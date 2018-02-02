@@ -1036,7 +1036,7 @@ Node *PhaseIdealLoop::place_near_use( Node *useblock ) const {
 
 
 bool PhaseIdealLoop::identical_backtoback_ifs(Node *n) {
-  if (!n->is_If()) {
+  if (!n->is_If() || n->is_CountedLoopEnd()) {
     return false;
   }
   if (!n->in(0)->is_Region()) {

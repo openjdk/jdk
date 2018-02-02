@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,23 +117,33 @@ bool OverflowSubLNode::will_overflow(jlong v1, jlong v2) const {
   return SubHelper<OverflowSubLNode>::will_overflow(v1, v2);
 }
 
-bool OverflowMulLNode::will_overflow(jlong val1, jlong val2) const {
-    jlong result = val1 * val2;
-    jlong ax = (val1 < 0 ? -val1 : val1);
-    jlong ay = (val2 < 0 ? -val2 : val2);
-
-    bool overflow = false;
-    if ((ax | ay) & CONST64(0xFFFFFFFF00000000)) {
-      // potential overflow if any bit in upper 32 bits are set
-      if ((val1 == min_jlong && val2 == -1) || (val2 == min_jlong && val1 == -1)) {
-        // -1 * Long.MIN_VALUE will overflow
-        overflow = true;
-      } else if (val2 != 0 && (result / val2 != val1)) {
-        overflow = true;
-      }
+bool OverflowMulLNode::is_overflow(jlong val1, jlong val2) {
+    // x * { 0, 1 } will never overflow. Even for x = min_jlong
+    if (val1 == 0 || val2 == 0 || val1 == 1 || val2 == 1) {
+      return false;
     }
 
-    return overflow;
+    // x * min_jlong for x not in { 0, 1 } overflows
+    // even -1 as -1 * min_jlong is an overflow
+    if (val1 == min_jlong || val2 == min_jlong) {
+      return true;
+    }
+
+    // if (x * y) / y == x there is no overflow
+    //
+    // the multiplication here is done as unsigned to avoid undefined behaviour which
+    // can be used by the compiler to assume that the check further down (result / val2 != val1)
+    // is always false and breaks the overflow check
+    julong v1 = (julong) val1;
+    julong v2 = (julong) val2;
+    julong tmp = v1 * v2;
+    jlong result = (jlong) tmp;
+
+    if (result / val2 != val1) {
+      return true;
+    }
+
+    return false;
 }
 
 bool OverflowAddINode::can_overflow(const Type* t1, const Type* t2) const {

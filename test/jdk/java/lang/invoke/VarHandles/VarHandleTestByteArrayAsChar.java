@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,6 +139,9 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
                                 "read write", bav, vh, h -> testArrayReadWrite(bas, h),
                                 true));
                         cases.add(new VarHandleSourceAccessTestCase(
+                                "null array", bav, vh, h -> testArrayNPE(bas, h),
+                                false));
+                        cases.add(new VarHandleSourceAccessTestCase(
                                 "unsupported", bav, vh, h -> testArrayUnsupported(bas, h),
                                 false));
                         cases.add(new VarHandleSourceAccessTestCase(
@@ -162,6 +165,9 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
                                     true));
                         }
 
+                        cases.add(new VarHandleSourceAccessTestCase(
+                                "null buffer", bav, vh, h -> testArrayNPE(bbs, h),
+                                false));
                         cases.add(new VarHandleSourceAccessTestCase(
                                 "unsupported", bav, vh, h -> testArrayUnsupported(bbs, h),
                                 false));
@@ -191,6 +197,88 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
         }
     }
 
+
+    static void testArrayNPE(ByteArraySource bs, VarHandleSource vhs) {
+        VarHandle vh = vhs.s;
+        byte[] array = null;
+        int ci = 1;
+
+        checkNPE(() -> {
+            char x = (char) vh.get(array, ci);
+        });
+
+        checkNPE(() -> {
+            vh.set(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            char x = (char) vh.getVolatile(array, ci);
+        });
+
+        checkNPE(() -> {
+            char x = (char) vh.getAcquire(array, ci);
+        });
+
+        checkNPE(() -> {
+            char x = (char) vh.getOpaque(array, ci);
+        });
+
+        checkNPE(() -> {
+            vh.setVolatile(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            vh.setRelease(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            vh.setOpaque(array, ci, VALUE_1);
+        });
+
+
+
+    }
+
+    static void testArrayNPE(ByteBufferSource bs, VarHandleSource vhs) {
+        VarHandle vh = vhs.s;
+        ByteBuffer array = null;
+        int ci = 1;
+
+        checkNPE(() -> {
+            char x = (char) vh.get(array, ci);
+        });
+
+        checkNPE(() -> {
+            vh.set(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            char x = (char) vh.getVolatile(array, ci);
+        });
+
+        checkNPE(() -> {
+            char x = (char) vh.getAcquire(array, ci);
+        });
+
+        checkNPE(() -> {
+            char x = (char) vh.getOpaque(array, ci);
+        });
+
+        checkNPE(() -> {
+            vh.setVolatile(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            vh.setRelease(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            vh.setOpaque(array, ci, VALUE_1);
+        });
+
+
+
+    }
 
     static void testArrayUnsupported(ByteArraySource bs, VarHandleSource vhs) {
         VarHandle vh = vhs.s;
