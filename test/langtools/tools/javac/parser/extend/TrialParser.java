@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Position;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 
 /**
  *
@@ -236,11 +237,11 @@ class TrialParser extends JavacParser {
                                     ? List.<JCTree>of(toP(F.at(pos).MethodDef(mods, name, t, typarams,
                                                             List.<JCVariableDecl>nil(), List.<JCExpression>nil(), null, null)))
                                     : null;
-                            return List.<JCTree>of(syntaxError(token.pos, err, "expected", LPAREN));
+                            return List.<JCTree>of(syntaxError(token.pos, err, Errors.Expected(LPAREN)));
                         }
                     } else if (!typarams.isEmpty()) {
                         // type parameters on non-variable non-method -- error
-                        return List.<JCTree>of(syntaxError(token.pos, "illegal.start.of.type"));
+                        return List.<JCTree>of(syntaxError(token.pos, Errors.IllegalStartOfType));
                     } else {
                         // expression-statement or expression to evaluate
                         accept(SEMI);

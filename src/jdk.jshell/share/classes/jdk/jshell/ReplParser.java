@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.parser.Tokens.Comment;
 import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.parser.Tokens.Token;
+import com.sun.tools.javac.resources.CompilerProperties;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.CLASS;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.COLON;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.ENUM;
@@ -244,11 +246,11 @@ class ReplParser extends JavacParser {
                                     ? List.of(toP(F.at(pos).MethodDef(mods, name, t, typarams,
                                                             List.nil(), List.nil(), null, null)))
                                     : null;
-                            return List.<JCTree>of(syntaxError(token.pos, err, "expected", LPAREN));
+                            return List.<JCTree>of(syntaxError(token.pos, err, Errors.Expected(LPAREN)));
                         }
                     } else if (!typarams.isEmpty()) {
                         // type parameters on non-variable non-method -- error
-                        return List.<JCTree>of(syntaxError(token.pos, "illegal.start.of.type"));
+                        return List.<JCTree>of(syntaxError(token.pos, Errors.IllegalStartOfType));
                     } else {
                         // expression-statement or expression to evaluate
                         JCExpressionStatement expr = toP(F.at(pos).Exec(t));
