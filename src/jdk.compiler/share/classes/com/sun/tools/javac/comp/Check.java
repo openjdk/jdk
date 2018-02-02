@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,9 @@ import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+import com.sun.tools.javac.util.JCDiagnostic.Error;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
+import com.sun.tools.javac.util.JCDiagnostic.Warning;
 import com.sun.tools.javac.util.List;
 
 import com.sun.tools.javac.code.Lint;
@@ -205,16 +207,16 @@ public class Check {
         if (sym.isDeprecatedForRemoval()) {
             if (!lint.isSuppressed(LintCategory.REMOVAL)) {
                 if (sym.kind == MDL) {
-                    removalHandler.report(pos, "has.been.deprecated.for.removal.module", sym);
+                    removalHandler.report(pos, Warnings.HasBeenDeprecatedForRemovalModule(sym));
                 } else {
-                    removalHandler.report(pos, "has.been.deprecated.for.removal", sym, sym.location());
+                    removalHandler.report(pos, Warnings.HasBeenDeprecatedForRemoval(sym, sym.location()));
                 }
             }
         } else if (!lint.isSuppressed(LintCategory.DEPRECATION)) {
             if (sym.kind == MDL) {
-                deprecationHandler.report(pos, "has.been.deprecated.module", sym);
+                deprecationHandler.report(pos, Warnings.HasBeenDeprecatedModule(sym));
             } else {
-                deprecationHandler.report(pos, "has.been.deprecated", sym, sym.location());
+                deprecationHandler.report(pos, Warnings.HasBeenDeprecated(sym, sym.location()));
             }
         }
     }
@@ -223,22 +225,22 @@ public class Check {
      *  @param pos        Position to be used for error reporting.
      *  @param msg        A string describing the problem.
      */
-    public void warnUnchecked(DiagnosticPosition pos, String msg, Object... args) {
+    public void warnUnchecked(DiagnosticPosition pos, Warning warnKey) {
         if (!lint.isSuppressed(LintCategory.UNCHECKED))
-            uncheckedHandler.report(pos, msg, args);
+            uncheckedHandler.report(pos, warnKey);
     }
 
     /** Warn about unsafe vararg method decl.
      *  @param pos        Position to be used for error reporting.
      */
-    void warnUnsafeVararg(DiagnosticPosition pos, String key, Object... args) {
+    void warnUnsafeVararg(DiagnosticPosition pos, Warning warnKey) {
         if (lint.isEnabled(LintCategory.VARARGS) && Feature.SIMPLIFIED_VARARGS.allowedInSource(source))
-            log.warning(LintCategory.VARARGS, pos, key, args);
+            log.warning(LintCategory.VARARGS, pos, warnKey);
     }
 
-    public void warnStatic(DiagnosticPosition pos, String msg, Object... args) {
+    public void warnStatic(DiagnosticPosition pos, Warning warnKey) {
         if (lint.isEnabled(LintCategory.STATIC))
-            log.warning(LintCategory.STATIC, pos, msg, args);
+            log.warning(LintCategory.STATIC, pos, warnKey);
     }
 
     /** Warn about division by integer constant zero.
@@ -903,14 +905,13 @@ public class Check {
             }
         } else if (hasTrustMeAnno && varargElemType != null &&
                             types.isReifiable(varargElemType)) {
-            warnUnsafeVararg(tree,
-                            "varargs.redundant.trustme.anno",
-                            syms.trustMeType.tsym,
-                            diags.fragment(Fragments.VarargsTrustmeOnReifiableVarargs(varargElemType)));
+            warnUnsafeVararg(tree, Warnings.VarargsRedundantTrustmeAnno(
+                                syms.trustMeType.tsym,
+                                diags.fragment(Fragments.VarargsTrustmeOnReifiableVarargs(varargElemType))));
         }
         else if (!hasTrustMeAnno && varargElemType != null &&
                 !types.isReifiable(varargElemType)) {
-            warnUnchecked(tree.params.head.pos(), "unchecked.varargs.non.reifiable.type", varargElemType);
+            warnUnchecked(tree.params.head.pos(), Warnings.UncheckedVarargsNonReifiableType(varargElemType));
         }
     }
     //where
@@ -998,9 +999,7 @@ public class Check {
                 (!Feature.SIMPLIFIED_VARARGS.allowedInSource(source) ||
                  sym.baseSymbol().attribute(syms.trustMeType.tsym) == null ||
                  !isTrustMeAllowedOnMethod(sym))) {
-                warnUnchecked(env.tree.pos(),
-                                  "unchecked.generic.array.creation",
-                                  argtype);
+                warnUnchecked(env.tree.pos(), Warnings.UncheckedGenericArrayCreation(argtype));
             }
             if ((sym.baseSymbol().flags() & SIGNATURE_POLYMORPHIC) == 0) {
                 TreeInfo.setVarargsElement(env.tree, types.elemtype(argtype));
@@ -1761,9 +1760,7 @@ public class Check {
             return;
         } else if (overrideWarner.hasNonSilentLint(LintCategory.UNCHECKED)) {
             warnUnchecked(TreeInfo.diagnosticPositionFor(m, tree),
-                    "override.unchecked.ret",
-                    uncheckedOverrides(m, other),
-                    mtres, otres);
+                    Warnings.OverrideUncheckedRet(uncheckedOverrides(m, other), mtres, otres));
         }
 
         // Error if overriding method throws an exception not reported
@@ -1779,9 +1776,7 @@ public class Check {
         }
         else if (unhandledUnerased.nonEmpty()) {
             warnUnchecked(TreeInfo.diagnosticPositionFor(m, tree),
-                          "override.unchecked.thrown",
-                         cannotOverride(m, other),
-                         unhandledUnerased.head);
+                          Warnings.OverrideUncheckedThrown(cannotOverride(m, other), unhandledUnerased.head));
             return;
         }
 
@@ -3237,10 +3232,10 @@ public class Check {
         missingDefaults = missingDefaults.reverse();
         if (missingDefaults.nonEmpty()) {
             isValid = false;
-            String key = (missingDefaults.size() > 1)
-                    ? "annotation.missing.default.value.1"
-                    : "annotation.missing.default.value";
-            log.error(a.pos(), key, a.type, missingDefaults);
+            Error errorKey = (missingDefaults.size() > 1)
+                    ? Errors.AnnotationMissingDefaultValue1(a.type, missingDefaults)
+                    : Errors.AnnotationMissingDefaultValue(a.type, missingDefaults);
+            log.error(a.pos(), errorKey);
         }
 
         return isValid && validateTargetAnnotationValue(a);
@@ -3605,14 +3600,14 @@ public class Check {
             if (warned) return; // suppress redundant diagnostics
             switch (lint) {
                 case UNCHECKED:
-                    Check.this.warnUnchecked(pos(), "prob.found.req", diags.fragment(uncheckedKey), found, expected);
+                    Check.this.warnUnchecked(pos(), Warnings.ProbFoundReq(diags.fragment(uncheckedKey), found, expected));
                     break;
                 case VARARGS:
                     if (method != null &&
                             method.attribute(syms.trustMeType.tsym) != null &&
                             isTrustMeAllowedOnMethod(method) &&
                             !types.isReifiable(method.type.getParameterTypes().last())) {
-                        Check.this.warnUnsafeVararg(pos(), "varargs.unsafe.use.varargs.param", method.params.last());
+                        Check.this.warnUnsafeVararg(pos(), Warnings.VarargsUnsafeUseVarargsParam(method.params.last()));
                     }
                     break;
                 default:

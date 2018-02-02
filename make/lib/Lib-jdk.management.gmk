@@ -80,3 +80,7 @@ $(BUILD_LIBMANAGEMENT_EXT): $(call FindLib, java.base, java)
 TARGETS += $(BUILD_LIBMANAGEMENT_EXT)
 
 ################################################################################
+
+# Include custom extension post hook
+$(eval $(call IncludeCustomExtension, lib/Lib-jdk.management-post.gmk))
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
  *          jdk.compiler/com.sun.tools.javac.parser
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util:+open
+ *          jdk.compiler/com.sun.tools.javac.resources
  */
 import java.lang.reflect.Field;
 import java.io.InputStream;
@@ -49,6 +50,8 @@ import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.Factory;
 import com.sun.tools.javac.util.Options;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 
 public class TestLog
 {
@@ -122,15 +125,15 @@ public class TestLog
         public void visitIf(JCTree.JCIf tree) {
             JCDiagnostic.DiagnosticPosition nil = null;
             // generate dummy messages to exercise the log API
-            log.error("not.stmt");
-            log.error(tree.pos, "not.stmt");
-            log.error(tree.pos(), "not.stmt");
-            log.error(nil, "not.stmt");
+            log.error(Errors.NotStmt);
+            log.error(tree.pos, Errors.NotStmt);
+            log.error(tree.pos(), Errors.NotStmt);
+            log.error(nil, Errors.NotStmt);
 
-            log.warning("div.zero");
-            log.warning(tree.pos, "div.zero");
-            log.warning(tree.pos(), "div.zero");
-            log.warning(nil, "div.zero");
+            log.warning(Warnings.DivZero);
+            log.warning(tree.pos, Warnings.DivZero);
+            log.warning(tree.pos(), Warnings.DivZero);
+            log.warning(nil, Warnings.DivZero);
         }
 
         private Log log;

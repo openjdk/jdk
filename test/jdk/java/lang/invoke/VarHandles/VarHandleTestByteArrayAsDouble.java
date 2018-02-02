@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,6 +139,9 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
                                 "read write", bav, vh, h -> testArrayReadWrite(bas, h),
                                 true));
                         cases.add(new VarHandleSourceAccessTestCase(
+                                "null array", bav, vh, h -> testArrayNPE(bas, h),
+                                false));
+                        cases.add(new VarHandleSourceAccessTestCase(
                                 "unsupported", bav, vh, h -> testArrayUnsupported(bas, h),
                                 false));
                         cases.add(new VarHandleSourceAccessTestCase(
@@ -162,6 +165,9 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
                                     true));
                         }
 
+                        cases.add(new VarHandleSourceAccessTestCase(
+                                "null buffer", bav, vh, h -> testArrayNPE(bbs, h),
+                                false));
                         cases.add(new VarHandleSourceAccessTestCase(
                                 "unsupported", bav, vh, h -> testArrayUnsupported(bbs, h),
                                 false));
@@ -191,6 +197,174 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
         }
     }
 
+
+    static void testArrayNPE(ByteArraySource bs, VarHandleSource vhs) {
+        VarHandle vh = vhs.s;
+        byte[] array = null;
+        int ci = 1;
+
+        checkNPE(() -> {
+            double x = (double) vh.get(array, ci);
+        });
+
+        checkNPE(() -> {
+            vh.set(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            double x = (double) vh.getVolatile(array, ci);
+        });
+
+        checkNPE(() -> {
+            double x = (double) vh.getAcquire(array, ci);
+        });
+
+        checkNPE(() -> {
+            double x = (double) vh.getOpaque(array, ci);
+        });
+
+        checkNPE(() -> {
+            vh.setVolatile(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            vh.setRelease(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            vh.setOpaque(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkNPE(() -> {
+            double r = (double) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            double r = (double) vh.compareAndExchangeAcquire(array, ci, VALUE_2, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            double r = (double) vh.compareAndExchangeRelease(array, ci, VALUE_2, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            boolean r = vh.weakCompareAndSetPlain(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkNPE(() -> {
+            boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkNPE(() -> {
+            boolean r = vh.weakCompareAndSetAcquire(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkNPE(() -> {
+            boolean r = vh.weakCompareAndSetRelease(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkNPE(() -> {
+            double o = (double) vh.getAndSet(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            double o = (double) vh.getAndSetAcquire(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            double o = (double) vh.getAndSetRelease(array, ci, VALUE_1);
+        });
+
+
+    }
+
+    static void testArrayNPE(ByteBufferSource bs, VarHandleSource vhs) {
+        VarHandle vh = vhs.s;
+        ByteBuffer array = null;
+        int ci = 1;
+
+        checkNPE(() -> {
+            double x = (double) vh.get(array, ci);
+        });
+
+        checkNPE(() -> {
+            vh.set(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            double x = (double) vh.getVolatile(array, ci);
+        });
+
+        checkNPE(() -> {
+            double x = (double) vh.getAcquire(array, ci);
+        });
+
+        checkNPE(() -> {
+            double x = (double) vh.getOpaque(array, ci);
+        });
+
+        checkNPE(() -> {
+            vh.setVolatile(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            vh.setRelease(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            vh.setOpaque(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkNPE(() -> {
+            double r = (double) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            double r = (double) vh.compareAndExchangeAcquire(array, ci, VALUE_2, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            double r = (double) vh.compareAndExchangeRelease(array, ci, VALUE_2, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            boolean r = vh.weakCompareAndSetPlain(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkNPE(() -> {
+            boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkNPE(() -> {
+            boolean r = vh.weakCompareAndSetAcquire(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkNPE(() -> {
+            boolean r = vh.weakCompareAndSetRelease(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkNPE(() -> {
+            double o = (double) vh.getAndSet(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            double o = (double) vh.getAndSetAcquire(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            double o = (double) vh.getAndSetRelease(array, ci, VALUE_1);
+        });
+
+
+    }
 
     static void testArrayUnsupported(ByteArraySource bs, VarHandleSource vhs) {
         VarHandle vh = vhs.s;

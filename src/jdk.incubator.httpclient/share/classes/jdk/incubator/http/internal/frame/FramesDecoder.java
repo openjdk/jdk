@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,14 +281,14 @@ public class FramesDecoder {
             int extract = Math.min(remaining, bytecount);
             ByteBuffer extractedBuf;
             if (isDataFrame) {
-                extractedBuf = Utils.slice(currentBuffer, extract);
+                extractedBuf = Utils.sliceWithLimitedCapacity(currentBuffer, extract);
                 slicedToDataFrame = true;
             } else {
                 // Header frames here
                 // HPACK decoding should performed under lock and immediately after frame decoding.
                 // in that case it is safe to release original buffer,
                 // because of sliced buffer has a very short life
-                extractedBuf = Utils.slice(currentBuffer, extract);
+                extractedBuf = Utils.sliceWithLimitedCapacity(currentBuffer, extract);
             }
             res.add(extractedBuf);
             bytecount -= extract;

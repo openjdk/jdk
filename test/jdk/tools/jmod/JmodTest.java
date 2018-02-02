@@ -104,7 +104,7 @@ public class JmodTest {
             Path link = Files.createSymbolicLink(
                 libDir.resolve("baz"), libDir.resolve("foo").toAbsolutePath());
             assertTrue(Files.exists(link));
-        } catch (UnsupportedOperationException uoe) {
+        } catch (IOException|UnsupportedOperationException uoe) {
             // OS does not support symlinks. Nothing to test!
             return;
         }

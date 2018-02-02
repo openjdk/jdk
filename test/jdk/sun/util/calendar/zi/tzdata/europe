@@ -91,14 +91,15 @@
 #        0:00       WET  WEST WEMT  Western Europe
 #        0:19:32.13 AMT* NST*       Amsterdam, Netherlands Summer (1835-1937)
 #        1:00       BST             British Standard (1968-1971)
+#        1:00       IST  GMT        Irish Standard (1968-) with winter DST
 #        1:00       CET  CEST CEMT  Central Europe
 #        1:00:14    SET             Swedish (1879-1899)
 #        1:36:34    RMT* LST*       Riga, Latvian Summer (1880-1926)*
 #        2:00       EET  EEST       Eastern Europe
 #        3:00       MSK  MSD  MDST* Moscow
 
-# From Peter Ilieve (1994-12-04),
-# The original six [EU members]: Belgium, France, (West) Germany, Italy,
+# From Peter Ilieve (1994-12-04), re EEC/EC/EU members:
+# The original six: Belgium, France, (West) Germany, Italy,
 # Luxembourg, the Netherlands.
 # Plus, from 1 Jan 73: Denmark, Ireland, United Kingdom.
 # Plus, from 1 Jan 81: Greece.
@@ -301,16 +302,31 @@
 # The following claim by Shanks & Pottenger is possible though doubtful;
 # we'll ignore it for now.
 #     * Dublin's 1971-10-31 switch was at 02:00, even though London's was 03:00.
+
+# From Paul Eggert (2017-12-04):
 #
-#
-# Whitman says Dublin Mean Time was -0:25:21, which is more precise than
-# Shanks & Pottenger.
-# Perhaps this was Dunsink Observatory Time, as Dunsink Observatory
-# (8 km NW of Dublin's center) seemingly was to Dublin as Greenwich was
-# to London.  For example:
+# Dunsink Observatory (8 km NW of Dublin's center) was to Dublin as
+# Greenwich was to London.  For example:
 #
 #   "Timeball on the ballast office is down.  Dunsink time."
 #   -- James Joyce, Ulysses
+#
+# The abbreviation DMT stood for "Dublin Mean Time" or "Dunsink Mean Time";
+# this being Ireland, opinions differed.
+#
+# Whitman says Dublin/Dunsink Mean Time was UT-00:25:21, which agrees
+# with measurements of recent visitors to the Meridian Room of Dunsink
+# Observatory; see Malone D. Dunsink and timekeeping. 2016-01-24.
+# <https://www.maths.tcd.ie/~dwmalone/time/dunsink.html>.  Malone
+# writes that the Nautical Almanac listed UT-00:25:22 until 1896, when
+# it moved to UT-00:25:21.1 (I confirmed that the 1893 edition used
+# the former and the 1896 edition used the latter).  Evidently the
+# news of this change propagated slowly, as Milne 1899 still lists
+# UT-00:25:22 and cites the International Telegraph Bureau.  As it is
+# not clear that there was any practical significance to the change
+# from UT-00:25:22 to UT-00:25:21.1 in civil timekeeping, omit this
+# transition for now and just use the latter value, omitting its
+# fraction since our format cannot represent fractions.
 
 # "Countess Markievicz ... claimed that the [1916] abolition of Dublin Mean Time
 # was among various actions undertaken by the 'English' government that
@@ -370,12 +386,28 @@
 # regulations. I spoke this morning with the Secretary of the Department of
 # Justice (tel +353 1 678 9711) who confirmed to me that the correct name is
 # "Irish Summer Time", abbreviated to "IST".
+#
+# From Paul Eggert (2017-12-07):
+# The 1996 anonymous contributor's goal was to determine the correct
+# abbreviation for summer time in Dublin and so the contributor
+# focused on the "IST", not on the "Irish Summer Time".  Though the
+# "IST" was correct, the "Irish Summer Time" appears to have been an
+# error, as Ireland's Standard Time (Amendment) Act, 1971 states that
+# standard time in Ireland remains at UT +01 and is observed in
+# summer, and that Greenwich mean time is observed in winter.  (Thanks
+# to Derick Rethans for pointing out the error.)  That is, when
+# Ireland amended the 1968 act that established UT +01 as Irish
+# Standard Time, it left standard time unchanged and established GMT
+# as a negative daylight saving time in winter.  So, in this database
+# IST stands for Irish Summer Time for timestamps before 1968, and for
+# Irish Standard Time after that.  See:
+# http://www.irishstatutebook.ie/eli/1971/act/17/enacted/en/print
 
 # Michael Deckers (2017-06-01) gave the following URLs for Ireland's
 # Summer Time Act, 1925 and Summer Time Orders, 1926 and 1947:
-# http://www.irishstatutebook.ie/eli/1925/act/8/enacted/en/print.html
-# http://www.irishstatutebook.ie/eli/1926/sro/919/made/en/print.html
-# http://www.irishstatutebook.ie/eli/1947/sro/71/made/en/print.html
+# http://www.irishstatutebook.ie/eli/1925/act/8/enacted/en/print
+# http://www.irishstatutebook.ie/eli/1926/sro/919/made/en/print
+# http://www.irishstatutebook.ie/eli/1947/sro/71/made/en/print
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 # Summer Time Act, 1916
@@ -499,9 +531,23 @@ Link	Europe/London	Europe/Jersey
 Link	Europe/London	Europe/Guernsey
 Link	Europe/London	Europe/Isle_of_Man
 
+# From Paul Eggert (2018-01-19):
+# The following is like GB-Eire and EU, except with standard time in
+# summer and negative daylight saving time in winter.
+# Although currently commented out, this will need to become uncommented
+# once the ICU/OpenJDK workaround is removed; see below.
+# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+#Rule	Eire	1971	only	-	Oct	31	 2:00u	-1:00	GMT
+#Rule	Eire	1972	1980	-	Mar	Sun>=16	 2:00u	0	IST
+#Rule	Eire	1972	1980	-	Oct	Sun>=23	 2:00u	-1:00	GMT
+#Rule	Eire	1981	max	-	Mar	lastSun	 1:00u	0	IST
+#Rule	Eire	1981	1989	-	Oct	Sun>=23	 1:00u	-1:00	GMT
+#Rule	Eire	1990	1995	-	Oct	Sun>=22	 1:00u	-1:00	GMT
+#Rule	Eire	1996	max	-	Oct	lastSun	 1:00u	-1:00	GMT
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Europe/Dublin	-0:25:00 -	LMT	1880 Aug  2
-			-0:25:21 -	DMT	1916 May 21  2:00s # Dublin MT
+			-0:25:21 -	DMT	1916 May 21  2:00s
 			-0:25:21 1:00	IST	1916 Oct  1  2:00s
 			 0:00	GB-Eire	%s	1921 Dec  6 # independence
 			 0:00	GB-Eire	GMT/IST	1940 Feb 25  2:00s
@@ -510,16 +556,33 @@ Zone	Europe/Dublin	-0:25:00 -	LMT	1880 Aug  2
 			 0:00	1:00	IST	1947 Nov  2  2:00s
 			 0:00	-	GMT	1948 Apr 18  2:00s
 			 0:00	GB-Eire	GMT/IST	1968 Oct 27
+# From Paul Eggert (2018-01-18):
+# The next line should look like this:
+#			 1:00	Eire	IST/GMT
+# However, in January 2018 we discovered that the Eire rules cause
+# problems with tests for ICU:
+# https://mm.icann.org/pipermail/tz/2018-January/025825.html
+# and with tests for OpenJDK:
+# https://mm.icann.org/pipermail/tz/2018-January/025822.html
+# To work around this problem, use a traditional approximation for
+# time stamps after 1971-10-31 02:00 UTC, to give ICU and OpenJDK
+# developers breathing room to fix bugs.  This approximation has
+# correct UTC offsets, but results in tm_isdst flags are the reverse
+# of what they should be.  This workaround is temporary and should be
+# removed reasonably soon.
 			 1:00	-	IST	1971 Oct 31  2:00u
 			 0:00	GB-Eire	GMT/IST	1996
 			 0:00	EU	GMT/IST
+# End of workaround for ICU and OpenJDK bugs.
+
 
 ###############################################################################
 
 # Europe
 
-# EU rules are for the European Union, previously known as the EC, EEC,
-# Common Market, etc.
+# The following rules are for the European Union and for its
+# predecessor organization, the European Communities.
+# For brevity they are called "EU rules" elsewhere in this file.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	EU	1977	1980	-	Apr	Sun>=1	 1:00u	1:00	S
@@ -952,7 +1015,7 @@ Zone	Europe/Prague	0:57:44 -	LMT	1850
 # The page http://www.retsinfo.dk/_GETDOCI_/ACCN/A18930008330-REGL
 # confirms this, and states that the law was put forth 1893-03-29.
 #
-# The EU treaty with effect from 1973:
+# The EU [actually, EEC and Euratom] treaty with effect from 1973:
 # http://www.retsinfo.dk/_GETDOCI_/ACCN/A19722110030-REGL
 #
 # This provoked a new law from 1974 to make possible summer time changes
@@ -1008,9 +1071,10 @@ Zone Atlantic/Faroe	-0:27:04 -	LMT	1908 Jan 11 # Tórshavn
 # East Greenland and Franz Josef Land, but we don't know their time zones.
 # My source for this is Wilhelm Dege's book mentioned under Svalbard.
 #
-# From Paul Eggert (2006-03-22):
-# Greenland joined the EU as part of Denmark, obtained home rule on 1979-05-01,
-# and left the EU on 1985-02-01.  It therefore should have been using EU
+# From Paul Eggert (2017-12-10):
+# Greenland joined the European Communities as part of Denmark,
+# obtained home rule on 1979-05-01, and left the European Communities
+# on 1985-02-01.  It therefore should have been using EU
 # rules at least through 1984.  Shanks & Pottenger say Scoresbysund and Godthåb
 # used C-Eur rules after 1980, but IATA SSIM (1991/1996) says they use EU
 # rules since at least 1991.  Assume EU rules since 1980.
@@ -1324,7 +1388,7 @@ Zone	Europe/Paris	0:09:21 -	LMT	1891 Mar 15  0:01
 # From Markus Kuhn (1998-09-29):
 # The German time zone web site by the Physikalisch-Technische
 # Bundesanstalt contains DST information back to 1916.
-# [See tz-link.htm for the URL.]
+# [See tz-link.html for the URL.]
 
 # From Jörg Schilling (2002-10-23):
 # In 1945, Berlin was switched to Moscow Summer time (GMT+4) by
@@ -1421,7 +1485,7 @@ Zone	Europe/Athens	1:34:52 -	LMT	1895 Sep 14
 			1:00	Greece	CE%sT	1944 Apr  4
 			2:00	Greece	EE%sT	1981
 			# Shanks & Pottenger say it switched to C-Eur in 1981;
-			# go with EU instead, since Greece joined it on Jan 1.
+			# go with EU rules instead, since Greece joined Jan 1.
 			2:00	EU	EE%sT
 
 # Hungary
@@ -2120,7 +2184,7 @@ Zone	Europe/Warsaw	1:24:00 -	LMT	1880
 # IATA SSIM (1991/1992) reports that the Azores were at -1:00.
 # IATA SSIM (1993-02) says +0:00; later issues (through 1996-09) say -1:00.
 # Guess that the Azores changed to EU rules in 1992 (since that's when Portugal
-# harmonized with the EU), and that they stayed +0:00 that winter.
+# harmonized with EU rules), and that they stayed +0:00 that winter.
 #
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 # DSH writes that despite Decree 1,469 (1915), the change to the clocks was not
@@ -2795,9 +2859,9 @@ Zone Asia/Omsk		 4:53:30 -	LMT	1919 Nov 14
 #
 # https://regnum.ru/news/society/1957270.html
 # has some historical data for Altai Krai:
-# before 1957: west part on UTC+6, east on UTC+7
-# after 1957: UTC+7
-# since 1995: UTC+6
+# before 1957: west part on UT+6, east on UT+7
+# after 1957: UT+7
+# since 1995: UT+6
 # http://barnaul.rusplt.ru/index/pochemu_altajskij_kraj_okazalsja_v_neprivychnom_chasovom_pojase-17648.html
 # confirms that and provides more details including 1995-05-28 transition date.
 
@@ -3604,6 +3668,17 @@ Zone	Europe/Zurich	0:34:08 -	LMT	1853 Jul 16 # See above comment.
 # From Paul Eggert (2016-09-07):
 # The change is permanent, so this is the new standard time in Turkey.
 # It takes effect today, which is not much notice.
+
+# From Kıvanç Yazan (2017-10-28):
+# Turkey will go back to Daylight Saving Time starting 2018-10.
+# http://www.resmigazete.gov.tr/eskiler/2017/10/20171028-5.pdf
+#
+# From Even Scharning (2017-11-08):
+# ... today it was announced that the DST will become "continuous":
+# http://www.hurriyet.com.tr/son-dakika-yaz-saati-uygulamasi-surekli-hale-geldi-40637482
+# From Paul Eggert (2017-11-08):
+# Although Google Translate misfires on that source, it looks like
+# Turkey reversed last month's decision, and so will stay at +03.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Turkey	1916	only	-	May	 1	0:00	1:00	S

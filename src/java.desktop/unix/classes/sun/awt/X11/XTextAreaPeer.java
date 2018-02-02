@@ -630,19 +630,6 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             super.focusLost(e);
             getComponent().repaint();
         }
-
-        // Fix for 5100950: textarea.getSelectedText() returns the de-selected text, on XToolkit
-        // Restoring Motif behaviour
-        // If the text is unhighlighted then we should sets the selection range to zero
-        @Override
-        public void setSelectionVisible(boolean vis) {
-            if (vis){
-                super.setSelectionVisible(vis);
-            }else{
-                // In order to de-select the selection
-                setDot(getDot());
-            }
-        }
     }
 
     @SuppressWarnings("serial") // JDK-implementation class

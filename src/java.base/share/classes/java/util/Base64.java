@@ -116,8 +116,8 @@ public class Base64 {
      *
      * @param   lineLength
      *          the length of each output line (rounded down to nearest multiple
-     *          of 4). If {@code lineLength <= 0} the output will not be separated
-     *          in lines
+     *          of 4). If the rounded down line length is not a positive value,
+     *          the output will not be separated in lines
      * @param   lineSeparator
      *          the line separator for each output line
      *
@@ -135,10 +135,12 @@ public class Base64 {
                  throw new IllegalArgumentException(
                      "Illegal base64 line separator character 0x" + Integer.toString(b, 16));
          }
+         // round down to nearest multiple of 4
+         lineLength &= ~0b11;
          if (lineLength <= 0) {
              return Encoder.RFC4648;
          }
-         return new Encoder(false, lineSeparator, lineLength >> 2 << 2, true);
+         return new Encoder(false, lineSeparator, lineLength, true);
     }
 
     /**

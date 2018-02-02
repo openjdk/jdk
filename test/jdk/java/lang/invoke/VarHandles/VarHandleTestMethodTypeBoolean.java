@@ -2906,4 +2906,3 @@ public class VarHandleTestMethodTypeBoolean extends VarHandleBaseTest {
         }
     }
 }
-

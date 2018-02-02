@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 6379808
+ * @bug 6379808 8166339
  * @summary Check all Cp933 SBCS characters are not supported in Cp834
  * @modules jdk.charsets
  */
@@ -62,17 +62,34 @@ public class TestCp834_SBCS {
                 if ((c = cb.get()) != '\ufffd') {
                     // OK, this is a SBCS character in Cp933
                     if (dec834.decode(ByteBuffer.wrap(ba)).get() != '\ufffd')
-                        throw new Exception("SBCS is supported in IBM834 decoder");
+                        throw new RuntimeException("SBCS is supported in IBM834 decoder");
 
                     if (enc834.canEncode(c))
-                        throw new Exception("SBCS can be encoded in IBM834 encoder");
+                        throw new RuntimeException("SBCS can be encoded in IBM834 encoder");
 
                     ca[0] = c;
                     ByteBuffer bb = enc834.encode(CharBuffer.wrap(ca));
                     if (bb.get() != (byte)0xfe || bb.get() != (byte)0xfe)
-                        throw new Exception("SBCS is supported in IBM834 encoder");
+                        throw new RuntimeException("SBCS is supported in IBM834 encoder");
                 }
             }
         }
+
+        // 8166339: cp834 should handle unmappable bytes as dobule-byte pair.
+        if (! new String("\ufffd".getBytes("cp834"), "cp834").equals("\ufffd")) {
+            throw new RuntimeException("u+fffd roundtrip failed");
+        }
+
+        if (! new String("a".getBytes("cp834"), "cp834").equals("\ufffd") ||
+            ! new String(new byte[] { 0x41, 0x40}, "cp834").equals("\ufffd")) {
+            throw new RuntimeException("decoding unmappable don't return u+fffd");
+        }
+
+        CoderResult cr = Charset.forName("Cp834").newDecoder().decode(
+            ByteBuffer.wrap(new byte[] { 0x41, 0x40}), CharBuffer.wrap(new char[2]), true);
+        if (cr.isError() && cr.length() != 2) {
+            throw new RuntimeException("decoding unmappable don't return unmmappable(2)");
+        }
+
     }
 }

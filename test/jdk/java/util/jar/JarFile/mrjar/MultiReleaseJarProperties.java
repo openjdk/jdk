@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,19 @@
 
 /*
  * @test
- * @bug 8132734 8144062
+ * @bug 8132734 8144062 8194070
  * @summary Test the System properties for JarFile that support multi-release jar files
  * @library /lib/testlibrary/java/util/jar
  * @build Compiler JarBuilder CreateMultiReleaseTestJars
  * @run testng MultiReleaseJarProperties
- * @run testng/othervm -Djdk.util.jar.version=0 MultiReleaseJarProperties
- * @run testng/othervm -Djdk.util.jar.version=8 MultiReleaseJarProperties
- * @run testng/othervm -Djdk.util.jar.version=9 MultiReleaseJarProperties
- * @run testng/othervm -Djdk.util.jar.version=10 MultiReleaseJarProperties
+ * @run testng/othervm -Djdk.util.jar.version=0   MultiReleaseJarProperties
+ * @run testng/othervm -Djdk.util.jar.version=8   MultiReleaseJarProperties
+ * @run testng/othervm -Djdk.util.jar.version=9   MultiReleaseJarProperties
  * @run testng/othervm -Djdk.util.jar.version=100 MultiReleaseJarProperties
- * @run testng/othervm -Djdk.util.jar.version=8 -Djdk.util.jar.enableMultiRelease=false MultiReleaseJarProperties
- * @run testng/othervm -Djdk.util.jar.version=9 -Djdk.util.jar.enableMultiRelease=false MultiReleaseJarProperties
- * @run testng/othervm -Djdk.util.jar.version=10 -Djdk.util.jar.enableMultiRelease=false MultiReleaseJarProperties
- * @run testng/othervm -Djdk.util.jar.version=8 -Djdk.util.jar.enableMultiRelease=force MultiReleaseJarProperties
- * @run testng/othervm -Djdk.util.jar.version=9 -Djdk.util.jar.enableMultiRelease=force MultiReleaseJarProperties
- * @run testng/othervm -Djdk.util.jar.version=10 -Djdk.util.jar.enableMultiRelease=force MultiReleaseJarProperties
+ * @run testng/othervm -Djdk.util.jar.version=8   -Djdk.util.jar.enableMultiRelease=false MultiReleaseJarProperties
+ * @run testng/othervm -Djdk.util.jar.version=9   -Djdk.util.jar.enableMultiRelease=false MultiReleaseJarProperties
+ * @run testng/othervm -Djdk.util.jar.version=8   -Djdk.util.jar.enableMultiRelease=force MultiReleaseJarProperties
+ * @run testng/othervm -Djdk.util.jar.version=9   -Djdk.util.jar.enableMultiRelease=force MultiReleaseJarProperties
  * @run testng/othervm -Djdk.util.jar.enableMultiRelease=false MultiReleaseJarProperties
  * @run testng/othervm -Djdk.util.jar.enableMultiRelease=force MultiReleaseJarProperties
  */
