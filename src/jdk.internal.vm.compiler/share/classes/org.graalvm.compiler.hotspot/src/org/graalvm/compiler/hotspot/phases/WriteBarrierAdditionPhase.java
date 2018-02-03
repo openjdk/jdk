@@ -34,7 +34,7 @@ import org.graalvm.compiler.hotspot.nodes.SerialArrayRangeWriteBarrier;
 import org.graalvm.compiler.hotspot.nodes.SerialWriteBarrier;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.extended.ArrayRangeWriteNode;
+import org.graalvm.compiler.nodes.extended.ArrayRangeWrite;
 import org.graalvm.compiler.nodes.java.AbstractCompareAndSwapNode;
 import org.graalvm.compiler.nodes.java.LoweredAtomicReadAndWriteNode;
 import org.graalvm.compiler.nodes.memory.FixedAccessNode;
@@ -65,9 +65,9 @@ public class WriteBarrierAdditionPhase extends Phase {
                 addAtomicReadWriteNodeBarriers(loweredAtomicReadAndWriteNode, graph);
             } else if (n instanceof AbstractCompareAndSwapNode) {
                 addCASBarriers((AbstractCompareAndSwapNode) n, graph);
-            } else if (n instanceof ArrayRangeWriteNode) {
-                ArrayRangeWriteNode node = (ArrayRangeWriteNode) n;
-                if (node.isObjectArray()) {
+            } else if (n instanceof ArrayRangeWrite) {
+                ArrayRangeWrite node = (ArrayRangeWrite) n;
+                if (node.writesObjectArray()) {
                     addArrayRangeBarriers(node, graph);
                 }
             }
@@ -171,17 +171,17 @@ public class WriteBarrierAdditionPhase extends Phase {
         }
     }
 
-    private void addArrayRangeBarriers(ArrayRangeWriteNode node, StructuredGraph graph) {
+    private void addArrayRangeBarriers(ArrayRangeWrite write, StructuredGraph graph) {
         if (config.useG1GC) {
-            if (!node.isInitialization()) {
-                G1ArrayRangePreWriteBarrier g1ArrayRangePreWriteBarrier = graph.add(new G1ArrayRangePreWriteBarrier(node.getArray(), node.getIndex(), node.getLength()));
-                graph.addBeforeFixed(node, g1ArrayRangePreWriteBarrier);
+            if (!write.isInitialization()) {
+                G1ArrayRangePreWriteBarrier g1ArrayRangePreWriteBarrier = graph.add(new G1ArrayRangePreWriteBarrier(write.getAddress(), write.getLength(), write.getElementStride()));
+                graph.addBeforeFixed(write.asNode(), g1ArrayRangePreWriteBarrier);
             }
-            G1ArrayRangePostWriteBarrier g1ArrayRangePostWriteBarrier = graph.add(new G1ArrayRangePostWriteBarrier(node.getArray(), node.getIndex(), node.getLength()));
-            graph.addAfterFixed(node, g1ArrayRangePostWriteBarrier);
+            G1ArrayRangePostWriteBarrier g1ArrayRangePostWriteBarrier = graph.add(new G1ArrayRangePostWriteBarrier(write.getAddress(), write.getLength(), write.getElementStride()));
+            graph.addAfterFixed(write.asNode(), g1ArrayRangePostWriteBarrier);
         } else {
-            SerialArrayRangeWriteBarrier serialArrayRangeWriteBarrier = graph.add(new SerialArrayRangeWriteBarrier(node.getArray(), node.getIndex(), node.getLength()));
-            graph.addAfterFixed(node, serialArrayRangeWriteBarrier);
+            SerialArrayRangeWriteBarrier serialArrayRangeWriteBarrier = graph.add(new SerialArrayRangeWriteBarrier(write.getAddress(), write.getLength(), write.getElementStride()));
+            graph.addAfterFixed(write.asNode(), serialArrayRangeWriteBarrier);
         }
     }
 

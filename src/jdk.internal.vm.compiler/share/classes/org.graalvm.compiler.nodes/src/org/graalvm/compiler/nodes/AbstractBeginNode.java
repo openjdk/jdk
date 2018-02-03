@@ -129,10 +129,13 @@ public abstract class AbstractBeginNode extends FixedWithNextNode implements LIR
             if (ret == null) {
                 throw new NoSuchElementException();
             }
-            if (!(current instanceof FixedWithNextNode) || (current instanceof AbstractBeginNode && current != AbstractBeginNode.this)) {
-                current = null;
-            } else {
+            if (current instanceof FixedWithNextNode) {
                 current = ((FixedWithNextNode) current).next();
+                if (current instanceof AbstractBeginNode) {
+                    current = null;
+                }
+            } else {
+                current = null;
             }
             return ret;
         }

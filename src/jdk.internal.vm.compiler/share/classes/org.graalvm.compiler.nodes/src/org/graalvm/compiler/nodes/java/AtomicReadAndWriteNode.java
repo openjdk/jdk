@@ -36,11 +36,10 @@ import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.JavaKind;
-import sun.misc.Unsafe;
 
 /**
- * Represents an atomic read-and-write operation like {@link Unsafe#getAndSetInt(Object, long, int)}
- * .
+ * Represents an atomic read-and-write operation like
+ * {@link sun.misc.Unsafe#getAndSetInt(Object, long, int)}.
  */
 @NodeInfo(cycles = CYCLES_8, size = SIZE_2)
 public final class AtomicReadAndWriteNode extends AbstractMemoryCheckpoint implements Lowerable, MemoryCheckpoint.Single {

@@ -25,7 +25,7 @@ package org.graalvm.compiler.debug;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.graalvm.util.EconomicMap;
+import org.graalvm.collections.EconomicMap;
 
 /**
  * Registry for allocating a globally unique integer id to each {@link AbstractKey}.

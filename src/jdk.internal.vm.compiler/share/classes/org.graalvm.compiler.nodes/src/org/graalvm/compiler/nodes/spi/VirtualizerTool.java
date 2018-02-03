@@ -24,6 +24,7 @@ package org.graalvm.compiler.nodes.spi;
 
 import java.util.List;
 
+import org.graalvm.compiler.core.common.spi.ArrayOffsetProvider;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
@@ -55,6 +56,8 @@ public interface VirtualizerTool {
      *         can be used to access {@link JavaConstant}s.
      */
     ConstantReflectionProvider getConstantReflectionProvider();
+
+    ArrayOffsetProvider getArrayOffsetProvider();
 
     /**
      * This method should be used to query the maximum size of virtualized objects before attempting

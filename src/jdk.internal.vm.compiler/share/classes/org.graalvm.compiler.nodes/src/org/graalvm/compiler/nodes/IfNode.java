@@ -30,6 +30,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.Equivalence;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -59,8 +61,6 @@ import org.graalvm.compiler.nodes.java.LoadFieldNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
-import org.graalvm.util.EconomicMap;
-import org.graalvm.util.Equivalence;
 
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
@@ -557,7 +557,7 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
         } else if (next1 instanceof DeoptimizeNode && next2 instanceof DeoptimizeNode) {
             DeoptimizeNode deopt1 = (DeoptimizeNode) next1;
             DeoptimizeNode deopt2 = (DeoptimizeNode) next2;
-            if (deopt1.reason() == deopt2.reason() && deopt1.action() == deopt2.action()) {
+            if (deopt1.getReason() == deopt2.getReason() && deopt1.getAction() == deopt2.getAction()) {
                 // Same deoptimization reason and action.
                 return true;
             }
@@ -600,7 +600,7 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
             }
         } else if (a instanceof CompareNode) {
             CompareNode compareA = (CompareNode) a;
-            Condition conditionA = compareA.condition();
+            Condition conditionA = compareA.condition().asCondition();
             if (compareA.unorderedIsTrue()) {
                 return false;
             }
@@ -614,7 +614,7 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
                     return false;
                 }
                 Condition comparableCondition = null;
-                Condition conditionB = compareB.condition();
+                Condition conditionB = compareB.condition().asCondition();
                 if (compareB.getX() == compareA.getX() && compareB.getY() == compareA.getY()) {
                     comparableCondition = conditionB;
                 } else if (compareB.getX() == compareA.getY() && compareB.getY() == compareA.getX()) {
@@ -1384,7 +1384,7 @@ public final class IfNode extends ControlSplitNode implements Simplifiable, LIRL
 
     @Override
     public AbstractBeginNode getPrimarySuccessor() {
-        return this.trueSuccessor();
+        return null;
     }
 
     public AbstractBeginNode getSuccessor(boolean result) {

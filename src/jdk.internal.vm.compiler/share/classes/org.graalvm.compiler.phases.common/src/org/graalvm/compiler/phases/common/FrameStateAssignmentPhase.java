@@ -24,6 +24,7 @@ package org.graalvm.compiler.phases.common;
 
 import java.util.List;
 
+import org.graalvm.collections.EconomicMap;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
@@ -40,7 +41,6 @@ import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.Phase;
 import org.graalvm.compiler.phases.graph.ReentrantNodeIterator;
 import org.graalvm.compiler.phases.graph.ReentrantNodeIterator.NodeIteratorClosure;
-import org.graalvm.util.EconomicMap;
 
 import jdk.vm.ci.code.BytecodeFrame;
 

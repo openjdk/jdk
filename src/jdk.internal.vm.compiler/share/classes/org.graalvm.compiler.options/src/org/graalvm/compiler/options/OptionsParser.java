@@ -28,9 +28,9 @@ import java.util.Formatter;
 import java.util.List;
 import java.util.ServiceLoader;
 
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.MapCursor;
 import org.graalvm.util.CollectionsUtil;
-import org.graalvm.util.EconomicMap;
-import org.graalvm.util.MapCursor;
 
 /**
  * This class contains methods for parsing Graal options and matching them against a set of

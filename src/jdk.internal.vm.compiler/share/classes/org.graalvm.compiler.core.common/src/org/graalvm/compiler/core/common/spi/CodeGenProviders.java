@@ -40,4 +40,5 @@ public interface CodeGenProviders {
 
     ConstantReflectionProvider getConstantReflection();
 
+    ArrayOffsetProvider getArrayOffsetProvider();
 }

@@ -101,6 +101,10 @@ public class AMD64Call {
         public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
             directCall(crb, masm, callTarget, null, true, state);
         }
+
+        public int emitCall(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
+            return directCall(crb, masm, callTarget, null, true, state);
+        }
     }
 
     @Opcode("CALL_INDIRECT")
@@ -183,23 +187,27 @@ public class AMD64Call {
         }
     }
 
-    public static void directCall(CompilationResultBuilder crb, AMD64MacroAssembler masm, InvokeTarget callTarget, Register scratch, boolean align, LIRFrameState info) {
+    public static int directCall(CompilationResultBuilder crb, AMD64MacroAssembler masm, InvokeTarget callTarget, Register scratch, boolean align, LIRFrameState info) {
         if (align) {
             emitAlignmentForDirectCall(crb, masm);
         }
         int before = masm.position();
+        int callPCOffset;
         if (scratch != null) {
             // offset might not fit a 32-bit immediate, generate an
             // indirect call with a 64-bit immediate
             masm.movq(scratch, 0L);
+            callPCOffset = masm.position();
             masm.call(scratch);
         } else {
+            callPCOffset = masm.position();
             masm.call();
         }
         int after = masm.position();
         crb.recordDirectCall(before, after, callTarget, info);
         crb.recordExceptionHandlers(after, info);
         masm.ensureUniquePC();
+        return callPCOffset;
     }
 
     protected static void emitAlignmentForDirectCall(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
@@ -228,12 +236,13 @@ public class AMD64Call {
         masm.ensureUniquePC();
     }
 
-    public static void indirectCall(CompilationResultBuilder crb, AMD64MacroAssembler masm, Register dst, InvokeTarget callTarget, LIRFrameState info) {
+    public static int indirectCall(CompilationResultBuilder crb, AMD64MacroAssembler masm, Register dst, InvokeTarget callTarget, LIRFrameState info) {
         int before = masm.position();
         masm.call(dst);
         int after = masm.position();
         crb.recordIndirectCall(before, after, callTarget, info);
         crb.recordExceptionHandlers(after, info);
         masm.ensureUniquePC();
+        return before;
     }
 }

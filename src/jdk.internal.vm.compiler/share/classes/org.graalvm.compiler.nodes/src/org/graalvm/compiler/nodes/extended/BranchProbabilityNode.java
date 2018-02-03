@@ -25,7 +25,7 @@ package org.graalvm.compiler.nodes.extended;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_0;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_0;
 
-import org.graalvm.compiler.core.common.calc.Condition;
+import org.graalvm.compiler.core.common.calc.CanonicalCondition;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.iterators.NodePredicates;
@@ -101,7 +101,7 @@ public final class BranchProbabilityNode extends FloatingNode implements Simplif
             }
             boolean usageFound = false;
             for (IntegerEqualsNode node : this.usages().filter(IntegerEqualsNode.class)) {
-                assert node.condition() == Condition.EQ;
+                assert node.condition() == CanonicalCondition.EQ;
                 ValueNode other = node.getX();
                 if (node.getX() == this) {
                     other = node.getY();

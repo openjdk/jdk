@@ -24,7 +24,7 @@ package org.graalvm.compiler.nodes.calc;
 
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
 
-import org.graalvm.compiler.core.common.calc.Condition;
+import org.graalvm.compiler.core.common.calc.CanonicalCondition;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.IterableNodeType;
@@ -67,10 +67,10 @@ public final class NormalizeCompareNode extends BinaryNode implements IterableNo
     }
 
     protected static ValueNode tryConstantFold(ValueNode x, ValueNode y, boolean isUnorderedLess, JavaKind kind, ConstantReflectionProvider constantReflection) {
-        LogicNode result = CompareNode.tryConstantFold(Condition.EQ, x, y, null, false);
+        LogicNode result = CompareNode.tryConstantFold(CanonicalCondition.EQ, x, y, null, false);
         if (result instanceof LogicConstantNode) {
             LogicConstantNode logicConstantNode = (LogicConstantNode) result;
-            LogicNode resultLT = CompareNode.tryConstantFold(Condition.LT, x, y, constantReflection, isUnorderedLess);
+            LogicNode resultLT = CompareNode.tryConstantFold(CanonicalCondition.LT, x, y, constantReflection, isUnorderedLess);
             if (resultLT instanceof LogicConstantNode) {
                 LogicConstantNode logicConstantNodeLT = (LogicConstantNode) resultLT;
                 if (logicConstantNodeLT.getValue()) {

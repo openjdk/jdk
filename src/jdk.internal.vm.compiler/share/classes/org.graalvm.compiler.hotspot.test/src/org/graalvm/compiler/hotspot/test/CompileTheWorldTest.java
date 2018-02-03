@@ -25,12 +25,12 @@ package org.graalvm.compiler.hotspot.test;
 import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationBailoutAction;
 import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationFailureAction;
 
+import org.graalvm.collections.EconomicMap;
 import org.graalvm.compiler.core.CompilationWrapper.ExceptionAction;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.hotspot.HotSpotGraalCompiler;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.util.EconomicMap;
 import org.junit.Test;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;

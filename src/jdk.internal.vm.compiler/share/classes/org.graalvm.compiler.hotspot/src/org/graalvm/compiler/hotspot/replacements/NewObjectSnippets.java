@@ -62,6 +62,7 @@ import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.FREQUENT
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.SLOW_PATH_PROBABILITY;
 import static org.graalvm.compiler.nodes.extended.BranchProbabilityNode.probability;
 import static org.graalvm.compiler.replacements.ReplacementsUtil.REPLACEMENTS_ASSERTIONS_ENABLED;
+import static org.graalvm.compiler.replacements.ReplacementsUtil.runtimeAssert;
 import static org.graalvm.compiler.replacements.ReplacementsUtil.staticAssert;
 import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER;
 import static org.graalvm.compiler.replacements.nodes.CStringConstant.cstring;
@@ -378,7 +379,13 @@ public class NewObjectSnippets implements Snippets {
         if (length < 0) {
             DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.RuntimeConstraint);
         }
-        int layoutHelper = knownElementKind != JavaKind.Illegal ? knownLayoutHelper : readLayoutHelper(nonNullKlass);
+        int layoutHelper;
+        if (knownElementKind == JavaKind.Illegal) {
+            layoutHelper = readLayoutHelper(nonNullKlass);
+        } else {
+            runtimeAssert(knownLayoutHelper == readLayoutHelper(nonNullKlass), "layout mismatch");
+            layoutHelper = knownLayoutHelper;
+        }
         //@formatter:off
         // from src/share/vm/oops/klass.hpp:
         //

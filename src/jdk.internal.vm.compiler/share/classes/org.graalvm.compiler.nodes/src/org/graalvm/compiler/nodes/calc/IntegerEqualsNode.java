@@ -22,9 +22,7 @@
  */
 package org.graalvm.compiler.nodes.calc;
 
-import jdk.vm.ci.meta.ConstantReflectionProvider;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import org.graalvm.compiler.core.common.calc.Condition;
+import org.graalvm.compiler.core.common.calc.CanonicalCondition;
 import org.graalvm.compiler.core.common.type.AbstractPointerStamp;
 import org.graalvm.compiler.core.common.type.FloatStamp;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
@@ -42,12 +40,14 @@ import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.TriState;
-import org.graalvm.compiler.options.OptionValues;
 
 @NodeInfo(shortName = "==")
 public final class IntegerEqualsNode extends CompareNode implements BinaryCommutative<ValueNode> {
@@ -55,13 +55,13 @@ public final class IntegerEqualsNode extends CompareNode implements BinaryCommut
     private static final IntegerEqualsOp OP = new IntegerEqualsOp();
 
     public IntegerEqualsNode(ValueNode x, ValueNode y) {
-        super(TYPE, Condition.EQ, false, x, y);
+        super(TYPE, CanonicalCondition.EQ, false, x, y);
         assert !x.getStackKind().isNumericFloat() && x.getStackKind() != JavaKind.Object;
         assert !y.getStackKind().isNumericFloat() && y.getStackKind() != JavaKind.Object;
     }
 
     public static LogicNode create(ValueNode x, ValueNode y, NodeView view) {
-        LogicNode result = CompareNode.tryConstantFoldPrimitive(Condition.EQ, x, y, false, view);
+        LogicNode result = CompareNode.tryConstantFoldPrimitive(CanonicalCondition.EQ, x, y, false, view);
         if (result != null) {
             return result;
         }
@@ -87,7 +87,7 @@ public final class IntegerEqualsNode extends CompareNode implements BinaryCommut
 
     public static LogicNode create(ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Integer smallestCompareWidth, ValueNode x, ValueNode y,
                     NodeView view) {
-        LogicNode value = OP.canonical(constantReflection, metaAccess, options, smallestCompareWidth, Condition.EQ, false, x, y, view);
+        LogicNode value = OP.canonical(constantReflection, metaAccess, options, smallestCompareWidth, CanonicalCondition.EQ, false, x, y, view);
         if (value != null) {
             return value;
         }
@@ -97,7 +97,7 @@ public final class IntegerEqualsNode extends CompareNode implements BinaryCommut
     @Override
     public Node canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
         NodeView view = NodeView.from(tool);
-        ValueNode value = OP.canonical(tool.getConstantReflection(), tool.getMetaAccess(), tool.getOptions(), tool.smallestCompareWidth(), Condition.EQ, false, forX, forY, view);
+        ValueNode value = OP.canonical(tool.getConstantReflection(), tool.getMetaAccess(), tool.getOptions(), tool.smallestCompareWidth(), CanonicalCondition.EQ, false, forX, forY, view);
         if (value != null) {
             return value;
         }
@@ -149,7 +149,7 @@ public final class IntegerEqualsNode extends CompareNode implements BinaryCommut
         }
 
         @Override
-        public LogicNode canonical(ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Integer smallestCompareWidth, Condition condition,
+        public LogicNode canonical(ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Integer smallestCompareWidth, CanonicalCondition condition,
                         boolean unorderedIsTrue, ValueNode forX, ValueNode forY, NodeView view) {
             if (GraphUtil.unproxify(forX) == GraphUtil.unproxify(forY)) {
                 return LogicConstantNode.tautology();
@@ -186,7 +186,7 @@ public final class IntegerEqualsNode extends CompareNode implements BinaryCommut
 
         @Override
         protected LogicNode canonicalizeSymmetricConstant(ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Integer smallestCompareWidth,
-                        Condition condition, Constant constant, ValueNode nonConstant, boolean mirrored, boolean unorderedIsTrue, NodeView view) {
+                        CanonicalCondition condition, Constant constant, ValueNode nonConstant, boolean mirrored, boolean unorderedIsTrue, NodeView view) {
             if (constant instanceof PrimitiveConstant) {
                 PrimitiveConstant primitiveConstant = (PrimitiveConstant) constant;
                 IntegerStamp nonConstantStamp = ((IntegerStamp) nonConstant.stamp(view));

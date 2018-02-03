@@ -24,7 +24,7 @@ package org.graalvm.compiler.debug;
 
 import static org.graalvm.compiler.debug.DebugCloseable.VOID_CLOSEABLE;
 
-import org.graalvm.util.Pair;
+import org.graalvm.collections.Pair;
 
 class MemUseTrackerKeyImpl extends AccumulatedKey implements MemUseTrackerKey {
 

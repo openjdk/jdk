@@ -82,6 +82,24 @@ suite = {
       "javaCompliance" : "1.8",
       "workingSets" : "API,SDK",
     },
+    "org.graalvm.collections" : {
+      "subDir" : "share/classes",
+      "sourceDirs" : ["src"],
+      "checkstyle" : "org.graalvm.word",
+      "javaCompliance" : "1.8",
+      "workingSets" : "API,SDK",
+    },
+    "org.graalvm.collections.test" : {
+      "subDir" : "share/classes",
+      "sourceDirs" : ["src"],
+      "dependencies" : [
+        "mx:JUNIT",
+        "org.graalvm.collections",
+      ],
+      "checkstyle" : "org.graalvm.word",
+      "javaCompliance" : "1.8",
+      "workingSets" : "API,SDK,Test",
+    },
 
     # ------------- Graal -------------
 
@@ -190,6 +208,9 @@ suite = {
     "org.graalvm.util" : {
       "subDir" : "share/classes",
       "sourceDirs" : ["src"],
+      "dependencies" : [
+        "org.graalvm.collections",
+      ],
       "checkstyle" : "org.graalvm.compiler.graph",
       "javaCompliance" : "1.8",
       "workingSets" : "API,Graal",
@@ -201,6 +222,7 @@ suite = {
       "dependencies" : [
         "mx:JUNIT",
         "org.graalvm.util",
+        "org.graalvm.compiler.core.test",
       ],
       "checkstyle" : "org.graalvm.compiler.graph",
       "javaCompliance" : "1.8",
@@ -970,10 +992,11 @@ suite = {
       "workingSets" : "Graal,SPARC",
     },
 
-    "org.graalvm.compiler.core.sparc.test" : {
+    "org.graalvm.compiler.hotspot.sparc.test" : {
       "subDir" : "share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : [
+        "org.graalvm.compiler.hotspot",
         "org.graalvm.compiler.lir.jtt",
         "JVMCI_HOTSPOT"
       ],
@@ -1007,6 +1030,7 @@ suite = {
       "subDir" : "share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : [
+        "org.graalvm.collections",
         "org.graalvm.compiler.debug",
         "org.graalvm.word",
       ],
@@ -1037,7 +1061,6 @@ suite = {
       "sourceDirs" : ["src"],
       "dependencies" : [
         "org.graalvm.compiler.debug",
-        "org.graalvm.util",
         "mx:JUNIT",
       ],
       "checkstyle" : "org.graalvm.compiler.graph",
@@ -1225,11 +1248,11 @@ suite = {
         "org.graalvm.compiler.asm.amd64.test",
         "org.graalvm.compiler.core.aarch64.test",
         "org.graalvm.compiler.core.amd64.test",
-        "org.graalvm.compiler.core.sparc.test",
         "org.graalvm.compiler.debug.test",
         "org.graalvm.compiler.hotspot.aarch64.test",
         "org.graalvm.compiler.hotspot.amd64.test",
         "org.graalvm.compiler.hotspot.lir.test",
+        "org.graalvm.compiler.hotspot.sparc.test",
         "org.graalvm.compiler.options.test",
         "org.graalvm.compiler.jtt",
         "org.graalvm.compiler.lir.jtt",

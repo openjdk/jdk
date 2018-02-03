@@ -22,12 +22,12 @@
  */
 package org.graalvm.compiler.phases.common.inlining.info;
 
+import org.graalvm.collections.EconomicSet;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.CallTargetNode.InvokeKind;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.phases.common.inlining.InliningUtil;
 import org.graalvm.compiler.phases.util.Providers;
-import org.graalvm.util.EconomicSet;
 
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 import jdk.vm.ci.meta.ResolvedJavaMethod;

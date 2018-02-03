@@ -22,6 +22,7 @@
  */
 package org.graalvm.compiler.loop;
 
+import org.graalvm.collections.EconomicSet;
 import org.graalvm.compiler.core.common.cfg.Loop;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Graph;
@@ -35,7 +36,6 @@ import org.graalvm.compiler.nodes.LoopExitNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.cfg.Block;
-import org.graalvm.util.EconomicSet;
 
 public class LoopFragmentWhole extends LoopFragment {
 

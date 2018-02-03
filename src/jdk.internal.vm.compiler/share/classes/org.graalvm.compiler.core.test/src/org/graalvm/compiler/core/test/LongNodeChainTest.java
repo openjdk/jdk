@@ -44,7 +44,7 @@ public class LongNodeChainTest extends GraalCompilerTest {
 
     public static final int N = 10000;
 
-    private static final SchedulingStrategy[] Strategies = new SchedulingStrategy[]{SchedulingStrategy.EARLIEST};
+    private static final SchedulingStrategy[] Strategies = new SchedulingStrategy[]{SchedulingStrategy.EARLIEST_WITH_GUARD_ORDER};
 
     @Test
     public void testLongAddChain() {

@@ -30,6 +30,9 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.function.Consumer;
 
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.Equivalence;
+import org.graalvm.collections.UnmodifiableEconomicMap;
 import org.graalvm.compiler.debug.CounterKey;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
@@ -41,9 +44,6 @@ import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.util.EconomicMap;
-import org.graalvm.util.Equivalence;
-import org.graalvm.util.UnmodifiableEconomicMap;
 
 /**
  * This class is a graph container, it contains the set of nodes that belong to this graph.

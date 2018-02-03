@@ -112,9 +112,9 @@ public final class NarrowNode extends IntegerConvertNode<Narrow, SignExtend> {
                     // ==> sxxx -(sign-extend)-> sssssxxx
                     return SignExtendNode.create(other.getValue(), other.getInputBits(), getResultBits(), view);
                 } else if (other instanceof ZeroExtendNode) {
-                    // xxxx -(zero-extend)-> 00000000 00000xxx -(narrow)-> 0000xxxx
+                    // xxxx -(zero-extend)-> 00000000 0000xxxx -(narrow)-> 0000xxxx
                     // ==> xxxx -(zero-extend)-> 0000xxxx
-                    return new ZeroExtendNode(other.getValue(), other.getInputBits(), getResultBits());
+                    return new ZeroExtendNode(other.getValue(), other.getInputBits(), getResultBits(), ((ZeroExtendNode) other).isInputAlwaysPositive());
                 }
             }
         } else if (forValue instanceof AndNode) {

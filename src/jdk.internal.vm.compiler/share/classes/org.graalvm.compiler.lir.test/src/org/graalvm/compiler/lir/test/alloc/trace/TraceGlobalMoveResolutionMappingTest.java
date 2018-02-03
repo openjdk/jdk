@@ -27,14 +27,13 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.HashSet;
 
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-
+import org.graalvm.collections.Pair;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.alloc.trace.ShadowedRegisterValue;
 import org.graalvm.compiler.lir.alloc.trace.TraceGlobalMoveResolutionPhase;
-import org.graalvm.util.Pair;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.Register.RegisterCategory;

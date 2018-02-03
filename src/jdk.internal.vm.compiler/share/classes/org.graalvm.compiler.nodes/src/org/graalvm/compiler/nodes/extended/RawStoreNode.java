@@ -119,7 +119,7 @@ public final class RawStoreNode extends UnsafeAccessNode implements StateSplit, 
             ValueNode indexValue = tool.getAlias(offset());
             if (indexValue.isConstant()) {
                 long off = indexValue.asJavaConstant().asLong();
-                int entryIndex = virtual.entryIndexForOffset(off, accessKind());
+                int entryIndex = virtual.entryIndexForOffset(tool.getArrayOffsetProvider(), off, accessKind());
                 if (entryIndex != -1 && tool.setVirtualEntry(virtual, entryIndex, value(), accessKind(), off)) {
                     tool.delete();
                 }

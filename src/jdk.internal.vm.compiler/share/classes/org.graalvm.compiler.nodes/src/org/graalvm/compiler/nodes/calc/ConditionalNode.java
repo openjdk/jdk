@@ -26,7 +26,7 @@ import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_1;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
 import static org.graalvm.compiler.nodes.calc.CompareNode.createCompareNode;
 
-import org.graalvm.compiler.core.common.calc.Condition;
+import org.graalvm.compiler.core.common.calc.CanonicalCondition;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -268,7 +268,7 @@ public final class ConditionalNode extends FloatingNode implements Canonicalizab
         generator.emitConditional(this);
     }
 
-    public ConditionalNode(StructuredGraph graph, Condition condition, ValueNode x, ValueNode y) {
+    public ConditionalNode(StructuredGraph graph, CanonicalCondition condition, ValueNode x, ValueNode y) {
         this(createCompareNode(graph, condition, x, y, null, NodeView.DEFAULT));
     }
 }

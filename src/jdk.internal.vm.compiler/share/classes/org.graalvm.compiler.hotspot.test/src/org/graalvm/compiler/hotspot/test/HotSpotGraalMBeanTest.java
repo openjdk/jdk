@@ -31,8 +31,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
-
 import java.util.Arrays;
+
 import javax.management.Attribute;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanInfo;
@@ -41,11 +41,11 @@ import javax.management.MBeanServer;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 
+import org.graalvm.collections.EconomicMap;
 import org.graalvm.compiler.debug.DebugOptions;
 import org.graalvm.compiler.hotspot.HotSpotGraalMBean;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.test.GraalTest;
-import org.graalvm.util.EconomicMap;
 import org.junit.Assume;
 import org.junit.Test;
 

@@ -50,6 +50,13 @@ public final class GraalDirectives {
     }
 
     /**
+     * Directive for the compiler to fall back to the bytecode interpreter at this point, invalidate
+     * the compiled code, record a speculation and reprofile the method.
+     */
+    public static void deoptimizeAndInvalidateWithSpeculation() {
+    }
+
+    /**
      * Returns a boolean value indicating whether the method is executed in Graal-compiled code.
      */
     public static boolean inCompiledCode() {

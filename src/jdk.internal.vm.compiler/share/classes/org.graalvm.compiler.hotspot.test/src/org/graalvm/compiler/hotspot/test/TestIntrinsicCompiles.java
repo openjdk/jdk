@@ -23,8 +23,10 @@
 package org.graalvm.compiler.hotspot.test;
 
 import static org.graalvm.compiler.core.common.CompilationIdentifier.INVALID_COMPILATION_ID;
+
 import java.util.List;
 
+import org.graalvm.collections.EconomicMap;
 import org.graalvm.compiler.api.test.Graal;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.debug.DebugContext;
@@ -36,10 +38,9 @@ import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plu
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Binding;
-import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.nodes.graphbuilderconf.MethodSubstitutionPlugin;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.runtime.RuntimeProvider;
-import org.graalvm.util.EconomicMap;
 import org.junit.Test;
 
 import jdk.vm.ci.hotspot.HotSpotVMConfigStore;

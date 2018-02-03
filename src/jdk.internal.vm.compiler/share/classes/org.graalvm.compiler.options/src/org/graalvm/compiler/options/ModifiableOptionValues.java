@@ -24,10 +24,10 @@ package org.graalvm.compiler.options;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.graalvm.util.EconomicMap;
-import org.graalvm.util.Equivalence;
-import org.graalvm.util.UnmodifiableEconomicMap;
-import org.graalvm.util.UnmodifiableMapCursor;
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.Equivalence;
+import org.graalvm.collections.UnmodifiableEconomicMap;
+import org.graalvm.collections.UnmodifiableMapCursor;
 
 /**
  * A context for obtaining values for {@link OptionKey}s that allows for key/value pairs to be

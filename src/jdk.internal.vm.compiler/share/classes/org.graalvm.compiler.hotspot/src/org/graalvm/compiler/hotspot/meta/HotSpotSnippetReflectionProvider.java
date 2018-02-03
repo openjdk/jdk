@@ -22,6 +22,7 @@
  */
 package org.graalvm.compiler.hotspot.meta;
 
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
@@ -103,5 +104,10 @@ public class HotSpotSnippetReflectionProvider implements SnippetReflectionProvid
             return type.cast(config);
         }
         return null;
+    }
+
+    @Override
+    public Class<?> originalClass(ResolvedJavaType type) {
+        return ((HotSpotResolvedJavaType) type).mirror();
     }
 }
