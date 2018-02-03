@@ -39,7 +39,7 @@ import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.extended.ArrayRangeWriteNode;
+import org.graalvm.compiler.nodes.extended.ArrayRangeWrite;
 import org.graalvm.compiler.nodes.java.LoweredAtomicReadAndWriteNode;
 import org.graalvm.compiler.nodes.java.LogicCompareAndSwapNode;
 import org.graalvm.compiler.nodes.memory.FixedAccessNode;
@@ -122,7 +122,7 @@ public class WriteBarrierVerificationPhase extends Phase {
     private boolean hasAttachedBarrier(FixedWithNextNode node) {
         final Node next = node.next();
         final Node previous = node.predecessor();
-        boolean validatePreBarrier = useG1GC() && (isObjectWrite(node) || !((ArrayRangeWriteNode) node).isInitialization());
+        boolean validatePreBarrier = useG1GC() && (isObjectWrite(node) || !((ArrayRangeWrite) node).isInitialization());
         if (node instanceof WriteNode) {
             WriteNode writeNode = (WriteNode) node;
             if (writeNode.getLocationIdentity().isInit()) {
@@ -143,7 +143,7 @@ public class WriteBarrierVerificationPhase extends Phase {
     }
 
     private static boolean isArrayBarrier(FixedWithNextNode node, final Node next) {
-        return (next instanceof ArrayRangeWriteBarrier) && ((ArrayRangeWriteNode) node).getArray() == ((ArrayRangeWriteBarrier) next).getObject();
+        return (next instanceof ArrayRangeWriteBarrier) && ((ArrayRangeWrite) node).getAddress() == ((ArrayRangeWriteBarrier) next).getAddress();
     }
 
     private static boolean isObjectWrite(Node node) {
@@ -152,7 +152,7 @@ public class WriteBarrierVerificationPhase extends Phase {
     }
 
     private static boolean isObjectArrayRangeWrite(Node node) {
-        return node instanceof ArrayRangeWriteNode && ((ArrayRangeWriteNode) node).isObjectArray();
+        return node instanceof ArrayRangeWrite && ((ArrayRangeWrite) node).writesObjectArray();
     }
 
     private static void expandFrontier(NodeFlood frontier, Node node) {

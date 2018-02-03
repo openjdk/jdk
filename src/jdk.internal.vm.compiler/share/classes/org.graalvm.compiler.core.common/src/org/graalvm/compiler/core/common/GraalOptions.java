@@ -233,6 +233,9 @@ public final class GraalOptions {
     public static final OptionKey<Boolean> OptScheduleOutOfLoops = new OptionKey<>(true);
 
     @Option(help = "", type = OptionType.Debug)
+    public static final OptionKey<Boolean> GuardPriorities = new OptionKey<>(true);
+
+    @Option(help = "", type = OptionType.Debug)
     public static final OptionKey<Boolean> OptEliminateGuards = new OptionKey<>(true);
 
     @Option(help = "", type = OptionType.Debug)
@@ -270,5 +273,8 @@ public final class GraalOptions {
 
     @Option(help = "Enable experimental Trace Register Allocation.", type = OptionType.Debug)
     public static final OptionKey<Boolean> TraceRA = new OptionKey<>(false);
+
+    @Option(help = "How to trace inlining decisions, one of: None, Linear, Tree", type = OptionType.Debug)
+    public static final OptionKey<TraceInliningMode> TraceInlining = new OptionKey<>(TraceInliningMode.None);
 
 }
