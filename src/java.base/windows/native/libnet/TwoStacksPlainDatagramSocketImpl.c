@@ -219,16 +219,16 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_bind0(JNIEnv *env, jobject this,
     jobject fd1Obj = (*env)->GetObjectField(env, this, pdsi_fd1ID);
     int ipv6_supported = ipv6_available();
     int fd, fd1 = -1, lcladdrlen = 0;
+    jint family;
     SOCKETADDRESS lcladdr;
 
-    if (getInetAddress_family(env, addressObj) == java_net_InetAddress_IPv6 &&
-        !ipv6_supported)
-    {
+    family = getInetAddress_family(env, addressObj);
+    JNU_CHECK_EXCEPTION(env);
+    if (family == java_net_InetAddress_IPv6 && !ipv6_supported) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                         "Protocol family not supported");
         return;
     }
-    JNU_CHECK_EXCEPTION(env);
     if (IS_NULL(fdObj) || (ipv6_supported && IS_NULL(fd1Obj))) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "socket closed");
         return;
