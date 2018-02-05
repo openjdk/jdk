@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8030976 8059226
+ * @requires !vm.graal.enabled
  * @library /test/lib /
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
