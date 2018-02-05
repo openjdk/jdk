@@ -1175,7 +1175,7 @@ public class ClassWriter extends ClassFile {
             endAttr(alenIdx);
             acount++;
         }
-        if (options.isSet(PARAMETERS)) {
+        if (options.isSet(PARAMETERS) && target.hasMethodParameters()) {
             if (!m.isLambdaMethod()) // Per JDK-8138729, do not emit parameters table for lambda bodies.
                 acount += writeMethodParametersAttr(m);
         }
