@@ -254,7 +254,8 @@ ciConstant ciBytecodeStream::get_constant() {
 // constant.
 constantTag ciBytecodeStream::get_constant_pool_tag(int index) const {
   VM_ENTRY_MARK;
-  return _method->get_Method()->constants()->tag_at(index);
+  BasicType bt = _method->get_Method()->constants()->basic_type_for_constant_at(index);
+  return constantTag::ofBasicType(bt);
 }
 
 // ------------------------------------------------------------------

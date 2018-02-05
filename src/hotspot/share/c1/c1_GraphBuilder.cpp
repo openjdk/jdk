@@ -874,6 +874,8 @@ void GraphBuilder::ScopeData::incr_num_returns() {
 void GraphBuilder::load_constant() {
   ciConstant con = stream()->get_constant();
   if (con.basic_type() == T_ILLEGAL) {
+    // FIXME: an unresolved Dynamic constant can get here,
+    // and that should not terminate the whole compilation.
     BAILOUT("could not resolve a constant");
   } else {
     ValueType* t = illegalType;
@@ -893,11 +895,19 @@ void GraphBuilder::load_constant() {
         ciObject* obj = con.as_object();
         if (!obj->is_loaded()
             || (PatchALot && obj->klass() != ciEnv::current()->String_klass())) {
+          // A Class, MethodType, MethodHandle, or String.
+          // Unloaded condy nodes show up as T_ILLEGAL, above.
           patch_state = copy_state_before();
           t = new ObjectConstant(obj);
         } else {
-          assert(obj->is_instance(), "must be java_mirror of klass");
-          t = new InstanceConstant(obj->as_instance());
+          // Might be a Class, MethodType, MethodHandle, or Dynamic constant
+          // result, which might turn out to be an array.
+          if (obj->is_null_object())
+            t = objectNull;
+          else if (obj->is_array())
+            t = new ArrayConstant(obj->as_array());
+          else
+            t = new InstanceConstant(obj->as_instance());
         }
         break;
        }

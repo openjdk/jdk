@@ -60,12 +60,17 @@ void G1SATBCardTableModRefBS::set_card_claimed(size_t card_index) {
   _byte_map[card_index] = val;
 }
 
-inline void G1SATBCardTableModRefBS::enqueue_if_weak(DecoratorSet decorators, oop value) {
+inline void G1SATBCardTableModRefBS::enqueue_if_weak_or_archive(DecoratorSet decorators, oop value) {
   assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "Reference strength must be known");
+  // Archive roots need to be enqueued since they add subgraphs to the
+  // Java heap that were not there at the snapshot when marking started.
+  // Weak and phantom references also need enqueueing for similar reasons.
+  const bool in_archive_root   = (decorators & IN_ARCHIVE_ROOT) != 0;
   const bool on_strong_oop_ref = (decorators & ON_STRONG_OOP_REF) != 0;
   const bool peek              = (decorators & AS_NO_KEEPALIVE) != 0;
+  const bool needs_enqueue     = in_archive_root || (!peek && !on_strong_oop_ref);
 
-  if (!peek && !on_strong_oop_ref && value != NULL) {
+  if (needs_enqueue && value != NULL) {
     enqueue(value);
   }
 }
@@ -75,7 +80,7 @@ template <typename T>
 inline oop G1SATBCardTableLoggingModRefBS::AccessBarrier<decorators, BarrierSetT>::
 oop_load_not_in_heap(T* addr) {
   oop value = ModRef::oop_load_not_in_heap(addr);
-  enqueue_if_weak(decorators, value);
+  enqueue_if_weak_or_archive(decorators, value);
   return value;
 }
 
@@ -84,7 +89,7 @@ template <typename T>
 inline oop G1SATBCardTableLoggingModRefBS::AccessBarrier<decorators, BarrierSetT>::
 oop_load_in_heap(T* addr) {
   oop value = ModRef::oop_load_in_heap(addr);
-  enqueue_if_weak(decorators, value);
+  enqueue_if_weak_or_archive(decorators, value);
   return value;
 }
 
@@ -92,7 +97,7 @@ template <DecoratorSet decorators, typename BarrierSetT>
 inline oop G1SATBCardTableLoggingModRefBS::AccessBarrier<decorators, BarrierSetT>::
 oop_load_in_heap_at(oop base, ptrdiff_t offset) {
   oop value = ModRef::oop_load_in_heap_at(base, offset);
-  enqueue_if_weak(AccessBarrierSupport::resolve_possibly_unknown_oop_ref_strength<decorators>(base, offset), value);
+  enqueue_if_weak_or_archive(AccessBarrierSupport::resolve_possibly_unknown_oop_ref_strength<decorators>(base, offset), value);
   return value;
 }
 

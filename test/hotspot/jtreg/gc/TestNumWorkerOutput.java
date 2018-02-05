@@ -30,7 +30,7 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UseConcMarkSweepGC TestNumWorkerOutput UseConcMarkSweepGC
  * @run main/othervm -XX:+UseG1GC TestNumWorkerOutput UseG1GC
  */

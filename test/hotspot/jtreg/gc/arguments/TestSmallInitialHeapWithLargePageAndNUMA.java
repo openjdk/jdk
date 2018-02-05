@@ -31,7 +31,7 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
  * @build TestSmallInitialHeapWithLargePageAndNUMA
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UseHugeTLBFS -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestSmallInitialHeapWithLargePageAndNUMA
 */
 

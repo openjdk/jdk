@@ -44,6 +44,14 @@ final class Linker {
         return libraryFileName;
     }
 
+    private static String getString(InputStream stream) {
+        BufferedReader br = new BufferedReader(new InputStreamReader(stream));
+        Stream<String> lines = br.lines();
+        StringBuilder sb = new StringBuilder();
+        lines.iterator().forEachRemaining(e -> sb.append(e));
+        return sb.toString();
+    }
+
     Linker(Main main) throws Exception {
         this.options = main.options;
         String name = options.outputName;
@@ -106,12 +114,7 @@ final class Linker {
             Process p = Runtime.getRuntime().exec(linkerCheck);
             final int exitCode = p.waitFor();
             if (exitCode != 0) {
-                InputStream stderr = p.getErrorStream();
-                BufferedReader br = new BufferedReader(new InputStreamReader(stderr));
-                Stream<String> lines = br.lines();
-                StringBuilder sb = new StringBuilder();
-                lines.iterator().forEachRemaining(e -> sb.append(e));
-                throw new InternalError(sb.toString());
+                throw new InternalError(getString(p.getErrorStream()));
             }
         }
     }
@@ -120,15 +123,11 @@ final class Linker {
         Process p = Runtime.getRuntime().exec(linkerCmd);
         final int exitCode = p.waitFor();
         if (exitCode != 0) {
-            InputStream stderr = p.getErrorStream();
-            if (stderr.read() == -1) {
-                stderr = p.getInputStream();
+            String errorMessage = getString(p.getErrorStream());
+            if (errorMessage.isEmpty()) {
+                errorMessage = getString(p.getInputStream());
             }
-            BufferedReader br = new BufferedReader(new InputStreamReader(stderr));
-            Stream<String> lines = br.lines();
-            StringBuilder sb = new StringBuilder();
-            lines.iterator().forEachRemaining(e -> sb.append(e));
-            throw new InternalError(sb.toString());
+            throw new InternalError(errorMessage);
         }
         File objFile = new File(objectFileName);
         if (objFile.exists()) {

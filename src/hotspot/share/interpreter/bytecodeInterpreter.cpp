@@ -2368,6 +2368,30 @@ run:
             THREAD->set_vm_result(NULL);
             break;
 
+          case JVM_CONSTANT_Dynamic:
+            {
+              oop result = constants->resolved_references()->obj_at(index);
+              if (result == NULL) {
+                CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode), handle_exception);
+                result = THREAD->vm_result();
+              }
+              VERIFY_OOP(result);
+
+              jvalue value;
+              BasicType type = java_lang_boxing_object::get_value(result, &value);
+              switch (type) {
+              case T_FLOAT:   SET_STACK_FLOAT(value.f, 0); break;
+              case T_INT:     SET_STACK_INT(value.i, 0); break;
+              case T_SHORT:   SET_STACK_INT(value.s, 0); break;
+              case T_BYTE:    SET_STACK_INT(value.b, 0); break;
+              case T_CHAR:    SET_STACK_INT(value.c, 0); break;
+              case T_BOOLEAN: SET_STACK_INT(value.z, 0); break;
+              default:  ShouldNotReachHere();
+              }
+
+              break;
+            }
+
           default:  ShouldNotReachHere();
           }
           UPDATE_PC_AND_TOS_AND_CONTINUE(incr, 1);
@@ -2387,6 +2411,27 @@ run:
           case JVM_CONSTANT_Double:
              SET_STACK_DOUBLE(constants->double_at(index), 1);
             break;
+
+          case JVM_CONSTANT_Dynamic:
+            {
+              oop result = constants->resolved_references()->obj_at(index);
+              if (result == NULL) {
+                CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode), handle_exception);
+                result = THREAD->vm_result();
+              }
+              VERIFY_OOP(result);
+
+              jvalue value;
+              BasicType type = java_lang_boxing_object::get_value(result, &value);
+              switch (type) {
+              case T_DOUBLE: SET_STACK_DOUBLE(value.d, 1); break;
+              case T_LONG:   SET_STACK_LONG(value.j, 1); break;
+              default:  ShouldNotReachHere();
+              }
+
+              break;
+            }
+
           default:  ShouldNotReachHere();
           }
           UPDATE_PC_AND_TOS_AND_CONTINUE(3, 2);
@@ -2404,7 +2449,7 @@ run:
           incr = 3;
         }
 
-        // We are resolved if the f1 field contains a non-null object (CallSite, etc.)
+        // We are resolved if the resolved_references array contains a non-null object (CallSite, etc.)
         // This kind of CP cache entry does not need to match the flags byte, because
         // there is a 1-1 relation between bytecode type and CP entry type.
         ConstantPool* constants = METHOD->constants();
@@ -2414,6 +2459,8 @@ run:
                   handle_exception);
           result = THREAD->vm_result();
         }
+        if (result == Universe::the_null_sentinel())
+          result = NULL;
 
         VERIFY_OOP(result);
         SET_STACK_OBJECT(result, 0);
@@ -2425,7 +2472,7 @@ run:
         u4 index = Bytes::get_native_u4(pc+1);
         ConstantPoolCacheEntry* cache = cp->constant_pool()->invokedynamic_cp_cache_entry_at(index);
 
-        // We are resolved if the resolved_references field contains a non-null object (CallSite, etc.)
+        // We are resolved if the resolved_references array contains a non-null object (CallSite, etc.)
         // This kind of CP cache entry does not need to match the flags byte, because
         // there is a 1-1 relation between bytecode type and CP entry type.
         if (! cache->is_resolved((Bytecodes::Code) opcode)) {

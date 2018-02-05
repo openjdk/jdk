@@ -491,6 +491,14 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
         return UNSAFE.getInt(getMetaspaceConstantPool() + config().constantPoolLengthOffset);
     }
 
+    public boolean hasDynamicConstant() {
+        return (flags() & config().constantPoolHasDynamicConstant) != 0;
+    }
+
+    private int flags() {
+        return UNSAFE.getInt(getMetaspaceConstantPool() + config().constantPoolFlagsOffset);
+    }
+
     @Override
     public Object lookupConstant(int cpi) {
         assert cpi != 0;

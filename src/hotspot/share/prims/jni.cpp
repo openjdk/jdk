@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -862,16 +862,10 @@ JNI_LEAF(jobjectRefType, jni_GetObjectRefType(JNIEnv *env, jobject obj))
 
   HOTSPOT_JNI_GETOBJECTREFTYPE_ENTRY(env, obj);
 
-  jobjectRefType ret;
-  if (JNIHandles::is_local_handle(thread, obj) ||
-      JNIHandles::is_frame_handle(thread, obj))
-    ret = JNILocalRefType;
-  else if (JNIHandles::is_global_handle(obj))
-    ret = JNIGlobalRefType;
-  else if (JNIHandles::is_weak_global_handle(obj))
-    ret = JNIWeakGlobalRefType;
-  else
-    ret = JNIInvalidRefType;
+  jobjectRefType ret = JNIInvalidRefType;
+  if (obj != NULL) {
+    ret = JNIHandles::handle_type(thread, obj);
+  }
 
   HOTSPOT_JNI_GETOBJECTREFTYPE_RETURN((void *) ret);
   return ret;

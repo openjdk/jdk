@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -679,10 +679,28 @@ class StubGenerator: public StubCodeGenerator {
       case BarrierSet::G1SATBCTLogging:
         // With G1, don't generate the call if we statically know that the target in uninitialized
         if (!uninitialized_target) {
+          Register thread = rax;
+          Label filtered;
+          __ push(thread);
+          __ get_thread(thread);
+          Address in_progress(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
+                                               SATBMarkQueue::byte_offset_of_active()));
+          // Is marking active?
+          if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
+            __ cmpl(in_progress, 0);
+          } else {
+            assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+            __ cmpb(in_progress, 0);
+          }
+          __ pop(thread);
+          __ jcc(Assembler::equal, filtered);
+
            __ pusha();                      // push registers
            __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre),
                            start, count);
            __ popa();
+
+           __ bind(filtered);
          }
         break;
       case BarrierSet::CardTableForRS:

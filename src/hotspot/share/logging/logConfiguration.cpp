@@ -296,7 +296,7 @@ void LogConfiguration::disable_logging() {
   notify_update_listeners();
 }
 
-void LogConfiguration::configure_stdout(LogLevelType level, bool exact_match, ...) {
+void LogConfiguration::configure_stdout(LogLevelType level, int exact_match, ...) {
   size_t i;
   va_list ap;
   LogTagLevelExpression expr;

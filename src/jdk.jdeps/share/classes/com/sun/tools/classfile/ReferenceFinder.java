@@ -160,6 +160,11 @@ public final class ReferenceFinder {
             return false;
         }
 
+        @Override
+        public Boolean visitDynamicConstant(CONSTANT_Dynamic_info info, ConstantPool constantPool) {
+            return false;
+        }
+
         public Boolean visitLong(CONSTANT_Long_info info, ConstantPool cpool) {
             return false;
         }

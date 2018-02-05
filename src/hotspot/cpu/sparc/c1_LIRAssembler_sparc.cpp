@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -991,8 +991,8 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
   int offset = -1;
 
   switch (c->type()) {
+    case T_FLOAT: type = T_INT; // Float constants are stored by int store instructions.
     case T_INT:
-    case T_FLOAT:
     case T_ADDRESS: {
       LIR_Opr tmp = FrameMap::O7_opr;
       int value = c->as_jint_bits();
@@ -1202,6 +1202,7 @@ void LIR_Assembler::stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
       __ stw(tmp, to.base(), to.disp());
       break;
     }
+    case T_ADDRESS:
     case T_OBJECT: {
       Register tmp = O7;
       Address from = frame_map()->address_for_slot(src->single_stack_ix());
@@ -1354,7 +1355,6 @@ void LIR_Assembler::reg2reg(LIR_Opr from_reg, LIR_Opr to_reg) {
     __ verify_oop(to_reg->as_register());
   }
 }
-
 
 void LIR_Assembler::reg2mem(LIR_Opr from_reg, LIR_Opr dest, BasicType type,
                             LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack,
@@ -2265,10 +2265,10 @@ void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
          op->obj()->as_register()   == O0 &&
          op->klass()->as_register() == G5, "must be");
   if (op->init_check()) {
+    add_debug_info_for_null_check_here(op->stub()->info());
     __ ldub(op->klass()->as_register(),
           in_bytes(InstanceKlass::init_state_offset()),
           op->tmp1()->as_register());
-    add_debug_info_for_null_check_here(op->stub()->info());
     __ cmp(op->tmp1()->as_register(), InstanceKlass::fully_initialized);
     __ br(Assembler::notEqual, false, Assembler::pn, *op->stub()->entry());
     __ delayed()->nop();

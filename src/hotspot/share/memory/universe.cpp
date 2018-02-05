@@ -111,6 +111,7 @@ oop Universe::_main_thread_group                      = NULL;
 oop Universe::_system_thread_group                    = NULL;
 objArrayOop Universe::_the_empty_class_klass_array    = NULL;
 Array<Klass*>* Universe::_the_array_interfaces_array = NULL;
+oop Universe::_the_null_sentinel                      = NULL;
 oop Universe::_the_null_string                        = NULL;
 oop Universe::_the_min_jint_string                   = NULL;
 LatestMethodCache* Universe::_finalizer_register_cache = NULL;
@@ -195,6 +196,7 @@ void Universe::oops_do(OopClosure* f, bool do_all) {
   assert(_mirrors[0] == NULL && _mirrors[T_BOOLEAN - 1] == NULL, "checking");
 
   f->do_oop((oop*)&_the_empty_class_klass_array);
+  f->do_oop((oop*)&_the_null_sentinel);
   f->do_oop((oop*)&_the_null_string);
   f->do_oop((oop*)&_the_min_jint_string);
   f->do_oop((oop*)&_out_of_memory_error_java_heap);
@@ -380,6 +382,11 @@ void Universe::genesis(TRAPS) {
     initialize_basic_type_klass(intArrayKlassObj(), CHECK);
     initialize_basic_type_klass(longArrayKlassObj(), CHECK);
   } // end of core bootstrapping
+
+  {
+    Handle tns = java_lang_String::create_from_str("<null_sentinel>", CHECK);
+    _the_null_sentinel = tns();
+  }
 
   // Maybe this could be lifted up now that object array can be initialized
   // during the bootstrapping.

@@ -29,7 +29,7 @@
  * @compile p1/c1.java
  * @build sun.hotspot.WhiteBox
  * @compile/module=java.base java/lang/ModuleHelper.java
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI ExportTwice
  */

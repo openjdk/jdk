@@ -117,7 +117,7 @@ int mread_real_time(timebasestruct_t *t, size_t size_of_timebasestruct_t);
 #if !defined(_AIXVERSION_610)
 extern "C" int getthrds64(pid_t, struct thrdentry64*, int, tid64_t*, int);
 extern "C" int getprocs64(procentry64*, int, fdsinfo*, int, pid_t*, int);
-extern "C" int getargs   (procsinfo*, int, char*, int);
+extern "C" int getargs(procsinfo*, int, char*, int);
 #endif
 
 #define MAX_PATH (2 * K)
@@ -129,6 +129,32 @@ extern "C" int getargs   (procsinfo*, int, char*, int);
 #define ERROR_MP_EXTSHM_ACTIVE                       101
 #define ERROR_MP_VMGETINFO_FAILED                    102
 #define ERROR_MP_VMGETINFO_CLAIMS_NO_SUPPORT_FOR_64K 103
+
+// excerpts from systemcfg.h that might be missing on older os levels
+#ifndef PV_5_Compat
+  #define PV_5_Compat 0x0F8000   /* Power PC 5 */
+#endif
+#ifndef PV_6
+  #define PV_6 0x100000          /* Power PC 6 */
+#endif
+#ifndef PV_6_1
+  #define PV_6_1 0x100001        /* Power PC 6 DD1.x */
+#endif
+#ifndef PV_6_Compat
+  #define PV_6_Compat 0x108000   /* Power PC 6 */
+#endif
+#ifndef PV_7
+  #define PV_7 0x200000          /* Power PC 7 */
+#endif
+#ifndef PV_7_Compat
+  #define PV_7_Compat 0x208000   /* Power PC 7 */
+#endif
+#ifndef PV_8
+  #define PV_8 0x300000          /* Power PC 8 */
+#endif
+#ifndef PV_8_Compat
+  #define PV_8_Compat 0x308000   /* Power PC 8 */
+#endif
 
 static address resolve_function_descriptor_to_code_pointer(address p);
 
@@ -1443,17 +1469,48 @@ void os::print_memory_info(outputStream* st) {
 
 // Get a string for the cpuinfo that is a summary of the cpu type
 void os::get_summary_cpu_info(char* buf, size_t buflen) {
-  // This looks good
-  libperfstat::cpuinfo_t ci;
-  if (libperfstat::get_cpuinfo(&ci)) {
-    strncpy(buf, ci.version, buflen);
-  } else {
-    strncpy(buf, "AIX", buflen);
+  // read _system_configuration.version
+  switch (_system_configuration.version) {
+  case PV_8:
+    strncpy(buf, "Power PC 8", buflen);
+    break;
+  case PV_7:
+    strncpy(buf, "Power PC 7", buflen);
+    break;
+  case PV_6_1:
+    strncpy(buf, "Power PC 6 DD1.x", buflen);
+    break;
+  case PV_6:
+    strncpy(buf, "Power PC 6", buflen);
+    break;
+  case PV_5:
+    strncpy(buf, "Power PC 5", buflen);
+    break;
+  case PV_5_2:
+    strncpy(buf, "Power PC 5_2", buflen);
+    break;
+  case PV_5_3:
+    strncpy(buf, "Power PC 5_3", buflen);
+    break;
+  case PV_5_Compat:
+    strncpy(buf, "PV_5_Compat", buflen);
+    break;
+  case PV_6_Compat:
+    strncpy(buf, "PV_6_Compat", buflen);
+    break;
+  case PV_7_Compat:
+    strncpy(buf, "PV_7_Compat", buflen);
+    break;
+  case PV_8_Compat:
+    strncpy(buf, "PV_8_Compat", buflen);
+    break;
+  default:
+    strncpy(buf, "unknown", buflen);
   }
 }
 
 void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
-  // Nothing to do beyond what os::print_cpu_info() does.
+  // Nothing to do beyond of what os::print_cpu_info() does.
 }
 
 static void print_signal_handler(outputStream* st, int sig,
@@ -4240,48 +4297,6 @@ int os::fork_and_exec(char* cmd) {
     }
   }
   return -1;
-}
-
-// is_headless_jre()
-//
-// Test for the existence of xawt/libmawt.so or libawt_xawt.so
-// in order to report if we are running in a headless jre.
-//
-// Since JDK8 xawt/libmawt.so is moved into the same directory
-// as libawt.so, and renamed libawt_xawt.so
-bool os::is_headless_jre() {
-  struct stat statbuf;
-  char buf[MAXPATHLEN];
-  char libmawtpath[MAXPATHLEN];
-  const char *xawtstr = "/xawt/libmawt.so";
-  const char *new_xawtstr = "/libawt_xawt.so";
-
-  char *p;
-
-  // Get path to libjvm.so
-  os::jvm_path(buf, sizeof(buf));
-
-  // Get rid of libjvm.so
-  p = strrchr(buf, '/');
-  if (p == NULL) return false;
-  else *p = '\0';
-
-  // Get rid of client or server
-  p = strrchr(buf, '/');
-  if (p == NULL) return false;
-  else *p = '\0';
-
-  // check xawt/libmawt.so
-  strcpy(libmawtpath, buf);
-  strcat(libmawtpath, xawtstr);
-  if (::stat(libmawtpath, &statbuf) == 0) return false;
-
-  // check libawt_xawt.so
-  strcpy(libmawtpath, buf);
-  strcat(libmawtpath, new_xawtstr);
-  if (::stat(libmawtpath, &statbuf) == 0) return false;
-
-  return true;
 }
 
 // Get the default path to the core file

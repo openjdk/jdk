@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,13 +147,26 @@ static void save_memory_to_file(char* addr, size_t size) {
 // which is always a local file system and is sometimes a RAM based file
 // system.
 
+
 // return the user specific temporary directory name.
+//
+// If containerized process, get dirname of
+// /proc/{vmid}/root/tmp/{PERFDATA_NAME_user}
+// otherwise /tmp/{PERFDATA_NAME_user}
 //
 // the caller is expected to free the allocated memory.
 //
-static char* get_user_tmp_dir(const char* user) {
+#define TMP_BUFFER_LEN (4+22)
+static char* get_user_tmp_dir(const char* user, int vmid, int nspid) {
+  char buffer[TMP_BUFFER_LEN];
+  char* tmpdir = (char *)os::get_temp_directory();
+  assert(strlen(tmpdir) == 4, "No longer using /tmp - update buffer size");
 
-  const char* tmpdir = os::get_temp_directory();
+  if (nspid != -1) {
+    jio_snprintf(buffer, TMP_BUFFER_LEN, "/proc/%d/root%s", vmid, tmpdir);
+    tmpdir = buffer;
+  }
+
   const char* perfdir = PERFDATA_NAME;
   size_t nbytes = strlen(tmpdir) + strlen(perfdir) + strlen(user) + 3;
   char* dirname = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
@@ -502,7 +515,10 @@ static char* get_user_name(uid_t uid) {
 //
 // the caller is expected to free the allocated memory.
 //
-static char* get_user_name_slow(int vmid, TRAPS) {
+// If nspid != -1, look in /proc/{vmid}/root/tmp for directories
+// containing nspid, otherwise just look for vmid in /tmp
+//
+static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
 
   // short circuit the directory search if the process doesn't even exist.
   if (kill(vmid, 0) == OS_ERR) {
@@ -518,8 +534,19 @@ static char* get_user_name_slow(int vmid, TRAPS) {
   // directory search
   char* oldest_user = NULL;
   time_t oldest_ctime = 0;
+  char buffer[TMP_BUFFER_LEN];
+  int searchpid;
+  char* tmpdirname = (char *)os::get_temp_directory();
+  assert(strlen(tmpdirname) == 4, "No longer using /tmp - update buffer size");
 
-  const char* tmpdirname = os::get_temp_directory();
+  if (nspid == -1) {
+    searchpid = vmid;
+  }
+  else {
+    jio_snprintf(buffer, MAXPATHLEN, "/proc/%d/root%s", vmid, tmpdirname);
+    tmpdirname = buffer;
+    searchpid = nspid;
+  }
 
   // open the temp directory
   DIR* tmpdirp = os::opendir(tmpdirname);
@@ -530,7 +557,7 @@ static char* get_user_name_slow(int vmid, TRAPS) {
   }
 
   // for each entry in the directory that matches the pattern hsperfdata_*,
-  // open the directory and check if the file for the given vmid exists.
+  // open the directory and check if the file for the given vmid or nspid exists.
   // The file with the expected name and the latest creation date is used
   // to determine the user name for the process id.
   //
@@ -575,7 +602,7 @@ static char* get_user_name_slow(int vmid, TRAPS) {
     errno = 0;
     while ((udentry = os::readdir(subdirp, (struct dirent *)udbuf)) != NULL) {
 
-      if (filename_to_pid(udentry->d_name) == vmid) {
+      if (filename_to_pid(udentry->d_name) == searchpid) {
         struct stat statbuf;
         int result;
 
@@ -626,10 +653,51 @@ static char* get_user_name_slow(int vmid, TRAPS) {
   return(oldest_user);
 }
 
+// Determine if the vmid is the parent pid
+// for a child in a PID namespace.
+// return the namespace pid if so, otherwise -1
+static int get_namespace_pid(int vmid) {
+  char fname[24];
+  int retpid = -1;
+
+  snprintf(fname, sizeof(fname), "/proc/%d/status", vmid);
+  FILE *fp = fopen(fname, "r");
+
+  if (fp) {
+    int pid, nspid;
+    int ret;
+    while (!feof(fp)) {
+      ret = fscanf(fp, "NSpid: %d %d", &pid, &nspid);
+      if (ret == 1) {
+        break;
+      }
+      if (ret == 2) {
+        retpid = nspid;
+        break;
+      }
+      for (;;) {
+        int ch = fgetc(fp);
+        if (ch == EOF || ch == (int)'\n') break;
+      }
+    }
+    fclose(fp);
+  }
+  return retpid;
+}
+
 // return the name of the user that owns the JVM indicated by the given vmid.
 //
-static char* get_user_name(int vmid, TRAPS) {
-  return get_user_name_slow(vmid, THREAD);
+static char* get_user_name(int vmid, int *nspid, TRAPS) {
+  char *result = get_user_name_slow(vmid, *nspid, THREAD);
+
+  // If we are examining a container process without PID namespaces enabled
+  // we need to use /proc/{pid}/root/tmp to find hsperfdata files.
+  if (result == NULL) {
+    result = get_user_name_slow(vmid, vmid, THREAD);
+    // Enable nspid logic going forward
+    if (result != NULL) *nspid = vmid;
+  }
+  return result;
 }
 
 // return the file name of the backing store file for the named
@@ -637,13 +705,15 @@ static char* get_user_name(int vmid, TRAPS) {
 //
 // the caller is expected to free the allocated memory.
 //
-static char* get_sharedmem_filename(const char* dirname, int vmid) {
+static char* get_sharedmem_filename(const char* dirname, int vmid, int nspid) {
+
+  int pid = (nspid == -1) ? vmid : nspid;
 
   // add 2 for the file separator and a null terminator.
   size_t nbytes = strlen(dirname) + UINT_CHARS + 2;
 
   char* name = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
-  snprintf(name, nbytes, "%s/%d", dirname, vmid);
+  snprintf(name, nbytes, "%s/%d", dirname, pid);
 
   return name;
 }
@@ -940,8 +1010,8 @@ static char* mmap_create_shared(size_t size) {
   if (user_name == NULL)
     return NULL;
 
-  char* dirname = get_user_tmp_dir(user_name);
-  char* filename = get_sharedmem_filename(dirname, vmid);
+  char* dirname = get_user_tmp_dir(user_name, vmid, -1);
+  char* filename = get_sharedmem_filename(dirname, vmid, -1);
 
   // get the short filename
   char* short_filename = strrchr(filename, '/');
@@ -1088,8 +1158,11 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
               "Illegal access mode");
   }
 
+  // determine if vmid is for a containerized process
+  int nspid = get_namespace_pid(vmid);
+
   if (user == NULL || strlen(user) == 0) {
-    luser = get_user_name(vmid, CHECK);
+    luser = get_user_name(vmid, &nspid, CHECK);
   }
   else {
     luser = user;
@@ -1100,7 +1173,7 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
               "Could not map vmid to user Name");
   }
 
-  char* dirname = get_user_tmp_dir(luser);
+  char* dirname = get_user_tmp_dir(luser, vmid, nspid);
 
   // since we don't follow symbolic links when creating the backing
   // store file, we don't follow them when attaching either.
@@ -1114,7 +1187,7 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
               "Process not found");
   }
 
-  char* filename = get_sharedmem_filename(dirname, vmid);
+  char* filename = get_sharedmem_filename(dirname, vmid, nspid);
 
   // copy heap memory to resource memory. the open_sharedmem_file
   // method below need to use the filename, but could throw an

@@ -28,9 +28,9 @@
  * @modules java.base/jdk.internal.misc
  * @build compiler.calls.common.InvokeInterface
  *        compiler.aot.AotCompiler
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *      sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main compiler.aot.AotCompiler
+ * @run driver compiler.aot.AotCompiler
  *      -libname AotInvokeInterface2CompiledTest.so
  *      -class compiler.calls.common.InvokeInterface
  *      -compile compiler.calls.common.InvokeInterface.caller()V

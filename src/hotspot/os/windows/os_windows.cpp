@@ -5262,9 +5262,6 @@ LONG WINAPI os::win32::serialize_fault_filter(struct _EXCEPTION_POINTERS* e) {
   return EXCEPTION_CONTINUE_SEARCH;
 }
 
-// We don't build a headless jre for Windows
-bool os::is_headless_jre() { return false; }
-
 static jint initSock() {
   WSADATA wsadata;
 

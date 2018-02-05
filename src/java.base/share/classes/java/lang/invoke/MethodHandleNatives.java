@@ -65,6 +65,12 @@ class MethodHandleNatives {
     static native void setCallSiteTargetNormal(CallSite site, MethodHandle target);
     static native void setCallSiteTargetVolatile(CallSite site, MethodHandle target);
 
+    static native void copyOutBootstrapArguments(Class<?> caller, int[] indexInfo,
+                                                 int start, int end,
+                                                 Object[] buf, int pos,
+                                                 boolean resolve,
+                                                 Object ifNotAvailable);
+
     /** Represents a context to track nmethod dependencies on CallSite instance target. */
     static class CallSiteContext implements Runnable {
         //@Injected JVM_nmethodBucket* vmdependencies;
@@ -228,6 +234,7 @@ class MethodHandleNatives {
      * The JVM is linking an invokedynamic instruction.  Create a reified call site for it.
      */
     static MemberName linkCallSite(Object callerObj,
+                                   int indexInCP,
                                    Object bootstrapMethodObj,
                                    Object nameObj, Object typeObj,
                                    Object staticArguments,
@@ -268,9 +275,7 @@ class MethodHandleNatives {
                                           Object[] appendixResult) {
         Object bsmReference = bootstrapMethod.internalMemberName();
         if (bsmReference == null)  bsmReference = bootstrapMethod;
-        Object staticArglist = (staticArguments instanceof Object[] ?
-                                java.util.Arrays.asList((Object[]) staticArguments) :
-                                staticArguments);
+        String staticArglist = staticArglistForTrace(staticArguments);
         System.out.println("linkCallSite "+caller.getName()+" "+
                            bsmReference+" "+
                            name+type+"/"+staticArglist);
@@ -280,9 +285,87 @@ class MethodHandleNatives {
             System.out.println("linkCallSite => "+res+" + "+appendixResult[0]);
             return res;
         } catch (Throwable ex) {
+            ex.printStackTrace(); // print now in case exception is swallowed
             System.out.println("linkCallSite => throw "+ex);
             throw ex;
         }
+    }
+
+    // this implements the upcall from the JVM, MethodHandleNatives.linkDynamicConstant:
+    static Object linkDynamicConstant(Object callerObj,
+                                      int indexInCP,
+                                      Object bootstrapMethodObj,
+                                      Object nameObj, Object typeObj,
+                                      Object staticArguments) {
+        MethodHandle bootstrapMethod = (MethodHandle)bootstrapMethodObj;
+        Class<?> caller = (Class<?>)callerObj;
+        String name = nameObj.toString().intern();
+        Class<?> type = (Class<?>)typeObj;
+        if (!TRACE_METHOD_LINKAGE)
+            return linkDynamicConstantImpl(caller, bootstrapMethod, name, type, staticArguments);
+        return linkDynamicConstantTracing(caller, bootstrapMethod, name, type, staticArguments);
+    }
+
+    static Object linkDynamicConstantImpl(Class<?> caller,
+                                          MethodHandle bootstrapMethod,
+                                          String name, Class<?> type,
+                                          Object staticArguments) {
+        return ConstantBootstraps.makeConstant(bootstrapMethod, name, type, staticArguments, caller);
+    }
+
+    private static String staticArglistForTrace(Object staticArguments) {
+        if (staticArguments instanceof Object[])
+            return "BSA="+java.util.Arrays.asList((Object[]) staticArguments);
+        if (staticArguments instanceof int[])
+            return "BSA@"+java.util.Arrays.toString((int[]) staticArguments);
+        if (staticArguments == null)
+            return "BSA0=null";
+        return "BSA1="+staticArguments;
+    }
+
+    // Tracing logic:
+    static Object linkDynamicConstantTracing(Class<?> caller,
+                                             MethodHandle bootstrapMethod,
+                                             String name, Class<?> type,
+                                             Object staticArguments) {
+        Object bsmReference = bootstrapMethod.internalMemberName();
+        if (bsmReference == null)  bsmReference = bootstrapMethod;
+        String staticArglist = staticArglistForTrace(staticArguments);
+        System.out.println("linkDynamicConstant "+caller.getName()+" "+
+                           bsmReference+" "+
+                           name+type+"/"+staticArglist);
+        try {
+            Object res = linkDynamicConstantImpl(caller, bootstrapMethod, name, type, staticArguments);
+            System.out.println("linkDynamicConstantImpl => "+res);
+            return res;
+        } catch (Throwable ex) {
+            ex.printStackTrace(); // print now in case exception is swallowed
+            System.out.println("linkDynamicConstant => throw "+ex);
+            throw ex;
+        }
+    }
+
+    /** The JVM is requesting pull-mode bootstrap when it provides
+     *  a tuple of the form int[]{ argc, vmindex }.
+     *  The BSM is expected to call back to the JVM using the caller
+     *  class and vmindex to resolve the static arguments.
+     */
+    static boolean staticArgumentsPulled(Object staticArguments) {
+        return staticArguments instanceof int[];
+    }
+
+    /** A BSM runs in pull-mode if and only if its sole arguments
+     * are (Lookup, BootstrapCallInfo), or can be converted pairwise
+     * to those types, and it is not of variable arity.
+     * Excluding error cases, we can just test that the arity is a constant 2.
+     *
+     * NOTE: This method currently returns false, since pulling is not currently
+     * exposed to a BSM. When pull mode is supported the method block will be
+     * replaced with currently commented out code.
+     */
+    static boolean isPullModeBSM(MethodHandle bsm) {
+        return false;
+//        return bsm.type().parameterCount() == 2 && !bsm.isVarargsCollector();
     }
 
     /**
@@ -506,34 +589,43 @@ class MethodHandleNatives {
             Lookup lookup = IMPL_LOOKUP.in(callerClass);
             assert(refKindIsValid(refKind));
             return lookup.linkMethodHandleConstant((byte) refKind, defc, name, type);
-        } catch (IllegalAccessException ex) {
+        } catch (ReflectiveOperationException ex) {
+            throw mapLookupExceptionToError(ex);
+        }
+    }
+
+    /**
+     * Map a reflective exception to a linkage error.
+     */
+    static LinkageError mapLookupExceptionToError(ReflectiveOperationException ex) {
+        LinkageError err;
+        if (ex instanceof IllegalAccessException) {
             Throwable cause = ex.getCause();
             if (cause instanceof AbstractMethodError) {
-                throw (AbstractMethodError) cause;
+                return (AbstractMethodError) cause;
             } else {
-                Error err = new IllegalAccessError(ex.getMessage());
-                throw initCauseFrom(err, ex);
+                err = new IllegalAccessError(ex.getMessage());
             }
-        } catch (NoSuchMethodException ex) {
-            Error err = new NoSuchMethodError(ex.getMessage());
-            throw initCauseFrom(err, ex);
-        } catch (NoSuchFieldException ex) {
-            Error err = new NoSuchFieldError(ex.getMessage());
-            throw initCauseFrom(err, ex);
-        } catch (ReflectiveOperationException ex) {
-            Error err = new IncompatibleClassChangeError();
-            throw initCauseFrom(err, ex);
+        } else if (ex instanceof NoSuchMethodException) {
+            err = new NoSuchMethodError(ex.getMessage());
+        } else if (ex instanceof NoSuchFieldException) {
+            err = new NoSuchFieldError(ex.getMessage());
+        } else {
+            err = new IncompatibleClassChangeError();
         }
+        return initCauseFrom(err, ex);
     }
 
     /**
      * Use best possible cause for err.initCause(), substituting the
      * cause for err itself if the cause has the same (or better) type.
      */
-    private static Error initCauseFrom(Error err, Exception ex) {
+    static <E extends Error> E initCauseFrom(E err, Exception ex) {
         Throwable th = ex.getCause();
-        if (err.getClass().isInstance(th))
-           return (Error) th;
+        @SuppressWarnings("unchecked")
+        final Class<E> Eclass = (Class<E>) err.getClass();
+        if (Eclass.isInstance(th))
+           return Eclass.cast(th);
         err.initCause(th == null ? ex : th);
         return err;
     }

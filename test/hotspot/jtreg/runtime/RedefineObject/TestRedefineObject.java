@@ -40,7 +40,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  *          java.instrument
  *          java.management
  * @build Agent
- * @run main ClassFileInstaller Agent
+ * @run driver ClassFileInstaller Agent
  * @run main TestRedefineObject
  * @run main/othervm -javaagent:agent.jar -Xlog:redefine+class+load=debug,redefine+class+timer=info Agent
  */

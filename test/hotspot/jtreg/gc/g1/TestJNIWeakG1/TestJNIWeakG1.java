@@ -31,7 +31,7 @@
  * @modules java.base
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *    sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm/native
  *    -Xbootclasspath/a:.

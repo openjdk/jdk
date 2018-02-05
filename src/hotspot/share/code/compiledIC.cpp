@@ -224,7 +224,7 @@ bool CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecod
     assert(bytecode == Bytecodes::_invokeinterface, "");
     int itable_index = call_info->itable_index();
     entry = VtableStubs::find_itable_stub(itable_index);
-    if (entry == false) {
+    if (entry == NULL) {
       return false;
     }
 #ifdef ASSERT

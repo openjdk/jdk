@@ -32,7 +32,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -Xlog:gc,gc+humongous=debug -XX:+UseG1GC -XX:MaxTenuringThreshold=0 -XX:G1RSetSparseRegionEntries=32 -XX:G1HeapRegionSize=1m -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestNoEagerReclaimOfHumongousRegions
  */

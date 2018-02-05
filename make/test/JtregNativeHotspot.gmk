@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ BUILD_HOTSPOT_JTREG_NATIVE_SRC += \
     $(TOPDIR)/test/hotspot/jtreg/compiler/runtime/criticalnatives/lookup \
     $(TOPDIR)/test/hotspot/jtreg/compiler/runtime/criticalnatives/argumentcorruption \
     $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/GetOwnedMonitorInfo \
+    $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/GetOwnedMonitorStackDepthInfo \
     $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/GetNamedModule \
     $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/IsModifiableModule \
     $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/AddModuleReads \
@@ -101,6 +102,7 @@ ifeq ($(TOOLCHAIN_TYPE), solstudio)
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_liboverflow := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libSimpleClassFileLoadHook := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libGetOwnedMonitorInfoTest := -lc
+    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libGetOwnedMonitorStackDepthInfoTest := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libGetNamedModuleTest := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libIsModifiableModuleTest := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libAddModuleReadsTest := -lc

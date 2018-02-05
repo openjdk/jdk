@@ -1359,6 +1359,87 @@ JVM_ENTRY(void, MHN_setCallSiteTargetVolatile(JNIEnv* env, jobject igcls, jobjec
 }
 JVM_END
 
+JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
+                                              jobject caller_jh, jintArray index_info_jh,
+                                              jint start, jint end,
+                                              jobjectArray buf_jh, jint pos,
+                                              jboolean resolve, jobject ifna_jh)) {
+  Klass* caller_k = java_lang_Class::as_Klass(JNIHandles::resolve(caller_jh));
+  if (caller_k == NULL || !caller_k->is_instance_klass()) {
+      THROW_MSG(vmSymbols::java_lang_InternalError(), "bad caller");
+  }
+  InstanceKlass* caller = InstanceKlass::cast(caller_k);
+  typeArrayOop index_info_oop = (typeArrayOop) JNIHandles::resolve(index_info_jh);
+  if (index_info_oop == NULL ||
+      index_info_oop->klass() != Universe::intArrayKlassObj() ||
+      typeArrayOop(index_info_oop)->length() < 2) {
+      THROW_MSG(vmSymbols::java_lang_InternalError(), "bad index info (0)");
+  }
+  typeArrayHandle index_info(THREAD, index_info_oop);
+  int bss_index_in_pool = index_info->int_at(1);
+  // While we are here, take a quick look at the index info:
+  if (bss_index_in_pool <= 0 ||
+      bss_index_in_pool >= caller->constants()->length() ||
+      index_info->int_at(0)
+      != caller->constants()->invoke_dynamic_argument_count_at(bss_index_in_pool)) {
+      THROW_MSG(vmSymbols::java_lang_InternalError(), "bad index info (1)");
+  }
+  objArrayHandle buf(THREAD, (objArrayOop) JNIHandles::resolve(buf_jh));
+  if (start < 0) {
+    for (int pseudo_index = -4; pseudo_index < 0; pseudo_index++) {
+      if (start == pseudo_index) {
+        if (start >= end || 0 > pos || pos >= buf->length())  break;
+        oop pseudo_arg = NULL;
+        switch (pseudo_index) {
+        case -4:  // bootstrap method
+          {
+            int bsm_index = caller->constants()->invoke_dynamic_bootstrap_method_ref_index_at(bss_index_in_pool);
+            pseudo_arg = caller->constants()->resolve_possibly_cached_constant_at(bsm_index, CHECK);
+            break;
+          }
+        case -3:  // name
+          {
+            Symbol* name = caller->constants()->name_ref_at(bss_index_in_pool);
+            Handle str = java_lang_String::create_from_symbol(name, CHECK);
+            pseudo_arg = str();
+            break;
+          }
+        case -2:  // type
+          {
+            Symbol* type = caller->constants()->signature_ref_at(bss_index_in_pool);
+            Handle th;
+            if (type->byte_at(0) == '(') {
+              th = SystemDictionary::find_method_handle_type(type, caller, CHECK);
+            } else {
+              th = SystemDictionary::find_java_mirror_for_type(type, caller, SignatureStream::NCDFError, CHECK);
+            }
+            pseudo_arg = th();
+            break;
+          }
+        case -1:  // argument count
+          {
+            int argc = caller->constants()->invoke_dynamic_argument_count_at(bss_index_in_pool);
+            jvalue argc_value; argc_value.i = (jint)argc;
+            pseudo_arg = java_lang_boxing_object::create(T_INT, &argc_value, CHECK);
+            break;
+          }
+        }
+
+        // Store the pseudo-argument, and advance the pointers.
+        buf->obj_at_put(pos++, pseudo_arg);
+        ++start;
+      }
+    }
+    // When we are done with this there may be regular arguments to process too.
+  }
+  Handle ifna(THREAD, JNIHandles::resolve(ifna_jh));
+  caller->constants()->
+    copy_bootstrap_arguments_at(bss_index_in_pool,
+                                start, end, buf, pos,
+                                (resolve == JNI_TRUE), ifna, CHECK);
+}
+JVM_END
+
 // It is called by a Cleaner object which ensures that dropped CallSites properly
 // deallocate their dependency information.
 JVM_ENTRY(void, MHN_clearCallSiteContext(JNIEnv* env, jobject igcls, jobject context_jh)) {
@@ -1438,6 +1519,7 @@ static JNINativeMethod MHN_methods[] = {
   {CC "objectFieldOffset",         CC "(" MEM ")J",                          FN_PTR(MHN_objectFieldOffset)},
   {CC "setCallSiteTargetNormal",   CC "(" CS "" MH ")V",                     FN_PTR(MHN_setCallSiteTargetNormal)},
   {CC "setCallSiteTargetVolatile", CC "(" CS "" MH ")V",                     FN_PTR(MHN_setCallSiteTargetVolatile)},
+  {CC "copyOutBootstrapArguments", CC "(" CLS "[III[" OBJ "IZ" OBJ ")V",     FN_PTR(MHN_copyOutBootstrapArguments)},
   {CC "clearCallSiteContext",      CC "(" CTX ")V",                          FN_PTR(MHN_clearCallSiteContext)},
   {CC "staticFieldOffset",         CC "(" MEM ")J",                          FN_PTR(MHN_staticFieldOffset)},
   {CC "staticFieldBase",           CC "(" MEM ")" OBJ,                        FN_PTR(MHN_staticFieldBase)},

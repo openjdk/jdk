@@ -28,7 +28,7 @@
  * @modules java.base/jdk.internal.misc
  * @build compiler.aot.SharedUsageTest
  *        compiler.aot.AotCompiler
- * @run main compiler.aot.AotCompiler -libname libSharedUsageTest.so
+ * @run driver compiler.aot.AotCompiler -libname libSharedUsageTest.so
  *      -class compiler.aot.SharedUsageTest
  *      -extraopt -XX:-UseCompressedOops
  * @run main/othervm -XX:+UseAOT -XX:AOTLibrary=./libSharedUsageTest.so

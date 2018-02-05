@@ -1483,8 +1483,9 @@ void Parse::do_one_bytecode() {
     // If the constant is unresolved, run this BC once in the interpreter.
     {
       ciConstant constant = iter().get_constant();
-      if (constant.basic_type() == T_OBJECT &&
-          !constant.as_object()->is_loaded()) {
+      if (!constant.is_valid() ||
+          (constant.basic_type() == T_OBJECT &&
+           !constant.as_object()->is_loaded())) {
         int index = iter().get_constant_pool_index();
         constantTag tag = iter().get_constant_pool_tag(index);
         uncommon_trap(Deoptimization::make_trap_request

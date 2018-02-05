@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.tools.jdi;
 
 import java.util.Collection;
-import java.util.Iterator;
 
 import com.sun.jdi.Mirror;
 import com.sun.jdi.VMMismatchException;
@@ -87,12 +86,8 @@ abstract class MirrorImpl extends Object implements Mirror {
      * Throw VMMismatchException on wrong VM.
      */
     void validateMirrors(Collection<? extends Mirror> mirrors) {
-        Iterator<? extends Mirror> iter = mirrors.iterator();
-        while (iter.hasNext()) {
-            MirrorImpl mirror = (MirrorImpl)iter.next();
-            if (!vm.equals(mirror.vm)) {
-                throw new VMMismatchException(mirror.toString());
-            }
+        for (Mirror mirror : mirrors) {
+            validateMirror(mirror);
         }
     }
 
@@ -101,12 +96,8 @@ abstract class MirrorImpl extends Object implements Mirror {
      * Throw VMMismatchException on wrong VM.
      */
     void validateMirrorsOrNulls(Collection<? extends Mirror> mirrors) {
-        Iterator<? extends Mirror> iter = mirrors.iterator();
-        while (iter.hasNext()) {
-            MirrorImpl mirror = (MirrorImpl)iter.next();
-            if ((mirror != null) && !vm.equals(mirror.vm)) {
-                throw new VMMismatchException(mirror.toString());
-            }
+        for (Mirror mirror : mirrors) {
+            validateMirrorOrNull(mirror);
         }
     }
 }

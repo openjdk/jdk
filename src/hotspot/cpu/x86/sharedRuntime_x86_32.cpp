@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   // We assume caller has already has return address slot on the stack
   // We push epb twice in this sequence because we want the real rbp,
   // to be under the return like a normal enter and we want to use pusha
-  // We push by hand instead of pusing push
+  // We push by hand instead of using push.
   __ enter();
   __ pusha();
   __ pushf();

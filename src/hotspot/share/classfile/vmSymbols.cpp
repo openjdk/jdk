@@ -98,6 +98,14 @@ void vmSymbols::initialize(TRAPS) {
     _type_signatures[T_BOOLEAN] = bool_signature();
     _type_signatures[T_VOID]    = void_signature();
     // no single signatures for T_OBJECT or T_ARRAY
+#ifdef ASSERT
+    for (int i = (int)T_BOOLEAN; i < (int)T_VOID+1; i++) {
+      Symbol* s = _type_signatures[i];
+      if (s == NULL)  continue;
+      BasicType st = signature_type(s);
+      assert(st == i, "");
+    }
+#endif
   }
 
 #ifdef ASSERT
@@ -202,9 +210,11 @@ void vmSymbols::serialize(SerializeClosure* soc) {
 
 BasicType vmSymbols::signature_type(const Symbol* s) {
   assert(s != NULL, "checking");
-  for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
-    if (s == _type_signatures[i]) {
-      return (BasicType)i;
+  if (s->utf8_length() == 1) {
+    BasicType result = char2type(s->byte_at(0));
+    if (is_java_primitive(result) || result == T_VOID) {
+      assert(s == _type_signatures[result], "");
+      return result;
     }
   }
   return T_OBJECT;
