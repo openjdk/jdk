@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 
 package java.lang;
-
-import java.util.Arrays;
 
 /** The CharacterData class encapsulates the large tables found in
     Java.lang.Character. */
@@ -190,10 +188,8 @@ class CharacterDataLatin1 extends CharacterData {
 
     int digit(int ch, int radix) {
         int value = DIGITS[ch];
-        if (value >= 0 && radix >= Character.MIN_RADIX && radix <= Character.MAX_RADIX) {
-            value = (value < radix) ? value : -1;
-        }
-        return value;
+        return (value >= 0 && value < radix && radix >= Character.MIN_RADIX
+                && radix <= Character.MAX_RADIX) ? value : -1;
     }
 
     int getNumericValue(int ch) {
