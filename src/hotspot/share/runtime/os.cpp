@@ -1749,7 +1749,7 @@ void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
 bool os::uncommit_memory(char* addr, size_t bytes) {
   bool res;
   if (MemTracker::tracking_level() > NMT_minimal) {
-    Tracker tkr = MemTracker::get_virtual_memory_uncommit_tracker();
+    Tracker tkr(Tracker::uncommit);
     res = pd_uncommit_memory(addr, bytes);
     if (res) {
       tkr.record((address)addr, bytes);
@@ -1763,7 +1763,7 @@ bool os::uncommit_memory(char* addr, size_t bytes) {
 bool os::release_memory(char* addr, size_t bytes) {
   bool res;
   if (MemTracker::tracking_level() > NMT_minimal) {
-    Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
+    Tracker tkr(Tracker::release);
     res = pd_release_memory(addr, bytes);
     if (res) {
       tkr.record((address)addr, bytes);
@@ -1800,7 +1800,7 @@ char* os::remap_memory(int fd, const char* file_name, size_t file_offset,
 bool os::unmap_memory(char *addr, size_t bytes) {
   bool result;
   if (MemTracker::tracking_level() > NMT_minimal) {
-    Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
+    Tracker tkr(Tracker::release);
     result = pd_unmap_memory(addr, bytes);
     if (result) {
       tkr.record((address)addr, bytes);

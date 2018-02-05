@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,6 @@ class MemTracker : AllStatic {
   static inline void record_virtual_memory_reserve_and_commit(void* addr, size_t size,
     const NativeCallStack& stack, MEMFLAGS flag = mtNone) { }
   static inline void record_virtual_memory_commit(void* addr, size_t size, const NativeCallStack& stack) { }
-  static inline Tracker get_virtual_memory_uncommit_tracker() { return Tracker(); }
-  static inline Tracker get_virtual_memory_release_tracker() { return Tracker(); }
   static inline void record_virtual_memory_type(void* addr, MEMFLAGS flag) { }
   static inline void record_thread_stack(void* addr, size_t size) { }
   static inline void release_thread_stack(void* addr, size_t size) { }
@@ -225,16 +223,6 @@ class MemTracker : AllStatic {
       if (tracking_level() < NMT_summary) return;
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
-  }
-
-  static inline Tracker get_virtual_memory_uncommit_tracker() {
-    assert(tracking_level() >= NMT_summary, "Check by caller");
-    return Tracker(Tracker::uncommit);
-  }
-
-  static inline Tracker get_virtual_memory_release_tracker() {
-    assert(tracking_level() >= NMT_summary, "Check by caller");
-    return Tracker(Tracker::release);
   }
 
   static inline void record_virtual_memory_type(void* addr, MEMFLAGS flag) {
