@@ -394,77 +394,48 @@ int32_t format ;
 XRectangle      bbox;           /* bounding box of grabbed area */
 list_ptr regions;/* list of regions to read from */
 {
-    image_region_type   *reg;
-    int32_t                     dst_x, dst_y;   /* where in pixmap to write (UL) */
-    int32_t                     diff;
-
-    XImage              *reg_image,*ximage ;
-    int32_t             srcRect_x,srcRect_y,srcRect_width,srcRect_height ;
-    int32_t     rem ;
-    int32_t     bytes_per_line;
-    int32_t     bitmap_unit;
-
-    bitmap_unit = sizeof (long);
-    if (format == ZPixmap)
-       bytes_per_line = width*depth/8;
-    else
-       bytes_per_line = width/8;
-
-
-    /* Find out how many more bytes are required for padding so that
-    ** bytes per scan line will be multiples of bitmap_unit bits */
-    if (format == ZPixmap) {
-       rem = (bytes_per_line*8)%bitmap_unit;
-    if (rem)
-       bytes_per_line += (rem/8 + 1);
-    }
+    XImage              *ximage ;
 
     ximage = XCreateImage(disp,fakeVis,(uint32_t) depth,format,0,NULL,
                           (uint32_t)width,(uint32_t)height,8,0);
 
-    bytes_per_line = ximage->bytes_per_line;
-
-    if (format == ZPixmap)
-          ximage->data = malloc(height*bytes_per_line);
-    else
-        ximage->data = malloc(height*bytes_per_line*depth);
-
+    ximage->data = calloc(ximage->bytes_per_line*height*((format==ZPixmap)? 1 : depth), sizeof(char));
     ximage->bits_per_pixel = depth; /** Valid only if format is ZPixmap ***/
 
-    for (reg = (image_region_type *) first_in_list( regions); reg;
+    for (image_region_type* reg = (image_region_type *) first_in_list( regions); reg;
          reg = (image_region_type *) next_in_list( regions))
     {
-                int32_t rect;
-                struct my_XRegion *vis_reg;
-                vis_reg = (struct my_XRegion *)(reg->visible_region);
-                for (rect = 0;
-                     rect < vis_reg->numRects;
-                     rect++)
+                struct my_XRegion *vis_reg = (struct my_XRegion *)(reg->visible_region);
+                for (int32_t rect = 0; rect < vis_reg->numRects; rect++)
                 {
-                /** ------------------------------------------------------------------------
-                        Intersect bbox with visible part of region giving src rect & output
-                        location.  Width is the min right side minus the max left side.
-                        Similar for height.  Offset src rect so x,y are relative to
-                        origin of win, not the root-relative visible rect of win.
-                    ------------------------------------------------------------------------ **/
-                    srcRect_width  = MIN( vis_reg->rects[rect].x2, bbox.width + bbox.x)
-             - MAX( vis_reg->rects[rect].x1, bbox.x);
+                    /** ------------------------------------------------------------------------
+                            Intersect bbox with visible part of region giving src rect & output
+                            location.  Width is the min right side minus the max left side.
+                            Similar for height.  Offset src rect so x,y are relative to
+                            origin of win, not the root-relative visible rect of win.
+                        ------------------------------------------------------------------------ **/
+                        int32_t srcRect_width  = MIN( vis_reg->rects[rect].x2, bbox.width + bbox.x)
+                                         - MAX( vis_reg->rects[rect].x1, bbox.x);
 
-                    srcRect_height = MIN( vis_reg->rects[rect].y2, bbox.height + bbox.y)
-             - MAX( vis_reg->rects[rect].y1, bbox.y);
+                        int32_t srcRect_height = MIN( vis_reg->rects[rect].y2, bbox.height + bbox.y)
+                                         - MAX( vis_reg->rects[rect].y1, bbox.y);
 
-                    diff = bbox.x - vis_reg->rects[rect].x1;
-                    srcRect_x = MAX( 0, diff)  + (vis_reg->rects[rect].x1 - reg->x_rootrel - reg->border);
-                    dst_x     = MAX( 0, -diff) ;
-                    diff = bbox.y - vis_reg->rects[rect].y1;
-                    srcRect_y = MAX( 0, diff)  + (vis_reg->rects[rect].y1 - reg->y_rootrel - reg->border);
-                    dst_y     = MAX( 0, -diff) ;
-            reg_image = XGetImage(disp,reg->win,srcRect_x,srcRect_y,
-             (uint32_t) srcRect_width, (uint32_t) srcRect_height,AllPlanes,format) ;
-                    TransferImage(disp,reg_image,srcRect_width,
-                                 srcRect_height,reg,ximage,dst_x,dst_y) ;
-            XDestroyImage(reg_image);
-            }
+                        int32_t diff = bbox.x - vis_reg->rects[rect].x1;
+                        int32_t srcRect_x = MAX( 0, diff)  + (vis_reg->rects[rect].x1 - reg->x_rootrel - reg->border);
+                        int32_t dst_x     = MAX( 0, -diff) ;
+
+                        diff = bbox.y - vis_reg->rects[rect].y1;
+                        int32_t srcRect_y = MAX( 0, diff)  + (vis_reg->rects[rect].y1 - reg->y_rootrel - reg->border);
+                        int32_t dst_y     = MAX( 0, -diff) ;
+                        XImage* reg_image = XGetImage(disp,reg->win,srcRect_x,srcRect_y,
+                                            (uint32_t) srcRect_width, (uint32_t) srcRect_height,AllPlanes,format) ;
+
+                        if (reg_image) {
+                            TransferImage(disp,reg_image,srcRect_width,
+                                            srcRect_height,reg,ximage,dst_x,dst_y) ;
+                            XDestroyImage(reg_image);
+                        }
+                }
     }
     return ximage ;
 }
