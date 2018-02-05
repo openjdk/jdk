@@ -2400,4 +2400,3 @@ public class VarHandleTestMethodTypeFloat extends VarHandleBaseTest {
 
     }
 }
-

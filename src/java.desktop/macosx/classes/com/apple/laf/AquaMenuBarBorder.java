@@ -31,13 +31,14 @@ import java.awt.Graphics;
 import java.awt.Insets;
 
 import javax.swing.border.Border;
+import javax.swing.plaf.UIResource;
 
 import sun.swing.SwingUtilities2;
 
 /**
  * The class represents the border of a {@code JMenuBar}.
  */
-public class AquaMenuBarBorder implements Border {
+public class AquaMenuBarBorder implements Border, UIResource {
 
     @Override
     public void paintBorder(final Component c, final Graphics g, final int x,

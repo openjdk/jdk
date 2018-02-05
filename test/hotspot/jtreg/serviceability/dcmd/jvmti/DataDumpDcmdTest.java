@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,11 @@ import jdk.test.lib.dcmd.JMXExecutor;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
 import org.testng.annotations.Test;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /*
  * @test
  * @bug 8054890
@@ -43,9 +48,19 @@ import org.testng.annotations.Test;
  */
 public class DataDumpDcmdTest {
     public void run(CommandExecutor executor) {
-        OutputAnalyzer output = executor.execute("JVMTI.data_dump");
+        OutputAnalyzer out = executor.execute("JVMTI.data_dump");
 
-        output.stderrShouldBeEmpty();
+        // stderr should be empty except for VM warnings.
+        if (!out.getStderr().isEmpty()) {
+            List<String> lines = Arrays.asList(out.getStderr().split("(\\r\\n|\\n|\\r)"));
+            Pattern p = Pattern.compile(".*VM warning.*");
+            for (String line : lines) {
+                Matcher m = p.matcher(line);
+                if (!m.matches()) {
+                    throw new RuntimeException("Stderr has output other than VM warnings");
+                }
+            }
+        }
     }
 
     @Test
