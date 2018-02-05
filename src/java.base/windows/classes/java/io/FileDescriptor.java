@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,15 @@ public final class FileDescriptor {
                     }
 
                     public void registerCleanup(FileDescriptor fdo) {
-                        fdo.registerCleanup();
+                        fdo.registerCleanup(null);
+                    }
+
+                    public void registerCleanup(FileDescriptor fdo, PhantomCleanable<Object> cleanup) {
+                        fdo.registerCleanup(cleanup);
+                    }
+
+                    public void unregisterCleanup(FileDescriptor fdo) {
+                        fdo.unregisterCleanup();
                     }
 
                     public void setHandle(FileDescriptor fdo, long handle) {
@@ -107,7 +115,7 @@ public final class FileDescriptor {
     /**
      * Cleanup in case FileDescriptor is not explicitly closed.
      */
-    private FDCleanup cleanup;
+    private PhantomCleanable<Object> cleanup;
 
     /**
      * Constructs an (invalid) FileDescriptor
@@ -217,11 +225,39 @@ public final class FileDescriptor {
      * The cleanup should be registered after the handle is set in the FileDescriptor.
      */
     @SuppressWarnings("unchecked")
-    synchronized void registerCleanup() {
+    void registerCleanup() {
+        registerCleanup(null);
+    }
+
+    /**
+     * Register a cleanup for the current handle.
+     * Used directly in java.io and indirectly via fdAccess.
+     * The cleanup should be registered after the handle is set in the FileDescriptor.
+     * @param newCleanable a PhantomCleanable to register
+     */
+    @SuppressWarnings("unchecked")
+    synchronized void registerCleanup(PhantomCleanable<Object> newCleanable) {
         if (cleanup != null) {
             cleanup.clear();
         }
-        cleanup = FDCleanup.create(this);
+        cleanup = (newCleanable == null) ? FDCleanup.create(this) : newCleanable;
+    }
+
+   /**
+     * Unregister a cleanup for the current raw fd.
+     * Used directly in java.io and indirectly via fdAccess.
+     * Normally {@link #close()} should be used except in cases where
+     * it is certain the caller will close the raw fd and the cleanup
+     * must not close the raw fd.  {@link #unregisterCleanup()} must be
+     * called before the raw fd is closed to prevent a race that makes
+     * it possible for the fd to be reallocated to another use and later
+     * the cleanup might be invoked.
+     */
+    synchronized void unregisterCleanup() {
+        if (cleanup != null) {
+            cleanup.clear();
+        }
+        cleanup = null;
     }
 
     /**
@@ -319,16 +355,21 @@ public final class FileDescriptor {
     /**
      * Cleanup for a FileDescriptor when it becomes phantom reachable.
      * Create a cleanup if handle != -1.
+     * Windows closes files using handles and sockets via the fd.
+     * Network FileDescriptors using socket fd must provide their
+     * own PhantomCleanable to {@link #registerCleanup}.
+     * This implementation only clears thehandles.
+     * <p>
      * Subclassed from {@code PhantomCleanable} so that {@code clear} can be
-     * called to disable the cleanup when the fd is closed by any means other
+     * called to disable the cleanup when the handle is closed by any means other
      * than calling {@link FileDescriptor#close}.
-     * Otherwise, it may close the handle after it has been reused.
+     * Otherwise, it may incorrectly close the handle after it has been reused.
      */
     static final class FDCleanup extends PhantomCleanable<Object> {
         private final long handle;
 
         static FDCleanup create(FileDescriptor fdo) {
-            return fdo.handle == -1
+            return fdo.handle == -1L
                     ? null
                     : new FDCleanup(fdo, CleanerFactory.cleaner(), fdo.handle);
         }

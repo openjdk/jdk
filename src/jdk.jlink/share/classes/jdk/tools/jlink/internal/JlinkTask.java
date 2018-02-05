@@ -43,8 +43,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -231,7 +229,8 @@ public class JlinkTask {
         try {
             List<String> remaining = optionsHelper.handleOptions(this, args);
             if (remaining.size() > 0 && !options.suggestProviders) {
-                throw taskHelper.newBadArgs("err.orphan.arguments", toString(remaining))
+                throw taskHelper.newBadArgs("err.orphan.arguments",
+                                            remaining.stream().collect(Collectors.joining(" ")))
                                 .showUsage(true);
             }
             if (options.help) {
@@ -659,9 +658,12 @@ public class JlinkTask {
         throws BadArgs
     {
         if (args.size() > 1) {
-            throw taskHelper.newBadArgs("err.orphan.argument",
-                                        toString(args.subList(1, args.size())))
-                            .showUsage(true);
+            List<String> arguments = args.get(0).startsWith("-")
+                                        ? args
+                                        : args.subList(1, args.size());
+            throw taskHelper.newBadArgs("err.invalid.arg.for.option",
+                                        "--suggest-providers",
+                                        arguments.stream().collect(Collectors.joining(" ")));
         }
 
         if (options.bindServices) {
@@ -714,17 +716,12 @@ public class JlinkTask {
                  .forEach(names::remove);
             if (!names.isEmpty()) {
                 log.println(taskHelper.getMessage("warn.provider.notfound",
-                                                  toString(names)));
+                    names.stream().sorted().collect(Collectors.joining(","))));
             }
 
             String msg = String.format("%n%s:", taskHelper.getMessage("suggested.providers.header"));
             printProviders(log, msg, mrefs, uses);
         }
-    }
-
-    private static String toString(Collection<String> collection) {
-        return collection.stream().sorted()
-                         .collect(Collectors.joining(","));
     }
 
     private String getSaveOpts() {

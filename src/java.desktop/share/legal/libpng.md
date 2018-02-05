@@ -1,4 +1,4 @@
-## libpng v1.6.23
+## libpng v1.6.34
 
 ### libpng License
 <pre>
@@ -14,8 +14,8 @@ this sentence.
 
 This code is released under the libpng license.
 
-libpng versions 1.0.7, July 1, 2000 through 1.6.23, June 9, 2016 are
-Copyright (c) 2000-2002, 2004, 2006-2016 Glenn Randers-Pehrson, are
+libpng versions 1.0.7, July 1, 2000 through 1.6.34, September 29, 2017 are
+Copyright (c) 2000-2002, 2004, 2006-2017 Glenn Randers-Pehrson, are
 derived from libpng-1.0.6, and are distributed according to the same
 disclaimer and license as libpng-1.0.6 with the following individuals
 added to the list of Contributing Authors:
@@ -26,6 +26,9 @@ added to the list of Contributing Authors:
    Cosmin Truta
    Gilles Vollant
    James Yu
+   Mandar Sahastrabuddhe
+   Google Inc.
+   Vadim Barkov
 
 and with the following additions to the disclaimer:
 

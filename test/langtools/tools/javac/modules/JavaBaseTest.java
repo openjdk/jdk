@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8193125
+ * @bug 8193125 8196623
  * @summary test modifiers with java.base
  * @library /tools/lib
  * @modules
@@ -66,10 +66,7 @@ public class JavaBaseTest {
         List.of("static", "transitive")
     );
 
-    final String specVersion = System.getProperty("java.specification.version");
-    final List<String> targets = specVersion.equals("10")
-            ? List.of("9", "10")
-            : List.of("9", "10", specVersion);
+    final List<String> targets = List.of("9", "10", "current");
 
     enum Mode { SOURCE, CLASS };
 
@@ -121,13 +118,18 @@ public class JavaBaseTest {
         Path modules = Files.createDirectories(base.resolve("modules"));
         boolean expectOK = target.equals("9");
 
-        String log = new JavacTask(tb)
-                .outdir(modules)
-                .options("-XDrawDiagnostics", "--release", target)
-                .files(tb.findJavaFiles(src))
-                .run(expectOK ? Task.Expect.SUCCESS : Task.Expect.FAIL)
-                .writeAll()
-                .getOutput(Task.OutputKind.DIRECT);
+        JavacTask jct = new JavacTask(tb)
+            .outdir(modules);
+
+        if (target.equals("current"))
+            jct.options("-XDrawDiagnostics");
+        else
+            jct.options("-XDrawDiagnostics", "--release", target);
+
+        String log = jct.files(tb.findJavaFiles(src))
+            .run(expectOK ? Task.Expect.SUCCESS : Task.Expect.FAIL)
+            .writeAll()
+            .getOutput(Task.OutputKind.DIRECT);
 
         if (!expectOK) {
             boolean foundErrorMessage = false;
@@ -189,12 +191,15 @@ public class JavaBaseTest {
                 "module m { requires java.base; }");
         Path modules1 = Files.createDirectories(base.resolve("interim-modules"));
 
-        new JavacTask(tb)
-                .outdir(modules1)
-                .options("--release", target)
-                .files(tb.findJavaFiles(src1))
-                .run(Task.Expect.SUCCESS)
-                .writeAll();
+        JavacTask jct = new JavacTask(tb)
+            .outdir(modules1);
+
+        if (!target.equals("current")) {
+            jct.options("--release", target);
+        }
+
+        jct.files(tb.findJavaFiles(src1))
+            .run(Task.Expect.SUCCESS);
 
         ClassFile cf1 = ClassFile.read(modules1.resolve("module-info.class"));
 

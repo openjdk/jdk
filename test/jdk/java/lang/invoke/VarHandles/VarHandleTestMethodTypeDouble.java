@@ -2400,4 +2400,3 @@ public class VarHandleTestMethodTypeDouble extends VarHandleBaseTest {
 
     }
 }
-

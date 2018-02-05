@@ -2054,4 +2054,3 @@ public class VarHandleTestMethodTypeString extends VarHandleBaseTest {
 
     }
 }
-

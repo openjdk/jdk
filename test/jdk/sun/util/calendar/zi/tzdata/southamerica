@@ -48,7 +48,7 @@
 # https://www.jstor.org/stable/1774359
 #
 # These tables use numeric abbreviations like -03 and -0330 for
-# integer hour and minute UTC offsets.  Although earlier editions used
+# integer hour and minute UT offsets.  Although earlier editions used
 # alphabetic time zone abbreviations, these abbreviations were
 # invented and did not reflect common practice.
 
@@ -602,7 +602,7 @@ Link America/Curacao America/Aruba
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	America/La_Paz	-4:32:36 -	LMT	1890
 			-4:32:36 -	CMT	1931 Oct 15 # Calamarca MT
-			-4:32:36 1:00	BOST	1932 Mar 21 # Bolivia ST
+			-4:32:36 1:00	BST	1932 Mar 21 # Bolivia ST
 			-4:00	-	-04
 
 # Brazil
@@ -931,12 +931,25 @@ Rule	Brazil	2007	only	-	Oct	Sun>=8	 0:00	1:00	S
 # [t]he DST period in Brazil now on will be from the 3rd Oct Sunday to the
 # 3rd Feb Sunday. There is an exception on the return date when this is
 # the Carnival Sunday then the return date will be the next Sunday...
-Rule	Brazil	2008	max	-	Oct	Sun>=15	0:00	1:00	S
+Rule	Brazil	2008	2017	-	Oct	Sun>=15	0:00	1:00	S
 Rule	Brazil	2008	2011	-	Feb	Sun>=15	0:00	0	-
+# Decree 7,584 <http://pcdsh01.on.br/HVdecreto7584_20111013.jpg> (2011-10-13)
+# added Bahia.
 Rule	Brazil	2012	only	-	Feb	Sun>=22	0:00	0	-
+# Decree 7,826 <http://pcdsh01.on.br/HVdecreto7826_20121015.jpg> (2012-10-15)
+# removed Bahia and added Tocantins.
+# Decree 8,112 <http://pcdsh01.on.br/HVdecreto8112_20130930.JPG> (2013-09-30)
+# removed Tocantins.
 Rule	Brazil	2013	2014	-	Feb	Sun>=15	0:00	0	-
 Rule	Brazil	2015	only	-	Feb	Sun>=22	0:00	0	-
 Rule	Brazil	2016	2022	-	Feb	Sun>=15	0:00	0	-
+# From Steffen Thorsen (2017-12-18):
+# According to many media sources, next year's DST start in Brazil will move to
+# the first Sunday of November, and it will stay like that for the years after.
+# ... https://www.timeanddate.com/news/time/brazil-delays-dst-2018.html
+# From Steffen Thorsen (2017-12-20):
+# http://www.planalto.gov.br/ccivil_03/_ato2015-2018/2017/decreto/D9242.htm
+Rule	Brazil	2018	max	-	Nov	Sun>=1	0:00	1:00	S
 Rule	Brazil	2023	only	-	Feb	Sun>=22	0:00	0	-
 Rule	Brazil	2024	2025	-	Feb	Sun>=15	0:00	0	-
 Rule	Brazil	2026	only	-	Feb	Sun>=22	0:00	0	-
@@ -1091,7 +1104,7 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 
 # From Paul Eggert (2015-04-03):
 # Shanks & Pottenger says America/Santiago introduced standard time in
-# 1890 and rounds its UTC offset to 70W40; guess that in practice this
+# 1890 and rounds its UT offset to 70W40; guess that in practice this
 # was the same offset as in 1916-1919.  It also says Pacific/Easter
 # standardized on 109W22 in 1890; assume this didn't change the clocks.
 #

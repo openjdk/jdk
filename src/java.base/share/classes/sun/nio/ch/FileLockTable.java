@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,9 +115,13 @@ class SharedFileLockTable extends FileLockTable {
     // File key for the file that this channel is connected to
     private final FileKey fileKey;
 
+    // Locks obtained for this channel
+    private final Set<FileLock> locks;
+
     SharedFileLockTable(Channel channel, FileDescriptor fd) throws IOException {
         this.channel = channel;
         this.fileKey = FileKey.create(fd);
+        this.locks = new HashSet<FileLock>();
     }
 
     @Override
@@ -135,6 +139,7 @@ class SharedFileLockTable extends FileLockTable {
                     if (prev == null) {
                         // we successfully created the key so we add the file lock
                         list.add(new FileLockReference(fl, queue, fileKey));
+                        locks.add(fl);
                         break;
                     }
                 }
@@ -151,6 +156,7 @@ class SharedFileLockTable extends FileLockTable {
                 if (list == current) {
                     checkList(list, fl.position(), fl.size());
                     list.add(new FileLockReference(fl, queue, fileKey));
+                    locks.add(fl);
                     break;
                 }
                 list = current;
@@ -187,6 +193,7 @@ class SharedFileLockTable extends FileLockTable {
                     assert (lock != null) && (lock.acquiredBy() == channel);
                     ref.clear();
                     list.remove(index);
+                    locks.remove(fl);
                     break;
                 }
                 index++;
@@ -220,6 +227,8 @@ class SharedFileLockTable extends FileLockTable {
 
                 // once the lock list is empty we remove it from the map
                 removeKeyIfEmpty(fileKey, list);
+
+                locks.clear();
             }
         }
         return result;
@@ -238,6 +247,8 @@ class SharedFileLockTable extends FileLockTable {
                 if (lock == fromLock) {
                     ref.clear();
                     list.set(index, new FileLockReference(toLock, queue, fileKey));
+                    locks.remove(fromLock);
+                    locks.add(toLock);
                     break;
                 }
             }

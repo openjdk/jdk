@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,6 +139,9 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
                                 "read write", bav, vh, h -> testArrayReadWrite(bas, h),
                                 true));
                         cases.add(new VarHandleSourceAccessTestCase(
+                                "null array", bav, vh, h -> testArrayNPE(bas, h),
+                                false));
+                        cases.add(new VarHandleSourceAccessTestCase(
                                 "unsupported", bav, vh, h -> testArrayUnsupported(bas, h),
                                 false));
                         cases.add(new VarHandleSourceAccessTestCase(
@@ -162,6 +165,9 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
                                     true));
                         }
 
+                        cases.add(new VarHandleSourceAccessTestCase(
+                                "null buffer", bav, vh, h -> testArrayNPE(bbs, h),
+                                false));
                         cases.add(new VarHandleSourceAccessTestCase(
                                 "unsupported", bav, vh, h -> testArrayUnsupported(bbs, h),
                                 false));
@@ -191,6 +197,266 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
         }
     }
 
+
+    static void testArrayNPE(ByteArraySource bs, VarHandleSource vhs) {
+        VarHandle vh = vhs.s;
+        byte[] array = null;
+        int ci = 1;
+
+        checkNPE(() -> {
+            long x = (long) vh.get(array, ci);
+        });
+
+        checkNPE(() -> {
+            vh.set(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long x = (long) vh.getVolatile(array, ci);
+        });
+
+        checkNPE(() -> {
+            long x = (long) vh.getAcquire(array, ci);
+        });
+
+        checkNPE(() -> {
+            long x = (long) vh.getOpaque(array, ci);
+        });
+
+        checkNPE(() -> {
+            vh.setVolatile(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            vh.setRelease(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            vh.setOpaque(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkNPE(() -> {
+            long r = (long) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long r = (long) vh.compareAndExchangeAcquire(array, ci, VALUE_2, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long r = (long) vh.compareAndExchangeRelease(array, ci, VALUE_2, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            boolean r = vh.weakCompareAndSetPlain(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkNPE(() -> {
+            boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkNPE(() -> {
+            boolean r = vh.weakCompareAndSetAcquire(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkNPE(() -> {
+            boolean r = vh.weakCompareAndSetRelease(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndSet(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndSetAcquire(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndSetRelease(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndAdd(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndAddAcquire(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndAddRelease(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndBitwiseOr(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndBitwiseOrAcquire(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndBitwiseOrRelease(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndBitwiseAnd(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndBitwiseAndAcquire(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndBitwiseAndRelease(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndBitwiseXor(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndBitwiseXorAcquire(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndBitwiseXorRelease(array, ci, VALUE_1);
+        });
+    }
+
+    static void testArrayNPE(ByteBufferSource bs, VarHandleSource vhs) {
+        VarHandle vh = vhs.s;
+        ByteBuffer array = null;
+        int ci = 1;
+
+        checkNPE(() -> {
+            long x = (long) vh.get(array, ci);
+        });
+
+        checkNPE(() -> {
+            vh.set(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long x = (long) vh.getVolatile(array, ci);
+        });
+
+        checkNPE(() -> {
+            long x = (long) vh.getAcquire(array, ci);
+        });
+
+        checkNPE(() -> {
+            long x = (long) vh.getOpaque(array, ci);
+        });
+
+        checkNPE(() -> {
+            vh.setVolatile(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            vh.setRelease(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            vh.setOpaque(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkNPE(() -> {
+            long r = (long) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long r = (long) vh.compareAndExchangeAcquire(array, ci, VALUE_2, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long r = (long) vh.compareAndExchangeRelease(array, ci, VALUE_2, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            boolean r = vh.weakCompareAndSetPlain(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkNPE(() -> {
+            boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkNPE(() -> {
+            boolean r = vh.weakCompareAndSetAcquire(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkNPE(() -> {
+            boolean r = vh.weakCompareAndSetRelease(array, ci, VALUE_1, VALUE_2);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndSet(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndSetAcquire(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndSetRelease(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndAdd(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndAddAcquire(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndAddRelease(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndBitwiseOr(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndBitwiseOrAcquire(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndBitwiseOrRelease(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndBitwiseAnd(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndBitwiseAndAcquire(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndBitwiseAndRelease(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndBitwiseXor(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndBitwiseXorAcquire(array, ci, VALUE_1);
+        });
+
+        checkNPE(() -> {
+            long o = (long) vh.getAndBitwiseXorRelease(array, ci, VALUE_1);
+        });
+    }
 
     static void testArrayUnsupported(ByteArraySource bs, VarHandleSource vhs) {
         VarHandle vh = vhs.s;

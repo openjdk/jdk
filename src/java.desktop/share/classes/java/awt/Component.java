@@ -9310,7 +9310,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
          * when shown/hidden..
          * @since 1.3
          */
-        protected class AccessibleAWTComponentHandler implements ComponentListener {
+        protected class AccessibleAWTComponentHandler implements ComponentListener, Serializable {
+            private static final long serialVersionUID = -1009684107426231869L;
+
             public void componentHidden(ComponentEvent e)  {
                 if (accessibleContext != null) {
                     accessibleContext.firePropertyChange(
@@ -9340,7 +9342,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
          * when focus events happen
          * @since 1.3
          */
-        protected class AccessibleAWTFocusHandler implements FocusListener {
+        protected class AccessibleAWTFocusHandler implements FocusListener, Serializable {
+            private static final long serialVersionUID = 3150908257351582233L;
+
             public void focusGained(FocusEvent event) {
                 if (accessibleContext != null) {
                     accessibleContext.firePropertyChange(

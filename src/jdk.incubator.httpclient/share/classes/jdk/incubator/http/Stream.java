@@ -767,7 +767,7 @@ class Stream<T> extends ExchangeImpl<T> {
         // blocks waiting for stream send window, if exhausted
         int actualAmount = windowController.tryAcquire(requestAmount, streamid, this);
         if (actualAmount <= 0) return null;
-        ByteBuffer outBuf = Utils.slice(buffer,  actualAmount);
+        ByteBuffer outBuf = Utils.sliceWithLimitedCapacity(buffer,  actualAmount);
         DataFrame df = new DataFrame(streamid, 0 , outBuf);
         return df;
     }

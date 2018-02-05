@@ -56,10 +56,10 @@
 <li><a href="#alsa">ALSA</a></li>
 <li><a href="#libffi">libffi</a></li>
 </ul></li>
-<li><a href="#other-tooling-requirements">Other Tooling Requirements</a><ul>
+<li><a href="#build-tools-requirements">Build Tools Requirements</a><ul>
+<li><a href="#autoconf">Autoconf</a></li>
 <li><a href="#gnu-make">GNU Make</a></li>
 <li><a href="#gnu-bash">GNU Bash</a></li>
-<li><a href="#autoconf">Autoconf</a></li>
 </ul></li>
 <li><a href="#running-configure">Running Configure</a><ul>
 <li><a href="#common-configure-arguments">Common Configure Arguments</a></li>
@@ -116,10 +116,10 @@
 <p>If you are eager to try out building OpenJDK, these simple steps works most of the time. They assume that you have installed Mercurial (and Cygwin if running on Windows) and cloned the top-level OpenJDK repository that you want to build.</p>
 <ol type="1">
 <li><p><a href="#getting-the-source-code">Get the complete source code</a>:<br />
-<code>hg clone http://hg.openjdk.java.net/jdk10/master</code></p></li>
+<code>hg clone http://hg.openjdk.java.net/jdk/jdk</code></p></li>
 <li><p><a href="#running-configure">Run configure</a>:<br />
 <code>bash configure</code></p>
-<p>If <code>configure</code> fails due to missing dependencies (to either the <a href="#native-compiler-toolchain-requirements">toolchain</a>, <a href="#external-library-requirements">external libraries</a> or the <a href="#boot-jdk-requirements">boot JDK</a>), most of the time it prints a suggestion on how to resolve the situation on your platform. Follow the instructions, and try running <code>bash configure</code> again.</p></li>
+<p>If <code>configure</code> fails due to missing dependencies (to either the <a href="#native-compiler-toolchain-requirements">toolchain</a>, <a href="#build-tools-requirements">build tools</a>, <a href="#external-library-requirements">external libraries</a> or the <a href="#boot-jdk-requirements">boot JDK</a>), most of the time it prints a suggestion on how to resolve the situation on your platform. Follow the instructions, and try running <code>bash configure</code> again.</p></li>
 <li><p><a href="#running-make">Run make</a>:<br />
 <code>make images</code></p></li>
 <li><p>Verify your newly built JDK:<br />
@@ -201,12 +201,13 @@
 <p>OpenJDK requires GNU Make 4.0 or greater on Windows. This is usually not a problem, since Cygwin currently only distributes GNU Make at a version above 4.0.</p>
 <p>Apart from the basic Cygwin installation, the following packages must also be installed:</p>
 <ul>
+<li><code>autoconf</code></li>
 <li><code>make</code></li>
 <li><code>zip</code></li>
 <li><code>unzip</code></li>
 </ul>
 <p>Often, you can install these packages using the following command line:</p>
-<pre><code>&lt;path to Cygwin setup&gt;/setup-x86_64 -q -P make -P unzip -P zip</code></pre>
+<pre><code>&lt;path to Cygwin setup&gt;/setup-x86_64 -q -P autoconf -P make -P unzip -P zip</code></pre>
 <p>Unfortunately, Cygwin can be unreliable in certain circumstances. If you experience build tool crashes or strange issues when building on Windows, please check the Cygwin FAQ on the <a href="https://cygwin.com/faq/faq.html#faq.using.bloda">&quot;BLODA&quot; list</a> and the section on <a href="https://cygwin.com/faq/faq.html#faq.using.fixing-fork-failures">fork() failures</a>.</p>
 <h3 id="solaris">Solaris</h3>
 <p>See <code>make/devkit/solaris11.1-package-list.txt</code> for a list of recommended packages to install when building on Solaris. The versions specified in this list is the versions used by the daily builds at Oracle, and is likely to work properly.</p>
@@ -424,7 +425,17 @@ tar -xzf freetype-2.5.3.tar.gz</code></pre>
 <li>To install on an rpm-based Linux, try running <code>sudo yum install libffi-devel</code>.</li>
 </ul>
 <p>Use <code>--with-libffi=&lt;path&gt;</code> if <code>configure</code> does not properly locate your libffi files.</p>
-<h2 id="other-tooling-requirements">Other Tooling Requirements</h2>
+<h2 id="build-tools-requirements">Build Tools Requirements</h2>
+<h3 id="autoconf">Autoconf</h3>
+<p>OpenJDK requires <a href="http://www.gnu.org/software/autoconf">Autoconf</a> on all platforms. At least version 2.69 is required.</p>
+<ul>
+<li>To install on an apt-based Linux, try running <code>sudo apt-get install autoconf</code>.</li>
+<li>To install on an rpm-based Linux, try running <code>sudo yum install autoconf</code>.</li>
+<li>To install on macOS, try running <code>brew install autoconf</code>.</li>
+<li>To install on Windows, try running <code>&lt;path to Cygwin setup&gt;/setup-x86_64 -q -P autoconf</code>.</li>
+</ul>
+<p>If <code>configure</code> has problems locating your installation of autoconf, you can specify it using the <code>AUTOCONF</code> environment variable, like this:</p>
+<pre><code>AUTOCONF=&lt;path to autoconf&gt; configure ...</code></pre>
 <h3 id="gnu-make">GNU Make</h3>
 <p>OpenJDK requires <a href="http://www.gnu.org/software/make">GNU Make</a>. No other flavors of make are supported.</p>
 <p>At least version 3.81 of GNU Make must be used. For distributions supporting GNU Make 4.0 or above, we strongly recommend it. GNU Make 4.0 contains useful functionality to handle parallel building (supported by <code>--with-output-sync</code>) and speed and stability improvements.</p>
@@ -434,10 +445,6 @@ tar -xzf freetype-2.5.3.tar.gz</code></pre>
 <h3 id="gnu-bash">GNU Bash</h3>
 <p>OpenJDK requires <a href="http://www.gnu.org/software/bash">GNU Bash</a>. No other shells are supported.</p>
 <p>At least version 3.2 of GNU Bash must be used.</p>
-<h3 id="autoconf">Autoconf</h3>
-<p>If you want to modify the build system itself, you need to install <a href="http://www.gnu.org/software/autoconf">Autoconf</a>.</p>
-<p>However, if you only need to build OpenJDK or if you only edit the actual OpenJDK source files, there is no dependency on autoconf, since the source distribution includes a pre-generated <code>configure</code> shell script.</p>
-<p>See the section on <a href="#autoconf-details">Autoconf Details</a> for details on how OpenJDK uses autoconf. This is especially important if you plan to contribute changes to OpenJDK that modifies the build system.</p>
 <h2 id="running-configure">Running Configure</h2>
 <p>To build OpenJDK, you need a &quot;configuration&quot;, which consists of a directory where to store the build output, coupled with information about the platform, the specific build machine, and choices that affect how OpenJDK is built.</p>
 <p>The configuration is created by the <code>configure</code> script. The basic invocation of the <code>configure</code> script looks like this:</p>
@@ -751,7 +758,12 @@ cannot create ... Permission denied
 spawn failed</code></pre>
 <p>This can be a sign of a Cygwin problem. See the information about solving problems in the <a href="#cygwin">Cygwin</a> section. Rebooting the computer might help temporarily.</p>
 <h3 id="getting-help">Getting Help</h3>
-<p>If none of the suggestions in this document helps you, or if you find what you believe is a bug in the build system, please contact the Build Group by sending a mail to <a href="mailto:build-dev@openjdk.java.net">build-dev@openjdk.java.net</a>. Please include the relevant parts of the configure and/or build log.</p>
+<p>If none of the suggestions in this document helps you, or if you find what you believe is a bug in the build system, please contact the Build Group by sending a mail to <script type="text/javascript">
+<!--
+h='&#x6f;&#112;&#x65;&#110;&#106;&#100;&#x6b;&#46;&#106;&#x61;&#118;&#x61;&#46;&#110;&#x65;&#116;';a='&#64;';n='&#98;&#x75;&#x69;&#108;&#100;&#x2d;&#100;&#x65;&#118;';e=n+a+h;
+document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'" clas'+'s="em' + 'ail">'+e+'<\/'+'a'+'>');
+// -->
+</script><noscript>&#98;&#x75;&#x69;&#108;&#100;&#x2d;&#100;&#x65;&#118;&#32;&#x61;&#116;&#32;&#x6f;&#112;&#x65;&#110;&#106;&#100;&#x6b;&#32;&#100;&#x6f;&#116;&#32;&#106;&#x61;&#118;&#x61;&#32;&#100;&#x6f;&#116;&#32;&#110;&#x65;&#116;</noscript>. Please include the relevant parts of the configure and/or build log.</p>
 <p>If you need general help or advice about developing for OpenJDK, you can also contact the Adoption Group. See the section on <a href="#contributing-to-openjdk">Contributing to OpenJDK</a> for more information.</p>
 <h2 id="hints-and-suggestions-for-advanced-users">Hints and Suggestions for Advanced Users</h2>
 <h3 id="setting-up-a-forest-for-pushing-changes-defpath">Setting Up a Forest for Pushing Changes (defpath)</h3>
@@ -871,15 +883,9 @@ test-support/</code></pre>
 <p>When building for distribution, <code>zipped</code> is a good solution. Binaries built with <code>internal</code> is suitable for use by developers, since they facilitate debugging, but should be stripped before distributed to end users.</p>
 <h3 id="autoconf-details">Autoconf Details</h3>
 <p>The <code>configure</code> script is based on the autoconf framework, but in some details deviate from a normal autoconf <code>configure</code> script.</p>
-<p>The <code>configure</code> script in the top level directory of OpenJDK is just a thin wrapper that calls <code>make/autoconf/configure</code>. This in turn provides functionality that is not easily expressed in the normal Autoconf framework, and then calls into the core of the <code>configure</code> script, which is the <code>make/autoconf/generated-configure.sh</code> file.</p>
-<p>As the name implies, this file is generated by Autoconf. It is checked in after regeneration, to alleviate the common user to have to install Autoconf.</p>
-<p>The build system will detect if the Autoconf source files have changed, and will trigger a regeneration of <code>make/autoconf/generated-configure.sh</code> if needed. You can also manually request such an update by <code>bash make/autoconf/autogen.sh</code>.</p>
-<p>If you make changes to the build system that requires a re-generation, note the following:</p>
-<ul>
-<li><p>You must use <em>exactly</em> version 2.69 of autoconf for your patch to be accepted. This is to avoid spurious changes in the generated file. Note that Ubuntu 16.04 ships a patched version of autoconf which claims to be 2.69, but is not.</p></li>
-<li><p>You do not need to include the generated file in reviews.</p></li>
-<li><p>If the generated file needs updating, the Oracle JDK closed counter-part will also need to be updated. It is very much appreciated if you ask for an Oracle engineer to sponsor your push so this can be made in tandem.</p></li>
-</ul>
+<p>The <code>configure</code> script in the top level directory of OpenJDK is just a thin wrapper that calls <code>make/autoconf/configure</code>. This in turn will run <code>autoconf</code> to create the runnable (generated) configure script, as <code>.build/generated-configure.sh</code>. Apart from being responsible for the generation of the runnable script, the <code>configure</code> script also provides functionality that is not easily expressed in the normal Autoconf framework. As part of this functionality, the generated script is called.</p>
+<p>The build system will detect if the Autoconf source files have changed, and will trigger a regeneration of the generated script if needed. You can also manually request such an update by <code>bash configure autogen</code>.</p>
+<p>In previous versions of the OpenJDK, the generated script was checked in at <code>make/autoconf/generated-configure.sh</code>. This is no longer the case.</p>
 <h3 id="developing-the-build-system-itself">Developing the Build System Itself</h3>
 <p>This section contains a few remarks about how to develop for the build system itself. It is not relevant if you are only making changes in the product source code.</p>
 <p>While technically using <code>make</code>, the make source files of the OpenJDK does not resemble most other Makefiles. Instead of listing specific targets and actions (perhaps using patterns), the basic modus operandi is to call a high-level function (or properly, macro) from the API in <code>make/common</code>. For instance, to compile all classes in the <code>jdk.internal.foo</code> package in the <code>jdk.foo</code> module, a call like this would be made:</p>
@@ -897,7 +903,7 @@ test-support/</code></pre>
 <pre><code>make COMPARE_BUILD=CONF=--enable-new-hotspot-feature:MAKE=hotspot</code></pre>
 <p>See <code>make/InitSupport.gmk</code> for details on how to use <code>COMPARE_BUILD</code>.</p>
 <p>To analyze build performance, run with <code>LOG=trace</code> and check <code>$BUILD/build-trace-time.log</code>. Use <code>JOBS=1</code> to avoid parallelism.</p>
-<p>Please check that you adhere to the <a href="http://openjdk.java.net/groups/build/doc/code-conventions.html">Code Conventions for the Build System</a> before submitting patches. Also see the section in <a href="#autoconf-details">Autoconf Details</a> about the generated configure script.</p>
+<p>Please check that you adhere to the <a href="http://openjdk.java.net/groups/build/doc/code-conventions.html">Code Conventions for the Build System</a> before submitting patches.</p>
 <h2 id="contributing-to-openjdk">Contributing to OpenJDK</h2>
 <p>So, now you've build your OpenJDK, and made your first patch, and want to contribute it back to the OpenJDK community.</p>
 <p>First of all: Thank you! We gladly welcome your contribution to the OpenJDK. However, please bear in mind that OpenJDK is a massive project, and we must ask you to follow our rules and guidelines to be able to accept your contribution.</p>
