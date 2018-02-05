@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,18 @@
 
 package java.net;
 
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.FileDescriptor;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import sun.net.ConnectionResetException;
 import sun.net.NetHooks;
 import sun.net.ResourceManager;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Collections;
 
 /**
  * Default Socket Implementation. This implementation does
@@ -136,6 +137,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
             fd = new FileDescriptor();
             try {
                 socketCreate(false);
+                SocketCleanable.register(fd);
             } catch (IOException ioe) {
                 ResourceManager.afterUdpClose();
                 fd = null;
@@ -144,6 +146,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
         } else {
             fd = new FileDescriptor();
             socketCreate(true);
+            SocketCleanable.register(fd);
         }
         if (socket != null)
             socket.setCreated();
@@ -643,14 +646,6 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
         socketSendUrgentData (data);
     }
 
-    /**
-     * Cleans up if the user forgets to close it.
-     */
-    @SuppressWarnings("deprecation")
-    protected void finalize() throws IOException {
-        close();
-    }
-
     /*
      * "Acquires" and returns the FileDescriptor for this impl
      *
@@ -748,6 +743,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
      * Close the socket (and release the file descriptor).
      */
     protected void socketClose() throws IOException {
+        SocketCleanable.unregister(fd);
         socketClose0(false);
     }
 
