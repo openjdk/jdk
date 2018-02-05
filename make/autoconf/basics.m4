@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -336,7 +336,6 @@ AC_DEFUN_ONCE([BASIC_INIT],
   DATE_WHEN_CONFIGURED=`LANG=C date`
   AC_SUBST(DATE_WHEN_CONFIGURED)
   AC_MSG_NOTICE([Configuration created at $DATE_WHEN_CONFIGURED.])
-  AC_MSG_NOTICE([configure script generated at timestamp $DATE_WHEN_GENERATED.])
 ])
 
 # Test that variable $1 denoting a program is not empty. If empty, exit with an error.
