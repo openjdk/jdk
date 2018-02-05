@@ -30,6 +30,7 @@
  *     /test/hotspot/jtreg/runtime/appcds/test-classes /test/hotspot/jtreg/runtime/appcds/jvmti
  *     /test/hotspot/jtreg/testlibrary/jvmti
  * @requires vm.cds
+ * @requires !vm.graal.enabled
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jartool/sun.tools.jar

@@ -57,17 +57,25 @@ public class TransformerAgent {
 
 
     static class SimpleTransformer implements ClassFileTransformer {
-       public byte[] transform(ClassLoader loader, String name, Class<?> classBeingRedefined,
-                            ProtectionDomain pd, byte[] buffer) throws IllegalClassFormatException {
+        public byte[] transform(ClassLoader loader, String name, Class<?> classBeingRedefined,
+                                ProtectionDomain pd, byte[] buffer) throws IllegalClassFormatException {
+            try {
+                log("SimpleTransformer called for: " + name + "@" + incrCounter(name));
+                if (!shouldTransform(name))
+                    return null;
 
-            log("SimpleTransformer called for: " + name + "@" + incrCounter(name));
-            if (!shouldTransform(name))
-                return null;
-
-            log("transforming: class name = " + name);
-            int nrOfReplacements = TransformUtil.replace(buffer, TransformUtil.BeforePattern,
-                                                         TransformUtil.AfterPattern);
-            log("replaced the string, nrOfReplacements = " + nrOfReplacements);
+                log("transforming: class name = " + name);
+                int nrOfReplacements = TransformUtil.replace(buffer, TransformUtil.BeforePattern,
+                                                           TransformUtil.AfterPattern);
+                log("replaced the string, nrOfReplacements = " + nrOfReplacements);
+            } catch (Throwable t) {
+                // The retransform native code that called this method does not propagate
+                // exceptions. Instead of getting an uninformative generic error, catch
+                // problems here and print it, then exit.
+                log("Transformation failed!");
+                t.printStackTrace();
+                System.exit(1);
+            }
             return buffer;
         }
 
