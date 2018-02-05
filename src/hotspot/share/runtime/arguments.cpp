@@ -729,7 +729,8 @@ static bool verify_special_jvm_flags() {
       // if flag has become obsolete it should not have a "globals" flag defined anymore.
       if (!version_less_than(JDK_Version::current(), flag.obsolete_in)) {
         if (Flag::find_flag(flag.name) != NULL) {
-          warning("Global variable for obsolete special flag entry \"%s\" should be removed", flag.name);
+          // Temporarily disable the warning: 8196739
+          // warning("Global variable for obsolete special flag entry \"%s\" should be removed", flag.name);
         }
       }
     }
@@ -738,7 +739,8 @@ static bool verify_special_jvm_flags() {
       // if flag has become expired it should not have a "globals" flag defined anymore.
       if (!version_less_than(JDK_Version::current(), flag.expired_in)) {
         if (Flag::find_flag(flag.name) != NULL) {
-          warning("Global variable for expired flag entry \"%s\" should be removed", flag.name);
+          // Temporarily disable the warning: 8196739
+          // warning("Global variable for expired flag entry \"%s\" should be removed", flag.name);
         }
       }
     }
