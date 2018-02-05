@@ -28,7 +28,7 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI StringTest
  * @summary testing of WB::set/getStringVMFlag()

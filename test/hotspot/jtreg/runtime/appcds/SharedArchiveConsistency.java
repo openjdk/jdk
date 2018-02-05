@@ -34,7 +34,7 @@
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @build sun.hotspot.WhiteBox
  * @compile test-classes/Hello.java
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI SharedArchiveConsistency
  */
 import jdk.test.lib.process.OutputAnalyzer;

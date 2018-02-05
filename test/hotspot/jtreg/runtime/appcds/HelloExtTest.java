@@ -33,7 +33,7 @@
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @compile test-classes/HelloExt.java
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main HelloExtTest
  */
 

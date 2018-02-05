@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "memory/filemap.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
@@ -58,8 +58,7 @@ void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
         er->NumberParameters >= 2) {
       const void* const fault_addr = (const void*) er->ExceptionInformation[1];
       if (fault_addr != NULL) {
-        FileMapInfo* const mapinfo = FileMapInfo::current_info();
-        if (mapinfo->is_in_shared_space(fault_addr)) {
+        if (MetaspaceShared::is_in_shared_metaspace(fault_addr)) {
           st->print("Error accessing class data sharing archive. "
             "Mapped file inaccessible during execution, possible disk/network problem.");
         }

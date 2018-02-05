@@ -111,7 +111,11 @@ class JVMInitializerListener : public ::testing::EmptyTestEventListener {
     const char* name = test_info.name();
     if (!_is_initialized && is_suffix("_test_vm", name)) {
       // we want to have hs_err and core files when we execute regular tests
-      ASSERT_EQ(0, init_jvm(_argc, _argv, false)) << "Could not initialize the JVM";
+      int ret_val = init_jvm(_argc, _argv, false);
+      if (ret_val != 0) {
+        ADD_FAILURE() << "Could not initialize the JVM";
+        exit(1);
+      }
       _is_initialized = true;
     }
   }

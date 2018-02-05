@@ -33,7 +33,7 @@
  *          jdk.jartool/sun.tools.jar
  * @compile test-classes/UnintendedLoaders.java test-classes/CustomLoadee.java
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main UnintendedLoadersTest
  */
 

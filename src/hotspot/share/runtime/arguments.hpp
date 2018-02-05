@@ -373,13 +373,7 @@ class Arguments : AllStatic {
 
   // Tiered
   static void set_tiered_flags();
-  // CMS/ParNew garbage collectors
-  static void set_parnew_gc_flags();
-  static void set_cms_and_parnew_gc_flags();
-  // UseParallel[Old]GC
-  static void set_parallel_gc_flags();
-  // Garbage-First (UseG1GC)
-  static void set_g1_gc_flags();
+
   // GC ergonomics
   static void set_conservative_max_heap_alignment();
   static void set_use_compressed_oops();

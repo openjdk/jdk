@@ -32,7 +32,7 @@
  *          java.management
  *          jdk.jartool/sun.tools.jar
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @compile test-classes/Hello.java
  * @compile test-classes/JvmtiApp.java
  * @run main JvmtiAddPath

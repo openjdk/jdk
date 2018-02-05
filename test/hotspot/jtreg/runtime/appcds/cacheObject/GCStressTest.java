@@ -34,8 +34,8 @@
  *          jdk.jartool/sun.tools.jar
  * @build sun.hotspot.WhiteBox
  * @compile GCStressApp.java
- * @run main ClassFileInstaller -jar gcstress.jar GCStressApp
- * @run main ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller -jar gcstress.jar GCStressApp
+ * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
  * @run main GCStressTest
  */
 

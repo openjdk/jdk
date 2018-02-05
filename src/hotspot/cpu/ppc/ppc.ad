@@ -1656,9 +1656,9 @@ const RegMask &MachLoadPollAddrLateNode::out_RegMask() const {
 
 // =============================================================================
 
-// Figure out which register class each belongs in: rc_int, rc_float or
+// Figure out which register class each belongs in: rc_int, rc_float, rc_vs or
 // rc_stack.
-enum RC { rc_bad, rc_int, rc_float, rc_stack };
+enum RC { rc_bad, rc_int, rc_float, rc_vs, rc_stack };
 
 static enum RC rc_class(OptoReg::Name reg) {
   // Return the register class for the given register. The given register
@@ -1672,6 +1672,9 @@ static enum RC rc_class(OptoReg::Name reg) {
 
   // We have 64 floating-point register halves, starting at index 64.
   if (reg < 64+64) return rc_float;
+
+  // We have 64 vector-scalar registers, starting at index 128.
+  if (reg < 64+64+64) return rc_vs;
 
   // Between float regs & stack are the flags regs.
   assert(OptoReg::is_stack(reg) || reg < 64+64+64, "blow up if spilling flags");
@@ -1734,6 +1737,58 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
 
   if (src_lo == dst_lo && src_hi == dst_hi)
     return size;            // Self copy, no move.
+
+  if (bottom_type()->isa_vect() != NULL && ideal_reg() == Op_VecX) {
+    // Memory->Memory Spill.
+    if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
+      int src_offset = ra_->reg2offset(src_lo);
+      int dst_offset = ra_->reg2offset(dst_lo);
+      if (cbuf) {
+        MacroAssembler _masm(cbuf);
+        __ ld(R0, src_offset, R1_SP);
+        __ std(R0, dst_offset, R1_SP);
+        __ ld(R0, src_offset+8, R1_SP);
+        __ std(R0, dst_offset+8, R1_SP);
+      }
+      size += 16;
+    }
+    // VectorSRegister->Memory Spill.
+    else if (src_lo_rc == rc_vs && dst_lo_rc == rc_stack) {
+      VectorSRegister Rsrc = as_VectorSRegister(Matcher::_regEncode[src_lo]);
+      int dst_offset = ra_->reg2offset(dst_lo);
+      if (cbuf) {
+        MacroAssembler _masm(cbuf);
+        __ addi(R0, R1_SP, dst_offset);
+        __ stxvd2x(Rsrc, R0);
+      }
+      size += 8;
+    }
+    // Memory->VectorSRegister Spill.
+    else if (src_lo_rc == rc_stack && dst_lo_rc == rc_vs) {
+      VectorSRegister Rdst = as_VectorSRegister(Matcher::_regEncode[dst_lo]);
+      int src_offset = ra_->reg2offset(src_lo);
+      if (cbuf) {
+        MacroAssembler _masm(cbuf);
+        __ addi(R0, R1_SP, src_offset);
+        __ lxvd2x(Rdst, R0);
+      }
+      size += 8;
+    }
+    // VectorSRegister->VectorSRegister.
+    else if (src_lo_rc == rc_vs && dst_lo_rc == rc_vs) {
+      VectorSRegister Rsrc = as_VectorSRegister(Matcher::_regEncode[src_lo]);
+      VectorSRegister Rdst = as_VectorSRegister(Matcher::_regEncode[dst_lo]);
+      if (cbuf) {
+        MacroAssembler _masm(cbuf);
+        __ xxlor(Rdst, Rsrc, Rsrc);
+      }
+      size += 4;
+    }
+    else {
+      ShouldNotReachHere(); // No VSR spill.
+    }
+    return size;
+  }
 
   // --------------------------------------
   // Memory->Memory Spill. Use R0 to hold the value.
@@ -3524,7 +3579,7 @@ encode %{
     assert(loadConLNodes._last->bottom_type()->isa_long(), "must be long");
   %}
 
-  enc_class postalloc_expand_load_replF_constant_vsx(vecX dst, immF src, iRegLdst toc) %{
+  enc_class postalloc_expand_load_replF_constant_vsx(vecX dst, immF src, iRegLdst toc, iRegLdst tmp) %{
     // Create new nodes.
 
     // Make an operand with the bit pattern to load as float.
@@ -3533,8 +3588,8 @@ encode %{
 
     loadConLReplicatedNodesTuple loadConLNodes =
       loadConLReplicatedNodesTuple_create(C, ra_, n_toc, op_repl, op_dst, op_zero,
-                                OptoReg::Name(R20_H_num), OptoReg::Name(R20_num),
-                                OptoReg::Name(VSR11_num), OptoReg::Name(VSR10_num));
+                                ra_->get_reg_second(n_tmp), ra_->get_reg_first(n_tmp),
+                                ra_->get_reg_second(this), ra_->get_reg_first(this));
 
     // Push new nodes.
     if (loadConLNodes._large_hi) { nodes->push(loadConLNodes._large_hi); }
@@ -14013,12 +14068,13 @@ instruct repl4F_reg_Ex(vecX dst, regF src) %{
   %}
 %}
 
-instruct repl4F_immF_Ex(vecX dst, immF src) %{
+instruct repl4F_immF_Ex(vecX dst, immF src, iRegLdst tmp) %{
   match(Set dst (ReplicateF src));
   predicate(n->as_Vector()->length() == 4);
+  effect(TEMP tmp);
   ins_cost(10 * DEFAULT_COST);
 
-  postalloc_expand( postalloc_expand_load_replF_constant_vsx(dst, src, constanttablebase) );
+  postalloc_expand( postalloc_expand_load_replF_constant_vsx(dst, src, constanttablebase, tmp) );
 %}
 
 instruct repl4F_immF0(vecX dst, immF_0 zero) %{

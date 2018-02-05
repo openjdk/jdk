@@ -419,7 +419,7 @@ void TemplateTable::sipush() {
 void TemplateTable::ldc(bool wide) {
   transition(vtos, vtos);
   Register rarg = NOT_LP64(rcx) LP64_ONLY(c_rarg1);
-  Label call_ldc, notFloat, notClass, Done;
+  Label call_ldc, notFloat, notClass, notInt, Done;
 
   if (wide) {
     __ get_unsigned_2_byte_index_at_bcp(rbx, 1);
@@ -465,19 +465,18 @@ void TemplateTable::ldc(bool wide) {
   __ jmp(Done);
 
   __ bind(notFloat);
-#ifdef ASSERT
-  {
-    Label L;
-    __ cmpl(rdx, JVM_CONSTANT_Integer);
-    __ jcc(Assembler::equal, L);
-    // String and Object are rewritten to fast_aldc
-    __ stop("unexpected tag type in ldc");
-    __ bind(L);
-  }
-#endif
-  // itos JVM_CONSTANT_Integer only
+  __ cmpl(rdx, JVM_CONSTANT_Integer);
+  __ jccb(Assembler::notEqual, notInt);
+
+  // itos
   __ movl(rax, Address(rcx, rbx, Address::times_ptr, base_offset));
   __ push(itos);
+  __ jmp(Done);
+
+  // assume the tag is for condy; if not, the VM runtime will tell us
+  __ bind(notInt);
+  condy_helper(Done);
+
   __ bind(Done);
 }
 
@@ -487,6 +486,7 @@ void TemplateTable::fast_aldc(bool wide) {
 
   Register result = rax;
   Register tmp = rdx;
+  Register rarg = NOT_LP64(rcx) LP64_ONLY(c_rarg1);
   int index_size = wide ? sizeof(u2) : sizeof(u1);
 
   Label resolved;
@@ -496,16 +496,27 @@ void TemplateTable::fast_aldc(bool wide) {
   assert_different_registers(result, tmp);
   __ get_cache_index_at_bcp(tmp, 1, index_size);
   __ load_resolved_reference_at_index(result, tmp);
-  __ testl(result, result);
+  __ testptr(result, result);
   __ jcc(Assembler::notZero, resolved);
 
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc);
 
   // first time invocation - must resolve first
-  __ movl(tmp, (int)bytecode());
-  __ call_VM(result, entry, tmp);
-
+  __ movl(rarg, (int)bytecode());
+  __ call_VM(result, entry, rarg);
   __ bind(resolved);
+
+  { // Check for the null sentinel.
+    // If we just called the VM, that already did the mapping for us,
+    // but it's harmless to retry.
+    Label notNull;
+    ExternalAddress null_sentinel((address)Universe::the_null_sentinel_addr());
+    __ movptr(tmp, null_sentinel);
+    __ cmpptr(tmp, result);
+    __ jccb(Assembler::notEqual, notNull);
+    __ xorptr(result, result);  // NULL object reference
+    __ bind(notNull);
+  }
 
   if (VerifyOops) {
     __ verify_oop(result);
@@ -514,7 +525,7 @@ void TemplateTable::fast_aldc(bool wide) {
 
 void TemplateTable::ldc2_w() {
   transition(vtos, vtos);
-  Label Long, Done;
+  Label notDouble, notLong, Done;
   __ get_unsigned_2_byte_index_at_bcp(rbx, 1);
 
   __ get_cpool_and_tags(rcx, rax);
@@ -522,23 +533,141 @@ void TemplateTable::ldc2_w() {
   const int tags_offset = Array<u1>::base_offset_in_bytes();
 
   // get type
-  __ cmpb(Address(rax, rbx, Address::times_1, tags_offset),
-          JVM_CONSTANT_Double);
-  __ jccb(Assembler::notEqual, Long);
+  __ movzbl(rdx, Address(rax, rbx, Address::times_1, tags_offset));
+  __ cmpl(rdx, JVM_CONSTANT_Double);
+  __ jccb(Assembler::notEqual, notDouble);
 
   // dtos
   __ load_double(Address(rcx, rbx, Address::times_ptr, base_offset));
   __ push(dtos);
 
-  __ jmpb(Done);
-  __ bind(Long);
+  __ jmp(Done);
+  __ bind(notDouble);
+  __ cmpl(rdx, JVM_CONSTANT_Long);
+  __ jccb(Assembler::notEqual, notLong);
 
   // ltos
   __ movptr(rax, Address(rcx, rbx, Address::times_ptr, base_offset + 0 * wordSize));
   NOT_LP64(__ movptr(rdx, Address(rcx, rbx, Address::times_ptr, base_offset + 1 * wordSize)));
   __ push(ltos);
+  __ jmp(Done);
+
+  __ bind(notLong);
+  condy_helper(Done);
 
   __ bind(Done);
+}
+
+void TemplateTable::condy_helper(Label& Done) {
+  const Register obj = rax;
+  const Register off = rbx;
+  const Register flags = rcx;
+  const Register rarg = NOT_LP64(rcx) LP64_ONLY(c_rarg1);
+  __ movl(rarg, (int)bytecode());
+  call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc), rarg);
+#ifndef _LP64
+  // borrow rdi from locals
+  __ get_thread(rdi);
+  __ get_vm_result_2(flags, rdi);
+  __ restore_locals();
+#else
+  __ get_vm_result_2(flags, r15_thread);
+#endif
+  // VMr = obj = base address to find primitive value to push
+  // VMr2 = flags = (tos, off) using format of CPCE::_flags
+  __ movl(off, flags);
+  __ andl(off, ConstantPoolCacheEntry::field_index_mask);
+  const Address field(obj, off, Address::times_1, 0*wordSize);
+
+  // What sort of thing are we loading?
+  __ shrl(flags, ConstantPoolCacheEntry::tos_state_shift);
+  __ andl(flags, ConstantPoolCacheEntry::tos_state_mask);
+
+  switch (bytecode()) {
+  case Bytecodes::_ldc:
+  case Bytecodes::_ldc_w:
+    {
+      // tos in (itos, ftos, stos, btos, ctos, ztos)
+      Label notInt, notFloat, notShort, notByte, notChar, notBool;
+      __ cmpl(flags, itos);
+      __ jcc(Assembler::notEqual, notInt);
+      // itos
+      __ movl(rax, field);
+      __ push(itos);
+      __ jmp(Done);
+
+      __ bind(notInt);
+      __ cmpl(flags, ftos);
+      __ jcc(Assembler::notEqual, notFloat);
+      // ftos
+      __ load_float(field);
+      __ push(ftos);
+      __ jmp(Done);
+
+      __ bind(notFloat);
+      __ cmpl(flags, stos);
+      __ jcc(Assembler::notEqual, notShort);
+      // stos
+      __ load_signed_short(rax, field);
+      __ push(stos);
+      __ jmp(Done);
+
+      __ bind(notShort);
+      __ cmpl(flags, btos);
+      __ jcc(Assembler::notEqual, notByte);
+      // btos
+      __ load_signed_byte(rax, field);
+      __ push(btos);
+      __ jmp(Done);
+
+      __ bind(notByte);
+      __ cmpl(flags, ctos);
+      __ jcc(Assembler::notEqual, notChar);
+      // ctos
+      __ load_unsigned_short(rax, field);
+      __ push(ctos);
+      __ jmp(Done);
+
+      __ bind(notChar);
+      __ cmpl(flags, ztos);
+      __ jcc(Assembler::notEqual, notBool);
+      // ztos
+      __ load_signed_byte(rax, field);
+      __ push(ztos);
+      __ jmp(Done);
+
+      __ bind(notBool);
+      break;
+    }
+
+  case Bytecodes::_ldc2_w:
+    {
+      Label notLong, notDouble;
+      __ cmpl(flags, ltos);
+      __ jcc(Assembler::notEqual, notLong);
+      // ltos
+      __ movptr(rax, field);
+      NOT_LP64(__ movptr(rdx, field.plus_disp(4)));
+      __ push(ltos);
+      __ jmp(Done);
+
+      __ bind(notLong);
+      __ cmpl(flags, dtos);
+      __ jcc(Assembler::notEqual, notDouble);
+      // dtos
+      __ load_double(field);
+      __ push(dtos);
+      __ jmp(Done);
+
+      __ bind(notDouble);
+      break;
+    }
+
+  default:
+    ShouldNotReachHere();
+  }
+
+  __ stop("bad ldc/condy");
 }
 
 void TemplateTable::locals_index(Register reg, int offset) {

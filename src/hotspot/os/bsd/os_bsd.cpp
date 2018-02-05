@@ -3894,59 +3894,6 @@ int os::fork_and_exec(char* cmd) {
   }
 }
 
-// is_headless_jre()
-//
-// Test for the existence of xawt/libmawt.so or libawt_xawt.so
-// in order to report if we are running in a headless jre
-//
-// Since JDK8 xawt/libmawt.so was moved into the same directory
-// as libawt.so, and renamed libawt_xawt.so
-//
-bool os::is_headless_jre() {
-#ifdef __APPLE__
-  // We no longer build headless-only on Mac OS X
-  return false;
-#else
-  struct stat statbuf;
-  char buf[MAXPATHLEN];
-  char libmawtpath[MAXPATHLEN];
-  const char *xawtstr  = "/xawt/libmawt" JNI_LIB_SUFFIX;
-  const char *new_xawtstr = "/libawt_xawt" JNI_LIB_SUFFIX;
-  char *p;
-
-  // Get path to libjvm.so
-  os::jvm_path(buf, sizeof(buf));
-
-  // Get rid of libjvm.so
-  p = strrchr(buf, '/');
-  if (p == NULL) {
-    return false;
-  } else {
-    *p = '\0';
-  }
-
-  // Get rid of client or server
-  p = strrchr(buf, '/');
-  if (p == NULL) {
-    return false;
-  } else {
-    *p = '\0';
-  }
-
-  // check xawt/libmawt.so
-  strcpy(libmawtpath, buf);
-  strcat(libmawtpath, xawtstr);
-  if (::stat(libmawtpath, &statbuf) == 0) return false;
-
-  // check libawt_xawt.so
-  strcpy(libmawtpath, buf);
-  strcat(libmawtpath, new_xawtstr);
-  if (::stat(libmawtpath, &statbuf) == 0) return false;
-
-  return true;
-#endif
-}
-
 // Get the default path to the core file
 // Returns the length of the string
 int os::get_core_path(char* buffer, size_t bufferSize) {

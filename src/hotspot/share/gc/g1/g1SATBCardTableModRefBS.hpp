@@ -54,7 +54,7 @@ public:
   // pre-marking object graph.
   static void enqueue(oop pre_val);
 
-  static void enqueue_if_weak(DecoratorSet decorators, oop value);
+  static void enqueue_if_weak_or_archive(DecoratorSet decorators, oop value);
 
   template <class T> void write_ref_array_pre_work(T* dst, int count);
   virtual void write_ref_array_pre(oop* dst, int count, bool dest_uninitialized);

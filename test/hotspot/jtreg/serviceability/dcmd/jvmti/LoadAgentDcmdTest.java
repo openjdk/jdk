@@ -47,7 +47,7 @@ import org.testng.annotations.Test;
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @build SimpleJvmtiAgent
- * @run main ClassFileInstaller SimpleJvmtiAgent
+ * @run driver ClassFileInstaller SimpleJvmtiAgent
  * @run testng/othervm LoadAgentDcmdTest
  */
 public class LoadAgentDcmdTest {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,6 +142,21 @@ class oopDesc {
 
   inline static bool is_null(oop obj)       { return obj == NULL; }
   inline static bool is_null(narrowOop obj) { return obj == 0; }
+
+  // Standard compare function returns negative value if o1 < o2
+  //                                   0              if o1 == o2
+  //                                   positive value if o1 > o2
+  inline static int  compare(oop o1, oop o2) {
+    void* o1_addr = (void*)o1;
+    void* o2_addr = (void*)o2;
+    if (o1_addr < o2_addr) {
+      return -1;
+    } else if (o1_addr > o2_addr) {
+      return 1;
+    } else {
+      return 0;
+    }
+  }
 
   // Decode an oop pointer from a narrowOop if compressed.
   // These are overloaded for oop and narrowOop as are the other functions
