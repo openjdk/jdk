@@ -36,8 +36,14 @@
 
 class Tracker : public StackObj {
  public:
-  Tracker() { }
-  void record(address addr, size_t size) { }
+  enum TrackerType {
+     uncommit,
+     release
+  };
+  Tracker(enum TrackerType type) : _type(type) { }
+  void record(address addr, size_t size);
+ private:
+  enum TrackerType  _type;
 };
 
 class MemTracker : AllStatic {
