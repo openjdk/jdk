@@ -409,11 +409,6 @@ class SignatureStream : public StackObj {
   const jbyte* raw_bytes()  { return _signature->bytes() + _begin; }
   int          raw_length() { return _end - _begin; }
 
-  jbyte raw_byte_at(int index) {
-    assert(index >= 0 && index < raw_length(), "index overflow");
-    return _signature->byte_at(_begin + index);
-  }
-
   // return same as_symbol except allocation of new symbols is avoided.
   Symbol* as_symbol_or_null();
 
