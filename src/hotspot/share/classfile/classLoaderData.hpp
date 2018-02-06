@@ -344,6 +344,13 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   }
   bool is_system_class_loader_data() const;
   bool is_platform_class_loader_data() const;
+
+  // Returns true if this class loader data is for the boot class loader.
+  // (Note that the class loader data may be anonymous.)
+  bool is_boot_class_loader_data() const {
+    return class_loader() == NULL;
+  }
+
   bool is_builtin_class_loader_data() const;
   bool is_permanent_class_loader_data() const;
 

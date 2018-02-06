@@ -693,23 +693,26 @@ ClassLoaderData::~ClassLoaderData() {
   }
 }
 
-// Returns true if this class loader data is for the system class loader.
+// Returns true if this class loader data is for the app class loader
+// or a user defined system class loader.  (Note that the class loader
+// data may be anonymous.)
 bool ClassLoaderData::is_system_class_loader_data() const {
   return SystemDictionary::is_system_class_loader(class_loader());
 }
 
 // Returns true if this class loader data is for the platform class loader.
+// (Note that the class loader data may be anonymous.)
 bool ClassLoaderData::is_platform_class_loader_data() const {
   return SystemDictionary::is_platform_class_loader(class_loader());
 }
 
-// Returns true if this class loader data is one of the 3 builtin
-// (boot, application/system or platform) class loaders.  Note that
-// if the class loader data is for an anonymous class then it may get
-// freed by a GC even if its class loader is one of the 3 builtin
-// loaders.
+// Returns true if the class loader for this class loader data is one of
+// the 3 builtin (boot application/system or platform) class loaders,
+// including a user-defined system class loader.  Note that if the class
+// loader data is for an anonymous class then it may get freed by a GC
+// even if its class loader is one of these loaders.
 bool ClassLoaderData::is_builtin_class_loader_data() const {
-  return (is_the_null_class_loader_data() ||
+  return (is_boot_class_loader_data() ||
           SystemDictionary::is_system_class_loader(class_loader()) ||
           SystemDictionary::is_platform_class_loader(class_loader()));
 }
