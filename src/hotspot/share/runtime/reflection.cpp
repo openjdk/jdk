@@ -765,26 +765,27 @@ void Reflection::check_for_inner_class(const InstanceKlass* outer, const Instanc
 static oop get_mirror_from_signature(const methodHandle& method,
                                      SignatureStream* ss,
                                      TRAPS) {
-  Klass* accessing_klass = method->method_holder();
-  assert(accessing_klass != NULL, "method has no accessing_klass");
 
-  oop mirror_oop = ss->as_java_mirror(Handle(THREAD, accessing_klass->class_loader()),
-                                      Handle(THREAD, accessing_klass->protection_domain()),
-                                      SignatureStream::NCDFError,
-                                      CHECK_NULL);
 
-  // Special tracing logic for resolution of class names during reflection.
-  if (log_is_enabled(Debug, class, resolve)) {
-    Klass* result = java_lang_Class::as_Klass(mirror_oop);
-    if (result != NULL) {
-      trace_class_resolution(result);
+  if (T_OBJECT == ss->type() || T_ARRAY == ss->type()) {
+    Symbol* name = ss->as_symbol(CHECK_NULL);
+    oop loader = method->method_holder()->class_loader();
+    oop protection_domain = method->method_holder()->protection_domain();
+    const Klass* k = SystemDictionary::resolve_or_fail(name,
+                                                       Handle(THREAD, loader),
+                                                       Handle(THREAD, protection_domain),
+                                                       true,
+                                                       CHECK_NULL);
+    if (log_is_enabled(Debug, class, resolve)) {
+      trace_class_resolution(k);
     }
+    return k->java_mirror();
   }
 
   assert(ss->type() != T_VOID || ss->at_return_type(),
     "T_VOID should only appear as return type");
 
-  return mirror_oop;
+  return java_lang_Class::primitive_mirror(ss->type());
 }
 
 static objArrayHandle get_parameter_types(const methodHandle& method,
@@ -818,17 +819,24 @@ static objArrayHandle get_exception_types(const methodHandle& method, TRAPS) {
 }
 
 static Handle new_type(Symbol* signature, Klass* k, TRAPS) {
-  Handle mirror = SystemDictionary::find_java_mirror_for_type(signature, k, SignatureStream::NCDFError, CHECK_(Handle()));
-
-  // Special tracing logic for resolution of class names during reflection.
-  if (log_is_enabled(Debug, class, resolve)) {
-    Klass* result = java_lang_Class::as_Klass(mirror());
-    if (result != NULL) {
-      trace_class_resolution(result);
-    }
+  // Basic types
+  BasicType type = vmSymbols::signature_type(signature);
+  if (type != T_OBJECT) {
+    return Handle(THREAD, Universe::java_mirror(type));
   }
 
-  return mirror;
+  Klass* result =
+    SystemDictionary::resolve_or_fail(signature,
+                                      Handle(THREAD, k->class_loader()),
+                                      Handle(THREAD, k->protection_domain()),
+                                      true, CHECK_(Handle()));
+
+  if (log_is_enabled(Debug, class, resolve)) {
+    trace_class_resolution(result);
+  }
+
+  oop nt = result->java_mirror();
+  return Handle(THREAD, nt);
 }
 
 

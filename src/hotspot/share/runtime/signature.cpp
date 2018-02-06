@@ -392,19 +392,11 @@ Klass* SignatureStream::as_klass(Handle class_loader, Handle protection_domain,
 
 oop SignatureStream::as_java_mirror(Handle class_loader, Handle protection_domain,
                                     FailureMode failure_mode, TRAPS) {
-  if (raw_length() == 1) {
-    // short-cut in a common case
-    return SystemDictionary::find_java_mirror_for_type((char) raw_byte_at(0));
-  }
-  TempNewSymbol signature = SymbolTable::new_symbol(_signature, _begin, _end, CHECK_NULL);
-  Klass* no_accessing_klass = NULL;
-  Handle mirror = SystemDictionary::find_java_mirror_for_type(signature,
-                                                              no_accessing_klass,
-                                                              class_loader,
-                                                              protection_domain,
-                                                              failure_mode,
-                                                              CHECK_NULL);
-  return mirror();
+  if (!is_object())
+    return Universe::java_mirror(type());
+  Klass* klass = as_klass(class_loader, protection_domain, failure_mode, CHECK_NULL);
+  if (klass == NULL)  return NULL;
+  return klass->java_mirror();
 }
 
 Symbol* SignatureStream::as_symbol_or_null() {
