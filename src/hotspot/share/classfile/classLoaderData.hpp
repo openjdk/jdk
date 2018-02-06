@@ -80,6 +80,9 @@ class ClassLoaderDataGraph : public AllStatic {
   // allocations until class unloading
   static bool _metaspace_oom;
 
+  static volatile size_t  _num_instance_classes;
+  static volatile size_t  _num_array_classes;
+
   static ClassLoaderData* add(Handle class_loader, bool anonymous, TRAPS);
   static void post_class_unload_events();
  public:
@@ -154,6 +157,15 @@ class ClassLoaderDataGraph : public AllStatic {
   static void print_creation(outputStream* out, Handle loader, ClassLoaderData* cld, TRAPS);
 
   static bool unload_list_contains(const void* x);
+
+  // instance and array class counters
+  static inline size_t num_instance_classes();
+  static inline size_t num_array_classes();
+  static inline void inc_instance_classes(size_t count);
+  static inline void dec_instance_classes(size_t count);
+  static inline void inc_array_classes(size_t count);
+  static inline void dec_array_classes(size_t count);
+
 #ifndef PRODUCT
   static bool contains_loader_data(ClassLoaderData* loader_data);
 #endif
