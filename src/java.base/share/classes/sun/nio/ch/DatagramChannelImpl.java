@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,32 @@ package sun.nio.ch;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.net.*;
+import java.net.DatagramSocket;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.PortUnreachableException;
+import java.net.ProtocolFamily;
+import java.net.SocketAddress;
+import java.net.SocketOption;
+import java.net.StandardProtocolFamily;
+import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
-import java.nio.channels.*;
-import java.nio.channels.spi.*;
-import java.util.*;
+import java.nio.channels.AlreadyBoundException;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.DatagramChannel;
+import java.nio.channels.MembershipKey;
+import java.nio.channels.NotYetConnectedException;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.UnsupportedAddressTypeException;
+import java.nio.channels.spi.SelectorProvider;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
+
 import sun.net.ResourceManager;
 import sun.net.ext.ExtendedSocketOptions;
 
@@ -67,10 +88,10 @@ class DatagramChannelImpl
     private int cachedSenderPort;
 
     // Lock held by current reading or connecting thread
-    private final Object readLock = new Object();
+    private final ReentrantLock readLock = new ReentrantLock();
 
     // Lock held by current writing or connecting thread
-    private final Object writeLock = new Object();
+    private final ReentrantLock writeLock = new ReentrantLock();
 
     // Lock held by any thread that modifies the state fields declared below
     // DO NOT invoke a blocking I/O operation while holding this lock!
@@ -328,7 +349,8 @@ class DatagramChannelImpl
     public SocketAddress receive(ByteBuffer dst) throws IOException {
         if (dst.isReadOnly())
             throw new IllegalArgumentException("Read-only buffer");
-        synchronized (readLock) {
+        readLock.lock();
+        try {
             ensureOpen();
             // Socket was not bound before attempting receive
             if (localAddress() == null)
@@ -348,6 +370,8 @@ class DatagramChannelImpl
                     if (n == IOStatus.UNAVAILABLE)
                         return null;
                 } else {
+                    // Cannot receive into user's buffer when running with a
+                    // security manager and not connected
                     bb = Util.getTemporaryDirectBuffer(dst.remaining());
                     for (;;) {
                         do {
@@ -379,6 +403,8 @@ class DatagramChannelImpl
                 end((n > 0) || (n == IOStatus.UNAVAILABLE));
                 assert IOStatus.check(n);
             }
+        } finally {
+            readLock.unlock();
         }
     }
 
@@ -425,7 +451,8 @@ class DatagramChannelImpl
         if (src == null)
             throw new NullPointerException();
 
-        synchronized (writeLock) {
+        writeLock.lock();
+        try {
             ensureOpen();
             InetSocketAddress isa = Net.checkAddress(target);
             InetAddress ia = isa.getAddress();
@@ -474,6 +501,8 @@ class DatagramChannelImpl
                 end((n > 0) || (n == IOStatus.UNAVAILABLE));
                 assert IOStatus.check(n);
             }
+        } finally {
+            writeLock.unlock();
         }
     }
 
@@ -534,7 +563,8 @@ class DatagramChannelImpl
     public int read(ByteBuffer buf) throws IOException {
         if (buf == null)
             throw new NullPointerException();
-        synchronized (readLock) {
+        readLock.lock();
+        try {
             synchronized (stateLock) {
                 ensureOpen();
                 if (!isConnected())
@@ -555,6 +585,8 @@ class DatagramChannelImpl
                 end((n > 0) || (n == IOStatus.UNAVAILABLE));
                 assert IOStatus.check(n);
             }
+        } finally {
+            readLock.unlock();
         }
     }
 
@@ -563,7 +595,8 @@ class DatagramChannelImpl
     {
         if ((offset < 0) || (length < 0) || (offset > dsts.length - length))
             throw new IndexOutOfBoundsException();
-        synchronized (readLock) {
+        readLock.lock();
+        try {
             synchronized (stateLock) {
                 ensureOpen();
                 if (!isConnected())
@@ -584,13 +617,16 @@ class DatagramChannelImpl
                 end((n > 0) || (n == IOStatus.UNAVAILABLE));
                 assert IOStatus.check(n);
             }
+        } finally {
+            readLock.unlock();
         }
     }
 
     public int write(ByteBuffer buf) throws IOException {
         if (buf == null)
             throw new NullPointerException();
-        synchronized (writeLock) {
+        writeLock.lock();
+        try {
             synchronized (stateLock) {
                 ensureOpen();
                 if (!isConnected())
@@ -611,6 +647,8 @@ class DatagramChannelImpl
                 end((n > 0) || (n == IOStatus.UNAVAILABLE));
                 assert IOStatus.check(n);
             }
+        } finally {
+            writeLock.unlock();
         }
     }
 
@@ -619,7 +657,8 @@ class DatagramChannelImpl
     {
         if ((offset < 0) || (length < 0) || (offset > srcs.length - length))
             throw new IndexOutOfBoundsException();
-        synchronized (writeLock) {
+        writeLock.lock();
+        try {
             synchronized (stateLock) {
                 ensureOpen();
                 if (!isConnected())
@@ -640,6 +679,8 @@ class DatagramChannelImpl
                 end((n > 0) || (n == IOStatus.UNAVAILABLE));
                 assert IOStatus.check(n);
             }
+        } finally {
+            writeLock.unlock();
         }
     }
 
@@ -661,8 +702,10 @@ class DatagramChannelImpl
 
     @Override
     public DatagramChannel bind(SocketAddress local) throws IOException {
-        synchronized (readLock) {
-            synchronized (writeLock) {
+        readLock.lock();
+        try {
+            writeLock.lock();
+            try {
                 synchronized (stateLock) {
                     ensureOpen();
                     if (localAddress != null)
@@ -692,7 +735,11 @@ class DatagramChannelImpl
                     Net.bind(family, fd, isa.getAddress(), isa.getPort());
                     localAddress = Net.localAddress(fd);
                 }
+            } finally {
+                writeLock.unlock();
             }
+        } finally {
+            readLock.unlock();
         }
         return this;
     }
@@ -714,8 +761,10 @@ class DatagramChannelImpl
 
     @Override
     public DatagramChannel connect(SocketAddress sa) throws IOException {
-        synchronized(readLock) {
-            synchronized(writeLock) {
+        readLock.lock();
+        try {
+            writeLock.lock();
+            try {
                 synchronized (stateLock) {
                     ensureOpenAndUnconnected();
                     InetSocketAddress isa = Net.checkAddress(sa);
@@ -759,14 +808,20 @@ class DatagramChannelImpl
                         }
                     }
                 }
+            } finally {
+                writeLock.unlock();
             }
+        } finally {
+            readLock.unlock();
         }
         return this;
     }
 
     public DatagramChannel disconnect() throws IOException {
-        synchronized(readLock) {
-            synchronized(writeLock) {
+        readLock.lock();
+        try {
+            writeLock.lock();
+            try {
                 synchronized (stateLock) {
                     if (!isConnected() || !isOpen())
                         return this;
@@ -783,7 +838,11 @@ class DatagramChannelImpl
                     // refresh local address
                     localAddress = Net.localAddress(fd);
                 }
+            } finally {
+                writeLock.unlock();
             }
+        } finally {
+            readLock.unlock();
         }
         return this;
     }
@@ -1087,7 +1146,8 @@ class DatagramChannelImpl
     int poll(int events, long timeout) throws IOException {
         assert Thread.holdsLock(blockingLock()) && !isBlocking();
 
-        synchronized (readLock) {
+        readLock.lock();
+        try {
             int n = 0;
             try {
                 begin();
@@ -1102,6 +1162,8 @@ class DatagramChannelImpl
                 end(n > 0);
             }
             return n;
+        } finally {
+            readLock.unlock();
         }
     }
 
