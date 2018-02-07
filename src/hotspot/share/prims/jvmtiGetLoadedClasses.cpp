@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,9 @@
 #include "prims/jvmtiGetLoadedClasses.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/stack.inline.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc/g1/g1SATBCardTableModRefBS.hpp"
+#endif
 
 
 // The closure for GetLoadedClasses
@@ -38,6 +41,20 @@ private:
   JvmtiEnv* _env;
   Thread*   _cur_thread;
 
+// Tell the GC to keep this klass alive
+static void ensure_klass_alive(oop o) {
+  // A klass that was previously considered dead can be looked up in the
+  // CLD/SD, and its _java_mirror or _class_loader can be stored in a root
+  // or a reachable object making it alive again. The SATB part of G1 needs
+  // to get notified about this potential resurrection, otherwise the marking
+  // might not find the object.
+#if INCLUDE_ALL_GCS
+  if (UseG1GC && o != NULL) {
+    G1SATBCardTableModRefBS::enqueue(o);
+  }
+#endif
+}
+
 public:
   LoadedClassesClosure(Thread* thread, JvmtiEnv* env) : _cur_thread(thread), _env(env) {
     assert(_cur_thread == Thread::current(), "must be current thread");
@@ -46,6 +63,7 @@ public:
   void do_klass(Klass* k) {
     // Collect all jclasses
     _classStack.push((jclass) _env->jni_reference(Handle(_cur_thread, k->java_mirror())));
+    ensure_klass_alive(k->java_mirror());
   }
 
   int extract(jclass* result_list) {
