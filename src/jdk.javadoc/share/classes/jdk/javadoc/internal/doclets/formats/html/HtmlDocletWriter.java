@@ -572,8 +572,8 @@ public class HtmlDocletWriter {
             } else {
                 tree.addContent(navDiv);
             }
-            Content ulNav = HtmlTree.UL(HtmlStyle.navList, getNavLinkPrevious(), getNavLinkNext());
-            Content subDiv = HtmlTree.DIV(HtmlStyle.subNav, ulNav);
+            HtmlTree subDiv = new HtmlTree(HtmlTag.DIV);
+            subDiv.setStyle(HtmlStyle.subNav);
             if (configuration.frames) {
                 Content ulFrames = HtmlTree.UL(HtmlStyle.navList,
                     getNavShowLists(), getNavHideLists(filename));
@@ -617,26 +617,6 @@ public class HtmlDocletWriter {
                 htmlTree.addContent(tree);
             }
         }
-    }
-
-    /**
-     * Get the word "NEXT" to indicate that no link is available.  Override
-     * this method to customize next link.
-     *
-     * @return a content tree for the link
-     */
-    protected Content getNavLinkNext() {
-        return getNavLinkNext(null);
-    }
-
-    /**
-     * Get the word "PREV" to indicate that no link is available.  Override
-     * this method to customize prev link.
-     *
-     * @return a content tree for the link
-     */
-    protected Content getNavLinkPrevious() {
-        return getNavLinkPrevious(null);
     }
 
     /**
@@ -708,39 +688,6 @@ public class HtmlDocletWriter {
      */
     protected Content getNavLinkClassUse() {
         Content li = HtmlTree.LI(contents.useLabel);
-        return li;
-    }
-
-    /**
-     * Get link for previous file.
-     *
-     * @param prev File name for the prev link
-     * @return a content tree for the link
-     */
-    public Content getNavLinkPrevious(DocPath prev) {
-        Content li;
-        if (prev != null) {
-            li = HtmlTree.LI(links.createLink(prev, contents.prevLabel, "", ""));
-        }
-        else
-            li = HtmlTree.LI(contents.prevLabel);
-        return li;
-    }
-
-    /**
-     * Get link for next file.  If next is null, just print the label
-     * without linking it anywhere.
-     *
-     * @param next File name for the next link
-     * @return a content tree for the link
-     */
-    public Content getNavLinkNext(DocPath next) {
-        Content li;
-        if (next != null) {
-            li = HtmlTree.LI(links.createLink(next, contents.nextLabel, "", ""));
-        }
-        else
-            li = HtmlTree.LI(contents.nextLabel);
         return li;
     }
 

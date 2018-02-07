@@ -59,50 +59,38 @@ public interface WriterFactory {
      * Return the writer for the package summary.
      *
      * @param packageElement the package being documented.
-     * @param prevPkg the previous package that was documented.
-     * @param nextPkg the next package being documented.
      * @return the writer for the package summary.  Return null if this
      * writer is not supported by the doclet.
      */
-    public abstract PackageSummaryWriter getPackageSummaryWriter(PackageElement
-        packageElement, PackageElement prevPkg, PackageElement nextPkg);
+    public abstract PackageSummaryWriter getPackageSummaryWriter(PackageElement packageElement);
 
     /**
      * Return the writer for the module summary.
      *
      * @param mdle the module being documented.
-     * @param prevModule the previous module that was documented.
-     * @param nextModule the next module being documented.
      * @return the writer for the module summary.  Return null if this
      * writer is not supported by the doclet.
      */
-    public abstract ModuleSummaryWriter getModuleSummaryWriter(
-        ModuleElement mdle, ModuleElement prevModule, ModuleElement nextModule);
+    public abstract ModuleSummaryWriter getModuleSummaryWriter(ModuleElement mdle);
 
     /**
      * Return the writer for a class.
      *
      * @param typeElement the class being documented.
-     * @param prevClass the previous class that was documented.
-     * @param nextClass the next class being documented.
      * @param classTree the class tree.
      * @return the writer for the class.  Return null if this
      * writer is not supported by the doclet.
      */
-    public abstract ClassWriter getClassWriter(TypeElement typeElement,
-        TypeElement prevClass, TypeElement nextClass, ClassTree classTree);
+    public abstract ClassWriter getClassWriter(TypeElement typeElement, ClassTree classTree);
 
     /**
      * Return the writer for an annotation type.
      *
      * @param annotationType the type being documented.
-     * @param prevType the previous type that was documented.
-     * @param nextType the next type being documented.
      * @return the writer for the annotation type.  Return null if this
      * writer is not supported by the doclet.
      */
-    public abstract AnnotationTypeWriter getAnnotationTypeWriter(
-        TypeElement annotationType, TypeMirror prevType, TypeMirror nextType);
+    public abstract AnnotationTypeWriter getAnnotationTypeWriter(TypeElement annotationType);
 
     /**
      * Return the method writer for a given class.

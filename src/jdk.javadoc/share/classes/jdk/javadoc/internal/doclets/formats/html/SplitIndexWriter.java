@@ -35,7 +35,6 @@ import java.util.TreeSet;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -60,16 +59,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
  */
 public class SplitIndexWriter extends AbstractIndexWriter {
 
-    /**
-     * Previous unicode character index in the built index.
-     */
-    protected int prev;
-
-    /**
-     * Next unicode character in the built index.
-     */
-    protected int next;
-
     private final List<Character> indexElements;
 
     /**
@@ -80,18 +69,13 @@ public class SplitIndexWriter extends AbstractIndexWriter {
      * @param path       Path to the file which is getting generated.
      * @param indexbuilder Unicode based Index from {@link IndexBuilder}
      * @param elements the collection of characters for which to generate index files
-     * @param prev  the previous character that was indexed
-     * @param next  the next character to be indexed
      */
     public SplitIndexWriter(HtmlConfiguration configuration,
                             DocPath path,
                             IndexBuilder indexbuilder,
-                            Collection<Character> elements,
-                            int prev, int next) {
+                            Collection<Character> elements) {
         super(configuration, path, indexbuilder);
         this.indexElements = new ArrayList<>(elements);
-        this.prev = prev;
-        this.next = next;
     }
 
     /**
@@ -117,7 +101,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
             DocPath filename = DocPaths.indexN(li.nextIndex());
             SplitIndexWriter indexgen = new SplitIndexWriter(configuration,
                     path.resolve(filename),
-                    indexbuilder, keys, prev, next);
+                    indexbuilder, keys);
             indexgen.generateIndexFile((Character) ch);
             if (!li.hasNext()) {
                 indexgen.createSearchIndexFiles();
@@ -180,42 +164,6 @@ public class SplitIndexWriter extends AbstractIndexWriter {
             contentTree.addContent(links.createLink(DocPaths.indexN(j),
                     new StringContent(indexElements.get(i).toString())));
             contentTree.addContent(Contents.SPACE);
-        }
-    }
-
-    /**
-     * Get link to the previous unicode character.
-     *
-     * @return a content tree for the link
-     */
-    @Override
-    public Content getNavLinkPrevious() {
-        Content prevletterLabel = contents.prevLetter;
-        if (prev == -1) {
-            return HtmlTree.LI(prevletterLabel);
-        }
-        else {
-            Content prevLink = links.createLink(DocPaths.indexN(prev),
-                    prevletterLabel);
-            return HtmlTree.LI(prevLink);
-        }
-    }
-
-    /**
-     * Get link to the next unicode character.
-     *
-     * @return a content tree for the link
-     */
-    @Override
-    public Content getNavLinkNext() {
-        Content nextletterLabel = contents.nextLetter;
-        if (next == -1) {
-            return HtmlTree.LI(nextletterLabel);
-        }
-        else {
-            Content nextLink = links.createLink(DocPaths.indexN(next),
-                    nextletterLabel);
-            return HtmlTree.LI(nextLink);
         }
     }
 }
