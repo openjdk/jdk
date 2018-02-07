@@ -85,7 +85,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
      */
     public ClassWriterImpl(HtmlConfiguration configuration, TypeElement typeElement,
                            ClassTree classTree) {
-        super(configuration, DocPath.forClass(configuration.utils, typeElement));
+        super(configuration, configuration.docPaths.forClass(typeElement));
         this.typeElement = typeElement;
         configuration.currentTypeElement = typeElement;
         this.classtree = classTree;

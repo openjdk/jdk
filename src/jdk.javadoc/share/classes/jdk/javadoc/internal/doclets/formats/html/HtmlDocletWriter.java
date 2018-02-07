@@ -155,6 +155,8 @@ public class HtmlDocletWriter {
 
     protected final Links links;
 
+    protected final DocPaths docPaths;
+
     /**
      * To check whether annotation heading is printed or not.
      */
@@ -202,6 +204,7 @@ public class HtmlDocletWriter {
         this.path = path;
         this.pathToRoot = path.parent().invert();
         this.filename = path.basename();
+        this.docPaths = configuration.docPaths;
 
         messages.notice("doclet.Generating_0",
             DocFile.createFileForOutput(configuration, path).getPath());
@@ -399,7 +402,7 @@ public class HtmlDocletWriter {
      */
     public Content getTargetModuleLink(String target, Content label, ModuleElement mdle) {
         return links.createLink(pathToRoot.resolve(
-                DocPaths.moduleSummary(mdle)), label, "", target);
+                docPaths.moduleSummary(mdle)), label, "", target);
     }
 
     /**
@@ -896,7 +899,7 @@ public class HtmlDocletWriter {
      * @param name File name, to which path string is.
      */
     protected DocPath pathString(PackageElement packageElement, DocPath name) {
-        return pathToRoot.resolve(DocPath.forPackage(packageElement).resolve(name));
+        return pathToRoot.resolve(docPaths.forPackage(packageElement).resolve(name));
     }
 
     /**
@@ -968,7 +971,7 @@ public class HtmlDocletWriter {
     public Content getModuleLink(ModuleElement mdle, Content label) {
         boolean included = utils.isIncluded(mdle);
         return (included)
-                ? links.createLink(pathToRoot.resolve(DocPaths.moduleSummary(mdle)), label, "", "")
+                ? links.createLink(pathToRoot.resolve(docPaths.moduleSummary(mdle)), label, "", "")
                 : label;
     }
 
@@ -997,7 +1000,7 @@ public class HtmlDocletWriter {
         }
         DocPath href = pathToRoot
                 .resolve(DocPaths.SOURCE_OUTPUT)
-                .resolve(DocPath.forClass(utils, te));
+                .resolve(docPaths.forClass(te));
         Content linkContent = links.createLink(href
                 .fragment(SourceToHTMLConverter.getAnchorName(utils, typeElement)), label, "", "");
         htmltree.addContent(linkContent);
@@ -1086,7 +1089,7 @@ public class HtmlDocletWriter {
 
     public DocLink getCrossModuleLink(String mdleName) {
         return configuration.extern.getExternalLink(mdleName, pathToRoot,
-            DocPaths.moduleSummary(mdleName).getPath());
+            docPaths.moduleSummary(mdleName).getPath());
     }
 
     /**
@@ -1945,22 +1948,22 @@ public class HtmlDocletWriter {
         DocPath redirectPathFromRoot = new SimpleElementVisitor9<DocPath, Void>() {
             @Override
             public DocPath visitType(TypeElement e, Void p) {
-                return DocPath.forPackage(utils.containingPackage(e));
+                return docPaths.forPackage(utils.containingPackage(e));
             }
 
             @Override
             public DocPath visitPackage(PackageElement e, Void p) {
-                return DocPath.forPackage(e);
+                return docPaths.forPackage(e);
             }
 
             @Override
             public DocPath visitVariable(VariableElement e, Void p) {
-                return DocPath.forPackage(utils.containingPackage(e));
+                return docPaths.forPackage(utils.containingPackage(e));
             }
 
             @Override
             public DocPath visitExecutable(ExecutableElement e, Void p) {
-                return DocPath.forPackage(utils.containingPackage(e));
+                return docPaths.forPackage(utils.containingPackage(e));
             }
 
             @Override

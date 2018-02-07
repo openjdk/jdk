@@ -75,7 +75,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
      */
     public AnnotationTypeWriterImpl(HtmlConfiguration configuration,
             TypeElement annotationType) {
-        super(configuration, DocPath.forClass(configuration.utils, annotationType));
+        super(configuration, configuration.docPaths.forClass(annotationType));
         this.annotationType = annotationType;
         configuration.currentTypeElement = annotationType;
     }

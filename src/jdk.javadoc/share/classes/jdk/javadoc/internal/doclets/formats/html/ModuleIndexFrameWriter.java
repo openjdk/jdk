@@ -114,9 +114,9 @@ public class ModuleIndexFrameWriter extends AbstractModuleIndexWriter {
     }
 
     private Content getModuleFramesHyperLink(ModuleElement mdle, Content label, String target) {
-        DocLink mdlLink = new DocLink(DocPaths.moduleFrame(mdle));
-        DocLink mtFrameLink = new DocLink(DocPaths.moduleTypeFrame(mdle));
-        DocLink cFrameLink = new DocLink(DocPaths.moduleSummary(mdle));
+        DocLink mdlLink = new DocLink(docPaths.moduleFrame(mdle));
+        DocLink mtFrameLink = new DocLink(docPaths.moduleTypeFrame(mdle));
+        DocLink cFrameLink = new DocLink(docPaths.moduleSummary(mdle));
         HtmlTree anchor = HtmlTree.A(mdlLink.toString(), label);
         String onclickStr = "updateModuleFrame('" + mtFrameLink + "','" + cFrameLink + "');";
         anchor.addAttr(HtmlAttr.TARGET, target);

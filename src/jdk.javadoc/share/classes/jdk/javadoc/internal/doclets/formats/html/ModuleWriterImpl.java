@@ -178,7 +178,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * @param mdle        Module under consideration.
      */
     public ModuleWriterImpl(HtmlConfiguration configuration, ModuleElement mdle) {
-        super(configuration, DocPaths.moduleSummary(mdle));
+        super(configuration, configuration.docPaths.moduleSummary(mdle));
         this.mdle = mdle;
         this.moduleMode = configuration.docEnv.getModuleMode();
         computeModulesData();

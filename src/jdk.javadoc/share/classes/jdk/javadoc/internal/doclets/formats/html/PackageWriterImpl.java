@@ -91,8 +91,8 @@ public class PackageWriterImpl extends HtmlDocletWriter
      * @param packageElement    PackageElement under consideration.
      */
     public PackageWriterImpl(HtmlConfiguration configuration, PackageElement packageElement) {
-        super(configuration, DocPath
-                .forPackage(packageElement)
+        super(configuration,
+                configuration.docPaths.forPackage(packageElement)
                 .resolve(DocPaths.PACKAGE_SUMMARY));
         this.packageElement = packageElement;
     }

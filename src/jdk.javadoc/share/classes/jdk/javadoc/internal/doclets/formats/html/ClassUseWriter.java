@@ -233,9 +233,9 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     public static void generate(HtmlConfiguration configuration, ClassUseMapper mapper,
                                 TypeElement typeElement) throws DocFileIOException {
         ClassUseWriter clsgen;
-        DocPath path = DocPath.forPackage(configuration.utils, typeElement)
+        DocPath path = configuration.docPaths.forPackage(typeElement)
                               .resolve(DocPaths.CLASS_USE)
-                              .resolve(DocPath.forName(configuration.utils, typeElement));
+                              .resolve(configuration.docPaths.forName( typeElement));
         clsgen = new ClassUseWriter(configuration, mapper, path, typeElement);
         clsgen.generateClassUseFile();
     }

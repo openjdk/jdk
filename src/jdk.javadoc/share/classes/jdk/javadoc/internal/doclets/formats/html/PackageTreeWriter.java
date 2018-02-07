@@ -82,7 +82,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
     public static void generate(HtmlConfiguration configuration,
                                 PackageElement pkg, boolean noDeprecated)
             throws DocFileIOException {
-        DocPath path = DocPath.forPackage(pkg).resolve(DocPaths.PACKAGE_TREE);
+        DocPath path = configuration.docPaths.forPackage(pkg).resolve(DocPaths.PACKAGE_TREE);
         PackageTreeWriter packgen = new PackageTreeWriter(configuration, path, pkg);
         packgen.generatePackageTreeFile();
     }

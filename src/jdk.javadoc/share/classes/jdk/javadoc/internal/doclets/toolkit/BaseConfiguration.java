@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,8 +65,7 @@ import static javax.tools.Diagnostic.Kind.*;
 /**
  * Configure the output based on the options. Doclets should sub-class
  * BaseConfiguration, to configure and add their own options. This class contains
- * all user options which are supported by the 1.1 doclet and the standard
- * doclet.
+ * all user options which are supported by the standard doclet.
  * <p>
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.
