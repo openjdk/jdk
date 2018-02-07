@@ -122,35 +122,40 @@ template <typename T> int subsystem_file_contents(CgroupSubsystem* c,
   char file[MAXPATHLEN+1];
   char buf[MAXPATHLEN+1];
 
-  if (c != NULL && c->subsystem_path() != NULL) {
-    strncpy(file, c->subsystem_path(), MAXPATHLEN);
-    file[MAXPATHLEN-1] = '\0';
-    int filelen = strlen(file);
-    if ((filelen + strlen(filename)) > (MAXPATHLEN-1)) {
-       log_debug(os, container)("File path too long %s, %s", file, filename);
-       return OSCONTAINER_ERROR;
-    }
-    strncat(file, filename, MAXPATHLEN-filelen);
-    log_trace(os, container)("Path to %s is %s", filename, file);
-    fp = fopen(file, "r");
-    if (fp != NULL) {
-      p = fgets(buf, MAXPATHLEN, fp);
-      if (p != NULL) {
-        int matched = sscanf(p, scan_fmt, returnval);
-        if (matched == 1) {
-          fclose(fp);
-          return 0;
-        } else {
-          log_debug(os, container)("Type %s not found in file %s",
-                                     scan_fmt , file);
-        }
+  if (c == NULL) {
+    log_debug(os, container)("subsystem_file_contents: CgroupSubsytem* is NULL");
+    return OSCONTAINER_ERROR;
+  }
+  if (c->subsystem_path() == NULL) {
+    log_debug(os, container)("subsystem_file_contents: subsystem path is NULL");
+    return OSCONTAINER_ERROR;
+  }
+
+  strncpy(file, c->subsystem_path(), MAXPATHLEN);
+  file[MAXPATHLEN-1] = '\0';
+  int filelen = strlen(file);
+  if ((filelen + strlen(filename)) > (MAXPATHLEN-1)) {
+    log_debug(os, container)("File path too long %s, %s", file, filename);
+    return OSCONTAINER_ERROR;
+  }
+  strncat(file, filename, MAXPATHLEN-filelen);
+  log_trace(os, container)("Path to %s is %s", filename, file);
+  fp = fopen(file, "r");
+  if (fp != NULL) {
+    p = fgets(buf, MAXPATHLEN, fp);
+    if (p != NULL) {
+      int matched = sscanf(p, scan_fmt, returnval);
+      if (matched == 1) {
+        fclose(fp);
+        return 0;
       } else {
-        log_debug(os, container)("Empty file %s", file);
+        log_debug(os, container)("Type %s not found in file %s", scan_fmt, file);
       }
     } else {
-      log_debug(os, container)("Open of file %s failed, %s", file,
-                               os::strerror(errno));
+      log_debug(os, container)("Empty file %s", file);
     }
+  } else {
+    log_debug(os, container)("Open of file %s failed, %s", file, os::strerror(errno));
   }
   if (fp != NULL)
     fclose(fp);
@@ -273,7 +278,7 @@ void OSContainer::init() {
         else {
           log_debug(os, container)("Incompatible str containing cgroup and cpuset: %s", p);
         }
-      } else if (strstr(p, "cpu,cpuacct") != NULL) {
+      } else if (strstr(p, "cpu,cpuacct") != NULL || strstr(p, "cpuacct,cpu") != NULL) {
         int matched = sscanf(p, "%d %d %d:%d %s %s",
                              &mountid,
                              &parentid,
@@ -322,8 +327,20 @@ void OSContainer::init() {
 
   fclose(mntinfo);
 
-  if (memory == NULL || cpuset == NULL || cpu == NULL || cpuacct == NULL) {
-    log_debug(os, container)("Required cgroup subsystems not found");
+  if (memory == NULL) {
+    log_debug(os, container)("Required cgroup memory subsystem not found");
+    return;
+  }
+  if (cpuset == NULL) {
+    log_debug(os, container)("Required cgroup cpuset subsystem not found");
+    return;
+  }
+  if (cpu == NULL) {
+    log_debug(os, container)("Required cgroup cpu subsystem not found");
+    return;
+  }
+  if (cpuacct == NULL) {
+    log_debug(os, container)("Required cgroup cpuacct subsystem not found");
     return;
   }
 
@@ -374,7 +391,7 @@ void OSContainer::init() {
         memory->set_subsystem_path(base);
       } else if (strstr(controller, "cpuset") != NULL) {
         cpuset->set_subsystem_path(base);
-      } else if (strstr(controller, "cpu,cpuacct") != NULL) {
+      } else if (strstr(controller, "cpu,cpuacct") != NULL || strstr(controller, "cpuacct,cpu") != NULL) {
         cpu->set_subsystem_path(base);
         cpuacct->set_subsystem_path(base);
       } else if (strstr(controller, "cpuacct") != NULL) {
