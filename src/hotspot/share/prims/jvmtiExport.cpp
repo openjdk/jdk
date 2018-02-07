@@ -597,12 +597,10 @@ void JvmtiExport::enter_primordial_phase() {
 }
 
 void JvmtiExport::enter_early_start_phase() {
-  JvmtiManageCapabilities::recompute_always_capabilities();
   set_early_vmstart_recorded(true);
 }
 
 void JvmtiExport::enter_start_phase() {
-  JvmtiManageCapabilities::recompute_always_capabilities();
   JvmtiEnvBase::set_phase(JVMTI_PHASE_START);
 }
 
