@@ -80,9 +80,6 @@
 #include "trace/tracing.hpp"
 #endif
 
-volatile size_t ClassLoaderDataGraph::_num_array_classes = 0;
-volatile size_t ClassLoaderDataGraph::_num_instance_classes = 0;
-
 ClassLoaderData * ClassLoaderData::_the_null_class_loader_data = NULL;
 
 ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous, Dependencies dependencies) :
@@ -446,11 +443,6 @@ void ClassLoaderData::add_class(Klass* k, bool publicize /* true */) {
     // Link the new item into the list, making sure the linked class is stable
     // since the list can be walked without a lock
     OrderAccess::release_store(&_klasses, k);
-    if (k->is_array_klass()) {
-      ClassLoaderDataGraph::inc_array_classes(1);
-    } else {
-      ClassLoaderDataGraph::inc_instance_classes(1);
-    }
   }
 
   if (publicize && k->class_loader_data() != NULL) {
@@ -476,7 +468,7 @@ class ClassLoaderDataGraphKlassIteratorStatic {
 
   InstanceKlass* try_get_next_class() {
     assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
-    int max_classes = ClassLoaderDataGraph::num_instance_classes();
+    int max_classes = InstanceKlass::number_of_instance_classes();
     assert(max_classes > 0, "should not be called with no instance classes");
     for (int i = 0; i < max_classes; ) {
 
@@ -553,13 +545,6 @@ void ClassLoaderData::remove_class(Klass* scratch_class) {
         Klass* next = k->next_link();
         prev->set_next_link(next);
       }
-
-      if (k->is_array_klass()) {
-        ClassLoaderDataGraph::dec_array_classes(1);
-      } else {
-        ClassLoaderDataGraph::dec_instance_classes(1);
-      }
-
       return;
     }
     prev = k;
@@ -654,34 +639,9 @@ bool ClassLoaderData::is_alive(BoolObjectClosure* is_alive_closure) const {
   return alive;
 }
 
-class ReleaseKlassClosure: public KlassClosure {
-private:
-  size_t  _instance_class_released;
-  size_t  _array_class_released;
-public:
-  ReleaseKlassClosure() : _instance_class_released(0), _array_class_released(0) { }
-
-  size_t instance_class_released() const { return _instance_class_released; }
-  size_t array_class_released()    const { return _array_class_released;    }
-
-  void do_klass(Klass* k) {
-    if (k->is_array_klass()) {
-      _array_class_released ++;
-    } else {
-      assert(k->is_instance_klass(), "Must be");
-      _instance_class_released ++;
-      InstanceKlass::release_C_heap_structures(InstanceKlass::cast(k));
-    }
-  }
-};
-
 ClassLoaderData::~ClassLoaderData() {
   // Release C heap structures for all the classes.
-  ReleaseKlassClosure cl;
-  classes_do(&cl);
-
-  ClassLoaderDataGraph::dec_array_classes(cl.array_class_released());
-  ClassLoaderDataGraph::dec_instance_classes(cl.instance_class_released());
+  classes_do(InstanceKlass::release_C_heap_structures);
 
   // Release C heap allocated hashtable for all the packages.
   if (_packages != NULL) {
