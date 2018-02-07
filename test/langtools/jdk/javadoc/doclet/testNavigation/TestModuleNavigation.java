@@ -82,23 +82,23 @@ public class TestModuleNavigation extends JavadocTester {
                 "Prev",
                 "Next");
 
-        checkOutput("m-summary.html", false,
+        checkOutput("m/module-summary.html", false,
                 "Prev&nbsp;Module",
                 "Next&nbsp;Module");
 
-        checkOutput("m2p1/package-summary.html", false,
+        checkOutput("m2/m2p1/package-summary.html", false,
                 "Prev&nbsp;Package",
                 "Next&nbsp;Package");
 
-        checkOutput("m2p1/Am2.html", false,
+        checkOutput("m2/m2p1/Am2.html", false,
                 "Prev&nbsp;Class",
                 "Next&nbsp;Class");
 
-        checkOutput("m2p1/class-use/Am2.html", false,
+        checkOutput("m2/m2p1/class-use/Am2.html", false,
                 "Prev",
                 "Next");
 
-        checkOutput("m2p1/package-tree.html", false,
+        checkOutput("m2/m2p1/package-tree.html", false,
                 "Prev",
                 "Next");
 

@@ -76,7 +76,7 @@ public class ModuleFrameWriter extends HtmlDocletWriter {
      * @param moduleElement moduleElement under consideration.
      */
     public ModuleFrameWriter(HtmlConfiguration configuration, ModuleElement moduleElement) {
-        super(configuration, DocPaths.moduleTypeFrame(moduleElement));
+        super(configuration, configuration.docPaths.moduleTypeFrame(moduleElement));
         this.mdle = moduleElement;
         if (configuration.getSpecifiedPackageElements().isEmpty()) {
             documentedClasses = new TreeSet<>(utils.makeGeneralPurposeComparator());
@@ -101,7 +101,7 @@ public class ModuleFrameWriter extends HtmlDocletWriter {
                 ? HtmlTree.MAIN()
                 : body;
         Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, HtmlStyle.bar,
-                mdlgen.links.createLink(DocPaths.moduleSummary(moduleElement), mdlLabel, "", "classFrame"));
+                mdlgen.links.createLink(configuration.docPaths.moduleSummary(moduleElement), mdlLabel, "", "classFrame"));
         htmlTree.addContent(heading);
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.setStyle(HtmlStyle.indexContainer);

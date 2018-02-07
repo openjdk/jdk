@@ -35,8 +35,9 @@ import javax.lang.model.type.TypeMirror;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
-import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.links.LinkFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.links.LinkInfo;
 
@@ -53,9 +54,12 @@ import jdk.javadoc.internal.doclets.toolkit.util.links.LinkInfo;
 public class LinkFactoryImpl extends LinkFactory {
 
     private final HtmlDocletWriter m_writer;
+    private final DocPaths docPaths;
 
     public LinkFactoryImpl(HtmlDocletWriter writer) {
+        super(writer.configuration.utils);
         m_writer = writer;
+        docPaths = writer.configuration.docPaths;
     }
 
     /**
@@ -72,7 +76,6 @@ public class LinkFactoryImpl extends LinkFactory {
     @Override
     protected Content getClassLink(LinkInfo linkInfo) {
         BaseConfiguration configuration = m_writer.configuration;
-        Utils utils = configuration.utils;
         LinkInfoImpl classLinkInfo = (LinkInfoImpl) linkInfo;
         boolean noLabel = linkInfo.label == null || linkInfo.label.isEmpty();
         TypeElement typeElement = classLinkInfo.typeElement;
@@ -84,14 +87,14 @@ public class LinkFactoryImpl extends LinkFactory {
                      utils.isTypeVariable(utils.getComponentType(classLinkInfo.type));
             title = getClassToolTip(typeElement, isTypeLink);
         }
-        Content label = classLinkInfo.getClassLinkLabel(m_writer.configuration);
+        Content label = classLinkInfo.getClassLinkLabel(configuration);
 
         Content link = new ContentBuilder();
         if (utils.isIncluded(typeElement)) {
             if (configuration.isGeneratedDoc(typeElement)) {
                 DocPath filename = getPath(classLinkInfo);
                 if (linkInfo.linkToSelf ||
-                                !(DocPath.forName(utils, typeElement)).equals(m_writer.filename)) {
+                                !(docPaths.forName(typeElement)).equals(m_writer.filename)) {
                         link.addContent(m_writer.links.createLink(
                                 filename.fragment(classLinkInfo.where),
                                 label,
@@ -140,7 +143,6 @@ public class LinkFactoryImpl extends LinkFactory {
 
     @Override
     public Content getTypeAnnotationLinks(LinkInfo linkInfo) {
-        Utils utils = ((LinkInfoImpl)linkInfo).utils;
         ContentBuilder links = new ContentBuilder();
         List<? extends AnnotationMirror> annotations;
         if (utils.isAnnotated(linkInfo.type)) {
@@ -191,22 +193,21 @@ public class LinkFactoryImpl extends LinkFactory {
      * @return the tool tip for the appropriate class.
      */
     private String getClassToolTip(TypeElement typeElement, boolean isTypeLink) {
-        BaseConfiguration configuration = m_writer.configuration;
-        Utils utils = configuration.utils;
+        Resources resources = m_writer.configuration.getResources();
         if (isTypeLink) {
-            return configuration.getText("doclet.Href_Type_Param_Title",
+            return resources.getText("doclet.Href_Type_Param_Title",
                     utils.getSimpleName(typeElement));
         } else if (utils.isInterface(typeElement)){
-            return configuration.getText("doclet.Href_Interface_Title",
+            return resources.getText("doclet.Href_Interface_Title",
                 utils.getPackageName(utils.containingPackage(typeElement)));
         } else if (utils.isAnnotationType(typeElement)) {
-            return configuration.getText("doclet.Href_Annotation_Title",
+            return resources.getText("doclet.Href_Annotation_Title",
                 utils.getPackageName(utils.containingPackage(typeElement)));
         } else if (utils.isEnum(typeElement)) {
-            return configuration.getText("doclet.Href_Enum_Title",
+            return resources.getText("doclet.Href_Enum_Title",
                 utils.getPackageName(utils.containingPackage(typeElement)));
         } else {
-            return configuration.getText("doclet.Href_Class_Title",
+            return resources.getText("doclet.Href_Class_Title",
                 utils.getPackageName(utils.containingPackage(typeElement)));
         }
     }
@@ -223,8 +224,8 @@ public class LinkFactoryImpl extends LinkFactory {
         if (linkInfo.context == LinkInfoImpl.Kind.PACKAGE_FRAME) {
             //Not really necessary to do this but we want to be consistent
             //with 1.4.2 output.
-            return DocPath.forName(linkInfo.utils, linkInfo.typeElement);
+            return docPaths.forName(linkInfo.typeElement);
         }
-        return m_writer.pathToRoot.resolve(DocPath.forClass(linkInfo.utils, linkInfo.typeElement));
+        return m_writer.pathToRoot.resolve(docPaths.forClass(linkInfo.typeElement));
     }
 }
