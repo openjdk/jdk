@@ -439,11 +439,11 @@ public class Resources_de extends java.util.ListResourceBundle {
 
         // 8171319: keytool should print out warnings when reading or
         // generating cert/cert req using weak algorithms
-        {"the.certificate.request", "Die Zertifikatsanforderung"},
+        {"the.certificate.request", "Die Zertifikatanforderung"},
         {"the.issuer", "Der Aussteller"},
         {"the.generated.certificate", "Das generierte Zertifikat"},
         {"the.generated.crl", "Die generierte CRL"},
-        {"the.generated.certificate.request", "Die generierte Zertifikatsanforderung"},
+        {"the.generated.certificate.request", "Die generierte Zertifikatanforderung"},
         {"the.certificate", "Das Zertifikat"},
         {"the.crl", "Die CRL"},
         {"the.tsa.certificate", "Das TSA-Zertifikat"},
@@ -459,7 +459,7 @@ public class Resources_de extends java.util.ListResourceBundle {
         {".PATTERN.printX509Cert.with.weak",
                 "Eigent\u00FCmer: {0}\nAussteller: {1}\nSeriennummer: {2}\nG\u00FCltig von: {3} bis: {4}\nZertifikatsfingerprints:\n\t SHA1: {5}\n\t SHA256: {6}\nSignaturalgorithmusname: {7}\nPublic Key-Algorithmus von Subject: {8}\nVersion: {9}"},
         {"PKCS.10.with.weak",
-                "PKCS #10-Zertifikatsanforderung (Version 1.0)\nSubject: %1$s\nFormat: %2$s\nPublic Key: %3$s\nSignaturalgorithmus: %4$s\n"},
+                "PKCS #10-Zertifikatanforderung (Version 1.0)\nSubject: %1$s\nFormat: %2$s\nPublic Key: %3$s\nSignaturalgorithmus: %4$s\n"},
         {"verified.by.s.in.s.weak", "Von %1$s in %2$s mit %3$s verifiziert"},
         {"whose.sigalg.risk", "%1$s verwendet den Signaturalgorithmus %2$s. Dies gilt als Sicherheitsrisiko."},
         {"whose.key.risk", "%1$s verwendet %2$s. Dies gilt als Sicherheitsrisiko."},
