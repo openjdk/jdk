@@ -37,7 +37,7 @@ import static java.util.Objects.requireNonNull;
  * unless the argument is specified to be unused or specified to accept a
  * {@code null} value.
  *
- * @since 10
+ * @since 11
  */
 public final class ConstantBootstraps {
     // implements the upcall from the JVM, MethodHandleNatives.linkDynamicConstant:
