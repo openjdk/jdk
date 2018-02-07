@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1417,7 +1417,6 @@ void os::print_memory_info(outputStream* st) {
 
   os::Aix::meminfo_t mi;
   if (os::Aix::get_meminfo(&mi)) {
-    char buffer[256];
     if (os::Aix::on_aix()) {
       st->print_cr("physical total : " SIZE_FORMAT, mi.real_total);
       st->print_cr("physical free  : " SIZE_FORMAT, mi.real_free);
@@ -1431,10 +1430,9 @@ void os::print_memory_info(outputStream* st) {
       // pgsp_free: size of system ASP times percentage of system ASP unused
       st->print_cr("physical total     : " SIZE_FORMAT, mi.real_total);
       st->print_cr("system asp total   : " SIZE_FORMAT, mi.pgsp_total);
-      st->print_cr("%% system asp used : " SIZE_FORMAT,
+      st->print_cr("%% system asp used : %.2f",
         mi.pgsp_total ? (100.0f * (mi.pgsp_total - mi.pgsp_free) / mi.pgsp_total) : -1.0f);
     }
-    st->print_raw(buffer);
   }
   st->cr();
 
