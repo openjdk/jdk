@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,8 +205,8 @@ public class PolicyParser {
                     if (!domainEntries.containsKey(domainName)) {
                         domainEntries.put(domainName, de);
                     } else {
-                        LocalizedMessage localizedMsg =
-                            new LocalizedMessage("duplicate.keystore.domain.name");
+                        LocalizedMessage localizedMsg = new LocalizedMessage(
+                            "duplicate.keystore.domain.name");
                         Object[] source = {domainName};
                         String msg = "duplicate keystore domain name: " +
                                      domainName;
@@ -220,7 +220,7 @@ public class PolicyParser {
         }
 
         if (keyStoreUrlString == null && storePassURL != null) {
-            throw new ParsingException(LocalizedMessage.getMessage
+            throw new ParsingException(LocalizedMessage.getNonlocalized
                 ("keystorePasswordURL.can.not.be.specified.without.also.specifying.keystore"));
         }
     }
@@ -362,7 +362,7 @@ public class PolicyParser {
             keyStoreType = match("quoted string");
         } else {
             throw new ParsingException(st.lineno(),
-                LocalizedMessage.getMessage("expected.keystore.type"));
+                LocalizedMessage.getNonlocalized("expected.keystore.type"));
         }
 
         // parse keystore provider
@@ -375,7 +375,7 @@ public class PolicyParser {
             keyStoreProvider = match("quoted string");
         } else {
             throw new ParsingException(st.lineno(),
-                LocalizedMessage.getMessage("expected.keystore.provider"));
+                LocalizedMessage.getNonlocalized("expected.keystore.provider"));
         }
     }
 
@@ -425,7 +425,7 @@ public class PolicyParser {
                 if (e.codeBase != null)
                     throw new ParsingException(
                             st.lineno(),
-                            LocalizedMessage.getMessage
+                            LocalizedMessage.getNonlocalized
                                 ("multiple.Codebase.expressions"));
                 e.codeBase = match("quoted string");
                 peekAndMatch(",");
@@ -433,7 +433,7 @@ public class PolicyParser {
                 if (e.signedBy != null)
                     throw new ParsingException(
                             st.lineno(),
-                            LocalizedMessage.getMessage
+                            LocalizedMessage.getNonlocalized
                                 ("multiple.SignedBy.expressions"));
                 e.signedBy = match("quoted string");
 
@@ -452,7 +452,7 @@ public class PolicyParser {
                 if (actr <= cctr)
                     throw new ParsingException(
                             st.lineno(),
-                            LocalizedMessage.getMessage
+                            LocalizedMessage.getNonlocalized
                                 ("SignedBy.has.empty.alias"));
 
                 peekAndMatch(",");
@@ -495,7 +495,7 @@ public class PolicyParser {
                         }
                         throw new ParsingException
                                 (st.lineno(),
-                                LocalizedMessage.getMessage
+                                LocalizedMessage.getNonlocalized
                                     ("can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name"));
                     }
                 }
@@ -532,7 +532,7 @@ public class PolicyParser {
 
             } else {
                 throw new ParsingException(st.lineno(),
-                    LocalizedMessage.getMessage
+                    LocalizedMessage.getNonlocalized
                         ("expected.codeBase.or.SignedBy.or.Principal"));
             }
         }
@@ -556,7 +556,7 @@ public class PolicyParser {
             } else {
                 throw new
                     ParsingException(st.lineno(),
-                        LocalizedMessage.getMessage
+                        LocalizedMessage.getNonlocalized
                             ("expected.permission.entry"));
             }
         }
@@ -733,7 +733,7 @@ public class PolicyParser {
         switch (lookahead) {
         case StreamTokenizer.TT_NUMBER:
             throw new ParsingException(st.lineno(), expect,
-                LocalizedMessage.getMessage("number.") +
+                LocalizedMessage.getNonlocalized("number.") +
                     String.valueOf(st.nval));
         case StreamTokenizer.TT_EOF:
             LocalizedMessage localizedMsg = new LocalizedMessage
@@ -826,10 +826,10 @@ public class PolicyParser {
             switch (lookahead) {
             case StreamTokenizer.TT_NUMBER:
                 throw new ParsingException(st.lineno(), ";",
-                        LocalizedMessage.getMessage("number.") +
+                        LocalizedMessage.getNonlocalized("number.") +
                             String.valueOf(st.nval));
             case StreamTokenizer.TT_EOF:
-                throw new ParsingException(LocalizedMessage.getMessage
+                throw new ParsingException(LocalizedMessage.getNonlocalized
                         ("expected.read.end.of.file."));
             default:
                 lookahead = st.nextToken();
@@ -987,7 +987,7 @@ public class PolicyParser {
          */
         public PrincipalEntry(String principalClass, String principalName) {
             if (principalClass == null || principalName == null)
-                throw new NullPointerException(LocalizedMessage.getMessage
+                throw new NullPointerException(LocalizedMessage.getNonlocalized
                     ("null.principalClass.or.principalName"));
             this.principalClass = principalClass;
             this.principalName = principalName;
@@ -1339,8 +1339,6 @@ public class PolicyParser {
 
         public ParsingException(int line, String msg) {
             super("line " + line + ": " + msg);
-            // don't call form.format unless getLocalizedMessage is called
-            // to avoid unnecessary permission checks
             localizedMsg = new LocalizedMessage("line.number.msg");
             source = new Object[] {line, msg};
         }
@@ -1348,16 +1346,14 @@ public class PolicyParser {
         public ParsingException(int line, String expect, String actual) {
             super("line " + line + ": expected [" + expect +
                 "], found [" + actual + "]");
-            // don't call form.format unless getLocalizedMessage is called
-            // to avoid unnecessary permission checks
             localizedMsg = new LocalizedMessage
                 ("line.number.expected.expect.found.actual.");
             source = new Object[] {line, expect, actual};
         }
 
-        @Override
-        public String getLocalizedMessage() {
-            return i18nMessage != null ? i18nMessage : localizedMsg.format(source);
+        public String getNonlocalizedMessage() {
+            return i18nMessage != null ? i18nMessage :
+                localizedMsg.formatNonlocalized(source);
         }
     }
 
