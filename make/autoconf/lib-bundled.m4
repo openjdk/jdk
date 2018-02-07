@@ -209,6 +209,8 @@ AC_DEFUN_ONCE([LIB_SETUP_ZLIB],
     AC_MSG_ERROR([Invalid value for --with-zlib: ${with_zlib}, use 'system' or 'bundled'])
   fi
 
+  LIBZ_CFLAGS=""
+  LIBZ_LIBS=""
   if test "x$USE_EXTERNAL_LIBZ" = "xfalse"; then
     LIBZ_CFLAGS="$LIBZ_CFLAGS -I$TOPDIR/src/java.base/share/native/libzip/zlib"
   else
