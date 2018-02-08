@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -918,7 +918,6 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
         -MD -Zc:wchar_t- -W3 -wd4800 \
         -DWIN32_LEAN_AND_MEAN \
         -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE \
-        -D_WINSOCK_DEPRECATED_NO_WARNINGS \
         -DWIN32 -DIAL"
     if test "x$OPENJDK_$1_CPU" = xx86_64; then
       $2COMMON_CCXXFLAGS_JDK="[$]$2COMMON_CCXXFLAGS_JDK -D_AMD64_ -Damd64"
