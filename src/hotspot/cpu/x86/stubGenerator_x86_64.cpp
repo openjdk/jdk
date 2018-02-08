@@ -4425,7 +4425,7 @@ class StubGenerator: public StubCodeGenerator {
    *    c_rarg0   - x address
    *    c_rarg1   - x length
    *    c_rarg2   - y address
-   *    c_rarg3   - y lenth
+   *    c_rarg3   - y length
    * not Win64
    *    c_rarg4   - z address
    *    c_rarg5   - z length

@@ -546,6 +546,9 @@ protected:
 
   const char* class_loader_and_module_name() const;
 
+  // Returns "interface", "abstract class" or "class".
+  const char* external_kind() const;
+
   // type testing operations
 #ifdef ASSERT
  protected:

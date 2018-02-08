@@ -2589,17 +2589,19 @@ run:
           if (ki->interface_klass() == iclass) break;
         }
         // If the interface isn't found, this class doesn't implement this
-        // interface.  The link resolver checks this but only for the first
+        // interface. The link resolver checks this but only for the first
         // time this interface is called.
         if (i == int2->itable_length()) {
-          VM_JAVA_ERROR(vmSymbols::java_lang_IncompatibleClassChangeError(), "", note_no_trap);
+          CALL_VM(InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose(THREAD, rcvr->klass(), iclass),
+                  handle_exception);
         }
         int mindex = interface_method->itable_index();
 
         itableMethodEntry* im = ki->first_method_entry(rcvr->klass());
         callee = im[mindex].method();
         if (callee == NULL) {
-          VM_JAVA_ERROR(vmSymbols::java_lang_AbstractMethodError(), "", note_no_trap);
+          CALL_VM(InterpreterRuntime::throw_AbstractMethodErrorVerbose(THREAD, rcvr->klass(), interface_method),
+                  handle_exception);
         }
 
         // Profile virtual call.

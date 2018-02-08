@@ -1354,7 +1354,7 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
   __ restore_locals();   // make sure locals pointer is correct as well (was destroyed)
 
   // throw exception
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError));
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodErrorWithMethod), rbx);
   // the call_VM checks for exception, so we should never return here.
   __ should_not_reach_here();
 
