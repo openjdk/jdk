@@ -24,9 +24,8 @@
 
 /*
  * @test TestSystemGCWithParallel
+ * @key gc stress
  * @bug 8190703
- * @key gc
- * @key stress
  * @requires vm.gc.Parallel
  * @summary Stress the Parallel GC full GC by allocating objects of different lifetimes concurrently with System.gc().
  * @run main/othervm/timeout=300 -Xlog:gc=info -Xmx512m -XX:+UseParallelGC TestSystemGCWithParallel 270

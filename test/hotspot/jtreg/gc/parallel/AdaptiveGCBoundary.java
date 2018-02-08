@@ -23,10 +23,9 @@
 
 /**
  * @test AdaptiveGCBoundary
+ * @key gc regression
  * @summary UseAdaptiveGCBoundary is broken
  * @bug 8014546
- * @key gc
- * @key regression
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
