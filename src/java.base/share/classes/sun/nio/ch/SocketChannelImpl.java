@@ -68,9 +68,6 @@ class SocketChannelImpl
 
     // Our file descriptor object
     private final FileDescriptor fd;
-
-    // fd value needed for dev/poll. This value will remain valid
-    // even after the value in the file descriptor object has been set to -1
     private final int fdVal;
 
     // IDs of native threads doing reads and writes, for signalling

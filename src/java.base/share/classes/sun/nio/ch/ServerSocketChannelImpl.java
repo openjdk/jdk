@@ -62,10 +62,7 @@ class ServerSocketChannelImpl
 
     // Our file descriptor
     private final FileDescriptor fd;
-
-    // fd value needed for dev/poll. This value will remain valid
-    // even after the value in the file descriptor object has been set to -1
-    private int fdVal;
+    private final int fdVal;
 
     // ID of native thread currently blocked in this channel, for signalling
     private volatile long thread;
