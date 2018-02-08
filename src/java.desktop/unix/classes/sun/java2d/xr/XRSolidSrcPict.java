@@ -47,7 +47,7 @@ public class XRSolidSrcPict {
 
     public XRSurfaceData prepareSrcPict(int pixelVal) {
         if(pixelVal != curPixVal) {
-            xrCol.setColorValues(pixelVal, true);
+            xrCol.setColorValues(pixelVal);
             con.renderRectangle(srcPict.picture, XRUtils.PictOpSrc, xrCol, 0, 0, 1, 1);
             this.curPixVal = pixelVal;
         }
