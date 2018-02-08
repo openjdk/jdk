@@ -28,10 +28,12 @@ import java.text.MessageFormat;
 
 /*
  * @test
- * @bug 8168075
+ * @bug 8168075 8196215
  * @summary Ensure that security message formatting code is capable of
  *     displaying all messages.
  * @modules java.base/sun.security.util
+ * @run main MessageFormatting
+ * @run main/othervm -Duser.country=SA -Duser.language=ar MessageFormatting
  */
 
 public class MessageFormatting {
@@ -63,7 +65,8 @@ public class MessageFormatting {
         if (str.indexOf('{') < 0) {
             return str;
         }
-        MessageFormat format = new MessageFormat(str);
+        Locale loc = new Locale("en", "US");
+        MessageFormat format = new MessageFormat(str, loc);
         return format.format(args);
     }
 }
