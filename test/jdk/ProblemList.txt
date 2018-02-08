@@ -341,6 +341,7 @@ java/nio/channels/DatagramChannel/ChangingAddress.java          7141822 macosx-a
 
 java/nio/file/WatchService/Basic.java                           7158947 solaris-all Solaris 11
 java/nio/file/WatchService/MayFlies.java                        7158947 solaris-all Solaris 11
+java/nio/file/WatchService/LotsOfCancels.java                   8188039 solaris-all Solaris 11
 java/nio/file/WatchService/LotsOfEvents.java                    7158947 solaris-all Solaris 11
 
 ############################################################################
