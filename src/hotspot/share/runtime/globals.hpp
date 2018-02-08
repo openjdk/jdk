@@ -3539,7 +3539,7 @@ public:
           "(-1 means no change)")                                           \
           range(-1, 127)                                                    \
                                                                             \
-  product(bool, CompilerThreadHintNoPreempt, true,                          \
+  product(bool, CompilerThreadHintNoPreempt, false,                         \
           "(Solaris only) Give compiler threads an extra quanta")           \
                                                                             \
   product(bool, VMThreadHintNoPreempt, false,                               \
