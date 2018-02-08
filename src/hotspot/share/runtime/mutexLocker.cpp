@@ -253,10 +253,10 @@ void mutex_init() {
   // of some places which hold other locks while releasing a handle, including
   // the Patching_lock, which is of "special" rank.  As a temporary workaround,
   // lower the JNI oopstorage lock ranks to make them super-special.
-  def(JNIGlobalAlloc_lock          , PaddedMutex  , special-1,   true,  Monitor::_safepoint_check_never);
-  def(JNIGlobalActive_lock         , PaddedMutex  , special-2,   true,  Monitor::_safepoint_check_never);
-  def(JNIWeakAlloc_lock            , PaddedMutex  , special-1,   true,  Monitor::_safepoint_check_never);
-  def(JNIWeakActive_lock           , PaddedMutex  , special-2,   true,  Monitor::_safepoint_check_never);
+  def(JNIGlobalAlloc_lock          , PaddedMutex  , nonleaf,     true,  Monitor::_safepoint_check_never);
+  def(JNIGlobalActive_lock         , PaddedMutex  , nonleaf-1,   true,  Monitor::_safepoint_check_never);
+  def(JNIWeakAlloc_lock            , PaddedMutex  , nonleaf,     true,  Monitor::_safepoint_check_never);
+  def(JNIWeakActive_lock           , PaddedMutex  , nonleaf-1,   true,  Monitor::_safepoint_check_never);
   def(JNICritical_lock             , PaddedMonitor, nonleaf,     true,  Monitor::_safepoint_check_always);     // used for JNI critical regions
   def(AdapterHandlerLibrary_lock   , PaddedMutex  , nonleaf,     true,  Monitor::_safepoint_check_always);
 
