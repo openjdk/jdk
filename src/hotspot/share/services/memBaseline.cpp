@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 #include "precompiled.hpp"
 
+#include "classfile/classLoaderData.inline.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.inline.hpp"
@@ -180,7 +181,8 @@ bool MemBaseline::baseline_allocation_sites() {
 bool MemBaseline::baseline(bool summaryOnly) {
   reset();
 
-  _class_count = InstanceKlass::number_of_instance_classes();
+  _instance_class_count = ClassLoaderDataGraph::num_instance_classes();
+  _array_class_count = ClassLoaderDataGraph::num_array_classes();
 
   if (!baseline_summary()) {
     return false;

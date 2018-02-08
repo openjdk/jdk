@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,4 +49,30 @@ inline ClassLoaderData *ClassLoaderDataGraph::find_or_create(Handle loader, TRAP
      return loader_data;
   }
   return ClassLoaderDataGraph::add(loader, false, THREAD);
+}
+
+size_t ClassLoaderDataGraph::num_instance_classes() {
+  return _num_instance_classes;
+}
+
+size_t ClassLoaderDataGraph::num_array_classes() {
+  return _num_array_classes;
+}
+
+void ClassLoaderDataGraph::inc_instance_classes(size_t count) {
+  Atomic::add(count, &_num_instance_classes);
+}
+
+void ClassLoaderDataGraph::dec_instance_classes(size_t count) {
+  assert(count <= _num_instance_classes, "Sanity");
+  Atomic::sub(count, &_num_instance_classes);
+}
+
+void ClassLoaderDataGraph::inc_array_classes(size_t count) {
+  Atomic::add(count, &_num_array_classes);
+}
+
+void ClassLoaderDataGraph::dec_array_classes(size_t count) {
+  assert(count <= _num_array_classes, "Sanity");
+  Atomic::sub(count, &_num_array_classes);
 }
