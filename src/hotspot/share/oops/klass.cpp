@@ -636,10 +636,15 @@ const char* Klass::external_name() const {
   return name()->as_klass_external_name();
 }
 
-
 const char* Klass::signature_name() const {
   if (name() == NULL)  return "<unknown>";
   return name()->as_C_string();
+}
+
+const char* Klass::external_kind() const {
+  if (is_interface()) return "interface";
+  if (is_abstract()) return "abstract class";
+  return "class";
 }
 
 // Unless overridden, modifier_flags is 0.

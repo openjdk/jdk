@@ -191,7 +191,7 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
   address entry = __ pc();
   // abstract method entry
   // throw exception
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError));
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodErrorWithMethod), G5_method);
   // the call_VM checks for exception, so we should never return here.
   __ should_not_reach_here();
   return entry;

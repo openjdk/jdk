@@ -452,8 +452,8 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
 
   // This is not a leaf but we have a JavaFrameAnchor now and we will
   // check (create) exceptions afterward so this is ok.
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError),
-                  R16_thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodErrorWithMethod),
+                  R16_thread, R19_method);
 
   // Pop the C frame and restore LR.
   __ pop_frame();

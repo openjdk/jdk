@@ -487,8 +487,8 @@ IRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
       ResourceMark rm(thread);
       stringStream tempst;
       tempst.print("interpreter method <%s>\n"
-                   " at bci %d for thread " INTPTR_FORMAT,
-                   h_method->print_value_string(), current_bci, p2i(thread));
+                   " at bci %d for thread " INTPTR_FORMAT " (%s)",
+                   h_method->print_value_string(), current_bci, p2i(thread), thread->name());
       Exceptions::log_exception(h_exception, tempst);
     }
 // Don't go paging in something which won't be used.
@@ -582,11 +582,45 @@ IRT_ENTRY(void, InterpreterRuntime::throw_AbstractMethodError(JavaThread* thread
   THROW(vmSymbols::java_lang_AbstractMethodError());
 IRT_END
 
+// This method is called from the "abstract_entry" of the interpreter.
+// At that point, the arguments have already been removed from the stack
+// and therefore we don't have the receiver object at our fingertips. (Though,
+// on some platforms the receiver still resides in a register...). Thus,
+// we have no choice but print an error message not containing the receiver
+// type.
+IRT_ENTRY(void, InterpreterRuntime::throw_AbstractMethodErrorWithMethod(JavaThread* thread,
+                                                                        Method* missingMethod))
+  ResourceMark rm(thread);
+  assert(missingMethod != NULL, "sanity");
+  methodHandle m(thread, missingMethod);
+  LinkResolver::throw_abstract_method_error(m, THREAD);
+IRT_END
+
+IRT_ENTRY(void, InterpreterRuntime::throw_AbstractMethodErrorVerbose(JavaThread* thread,
+                                                                     Klass* recvKlass,
+                                                                     Method* missingMethod))
+  ResourceMark rm(thread);
+  methodHandle mh = methodHandle(thread, missingMethod);
+  LinkResolver::throw_abstract_method_error(mh, recvKlass, THREAD);
+IRT_END
+
 
 IRT_ENTRY(void, InterpreterRuntime::throw_IncompatibleClassChangeError(JavaThread* thread))
   THROW(vmSymbols::java_lang_IncompatibleClassChangeError());
 IRT_END
 
+IRT_ENTRY(void, InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose(JavaThread* thread,
+                                                                              Klass* recvKlass,
+                                                                              Klass* interfaceKlass))
+  ResourceMark rm(thread);
+  char buf[1000];
+  buf[0] = '\0';
+  jio_snprintf(buf, sizeof(buf),
+               "Class %s does not implement the requested interface %s",
+               recvKlass ? recvKlass->external_name() : "NULL",
+               interfaceKlass ? interfaceKlass->external_name() : "NULL");
+  THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
+IRT_END
 
 //------------------------------------------------------------------------------------------------------------------------
 // Fields

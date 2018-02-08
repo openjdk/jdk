@@ -3872,6 +3872,8 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   Label no_such_interface, no_such_method;
 
+  // Preserve method for throw_AbstractMethodErrorVerbose.
+  __ mov(rcx, rbx);
   // Receiver subtype check against REFC.
   // Superklass in rax. Subklass in rdx. Blows rcx, rdi.
   __ lookup_interface_method(// inputs: rec. class, interface, itable index
@@ -3893,8 +3895,10 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ subl(rbx, Method::itable_index_max);
   __ negl(rbx);
 
+  // Preserve recvKlass for throw_AbstractMethodErrorVerbose.
+  __ mov(rlocals, rdx);
   __ lookup_interface_method(// inputs: rec. class, interface, itable index
-                             rdx, rax, rbx,
+                             rlocals, rax, rbx,
                              // outputs: method, scan temp. reg
                              rbx, rbcp,
                              no_such_interface);
@@ -3926,8 +3930,19 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ pop(rbx);           // pop return address (pushed by prepare_invoke)
   __ restore_bcp();      // rbcp must be correct for exception handler   (was destroyed)
   __ restore_locals();   // make sure locals pointer is correct as well (was destroyed)
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError));
-  // the call_VM checks for exception, so we should never return here.
+  // Pass arguments for generating a verbose error message.
+#ifdef _LP64
+  Register recvKlass = c_rarg1;
+  Register method    = c_rarg2;
+  if (recvKlass != rdx) { __ movq(recvKlass, rdx); }
+  if (method != rcx)    { __ movq(method, rcx);    }
+#else
+  Register recvKlass = rdx;
+  Register method    = rcx;
+#endif
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodErrorVerbose),
+             recvKlass, method);
+  // The call_VM checks for exception, so we should never return here.
   __ should_not_reach_here();
 
   __ bind(no_such_interface);
@@ -3935,8 +3950,10 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ pop(rbx);           // pop return address (pushed by prepare_invoke)
   __ restore_bcp();      // rbcp must be correct for exception handler   (was destroyed)
   __ restore_locals();   // make sure locals pointer is correct as well (was destroyed)
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address,
-                   InterpreterRuntime::throw_IncompatibleClassChangeError));
+  // Pass arguments for generating a verbose error message.
+  LP64_ONLY( if (recvKlass != rdx) { __ movq(recvKlass, rdx); } )
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose),
+             recvKlass, rax);
   // the call_VM checks for exception, so we should never return here.
   __ should_not_reach_here();
 }

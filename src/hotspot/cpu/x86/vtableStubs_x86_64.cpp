@@ -182,10 +182,10 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   const Register method = rbx;
   __ load_klass(recv_klass_reg, j_rarg0);   // restore recv_klass_reg
   __ lookup_interface_method(// inputs: rec. class, interface, itable index
-                       recv_klass_reg, holder_klass_reg, itable_index,
-                       // outputs: method, scan temp. reg
-                       method, temp_reg,
-                       L_no_such_interface);
+                             recv_klass_reg, holder_klass_reg, itable_index,
+                             // outputs: method, scan temp. reg
+                             method, temp_reg,
+                             L_no_such_interface);
 
   // If we take a trap while this arg is on the stack we will not
   // be able to walk the stack properly. This is not an issue except
@@ -213,7 +213,12 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   __ jmp(Address(method, Method::from_compiled_offset()));
 
   __ bind(L_no_such_interface);
-  __ jump(RuntimeAddress(StubRoutines::throw_IncompatibleClassChangeError_entry()));
+  // Handle IncompatibleClassChangeError in itable stubs.
+  // More detailed error message.
+  // We force resolving of the call site by jumping to the "handle
+  // wrong method" stub, and so let the interpreter runtime do all the
+  // dirty work.
+  __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
 
   __ flush();
 

@@ -3742,8 +3742,12 @@ void TemplateTable::invokeinterface(int byte_no) {
   // Throw exception.
   __ restore_bcp();      // Bcp must be correct for exception handler   (was destroyed).
   __ restore_locals();   // Make sure locals pointer is correct as well (was destroyed).
+  // Pass arguments for generating a verbose error message.
+  __ z_lgr(Z_tmp_1, method); // Prevent register clash.
   __ call_VM(noreg,
-             CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError));
+             CAST_FROM_FN_PTR(address,
+                              InterpreterRuntime::throw_AbstractMethodErrorVerbose),
+                              klass, Z_tmp_1);
   // The call_VM checks for exception, so we should never return here.
   __ should_not_reach_here();
 
@@ -3752,8 +3756,11 @@ void TemplateTable::invokeinterface(int byte_no) {
   // Throw exception.
   __ restore_bcp();      // Bcp must be correct for exception handler   (was destroyed).
   __ restore_locals();   // Make sure locals pointer is correct as well (was destroyed).
+  // Pass arguments for generating a verbose error message.
   __ call_VM(noreg,
-             CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_IncompatibleClassChangeError));
+             CAST_FROM_FN_PTR(address,
+                              InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose),
+                              klass, interface);
   // The call_VM checks for exception, so we should never return here.
   __ should_not_reach_here();
 
