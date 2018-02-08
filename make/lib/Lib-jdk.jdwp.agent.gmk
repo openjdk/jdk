@@ -43,6 +43,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBDT_SOCKET, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) -DUSE_MMAP \
         $(LIBDT_SOCKET_CPPFLAGS), \
+    DISABLED_WARNINGS_gcc := shift-negative-value, \
     MAPFILE := $(TOPDIR)/make/mapfiles/libdt_socket/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
