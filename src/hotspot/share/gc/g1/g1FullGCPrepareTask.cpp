@@ -37,7 +37,7 @@
 #include "logging/log.hpp"
 #include "utilities/ticks.inline.hpp"
 
-bool G1FullGCPrepareTask::G1CalculatePointersClosure::doHeapRegion(HeapRegion* hr) {
+bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion* hr) {
   if (hr->is_humongous()) {
     oop obj = oop(hr->humongous_start_region()->bottom());
     if (_bitmap->is_marked(obj)) {

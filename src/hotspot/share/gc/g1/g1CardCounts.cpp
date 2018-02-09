@@ -144,7 +144,7 @@ class G1CardCountsClearClosure : public HeapRegionClosure {
     HeapRegionClosure(), _card_counts(card_counts) { }
 
 
-  virtual bool doHeapRegion(HeapRegion* r) {
+  virtual bool do_heap_region(HeapRegion* r) {
     _card_counts->clear_region(r);
     return false;
   }
