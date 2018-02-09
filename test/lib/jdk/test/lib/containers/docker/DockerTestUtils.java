@@ -161,7 +161,7 @@ public class DockerTestUtils {
         Files.copy(dockerfile, buildDir.resolve("Dockerfile"));
 
         // Build the docker
-        execute("docker", "build", buildDir.toString(), "--no-cache", "--tag", imageName)
+        execute("docker", "build", "--no-cache", "--tag", imageName, buildDir.toString())
             .shouldHaveExitValue(0)
             .shouldContain("Successfully built");
     }
