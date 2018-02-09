@@ -50,7 +50,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -72,16 +71,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  * @author Bhavesh Patel
  */
 public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryWriter {
-
-    /**
-     * The prev module name in the alpha-order list.
-     */
-    protected ModuleElement prevModule;
-
-    /**
-     * The next module name in the alpha-order list.
-     */
-    protected ModuleElement nextModule;
 
     /**
      * The module being documented.
@@ -187,14 +176,9 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      *
      * @param configuration the configuration of the doclet.
      * @param mdle        Module under consideration.
-     * @param prevModule   Previous module in the sorted array.
-     * @param nextModule   Next module in the sorted array.
      */
-    public ModuleWriterImpl(HtmlConfiguration configuration,
-            ModuleElement mdle, ModuleElement prevModule, ModuleElement nextModule) {
-        super(configuration, DocPaths.moduleSummary(mdle));
-        this.prevModule = prevModule;
-        this.nextModule = nextModule;
+    public ModuleWriterImpl(HtmlConfiguration configuration, ModuleElement mdle) {
+        super(configuration, configuration.docPaths.moduleSummary(mdle));
         this.mdle = mdle;
         this.moduleMode = configuration.docEnv.getModuleMode();
         computeModulesData();
@@ -1042,40 +1026,6 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     @Override
     protected Content getNavLinkModule() {
         Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, contents.moduleLabel);
-        return li;
-    }
-
-    /**
-     * Get "PREV MODULE" link in the navigation bar.
-     *
-     * @return a content tree for the previous link
-     */
-    @Override
-    public Content getNavLinkPrevious() {
-        Content li;
-        if (prevModule == null) {
-            li = HtmlTree.LI(contents.prevModuleLabel);
-        } else {
-            li = HtmlTree.LI(links.createLink(pathToRoot.resolve(DocPaths.moduleSummary(
-                    prevModule)), contents.prevModuleLabel, "", ""));
-        }
-        return li;
-    }
-
-    /**
-     * Get "NEXT MODULE" link in the navigation bar.
-     *
-     * @return a content tree for the next link
-     */
-    @Override
-    public Content getNavLinkNext() {
-        Content li;
-        if (nextModule == null) {
-            li = HtmlTree.LI(contents.nextModuleLabel);
-        } else {
-            li = HtmlTree.LI(links.createLink(pathToRoot.resolve(DocPaths.moduleSummary(
-                    nextModule)), contents.nextModuleLabel, "", ""));
-        }
         return li;
     }
 }

@@ -129,25 +129,18 @@ generate_configure_script() {
 }
 
 test_generated_up_to_date() {
-  if test "x`which hg 2> /dev/null | grep -v '^no hg in'`" != x; then
-    conf_updated_autoconf_files=`cd $conf_script_dir && hg status -mard . 2> /dev/null`
-    conf_source_files="$conf_script_dir/configure.ac $conf_script_dir/*.m4"
-    if test "x$CUSTOM_CONFIG_DIR" != x; then
-      conf_custom_updated_autoconf_files=`cd $CUSTOM_CONFIG_DIR && hg status -mard . 2> /dev/null`
-      conf_custom_source_files="$CUSTOM_CONFIG_DIR/*.m4"
-    else
-      conf_custom_updated_autoconf_files=""
-      conf_custom_source_files=""
-    fi
-
-    if test "x${conf_updated_autoconf_files}${conf_custom_updated_autoconf_files}" != x; then
-      for file in $conf_source_files $conf_custom_source_files ; do
-        if test $file -nt $generated_script; then
-          return 0
-        fi
-      done
-    fi
+  conf_source_files="$conf_script_dir/configure.ac $conf_script_dir/*.m4"
+  if test "x$CUSTOM_CONFIG_DIR" != x; then
+    conf_custom_source_files="$CUSTOM_CONFIG_DIR/*.m4"
+  else
+    conf_custom_source_files=""
   fi
+
+  for file in $conf_source_files $conf_custom_source_files ; do
+    if test $file -nt $generated_script; then
+      return 0
+    fi
+  done
   return 1
 }
 

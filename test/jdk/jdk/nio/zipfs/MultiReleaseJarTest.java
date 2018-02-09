@@ -26,11 +26,11 @@
  * @bug 8144355 8144062 8176709 8194070 8193802
  * @summary Test aliasing additions to ZipFileSystem for multi-release jar files
  * @library /lib/testlibrary/java/util/jar
- * @build Compiler JarBuilder CreateMultiReleaseTestJars
- * @run testng MultiReleaseJarTest
  * @modules jdk.compiler
  *          jdk.jartool
  *          jdk.zipfs
+ * @build Compiler JarBuilder CreateMultiReleaseTestJars
+ * @run testng MultiReleaseJarTest
  */
 
 import java.io.IOException;

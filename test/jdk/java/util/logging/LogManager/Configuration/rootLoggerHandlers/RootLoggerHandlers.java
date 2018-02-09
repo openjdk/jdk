@@ -63,6 +63,7 @@ public class RootLoggerHandlers {
         Path loggingProps = USER_DIR.resolve(CONFIG_FILE);
         System.setProperty("java.util.logging.config.file", loggingProps.toString());
         Files.copy(initialProps, loggingProps, StandardCopyOption.REPLACE_EXISTING);
+        loggingProps.toFile().setWritable(true);
         System.out.println("Root level is: " + Logger.getLogger("").getLevel());
         if (Logger.getLogger("").getLevel() != Level.INFO) {
             throw new RuntimeException("Expected root level INFO, got: "

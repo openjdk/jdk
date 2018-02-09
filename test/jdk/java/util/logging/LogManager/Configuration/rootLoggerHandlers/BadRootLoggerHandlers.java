@@ -132,6 +132,7 @@ public class BadRootLoggerHandlers {
         }
 
         Files.copy(initialProps, loggingProps, StandardCopyOption.REPLACE_EXISTING);
+        loggingProps.toFile().setWritable(true);
 
         SystemErr err = new SystemErr(System.err);
         System.setErr(new PrintStream(err));

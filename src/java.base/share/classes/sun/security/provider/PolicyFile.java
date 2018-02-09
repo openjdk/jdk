@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -580,8 +580,8 @@ public class PolicyFile extends java.security.Policy {
                 k.add(policy);
                 return k;
             });
-            Object[] source = {policy, pe.getLocalizedMessage()};
-            System.err.println(LocalizedMessage.getMessage
+            Object[] source = {policy, pe.getNonlocalizedMessage()};
+            System.err.println(LocalizedMessage.getNonlocalized
                 (POLICY + ".error.parsing.policy.message", source));
             if (debug != null) {
                 pe.printStackTrace();
@@ -808,14 +808,14 @@ public class PolicyFile extends java.security.Policy {
                     Object[] source = {pe.permission,
                                        ite.getTargetException().toString()};
                     System.err.println(
-                        LocalizedMessage.getMessage(
+                        LocalizedMessage.getNonlocalized(
                             POLICY + ".error.adding.Permission.perm.message",
                             source));
                 } catch (Exception e) {
                     Object[] source = {pe.permission,
                                        e.toString()};
                     System.err.println(
-                        LocalizedMessage.getMessage(
+                        LocalizedMessage.getNonlocalized(
                             POLICY + ".error.adding.Permission.perm.message",
                             source));
                 }
@@ -826,7 +826,7 @@ public class PolicyFile extends java.security.Policy {
         } catch (Exception e) {
             Object[] source = {e.toString()};
             System.err.println(
-                LocalizedMessage.getMessage(
+                LocalizedMessage.getNonlocalized(
                     POLICY + ".error.adding.Entry.message",
                     source));
         }
@@ -1803,7 +1803,7 @@ public class PolicyFile extends java.security.Policy {
                 if (colonIndex == -1) {
                     Object[] source = {pe.name};
                     throw new Exception(
-                        LocalizedMessage.getMessage(
+                        LocalizedMessage.getNonlocalized(
                             "alias.name.not.provided.pe.name.",
                             source));
                 }
@@ -1811,7 +1811,7 @@ public class PolicyFile extends java.security.Policy {
                 if ((suffix = getDN(suffix, keystore)) == null) {
                     Object[] source = {value.substring(colonIndex+1)};
                     throw new Exception(
-                        LocalizedMessage.getMessage(
+                        LocalizedMessage.getNonlocalized(
                             "unable.to.perform.substitution.on.alias.suffix",
                             source));
                 }
@@ -1821,7 +1821,7 @@ public class PolicyFile extends java.security.Policy {
             } else {
                 Object[] source = {prefix};
                 throw new Exception(
-                    LocalizedMessage.getMessage(
+                    LocalizedMessage.getNonlocalized(
                         "substitution.value.prefix.unsupported",
                         source));
             }
@@ -2037,7 +2037,7 @@ public class PolicyFile extends java.security.Policy {
             super(type);
             if (type == null) {
                 throw new NullPointerException
-                    (LocalizedMessage.getMessage("type.can.t.be.null"));
+                    (LocalizedMessage.getNonlocalized("type.can.t.be.null"));
             }
             this.type = type;
             this.name = name;

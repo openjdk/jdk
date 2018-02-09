@@ -808,17 +808,26 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     static Locale getInstance(BaseLocale baseloc, LocaleExtensions extensions) {
-        LocaleKey key = new LocaleKey(baseloc, extensions);
-        return LOCALECACHE.get(key);
+        if (extensions == null) {
+            return LOCALECACHE.get(baseloc);
+        } else {
+            LocaleKey key = new LocaleKey(baseloc, extensions);
+            return LOCALECACHE.get(key);
+        }
     }
 
-    private static class Cache extends LocaleObjectCache<LocaleKey, Locale> {
+    private static class Cache extends LocaleObjectCache<Object, Locale> {
         private Cache() {
         }
 
         @Override
-        protected Locale createObject(LocaleKey key) {
-            return new Locale(key.base, key.exts);
+        protected Locale createObject(Object key) {
+            if (key instanceof BaseLocale) {
+                return new Locale((BaseLocale)key, null);
+            } else {
+                LocaleKey lk = (LocaleKey)key;
+                return new Locale(lk.base, lk.exts);
+            }
         }
     }
 

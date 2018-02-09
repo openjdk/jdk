@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4131628 4664607 7025314 8023700 7198273 8025633 8026567 8081854 8150188 8151743
+ * @bug      4131628 4664607 7025314 8023700 7198273 8025633 8026567 8081854 8150188 8151743 8196027
  * @summary  Make sure the Next/Prev Class links iterate through all types.
  *           Make sure the navagation is 2 columns, not 3.
  * @author   jamieh
@@ -48,23 +48,18 @@ public class TestNavigation extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/A.html", true,
-                "<li>Prev&nbsp;Class</li>",
-                "<a href=\"C.html\" title=\"class in pkg\"><span class=\"typeNameLink\">Next&nbsp;Class</span></a>",
+                "<ul class=\"navList\" title=\"Navigation\">\n" +
                 "<li><a href=\"../overview-summary.html\">Overview</a></li>");
 
         checkOutput("pkg/C.html", true,
-                "<a href=\"A.html\" title=\"annotation in pkg\"><span class=\"typeNameLink\">Prev&nbsp;Class</span></a>",
-                "<a href=\"E.html\" title=\"enum in pkg\"><span class=\"typeNameLink\">Next&nbsp;Class</span></a>",
+                "<ul class=\"navList\" title=\"Navigation\">\n" +
                 "<li><a href=\"../overview-summary.html\">Overview</a></li>");
 
         checkOutput("pkg/E.html", true,
-                "<a href=\"C.html\" title=\"class in pkg\"><span class=\"typeNameLink\">Prev&nbsp;Class</span></a>",
-                "<a href=\"I.html\" title=\"interface in pkg\"><span class=\"typeNameLink\">Next&nbsp;Class</span></a>",
+                "<ul class=\"navList\" title=\"Navigation\">\n" +
                 "<li><a href=\"../overview-summary.html\">Overview</a></li>");
 
         checkOutput("pkg/I.html", true,
-                "<a href=\"E.html\" title=\"enum in pkg\"><span class=\"typeNameLink\">Prev&nbsp;Class</span></a>",
-                "<li>Next&nbsp;Class</li>",
                 // Test for 4664607
                 "<div class=\"skipNav\"><a href=\"#skip.navbar.top\" title=\"Skip navigation links\">Skip navigation links</a></div>\n"
                 + "<a name=\"navbar.top.firstrow\">\n"

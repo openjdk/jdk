@@ -210,6 +210,12 @@ public class HtmlConfiguration extends BaseConfiguration {
     public HtmlVersion htmlVersion = null;
 
     /**
+     * Flag to enable/disable use of module directories when generating docs for modules
+     * Default: on (module directories are enabled).
+     */
+    public boolean useModuleDirectories = true;
+
+    /**
      * Collected set of doclint options
      */
     public Map<Doclet.Option, String> doclintOpts = new LinkedHashMap<>();
@@ -244,6 +250,8 @@ public class HtmlConfiguration extends BaseConfiguration {
     protected final Contents contents;
 
     protected final Messages messages;
+
+    protected DocPaths docPaths;
 
     /**
      * Creates an object to hold the configuration for a doclet.
@@ -357,6 +365,7 @@ public class HtmlConfiguration extends BaseConfiguration {
                 }
             }
         }
+        docPaths = new DocPaths(utils, useModuleDirectories);
         setCreateOverview();
         setTopFile(docEnv);
         workArounds.initDocLint(doclintOpts.values(), tagletManager.getCustomTagNames(),
@@ -406,15 +415,15 @@ public class HtmlConfiguration extends BaseConfiguration {
             topFile = DocPaths.overviewSummary(frames);
         } else {
             if (showModules) {
-                topFile = DocPath.empty.resolve(DocPaths.moduleSummary(modules.first()));
+                topFile = DocPath.empty.resolve(docPaths.moduleSummary(modules.first()));
             } else if (packages.size() == 1 && packages.first().isUnnamed()) {
                 List<TypeElement> classes = new ArrayList<>(getIncludedTypeElements());
                 if (!classes.isEmpty()) {
                     TypeElement te = getValidClass(classes);
-                    topFile = DocPath.forClass(utils, te);
+                    topFile = docPaths.forClass(te);
                 }
             } else if (!packages.isEmpty()) {
-                topFile = DocPath.forPackage(packages.first()).resolve(DocPaths.PACKAGE_SUMMARY);
+                topFile = docPaths.forPackage(packages.first()).resolve(DocPaths.PACKAGE_SUMMARY);
             }
         }
     }
@@ -835,6 +844,13 @@ public class HtmlConfiguration extends BaseConfiguration {
                         reporter.print(ERROR, getText("doclet.Option_doclint_package_invalid_arg"));
                         return false;
                     }
+                    return true;
+                }
+            },
+            new XOption(resources, "--no-module-directories") {
+                @Override
+                public boolean process(String option, List<String> args) {
+                    useModuleDirectories = false;
                     return true;
                 }
             }
