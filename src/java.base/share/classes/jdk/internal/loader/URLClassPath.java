@@ -104,7 +104,7 @@ public class URLClassPath {
     private final List<URL> path;
 
     /* The stack of unopened URLs */
-    private final Stack<URL> urls = new Stack<>();
+    private final Stack<URL> unopenedUrls = new Stack<>();
 
     /* The resulting search path of Loaders */
     private final ArrayList<Loader> loaders = new ArrayList<>();
@@ -192,7 +192,7 @@ public class URLClassPath {
 
             // push the URLs
             for (int i = path.size() - 1; i >= 0; --i) {
-                urls.push(path.get(i));
+                unopenedUrls.push(path.get(i));
             }
         }
 
@@ -227,11 +227,11 @@ public class URLClassPath {
     public synchronized void addURL(URL url) {
         if (closed)
             return;
-        synchronized (urls) {
+        synchronized (unopenedUrls) {
             if (url == null || path.contains(url))
                 return;
 
-            urls.add(0, url);
+            unopenedUrls.add(0, url);
             path.add(url);
         }
     }
@@ -262,8 +262,8 @@ public class URLClassPath {
      * Returns the original search path of URLs.
      */
     public URL[] getURLs() {
-        synchronized (urls) {
-            return path.toArray(new URL[path.size()]);
+        synchronized (unopenedUrls) {
+            return path.toArray(new URL[0]);
         }
     }
 
@@ -418,11 +418,11 @@ public class URLClassPath {
         while (loaders.size() < index + 1) {
             // Pop the next URL from the URL stack
             URL url;
-            synchronized (urls) {
-                if (urls.empty()) {
+            synchronized (unopenedUrls) {
+                if (unopenedUrls.empty()) {
                     return null;
                 } else {
-                    url = urls.pop();
+                    url = unopenedUrls.pop();
                 }
             }
             // Skip this URL if it already has a Loader. (Loader
@@ -504,10 +504,10 @@ public class URLClassPath {
     /*
      * Pushes the specified URLs onto the list of unopened URLs.
      */
-    private void push(URL[] us) {
-        synchronized (urls) {
-            for (int i = us.length - 1; i >= 0; --i) {
-                urls.push(us[i]);
+    private void push(URL[] urls) {
+        synchronized (unopenedUrls) {
+            for (int i = urls.length - 1; i >= 0; --i) {
+                unopenedUrls.push(urls[i]);
             }
         }
     }
