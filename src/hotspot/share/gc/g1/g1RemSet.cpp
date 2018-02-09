@@ -127,7 +127,7 @@ private:
   public:
     G1ResetScanTopClosure(HeapWord** scan_top) : _scan_top(scan_top) { }
 
-    virtual bool do_heap_region(HeapRegion* r) {
+    virtual bool doHeapRegion(HeapRegion* r) {
       uint hrm_index = r->hrm_index();
       if (!r->in_collection_set() && r->is_old_or_humongous()) {
         _scan_top[hrm_index] = r->top();
@@ -349,7 +349,7 @@ void G1ScanRSForRegionClosure::claim_card(size_t card_index, const uint region_i
   _scan_state->add_dirty_region(region_idx_for_card);
 }
 
-bool G1ScanRSForRegionClosure::do_heap_region(HeapRegion* r) {
+bool G1ScanRSForRegionClosure::doHeapRegion(HeapRegion* r) {
   assert(r->in_collection_set(), "should only be called on elements of CS.");
   uint region_idx = r->hrm_index();
 
@@ -522,7 +522,7 @@ public:
     _g1h(G1CollectedHeap::heap()),
     _live_data(live_data) { }
 
-  bool do_heap_region(HeapRegion* r) {
+  bool doHeapRegion(HeapRegion* r) {
     if (!r->is_continues_humongous()) {
       r->rem_set()->scrub(_live_data);
     }

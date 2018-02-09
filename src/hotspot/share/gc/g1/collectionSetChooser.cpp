@@ -138,7 +138,7 @@ void CollectionSetChooser::sort_regions() {
     G1PrintRegionLivenessInfoClosure cl("Post-Sorting");
     for (uint i = 0; i < _end; ++i) {
       HeapRegion* r = regions_at(i);
-      cl.do_heap_region(r);
+      cl.doHeapRegion(r);
     }
   }
   verify();
@@ -220,7 +220,7 @@ public:
     _g1h(G1CollectedHeap::heap()),
     _cset_updater(hrSorted, true /* parallel */, chunk_size) { }
 
-  bool do_heap_region(HeapRegion* r) {
+  bool doHeapRegion(HeapRegion* r) {
     // Do we have any marking information for this region?
     if (r->is_marked()) {
       // We will skip any region that's currently used as an old GC

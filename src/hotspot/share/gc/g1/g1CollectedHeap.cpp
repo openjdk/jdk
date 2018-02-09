@@ -1069,7 +1069,7 @@ class PostCompactionPrinterClosure: public HeapRegionClosure {
 private:
   G1HRPrinter* _hr_printer;
 public:
-  bool do_heap_region(HeapRegion* hr) {
+  bool doHeapRegion(HeapRegion* hr) {
     assert(!hr->is_young(), "not expecting to find young regions");
     _hr_printer->post_compaction(hr);
     return false;
@@ -1980,7 +1980,7 @@ public:
   CheckGCTimeStampsHRClosure(unsigned gc_time_stamp) :
     _gc_time_stamp(gc_time_stamp), _failures(false) { }
 
-  virtual bool do_heap_region(HeapRegion* hr) {
+  virtual bool doHeapRegion(HeapRegion* hr) {
     unsigned region_gc_time_stamp = hr->get_gc_time_stamp();
     if (_gc_time_stamp != region_gc_time_stamp) {
       log_error(gc, verify)("Region " HR_FORMAT " has GC time stamp = %d, expected %d", HR_FORMAT_PARAMS(hr),
@@ -2032,7 +2032,7 @@ class SumUsedClosure: public HeapRegionClosure {
   size_t _used;
 public:
   SumUsedClosure() : _used(0) {}
-  bool do_heap_region(HeapRegion* r) {
+  bool doHeapRegion(HeapRegion* r) {
     _used += r->used();
     return false;
   }
@@ -2251,7 +2251,7 @@ class IterateObjectClosureRegionClosure: public HeapRegionClosure {
   ObjectClosure* _cl;
 public:
   IterateObjectClosureRegionClosure(ObjectClosure* cl) : _cl(cl) {}
-  bool do_heap_region(HeapRegion* r) {
+  bool doHeapRegion(HeapRegion* r) {
     if (!r->is_continues_humongous()) {
       r->object_iterate(_cl);
     }
@@ -2366,7 +2366,7 @@ class PrintRegionClosure: public HeapRegionClosure {
   outputStream* _st;
 public:
   PrintRegionClosure(outputStream* st) : _st(st) {}
-  bool do_heap_region(HeapRegion* r) {
+  bool doHeapRegion(HeapRegion* r) {
     r->print_on(_st);
     return false;
   }
@@ -2485,7 +2485,7 @@ private:
   size_t _occupied_sum;
 
 public:
-  bool do_heap_region(HeapRegion* r) {
+  bool doHeapRegion(HeapRegion* r) {
     HeapRegionRemSet* hrrs = r->rem_set();
     size_t occupied = hrrs->occupied();
     _occupied_sum += occupied;
@@ -2733,7 +2733,7 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
     _dcq(&JavaThread::dirty_card_queue_set()) {
   }
 
-  virtual bool do_heap_region(HeapRegion* r) {
+  virtual bool doHeapRegion(HeapRegion* r) {
     if (!r->is_starts_humongous()) {
       return false;
     }
@@ -2809,7 +2809,7 @@ void G1CollectedHeap::register_humongous_regions_with_cset() {
 
 class VerifyRegionRemSetClosure : public HeapRegionClosure {
   public:
-    bool do_heap_region(HeapRegion* hr) {
+    bool doHeapRegion(HeapRegion* hr) {
       if (!hr->is_archive() && !hr->is_continues_humongous()) {
         hr->verify_rem_set();
       }
@@ -2879,7 +2879,7 @@ private:
 public:
   G1PrintCollectionSetClosure(G1HRPrinter* hr_printer) : HeapRegionClosure(), _hr_printer(hr_printer) { }
 
-  virtual bool do_heap_region(HeapRegion* r) {
+  virtual bool doHeapRegion(HeapRegion* r) {
     _hr_printer->cset(r);
     return false;
   }
@@ -4569,7 +4569,7 @@ private:
       _local_free_list("Local Region List for CSet Freeing") {
     }
 
-    virtual bool do_heap_region(HeapRegion* r) {
+    virtual bool doHeapRegion(HeapRegion* r) {
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
       assert(r->in_collection_set(), "Region %u should be in collection set.", r->hrm_index());
@@ -4692,7 +4692,7 @@ private:
   public:
     G1PrepareFreeCollectionSetClosure(WorkItem* work_items) : HeapRegionClosure(), _cur_idx(0), _work_items(work_items) { }
 
-    virtual bool do_heap_region(HeapRegion* r) {
+    virtual bool doHeapRegion(HeapRegion* r) {
       _work_items[_cur_idx++] = WorkItem(r);
       return false;
     }
@@ -4826,7 +4826,7 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
     _free_region_list(free_region_list), _humongous_objects_reclaimed(0), _humongous_regions_reclaimed(0), _freed_bytes(0) {
   }
 
-  virtual bool do_heap_region(HeapRegion* r) {
+  virtual bool doHeapRegion(HeapRegion* r) {
     if (!r->is_starts_humongous()) {
       return false;
     }
@@ -4961,7 +4961,7 @@ void G1CollectedHeap::eagerly_reclaim_humongous_regions() {
 
 class G1AbandonCollectionSetClosure : public HeapRegionClosure {
 public:
-  virtual bool do_heap_region(HeapRegion* r) {
+  virtual bool doHeapRegion(HeapRegion* r) {
     assert(r->in_collection_set(), "Region %u must have been in collection set", r->hrm_index());
     G1CollectedHeap::heap()->clear_in_cset(r);
     r->set_young_index_in_cset(-1);
@@ -5031,7 +5031,7 @@ private:
   bool _success;
 public:
   NoYoungRegionsClosure() : _success(true) { }
-  bool do_heap_region(HeapRegion* r) {
+  bool doHeapRegion(HeapRegion* r) {
     if (r->is_young()) {
       log_error(gc, verify)("Region [" PTR_FORMAT ", " PTR_FORMAT ") tagged as young",
                             p2i(r->bottom()), p2i(r->end()));
@@ -5061,7 +5061,7 @@ private:
 public:
   TearDownRegionSetsClosure(HeapRegionSet* old_set) : _old_set(old_set) { }
 
-  bool do_heap_region(HeapRegion* r) {
+  bool doHeapRegion(HeapRegion* r) {
     if (r->is_old()) {
       _old_set->remove(r);
     } else if(r->is_young()) {
@@ -5129,7 +5129,7 @@ public:
     }
   }
 
-  bool do_heap_region(HeapRegion* r) {
+  bool doHeapRegion(HeapRegion* r) {
     if (r->is_empty()) {
       // Add free regions to the free list
       r->set_free();

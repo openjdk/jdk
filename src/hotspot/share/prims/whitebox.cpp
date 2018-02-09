@@ -528,7 +528,7 @@ class OldRegionsLivenessClosure: public HeapRegionClosure {
     size_t total_memory() { return _total_memory; }
     size_t total_memory_to_free() { return _total_memory_to_free; }
 
-  bool do_heap_region(HeapRegion* r) {
+  bool doHeapRegion(HeapRegion* r) {
     if (r->is_old()) {
       size_t prev_live = r->marked_bytes();
       size_t live = r->live_bytes();

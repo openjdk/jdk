@@ -848,7 +848,7 @@ public:
   // The header and footer are printed in the constructor and
   // destructor respectively.
   G1PrintRegionLivenessInfoClosure(const char* phase_name);
-  virtual bool do_heap_region(HeapRegion* r);
+  virtual bool doHeapRegion(HeapRegion* r);
   ~G1PrintRegionLivenessInfoClosure();
 };
 
