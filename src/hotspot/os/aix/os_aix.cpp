@@ -1721,7 +1721,7 @@ void os::signal_notify(int sig) {
   local_sem_post();
 }
 
-static int check_pending_signals(bool wait) {
+static int check_pending_signals() {
   Atomic::store(0, &sigint_count);
   for (;;) {
     for (int i = 0; i < NSIG + 1; i++) {
@@ -1729,9 +1729,6 @@ static int check_pending_signals(bool wait) {
       if (n > 0 && n == Atomic::cmpxchg(n - 1, &pending_signals[i], n)) {
         return i;
       }
-    }
-    if (!wait) {
-      return -1;
     }
     JavaThread *thread = JavaThread::current();
     ThreadBlockInVM tbivm(thread);
@@ -1761,12 +1758,8 @@ static int check_pending_signals(bool wait) {
   }
 }
 
-int os::signal_lookup() {
-  return check_pending_signals(false);
-}
-
 int os::signal_wait() {
-  return check_pending_signals(true);
+  return check_pending_signals();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -581,25 +581,6 @@ address TemplateInterpreterGenerator::generate_ArrayIndexOutOfBounds_handler(con
   __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_ArrayIndexOutOfBoundsException));
   return entry;
 }
-
-#if 0
-// Call special ClassCastException constructor taking object to cast
-// and target class as arguments.
-address TemplateInterpreterGenerator::generate_ClassCastException_verbose_handler() {
-  address entry = __ pc();
-
-  // Expression stack must be empty before entering the VM if an
-  // exception happened.
-  __ empty_expression_stack();
-
-  // Thread will be loaded to R3_ARG1.
-  // Target class oop is in register R5_ARG3 by convention!
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_ClassCastException_verbose), R17_tos, R5_ARG3);
-  // Above call must not return here since exception pending.
-  DEBUG_ONLY(__ should_not_reach_here();)
-  return entry;
-}
-#endif
 
 address TemplateInterpreterGenerator::generate_ClassCastException_handler() {
   address entry = __ pc();
@@ -1895,7 +1876,6 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
 
   return NULL;
 }
-
 
 /**
  * Method entry for static native methods:

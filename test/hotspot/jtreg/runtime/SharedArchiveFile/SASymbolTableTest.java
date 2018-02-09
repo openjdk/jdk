@@ -25,7 +25,7 @@
  * @test SASymbolTableTest
  * @requires vm.cds
  * @summary Walk symbol table using SA, with and without CDS.
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.hotspot.agent/sun.jvm.hotspot.oops

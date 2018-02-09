@@ -633,6 +633,7 @@ public class ClassFinder {
         boolean haveSourcePath = includeSourcePath && fileManager.hasLocation(SOURCE_PATH);
 
         if (verbose && verbosePath) {
+            verbosePath = false; // print once per compile
             if (fileManager instanceof StandardJavaFileManager) {
                 StandardJavaFileManager fm = (StandardJavaFileManager)fileManager;
                 if (haveSourcePath && wantSourceFiles) {

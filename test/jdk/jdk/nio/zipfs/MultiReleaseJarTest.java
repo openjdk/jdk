@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,14 @@
 
 /*
  * @test
- * @bug 8144355 8144062 8176709
+ * @bug 8144355 8144062 8176709 8194070 8193802
  * @summary Test aliasing additions to ZipFileSystem for multi-release jar files
  * @library /lib/testlibrary/java/util/jar
- * @build Compiler JarBuilder CreateMultiReleaseTestJars
- * @run testng MultiReleaseJarTest
  * @modules jdk.compiler
  *          jdk.jartool
  *          jdk.zipfs
+ * @build Compiler JarBuilder CreateMultiReleaseTestJars
+ * @run testng MultiReleaseJarTest
  */
 
 import java.io.IOException;
@@ -92,9 +92,9 @@ public class MultiReleaseJarTest {
                 {"0", 8},
                 {"8", 8},
                 {"9", 9},
-                {"10", 10},
-                {"11", 10},
-                {"50", 10}
+                {Integer.toString(MAJOR_VERSION), MAJOR_VERSION},
+                {Integer.toString(MAJOR_VERSION+1), MAJOR_VERSION},
+                {"50", MAJOR_VERSION}
         };
     }
 
@@ -105,9 +105,9 @@ public class MultiReleaseJarTest {
                 {new Integer(0), 8},
                 {new Integer(8), 8},
                 {new Integer(9), 9},
-                {new Integer(10), 10},
-                {new Integer(11), 10},
-                {new Integer(100), 10}
+                {new Integer(MAJOR_VERSION), MAJOR_VERSION},
+                {new Integer(MAJOR_VERSION + 1), MAJOR_VERSION},
+                {new Integer(100), MAJOR_VERSION}
         };
     }
 
@@ -116,9 +116,8 @@ public class MultiReleaseJarTest {
         return new Object[][] {
                 {Version.parse("8"),    8},
                 {Version.parse("9"),    9},
-                {Version.parse("10"),  10},
-                {Version.parse("11"),  10},
-                {Version.parse("100"), 10}
+                {Version.parse("11"),  MAJOR_VERSION},
+                {Version.parse("100"), MAJOR_VERSION}
         };
     }
 
@@ -168,8 +167,8 @@ public class MultiReleaseJarTest {
 
     @Test
     public void testShortJar() throws Throwable {
-        integerEnv.put("multi-release", Integer.valueOf(10));
-        runTest(smruri, integerEnv, 10);
+        integerEnv.put("multi-release", Integer.valueOf(MAJOR_VERSION));
+        runTest(smruri, integerEnv, MAJOR_VERSION);
         integerEnv.put("multi-release", Integer.valueOf(9));
         runTest(smruri, integerEnv, 8);
     }
@@ -203,6 +202,21 @@ public class MultiReleaseJarTest {
         //testCustomMultiReleaseValue("true\r ", false);
         //testCustomMultiReleaseValue("true\n true", false);
         //testCustomMultiReleaseValue("true\r\n true", false);
+    }
+
+    @Test
+    public void testMultiReleaseJarWithNonVersionDir() throws Exception {
+        String jfname = "multi-release-non-ver.jar";
+        Path jfpath = Paths.get(jfname);
+        URI uri = new URI("jar", jfpath.toUri().toString() , null);
+        JarBuilder jb = new JarBuilder(jfname);
+        jb.addAttribute("Multi-Release", "true");
+        jb.build();
+        Map<String,String> env = Map.of("multi-release", "runtime");
+        try (FileSystem fs = FileSystems.newFileSystem(uri, env)) {
+            Assert.assertTrue(true);
+        }
+        Files.delete(jfpath);
     }
 
     private static final AtomicInteger JAR_COUNT = new AtomicInteger(0);

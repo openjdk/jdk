@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6578647 6829283 8171340
+ * @bug 6578647 6829283 8171340 8194486
  * @modules java.base/sun.security.util
  *          java.security.jgss/sun.security.krb5.internal:+open
  *          java.security.jgss/sun.security.jgss
@@ -35,11 +35,13 @@
  *          jdk.security.auth
  *          jdk.security.jgss
  *          jdk.httpserver
- * @run main/othervm HttpNegotiateServer
  * @summary Undefined requesting URL in java.net.Authenticator
  *          .getPasswordAuthentication()
  * @summary HTTP/Negotiate: Authenticator triggered again when
  *          user cancels the first one
+ * @library /test/lib
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts HttpNegotiateServer
  */
 
 import com.sun.net.httpserver.Headers;

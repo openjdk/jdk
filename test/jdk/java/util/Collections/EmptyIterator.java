@@ -27,9 +27,24 @@
  * @summary Test empty iterators, enumerations, and collections
  */
 
-import static java.util.Collections.*;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.concurrent.SynchronousQueue;
+
+import static java.util.Collections.emptyEnumeration;
+import static java.util.Collections.emptyIterator;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyListIterator;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
+import static java.util.Collections.nCopies;
+import static java.util.Collections.unmodifiableMap;
 
 public class EmptyIterator {
 

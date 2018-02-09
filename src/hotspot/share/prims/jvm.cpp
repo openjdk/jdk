@@ -678,16 +678,8 @@ JVM_END
 // Misc. class handling ///////////////////////////////////////////////////////////
 
 
-JVM_ENTRY(jclass, JVM_GetCallerClass(JNIEnv* env, int depth))
+JVM_ENTRY(jclass, JVM_GetCallerClass(JNIEnv* env))
   JVMWrapper("JVM_GetCallerClass");
-
-  // Pre-JDK 8 and early builds of JDK 8 don't have a CallerSensitive annotation; or
-  // sun.reflect.Reflection.getCallerClass with a depth parameter is provided
-  // temporarily for existing code to use until a replacement API is defined.
-  if (SystemDictionary::reflect_CallerSensitive_klass() == NULL || depth != JVM_CALLER_DEPTH) {
-    Klass* k = thread->security_get_caller_class(depth);
-    return (k == NULL) ? NULL : (jclass) JNIHandles::make_local(env, k->java_mirror());
-  }
 
   // Getting the class of the caller frame.
   //

@@ -48,6 +48,10 @@ class JNIHandles : AllStatic {
   template<bool external_guard> inline static oop resolve_impl(jobject handle);
   template<bool external_guard> static oop resolve_jweak(jweak handle);
 
+  // This method is not inlined in order to avoid circular includes between
+  // this header file and thread.hpp.
+  static bool current_thread_in_native();
+
  public:
   // Low tag bit in jobject used to distinguish a jweak.  jweak is
   // type equivalent to jobject, but there are places where we need to
@@ -230,6 +234,7 @@ inline oop JNIHandles::guard_value(oop value) {
 template<bool external_guard>
 inline oop JNIHandles::resolve_impl(jobject handle) {
   assert(handle != NULL, "precondition");
+  assert(!current_thread_in_native(), "must not be in native");
   oop result;
   if (is_jweak(handle)) {       // Unlikely
     result = resolve_jweak<external_guard>(handle);

@@ -637,7 +637,7 @@ else
   # Declare dependencies between hotspot-<variant>* targets
   $(foreach v, $(JVM_VARIANTS), \
       $(eval hotspot-$v: hotspot-$v-gensrc hotspot-$v-libs) \
-      $(eval hotspot-$v-libs: hotspot-$v-gensrc) \
+      $(eval hotspot-$v-libs: hotspot-$v-gensrc java.base-copy) \
   )
 
   hotspot-ide-project: hotspot exploded-image
@@ -691,8 +691,9 @@ else
   jdk.jdwp.agent-libs: jdk.jdwp.agent-gensrc
 
   # The swing beans need to have java base properly generated to avoid errors
-  # in javadoc.
-  java.desktop-gensrc-src: java.base-gensrc
+  # in javadoc. The X11 wrappers need the java.base include files to have been
+  # copied and processed.
+  java.desktop-gensrc-src: java.base-gensrc java.base-copy
 
   # The annotation processing for jdk.internal.vm.ci and jdk.internal.vm.compiler
   # needs classes from the current JDK.

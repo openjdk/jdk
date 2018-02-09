@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -342,7 +342,7 @@ class Access: public AllStatic {
   template <DecoratorSet expected_mo_decorators>
   static void verify_primitive_decorators() {
     const DecoratorSet primitive_decorators = (AS_DECORATOR_MASK ^ AS_NO_KEEPALIVE) | IN_HEAP |
-                                               IN_HEAP_ARRAY | MO_DECORATOR_MASK;
+                                               IN_HEAP_ARRAY;
     verify_decorators<expected_mo_decorators | primitive_decorators>();
   }
 
@@ -350,7 +350,7 @@ class Access: public AllStatic {
   static void verify_oop_decorators() {
     const DecoratorSet oop_decorators = AS_DECORATOR_MASK | IN_DECORATOR_MASK |
                                         (ON_DECORATOR_MASK ^ ON_UNKNOWN_OOP_REF) | // no unknown oop refs outside of the heap
-                                        OOP_DECORATOR_MASK | MO_DECORATOR_MASK;
+                                        OOP_DECORATOR_MASK;
     verify_decorators<expected_mo_decorators | oop_decorators>();
   }
 
@@ -358,8 +358,7 @@ class Access: public AllStatic {
   static void verify_heap_oop_decorators() {
     const DecoratorSet heap_oop_decorators = AS_DECORATOR_MASK | ON_DECORATOR_MASK |
                                              OOP_DECORATOR_MASK | (IN_DECORATOR_MASK ^
-                                                                  (IN_ROOT ^ IN_CONCURRENT_ROOT)) | // no root accesses in the heap
-                                             MO_DECORATOR_MASK;
+                                                                   (IN_ROOT | IN_CONCURRENT_ROOT)); // no root accesses in the heap
     verify_decorators<expected_mo_decorators | heap_oop_decorators>();
   }
 

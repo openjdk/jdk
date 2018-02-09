@@ -42,18 +42,14 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Queue;
 import java.util.PriorityQueue;
+import java.util.Queue;
 
 public class PriorityQueueSort {
 
     static class MyComparator implements Comparator<Integer> {
         public int compare(Integer x, Integer y) {
-            int i = x.intValue();
-            int j = y.intValue();
-            if (i < j) return -1;
-            if (i > j) return 1;
-            return 0;
+            return Integer.compare(x.intValue(), y.intValue());
         }
     }
 

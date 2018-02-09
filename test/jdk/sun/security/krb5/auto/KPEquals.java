@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
 
 /*
  * @test
- * @bug 8015669
+ * @bug 8015669 8194486
  * @summary KerberosPrincipal::equals should ignore name-type
+ * @library /test/lib
  * @compile -XDignore.symbol.file KPEquals.java
- * @run main/othervm KPEquals
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts KPEquals
  */
 
 import sun.security.jgss.GSSUtil;

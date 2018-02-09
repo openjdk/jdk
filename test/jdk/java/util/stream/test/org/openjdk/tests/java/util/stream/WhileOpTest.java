@@ -47,6 +47,7 @@ import java.util.stream.TestData;
 /*
  * @test
  * @bug 8071597 8193856
+ * @run main/timeout=240
  */
 @Test
 public class WhileOpTest extends OpTestCase {

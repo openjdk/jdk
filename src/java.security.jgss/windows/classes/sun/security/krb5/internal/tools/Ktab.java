@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,14 @@ public class Ktab {
      */
     public static void main(String[] args) {
         Ktab ktab = new Ktab();
-        if ((args.length == 1) && (args[0].equalsIgnoreCase("-help"))) {
+        if ((args.length == 1) &&
+            ((args[0].equalsIgnoreCase("-?")) ||
+             (args[0].equalsIgnoreCase("-h")) ||
+             (args[0].equalsIgnoreCase("--help")) ||
+             // -help: legacy.
+             (args[0].equalsIgnoreCase("-help")))) {
             ktab.printHelp();
+            System.exit(0);
             return;
         } else if ((args == null) || (args.length == 0)) {
             ktab.action = 'l';

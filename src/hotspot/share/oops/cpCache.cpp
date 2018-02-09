@@ -177,6 +177,7 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
       // instruction somehow links to a non-interface method (in Object).
       // In that case, the method has no itable index and must be invoked as a virtual.
       // Set a flag to keep track of this corner case.
+      assert(method->is_public(), "Calling non-public method in Object with invokeinterface");
       change_to_virtual = true;
 
       // ...and fall through as if we were handling invokevirtual:

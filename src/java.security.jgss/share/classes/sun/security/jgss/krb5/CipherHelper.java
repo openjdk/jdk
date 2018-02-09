@@ -40,6 +40,8 @@ import java.security.MessageDigest;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import sun.security.krb5.*;
+import sun.security.krb5.internal.crypto.Aes128Sha2;
+import sun.security.krb5.internal.crypto.Aes256Sha2;
 import sun.security.krb5.internal.crypto.Des3;
 import sun.security.krb5.internal.crypto.Aes128;
 import sun.security.krb5.internal.crypto.Aes256;
@@ -101,6 +103,8 @@ class CipherHelper {
 
         case EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96:
         case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96:
+        case EncryptedData.ETYPE_AES128_CTS_HMAC_SHA256_128:
+        case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA384_192:
             sgnAlg = -1;
             sealAlg = -1;
             break;
@@ -365,6 +369,33 @@ class CipherHelper {
                 throw ge;
             }
 
+        case EncryptedData.ETYPE_AES128_CTS_HMAC_SHA256_128:
+            try {
+                byte[] answer = Aes128Sha2.calculateChecksum(keybytes, key_usage,
+                        buf, 0, total);
+                return answer;
+            } catch (GeneralSecurityException e) {
+                GSSException ge = new GSSException(GSSException.FAILURE, -1,
+                        "Could not use AES128 signing algorithm - " +
+                                e.getMessage());
+                ge.initCause(e);
+                throw ge;
+            }
+
+        case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA384_192:
+            try {
+                byte[] answer = Aes256Sha2.calculateChecksum(keybytes, key_usage,
+                        buf, 0, total);
+                return answer;
+            } catch (GeneralSecurityException e) {
+                GSSException ge = new GSSException(GSSException.FAILURE, -1,
+                        "Could not use AES256 signing algorithm - " +
+                                e.getMessage());
+                ge.initCause(e);
+                throw ge;
+            }
+
+
         default:
             throw new GSSException(GSSException.FAILURE, -1,
                 "Unsupported encryption type: " + etype);
@@ -517,6 +548,11 @@ class CipherHelper {
         case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96:
             return Aes256.getChecksumLength();
 
+        case EncryptedData.ETYPE_AES128_CTS_HMAC_SHA256_128:
+            return Aes128Sha2.getChecksumLength();
+        case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA384_192:
+            return Aes256Sha2.getChecksumLength();
+
         case EncryptedData.ETYPE_ARCFOUR_HMAC:
             // only first 8 octets of HMAC Sgn_Cksum are used
             return HMAC_CHECKSUM_SIZE;
@@ -573,6 +609,14 @@ class CipherHelper {
             case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96:
                     aes256Decrypt(token, ciphertext, cStart, cLen,
                                 plaintext, pStart, key_usage);
+                    break;
+            case EncryptedData.ETYPE_AES128_CTS_HMAC_SHA256_128:
+                    aes128Sha2Decrypt(token, ciphertext, cStart, cLen,
+                            plaintext, pStart, key_usage);
+                    break;
+            case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA384_192:
+                    aes256Sha2Decrypt(token, ciphertext, cStart, cLen,
+                            plaintext, pStart, key_usage);
                     break;
             default:
                     throw new GSSException(GSSException.FAILURE, -1,
@@ -654,6 +698,14 @@ class CipherHelper {
                     aes256Decrypt(token, ciphertext, 0, cLen,
                                 plaintext, pStart, key_usage);
                     break;
+            case EncryptedData.ETYPE_AES128_CTS_HMAC_SHA256_128:
+                    aes128Sha2Decrypt(token, ciphertext, 0, cLen,
+                            plaintext, pStart, key_usage);
+                    break;
+            case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA384_192:
+                    aes256Sha2Decrypt(token, ciphertext, 0, cLen,
+                            plaintext, pStart, key_usage);
+                    break;
             default:
                     throw new GSSException(GSSException.FAILURE, -1,
                         "Unsupported etype: " + etype);
@@ -720,6 +772,12 @@ class CipherHelper {
             case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96:
                 return aes256Encrypt(confounder, tokenHeader,
                             plaintext, start, len, key_usage);
+            case EncryptedData.ETYPE_AES128_CTS_HMAC_SHA256_128:
+                return aes128Sha2Encrypt(confounder, tokenHeader,
+                        plaintext, start, len, key_usage);
+            case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA384_192:
+                return aes256Sha2Encrypt(confounder, tokenHeader,
+                        plaintext, start, len, key_usage);
             default:
                 throw new GSSException(GSSException.FAILURE, -1,
                     "Unsupported etype: " + etype);
@@ -795,6 +853,14 @@ class CipherHelper {
             case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96:
                     ctext = aes256Encrypt(confounder, tokenHeader,
                                 plaintext, pStart, pLen, key_usage);
+                    break;
+            case EncryptedData.ETYPE_AES128_CTS_HMAC_SHA256_128:
+                    ctext = aes128Sha2Encrypt(confounder, tokenHeader,
+                            plaintext, pStart, pLen, key_usage);
+                    break;
+            case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA384_192:
+                    ctext = aes256Sha2Encrypt(confounder, tokenHeader,
+                            plaintext, pStart, pLen, key_usage);
                     break;
             default:
                     throw new GSSException(GSSException.FAILURE, -1,
@@ -1317,6 +1383,38 @@ class CipherHelper {
         }
     }
 
+    private byte[] aes128Sha2Encrypt(byte[] confounder, byte[] tokenHeader,
+            byte[] plaintext, int start, int len, int key_usage)
+            throws GSSException {
+
+        // encrypt { AES-plaintext-data | filler | header }
+        // AES-plaintext-data { confounder | plaintext }
+        // WrapToken = { tokenHeader |
+        //      Encrypt (confounder | plaintext | tokenHeader ) | HMAC }
+
+        byte[] all = new byte[confounder.length + len + tokenHeader.length];
+        System.arraycopy(confounder, 0, all, 0, confounder.length);
+        System.arraycopy(plaintext, start, all, confounder.length, len);
+        System.arraycopy(tokenHeader, 0, all, confounder.length+len,
+                tokenHeader.length);
+
+        // Krb5Token.debug("\naes128Sha2Encrypt:" + Krb5Token.getHexBytes(all));
+        try {
+            byte[] answer = Aes128Sha2.encryptRaw(keybytes, key_usage,
+                    ZERO_IV_AES,
+                    all, 0, all.length);
+            // Krb5Token.debug("\naes128Sha2Encrypt encrypted:" +
+            //                  Krb5Token.getHexBytes(answer));
+            return answer;
+        } catch (Exception e) {
+            // GeneralSecurityException, KrbCryptoException
+            GSSException ge = new GSSException(GSSException.FAILURE, -1,
+                    "Could not use Aes128Sha2 Cipher - " + e.getMessage());
+            ge.initCause(e);
+            throw ge;
+        }
+    }
+
     private void aes128Decrypt(WrapToken_v2 token, byte[] ciphertext,
         int cStart, int cLen, byte[] plaintext, int pStart, int key_usage)
         throws GSSException {
@@ -1354,6 +1452,43 @@ class CipherHelper {
         */
     }
 
+    private void aes128Sha2Decrypt(WrapToken_v2 token, byte[] ciphertext,
+            int cStart, int cLen, byte[] plaintext, int pStart, int key_usage)
+            throws GSSException {
+
+        byte[] ptext = null;
+
+        try {
+            ptext = Aes128Sha2.decryptRaw(keybytes, key_usage,
+                    ZERO_IV_AES, ciphertext, cStart, cLen);
+        } catch (GeneralSecurityException e) {
+            GSSException ge = new GSSException(GSSException.FAILURE, -1,
+                    "Could not use AES128Sha2 Cipher - " + e.getMessage());
+            ge.initCause(e);
+            throw ge;
+        }
+
+        /*
+        Krb5Token.debug("\naes128Sha2Decrypt in: " +
+            Krb5Token.getHexBytes(ciphertext, cStart, cLen));
+        Krb5Token.debug("\naes128Sha2Decrypt plain: " +
+            Krb5Token.getHexBytes(ptext));
+        Krb5Token.debug("\naes128Sha2Decrypt ptext: " +
+            Krb5Token.getHexBytes(ptext));
+        */
+
+        // Strip out confounder and token header
+        int len = ptext.length - WrapToken_v2.CONFOUNDER_SIZE -
+                WrapToken_v2.TOKEN_HEADER_SIZE;
+        System.arraycopy(ptext, WrapToken_v2.CONFOUNDER_SIZE,
+                plaintext, pStart, len);
+
+        /*
+        Krb5Token.debug("\naes128Sha2Decrypt plaintext: " +
+            Krb5Token.getHexBytes(plaintext, pStart, len));
+        */
+    }
+
     private byte[] aes256Encrypt(byte[] confounder, byte[] tokenHeader,
         byte[] plaintext, int start, int len, int key_usage)
         throws GSSException {
@@ -1381,6 +1516,38 @@ class CipherHelper {
             // GeneralSecurityException, KrbCryptoException
             GSSException ge = new GSSException(GSSException.FAILURE, -1,
                 "Could not use AES256 Cipher - " + e.getMessage());
+            ge.initCause(e);
+            throw ge;
+        }
+    }
+
+    private byte[] aes256Sha2Encrypt(byte[] confounder, byte[] tokenHeader,
+            byte[] plaintext, int start, int len, int key_usage)
+            throws GSSException {
+
+        // encrypt { AES-plaintext-data | filler | header }
+        // AES-plaintext-data { confounder | plaintext }
+        // WrapToken = { tokenHeader |
+        //       Encrypt (confounder | plaintext | tokenHeader ) | HMAC }
+
+        byte[] all = new byte[confounder.length + len + tokenHeader.length];
+        System.arraycopy(confounder, 0, all, 0, confounder.length);
+        System.arraycopy(plaintext, start, all, confounder.length, len);
+        System.arraycopy(tokenHeader, 0, all, confounder.length+len,
+                tokenHeader.length);
+
+        // Krb5Token.debug("\naes256Sha2Encrypt:" + Krb5Token.getHexBytes(all));
+
+        try {
+            byte[] answer = Aes256Sha2.encryptRaw(keybytes, key_usage,
+                    ZERO_IV_AES, all, 0, all.length);
+            // Krb5Token.debug("\naes256Sha2Encrypt encrypted:" +
+            //  Krb5Token.getHexBytes(answer));
+            return answer;
+        } catch (Exception e) {
+            // GeneralSecurityException, KrbCryptoException
+            GSSException ge = new GSSException(GSSException.FAILURE, -1,
+                    "Could not use Aes256Sha2 Cipher - " + e.getMessage());
             ge.initCause(e);
             throw ge;
         }
@@ -1418,6 +1585,43 @@ class CipherHelper {
 
         /*
         Krb5Token.debug("\naes128Decrypt plaintext: " +
+            Krb5Token.getHexBytes(plaintext, pStart, len));
+        */
+
+    }
+
+    private void aes256Sha2Decrypt(WrapToken_v2 token, byte[] ciphertext,
+            int cStart, int cLen, byte[] plaintext, int pStart, int key_usage)
+            throws GSSException {
+
+        byte[] ptext;
+        try {
+            ptext = Aes256Sha2.decryptRaw(keybytes, key_usage,
+                    ZERO_IV_AES, ciphertext, cStart, cLen);
+        } catch (GeneralSecurityException e) {
+            GSSException ge = new GSSException(GSSException.FAILURE, -1,
+                    "Could not use AES256Sha2 Cipher - " + e.getMessage());
+            ge.initCause(e);
+            throw ge;
+        }
+
+        /*
+        Krb5Token.debug("\naes256Sha2Decrypt in: " +
+            Krb5Token.getHexBytes(ciphertext, cStart, cLen));
+        Krb5Token.debug("\naes256Sha2Decrypt plain: " +
+            Krb5Token.getHexBytes(ptext));
+        Krb5Token.debug("\naes256Sha2Decrypt ptext: " +
+            Krb5Token.getHexBytes(ptext));
+        */
+
+        // Strip out confounder and token header
+        int len = ptext.length - WrapToken_v2.CONFOUNDER_SIZE -
+                WrapToken_v2.TOKEN_HEADER_SIZE;
+        System.arraycopy(ptext, WrapToken_v2.CONFOUNDER_SIZE,
+                plaintext, pStart, len);
+
+        /*
+        Krb5Token.debug("\naes256Sha2Decrypt plaintext: " +
             Krb5Token.getHexBytes(plaintext, pStart, len));
         */
 

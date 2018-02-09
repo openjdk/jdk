@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
-
-import static javax.tools.FileManagerUtils.*;
+import java.util.Iterator;
 
 /**
  * File manager based on {@linkplain File java.io.File} and {@linkplain Path java.nio.file.Path}.
@@ -447,4 +446,42 @@ public interface StandardJavaFileManager extends JavaFileManager {
       * @since 9
       */
     default void setPathFactory(PathFactory f) { }
+
+
+    private static Iterable<Path> asPaths(final Iterable<? extends File> files) {
+        return () -> new Iterator<Path>() {
+            Iterator<? extends File> iter = files.iterator();
+
+            @Override
+            public boolean hasNext() {
+                return iter.hasNext();
+            }
+
+            @Override
+            public Path next() {
+                return iter.next().toPath();
+            }
+        };
+    }
+
+    private static Iterable<File> asFiles(final Iterable<? extends Path> paths) {
+        return () -> new Iterator<File>() {
+            Iterator<? extends Path> iter = paths.iterator();
+
+            @Override
+            public boolean hasNext() {
+                return iter.hasNext();
+            }
+
+            @Override
+            public File next() {
+                Path p = iter.next();
+                try {
+                    return p.toFile();
+                } catch (UnsupportedOperationException e) {
+                    throw new IllegalArgumentException(p.toString(), e);
+                }
+            }
+        };
+    }
 }

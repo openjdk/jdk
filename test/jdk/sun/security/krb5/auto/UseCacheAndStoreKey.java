@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
 
 /*
  * @test
- * @bug 7201053
+ * @bug 7201053 8194486
  * @summary Krb5LoginModule shows NPE when both useTicketCache and storeKey
  *          are set to true
+ * @library /test/lib
  * @compile -XDignore.symbol.file UseCacheAndStoreKey.java
- * @run main/othervm UseCacheAndStoreKey
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts UseCacheAndStoreKey
  */
 
 import java.io.FileOutputStream;

@@ -40,7 +40,7 @@ requires.properties= \
     vm.cds
 
 # Minimum jtreg version
-requiredVersion=4.2 b09
+requiredVersion=4.2 b11
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them

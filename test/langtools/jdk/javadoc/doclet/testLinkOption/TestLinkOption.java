@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ public class TestLinkOption extends JavadocTester {
                 + " title=\"class or interface in java.lang\" class=\"externalLink\"><code><tt>getSystemClassLoader()</tt>"
                 + "</code></a> as the parent class loader.</div>",
                 "<div class=\"block\">is equivalent to invoking <code>"
-                + "<a href=\"../pkg/B.html#createTempFile-java.lang.String-java.lang.String-java.io.File-\">"
+                + "<a href=\"#createTempFile-java.lang.String-java.lang.String-java.io.File-\">"
                 + "<code>createTempFile(prefix,&nbsp;suffix,&nbsp;null)</code></a></code>.</div>",
                 "<a href=\"" + url + "java/lang/String.html?is-external=true\" "
                 + "title=\"class or interface in java.lang\" class=\"externalLink\">Link-Plain to String Class</a>",

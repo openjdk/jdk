@@ -749,8 +749,13 @@ C2V_VMENTRY(jobject, findUniqueConcreteMethod, (JNIEnv *, jobject, jobject jvmci
 C2V_END
 
 C2V_VMENTRY(jobject, getImplementor, (JNIEnv *, jobject, jobject jvmci_type))
-  InstanceKlass* klass = (InstanceKlass*) CompilerToVM::asKlass(jvmci_type);
-  oop implementor = CompilerToVM::get_jvmci_type(klass->implementor(), CHECK_NULL);
+  Klass* klass = CompilerToVM::asKlass(jvmci_type);
+  if (!klass->is_interface()) {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
+        err_msg("Expected interface type, got %s", klass->external_name()));
+  }
+  InstanceKlass* iklass = InstanceKlass::cast(klass);
+  oop implementor = CompilerToVM::get_jvmci_type(iklass->implementor(), CHECK_NULL);
   return JNIHandles::make_local(THREAD, implementor);
 C2V_END
 
@@ -989,8 +994,12 @@ C2V_VMENTRY(jboolean, hasFinalizableSubclass,(JNIEnv *, jobject, jobject jvmci_t
 C2V_END
 
 C2V_VMENTRY(jobject, getClassInitializer, (JNIEnv *, jobject, jobject jvmci_type))
-  InstanceKlass* klass = (InstanceKlass*) CompilerToVM::asKlass(jvmci_type);
-  oop result = CompilerToVM::get_jvmci_method(klass->class_initializer(), CHECK_NULL);
+  Klass* klass = CompilerToVM::asKlass(jvmci_type);
+  if (!klass->is_instance_klass()) {
+    return NULL;
+  }
+  InstanceKlass* iklass = InstanceKlass::cast(klass);
+  oop result = CompilerToVM::get_jvmci_method(iklass->class_initializer(), CHECK_NULL);
   return JNIHandles::make_local(THREAD, result);
 C2V_END
 

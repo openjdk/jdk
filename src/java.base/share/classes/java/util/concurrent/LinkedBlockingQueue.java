@@ -1060,11 +1060,10 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         int n, len = 0;
         do {
             // 1. Extract batch of up to 64 elements while holding the lock.
-            long deathRow = 0;          // "bitset" of size 64
             fullyLock();
             try {
-                if (nodes == null) {
-                    if (p == null) p = head.next;
+                if (nodes == null) {  // first batch; initialize
+                    p = head.next;
                     for (Node<E> q = p; q != null; q = succ(q))
                         if (q.item != null && ++len == 64)
                             break;
@@ -1077,6 +1076,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
             }
 
             // 2. Run the filter on the elements while lock is free.
+            long deathRow = 0L;       // "bitset" of size 64
             for (int i = 0; i < n; i++) {
                 final E e;
                 if ((e = nodes[i].item) != null && filter.test(e))
@@ -1095,6 +1095,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
                             unlink(q, ancestor);
                             removed = true;
                         }
+                        nodes[i] = null; // help GC
                     }
                 } finally {
                     fullyUnlock();

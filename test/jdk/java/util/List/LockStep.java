@@ -29,10 +29,23 @@
  * @key randomness
  */
 
-import java.io.*;
-import java.util.*;
-import java.util.concurrent.*;
-import static java.util.Collections.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Random;
+import java.util.Vector;
 
 @SuppressWarnings("unchecked")
 public class LockStep {

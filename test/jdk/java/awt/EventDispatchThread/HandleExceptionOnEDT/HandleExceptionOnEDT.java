@@ -90,9 +90,9 @@ public class HandleExceptionOnEDT
         Point fp = f.getLocationOnScreen();
         r.mouseMove(fp.x + f.getWidth() / 2, fp.y + f.getHeight() / 2);
         Util.waitForIdle(r);
-        r.mousePress(InputEvent.BUTTON1_MASK);
+        r.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         Util.waitForIdle(r);
-        r.mouseRelease(InputEvent.BUTTON2_MASK);
+        r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         f.removeMouseListener(exceptionListener);
 
         if (!exceptionHandled)
@@ -118,9 +118,9 @@ public class HandleExceptionOnEDT
         Point dp = d.getLocationOnScreen();
         r.mouseMove(dp.x + d.getWidth() / 2, dp.y + d.getHeight() / 2);
         Util.waitForIdle(r);
-        r.mousePress(InputEvent.BUTTON1_MASK);
+        r.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         Util.waitForIdle(r);
-        r.mouseRelease(InputEvent.BUTTON2_MASK);
+        r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         d.removeMouseListener(exceptionListener);
 
         if (!exceptionHandled)
@@ -142,9 +142,9 @@ public class HandleExceptionOnEDT
         mousePressed = false;
         r.mouseMove(fp.x + 50, fp.y + 50);
         Util.waitForIdle(r);
-        r.mousePress(InputEvent.BUTTON1_MASK);
+        r.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         Util.waitForIdle(r);
-        r.mouseRelease(InputEvent.BUTTON1_MASK);
+        r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         Util.waitForIdle(r);
         f.removeMouseListener(pressedListener);
 

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1912,8 +1912,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // - *_slot_offset Indicates offset from SP in number of stack slots.
   // - *_offset      Indicates offset from SP in bytes.
 
-  int stack_slots = c_calling_convention(out_sig_bt, out_regs, out_regs2, total_c_args) // 1+2)
-                  + SharedRuntime::out_preserve_stack_slots(); // See c_calling_convention.
+  int stack_slots = c_calling_convention(out_sig_bt, out_regs, out_regs2, total_c_args) + // 1+2)
+                    SharedRuntime::out_preserve_stack_slots(); // See c_calling_convention.
 
   // Now the space for the inbound oop handle area.
   int total_save_slots = num_java_iarg_registers * VMRegImpl::slots_per_word;
@@ -2044,7 +2044,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   OopMap    *oop_map  = new OopMap(stack_slots * 2, 0 /* arg_slots*/);
 
   if (is_critical_native) {
-    check_needs_gc_for_critical_native(masm, stack_slots, total_in_args, oop_handle_slot_offset, oop_maps, in_regs, in_sig_bt, r_temp_1);
+    check_needs_gc_for_critical_native(masm, stack_slots, total_in_args, oop_handle_slot_offset,
+                                       oop_maps, in_regs, in_sig_bt, r_temp_1);
   }
 
   // Move arguments from register/stack to register/stack.

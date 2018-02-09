@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,9 +186,7 @@ public class TestLibrary {
      * Maximum timeout (before multipliers are applied) is one hour.
      */
     public static long computeDeadline(long timestamp, long timeout) {
-        final long MAX_TIMEOUT_MS = 3_600_000L;
-
-        if (timeout < 0L || timeout > MAX_TIMEOUT_MS) {
+        if (timeout < 0L) {
             throw new IllegalArgumentException("timeout " + timeout + "ms out of range");
         }
 

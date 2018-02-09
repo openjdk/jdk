@@ -217,6 +217,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   friend class ClassLoaderDataGraphKlassIteratorAtomic;
   friend class ClassLoaderDataGraphKlassIteratorStatic;
   friend class ClassLoaderDataGraphMetaspaceIterator;
+  friend class InstanceKlass;
   friend class MetaDataFactory;
   friend class Method;
 

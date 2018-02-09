@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,16 @@ import com.sun.tools.javac.code.Printer;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
+import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.code.Type.IntersectionClassType;
 import com.sun.tools.javac.util.JavacMessages;
 import java.util.Locale;
 import java.util.function.BinaryOperator;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+
 
 /**
  * Print types in source form.
@@ -47,14 +50,44 @@ class TypePrinter extends Printer {
 
     private final JavacMessages messages;
     private final BinaryOperator<String> fullClassNameAndPackageToClass;
-    private final boolean printEnhancedTypes;
+    private final Function<TypeSymbol, String> anonymousToName;
+    private final boolean printIntersectionTypes;
+    private final AnonymousTypeKind anonymousTypesKind;
 
+    /**Create a TypePrinter.
+     *
+     * @param messages javac's messages
+     * @param fullClassNameAndPackageToClass convertor to convert full class names to
+     *                                       simple class names.
+     * @param printIntersectionTypes whether intersection types should be printed
+     * @param anonymousTypesKind how the anonymous types should be printed
+     */
     TypePrinter(JavacMessages messages,
                 BinaryOperator<String> fullClassNameAndPackageToClass,
-                boolean printEnhancedTypes) {
+                boolean printIntersectionTypes, AnonymousTypeKind anonymousTypesKind) {
+        this(messages, fullClassNameAndPackageToClass, cs -> cs.flatName().toString(),
+             printIntersectionTypes, anonymousTypesKind);
+    }
+
+    /**Create a TypePrinter.
+     *
+     * @param messages javac's messages
+     * @param fullClassNameAndPackageToClass convertor to convert full class names to
+     *                                       simple class names.
+     * @param anonymousToName convertor from anonymous classes to name that should be printed
+     *                        if anonymousTypesKind == AnonymousTypeKind.DECLARE
+     * @param printIntersectionTypes whether intersection types should be printed
+     * @param anonymousTypesKind how the anonymous types should be printed
+     */
+    TypePrinter(JavacMessages messages,
+                BinaryOperator<String> fullClassNameAndPackageToClass,
+                Function<TypeSymbol, String> anonymousToName,
+                boolean printIntersectionTypes, AnonymousTypeKind anonymousTypesKind) {
         this.messages = messages;
         this.fullClassNameAndPackageToClass = fullClassNameAndPackageToClass;
-        this.printEnhancedTypes = printEnhancedTypes;
+        this.anonymousToName = anonymousToName;
+        this.printIntersectionTypes = printIntersectionTypes;
+        this.anonymousTypesKind = anonymousTypesKind;
     }
 
     String toString(Type t) {
@@ -96,9 +129,9 @@ class TypePrinter extends Printer {
      */
     @Override
     protected String className(ClassType t, boolean longform, Locale locale) {
-        Symbol sym = t.tsym;
+        TypeSymbol sym = t.tsym;
         if (sym.name.length() == 0 && (sym.flags() & COMPOUND) != 0) {
-            if (printEnhancedTypes) {
+            if (printIntersectionTypes) {
                 return ((IntersectionClassType) t).getExplicitComponents()
                                                   .stream()
                                                   .map(i -> visit(i, locale))
@@ -107,18 +140,26 @@ class TypePrinter extends Printer {
                 return OBJECT;
             }
         } else if (sym.name.length() == 0) {
-            if (printEnhancedTypes) {
-                return t.tsym.flatName().toString().substring(t.tsym.outermostClass().flatName().length());
+            if (anonymousTypesKind == AnonymousTypeKind.DECLARE) {
+                return anonymousToName.apply(sym);
             }
             // Anonymous
             String s;
+            boolean isClass;
             ClassType norm = (ClassType) t.tsym.type;
             if (norm == null) {
                 s = OBJECT;
+                isClass = true;
             } else if (norm.interfaces_field != null && norm.interfaces_field.nonEmpty()) {
                 s = visit(norm.interfaces_field.head, locale);
+                isClass = false;
             } else {
                 s = visit(norm.supertype_field, locale);
+                isClass = true;
+            }
+            if (anonymousTypesKind == AnonymousTypeKind.DISPLAY) {
+                s = isClass ? "<anonymous class extending " + s + ">"
+                            : "<anonymous class implementing " + s + ">";
             }
             return s;
         } else if (longform) {
@@ -152,4 +193,14 @@ class TypePrinter extends Printer {
                 : s.fullname.toString();
     }
 
+    /** Specifies how the anonymous classes should be handled. */
+    public enum AnonymousTypeKind {
+        /* The anonymous class is printed as the name of its supertype. */
+        SUPER,
+        /* The anonymous class is printed as converted by the anonymousToName
+         * convertor. */
+        DECLARE,
+        /* The anonymous class is printed in a human readable form. */
+        DISPLAY;
+    }
 }

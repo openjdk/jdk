@@ -30,7 +30,10 @@
  * @author Konstantin Kladko
  */
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.NoSuchElementException;
 
 public class HasNextAfterException {
     public static void main(String[] args) {

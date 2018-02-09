@@ -73,6 +73,11 @@ int CompiledStaticCall::to_interp_stub_size() {
          LP64_ONLY(15);  // movq (1+1+8); jmp (1+4)
 }
 
+int CompiledStaticCall::to_trampoline_stub_size() {
+  // x86 doesn't use trampolines.
+  return 0;
+}
+
 // Relocation entries for call stub, compiled java to interpreter.
 int CompiledStaticCall::reloc_to_interp_stub() {
   return 4; // 3 in emit_to_interp_stub + 1 in emit_call

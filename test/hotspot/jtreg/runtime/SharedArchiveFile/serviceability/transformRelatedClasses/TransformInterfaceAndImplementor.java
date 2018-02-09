@@ -27,7 +27,7 @@
  * @summary Exercise initial transformation (ClassFileLoadHook)
  *  with CDS with Interface/Implementor pair
  * @library /test/lib /runtime/SharedArchiveFile /testlibrary/jvmti
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires vm.flavor != "minimal"
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar

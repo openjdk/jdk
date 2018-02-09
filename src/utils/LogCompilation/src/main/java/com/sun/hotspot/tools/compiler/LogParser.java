@@ -975,6 +975,12 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
                 // track of it but don't add it to the list yet.
                 methodHandleSite = site;
             }
+        } else if (qname.equals("intrinsic")) {
+            String id = atts.getValue("id");
+            assert id != null : "intrinsic id is null";
+            CallSite cs = (site != null) ? site : scopes.peek();
+            assert cs != null : "no CallSite?";
+            cs.setIntrinsicName(id);
         } else if (qname.equals("regalloc")) {
             compile.setAttempts(Integer.parseInt(search(atts, "attempts")));
         } else if (qname.equals("inline_fail")) {

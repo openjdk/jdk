@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @summary a simple test to ensure that class is loaded from jar file in --patch-module at runtime
  * @library ../..
  * @library /test/hotspot/jtreg/testlibrary

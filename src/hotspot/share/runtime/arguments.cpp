@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,7 +204,9 @@ SystemProperty::SystemProperty(const char* key, const char* value, bool writeabl
   _writeable = writeable;
 }
 
-AgentLibrary::AgentLibrary(const char* name, const char* options, bool is_absolute_path, void* os_lib) {
+AgentLibrary::AgentLibrary(const char* name, const char* options,
+               bool is_absolute_path, void* os_lib,
+               bool instrument_lib) {
   _name = AllocateHeap(strlen(name)+1, mtArguments);
   strcpy(_name, name);
   if (options == NULL) {
@@ -218,6 +220,7 @@ AgentLibrary::AgentLibrary(const char* name, const char* options, bool is_absolu
   _next = NULL;
   _state = agent_invalid;
   _is_static_lib = false;
+  _is_instrument_lib = instrument_lib;
 }
 
 // Check if head of 'option' matches 'name', and sets 'tail' to the remaining
@@ -292,6 +295,10 @@ void Arguments::add_init_library(const char* name, char* options) {
 
 void Arguments::add_init_agent(const char* name, char* options, bool absolute_path) {
   _agentList.add(new AgentLibrary(name, options, absolute_path, NULL));
+}
+
+void Arguments::add_instrument_agent(const char* name, char* options, bool absolute_path) {
+  _agentList.add(new AgentLibrary(name, options, absolute_path, NULL, true));
 }
 
 // Late-binding agents not started via arguments
@@ -501,7 +508,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "MaxRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "MinRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
-  { "UseMembar",                    JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
+  { "UseMembar",                    JDK_Version::jdk(10), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FastTLABRefill",               JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "SafepointSpinBeforeYield",     JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "DeferThrSuspendLoopCount",     JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
@@ -520,6 +527,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "ConvertSleepToYield",           JDK_Version::jdk(9),      JDK_Version::jdk(10), JDK_Version::jdk(11) },
   { "ConvertYieldToSleep",           JDK_Version::jdk(9),      JDK_Version::jdk(10), JDK_Version::jdk(11) },
   { "MinSleepInterval",              JDK_Version::jdk(9),      JDK_Version::jdk(10), JDK_Version::jdk(11) },
+  { "CheckAssertionStatusDirectives",JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "PermSize",                      JDK_Version::undefined(), JDK_Version::jdk(8),  JDK_Version::undefined() },
   { "MaxPermSize",                   JDK_Version::undefined(), JDK_Version::jdk(8),  JDK_Version::undefined() },
   { "SharedReadWriteSize",           JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
@@ -678,6 +686,14 @@ static bool lookup_special_flag(const char *flag_name, size_t skip_index) {
   return false;
 }
 
+// Verifies the correctness of the entries in the special_jvm_flags table.
+// If there is a semantic error (i.e. a bug in the table) such as the obsoletion
+// version being earlier than the deprecation version, then a warning is issued
+// and verification fails - by returning false. If it is detected that the table
+// is out of date, with respect to the current version, then a warning is issued
+// but verification does not fail. This allows the VM to operate when the version
+// is first updated, without needing to update all the impacted flags at the
+// same time.
 static bool verify_special_jvm_flags() {
   bool success = true;
   for (size_t i = 0; special_jvm_flags[i].name != NULL; i++) {
@@ -713,8 +729,8 @@ static bool verify_special_jvm_flags() {
       // if flag has become obsolete it should not have a "globals" flag defined anymore.
       if (!version_less_than(JDK_Version::current(), flag.obsolete_in)) {
         if (Flag::find_flag(flag.name) != NULL) {
-          warning("Global variable for obsolete special flag entry \"%s\" should be removed", flag.name);
-          success = false;
+          // Temporarily disable the warning: 8196739
+          // warning("Global variable for obsolete special flag entry \"%s\" should be removed", flag.name);
         }
       }
     }
@@ -723,8 +739,8 @@ static bool verify_special_jvm_flags() {
       // if flag has become expired it should not have a "globals" flag defined anymore.
       if (!version_less_than(JDK_Version::current(), flag.expired_in)) {
         if (Flag::find_flag(flag.name) != NULL) {
-          warning("Global variable for expired flag entry \"%s\" should be removed", flag.name);
-          success = false;
+          // Temporarily disable the warning: 8196739
+          // warning("Global variable for expired flag entry \"%s\" should be removed", flag.name);
         }
       }
     }
@@ -2795,7 +2811,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         size_t length = strlen(tail) + 1;
         char *options = NEW_C_HEAP_ARRAY(char, length, mtArguments);
         jio_snprintf(options, length, "%s", tail);
-        add_init_agent("instrument", options, false);
+        add_instrument_agent("instrument", options, false);
         // java agents need module java.instrument
         if (!create_numbered_property("jdk.module.addmods", "java.instrument", addmods_count++)) {
           return JNI_ENOMEM;
