@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,8 @@
 
 
 // Copy bytes; larger units are filled atomically if everything is aligned.
-void Copy::conjoint_memory_atomic(void* from, void* to, size_t size) {
-  address src = (address) from;
-  address dst = (address) to;
-  uintptr_t bits = (uintptr_t) src | (uintptr_t) dst | (uintptr_t) size;
+void Copy::conjoint_memory_atomic(const void* from, void* to, size_t size) {
+  uintptr_t bits = (uintptr_t) from | (uintptr_t) to | (uintptr_t) size;
 
   // (Note:  We could improve performance by ignoring the low bits of size,
   // and putting a short cleanup loop after each bulk copy loop.
@@ -43,14 +41,14 @@ void Copy::conjoint_memory_atomic(void* from, void* to, size_t size) {
   // which may or may not want to include such optimizations.)
 
   if (bits % sizeof(jlong) == 0) {
-    Copy::conjoint_jlongs_atomic((jlong*) src, (jlong*) dst, size / sizeof(jlong));
+    Copy::conjoint_jlongs_atomic((const jlong*) from, (jlong*) to, size / sizeof(jlong));
   } else if (bits % sizeof(jint) == 0) {
-    Copy::conjoint_jints_atomic((jint*) src, (jint*) dst, size / sizeof(jint));
+    Copy::conjoint_jints_atomic((const jint*) from, (jint*) to, size / sizeof(jint));
   } else if (bits % sizeof(jshort) == 0) {
-    Copy::conjoint_jshorts_atomic((jshort*) src, (jshort*) dst, size / sizeof(jshort));
+    Copy::conjoint_jshorts_atomic((const jshort*) from, (jshort*) to, size / sizeof(jshort));
   } else {
     // Not aligned, so no need to be atomic.
-    Copy::conjoint_jbytes((void*) src, (void*) dst, size);
+    Copy::conjoint_jbytes((const void*) from, (void*) to, size);
   }
 }
 
