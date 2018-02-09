@@ -252,7 +252,7 @@ public:
     _max_rs_mem_sz(0), _max_code_root_mem_sz(0)
   {}
 
-  bool doHeapRegion(HeapRegion* r) {
+  bool do_heap_region(HeapRegion* r) {
     HeapRegionRemSet* hrrs = r->rem_set();
 
     // HeapRegionRemSet::mem_size() includes the
