@@ -46,6 +46,7 @@ import java.security.Permission;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.cert.Certificate;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -57,7 +58,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.Set;
-import java.util.Stack;
 import java.util.StringTokenizer;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
@@ -101,10 +101,10 @@ public class URLClassPath {
     }
 
     /* The original search path of URLs. */
-    private final List<URL> path;
+    private final ArrayList<URL> path;
 
-    /* The stack of unopened URLs */
-    private final Stack<URL> unopenedUrls = new Stack<>();
+    /* The deque of unopened URLs */
+    private final ArrayDeque<URL> unopenedUrls;
 
     /* The resulting search path of Loaders */
     private final ArrayList<Loader> loaders = new ArrayList<>();
@@ -138,12 +138,15 @@ public class URLClassPath {
     public URLClassPath(URL[] urls,
                         URLStreamHandlerFactory factory,
                         AccessControlContext acc) {
-        List<URL> path = new ArrayList<>(urls.length);
+        ArrayList<URL> path = new ArrayList<>(urls.length);
+        ArrayDeque<URL> unopenedUrls = new ArrayDeque<>(urls.length);
         for (URL url : urls) {
             path.add(url);
+            unopenedUrls.add(url);
         }
         this.path = path;
-        push(urls);
+        this.unopenedUrls = unopenedUrls;
+
         if (factory != null) {
             jarHandler = factory.createURLStreamHandler("jar");
         } else {
@@ -169,7 +172,7 @@ public class URLClassPath {
      * @apiNote Used to create the application class path.
      */
     URLClassPath(String cp, boolean skipEmptyElements) {
-        List<URL> path = new ArrayList<>();
+        ArrayList<URL> path = new ArrayList<>();
         if (cp != null) {
             // map each element of class path to a file URL
             int off = 0;
@@ -189,13 +192,16 @@ public class URLClassPath {
                 URL url = toFileURL(element);
                 if (url != null) path.add(url);
             }
-
-            // push the URLs
-            for (int i = path.size() - 1; i >= 0; --i) {
-                unopenedUrls.push(path.get(i));
-            }
         }
 
+        // can't use ArrayDeque#addAll or new ArrayDeque(Collection);
+        // it's too early in the bootstrap to trigger use of lambdas
+        int size = path.size();
+        ArrayDeque<URL> unopenedUrls = new ArrayDeque<>(size);
+        for (int i = 0; i < size; i++)
+            unopenedUrls.add(path.get(i));
+
+        this.unopenedUrls = unopenedUrls;
         this.path = path;
         this.jarHandler = null;
         this.acc = null;
@@ -225,14 +231,13 @@ public class URLClassPath {
      * URLs, then invoking this method has no effect.
      */
     public synchronized void addURL(URL url) {
-        if (closed)
+        if (closed || url == null)
             return;
         synchronized (unopenedUrls) {
-            if (url == null || path.contains(url))
-                return;
-
-            unopenedUrls.add(0, url);
-            path.add(url);
+            if (! path.contains(url)) {
+                unopenedUrls.addLast(url);
+                path.add(url);
+            }
         }
     }
 
@@ -413,17 +418,14 @@ public class URLClassPath {
         if (closed) {
             return null;
         }
-         // Expand URL search path until the request can be satisfied
-         // or the URL stack is empty.
+        // Expand URL search path until the request can be satisfied
+        // or unopenedUrls is exhausted.
         while (loaders.size() < index + 1) {
-            // Pop the next URL from the URL stack
-            URL url;
+            final URL url;
             synchronized (unopenedUrls) {
-                if (unopenedUrls.empty()) {
+                url = unopenedUrls.pollFirst();
+                if (url == null)
                     return null;
-                } else {
-                    url = unopenedUrls.pop();
-                }
             }
             // Skip this URL if it already has a Loader. (Loader
             // may be null in the case where URL has not been opened
@@ -437,7 +439,7 @@ public class URLClassPath {
             try {
                 loader = getLoader(url);
                 // If the loader defines a local class path then add the
-                // URLs to the list of URLs to be opened.
+                // URLs as the next URLs to be opened.
                 URL[] urls = loader.getClassPath();
                 if (urls != null) {
                     push(urls);
@@ -502,12 +504,12 @@ public class URLClassPath {
     }
 
     /*
-     * Pushes the specified URLs onto the list of unopened URLs.
+     * Pushes the specified URLs onto the head of unopened URLs.
      */
     private void push(URL[] urls) {
         synchronized (unopenedUrls) {
             for (int i = urls.length - 1; i >= 0; --i) {
-                unopenedUrls.push(urls[i]);
+                unopenedUrls.addFirst(urls[i]);
             }
         }
     }
