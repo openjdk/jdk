@@ -79,7 +79,7 @@ public:
   G1YoungRemSetSamplingClosure(SuspendibleThreadSetJoiner* sts) :
     HeapRegionClosure(), _sts(sts), _regions_visited(0), _sampled_rs_lengths(0) { }
 
-  virtual bool do_heap_region(HeapRegion* r) {
+  virtual bool doHeapRegion(HeapRegion* r) {
     size_t rs_length = r->rem_set()->occupied();
     _sampled_rs_lengths += rs_length;
 
@@ -114,7 +114,7 @@ void G1YoungRemSetSamplingThread::sample_young_list_rs_lengths() {
     G1CollectionSet* g1cs = g1h->collection_set();
     g1cs->iterate(&cl);
 
-    if (cl.is_complete()) {
+    if (cl.complete()) {
       g1p->revise_young_list_target_length_if_necessary(cl.sampled_rs_lengths());
     }
   }

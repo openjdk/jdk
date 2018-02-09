@@ -176,7 +176,7 @@ public:
                            CodeBlobClosure* code_root_cl,
                            uint worker_i);
 
-  bool do_heap_region(HeapRegion* r);
+  bool doHeapRegion(HeapRegion* r);
 
   double strong_code_root_scan_time_sec() {
     return _strong_code_root_scan_time_sec;

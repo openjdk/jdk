@@ -242,9 +242,9 @@ void HeapRegionManager::iterate(HeapRegionClosure* blk) const {
       continue;
     }
     guarantee(at(i) != NULL, "Tried to access region %u that has a NULL HeapRegion*", i);
-    bool res = blk->do_heap_region(at(i));
+    bool res = blk->doHeapRegion(at(i));
     if (res) {
-      blk->set_incomplete();
+      blk->incomplete();
       return;
     }
   }
@@ -353,7 +353,7 @@ void HeapRegionManager::par_iterate(HeapRegionClosure* blk, HeapRegionClaimer* h
     if (!hrclaimer->claim_region(index)) {
       continue;
     }
-    bool res = blk->do_heap_region(r);
+    bool res = blk->doHeapRegion(r);
     if (res) {
       return;
     }
