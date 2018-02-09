@@ -175,23 +175,18 @@ public class URLClassPath {
         ArrayList<URL> path = new ArrayList<>();
         if (cp != null) {
             // map each element of class path to a file URL
-            int off = 0;
-            int next;
-            while ((next = cp.indexOf(File.pathSeparator, off)) != -1) {
-                String element = cp.substring(off, next);
+            int off = 0, next;
+            do {
+                next = cp.indexOf(File.pathSeparator, off);
+                String element = (next == -1)
+                    ? cp.substring(off)
+                    : cp.substring(off, next);
                 if (element.length() > 0 || !skipEmptyElements) {
                     URL url = toFileURL(element);
                     if (url != null) path.add(url);
                 }
                 off = next + 1;
-            }
-
-            // remaining element
-            String element = cp.substring(off);
-            if (element.length() > 0 || !skipEmptyElements) {
-                URL url = toFileURL(element);
-                if (url != null) path.add(url);
-            }
+            } while (next != -1);
         }
 
         // can't use ArrayDeque#addAll or new ArrayDeque(Collection);
