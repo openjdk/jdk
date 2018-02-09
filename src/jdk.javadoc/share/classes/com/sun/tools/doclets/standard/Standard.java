@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,6 @@
 
 package com.sun.tools.doclets.standard;
 
-import com.sun.javadoc.ClassDoc;
-import com.sun.javadoc.DocErrorReporter;
-import com.sun.javadoc.PackageDoc;
 import com.sun.javadoc.RootDoc;
 
 /**
@@ -35,8 +32,9 @@ import com.sun.javadoc.RootDoc;
  * @deprecated The doclet has been superseded by its replacement,
  * {@link jdk.javadoc.doclet.StandardDoclet}.
  */
-@Deprecated(forRemoval=true, since="9")
-@SuppressWarnings("deprecation")
+@Deprecated(since="9", forRemoval=true)
+@SuppressWarnings("removal")
+
 public class Standard {
 
     public static boolean start(RootDoc root) {
