@@ -40,7 +40,7 @@ public:
   G1ResetHumongousClosure(G1CMBitMap* bitmap) :
       _bitmap(bitmap) { }
 
-  bool doHeapRegion(HeapRegion* current) {
+  bool do_heap_region(HeapRegion* current) {
     if (current->is_humongous()) {
       if (current->is_starts_humongous()) {
         oop obj = oop(current->bottom());
