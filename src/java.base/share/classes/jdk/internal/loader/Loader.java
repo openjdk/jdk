@@ -63,7 +63,6 @@ import java.util.stream.Stream;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.module.Resources;
 
-
 /**
  * A class loader that loads classes and resources from a collection of
  * modules, or from a single module where the class loader is a member
@@ -111,7 +110,7 @@ public final class Loader extends SecureClassLoader {
     private final Map<ModuleReference, ModuleReader> moduleToReader
         = new ConcurrentHashMap<>();
 
-    // ACC used when loading classes and resources */
+    // ACC used when loading classes and resources
     private final AccessControlContext acc;
 
     /**
