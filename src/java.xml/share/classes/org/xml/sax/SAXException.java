@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,12 @@
 // $Id: SAXException.java,v 1.3 2004/11/03 22:55:32 jsuttor Exp $
 
 package org.xml.sax;
+
+import java.io.IOException;
+import java.io.InvalidClassException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamField;
 
 /**
  * Encapsulate a general SAX error or warning.
@@ -68,7 +74,6 @@ public class SAXException extends Exception {
     public SAXException ()
     {
         super();
-        this.exception = null;
     }
 
 
@@ -79,7 +84,6 @@ public class SAXException extends Exception {
      */
     public SAXException (String message) {
         super(message);
-        this.exception = null;
     }
 
 
@@ -94,8 +98,7 @@ public class SAXException extends Exception {
      */
     public SAXException (Exception e)
     {
-        super();
-        this.exception = e;
+        super(e);
     }
 
 
@@ -110,8 +113,7 @@ public class SAXException extends Exception {
      */
     public SAXException (String message, Exception e)
     {
-        super(message);
-        this.exception = e;
+        super(message, e);
     }
 
 
@@ -127,14 +129,14 @@ public class SAXException extends Exception {
     public String getMessage ()
     {
         String message = super.getMessage();
+        Throwable cause = super.getCause();
 
-        if (message == null && exception != null) {
-            return exception.getMessage();
+        if (message == null && cause != null) {
+            return cause.getMessage();
         } else {
             return message;
         }
     }
-
 
     /**
      * Return the embedded exception, if any.
@@ -143,7 +145,7 @@ public class SAXException extends Exception {
      */
     public Exception getException ()
     {
-        return exception;
+        return getExceptionInternal();
     }
 
     /**
@@ -152,7 +154,7 @@ public class SAXException extends Exception {
      * @return Return the cause of the exception
      */
     public Throwable getCause() {
-        return exception;
+        return super.getCause();
     }
 
     /**
@@ -162,6 +164,7 @@ public class SAXException extends Exception {
      */
     public String toString ()
     {
+        Throwable exception = super.getCause();
         if (exception != null) {
             return super.toString() + "\n" + exception.toString();
         } else {
@@ -175,11 +178,59 @@ public class SAXException extends Exception {
     // Internal state.
     //////////////////////////////////////////////////////////////////////
 
+    private static final ObjectStreamField[] serialPersistentFields = {
+        new ObjectStreamField( "exception", Exception.class )
+    };
 
     /**
-     * @serial The embedded exception if tunnelling, or null.
+     * Writes "exception" field to the stream.
+     *
+     * @param out stream used for serialization.
+     * @throws IOException thrown by <code>ObjectOutputStream</code>
      */
-    private Exception exception;
+    private void writeObject(ObjectOutputStream out)
+            throws IOException {
+        ObjectOutputStream.PutField fields = out.putFields();
+        fields.put("exception", getExceptionInternal());
+        out.writeFields();
+    }
+
+    /**
+     * Reads the "exception" field from the stream.
+     * And initializes the "exception" if it wasn't
+     * done before.
+     *
+     * @param in stream used for deserialization
+     * @throws IOException            thrown by <code>ObjectInputStream</code>
+     * @throws ClassNotFoundException thrown by <code>ObjectInputStream</code>
+     */
+    private void readObject(ObjectInputStream in)
+            throws IOException, ClassNotFoundException {
+        ObjectInputStream.GetField fields = in.readFields();
+        Exception exception = (Exception) fields.get("exception", null);
+        Throwable superCause = super.getCause();
+
+        // if super.getCause() and 'exception' fields present then always use
+        // getCause() value. Otherwise, use 'exception' to initialize cause
+        if (superCause == null && exception != null) {
+            try {
+                super.initCause(exception);
+            } catch (IllegalStateException e) {
+                throw new InvalidClassException("Inconsistent state: two causes");
+            }
+        }
+    }
+
+    // Internal method to guard against overriding of public getException
+    // method by SAXException subclasses
+    private Exception getExceptionInternal() {
+        Throwable cause = super.getCause();
+        if (cause instanceof Exception) {
+            return (Exception) cause;
+        } else {
+            return null;
+        }
+    }
 
     // Added serialVersionUID to preserve binary compatibility
     static final long serialVersionUID = 583241635256073760L;
