@@ -36,9 +36,9 @@ import java.nio.file.ProviderMismatchException;
  * @bug 8038500 8040059 8139956 8146754 8172921 8186142
  * @summary Tests path operations for zip provider.
  *
+ * @modules jdk.zipfs
  * @run main PathOps
  * @run main/othervm/java.security.policy=test.policy PathOps
- * @modules jdk.zipfs
  */
 
 public class PathOps {

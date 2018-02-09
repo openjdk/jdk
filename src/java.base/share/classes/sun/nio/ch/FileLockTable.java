@@ -25,64 +25,27 @@
 
 package sun.nio.ch;
 
-import java.nio.channels.*;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.lang.ref.*;
 import java.io.FileDescriptor;
 import java.io.IOException;
-
-abstract class FileLockTable {
-    protected FileLockTable() {
-    }
-
-    /**
-     * Creates and returns a file lock table for a channel that is connected to
-     * the a system-wide map of all file locks for the Java virtual machine.
-     */
-    public static FileLockTable newSharedFileLockTable(Channel channel,
-                                                       FileDescriptor fd)
-        throws IOException
-    {
-        return new SharedFileLockTable(channel, fd);
-    }
-
-    /**
-     * Adds a file lock to the table.
-     *
-     * @throws OverlappingFileLockException if the file lock overlaps
-     *         with an existing file lock in the table
-     */
-    public abstract void add(FileLock fl) throws OverlappingFileLockException;
-
-    /**
-     * Remove an existing file lock from the table.
-     */
-    public abstract void remove(FileLock fl);
-
-    /**
-     * Removes all file locks from the table.
-     *
-     * @return  The list of file locks removed
-     */
-    public abstract List<FileLock> removeAll();
-
-    /**
-     * Replaces an existing file lock in the table.
-     */
-    public abstract void replace(FileLock fl1, FileLock fl2);
-}
-
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.nio.channels.Channel;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A file lock table that is over a system-wide map of all file locks.
  */
-class SharedFileLockTable extends FileLockTable {
-
+class FileLockTable {
     /**
      * A weak reference to a FileLock.
      * <p>
-     * SharedFileLockTable uses a list of file lock references to avoid keeping the
+     * FileLockTable uses a list of file lock references to avoid keeping the
      * FileLock (and FileChannel) alive.
      */
     private static class FileLockReference extends WeakReference<FileLock> {
@@ -118,14 +81,17 @@ class SharedFileLockTable extends FileLockTable {
     // Locks obtained for this channel
     private final Set<FileLock> locks;
 
-    SharedFileLockTable(Channel channel, FileDescriptor fd) throws IOException {
+    /**
+     * Creates a file lock table for a channel that is connected to the
+     * system-wide map of all file locks for the Java virtual machine.
+     */
+    FileLockTable(Channel channel, FileDescriptor fd) throws IOException {
         this.channel = channel;
         this.fileKey = FileKey.create(fd);
         this.locks = new HashSet<FileLock>();
     }
 
-    @Override
-    public void add(FileLock fl) throws OverlappingFileLockException {
+    void add(FileLock fl) throws OverlappingFileLockException {
         List<FileLockReference> list = lockMap.get(fileKey);
 
         for (;;) {
@@ -176,8 +142,7 @@ class SharedFileLockTable extends FileLockTable {
         }
     }
 
-    @Override
-    public void remove(FileLock fl) {
+    void remove(FileLock fl) {
         assert fl != null;
 
         // the lock must exist so the list of locks must be present
@@ -201,8 +166,7 @@ class SharedFileLockTable extends FileLockTable {
         }
     }
 
-    @Override
-    public List<FileLock> removeAll() {
+    List<FileLock> removeAll() {
         List<FileLock> result = new ArrayList<FileLock>();
         List<FileLockReference> list = lockMap.get(fileKey);
         if (list != null) {
@@ -234,8 +198,7 @@ class SharedFileLockTable extends FileLockTable {
         return result;
     }
 
-    @Override
-    public void replace(FileLock fromLock, FileLock toLock) {
+    void replace(FileLock fromLock, FileLock toLock) {
         // the lock must exist so there must be a list
         List<FileLockReference> list = lockMap.get(fileKey);
         assert list != null;

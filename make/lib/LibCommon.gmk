@@ -68,12 +68,3 @@ LIBJAVA_HEADER_FLAGS := $(addprefix -I, $(call FindSrcDirsForLib, java.base, jav
 INSTALL_LIBRARIES_HERE := $(call FindLibDirForModule, $(MODULE))
 
 ################################################################################
-
-# Define it here since there are multiple uses.
-ifeq ($(USE_EXTERNAL_LIBZ), true)
-  LIBZ := -lz
-else
-  ZLIB_CPPFLAGS := -I$(TOPDIR)/src/java.base/share/native/libzip/zlib
-endif
-
-###############################################################################

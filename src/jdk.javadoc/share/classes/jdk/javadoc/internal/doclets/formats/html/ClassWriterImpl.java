@@ -40,7 +40,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -79,25 +78,17 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
 
     protected final ClassTree classtree;
 
-    protected final TypeElement prev;
-
-    protected final TypeElement next;
-
     /**
      * @param configuration the configuration data for the doclet
      * @param typeElement the class being documented.
-     * @param prevClass the previous class that was documented.
-     * @param nextClass the next class being documented.
      * @param classTree the class tree for the given class.
      */
     public ClassWriterImpl(HtmlConfiguration configuration, TypeElement typeElement,
-                           TypeElement prevClass, TypeElement nextClass, ClassTree classTree) {
-        super(configuration, DocPath.forClass(configuration.utils, typeElement));
+                           ClassTree classTree) {
+        super(configuration, configuration.docPaths.forClass(typeElement));
         this.typeElement = typeElement;
         configuration.currentTypeElement = typeElement;
         this.classtree = classTree;
-        this.prev = prevClass;
-        this.next = nextClass;
     }
 
     /**
@@ -146,44 +137,6 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     protected Content getNavLinkClassUse() {
         Content linkContent = links.createLink(DocPaths.CLASS_USE.resolve(filename), contents.useLabel);
         Content li = HtmlTree.LI(linkContent);
-        return li;
-    }
-
-    /**
-     * Get link to previous class.
-     *
-     * @return a content tree for the previous class link
-     */
-    @Override
-    public Content getNavLinkPrevious() {
-        Content li;
-        if (prev != null) {
-            Content prevLink = getLink(new LinkInfoImpl(configuration,
-                    LinkInfoImpl.Kind.CLASS, prev)
-                    .label(contents.prevClassLabel).strong(true));
-            li = HtmlTree.LI(prevLink);
-        }
-        else
-            li = HtmlTree.LI(contents.prevClassLabel);
-        return li;
-    }
-
-    /**
-     * Get link to next class.
-     *
-     * @return a content tree for the next class link
-     */
-    @Override
-    public Content getNavLinkNext() {
-        Content li;
-        if (next != null) {
-            Content nextLink = getLink(new LinkInfoImpl(configuration,
-                    LinkInfoImpl.Kind.CLASS, next)
-                    .label(contents.nextClassLabel).strong(true));
-            li = HtmlTree.LI(nextLink);
-        }
-        else
-            li = HtmlTree.LI(contents.nextClassLabel);
         return li;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,25 @@ package sun.nio.ch;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.net.*;
-import java.nio.channels.*;
-import java.nio.channels.spi.*;
-import java.util.*;
+import java.net.InetSocketAddress;
+import java.net.ProtocolFamily;
+import java.net.ServerSocket;
+import java.net.SocketAddress;
+import java.net.SocketOption;
+import java.net.StandardProtocolFamily;
+import java.net.StandardSocketOptions;
+import java.nio.channels.AlreadyBoundException;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.NotYetBoundException;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.nio.channels.spi.SelectorProvider;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
+
 import sun.net.NetHooks;
 
 /**
@@ -47,16 +62,13 @@ class ServerSocketChannelImpl
 
     // Our file descriptor
     private final FileDescriptor fd;
-
-    // fd value needed for dev/poll. This value will remain valid
-    // even after the value in the file descriptor object has been set to -1
-    private int fdVal;
+    private final int fdVal;
 
     // ID of native thread currently blocked in this channel, for signalling
     private volatile long thread;
 
     // Lock held by thread currently blocked in this channel
-    private final Object lock = new Object();
+    private final ReentrantLock acceptLock = new ReentrantLock();
 
     // Lock held by any thread that modifies the state fields declared below
     // DO NOT invoke a blocking I/O operation while holding this lock!
@@ -77,7 +89,7 @@ class ServerSocketChannelImpl
     private boolean isReuseAddress;
 
     // Our socket adaptor, if any
-    ServerSocket socket;
+    private ServerSocket socket;
 
     // -- End of fields protected by stateLock
 
@@ -211,7 +223,8 @@ class ServerSocketChannelImpl
 
     @Override
     public ServerSocketChannel bind(SocketAddress local, int backlog) throws IOException {
-        synchronized (lock) {
+        acceptLock.lock();
+        try {
             if (!isOpen())
                 throw new ClosedChannelException();
             if (isBound())
@@ -227,12 +240,15 @@ class ServerSocketChannelImpl
             synchronized (stateLock) {
                 localAddress = Net.localAddress(fd);
             }
+        } finally {
+            acceptLock.unlock();
         }
         return this;
     }
 
     public SocketChannel accept() throws IOException {
-        synchronized (lock) {
+        acceptLock.lock();
+        try {
             if (!isOpen())
                 throw new ClosedChannelException();
             if (!isBound())
@@ -278,6 +294,8 @@ class ServerSocketChannelImpl
             }
             return sc;
 
+        } finally {
+            acceptLock.unlock();
         }
     }
 
@@ -353,7 +371,8 @@ class ServerSocketChannelImpl
     int poll(int events, long timeout) throws IOException {
         assert Thread.holdsLock(blockingLock()) && !isBlocking();
 
-        synchronized (lock) {
+        acceptLock.lock();
+        try {
             int n = 0;
             try {
                 begin();
@@ -368,6 +387,8 @@ class ServerSocketChannelImpl
                 end(n > 0);
             }
             return n;
+        } finally {
+            acceptLock.unlock();
         }
     }
 

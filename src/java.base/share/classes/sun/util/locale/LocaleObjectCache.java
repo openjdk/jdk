@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public abstract class LocaleObjectCache<K, V> {
-    private ConcurrentMap<K, CacheEntry<K, V>> map;
-    private ReferenceQueue<V> queue = new ReferenceQueue<>();
+    private final ConcurrentMap<K, CacheEntry<K, V>> map;
+    private final ReferenceQueue<V> queue = new ReferenceQueue<>();
 
     public LocaleObjectCache() {
         this(16, 0.75f, 16);
@@ -57,17 +57,14 @@ public abstract class LocaleObjectCache<K, V> {
             value = entry.get();
         }
         if (value == null) {
-            V newVal = createObject(key);
-            // make sure key is normalized *after* the object creation
-            // so that newVal is assured to be created from a valid key.
             key = normalizeKey(key);
+            V newVal = createObject(key);
             if (key == null || newVal == null) {
                 // subclass must return non-null key/value object
                 return null;
             }
 
             CacheEntry<K, V> newEntry = new CacheEntry<>(key, newVal, queue);
-
             entry = map.putIfAbsent(key, newEntry);
             if (entry == null) {
                 value = newVal;
@@ -92,7 +89,7 @@ public abstract class LocaleObjectCache<K, V> {
     private void cleanStaleEntries() {
         CacheEntry<K, V> entry;
         while ((entry = (CacheEntry<K, V>)queue.poll()) != null) {
-            map.remove(entry.getKey());
+            map.remove(entry.getKey(), entry);
         }
     }
 

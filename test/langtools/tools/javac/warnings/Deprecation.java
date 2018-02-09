@@ -1,8 +1,9 @@
 /**
  * @test  /nodynamiccopyright/
- * @bug 4986256 6598104 8032211
+ * @bug 4986256 6598104 8032211 8194764
  * @compile/ref=Deprecation.noLint.out                                                 -XDrawDiagnostics Deprecation.java
  * @compile/ref=Deprecation.lintDeprecation.out  -Xlint:deprecation                    -XDrawDiagnostics Deprecation.java
+ * @compile/ref=Deprecation.lintDeprecation.out  -Xlint:deprecation,-options -source 9 -XDrawDiagnostics Deprecation.java
  * @compile/ref=Deprecation.lintDeprecation8.out -Xlint:deprecation,-options -source 8 -XDrawDiagnostics Deprecation.java
  */
 

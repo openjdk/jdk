@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ int dbgsysRecvFrom(int fd, char *buf, size_t nBytes, int flags, struct sockaddr 
 int dbgsysListen(int fd, int backlog);
 int dbgsysRecv(int fd, char *buf, size_t nBytes, int flags);
 int dbgsysSend(int fd, char *buf, size_t nBytes, int flags);
-struct hostent *dbgsysGetHostByName(char *hostname);
+int dbgsysGetAddrInfo(char *hostname, char *service, struct addrinfo *hints, struct addrinfo **results);
 int dbgsysSocket(int domain, int type, int protocol);
 int dbgsysBind(int fd, struct sockaddr *name, socklen_t namelen);
 int dbgsysSetSocketOption(int fd, jint cmd, jboolean on, jvalue value);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,7 +182,7 @@ public class SourceToHTMLConverter {
             int lineno = 1;
             String line;
             relativePath = DocPaths.SOURCE_OUTPUT
-                    .resolve(DocPath.forPackage(utils, te))
+                    .resolve(configuration.docPaths.forPackage(te))
                     .invert();
             Content body = getHeader();
             Content pre = new HtmlTree(HtmlTag.PRE);
@@ -196,7 +196,7 @@ public class SourceToHTMLConverter {
             addBlankLines(pre);
             Content div = HtmlTree.DIV(HtmlStyle.sourceContainer, pre);
             body.addContent((configuration.allowTag(HtmlTag.MAIN)) ? HtmlTree.MAIN(div) : div);
-            writeToFile(body, outputdir.resolve(DocPath.forClass(utils, te)));
+            writeToFile(body, outputdir.resolve(configuration.docPaths.forClass(te)));
         } catch (IOException e) {
             String message = resources.getText("doclet.exception.read.file", fo.getName());
             throw new SimpleDocletException(message, e);
