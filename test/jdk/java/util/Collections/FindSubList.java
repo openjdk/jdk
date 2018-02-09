@@ -27,7 +27,12 @@
  * @summary Basic test for Collections.indexOfSubList/lastIndexOfSubList
  */
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Vector;
 
 public class FindSubList {
     public static void main(String[] args) throws Exception {

@@ -26,8 +26,7 @@
  * @test
  * @summary Test combinations of jigsaw options that affect the use of AppCDS
  *
- * AppCDS does not support uncompressed oops
- * @requires ((vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)) & !vm.graal.enabled
+ * @requires vm.cds & !vm.graal.enabled
  * @library /test/lib ..
  * @modules java.base/jdk.internal.misc
  *          java.management

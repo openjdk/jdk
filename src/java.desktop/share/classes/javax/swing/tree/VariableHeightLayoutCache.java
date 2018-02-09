@@ -409,11 +409,10 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
      */
     public void treeNodesChanged(TreeModelEvent e) {
         if(e != null) {
-            int               changedIndexs[];
-            TreeStateNode     changedNode;
+            int               changedIndexs[]  = e.getChildIndices();
+            TreeStateNode     changedNode = getNodeForPath(
+                    SwingUtilities2.getTreePath(e, getModel()), false, false);
 
-            changedIndexs = e.getChildIndices();
-            changedNode = getNodeForPath(SwingUtilities2.getTreePath(e, getModel()), false, false);
             if(changedNode != null) {
                 Object            changedValue = changedNode.getValue();
 
@@ -421,17 +420,12 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
                    child indexs that are passed in. */
                 changedNode.updatePreferredSize();
                 if(changedNode.hasBeenExpanded() && changedIndexs != null) {
-                    int                counter;
-                    TreeStateNode      changedChildNode;
-
-                    for(counter = 0; counter < changedIndexs.length;
-                        counter++) {
-                        changedChildNode = (TreeStateNode)changedNode
-                                    .getChildAt(changedIndexs[counter]);
+                    for(int index : changedIndexs) {
+                        TreeStateNode changedChildNode = (TreeStateNode)changedNode
+                                    .getChildAt(index);
                         /* Reset the user object. */
                         changedChildNode.setUserObject
-                                    (treeModel.getChild(changedValue,
-                                                     changedIndexs[counter]));
+                                    (treeModel.getChild(changedValue, index));
                         changedChildNode.updatePreferredSize();
                     }
                 }
@@ -462,34 +456,26 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
      */
     public void treeNodesInserted(TreeModelEvent e) {
         if(e != null) {
-            int               changedIndexs[];
-            TreeStateNode     changedParentNode;
-
-            changedIndexs = e.getChildIndices();
-            changedParentNode = getNodeForPath(SwingUtilities2.getTreePath(e, getModel()), false, false);
+            int               changedIndexs[] = e.getChildIndices();
+            TreeStateNode     changedParentNode = getNodeForPath(
+                    SwingUtilities2.getTreePath(e, getModel()), false, false);
             /* Only need to update the children if the node has been
                expanded once. */
             // PENDING(scott): make sure childIndexs is sorted!
             if(changedParentNode != null && changedIndexs != null &&
                changedIndexs.length > 0) {
                 if(changedParentNode.hasBeenExpanded()) {
-                    boolean            makeVisible;
-                    int                counter;
-                    Object             changedParent;
-                    TreeStateNode      newNode;
-                    int                oldChildCount = changedParentNode.
-                                          getChildCount();
+                    boolean   makeVisible =((changedParentNode == root &&
+                                            !rootVisible) ||
+                                            (changedParentNode.getRow() != -1 &&
+                                               changedParentNode.isExpanded()));
+                    int  oldChildCount = changedParentNode.getChildCount();
 
-                    changedParent = changedParentNode.getValue();
-                    makeVisible = ((changedParentNode == root &&
-                                    !rootVisible) ||
-                                   (changedParentNode.getRow() != -1 &&
-                                    changedParentNode.isExpanded()));
-                    for(counter = 0;counter < changedIndexs.length;counter++)
+                    for(int index : changedIndexs)
                     {
-                        newNode = this.createNodeAt(changedParentNode,
-                                                    changedIndexs[counter]);
+                        this.createNodeAt(changedParentNode, index);
                     }
+
                     if(oldChildCount == 0) {
                         // Update the size of the parent.
                         changedParentNode.updatePreferredSize();
@@ -643,7 +629,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
                 rebuild(true);
             }
             else if(changedNode != null) {
-                int                              nodeIndex, oldRow;
+                int                              nodeIndex;
                 TreeStateNode                    newNode, parent;
                 boolean                          wasExpanded, wasVisible;
                 int                              newIndex;
@@ -925,24 +911,22 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
       * row index, the last row index is returned.
       */
     private int getRowContainingYLocation(int location) {
+        final int rows = getRowCount();
+
+        if(rows <= 0)
+            return -1;
         if(isFixedRowHeight()) {
-            if(getRowCount() == 0)
-                return -1;
-            return Math.max(0, Math.min(getRowCount() - 1,
+            return Math.max(0, Math.min(rows - 1,
                                         location / getRowHeight()));
         }
 
-        int                    max, maxY, mid, min, minY;
-        TreeStateNode          node;
+        int max = rows, min = 0, mid = 0;
 
-        if((max = getRowCount()) <= 0)
-            return -1;
-        mid = min = 0;
         while(min < max) {
             mid = (max - min) / 2 + min;
-            node = (TreeStateNode)visibleNodes.elementAt(mid);
-            minY = node.getYOrigin();
-            maxY = minY + node.getPreferredHeight();
+            TreeStateNode node = (TreeStateNode)visibleNodes.elementAt(mid);
+            int minY = node.getYOrigin();
+            int maxY = minY + node.getPreferredHeight();
             if(location < minY) {
                 max = mid - 1;
             }
@@ -954,8 +938,8 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
         }
         if(min == max) {
             mid = min;
-            if(mid >= getRowCount())
-                mid = getRowCount() - 1;
+            if(mid >= rows)
+                mid = rows - 1;
         }
         return mid;
     }
@@ -1008,9 +992,9 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
             if(nodeWidth > maxWidth)
                 maxWidth = nodeWidth;
         }
+
         return maxWidth;
     }
-
     /**
       * Responsible for creating a TreeStateNode that will be used
       * to track display information about value.
@@ -1362,17 +1346,11 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
                                                        isExpanded(),
                                                        boundsBuffer);
 
-            if(bounds == null) {
+            if(bounds == null || bounds.height == 0) {
                 xOrigin = 0;
                 preferredWidth = preferredHeight = 0;
                 updateNodeSizes = true;
-            }
-            else if(bounds.height == 0) {
-                xOrigin = 0;
-                preferredWidth = preferredHeight = 0;
-                updateNodeSizes = true;
-            }
-            else {
+            } else {
                 xOrigin = bounds.x;
                 preferredWidth = bounds.width;
                 if(isFixedRowHeight())
@@ -1477,24 +1455,14 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
                     Object         realNode = getValue();
                     TreeModel      treeModel = getModel();
                     int            count = treeModel.getChildCount(realNode);
-
+                    int offset = originalRow == -1 ? -1 : originalRow + 1;
                     hasBeenExpanded = true;
-                    if(originalRow == -1) {
-                        for (int i = 0; i < count; i++) {
-                            newNode = createNodeForValue(treeModel.getChild
-                                                            (realNode, i));
-                            this.add(newNode);
-                            newNode.updatePreferredSize(-1);
-                        }
-                    }
-                    else {
-                        int offset = originalRow + 1;
-                        for (int i = 0; i < count; i++) {
-                            newNode = createNodeForValue(treeModel.getChild
-                                                       (realNode, i));
-                            this.add(newNode);
-                            newNode.updatePreferredSize(offset);
-                        }
+
+                    for (int i = 0; i < count; i++) {
+                        newNode = createNodeForValue(treeModel.getChild
+                                                        (realNode, i));
+                        this.add(newNode);
+                        newNode.updatePreferredSize(offset);
                     }
                 }
 
@@ -1502,14 +1470,9 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
                 Enumeration<TreeNode> cursor = preorderEnumeration();
                 cursor.nextElement(); // don't add me, I'm already in
 
-                int newYOrigin;
+                int newYOrigin = isFixed || (this == root && !isRootVisible()) ?
+                                    0 : getYOrigin() + this.getPreferredHeight();
 
-                if(isFixed)
-                    newYOrigin = 0;
-                else if(this == root && !isRootVisible())
-                    newYOrigin = 0;
-                else
-                    newYOrigin = getYOrigin() + this.getPreferredHeight();
                 TreeStateNode   aNode;
                 if(!isFixed) {
                     while (cursor.hasMoreElements()) {
@@ -1744,14 +1707,10 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
         protected boolean updateNextIndex() {
             // nextIndex == -1 identifies receiver, make sure is expanded
             // before descend.
-            if(nextIndex == -1 && !parent.isExpanded())
-                return false;
-
-            // Check that it can have kids
-            if(childCount == 0)
-                return false;
-            // Make sure next index not beyond child count.
-            else if(++nextIndex >= childCount)
+            if((nextIndex == -1 && !parent.isExpanded()) ||
+                childCount == 0 || // Check that it can have kids
+                ++nextIndex >= childCount) // Make sure next index not beyond
+                                             // child count.
                 return false;
 
             TreeStateNode       child = (TreeStateNode)parent.

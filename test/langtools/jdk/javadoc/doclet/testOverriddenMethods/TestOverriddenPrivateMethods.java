@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class TestOverriddenPrivateMethods extends JavadocTester {
         // The public method should be overridden
         checkOutput("pkg1/SubClass.html", true,
                 "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n"
-                + "<dd><code><a href=\"../pkg1/BaseClass.html#publicMethod");
+                + "<dd><code><a href=\"BaseClass.html#publicMethod");
 
         // The public method in different package should be overridden
         checkOutput("pkg2/SubClass.html", true,

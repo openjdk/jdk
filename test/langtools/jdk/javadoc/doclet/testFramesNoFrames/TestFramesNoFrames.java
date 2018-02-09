@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,18 +301,20 @@ public class TestFramesNoFrames extends JavadocTester {
         private void checkFrameFiles() {
             // these files are all only generated in frames mode
 
-            // <module>-frame.html and <module>-type-frame.html files
+            // <module>/module-frame.html and <module>/module-type-frame.html files
             checkFiles(frames, classes.stream()
                 .filter(c -> isInModule(c))
                 .map(c -> modulePart(c))
                 .flatMap(m -> Arrays.asList(
-                        m + "-frame.html",
-                        m + "-type-frame.html").stream())
+                        m + "/module-frame.html",
+                        m + "/module-type-frame.html").stream())
                 .collect(Collectors.toSet()));
 
             // <package>/package-frame.html files
             checkFiles(frames, classes.stream()
-                    .map(c -> packagePart(c) + "/package-frame.html")
+                    .map(c -> (isInModule(c) ? (modulePart(c) + "/") : "")
+                                + packagePart(c)
+                                + "/package-frame.html")
                     .collect(Collectors.toSet()));
         }
 
@@ -360,7 +362,8 @@ public class TestFramesNoFrames extends JavadocTester {
             // contain FRAMES/NO-FRAMES links in frames mode
             List<String> navbarFiles = new ArrayList<>();
             navbarFiles.addAll(classes.stream()
-                    .map(c -> toHtml(packageClassPart(c)))
+                    .map(c -> (isInModule(c) ? (modulePart(c) + "/") : "")
+                                + toHtml(packageClassPart(c)))
                     .collect(Collectors.toSet()));
             for (String f : navbarFiles) {
                 checkOutput(f, frames,

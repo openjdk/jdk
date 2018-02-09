@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -72,16 +71,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  * @author Bhavesh Patel
  */
 public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryWriter {
-
-    /**
-     * The prev module name in the alpha-order list.
-     */
-    protected ModuleElement prevModule;
-
-    /**
-     * The next module name in the alpha-order list.
-     */
-    protected ModuleElement nextModule;
 
     /**
      * The module being documented.
@@ -187,14 +176,9 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      *
      * @param configuration the configuration of the doclet.
      * @param mdle        Module under consideration.
-     * @param prevModule   Previous module in the sorted array.
-     * @param nextModule   Next module in the sorted array.
      */
-    public ModuleWriterImpl(HtmlConfiguration configuration,
-            ModuleElement mdle, ModuleElement prevModule, ModuleElement nextModule) {
-        super(configuration, DocPaths.moduleSummary(mdle));
-        this.prevModule = prevModule;
-        this.nextModule = nextModule;
+    public ModuleWriterImpl(HtmlConfiguration configuration, ModuleElement mdle) {
+        super(configuration, configuration.docPaths.moduleSummary(mdle));
         this.mdle = mdle;
         this.moduleMode = configuration.docEnv.getModuleMode();
         computeModulesData();
@@ -951,20 +935,20 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         Content ulNav = HtmlTree.UL(HtmlStyle.subNavList, li);
         Content liNav = new HtmlTree(HtmlTag.LI);
         liNav.addContent(!utils.getFullBody(mdle).isEmpty() && !configuration.nocomment
-                ? Links.createLink(SectionName.MODULE_DESCRIPTION, contents.navModuleDescription)
+                ? links.createLink(SectionName.MODULE_DESCRIPTION, contents.navModuleDescription)
                 : contents.navModuleDescription);
         addNavGap(liNav);
         liNav.addContent((display(requires) || display(indirectModules))
-                ? Links.createLink(SectionName.MODULES, contents.navModules)
+                ? links.createLink(SectionName.MODULES, contents.navModules)
                 : contents.navModules);
         addNavGap(liNav);
         liNav.addContent((display(packages)
                 || display(indirectPackages) || display(indirectOpenPackages))
-                ? Links.createLink(SectionName.PACKAGES, contents.navPackages)
+                ? links.createLink(SectionName.PACKAGES, contents.navPackages)
                 : contents.navPackages);
         addNavGap(liNav);
         liNav.addContent((displayServices(uses, usesTrees) || displayServices(provides.keySet(), providesTrees))
-                ? Links.createLink(SectionName.SERVICES, contents.navServices)
+                ? links.createLink(SectionName.SERVICES, contents.navServices)
                 : contents.navServices);
         ulNav.addContent(liNav);
         return ulNav;
@@ -1042,40 +1026,6 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     @Override
     protected Content getNavLinkModule() {
         Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, contents.moduleLabel);
-        return li;
-    }
-
-    /**
-     * Get "PREV MODULE" link in the navigation bar.
-     *
-     * @return a content tree for the previous link
-     */
-    @Override
-    public Content getNavLinkPrevious() {
-        Content li;
-        if (prevModule == null) {
-            li = HtmlTree.LI(contents.prevModuleLabel);
-        } else {
-            li = HtmlTree.LI(Links.createLink(pathToRoot.resolve(DocPaths.moduleSummary(
-                    prevModule)), contents.prevModuleLabel, "", ""));
-        }
-        return li;
-    }
-
-    /**
-     * Get "NEXT MODULE" link in the navigation bar.
-     *
-     * @return a content tree for the next link
-     */
-    @Override
-    public Content getNavLinkNext() {
-        Content li;
-        if (nextModule == null) {
-            li = HtmlTree.LI(contents.nextModuleLabel);
-        } else {
-            li = HtmlTree.LI(Links.createLink(pathToRoot.resolve(DocPaths.moduleSummary(
-                    nextModule)), contents.nextModuleLabel, "", ""));
-        }
         return li;
     }
 }

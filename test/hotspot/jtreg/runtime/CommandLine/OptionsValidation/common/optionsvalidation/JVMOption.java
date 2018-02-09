@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -402,6 +402,9 @@ public abstract class JVMOption {
         if (out.getOutput().contains("A fatal error has been detected by the Java Runtime Environment")) {
             /* Always consider "fatal error" in output as fail */
             errorMessage = "JVM output reports a fatal error. JVM exited with code " + exitCode + "!";
+        } else if (out.getStderr().contains("Ignoring option " + name)) {
+            // Watch for newly obsoleted, but not yet removed, flags
+            System.out.println("SKIPPED: Ignoring test result for obsolete flag " + name);
         } else if (valid == true) {
             if (!allowedExitCodes.contains(exitCode)) {
                 errorMessage = "JVM exited with unexpected error code = " + exitCode;

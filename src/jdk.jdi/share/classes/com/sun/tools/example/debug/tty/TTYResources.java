@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -426,7 +426,7 @@ public class TTYResources extends java.util.ListResourceBundle {
              "Usage: {0} <options> <class> <arguments>\n" +
              "\n" +
              "where options include:\n" +
-             "    -help             print out this message and exit\n" +
+             "    -? -h --help -help print this help message and exit\n" +
              "    -sourcepath <directories separated by \"{1}\">\n" +
              "                      directories in which to look for source files\n" +
              "    -attach <address>\n" +

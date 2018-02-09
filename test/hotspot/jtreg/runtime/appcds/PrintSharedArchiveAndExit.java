@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary test the -XX:+PrintSharedArchiveAndExit flag
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

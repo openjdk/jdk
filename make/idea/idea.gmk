@@ -20,16 +20,9 @@ else #with SPEC
     SEL_MODULES := $(MODULES)
   endif
 
-  # Find all source dirs for a particular module
-  # $1 - Module to find source dirs for
-  FindIdeaModuleSrcDirs = \
-    $(strip $(addsuffix /$(strip $1), $(GENERATED_SRC_DIRS) $(IMPORT_MODULES_SRC)) \
-        $(wildcard $(foreach sub, $(SRC_SUBDIRS), $(addsuffix /$(strip $1)/$(sub), $(TOP_SRC_DIRS)))))
-
-
   idea:
 	$(ECHO) "SUPPORT=$(SUPPORT_OUTPUTDIR)" >> $(OUT)
-	$(ECHO) "MODULE_ROOTS=\"$(foreach mod, $(SEL_MODULES), $(call FindIdeaModuleSrcDirs,$(mod)))\"" >> $(OUT)
+	$(ECHO) "MODULE_ROOTS=\"$(foreach mod, $(SEL_MODULES), $(call FindModuleSrcDirs,$(mod)))\"" >> $(OUT)
 	$(ECHO) "MODULE_NAMES=\"$(strip $(foreach mod, $(SEL_MODULES), $(mod)))\"" >> $(OUT)
 	$(ECHO) "SEL_MODULES=\"$(SEL_MODULES)\"" >> $(OUT)
 	$(ECHO) "BOOT_JDK=\"$(BOOT_JDK)\"" >> $(OUT)

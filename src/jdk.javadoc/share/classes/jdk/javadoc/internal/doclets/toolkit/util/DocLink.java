@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,51 +39,101 @@ package jdk.javadoc.internal.doclets.toolkit.util;
  *
  */
 public class DocLink {
-    final String path;
+    final DocPath path;
     final String query;
     final String fragment;
 
-    /** Create a DocLink representing the URI {@code #fragment}. */
+    /**
+     * Creates a DocLink representing the URI {@code #fragment}.
+     * @param fragment the fragment
+     * @return the DocLink
+     */
     public static DocLink fragment(String fragment) {
-        return new DocLink((String) null, (String) null, fragment);
-    }
-
-    /** Create a DocLink representing the URI {@code path}. */
-    public DocLink(DocPath path) {
-        this(path.getPath(), null, null);
+        return new DocLink((DocPath) null, (String) null, fragment);
     }
 
     /**
-     * Create a DocLink representing the URI {@code path?query#fragment}.
-     * query and fragment may be null.
+     * Creates a DocLink representing the URI {@code path}.
+     * @param path the path
+     */
+    public DocLink(DocPath path) {
+        this(path, null, null);
+    }
+
+    /**
+     * Creates a DocLink representing the URI {@code path?query#fragment}.
+     * Any of the component parts may be null.
+     * @param path the path
+     * @param query the query
+     * @param fragment the fragment
      */
     public DocLink(DocPath path, String query, String fragment) {
-        this(path.getPath(), query, fragment);
-    }
-
-    /**
-     * Create a DocLink representing the URI {@code path?query#fragment}.
-     * Any of the component parts may be null.
-     */
-    public DocLink(String path, String query, String fragment) {
         this.path = path;
         this.query = query;
         this.fragment = fragment;
     }
 
     /**
-     * Return the link in the form "path?query#fragment", omitting any empty
+     * Creates a DocLink representing the URI {@code path?query#fragment}.
+     * Any of the component parts may be null.
+     * @param path the path
+     * @param query the query
+     * @param fragment the fragment
+     */
+    public DocLink(String path, String query, String fragment) {
+        this(DocPath.create(path), query, fragment);
+    }
+
+    /**
+     * Creates a DocLink formed by relativizing the path against a given base.
+     * @param base the base
+     * @return the DocLink
+     */
+    public DocLink relativizeAgainst(DocPath base) {
+        if (base.isEmpty() || path == null) {
+            return this;
+        }
+
+        // The following guards against the (ugly) use-case of using DocPath to contain a URL
+        if (isAbsoluteURL(path)) {
+            return this;
+        }
+
+        DocPath newPath = base.relativize(path);
+        // avoid generating an empty link by using the basename of the path if necessary
+        if (newPath.isEmpty() && isEmpty(query) && isEmpty(fragment)) {
+            newPath = path.basename();
+        }
+        return new DocLink(newPath, query, fragment);
+    }
+
+    // return true if the path begins <letters>://
+    private boolean isAbsoluteURL(DocPath path) {
+        String s = path.getPath();
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (Character.isLetter(c)) {
+                continue;
+            }
+            return (c == ':' && i + 2 < s.length() && s.charAt(i + 1)== '/' && s.charAt(i + 2)== '/');
+        }
+        return false;
+    }
+
+    /**
+     * Returns the link in the form "path?query#fragment", omitting any empty
      * components.
+     * @return the string
      */
     @Override
     public String toString() {
         // common fast path
         if (path != null && isEmpty(query) && isEmpty(fragment))
-            return path;
+            return path.getPath();
 
         StringBuilder sb = new StringBuilder();
         if (path != null)
-            sb.append(path);
+            sb.append(path.getPath());
         if (!isEmpty(query))
             sb.append("?").append(query);
         if (!isEmpty(fragment))

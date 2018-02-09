@@ -570,7 +570,7 @@ public class AdaptiveResultTreeImpl extends SimpleResultTreeImpl
         if (_openElementName != null) {
 
            int index;
-           if ((index =_openElementName.indexOf(":")) < 0)
+           if ((index =_openElementName.indexOf(':')) < 0)
                _dom.startElement(null, _openElementName, _openElementName, _attributes);
            else {
                 String uri =_dom.getNamespaceURI(_openElementName.substring(0,index));
@@ -682,7 +682,7 @@ public class AdaptiveResultTreeImpl extends SimpleResultTreeImpl
     public void addAttribute(String qName, String value)
     {
         // "prefix:localpart" or "localpart"
-        int colonpos = qName.indexOf(":");
+        int colonpos = qName.indexOf(':');
         String uri = EMPTY_STRING;
         String localName = qName;
         if (colonpos >0)

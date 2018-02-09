@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,7 @@
  * @test MultiReleaseJars
  * @bug 8170105
  * @summary Test multi-release jar with AppCDS.
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar
@@ -42,8 +41,8 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class MultiReleaseJars {
 
-    static final int MAJOR_VERSION = Runtime.version().major();
-    static final String MAJOR_VERSION_STRING = String.valueOf(Runtime.version().major());
+    static final int MAJOR_VERSION = 10; // Runtime.version().major();
+    static final String MAJOR_VERSION_STRING = String.valueOf(MAJOR_VERSION);
 
     static String[] getMain() {
         String[] sts = {

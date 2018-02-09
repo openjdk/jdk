@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -305,6 +305,9 @@ protected:
   enum Extended_Family {
     // AMD
     CPU_FAMILY_AMD_11H       = 0x11,
+    // ZX
+    CPU_FAMILY_ZX_CORE_F6    = 6,
+    CPU_FAMILY_ZX_CORE_F7    = 7,
     // Intel
     CPU_FAMILY_INTEL_CORE    = 6,
     CPU_MODEL_NEHALEM        = 0x1e,
@@ -549,6 +552,16 @@ protected:
       }
     }
 
+    // ZX features.
+    if (is_zx()) {
+      if (_cpuid_info.ext_cpuid1_ecx.bits.lzcnt_intel != 0)
+        result |= CPU_LZCNT;
+      // for ZX, ecx.bits.misalignsse bit (bit 8) indicates support for prefetchw
+      if (_cpuid_info.ext_cpuid1_ecx.bits.misalignsse != 0) {
+        result |= CPU_3DNOW_PREFETCH;
+      }
+    }
+
     return result;
   }
 
@@ -657,6 +670,7 @@ public:
   static bool is_P6()             { return cpu_family() >= 6; }
   static bool is_amd()            { assert_is_initialized(); return _cpuid_info.std_vendor_name_0 == 0x68747541; } // 'htuA'
   static bool is_intel()          { assert_is_initialized(); return _cpuid_info.std_vendor_name_0 == 0x756e6547; } // 'uneG'
+  static bool is_zx()             { assert_is_initialized(); return (_cpuid_info.std_vendor_name_0 == 0x746e6543) || (_cpuid_info.std_vendor_name_0 == 0x68532020); } // 'tneC'||'hS  '
   static bool is_atom_family()    { return ((cpu_family() == 0x06) && ((extended_cpu_model() == 0x36) || (extended_cpu_model() == 0x37) || (extended_cpu_model() == 0x4D))); } //Silvermont and Centerton
   static bool is_knights_family() { return ((cpu_family() == 0x06) && ((extended_cpu_model() == 0x57) || (extended_cpu_model() == 0x85))); } // Xeon Phi 3200/5200/7200 and Future Xeon Phi
 
@@ -680,6 +694,15 @@ public:
       }
     } else if (is_amd()) {
       result = (_cpuid_info.ext_cpuid8_ecx.bits.cores_per_cpu + 1);
+    } else if (is_zx()) {
+      bool supports_topology = supports_processor_topology();
+      if (supports_topology) {
+        result = _cpuid_info.tpl_cpuidB1_ebx.bits.logical_cpus /
+                 _cpuid_info.tpl_cpuidB0_ebx.bits.logical_cpus;
+      }
+      if (!supports_topology || result == 0) {
+        result = (_cpuid_info.dcp_cpuid4_eax.bits.cores_per_cpu + 1);
+      }
     }
     return result;
   }
@@ -687,6 +710,8 @@ public:
   static uint threads_per_core()  {
     uint result = 1;
     if (is_intel() && supports_processor_topology()) {
+      result = _cpuid_info.tpl_cpuidB0_ebx.bits.logical_cpus;
+    } else if (is_zx() && supports_processor_topology()) {
       result = _cpuid_info.tpl_cpuidB0_ebx.bits.logical_cpus;
     } else if (_cpuid_info.std_cpuid1_edx.bits.ht != 0) {
       if (cpu_family() >= 0x17) {
@@ -705,6 +730,8 @@ public:
       result = (_cpuid_info.dcp_cpuid4_ebx.bits.L1_line_size + 1);
     } else if (is_amd()) {
       result = _cpuid_info.ext_cpuid5_ecx.bits.L1_line_size;
+    } else if (is_zx()) {
+      result = (_cpuid_info.dcp_cpuid4_ebx.bits.L1_line_size + 1);
     }
     if (result < 32) // not defined ?
       result = 32;   // 32 bytes by default on x86 and other x64

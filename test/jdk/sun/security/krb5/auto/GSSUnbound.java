@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
 
 /*
  * @test
- * @bug 8001104
+ * @bug 8001104 8194486
  * @summary Unbound SASL service: the GSSAPI/krb5 mech
+ * @library /test/lib
  * @compile -XDignore.symbol.file GSSUnbound.java
- * @run main/othervm GSSUnbound
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts GSSUnbound
  */
 
 import java.security.Security;

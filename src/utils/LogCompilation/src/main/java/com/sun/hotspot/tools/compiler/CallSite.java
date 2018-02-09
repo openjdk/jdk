@@ -105,6 +105,11 @@ public class CallSite {
     private List<UncommonTrap> traps;
 
     /**
+     * The name of the intrinsic at this call site.
+     */
+    private String intrinsicName;
+
+    /**
      * Default constructor: used to create an instance that represents the top
      * scope of a compilation.
      */
@@ -179,6 +184,7 @@ public class CallSite {
         } else {
             stream.print("  @ " + getBci() + " " + m + " " + getReason());
         }
+        stream.print(getIntrinsicOrEmptyString());
         stream.printf(" (end time: %6.4f", getTimeStamp());
         if (getEndNodes() > 0) {
             stream.printf(" nodes: %d live: %d", getEndNodes(), getEndLiveNodes());
@@ -367,5 +373,20 @@ public class CallSite {
 
     public void setInlineId(long inlineId) {
         this.inlineId = inlineId;
+    }
+
+    public String getIntrinsicName() {
+        return intrinsicName;
+    }
+
+    public void setIntrinsicName(String name) {
+        this.intrinsicName = name;
+    }
+
+    public String getIntrinsicOrEmptyString() {
+        if (intrinsicName != null) {
+            return " (intrinsic: " + getIntrinsicName() + ")";
+        }
+        return "";
     }
 }

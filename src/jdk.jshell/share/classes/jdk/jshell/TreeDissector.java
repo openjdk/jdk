@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import javax.lang.model.type.TypeMirror;
+import jdk.jshell.TypePrinter.AnonymousTypeKind;
 import jdk.jshell.Util.Pair;
 
 /**
@@ -227,7 +228,7 @@ class TreeDissector {
         Type typeImpl = (Type) type;
         try {
             TypePrinter tp = new TypePrinter(at.messages(),
-                    state.maps::fullClassNameAndPackageToClass, true);
+                    state.maps::fullClassNameAndPackageToClass, true, AnonymousTypeKind.DISPLAY);
             return tp.toString(typeImpl);
         } catch (Exception ex) {
             return null;

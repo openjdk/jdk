@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.security.tools.jarsigner;
 
 import java.io.*;
+import java.net.UnknownHostException;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.PKIXBuilderParameters;
 import java.util.*;
@@ -457,9 +458,11 @@ public class Main {
                 showcerts = true;
             } else if (collator.compare(flags, "-strict") ==0) {
                 strict = true;
-            } else if (collator.compare(flags, "-h") == 0 ||
-                        collator.compare(flags, "-?") == 0 ||
-                        collator.compare(flags, "-help") == 0) {
+            } else if (collator.compare(flags, "-?") == 0 ||
+                       collator.compare(flags, "-h") == 0 ||
+                       collator.compare(flags, "--help") == 0 ||
+                       // -help: legacy.
+                       collator.compare(flags, "-help") == 0) {
                 fullusage();
             } else {
                 System.err.println(
@@ -647,6 +650,9 @@ public class Main {
         System.out.println();
         System.out.println(rb.getString
                 (".conf.url.specify.a.pre.configured.options.file"));
+        System.out.println();
+        System.out.println(rb.getString
+                (".print.this.help.message"));
         System.out.println();
 
         System.exit(0);
@@ -1395,13 +1401,6 @@ public class Main {
             error(rb.getString("unable.to.open.jar.file.")+jarName, ioe);
         }
 
-        FileOutputStream fos = null;
-        try {
-            fos = new FileOutputStream(signedJarFile);
-        } catch (IOException ioe) {
-            error(rb.getString("unable.to.create.")+tmpJarName, ioe);
-        }
-
         CertPath cp = CertificateFactory.getInstance("X.509")
                 .generateCertPath(Arrays.asList(certChain));
         JarSigner.Builder builder = new JarSigner.Builder(privateKey, cp);
@@ -1468,24 +1467,42 @@ public class Main {
         builder.setProperty("sectionsOnly", Boolean.toString(!signManifest));
         builder.setProperty("internalSF", Boolean.toString(!externalSF));
 
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(signedJarFile);
+        } catch (IOException ioe) {
+            error(rb.getString("unable.to.create.")+tmpJarName, ioe);
+        }
+
+        Throwable failedCause = null;
+        String failedMessage = null;
+
         try {
             builder.build().sign(zipFile, fos);
         } catch (JarSignerException e) {
-            Throwable cause = e.getCause();
-            if (cause != null && cause instanceof SocketTimeoutException) {
+            failedCause = e.getCause();
+            if (failedCause instanceof SocketTimeoutException
+                    || failedCause instanceof UnknownHostException) {
                 // Provide a helpful message when TSA is beyond a firewall
-                error(rb.getString("unable.to.sign.jar.") +
+                failedMessage = rb.getString("unable.to.sign.jar.") +
                         rb.getString("no.response.from.the.Timestamping.Authority.") +
                         "\n  -J-Dhttp.proxyHost=<hostname>" +
                         "\n  -J-Dhttp.proxyPort=<portnumber>\n" +
                         rb.getString("or") +
                         "\n  -J-Dhttps.proxyHost=<hostname> " +
-                        "\n  -J-Dhttps.proxyPort=<portnumber> ", e);
+                        "\n  -J-Dhttps.proxyPort=<portnumber> ";
             } else {
-                error(rb.getString("unable.to.sign.jar.")+e.getCause(), e.getCause());
+                // JarSignerException might have a null cause
+                if (failedCause == null) {
+                    failedCause = e;
+                }
+                failedMessage = rb.getString("unable.to.sign.jar.") + failedCause;
             }
+        } catch (Exception e) {
+            failedCause = e;
+            failedMessage = rb.getString("unable.to.sign.jar.") + failedCause;
         } finally {
-            // close the resouces
+            // close the resources
             if (zipFile != null) {
                 zipFile.close();
                 zipFile = null;
@@ -1494,6 +1511,12 @@ public class Main {
             if (fos != null) {
                 fos.close();
             }
+
+        }
+
+        if (failedCause != null) {
+            signedJarFile.delete();
+            error(failedMessage, failedCause);
         }
 
         // The JarSigner API always accepts the timestamp received.

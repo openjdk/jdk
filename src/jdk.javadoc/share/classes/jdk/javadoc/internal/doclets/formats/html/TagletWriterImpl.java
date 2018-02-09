@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,23 +106,24 @@ public class TagletWriterImpl extends TagletWriter {
         }
         String desc = ch.getText(itt.getDescription());
 
-        String anchorName = configuration.links.getName(tagText);
+        String anchorName = htmlWriter.links.getName(tagText);
         Content result = HtmlTree.A_ID(HtmlStyle.searchTagResult, anchorName, new StringContent(tagText));
         if (configuration.createindex && !tagText.isEmpty()) {
             SearchIndexItem si = new SearchIndexItem();
             si.setLabel(tagText);
             si.setDescription(desc);
+            DocPaths docPaths = configuration.docPaths;
             new SimpleElementVisitor9<Void, Void>() {
                 @Override
                 public Void visitModule(ModuleElement e, Void p) {
-                    si.setUrl(DocPaths.moduleSummary(e).getPath() + "#" + anchorName);
+                    si.setUrl(docPaths.moduleSummary(e).getPath() + "#" + anchorName);
                     si.setHolder(utils.getFullyQualifiedName(element));
                     return null;
                 }
 
                 @Override
                 public Void visitPackage(PackageElement e, Void p) {
-                    si.setUrl(DocPath.forPackage(e).getPath()
+                    si.setUrl(docPaths.forPackage(e).getPath()
                             + "/" + DocPaths.PACKAGE_SUMMARY.getPath() + "#" + anchorName);
                     si.setHolder(utils.getSimpleName(element));
                     return null;
@@ -130,7 +131,7 @@ public class TagletWriterImpl extends TagletWriter {
 
                 @Override
                 public Void visitType(TypeElement e, Void p) {
-                    si.setUrl(DocPath.forClass(utils, e).getPath() + "#" + anchorName);
+                    si.setUrl(docPaths.forClass(e).getPath() + "#" + anchorName);
                     si.setHolder(utils.getFullyQualifiedName(e));
                     return null;
                 }
@@ -138,7 +139,7 @@ public class TagletWriterImpl extends TagletWriter {
                 @Override
                 public Void visitVariable(VariableElement e, Void p) {
                     TypeElement te = utils.getEnclosingTypeElement(e);
-                    si.setUrl(DocPath.forClass(utils, te).getPath() + "#" + anchorName);
+                    si.setUrl(docPaths.forClass(te).getPath() + "#" + anchorName);
                     si.setHolder(utils.getFullyQualifiedName(e) + "." + utils.getSimpleName(e));
                     return null;
                 }
@@ -146,7 +147,7 @@ public class TagletWriterImpl extends TagletWriter {
                 @Override
                 protected Void defaultAction(Element e, Void p) {
                     TypeElement te = utils.getEnclosingTypeElement(e);
-                    si.setUrl(DocPath.forClass(utils, te).getPath() + "#" + anchorName);
+                    si.setUrl(docPaths.forClass(te).getPath() + "#" + anchorName);
                     si.setHolder(utils.getFullyQualifiedName(e));
                     return null;
                 }
@@ -288,7 +289,7 @@ public class TagletWriterImpl extends TagletWriter {
                     ((ClassWriterImpl) htmlWriter).getTypeElement().getQualifiedName() + "." +
                     utils.getSimpleName(holder);
             DocLink link = constantsPath.fragment(whichConstant);
-            body.addContent(Links.createLink(link,
+            body.addContent(htmlWriter.links.createLink(link,
                     new StringContent(configuration.getText("doclet.Constants_Summary"))));
         }
         if (utils.isClass(holder) && utils.isSerializable((TypeElement)holder)) {
@@ -298,7 +299,7 @@ public class TagletWriterImpl extends TagletWriter {
                 appendSeparatorIfNotEmpty(body);
                 DocPath serialPath = htmlWriter.pathToRoot.resolve(DocPaths.SERIALIZED_FORM);
                 DocLink link = serialPath.fragment(utils.getFullyQualifiedName(holder));
-                body.addContent(Links.createLink(link,
+                body.addContent(htmlWriter.links.createLink(link,
                         new StringContent(configuration.getText("doclet.Serialized_Form"))));
             }
         }

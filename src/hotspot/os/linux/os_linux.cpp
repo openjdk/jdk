@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,6 @@
 # include <sys/wait.h>
 # include <pwd.h>
 # include <poll.h>
-# include <semaphore.h>
 # include <fcntl.h>
 # include <string.h>
 # include <syscall.h>
@@ -2479,11 +2478,11 @@ void* os::user_handler() {
   return CAST_FROM_FN_PTR(void*, UserHandler);
 }
 
-struct timespec PosixSemaphore::create_timespec(unsigned int sec, int nsec) {
+static struct timespec create_semaphore_timespec(unsigned int sec, int nsec) {
   struct timespec ts;
   // Semaphore's are always associated with CLOCK_REALTIME
   os::Linux::clock_gettime(CLOCK_REALTIME, &ts);
-  // see unpackTime for discussion on overflow checking
+  // see os_posix.cpp for discussion on overflow checking
   if (sec >= MAX_SECS) {
     ts.tv_sec += MAX_SECS;
     ts.tv_nsec = 0;
@@ -2535,7 +2534,7 @@ int os::sigexitnum_pd() {
 static volatile jint pending_signals[NSIG+1] = { 0 };
 
 // Linux(POSIX) specific hand shaking semaphore.
-static sem_t sig_sem;
+static Semaphore* sig_sem = NULL;
 static PosixSemaphore sr_semaphore;
 
 void os::signal_init_pd() {
@@ -2543,15 +2542,21 @@ void os::signal_init_pd() {
   ::memset((void*)pending_signals, 0, sizeof(pending_signals));
 
   // Initialize signal semaphore
-  ::sem_init(&sig_sem, 0, 0);
+  sig_sem = new Semaphore();
 }
 
 void os::signal_notify(int sig) {
-  Atomic::inc(&pending_signals[sig]);
-  ::sem_post(&sig_sem);
+  if (sig_sem != NULL) {
+    Atomic::inc(&pending_signals[sig]);
+    sig_sem->signal();
+  } else {
+    // Signal thread is not created with ReduceSignalUsage and signal_init_pd
+    // initialization isn't called.
+    assert(ReduceSignalUsage, "signal semaphore should be created");
+  }
 }
 
-static int check_pending_signals(bool wait) {
+static int check_pending_signals() {
   Atomic::store(0, &sigint_count);
   for (;;) {
     for (int i = 0; i < NSIG + 1; i++) {
@@ -2560,9 +2565,6 @@ static int check_pending_signals(bool wait) {
         return i;
       }
     }
-    if (!wait) {
-      return -1;
-    }
     JavaThread *thread = JavaThread::current();
     ThreadBlockInVM tbivm(thread);
 
@@ -2570,7 +2572,7 @@ static int check_pending_signals(bool wait) {
     do {
       thread->set_suspend_equivalent();
       // cleared by handle_special_suspend_equivalent_condition() or java_suspend_self()
-      ::sem_wait(&sig_sem);
+      sig_sem->wait();
 
       // were we externally suspended while we were waiting?
       threadIsSuspended = thread->handle_special_suspend_equivalent_condition();
@@ -2579,7 +2581,7 @@ static int check_pending_signals(bool wait) {
         // another thread suspended us. We don't want to continue running
         // while suspended because that would surprise the thread that
         // suspended us.
-        ::sem_post(&sig_sem);
+        sig_sem->signal();
 
         thread->java_suspend_self();
       }
@@ -2587,12 +2589,8 @@ static int check_pending_signals(bool wait) {
   }
 }
 
-int os::signal_lookup() {
-  return check_pending_signals(false);
-}
-
 int os::signal_wait() {
-  return check_pending_signals(true);
+  return check_pending_signals();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -4317,7 +4315,7 @@ static bool do_suspend(OSThread* osthread) {
 
   // managed to send the signal and switch to SUSPEND_REQUEST, now wait for SUSPENDED
   while (true) {
-    if (sr_semaphore.timedwait(0, 2 * NANOSECS_PER_MILLISEC)) {
+    if (sr_semaphore.timedwait(create_semaphore_timespec(0, 2 * NANOSECS_PER_MILLISEC))) {
       break;
     } else {
       // timeout
@@ -4351,7 +4349,7 @@ static void do_resume(OSThread* osthread) {
 
   while (true) {
     if (sr_notify(osthread) == 0) {
-      if (sr_semaphore.timedwait(0, 2 * NANOSECS_PER_MILLISEC)) {
+      if (sr_semaphore.timedwait(create_semaphore_timespec(0, 2 * NANOSECS_PER_MILLISEC))) {
         if (osthread->sr.is_running()) {
           return;
         }

@@ -1,5 +1,5 @@
 SRC#
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -62,9 +62,6 @@ AC_DEFUN_ONCE([CUSTOM_SUMMARY_AND_WARNINGS_HOOK])
 # definitions. It is replaced with custom functionality when building
 # custom sources.
 #CUSTOM_AUTOCONF_INCLUDE
-
-# Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=@DATE_WHEN_GENERATED@
 
 ###############################################################################
 #
@@ -279,6 +276,9 @@ CUSTOM_LATE_HOOK
 
 # This needs to be done after CUSTOM_LATE_HOOK since we can setup custom features.
 HOTSPOT_VALIDATE_JVM_FEATURES
+
+# Did user specify any unknown variables?
+BASIC_CHECK_LEFTOVER_OVERRIDDEN
 
 # We're messing a bit with internal autoconf variables to put the config.status
 # in the output directory instead of the current directory.

@@ -68,7 +68,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBINSTRUMENT, \
     LDFLAGS_macosx := -Wl$(COMMA)-all_load, \
     LDFLAGS_aix := -L$(SUPPORT_OUTPUTDIR)/native/java.base, \
     LIBS := $(JDKLIB_LIBS), \
-    LIBS_unix := -ljava -ljvm $(LIBZ), \
+    LIBS_unix := -ljava -ljvm $(LIBZ_LIBS), \
     LIBS_linux := -ljli $(LIBDL), \
     LIBS_solaris := -ljli $(LIBDL), \
     LIBS_aix := -liconv -ljli_static $(LIBDL), \

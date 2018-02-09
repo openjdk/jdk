@@ -34,23 +34,23 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * @test
- * @bug 8007799
+ * @bug 8007799 8176379
  * @summary test Encoder with linemax == 0, line separator should not appear in encoded data
  */
 
 public class Base64GetEncoderTest {
 
     public static void main(String args[]) throws Throwable {
-        final Base64.Encoder encoder = Base64.getMimeEncoder(0, "$$$".getBytes(US_ASCII));
 
-        testEncodeToString(encoder);
+        for (int maxlen = -4; maxlen < 4; maxlen++) {
 
-        testWrapEncode1(encoder);
+            final Base64.Encoder encoder = Base64.getMimeEncoder(maxlen, "$$$".getBytes(US_ASCII));
 
-        testEncodeToStringWithLongInputData(encoder);
-
-        testWrapEncode2(encoder);
-
+            testEncodeToString(encoder);
+            testWrapEncode1(encoder);
+            testEncodeToStringWithLongInputData(encoder);
+            testWrapEncode2(encoder);
+        }
     }
 
     private static void testWrapEncode2(final Base64.Encoder encoder)

@@ -1033,8 +1033,10 @@ public abstract class DefaultRowSorter<M, I> extends RowSorter<M> {
             // Not transformed, nothing to do.
             return false;
         }
-        if (!sorted || (lastRow - firstRow) > viewToModel.length / 10) {
-            // We either weren't sorted, or to much changed, sort it all
+        if (!sorted || viewToModel.length == 0 ||
+                (lastRow - firstRow) > viewToModel.length / 10) {
+            // We either weren't sorted, or to much changed, sort it all or
+            // this is the first row added and we have to update diffeent caches
             sort();
             return false;
         }

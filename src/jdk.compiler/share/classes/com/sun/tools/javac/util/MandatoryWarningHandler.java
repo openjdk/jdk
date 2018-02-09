@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+import com.sun.tools.javac.util.JCDiagnostic.Note;
+import com.sun.tools.javac.util.JCDiagnostic.Warning;
 
 
 /**
@@ -121,7 +123,7 @@ public class MandatoryWarningHandler {
     /**
      * Report a mandatory warning.
      */
-    public void report(DiagnosticPosition pos, String msg, Object... args) {
+    public void report(DiagnosticPosition pos, Warning warnKey) {
         JavaFileObject currentSource = log.currentSourceFile();
 
         if (verbose) {
@@ -130,7 +132,7 @@ public class MandatoryWarningHandler {
 
             if (log.nwarnings < log.MaxWarnings) {
                 // generate message and remember the source file
-                logMandatoryWarning(pos, msg, args);
+                logMandatoryWarning(pos, warnKey);
                 sourcesWithReportedWarnings.add(currentSource);
             } else if (deferredDiagnosticKind == null) {
                 // set up deferred message
@@ -248,13 +250,12 @@ public class MandatoryWarningHandler {
      * Reports a mandatory warning to the log.  If mandatory warnings
      * are not being enforced, treat this as an ordinary warning.
      */
-    private void logMandatoryWarning(DiagnosticPosition pos, String msg,
-                                     Object... args) {
+    private void logMandatoryWarning(DiagnosticPosition pos, Warning warnKey) {
         // Note: the following log methods are safe if lintCategory is null.
         if (enforceMandatory)
-            log.mandatoryWarning(lintCategory, pos, msg, args);
+            log.mandatoryWarning(lintCategory, pos, warnKey);
         else
-            log.warning(lintCategory, pos, msg, args);
+            log.warning(lintCategory, pos, warnKey);
     }
 
     /**
@@ -263,8 +264,8 @@ public class MandatoryWarningHandler {
      */
     private void logMandatoryNote(JavaFileObject file, String msg, Object... args) {
         if (enforceMandatory)
-            log.mandatoryNote(file, msg, args);
+            log.mandatoryNote(file, new Note("compiler", msg, args));
         else
-            log.note(file, msg, args);
+            log.note(file, new Note("compiler", msg, args));
     }
 }

@@ -132,8 +132,8 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
 
 extern "C" {
   // defined in bsd_x86.s
-  jlong _Atomic_cmpxchg_long(jlong, volatile jlong*, jlong, bool);
-  void _Atomic_move_long(const volatile jlong* src, volatile jlong* dst);
+  int64_t _Atomic_cmpxchg_long(int64_t, volatile int64_t*, int64_t, bool);
+  void _Atomic_move_long(const volatile int64_t* src, volatile int64_t* dst);
 }
 
 template<>
@@ -143,15 +143,15 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
                                                 T compare_value,
                                                 cmpxchg_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
-  return cmpxchg_using_helper<jlong>(_Atomic_cmpxchg_long, exchange_value, dest, compare_value);
+  return cmpxchg_using_helper<int64_t>(_Atomic_cmpxchg_long, exchange_value, dest, compare_value);
 }
 
 template<>
 template<typename T>
 inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {
   STATIC_ASSERT(8 == sizeof(T));
-  volatile jlong dest;
-  _Atomic_move_long(reinterpret_cast<const volatile jlong*>(src), reinterpret_cast<volatile jlong*>(&dest));
+  volatile int64_t dest;
+  _Atomic_move_long(reinterpret_cast<const volatile int64_t*>(src), reinterpret_cast<volatile int64_t*>(&dest));
   return PrimitiveConversions::cast<T>(dest);
 }
 
@@ -160,7 +160,7 @@ template<typename T>
 inline void Atomic::PlatformStore<8>::operator()(T store_value,
                                                  T volatile* dest) const {
   STATIC_ASSERT(8 == sizeof(T));
-  _Atomic_move_long(reinterpret_cast<const volatile jlong*>(&store_value), reinterpret_cast<volatile jlong*>(dest));
+  _Atomic_move_long(reinterpret_cast<const volatile int64_t*>(&store_value), reinterpret_cast<volatile int64_t*>(dest));
 }
 
 #endif // AMD64

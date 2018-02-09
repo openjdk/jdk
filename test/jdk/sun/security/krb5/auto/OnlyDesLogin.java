@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,13 @@
 
 /*
  * @test
- * @bug 8014310
- * @summary JAAS/Krb5LoginModule using des encytypes failure with NPE after JDK-8012679
+ * @bug 8014310 8194486
+ * @summary JAAS/Krb5LoginModule using des encytypes failure with NPE
+ *          after JDK-8012679
+ * @library /test/lib
  * @compile -XDignore.symbol.file OnlyDesLogin.java
- * @run main/othervm OnlyDesLogin
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts OnlyDesLogin
  */
 
 import sun.security.krb5.Config;

@@ -367,3 +367,24 @@ void NativeCallTrampolineStub::set_destination(address new_destination) {
   set_ptr_at(data_offset, new_destination);
   OrderAccess::release();
 }
+
+// Generate a trampoline for a branch to dest.  If there's no need for a
+// trampoline, simply patch the call directly to dest.
+address NativeCall::trampoline_jump(CodeBuffer &cbuf, address dest) {
+  MacroAssembler a(&cbuf);
+  address stub = NULL;
+
+  if (a.far_branches()
+      && ! is_NativeCallTrampolineStub_at(instruction_address() + displacement())) {
+    stub = a.emit_trampoline_stub(instruction_address() - cbuf.insts()->start(), dest);
+  }
+
+  if (stub == NULL) {
+    // If we generated no stub, patch this call directly to dest.
+    // This will happen if we don't need far branches or if there
+    // already was a trampoline.
+    set_destination(dest);
+  }
+
+  return stub;
+}

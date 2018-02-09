@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
@@ -64,16 +63,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  */
 public class PackageWriterImpl extends HtmlDocletWriter
     implements PackageSummaryWriter {
-
-    /**
-     * The prev package name in the alpha-order list.
-     */
-    protected PackageElement prev;
-
-    /**
-     * The next package name in the alpha-order list.
-     */
-    protected PackageElement next;
 
     /**
      * The package being documented.
@@ -100,16 +89,11 @@ public class PackageWriterImpl extends HtmlDocletWriter
      *
      * @param configuration the configuration of the doclet.
      * @param packageElement    PackageElement under consideration.
-     * @param prev          Previous package in the sorted array.
-     * @param next            Next package in the sorted array.
      */
-    public PackageWriterImpl(HtmlConfiguration configuration,
-            PackageElement packageElement, PackageElement prev, PackageElement next) {
-        super(configuration, DocPath
-                .forPackage(packageElement)
+    public PackageWriterImpl(HtmlConfiguration configuration, PackageElement packageElement) {
+        super(configuration,
+                configuration.docPaths.forPackage(packageElement)
                 .resolve(DocPaths.PACKAGE_SUMMARY));
-        this.prev = prev;
-        this.next = next;
         this.packageElement = packageElement;
     }
 
@@ -385,45 +369,9 @@ public class PackageWriterImpl extends HtmlDocletWriter
      */
     @Override
     protected Content getNavLinkClassUse() {
-        Content useLink = Links.createLink(DocPaths.PACKAGE_USE,
+        Content useLink = links.createLink(DocPaths.PACKAGE_USE,
                 contents.useLabel, "", "");
         Content li = HtmlTree.LI(useLink);
-        return li;
-    }
-
-    /**
-     * Get "PREV PACKAGE" link in the navigation bar.
-     *
-     * @return a content tree for the previous link
-     */
-    @Override
-    public Content getNavLinkPrevious() {
-        Content li;
-        if (prev == null) {
-            li = HtmlTree.LI(contents.prevPackageLabel);
-        } else {
-            DocPath p = DocPath.relativePath(packageElement, prev);
-            li = HtmlTree.LI(Links.createLink(p.resolve(DocPaths.PACKAGE_SUMMARY),
-                contents.prevPackageLabel, "", ""));
-        }
-        return li;
-    }
-
-    /**
-     * Get "NEXT PACKAGE" link in the navigation bar.
-     *
-     * @return a content tree for the next link
-     */
-    @Override
-    public Content getNavLinkNext() {
-        Content li;
-        if (next == null) {
-            li = HtmlTree.LI(contents.nextPackageLabel);
-        } else {
-            DocPath p = DocPath.relativePath(packageElement, next);
-            li = HtmlTree.LI(Links.createLink(p.resolve(DocPaths.PACKAGE_SUMMARY),
-                contents.nextPackageLabel, "", ""));
-        }
         return li;
     }
 
@@ -435,7 +383,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      */
     @Override
     protected Content getNavLinkTree() {
-        Content useLink = Links.createLink(DocPaths.PACKAGE_TREE,
+        Content useLink = links.createLink(DocPaths.PACKAGE_TREE,
                 contents.treeLabel, "", "");
         Content li = HtmlTree.LI(useLink);
         return li;

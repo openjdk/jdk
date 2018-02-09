@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -428,12 +428,16 @@ public class PNGImageReader extends ImageReader {
 
     private void parse_iCCP_chunk(int chunkLength) throws IOException {
         String keyword = readNullTerminatedString("ISO-8859-1", 80);
+        int compressedProfileLength = chunkLength - keyword.length() - 2;
+        if (compressedProfileLength <= 0) {
+            throw new IIOException("iCCP chunk length is not proper");
+        }
         metadata.iCCP_profileName = keyword;
 
         metadata.iCCP_compressionMethod = stream.readUnsignedByte();
 
         byte[] compressedProfile =
-          new byte[chunkLength - keyword.length() - 2];
+          new byte[compressedProfileLength];
         stream.readFully(compressedProfile);
         metadata.iCCP_compressedProfile = compressedProfile;
 
@@ -463,7 +467,11 @@ public class PNGImageReader extends ImageReader {
 
         String text;
         pos = stream.getStreamPosition();
-        byte[] b = new byte[(int)(chunkStart + chunkLength - pos)];
+        int textLength = (int)(chunkStart + chunkLength - pos);
+        if (textLength <= 0) {
+            throw new IIOException("iTXt chunk length is not proper");
+        }
+        byte[] b = new byte[textLength];
         stream.readFully(b);
 
         if (compressionFlag == 1) { // Decompress the text
@@ -515,12 +523,16 @@ public class PNGImageReader extends ImageReader {
     private void parse_sPLT_chunk(int chunkLength)
         throws IOException, IIOException {
         metadata.sPLT_paletteName = readNullTerminatedString("ISO-8859-1", 80);
-        chunkLength -= metadata.sPLT_paletteName.length() + 1;
+        int remainingChunkLength = chunkLength -
+                (metadata.sPLT_paletteName.length() + 1);
+        if (remainingChunkLength <= 0) {
+            throw new IIOException("sPLT chunk length is not proper");
+        }
 
         int sampleDepth = stream.readUnsignedByte();
         metadata.sPLT_sampleDepth = sampleDepth;
 
-        int numEntries = chunkLength/(4*(sampleDepth/8) + 2);
+        int numEntries = remainingChunkLength/(4*(sampleDepth/8) + 2);
         metadata.sPLT_red = new int[numEntries];
         metadata.sPLT_green = new int[numEntries];
         metadata.sPLT_blue = new int[numEntries];
@@ -558,9 +570,13 @@ public class PNGImageReader extends ImageReader {
 
     private void parse_tEXt_chunk(int chunkLength) throws IOException {
         String keyword = readNullTerminatedString("ISO-8859-1", 80);
+        int textLength = chunkLength - keyword.length() - 1;
+        if (textLength <= 0) {
+            throw new IIOException("tEXt chunk length is not proper");
+        }
         metadata.tEXt_keyword.add(keyword);
 
-        byte[] b = new byte[chunkLength - keyword.length() - 1];
+        byte[] b = new byte[textLength];
         stream.readFully(b);
         metadata.tEXt_text.add(new String(b, "ISO-8859-1"));
 
@@ -596,7 +612,7 @@ public class PNGImageReader extends ImageReader {
             // Alpha table may have fewer entries than RGB palette
             int maxEntries = metadata.PLTE_red.length;
             int numEntries = chunkLength;
-            if (numEntries > maxEntries) {
+            if (numEntries > maxEntries && maxEntries > 0) {
                 processWarningOccurred(
 "tRNS chunk has more entries than prior PLTE chunk, ignoring extras.");
                 numEntries = maxEntries;
@@ -652,12 +668,16 @@ public class PNGImageReader extends ImageReader {
 
     private void parse_zTXt_chunk(int chunkLength) throws IOException {
         String keyword = readNullTerminatedString("ISO-8859-1", 80);
+        int textLength = chunkLength - keyword.length() - 2;
+        if (textLength <= 0) {
+            throw new IIOException("zTXt chunk length is not proper");
+        }
         metadata.zTXt_keyword.add(keyword);
 
         int method = stream.readUnsignedByte();
         metadata.zTXt_compressionMethod.add(method);
 
-        byte[] b = new byte[chunkLength - keyword.length() - 2];
+        byte[] b = new byte[textLength];
         stream.readFully(b);
         metadata.zTXt_text.add(new String(inflate(b), "ISO-8859-1"));
 
@@ -738,6 +758,17 @@ public class PNGImageReader extends ImageReader {
                 case IDAT_TYPE:
                     // If chunk type is 'IDAT', we've reached the image data.
                     if (imageStartPosition == -1L) {
+                        /*
+                         * The PNG specification mandates that if colorType is
+                         * PNG_COLOR_PALETTE then the PLTE chunk should appear
+                         * before the first IDAT chunk.
+                         */
+                        if (colorType == PNG_COLOR_PALETTE &&
+                            !(metadata.PLTE_present))
+                        {
+                            throw new IIOException("Required PLTE chunk"
+                                    + " missing");
+                        }
                         /*
                          * PNGs may contain multiple IDAT chunks containing
                          * a portion of image data. We store the position of
@@ -986,7 +1017,9 @@ public class PNGImageReader extends ImageReader {
         }
 
         int inputBands = inputBandsForColorType[metadata.IHDR_colorType];
-        int bytesPerRow = (inputBands*passWidth*metadata.IHDR_bitDepth + 7)/8;
+        int bitsPerRow = Math.
+                multiplyExact((inputBands * metadata.IHDR_bitDepth), passWidth);
+        int bytesPerRow = (bitsPerRow + 7) / 8;
 
         // Read the image row-by-row
         for (int srcY = 0; srcY < passHeight; srcY++) {
@@ -1037,7 +1070,8 @@ public class PNGImageReader extends ImageReader {
         int bytesPerPixel = (bitDepth == 16) ? 2 : 1;
         bytesPerPixel *= inputBands;
 
-        int bytesPerRow = (inputBands*passWidth*bitDepth + 7)/8;
+        int bitsPerRow = Math.multiplyExact((inputBands * bitDepth), passWidth);
+        int bytesPerRow = (bitsPerRow + 7) / 8;
         int eltsPerRow = (bitDepth == 16) ? bytesPerRow/2 : bytesPerRow;
 
         // If no pixels need updating, just skip the input data

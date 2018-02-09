@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,11 @@
 
 /*
  * @test
- * @bug 8038089
+ * @bug 8038089 8194486
  * @summary TLS optional support for Kerberos cipher suites needs to be re-examined
- * @library ../../../../java/security/testlibrary/
- * @run main/othervm SSLwithPerms
+ * @library ../../../../java/security/testlibrary/ /test/lib
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts SSLwithPerms
  */
 import java.io.*;
 import javax.net.ssl.*;

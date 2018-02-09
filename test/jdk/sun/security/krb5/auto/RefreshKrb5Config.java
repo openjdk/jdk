@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,12 @@ import javax.security.auth.login.LoginException;
 
 /*
  * @test
- * @bug 4745056 8075297
+ * @bug 4745056 8075297 8194486
  * @summary Checks if refreshKrb5Config is set to true for Krb5LoginModule,
  *          then configuration will be refreshed before login() method is called
- * @run main/othervm RefreshKrb5Config
+ * @library /test/lib
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts RefreshKrb5Config
  */
 public class RefreshKrb5Config {
 

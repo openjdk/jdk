@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -59,32 +58,15 @@ public class PackageTreeWriter extends AbstractTreeWriter {
     protected PackageElement packageElement;
 
     /**
-     * The previous package name in the alpha-order list.
-     */
-    protected PackageElement prev;
-
-    /**
-     * The next package name in the alpha-order list.
-     */
-    protected PackageElement next;
-
-    /**
      * Constructor.
      * @param configuration the configuration
      * @param path the docpath to generate files into
      * @param packageElement the current package
-     * @param prev the previous package
-     * @param next the next package
      */
-    public PackageTreeWriter(HtmlConfiguration configuration,
-                             DocPath path,
-                             PackageElement packageElement,
-                             PackageElement prev, PackageElement next) {
+    public PackageTreeWriter(HtmlConfiguration configuration, DocPath path, PackageElement packageElement) {
         super(configuration, path,
               new ClassTree(configuration.typeElementCatalog.allClasses(packageElement), configuration));
         this.packageElement = packageElement;
-        this.prev = prev;
-        this.next = next;
     }
 
     /**
@@ -93,18 +75,15 @@ public class PackageTreeWriter extends AbstractTreeWriter {
      *
      * @param configuration the configuration for this run.
      * @param pkg      Package for which tree file is to be generated.
-     * @param prev     Previous package in the alpha-ordered list.
-     * @param next     Next package in the alpha-ordered list.
      * @param noDeprecated  If true, do not generate any information for
      * deprecated classe or interfaces.
      * @throws DocFileIOException if there is a problem generating the package tree page
      */
     public static void generate(HtmlConfiguration configuration,
-                                PackageElement pkg, PackageElement prev,
-                                PackageElement next, boolean noDeprecated)
+                                PackageElement pkg, boolean noDeprecated)
             throws DocFileIOException {
-        DocPath path = DocPath.forPackage(pkg).resolve(DocPaths.PACKAGE_TREE);
-        PackageTreeWriter packgen = new PackageTreeWriter(configuration, path, pkg, prev, next);
+        DocPath path = configuration.docPaths.forPackage(pkg).resolve(DocPaths.PACKAGE_TREE);
+        PackageTreeWriter packgen = new PackageTreeWriter(configuration, path, pkg);
         packgen.generatePackageTreeFile();
     }
 
@@ -183,36 +162,6 @@ public class PackageTreeWriter extends AbstractTreeWriter {
     }
 
     /**
-     * Get link for the previous package tree file.
-     *
-     * @return a content tree for the link
-     */
-    @Override
-    protected Content getNavLinkPrevious() {
-        if (prev == null) {
-            return getNavLinkPrevious(null);
-        } else {
-            DocPath path = DocPath.relativePath(packageElement, prev);
-            return getNavLinkPrevious(path.resolve(DocPaths.PACKAGE_TREE));
-        }
-    }
-
-    /**
-     * Get link for the next package tree file.
-     *
-     * @return a content tree for the link
-     */
-    @Override
-    protected Content getNavLinkNext() {
-        if (next == null) {
-            return getNavLinkNext(null);
-        } else {
-            DocPath path = DocPath.relativePath(packageElement, next);
-            return getNavLinkNext(path.resolve(DocPaths.PACKAGE_TREE));
-        }
-    }
-
-    /**
      * Get the module link.
      *
      * @return a content tree for the module link
@@ -232,7 +181,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
      */
     @Override
     protected Content getNavLinkPackage() {
-        Content linkContent = Links.createLink(DocPaths.PACKAGE_SUMMARY,
+        Content linkContent = links.createLink(DocPaths.PACKAGE_SUMMARY,
                 contents.packageLabel);
         Content li = HtmlTree.LI(linkContent);
         return li;

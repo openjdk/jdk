@@ -166,14 +166,7 @@ class VersionProps {
      * Print version info.
      */
     private static void print(boolean err, boolean newln) {
-        boolean isHeadless = false;
         PrintStream ps = err ? System.err : System.out;
-
-        /* Report that we're running headless if the property is true */
-        String headless = System.getProperty("java.awt.headless");
-        if ( (headless != null) && (headless.equalsIgnoreCase("true")) ) {
-            isHeadless = true;
-        }
 
         /* First line: platform version. */
         if (err) {

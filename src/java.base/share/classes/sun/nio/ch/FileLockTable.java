@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,64 +25,27 @@
 
 package sun.nio.ch;
 
-import java.nio.channels.*;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.lang.ref.*;
 import java.io.FileDescriptor;
 import java.io.IOException;
-
-abstract class FileLockTable {
-    protected FileLockTable() {
-    }
-
-    /**
-     * Creates and returns a file lock table for a channel that is connected to
-     * the a system-wide map of all file locks for the Java virtual machine.
-     */
-    public static FileLockTable newSharedFileLockTable(Channel channel,
-                                                       FileDescriptor fd)
-        throws IOException
-    {
-        return new SharedFileLockTable(channel, fd);
-    }
-
-    /**
-     * Adds a file lock to the table.
-     *
-     * @throws OverlappingFileLockException if the file lock overlaps
-     *         with an existing file lock in the table
-     */
-    public abstract void add(FileLock fl) throws OverlappingFileLockException;
-
-    /**
-     * Remove an existing file lock from the table.
-     */
-    public abstract void remove(FileLock fl);
-
-    /**
-     * Removes all file locks from the table.
-     *
-     * @return  The list of file locks removed
-     */
-    public abstract List<FileLock> removeAll();
-
-    /**
-     * Replaces an existing file lock in the table.
-     */
-    public abstract void replace(FileLock fl1, FileLock fl2);
-}
-
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.nio.channels.Channel;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A file lock table that is over a system-wide map of all file locks.
  */
-class SharedFileLockTable extends FileLockTable {
-
+class FileLockTable {
     /**
      * A weak reference to a FileLock.
      * <p>
-     * SharedFileLockTable uses a list of file lock references to avoid keeping the
+     * FileLockTable uses a list of file lock references to avoid keeping the
      * FileLock (and FileChannel) alive.
      */
     private static class FileLockReference extends WeakReference<FileLock> {
@@ -115,13 +78,20 @@ class SharedFileLockTable extends FileLockTable {
     // File key for the file that this channel is connected to
     private final FileKey fileKey;
 
-    SharedFileLockTable(Channel channel, FileDescriptor fd) throws IOException {
+    // Locks obtained for this channel
+    private final Set<FileLock> locks;
+
+    /**
+     * Creates a file lock table for a channel that is connected to the
+     * system-wide map of all file locks for the Java virtual machine.
+     */
+    FileLockTable(Channel channel, FileDescriptor fd) throws IOException {
         this.channel = channel;
         this.fileKey = FileKey.create(fd);
+        this.locks = new HashSet<FileLock>();
     }
 
-    @Override
-    public void add(FileLock fl) throws OverlappingFileLockException {
+    void add(FileLock fl) throws OverlappingFileLockException {
         List<FileLockReference> list = lockMap.get(fileKey);
 
         for (;;) {
@@ -135,6 +105,7 @@ class SharedFileLockTable extends FileLockTable {
                     if (prev == null) {
                         // we successfully created the key so we add the file lock
                         list.add(new FileLockReference(fl, queue, fileKey));
+                        locks.add(fl);
                         break;
                     }
                 }
@@ -151,6 +122,7 @@ class SharedFileLockTable extends FileLockTable {
                 if (list == current) {
                     checkList(list, fl.position(), fl.size());
                     list.add(new FileLockReference(fl, queue, fileKey));
+                    locks.add(fl);
                     break;
                 }
                 list = current;
@@ -170,8 +142,7 @@ class SharedFileLockTable extends FileLockTable {
         }
     }
 
-    @Override
-    public void remove(FileLock fl) {
+    void remove(FileLock fl) {
         assert fl != null;
 
         // the lock must exist so the list of locks must be present
@@ -187,6 +158,7 @@ class SharedFileLockTable extends FileLockTable {
                     assert (lock != null) && (lock.acquiredBy() == channel);
                     ref.clear();
                     list.remove(index);
+                    locks.remove(fl);
                     break;
                 }
                 index++;
@@ -194,8 +166,7 @@ class SharedFileLockTable extends FileLockTable {
         }
     }
 
-    @Override
-    public List<FileLock> removeAll() {
+    List<FileLock> removeAll() {
         List<FileLock> result = new ArrayList<FileLock>();
         List<FileLockReference> list = lockMap.get(fileKey);
         if (list != null) {
@@ -220,13 +191,14 @@ class SharedFileLockTable extends FileLockTable {
 
                 // once the lock list is empty we remove it from the map
                 removeKeyIfEmpty(fileKey, list);
+
+                locks.clear();
             }
         }
         return result;
     }
 
-    @Override
-    public void replace(FileLock fromLock, FileLock toLock) {
+    void replace(FileLock fromLock, FileLock toLock) {
         // the lock must exist so there must be a list
         List<FileLockReference> list = lockMap.get(fileKey);
         assert list != null;
@@ -238,6 +210,8 @@ class SharedFileLockTable extends FileLockTable {
                 if (lock == fromLock) {
                     ref.clear();
                     list.set(index, new FileLockReference(toLock, queue, fileKey));
+                    locks.remove(fromLock);
+                    locks.add(toLock);
                     break;
                 }
             }

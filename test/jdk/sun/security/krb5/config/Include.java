@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8029994 8177085
+ * @bug 8029994 8177085 8177398
  * @summary Support "include" and "includedir" in krb5.conf
  * @modules java.security.jgss/sun.security.krb5
  * @compile -XDignore.symbol.file Include.java
@@ -53,6 +53,7 @@ public class Include {
         Path df2 = Paths.get("d/f2");       // another file
         Path df3 = Paths.get("d/f.3");      // third file bad name
         Path df4 = Paths.get("d/f4.conf");  // fourth file
+        Path df5 = Paths.get("d/.f5.conf"); // fifth file is dotfile
 
         // OK: The base file can be missing
         System.setProperty("java.security.krb5.conf", "no-such-file");
@@ -103,6 +104,8 @@ public class Include {
         Files.write(ddf, (krb5Conf + "ddf").getBytes());
         // fx4 will be loaded
         Files.write(df4, (krb5Conf + "df4").getBytes());
+        // fx5 will be excluded
+        Files.write(df5, (krb5Conf + "df5").getBytes());
 
         // OK: All good files read
         tryReload(true);

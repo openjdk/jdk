@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import javax.lang.model.util.SimpleTypeVisitor9;
 import javax.lang.model.util.Types;
 
 import jdk.javadoc.doclet.DocletEnvironment;
-import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap.Kind;
 
 /**
@@ -192,7 +192,7 @@ public class ClassUseMapper {
     private final Types typeUtils;
     private final Utils utils;
 
-    public ClassUseMapper(HtmlConfiguration configuration, ClassTree classtree) {
+    public ClassUseMapper(BaseConfiguration configuration, ClassTree classtree) {
         docEnv = configuration.docEnv;
         elementUtils = docEnv.getElementUtils();
         typeUtils = docEnv.getTypeUtils();
@@ -414,11 +414,11 @@ public class ClassUseMapper {
         }
     }
 
-    private <T> List<T> refList(Map<TypeElement, List<T>> map, Element element) {
+    private <T> List<T> refList(Map<TypeElement, List<T>> map, TypeElement element) {
         List<T> list = map.get(element);
         if (list == null) {
             list = new ArrayList<>();
-            map.put((TypeElement) element, list);
+            map.put(element, list);
         }
         return list;
     }
@@ -570,7 +570,7 @@ public class ClassUseMapper {
             @Override
             public Void visitPackage(PackageElement e, Void p) {
                 for (AnnotationMirror a : e.getAnnotationMirrors()) {
-                    refList(map, a.getAnnotationType().asElement()).add(holder);
+                    refList(map, (TypeElement) a.getAnnotationType().asElement()).add(holder);
                 }
                 return null;
             }

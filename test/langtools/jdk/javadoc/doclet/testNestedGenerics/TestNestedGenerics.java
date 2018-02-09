@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class TestNestedGenerics extends JavadocTester {
 
         checkOutput("pkg/NestedGenerics.html", true,
             "<div class=\"block\">Contains <a " +
-            "href=\"../pkg/NestedGenerics.html#foo-java.util.Map-\"><code>foo" +
+            "href=\"#foo-java.util.Map-\"><code>foo" +
             "(java.util.Map&lt;A, java.util.Map&lt;A, A&gt;&gt;)</code></a></div>");
     }
 }

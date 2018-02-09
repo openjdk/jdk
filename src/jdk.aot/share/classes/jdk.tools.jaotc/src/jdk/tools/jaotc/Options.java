@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,7 +227,7 @@ final class Options {
             task.options.verbose = true;
             task.options.debug = true;
         }
-    }, new Option("  --help                     Print this usage message", false, "--help") {
+    }, new Option("  -? -h --help               Print this help message", false, "--help", "-h", "-?") {
         @Override
         void process(Main task, String opt, String arg) {
             task.options.help = true;
