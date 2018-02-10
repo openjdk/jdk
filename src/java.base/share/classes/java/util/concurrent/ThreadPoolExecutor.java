@@ -35,9 +35,6 @@
 
 package java.util.concurrent;
 
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.HashSet;
@@ -268,8 +265,8 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * <dd>A pool that is no longer referenced in a program <em>AND</em>
  * has no remaining threads may be reclaimed (garbage collected)
- * without being explicity shutdown. You can configure a pool to allow
- * all unused threads to eventually die by setting appropriate
+ * without being explicitly shutdown. You can configure a pool to
+ * allow all unused threads to eventually die by setting appropriate
  * keep-alive times, using a lower bound of zero core threads and/or
  * setting {@link #allowCoreThreadTimeOut(boolean)}.  </dd>
  *
@@ -1461,6 +1458,18 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
             mainLock.unlock();
         }
     }
+
+    // Override without "throws Throwable" for compatibility with subclasses
+    // whose finalize method invokes super.finalize() (as is recommended).
+    // Before JDK 11, finalize() had a non-empty method body.
+
+    /**
+     * @implNote Previous versions of this class had a finalize method
+     * that shut down this executor, but in this version, finalize
+     * does nothing.
+     */
+    @Deprecated(since="9")
+    protected void finalize() {}
 
     /**
      * Sets the thread factory used to create new threads.
