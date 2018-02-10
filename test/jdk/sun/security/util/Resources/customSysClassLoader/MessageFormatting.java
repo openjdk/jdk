@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,12 @@ import java.text.MessageFormat;
 
 /*
  * @test
- * @bug 8168075
+ * @bug 8168075 8196215
  * @summary Ensure that security message formatting code is capable of
  *     displaying all messages.
  * @modules java.base/sun.security.util
+ * @run main MessageFormatting
+ * @run main/othervm -Duser.country=SA -Duser.language=ar MessageFormatting
  */
 
 public class MessageFormatting {
@@ -44,7 +46,8 @@ public class MessageFormatting {
         Enumeration<String> keys = resources.getKeys();
         while (keys.hasMoreElements()) {
             String curKey = keys.nextElement();
-            String formattedString = LocalizedMessage.getMessageUnbooted(curKey, MSG_ARGS);
+            String formattedString =
+                LocalizedMessage.getNonlocalized(curKey, MSG_ARGS);
             String msg = resources.getString(curKey);
             String expectedString = formatIfNecessary(msg, MSG_ARGS);
             if (!formattedString.equals(expectedString)) {
@@ -62,7 +65,8 @@ public class MessageFormatting {
         if (str.indexOf('{') < 0) {
             return str;
         }
-        MessageFormat format = new MessageFormat(str);
+        Locale loc = new Locale("en", "US");
+        MessageFormat format = new MessageFormat(str, loc);
         return format.format(args);
     }
 }

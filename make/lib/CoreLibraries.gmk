@@ -67,7 +67,7 @@ ifneq ($(OPENJDK_TARGET_OS), macosx)
       CFLAGS_linux_ppc64le := -ffp-contract=off, \
       CFLAGS_linux_s390x := -ffp-contract=off, \
       CFLAGS_linux_aarch64 := -ffp-contract=off, \
-      DISABLED_WARNINGS_gcc := sign-compare, \
+      DISABLED_WARNINGS_gcc := sign-compare misleading-indentation, \
       DISABLED_WARNINGS_microsoft := 4146 4244 4018, \
       ARFLAGS := $(ARFLAGS), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfdlibm, \
@@ -82,7 +82,7 @@ else
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfdlibm, \
       SRC := $(LIBFDLIBM_SRC), \
       CFLAGS := $(CFLAGS_JDKLIB) $(LIBFDLIBM_CFLAGS), \
-      LDFLAGS := -nostdlib -r -arch x86_64, \
+      LDFLAGS := -nostdlib $(ARFLAGS), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfdlibm, \
   ))
 
@@ -113,6 +113,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBVERIFY, \
     SRC := $(TOPDIR)/src/java.base/share/native/libverify, \
     OPTIMIZATION := $(LIBVERIFY_OPTIMIZATION), \
     CFLAGS := $(CFLAGS_JDKLIB), \
+    DISABLED_WARNINGS_gcc := implicit-fallthrough, \
     DISABLED_WARNINGS_microsoft := 4244 4267, \
     MAPFILE := $(TOPDIR)/make/mapfiles/libverify/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
@@ -224,11 +225,12 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBZIP, \
     SRC := $(TOPDIR)/src/java.base/share/native/libzip, \
     EXCLUDES := $(LIBZIP_EXCLUDES), \
     CFLAGS := $(CFLAGS_JDKLIB) \
-        $(ZLIB_CPPFLAGS) \
+        $(LIBZ_CFLAGS) \
         -I$(TOPDIR)/src/java.base/share/native/libjava \
         -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjava \
         -I$(SUPPORT_OUTPUTDIR)/headers/java.base, \
     CFLAGS_unix := $(BUILD_LIBZIP_MMAP) -UDEBUG, \
+    DISABLED_WARNINGS_gcc := implicit-fallthrough, \
     MAPFILE := $(TOPDIR)/make/mapfiles/libzip/mapfile-vers, \
     REORDER := $(BUILD_LIBZIP_REORDER), \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
@@ -236,7 +238,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBZIP, \
     LDFLAGS_windows := -export:ZIP_Open -export:ZIP_Close -export:ZIP_FindEntry \
         -export:ZIP_ReadEntry -export:ZIP_GetNextEntry \
         -export:ZIP_InflateFully -export:ZIP_CRC32 -export:ZIP_FreeEntry, \
-    LIBS_unix := -ljvm -ljava $(LIBZ), \
+    LIBS_unix := -ljvm -ljava $(LIBZ_LIBS), \
     LIBS_solaris := -lc, \
     LIBS_windows := jvm.lib $(WIN_JAVA_LIB), \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
@@ -270,6 +272,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJIMAGE, \
     EXCLUDES := $(LIBJIMAGE_EXCLUDES), \
     CFLAGS := $(CFLAGS_JDKLIB) $(JIMAGELIB_CPPFLAGS), \
     CXXFLAGS := $(CXXFLAGS_JDKLIB) $(JIMAGELIB_CPPFLAGS), \
+    DISABLED_WARNINGS_gcc := implicit-fallthrough, \
     CFLAGS_unix := -UDEBUG, \
     MAPFILE := $(TOPDIR)/make/mapfiles/libjimage/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
@@ -341,8 +344,9 @@ endif
 
 LIBJLI_CFLAGS += $(addprefix -I, $(LIBJLI_SRC_DIRS))
 
+LIBJLI_CFLAGS += $(LIBZ_CFLAGS)
+
 ifneq ($(USE_EXTERNAL_LIBZ), true)
-  LIBJLI_CFLAGS += $(ZLIB_CPPFLAGS)
   LIBJLI_EXTRA_FILES += \
       $(addprefix $(TOPDIR)/src/java.base/share/native/libzip/zlib/, \
           inflate.c \
@@ -362,6 +366,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJLI, \
     EXTRA_FILES := $(LIBJLI_EXTRA_FILES), \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(LIBJLI_CFLAGS), \
+    DISABLED_WARNINGS_gcc := maybe-uninitialized, \
     DISABLED_WARNINGS_solstudio := \
         E_ASM_DISABLES_OPTIMIZATION \
         E_STATEMENT_NOT_REACHED, \
@@ -390,7 +395,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJLI, \
         -export:JLI_PreprocessArg \
         -export:JLI_AddArgsFromEnvVar \
         -export:JLI_GetAppArgIndex, \
-    LIBS_unix := $(LIBZ), \
+    LIBS_unix := $(LIBZ_LIBS), \
     LIBS_linux := $(LIBDL) -lc -lpthread, \
     LIBS_solaris := $(LIBDL) -lc, \
     LIBS_aix := $(LIBDL),\
@@ -437,7 +442,7 @@ else ifeq ($(OPENJDK_TARGET_OS), macosx)
       EXTRA_FILES := $(LIBJLI_EXTRA_FILES), \
       OPTIMIZATION := HIGH, \
       CFLAGS := $(CFLAGS_JDKLIB) $(LIBJLI_CFLAGS), \
-      LDFLAGS := -nostdlib -r, \
+      LDFLAGS := -nostdlib $(ARFLAGS), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli_static, \
   ))
 

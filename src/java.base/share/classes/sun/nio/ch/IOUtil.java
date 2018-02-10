@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ public class IOUtil {
             src.position(pos);
 
             int n = writeFromNativeBuffer(fd, bb, position,
-                    directIO, alignment, nd);
+                                          directIO, alignment, nd);
             if (n > 0) {
                 // now update src
                 src.position(pos + n);
@@ -161,8 +161,7 @@ public class IOUtil {
                     if (!(buf instanceof DirectBuffer)) {
                         ByteBuffer shadow;
                         if (directIO)
-                            shadow = Util.getTemporaryAlignedDirectBuffer(rem,
-                                    alignment);
+                            shadow = Util.getTemporaryAlignedDirectBuffer(rem, alignment);
                         else
                             shadow = Util.getTemporaryDirectBuffer(rem);
                         shadow.put(buf);
@@ -241,8 +240,7 @@ public class IOUtil {
         int rem = dst.remaining();
         if (directIO) {
             Util.checkRemainingBufferSizeAligned(rem, alignment);
-            bb = Util.getTemporaryAlignedDirectBuffer(rem,
-                                                      alignment);
+            bb = Util.getTemporaryAlignedDirectBuffer(rem, alignment);
         } else {
             bb = Util.getTemporaryDirectBuffer(rem);
         }
@@ -277,8 +275,7 @@ public class IOUtil {
             return 0;
         int n = 0;
         if (position != -1) {
-            n = nd.pread(fd, ((DirectBuffer)bb).address() + pos,
-                         rem, position);
+            n = nd.pread(fd, ((DirectBuffer)bb).address() + pos, rem, position);
         } else {
             n = nd.read(fd, ((DirectBuffer)bb).address() + pos, rem);
         }
@@ -332,8 +329,7 @@ public class IOUtil {
                     if (!(buf instanceof DirectBuffer)) {
                         ByteBuffer shadow;
                         if (directIO) {
-                            shadow = Util.getTemporaryAlignedDirectBuffer(rem,
-                                    alignment);
+                            shadow = Util.getTemporaryAlignedDirectBuffer(rem, alignment);
                         } else {
                             shadow = Util.getTemporaryDirectBuffer(rem);
                         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,8 @@ package com.sun.javadoc;
  *   in the package {@code jdk.javadoc.doclet}.
  *   For more information, see the <i>Migration Guide</i> in the documentation for that package.
  */
-@Deprecated
+@Deprecated(since="9", forRemoval=true)
+@SuppressWarnings("removal")
 public interface ClassDoc extends ProgramElementDoc, Type {
 
     /**
@@ -341,7 +342,7 @@ public interface ClassDoc extends ProgramElementDoc, Type {
      *          should not be exposed here.  In addition, not all imported
      *          classes are imported through single-type-import declarations.
      */
-    @Deprecated
+    @Deprecated(since="9", forRemoval=true)
     ClassDoc[] importedClasses();
 
     /**
@@ -356,6 +357,6 @@ public interface ClassDoc extends ProgramElementDoc, Type {
      *          return type does not allow for all type-import-on-demand
      *          declarations to be returned.
      */
-    @Deprecated
+    @Deprecated(since="9", forRemoval=true)
     PackageDoc[] importedPackages();
 }

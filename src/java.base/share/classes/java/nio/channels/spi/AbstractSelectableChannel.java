@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,14 @@
 package java.nio.channels.spi;
 
 import java.io.IOException;
-import java.nio.channels.*;
+import java.nio.channels.CancelledKeyException;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.ClosedSelectorException;
+import java.nio.channels.IllegalBlockingModeException;
+import java.nio.channels.IllegalSelectorException;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 
 
 /**
@@ -67,8 +74,8 @@ public abstract class AbstractSelectableChannel
     // Lock for registration and configureBlocking operations
     private final Object regLock = new Object();
 
-    // Blocking mode, protected by regLock
-    boolean blocking = true;
+    // True when non-blocking, need regLock to change;
+    private volatile boolean nonBlocking;
 
     /**
      * Initializes a new instance of this class.
@@ -197,7 +204,7 @@ public abstract class AbstractSelectableChannel
                 throw new ClosedChannelException();
             if ((ops & ~validOps()) != 0)
                 throw new IllegalArgumentException();
-            if (blocking)
+            if (isBlocking())
                 throw new IllegalBlockingModeException();
             SelectionKey k = findKey(sel);
             if (k != null) {
@@ -264,9 +271,7 @@ public abstract class AbstractSelectableChannel
     // -- Blocking --
 
     public final boolean isBlocking() {
-        synchronized (regLock) {
-            return blocking;
-        }
+        return !nonBlocking;
     }
 
     public final Object blockingLock() {
@@ -287,12 +292,13 @@ public abstract class AbstractSelectableChannel
         synchronized (regLock) {
             if (!isOpen())
                 throw new ClosedChannelException();
-            if (blocking == block)
-                return this;
-            if (block && haveValidKeys())
-                throw new IllegalBlockingModeException();
-            implConfigureBlocking(block);
-            blocking = block;
+            boolean blocking = !nonBlocking;
+            if (block != blocking) {
+                if (block && haveValidKeys())
+                    throw new IllegalBlockingModeException();
+                implConfigureBlocking(block);
+                nonBlocking = !block;
+            }
         }
         return this;
     }

@@ -76,36 +76,31 @@ public class WriterFactoryImpl implements WriterFactory {
      * {@inheritDoc}
      */
     @Override
-    public PackageSummaryWriter getPackageSummaryWriter(PackageElement packageElement,
-            PackageElement prevPkg, PackageElement nextPkg) {
-        return new PackageWriterImpl(configuration, packageElement, prevPkg, nextPkg);
+    public PackageSummaryWriter getPackageSummaryWriter(PackageElement packageElement) {
+        return new PackageWriterImpl(configuration, packageElement);
     }
 
     /**
      * {@inheritDoc}
      */
-    public ModuleSummaryWriter getModuleSummaryWriter(ModuleElement mdle,
-        ModuleElement prevModule, ModuleElement nextModule) {
-        return new ModuleWriterImpl(configuration, mdle,
-            prevModule, nextModule);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public ClassWriter getClassWriter(TypeElement typeElement, TypeElement prevClass,
-            TypeElement nextClass, ClassTree classTree) {
-        return new ClassWriterImpl(configuration, typeElement, prevClass, nextClass, classTree);
+    public ModuleSummaryWriter getModuleSummaryWriter(ModuleElement mdle) {
+        return new ModuleWriterImpl(configuration, mdle);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public AnnotationTypeWriter getAnnotationTypeWriter(TypeElement annotationType,
-            TypeMirror prevType, TypeMirror nextType) {
-        return new AnnotationTypeWriterImpl(configuration, annotationType, prevType, nextType);
+    public ClassWriter getClassWriter(TypeElement typeElement, ClassTree classTree) {
+        return new ClassWriterImpl(configuration, typeElement, classTree);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public AnnotationTypeWriter getAnnotationTypeWriter(TypeElement annotationType) {
+        return new AnnotationTypeWriterImpl(configuration, annotationType);
     }
 
     /**

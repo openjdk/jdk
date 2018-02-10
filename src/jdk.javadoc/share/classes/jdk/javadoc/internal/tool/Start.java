@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -359,7 +359,7 @@ public class Start extends ToolOption.Helper {
         return begin(opts, fileObjects).isOK();
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     private Result begin(List<String> options, Iterable<? extends JavaFileObject> fileObjects) {
         fileManager = context.get(JavaFileManager.class);
         if (fileManager == null) {

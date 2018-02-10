@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -547,6 +547,11 @@ public final class JarSigner {
     /**
      * Signs a file into an {@link OutputStream}. This method will not close
      * {@code file} or {@code os}.
+     * <p>
+     * If an I/O error or signing error occurs during the signing, then it may
+     * do so after some bytes have been written. Consequently, the output
+     * stream may be in an inconsistent state. It is strongly recommended that
+     * it be promptly closed in this case.
      *
      * @param file the file to sign.
      * @param os the output stream.

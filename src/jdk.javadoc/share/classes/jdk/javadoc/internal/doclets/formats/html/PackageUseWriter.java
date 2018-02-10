@@ -75,7 +75,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
     public PackageUseWriter(HtmlConfiguration configuration,
                             ClassUseMapper mapper, DocPath filename,
                             PackageElement pkgElement) {
-        super(configuration, DocPath.forPackage(pkgElement).resolve(filename));
+        super(configuration, configuration.docPaths.forPackage(pkgElement).resolve(filename));
         this.packageElement = pkgElement;
 
         // by examining all classes in this package, find what packages
@@ -221,7 +221,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
             for (TypeElement te : usingPackageToUsedClasses.get(packageName)) {
                 DocPath dp = pathString(te,
-                        DocPaths.CLASS_USE.resolve(DocPath.forName(utils, te)));
+                        DocPaths.CLASS_USE.resolve(docPaths.forName(te)));
                 Content stringContent = new StringContent(utils.getSimpleName(te));
                 Content typeContent = links.createLink(dp.fragment(getPackageAnchorName(usingPackage)),
                         stringContent);

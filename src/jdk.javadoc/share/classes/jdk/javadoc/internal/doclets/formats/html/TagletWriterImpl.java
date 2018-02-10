@@ -112,17 +112,18 @@ public class TagletWriterImpl extends TagletWriter {
             SearchIndexItem si = new SearchIndexItem();
             si.setLabel(tagText);
             si.setDescription(desc);
+            DocPaths docPaths = configuration.docPaths;
             new SimpleElementVisitor9<Void, Void>() {
                 @Override
                 public Void visitModule(ModuleElement e, Void p) {
-                    si.setUrl(DocPaths.moduleSummary(e).getPath() + "#" + anchorName);
+                    si.setUrl(docPaths.moduleSummary(e).getPath() + "#" + anchorName);
                     si.setHolder(utils.getFullyQualifiedName(element));
                     return null;
                 }
 
                 @Override
                 public Void visitPackage(PackageElement e, Void p) {
-                    si.setUrl(DocPath.forPackage(e).getPath()
+                    si.setUrl(docPaths.forPackage(e).getPath()
                             + "/" + DocPaths.PACKAGE_SUMMARY.getPath() + "#" + anchorName);
                     si.setHolder(utils.getSimpleName(element));
                     return null;
@@ -130,7 +131,7 @@ public class TagletWriterImpl extends TagletWriter {
 
                 @Override
                 public Void visitType(TypeElement e, Void p) {
-                    si.setUrl(DocPath.forClass(utils, e).getPath() + "#" + anchorName);
+                    si.setUrl(docPaths.forClass(e).getPath() + "#" + anchorName);
                     si.setHolder(utils.getFullyQualifiedName(e));
                     return null;
                 }
@@ -138,7 +139,7 @@ public class TagletWriterImpl extends TagletWriter {
                 @Override
                 public Void visitVariable(VariableElement e, Void p) {
                     TypeElement te = utils.getEnclosingTypeElement(e);
-                    si.setUrl(DocPath.forClass(utils, te).getPath() + "#" + anchorName);
+                    si.setUrl(docPaths.forClass(te).getPath() + "#" + anchorName);
                     si.setHolder(utils.getFullyQualifiedName(e) + "." + utils.getSimpleName(e));
                     return null;
                 }
@@ -146,7 +147,7 @@ public class TagletWriterImpl extends TagletWriter {
                 @Override
                 protected Void defaultAction(Element e, Void p) {
                     TypeElement te = utils.getEnclosingTypeElement(e);
-                    si.setUrl(DocPath.forClass(utils, te).getPath() + "#" + anchorName);
+                    si.setUrl(docPaths.forClass(te).getPath() + "#" + anchorName);
                     si.setHolder(utils.getFullyQualifiedName(e));
                     return null;
                 }

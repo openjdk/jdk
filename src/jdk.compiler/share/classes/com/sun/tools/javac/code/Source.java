@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,7 @@ public enum Source {
         BINARY_LITERALS(JDK7, Fragments.FeatureBinaryLit, DiagKind.PLURAL),
         UNDERSCORES_IN_LITERALS(JDK7, Fragments.FeatureUnderscoreLit, DiagKind.PLURAL),
         STRINGS_IN_SWITCH(JDK7, Fragments.FeatureStringSwitch, DiagKind.PLURAL),
-        DEPRECATION_ON_IMPORT(MIN, JDK9),
+        DEPRECATION_ON_IMPORT(MIN, JDK8),
         SIMPLIFIED_VARARGS(JDK7),
         OBJECT_TO_PRIMITIVE_CAST(JDK7),
         ENFORCE_THIS_DOT_INIT(JDK7),

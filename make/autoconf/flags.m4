@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -918,7 +918,6 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
         -MD -Zc:wchar_t- -W3 -wd4800 \
         -DWIN32_LEAN_AND_MEAN \
         -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE \
-        -D_WINSOCK_DEPRECATED_NO_WARNINGS \
         -DWIN32 -DIAL"
     if test "x$OPENJDK_$1_CPU" = xx86_64; then
       $2COMMON_CCXXFLAGS_JDK="[$]$2COMMON_CCXXFLAGS_JDK -D_AMD64_ -Damd64"
@@ -1113,10 +1112,11 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
 
   # Additional macosx handling
   if test "x$OPENJDK_$1_OS" = xmacosx; then
-    # MACOSX_VERSION_MIN is the c++ and ld is -mmacosx-version-min argument. The expected
-    # format is X.Y.Z. It's hard-coded to the minimum OSX version on which the
-    # JDK can be built and makes the linked binaries compatible even if built on
-    # a newer version of the OS.
+    # MACOSX_VERSION_MIN specifies the lowest version of Macosx that the built
+    # binaries should be compatible with, even if compiled on a newer version
+    # of the OS. It currently has a hard coded value. Setting this also limits
+    # exposure to API changes in header files. Bumping this is likely to
+    # require code changes to build.
     MACOSX_VERSION_MIN=10.7.0
     AC_SUBST(MACOSX_VERSION_MIN)
 
@@ -1150,6 +1150,7 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
     $2JVM_CFLAGS="[$]$2JVM_CFLAGS \
         -DMAC_OS_X_VERSION_MIN_REQUIRED=\$(subst .,,\$(MACOSX_VERSION_MIN)) \
         -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
+    $2ARFLAGS="$2$ARFLAGS -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
 
     if test -n "$MACOSX_VERSION_MAX"; then
         $2COMMON_CCXXFLAGS_JDK="[$]$2COMMON_CCXXFLAGS_JDK \
