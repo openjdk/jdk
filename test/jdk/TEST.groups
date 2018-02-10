@@ -267,13 +267,10 @@ jdk_other = \
     javax/naming \
     javax/script \
     javax/smartcardio \
-    javax/transaction \
     javax/xml \
     -javax/xml/crypto \
     jdk/internal/jline \
     com/sun/jndi \
-    com/sun/corba \
-    org/omg/CORBA \
     lib/testlibrary
 
 #

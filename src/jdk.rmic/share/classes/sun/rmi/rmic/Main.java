@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,8 +81,6 @@ public class Main implements sun.rmi.rmic.Constants {
     Vector<Generator> generators;
     Class<? extends BatchEnvironment> environmentClass =
         BatchEnvironment.class;
-    boolean iiopGeneration = false;
-
     /**
      * Name of the program.
      */
@@ -424,12 +422,6 @@ public class Main implements sun.rmi.rmic.Constants {
             }
         }
 
-        // If this is the iiop stub generator, cache
-        // that fact for the jrmp generator...
-
-        if (arg.equals("iiop")) {
-            iiopGeneration = true;
-        }
         return gen;
     }
 
