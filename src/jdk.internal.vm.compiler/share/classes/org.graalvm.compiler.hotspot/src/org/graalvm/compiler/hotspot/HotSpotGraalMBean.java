@@ -44,10 +44,10 @@ import org.graalvm.compiler.options.OptionDescriptors;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.options.OptionsParser;
-import org.graalvm.util.EconomicMap;
-import org.graalvm.util.EconomicSet;
-import org.graalvm.util.Equivalence;
-import org.graalvm.util.UnmodifiableEconomicMap;
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.EconomicSet;
+import org.graalvm.collections.Equivalence;
+import org.graalvm.collections.UnmodifiableEconomicMap;
 
 public final class HotSpotGraalMBean implements javax.management.DynamicMBean {
     private static Object mBeanServerField;

@@ -124,8 +124,6 @@
 
 #endif //  ndef DTRACE_ENABLED
 
-volatile int InstanceKlass::_total_instanceKlass_count = 0;
-
 static inline bool is_class_loader(const Symbol* class_name,
                                    const ClassFileParser& parser) {
   assert(class_name != NULL, "invariant");
@@ -193,8 +191,6 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
   // Add all classes to our internal class loader list here,
   // including classes in the bootstrap (NULL) class loader.
   loader_data->add_class(ik, publicize);
-  Atomic::inc(&_total_instanceKlass_count);
-
   return ik;
 }
 
@@ -2241,9 +2237,6 @@ void InstanceKlass::release_C_heap_structures() {
   // class can't be referenced anymore).
   if (_array_name != NULL)  _array_name->decrement_refcount();
   if (_source_debug_extension != NULL) FREE_C_HEAP_ARRAY(char, _source_debug_extension);
-
-  assert(_total_instanceKlass_count >= 1, "Sanity check");
-  Atomic::dec(&_total_instanceKlass_count);
 }
 
 void InstanceKlass::set_source_debug_extension(const char* array, int length) {

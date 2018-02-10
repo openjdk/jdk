@@ -33,14 +33,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.Equivalence;
+import org.graalvm.collections.MapCursor;
 import org.graalvm.compiler.core.common.FieldIntrospection;
 import org.graalvm.compiler.core.common.Fields;
 import org.graalvm.compiler.core.common.FieldsScanner;
 import org.graalvm.compiler.lir.LIRInstruction.OperandFlag;
 import org.graalvm.compiler.lir.LIRInstruction.OperandMode;
-import org.graalvm.util.Equivalence;
-import org.graalvm.util.EconomicMap;
-import org.graalvm.util.MapCursor;
 
 import jdk.vm.ci.code.RegisterValue;
 import jdk.vm.ci.code.StackSlot;

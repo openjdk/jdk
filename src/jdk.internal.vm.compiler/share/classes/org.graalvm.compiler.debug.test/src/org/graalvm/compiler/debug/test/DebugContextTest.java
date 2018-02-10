@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.Formatter;
 import java.util.List;
 
+import org.graalvm.collections.EconomicMap;
 import org.graalvm.compiler.debug.Assertions;
 import org.graalvm.compiler.debug.CounterKey;
 import org.graalvm.compiler.debug.DebugCloseable;
@@ -46,7 +47,6 @@ import org.graalvm.compiler.debug.DebugOptions;
 import org.graalvm.compiler.debug.DebugVerifyHandler;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.util.EconomicMap;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;

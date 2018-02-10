@@ -25,8 +25,8 @@ package org.graalvm.compiler.core.common.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.graalvm.util.EconomicMap;
-import org.graalvm.util.Equivalence;
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.Equivalence;
 
 /**
  * Creates an array of T objects order by the occurrence frequency of each object. The most

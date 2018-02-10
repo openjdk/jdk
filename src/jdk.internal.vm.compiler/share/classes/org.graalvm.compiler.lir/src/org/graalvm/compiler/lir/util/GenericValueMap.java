@@ -22,8 +22,8 @@
  */
 package org.graalvm.compiler.lir.util;
 
-import org.graalvm.util.Equivalence;
-import org.graalvm.util.EconomicMap;
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.Equivalence;
 
 import jdk.vm.ci.meta.Value;
 

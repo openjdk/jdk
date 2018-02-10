@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2264,7 +2264,7 @@ void Parse::do_one_bytecode() {
     ciMethodData* methodData = method()->method_data();
     if (!methodData->is_mature())  break;
     ciProfileData* data = methodData->bci_to_data(bci());
-    assert( data->is_JumpData(), "" );
+    assert(data != NULL && data->is_JumpData(), "need JumpData for taken branch");
     int taken = ((ciJumpData*)data)->taken();
     taken = method()->scale_count(taken);
     target_block->set_count(taken);

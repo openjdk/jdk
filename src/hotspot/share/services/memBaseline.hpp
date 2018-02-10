@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,8 @@ class MemBaseline VALUE_OBJ_CLASS_SPEC {
   VirtualMemorySnapshot  _virtual_memory_snapshot;
   MetaspaceSnapshot      _metaspace_snapshot;
 
-  size_t               _class_count;
+  size_t                 _instance_class_count;
+  size_t                 _array_class_count;
 
   // Allocation sites information
   // Malloc allocation sites
@@ -89,7 +90,7 @@ class MemBaseline VALUE_OBJ_CLASS_SPEC {
   // create a memory baseline
   MemBaseline():
     _baseline_type(Not_baselined),
-    _class_count(0) {
+    _instance_class_count(0), _array_class_count(0) {
   }
 
   bool baseline(bool summaryOnly = true);
@@ -160,7 +161,17 @@ class MemBaseline VALUE_OBJ_CLASS_SPEC {
 
   size_t class_count() const {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
-    return _class_count;
+    return _instance_class_count + _array_class_count;
+  }
+
+  size_t instance_class_count() const {
+    assert(baseline_type() != Not_baselined, "Not yet baselined");
+    return _instance_class_count;
+  }
+
+  size_t array_class_count() const {
+    assert(baseline_type() != Not_baselined, "Not yet baselined");
+    return _array_class_count;
   }
 
   size_t thread_count() const {
@@ -172,7 +183,8 @@ class MemBaseline VALUE_OBJ_CLASS_SPEC {
   void reset() {
     _baseline_type = Not_baselined;
     // _malloc_memory_snapshot and _virtual_memory_snapshot are copied over.
-    _class_count  = 0;
+    _instance_class_count  = 0;
+    _array_class_count = 0;
 
     _malloc_sites.clear();
     _virtual_memory_sites.clear();
