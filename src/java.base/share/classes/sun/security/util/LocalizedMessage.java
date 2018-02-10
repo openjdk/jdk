@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ package sun.security.util;
 
 public class LocalizedMessage {
 
-    private static final Resources resources = new Resources();
+    private static final Resources RESOURCES = new Resources();
 
     private final String key;
 
@@ -59,16 +59,28 @@ public class LocalizedMessage {
 
     /**
      * Return a localized string corresponding to the key stored in this
-     * object, formatted with the provided arguments. When the VM is booted,
-     * this method will obtain the correct localized message and format it
-     * using java.text.MessageFormat. Otherwise, a non-localized string is
-     * returned, and the formatting is performed by simplified formatting code.
+     * object, formatted with the provided arguments. This method should only
+     * be called when the VM is booted and all resources needed to obtain
+     * and format the localized message are loaded (or can be loaded).
      *
      * @param arguments The arguments that should be placed in the message
      * @return A formatted message string
      */
-    public String format(Object... arguments) {
-        return getMessage(key, arguments);
+    public String formatLocalized(Object... arguments) {
+        return getLocalized(key, arguments);
+    }
+
+    /**
+     * Return a non-localized string corresponding to the key stored in this
+     * object, formatted with the provided arguments. All strings are obtained
+     * from sun.security.util.Resources, and the formatting only supports
+     * simple positional argument replacement (e.g. {1}).
+     *
+     * @param arguments The arguments that should be placed in the message
+     * @return A formatted message string
+     */
+    public String formatNonlocalized(Object... arguments) {
+        return getNonlocalized(key, arguments);
     }
 
     /**
@@ -81,10 +93,10 @@ public class LocalizedMessage {
      * @param arguments The arguments that should be placed in the message
      * @return A formatted message string
      */
-    public static String getMessageUnbooted(String key,
-                                            Object... arguments) {
+    public static String getNonlocalized(String key,
+                                                Object... arguments) {
 
-        String value = resources.getString(key);
+        String value = RESOURCES.getString(key);
         if (arguments == null || arguments.length == 0) {
             return value;
         }
@@ -110,8 +122,7 @@ public class LocalizedMessage {
             try {
                 int index = Integer.parseInt(indexStr);
                 sb.append(arguments[index]);
-            }
-            catch(NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 // argument index is not an integer
                 throw new RuntimeException("not an integer: " + indexStr);
             }
@@ -123,29 +134,22 @@ public class LocalizedMessage {
 
     /**
      * Return a localized string corresponding to the provided key, and
-     * formatted with the provided arguments. When the VM is booted, this
-     * method will obtain the correct localized message and format it using
-     * java.text.MessageFormat. Otherwise, a non-localized string is returned,
-     * and the formatting is performed by simplified formatting code.
+     * formatted with the provided arguments. This method should only be
+     * called when the VM is booted and all resources needed to obtain
+     * and format the localized message are loaded (or can be loaded).
      *
      * @param key The key of the desired string in the security resource bundle
      * @param arguments The arguments that should be placed in the message
      * @return A formatted message string
      */
-    public static String getMessage(String key,
-                                    Object... arguments) {
+    public static String getLocalized(String key, Object... arguments) {
 
-        if (jdk.internal.misc.VM.isBooted()) {
-            // Localization and formatting resources are available
-            String value = ResourcesMgr.getString(key);
-            if (arguments == null) {
-                return value;
-            }
-            java.text.MessageFormat form = new java.text.MessageFormat(value);
-            return form.format(arguments);
-        } else {
-            return getMessageUnbooted(key, arguments);
+        String value = ResourcesMgr.getString(key);
+        if (arguments == null) {
+            return value;
         }
+        java.text.MessageFormat form = new java.text.MessageFormat(value);
+        return form.format(arguments);
     }
 
 }

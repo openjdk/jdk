@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,7 @@ handleSocketError(JNIEnv *env, int errorValue)
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_SocketChannelImpl_checkConnect(JNIEnv *env, jobject this,
-                                               jobject fdo, jboolean block,
-                                               jboolean ready)
+                                               jobject fdo, jboolean block)
 {
     int optError = 0;
     int lastError = 0;

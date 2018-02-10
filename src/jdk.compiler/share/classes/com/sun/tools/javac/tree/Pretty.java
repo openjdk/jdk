@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -637,19 +637,43 @@ public class Pretty extends JCTree.Visitor {
                 print("/*public static final*/ ");
                 print(tree.name);
                 if (tree.init != null) {
-                    if (sourceOutput && tree.init.hasTag(NEWCLASS)) {
-                        print(" /*enum*/ ");
+                    if (tree.init.hasTag(NEWCLASS)) {
                         JCNewClass init = (JCNewClass) tree.init;
-                        if (init.args != null && init.args.nonEmpty()) {
+                        if (sourceOutput) {
+                            print(" /*enum*/ ");
+                            if (init.args != null && init.args.nonEmpty()) {
+                                print("(");
+                                print(init.args);
+                                print(")");
+                            }
+                            if (init.def != null && init.def.defs != null) {
+                                print(" ");
+                                printBlock(init.def.defs);
+                            }
+                            return;
+                        }else {
+                            print(" /* = ");
+                            print("new ");
+                            if (init.def != null && init.def.mods.annotations.nonEmpty()) {
+                                printTypeAnnotations(init.def.mods.annotations);
+                            }
+                            printExpr(init.clazz);
                             print("(");
-                            print(init.args);
+                            printExprs(init.args);
                             print(")");
+                            print(" */");
+                            print(" /*enum*/ ");
+                            if (init.args != null && init.args.nonEmpty()) {
+                                print("(");
+                                printExprs(init.args);
+                                print(")");
+                            }
+                            if (init.def != null && init.def.defs != null) {
+                                print(" ");
+                                printBlock(init.def.defs);
+                            }
+                            return;
                         }
-                        if (init.def != null && init.def.defs != null) {
-                            print(" ");
-                            printBlock(init.def.defs);
-                        }
-                        return;
                     }
                     print(" /* = ");
                     printExpr(tree.init);

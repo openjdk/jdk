@@ -25,9 +25,9 @@
  * @bug 7156873 8040059 8028480 8034773 8153248 8061777
  * @summary ZipFileSystem regression tests
  *
+ * @modules jdk.zipfs
  * @run main ZFSTests
  * @run main/othervm/java.security.policy=test.policy ZFSTests
- * @modules jdk.zipfs
  */
 
 

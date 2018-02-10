@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,8 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  * @author Scott Seligman (generics, enums, annotations)
  */
 
-@Deprecated
+@Deprecated(since="9", forRemoval=true)
+@SuppressWarnings("removal")
 public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
 
     public final ClassType type;        // protected->public for debugging
@@ -1091,7 +1092,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
      *          should not be exposed here.  In addition, not all imported
      *          classes are imported through single-type-import declarations.
      */
-    @Deprecated
+    @Deprecated(since="9", forRemoval=true)
     public ClassDoc[] importedClasses() {
         // information is not available for binary classfiles
         if (tsym.sourcefile == null) return new ClassDoc[0];
@@ -1129,7 +1130,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
      *          return type does not allow for all type-import-on-demand
      *          declarations to be returned.
      */
-    @Deprecated
+    @Deprecated(since="9", forRemoval=true)
     public PackageDoc[] importedPackages() {
         // information is not available for binary classfiles
         if (tsym.sourcefile == null) return new PackageDoc[0];
