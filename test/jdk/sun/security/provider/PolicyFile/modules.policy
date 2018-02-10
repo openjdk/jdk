@@ -25,10 +25,6 @@ grant {
     permission javax.security.auth.kerberos.ServicePermission "*", "accept";
     // java.sql module
     permission java.sql.SQLPermission "setLog";
-    // javax.xml.bind module
-    permission javax.xml.bind.JAXBPermission "setDatatypeConverter";
-    // javax.xml.ws module
-    permission javax.xml.ws.WebServicePermission "publishEndpoint";
     // java.smartcardio module
     permission javax.smartcardio.CardPermission "*", "*";
     // jdk.attach module (@jdk.Exported Permissions)

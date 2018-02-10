@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,10 @@
  * @bug 6479237
  * @summary Test the format of StackTraceElement::toString and its serial form
  * @modules java.logging
- *          java.xml.bind
+ *
  * @run main SerialTest
  */
 
-import javax.xml.bind.JAXBElement;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -53,7 +52,6 @@ public class SerialTest {
     private static final Path SER_DIR = Paths.get("sers");
     private static final String JAVA_BASE = "java.base";
     private static final String JAVA_LOGGING = "java.logging";
-    private static final String JAVA_XML_BIND = "java.xml.bind";
 
     private static boolean isImage;
 
@@ -71,15 +69,6 @@ public class SerialTest {
             Arrays.stream(e.getStackTrace())
                   .filter(ste -> ste.getClassName().startsWith("java.util.logging.") ||
                                  ste.getClassName().equals("SerialTest"))
-                  .forEach(SerialTest::test);
-        }
-
-        // test stack trace with upgradeable module
-        try {
-            new JAXBElement(null, null, null);
-        } catch (IllegalArgumentException e) {
-            Arrays.stream(e.getStackTrace())
-                  .filter(ste -> ste.getModuleName() != null)
                   .forEach(SerialTest::test);
         }
 
@@ -121,10 +110,6 @@ public class SerialTest {
                     case JAVA_BASE:
                     case JAVA_LOGGING:
                         checkNamedModule(ste, loader, false);
-                        break;
-                    case JAVA_XML_BIND:
-                        // for exploded build, no version is shown
-                        checkNamedModule(ste, loader, isImage);
                         break;
                     default:  // ignore
                 }

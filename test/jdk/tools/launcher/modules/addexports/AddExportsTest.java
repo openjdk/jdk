@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,7 @@
 /**
  * @test
  * @library /lib/testlibrary /test/lib
- * @modules java.transaction
- *          jdk.compiler
+ * @modules jdk.compiler
  * @build AddExportsTest jdk.test.lib.compiler.CompilerUtils jdk.testlibrary.*
  * @run testng AddExportsTest
  * @summary Basic tests for java --add-exports
@@ -52,15 +51,12 @@ public class AddExportsTest {
 
     private static final Path SRC_DIR = Paths.get(TEST_SRC, "src");
     private static final Path MODS_DIR = Paths.get("mods");
-    private static final Path UPGRADE_MODS_DIRS = Paths.get("upgrademods");
 
     // test module m1 that uses Unsafe
     private static final String TEST1_MODULE = "m1";
     private static final String TEST1_MAIN_CLASS = "jdk.test1.Main";
 
-    // test module m2 uses java.transaction internals
-    private static final String TEST2_MODULE = "m2";
-    private static final String TEST2_MAIN_CLASS = "jdk.test2.Main";
+
 
     // test module m3 uses m4 internals
     private static final String TEST3_MODULE = "m3";
@@ -78,19 +74,7 @@ public class AddExportsTest {
                 "--add-exports", "java.base/jdk.internal.misc=m1");
         assertTrue(compiled, "module " + TEST1_MODULE + " did not compile");
 
-        // javac -d upgrademods/java.transaction src/java.transaction/**
-        compiled = CompilerUtils.compile(
-                SRC_DIR.resolve("java.transaction"),
-                UPGRADE_MODS_DIRS.resolve("java.transaction"));
-        assertTrue(compiled, "module java.transaction did not compile");
 
-        // javac --upgrade-module-path upgrademods -d mods/m2 src/m2/**
-        compiled = CompilerUtils.compile(
-                SRC_DIR.resolve(TEST2_MODULE),
-                MODS_DIR.resolve(TEST2_MODULE),
-                "--upgrade-module-path", UPGRADE_MODS_DIRS.toString(),
-                "--add-exports", "java.transaction/javax.transaction.internal=m2");
-        assertTrue(compiled, "module " + TEST2_MODULE + " did not compile");
 
         // javac -d mods/m3 src/m3/**
         compiled = CompilerUtils.compile(
@@ -162,26 +146,6 @@ public class AddExportsTest {
         assertTrue(exitValue == 0);
     }
 
-
-    /**
-     * Test --add-exports with upgraded module
-     */
-    public void testWithUpgradedModule() throws Exception {
-
-        // java --add-exports java.transaction/javax.transaction.internal=m2
-        //      --upgrade-module-path upgrademods --module-path mods -m ...
-        String mid = TEST2_MODULE + "/" + TEST2_MAIN_CLASS;
-        int exitValue = executeTestJava(
-                "--add-exports", "java.transaction/javax.transaction.internal=m2",
-                "--upgrade-module-path", UPGRADE_MODS_DIRS.toString(),
-                "--module-path", MODS_DIR.toString(),
-                "-m", mid)
-                .outputTo(System.out)
-                .errorTo(System.out)
-                .getExitValue();
-
-        assertTrue(exitValue == 0);
-    }
 
 
     /**

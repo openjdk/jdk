@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-import javax.activation.MimeTypeParameterList;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -125,11 +124,6 @@ public class TryAccess {
         ctor.setAccessible(true);
     }
 
-    static void setAccessibleNotPublicMemberUpgradeableModule() throws Exception {
-        Method method = MimeTypeParameterList.class.getDeclaredMethod("parse",
-                String.class);
-        method.setAccessible(true);
-    }
 
     static void setAccessibleNotPublicMemberApplicationModule() throws Exception {
         Class<?> clazz = Class.forName("p.Type");

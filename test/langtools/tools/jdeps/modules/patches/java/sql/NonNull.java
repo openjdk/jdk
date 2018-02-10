@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c)  2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,17 @@
  * questions.
  */
 
-import java.util.*;
-import javax.annotation.processing.*;
-import javax.lang.model.element.*;
-import javax.tools.*;
+package java.sql;
 
-@SuppressWarnings("")
-public class A extends JavacTestingAbstractProcessor {
-    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        Messager m = processingEnv.getMessager();
-        for (TypeElement anno: annotations) {
-            for (Element e: roundEnv.getElementsAnnotatedWith(anno))
-                m.printMessage(Diagnostic.Kind.ERROR, "test", e);
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-        }
-        return true;
-    }
+import static java.lang.annotation.ElementType.*;
 
-    @SuppressWarnings("")
-    private void foo() {}
+@Documented
+@Target({FIELD, LOCAL_VARIABLE})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface NonNull {
 }

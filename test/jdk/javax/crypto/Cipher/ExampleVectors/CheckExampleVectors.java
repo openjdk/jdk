@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @bug 8006259
  * @summary Test several modes of operation using vectors from SP 800-38A
- * @modules java.xml.bind
  * @run main CheckExampleVectors
  */
 
@@ -33,7 +32,6 @@ import java.io.*;
 import java.security.*;
 import java.util.*;
 import java.util.function.*;
-import javax.xml.bind.DatatypeConverter;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
@@ -124,7 +122,7 @@ public class CheckExampleVectors {
         if (v.equals("")) {
             return null;
         }
-        return DatatypeConverter.parseBase64Binary(v);
+        return Base64.getDecoder().decode(v);
     }
 
     private static String toModeString(Mode mode) {

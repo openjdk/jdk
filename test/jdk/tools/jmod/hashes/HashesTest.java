@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,30 +237,6 @@ public class HashesTest {
               .forEach(mn -> assertTrue(ht.hashes(mn) == null));
     }
 
-    @Test
-    public static void upgradeableModule() throws IOException {
-        Path mpath = Paths.get(System.getProperty("java.home"), "jmods");
-        if (!Files.exists(mpath)) {
-            return;
-        }
-
-        Path dest = Paths.get("test4");
-        HashesTest ht = new HashesTest(dest);
-        ht.makeModule("m1");
-        ht.makeModule("java.xml.bind", "m1");
-        ht.makeModule("java.xml.ws", "java.xml.bind");
-        ht.makeModule("m2", "java.xml.ws");
-
-        ht.makeJmod("m1");
-        ht.makeJmod("m2");
-        ht.makeJmod("java.xml.ws");
-        ht.makeJmod("java.xml.bind",
-                    "--module-path",
-                    ht.lib.toString() + File.pathSeparator + mpath,
-                    "--hash-modules", "^java.xml.*|^m.*");
-
-        ht.checkHashes("java.xml.bind", "java.xml.ws", "m2");
-    }
 
     @Test
     public static void testImageJmods() throws IOException {

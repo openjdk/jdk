@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,6 @@ public class VersionCheck extends TestHelper {
         "packager",
         "ssvagent",
         "unpack200",
-        "wsimport"
     };
 
     // tools that do not accept -version
@@ -107,21 +106,15 @@ public class VersionCheck extends TestHelper {
         "kinit",
         "klist",
         "ktab",
-        "orbd",
         "pack200",
         "packager",
         "rmic",
         "rmid",
         "rmiregistry",
-        "schemagen", // returns error code 127
         "serialver",
         "servertool",
         "ssvagent",
-        "tnameserv",
-        "unpack200",
-        "wsgen",
-        "wsimport",
-        "xjc"
+        "unpack200"
     };
 
     // expected reference strings

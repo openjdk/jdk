@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -74,24 +74,13 @@ BOOT_MODULES += \
 # Modules that directly or indirectly requiring upgradeable modules
 # should carefully be considered if it should be upgradeable or not.
 UPGRADEABLE_MODULES += \
-    java.activation \
     java.compiler \
-    java.corba \
-    java.transaction \
-    java.xml.bind \
-    java.xml.ws \
-    java.xml.ws.annotation \
     jdk.internal.vm.compiler \
     #
 
-UPGRADEABLE_TOOL_MODULES += \
-    jdk.xml.bind \
-    jdk.xml.ws \
-    #
 
 AGGREGATOR_MODULES += \
     java.se \
-    java.se.ee \
     #
 
 PLATFORM_MODULES += \
@@ -143,7 +132,7 @@ JRE_TOOL_MODULES += \
 # DOCS_MODULES defines the root modules for javadoc generation.
 # All of their `require transitive` modules directly and indirectly will be included.
 DOCS_MODULES += \
-    java.se.ee \
+    java.se \
     java.smartcardio \
     jdk.accessibility \
     jdk.attach \
@@ -194,8 +183,6 @@ LANGTOOLS_MODULES := \
     jdk.jdeps \
     jdk.jshell \
     #
-
-CORBA_MODULES := java.corba
 
 HOTSPOT_MODULES := \
     jdk.aot \
@@ -395,7 +382,7 @@ FindTransitiveIndirectDepsForModules = \
 # Upgradeable modules are those that are either defined as upgradeable or that
 # require an upradeable module.
 FindAllUpgradeableModules = \
-    $(sort $(filter-out $(MODULES_FILTER), $(UPGRADEABLE_MODULES) $(UPGRADEABLE_TOOL_MODULES)))
+    $(sort $(filter-out $(MODULES_FILTER), $(UPGRADEABLE_MODULES)))
 
 
 ################################################################################
