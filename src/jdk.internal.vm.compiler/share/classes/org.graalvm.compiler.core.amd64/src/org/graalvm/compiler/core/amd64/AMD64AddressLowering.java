@@ -27,7 +27,6 @@ import org.graalvm.compiler.asm.amd64.AMD64Address.Scale;
 import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.type.AbstractPointerStamp;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
-import org.graalvm.compiler.core.common.type.PrimitiveStamp;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -107,7 +106,9 @@ public class AMD64AddressLowering extends AddressLowering {
                 ret.setBase(add.getX());
                 ret.setIndex(considerNegation(graph, add.getY(), isBaseNegated));
                 return true;
-            } else if (ret.getBase() == null && ret.getIndex() instanceof AddNode) {
+            }
+
+            if (ret.getBase() == null && ret.getIndex() instanceof AddNode) {
                 AddNode add = (AddNode) ret.getIndex();
                 ret.setBase(considerNegation(graph, add.getX(), isIndexNegated));
                 ret.setIndex(add.getY());
@@ -188,7 +189,7 @@ public class AMD64AddressLowering extends AddressLowering {
             return improveConstDisp(address, node, c, null, shift, negateExtractedDisplacement);
         } else {
             if (node.stamp(NodeView.DEFAULT) instanceof IntegerStamp) {
-                assert PrimitiveStamp.getBits(node.stamp(NodeView.DEFAULT)) == ADDRESS_BITS;
+                assert IntegerStamp.getBits(node.stamp(NodeView.DEFAULT)) == ADDRESS_BITS;
 
                 /*
                  * we can't swallow zero-extends because of multiple reasons:

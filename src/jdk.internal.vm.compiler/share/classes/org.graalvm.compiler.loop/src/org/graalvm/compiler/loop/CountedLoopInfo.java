@@ -73,12 +73,18 @@ public class CountedLoopInfo {
         Stamp stamp = iv.valueNode().stamp(NodeView.DEFAULT);
         ValueNode range = sub(graph, end, iv.initNode());
 
+        ValueNode max;
+        ValueNode min;
         ValueNode oneDirection;
         if (iv.direction() == Direction.Up) {
             oneDirection = ConstantNode.forIntegerStamp(stamp, 1, graph);
+            max = end;
+            min = iv.initNode();
         } else {
             assert iv.direction() == Direction.Down;
             oneDirection = ConstantNode.forIntegerStamp(stamp, -1, graph);
+            max = iv.initNode();
+            min = end;
         }
         if (oneOff) {
             range = add(graph, range, oneDirection);
@@ -95,7 +101,7 @@ public class CountedLoopInfo {
             return div;
         }
         ConstantNode zero = ConstantNode.forIntegerStamp(stamp, 0, graph);
-        return graph.unique(new ConditionalNode(graph.unique(new IntegerLessThanNode(zero, div)), div, zero));
+        return graph.unique(new ConditionalNode(graph.unique(new IntegerLessThanNode(max, min)), zero, div));
     }
 
     /**

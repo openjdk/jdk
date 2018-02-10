@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,10 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
 
     if (flag == mtClass) {
       // report class count
-      out->print_cr("%27s (classes #" SIZE_FORMAT ")", " ", _class_count);
+      out->print_cr("%27s (classes #" SIZE_FORMAT ")",
+        " ", (_instance_class_count + _array_class_count));
+      out->print_cr("%27s (  instance classes #" SIZE_FORMAT ", array classes #" SIZE_FORMAT ")",
+        " ", _instance_class_count, _array_class_count);
     } else if (flag == mtThread) {
       // report thread count
       out->print_cr("%27s (thread #" SIZE_FORMAT ")", " ", _malloc_snapshot->thread_count());
@@ -459,6 +462,17 @@ void MemSummaryDiffReporter::diff_summary_of_type(MEMFLAGS flag,
         out->print(" %+d", (int)(_current_baseline.class_count() - _early_baseline.class_count()));
       }
       out->print_cr(")");
+
+      out->print("%27s (  instance classes #" SIZE_FORMAT, " ", _current_baseline.instance_class_count());
+      if (_current_baseline.instance_class_count() != _early_baseline.instance_class_count()) {
+        out->print(" %+d", (int)(_current_baseline.instance_class_count() - _early_baseline.instance_class_count()));
+      }
+      out->print(", array classes #" SIZE_FORMAT, _current_baseline.array_class_count());
+      if (_current_baseline.array_class_count() != _early_baseline.array_class_count()) {
+        out->print(" %+d", (int)(_current_baseline.array_class_count() - _early_baseline.array_class_count()));
+      }
+      out->print_cr(")");
+
     } else if (flag == mtThread) {
       // report thread count
       out->print("%27s (thread #" SIZE_FORMAT "", " ", _current_baseline.thread_count());

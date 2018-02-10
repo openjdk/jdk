@@ -120,7 +120,7 @@ public class GuardLoweringPhase extends BasePhase<MidTierContext> {
     @Override
     protected void run(StructuredGraph graph, MidTierContext context) {
         if (graph.getGuardsStage().allowsFloatingGuards()) {
-            SchedulePhase schedulePhase = new SchedulePhase(SchedulingStrategy.EARLIEST);
+            SchedulePhase schedulePhase = new SchedulePhase(SchedulingStrategy.EARLIEST_WITH_GUARD_ORDER);
             schedulePhase.apply(graph);
             ScheduleResult schedule = graph.getLastSchedule();
 

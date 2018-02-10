@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,6 @@ public class SunMiscSignalTest {
         Object[][] posixSignals = {
                 {"HUP",  IsSupported.YES, registerXrs, raiseXrs, invokedXrs},
                 {"QUIT", IsSupported.YES, CanRegister.NO, CanRaise.NO, Invoked.NO},
-                {"BUS",  IsSupported.YES, CanRegister.YES, CanRaise.YES, invokedXrs},
                 {"USR1", IsSupported.YES, CanRegister.YES, CanRaise.YES, invokedXrs},
                 {"USR2", IsSupported.YES, CanRegister.YES, CanRaise.YES, invokedXrs},
                 {"PIPE", IsSupported.YES, CanRegister.YES, CanRaise.YES, invokedXrs},
@@ -130,6 +129,14 @@ public class SunMiscSignalTest {
                 {"WINCH", IsSupported.YES, CanRegister.YES, CanRaise.YES, invokedXrs},
                 {"IO",   IsSupported.YES, CanRegister.YES, CanRaise.YES, invokedXrs},
                 {"SYS",   IsSupported.YES, CanRegister.YES, CanRaise.YES, invokedXrs},
+        };
+
+        Object[][] posixNonOSXSignals = {
+                {"BUS",  IsSupported.YES, CanRegister.YES, CanRaise.YES, invokedXrs},
+        };
+
+        Object[][] posixOSXSignals = {
+                {"BUS",  IsSupported.YES, CanRegister.NO, CanRaise.NO, Invoked.NO},
         };
 
         Object[][] windowsSignals = {
@@ -155,7 +162,9 @@ public class SunMiscSignalTest {
                 {"SYS",  IsSupported.NO, CanRegister.NO, CanRaise.NO, Invoked.NO},
         };
 
-        return concatArrays(commonSignals, (Platform.isWindows() ? windowsSignals : posixSignals));
+        Object[][] combinedPosixSignals = concatArrays(posixSignals,
+                                                       (Platform.isOSX() ? posixOSXSignals : posixNonOSXSignals));
+        return concatArrays(commonSignals, (Platform.isWindows() ? windowsSignals : combinedPosixSignals));
     }
 
     // Provider of invalid signal names

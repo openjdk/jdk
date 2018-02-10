@@ -44,6 +44,8 @@ class OopStorage::Block /* No base class, to avoid messing up alignment. */ {
   void* _memory;              // Unaligned storage containing block.
   BlockEntry _active_entry;
   BlockEntry _allocate_entry;
+  Block* volatile _deferred_updates_next;
+  volatile uintx _release_refcount;
 
   Block(const OopStorage* owner, void* memory);
   ~Block();
@@ -75,7 +77,10 @@ public:
   bool is_full() const;
   bool is_empty() const;
   uintx allocated_bitmask() const;
-  uintx cmpxchg_allocated_bitmask(uintx new_value, uintx compare_value);
+  bool is_deletable() const;
+
+  Block* deferred_updates_next() const;
+  void set_deferred_updates_next(Block* new_next);
 
   bool contains(const oop* ptr) const;
 
@@ -85,6 +90,8 @@ public:
   oop* allocate();
   static Block* new_block(const OopStorage* owner);
   static void delete_block(const Block& block);
+
+  void release_entries(uintx releasing, Block* volatile* deferred_list);
 
   template<typename F> bool iterate(F f);
   template<typename F> bool iterate(F f) const;

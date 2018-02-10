@@ -33,6 +33,15 @@ import org.graalvm.compiler.phases.Phase;
 public class AddressLoweringPhase extends Phase {
 
     public abstract static class AddressLowering {
+
+        @SuppressWarnings("unused")
+        public void preProcess(StructuredGraph graph) {
+        }
+
+        @SuppressWarnings("unused")
+        public void postProcess(AddressNode lowered) {
+        }
+
         public abstract AddressNode lower(ValueNode base, ValueNode offset);
     }
 
@@ -45,11 +54,13 @@ public class AddressLoweringPhase extends Phase {
 
     @Override
     protected void run(StructuredGraph graph) {
+        lowering.preProcess(graph);
         for (Node node : graph.getNodes()) {
             AddressNode lowered;
             if (node instanceof OffsetAddressNode) {
                 OffsetAddressNode address = (OffsetAddressNode) node;
                 lowered = lowering.lower(address.getBase(), address.getOffset());
+                lowering.postProcess(lowered);
             } else {
                 continue;
             }

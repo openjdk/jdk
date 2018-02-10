@@ -33,9 +33,6 @@
 
 // Explicit C-heap memory management
 
-void trace_heap_malloc(size_t size, const char* name, void *p);
-void trace_heap_free(void *p);
-
 #ifndef PRODUCT
 // Increments unsigned long value for statistics (not atomic on MP).
 inline void inc_stat_counter(volatile julong* dest, julong add_value) {
@@ -56,9 +53,6 @@ inline char* AllocateHeap(size_t size, MEMFLAGS flags,
     const NativeCallStack& stack,
     AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
   char* p = (char*) os::malloc(size, flags, stack);
-  #ifdef ASSERT
-  if (PrintMallocFree) trace_heap_malloc(size, "AllocateHeap", p);
-  #endif
   if (p == NULL && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
     vm_exit_out_of_memory(size, OOM_MALLOC_ERROR, "AllocateHeap");
   }
@@ -73,9 +67,6 @@ ALWAYSINLINE char* AllocateHeap(size_t size, MEMFLAGS flags,
 ALWAYSINLINE char* ReallocateHeap(char *old, size_t size, MEMFLAGS flag,
     AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
   char* p = (char*) os::realloc(old, size, flag, CURRENT_PC);
-  #ifdef ASSERT
-  if (PrintMallocFree) trace_heap_malloc(size, "ReallocateHeap", p);
-  #endif
   if (p == NULL && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
     vm_exit_out_of_memory(size, OOM_MALLOC_ERROR, "ReallocateHeap");
   }
@@ -83,20 +74,13 @@ ALWAYSINLINE char* ReallocateHeap(char *old, size_t size, MEMFLAGS flag,
 }
 
 inline void FreeHeap(void* p) {
-  #ifdef ASSERT
-  if (PrintMallocFree) trace_heap_free(p);
-  #endif
   os::free(p);
 }
 
 
 template <MEMFLAGS F> void* CHeapObj<F>::operator new(size_t size,
       const NativeCallStack& stack) throw() {
-  void* p = (void*)AllocateHeap(size, F, stack);
-#ifdef ASSERT
-  if (PrintMallocFree) trace_heap_malloc(size, "CHeapObj-new", p);
-#endif
-  return p;
+  return (void*)AllocateHeap(size, F, stack);
 }
 
 template <MEMFLAGS F> void* CHeapObj<F>::operator new(size_t size) throw() {
@@ -104,14 +88,9 @@ template <MEMFLAGS F> void* CHeapObj<F>::operator new(size_t size) throw() {
 }
 
 template <MEMFLAGS F> void* CHeapObj<F>::operator new (size_t size,
-  const std::nothrow_t&  nothrow_constant, const NativeCallStack& stack) throw() {
-  void* p = (void*)AllocateHeap(size, F, stack,
-      AllocFailStrategy::RETURN_NULL);
-#ifdef ASSERT
-    if (PrintMallocFree) trace_heap_malloc(size, "CHeapObj-new", p);
-#endif
-    return p;
-  }
+      const std::nothrow_t&  nothrow_constant, const NativeCallStack& stack) throw() {
+  return (void*)AllocateHeap(size, F, stack, AllocFailStrategy::RETURN_NULL);
+}
 
 template <MEMFLAGS F> void* CHeapObj<F>::operator new (size_t size,
   const std::nothrow_t& nothrow_constant) throw() {

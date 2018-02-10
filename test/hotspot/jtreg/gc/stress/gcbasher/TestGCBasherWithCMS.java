@@ -26,8 +26,7 @@ import java.io.IOException;
 
 /*
  * @test TestGCBasherWithCMS
- * @key gc
- * @key stress
+ * @key gc stress
  * @requires vm.gc.ConcMarkSweep
  * @requires vm.flavor == "server" & !vm.emulatedClient
  * @summary Stress the CMS GC by trying to make old objects more likely to be garbage than young objects.

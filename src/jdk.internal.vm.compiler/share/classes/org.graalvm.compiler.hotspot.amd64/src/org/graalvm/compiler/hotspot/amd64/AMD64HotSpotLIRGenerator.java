@@ -572,7 +572,7 @@ public class AMD64HotSpotLIRGenerator extends AMD64LIRGenerator implements HotSp
         if (inputKind.isReference(0)) {
             // oop
             Variable result = newVariable(lirKindTool.getNarrowOopKind());
-            append(new AMD64Move.CompressPointer(result, asAllocatable(pointer), getProviders().getRegisters().getHeapBaseRegister().asValue(), encoding, nonNull, getLIRKindTool()));
+            append(new AMD64Move.CompressPointerOp(result, asAllocatable(pointer), getProviders().getRegisters().getHeapBaseRegister().asValue(), encoding, nonNull, getLIRKindTool()));
             return result;
         } else {
             // metaspace pointer
@@ -589,7 +589,7 @@ public class AMD64HotSpotLIRGenerator extends AMD64LIRGenerator implements HotSp
                     base = emitLoadConstant(lirKindTool.getWordKind(), JavaConstant.forLong(encoding.getBase()));
                 }
             }
-            append(new AMD64Move.CompressPointer(result, asAllocatable(pointer), base, encoding, nonNull, getLIRKindTool()));
+            append(new AMD64Move.CompressPointerOp(result, asAllocatable(pointer), base, encoding, nonNull, getLIRKindTool()));
             return result;
         }
     }
@@ -602,7 +602,7 @@ public class AMD64HotSpotLIRGenerator extends AMD64LIRGenerator implements HotSp
         if (inputKind.isReference(0)) {
             // oop
             Variable result = newVariable(lirKindTool.getObjectKind());
-            append(new AMD64Move.UncompressPointer(result, asAllocatable(pointer), getProviders().getRegisters().getHeapBaseRegister().asValue(), encoding, nonNull, lirKindTool));
+            append(new AMD64Move.UncompressPointerOp(result, asAllocatable(pointer), getProviders().getRegisters().getHeapBaseRegister().asValue(), encoding, nonNull, lirKindTool));
             return result;
         } else {
             // metaspace pointer
@@ -620,7 +620,7 @@ public class AMD64HotSpotLIRGenerator extends AMD64LIRGenerator implements HotSp
                     base = emitLoadConstant(uncompressedKind, JavaConstant.forLong(encoding.getBase()));
                 }
             }
-            append(new AMD64Move.UncompressPointer(result, asAllocatable(pointer), base, encoding, nonNull, lirKindTool));
+            append(new AMD64Move.UncompressPointerOp(result, asAllocatable(pointer), base, encoding, nonNull, lirKindTool));
             return result;
         }
     }

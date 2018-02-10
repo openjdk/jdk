@@ -37,6 +37,8 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
@@ -84,8 +86,8 @@ public class ServiceProviderProcessor extends AbstractProcessor {
             try {
                 annotation.value();
             } catch (MirroredTypeException ex) {
-                TypeMirror serviceInterface = ex.getTypeMirror();
-                if (verifyAnnotation(serviceInterface, serviceProvider)) {
+                TypeMirror service = ex.getTypeMirror();
+                if (verifyAnnotation(service, serviceProvider)) {
                     if (serviceProvider.getNestingKind().isNested()) {
                         /*
                          * This is a simplifying constraint that means we don't have to process the
@@ -94,7 +96,30 @@ public class ServiceProviderProcessor extends AbstractProcessor {
                         String msg = String.format("Service provider class %s must be a top level class", serviceProvider.getSimpleName());
                         processingEnv.getMessager().printMessage(Kind.ERROR, msg, serviceProvider);
                     } else {
-                        serviceProviders.put(serviceProvider, ex.getTypeMirror().toString());
+                        /*
+                         * Since the definition of the service class is not necessarily modifiable,
+                         * we need to support a non-top-level service class and ensure its name is
+                         * properly expressed with '$' separating nesting levels instead of '.'.
+                         */
+                        TypeElement serviceElement = (TypeElement) processingEnv.getTypeUtils().asElement(service);
+                        String serviceName = serviceElement.getSimpleName().toString();
+                        Element enclosing = serviceElement.getEnclosingElement();
+                        while (enclosing != null) {
+                            final ElementKind kind = enclosing.getKind();
+                            if (kind == ElementKind.PACKAGE) {
+                                serviceName = ((PackageElement) enclosing).getQualifiedName().toString() + "." + serviceName;
+                                break;
+                            } else if (kind == ElementKind.CLASS || kind == ElementKind.INTERFACE) {
+                                serviceName = ((TypeElement) enclosing).getSimpleName().toString() + "$" + serviceName;
+                                enclosing = enclosing.getEnclosingElement();
+                            } else {
+                                String msg = String.format("Cannot generate provider descriptor for service class %s as it is not nested in a package, class or interface",
+                                                serviceElement.getQualifiedName());
+                                processingEnv.getMessager().printMessage(Kind.ERROR, msg, serviceProvider);
+                                return;
+                            }
+                        }
+                        serviceProviders.put(serviceProvider, serviceName);
                     }
                 }
             }

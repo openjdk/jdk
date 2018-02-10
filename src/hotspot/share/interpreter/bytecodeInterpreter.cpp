@@ -594,10 +594,6 @@ BytecodeInterpreter::run(interpreterState istate) {
     VERIFY_OOP(rcvr);
   }
 #endif
-// #define HACK
-#ifdef HACK
-  bool interesting = false;
-#endif // HACK
 
   /* QQQ this should be a stack method so we don't know actual direction */
   guarantee(istate->msg() == initialize ||
@@ -648,19 +644,6 @@ BytecodeInterpreter::run(interpreterState istate) {
         // initialize
         os::breakpoint();
       }
-
-#ifdef HACK
-      {
-        ResourceMark rm;
-        char *method_name = istate->method()->name_and_sig_as_C_string();
-        if (strstr(method_name, "runThese$TestRunner.run()V") != NULL) {
-          tty->print_cr("entering: depth %d bci: %d",
-                         (istate->_stack_base - istate->_stack),
-                         istate->_bcp - istate->_method->code_base());
-          interesting = true;
-        }
-      }
-#endif // HACK
 
       // Lock method if synchronized.
       if (METHOD->is_synchronized()) {
@@ -793,18 +776,6 @@ BytecodeInterpreter::run(interpreterState istate) {
         // resume
         os::breakpoint();
       }
-#ifdef HACK
-      {
-        ResourceMark rm;
-        char *method_name = istate->method()->name_and_sig_as_C_string();
-        if (strstr(method_name, "runThese$TestRunner.run()V") != NULL) {
-          tty->print_cr("resume: depth %d bci: %d",
-                         (istate->_stack_base - istate->_stack) ,
-                         istate->_bcp - istate->_method->code_base());
-          interesting = true;
-        }
-      }
-#endif // HACK
       // returned from a java call, continue executing.
       if (THREAD->pop_frame_pending() && !THREAD->pop_frame_in_process()) {
         goto handle_Pop_Frame;

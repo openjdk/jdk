@@ -40,7 +40,7 @@
       <property name="tokens" value="ARRAY_INIT,BNOT,DEC,DOT,INC,LNOT,UNARY_MINUS,UNARY_PLUS"/>
     </module>
     <module name="NoWhitespaceBefore">
-      <property name="tokens" value="SEMI,DOT,POST_DEC,POST_INC"/>
+      <property name="tokens" value="SEMI,POST_DEC,POST_INC"/>
     </module>
     <module name="ParenPad"/>
     <module name="TypecastParenPad">

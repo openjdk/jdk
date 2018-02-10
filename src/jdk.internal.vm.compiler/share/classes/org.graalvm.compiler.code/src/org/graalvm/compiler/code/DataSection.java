@@ -40,7 +40,7 @@ public final class DataSection implements Iterable<Data> {
 
     public interface Patches {
 
-        void registerPatch(VMConstant c);
+        void registerPatch(int position, VMConstant c);
     }
 
     public abstract static class Data {

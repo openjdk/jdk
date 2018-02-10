@@ -28,6 +28,10 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.EconomicSet;
+import org.graalvm.collections.Equivalence;
+import org.graalvm.collections.UnmodifiableEconomicMap;
 import org.graalvm.compiler.core.common.CancellationBailoutException;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.GraalOptions;
@@ -38,6 +42,7 @@ import org.graalvm.compiler.debug.JavaMethodContext;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeMap;
+import org.graalvm.compiler.graph.NodeSourcePosition;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
@@ -45,10 +50,6 @@ import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.spi.VirtualizableAllocation;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.util.EconomicMap;
-import org.graalvm.util.EconomicSet;
-import org.graalvm.util.Equivalence;
-import org.graalvm.util.UnmodifiableEconomicMap;
 
 import jdk.vm.ci.meta.Assumptions;
 import jdk.vm.ci.meta.Assumptions.Assumption;
@@ -169,6 +170,7 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
         private final OptionValues options;
         private Cancellable cancellable = null;
         private final DebugContext debug;
+        private NodeSourcePosition callerContext;
 
         /**
          * Creates a builder for a graph.
@@ -255,8 +257,13 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
             return this;
         }
 
+        public Builder callerContext(NodeSourcePosition context) {
+            this.callerContext = context;
+            return this;
+        }
+
         public StructuredGraph build() {
-            return new StructuredGraph(name, rootMethod, entryBCI, assumptions, speculationLog, useProfilingInfo, compilationId, options, debug, cancellable);
+            return new StructuredGraph(name, rootMethod, entryBCI, assumptions, speculationLog, useProfilingInfo, compilationId, options, debug, cancellable, callerContext);
         }
     }
 
@@ -283,6 +290,13 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
     private SpeculationLog speculationLog;
 
     private ScheduleResult lastSchedule;
+
+    private final InliningLog inliningLog;
+
+    /**
+     * Call stack (context) leading to construction of this graph.
+     */
+    private final NodeSourcePosition callerContext;
 
     /**
      * Records the methods that were used while constructing this graph, one entry for each time a
@@ -317,7 +331,8 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
                     CompilationIdentifier compilationId,
                     OptionValues options,
                     DebugContext debug,
-                    Cancellable cancellable) {
+                    Cancellable cancellable,
+                    NodeSourcePosition context) {
         super(name, options, debug);
         this.setStart(add(new StartNode()));
         this.rootMethod = method;
@@ -328,6 +343,8 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
         this.speculationLog = speculationLog;
         this.useProfilingInfo = useProfilingInfo;
         this.cancellable = cancellable;
+        this.inliningLog = new InliningLog();
+        this.callerContext = context;
     }
 
     public void setLastSchedule(ScheduleResult result) {
@@ -436,6 +453,10 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
         this.start = start;
     }
 
+    public InliningLog getInliningLog() {
+        return inliningLog;
+    }
+
     /**
      * Creates a copy of this graph.
      *
@@ -459,7 +480,7 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
                         speculationLog,
                         useProfilingInfo,
                         newCompilationId,
-                        getOptions(), debugForCopy, null);
+                        getOptions(), debugForCopy, null, callerContext);
         if (allowAssumptions == AllowAssumptions.YES && assumptions != null) {
             copy.assumptions.record(assumptions);
         }
@@ -930,5 +951,9 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
     @Override
     protected void afterRegister(Node node) {
         assert hasValueProxies() || !(node instanceof ValueProxyNode);
+    }
+
+    public NodeSourcePosition getCallerContext() {
+        return callerContext;
     }
 }

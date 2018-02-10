@@ -26,12 +26,12 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.graalvm.collections.EconomicSet;
+import org.graalvm.collections.Equivalence;
 import org.graalvm.compiler.graph.Graph.NodeEvent;
 import org.graalvm.compiler.graph.Graph.NodeEventListener;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.Node.IndirectCanonicalization;
-import org.graalvm.util.Equivalence;
-import org.graalvm.util.EconomicSet;
 
 /**
  * A simple {@link NodeEventListener} implementation that accumulates event nodes in a

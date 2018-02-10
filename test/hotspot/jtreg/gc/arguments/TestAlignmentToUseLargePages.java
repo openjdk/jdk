@@ -23,11 +23,10 @@
 
 /**
  * @test TestAlignmentToUseLargePages
+ * @key gc regression
  * @summary All parallel GC variants may use large pages without the requirement that the
  * heap alignment is large page aligned. Other collectors also need to start up with odd sized heaps.
  * @bug 8024396
- * @key gc
- * @key regression
  * @requires vm.gc=="null"
  * @run main/othervm -Xms71M -Xmx91M -XX:+UseParallelGC -XX:-UseParallelOldGC -XX:+UseLargePages TestAlignmentToUseLargePages
  * @run main/othervm -Xms71M -Xmx91M -XX:+UseParallelGC -XX:-UseParallelOldGC -XX:-UseLargePages TestAlignmentToUseLargePages

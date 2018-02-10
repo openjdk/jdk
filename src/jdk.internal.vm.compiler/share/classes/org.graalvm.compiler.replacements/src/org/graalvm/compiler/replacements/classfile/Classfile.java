@@ -46,8 +46,8 @@ public class Classfile {
     private final ResolvedJavaType type;
     private final List<ClassfileBytecode> codeAttributes;
 
-    private static final int MAJOR_VERSION_JAVA_MIN = 51;
-    private static final int MAJOR_VERSION_JAVA_MAX = 55;
+    private static final int MAJOR_VERSION_JAVA_MIN = 51; // JDK7
+    private static final int MAJOR_VERSION_JAVA_MAX = 55; // JDK11
     private static final int MAGIC = 0xCAFEBABE;
 
     /**

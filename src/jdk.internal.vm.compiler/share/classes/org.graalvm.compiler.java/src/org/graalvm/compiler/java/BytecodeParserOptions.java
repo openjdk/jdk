@@ -34,7 +34,9 @@ import org.graalvm.compiler.options.OptionKey;
  */
 public class BytecodeParserOptions {
     // @formatter:off
-    @Option(help = "The trace level for the bytecode parser used when building a graph from bytecode", type = OptionType.Debug)
+    @Option(help = "The trace level for the bytecode parser. A value of 1 enables instruction tracing " +
+                   "and any greater value emits a frame state trace just prior to an instruction trace. " +
+                   "This option requires assertions to be enabled.", type = OptionType.Debug)
     public static final OptionKey<Integer> TraceBytecodeParserLevel = new OptionKey<>(0);
 
     @Option(help = "Inlines trivial methods during bytecode parsing.", type = OptionType.Expert)
@@ -56,7 +58,7 @@ public class BytecodeParserOptions {
     public static final OptionKey<Boolean> TraceParserPlugins = new OptionKey<>(false);
 
     @Option(help = "Maximum depth when inlining during bytecode parsing.", type = OptionType.Debug)
-    public static final OptionKey<Integer> InlineDuringParsingMaxDepth = new OptionKey<>(10);
+    public static final OptionKey<Integer> InlineDuringParsingMaxDepth = new OptionKey<>(3);
 
     @Option(help = "When creating info points hide the methods of the substitutions.", type = OptionType.Debug)
     public static final OptionKey<Boolean> HideSubstitutionStates = new OptionKey<>(false);

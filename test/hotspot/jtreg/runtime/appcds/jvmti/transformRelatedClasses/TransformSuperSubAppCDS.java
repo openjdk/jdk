@@ -34,6 +34,7 @@
  *     /test/hotspot/jtreg/runtime/appcds/customLoader/test-classes
  * @requires vm.cds
  * @requires vm.flavor != "minimal"
+ * @requires !vm.graal.enabled
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar
  *          java.management

@@ -98,8 +98,8 @@ public class HotSpotCompiledCodeBuilder {
 
         ByteBuffer buffer = ByteBuffer.wrap(dataSection).order(ByteOrder.nativeOrder());
         Builder<DataPatch> patchBuilder = Stream.builder();
-        data.buildDataSection(buffer, vmConstant -> {
-            patchBuilder.accept(new DataPatch(buffer.position(), new ConstantReference(vmConstant)));
+        data.buildDataSection(buffer, (position, vmConstant) -> {
+            patchBuilder.accept(new DataPatch(position, new ConstantReference(vmConstant)));
         });
 
         int dataSectionAlignment = data.getSectionAlignment();

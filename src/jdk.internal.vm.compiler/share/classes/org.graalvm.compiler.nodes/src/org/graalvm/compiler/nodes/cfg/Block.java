@@ -42,7 +42,6 @@ import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
 import org.graalvm.word.LocationIdentity;
 
 public final class Block extends AbstractBlockBase<Block> {
-
     public static final Block[] EMPTY_ARRAY = new Block[0];
 
     protected final AbstractBeginNode beginNode;
@@ -53,7 +52,6 @@ public final class Block extends AbstractBlockBase<Block> {
     private Loop<Block> loop;
 
     protected Block postdominator;
-    protected Block distancedDominatorCache;
     private LocationSet killLocations;
     private LocationSet killLocationsBetweenThisAndDominator;
 

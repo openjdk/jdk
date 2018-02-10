@@ -39,10 +39,10 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.Value;
-import sun.misc.Unsafe;
 
 /**
- * Represents an atomic read-and-add operation like {@link Unsafe#getAndAddInt(Object, long, int)}.
+ * Represents an atomic read-and-add operation like
+ * {@link sun.misc.Unsafe#getAndAddInt(Object, long, int)}.
  */
 @NodeInfo(allowedUsageTypes = Memory, cycles = CYCLES_8, size = SIZE_2)
 public final class AtomicReadAndAddNode extends AbstractMemoryCheckpoint implements LIRLowerable, MemoryCheckpoint.Single {

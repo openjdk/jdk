@@ -56,9 +56,8 @@ public class ClhsdbWhere {
                     "Java Stack Trace for Sweeper thread",
                     "CompilerThread",
                     "Java Stack Trace for Finalizer",
-                    "java.lang.ref.Reference",
-                    "private static void processPendingReferences",
-                    "private static native void waitForReferencePendingList",
+                    "Java Stack Trace for Signal Dispatcher",
+                    "Java Stack Trace for Reference Handler",
                     "Java Stack Trace for main",
                     "public static void main"));
 

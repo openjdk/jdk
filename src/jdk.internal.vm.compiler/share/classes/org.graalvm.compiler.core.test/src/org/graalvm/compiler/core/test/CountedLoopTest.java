@@ -25,14 +25,12 @@ package org.graalvm.compiler.core.test;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_IGNORED;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_IGNORED;
 
-import org.graalvm.compiler.nodes.NodeView;
-import org.junit.Test;
-
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.loop.InductionVariable;
 import org.graalvm.compiler.loop.LoopsData;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
@@ -42,6 +40,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import org.junit.Test;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -117,6 +116,21 @@ public class CountedLoopTest extends GraalCompilerTest {
         test("incrementSnippet", 0, 256, 3);
     }
 
+    @Test
+    public void increment4() {
+        test("incrementSnippet", -10, Integer.MAX_VALUE, 1);
+    }
+
+    @Test
+    public void increment5() {
+        test("incrementSnippet", 256, 256, 1);
+    }
+
+    @Test
+    public void increment6() {
+        test("incrementSnippet", 257, 256, 1);
+    }
+
     public static Result incrementEqSnippet(int start, int limit, int step) {
         int i;
         int inc = ((step - 1) & 0xFFFF) + 1; // make sure this value is always strictly positive
@@ -142,6 +156,21 @@ public class CountedLoopTest extends GraalCompilerTest {
     @Test
     public void incrementEq3() {
         test("incrementEqSnippet", 0, 256, 3);
+    }
+
+    @Test
+    public void incrementEq4() {
+        test("incrementEqSnippet", -10, 0, Integer.MAX_VALUE);
+    }
+
+    @Test
+    public void incrementEq5() {
+        test("incrementEqSnippet", 256, 256, 1);
+    }
+
+    @Test
+    public void incrementEq6() {
+        test("incrementEqSnippet", 257, 256, 1);
     }
 
     public static Result decrementSnippet(int start, int limit, int step) {
@@ -196,6 +225,11 @@ public class CountedLoopTest extends GraalCompilerTest {
     @Test
     public void decrementEq3() {
         test("decrementEqSnippet", 256, 0, 3);
+    }
+
+    @Test
+    public void decrementEq4() {
+        test("decrementEqSnippet", -10, 0, Integer.MAX_VALUE);
     }
 
     public static Result twoVariablesSnippet() {

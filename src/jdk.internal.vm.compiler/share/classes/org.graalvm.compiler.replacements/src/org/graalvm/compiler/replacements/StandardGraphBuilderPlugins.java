@@ -37,10 +37,13 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
+import jdk.vm.ci.code.BytecodePosition;
+import jdk.vm.ci.meta.SpeculationLog;
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.core.common.calc.Condition;
+import org.graalvm.compiler.core.common.calc.Condition.CanonicalizedCondition;
 import org.graalvm.compiler.core.common.calc.UnsignedMath;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -456,23 +459,16 @@ public class StandardGraphBuilderPlugins {
 
         @Override
         public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode x, ValueNode y) {
-            // the mirroring and negation operations get the condition into canonical form
-            boolean mirror = condition.canonicalMirror();
-            boolean negate = condition.canonicalNegate();
+            CanonicalizedCondition canonical = condition.canonicalize();
             StructuredGraph graph = b.getGraph();
 
-            ValueNode lhs = mirror ? y : x;
-            ValueNode rhs = mirror ? x : y;
+            ValueNode lhs = canonical.mustMirror() ? y : x;
+            ValueNode rhs = canonical.mustMirror() ? x : y;
 
-            ValueNode trueValue = ConstantNode.forBoolean(!negate, graph);
-            ValueNode falseValue = ConstantNode.forBoolean(negate, graph);
+            ValueNode trueValue = ConstantNode.forBoolean(!canonical.mustNegate(), graph);
+            ValueNode falseValue = ConstantNode.forBoolean(canonical.mustNegate(), graph);
 
-            Condition cond = mirror ? condition.mirror() : condition;
-            if (negate) {
-                cond = cond.negate();
-            }
-
-            LogicNode compare = CompareNode.createCompareNode(graph, b.getConstantReflection(), b.getMetaAccess(), b.getOptions(), null, cond, lhs, rhs, NodeView.DEFAULT);
+            LogicNode compare = CompareNode.createCompareNode(graph, b.getConstantReflection(), b.getMetaAccess(), b.getOptions(), null, canonical.getCanonicalCondition(), lhs, rhs, NodeView.DEFAULT);
             b.addPush(JavaKind.Boolean, new ConditionalNode(compare, trueValue, falseValue));
             return true;
         }
@@ -728,6 +724,24 @@ public class StandardGraphBuilderPlugins {
         }
     }
 
+    private static final class DirectiveSpeculationReason implements SpeculationLog.SpeculationReason {
+        private final BytecodePosition pos;
+
+        private DirectiveSpeculationReason(BytecodePosition pos) {
+            this.pos = pos;
+        }
+
+        @Override
+        public int hashCode() {
+            return pos.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof DirectiveSpeculationReason && ((DirectiveSpeculationReason) obj).pos.equals(this.pos);
+        }
+    }
+
     private static void registerGraalDirectivesPlugins(InvocationPlugins plugins) {
         Registration r = new Registration(plugins, GraalDirectives.class);
         r.register0("deoptimize", new InvocationPlugin() {
@@ -742,6 +756,23 @@ public class StandardGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
                 b.add(new DeoptimizeNode(DeoptimizationAction.InvalidateReprofile, DeoptimizationReason.TransferToInterpreter));
+                return true;
+            }
+        });
+
+        r.register0("deoptimizeAndInvalidateWithSpeculation", new InvocationPlugin() {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                GraalError.guarantee(b.getGraph().getSpeculationLog() != null, "A speculation log is need to use `deoptimizeAndInvalidateWithSpeculation`");
+                BytecodePosition pos = new BytecodePosition(null, b.getMethod(), b.bci());
+                DirectiveSpeculationReason reason = new DirectiveSpeculationReason(pos);
+                JavaConstant speculation;
+                if (b.getGraph().getSpeculationLog().maySpeculate(reason)) {
+                    speculation = b.getGraph().getSpeculationLog().speculate(reason);
+                } else {
+                    speculation = JavaConstant.defaultForKind(JavaKind.Object);
+                }
+                b.add(new DeoptimizeNode(DeoptimizationAction.InvalidateReprofile, DeoptimizationReason.TransferToInterpreter, speculation));
                 return true;
             }
         });

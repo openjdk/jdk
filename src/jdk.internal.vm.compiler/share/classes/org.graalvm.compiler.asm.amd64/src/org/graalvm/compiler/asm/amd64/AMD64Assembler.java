@@ -208,7 +208,6 @@ public class AMD64Assembler extends Assembler {
     }
 
     private static class VexOpcode {
-        private static final int VEX_OPCODE_NONE = 0x0;
         private static final int VEX_OPCODE_0F = 0x1;
         private static final int VEX_OPCODE_0F_38 = 0x2;
         private static final int VEX_OPCODE_0F_3A = 0x3;
@@ -861,9 +860,26 @@ public class AMD64Assembler extends Assembler {
                     break;
             }
 
+            int opc = 0;
+            if (isSimd) {
+                switch (prefix2) {
+                    case P_0F:
+                        opc = VexOpcode.VEX_OPCODE_0F;
+                        break;
+                    case P_0F38:
+                        opc = VexOpcode.VEX_OPCODE_0F_38;
+                        break;
+                    case P_0F3A:
+                        opc = VexOpcode.VEX_OPCODE_0F_3A;
+                        break;
+                    default:
+                        isSimd = false;
+                        break;
+                }
+            }
+
             if (isSimd) {
                 int pre;
-                int opc;
                 boolean rexVexW = (size == QWORD) ? true : false;
                 AMD64InstructionAttr attributes = new AMD64InstructionAttr(AvxVectorLen.AVX_128bit, rexVexW, /* legacyMode */ false, /* noMaskReg */ false, /* usesVl */ false, asm.target);
                 int curPrefix = size.sizePrefix | prefix1;
@@ -879,20 +895,6 @@ public class AMD64Assembler extends Assembler {
                         break;
                     default:
                         pre = VexSimdPrefix.VEX_SIMD_NONE;
-                        break;
-                }
-                switch (prefix2) {
-                    case P_0F:
-                        opc = VexOpcode.VEX_OPCODE_0F;
-                        break;
-                    case P_0F38:
-                        opc = VexOpcode.VEX_OPCODE_0F_38;
-                        break;
-                    case P_0F3A:
-                        opc = VexOpcode.VEX_OPCODE_0F_3A;
-                        break;
-                    default:
-                        opc = VexOpcode.VEX_OPCODE_NONE;
                         break;
                 }
                 int encode;
@@ -938,9 +940,26 @@ public class AMD64Assembler extends Assembler {
                     break;
             }
 
+            int opc = 0;
+            if (isSimd) {
+                switch (prefix2) {
+                    case P_0F:
+                        opc = VexOpcode.VEX_OPCODE_0F;
+                        break;
+                    case P_0F38:
+                        opc = VexOpcode.VEX_OPCODE_0F_38;
+                        break;
+                    case P_0F3A:
+                        opc = VexOpcode.VEX_OPCODE_0F_3A;
+                        break;
+                    default:
+                        isSimd = false;
+                        break;
+                }
+            }
+
             if (isSimd) {
                 int pre;
-                int opc;
                 boolean rexVexW = (size == QWORD) ? true : false;
                 AMD64InstructionAttr attributes = new AMD64InstructionAttr(AvxVectorLen.AVX_128bit, rexVexW, /* legacyMode */ false, /* noMaskReg */ false, /* usesVl */ false, asm.target);
                 int curPrefix = size.sizePrefix | prefix1;
@@ -956,20 +975,6 @@ public class AMD64Assembler extends Assembler {
                         break;
                     default:
                         pre = VexSimdPrefix.VEX_SIMD_NONE;
-                        break;
-                }
-                switch (prefix2) {
-                    case P_0F:
-                        opc = VexOpcode.VEX_OPCODE_0F;
-                        break;
-                    case P_0F38:
-                        opc = VexOpcode.VEX_OPCODE_0F_38;
-                        break;
-                    case P_0F3A:
-                        opc = VexOpcode.VEX_OPCODE_0F_3A;
-                        break;
-                    default:
-                        opc = VexOpcode.VEX_OPCODE_NONE;
                         break;
                 }
                 if (noNds) {
@@ -1055,8 +1060,7 @@ public class AMD64Assembler extends Assembler {
                     opc = VexOpcode.VEX_OPCODE_0F_3A;
                     break;
                 default:
-                    opc = VexOpcode.VEX_OPCODE_NONE;
-                    break;
+                    throw GraalError.shouldNotReachHere("invalid VEX instruction prefix");
             }
             int encode;
             encode = asm.simdPrefixAndEncode(dst, nds, src, pre, opc, attributes);
@@ -1096,8 +1100,7 @@ public class AMD64Assembler extends Assembler {
                     opc = VexOpcode.VEX_OPCODE_0F_3A;
                     break;
                 default:
-                    opc = VexOpcode.VEX_OPCODE_NONE;
-                    break;
+                    throw GraalError.shouldNotReachHere("invalid VEX instruction prefix");
             }
             asm.simdPrefix(dst, nds, src, pre, opc, attributes);
             asm.emitByte(op);
@@ -1163,9 +1166,26 @@ public class AMD64Assembler extends Assembler {
                     break;
             }
 
+            int opc = 0;
+            if (isSimd) {
+                switch (prefix2) {
+                    case P_0F:
+                        opc = VexOpcode.VEX_OPCODE_0F;
+                        break;
+                    case P_0F38:
+                        opc = VexOpcode.VEX_OPCODE_0F_38;
+                        break;
+                    case P_0F3A:
+                        opc = VexOpcode.VEX_OPCODE_0F_3A;
+                        break;
+                    default:
+                        isSimd = false;
+                        break;
+                }
+            }
+
             if (isSimd) {
                 int pre;
-                int opc;
                 boolean rexVexW = (size == QWORD) ? true : false;
                 AMD64InstructionAttr attributes = new AMD64InstructionAttr(AvxVectorLen.AVX_128bit, rexVexW, /* legacyMode */ false, /* noMaskReg */ false, /* usesVl */ false, asm.target);
                 int curPrefix = size.sizePrefix | prefix1;
@@ -1181,20 +1201,6 @@ public class AMD64Assembler extends Assembler {
                         break;
                     default:
                         pre = VexSimdPrefix.VEX_SIMD_NONE;
-                        break;
-                }
-                switch (prefix2) {
-                    case P_0F:
-                        opc = VexOpcode.VEX_OPCODE_0F;
-                        break;
-                    case P_0F38:
-                        opc = VexOpcode.VEX_OPCODE_0F_38;
-                        break;
-                    case P_0F3A:
-                        opc = VexOpcode.VEX_OPCODE_0F_3A;
-                        break;
-                    default:
-                        opc = VexOpcode.VEX_OPCODE_NONE;
                         break;
                 }
                 int encode;
@@ -1222,9 +1228,26 @@ public class AMD64Assembler extends Assembler {
                     break;
             }
 
+            int opc = 0;
+            if (isSimd) {
+                switch (prefix2) {
+                    case P_0F:
+                        opc = VexOpcode.VEX_OPCODE_0F;
+                        break;
+                    case P_0F38:
+                        opc = VexOpcode.VEX_OPCODE_0F_38;
+                        break;
+                    case P_0F3A:
+                        opc = VexOpcode.VEX_OPCODE_0F_3A;
+                        break;
+                    default:
+                        isSimd = false;
+                        break;
+                }
+            }
+
             if (isSimd) {
                 int pre;
-                int opc;
                 boolean rexVexW = (size == QWORD) ? true : false;
                 AMD64InstructionAttr attributes = new AMD64InstructionAttr(AvxVectorLen.AVX_128bit, rexVexW, /* legacyMode */ false, /* noMaskReg */ false, /* usesVl */ false, asm.target);
                 int curPrefix = size.sizePrefix | prefix1;
@@ -1240,20 +1263,6 @@ public class AMD64Assembler extends Assembler {
                         break;
                     default:
                         pre = VexSimdPrefix.VEX_SIMD_NONE;
-                        break;
-                }
-                switch (prefix2) {
-                    case P_0F:
-                        opc = VexOpcode.VEX_OPCODE_0F;
-                        break;
-                    case P_0F38:
-                        opc = VexOpcode.VEX_OPCODE_0F_38;
-                        break;
-                    case P_0F3A:
-                        opc = VexOpcode.VEX_OPCODE_0F_3A;
-                        break;
-                    default:
-                        opc = VexOpcode.VEX_OPCODE_NONE;
                         break;
                 }
                 asm.simdPrefix(src, Register.None, dst, pre, opc, attributes);
@@ -1390,9 +1399,26 @@ public class AMD64Assembler extends Assembler {
                     break;
             }
 
+            int opc = 0;
+            if (isSimd) {
+                switch (prefix2) {
+                    case P_0F:
+                        opc = VexOpcode.VEX_OPCODE_0F;
+                        break;
+                    case P_0F38:
+                        opc = VexOpcode.VEX_OPCODE_0F_38;
+                        break;
+                    case P_0F3A:
+                        opc = VexOpcode.VEX_OPCODE_0F_3A;
+                        break;
+                    default:
+                        isSimd = false;
+                        break;
+                }
+            }
+
             if (isSimd) {
                 int pre;
-                int opc;
                 AMD64InstructionAttr attributes = new AMD64InstructionAttr(AvxVectorLen.AVX_128bit, /* rexVexW */ false, /* legacyMode */ false, /* noMaskReg */ false, /* usesVl */ false, asm.target);
                 int curPrefix = size.sizePrefix | prefix1;
                 switch (curPrefix) {
@@ -1407,20 +1433,6 @@ public class AMD64Assembler extends Assembler {
                         break;
                     default:
                         pre = VexSimdPrefix.VEX_SIMD_NONE;
-                        break;
-                }
-                switch (prefix2) {
-                    case P_0F:
-                        opc = VexOpcode.VEX_OPCODE_0F;
-                        break;
-                    case P_0F38:
-                        opc = VexOpcode.VEX_OPCODE_0F_38;
-                        break;
-                    case P_0F3A:
-                        opc = VexOpcode.VEX_OPCODE_0F_3A;
-                        break;
-                    default:
-                        opc = VexOpcode.VEX_OPCODE_NONE;
                         break;
                 }
                 int encode;
@@ -1453,9 +1465,26 @@ public class AMD64Assembler extends Assembler {
                     break;
             }
 
+            int opc = 0;
+            if (isSimd) {
+                switch (prefix2) {
+                    case P_0F:
+                        opc = VexOpcode.VEX_OPCODE_0F;
+                        break;
+                    case P_0F38:
+                        opc = VexOpcode.VEX_OPCODE_0F_38;
+                        break;
+                    case P_0F3A:
+                        opc = VexOpcode.VEX_OPCODE_0F_3A;
+                        break;
+                    default:
+                        isSimd = false;
+                        break;
+                }
+            }
+
             if (isSimd) {
                 int pre;
-                int opc;
                 AMD64InstructionAttr attributes = new AMD64InstructionAttr(AvxVectorLen.AVX_128bit, /* rexVexW */ false, /* legacyMode */ false, /* noMaskReg */ false, /* usesVl */ false, asm.target);
                 int curPrefix = size.sizePrefix | prefix1;
                 switch (curPrefix) {
@@ -1472,21 +1501,6 @@ public class AMD64Assembler extends Assembler {
                         pre = VexSimdPrefix.VEX_SIMD_NONE;
                         break;
                 }
-                switch (prefix2) {
-                    case P_0F:
-                        opc = VexOpcode.VEX_OPCODE_0F;
-                        break;
-                    case P_0F38:
-                        opc = VexOpcode.VEX_OPCODE_0F_38;
-                        break;
-                    case P_0F3A:
-                        opc = VexOpcode.VEX_OPCODE_0F_3A;
-                        break;
-                    default:
-                        opc = VexOpcode.VEX_OPCODE_NONE;
-                        break;
-                }
-
                 if (noNds) {
                     asm.simdPrefix(dst, Register.None, src, pre, opc, attributes);
                 } else {

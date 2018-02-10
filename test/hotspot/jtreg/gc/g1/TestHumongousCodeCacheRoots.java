@@ -23,8 +23,7 @@
 
 /*
  * @test
- * @key regression
- * @key gc
+ * @key regression gc
  * @bug 8027756
  * @requires vm.gc.G1
  * @library /test/lib

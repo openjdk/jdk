@@ -160,6 +160,12 @@ public final class NodeBitMap extends NodeIdAccessor implements NodeIterable<Nod
         }
     }
 
+    public void invert() {
+        for (int i = 0; i < bits.length; i++) {
+            bits[i] = ~bits[i];
+        }
+    }
+
     public void grow() {
         nodeCount = Math.max(nodeCount, graph().nodeIdCount());
         int newLength = sizeForNodeCount(nodeCount);

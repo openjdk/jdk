@@ -24,6 +24,7 @@ package org.graalvm.compiler.core.target;
 
 import java.util.ArrayList;
 
+import org.graalvm.collections.EconomicSet;
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
@@ -44,7 +45,6 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
 import org.graalvm.compiler.phases.tiers.TargetProvider;
 import org.graalvm.compiler.phases.util.Providers;
-import org.graalvm.util.EconomicSet;
 
 import jdk.vm.ci.code.BailoutException;
 import jdk.vm.ci.code.CodeCacheProvider;
@@ -204,28 +204,45 @@ public abstract class Backend implements TargetProvider, ValueKindFactory<LIRKin
         }
         try (DebugContext.Scope s2 = debug.scope("CodeInstall", debugContext);
                         DebugContext.Activation a = debug.activate()) {
-            for (CodeInstallationTask task : tasks) {
-                task.preProcess(compilationResult);
-            }
+            preCodeInstallationTasks(tasks, compilationResult);
 
-            CompiledCode compiledCode = createCompiledCode(method, compilationRequest, compilationResult);
-            InstalledCode installedCode = getProviders().getCodeCache().installCode(method, compiledCode, predefinedInstalledCode, speculationLog, isDefault);
-
-            // Run post-code installation tasks.
+            InstalledCode installedCode;
             try {
-                for (CodeInstallationTask task : tasks) {
-                    task.postProcess(installedCode);
-                }
-                for (CodeInstallationTask task : tasks) {
-                    task.releaseInstallation(installedCode);
-                }
+                CompiledCode compiledCode = createCompiledCode(method, compilationRequest, compilationResult);
+                installedCode = getProviders().getCodeCache().installCode(method, compiledCode, predefinedInstalledCode, speculationLog, isDefault);
             } catch (Throwable t) {
-                installedCode.invalidate();
+                failCodeInstallationTasks(tasks, t);
                 throw t;
             }
+
+            postCodeInstallationTasks(tasks, installedCode);
+
             return installedCode;
         } catch (Throwable e) {
             throw debug.handle(e);
+        }
+    }
+
+    private static void failCodeInstallationTasks(CodeInstallationTask[] tasks, Throwable t) {
+        for (CodeInstallationTask task : tasks) {
+            task.installFailed(t);
+        }
+    }
+
+    private static void preCodeInstallationTasks(CodeInstallationTask[] tasks, CompilationResult compilationResult) {
+        for (CodeInstallationTask task : tasks) {
+            task.preProcess(compilationResult);
+        }
+    }
+
+    private static void postCodeInstallationTasks(CodeInstallationTask[] tasks, InstalledCode installedCode) {
+        try {
+            for (CodeInstallationTask task : tasks) {
+                task.postProcess(installedCode);
+            }
+        } catch (Throwable t) {
+            installedCode.invalidate();
+            throw t;
         }
     }
 
@@ -301,11 +318,10 @@ public abstract class Backend implements TargetProvider, ValueKindFactory<LIRKin
         }
 
         /**
-         * Task to run after all the post-code installation tasks are complete, used to release the
-         * installed code.
+         * Invoked after {@link #preProcess} when code installation fails.
          */
         @SuppressWarnings("unused")
-        public void releaseInstallation(InstalledCode installedCode) {
+        public void installFailed(Throwable t) {
         }
     }
 

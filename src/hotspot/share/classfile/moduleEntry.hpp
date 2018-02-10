@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,11 @@ public:
   void             set_shared_protection_domain(ClassLoaderData *loader_data, Handle pd);
 
   ClassLoaderData* loader_data() const                 { return _loader_data; }
-  void             set_loader_data(ClassLoaderData* l) { _loader_data = l; }
+
+  void set_loader_data(ClassLoaderData* cld) {
+    assert(!cld->is_anonymous(), "Unexpected anonymous class loader data");
+    _loader_data = cld;
+  }
 
   Symbol*          version() const                     { return _version; }
   void             set_version(Symbol* version);

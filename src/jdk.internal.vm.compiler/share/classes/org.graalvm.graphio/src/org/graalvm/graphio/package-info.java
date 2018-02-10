@@ -24,13 +24,12 @@
 
 /**
  * Send your graphs to <b>IGV</b> via a socket or a file. This package allows one to easily encode
- * any graph-like data structure and send it for visualization to
- * <em>OracleLab's Ideal Graph Visualizer</em> tool. Assuming you already have your own data
- * structure that contains <b>nodes</b> and <b>edges</b> among them, creating a
- * {@link org.graalvm.graphio.GraphOutput} specialized for your data is a matter of implementing a
- * single interface:
+ * any graph-like data structure and send it for visualization to <em>OracleLab's Ideal Graph
+ * Visualizer</em> tool. Assuming you already have your own data structure that contains
+ * <b>nodes</b> and <b>edges</b> among them, creating a {@link org.graalvm.graphio.GraphOutput}
+ * specialized for your data is a matter of implementing a single interface:
  *
- * {@link org.graalvm.graphio.GraphSnippets#acmeGraphStructure}
+ * {@link org.graalvm.graphio.GraphJavadocSnippets#acmeGraphStructure}
  *
  * The {@link org.graalvm.graphio.GraphStructure} interface defines the set of operations that are
  * needed by the <em>graph protocol</em> to encode a graph into the <b>IGV</b> expected format. The
@@ -43,7 +42,7 @@
  * {@link org.graalvm.graphio.GraphOutput}. To do so use the associated
  * {@link org.graalvm.graphio.GraphOutput.Builder builder} just like shown in the following method:
  *
- * {@link org.graalvm.graphio.GraphSnippets#buildOutput}
+ * {@link org.graalvm.graphio.GraphJavadocSnippets#buildOutput}
  *
  * Now you are ready to dump your graph into <b>IGV</b>. Where to obtain the right channel? One
  * option is to create a {@link java.nio.channels.FileChannel} and dump the data into a file
@@ -51,7 +50,7 @@
  * <code>4445</code> (the default port <b>IGV</b> listens to) and dump the data there. Here is an
  * example:
  *
- * {@link org.graalvm.graphio.GraphSnippets#dump}
+ * {@link org.graalvm.graphio.GraphJavadocSnippets#dump}
  *
  * Call the {@code dump} method with pointer to file {@code diamond.bgv} and then you can open the
  * file in <b>IGV</b>. The result will look like this:
@@ -75,7 +74,7 @@
  * {@link org.graalvm.graphio.GraphOutput.Builder} instance methods, which may, but need not be
  * called at all. Here is an example:
  *
- * {@link org.graalvm.graphio.GraphSnippets#buildAll}
+ * {@link org.graalvm.graphio.GraphJavadocSnippets#buildAll}
  *
  * All these interfaces follow the
  * <a href="http://wiki.apidesign.org/wiki/Singletonizer">singletonizer</a> API pattern again - e.g.

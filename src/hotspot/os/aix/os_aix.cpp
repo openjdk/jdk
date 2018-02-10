@@ -188,6 +188,7 @@ int       os::Aix::_extshm = -1;
 ////////////////////////////////////////////////////////////////////////////////
 // local variables
 
+static volatile jlong max_real_time = 0;
 static jlong    initial_time_count = 0;
 static int      clock_tics_per_sec = 100;
 static sigset_t check_signal_done;         // For diagnostics to print a message once (see run_periodic_checks)
@@ -1076,32 +1077,50 @@ void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
   nanos = jlong(time.tv_usec) * 1000;
 }
 
+// We use mread_real_time here.
+// On AIX: If the CPU has a time register, the result will be RTC_POWER and
+// it has to be converted to real time. AIX documentations suggests to do
+// this unconditionally, so we do it.
+//
+// See: https://www.ibm.com/support/knowledgecenter/ssw_aix_61/com.ibm.aix.basetrf2/read_real_time.htm
+//
+// On PASE: mread_real_time will always return RTC_POWER_PC data, so no
+// conversion is necessary. However, mread_real_time will not return
+// monotonic results but merely matches read_real_time. So we need a tweak
+// to ensure monotonic results.
+//
+// For PASE no public documentation exists, just word by IBM
 jlong os::javaTimeNanos() {
+  timebasestruct_t time;
+  int rc = mread_real_time(&time, TIMEBASE_SZ);
   if (os::Aix::on_pase()) {
-
-    timeval time;
-    int status = gettimeofday(&time, NULL);
-    assert(status != -1, "PASE error at gettimeofday()");
-    jlong usecs = jlong((unsigned long long) time.tv_sec * (1000 * 1000) + time.tv_usec);
-    return 1000 * usecs;
-
-  } else {
-    // On AIX use the precision of processors real time clock
-    // or time base registers.
-    timebasestruct_t time;
-    int rc;
-
-    // If the CPU has a time register, it will be used and
-    // we have to convert to real time first. After convertion we have following data:
-    // time.tb_high [seconds since 00:00:00 UTC on 1.1.1970]
-    // time.tb_low  [nanoseconds after the last full second above]
-    // We better use mread_real_time here instead of read_real_time
-    // to ensure that we will get a monotonic increasing time.
-    if (mread_real_time(&time, TIMEBASE_SZ) != RTC_POWER) {
-      rc = time_base_to_time(&time, TIMEBASE_SZ);
-      assert(rc != -1, "aix error at time_base_to_time()");
+    assert(rc == RTC_POWER, "expected time format RTC_POWER from mread_real_time in PASE");
+    jlong now = jlong(time.tb_high) * NANOSECS_PER_SEC + jlong(time.tb_low);
+    jlong prev = max_real_time;
+    if (now <= prev) {
+      return prev;   // same or retrograde time;
     }
-    return jlong(time.tb_high) * (1000 * 1000 * 1000) + jlong(time.tb_low);
+    jlong obsv = Atomic::cmpxchg(now, &max_real_time, prev);
+    assert(obsv >= prev, "invariant");   // Monotonicity
+    // If the CAS succeeded then we're done and return "now".
+    // If the CAS failed and the observed value "obsv" is >= now then
+    // we should return "obsv".  If the CAS failed and now > obsv > prv then
+    // some other thread raced this thread and installed a new value, in which case
+    // we could either (a) retry the entire operation, (b) retry trying to install now
+    // or (c) just return obsv.  We use (c).   No loop is required although in some cases
+    // we might discard a higher "now" value in deference to a slightly lower but freshly
+    // installed obsv value.   That's entirely benign -- it admits no new orderings compared
+    // to (a) or (b) -- and greatly reduces coherence traffic.
+    // We might also condition (c) on the magnitude of the delta between obsv and now.
+    // Avoiding excessive CAS operations to hot RW locations is critical.
+    // See https://blogs.oracle.com/dave/entry/cas_and_cache_trivia_invalidate
+    return (prev == obsv) ? now : obsv;
+  } else {
+    if (rc != RTC_POWER) {
+      rc = time_base_to_time(&time, TIMEBASE_SZ);
+      assert(rc != -1, "error calling time_base_to_time()");
+    }
+    return jlong(time.tb_high) * NANOSECS_PER_SEC + jlong(time.tb_low);
   }
 }
 

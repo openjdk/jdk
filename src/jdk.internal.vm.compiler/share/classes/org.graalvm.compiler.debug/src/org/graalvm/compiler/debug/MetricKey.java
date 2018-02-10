@@ -24,7 +24,7 @@ package org.graalvm.compiler.debug;
 
 import java.util.Comparator;
 
-import org.graalvm.util.Pair;
+import org.graalvm.collections.Pair;
 
 /**
  * A key for a metric.

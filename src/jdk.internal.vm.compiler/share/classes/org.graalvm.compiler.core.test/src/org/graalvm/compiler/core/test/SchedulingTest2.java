@@ -70,7 +70,7 @@ public class SchedulingTest2 extends GraphScheduleTest {
         returnNode.replaceAtPredecessor(beginNode);
         beginNode.setNext(returnNode);
         debug.dump(DebugContext.BASIC_LEVEL, graph, "Graph");
-        SchedulePhase schedulePhase = new SchedulePhase(SchedulingStrategy.EARLIEST);
+        SchedulePhase schedulePhase = new SchedulePhase(SchedulingStrategy.EARLIEST_WITH_GUARD_ORDER);
         schedulePhase.apply(graph);
         ScheduleResult schedule = graph.getLastSchedule();
         BlockMap<List<Node>> blockToNodesMap = schedule.getBlockToNodesMap();

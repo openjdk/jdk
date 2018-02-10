@@ -50,6 +50,21 @@ public class ProbabilityDirectiveTest extends GraalCompilerTest {
         test("branchProbabilitySnippet", 5);
     }
 
+    public static int branchProbabilitySnippet2(int arg) {
+        if (!GraalDirectives.injectBranchProbability(0.125, arg <= 0)) {
+            GraalDirectives.controlFlowAnchor(); // prevent removal of the if
+            return 2;
+        } else {
+            GraalDirectives.controlFlowAnchor(); // prevent removal of the if
+            return 1;
+        }
+    }
+
+    @Test
+    public void testBranchProbability2() {
+        test("branchProbabilitySnippet2", 5);
+    }
+
     @Override
     protected boolean checkLowTierGraph(StructuredGraph graph) {
         NodeIterable<IfNode> ifNodes = graph.getNodes(IfNode.TYPE);

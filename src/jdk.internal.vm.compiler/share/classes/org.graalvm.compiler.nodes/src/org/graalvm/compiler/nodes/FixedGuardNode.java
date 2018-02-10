@@ -83,15 +83,7 @@ public final class FixedGuardNode extends AbstractFixedGuardNode implements Lowe
     @Override
     public void lower(LoweringTool tool) {
         if (graph().getGuardsStage().allowsFloatingGuards()) {
-            /*
-             * Don't allow guards with action None and reason RuntimeConstraint to float. In cases
-             * where 2 guards are testing equivalent conditions they might be lowered at the same
-             * location. If the guard with the None action is lowered before the other guard then
-             * the code will be stuck repeatedly deoptimizing without invalidating the code.
-             * Conditional elimination will eliminate the guard if it's truly redundant in this
-             * case.
-             */
-            if (getAction() != DeoptimizationAction.None || getReason() != DeoptimizationReason.RuntimeConstraint) {
+            if (getAction() != DeoptimizationAction.None) {
                 ValueNode guard = tool.createGuard(this, getCondition(), getReason(), getAction(), getSpeculation(), isNegated()).asNode();
                 this.replaceAtUsages(guard);
                 graph().removeFixed(this);

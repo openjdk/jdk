@@ -24,7 +24,7 @@ package org.graalvm.compiler.nodes.java;
 
 import java.util.Collections;
 
-import org.graalvm.compiler.core.common.calc.Condition;
+import org.graalvm.compiler.core.common.calc.CanonicalCondition;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -132,7 +132,7 @@ public class NewArrayNode extends AbstractNewArrayNode implements VirtualizableA
             // Should be areFrameStatesAtSideEffects but currently SVM will complain about
             // RuntimeConstraint
             if (graph().getGuardsStage().allowsFloatingGuards()) {
-                LogicNode lengthNegativeCondition = CompareNode.createCompareNode(graph(), Condition.LT, length(), ConstantNode.forInt(0, graph()), tool.getConstantReflection(), view);
+                LogicNode lengthNegativeCondition = CompareNode.createCompareNode(graph(), CanonicalCondition.LT, length(), ConstantNode.forInt(0, graph()), tool.getConstantReflection(), view);
                 // we do not have a non-deopting path for that at the moment so action=None.
                 FixedGuardNode guard = graph().add(new FixedGuardNode(lengthNegativeCondition, DeoptimizationReason.RuntimeConstraint, DeoptimizationAction.None, true));
                 graph().replaceFixedWithFixed(this, guard);

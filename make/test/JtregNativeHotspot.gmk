@@ -67,6 +67,7 @@ BUILD_HOTSPOT_JTREG_NATIVE_SRC += \
     $(TOPDIR)/test/hotspot/jtreg/compiler/calls \
     $(TOPDIR)/test/hotspot/jtreg/compiler/runtime/criticalnatives/lookup \
     $(TOPDIR)/test/hotspot/jtreg/compiler/runtime/criticalnatives/argumentcorruption \
+    $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/CanGenerateAllClassHook \
     $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/GetOwnedMonitorInfo \
     $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/GetOwnedMonitorStackDepthInfo \
     $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/GetNamedModule \
@@ -101,6 +102,7 @@ endif
 ifeq ($(TOOLCHAIN_TYPE), solstudio)
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_liboverflow := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libSimpleClassFileLoadHook := -lc
+    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libCanGenerateAllClassHook := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libGetOwnedMonitorInfoTest := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libGetOwnedMonitorStackDepthInfoTest := -lc
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libGetNamedModuleTest := -lc

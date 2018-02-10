@@ -22,10 +22,9 @@
  */
 package org.graalvm.compiler.nodes.calc;
 
-import jdk.vm.ci.meta.ConstantReflectionProvider;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.TriState;
-import org.graalvm.compiler.core.common.calc.Condition;
+import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
+
+import org.graalvm.compiler.core.common.calc.CanonicalCondition;
 import org.graalvm.compiler.core.common.type.FloatStamp;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -41,7 +40,9 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.options.OptionValues;
 
-import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
+import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.TriState;
 
 @NodeInfo(shortName = "<", cycles = CYCLES_2)
 public final class FloatLessThanNode extends CompareNode {
@@ -49,13 +50,13 @@ public final class FloatLessThanNode extends CompareNode {
     private static final FloatLessThanOp OP = new FloatLessThanOp();
 
     public FloatLessThanNode(ValueNode x, ValueNode y, boolean unorderedIsTrue) {
-        super(TYPE, Condition.LT, unorderedIsTrue, x, y);
+        super(TYPE, CanonicalCondition.LT, unorderedIsTrue, x, y);
         assert x.stamp(NodeView.DEFAULT) instanceof FloatStamp && y.stamp(NodeView.DEFAULT) instanceof FloatStamp;
         assert x.stamp(NodeView.DEFAULT).isCompatible(y.stamp(NodeView.DEFAULT));
     }
 
     public static LogicNode create(ValueNode x, ValueNode y, boolean unorderedIsTrue, NodeView view) {
-        LogicNode result = CompareNode.tryConstantFoldPrimitive(Condition.LT, x, y, unorderedIsTrue, view);
+        LogicNode result = CompareNode.tryConstantFoldPrimitive(CanonicalCondition.LT, x, y, unorderedIsTrue, view);
         if (result != null) {
             return result;
         }
@@ -64,7 +65,7 @@ public final class FloatLessThanNode extends CompareNode {
 
     public static LogicNode create(ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Integer smallestCompareWidth,
                     ValueNode x, ValueNode y, boolean unorderedIsTrue, NodeView view) {
-        LogicNode result = OP.canonical(constantReflection, metaAccess, options, smallestCompareWidth, Condition.LT, unorderedIsTrue, x, y, view);
+        LogicNode result = OP.canonical(constantReflection, metaAccess, options, smallestCompareWidth, CanonicalCondition.LT, unorderedIsTrue, x, y, view);
         if (result != null) {
             return result;
         }
@@ -74,7 +75,7 @@ public final class FloatLessThanNode extends CompareNode {
     @Override
     public Node canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
         NodeView view = NodeView.from(tool);
-        ValueNode value = OP.canonical(tool.getConstantReflection(), tool.getMetaAccess(), tool.getOptions(), tool.smallestCompareWidth(), Condition.LT, unorderedIsTrue, forX, forY, view);
+        ValueNode value = OP.canonical(tool.getConstantReflection(), tool.getMetaAccess(), tool.getOptions(), tool.smallestCompareWidth(), CanonicalCondition.LT, unorderedIsTrue, forX, forY, view);
         if (value != null) {
             return value;
         }
@@ -84,7 +85,7 @@ public final class FloatLessThanNode extends CompareNode {
     public static class FloatLessThanOp extends CompareOp {
 
         @Override
-        public LogicNode canonical(ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Integer smallestCompareWidth, Condition condition,
+        public LogicNode canonical(ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess, OptionValues options, Integer smallestCompareWidth, CanonicalCondition condition,
                         boolean unorderedIsTrue, ValueNode forX, ValueNode forY, NodeView view) {
             LogicNode result = super.canonical(constantReflection, metaAccess, options, smallestCompareWidth, condition, unorderedIsTrue, forX, forY, view);
             if (result != null) {

@@ -22,8 +22,6 @@
  */
 package org.graalvm.compiler.test;
 
-import org.graalvm.util.CollectionsUtil;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -36,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.graalvm.util.CollectionsUtil;
 
 /**
  * Utility methods for spawning a VM in a subprocess during unit tests.

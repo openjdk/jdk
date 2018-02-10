@@ -143,7 +143,7 @@ final class DataPatchProcessor {
         int alignment = data.getAlignment();
         byte[] value = new byte[size];
         ByteBuffer buffer = ByteBuffer.wrap(value).order(ByteOrder.nativeOrder());
-        DataSection.emit(buffer, data, p -> {
+        DataSection.emit(buffer, data, (p, c) -> {
         });
         String targetSymbol = "data.M" + methodInfo.getCodeId() + "." + dataOffset;
         Symbol relocationSymbol = binaryContainer.getSymbol(targetSymbol);
