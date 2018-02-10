@@ -90,8 +90,7 @@ public class ThreadLocalRandomTest extends JSR166TestCase {
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
         final java.lang.reflect.Method m;
         try {
-            m = ThreadLocalRandom.class.getDeclaredMethod(
-                    "next", new Class[] { int.class });
+            m = ThreadLocalRandom.class.getDeclaredMethod("next", int.class);
             m.setAccessible(true);
         } catch (SecurityException acceptable) {
             // Security manager may deny access

@@ -69,7 +69,7 @@ public class LongAdderTest extends JSR166TestCase {
     /**
      * decrement decrements and sum returns current value
      */
-    public void testDecrementAndsum() {
+    public void testDecrementAndSum() {
         LongAdder ai = new LongAdder();
         ai.decrement();
         assertEquals(-1, ai.sum());
@@ -80,7 +80,7 @@ public class LongAdderTest extends JSR166TestCase {
     /**
      * incrementAndGet increments and returns current value
      */
-    public void testIncrementAndsum() {
+    public void testIncrementAndSum() {
         LongAdder ai = new LongAdder();
         ai.increment();
         assertEquals(1, ai.sum());

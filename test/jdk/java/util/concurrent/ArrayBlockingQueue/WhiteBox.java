@@ -181,7 +181,7 @@ public class WhiteBox {
             Object x = it.next();
             assertSame(x, a[i]);
             assertSame(x, b[i]);
-            if (xx != null) assertSame(x, yy[i]);
+            assertSame(x, yy[i]);
         }
         if (rnd.nextBoolean()) assertTrue(!it.hasNext());
     }

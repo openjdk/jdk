@@ -55,7 +55,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
-import junit.framework.AssertionFailedError;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -331,7 +330,7 @@ public class ForkJoinPoolTest extends JSR166TestCase {
                        p.getFactory());
             while (! p.isQuiescent()) {
                 if (millisElapsedSince(startTime) > LONG_DELAY_MS)
-                    throw new AssertionFailedError("timed out");
+                    throw new AssertionError("timed out");
                 assertFalse(p.getAsyncMode());
                 assertFalse(p.isShutdown());
                 assertFalse(p.isTerminating());

@@ -45,7 +45,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import junit.framework.AssertionFailedError;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -115,7 +114,7 @@ public class ReentrantLockTest extends JSR166TestCase {
         long startTime = System.nanoTime();
         while (!lock.hasQueuedThread(t)) {
             if (millisElapsedSince(startTime) > LONG_DELAY_MS)
-                throw new AssertionFailedError("timed out");
+                throw new AssertionError("timed out");
             Thread.yield();
         }
         assertTrue(t.isAlive());
