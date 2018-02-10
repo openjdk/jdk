@@ -370,7 +370,7 @@ void TemplateTable::sipush()
 void TemplateTable::ldc(bool wide)
 {
   transition(vtos, vtos);
-  Label call_ldc, notFloat, notClass, Done;
+  Label call_ldc, notFloat, notClass, notInt, Done;
 
   if (wide) {
     __ get_unsigned_2_byte_index_at_bcp(r1, 1);
@@ -417,20 +417,19 @@ void TemplateTable::ldc(bool wide)
   __ b(Done);
 
   __ bind(notFloat);
-#ifdef ASSERT
-  {
-    Label L;
-    __ cmp(r3, JVM_CONSTANT_Integer);
-    __ br(Assembler::EQ, L);
-    // String and Object are rewritten to fast_aldc
-    __ stop("unexpected tag type in ldc");
-    __ bind(L);
-  }
-#endif
-  // itos JVM_CONSTANT_Integer only
+
+  __ cmp(r3, JVM_CONSTANT_Integer);
+  __ br(Assembler::NE, notInt);
+
+  // itos
   __ adds(r1, r2, r1, Assembler::LSL, 3);
   __ ldrw(r0, Address(r1, base_offset));
   __ push_i(r0);
+  __ b(Done);
+
+  __ bind(notInt);
+  condy_helper(Done);
+
   __ bind(Done);
 }
 
@@ -441,6 +440,8 @@ void TemplateTable::fast_aldc(bool wide)
 
   Register result = r0;
   Register tmp = r1;
+  Register rarg = r2;
+
   int index_size = wide ? sizeof(u2) : sizeof(u1);
 
   Label resolved;
@@ -455,12 +456,27 @@ void TemplateTable::fast_aldc(bool wide)
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc);
 
   // first time invocation - must resolve first
-  __ mov(tmp, (int)bytecode());
-  __ call_VM(result, entry, tmp);
+  __ mov(rarg, (int)bytecode());
+  __ call_VM(result, entry, rarg);
 
   __ bind(resolved);
 
+  { // Check for the null sentinel.
+    // If we just called the VM, that already did the mapping for us,
+    // but it's harmless to retry.
+    Label notNull;
+
+    // Stash null_sentinel address to get its value later
+    __ movptr(rarg, (uintptr_t)Universe::the_null_sentinel_addr());
+    __ ldr(tmp, Address(rarg));
+    __ cmp(result, tmp);
+    __ br(Assembler::NE, notNull);
+    __ mov(result, 0);  // NULL object reference
+    __ bind(notNull);
+  }
+
   if (VerifyOops) {
+    // Safe to call with 0 result
     __ verify_oop(result);
   }
 }
@@ -468,7 +484,7 @@ void TemplateTable::fast_aldc(bool wide)
 void TemplateTable::ldc2_w()
 {
   transition(vtos, vtos);
-  Label Long, Done;
+  Label notDouble, notLong, Done;
   __ get_unsigned_2_byte_index_at_bcp(r0, 1);
 
   __ get_cpool_and_tags(r1, r2);
@@ -479,20 +495,141 @@ void TemplateTable::ldc2_w()
   __ lea(r2, Address(r2, r0, Address::lsl(0)));
   __ load_unsigned_byte(r2, Address(r2, tags_offset));
   __ cmpw(r2, (int)JVM_CONSTANT_Double);
-  __ br(Assembler::NE, Long);
+  __ br(Assembler::NE, notDouble);
+
   // dtos
   __ lea (r2, Address(r1, r0, Address::lsl(3)));
   __ ldrd(v0, Address(r2, base_offset));
   __ push_d();
   __ b(Done);
 
-  __ bind(Long);
+  __ bind(notDouble);
+  __ cmpw(r2, (int)JVM_CONSTANT_Long);
+  __ br(Assembler::NE, notLong);
+
   // ltos
   __ lea(r0, Address(r1, r0, Address::lsl(3)));
   __ ldr(r0, Address(r0, base_offset));
   __ push_l();
+  __ b(Done);
+
+  __ bind(notLong);
+  condy_helper(Done);
 
   __ bind(Done);
+}
+
+void TemplateTable::condy_helper(Label& Done)
+{
+  Register obj = r0;
+  Register rarg = r1;
+  Register flags = r2;
+  Register off = r3;
+
+  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc);
+
+  __ mov(rarg, (int) bytecode());
+  __ call_VM(obj, entry, rarg);
+
+  __ get_vm_result_2(flags, rthread);
+
+  // VMr = obj = base address to find primitive value to push
+  // VMr2 = flags = (tos, off) using format of CPCE::_flags
+  __ mov(off, flags);
+  __ andw(off, off, ConstantPoolCacheEntry::field_index_mask);
+
+  const Address field(obj, off);
+
+  // What sort of thing are we loading?
+  // x86 uses a shift and mask or wings it with a shift plus assert
+  // the mask is not needed. aarch64 just uses bitfield extract
+  __ ubfxw(flags, flags, ConstantPoolCacheEntry::tos_state_shift,
+           ConstantPoolCacheEntry::tos_state_bits);
+
+  switch (bytecode()) {
+    case Bytecodes::_ldc:
+    case Bytecodes::_ldc_w:
+      {
+        // tos in (itos, ftos, stos, btos, ctos, ztos)
+        Label notInt, notFloat, notShort, notByte, notChar, notBool;
+        __ cmpw(flags, itos);
+        __ br(Assembler::NE, notInt);
+        // itos
+        __ ldrw(r0, field);
+        __ push(itos);
+        __ b(Done);
+
+        __ bind(notInt);
+        __ cmpw(flags, ftos);
+        __ br(Assembler::NE, notFloat);
+        // ftos
+        __ load_float(field);
+        __ push(ftos);
+        __ b(Done);
+
+        __ bind(notFloat);
+        __ cmpw(flags, stos);
+        __ br(Assembler::NE, notShort);
+        // stos
+        __ load_signed_short(r0, field);
+        __ push(stos);
+        __ b(Done);
+
+        __ bind(notShort);
+        __ cmpw(flags, btos);
+        __ br(Assembler::NE, notByte);
+        // btos
+        __ load_signed_byte(r0, field);
+        __ push(btos);
+        __ b(Done);
+
+        __ bind(notByte);
+        __ cmpw(flags, ctos);
+        __ br(Assembler::NE, notChar);
+        // ctos
+        __ load_unsigned_short(r0, field);
+        __ push(ctos);
+        __ b(Done);
+
+        __ bind(notChar);
+        __ cmpw(flags, ztos);
+        __ br(Assembler::NE, notBool);
+        // ztos
+        __ load_signed_byte(r0, field);
+        __ push(ztos);
+        __ b(Done);
+
+        __ bind(notBool);
+        break;
+      }
+
+    case Bytecodes::_ldc2_w:
+      {
+        Label notLong, notDouble;
+        __ cmpw(flags, ltos);
+        __ br(Assembler::NE, notLong);
+        // ltos
+        __ ldr(r0, field);
+        __ push(ltos);
+        __ b(Done);
+
+        __ bind(notLong);
+        __ cmpw(flags, dtos);
+        __ br(Assembler::NE, notDouble);
+        // dtos
+        __ load_double(field);
+        __ push(dtos);
+        __ b(Done);
+
+       __ bind(notDouble);
+        break;
+      }
+
+    default:
+      ShouldNotReachHere();
+    }
+
+    __ stop("bad ldc/condy");
 }
 
 void TemplateTable::locals_index(Register reg, int offset)

@@ -277,6 +277,8 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   // Add in the index
   add(result, result, tmp);
   load_heap_oop(result, Address(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
+  // The resulting oop is null if the reference is not yet resolved.
+  // It is Universe::the_null_sentinel() if the reference resolved to NULL via condy.
 }
 
 void InterpreterMacroAssembler::load_resolved_klass_at_offset(
@@ -399,6 +401,13 @@ void InterpreterMacroAssembler::store_ptr(int n, Register val) {
   str(val, Address(esp, Interpreter::expr_offset_in_bytes(n)));
 }
 
+void InterpreterMacroAssembler::load_float(Address src) {
+  ldrs(v0, src);
+}
+
+void InterpreterMacroAssembler::load_double(Address src) {
+  ldrd(v0, src);
+}
 
 void InterpreterMacroAssembler::prepare_to_jump_from_interpreted() {
   // set sender sp
