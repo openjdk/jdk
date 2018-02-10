@@ -158,6 +158,10 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void load_ptr(int n, Register val);
   void store_ptr(int n, Register val);
 
+// Load float value from 'address'. The value is loaded onto the FPU register v0.
+  void load_float(Address src);
+  void load_double(Address src);
+
   // Generate a subtype check: branch to ok_is_subtype if sub_klass is
   // a subtype of super_klass.
   void gen_subtype_check( Register sub_klass, Label &ok_is_subtype );
