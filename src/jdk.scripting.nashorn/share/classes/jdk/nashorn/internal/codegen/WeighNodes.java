@@ -455,11 +455,6 @@ final class WeighNodes extends NodeOperatorVisitor<LexicalContext> {
     }
 
     @Override
-    public Node leaveCOMMALEFT(final BinaryNode binaryNode) {
-        return binaryNodeWeight(binaryNode);
-    }
-
-    @Override
     public Node leaveCOMMARIGHT(final BinaryNode binaryNode) {
         return binaryNodeWeight(binaryNode);
     }
