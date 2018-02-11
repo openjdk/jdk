@@ -85,7 +85,7 @@ julong os::num_frees = 0;           // # of calls to free
 julong os::free_bytes = 0;          // # of bytes freed
 #endif
 
-static juint cur_malloc_words = 0;  // current size for MallocMaxTestWords
+static size_t cur_malloc_words = 0;  // current size for MallocMaxTestWords
 
 void os_init_globals() {
   // Called from init_globals().
@@ -629,12 +629,12 @@ static void verify_memory(void* ptr) {
 //
 static bool has_reached_max_malloc_test_peak(size_t alloc_size) {
   if (MallocMaxTestWords > 0) {
-    jint words = (jint)(alloc_size / BytesPerWord);
+    size_t words = (alloc_size / BytesPerWord);
 
     if ((cur_malloc_words + words) > MallocMaxTestWords) {
       return true;
     }
-    Atomic::add(words, (volatile jint *)&cur_malloc_words);
+    Atomic::add(words, &cur_malloc_words);
   }
   return false;
 }
@@ -1826,8 +1826,7 @@ void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 os::SuspendResume::State os::SuspendResume::switch_state(os::SuspendResume::State from,
                                                          os::SuspendResume::State to)
 {
-  os::SuspendResume::State result =
-    (os::SuspendResume::State) Atomic::cmpxchg((jint) to, (jint *) &_state, (jint) from);
+  os::SuspendResume::State result = Atomic::cmpxchg(to, &_state, from);
   if (result == from) {
     // success
     return to;

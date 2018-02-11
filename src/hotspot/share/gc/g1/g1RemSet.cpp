@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,7 +204,7 @@ public:
     if (_iter_states[region] != Unclaimed) {
       return false;
     }
-    jint res = Atomic::cmpxchg(Claimed, (jint*)(&_iter_states[region]), Unclaimed);
+    G1RemsetIterState res = Atomic::cmpxchg(Claimed, &_iter_states[region], Unclaimed);
     return (res == Unclaimed);
   }
 
@@ -214,7 +214,7 @@ public:
     if (iter_is_complete(region)) {
       return false;
     }
-    jint res = Atomic::cmpxchg(Complete, (jint*)(&_iter_states[region]), Claimed);
+    G1RemsetIterState res = Atomic::cmpxchg(Complete, &_iter_states[region], Claimed);
     return (res == Claimed);
   }
 

@@ -38,9 +38,9 @@
 inline void inc_stat_counter(volatile julong* dest, julong add_value) {
 #if defined(SPARC) || defined(X86)
   // Sparc and X86 have atomic jlong (8 bytes) instructions
-  julong value = Atomic::load((volatile jlong*)dest);
+  julong value = Atomic::load(dest);
   value += add_value;
-  Atomic::store((jlong)value, (volatile jlong*)dest);
+  Atomic::store(value, dest);
 #else
   // possible word-tearing during load/store
   *dest += add_value;

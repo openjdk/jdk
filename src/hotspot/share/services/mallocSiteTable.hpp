@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,7 @@ class MallocSiteTable : AllStatic {
 
     ~AccessLock() {
       if (_lock_state == SharedLock) {
-        Atomic::dec((volatile jint*)_lock);
+        Atomic::dec(_lock);
       }
     }
     // Acquire shared lock.
@@ -159,7 +159,7 @@ class MallocSiteTable : AllStatic {
     inline bool sharedLock() {
       jint res = Atomic::add(1, _lock);
       if (res < 0) {
-        Atomic::add(-1, _lock);
+        Atomic::dec(_lock);
         return false;
       }
       _lock_state = SharedLock;

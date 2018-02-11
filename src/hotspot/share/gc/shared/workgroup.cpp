@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,7 @@ public:
     // Wait for the coordinator to dispatch a task.
     _start_semaphore->wait();
 
-    uint num_started = (uint) Atomic::add(1, (volatile jint*)&_started);
+    uint num_started = Atomic::add(1u, &_started);
 
     // Subtract one to get a zero-indexed worker id.
     uint worker_id = num_started - 1;
@@ -168,7 +168,7 @@ public:
   void worker_done_with_task() {
     // Mark that the worker is done with the task.
     // The worker is not allowed to read the state variables after this line.
-    uint not_finished = (uint) Atomic::add(-1, (volatile jint*)&_not_finished);
+    uint not_finished = Atomic::sub(1u, &_not_finished);
 
     // The last worker signals to the coordinator that all work is completed.
     if (not_finished == 0) {
@@ -439,7 +439,7 @@ bool SubTasksDone::is_task_claimed(uint t) {
 #ifdef ASSERT
   if (!res) {
     assert(_claimed < _n_tasks, "Too many tasks claimed; missing clear?");
-    Atomic::inc((volatile jint*) &_claimed);
+    Atomic::inc(&_claimed);
   }
 #endif
   return res;
