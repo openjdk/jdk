@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -439,11 +439,11 @@ void CompiledMethod::increase_unloading_clock() {
 }
 
 void CompiledMethod::set_unloading_clock(unsigned char unloading_clock) {
-  OrderAccess::release_store((volatile jubyte*)&_unloading_clock, unloading_clock);
+  OrderAccess::release_store(&_unloading_clock, unloading_clock);
 }
 
 unsigned char CompiledMethod::unloading_clock() {
-  return (unsigned char)OrderAccess::load_acquire((volatile jubyte*)&_unloading_clock);
+  return OrderAccess::load_acquire(&_unloading_clock);
 }
 
 // Processing of oop references should have been sufficient to keep

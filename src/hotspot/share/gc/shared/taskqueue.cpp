@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +153,7 @@ bool
 ParallelTaskTerminator::offer_termination(TerminatorTerminator* terminator) {
   assert(_n_threads > 0, "Initialization is incorrect");
   assert(_offered_termination < _n_threads, "Invariant");
-  Atomic::inc((int *)&_offered_termination);
+  Atomic::inc(&_offered_termination);
 
   uint yield_count = 0;
   // Number of hard spin loops done since last yield
@@ -228,7 +228,7 @@ ParallelTaskTerminator::offer_termination(TerminatorTerminator* terminator) {
 #endif
       if (peek_in_queue_set() ||
           (terminator != NULL && terminator->should_exit_termination())) {
-        Atomic::dec((int *)&_offered_termination);
+        Atomic::dec(&_offered_termination);
         assert(_offered_termination < _n_threads, "Invariant");
         return false;
       }
