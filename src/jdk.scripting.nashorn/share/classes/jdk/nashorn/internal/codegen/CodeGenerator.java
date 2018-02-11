@@ -1077,12 +1077,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             }
 
             @Override
-            public boolean enterCOMMALEFT(final BinaryNode binaryNode) {
-                loadCOMMALEFT(binaryNode, resultBounds);
-                return false;
-            }
-
-            @Override
             public boolean enterCOMMARIGHT(final BinaryNode binaryNode) {
                 loadCOMMARIGHT(binaryNode, resultBounds);
                 return false;
@@ -4245,11 +4239,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     private void loadCOMMARIGHT(final BinaryNode binaryNode, final TypeBounds resultBounds) {
         loadAndDiscard(binaryNode.lhs());
         loadMaybeDiscard(binaryNode, binaryNode.rhs(), resultBounds);
-    }
-
-    private void loadCOMMALEFT(final BinaryNode binaryNode, final TypeBounds resultBounds) {
-        loadMaybeDiscard(binaryNode, binaryNode.lhs(), resultBounds);
-        loadAndDiscard(binaryNode.rhs());
     }
 
     private void loadDIV(final BinaryNode binaryNode, final TypeBounds resultBounds) {

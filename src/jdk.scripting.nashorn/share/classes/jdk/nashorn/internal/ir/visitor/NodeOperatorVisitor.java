@@ -143,8 +143,6 @@ public abstract class NodeOperatorVisitor<T extends LexicalContext> extends Node
             return enterBIT_XOR(binaryNode);
         case COMMARIGHT:
             return enterCOMMARIGHT(binaryNode);
-        case COMMALEFT:
-            return enterCOMMALEFT(binaryNode);
         case DIV:
             return enterDIV(binaryNode);
         case EQ:
@@ -227,8 +225,6 @@ public abstract class NodeOperatorVisitor<T extends LexicalContext> extends Node
             return leaveBIT_XOR(binaryNode);
         case COMMARIGHT:
             return leaveCOMMARIGHT(binaryNode);
-        case COMMALEFT:
-            return leaveCOMMALEFT(binaryNode);
         case DIV:
             return leaveDIV(binaryNode);
         case EQ:
@@ -811,28 +807,6 @@ public abstract class NodeOperatorVisitor<T extends LexicalContext> extends Node
      * @return processed node, which will replace the original one, or the original node
      */
     public Node leaveBIT_XOR(final BinaryNode binaryNode) {
-        return leaveDefault(binaryNode);
-    }
-
-    /**
-     * Binary enter - callback for entering comma left operator
-     * (a, b) where the result is a
-     *
-     * @param  binaryNode the node
-     * @return true if traversal should continue and node children be traversed, false otherwise
-     */
-    public boolean enterCOMMALEFT(final BinaryNode binaryNode) {
-        return enterDefault(binaryNode);
-    }
-
-    /**
-     * Binary leave - callback for leaving a comma left operator
-     * (a, b) where the result is a
-     *
-     * @param  binaryNode the node
-     * @return processed node, which will replace the original one, or the original node
-     */
-    public Node leaveCOMMALEFT(final BinaryNode binaryNode) {
         return leaveDefault(binaryNode);
     }
 
