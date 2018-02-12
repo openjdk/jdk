@@ -102,8 +102,33 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
 AC_DEFUN([BOOTJDK_CHECK_ARGUMENTS],
 [
   if test "x$with_boot_jdk" != x; then
-    BOOT_JDK=$with_boot_jdk
-    BOOT_JDK_FOUND=maybe
+    if test -d "$with_boot_jdk"; then
+      BOOT_JDK=$with_boot_jdk
+      BOOT_JDK_FOUND=maybe
+    elif test -f "$with_boot_jdk"; then
+      case "$with_boot_jdk" in
+        *.tar.gz )
+            BOOT_JDK_SUPPORT_DIR=$CONFIGURESUPPORT_OUTPUTDIR/boot-jdk
+            $RM -rf $BOOT_JDK_SUPPORT_DIR
+            $MKDIR -p $BOOT_JDK_SUPPORT_DIR
+            $GUNZIP -c $with_boot_jdk | $TAR xf - -C $BOOT_JDK_SUPPORT_DIR
+
+            # Try to find javac to determine BOOT_JDK path
+            BOOT_JDK_JAVAC_PATH=`$FIND $BOOT_JDK_SUPPORT_DIR | $GREP "/bin/javac"`
+            if test "x$BOOT_JDK_JAVAC_PATH" != x; then
+              BOOT_JDK_FOUND=maybe
+              BOOT_JDK=$($DIRNAME $($DIRNAME $BOOT_JDK_JAVAC_PATH))
+            else
+              BOOT_JDK_FOUND=no
+            fi
+          ;;
+        * )
+            BOOT_JDK_FOUND=no
+          ;;
+      esac
+    else
+      BOOT_JDK_FOUND=no
+    fi
     AC_MSG_NOTICE([Found potential Boot JDK using configure arguments])
   fi
 ])
