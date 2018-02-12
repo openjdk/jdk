@@ -1702,7 +1702,7 @@ class BacktraceBuilder: public StackObj {
       method = mhandle();
     }
 
-    _methods->short_at_put(_index, method->orig_method_idnum());
+    _methods->ushort_at_put(_index, method->orig_method_idnum());
     _bcis->int_at_put(_index, Backtrace::merge_bci_and_version(bci, method->constants()->version()));
 
     // Note:this doesn't leak symbols because the mirror in the backtrace keeps the
@@ -1756,7 +1756,7 @@ class BacktraceIterator : public StackObj {
 
   BacktraceElement next(Thread* thread) {
     BacktraceElement e (Handle(thread, _mirrors->obj_at(_index)),
-                        _methods->short_at(_index),
+                        _methods->ushort_at(_index),
                         Backtrace::version_at(_bcis->int_at(_index)),
                         Backtrace::bci_at(_bcis->int_at(_index)),
                         _names->symbol_at(_index));
@@ -1968,7 +1968,7 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
   bool skip_throwableInit_check = false;
   bool skip_hidden = !ShowHiddenFrames;
 
-  for (frame fr = thread->last_frame(); max_depth != total_count;) {
+  for (frame fr = thread->last_frame(); max_depth == 0 || max_depth != total_count;) {
     Method* method = NULL;
     int bci = 0;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -942,7 +942,6 @@ public:
     int ncpus;                            // number of active logical processors
     double loadavg[3];                    // (1<<SBITS) times the average number of runnables processes during the last 1, 5 and 15 minutes.
                                           // To calculate the load average, divide the numbers by (1<<SBITS). SBITS is defined in <sys/proc.h>.
-    char version[20];                     // processor version from _system_configuration (sys/systemcfg.h)
     unsigned long long user_clock_ticks;  // raw total number of clock ticks spent in user mode
     unsigned long long sys_clock_ticks;   // raw total number of clock ticks spent in system mode
     unsigned long long idle_clock_ticks;  // raw total number of clock ticks spent idle
@@ -965,7 +964,6 @@ public:
   static bool get_partitioninfo(partitioninfo_t* ppi);
   static bool get_cpuinfo(cpuinfo_t* pci);
   static bool get_wparinfo(wparinfo_t* pwi);
-
 };
 
 #endif // OS_AIX_VM_LIBPERFSTAT_AIX_HPP

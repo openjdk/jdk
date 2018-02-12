@@ -1510,11 +1510,11 @@ void Assembler::call(Address adr) {
 }
 
 void Assembler::call_literal(address entry, RelocationHolder const& rspec) {
-  assert(entry != NULL, "call most probably wrong");
   InstructionMark im(this);
   emit_int8((unsigned char)0xE8);
   intptr_t disp = entry - (pc() + sizeof(int32_t));
-  assert(is_simm32(disp), "must be 32bit offset (call2)");
+  // Entry is NULL in case of a scratch emit.
+  assert(entry == NULL || is_simm32(disp), "disp=" INTPTR_FORMAT " must be 32bit offset (call2)", disp);
   // Technically, should use call32_operand, but this format is
   // implied by the fact that we're emitting a call instruction.
 

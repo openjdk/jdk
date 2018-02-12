@@ -278,7 +278,7 @@ void TemplateTable::initialize() {
   def(Bytecodes::_sipush              , ubcp|____|____|____, vtos, itos, sipush              ,  _           );
   def(Bytecodes::_ldc                 , ubcp|____|clvm|____, vtos, vtos, ldc                 ,  false       );
   def(Bytecodes::_ldc_w               , ubcp|____|clvm|____, vtos, vtos, ldc                 ,  true        );
-  def(Bytecodes::_ldc2_w              , ubcp|____|____|____, vtos, vtos, ldc2_w              ,  _           );
+  def(Bytecodes::_ldc2_w              , ubcp|____|clvm|____, vtos, vtos, ldc2_w              ,  _           );
   def(Bytecodes::_iload               , ubcp|____|clvm|____, vtos, itos, iload               ,  _           );
   def(Bytecodes::_lload               , ubcp|____|____|____, vtos, ltos, lload               ,  _           );
   def(Bytecodes::_fload               , ubcp|____|____|____, vtos, ftos, fload               ,  _           );

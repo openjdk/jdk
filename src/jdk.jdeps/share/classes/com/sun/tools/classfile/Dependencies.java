@@ -688,6 +688,11 @@ public class Dependencies {
                 return null;
             }
 
+            @Override
+            public Void visitDynamicConstant(CONSTANT_Dynamic_info info, Void aVoid) {
+                return null;
+            }
+
             public Void visitLong(CONSTANT_Long_info info, Void p) {
                 return null;
             }

@@ -723,9 +723,6 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
      */
     String type(String id) {
         String result = types.get(id);
-        if (result == null) {
-            reportInternalError(id);
-        }
         String remapped = type2printableMap.get(result);
         if (remapped != null) {
             return remapped;

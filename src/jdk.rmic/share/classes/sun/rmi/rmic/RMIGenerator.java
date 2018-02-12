@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ import sun.tools.java.ClassDeclaration;
 import sun.tools.java.ClassNotFound;
 import sun.tools.java.ClassFile;
 import sun.tools.java.MemberDefinition;
-import com.sun.corba.se.impl.util.Utility;
 
 /**
  * A Generator object will generate the Java source code of the stub
@@ -195,28 +194,6 @@ public class RMIGenerator implements RMIConstants, Generator {
     {
         File packageDir = Util.getOutputDirectoryFor(className,destDir,env);
         String outputName = Names.mangleClass(outputClassName).getName().toString();
-
-        // Is there any existing _Tie equivalent leftover from a
-        // previous invocation of rmic -iiop? Only do this once per
-        // class by looking for skeleton generation...
-
-        if (outputName.endsWith("_Skel")) {
-            String classNameStr = className.getName().toString();
-            File temp = new File(packageDir, Utility.tieName(classNameStr) + ".class");
-            if (temp.exists()) {
-
-                // Found a tie. Is IIOP generation also being done?
-
-                if (!env.getMain().iiopGeneration) {
-
-                    // No, so write a warning...
-
-                    env.error(0,"warn.rmic.tie.found",
-                              classNameStr,
-                              temp.getAbsolutePath());
-                }
-            }
-        }
 
         String outputFileName = outputName + ".java";
         return new File(packageDir, outputFileName);

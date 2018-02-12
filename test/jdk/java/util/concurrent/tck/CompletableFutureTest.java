@@ -68,7 +68,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import junit.framework.AssertionFailedError;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -319,7 +318,7 @@ public class CompletableFutureTest extends JSR166TestCase {
         }
 
         f = new CompletableFuture<>();
-        f.completeExceptionally(ex = new CFException());
+        f.completeExceptionally(new CFException());
         f.obtrudeValue(v1);
         checkCompletedNormally(f, v1);
         f.obtrudeException(ex = new CFException());
@@ -4217,7 +4216,7 @@ public class CompletableFutureTest extends JSR166TestCase {
         static void assertZero(CompletableFuture<?> f) {
             try {
                 f.getNow(null);
-                throw new AssertionFailedError("should throw");
+                throw new AssertionError("should throw");
             } catch (CompletionException success) {
                 assertTrue(success.getCause() instanceof ZeroException);
             }

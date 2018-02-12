@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,6 @@ public class GetSysPkgTest {
         Class clss = Class.forName("jdk.nio.zipfs.ZipPath");
         if (clss == null)
             throw new RuntimeException("Could not find class jdk.nio.zipfs.ZipPath");
-        getPkg("javax/activation", null);       // Not owned by boot loader
 
         // Test a package not in jimage file.
         clss = Class.forName("GetSysPkg_package.GetSysClass");

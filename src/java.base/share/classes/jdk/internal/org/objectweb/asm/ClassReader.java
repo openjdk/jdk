@@ -205,6 +205,10 @@ public class ClassReader {
             case ClassWriter.FLOAT:
             case ClassWriter.NAME_TYPE:
             case ClassWriter.INDY:
+            // @@@ ClassWriter.CONDY
+            // Enables MethodHandles.lookup().defineClass to function correctly
+            // when it reads the class name
+            case 17:
                 size = 5;
                 break;
             case ClassWriter.LONG:

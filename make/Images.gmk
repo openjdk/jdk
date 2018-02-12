@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ JRE_MODULES += $(filter $(ALL_MODULES), $(BOOT_MODULES) \
     $(PLATFORM_MODULES) $(JRE_TOOL_MODULES))
 JDK_MODULES += $(ALL_MODULES)
 
-# Modules list for compact builds 
+# Modules list for compact builds
 JRE_COMPACT1_MODULES := \
     java.logging \
     java.scripting \
@@ -199,7 +199,6 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       rmid.1 \
       rmiregistry.1 \
       servertool.1 \
-      tnameserv.1 \
       unpack200.1
 
   JDK_MAN_PAGES += \
@@ -223,11 +222,7 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       jstat.1 \
       jstatd.1 \
       rmic.1 \
-      schemagen.1 \
-      serialver.1 \
-      wsgen.1 \
-      wsimport.1 \
-      xjc.1
+      serialver.1
 
   # This variable is potentially overridden in the closed makefile.
   MAN_SRC_BASEDIR ?= $(TOPDIR)/src

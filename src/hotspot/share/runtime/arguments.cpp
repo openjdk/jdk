@@ -513,7 +513,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "SafepointSpinBeforeYield",     JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "DeferThrSuspendLoopCount",     JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "DeferPollingPageLoopCount",    JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
-  { "UseCGroupMemoryLimitForHeap",  JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::jdk(11) },
   { "IgnoreUnverifiableClassesDuringDump", JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "CheckEndorsedAndExtDirs",      JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
 
@@ -1861,32 +1860,6 @@ void Arguments::set_heap_size() {
   julong phys_mem =
     FLAG_IS_DEFAULT(MaxRAM) ? MIN2(os::physical_memory(), (julong)MaxRAM)
                             : (julong)MaxRAM;
-
-  // Experimental support for CGroup memory limits
-  if (UseCGroupMemoryLimitForHeap) {
-    // This is a rough indicator that a CGroup limit may be in force
-    // for this process
-    const char* lim_file = "/sys/fs/cgroup/memory/memory.limit_in_bytes";
-    FILE *fp = fopen(lim_file, "r");
-    if (fp != NULL) {
-      julong cgroup_max = 0;
-      int ret = fscanf(fp, JULONG_FORMAT, &cgroup_max);
-      if (ret == 1 && cgroup_max > 0) {
-        // If unlimited, cgroup_max will be a very large, but unspecified
-        // value, so use initial phys_mem as a limit
-        log_info(gc, heap)("Setting phys_mem to the min of cgroup limit ("
-                           JULONG_FORMAT "MB) and initial phys_mem ("
-                           JULONG_FORMAT "MB)", cgroup_max/M, phys_mem/M);
-        phys_mem = MIN2(cgroup_max, phys_mem);
-      } else {
-        warning("Unable to read/parse cgroup memory limit from %s: %s",
-                lim_file, errno != 0 ? strerror(errno) : "unknown error");
-      }
-      fclose(fp);
-    } else {
-      warning("Unable to open cgroup memory limit file %s (%s)", lim_file, strerror(errno));
-    }
-  }
 
   // Convert deprecated flags
   if (FLAG_IS_DEFAULT(MaxRAMPercentage) &&
@@ -3490,27 +3463,6 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     return JNI_ENOMEM;
   }
 #endif
-
-  // If we are running in a headless jre, force java.awt.headless property
-  // to be true unless the property has already been set.
-  // Also allow the OS environment variable JAVA_AWT_HEADLESS to set headless state.
-  if (os::is_headless_jre()) {
-    const char* headless = Arguments::get_property("java.awt.headless");
-    if (headless == NULL) {
-      const char *headless_env = ::getenv("JAVA_AWT_HEADLESS");
-      if (headless_env == NULL) {
-        if (!add_property("java.awt.headless=true")) {
-          return JNI_ENOMEM;
-        }
-      } else {
-        char buffer[256];
-        jio_snprintf(buffer, sizeof(buffer), "java.awt.headless=%s", headless_env);
-        if (!add_property(buffer)) {
-          return JNI_ENOMEM;
-        }
-      }
-    }
-  }
 
   if (!check_vm_args_consistency()) {
     return JNI_ERR;

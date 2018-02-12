@@ -33,6 +33,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/cpCache.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -741,13 +742,16 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
 
 #if INCLUDE_CDS_JAVA_HEAP
 oop ConstantPoolCache::archived_references() {
-  assert(UseSharedSpaces, "UseSharedSpaces expected.");
-  return oopDesc::decode_heap_oop(_archived_references);
+  // Loading an archive root forces the oop to become strongly reachable.
+  // For example, if it is loaded during concurrent marking in a SATB
+  // collector, it will be enqueued to the SATB queue, effectively
+  // shading the previously white object gray.
+  return RootAccess<IN_ARCHIVE_ROOT>::oop_load(&_archived_references);
 }
 
 void ConstantPoolCache::set_archived_references(oop o) {
   assert(DumpSharedSpaces, "called only during runtime");
-  _archived_references = oopDesc::encode_heap_oop(o);
+  RootAccess<IN_ARCHIVE_ROOT>::oop_store(&_archived_references, o);
 }
 #endif
 

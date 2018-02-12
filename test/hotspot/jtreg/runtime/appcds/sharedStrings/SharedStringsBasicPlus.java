@@ -34,7 +34,7 @@
  * @modules java.management
  *          jdk.jartool/sun.tools.jar
  * @build HelloStringPlus sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main SharedStringsBasicPlus
  */
 

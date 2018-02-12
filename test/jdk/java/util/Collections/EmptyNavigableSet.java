@@ -163,10 +163,7 @@ public class EmptyNavigableSet {
      */
     @Test(dataProvider = "NavigableSet<?>", dataProviderClass = EmptyNavigableSet.class)
     public void testEmptyIterator(String description, NavigableSet<?> navigableSet) {
-        Iterator emptyIterator = navigableSet.iterator();
-
-        assertFalse((emptyIterator != null) && (emptyIterator.hasNext()),
-            "The iterator is not empty.");
+        assertFalse(navigableSet.iterator().hasNext(), "The iterator is not empty.");
     }
 
     /**
