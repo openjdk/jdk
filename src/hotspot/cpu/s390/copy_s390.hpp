@@ -740,13 +740,13 @@ static void pd_aligned_disjoint_words(const HeapWord* from, HeapWord* to, size_t
 #endif
 }
 
-static void pd_disjoint_words_atomic(HeapWord* from, HeapWord* to, size_t count) {
+static void pd_disjoint_words_atomic(const HeapWord* from, HeapWord* to, size_t count) {
   // JVM2008: < 4k calls.
   assert(((((size_t)from) & 0x07L) | (((size_t)to) & 0x07L)) == 0, "No atomic copy w/o aligned data");
   pd_aligned_disjoint_words(from, to, count); // Rare calls -> just delegate.
 }
 
-static void pd_disjoint_words(HeapWord* from, HeapWord* to, size_t count) {
+static void pd_disjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
   // JVM2008: very rare.
   pd_aligned_disjoint_words(from, to, count); // Rare calls -> just delegate.
 }
