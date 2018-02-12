@@ -516,6 +516,8 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   // Add in the index
   addptr(result, tmp);
   load_heap_oop(result, Address(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
+  // The resulting oop is null if the reference is not yet resolved.
+  // It is Universe::the_null_sentinel() if the reference resolved to NULL via condy.
 }
 
 // load cpool->resolved_klass_at(index)

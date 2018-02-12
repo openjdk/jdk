@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -124,10 +124,9 @@ ifneq ($(CREATING_BUILDJDK), true)
   LANGTOOLS_GENSRC_TARGETS := $(filter $(addsuffix -%, $(LANGTOOLS_MODULES)), $(GENSRC_TARGETS))
   INTERIM_LANGTOOLS_GENSRC_TARGETS := $(filter $(addsuffix -%, \
       $(INTERIM_LANGTOOLS_BASE_MODULES)), $(GENSRC_TARGETS))
-  CORBA_GENSRC_TARGETS := $(filter $(addsuffix -%, $(CORBA_MODULES)), $(GENSRC_TARGETS))
   HOTSPOT_GENSRC_TARGETS := $(filter $(addsuffix -%, $(HOTSPOT_MODULES)), $(GENSRC_TARGETS))
   JDK_GENSRC_TARGETS := $(filter-out $(LANGTOOLS_GENSRC_TARGETS) \
-      $(CORBA_GENSRC_TARGETS) $(HOTSPOT_GENSRC_TARGETS), $(GENSRC_TARGETS))
+      $(HOTSPOT_GENSRC_TARGETS), $(GENSRC_TARGETS))
 
   GENSRC_MODULEINFO_MODULES := $(ALL_MODULES)
   GENSRC_MODULEINFO_TARGETS := $(addsuffix -gensrc-moduleinfo, \
@@ -617,8 +616,6 @@ else
   buildtools-hotspot: interim-langtools
 
   buildtools-modules: exploded-image-base
-
-  $(CORBA_GENSRC_TARGETS): interim-langtools
 
   $(HOTSPOT_GENSRC_TARGETS): interim-langtools buildtools-hotspot
 

@@ -2641,6 +2641,81 @@ static bool is_always_visible_class(oop mirror) {
           InstanceKlass::cast(klass)->is_same_class_package(SystemDictionary::MethodHandle_klass()));  // java.lang.invoke
 }
 
+
+// Return the Java mirror (java.lang.Class instance) for a single-character
+// descriptor.  This result, when available, is the same as produced by the
+// heavier API point of the same name that takes a Symbol.
+oop SystemDictionary::find_java_mirror_for_type(char signature_char) {
+  return java_lang_Class::primitive_mirror(char2type(signature_char));
+}
+
+// Find or construct the Java mirror (java.lang.Class instance) for a
+// for the given field type signature, as interpreted relative to the
+// given class loader.  Handles primitives, void, references, arrays,
+// and all other reflectable types, except method types.
+// N.B.  Code in reflection should use this entry point.
+Handle SystemDictionary::find_java_mirror_for_type(Symbol* signature,
+                                                   Klass* accessing_klass,
+                                                   Handle class_loader,
+                                                   Handle protection_domain,
+                                                   SignatureStream::FailureMode failure_mode,
+                                                   TRAPS) {
+  Handle empty;
+
+  assert(accessing_klass == NULL || (class_loader.is_null() && protection_domain.is_null()),
+         "one or the other, or perhaps neither");
+
+  Symbol* type = signature;
+
+  // What we have here must be a valid field descriptor,
+  // and all valid field descriptors are supported.
+  // Produce the same java.lang.Class that reflection reports.
+  if (type->utf8_length() == 1) {
+
+    // It's a primitive.  (Void has a primitive mirror too.)
+    char ch = (char) type->byte_at(0);
+    assert(is_java_primitive(char2type(ch)) || ch == 'V', "");
+    return Handle(THREAD, find_java_mirror_for_type(ch));
+
+  } else if (FieldType::is_obj(type) || FieldType::is_array(type)) {
+
+    // It's a reference type.
+    if (accessing_klass != NULL) {
+      class_loader      = Handle(THREAD, accessing_klass->class_loader());
+      protection_domain = Handle(THREAD, accessing_klass->protection_domain());
+    }
+    Klass* constant_type_klass;
+    if (failure_mode == SignatureStream::ReturnNull) {
+      constant_type_klass = resolve_or_null(type, class_loader, protection_domain,
+                                            CHECK_(empty));
+    } else {
+      bool throw_error = (failure_mode == SignatureStream::NCDFError);
+      constant_type_klass = resolve_or_fail(type, class_loader, protection_domain,
+                                            throw_error, CHECK_(empty));
+    }
+    if (constant_type_klass == NULL) {
+      return Handle();  // report failure this way
+    }
+    Handle mirror(THREAD, constant_type_klass->java_mirror());
+
+    // Check accessibility, emulating ConstantPool::verify_constant_pool_resolve.
+    if (accessing_klass != NULL) {
+      Klass* sel_klass = constant_type_klass;
+      bool fold_type_to_class = true;
+      LinkResolver::check_klass_accessability(accessing_klass, sel_klass,
+                                              fold_type_to_class, CHECK_(empty));
+    }
+
+    return mirror;
+
+  }
+
+  // Fall through to an error.
+  assert(false, "unsupported mirror syntax");
+  THROW_MSG_(vmSymbols::java_lang_InternalError(), "unsupported mirror syntax", empty);
+}
+
+
 // Ask Java code to find or construct a java.lang.invoke.MethodType for the given
 // signature, as interpreted relative to the given class loader.
 // Because of class loader constraints, all method handle usage must be
@@ -2695,15 +2770,13 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
       pts->obj_at_put(arg++, mirror);
 
     // Check accessibility.
-    if (ss.is_object() && accessing_klass != NULL) {
+    if (!java_lang_Class::is_primitive(mirror) && accessing_klass != NULL) {
       Klass* sel_klass = java_lang_Class::as_Klass(mirror);
       mirror = NULL;  // safety
       // Emulate ConstantPool::verify_constant_pool_resolve.
-      if (sel_klass->is_objArray_klass())
-        sel_klass = ObjArrayKlass::cast(sel_klass)->bottom_klass();
-      if (sel_klass->is_instance_klass()) {
-        LinkResolver::check_klass_accessability(accessing_klass, sel_klass, CHECK_(empty));
-      }
+      bool fold_type_to_class = true;
+      LinkResolver::check_klass_accessability(accessing_klass, sel_klass,
+                                              fold_type_to_class, CHECK_(empty));
     }
   }
   assert(arg == npts, "");
@@ -2806,9 +2879,60 @@ Handle SystemDictionary::link_method_handle_constant(Klass* caller,
   return Handle(THREAD, (oop) result.get_jobject());
 }
 
+// Ask Java to compute a constant by invoking a BSM given a Dynamic_info CP entry
+Handle SystemDictionary::link_dynamic_constant(Klass* caller,
+                                               int condy_index,
+                                               Handle bootstrap_specifier,
+                                               Symbol* name,
+                                               Symbol* type,
+                                               TRAPS) {
+  Handle empty;
+  Handle bsm, info;
+  if (java_lang_invoke_MethodHandle::is_instance(bootstrap_specifier())) {
+    bsm = bootstrap_specifier;
+  } else {
+    assert(bootstrap_specifier->is_objArray(), "");
+    objArrayOop args = (objArrayOop) bootstrap_specifier();
+    assert(args->length() == 2, "");
+    bsm  = Handle(THREAD, args->obj_at(0));
+    info = Handle(THREAD, args->obj_at(1));
+  }
+  guarantee(java_lang_invoke_MethodHandle::is_instance(bsm()),
+            "caller must supply a valid BSM");
+
+  // This should not happen.  JDK code should take care of that.
+  if (caller == NULL) {
+    THROW_MSG_(vmSymbols::java_lang_InternalError(), "bad dynamic constant", empty);
+  }
+
+  Handle constant_name = java_lang_String::create_from_symbol(name, CHECK_(empty));
+
+  // Resolve the constant type in the context of the caller class
+  Handle type_mirror = find_java_mirror_for_type(type, caller, SignatureStream::NCDFError,
+                                                 CHECK_(empty));
+
+  // call java.lang.invoke.MethodHandleNatives::linkConstantDyanmic(caller, condy_index, bsm, type, info)
+  JavaCallArguments args;
+  args.push_oop(Handle(THREAD, caller->java_mirror()));
+  args.push_int(condy_index);
+  args.push_oop(bsm);
+  args.push_oop(constant_name);
+  args.push_oop(type_mirror);
+  args.push_oop(info);
+  JavaValue result(T_OBJECT);
+  JavaCalls::call_static(&result,
+                         SystemDictionary::MethodHandleNatives_klass(),
+                         vmSymbols::linkDynamicConstant_name(),
+                         vmSymbols::linkDynamicConstant_signature(),
+                         &args, CHECK_(empty));
+
+  return Handle(THREAD, (oop) result.get_jobject());
+}
+
 // Ask Java code to find or construct a java.lang.invoke.CallSite for the given
 // name and signature, as interpreted relative to the given class loader.
 methodHandle SystemDictionary::find_dynamic_call_site_invoker(Klass* caller,
+                                                              int indy_index,
                                                               Handle bootstrap_specifier,
                                                               Symbol* name,
                                                               Symbol* type,
@@ -2820,17 +2944,10 @@ methodHandle SystemDictionary::find_dynamic_call_site_invoker(Klass* caller,
   if (java_lang_invoke_MethodHandle::is_instance(bootstrap_specifier())) {
     bsm = bootstrap_specifier;
   } else {
-    assert(bootstrap_specifier->is_objArray(), "");
-    objArrayHandle args(THREAD, (objArrayOop) bootstrap_specifier());
-    int len = args->length();
-    assert(len >= 1, "");
-    bsm = Handle(THREAD, args->obj_at(0));
-    if (len > 1) {
-      objArrayOop args1 = oopFactory::new_objArray(SystemDictionary::Object_klass(), len-1, CHECK_(empty));
-      for (int i = 1; i < len; i++)
-        args1->obj_at_put(i-1, args->obj_at(i));
-      info = Handle(THREAD, args1);
-    }
+    objArrayOop args = (objArrayOop) bootstrap_specifier();
+    assert(args->length() == 2, "");
+    bsm  = Handle(THREAD, args->obj_at(0));
+    info = Handle(THREAD, args->obj_at(1));
   }
   guarantee(java_lang_invoke_MethodHandle::is_instance(bsm()),
             "caller must supply a valid BSM");
@@ -2846,9 +2963,10 @@ methodHandle SystemDictionary::find_dynamic_call_site_invoker(Klass* caller,
   objArrayHandle appendix_box = oopFactory::new_objArray_handle(SystemDictionary::Object_klass(), 1, CHECK_(empty));
   assert(appendix_box->obj_at(0) == NULL, "");
 
-  // call java.lang.invoke.MethodHandleNatives::linkCallSite(caller, bsm, name, mtype, info, &appendix)
+  // call java.lang.invoke.MethodHandleNatives::linkCallSite(caller, indy_index, bsm, name, mtype, info, &appendix)
   JavaCallArguments args;
   args.push_oop(Handle(THREAD, caller->java_mirror()));
+  args.push_int(indy_index);
   args.push_oop(bsm);
   args.push_oop(method_name);
   args.push_oop(method_type);

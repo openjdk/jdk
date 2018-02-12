@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,7 +248,7 @@ public:
                                     int first_region_id, int max_num_regions);
   void  write_bytes(const void* buffer, int count);
   void  write_bytes_aligned(const void* buffer, int count);
-  char* map_region(int i);
+  char* map_region(int i, char** top_ret);
   void  map_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
   void  fixup_mapped_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
   void  unmap_region(int i);
@@ -265,8 +265,6 @@ public:
   static void fail_stop(const char *msg, ...) ATTRIBUTE_PRINTF(1, 2);
   static void fail_continue(const char *msg, ...) ATTRIBUTE_PRINTF(1, 2);
 
-  // Return true if given address is in the mapped shared space.
-  bool is_in_shared_space(const void* p) NOT_CDS_RETURN_(false);
   bool is_in_shared_region(const void* p, int idx) NOT_CDS_RETURN_(false);
   void print_shared_spaces() NOT_CDS_RETURN;
 

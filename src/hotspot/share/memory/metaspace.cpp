@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4070,7 +4070,7 @@ void Metaspace::print_on(outputStream* out) const {
 }
 
 bool Metaspace::contains(const void* ptr) {
-  if (UseSharedSpaces && MetaspaceShared::is_in_shared_space(ptr)) {
+  if (MetaspaceShared::is_in_shared_metaspace(ptr)) {
     return true;
   }
   return contains_non_shared(ptr);

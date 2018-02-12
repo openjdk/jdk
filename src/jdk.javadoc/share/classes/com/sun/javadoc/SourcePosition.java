@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,8 @@ import java.io.File;
  *   in the package {@code jdk.javadoc.doclet}.
  *   For more information, see the <i>Migration Guide</i> in the documentation for that package.
  */
-@Deprecated
+@Deprecated(since="9", forRemoval=true)
+@SuppressWarnings("removal")
 public interface SourcePosition {
     /** The source file. Returns null if no file information is
      *  available.

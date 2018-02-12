@@ -250,9 +250,6 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
         case INSTANCEOF: {
             return Type.BOOLEAN;
         }
-        case COMMALEFT: {
-            return lhs.getType();
-        }
         case COMMARIGHT: {
             return rhs.getType();
         }
@@ -378,8 +375,6 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
     @Override
     public boolean isAlwaysFalse() {
         switch (tokenType()) {
-        case COMMALEFT:
-            return lhs.isAlwaysFalse();
         case COMMARIGHT:
             return rhs.isAlwaysFalse();
         default:
@@ -390,8 +385,6 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
     @Override
     public boolean isAlwaysTrue() {
         switch (tokenType()) {
-        case COMMALEFT:
-            return lhs.isAlwaysTrue();
         case COMMARIGHT:
             return rhs.isAlwaysTrue();
         default:
@@ -419,9 +412,6 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
         sb.append(' ');
 
         switch (tokenType) {
-        case COMMALEFT:
-            sb.append(",<");
-            break;
         case COMMARIGHT:
             sb.append(",>");
             break;

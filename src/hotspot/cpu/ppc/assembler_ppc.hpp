@@ -518,6 +518,7 @@ class Assembler : public AbstractAssembler {
     XXMRGHW_OPCODE = (60u << OPCODE_SHIFT |   18u << 3),
     XXMRGLW_OPCODE = (60u << OPCODE_SHIFT |   50u << 3),
     XXSPLTW_OPCODE = (60u << OPCODE_SHIFT |  164u << 2),
+    XXLOR_OPCODE   = (60u << OPCODE_SHIFT |  146u << 3),
     XXLXOR_OPCODE  = (60u << OPCODE_SHIFT |  154u << 3),
     XXLEQV_OPCODE  = (60u << OPCODE_SHIFT |  186u << 3),
 
@@ -2162,6 +2163,7 @@ class Assembler : public AbstractAssembler {
   inline void mtvsrd(   VectorSRegister d, Register a);
   inline void mtvsrwz(  VectorSRegister d, Register a);
   inline void xxspltw(  VectorSRegister d, VectorSRegister b, int ui2);
+  inline void xxlor(    VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xxlxor(   VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xxleqv(   VectorSRegister d, VectorSRegister a, VectorSRegister b);
 

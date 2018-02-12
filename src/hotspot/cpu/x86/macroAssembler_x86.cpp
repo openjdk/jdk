@@ -836,7 +836,8 @@ void MacroAssembler::warn(const char* msg) {
   andq(rsp, -16);     // align stack as required by push_CPU_state and call
   push_CPU_state();   // keeps alignment at 16 bytes
   lea(c_rarg0, ExternalAddress((address) msg));
-  call_VM_leaf(CAST_FROM_FN_PTR(address, warning), c_rarg0);
+  lea(rax, ExternalAddress(CAST_FROM_FN_PTR(address, warning)));
+  call(rax);
   pop_CPU_state();
   mov(rsp, rbp);
   pop(rbp);

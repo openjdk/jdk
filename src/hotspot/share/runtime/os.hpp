@@ -717,9 +717,6 @@ class os: AllStatic {
   // Fills in path to jvm.dll/libjvm.so (used by the Disassembler)
   static void     jvm_path(char *buf, jint buflen);
 
-  // Returns true if we are running in a headless jre.
-  static bool     is_headless_jre();
-
   // JNI names
   static void     print_jni_name_prefix_on(outputStream* st, int args_size);
   static void     print_jni_name_suffix_on(outputStream* st, int args_size);

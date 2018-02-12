@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1317,9 +1317,9 @@ class JNILocalsDumper : public OopClosure {
 
 
 void JNILocalsDumper::do_oop(oop* obj_p) {
-  // ignore null or deleted handles
+  // ignore null handles
   oop o = *obj_p;
-  if (o != NULL && o != JNIHandles::deleted_handle()) {
+  if (o != NULL) {
     writer()->write_u1(HPROF_GC_ROOT_JNI_LOCAL);
     writer()->write_objectID(o);
     writer()->write_u4(_thread_serial_num);
@@ -1347,7 +1347,7 @@ void JNIGlobalsDumper::do_oop(oop* obj_p) {
   oop o = *obj_p;
 
   // ignore these
-  if (o == NULL || o == JNIHandles::deleted_handle()) return;
+  if (o == NULL) return;
 
   // we ignore global ref to symbols and other internal objects
   if (o->is_instance() || o->is_objArray() || o->is_typeArray()) {
@@ -1422,9 +1422,6 @@ class HeapObjectDumper : public ObjectClosure {
 };
 
 void HeapObjectDumper::do_object(oop o) {
-  // hide the sentinel for deleted handles
-  if (o == JNIHandles::deleted_handle()) return;
-
   // skip classes as these emitted as HPROF_GC_CLASS_DUMP records
   if (o->klass() == SystemDictionary::Class_klass()) {
     if (!java_lang_Class::is_primitive(o)) {
