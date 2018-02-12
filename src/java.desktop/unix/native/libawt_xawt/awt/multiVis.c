@@ -395,6 +395,8 @@ XRectangle      bbox;           /* bounding box of grabbed area */
 list_ptr regions;/* list of regions to read from */
 {
     XImage              *ximage ;
+    image_region_type* reg;
+    int32_t rect;
 
     ximage = XCreateImage(disp,fakeVis,(uint32_t) depth,format,0,NULL,
                           (uint32_t)width,(uint32_t)height,8,0);
@@ -402,11 +404,11 @@ list_ptr regions;/* list of regions to read from */
     ximage->data = calloc(ximage->bytes_per_line*height*((format==ZPixmap)? 1 : depth), sizeof(char));
     ximage->bits_per_pixel = depth; /** Valid only if format is ZPixmap ***/
 
-    for (image_region_type* reg = (image_region_type *) first_in_list( regions); reg;
+    for (reg = (image_region_type *) first_in_list( regions); reg;
          reg = (image_region_type *) next_in_list( regions))
     {
                 struct my_XRegion *vis_reg = (struct my_XRegion *)(reg->visible_region);
-                for (int32_t rect = 0; rect < vis_reg->numRects; rect++)
+                for (rect = 0; rect < vis_reg->numRects; rect++)
                 {
                     /** ------------------------------------------------------------------------
                             Intersect bbox with visible part of region giving src rect & output
