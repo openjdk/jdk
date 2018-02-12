@@ -134,7 +134,7 @@ public final class UcryptoException extends ProviderException {
      * Get the error enum value (if any) associated with this exception.
      */
     public Error getError() {
-        return errorCode < ALL_ERRORS.length ?
+        return (errorCode >= 0 && errorCode < ALL_ERRORS.length) ?
             ALL_ERRORS[errorCode] :
             null;
     }
@@ -154,7 +154,7 @@ public final class UcryptoException extends ProviderException {
      */
     static String getErrorMessage(int errorCode) {
         String message;
-        if (errorCode < ALL_ERRORS.length) {
+        if (errorCode >= 0 && errorCode < ALL_ERRORS.length) {
             message = ALL_ERRORS[errorCode].name();
         } else {
             message = "0x" + Integer.toHexString(errorCode);
