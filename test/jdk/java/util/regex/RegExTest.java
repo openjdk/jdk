@@ -35,7 +35,7 @@
  * 8027645 8035076 8039124 8035975 8074678 6854417 8143854 8147531 7071819
  * 8151481 4867170 7080302 6728861 6995635 6736245 4916384 6328855 6192895
  * 6345469 6988218 6693451 7006761 8140212 8143282 8158482 8176029 8184706
- * 8194667
+ * 8194667 8197462
  *
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
@@ -168,6 +168,7 @@ public class RegExTest {
         embeddedFlags();
         grapheme();
         expoBacktracking();
+        invalidGroupName();
 
         if (failure) {
             throw new
@@ -4869,5 +4870,42 @@ public class RegExTest {
                 failCount++;
             }
         }
+    }
+
+    private static void invalidGroupName() {
+        // Invalid start of a group name
+        for (String groupName : List.of("", ".", "0", "\u0040", "\u005b",
+                "\u0060", "\u007b", "\u0416")) {
+            for (String pat : List.of("(?<" + groupName + ">)",
+                    "\\k<" + groupName + ">")) {
+                try {
+                    Pattern.compile(pat);
+                    failCount++;
+                } catch (PatternSyntaxException e) {
+                    if (!e.getMessage().startsWith(
+                            "capturing group name does not start with a"
+                            + " Latin letter")) {
+                        failCount++;
+                    }
+                }
+            }
+        }
+        // Invalid char in a group name
+        for (String groupName : List.of("a.", "b\u0040", "c\u005b",
+                "d\u0060", "e\u007b", "f\u0416")) {
+            for (String pat : List.of("(?<" + groupName + ">)",
+                    "\\k<" + groupName + ">")) {
+                try {
+                    Pattern.compile(pat);
+                    failCount++;
+                } catch (PatternSyntaxException e) {
+                    if (!e.getMessage().startsWith(
+                            "named capturing group is missing trailing '>'")) {
+                        failCount++;
+                    }
+                }
+            }
+        }
+        report("Invalid capturing group names");
     }
 }
