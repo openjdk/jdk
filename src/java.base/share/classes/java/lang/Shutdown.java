@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,6 +130,9 @@ class Shutdown {
         }
     }
 
+    /* Notify the VM that it's time to halt. */
+    static native void beforeHalt();
+
     /* The halt method is synchronized on the halt lock
      * to avoid corruption of the delete-on-shutdown file list.
      * It invokes the true native halt method.
@@ -209,6 +212,7 @@ class Shutdown {
             /* Synchronize on the class object, causing any other thread
              * that attempts to initiate shutdown to stall indefinitely
              */
+            beforeHalt();
             sequence();
             halt(status);
         }
