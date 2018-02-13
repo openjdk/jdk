@@ -445,9 +445,9 @@ $(eval $(call SetupApiDocsGeneration, JDK_API, \
 ################################################################################
 # Setup generation of the Java SE API documentation (javadoc + modulegraph)
 
-# The Java SE module scope is just java.se.ee and its transitive indirect
+# The Java SE module scope is just java.se and its transitive indirect
 # exports.
-JAVASE_MODULES := java.se.ee
+JAVASE_MODULES := java.se
 
 $(eval $(call SetupApiDocsGeneration, JAVASE_API, \
     MODULES := $(JAVASE_MODULES), \
