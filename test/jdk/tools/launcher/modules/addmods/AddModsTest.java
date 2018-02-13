@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,47 +91,6 @@ public class AddModsTest {
                               "--add-modules", "ALL-DEFAULT",
                               "-m", TEST_MID,
                               "java.sql.Connection")
-                .outputTo(System.out)
-                .errorTo(System.out)
-                .getExitValue();
-
-        assertTrue(exitValue == 0);
-    }
-
-    /**
-     * Basic test of --add-modules ALL-DEFAULT. Module java.xml.ws.annotation
-     * should not resolved and so the types in that module should not be
-     * visible.
-     */
-    public void testAddDefaultModules2() throws Exception {
-
-        // java --add-modules ALL-DEFAULT --module-path mods1 -m test ...
-        int exitValue
-            = executeTestJava("--module-path", MODS1_DIR.toString(),
-                              "--add-modules", "ALL-DEFAULT",
-                              "-m", TEST_MID,
-                              "javax.annotation.Generated")
-                .outputTo(System.out)
-                .errorTo(System.out)
-                .shouldContain("ClassNotFoundException")
-                .getExitValue();
-
-        assertTrue(exitValue != 0);
-    }
-
-    /**
-     * Basic test of --add-modules ALL-SYSTEM. All system modules should be resolved
-     * and thus all types in those modules should be visible.
-     */
-    public void testAddSystemModules() throws Exception {
-
-        // java --add-modules ALL-SYSTEM --module-path mods1 -m test ...
-        int exitValue
-            = executeTestJava("--module-path", MODS1_DIR.toString(),
-                              "--add-modules", "ALL-SYSTEM",
-                              "-m", TEST_MID,
-                              "java.sql.Connection",
-                              "javax.annotation.Generated")
                 .outputTo(System.out)
                 .errorTo(System.out)
                 .getExitValue();

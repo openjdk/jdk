@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,12 +90,6 @@ public abstract class MappedByteBuffer
         this.fd = null;
     }
 
-    private void checkMapped() {
-        if (fd == null)
-            // Can only happen if a luser explicitly casts a direct byte buffer
-            throw new UnsupportedOperationException();
-    }
-
     // Returns the distance (in bytes) of the buffer from the page aligned address
     // of the mapping. Computed each time to avoid storing in every direct buffer.
     private long mappingOffset() {
@@ -131,7 +125,9 @@ public abstract class MappedByteBuffer
      *          is resident in physical memory
      */
     public final boolean isLoaded() {
-        checkMapped();
+        if (fd == null) {
+            return true;
+        }
         if ((address == 0) || (capacity() == 0))
             return true;
         long offset = mappingOffset();
@@ -153,7 +149,9 @@ public abstract class MappedByteBuffer
      * @return  This buffer
      */
     public final MappedByteBuffer load() {
-        checkMapped();
+        if (fd == null) {
+            return this;
+        }
         if ((address == 0) || (capacity() == 0))
             return this;
         long offset = mappingOffset();
@@ -197,7 +195,9 @@ public abstract class MappedByteBuffer
      * @return  This buffer
      */
     public final MappedByteBuffer force() {
-        checkMapped();
+        if (fd == null) {
+            return this;
+        }
         if ((address != 0) && (capacity() != 0)) {
             long offset = mappingOffset();
             force0(fd, mappingAddress(offset), mappingLength(offset));

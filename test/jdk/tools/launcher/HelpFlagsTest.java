@@ -59,15 +59,6 @@ public class HelpFlagsTest extends TestHelper {
         "jconsole",         // gui, don't test
         "servertool",       // none. Shell, don't test.
         "javaw",            // don't test, win only
-        // The flags of these tools need to be fixed in Java EE.
-        // The tools are deprecated for removal in Java SE. Don't test.
-        "idlj",
-        "orbd",
-        "schemagen",
-        "tnameserv",
-        "wsgen",
-        "wsimport",
-        "xjc",
         // These shall have a help message that resembles that of
         // MIT's tools. Thus -?, -h and --help are supported, but not
         // mentioned in the help text.

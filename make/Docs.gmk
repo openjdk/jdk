@@ -44,7 +44,7 @@ $(eval $(call IncludeCustomExtension, Docs.gmk))
 #
 # We will generate API documentation for two different selections of the source
 # code: "Java SE", which contains just the modules covered by the top-level
-# module java.se.ee, and "JDK", which covers all of Java SE and also all
+# module java.se and "JDK", which covers all of Java SE and also all
 # other available modules that should be documented, including imported modules,
 # if any.
 #
@@ -396,8 +396,8 @@ endef
 
 # Define the groups of the JDK API documentation
 JavaSE_GROUP_NAME := Java SE
-JavaSE_GROUP_MODULES := $(call ColonList, $(sort java.se.ee \
-    $(call FindTransitiveIndirectDepsForModules, java.se.ee)))
+JavaSE_GROUP_MODULES := $(call ColonList, $(sort java.se \
+    $(call FindTransitiveIndirectDepsForModules, java.se)))
 JavaSE_GROUP_DESCRIPTION := \
     The Java Platform, Standard Edition (Java SE) APIs define the core Java \
     platform for general-purpose computing. These APIs are in modules whose \

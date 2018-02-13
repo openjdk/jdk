@@ -782,12 +782,9 @@ public final class Pattern
      * arguments, they can also be passed as inline modifiers.
      * For example, the following statements have the same effect.
      * <pre>
-     * RegExp r1 = RegExp.compile("abc", Pattern.I|Pattern.M);
-     * RegExp r2 = RegExp.compile("(?im)abc", 0);
+     * Pattern p1 = Pattern.compile("abc", Pattern.CASE_INSENSITIVE|Pattern.MULTILINE);
+     * Pattern p2 = Pattern.compile("(?im)abc", 0);
      * </pre>
-     *
-     * The flags are duplicated so that the familiar Perl match flag
-     * names are available.
      */
 
     /**
@@ -2527,7 +2524,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 throw error("\\k is not followed by '<' for named capturing group");
             String name = groupname(read());
             if (!namedGroups().containsKey(name))
-                throw error("(named capturing group <"+ name+"> does not exit");
+                throw error("named capturing group <" + name + "> does not exist");
             if (create) {
                 hasGroupRef = true;
                 if (has(CASE_INSENSITIVE))
@@ -2922,13 +2919,11 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
      */
     private String groupname(int ch) {
         StringBuilder sb = new StringBuilder();
-        sb.append(Character.toChars(ch));
-        while (ASCII.isLower(ch=read()) || ASCII.isUpper(ch) ||
-               ASCII.isDigit(ch)) {
-            sb.append(Character.toChars(ch));
-        }
-        if (sb.length() == 0)
-            throw error("named capturing group has 0 length name");
+        if (!ASCII.isAlpha(ch))
+            throw error("capturing group name does not start with a Latin letter");
+        do {
+            sb.append((char) ch);
+        } while (ASCII.isAlnum(ch=read()));
         if (ch != '>')
             throw error("named capturing group is missing trailing '>'");
         return sb.toString();
@@ -2974,7 +2969,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 break;
             case '<':   // (?<xxx)  look behind
                 ch = read();
-                if (ASCII.isLower(ch) || ASCII.isUpper(ch)) {
+                if (ch != '=' && ch != '!') {
                     // named captured group
                     String name = groupname(ch);
                     if (namedGroups().containsKey(name))
@@ -3005,14 +3000,12 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                                                info.minLength) :
                                    new Behind(head, info.maxLength,
                                               info.minLength));
-                } else if (ch == '!') {
+                } else { // if (ch == '!')
                     head = tail = (hasSupplementary ?
                                    new NotBehindS(head, info.maxLength,
                                                   info.minLength) :
                                    new NotBehind(head, info.maxLength,
                                                  info.minLength));
-                } else {
-                    throw error("Unknown look-behind group");
                 }
                 // clear all top-closure-nodes inside lookbehind
                 if (saveTCNCount < topClosureNodes.size())
