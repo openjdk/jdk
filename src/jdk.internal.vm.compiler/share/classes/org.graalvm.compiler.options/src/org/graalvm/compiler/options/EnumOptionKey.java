@@ -24,7 +24,7 @@ package org.graalvm.compiler.options;
 
 import java.util.EnumSet;
 
-import org.graalvm.util.EconomicMap;
+import org.graalvm.collections.EconomicMap;
 
 public class EnumOptionKey<T extends Enum<T>> extends OptionKey<T> {
     final Class<T> enumClass;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8149757 8144062
+ * @bug 8149757 8144062 8196627
  * @summary Test that StandardJavaFileManager uses the correct version of a
  * class from a multi-release jar on classpath
  * @library /tools/lib
@@ -56,6 +56,7 @@ import toolbox.JavacTask;
 import toolbox.ToolBox;
 
 public class MultiReleaseJarAwareSJFM {
+    private static final int CURRENT_VERSION = Runtime.version().major();
 
     private final String version8 =
             "package version;\n" +
@@ -86,12 +87,12 @@ public class MultiReleaseJarAwareSJFM {
             "    }\n" +
             "}\n";
 
-    private final String version10 =
+    private final String versionCurrent =
             "package version;\n" +
             "\n" +
             "public class Version {\n" +
             "    public int getVersion() {\n" +
-            "        return 10;\n" +
+            "        return " + CURRENT_VERSION +";\n" +
             "    }\n" +
             "}\n";
 
@@ -116,7 +117,7 @@ public class MultiReleaseJarAwareSJFM {
     public void setup() throws Exception {
         tb.createDirectories("classes",
                 "classes/META-INF/versions/9",
-                "classes/META-INF/versions/10");
+                "classes/META-INF/versions/" + CURRENT_VERSION);
         new JavacTask(tb)
                 .outdir("classes")
                 .sources(version8)
@@ -126,8 +127,8 @@ public class MultiReleaseJarAwareSJFM {
                 .sources(version9, packagePrivate)
                 .run();
         new JavacTask(tb)
-                .outdir("classes/META-INF/versions/10")
-                .sources(version10)
+                .outdir("classes/META-INF/versions/" + CURRENT_VERSION)
+                .sources(versionCurrent)
                 .run();
         new JarTask(tb, "multi-release.jar")
                 .manifest(manifest)
@@ -135,16 +136,16 @@ public class MultiReleaseJarAwareSJFM {
                 .files("version/Version.class",
                         "META-INF/versions/9/version/Version.class",
                         "META-INF/versions/9/version/PackagePrivate.class",
-                        "META-INF/versions/10/version/Version.class")
+                        "META-INF/versions/" + CURRENT_VERSION + "/version/Version.class")
                 .run();
     }
 
     @AfterClass
     public void teardown() throws Exception {
         tb.deleteFiles(
-                "classes/META-INF/versions/10/version/Version.class",
-                "classes/META-INF/versions/10/version",
-                "classes/META-INF/versions/10/",
+                "classes/META-INF/versions/" + CURRENT_VERSION + "/version/Version.class",
+                "classes/META-INF/versions/" + CURRENT_VERSION + "/version",
+                "classes/META-INF/versions/" + CURRENT_VERSION,
                 "classes/META-INF/versions/9/version/Version.class",
                 "classes/META-INF/versions/9/version/PackagePrivate.class",
                 "classes/META-INF/versions/9/version",

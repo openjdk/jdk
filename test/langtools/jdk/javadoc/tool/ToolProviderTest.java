@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ public class ToolProviderTest extends TestRunner {
     public void testOneStream() throws Exception {
         StringWriter sw = new StringWriter();
         try (PrintWriter pw = new PrintWriter(sw)) {
-            int rc = javadoc.run(pw, pw, "-help");
+            int rc = javadoc.run(pw, pw, "--help");
             if (rc != 0) {
                 error("unexpected exit code: " + rc);
             }
@@ -86,7 +86,7 @@ public class ToolProviderTest extends TestRunner {
         StringWriter swErr = new StringWriter();
         try (PrintWriter pwOut = new PrintWriter(swOut);
                 PrintWriter pwErr = new PrintWriter(swErr)) {
-            int rc = javadoc.run(pwOut, pwErr, "-help");
+            int rc = javadoc.run(pwOut, pwErr, "--help");
             if (rc != 0) {
                 error("unexpected exit code: " + rc);
             }

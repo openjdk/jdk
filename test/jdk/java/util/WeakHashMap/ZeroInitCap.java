@@ -21,7 +21,8 @@
  * questions.
  */
 
-import java.util.*;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 /*
  * @test

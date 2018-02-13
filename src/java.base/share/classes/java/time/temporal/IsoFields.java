@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -708,9 +708,8 @@ public final class IsoFields {
                     return (R) temporal.with(WEEK_BASED_YEAR,
                             Math.addExact(temporal.get(WEEK_BASED_YEAR), amount));
                 case QUARTER_YEARS:
-                    // no overflow (256 is multiple of 4)
-                    return (R) temporal.plus(amount / 256, YEARS)
-                            .plus((amount % 256) * 3, MONTHS);
+                    return (R) temporal.plus(amount / 4, YEARS)
+                            .plus((amount % 4) * 3, MONTHS);
                 default:
                     throw new IllegalStateException("Unreachable");
             }

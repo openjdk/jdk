@@ -78,9 +78,7 @@ public class DrainToFails {
             pseudodelay = i;
         }
         public int compareTo(PDelay other) {
-            int a = this.pseudodelay;
-            int b = other.pseudodelay;
-            return (a < b) ? -1 : (a > b) ? 1 : 0;
+            return Integer.compare(this.pseudodelay, other.pseudodelay);
         }
         public int compareTo(Delayed y) {
             return compareTo((PDelay)y);

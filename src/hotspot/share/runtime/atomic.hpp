@@ -45,8 +45,8 @@ enum cmpxchg_memory_order {
 
 class Atomic : AllStatic {
 public:
-  // Atomic operations on jlong types are not available on all 32-bit
-  // platforms. If atomic ops on jlongs are defined here they must only
+  // Atomic operations on int64 types are not available on all 32-bit
+  // platforms. If atomic ops on int64 are defined here they must only
   // be used from code that verifies they are available at runtime and
   // can provide an alternative action if not - see supports_cx8() for
   // a means to test availability.
@@ -639,16 +639,16 @@ struct Atomic::AddImpl<
 //
 // Use the ATOMIC_SHORT_PAIR macro (see macros.hpp) to get the desired alignment.
 template<>
-struct Atomic::AddImpl<jshort, jshort> VALUE_OBJ_CLASS_SPEC {
-  jshort operator()(jshort add_value, jshort volatile* dest) const {
+struct Atomic::AddImpl<short, short> VALUE_OBJ_CLASS_SPEC {
+  short operator()(short add_value, short volatile* dest) const {
 #ifdef VM_LITTLE_ENDIAN
     assert((intx(dest) & 0x03) == 0x02, "wrong alignment");
-    jint new_value = Atomic::add(add_value << 16, (volatile jint*)(dest-1));
+    int new_value = Atomic::add(add_value << 16, (volatile int*)(dest-1));
 #else
     assert((intx(dest) & 0x03) == 0x00, "wrong alignment");
-    jint new_value = Atomic::add(add_value << 16, (volatile jint*)(dest));
+    int new_value = Atomic::add(add_value << 16, (volatile int*)(dest));
 #endif
-    return (jshort)(new_value >> 16); // preserves sign
+    return (short)(new_value >> 16); // preserves sign
   }
 };
 
@@ -807,7 +807,7 @@ inline T Atomic::CmpxchgByteUsingInt::operator()(T exchange_value,
   do {
     // value to swap in matches current value ...
     uint32_t new_value = cur;
-    // ... except for the one jbyte we want to update
+    // ... except for the one byte we want to update
     reinterpret_cast<uint8_t*>(&new_value)[offset] = canon_exchange_value;
 
     uint32_t res = cmpxchg(new_value, aligned_dest, cur, order);

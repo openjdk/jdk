@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1702,7 +1702,7 @@ WB_ENTRY(jboolean, WB_IsShared(JNIEnv* env, jobject wb, jobject obj))
 WB_END
 
 WB_ENTRY(jboolean, WB_IsSharedClass(JNIEnv* env, jobject wb, jclass clazz))
-  return (jboolean)MetaspaceShared::is_in_shared_space(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
+  return (jboolean)MetaspaceShared::is_in_shared_metaspace(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
 WB_END
 
 WB_ENTRY(jboolean, WB_AreSharedStringsIgnored(JNIEnv* env))
@@ -1727,10 +1727,16 @@ WB_END
 
 WB_ENTRY(jboolean, WB_IsCDSIncludedInVmBuild(JNIEnv* env))
 #if INCLUDE_CDS
+# ifdef _LP64
+    if (!UseCompressedOops || !UseCompressedClassPointers) {
+      // On 64-bit VMs, CDS is supported only with compressed oops/pointers
+      return false;
+    }
+# endif // _LP64
   return true;
 #else
   return false;
-#endif
+#endif // INCLUDE_CDS
 WB_END
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,6 @@ class ServiceUtil : public AllStatic {
   // Return true if oop represents an object that is "visible"
   // to the java world.
   static inline bool visible_oop(oop o) {
-    // the sentinel for deleted handles isn't visible
-    if (o == JNIHandles::deleted_handle()) {
-      return false;
-    }
-
     // instance
     if (o->is_instance()) {
       // instance objects are visible

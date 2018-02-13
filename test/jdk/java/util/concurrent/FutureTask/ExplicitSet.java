@@ -60,7 +60,7 @@ public class ExplicitSet {
                     public Boolean call() {
                         fail("The task should never be run!");
                         return null;
-                    };
+                    }
                 });
         }
 

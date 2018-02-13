@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,21 +78,21 @@ define_pd_global(bool, TieredCompilation,            false);
 
 define_pd_global(intx, CompileThreshold,             0);
 
-define_pd_global(intx, OnStackReplacePercentage,     0);
-define_pd_global(bool, ResizeTLAB,                   false);
-define_pd_global(intx, FreqInlineSize,               0);
+define_pd_global(intx,   OnStackReplacePercentage,   0);
+define_pd_global(bool,   ResizeTLAB,                 false);
+define_pd_global(intx,   FreqInlineSize,             0);
 define_pd_global(size_t, NewSizeThreadIncrease,      4*K);
-define_pd_global(intx, InlineClassNatives,           true);
-define_pd_global(intx, InlineUnsafeOps,              true);
-define_pd_global(intx, InitialCodeCacheSize,         160*K);
-define_pd_global(intx, ReservedCodeCacheSize,        32*M);
-define_pd_global(intx, NonProfiledCodeHeapSize,      0);
-define_pd_global(intx, ProfiledCodeHeapSize,         0);
-define_pd_global(intx, NonNMethodCodeHeapSize,       32*M);
+define_pd_global(bool,   InlineClassNatives,         true);
+define_pd_global(bool,   InlineUnsafeOps,            true);
+define_pd_global(uintx,  InitialCodeCacheSize,       160*K);
+define_pd_global(uintx,  ReservedCodeCacheSize,      32*M);
+define_pd_global(uintx,  NonProfiledCodeHeapSize,    0);
+define_pd_global(uintx,  ProfiledCodeHeapSize,       0);
+define_pd_global(uintx,  NonNMethodCodeHeapSize,     32*M);
 
-define_pd_global(intx, CodeCacheExpansionSize,       32*K);
-define_pd_global(intx, CodeCacheMinBlockLength,      1);
-define_pd_global(intx, CodeCacheMinimumUseSpace,     200*K);
+define_pd_global(uintx,  CodeCacheExpansionSize,     32*K);
+define_pd_global(uintx,  CodeCacheMinBlockLength,    1);
+define_pd_global(uintx,  CodeCacheMinimumUseSpace,   200*K);
 define_pd_global(size_t, MetaspaceSize,              ScaleForWordSize(4*M));
 define_pd_global(bool, NeverActAsServerClassMachine, true);
 define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
@@ -893,20 +893,11 @@ public:
   develop(bool, TraceJavaAssertions, false,                                 \
           "Trace java language assertions")                                 \
                                                                             \
-  notproduct(bool, CheckAssertionStatusDirectives, false,                   \
-          "Temporary - see javaClasses.cpp")                                \
-                                                                            \
-  notproduct(bool, PrintMallocFree, false,                                  \
-          "Trace calls to C heap malloc/free allocation")                   \
-                                                                            \
   notproduct(bool, VerifyCodeCache, false,                                  \
           "Verify code cache on memory allocation/deallocation")            \
                                                                             \
   develop(bool, UseMallocOnly, false,                                       \
           "Use only malloc/free for allocation (no resource area/arena)")   \
-                                                                            \
-  develop(bool, PrintMalloc, false,                                         \
-          "Print all malloc/free calls")                                    \
                                                                             \
   develop(bool, PrintMallocStatistics, false,                               \
           "Print malloc/free statistics")                                   \
@@ -2044,11 +2035,6 @@ public:
           "Maximum ergonomically set heap size (in bytes); zero means use " \
           "MaxRAM * MaxRAMPercentage / 100")                                \
           range(0, max_uintx)                                               \
-                                                                            \
-  experimental(bool, UseCGroupMemoryLimitForHeap, false,                    \
-          "Use CGroup memory limit as physical memory limit for heap "      \
-          "sizing"                                                          \
-          "Deprecated, replaced by container support")                      \
                                                                             \
   product(uintx, MaxRAMFraction, 4,                                         \
           "Maximum fraction (1/n) of real memory used for maximum heap "    \
@@ -3553,7 +3539,7 @@ public:
           "(-1 means no change)")                                           \
           range(-1, 127)                                                    \
                                                                             \
-  product(bool, CompilerThreadHintNoPreempt, true,                          \
+  product(bool, CompilerThreadHintNoPreempt, false,                         \
           "(Solaris only) Give compiler threads an extra quanta")           \
                                                                             \
   product(bool, VMThreadHintNoPreempt, false,                               \
@@ -3968,6 +3954,14 @@ public:
                                                                             \
   develop(bool, TraceInvokeDynamic, false,                                  \
           "trace internal invoke dynamic operations")                       \
+                                                                            \
+  diagnostic(int, UseBootstrapCallInfo, 1,                                  \
+          "0: when resolving InDy or ConDy, force all BSM arguments to be " \
+          "resolved before the bootstrap method is called; 1: when a BSM "  \
+          "that may accept a BootstrapCallInfo is detected, use that API "  \
+          "to pass BSM arguments, which allows the BSM to delay their "     \
+          "resolution; 2+: stress test the BCI API by calling more BSMs "   \
+          "via that API, instead of with the eagerly-resolved array.")      \
                                                                             \
   diagnostic(bool, PauseAtStartup,      false,                              \
           "Causes the VM to pause at startup time and wait for the pause "  \

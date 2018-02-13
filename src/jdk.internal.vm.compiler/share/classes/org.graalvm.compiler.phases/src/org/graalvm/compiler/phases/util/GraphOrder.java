@@ -25,6 +25,8 @@ package org.graalvm.compiler.phases.util;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.Equivalence;
 import org.graalvm.compiler.core.common.cfg.Loop;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.GraalGraphError;
@@ -55,8 +57,6 @@ import org.graalvm.compiler.phases.graph.ReentrantBlockIterator.BlockIteratorClo
 import org.graalvm.compiler.phases.graph.StatelessPostOrderNodeIterator;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase.SchedulingStrategy;
-import org.graalvm.util.EconomicMap;
-import org.graalvm.util.Equivalence;
 
 public final class GraphOrder {
 

@@ -47,6 +47,7 @@ import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.debug.DebugContext;
+import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.graph.NodeSourcePosition;
 import org.graalvm.compiler.java.BciBlockMapping.BciBlock;
 import org.graalvm.compiler.nodeinfo.Verbosity;
@@ -999,15 +1000,14 @@ public final class FrameStateBuilder implements SideEffectsState {
     }
 
     public void traceState() {
-        DebugContext debug = graph.getDebug();
-        debug.log("|   state [nr locals = %d, stack depth = %d, method = %s]", localsSize(), stackSize(), getMethod());
+        TTY.println("|   state [nr locals = %d, stack depth = %d, method = %s]", localsSize(), stackSize(), getMethod());
         for (int i = 0; i < localsSize(); ++i) {
             ValueNode value = locals[i];
-            debug.log("|   local[%d] = %-8s : %s", i, value == null ? "bogus" : value == TWO_SLOT_MARKER ? "second" : value.getStackKind().getJavaName(), value);
+            TTY.println("|   local[%d] = %-8s : %s", i, value == null ? "bogus" : value == TWO_SLOT_MARKER ? "second" : value.getStackKind().getJavaName(), value);
         }
         for (int i = 0; i < stackSize(); ++i) {
             ValueNode value = stack[i];
-            debug.log("|   stack[%d] = %-8s : %s", i, value == null ? "bogus" : value == TWO_SLOT_MARKER ? "second" : value.getStackKind().getJavaName(), value);
+            TTY.println("|   stack[%d] = %-8s : %s", i, value == null ? "bogus" : value == TWO_SLOT_MARKER ? "second" : value.getStackKind().getJavaName(), value);
         }
     }
 }

@@ -29,7 +29,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:NativeMemoryTracking=summary -XX:+WhiteBoxAPI SummarySanityCheck
  */
@@ -63,8 +63,8 @@ public class SummarySanityCheck {
       throwTestException("Failed to parse jcmd output");
     }
 
-    int totalCommitted = 0, totalReserved = 0;
-    int totalCommittedSum = 0, totalReservedSum = 0;
+    long totalCommitted = 0, totalReserved = 0;
+    long totalCommittedSum = 0, totalReservedSum = 0;
 
     // Match '- <mtType> (reserved=<reserved>KB, committed=<committed>KB)
     Pattern mtTypePattern = Pattern.compile("-\\s+(?<typename>[\\w\\s]+)\\(reserved=(?<reserved>\\d+)KB,\\scommitted=(?<committed>\\d+)KB\\)");
@@ -76,16 +76,16 @@ public class SummarySanityCheck {
         Matcher totalMemoryMatcher = totalMemoryPattern.matcher(lines[i]);
 
         if (totalMemoryMatcher.matches()) {
-          totalCommitted = Integer.parseInt(totalMemoryMatcher.group("committed"));
-          totalReserved = Integer.parseInt(totalMemoryMatcher.group("reserved"));
+          totalCommitted = Long.parseLong(totalMemoryMatcher.group("committed"));
+          totalReserved = Long.parseLong(totalMemoryMatcher.group("reserved"));
         } else {
           throwTestException("Failed to match the expected groups in 'Total' memory part");
         }
       } else if (lines[i].startsWith("-")) {
         Matcher typeMatcher = mtTypePattern.matcher(lines[i]);
         if (typeMatcher.matches()) {
-          int typeCommitted = Integer.parseInt(typeMatcher.group("committed"));
-          int typeReserved = Integer.parseInt(typeMatcher.group("reserved"));
+          long typeCommitted = Long.parseLong(typeMatcher.group("committed"));
+          long typeReserved = Long.parseLong(typeMatcher.group("reserved"));
 
           // Make sure reserved is always less or equals
           if (typeCommitted > typeReserved) {
@@ -103,12 +103,12 @@ public class SummarySanityCheck {
     }
 
     // See if they add up correctly, rounding is a problem so make sure we're within +/- 8KB
-    int committedDiff = totalCommitted - totalCommittedSum;
+    long committedDiff = totalCommitted - totalCommittedSum;
     if (committedDiff > 8 || committedDiff < -8) {
       throwTestException("Total committed (" + totalCommitted + ") did not match the summarized committed (" + totalCommittedSum + ")" );
     }
 
-    int reservedDiff = totalReserved - totalReservedSum;
+    long reservedDiff = totalReserved - totalReservedSum;
     if (reservedDiff > 8 || reservedDiff < -8) {
       throwTestException("Total reserved (" + totalReserved + ") did not match the summarized reserved (" + totalReservedSum + ")" );
     }

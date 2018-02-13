@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,16 +98,11 @@ abstract class Task<T> implements Runnable {
         Predicate<String> startsWithJavaSmartCardIO   = path -> path.toString().startsWith("java.smartcardio/java");
         Predicate<String> startsWithJavaManagement    = path -> path.toString().startsWith("java.management/java");
         Predicate<String> startsWithJavaXML           = path -> path.toString().startsWith("java.xml/java");
-        Predicate<String> startsWithJavaXMLBind       = path -> path.toString().startsWith("java.xml.bind/java");
         Predicate<String> startsWithJavaScripting     = path -> path.toString().startsWith("java.scripting/java");
         Predicate<String> startsWithJavaNaming        = path -> path.toString().startsWith("java.naming/java");
         Predicate<String> startsWithJavaSQL           = path -> path.toString().startsWith("java.sql/java");
-        Predicate<String> startsWithJavaActivation    = path -> path.toString().startsWith("java.activation/java");
         Predicate<String> startsWithJavaCompiler      = path -> path.toString().startsWith("java.compiler/java");
-        Predicate<String> startsWithJavaAnnotations   = path -> path.toString().startsWith("java.annotations/java");
-        Predicate<String> startsWithJavaTransaction   = path -> path.toString().startsWith("java.transaction/java");
         Predicate<String> startsWithJavaLogging       = path -> path.toString().startsWith("java.logging/java");
-        Predicate<String> startsWithJavaCorba         = path -> path.toString().startsWith("java.corba/java");
         Predicate<String> startsWithJavaPrefs         = path -> path.toString().startsWith("java.prefs/java");
 
         fileNames = Files.walk(modules)
@@ -121,16 +116,11 @@ abstract class Task<T> implements Runnable {
                     .or(startsWithJavaSmartCardIO)
                     .or(startsWithJavaManagement)
                     .or(startsWithJavaXML)
-                    .or(startsWithJavaXMLBind)
                     .or(startsWithJavaScripting)
                     .or(startsWithJavaNaming)
                     .or(startsWithJavaSQL)
-                    .or(startsWithJavaActivation)
                     .or(startsWithJavaCompiler)
-                    .or(startsWithJavaAnnotations)
-                    .or(startsWithJavaTransaction)
                     .or(startsWithJavaLogging)
-                    .or(startsWithJavaCorba)
                     .or(startsWithJavaPrefs))
                 .map(s -> s.replace('/', '.'))
                 .filter(path -> path.toString().endsWith(".class"))

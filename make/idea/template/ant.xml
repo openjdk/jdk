@@ -3,7 +3,6 @@
   <component name="AntConfiguration">
     <buildFile url="file://$PROJECT_DIR$/.idea/build.xml">
       <properties>
-        <property name="boot.java.home" value="$JDKPath$" />
         <property name="intellij.ismake" value="$IsMake$" />
         <property name="build.target.dir" value="specDir" /> <!-- this will be replaced -->
         <property name="module.name" value="java.base" /> <!-- this will be replaced -->

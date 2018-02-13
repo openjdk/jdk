@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary a simple test for loading a class using the ext class loader in AppCDS
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -34,7 +33,7 @@
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @compile test-classes/HelloExt.java
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main HelloExtTest
  */
 

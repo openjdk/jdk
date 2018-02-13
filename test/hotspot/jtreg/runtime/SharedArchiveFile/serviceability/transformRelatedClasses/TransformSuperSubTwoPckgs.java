@@ -28,8 +28,9 @@
  * @summary Exercise initial transformation (ClassFileLoadHook)
  *  with CDS with SubClass and SuperClass, each lives in own separate package
  * @library /test/lib /runtime/SharedArchiveFile /testlibrary/jvmti
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires vm.flavor != "minimal"
+ * @requires !vm.graal.enabled
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar
  *          java.management

@@ -286,7 +286,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
     if test "x$XCODE_VERSION_OUTPUT" != x; then
       # For Xcode, we set the Xcode version as TOOLCHAIN_VERSION
       TOOLCHAIN_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | $CUT -f 2 -d ' '`
-      TOOLCHAIN_DESCRIPTION="$TOOLCHAIN_DESCRIPTION from Xcode"
+      TOOLCHAIN_DESCRIPTION="$TOOLCHAIN_DESCRIPTION from Xcode $TOOLCHAIN_VERSION"
     else
       # Currently we do not define this for other toolchains. This might change as the need arise.
       TOOLCHAIN_VERSION=

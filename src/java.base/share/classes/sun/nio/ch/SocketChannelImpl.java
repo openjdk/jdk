@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,30 @@ package sun.nio.ch;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ProtocolFamily;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.net.SocketOption;
+import java.net.StandardProtocolFamily;
+import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
-import java.nio.channels.*;
-import java.nio.channels.spi.*;
-import java.util.*;
+import java.nio.channels.AlreadyBoundException;
+import java.nio.channels.AlreadyConnectedException;
+import java.nio.channels.AsynchronousCloseException;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.ConnectionPendingException;
+import java.nio.channels.NoConnectionPendingException;
+import java.nio.channels.NotYetConnectedException;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
+import java.nio.channels.spi.SelectorProvider;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
+
 import sun.net.NetHooks;
 import sun.net.ext.ExtendedSocketOptions;
 
@@ -49,9 +68,6 @@ class SocketChannelImpl
 
     // Our file descriptor object
     private final FileDescriptor fd;
-
-    // fd value needed for dev/poll. This value will remain valid
-    // even after the value in the file descriptor object has been set to -1
     private final int fdVal;
 
     // IDs of native threads doing reads and writes, for signalling
@@ -59,10 +75,10 @@ class SocketChannelImpl
     private volatile long writerThread;
 
     // Lock held by current reading or connecting thread
-    private final Object readLock = new Object();
+    private final ReentrantLock readLock = new ReentrantLock();
 
     // Lock held by current writing or connecting thread
-    private final Object writeLock = new Object();
+    private final ReentrantLock writeLock = new ReentrantLock();
 
     // Lock held by any thread that modifies the state fields declared below
     // DO NOT invoke a blocking I/O operation while holding this lock!
@@ -89,7 +105,6 @@ class SocketChannelImpl
     // Input/Output open
     private boolean isInputOpen = true;
     private boolean isOutputOpen = true;
-    private boolean readyToConnect = false;
 
     // Socket adaptor, created on demand
     private Socket socket;
@@ -298,7 +313,8 @@ class SocketChannelImpl
         if (buf == null)
             throw new NullPointerException();
 
-        synchronized (readLock) {
+        readLock.lock();
+        try {
             if (!ensureReadOpen())
                 return -1;
             int n = 0;
@@ -418,6 +434,8 @@ class SocketChannelImpl
                 assert IOStatus.check(n);
 
             }
+        } finally {
+            readLock.unlock();
         }
     }
 
@@ -426,7 +444,8 @@ class SocketChannelImpl
     {
         if ((offset < 0) || (length < 0) || (offset > dsts.length - length))
             throw new IndexOutOfBoundsException();
-        synchronized (readLock) {
+        readLock.lock();
+        try {
             if (!ensureReadOpen())
                 return -1;
             long n = 0;
@@ -453,13 +472,16 @@ class SocketChannelImpl
                 }
                 assert IOStatus.check(n);
             }
+        } finally {
+            readLock.unlock();
         }
     }
 
     public int write(ByteBuffer buf) throws IOException {
         if (buf == null)
             throw new NullPointerException();
-        synchronized (writeLock) {
+        writeLock.lock();
+        try {
             ensureWriteOpen();
             int n = 0;
             try {
@@ -484,6 +506,8 @@ class SocketChannelImpl
                 }
                 assert IOStatus.check(n);
             }
+        } finally {
+            writeLock.unlock();
         }
     }
 
@@ -492,7 +516,8 @@ class SocketChannelImpl
     {
         if ((offset < 0) || (length < 0) || (offset > srcs.length - length))
             throw new IndexOutOfBoundsException();
-        synchronized (writeLock) {
+        writeLock.lock();
+        try {
             ensureWriteOpen();
             long n = 0;
             try {
@@ -517,12 +542,15 @@ class SocketChannelImpl
                 }
                 assert IOStatus.check(n);
             }
+        } finally {
+            writeLock.unlock();
         }
     }
 
     // package-private
     int sendOutOfBandData(byte b) throws IOException {
-        synchronized (writeLock) {
+        writeLock.lock();
+        try {
             ensureWriteOpen();
             int n = 0;
             try {
@@ -547,6 +575,8 @@ class SocketChannelImpl
                 }
                 assert IOStatus.check(n);
             }
+        } finally {
+            writeLock.unlock();
         }
     }
 
@@ -568,8 +598,10 @@ class SocketChannelImpl
 
     @Override
     public SocketChannel bind(SocketAddress local) throws IOException {
-        synchronized (readLock) {
-            synchronized (writeLock) {
+        readLock.lock();
+        try {
+            writeLock.lock();
+            try {
                 synchronized (stateLock) {
                     if (!isOpen())
                         throw new ClosedChannelException();
@@ -587,7 +619,11 @@ class SocketChannelImpl
                     Net.bind(fd, isa.getAddress(), isa.getPort());
                     localAddress = Net.localAddress(fd);
                 }
+            } finally {
+                writeLock.unlock();
             }
+        } finally {
+            readLock.unlock();
         }
         return this;
     }
@@ -616,14 +652,16 @@ class SocketChannelImpl
     }
 
     public boolean connect(SocketAddress sa) throws IOException {
-        synchronized (readLock) {
-            synchronized (writeLock) {
+        readLock.lock();
+        try {
+            writeLock.lock();
+            try {
                 ensureOpenAndUnconnected();
                 InetSocketAddress isa = Net.checkAddress(sa);
                 SecurityManager sm = System.getSecurityManager();
                 if (sm != null)
                     sm.checkConnect(isa.getAddress().getHostAddress(),
-                                    isa.getPort());
+                            isa.getPort());
                 synchronized (blockingLock()) {
                     int n = 0;
                     try {
@@ -636,8 +674,8 @@ class SocketChannelImpl
                                 // notify hook only if unbound
                                 if (localAddress == null) {
                                     NetHooks.beforeTcpConnect(fd,
-                                                           isa.getAddress(),
-                                                           isa.getPort());
+                                            isa.getAddress(),
+                                            isa.getPort());
                                 }
                                 readerThread = NativeThread.current();
                             }
@@ -646,10 +684,9 @@ class SocketChannelImpl
                                 if (ia.isAnyLocalAddress())
                                     ia = InetAddress.getLocalHost();
                                 n = Net.connect(fd,
-                                                ia,
-                                                isa.getPort());
-                                if (  (n == IOStatus.INTERRUPTED)
-                                      && isOpen())
+                                        ia,
+                                        isa.getPort());
+                                if ((n == IOStatus.INTERRUPTED) && isOpen())
                                     continue;
                                 break;
                             }
@@ -686,13 +723,19 @@ class SocketChannelImpl
                     }
                 }
                 return false;
+            } finally {
+                writeLock.unlock();
             }
+        } finally {
+            readLock.unlock();
         }
     }
 
     public boolean finishConnect() throws IOException {
-        synchronized (readLock) {
-            synchronized (writeLock) {
+        readLock.lock();
+        try {
+            writeLock.lock();
+            try {
                 synchronized (stateLock) {
                     if (!isOpen())
                         throw new ClosedChannelException();
@@ -714,24 +757,20 @@ class SocketChannelImpl
                             }
                             if (!isBlocking()) {
                                 for (;;) {
-                                    n = checkConnect(fd, false,
-                                                     readyToConnect);
-                                    if (  (n == IOStatus.INTERRUPTED)
-                                          && isOpen())
+                                    n = checkConnect(fd, false);
+                                    if ((n == IOStatus.INTERRUPTED) && isOpen())
                                         continue;
                                     break;
                                 }
                             } else {
                                 for (;;) {
-                                    n = checkConnect(fd, true,
-                                                     readyToConnect);
+                                    n = checkConnect(fd, true);
                                     if (n == 0) {
                                         // Loop in case of
                                         // spurious notifications
                                         continue;
                                     }
-                                    if (  (n == IOStatus.INTERRUPTED)
-                                          && isOpen())
+                                    if ((n == IOStatus.INTERRUPTED) && isOpen())
                                         continue;
                                     break;
                                 }
@@ -769,7 +808,11 @@ class SocketChannelImpl
                     return true;
                 }
                 return false;
+            } finally {
+                writeLock.unlock();
             }
+        } finally {
+            readLock.unlock();
         }
     }
 
@@ -903,9 +946,6 @@ class SocketChannelImpl
         if ((ops & (Net.POLLERR | Net.POLLHUP)) != 0) {
             newOps = intOps;
             sk.nioReadyOps(newOps);
-            // No need to poll again in checkConnect,
-            // the error will be detected there
-            readyToConnect = true;
             return (newOps & ~oldOps) != 0;
         }
 
@@ -918,7 +958,6 @@ class SocketChannelImpl
             ((intOps & SelectionKey.OP_CONNECT) != 0) &&
             ((state == ST_UNCONNECTED) || (state == ST_PENDING))) {
             newOps |= SelectionKey.OP_CONNECT;
-            readyToConnect = true;
         }
 
         if (((ops & Net.POLLOUT) != 0) &&
@@ -942,7 +981,8 @@ class SocketChannelImpl
     int poll(int events, long timeout) throws IOException {
         assert Thread.holdsLock(blockingLock()) && !isBlocking();
 
-        synchronized (readLock) {
+        readLock.lock();
+        try {
             int n = 0;
             try {
                 begin();
@@ -957,6 +997,8 @@ class SocketChannelImpl
                 end(n > 0);
             }
             return n;
+        } finally {
+            readLock.unlock();
         }
     }
 
@@ -1024,8 +1066,7 @@ class SocketChannelImpl
 
     // -- Native methods --
 
-    private static native int checkConnect(FileDescriptor fd,
-                                           boolean block, boolean ready)
+    private static native int checkConnect(FileDescriptor fd, boolean block)
         throws IOException;
 
     private static native int sendOutOfBandData(FileDescriptor fd, byte data)

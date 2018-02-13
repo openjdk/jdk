@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -489,7 +489,7 @@ StackFrameInfo::StackFrameInfo(javaVFrame* jvf, bool with_lock_info) {
       _locked_monitors = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<oop>(length, true);
       for (int i = 0; i < length; i++) {
         MonitorInfo* monitor = list->at(i);
-        assert(monitor->owner(), "This monitor must have an owning object");
+        assert(monitor->owner() != NULL, "This monitor must have an owning object");
         _locked_monitors->append(monitor->owner());
       }
     }

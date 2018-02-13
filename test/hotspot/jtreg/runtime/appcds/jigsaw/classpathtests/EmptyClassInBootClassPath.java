@@ -29,7 +29,7 @@
  *     2) app loader will load the class from the jimage by default;
  *        app loader will load the class from the bootclasspath if the
  *        "--limit-modules java.base" option is specified
- * @requires ((vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)) & !vm.graal.enabled
+ * @requires vm.cds & !vm.graal.enabled
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules java.base/jdk.internal.misc
  *          java.management

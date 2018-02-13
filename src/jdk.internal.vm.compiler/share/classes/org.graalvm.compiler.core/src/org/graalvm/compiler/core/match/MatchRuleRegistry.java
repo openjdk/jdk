@@ -27,6 +27,9 @@ import static org.graalvm.compiler.debug.DebugOptions.LogVerbose;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.Equivalence;
+import org.graalvm.collections.MapCursor;
 import org.graalvm.compiler.core.gen.NodeMatchRules;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
@@ -36,9 +39,6 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.Position;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.serviceprovider.GraalServices;
-import org.graalvm.util.EconomicMap;
-import org.graalvm.util.Equivalence;
-import org.graalvm.util.MapCursor;
 
 public class MatchRuleRegistry {
 

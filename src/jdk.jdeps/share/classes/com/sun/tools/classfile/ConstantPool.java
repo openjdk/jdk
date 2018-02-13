@@ -116,6 +116,7 @@ public class ConstantPool {
     public static final int CONSTANT_NameAndType = 12;
     public static final int CONSTANT_MethodHandle = 15;
     public static final int CONSTANT_MethodType = 16;
+    public static final int CONSTANT_Dynamic = 17;
     public static final int CONSTANT_InvokeDynamic = 18;
     public static final int CONSTANT_Module = 19;
     public static final int CONSTANT_Package = 20;
@@ -196,6 +197,10 @@ public class ConstantPool {
 
             case CONSTANT_InvokeDynamic:
                 pool[i] = new CONSTANT_InvokeDynamic_info(this, cr);
+                break;
+
+            case CONSTANT_Dynamic:
+                pool[i] = new CONSTANT_Dynamic_info(this, cr);
                 break;
 
             case CONSTANT_Long:
@@ -352,6 +357,7 @@ public class ConstantPool {
         R visitInteger(CONSTANT_Integer_info info, P p);
         R visitInterfaceMethodref(CONSTANT_InterfaceMethodref_info info, P p);
         R visitInvokeDynamic(CONSTANT_InvokeDynamic_info info, P p);
+        R visitDynamicConstant(CONSTANT_Dynamic_info info, P p);
         R visitLong(CONSTANT_Long_info info, P p);
         R visitMethodref(CONSTANT_Methodref_info info, P p);
         R visitMethodHandle(CONSTANT_MethodHandle_info info, P p);
@@ -877,6 +883,44 @@ public class ConstantPool {
 
         public final int name_index;
         public final int type_index;
+    }
+
+    public static class CONSTANT_Dynamic_info extends CPInfo {
+        CONSTANT_Dynamic_info(ConstantPool cp, ClassReader cr) throws IOException {
+            super(cp);
+            bootstrap_method_attr_index = cr.readUnsignedShort();
+            name_and_type_index = cr.readUnsignedShort();
+        }
+
+        public CONSTANT_Dynamic_info(ConstantPool cp, int bootstrap_method_index, int name_and_type_index) {
+            super(cp);
+            this.bootstrap_method_attr_index = bootstrap_method_index;
+            this.name_and_type_index = name_and_type_index;
+        }
+
+        public int getTag() {
+            return CONSTANT_Dynamic;
+        }
+
+        public int byteLength() {
+            return 5;
+        }
+
+        @Override
+        public String toString() {
+            return "CONSTANT_Dynamic_info[bootstrap_method_index: " + bootstrap_method_attr_index + ", name_and_type_index: " + name_and_type_index + "]";
+        }
+
+        public <R, D> R accept(Visitor<R, D> visitor, D data) {
+            return visitor.visitDynamicConstant(this, data);
+        }
+
+        public CONSTANT_NameAndType_info getNameAndTypeInfo() throws ConstantPoolException {
+            return cp.getNameAndTypeInfo(name_and_type_index);
+        }
+
+        public final int bootstrap_method_attr_index;
+        public final int name_and_type_index;
     }
 
     public static class CONSTANT_Package_info extends CPInfo {

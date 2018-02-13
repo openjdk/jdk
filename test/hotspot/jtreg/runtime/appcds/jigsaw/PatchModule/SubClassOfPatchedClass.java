@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @summary the class in the -cp is a subclass of the class in --patch-module. The
  *          patched class should be used at runtime.
  * @library ../..

@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary Exercise GC with shared strings
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires vm.gc.G1
  * @requires (sun.arch.data.model != "32") & (os.family != "windows")
  * @library /test/hotspot/jtreg/runtime/appcds /test/lib
@@ -33,7 +33,7 @@
  * @modules java.management
  *          jdk.jartool/sun.tools.jar
  * @build HelloStringGC sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main ExerciseGC
  */
 public class ExerciseGC {

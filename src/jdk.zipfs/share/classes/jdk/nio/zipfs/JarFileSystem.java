@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,9 @@ class JarFileSystem extends ZipFileSystem {
      */
     private Function<byte[],byte[]> createVersionedLinks(int version) {
         HashMap<IndexNode,byte[]> aliasMap = new HashMap<>();
-        getVersionMap(version, getInode(getBytes("/META-INF/versions"))).values()
+        IndexNode verdir = getInode(getBytes("/META-INF/versions"));
+        if (verdir != null) {
+            getVersionMap(version, verdir).values()
                 .forEach(versionNode -> {   // for each META-INF/versions/{n} directory
                     // put all the leaf inodes, i.e. entries, into the alias map
                     // possibly shadowing lower versioned entries
@@ -124,6 +126,7 @@ class JarFileSystem extends ZipFileSystem {
                         }
                     });
                 });
+        }
         return path -> aliasMap.get(IndexNode.keyOf(path));
     }
 

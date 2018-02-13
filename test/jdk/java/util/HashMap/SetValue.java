@@ -28,7 +28,8 @@
  * @author jbloch
  */
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SetValue {
     static final String key      = "key";

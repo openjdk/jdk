@@ -29,7 +29,9 @@
  * @author Konstantin Kladko
  */
 
-import java.util.*;
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
+import java.util.Vector;
 
 public class ComodifiedRemoveAllElements {
     public static void main(String[] args) {

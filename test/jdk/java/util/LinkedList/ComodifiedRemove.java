@@ -29,9 +29,10 @@
  * @author Konstantin Kladko
  */
 
-import java.util.*;
-import java.util.ListIterator;
 import java.util.ConcurrentModificationException;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
 
 public class ComodifiedRemove {
     public static

@@ -26,7 +26,7 @@
  * @test
  * @summary When dumping the CDS archive, try to cause garbage collection while classes are being loaded.
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds /test/hotspot/jtreg/runtime/appcds/test-classes
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires vm.flavor != "minimal"
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar

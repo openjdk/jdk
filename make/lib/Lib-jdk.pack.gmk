@@ -40,6 +40,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBUNPACK, \
         -I$(TOPDIR)/src/jdk.pack/share/native/common-unpack \
         $(LIBJAVA_HEADER_FLAGS), \
     CFLAGS_release := -DPRODUCT, \
+    DISABLED_WARNINGS_gcc := implicit-fallthrough, \
     MAPFILE := $(TOPDIR)/make/mapfiles/libunpack/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \

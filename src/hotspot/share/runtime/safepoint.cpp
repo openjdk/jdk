@@ -103,7 +103,7 @@ void SafepointSynchronize::begin() {
 
   int nof_threads = Threads::number_of_threads();
 
-  log_debug(safepoint)("Safepoint synchronization initiated. (%d)", nof_threads);
+  log_debug(safepoint)("Safepoint synchronization initiated. (%d threads)", nof_threads);
 
   RuntimeService::record_safepoint_begin();
 
@@ -407,9 +407,7 @@ void SafepointSynchronize::begin() {
   // Update the count of active JNI critical regions
   GCLocker::set_jni_lock_count(_current_jni_active_count);
 
-  if (log_is_enabled(Debug, safepoint)) {
-    log_debug(safepoint)("Entering safepoint region: %s", VMThread::vm_safepoint_description());
-  }
+  log_info(safepoint)("Entering safepoint region: %s", VMThread::vm_safepoint_description());
 
   RuntimeService::record_safepoint_synchronized();
   if (PrintSafepointStatistics) {
@@ -496,14 +494,14 @@ void SafepointSynchronize::end() {
           cur_state->restart(); // TSS _running
           SafepointMechanism::disarm_local_poll(current); // release store, local state -> polling page
         }
-        log_debug(safepoint)("Leaving safepoint region");
+        log_info(safepoint)("Leaving safepoint region");
       } else {
         // Set to not synchronized, so the threads will not go into the signal_thread_blocked method
         // when they get restarted.
         _state = _not_synchronized;
         OrderAccess::fence();
 
-        log_debug(safepoint)("Leaving safepoint region");
+        log_info(safepoint)("Leaving safepoint region");
 
         // Start suspended threads
         jtiwh.rewind();

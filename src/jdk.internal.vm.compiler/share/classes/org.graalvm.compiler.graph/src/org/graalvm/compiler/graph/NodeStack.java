@@ -74,6 +74,10 @@ public final class NodeStack {
         return tos == 0;
     }
 
+    public void clear() {
+        tos = 0;
+    }
+
     @Override
     public String toString() {
         if (tos == 0) {

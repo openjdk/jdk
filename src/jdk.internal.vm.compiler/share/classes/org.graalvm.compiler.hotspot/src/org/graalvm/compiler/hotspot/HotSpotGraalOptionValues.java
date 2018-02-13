@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
 
+import org.graalvm.collections.EconomicMap;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionDescriptors;
 import org.graalvm.compiler.options.OptionKey;
@@ -37,7 +38,6 @@ import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.options.OptionValuesAccess;
 import org.graalvm.compiler.options.OptionsParser;
 import org.graalvm.compiler.serviceprovider.ServiceProvider;
-import org.graalvm.util.EconomicMap;
 
 import jdk.vm.ci.common.InitTimer;
 

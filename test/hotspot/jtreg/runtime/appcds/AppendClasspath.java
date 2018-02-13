@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary At run time, it is OK to append new elements to the classpath that was used at dump time.
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

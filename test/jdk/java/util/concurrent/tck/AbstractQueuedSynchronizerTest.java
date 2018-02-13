@@ -44,7 +44,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer.ConditionObject;
 
-import junit.framework.AssertionFailedError;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -172,7 +171,7 @@ public class AbstractQueuedSynchronizerTest extends JSR166TestCase {
         long startTime = System.nanoTime();
         while (!sync.isQueued(t)) {
             if (millisElapsedSince(startTime) > LONG_DELAY_MS)
-                throw new AssertionFailedError("timed out");
+                throw new AssertionError("timed out");
             Thread.yield();
         }
         assertTrue(t.isAlive());
@@ -1289,11 +1288,10 @@ public class AbstractQueuedSynchronizerTest extends JSR166TestCase {
     }
 
     /**
-     * Disabled demo test for (unfixed as of 2017-11)
      * JDK-8191483: AbstractQueuedSynchronizer cancel/cancel race
      * ant -Djsr166.tckTestClass=AbstractQueuedSynchronizerTest -Djsr166.methodFilter=testCancelCancelRace -Djsr166.runsPerTest=100 tck
      */
-    public void DISABLED_testCancelCancelRace() throws InterruptedException {
+    public void testCancelCancelRace() throws InterruptedException {
         class Sync extends AbstractQueuedSynchronizer {
             protected boolean tryAcquire(int acquires) {
                 return !hasQueuedPredecessors() && compareAndSetState(0, 1);

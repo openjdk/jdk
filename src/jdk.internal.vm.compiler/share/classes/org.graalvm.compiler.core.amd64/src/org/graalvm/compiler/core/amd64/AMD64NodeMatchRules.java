@@ -44,6 +44,7 @@ import org.graalvm.compiler.asm.amd64.AMD64Assembler.OperandSize;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.SSEOp;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.NumUtil;
+import org.graalvm.compiler.core.common.calc.CanonicalCondition;
 import org.graalvm.compiler.core.common.calc.Condition;
 import org.graalvm.compiler.core.gen.NodeLIRBuilder;
 import org.graalvm.compiler.core.gen.NodeMatchRules;
@@ -128,7 +129,7 @@ public class AMD64NodeMatchRules extends NodeMatchRules {
     }
 
     protected ComplexMatchResult emitCompareBranchMemory(IfNode ifNode, CompareNode compare, ValueNode value, LIRLowerableAccess access) {
-        Condition cond = compare.condition();
+        Condition cond = compare.condition().asCondition();
         AMD64Kind kind = getMemoryKind(access);
         boolean matchedAsConstant = false; // For assertion checking
 
@@ -303,7 +304,7 @@ public class AMD64NodeMatchRules extends NodeMatchRules {
     @MatchRule("(If (FloatEquals=compare value ValueCompareAndSwap=cas))")
     @MatchRule("(If (IntegerEquals=compare value ValueCompareAndSwap=cas))")
     public ComplexMatchResult ifCompareValueCas(IfNode root, CompareNode compare, ValueNode value, ValueCompareAndSwapNode cas) {
-        assert compare.condition() == Condition.EQ;
+        assert compare.condition() == CanonicalCondition.EQ;
         if (value == cas.getExpectedValue() && cas.usages().count() == 1) {
             return builder -> {
                 LIRKind kind = getLirKind(cas);
@@ -326,7 +327,7 @@ public class AMD64NodeMatchRules extends NodeMatchRules {
     @MatchRule("(If (IntegerEquals=compare value LogicCompareAndSwap=cas))")
     public ComplexMatchResult ifCompareLogicCas(IfNode root, CompareNode compare, ValueNode value, LogicCompareAndSwapNode cas) {
         JavaConstant constant = value.asJavaConstant();
-        assert compare.condition() == Condition.EQ;
+        assert compare.condition() == CanonicalCondition.EQ;
         if (constant != null && cas.usages().count() == 1) {
             long constantValue = constant.asLong();
             boolean successIsTrue;

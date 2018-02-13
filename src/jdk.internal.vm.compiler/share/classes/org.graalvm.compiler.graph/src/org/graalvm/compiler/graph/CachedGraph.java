@@ -24,7 +24,7 @@ package org.graalvm.compiler.graph;
 
 import java.util.function.Consumer;
 
-import org.graalvm.util.UnmodifiableEconomicMap;
+import org.graalvm.collections.UnmodifiableEconomicMap;
 
 /**
  * This class is a container of a graph that needs to be readonly and optionally a lazily created

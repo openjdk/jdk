@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,15 +156,15 @@ public class TestIndirectExportsOpens extends JavadocTester {
         // In details mode all kinds of packages from java.base,
         // could be listed in the indirects section, so just
         // check for minimal expected strings.
-        checkOutput("a-summary.html", true,
+        checkOutput("a/module-summary.html", true,
                 "Indirect Exports table",
-                "<th class=\"colFirst\" scope=\"row\"><a href=\"m-summary.html\">m</a></th>\n"
-                + "<td class=\"colLast\"><a href=\"exportsto/package-summary.html\">exportsto</a></td>\n"
+                "<th class=\"colFirst\" scope=\"row\"><a href=\"../m/module-summary.html\">m</a></th>\n"
+                + "<td class=\"colLast\"><a href=\"../m/exportsto/package-summary.html\">exportsto</a></td>\n"
                 + "</tr>\n");
 
-        checkOutput("a-summary.html", true,
+        checkOutput("a/module-summary.html", true,
                 "Indirect Opens table",
-                "<th class=\"colFirst\" scope=\"row\"><a href=\"m-summary.html\">m</a></th>\n"
+                "<th class=\"colFirst\" scope=\"row\"><a href=\"../m/module-summary.html\">m</a></th>\n"
                 + "<td class=\"colLast\">opensto</td>\n"
                 + "</tr>\n");
     }
@@ -183,11 +183,11 @@ public class TestIndirectExportsOpens extends JavadocTester {
 
         // Avoid false positives, just check for primary string absence.
         if (!present) {
-            checkOutput("a-summary.html", false, typeString);
+            checkOutput("a/module-summary.html", false, typeString);
             return;
         }
 
-        checkOutput("a-summary.html", present,
+        checkOutput("a/module-summary.html", present,
                 "<table class=\"packagesSummary\" summary=\"" + typeString + " table, listing modules, and packages\">\n"
                 + "<caption><span>" + typeString + "</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
@@ -196,8 +196,8 @@ public class TestIndirectExportsOpens extends JavadocTester {
                 + "</tr>\n"
                 + "<tbody>\n"
                 + "<tr class=\"altColor\">\n"
-                + "<th class=\"colFirst\" scope=\"row\"><a href=\"m-summary.html\">m</a></th>\n"
-                + "<td class=\"colLast\"><a href=\"pm/package-summary.html\">pm</a></td>\n"
+                + "<th class=\"colFirst\" scope=\"row\"><a href=\"../m/module-summary.html\">m</a></th>\n"
+                + "<td class=\"colLast\"><a href=\"../m/pm/package-summary.html\">pm</a></td>\n"
                 + "</tr>\n"
                 + "</tbody>\n"
                 + "</table>\n");

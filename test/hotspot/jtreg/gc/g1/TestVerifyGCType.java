@@ -28,7 +28,7 @@
  * @requires vm.gc.G1
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver TestVerifyGCType
  */
 

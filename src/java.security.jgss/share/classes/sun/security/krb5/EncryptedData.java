@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,12 @@ public class EncryptedData implements Cloneable {
          ETYPE_AES128_CTS_HMAC_SHA1_96 = 17; // 16      0           16
     public static final int
          ETYPE_AES256_CTS_HMAC_SHA1_96 = 18; // 16      0           16
+
+    // rfc8009
+    public static final int
+        ETYPE_AES128_CTS_HMAC_SHA256_128 = 19; // 16      0           16
+    public static final int
+        ETYPE_AES256_CTS_HMAC_SHA384_192 = 20; // 16      0           16
 
     /* used by self */
     private EncryptedData() {

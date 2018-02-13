@@ -42,6 +42,8 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.Equivalence;
 import org.graalvm.compiler.core.common.FieldIntrospection;
 import org.graalvm.compiler.core.common.Fields;
 import org.graalvm.compiler.core.common.FieldsScanner;
@@ -65,8 +67,6 @@ import org.graalvm.compiler.nodeinfo.NodeCycles;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodeinfo.NodeSize;
 import org.graalvm.compiler.nodeinfo.Verbosity;
-import org.graalvm.util.EconomicMap;
-import org.graalvm.util.Equivalence;
 
 /**
  * Metadata for every {@link Node} type. The metadata includes:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,14 @@
  */
 import java.io.*;
 import java.nio.file.*;
+import java.util.Arrays;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.dcmd.*;
@@ -43,7 +47,7 @@ import org.testng.annotations.Test;
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @build SimpleJvmtiAgent
- * @run main ClassFileInstaller SimpleJvmtiAgent
+ * @run driver ClassFileInstaller SimpleJvmtiAgent
  * @run testng/othervm LoadAgentDcmdTest
  */
 public class LoadAgentDcmdTest {
@@ -97,6 +101,20 @@ public class LoadAgentDcmdTest {
         }
     }
 
+    static void checkWarningsOnly(OutputAnalyzer out) {
+        // stderr should be empty except for VM warnings.
+        if (!out.getStderr().isEmpty()) {
+            List<String> lines = Arrays.asList(out.getStderr().split("(\\r\\n|\\n|\\r)"));
+            Pattern p = Pattern.compile(".*VM warning.*");
+            for (String line : lines) {
+                Matcher m = p.matcher(line);
+                if (!m.matches()) {
+                    throw new RuntimeException("Stderr has output other than VM warnings");
+                }
+            }
+        }
+    }
+
     public void run(CommandExecutor executor)  {
         try{
 
@@ -108,22 +126,22 @@ public class LoadAgentDcmdTest {
             // Test 1: Native agent, no arguments
             output = executor.execute("JVMTI.agent_load " +
                                           libpath + " agent.jar");
-            output.stderrShouldBeEmpty();
+            checkWarningsOnly(output);
 
             // Test 2: Native agent, with arguments
             output = executor.execute("JVMTI.agent_load " +
                                           libpath + " \"agent.jar=foo=bar\"");
-            output.stderrShouldBeEmpty();
+            checkWarningsOnly(output);
 
             // Test 3: Java agent, no arguments
             output = executor.execute("JVMTI.agent_load " +
                                           "agent.jar");
-            output.stderrShouldBeEmpty();
+            checkWarningsOnly(output);
 
             // Test 4: Java agent, with arguments
             output = executor.execute("JVMTI.agent_load " +
                                           "\"agent.jar=foo=bar\"");
-            output.stderrShouldBeEmpty();
+            checkWarningsOnly(output);
 
         } catch (Exception e) {
             throw new RuntimeException(e);

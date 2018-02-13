@@ -207,8 +207,7 @@ int Bytecode_loadconstant::pool_index() const {
 
 BasicType Bytecode_loadconstant::result_type() const {
   int index = pool_index();
-  constantTag tag = _method->constants()->tag_at(index);
-  return tag.basic_type();
+  return _method->constants()->basic_type_for_constant_at(index);
 }
 
 oop Bytecode_loadconstant::resolve_constant(TRAPS) const {
@@ -217,6 +216,8 @@ oop Bytecode_loadconstant::resolve_constant(TRAPS) const {
   ConstantPool* constants = _method->constants();
   if (has_cache_index()) {
     return constants->resolve_cached_constant_at(index, THREAD);
+  } else if (_method->constants()->tag_at(index).is_dynamic_constant()) {
+    return constants->resolve_possibly_cached_constant_at(index, THREAD);
   } else {
     return constants->resolve_constant_at(index, THREAD);
   }

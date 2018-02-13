@@ -49,6 +49,7 @@ import java.util.zip.ZipOutputStream;
  * @summary JDK 9 rejects zip files where the modified day or month is 0
  *          or otherwise represent an invalid date, such as 1980-02-30 24:60:60
  * @author Liam Miller-Cushon
+ * @modules jdk.zipfs
  */
 public class ZeroDate {
 

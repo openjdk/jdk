@@ -27,21 +27,22 @@
  * @summary Unit test for Collections.emptyNavigableSet
  * @run testng EmptyNavigableSet
  */
+
+import org.testng.Assert;
+import org.testng.Assert.ThrowingRunnable;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.NavigableSet;
+import java.util.NoSuchElementException;
 import java.util.SortedSet;
 import java.util.TreeSet;
-
-import org.testng.Assert;
-import org.testng.Assert.ThrowingRunnable;
-import org.testng.annotations.Test;
-import org.testng.annotations.DataProvider;
 
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertSame;
@@ -130,10 +131,9 @@ public class EmptyNavigableSet {
      */
     @Test(dataProvider = "NavigableSet<?>", dataProviderClass = EmptyNavigableSet.class)
     public void testContainsRequiresComparable(String description, NavigableSet<?> navigableSet) {
-        assertThrowsCCE(() -> {
-            navigableSet.contains(new Object());
-        },
-            description + ": Compareable should be required");
+        assertThrowsCCE(
+            () -> navigableSet.contains(new Object()),
+            description + ": Comparable should be required");
     }
 
     /**
@@ -163,10 +163,7 @@ public class EmptyNavigableSet {
      */
     @Test(dataProvider = "NavigableSet<?>", dataProviderClass = EmptyNavigableSet.class)
     public void testEmptyIterator(String description, NavigableSet<?> navigableSet) {
-        Iterator emptyIterator = navigableSet.iterator();
-
-        assertFalse((emptyIterator != null) && (emptyIterator.hasNext()),
-            "The iterator is not empty.");
+        assertFalse(navigableSet.iterator().hasNext(), "The iterator is not empty.");
     }
 
     /**
@@ -182,9 +179,7 @@ public class EmptyNavigableSet {
      */
     @Test(dataProvider = "NavigableSet<?>", dataProviderClass = EmptyNavigableSet.class)
     public void testFirst(String description, NavigableSet<?> navigableSet) {
-        assertThrowsNSEE(() -> {
-            navigableSet.first();
-        }, description);
+        assertThrowsNSEE(navigableSet::first, description);
     }
 
     /**
@@ -210,9 +205,7 @@ public class EmptyNavigableSet {
      */
     @Test(dataProvider = "NavigableSet<?>", dataProviderClass = EmptyNavigableSet.class)
     public void testLast(String description, NavigableSet<?> navigableSet) {
-        assertThrowsNSEE(() -> {
-            navigableSet.last();
-        }, description);
+        assertThrowsNSEE(navigableSet::last, description);
     }
 
     /**
@@ -277,9 +270,7 @@ public class EmptyNavigableSet {
         Object last = (BigInteger.ZERO == first) ? BigInteger.TEN : BigInteger.ZERO;
 
             assertThrowsIAE(
-                () -> {
-                    navigableSet.subSet(last, true, first, false);
-                },
+                () -> navigableSet.subSet(last, true, first, false),
                 description
                 + ": Must throw IllegalArgumentException when fromElement is not less than toElement.");
 
@@ -299,9 +290,8 @@ public class EmptyNavigableSet {
         // slightly smaller
         NavigableSet ns = subSet.subSet(first, false, last, false);
         // slight expansion
-        assertThrowsIAE(() -> {
-            ns.subSet(first, true, last, true);
-        },
+        assertThrowsIAE(
+            () -> ns.subSet(first, true, last, true),
             description + ": Expansion should not be allowed");
 
         // much smaller
@@ -319,9 +309,8 @@ public class EmptyNavigableSet {
         NavigableSet ns = subSet.headSet(BigInteger.ONE, false);
 
         // slight expansion
-        assertThrowsIAE(() -> {
-            ns.headSet(BigInteger.ONE, true);
-        },
+        assertThrowsIAE(
+            () -> ns.headSet(BigInteger.ONE, true),
             description + ": Expansion should not be allowed");
 
         // much smaller
@@ -339,9 +328,8 @@ public class EmptyNavigableSet {
         NavigableSet ns = subSet.tailSet(BigInteger.ONE, false);
 
         // slight expansion
-        assertThrowsIAE(() -> {
-            ns.tailSet(BigInteger.ONE, true);
-        },
+        assertThrowsIAE(
+            () -> ns.tailSet(BigInteger.ONE, true),
             description + ": Expansion should not be allowed");
 
         // much smaller
@@ -353,14 +341,13 @@ public class EmptyNavigableSet {
      */
     @Test(dataProvider = "NavigableSet<?>", dataProviderClass = EmptyNavigableSet.class)
     public void testTailSet(String description, NavigableSet navigableSet) {
-        assertThrowsNPE(() -> {
-            navigableSet.tailSet(null);
-        },
+        assertThrowsNPE(
+            () -> navigableSet.tailSet(null),
             description + ": Must throw NullPointerException for null element");
 
-        assertThrowsCCE(() -> {
-            navigableSet.tailSet(new Object());
-        }, description);
+        assertThrowsCCE(
+            () -> navigableSet.tailSet(new Object()),
+            description);
 
         NavigableSet ss = navigableSet.tailSet("1", true);
 

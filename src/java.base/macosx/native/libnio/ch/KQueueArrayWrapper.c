@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "jni_util.h"
 #include "jvm.h"
 #include "jlong.h"
+#include "nio_util.h"
 
 #include <sys/types.h>
 #include <sys/event.h>
@@ -153,15 +154,10 @@ Java_sun_nio_ch_KQueueArrayWrapper_kevent0(JNIEnv *env, jobject this, jint kq,
         tsp = NULL;
     }
 
-    result = kevent(kq, NULL, 0, kevs, kevCount, tsp);
-
+    RESTARTABLE(kevent(kq, NULL, 0, kevs, kevCount, tsp), result);
     if (result < 0) {
-        if (errno == EINTR) {
-            // ignore EINTR, pretend nothing was selected
-            result = 0;
-        } else {
-            JNU_ThrowIOExceptionWithLastError(env, "KQueueArrayWrapper: kqueue failed");
-        }
+        JNU_ThrowIOExceptionWithLastError(env,
+            "KQueueArrayWrapper: kevent poll failed");
     }
 
     return result;

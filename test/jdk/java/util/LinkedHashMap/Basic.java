@@ -27,9 +27,21 @@
  * @summary Basic test for LinkedHashMap.  (Based on MapBash)
  */
 
-import java.util.*;
-import java.util.function.*;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Random;
+import java.util.Set;
+import java.util.function.BiFunction;
 
 public class Basic {
     static final Random rnd = new Random(666);

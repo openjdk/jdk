@@ -24,20 +24,29 @@ package org.graalvm.compiler.core.test;
 
 import java.util.List;
 
-import org.junit.Assert;
-
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeMap;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.ScheduleResult;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
+import org.junit.Assert;
+
+import jdk.vm.ci.meta.SpeculationLog;
 
 public class GraphScheduleTest extends GraalCompilerTest {
 
     protected void assertOrderedAfterSchedule(StructuredGraph graph, Node a, Node b) {
-        SchedulePhase ibp = new SchedulePhase(SchedulePhase.SchedulingStrategy.LATEST);
+        assertOrderedAfterSchedule(graph, SchedulePhase.SchedulingStrategy.LATEST, a, b);
+    }
+
+    protected void assertOrderedAfterSchedule(StructuredGraph graph, SchedulePhase.SchedulingStrategy strategy, Node a, Node b) {
+        SchedulePhase ibp = new SchedulePhase(strategy);
         ibp.apply(graph);
+        assertOrderedAfterLastSchedule(graph, a, b);
+    }
+
+    protected void assertOrderedAfterLastSchedule(StructuredGraph graph, Node a, Node b) {
         assertOrderedAfterSchedule(graph.getLastSchedule(), a, b);
     }
 
@@ -48,7 +57,7 @@ public class GraphScheduleTest extends GraalCompilerTest {
 
         if (bBlock == aBlock) {
             List<Node> instructions = ibp.nodesFor(bBlock);
-            Assert.assertTrue(instructions.indexOf(b) > instructions.indexOf(a));
+            Assert.assertTrue(a + " should be before " + b, instructions.indexOf(b) > instructions.indexOf(a));
         } else {
             Block block = bBlock;
             while (block != null) {
@@ -59,5 +68,10 @@ public class GraphScheduleTest extends GraalCompilerTest {
             }
             Assert.fail("block of A doesn't dominate the block of B");
         }
+    }
+
+    @Override
+    protected SpeculationLog getSpeculationLog() {
+        return getCodeCache().createSpeculationLog();
     }
 }

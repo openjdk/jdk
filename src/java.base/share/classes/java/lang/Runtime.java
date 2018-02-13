@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1099,16 +1099,23 @@ public class Runtime {
                     m.group(VersionPattern.OPT_GROUP));
 
             // empty '+'
-            if ((m.group(VersionPattern.PLUS_GROUP) != null)
-                    && !build.isPresent()) {
-                if (optional.isPresent()) {
-                    if (pre.isPresent())
-                        throw new IllegalArgumentException("'+' found with"
-                            + " pre-release and optional components:'" + s
-                            + "'");
+            if (!build.isPresent()) {
+                if (m.group(VersionPattern.PLUS_GROUP) != null) {
+                    if (optional.isPresent()) {
+                        if (pre.isPresent())
+                            throw new IllegalArgumentException("'+' found with"
+                                + " pre-release and optional components:'" + s
+                                + "'");
+                    } else {
+                        throw new IllegalArgumentException("'+' found with neither"
+                            + " build or optional components: '" + s + "'");
+                    }
                 } else {
-                    throw new IllegalArgumentException("'+' found with neither"
-                        + " build or optional components: '" + s + "'");
+                    if (optional.isPresent() && !pre.isPresent()) {
+                        throw new IllegalArgumentException("optional component"
+                            + " must be preceeded by a pre-release component"
+                            + " or '+': '" + s + "'");
+                    }
                 }
             }
             return new Version(List.of(version), pre, build, optional);

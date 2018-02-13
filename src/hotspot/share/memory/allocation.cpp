@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,9 @@
 #include "services/memTracker.hpp"
 #include "utilities/ostream.hpp"
 
+void* MetaspaceObj::_shared_metaspace_base = NULL;
+void* MetaspaceObj::_shared_metaspace_top  = NULL;
+
 void* StackObj::operator new(size_t size)     throw() { ShouldNotCallThis(); return 0; }
 void  StackObj::operator delete(void* p)              { ShouldNotCallThis(); }
 void* StackObj::operator new [](size_t size)  throw() { ShouldNotCallThis(); return 0; }
@@ -52,10 +55,6 @@ void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
                                  MetaspaceObj::Type type, TRAPS) throw() {
   // Klass has it's own operator new
   return Metaspace::allocate(loader_data, word_size, type, THREAD);
-}
-
-bool MetaspaceObj::is_shared() const {
-  return MetaspaceShared::is_in_shared_space(this);
 }
 
 bool MetaspaceObj::is_metaspace_object() const {
@@ -210,18 +209,6 @@ ResourceObj::~ResourceObj() {
     }
 }
 #endif // ASSERT
-
-
-void trace_heap_malloc(size_t size, const char* name, void* p) {
-  // A lock is not needed here - tty uses a lock internally
-  tty->print_cr("Heap malloc " INTPTR_FORMAT " " SIZE_FORMAT " %s", p2i(p), size, name == NULL ? "" : name);
-}
-
-
-void trace_heap_free(void* p) {
-  // A lock is not needed here - tty uses a lock internally
-  tty->print_cr("Heap free   " INTPTR_FORMAT, p2i(p));
-}
 
 //--------------------------------------------------------------------------------------
 // Non-product code

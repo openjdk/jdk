@@ -21,7 +21,8 @@
  * questions.
  */
 
-// key: compiler.err.types.incompatible.diff.ret
+// key: compiler.err.types.incompatible
+// key: compiler.misc.incompatible.diff.ret
 // key: compiler.err.prob.found.req
 // key: compiler.misc.incompatible.descs.in.functional.intf
 // key: compiler.misc.descriptor

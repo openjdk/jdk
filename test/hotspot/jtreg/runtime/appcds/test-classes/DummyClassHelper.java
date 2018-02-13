@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,30 +27,32 @@ import java.lang.reflect.*;
 import sun.hotspot.WhiteBox;
 
 public class DummyClassHelper {
+    static void checkDummyMethod(Class<?> cls, String className) {
+        Method m = null;
+        try {
+            m = cls.getMethod("thisClassIsDummy");
+            throw new java.lang.RuntimeException(className +
+                " should be loaded from the jimage and should not have the thisClassIsDummy() method.");
+        } catch(NoSuchMethodException ex) {
+            System.out.println(ex.toString());
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         String[] classNames = {args[0], args[1]};
         Class cls = null;
-        if (args.length == 2) {
-            for (int i = 0; i < classNames.length; i++) {
-                Method m = null;
-                cls = Class.forName(classNames[i]);
-                try {
-                    m = cls.getMethod("thisClassIsDummy");
-                    throw new java.lang.RuntimeException(classNames[i] +
-                        " should be loaded from the jimage and should not have the thisClassIsDummy() method.");
-                } catch(NoSuchMethodException ex) {
-                    System.out.println(ex.toString());
-                }
-            }
-        } else {
-            WhiteBox wb = WhiteBox.getWhiteBox();
-            for (int i = 0; i < classNames.length; i++) {
-                cls = Class.forName(classNames[i]);
+        boolean doWBCheck = (args.length == 3);
+        WhiteBox wb = null;
+        if (doWBCheck) {
+            wb = WhiteBox.getWhiteBox();
+        }
+        for (int i = 0; i < classNames.length; i++) {
+            cls = Class.forName(classNames[i]);
+            checkDummyMethod(cls, classNames[i]);
+            if (doWBCheck) {
                 if (!wb.isSharedClass(cls)) {
-                    System.out.println(classNames[i] + ".class" + " is not in shared space as expected.");
-                } else {
                     throw new java.lang.RuntimeException(classNames[i] +
-                        ".class shouldn't be in shared space.");
+                        ".class should be in shared space.");
                 }
             }
         }

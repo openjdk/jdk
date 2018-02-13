@@ -26,7 +26,7 @@
  * @test
  * @summary Redefine shared class. GC should not cause crash with cached resolved_references.
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds /test/hotspot/jtreg/runtime/appcds/test-classes /test/hotspot/jtreg/runtime/appcds/jvmti
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires vm.gc.G1
  * @requires vm.flavor != "minimal"
  * @requires (sun.arch.data.model != "32") & (os.family != "windows")

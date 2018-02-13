@@ -67,7 +67,8 @@ public class AMD64HotSpotLoweringProvider extends DefaultHotSpotLoweringProvider
     public void initialize(OptionValues options, Iterable<DebugHandlersFactory> factories, HotSpotProviders providers, GraalHotSpotVMConfig config) {
         convertSnippets = new AMD64ConvertSnippets.Templates(options, factories, providers, providers.getSnippetReflection(), providers.getCodeCache().getTarget());
         profileSnippets = ProfileNode.Options.ProbabilisticProfiling.getValue(options)
-                        ? new ProbabilisticProfileSnippets.Templates(options, factories, providers, providers.getCodeCache().getTarget()) : null;
+                        ? new ProbabilisticProfileSnippets.Templates(options, factories, providers, providers.getCodeCache().getTarget())
+                        : null;
         super.initialize(options, factories, providers, config);
     }
 

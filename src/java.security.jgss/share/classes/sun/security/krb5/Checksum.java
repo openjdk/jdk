@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,10 @@ public class Checksum {
     // draft-raeburn-krb-rijndael-krb-07.txt
     public static final int CKSUMTYPE_HMAC_SHA1_96_AES128 = 15;        // 96
     public static final int CKSUMTYPE_HMAC_SHA1_96_AES256 = 16;        // 96
+
+    // rfc8009
+    public static final int CKSUMTYPE_HMAC_SHA256_128_AES128 = 19;        // 96
+    public static final int CKSUMTYPE_HMAC_SHA384_192_AES256 = 20;        // 96
 
     // draft-brezak-win2k-krb-rc4-hmac-04.txt
     public static final int CKSUMTYPE_HMAC_MD5_ARCFOUR = -138;

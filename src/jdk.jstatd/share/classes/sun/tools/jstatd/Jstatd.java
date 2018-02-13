@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,8 @@ public class Jstatd {
     private static boolean startRegistry = true;
 
     private static void printUsage() {
-        System.err.println("usage: jstatd [-nr] [-p port] [-n rminame]");
+        System.err.println("usage: jstatd [-nr] [-p port] [-n rminame]\n" +
+                           "       jstatd -?|-h|--help");
     }
 
     static void bind(String name, RemoteHostImpl remoteHost)
@@ -78,7 +79,12 @@ public class Jstatd {
         for ( ; (argc < args.length) && (args[argc].startsWith("-")); argc++) {
             String arg = args[argc];
 
-            if (arg.compareTo("-nr") == 0) {
+            if (arg.compareTo("-?") == 0 ||
+                arg.compareTo("-h") == 0 ||
+                arg.compareTo("--help") == 0) {
+                printUsage();
+                System.exit(0);
+            } else if (arg.compareTo("-nr") == 0) {
                 startRegistry = false;
             } else if (arg.startsWith("-p")) {
                 if (arg.compareTo("-p") != 0) {

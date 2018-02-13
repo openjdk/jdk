@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,9 +53,9 @@ public class TestPackagePage extends JavadocTester {
 
         // With just one package, all general pages link to the single package page.
         checkOutput("com/pkg/C.html", true,
-            "<a href=\"../../com/pkg/package-summary.html\">Package</a>");
+            "<a href=\"package-summary.html\">Package</a>");
         checkOutput("com/pkg/package-tree.html", true,
-            "<li><a href=\"../../com/pkg/package-summary.html\">Package</a></li>");
+            "<li><a href=\"package-summary.html\">Package</a></li>");
         checkOutput("deprecated-list.html", true,
             "<li><a href=\"com/pkg/package-summary.html\">Package</a></li>");
         checkOutput("index-all.html", true,
