@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,9 @@
  */
 /*
  * @test
- * @bug 8191639
- * @headful
- * @summary  Verifies no NPE is thrown wjen pageup/down is pressed in a JList
+ * @bug 8191639 8196443
+ * @key headful
+ * @summary  Verifies no NPE is thrown when pageup/down is pressed in a JList
  * @run main BasicListTest
  */
 

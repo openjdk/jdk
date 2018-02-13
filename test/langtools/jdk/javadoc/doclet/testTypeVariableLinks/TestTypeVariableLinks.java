@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,8 @@ public class TestTypeVariableLinks extends JavadocTester {
         checkOutput("pkg1/C.html", true,
                 "<div class=\"block\">Linking to List.clear() <code>List.clear()</code></div>");
         checkOutput("pkg1/C.html", true,
-                "<div class=\"block\">Linking to Additional.doAction() <a href=\"../pkg1/Additional.html#doAction--\"><code>Additional.doAction()</code></a></div>");
+                "<div class=\"block\">Linking to Additional.doAction() <a href=\"Additional.html#doAction--\"><code>Additional.doAction()</code></a></div>");
         checkOutput("pkg1/C.html", true,
-                "<div class=\"block\">Linking to I.abstractAction() <a href=\"../pkg1/I.html#abstractAction--\"><code>I.abstractAction()</code></a></div>");
+                "<div class=\"block\">Linking to I.abstractAction() <a href=\"I.html#abstractAction--\"><code>I.abstractAction()</code></a></div>");
     }
 }

@@ -28,14 +28,14 @@
  *          option for testing the interaction with GC and shared strings.
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds /test/hotspot/jtreg/runtime/appcds/test-classes
  * @requires (sun.arch.data.model != "32") & (os.family != "windows")
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires vm.flavor != "minimal"
  * @requires vm.gc.G1
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar
  *          java.management
  * @build sun.hotspot.WhiteBox GCDuringDumpTransformer GCSharedStringsDuringDumpWb
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm/timeout=480 GCSharedStringsDuringDump
  */
 

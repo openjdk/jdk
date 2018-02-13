@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,12 +71,12 @@ define_pd_global(bool, IdealizeClearArrayNode,       true);
 // sequence of instructions to load a 64 bit pointer.
 //
 // InitialCodeCacheSize derived from specjbb2000 run.
-define_pd_global(intx, InitialCodeCacheSize,         2048*K); // Integral multiple of CodeCacheExpansionSize
-define_pd_global(intx, ReservedCodeCacheSize,        48*M);
-define_pd_global(intx, NonProfiledCodeHeapSize,      21*M);
-define_pd_global(intx, ProfiledCodeHeapSize,         22*M);
-define_pd_global(intx, NonNMethodCodeHeapSize,       5*M );
-define_pd_global(intx, CodeCacheExpansionSize,       64*K);
+define_pd_global(uintx, InitialCodeCacheSize,        2048*K); // Integral multiple of CodeCacheExpansionSize
+define_pd_global(uintx, ReservedCodeCacheSize,       48*M);
+define_pd_global(uintx, NonProfiledCodeHeapSize,     21*M);
+define_pd_global(uintx, ProfiledCodeHeapSize,        22*M);
+define_pd_global(uintx, NonNMethodCodeHeapSize,      5*M );
+define_pd_global(uintx, CodeCacheExpansionSize,      64*K);
 
 // Ergonomics related flags
 define_pd_global(uint64_t,MaxRAM,                    128ULL*G);

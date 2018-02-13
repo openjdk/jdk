@@ -141,6 +141,7 @@ class Universe: AllStatic {
   static oop          _system_thread_group;           // Reference to the system thread group object
 
   static objArrayOop  _the_empty_class_klass_array;   // Canonicalized obj array of type java.lang.Class
+  static oop          _the_null_sentinel;             // A unique object pointer unused except as a sentinel for null.
   static oop          _the_null_string;               // A cache of "null" as a Java string
   static oop          _the_min_jint_string;          // A cache of "-2147483648" as a Java string
   static LatestMethodCache* _finalizer_register_cache; // static method for registering finalizable objects
@@ -321,6 +322,9 @@ class Universe: AllStatic {
   static Method*      throw_illegal_access_error()    { return _throw_illegal_access_error_cache->get_method(); }
 
   static Method*      do_stack_walk_method()          { return _do_stack_walk_cache->get_method(); }
+
+  static oop          the_null_sentinel()             { return _the_null_sentinel;             }
+  static address      the_null_sentinel_addr()        { return (address) &_the_null_sentinel;  }
 
   // Function to initialize these
   static void initialize_known_methods(TRAPS);

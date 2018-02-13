@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,7 +281,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     protected Content getNavSummaryLink(TypeElement typeElement, boolean link) {
         if (link) {
             if (typeElement == null) {
-                return Links.createLink(SectionName.ENUM_CONSTANT_SUMMARY,
+                return links.createLink(SectionName.ENUM_CONSTANT_SUMMARY,
                         contents.navEnum);
             } else {
                 return links.createLink(
@@ -299,7 +299,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     @Override
     protected void addNavDetailLink(boolean link, Content liNav) {
         if (link) {
-            liNav.addContent(Links.createLink(
+            liNav.addContent(links.createLink(
                     SectionName.ENUM_CONSTANT_DETAIL,
                     contents.navEnum));
         } else {

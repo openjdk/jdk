@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @summary a test to demonstrate that an application class in the -cp
  *          will be archived although --patch-module is specified. The class in
  *          the -cp has no dependencies on the class in the --patch-module.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -433,7 +433,7 @@ class StubGenerator: public StubCodeGenerator {
 
 
   //----------------------------------------------------------------------------------------------------
-  // Support for jint Atomic::xchg(jint exchange_value, volatile jint* dest)
+  // Support for int32_t Atomic::xchg(int32_t exchange_value, volatile int32_t* dest)
   //
   // xchg exists as far back as 8086, lock needed for MP only
   // Stack layout immediately after call:
@@ -676,15 +676,35 @@ class StubGenerator: public StubCodeGenerator {
     assert_different_registers(start, count);
     BarrierSet* bs = Universe::heap()->barrier_set();
     switch (bs->kind()) {
+#if INCLUDE_ALL_GCS
       case BarrierSet::G1SATBCTLogging:
         // With G1, don't generate the call if we statically know that the target in uninitialized
         if (!uninitialized_target) {
+          Register thread = rax;
+          Label filtered;
+          __ push(thread);
+          __ get_thread(thread);
+          Address in_progress(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
+                                               SATBMarkQueue::byte_offset_of_active()));
+          // Is marking active?
+          if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
+            __ cmpl(in_progress, 0);
+          } else {
+            assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+            __ cmpb(in_progress, 0);
+          }
+          __ pop(thread);
+          __ jcc(Assembler::equal, filtered);
+
            __ pusha();                      // push registers
            __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre),
                            start, count);
            __ popa();
+
+           __ bind(filtered);
          }
         break;
+#endif // INCLUDE_ALL_GCS
       case BarrierSet::CardTableForRS:
       case BarrierSet::CardTableExtension:
       case BarrierSet::ModRef:
@@ -708,6 +728,7 @@ class StubGenerator: public StubCodeGenerator {
     BarrierSet* bs = Universe::heap()->barrier_set();
     assert_different_registers(start, count);
     switch (bs->kind()) {
+#if INCLUDE_ALL_GCS
       case BarrierSet::G1SATBCTLogging:
         {
           __ pusha();                      // push registers
@@ -716,6 +737,7 @@ class StubGenerator: public StubCodeGenerator {
           __ popa();
         }
         break;
+#endif // INCLUDE_ALL_GCS
 
       case BarrierSet::CardTableForRS:
       case BarrierSet::CardTableExtension:

@@ -352,8 +352,7 @@ public class RecursiveActionTest extends JSR166TestCase {
      * succeeds in the presence of interrupts
      */
     public void testJoinIgnoresInterruptsOutsideForkJoinPool() {
-        final SynchronousQueue<FibAction[]> sq =
-            new SynchronousQueue<FibAction[]>();
+        final SynchronousQueue<FibAction[]> sq = new SynchronousQueue<>();
         RecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() throws InterruptedException {
                 FibAction[] fibActions = new FibAction[6];

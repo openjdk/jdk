@@ -28,10 +28,10 @@
  */
 
 import static java.util.stream.Collectors.summingInt;
+import static java.util.stream.Collectors.toCollection;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -46,6 +46,7 @@ import java.util.Vector;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.LinkedTransferQueue;
@@ -55,6 +56,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * Usage: [iterations=N] [size=N] [filter=REGEXP] [warmup=SECONDS]
@@ -79,7 +81,7 @@ public class IteratorMicroBenchmark {
     final int size;             // number of elements in collections
     final double warmupSeconds;
     final long warmupNanos;
-    final Pattern filter;       // select subset of Jobs to run
+    final Pattern nameFilter;   // select subset of Jobs to run
     final boolean reverse;      // reverse order of Jobs
     final boolean shuffle;      // randomize order of Jobs
 
@@ -87,7 +89,7 @@ public class IteratorMicroBenchmark {
         iterations    = intArg(args, "iterations", 10_000);
         size          = intArg(args, "size", 1000);
         warmupSeconds = doubleArg(args, "warmup", 7.0);
-        filter        = patternArg(args, "filter");
+        nameFilter    = patternArg(args, "filter");
         reverse       = booleanArg(args, "reverse");
         shuffle       = booleanArg(args, "shuffle");
 
@@ -204,15 +206,6 @@ public class IteratorMicroBenchmark {
         throw new IllegalArgumentException(val);
     }
 
-    private static List<Job> filter(Pattern filter, List<Job> jobs) {
-        if (filter == null) return jobs;
-        ArrayList<Job> newJobs = new ArrayList<>();
-        for (Job job : jobs)
-            if (filter.matcher(job.name()).find())
-                newJobs.add(job);
-        return newJobs;
-    }
-
     private static void deoptimize(int sum) {
         if (sum == 42)
             System.out.println("the answer");
@@ -251,7 +244,7 @@ public class IteratorMicroBenchmark {
     void run() throws Throwable {
 //         System.out.printf(
 //             "iterations=%d size=%d, warmup=%1g, filter=\"%s\"%n",
-//             iterations, size, warmupSeconds, filter);
+//             iterations, size, warmupSeconds, nameFilter);
 
         final ArrayList<Integer> al = new ArrayList<>(size);
 
@@ -270,34 +263,48 @@ public class IteratorMicroBenchmark {
             abq.add(abq.remove());
         }
 
-        ArrayList<Job> jobs = new ArrayList<>(Arrays.asList());
-
-        List.of(al, ad, abq,
+        ArrayList<Job> jobs = Stream.<Collection<Integer>>of(
+                al, ad, abq,
                 new LinkedList<>(al),
                 new PriorityQueue<>(al),
                 new Vector<>(al),
+                new CopyOnWriteArrayList<>(al),
                 new ConcurrentLinkedQueue<>(al),
                 new ConcurrentLinkedDeque<>(al),
                 new LinkedBlockingQueue<>(al),
                 new LinkedBlockingDeque<>(al),
                 new LinkedTransferQueue<>(al),
                 new PriorityBlockingQueue<>(al))
-            .stream()
-            .forEach(x -> {
-                         jobs.addAll(collectionJobs(x));
-                         if (x instanceof Deque)
-                             jobs.addAll(dequeJobs((Deque<Integer>)x));
-                     });
+            .flatMap(x -> jobs(x))
+            .filter(job ->
+                nameFilter == null || nameFilter.matcher(job.name()).find())
+            .collect(toCollection(ArrayList::new));
 
         if (reverse) Collections.reverse(jobs);
         if (shuffle) Collections.shuffle(jobs);
 
-        time(filter(filter, jobs));
+        time(jobs);
     }
 
-    List<Job> collectionJobs(Collection<Integer> x) {
+    @SafeVarargs @SuppressWarnings("varargs")
+    private <T> Stream<T> concatStreams(Stream<T> ... streams) {
+        return Stream.of(streams).flatMap(s -> s);
+    }
+
+    Stream<Job> jobs(Collection<Integer> x) {
+        return concatStreams(
+            collectionJobs(x),
+            (x instanceof Deque)
+            ? dequeJobs((Deque<Integer>)x)
+            : Stream.empty(),
+            (x instanceof List)
+            ? listJobs((List<Integer>)x)
+            : Stream.empty());
+    }
+
+    Stream<Job> collectionJobs(Collection<Integer> x) {
         String klazz = x.getClass().getSimpleName();
-        return List.of(
+        return Stream.of(
             new Job(klazz + " iterate for loop") {
                 public void work() throws Throwable {
                     for (int i = 0; i < iterations; i++) {
@@ -438,9 +445,9 @@ public class IteratorMicroBenchmark {
                         check.sum(sum[0]);}}});
     }
 
-    List<Job> dequeJobs(Deque<Integer> x) {
+    Stream<Job> dequeJobs(Deque<Integer> x) {
         String klazz = x.getClass().getSimpleName();
-        return List.of(
+        return Stream.of(
             new Job(klazz + " descendingIterator() loop") {
                 public void work() throws Throwable {
                     for (int i = 0; i < iterations; i++) {
@@ -456,5 +463,51 @@ public class IteratorMicroBenchmark {
                         sum[0] = 0;
                         x.descendingIterator().forEachRemaining(n -> sum[0] += n);
                         check.sum(sum[0]);}}});
+    }
+
+    Stream<Job> listJobs(List<Integer> x) {
+        String klazz = x.getClass().getSimpleName();
+        return Stream.of(
+            new Job(klazz + " subList toArray()") {
+                public void work() throws Throwable {
+                    int size = x.size();
+                    for (int i = 0; i < iterations; i++) {
+                        int total = Stream.of(x.subList(0, size / 2),
+                                              x.subList(size / 2, size))
+                            .mapToInt(subList -> {
+                                int sum = 0;
+                                for (Object o : subList.toArray())
+                                    sum += (Integer) o;
+                                return sum; })
+                            .sum();
+                        check.sum(total);}}},
+            new Job(klazz + " subList toArray(a)") {
+                public void work() throws Throwable {
+                    int size = x.size();
+                    for (int i = 0; i < iterations; i++) {
+                        int total = Stream.of(x.subList(0, size / 2),
+                                              x.subList(size / 2, size))
+                            .mapToInt(subList -> {
+                                int sum = 0;
+                                Integer[] a = new Integer[subList.size()];
+                                for (Object o : subList.toArray(a))
+                                    sum += (Integer) o;
+                                return sum; })
+                            .sum();
+                        check.sum(total);}}},
+            new Job(klazz + " subList toArray(empty)") {
+                public void work() throws Throwable {
+                    int size = x.size();
+                    Integer[] empty = new Integer[0];
+                    for (int i = 0; i < iterations; i++) {
+                        int total = Stream.of(x.subList(0, size / 2),
+                                              x.subList(size / 2, size))
+                            .mapToInt(subList -> {
+                                int sum = 0;
+                                for (Object o : subList.toArray(empty))
+                                    sum += (Integer) o;
+                                return sum; })
+                            .sum();
+                        check.sum(total);}}});
     }
 }

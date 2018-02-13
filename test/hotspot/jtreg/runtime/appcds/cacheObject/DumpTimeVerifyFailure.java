@@ -26,7 +26,7 @@
  * @test
  * @summary Dump time should not crash if any class with shared strings fails verification due to missing dependencies.
  * @bug 8186789
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires (sun.arch.data.model != "32") & (os.family != "windows")
  * @requires (vm.gc=="null")
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds

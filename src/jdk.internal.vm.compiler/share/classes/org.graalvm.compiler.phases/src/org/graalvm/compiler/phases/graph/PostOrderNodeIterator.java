@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Set;
 
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.Equivalence;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeBitMap;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
@@ -41,8 +43,6 @@ import org.graalvm.compiler.nodes.InvokeWithExceptionNode;
 import org.graalvm.compiler.nodes.LoopBeginNode;
 import org.graalvm.compiler.nodes.LoopEndNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.util.Equivalence;
-import org.graalvm.util.EconomicMap;
 
 /**
  * A PostOrderNodeIterator iterates the fixed nodes of the graph in post order starting from a

@@ -27,7 +27,8 @@
  * @summary Basic test of removeEldestElement method.
  */
 
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class Cache {
     private static final int MAP_SIZE = 10;

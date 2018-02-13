@@ -109,8 +109,7 @@ void VM_Version::initialize() {
 
   if (PowerArchitecturePPC64 >= 8) {
     if (FLAG_IS_DEFAULT(SuperwordUseVSX)) {
-      // TODO: Switch on when it works stable. Currently, MachSpillCopyNode::implementation code is missing.
-      //FLAG_SET_ERGO(bool, SuperwordUseVSX, true);
+      FLAG_SET_ERGO(bool, SuperwordUseVSX, true);
     }
   } else {
     if (SuperwordUseVSX) {

@@ -135,8 +135,9 @@ final class CompilerToVM {
     /**
      * Gets the implementor for the interface class {@code type}.
      *
-     * @return the implementor if there is a single implementor, 0 if there is no implementor, or
-     *         {@code type} itself if there is more than one implementor
+     * @return the implementor if there is a single implementor, {@code null} if there is no
+     *         implementor, or {@code type} itself if there is more than one implementor
+     * @throws IllegalArgumentException if type is not an interface type
      */
     native HotSpotResolvedObjectTypeImpl getImplementor(HotSpotResolvedObjectTypeImpl type);
 
@@ -237,6 +238,8 @@ final class CompilerToVM {
      */
     native HotSpotResolvedJavaMethodImpl lookupMethodInPool(HotSpotConstantPool constantPool, int cpi, byte opcode);
 
+    // TODO resolving JVM_CONSTANT_Dynamic
+
     /**
      * Ensures that the type referenced by the specified {@code JVM_CONSTANT_InvokeDynamic} entry at
      * index {@code cpi} in {@code constantPool} is loaded and initialized.
@@ -256,13 +259,12 @@ final class CompilerToVM {
     native void resolveInvokeHandleInPool(HotSpotConstantPool constantPool, int cpi);
 
     /**
-     * If {@code cpi} denotes an entry representing a resolved dynamic adapter
-     * (see {@code resolveInvokeDynamicInPool} and {@code resolveInvokeHandleInPool}),
-     * return the opcode of the instruction for which the resolution was performed
-     * ({@code invokedynamic} or {@code invokevirtual}}, or {@code -1} otherwise.
+     * If {@code cpi} denotes an entry representing a resolved dynamic adapter (see
+     * {@code resolveInvokeDynamicInPool} and {@code resolveInvokeHandleInPool}), return the opcode
+     * of the instruction for which the resolution was performed ({@code invokedynamic} or
+     * {@code invokevirtual}}, or {@code -1} otherwise.
      */
     native int isResolvedInvokeHandleInPool(HotSpotConstantPool constantPool, int cpi);
-
 
     /**
      * Gets the list of type names (in the format of {@link JavaType#getName()}) denoting the
@@ -388,7 +390,7 @@ final class CompilerToVM {
     /**
      * Gets the static initializer of {@code type}.
      *
-     * @return 0 if {@code type} has no static initializer
+     * @return {@code null} if {@code type} has no static initializer
      */
     native HotSpotResolvedJavaMethodImpl getClassInitializer(HotSpotResolvedObjectTypeImpl type);
 
@@ -468,7 +470,8 @@ final class CompilerToVM {
     native long getLocalVariableTableStart(HotSpotResolvedJavaMethodImpl method);
 
     /**
-     * Sets flags on {@code method} indicating that it should never be inlined or compiled by the VM.
+     * Sets flags on {@code method} indicating that it should never be inlined or compiled by the
+     * VM.
      */
     native void setNotInlinableOrCompilable(HotSpotResolvedJavaMethodImpl method);
 

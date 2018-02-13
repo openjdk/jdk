@@ -57,6 +57,7 @@ public enum SourceVersion {
      * 1.8: lambda expressions and default methods
      *   9: modules, small cleanups to 1.7 and 1.8 changes
      *  10: local-variable type inference (var)
+     *  11: to be determined changes
      */
 
     /**
@@ -162,7 +163,15 @@ public enum SourceVersion {
      *
      * @since 10
      */
-     RELEASE_10;
+     RELEASE_10,
+
+    /**
+     * The version recognized by the Java Platform, Standard Edition
+     * 11.
+     *
+     * @since 11
+     */
+     RELEASE_11;
 
     // Note that when adding constants for newer releases, the
     // behavior of latest() and latestSupported() must be updated too.
@@ -173,7 +182,7 @@ public enum SourceVersion {
      * @return the latest source version that can be modeled
      */
     public static SourceVersion latest() {
-        return RELEASE_10;
+        return RELEASE_11;
     }
 
     private static final SourceVersion latestSupported = getLatestSupported();
@@ -183,6 +192,8 @@ public enum SourceVersion {
             String specVersion = System.getProperty("java.specification.version");
 
             switch (specVersion) {
+                case "11":
+                    return RELEASE_11;
                 case "10":
                     return RELEASE_10;
                 case "9":

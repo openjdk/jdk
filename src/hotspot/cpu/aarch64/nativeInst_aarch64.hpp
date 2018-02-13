@@ -61,7 +61,7 @@ class NativeInstruction VALUE_OBJ_CLASS_SPEC {
     return uint_at(0);
   }
 
-  bool is_blr()                      const { return (encoding() & 0xfffffc1f) == 0xd63f0000; }
+  bool is_blr()                      const { return (encoding() & 0xff9ffc1f) == 0xd61f0000; } // blr(register) or br(register)
   bool is_adr_aligned()              const { return (encoding() & 0xff000000) == 0x10000000; } // adr Xn, <label>, where label is aligned to 4 bytes (address of instruction).
 
   inline bool is_nop();
@@ -143,8 +143,9 @@ inline NativeInstruction* nativeInstruction_at(uint32_t *address) {
 }
 
 inline NativeCall* nativeCall_at(address address);
-// The NativeCall is an abstraction for accessing/manipulating native call imm32/rel32off
-// instructions (used to manipulate inline caches, primitive & dll calls, etc.).
+// The NativeCall is an abstraction for accessing/manipulating native
+// call instructions (used to manipulate inline caches, primitive &
+// DSO calls, etc.).
 
 class NativeCall: public NativeInstruction {
  public:
@@ -155,7 +156,6 @@ class NativeCall: public NativeInstruction {
     return_address_offset       =    4
   };
 
-  enum { cache_line_size = BytesPerWord };  // conservative estimate!
   address instruction_address() const       { return addr_at(instruction_offset); }
   address next_instruction_address() const  { return addr_at(return_address_offset); }
   int   displacement() const                { return (int_at(displacement_offset) << 6) >> 4; }
@@ -206,6 +206,7 @@ class NativeCall: public NativeInstruction {
   void set_destination_mt_safe(address dest, bool assert_lock = true);
 
   address get_trampoline();
+  address trampoline_jump(CodeBuffer &cbuf, address dest);
 };
 
 inline NativeCall* nativeCall_at(address address) {

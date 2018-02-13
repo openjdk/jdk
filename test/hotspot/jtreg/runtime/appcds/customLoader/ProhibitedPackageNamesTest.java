@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary Make sure prohibited packages cannot be stored into archive for custom loaders.
- * (NOTE: AppCDS does not support uncompressed oops)
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires vm.cds.custom.loaders
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules java.base/jdk.internal.misc

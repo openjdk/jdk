@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary Test open archive heap regions
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires (sun.arch.data.model != "32") & (os.family != "windows")
  * @requires (vm.gc=="null")
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds

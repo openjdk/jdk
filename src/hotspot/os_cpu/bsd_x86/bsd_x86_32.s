@@ -633,10 +633,10 @@ mmx_acs_CopyLeft:
         ret
 
 
-        # Support for jlong Atomic::cmpxchg(jlong exchange_value,
-        #                                   volatile jlong* dest,
-        #                                   jlong compare_value,
-        #                                   bool is_MP)
+        # Support for int64_t Atomic::cmpxchg(int64_t exchange_value,
+        #                                     volatile int64_t* dest,
+        #                                     int64_t compare_value,
+        #                                     bool is_MP)
         #
         .p2align 4,,15
         ELF_TYPE(_Atomic_cmpxchg_long,@function)
@@ -658,8 +658,8 @@ SYMBOL(_Atomic_cmpxchg_long):
         ret
 
 
-        # Support for jlong Atomic::load and Atomic::store.
-        # void _Atomic_move_long(const volatile jlong* src, volatile jlong* dst)
+        # Support for int64_t Atomic::load and Atomic::store.
+        # void _Atomic_move_long(const volatile int64_t* src, volatile int64_t* dst)
         .p2align 4,,15
         ELF_TYPE(_Atomic_move_long,@function)
 SYMBOL(_Atomic_move_long):

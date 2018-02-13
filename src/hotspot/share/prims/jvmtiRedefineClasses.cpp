@@ -497,6 +497,7 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
     } break;
 
     // this is an indirect CP entry so it needs special handling
+    case JVM_CONSTANT_Dynamic:  // fall through
     case JVM_CONSTANT_InvokeDynamic:
     {
       // Index of the bootstrap specifier in the operands array
@@ -509,15 +510,18 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
                                                     merge_cp_length_p, THREAD);
       if (new_bs_i != old_bs_i) {
         log_trace(redefine, class, constantpool)
-          ("InvokeDynamic entry@%d bootstrap_method_attr_index change: %d to %d",
+          ("Dynamic entry@%d bootstrap_method_attr_index change: %d to %d",
            *merge_cp_length_p, old_bs_i, new_bs_i);
       }
       if (new_ref_i != old_ref_i) {
         log_trace(redefine, class, constantpool)
-          ("InvokeDynamic entry@%d name_and_type_index change: %d to %d", *merge_cp_length_p, old_ref_i, new_ref_i);
+          ("Dynamic entry@%d name_and_type_index change: %d to %d", *merge_cp_length_p, old_ref_i, new_ref_i);
       }
 
-      (*merge_cp_p)->invoke_dynamic_at_put(*merge_cp_length_p, new_bs_i, new_ref_i);
+      if (scratch_cp->tag_at(scratch_i).is_dynamic_constant())
+        (*merge_cp_p)->dynamic_constant_at_put(*merge_cp_length_p, new_bs_i, new_ref_i);
+      else
+        (*merge_cp_p)->invoke_dynamic_at_put(*merge_cp_length_p, new_bs_i, new_ref_i);
       if (scratch_i != *merge_cp_length_p) {
         // The new entry in *merge_cp_p is at a different index than
         // the new entry in scratch_cp so we need to map the index values.

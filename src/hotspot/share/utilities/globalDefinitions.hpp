@@ -596,6 +596,10 @@ inline bool is_signed_subword_type(BasicType t) {
   return (t == T_BYTE || t == T_SHORT);
 }
 
+inline bool is_reference_type(BasicType t) {
+  return (t == T_OBJECT || t == T_ARRAY);
+}
+
 // Convert a char from a classfile signature to a BasicType
 inline BasicType char2type(char c) {
   switch( c ) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1543,10 +1543,10 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
 
 void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
   if (op->init_check()) {
+    add_debug_info_for_null_check_here(op->stub()->info());
     __ cmpb(Address(op->klass()->as_register(),
                     InstanceKlass::init_state_offset()),
                     InstanceKlass::fully_initialized);
-    add_debug_info_for_null_check_here(op->stub()->info());
     __ jcc(Assembler::notEqual, *op->stub()->entry());
   }
   __ allocate_object(op->obj()->as_register(),
@@ -2580,7 +2580,9 @@ void LIR_Assembler::arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, 
     move_regs(lreg, rax);
 
     int idivl_offset = __ corrected_idivl(rreg);
-    add_debug_info_for_div0(idivl_offset, info);
+    if (ImplicitDiv0Checks) {
+      add_debug_info_for_div0(idivl_offset, info);
+    }
     if (code == lir_irem) {
       move_regs(rdx, dreg); // result is in rdx
     } else {
@@ -3502,7 +3504,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ciMethodData* md = method->method_data_or_null();
   assert(md != NULL, "Sanity");
   ciProfileData* data = md->bci_to_data(bci);
-  assert(data->is_CounterData(), "need CounterData for calls");
+  assert(data != NULL && data->is_CounterData(), "need CounterData for calls");
   assert(op->mdo()->is_single_cpu(),  "mdo must be allocated");
   Register mdo  = op->mdo()->as_register();
   __ mov_metadata(mdo, md->constant_encoding());

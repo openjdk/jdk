@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,19 +52,19 @@ public class TestValueTag extends JavadocTester {
                 // Base case:  using @value on a constant.
                 "Result:  \"Test 1 passes\"",
                 // Retrieve value of constant in same class.
-                "Result:  <a href=\"../pkg1/Class1.html#TEST_2_PASSES\">\"Test 2 passes\"</a>",
-                "Result:  <a href=\"../pkg1/Class1.html#TEST_3_PASSES\">\"Test 3 passes\"</a>",
-                "Result:  <a href=\"../pkg1/Class1.html#TEST_4_PASSES\">\"Test 4 passes\"</a>",
-                "Result:  <a href=\"../pkg1/Class1.html#TEST_5_PASSES\">\"Test 5 passes\"</a>",
-                "Result:  <a href=\"../pkg1/Class1.html#TEST_6_PASSES\">\"Test 6 passes\"</a>");
+                "Result:  <a href=\"#TEST_2_PASSES\">\"Test 2 passes\"</a>",
+                "Result:  <a href=\"#TEST_3_PASSES\">\"Test 3 passes\"</a>",
+                "Result:  <a href=\"#TEST_4_PASSES\">\"Test 4 passes\"</a>",
+                "Result:  <a href=\"#TEST_5_PASSES\">\"Test 5 passes\"</a>",
+                "Result:  <a href=\"#TEST_6_PASSES\">\"Test 6 passes\"</a>");
 
         checkOutput("pkg1/Class2.html", true,
                 // Retrieve value of constant in different class.
-                "Result:  <a href=\"../pkg1/Class1.html#TEST_7_PASSES\">\"Test 7 passes\"</a>",
-                "Result:  <a href=\"../pkg1/Class1.html#TEST_8_PASSES\">\"Test 8 passes\"</a>",
-                "Result:  <a href=\"../pkg1/Class1.html#TEST_9_PASSES\">\"Test 9 passes\"</a>",
-                "Result:  <a href=\"../pkg1/Class1.html#TEST_10_PASSES\">\"Test 10 passes\"</a>",
-                "Result:  <a href=\"../pkg1/Class1.html#TEST_11_PASSES\">\"Test 11 passes\"</a>",
+                "Result:  <a href=\"Class1.html#TEST_7_PASSES\">\"Test 7 passes\"</a>",
+                "Result:  <a href=\"Class1.html#TEST_8_PASSES\">\"Test 8 passes\"</a>",
+                "Result:  <a href=\"Class1.html#TEST_9_PASSES\">\"Test 9 passes\"</a>",
+                "Result:  <a href=\"Class1.html#TEST_10_PASSES\">\"Test 10 passes\"</a>",
+                "Result:  <a href=\"Class1.html#TEST_11_PASSES\">\"Test 11 passes\"</a>",
                 // Retrieve value of constant in different package
                 "Result:  <a href=\"../pkg2/Class3.html#TEST_12_PASSES\">\"Test 12 passes\"</a>",
                 "Result:  <a href=\"../pkg2/Class3.html#TEST_13_PASSES\">\"Test 13 passes\"</a>",
@@ -74,7 +74,7 @@ public class TestValueTag extends JavadocTester {
 
         checkOutput("pkg2/package-summary.html", true,
                 // Retrieve value of constant from a package page
-                "Result: <a href=\"../pkg2/Class3.html#TEST_17_PASSES\">\"Test 17 passes\"</a>");
+                "Result: <a href=\"Class3.html#TEST_17_PASSES\">\"Test 17 passes\"</a>");
 
         checkOutput("pkg1/CustomTagUsage.html", true,
                 // Test @value tag used with custom tag.
@@ -104,7 +104,7 @@ public class TestValueTag extends JavadocTester {
 
         checkOutput("pkg1/Class1.html", false,
                 // Base case:  using @value on a constant.
-                "Result:  <a href=\"../pkg1/Class1.html#TEST_12_ERROR\">\"Test 12 "
+                "Result:  <a href=\"#TEST_12_ERROR\">\"Test 12 "
                 + "generates an error message\"</a>");
 
         checkForException();
@@ -141,9 +141,9 @@ public class TestValueTag extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOrder("pkg3/RT.html",
-                "The value is <a href=\"../pkg3/RT.html#CONSTANT\">\"constant\"</a>.",
-                "The value1 is <a href=\"../pkg3/RT.html#CONSTANT\">\"constant\"</a>.",
-                "The value2 is <a href=\"../pkg3/RT.html#CONSTANT\">\"constant\"</a>.",
+                "The value is <a href=\"#CONSTANT\">\"constant\"</a>.",
+                "The value1 is <a href=\"#CONSTANT\">\"constant\"</a>.",
+                "The value2 is <a href=\"#CONSTANT\">\"constant\"</a>.",
                 "The value3 is <a href=\"../pkg2/Class3.html#TEST_12_PASSES\">"
                 + "\"Test 12 passes\"</a>.");
     }

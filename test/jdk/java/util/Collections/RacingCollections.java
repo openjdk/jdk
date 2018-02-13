@@ -28,9 +28,46 @@
  * @author Martin Buchholz
  */
 
-import static java.util.Collections.*;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.Vector;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.LinkedTransferQueue;
+
+import static java.util.Collections.asLifoQueue;
+import static java.util.Collections.checkedList;
+import static java.util.Collections.checkedMap;
+import static java.util.Collections.checkedSet;
+import static java.util.Collections.newSetFromMap;
+import static java.util.Collections.synchronizedList;
+import static java.util.Collections.synchronizedMap;
+import static java.util.Collections.synchronizedSet;
+import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.unmodifiableMap;
+import static java.util.Collections.unmodifiableSet;
 
 public class RacingCollections {
     /**

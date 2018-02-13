@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -874,6 +874,8 @@ void GraphBuilder::ScopeData::incr_num_returns() {
 void GraphBuilder::load_constant() {
   ciConstant con = stream()->get_constant();
   if (con.basic_type() == T_ILLEGAL) {
+    // FIXME: an unresolved Dynamic constant can get here,
+    // and that should not terminate the whole compilation.
     BAILOUT("could not resolve a constant");
   } else {
     ValueType* t = illegalType;
@@ -893,11 +895,19 @@ void GraphBuilder::load_constant() {
         ciObject* obj = con.as_object();
         if (!obj->is_loaded()
             || (PatchALot && obj->klass() != ciEnv::current()->String_klass())) {
+          // A Class, MethodType, MethodHandle, or String.
+          // Unloaded condy nodes show up as T_ILLEGAL, above.
           patch_state = copy_state_before();
           t = new ObjectConstant(obj);
         } else {
-          assert(obj->is_instance(), "must be java_mirror of klass");
-          t = new InstanceConstant(obj->as_instance());
+          // Might be a Class, MethodType, MethodHandle, or Dynamic constant
+          // result, which might turn out to be an array.
+          if (obj->is_null_object())
+            t = objectNull;
+          else if (obj->is_array())
+            t = new ArrayConstant(obj->as_array());
+          else
+            t = new InstanceConstant(obj->as_instance());
         }
         break;
        }
@@ -1546,8 +1556,6 @@ void GraphBuilder::method_return(Value x, bool ignore_return) {
       }
       if (profile_return() && x->type()->is_object_kind()) {
         ciMethod* caller = state()->scope()->method();
-        ciMethodData* md = caller->method_data_or_null();
-        ciProfileData* data = md->bci_to_data(invoke_bci);
         profile_return_type(x, method(), caller, invoke_bci);
       }
     }

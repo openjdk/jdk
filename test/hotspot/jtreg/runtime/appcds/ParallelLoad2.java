@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary Load app classes from CDS archive in parallel threads. Similar to ParallelLoad.java, but each class in its own JAR
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

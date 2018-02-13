@@ -54,7 +54,7 @@ ifeq ($(ENABLE_INTREE_EC), true)
           -DMP_API_COMPATIBLE -DNSS_ECC_MORE_THAN_SUITE_B, \
       CXXFLAGS := $(filter-out $(ECC_JNI_SOLSPARC_FILTER), $(CXXFLAGS_JDKLIB)) \
           $(BUILD_LIBSUNEC_FLAGS), \
-      DISABLED_WARNINGS_gcc := sign-compare, \
+      DISABLED_WARNINGS_gcc := sign-compare implicit-fallthrough, \
       DISABLED_WARNINGS_microsoft := 4101 4244 4146 4018, \
       MAPFILE := $(TOPDIR)/make/mapfiles/libsunec/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK), \

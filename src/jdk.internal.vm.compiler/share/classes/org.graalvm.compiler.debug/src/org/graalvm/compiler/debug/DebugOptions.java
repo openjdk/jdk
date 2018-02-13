@@ -27,11 +27,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.graalvm.collections.EconomicMap;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.util.EconomicMap;
 
 /**
  * Options that configure a {@link DebugContext} and related functionality.

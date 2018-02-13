@@ -54,13 +54,13 @@ struct Atomic::PlatformAdd
 template<>
 template<typename I, typename D>
 inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest) const {
-  return add_using_helper<jint>(os::atomic_add_func, add_value, dest);
+  return add_using_helper<int32_t>(os::atomic_add_func, add_value, dest);
 }
 
 template<>
 template<typename I, typename D>
 inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) const {
-  return add_using_helper<intptr_t>(os::atomic_add_ptr_func, add_value, dest);
+  return add_using_helper<int64_t>(os::atomic_add_long_func, add_value, dest);
 }
 
 #define DEFINE_STUB_XCHG(ByteSize, StubType, StubName)                  \
@@ -72,8 +72,8 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) co
     return xchg_using_helper<StubType>(StubName, exchange_value, dest); \
   }
 
-DEFINE_STUB_XCHG(4, jint, os::atomic_xchg_func)
-DEFINE_STUB_XCHG(8, jlong, os::atomic_xchg_long_func)
+DEFINE_STUB_XCHG(4, int32_t, os::atomic_xchg_func)
+DEFINE_STUB_XCHG(8, int64_t, os::atomic_xchg_long_func)
 
 #undef DEFINE_STUB_XCHG
 
@@ -88,9 +88,9 @@ DEFINE_STUB_XCHG(8, jlong, os::atomic_xchg_long_func)
     return cmpxchg_using_helper<StubType>(StubName, exchange_value, dest, compare_value); \
   }
 
-DEFINE_STUB_CMPXCHG(1, jbyte, os::atomic_cmpxchg_byte_func)
-DEFINE_STUB_CMPXCHG(4, jint,  os::atomic_cmpxchg_func)
-DEFINE_STUB_CMPXCHG(8, jlong, os::atomic_cmpxchg_long_func)
+DEFINE_STUB_CMPXCHG(1, int8_t,  os::atomic_cmpxchg_byte_func)
+DEFINE_STUB_CMPXCHG(4, int32_t, os::atomic_cmpxchg_func)
+DEFINE_STUB_CMPXCHG(8, int64_t, os::atomic_cmpxchg_long_func)
 
 #undef DEFINE_STUB_CMPXCHG
 
@@ -162,10 +162,10 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
                                                 T compare_value,
                                                 cmpxchg_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
-  jint ex_lo  = (jint)exchange_value;
-  jint ex_hi  = *( ((jint*)&exchange_value) + 1 );
-  jint cmp_lo = (jint)compare_value;
-  jint cmp_hi = *( ((jint*)&compare_value) + 1 );
+  int32_t ex_lo  = (int32_t)exchange_value;
+  int32_t ex_hi  = *( ((int32_t*)&exchange_value) + 1 );
+  int32_t cmp_lo = (int32_t)compare_value;
+  int32_t cmp_hi = *( ((int32_t*)&compare_value) + 1 );
   __asm {
     push ebx
     push edi

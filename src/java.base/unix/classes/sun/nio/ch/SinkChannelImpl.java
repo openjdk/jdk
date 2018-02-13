@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,14 @@
 
 package sun.nio.ch;
 
-import java.io.*;
+import java.io.FileDescriptor;
+import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.*;
-import java.nio.channels.spi.*;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.Pipe;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.spi.SelectorProvider;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 class SinkChannelImpl
@@ -40,17 +44,17 @@ class SinkChannelImpl
     private static final NativeDispatcher nd = new FileDispatcherImpl();
 
     // The file descriptor associated with this channel
-    FileDescriptor fd;
+    private final FileDescriptor fd;
 
     // fd value needed for dev/poll. This value will remain valid
     // even after the value in the file descriptor object has been set to -1
-    int fdVal;
+    private final int fdVal;
 
     // ID of native thread doing write, for signalling
     private volatile long thread;
 
-    // Lock held by current reading thread
-    private final Object lock = new Object();
+    // Lock held by current writing thread
+    private final ReentrantLock writeLock = new ReentrantLock();
 
     // Lock held by any thread that modifies the state fields declared below
     // DO NOT invoke a blocking I/O operation while holding this lock!
@@ -155,8 +159,9 @@ class SinkChannelImpl
     }
 
     public int write(ByteBuffer src) throws IOException {
-        ensureOpen();
-        synchronized (lock) {
+        writeLock.lock();
+        try {
+            ensureOpen();
             int n = 0;
             try {
                 begin();
@@ -172,14 +177,18 @@ class SinkChannelImpl
                 end((n > 0) || (n == IOStatus.UNAVAILABLE));
                 assert IOStatus.check(n);
             }
+        } finally {
+            writeLock.unlock();
         }
     }
 
     public long write(ByteBuffer[] srcs) throws IOException {
         if (srcs == null)
             throw new NullPointerException();
-        ensureOpen();
-        synchronized (lock) {
+
+        writeLock.lock();
+        try {
+            ensureOpen();
             long n = 0;
             try {
                 begin();
@@ -195,6 +204,8 @@ class SinkChannelImpl
                 end((n > 0) || (n == IOStatus.UNAVAILABLE));
                 assert IOStatus.check(n);
             }
+        } finally {
+            writeLock.unlock();
         }
     }
 

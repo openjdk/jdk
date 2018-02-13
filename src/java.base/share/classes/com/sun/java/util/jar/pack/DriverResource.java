@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ public class DriverResource extends ListResourceBundle {
                 "  -q, --quiet                     set verbosity to lowest level",
                 "  -l{F}, --log-file={F}           output to the given log file, ",
                 "                                  or '-' for System.out",
-                "  -?, -h, --help                  print this message",
+                "  -?, -h, --help                  print this help message",
                 "  -V, --version                   print program version",
                 "  -J{X}                           pass option X to underlying Java VM",
                 "",
@@ -118,7 +118,7 @@ public class DriverResource extends ListResourceBundle {
                 "  -q, --quiet                   set verbosity to lowest level",
                 "  -l{F}, --log-file={F}         output to the given log file, or",
                 "                                '-' for System.out",
-                "  -?, -h, --help                print this message",
+                "  -?, -h, --help                print this help message",
                 "  -V, --version                 print program version",
                 "  -J{X}                         pass option X to underlying Java VM"
             }

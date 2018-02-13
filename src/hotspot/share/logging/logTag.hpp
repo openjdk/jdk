@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@
   LOG_TAG(exceptions) \
   LOG_TAG(exit) \
   LOG_TAG(fingerprint) \
+  LOG_TAG(free) \
   LOG_TAG(freelist) \
   LOG_TAG(gc) \
   LOG_TAG(handshake) \
@@ -85,6 +86,7 @@
   LOG_TAG(load) /* Trace all classes loaded */ \
   LOG_TAG(loader) \
   LOG_TAG(logging) \
+  LOG_TAG(malloc) \
   LOG_TAG(mark) \
   LOG_TAG(marking) \
   LOG_TAG(membername) \
@@ -101,6 +103,7 @@
   LOG_TAG(objecttagging) \
   LOG_TAG(obsolete) \
   LOG_TAG(oopmap) \
+  LOG_TAG(oopstorage) \
   LOG_TAG(os) \
   LOG_TAG(pagesize) \
   LOG_TAG(patch) \

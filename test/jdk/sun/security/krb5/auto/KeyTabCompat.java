@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @bug 6894072
- * @bug 8004488
- * @compile -XDignore.symbol.file KeyTabCompat.java
- * @run main/othervm KeyTabCompat
+ * @bug 6894072 8004488 8194486
  * @summary always refresh keytab
+ * @library /test/lib
+ * @compile -XDignore.symbol.file KeyTabCompat.java
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts KeyTabCompat
  */
 
 import javax.security.auth.kerberos.KerberosKey;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,15 +45,7 @@ class PosixSemaphore : public CHeapObj<mtInternal> {
   void wait();
 
   bool trywait();
-  bool timedwait(unsigned int sec, int nsec) {
-    return timedwait(create_timespec(sec, nsec));
-  }
-
- private:
   bool timedwait(struct timespec ts);
-
-  // OS specific implementation to create a timespec suitable for semaphores.
-  struct timespec create_timespec(unsigned int set, int nsec);
 };
 
 typedef PosixSemaphore SemaphoreImpl;

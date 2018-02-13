@@ -82,6 +82,10 @@ public interface InlineInvokePlugin extends GraphBuilderPlugin {
             return methodToInline;
         }
 
+        public boolean allowsInlining() {
+            return methodToInline != null;
+        }
+
         /**
          * Gets the provider of bytecode to be parsed for {@link #getMethodToInline()} if is is an
          * intrinsic for the original method (i.e., the {@code method} passed to

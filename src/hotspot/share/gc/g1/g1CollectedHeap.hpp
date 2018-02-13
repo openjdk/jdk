@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,6 @@ class G1CollectedHeap : public CollectedHeap {
   friend class VM_CollectForMetadataAllocation;
   friend class VM_G1CollectForAllocation;
   friend class VM_G1CollectFull;
-  friend class VM_G1IncCollectionPause;
   friend class VMStructs;
   friend class MutatorAllocRegion;
   friend class G1FullCollector;
@@ -454,35 +453,20 @@ protected:
   virtual HeapWord* mem_allocate(size_t word_size,
                                  bool*  gc_overhead_limit_was_exceeded);
 
-  // The following three methods take a gc_count_before_ret
-  // parameter which is used to return the GC count if the method
-  // returns NULL. Given that we are required to read the GC count
-  // while holding the Heap_lock, and these paths will take the
-  // Heap_lock at some point, it's easier to get them to read the GC
-  // count while holding the Heap_lock before they return NULL instead
-  // of the caller (namely: mem_allocate()) having to also take the
-  // Heap_lock just to read the GC count.
-
   // First-level mutator allocation attempt: try to allocate out of
   // the mutator alloc region without taking the Heap_lock. This
   // should only be used for non-humongous allocations.
-  inline HeapWord* attempt_allocation(size_t word_size,
-                                      uint* gc_count_before_ret,
-                                      uint* gclocker_retry_count_ret);
+  inline HeapWord* attempt_allocation(size_t word_size);
 
   // Second-level mutator allocation attempt: take the Heap_lock and
   // retry the allocation attempt, potentially scheduling a GC
   // pause. This should only be used for non-humongous allocations.
   HeapWord* attempt_allocation_slow(size_t word_size,
-                                    AllocationContext_t context,
-                                    uint* gc_count_before_ret,
-                                    uint* gclocker_retry_count_ret);
+                                    AllocationContext_t context);
 
   // Takes the Heap_lock and attempts a humongous allocation. It can
   // potentially schedule a GC pause.
-  HeapWord* attempt_allocation_humongous(size_t word_size,
-                                         uint* gc_count_before_ret,
-                                         uint* gclocker_retry_count_ret);
+  HeapWord* attempt_allocation_humongous(size_t word_size);
 
   // Allocation attempt that should be called during safepoints (e.g.,
   // at the end of a successful GC). expect_null_mutator_alloc_region
@@ -1076,6 +1060,11 @@ public:
 
   virtual bool is_maximal_no_gc() const {
     return _hrm.available() == 0;
+  }
+
+  // Returns whether there are any regions left in the heap for allocation.
+  bool has_regions_left_for_allocation() const {
+    return !is_maximal_no_gc() || num_free_regions() != 0;
   }
 
   // The current number of regions in the heap.

@@ -46,9 +46,9 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
  * @bug 8038500 8040059 8150366 8150496 8147539
  * @summary Basic test for zip provider
  *
+ * @modules jdk.zipfs
  * @run main Basic
  * @run main/othervm/java.security.policy=test.policy Basic
- * @modules jdk.zipfs
  */
 
 public class Basic {

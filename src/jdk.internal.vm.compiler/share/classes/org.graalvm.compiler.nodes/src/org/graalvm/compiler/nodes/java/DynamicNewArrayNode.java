@@ -125,6 +125,13 @@ public class DynamicNewArrayNode extends AbstractNewArrayNode implements Canonic
     }
 
     @NodeIntrinsic
+    private static native Object newArray(Class<?> componentType, int length, @ConstantNodeParameter boolean fillContents);
+
+    public static Object newArray(Class<?> componentType, int length) {
+        return newArray(componentType, length, true);
+    }
+
+    @NodeIntrinsic
     private static native Object newArray(Class<?> componentType, int length, @ConstantNodeParameter boolean fillContents, @ConstantNodeParameter JavaKind knownElementKind);
 
     public static Object newArray(Class<?> componentType, int length, JavaKind knownElementKind) {

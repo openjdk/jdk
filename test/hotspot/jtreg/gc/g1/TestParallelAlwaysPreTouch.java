@@ -23,13 +23,12 @@
 
 /*
  * @test
+ * @key gc regression
  * @bug 8169703
  * @summary Regression test to ensure AlwaysPreTouch with multiple threads works at mutator time.
  * Allocates a few humongous objects that will be allocated by expanding the heap, causing concurrent parallel
  * pre-touch.
  * @requires vm.gc.G1
- * @key gc
- * @key regression
  * @run main/othervm -XX:+UseG1GC -Xms10M -Xmx100m -XX:G1HeapRegionSize=1M -XX:+AlwaysPreTouch -XX:PreTouchParallelChunkSize=512k -Xlog:gc+ergo+heap=debug,gc+heap=debug,gc=debug TestParallelAlwaysPreTouch
  */
 

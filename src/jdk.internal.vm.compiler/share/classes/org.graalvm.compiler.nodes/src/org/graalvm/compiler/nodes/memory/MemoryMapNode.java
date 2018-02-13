@@ -32,6 +32,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.Equivalence;
+import org.graalvm.collections.MapCursor;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeInputList;
@@ -41,9 +44,6 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-import org.graalvm.util.Equivalence;
-import org.graalvm.util.EconomicMap;
-import org.graalvm.util.MapCursor;
 import org.graalvm.word.LocationIdentity;
 
 @NodeInfo(allowedUsageTypes = {Extension, Memory}, cycles = CYCLES_0, size = SIZE_0)

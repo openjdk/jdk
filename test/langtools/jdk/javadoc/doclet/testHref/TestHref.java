@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public class TestHref extends JavadocTester {
                 //External link.
                 "href=\"http://java.sun.com/j2se/1.4/docs/api/java/lang/Object.html?is-external=true#wait-long-int-\"",
                 //Member summary table link.
-                "href=\"../pkg/C1.html#method-int-int-java.util.ArrayList-\"",
+                "href=\"#method-int-int-java.util.ArrayList-\"",
                 //Anchor test.
                 "<a name=\"method-int-int-java.util.ArrayList-\">\n"
                 + "<!--   -->\n"
@@ -64,10 +64,10 @@ public class TestHref extends JavadocTester {
 
         checkOutput("pkg/C2.html", true,
                 //{@link} test.
-                "Link: <a href=\"../pkg/C1.html#method-int-int-java.util.ArrayList-\">",
+                "Link: <a href=\"C1.html#method-int-int-java.util.ArrayList-\">",
                 //@see test.
                 "See Also:</span></dt>\n"
-                + "<dd><a href=\"../pkg/C1.html#method-int-int-java.util.ArrayList-\">"
+                + "<dd><a href=\"C1.html#method-int-int-java.util.ArrayList-\">"
         );
 
         checkOutput("pkg/C4.html", true,

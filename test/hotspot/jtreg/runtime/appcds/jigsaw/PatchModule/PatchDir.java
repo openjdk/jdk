@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @summary a simple test to ensure that a directory in the --patch-module
  *          option does not affect dump process
  * @library ../..

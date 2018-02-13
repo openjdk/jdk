@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,8 +164,13 @@ class MetaspaceShared : AllStatic {
   static bool map_shared_spaces(FileMapInfo* mapinfo) NOT_CDS_RETURN_(false);
   static void initialize_shared_spaces() NOT_CDS_RETURN;
 
-  // Return true if given address is in the mapped shared space.
-  static bool is_in_shared_space(const void* p) NOT_CDS_RETURN_(false);
+  // Return true if given address is in the shared metaspace regions (i.e., excluding any
+  // mapped shared heap regions.)
+  static bool is_in_shared_metaspace(const void* p) {
+    // If no shared metaspace regions are mapped, MetaspceObj::_shared_metaspace_{base,top} will
+    // both be NULL and all values of p will be rejected quickly.
+    return (p < MetaspaceObj::_shared_metaspace_top && p >= MetaspaceObj::_shared_metaspace_base);
+  }
 
   // Return true if given address is in the shared region corresponding to the idx
   static bool is_in_shared_region(const void* p, int idx) NOT_CDS_RETURN_(false);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
 
 /*
  * @test
- * @bug 7162687 8015595
+ * @bug 7162687 8015595 8194486
  * @summary enhance KDC server availability detection
+ * @library /test/lib
  * @compile -XDignore.symbol.file Unreachable.java
- * @run main/othervm Unreachable
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts Unreachable
  */
 import java.net.PortUnreachableException;
 import java.net.SocketTimeoutException;
