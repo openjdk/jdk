@@ -30,7 +30,7 @@
 
 template <DecoratorSet decorators, typename T>
 inline void G1SATBCardTableModRefBS::write_ref_field_pre(T* field) {
-  if (HasDecorator<decorators, ARRAYCOPY_DEST_NOT_INITIALIZED>::value ||
+  if (HasDecorator<decorators, AS_DEST_NOT_INITIALIZED>::value ||
       HasDecorator<decorators, AS_NO_KEEPALIVE>::value) {
     return;
   }
