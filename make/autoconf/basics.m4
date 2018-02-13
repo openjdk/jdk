@@ -814,6 +814,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
           | $SED -e 's/config.log//g' \
               -e 's/configure.log//g' \
               -e 's/confdefs.h//g' \
+              -e 's/configure-support//g' \
               -e 's/ //g' \
           | $TR -d '\n'`
       if test "x$filtered_files" != x; then

@@ -74,7 +74,6 @@ java -Xms256m -Xmx512m com.sun.tdk.jcov.RepGenMain -fmt=html_ns -src_root=${SRCS
         -include=sun.misc.ProxyGenerator \
         -exclude=com.sun.rmi.rmid.* \
         -exclude=sun.rmi.rmic.* \
-        -exclude=sun.rmi.rmic.iiop.* \
         -exclude=javax.rmi.ssl.* \
         java.jcov
 
