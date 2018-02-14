@@ -909,11 +909,11 @@ class os: AllStatic {
   class SuspendedThreadTask {
   public:
     SuspendedThreadTask(Thread* thread) : _thread(thread), _done(false) {}
-    virtual ~SuspendedThreadTask() {}
     void run();
     bool is_done() { return _done; }
     virtual void do_task(const SuspendedThreadTaskContext& context) = 0;
   protected:
+    ~SuspendedThreadTask() {}
   private:
     void internal_do_task();
     Thread* _thread;
