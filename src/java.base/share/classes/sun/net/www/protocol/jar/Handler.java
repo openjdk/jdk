@@ -141,10 +141,9 @@ public class Handler extends java.net.URLStreamHandler {
         // 1. absolute (jar:)
         // 2. relative (i.e. url + foo/bar/baz.ext)
         // 3. anchor-only (i.e. url + #foo), which we already did (refOnly)
-        boolean absoluteSpec = false;
-        if (spec.length() >= 4) {
-            absoluteSpec = spec.substring(0, 4).equalsIgnoreCase("jar:");
-        }
+        boolean absoluteSpec = spec.length() >= 4
+                ? spec.regionMatches(true, 0, "jar:", 0, 4)
+                : false;
         spec = spec.substring(start, limit);
 
         if (absoluteSpec) {
@@ -156,16 +155,14 @@ public class Handler extends java.net.URLStreamHandler {
             int bangSlash = indexOfBangSlash(file);
             String toBangSlash = file.substring(0, bangSlash);
             String afterBangSlash = file.substring(bangSlash);
-            sun.net.www.ParseUtil canonizer = new ParseUtil();
-            afterBangSlash = canonizer.canonizeString(afterBangSlash);
+            afterBangSlash = ParseUtil.canonizeString(afterBangSlash);
             file = toBangSlash + afterBangSlash;
         }
         setURL(url, "jar", "", -1, file, ref);
     }
 
     private String parseAbsoluteSpec(String spec) {
-        URL url = null;
-        int index = -1;
+        int index;
         // check for !/
         if ((index = indexOfBangSlash(spec)) == -1) {
             throw new NullPointerException("no !/ in spec");
@@ -173,7 +170,7 @@ public class Handler extends java.net.URLStreamHandler {
         // test the inner URL
         try {
             String innerSpec = spec.substring(0, index - 1);
-            url = new URL(innerSpec);
+            new URL(innerSpec);
         } catch (MalformedURLException e) {
             throw new NullPointerException("invalid url: " +
                                            spec + " (" + e + ")");
@@ -193,16 +190,16 @@ public class Handler extends java.net.URLStreamHandler {
                                                ": no !/");
             }
             ctxFile = ctxFile.substring(0, bangSlash);
-        }
-        if (!ctxFile.endsWith("/") && (!spec.startsWith("/"))){
+        } else {
             // chop up the last component
             int lastSlash = ctxFile.lastIndexOf('/');
             if (lastSlash == -1) {
                 throw new NullPointerException("malformed " +
                                                "context url:" +
                                                url);
+            } else if (lastSlash < ctxFile.length() - 1) {
+                ctxFile = ctxFile.substring(0, lastSlash + 1);
             }
-            ctxFile = ctxFile.substring(0, lastSlash + 1);
         }
         return (ctxFile + spec);
     }
