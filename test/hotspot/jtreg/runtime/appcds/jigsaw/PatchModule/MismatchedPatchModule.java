@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,12 +72,12 @@ public class MismatchedPatchModule {
         TestCommon.checkDump(output, "Loading classes to share");
 
         // javax.naming.spi.NamingManager is not patched at runtime
-        output = TestCommon.execCommon(
+        TestCommon.run(
             "-XX:+UnlockDiagnosticVMOptions",
             "--patch-module=java.naming2=" + moduleJar,
             "-Xlog:class+path=info",
-            "PatchMain", "javax.naming.spi.NamingManager");
-        output.shouldNotContain("I pass!");
+            "PatchMain", "javax.naming.spi.NamingManager")
+          .assertNormalExit(o -> o.shouldNotContain("I pass!"));
 
         // Case 2: --patch-module specified for dump time but not for run time
         System.out.println("Case 2: --patch-module specified for dump time but not for run time");
@@ -89,11 +89,11 @@ public class MismatchedPatchModule {
         TestCommon.checkDump(output, "Loading classes to share");
 
         // javax.naming.spi.NamingManager is not patched at runtime
-        output = TestCommon.execCommon(
+        TestCommon.run(
             "-XX:+UnlockDiagnosticVMOptions",
             "-Xlog:class+path=info",
-            "PatchMain", "javax.naming.spi.NamingManager");
-        output.shouldNotContain("I pass!");
+            "PatchMain", "javax.naming.spi.NamingManager")
+          .assertNormalExit(o -> o.shouldNotContain("I pass!"));
 
         // Case 3: --patch-module specified for run time but not for dump time
         System.out.println("Case 3: --patch-module specified for run time but not for dump time");
@@ -104,12 +104,12 @@ public class MismatchedPatchModule {
         TestCommon.checkDump(output, "Loading classes to share");
 
         // javax.naming.spi.NamingManager is patched at runtime
-        output = TestCommon.execCommon(
+        TestCommon.run(
             "-XX:+UnlockDiagnosticVMOptions",
             "--patch-module=java.naming=" + moduleJar,
             "-Xlog:class+path=info",
-            "PatchMain", "javax.naming.spi.NamingManager");
-        TestCommon.checkExec(output, "I pass!");
+            "PatchMain", "javax.naming.spi.NamingManager")
+          .assertNormalExit("I pass!");
 
         // Case 4: mismatched --patch-module entry counts between dump time and run time
         System.out.println("Case 4: mismatched --patch-module entry counts between dump time and run time");
@@ -121,12 +121,12 @@ public class MismatchedPatchModule {
         TestCommon.checkDump(output, "Loading classes to share");
 
         // javax.naming.spi.NamingManager is patched at runtime
-        output = TestCommon.execCommon(
+        TestCommon.run(
             "-XX:+UnlockDiagnosticVMOptions",
             "--patch-module=java.naming=" + moduleJar,
             "--patch-module=java.naming2=" + moduleJar,
             "-Xlog:class+path=info",
-            "PatchMain", "javax.naming.spi.NamingManager");
-        TestCommon.checkExec(output, "I pass!");
+            "PatchMain", "javax.naming.spi.NamingManager")
+          .assertNormalExit("I pass!");
     }
 }
