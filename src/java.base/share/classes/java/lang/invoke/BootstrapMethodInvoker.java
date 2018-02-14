@@ -67,12 +67,12 @@ final class BootstrapMethodInvoker {
             // VM is pushing arguments at us
             pullModeBSM = null;
             if (pullMode) {
-                bootstrapMethod = Adapters.pushMePullYou(bootstrapMethod, true);
+                bootstrapMethod = pushMePullYou(bootstrapMethod, true);
             }
         } else {
             // VM wants us to pull args from it
             pullModeBSM = pullMode ? bootstrapMethod :
-                    Adapters.pushMePullYou(bootstrapMethod, false);
+                    pushMePullYou(bootstrapMethod, false);
             bootstrapMethod = null;
         }
         try {
@@ -237,9 +237,10 @@ final class BootstrapMethodInvoker {
             // give up at first null and grab the rest in one big block
             if (i >= end)  return i;
             Object[] temp = new Object[end - i];
-            if (TRACE_METHOD_LINKAGE)
-                System.out.println("resolving more BSM arguments: "+
+            if (TRACE_METHOD_LINKAGE) {
+                System.out.println("resolving more BSM arguments: " +
                         Arrays.asList(caller.getSimpleName(), Arrays.toString(indexInfo), i, end));
+            }
             copyOutBootstrapArguments(caller, indexInfo,
                                       i, end, temp, 0,
                                       true, null);
@@ -285,9 +286,10 @@ final class BootstrapMethodInvoker {
         private void prefetchIntoCache(int i, int pfLimit) {
             if (pfLimit <= i)  return;  // corner case
             Object[] temp = new Object[pfLimit - i];
-            if (TRACE_METHOD_LINKAGE)
-                System.out.println("prefetching BSM arguments: "+
+            if (TRACE_METHOD_LINKAGE) {
+                System.out.println("prefetching BSM arguments: " +
                         Arrays.asList(caller.getSimpleName(), Arrays.toString(indexInfo), i, pfLimit));
+            }
             copyOutBootstrapArguments(caller, indexInfo,
                                       i, pfLimit, temp, 0,
                                       false, NOT_PRESENT);
@@ -301,7 +303,7 @@ final class BootstrapMethodInvoker {
     }
 
     /*non-public*/ static final
-    class Adapters {
+    class PushAdapter {
         // skeleton for push-mode BSM which wraps a pull-mode BSM:
         static Object pushToBootstrapMethod(MethodHandle pullModeBSM,
                                             MethodHandles.Lookup lookup, String name, Object type,
@@ -313,29 +315,75 @@ final class BootstrapMethodInvoker {
             return pullModeBSM.invoke(lookup, bsci);
         }
 
-        // skeleton for pull-mode BSM which wraps a push-mode BSM:
-        static Object pullFromBootstrapMethod(MethodHandle pushModeBSM,
-                                              MethodHandles.Lookup lookup, BootstrapCallInfo<?> bsci)
-                throws Throwable {
-            int argc = bsci.size();
-            Object arguments[] = new Object[3 + argc];
-            arguments[0] = lookup;
-            arguments[1] = bsci.invocationName();
-            arguments[2] = bsci.invocationType();
-            bsci.copyConstants(0, argc, arguments, 3);
-            if (TRACE_METHOD_LINKAGE)
-                System.out.println("pulled arguments from VM for push-mode BSM");
-            return pushModeBSM.invokeWithArguments(arguments);
-        }
         static final MethodHandle MH_pushToBootstrapMethod;
-        static final MethodHandle MH_pullFromBootstrapMethod;
         static {
-            final Class<?> THIS_CLASS = Adapters.class;
+            final Class<?> THIS_CLASS = PushAdapter.class;
             try {
                 MH_pushToBootstrapMethod = IMPL_LOOKUP
                     .findStatic(THIS_CLASS, "pushToBootstrapMethod",
                                 MethodType.methodType(Object.class, MethodHandle.class,
                                         Lookup.class, String.class, Object.class, Object[].class));
+            } catch (Throwable ex) {
+                throw new InternalError(ex);
+            }
+        }
+    }
+
+    /*non-public*/ static final
+    class PullAdapter {
+        // skeleton for pull-mode BSM which wraps a push-mode BSM:
+        static Object pullFromBootstrapMethod(MethodHandle pushModeBSM,
+                                              MethodHandles.Lookup lookup,
+                                              BootstrapCallInfo<?> bsci)
+                throws Throwable {
+            int argc = bsci.size();
+            switch (argc) {
+                case 0:
+                    return pushModeBSM.invoke(lookup, bsci.invocationName(), bsci.invocationType());
+                case 1:
+                    return pushModeBSM.invoke(lookup, bsci.invocationName(), bsci.invocationType(),
+                            bsci.get(0));
+                case 2:
+                    return pushModeBSM.invoke(lookup, bsci.invocationName(), bsci.invocationType(),
+                            bsci.get(0), bsci.get(1));
+                case 3:
+                    return pushModeBSM.invoke(lookup, bsci.invocationName(), bsci.invocationType(),
+                            bsci.get(0), bsci.get(1), bsci.get(2));
+                case 4:
+                    return pushModeBSM.invoke(lookup, bsci.invocationName(), bsci.invocationType(),
+                            bsci.get(0), bsci.get(1), bsci.get(2), bsci.get(3));
+                case 5:
+                    return pushModeBSM.invoke(lookup, bsci.invocationName(), bsci.invocationType(),
+                            bsci.get(0), bsci.get(1), bsci.get(2), bsci.get(3), bsci.get(4));
+                case 6:
+                    return pushModeBSM.invoke(lookup, bsci.invocationName(), bsci.invocationType(),
+                            bsci.get(0), bsci.get(1), bsci.get(2), bsci.get(3), bsci.get(4), bsci.get(5));
+                default:
+                    final int NON_SPREAD_ARG_COUNT = 3;  // (lookup, name, type)
+                    final int MAX_SAFE_SIZE = MethodType.MAX_MH_ARITY / 2 - NON_SPREAD_ARG_COUNT;
+                    if (argc >= MAX_SAFE_SIZE) {
+                        // to be on the safe side, use invokeWithArguments which handles jumbo lists
+                        Object[] newargv = new Object[NON_SPREAD_ARG_COUNT + argc];
+                        newargv[0] = lookup;
+                        newargv[1] = bsci.invocationName();
+                        newargv[2] = bsci.invocationType();
+                        bsci.copyConstants(0, argc, newargv, NON_SPREAD_ARG_COUNT);
+                        return pushModeBSM.invokeWithArguments(newargv);
+                    }
+                    MethodType invocationType = MethodType.genericMethodType(NON_SPREAD_ARG_COUNT + argc);
+                    MethodHandle typedBSM = pushModeBSM.asType(invocationType);
+                    MethodHandle spreader = invocationType.invokers().spreadInvoker(NON_SPREAD_ARG_COUNT);
+                    Object[] argv = new Object[argc];
+                    bsci.copyConstants(0, argc, argv, 0);
+                    return spreader.invokeExact(typedBSM, (Object) lookup, (Object) bsci.invocationName(), bsci.invocationType(), argv);
+                }
+        }
+
+        static final MethodHandle MH_pullFromBootstrapMethod;
+
+        static {
+            final Class<?> THIS_CLASS = PullAdapter.class;
+            try {
                 MH_pullFromBootstrapMethod = IMPL_LOOKUP
                     .findStatic(THIS_CLASS, "pullFromBootstrapMethod",
                                 MethodType.methodType(Object.class, MethodHandle.class,
@@ -344,23 +392,25 @@ final class BootstrapMethodInvoker {
                 throw new InternalError(ex);
             }
         }
+    }
 
-        /** Given a push-mode BSM (taking one argument) convert it to a
-         *  pull-mode BSM (taking N pre-resolved arguments).
-         *  This method is used when, in fact, the JVM is passing up
-         *  pre-resolved arguments, but the BSM is expecting lazy stuff.
-         *  Or, when goToPushMode is true, do the reverse transform.
-         *  (The two transforms are exactly inverse.)
-         */
-        static MethodHandle pushMePullYou(MethodHandle bsm, boolean goToPushMode) {
-            if (TRACE_METHOD_LINKAGE)
-                System.out.println("converting BSM to "+(goToPushMode ? "push mode" : "pull mode"));
-            assert(isPullModeBSM(bsm) == goToPushMode);  //there must be a change
-            if (goToPushMode) {
-                return Adapters.MH_pushToBootstrapMethod.bindTo(bsm).withVarargs(true);
-            } else {
-                return Adapters.MH_pullFromBootstrapMethod.bindTo(bsm).withVarargs(false);
-            }
+    /** Given a push-mode BSM (taking one argument) convert it to a
+     *  pull-mode BSM (taking N pre-resolved arguments).
+     *  This method is used when, in fact, the JVM is passing up
+     *  pre-resolved arguments, but the BSM is expecting lazy stuff.
+     *  Or, when goToPushMode is true, do the reverse transform.
+     *  (The two transforms are exactly inverse.)
+     */
+    static MethodHandle pushMePullYou(MethodHandle bsm, boolean goToPushMode) {
+        if (TRACE_METHOD_LINKAGE) {
+            System.out.println("converting BSM of type " + bsm.type() + " to "
+                    + (goToPushMode ? "push mode" : "pull mode"));
+        }
+        assert(isPullModeBSM(bsm) == goToPushMode); // there must be a change
+        if (goToPushMode) {
+            return PushAdapter.MH_pushToBootstrapMethod.bindTo(bsm).withVarargs(true);
+        } else {
+            return PullAdapter.MH_pullFromBootstrapMethod.bindTo(bsm).withVarargs(false);
         }
     }
 }
