@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,6 @@ public:
   // Initializes the buffer to be empty, but with the given "word_sz".
   // Must get initialized with "set_buf" for an allocation to succeed.
   PLAB(size_t word_sz);
-  virtual ~PLAB() {}
 
   static size_t size_required_for_allocation(size_t word_size) { return word_size + AlignmentReserve; }
 
@@ -120,7 +119,7 @@ public:
   }
 
   // Sets the space of the buffer to be [buf, space+word_sz()).
-  virtual void set_buf(HeapWord* buf, size_t new_word_sz) {
+  void set_buf(HeapWord* buf, size_t new_word_sz) {
     assert(new_word_sz > AlignmentReserve, "Too small");
     _word_sz = new_word_sz;
 
@@ -136,11 +135,11 @@ public:
   // Flush allocation statistics into the given PLABStats supporting ergonomic
   // sizing of PLAB's and retire the current buffer. To be called at the end of
   // GC.
-  virtual void flush_and_retire_stats(PLABStats* stats);
+  void flush_and_retire_stats(PLABStats* stats);
 
   // Fills in the unallocated portion of the buffer with a garbage object and updates
   // statistics. To be called during GC.
-  virtual void retire();
+  void retire();
 };
 
 // PLAB book-keeping.

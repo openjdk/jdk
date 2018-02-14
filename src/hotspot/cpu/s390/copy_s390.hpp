@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -73,7 +73,7 @@
 
 #undef USE_INLINE_ASM
 
-static void copy_conjoint_jshorts_atomic(jshort* from, jshort* to, size_t count) {
+static void copy_conjoint_jshorts_atomic(const jshort* from, jshort* to, size_t count) {
   if (from > to) {
     while (count-- > 0) {
       // Copy forwards
@@ -89,7 +89,7 @@ static void copy_conjoint_jshorts_atomic(jshort* from, jshort* to, size_t count)
   }
 }
 
-static void copy_conjoint_jints_atomic(jint* from, jint* to, size_t count) {
+static void copy_conjoint_jints_atomic(const jint* from, jint* to, size_t count) {
   if (from > to) {
     while (count-- > 0) {
       // Copy forwards
@@ -105,7 +105,7 @@ static void copy_conjoint_jints_atomic(jint* from, jint* to, size_t count) {
   }
 }
 
-static bool has_destructive_overlap(char* from, char* to, size_t byte_count) {
+static bool has_destructive_overlap(const char* from, char* to, size_t byte_count) {
   return (from < to) && ((to-from) < (ptrdiff_t)byte_count);
 }
 
@@ -662,7 +662,7 @@ static bool has_destructive_overlap(char* from, char* to, size_t byte_count) {
 //   D I S J O I N T   C O P Y I N G   //
 //*************************************//
 
-static void pd_aligned_disjoint_words(HeapWord* from, HeapWord* to, size_t count) {
+static void pd_aligned_disjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
   // JVM2008: very frequent, some tests frequent.
 
   // Copy HeapWord (=DW) aligned storage. Use MVCLE in inline-asm code.
@@ -740,13 +740,13 @@ static void pd_aligned_disjoint_words(HeapWord* from, HeapWord* to, size_t count
 #endif
 }
 
-static void pd_disjoint_words_atomic(HeapWord* from, HeapWord* to, size_t count) {
+static void pd_disjoint_words_atomic(const HeapWord* from, HeapWord* to, size_t count) {
   // JVM2008: < 4k calls.
   assert(((((size_t)from) & 0x07L) | (((size_t)to) & 0x07L)) == 0, "No atomic copy w/o aligned data");
   pd_aligned_disjoint_words(from, to, count); // Rare calls -> just delegate.
 }
 
-static void pd_disjoint_words(HeapWord* from, HeapWord* to, size_t count) {
+static void pd_disjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
   // JVM2008: very rare.
   pd_aligned_disjoint_words(from, to, count); // Rare calls -> just delegate.
 }
@@ -756,7 +756,7 @@ static void pd_disjoint_words(HeapWord* from, HeapWord* to, size_t count) {
 //   C O N J O I N T   C O P Y I N G   //
 //*************************************//
 
-static void pd_aligned_conjoint_words(HeapWord* from, HeapWord* to, size_t count) {
+static void pd_aligned_conjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
   // JVM2008: between some and lower end of frequent.
 
 #ifdef USE_INLINE_ASM
@@ -836,13 +836,13 @@ static void pd_aligned_conjoint_words(HeapWord* from, HeapWord* to, size_t count
 #endif
 }
 
-static void pd_conjoint_words(HeapWord* from, HeapWord* to, size_t count) {
+static void pd_conjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
 
   // Just delegate. HeapWords are optimally aligned anyway.
   pd_aligned_conjoint_words(from, to, count);
 }
 
-static void pd_conjoint_bytes(void* from, void* to, size_t count) {
+static void pd_conjoint_bytes(const void* from, void* to, size_t count) {
 
 #ifdef USE_INLINE_ASM
   size_t count_in = count;
@@ -866,16 +866,16 @@ static void pd_conjoint_bytes(void* from, void* to, size_t count) {
 //   C O N J O I N T  A T O M I C   C O P Y I N G   //
 //**************************************************//
 
-static void pd_conjoint_bytes_atomic(void* from, void* to, size_t count) {
+static void pd_conjoint_bytes_atomic(const void* from, void* to, size_t count) {
   // Call arraycopy stubs to do the job.
   pd_conjoint_bytes(from, to, count); // bytes are always accessed atomically.
 }
 
-static void pd_conjoint_jshorts_atomic(jshort* from, jshort* to, size_t count) {
+static void pd_conjoint_jshorts_atomic(const jshort* from, jshort* to, size_t count) {
 
 #ifdef USE_INLINE_ASM
   size_t count_in = count;
-  if (has_destructive_overlap((char*)from, (char*)to, count_in*BytesPerShort)) {
+  if (has_destructive_overlap((const char*)from, (char*)to, count_in*BytesPerShort)) {
     // Use optimizations from shared code where no z-specific optimization exists.
     copy_conjoint_jshorts_atomic(from, to, count);
   } else {
@@ -890,11 +890,11 @@ static void pd_conjoint_jshorts_atomic(jshort* from, jshort* to, size_t count) {
 #endif
 }
 
-static void pd_conjoint_jints_atomic(jint* from, jint* to, size_t count) {
+static void pd_conjoint_jints_atomic(const jint* from, jint* to, size_t count) {
 
 #ifdef USE_INLINE_ASM
   size_t count_in = count;
-  if (has_destructive_overlap((char*)from, (char*)to, count_in*BytesPerInt)) {
+  if (has_destructive_overlap((const char*)from, (char*)to, count_in*BytesPerInt)) {
     switch (count_in) {
       case 4: COPY4_ATOMIC_4(to,from)
               return;
@@ -922,7 +922,7 @@ static void pd_conjoint_jints_atomic(jint* from, jint* to, size_t count) {
 #endif
 }
 
-static void pd_conjoint_jlongs_atomic(jlong* from, jlong* to, size_t count) {
+static void pd_conjoint_jlongs_atomic(const jlong* from, jlong* to, size_t count) {
 
 #ifdef USE_INLINE_ASM
   size_t count_in = count;
@@ -970,11 +970,11 @@ static void pd_conjoint_jlongs_atomic(jlong* from, jlong* to, size_t count) {
     }
   }
   else
-    pd_aligned_disjoint_words((HeapWord*)from, (HeapWord*)to, count_in); // rare calls -> just delegate.
+    pd_aligned_disjoint_words((const HeapWord*)from, (HeapWord*)to, count_in); // rare calls -> just delegate.
 #endif
 }
 
-static void pd_conjoint_oops_atomic(oop* from, oop* to, size_t count) {
+static void pd_conjoint_oops_atomic(const oop* from, oop* to, size_t count) {
 
 #ifdef USE_INLINE_ASM
   size_t count_in = count;
@@ -1011,24 +1011,24 @@ static void pd_conjoint_oops_atomic(oop* from, oop* to, size_t count) {
 #endif
 }
 
-static void pd_arrayof_conjoint_bytes(HeapWord* from, HeapWord* to, size_t count) {
+static void pd_arrayof_conjoint_bytes(const HeapWord* from, HeapWord* to, size_t count) {
   pd_conjoint_bytes_atomic(from, to, count);
 }
 
-static void pd_arrayof_conjoint_jshorts(HeapWord* from, HeapWord* to, size_t count) {
-  pd_conjoint_jshorts_atomic((jshort*)from, (jshort*)to, count);
+static void pd_arrayof_conjoint_jshorts(const HeapWord* from, HeapWord* to, size_t count) {
+  pd_conjoint_jshorts_atomic((const jshort*)from, (jshort*)to, count);
 }
 
-static void pd_arrayof_conjoint_jints(HeapWord* from, HeapWord* to, size_t count) {
-  pd_conjoint_jints_atomic((jint*)from, (jint*)to, count);
+static void pd_arrayof_conjoint_jints(const HeapWord* from, HeapWord* to, size_t count) {
+  pd_conjoint_jints_atomic((const jint*)from, (jint*)to, count);
 }
 
-static void pd_arrayof_conjoint_jlongs(HeapWord* from, HeapWord* to, size_t count) {
-  pd_conjoint_jlongs_atomic((jlong*)from, (jlong*)to, count);
+static void pd_arrayof_conjoint_jlongs(const HeapWord* from, HeapWord* to, size_t count) {
+  pd_conjoint_jlongs_atomic((const jlong*)from, (jlong*)to, count);
 }
 
-static void pd_arrayof_conjoint_oops(HeapWord* from, HeapWord* to, size_t count) {
-  pd_conjoint_oops_atomic((oop*)from, (oop*)to, count);
+static void pd_arrayof_conjoint_oops(const HeapWord* from, HeapWord* to, size_t count) {
+  pd_conjoint_oops_atomic((const oop*)from, (oop*)to, count);
 }
 
 //**********************************************//

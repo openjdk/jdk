@@ -273,7 +273,7 @@ private:
   G1CollectedHeap* _g1h;
 public:
   VerifyArchivePointerRegionClosure(G1CollectedHeap* g1h) { }
-  virtual bool doHeapRegion(HeapRegion* r) {
+  virtual bool do_heap_region(HeapRegion* r) {
    if (r->is_archive()) {
       VerifyObjectInArchiveRegionClosure verify_oop_pointers(r, false);
       r->object_iterate(&verify_oop_pointers);
@@ -306,7 +306,7 @@ public:
     return _failures;
   }
 
-  bool doHeapRegion(HeapRegion* r) {
+  bool do_heap_region(HeapRegion* r) {
     // For archive regions, verify there are no heap pointers to
     // non-pinned regions. For all others, verify liveness info.
     if (r->is_closed_archive()) {
@@ -498,7 +498,7 @@ public:
     _old_set(old_set), _humongous_set(humongous_set), _hrm(hrm),
     _old_count(), _humongous_count(), _free_count(){ }
 
-  bool doHeapRegion(HeapRegion* hr) {
+  bool do_heap_region(HeapRegion* hr) {
     if (hr->is_young()) {
       // TODO
     } else if (hr->is_humongous()) {
@@ -608,7 +608,7 @@ class G1VerifyCardTableCleanup: public HeapRegionClosure {
 public:
   G1VerifyCardTableCleanup(G1HeapVerifier* verifier, G1SATBCardTableModRefBS* ct_bs)
     : _verifier(verifier), _ct_bs(ct_bs) { }
-  virtual bool doHeapRegion(HeapRegion* r) {
+  virtual bool do_heap_region(HeapRegion* r) {
     if (r->is_survivor()) {
       _verifier->verify_dirty_region(r);
     } else {
@@ -654,7 +654,7 @@ private:
   G1HeapVerifier* _verifier;
 public:
   G1VerifyDirtyYoungListClosure(G1HeapVerifier* verifier) : HeapRegionClosure(), _verifier(verifier) { }
-  virtual bool doHeapRegion(HeapRegion* r) {
+  virtual bool do_heap_region(HeapRegion* r) {
     _verifier->verify_dirty_region(r);
     return false;
   }
@@ -721,7 +721,7 @@ public:
 
   bool failures() { return _failures; }
 
-  virtual bool doHeapRegion(HeapRegion* hr) {
+  virtual bool do_heap_region(HeapRegion* hr) {
     bool result = _verifier->verify_bitmaps(_caller, hr);
     if (!result) {
       _failures = true;
@@ -744,7 +744,7 @@ class G1CheckCSetFastTableClosure : public HeapRegionClosure {
  public:
   G1CheckCSetFastTableClosure() : HeapRegionClosure(), _failures(false) { }
 
-  virtual bool doHeapRegion(HeapRegion* hr) {
+  virtual bool do_heap_region(HeapRegion* hr) {
     uint i = hr->hrm_index();
     InCSetState cset_state = (InCSetState) G1CollectedHeap::heap()->_in_cset_fast_test.get_by_index(i);
     if (hr->is_humongous()) {

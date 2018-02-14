@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,6 @@ PSGCAdaptivePolicyCounters* ParallelScavengeHeap::_gc_policy_counters = NULL;
 GCTaskManager* ParallelScavengeHeap::_gc_task_manager = NULL;
 
 jint ParallelScavengeHeap::initialize() {
-  CollectedHeap::pre_initialize();
-
   const size_t heap_size = _collector_policy->max_heap_byte_size();
 
   ReservedSpace heap_rs = Universe::reserve_heap(heap_size, _collector_policy->heap_alignment());
@@ -490,13 +488,6 @@ void ParallelScavengeHeap::resize_all_tlabs() {
   CollectedHeap::resize_all_tlabs();
 }
 
-bool ParallelScavengeHeap::can_elide_initializing_store_barrier(oop new_obj) {
-  // We don't need barriers for stores to objects in the
-  // young gen and, a fortiori, for initializing stores to
-  // objects therein.
-  return is_in_young(new_obj);
-}
-
 // This method is used by System.gc() and JVMTI.
 void ParallelScavengeHeap::collect(GCCause::Cause cause) {
   assert(!Heap_lock->owned_by_self(),
@@ -719,4 +710,3 @@ GrowableArray<MemoryPool*> ParallelScavengeHeap::memory_pools() {
   memory_pools.append(_old_pool);
   return memory_pools;
 }
-
