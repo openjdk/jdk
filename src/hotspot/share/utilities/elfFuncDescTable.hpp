@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -116,32 +116,31 @@ documentation.
 
 class ElfFuncDescTable: public CHeapObj<mtInternal> {
   friend class ElfFile;
- public:
+private:
+  // holds the complete function descriptor section if
+  // we can allocate enough memory
+  ElfSection          _section;
+
+  // file contains string table
+  FILE* const         _file;
+
+  // The section index of this function descriptor (i.e. '.opd') section in the ELF file
+  const int           _index;
+
+  NullDecoder::decoder_status  _status;
+public:
   ElfFuncDescTable(FILE* file, Elf_Shdr shdr, int index);
   ~ElfFuncDescTable();
 
   // return the function address for the function descriptor at 'index' or NULL on error
   address lookup(Elf_Word index);
 
-  int get_index() { return m_index; };
+  int get_index() const { return _index; };
 
-  NullDecoder::decoder_status get_status() { return m_status; };
+  NullDecoder::decoder_status get_status() const { return _status; };
 
- protected:
-  // holds the complete function descriptor section if
-  // we can allocate enough memory
-  address*            m_funcDescs;
-
-  // file contains string table
-  FILE*               m_file;
-
-  // section header
-  Elf_Shdr            m_shdr;
-
-  // The section index of this function descriptor (i.e. '.opd') section in the ELF file
-  int                 m_index;
-
-  NullDecoder::decoder_status  m_status;
+private:
+  address* cached_func_descs() const { return (address*)_section.section_data(); }
 };
 
 #endif // !_WINDOWS && !__APPLE__
