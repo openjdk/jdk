@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import jdk.internal.misc.SharedSecrets;
 
 // jmx import
 //
@@ -922,6 +923,8 @@ public class TabularDataSupport
             throws IOException, ClassNotFoundException {
       in.defaultReadObject();
       List<String> tmpNames = tabularType.getIndexNames();
-      indexNamesArray = tmpNames.toArray(new String[tmpNames.size()]);
+      int size = tmpNames.size();
+      SharedSecrets.getJavaObjectInputStreamAccess().checkArray(in, String[].class, size);
+      indexNamesArray = tmpNames.toArray(new String[size]);
     }
 }
