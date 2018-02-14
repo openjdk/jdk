@@ -44,7 +44,9 @@ import java.nio.charset.CodingErrorAction;
  * @author  Mike McCloskey
  */
 
-public class ParseUtil {
+public final class ParseUtil {
+
+    private ParseUtil() {}
 
     /**
      * Constructs an encoded version of the specified path string suitable
@@ -80,10 +82,13 @@ public class ParseUtil {
         int len = path.length();
         for (int i = 0; i < len; i++) {
             char c = path.charAt(i);
-            if (c == '/' || c == '.' ||
-                    c >= 'a' && c <= 'z' ||
-                    c >= 'A' && c <= 'Z' ||
-                    c >= '0' && c <= '9') {
+            // Ordering in the following test is performance sensitive,
+            // and typically paths have most chars in the a-z range, then
+            // in the symbol range '&'-':' (includes '.', '/' and '0'-'9')
+            // and more rarely in the A-Z range.
+            if (c >= 'a' && c <= 'z' ||
+                c >= '&' && c <= ':' ||
+                c >= 'A' && c <= 'Z') {
                 continue;
             } else if (c > 0x007F || match(c, L_ENCODED, H_ENCODED)) {
                 return i;
@@ -219,9 +224,17 @@ public class ParseUtil {
     /**
      * Returns a canonical version of the specified string.
      */
-    public String canonizeString(String file) {
-        int i = 0;
-        int lim = file.length();
+    public static String canonizeString(String file) {
+        int len = file.length();
+        if (len == 0 || (file.indexOf("./") == -1 && file.charAt(len - 1) != '.')) {
+            return file;
+        } else {
+            return doCanonize(file);
+        }
+    }
+
+    private static String doCanonize(String file) {
+        int i, lim;
 
         // Remove embedded /../
         while ((i = file.indexOf("/../")) >= 0) {
