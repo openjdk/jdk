@@ -58,7 +58,7 @@ struct DetailedUsage : public StackObj {
 class DetailedUsageClosure: public HeapRegionClosure {
 public:
   DetailedUsage _usage;
-  bool doHeapRegion(HeapRegion* r) {
+  bool do_heap_region(HeapRegion* r) {
     if (r->is_old()) {
       _usage._old_used += r->used();
       _usage._old_region_count++;

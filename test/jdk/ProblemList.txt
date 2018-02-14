@@ -482,6 +482,8 @@ com/sun/jdi/GetLocalVariables4Test.sh                           8067354 windows-
 
 com/sun/jdi/sde/SourceDebugExtensionTest.java                   8158066 windows-all
 
+com/sun/jdi/NashornPopFrameTest.java                            8187143 generic-all
+
 ############################################################################
 
 # jdk_time

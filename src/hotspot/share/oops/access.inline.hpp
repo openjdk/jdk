@@ -1060,6 +1060,7 @@ void Access<decorators>::verify_decorators() {
   const DecoratorSet barrier_strength_decorators = decorators & AS_DECORATOR_MASK;
   STATIC_ASSERT(barrier_strength_decorators == 0 || ( // make sure barrier strength decorators are disjoint if set
     (barrier_strength_decorators ^ AS_NO_KEEPALIVE) == 0 ||
+    (barrier_strength_decorators ^ AS_DEST_NOT_INITIALIZED) == 0 ||
     (barrier_strength_decorators ^ AS_RAW) == 0 ||
     (barrier_strength_decorators ^ AS_NORMAL) == 0
   ));

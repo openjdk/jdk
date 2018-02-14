@@ -186,9 +186,9 @@ void G1CollectionSet::iterate_from(HeapRegionClosure* cl, uint worker_id, uint t
 
   do {
     HeapRegion* r = G1CollectedHeap::heap()->region_at(_collection_set_regions[cur_pos]);
-    bool result = cl->doHeapRegion(r);
+    bool result = cl->do_heap_region(r);
     if (result) {
-      cl->incomplete();
+      cl->set_incomplete();
       return;
     }
     cur_pos++;
@@ -292,7 +292,7 @@ public:
 public:
   G1VerifyYoungAgesClosure() : HeapRegionClosure(), _valid(true) { }
 
-  virtual bool doHeapRegion(HeapRegion* r) {
+  virtual bool do_heap_region(HeapRegion* r) {
     guarantee(r->is_young(), "Region must be young but is %s", r->get_type_str());
 
     SurvRateGroup* group = r->surv_rate_group();
@@ -332,7 +332,7 @@ class G1PrintCollectionSetClosure : public HeapRegionClosure {
 public:
   G1PrintCollectionSetClosure(outputStream* st) : HeapRegionClosure(), _st(st) { }
 
-  virtual bool doHeapRegion(HeapRegion* r) {
+  virtual bool do_heap_region(HeapRegion* r) {
     assert(r->in_collection_set(), "Region %u should be in collection set", r->hrm_index());
     _st->print_cr("  " HR_FORMAT ", P: " PTR_FORMAT "N: " PTR_FORMAT ", age: %4d",
                   HR_FORMAT_PARAMS(r),
@@ -524,7 +524,7 @@ public:
     FREE_C_HEAP_ARRAY(int, _heap_region_indices);
   }
 
-  virtual bool doHeapRegion(HeapRegion* r) {
+  virtual bool do_heap_region(HeapRegion* r) {
     const int idx = r->young_index_in_cset();
 
     assert(idx > -1, "Young index must be set for all regions in the incremental collection set but is not for region %u.", r->hrm_index());
