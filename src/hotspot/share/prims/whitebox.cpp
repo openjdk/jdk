@@ -60,6 +60,7 @@
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/elfFile.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_CDS
 #include "prims/cdsoffsets.hpp"
@@ -1911,6 +1912,13 @@ WB_ENTRY(void, WB_PrintOsInfo(JNIEnv* env, jobject o))
   os::print_os_info(tty);
 WB_END
 
+// Elf decoder
+WB_ENTRY(void, WB_DisableElfSectionCache(JNIEnv* env))
+#if !defined(_WINDOWS) && !defined(__APPLE__)
+  ElfFile::_do_not_cache_elf_section = true;
+#endif
+WB_END
+
 
 #define CC (char*)
 
@@ -2125,6 +2133,7 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_CheckLibSpecifiesNoexecstack},
   {CC"isContainerized",           CC"()Z",            (void*)&WB_IsContainerized },
   {CC"printOsInfo",               CC"()V",            (void*)&WB_PrintOsInfo },
+  {CC"disableElfSectionCache",    CC"()V",            (void*)&WB_DisableElfSectionCache },
 };
 
 
