@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,6 @@
 import jdk.testlibrary.OutputAnalyzer;
 import jdk.test.lib.util.JarUtils;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Base64;
-
 /**
  * @test
  * @bug 8024302 8026037
@@ -38,24 +34,13 @@ import java.util.Base64;
  */
 public class BadNetscapeCertTypeTest extends Test {
 
-    private static final String NETSCAPE_KEYSTORE_BASE64 = TEST_SOURCES + FS
-            + "bad_netscape_cert_type.jks.base64";
-
-    private static final String NETSCAPE_KEYSTORE
-            = "bad_netscape_cert_type.jks";
-
     /**
      * The test signs and verifies a jar that contains entries
      * whose signer certificate's NetscapeCertType extension
      * doesn't allow code signing (badNetscapeCertType).
      * Warning message is expected.
-     * Run bad_netscape_cert_type.sh script to create bad_netscape_cert_type.jks
      */
     public static void main(String[] args) throws Throwable {
-
-        Files.write(Paths.get(NETSCAPE_KEYSTORE),
-                Base64.getMimeDecoder().decode(
-                    Files.readAllBytes(Paths.get(NETSCAPE_KEYSTORE_BASE64))));
 
         BadNetscapeCertTypeTest test = new BadNetscapeCertTypeTest();
         test.start();
@@ -66,10 +51,22 @@ public class BadNetscapeCertTypeTest extends Test {
         Utils.createFiles(FIRST_FILE);
         JarUtils.createJar(UNSIGNED_JARFILE, FIRST_FILE);
 
+        // create a certificate whose signer certificate's
+        // NetscapeCertType extension doesn't allow code signing
+        // create key pair for jar signing
+        createAlias(CA_KEY_ALIAS);
+        createAlias(KEY_ALIAS);
+
+        issueCert(
+                KEY_ALIAS,
+                // NetscapeCertType [ SSL client ]
+                "-ext", "2.16.840.1.113730.1.1=03020780",
+                "-validity", Integer.toString(VALIDITY));
+
         // sign jar
         OutputAnalyzer analyzer = jarsigner(
                 "-verbose",
-                "-keystore", NETSCAPE_KEYSTORE,
+                "-keystore", KEYSTORE,
                 "-storepass", PASSWORD,
                 "-keypass", PASSWORD,
                 "-signedjar", SIGNED_JARFILE,
@@ -82,7 +79,7 @@ public class BadNetscapeCertTypeTest extends Test {
         analyzer = jarsigner(
                 "-verify",
                 "-verbose",
-                "-keystore", NETSCAPE_KEYSTORE,
+                "-keystore", KEYSTORE,
                 "-storepass", PASSWORD,
                 "-keypass", PASSWORD,
                 SIGNED_JARFILE);
@@ -94,7 +91,7 @@ public class BadNetscapeCertTypeTest extends Test {
                 "-verify",
                 "-verbose",
                 "-strict",
-                "-keystore", NETSCAPE_KEYSTORE,
+                "-keystore", KEYSTORE,
                 "-storepass", PASSWORD,
                 "-keypass", PASSWORD,
                 SIGNED_JARFILE);

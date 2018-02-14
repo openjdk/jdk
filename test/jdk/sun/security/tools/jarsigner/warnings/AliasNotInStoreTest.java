@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,32 +51,12 @@ public class AliasNotInStoreTest extends Test {
         JarUtils.createJar(UNSIGNED_JARFILE, FIRST_FILE);
 
         // create first key pair for signing
-        keytool(
-                "-genkey",
-                "-alias", FIRST_KEY_ALIAS,
-                "-keyalg", KEY_ALG,
-                "-keysize", Integer.toString(KEY_SIZE),
-                "-keystore", BOTH_KEYS_KEYSTORE,
-                "-storepass", PASSWORD,
-                "-keypass", PASSWORD,
-                "-dname", "CN=First",
-                "-validity", Integer.toString(VALIDITY)).shouldHaveExitValue(0);
-
-        // create second key pair for signing
-        keytool(
-                "-genkey",
-                "-alias", SECOND_KEY_ALIAS,
-                "-keyalg", KEY_ALG,
-                "-keysize", Integer.toString(KEY_SIZE),
-                "-keystore", BOTH_KEYS_KEYSTORE,
-                "-storepass", PASSWORD,
-                "-keypass", PASSWORD,
-                "-dname", "CN=Second",
-                "-validity", Integer.toString(VALIDITY)).shouldHaveExitValue(0);
+        createAlias(FIRST_KEY_ALIAS);
+        createAlias(SECOND_KEY_ALIAS);
 
         // sign jar with first key
         OutputAnalyzer analyzer = jarsigner(
-                "-keystore", BOTH_KEYS_KEYSTORE,
+                "-keystore", KEYSTORE,
                 "-storepass", PASSWORD,
                 "-keypass", PASSWORD,
                 "-signedjar", SIGNED_JARFILE,
@@ -93,7 +73,7 @@ public class AliasNotInStoreTest extends Test {
 
         // sign jar with second key
         analyzer = jarsigner(
-                "-keystore", BOTH_KEYS_KEYSTORE,
+                "-keystore", KEYSTORE,
                 "-storepass", PASSWORD,
                 "-keypass", PASSWORD,
                 UPDATED_SIGNED_JARFILE,
@@ -104,7 +84,7 @@ public class AliasNotInStoreTest extends Test {
         // create keystore that contains only first key
         keytool(
                 "-importkeystore",
-                "-srckeystore", BOTH_KEYS_KEYSTORE,
+                "-srckeystore", KEYSTORE,
                 "-srcalias", FIRST_KEY_ALIAS,
                 "-srcstorepass", PASSWORD,
                 "-srckeypass", PASSWORD,
@@ -113,7 +93,7 @@ public class AliasNotInStoreTest extends Test {
                 "-deststorepass", PASSWORD,
                 "-destkeypass", PASSWORD).shouldHaveExitValue(0);
 
-        // verify jar with keystore that contains only first key in strict mode,
+        // verify jar with keystore that contains only first key,
         // so there is signed entry (FirstClass.class) that is not signed
         // by any alias in the keystore
         analyzer = jarsigner(
