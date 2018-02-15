@@ -692,8 +692,9 @@ public class Base64 {
             int dp = 0;
             int bits = 0;
             int shiftto = 18;       // pos of first byte of 4-byte atom
+
             while (sp < sl) {
-                if (bits == 0 && sp + 4 < sl) {           // fast path
+                if (shiftto == 18 && sp + 4 < sl) {       // fast path
                     int sl0 = sp + ((sl - sp) & ~0b11);
                     while (sp < sl0) {
                         int b1 = base64[src[sp++] & 0xff];
