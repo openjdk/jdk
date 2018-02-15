@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,48 +30,26 @@
 #include "utilities/elfFuncDescTable.hpp"
 #include "utilities/elfSymbolTable.hpp"
 
-ElfSymbolTable::ElfSymbolTable(FILE* file, Elf_Shdr shdr) {
-  assert(file, "null file handle");
-  m_symbols = NULL;
-  m_next = NULL;
-  m_file = file;
-  m_status = NullDecoder::no_error;
+ElfSymbolTable::ElfSymbolTable(FILE* const file, Elf_Shdr& shdr) :
+  _section(file, shdr), _fd(file), _next(NULL) {
+  assert(file != NULL, "null file handle");
+  _status = _section.status();
 
-  // try to load the string table
-  long cur_offset = ftell(file);
-  if (cur_offset != -1) {
-    // call malloc so we can back up if memory allocation fails.
-    m_symbols = (Elf_Sym*)os::malloc(shdr.sh_size, mtInternal);
-    if (m_symbols) {
-      if (fseek(file, shdr.sh_offset, SEEK_SET) ||
-        fread((void*)m_symbols, shdr.sh_size, 1, file) != 1 ||
-        fseek(file, cur_offset, SEEK_SET)) {
-        m_status = NullDecoder::file_invalid;
-        os::free(m_symbols);
-        m_symbols = NULL;
-      }
-    }
-    if (!NullDecoder::is_error(m_status)) {
-      memcpy(&m_shdr, &shdr, sizeof(Elf_Shdr));
-    }
-  } else {
-    m_status = NullDecoder::file_invalid;
+  if (_section.section_header()->sh_size % sizeof(Elf_Sym) != 0) {
+    _status = NullDecoder::file_invalid;
   }
 }
 
 ElfSymbolTable::~ElfSymbolTable() {
-  if (m_symbols != NULL) {
-    os::free(m_symbols);
-  }
-
-  if (m_next != NULL) {
-    delete m_next;
+  if (_next != NULL) {
+    delete _next;
   }
 }
 
 bool ElfSymbolTable::compare(const Elf_Sym* sym, address addr, int* stringtableIndex, int* posIndex, int* offset, ElfFuncDescTable* funcDescTable) {
   if (STT_FUNC == ELF_ST_TYPE(sym->st_info)) {
     Elf_Word st_size = sym->st_size;
+    const Elf_Shdr* shdr = _section.section_header();
     address sym_addr;
     if (funcDescTable != NULL && funcDescTable->get_index() == sym->st_shndx) {
       // We need to go another step trough the function descriptor table (currently PPC64 only)
@@ -82,7 +60,7 @@ bool ElfSymbolTable::compare(const Elf_Sym* sym, address addr, int* stringtableI
     if (sym_addr <= addr && (Elf_Word)(addr - sym_addr) < st_size) {
       *offset = (int)(addr - sym_addr);
       *posIndex = sym->st_name;
-      *stringtableIndex = m_shdr.sh_link;
+      *stringtableIndex = shdr->sh_link;
       return true;
     }
   }
@@ -94,39 +72,39 @@ bool ElfSymbolTable::lookup(address addr, int* stringtableIndex, int* posIndex, 
   assert(posIndex, "null string table offset pointer");
   assert(offset, "null offset pointer");
 
-  if (NullDecoder::is_error(m_status)) {
+  if (NullDecoder::is_error(get_status())) {
     return false;
   }
 
   size_t  sym_size = sizeof(Elf_Sym);
-  assert((m_shdr.sh_size % sym_size) == 0, "check size");
-  int count = m_shdr.sh_size / sym_size;
-  if (m_symbols != NULL) {
+  int count = _section.section_header()->sh_size / sym_size;
+  Elf_Sym* symbols = (Elf_Sym*)_section.section_data();
+
+  if (symbols != NULL) {
     for (int index = 0; index < count; index ++) {
-      if (compare(&m_symbols[index], addr, stringtableIndex, posIndex, offset, funcDescTable)) {
+      if (compare(&symbols[index], addr, stringtableIndex, posIndex, offset, funcDescTable)) {
         return true;
       }
     }
   } else {
-    long cur_pos;
-    if ((cur_pos = ftell(m_file)) == -1 ||
-      fseek(m_file, m_shdr.sh_offset, SEEK_SET)) {
-      m_status = NullDecoder::file_invalid;
+    MarkedFileReader mfd(_fd);
+
+    if (!mfd.has_mark() || !mfd.set_position(_section.section_header()->sh_offset)) {
+      _status = NullDecoder::file_invalid;
       return false;
     }
 
     Elf_Sym sym;
     for (int index = 0; index < count; index ++) {
-      if (fread(&sym, sym_size, 1, m_file) == 1) {
-        if (compare(&sym, addr, stringtableIndex, posIndex, offset, funcDescTable)) {
-          return true;
-        }
-      } else {
-        m_status = NullDecoder::file_invalid;
+      if (!mfd.read((void*)&sym, sizeof(sym))) {
+        _status = NullDecoder::file_invalid;
         return false;
       }
+
+      if (compare(&sym, addr, stringtableIndex, posIndex, offset, funcDescTable)) {
+        return true;
+      }
     }
-    fseek(m_file, cur_pos, SEEK_SET);
   }
   return false;
 }

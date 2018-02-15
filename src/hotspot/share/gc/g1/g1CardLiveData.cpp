@@ -285,7 +285,7 @@ class G1CreateCardLiveDataTask: public AbstractGangTask {
       _mark_bitmap(mark_bitmap),
       _cm(cm) { }
 
-    bool doHeapRegion(HeapRegion* hr) {
+    bool do_heap_region(HeapRegion* hr) {
       size_t marked_bytes = _helper.mark_marked_during_marking(_mark_bitmap, hr);
       if (marked_bytes > 0) {
         hr->add_to_marked_bytes(marked_bytes);
@@ -352,7 +352,7 @@ class G1FinalizeCardLiveDataTask: public AbstractGangTask {
       _helper(live_data, g1h->reserved_region().start()),
       _gc_timestamp_at_create(live_data->gc_timestamp_at_create()) { }
 
-    bool doHeapRegion(HeapRegion* hr) {
+    bool do_heap_region(HeapRegion* hr) {
       if (has_been_reclaimed(hr)) {
         _helper.reset_live_data(hr);
       }
@@ -478,7 +478,7 @@ class G1VerifyCardLiveDataTask: public AbstractGangTask {
 
     int failures() const { return _failures; }
 
-    bool doHeapRegion(HeapRegion* hr) {
+    bool do_heap_region(HeapRegion* hr) {
       int failures = 0;
 
       // Walk the marking bitmap for this region and set the corresponding bits

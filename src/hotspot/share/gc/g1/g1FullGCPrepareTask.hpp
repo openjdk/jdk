@@ -67,7 +67,7 @@ protected:
                                G1FullGCCompactionPoint* cp);
 
     void update_sets();
-    bool doHeapRegion(HeapRegion* hr);
+    bool do_heap_region(HeapRegion* hr);
     bool freed_regions();
   };
 

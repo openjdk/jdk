@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,7 +279,7 @@ public class VerifierTest implements Opcodes {
         MethodVisitor mv;
         AnnotationVisitor av0;
 
-        cw.visit(V1_6, ACC_SUPER, "UnverifiableBase", null, "java/lang/Object", null);
+        cw.visit(V1_8, ACC_SUPER, "UnverifiableBase", null, "java/lang/Object", null);
         {
             fv = cw.visitField(ACC_FINAL + ACC_STATIC, "x", "LVerifierTest;", null, null);
             fv.visitEnd();
@@ -296,8 +296,7 @@ public class VerifierTest implements Opcodes {
         {
             mv = cw.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null);
             mv.visitCode();
-            //WAS mv.visitTypeInsn(NEW, "VerifierTest");
-            mv.visitTypeInsn(NEW, "java/lang/Object");
+            mv.visitTypeInsn(NEW, "VerifierTest0");
             mv.visitInsn(DUP);
             mv.visitMethodInsn(INVOKESPECIAL, "VerifierTest0", "<init>", "()V", false);
             mv.visitFieldInsn(PUTSTATIC, "UnverifiableBase", "x", "LVerifierTest;");
@@ -305,6 +304,7 @@ public class VerifierTest implements Opcodes {
             mv.visitMaxs(2, 0);
             mv.visitEnd();
         }
+        addBadMethod(cw);
         cw.visitEnd();
 
         return cw.toByteArray();
@@ -317,7 +317,7 @@ public class VerifierTest implements Opcodes {
         MethodVisitor mv;
         AnnotationVisitor av0;
 
-        cw.visit(V1_6, ACC_ABSTRACT + ACC_INTERFACE, "UnverifiableIntf", null, "java/lang/Object", null);
+        cw.visit(V1_8, ACC_ABSTRACT + ACC_INTERFACE, "UnverifiableIntf", null, "java/lang/Object", null);
 
         {
             fv = cw.visitField(ACC_PUBLIC + ACC_FINAL + ACC_STATIC, "x", "LVerifierTest0;", null, null);
@@ -326,8 +326,7 @@ public class VerifierTest implements Opcodes {
         {
             mv = cw.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null);
             mv.visitCode();
-            //WAS mv.visitTypeInsn(NEW, "VerifierTest");
-            mv.visitTypeInsn(NEW, "java/lang/Object");
+            mv.visitTypeInsn(NEW, "VerifierTest0");
             mv.visitInsn(DUP);
             mv.visitMethodInsn(INVOKESPECIAL, "VerifierTest0", "<init>", "()V", false);
             mv.visitFieldInsn(PUTSTATIC, "UnverifiableIntf", "x", "LVerifierTest0;");
@@ -335,9 +334,18 @@ public class VerifierTest implements Opcodes {
             mv.visitMaxs(2, 0);
             mv.visitEnd();
         }
+        addBadMethod(cw);
         cw.visitEnd();
 
         return cw.toByteArray();
     }
 
+    // Add a bad method to make the class fail verification.
+    static void addBadMethod(ClassWriter cw) throws Exception {
+        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "bad", "()V", null, null);
+        mv.visitCode();
+        mv.visitInsn(ARETURN); //  java.lang.VerifyError: Operand stack underflow
+        mv.visitMaxs(2, 2);
+        mv.visitEnd();
+    }
 }

@@ -27,6 +27,8 @@
 
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
+#include "metaprogramming/isRegisteredEnum.hpp"
+#include "metaprogramming/integralConstant.hpp"
 #include "runtime/extendedPC.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/macros.hpp"
@@ -907,11 +909,11 @@ class os: AllStatic {
   class SuspendedThreadTask {
   public:
     SuspendedThreadTask(Thread* thread) : _thread(thread), _done(false) {}
-    virtual ~SuspendedThreadTask() {}
     void run();
     bool is_done() { return _done; }
     virtual void do_task(const SuspendedThreadTaskContext& context) = 0;
   protected:
+    ~SuspendedThreadTask() {}
   private:
     void internal_do_task();
     Thread* _thread;
@@ -1005,6 +1007,10 @@ class os: AllStatic {
   static bool set_boot_path(char fileSep, char pathSep);
 
 };
+
+#ifndef _WINDOWS
+template<> struct IsRegisteredEnum<os::SuspendResume::State> : public TrueType {};
+#endif // !_WINDOWS
 
 // Note that "PAUSE" is almost always used with synchronization
 // so arguably we should provide Atomic::SpinPause() instead

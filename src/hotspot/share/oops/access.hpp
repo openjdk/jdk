@@ -155,6 +155,8 @@ const DecoratorSet MO_DECORATOR_MASK = MO_UNORDERED | MO_VOLATILE | MO_RELAXED |
 //  - Accesses on narrowOop* translate to encoded/decoded memory accesses without runtime checks
 //  - Accesses on HeapWord* translate to a runtime check choosing one of the above
 //  - Accesses on other types translate to raw memory accesses without runtime checks
+// * AS_DEST_NOT_INITIALIZED: This property can be important to e.g. SATB barriers by
+//   marking that the previous value is uninitialized nonsense rather than a real value.
 // * AS_NO_KEEPALIVE: The barrier is used only on oop references and will not keep any involved objects
 //   alive, regardless of the type of reference being accessed. It will however perform the memory access
 //   in a consistent way w.r.t. e.g. concurrent compaction, so that the right field is being accessed,
@@ -164,10 +166,12 @@ const DecoratorSet MO_DECORATOR_MASK = MO_UNORDERED | MO_VOLATILE | MO_RELAXED |
 //   responsibility of performing the access and what barriers to be performed to the GC. This is the default.
 //   Note that primitive accesses will only be resolved on the barrier set if the appropriate build-time
 //   decorator for enabling primitive barriers is enabled for the build.
-const DecoratorSet AS_RAW            = UCONST64(1) << 11;
-const DecoratorSet AS_NO_KEEPALIVE   = UCONST64(1) << 12;
-const DecoratorSet AS_NORMAL         = UCONST64(1) << 13;
-const DecoratorSet AS_DECORATOR_MASK = AS_RAW | AS_NO_KEEPALIVE | AS_NORMAL;
+const DecoratorSet AS_RAW                  = UCONST64(1) << 11;
+const DecoratorSet AS_DEST_NOT_INITIALIZED = UCONST64(1) << 12;
+const DecoratorSet AS_NO_KEEPALIVE         = UCONST64(1) << 13;
+const DecoratorSet AS_NORMAL               = UCONST64(1) << 14;
+const DecoratorSet AS_DECORATOR_MASK       = AS_RAW | AS_DEST_NOT_INITIALIZED |
+                                             AS_NO_KEEPALIVE | AS_NORMAL;
 
 // === Reference Strength Decorators ===
 // These decorators only apply to accesses on oop-like types (oop/narrowOop).
@@ -178,10 +182,10 @@ const DecoratorSet AS_DECORATOR_MASK = AS_RAW | AS_NO_KEEPALIVE | AS_NORMAL;
 // * ON_UNKNOWN_OOP_REF: The memory access is performed on a reference of unknown strength.
 //   This could for example come from the unsafe API.
 // * Default (no explicit reference strength specified): ON_STRONG_OOP_REF
-const DecoratorSet ON_STRONG_OOP_REF  = UCONST64(1) << 14;
-const DecoratorSet ON_WEAK_OOP_REF    = UCONST64(1) << 15;
-const DecoratorSet ON_PHANTOM_OOP_REF = UCONST64(1) << 16;
-const DecoratorSet ON_UNKNOWN_OOP_REF = UCONST64(1) << 17;
+const DecoratorSet ON_STRONG_OOP_REF  = UCONST64(1) << 15;
+const DecoratorSet ON_WEAK_OOP_REF    = UCONST64(1) << 16;
+const DecoratorSet ON_PHANTOM_OOP_REF = UCONST64(1) << 17;
+const DecoratorSet ON_UNKNOWN_OOP_REF = UCONST64(1) << 18;
 const DecoratorSet ON_DECORATOR_MASK  = ON_STRONG_OOP_REF | ON_WEAK_OOP_REF |
                                         ON_PHANTOM_OOP_REF | ON_UNKNOWN_OOP_REF;
 
@@ -196,23 +200,21 @@ const DecoratorSet ON_DECORATOR_MASK  = ON_STRONG_OOP_REF | ON_WEAK_OOP_REF |
 // * IN_CONCURRENT_ROOT: The access is performed in an off-heap data structure pointing into the Java heap,
 //   but is notably not scanned during safepoints. This is sometimes a special case for some GCs and
 //   implies that it is also an IN_ROOT.
-const DecoratorSet IN_HEAP            = UCONST64(1) << 18;
-const DecoratorSet IN_HEAP_ARRAY      = UCONST64(1) << 19;
-const DecoratorSet IN_ROOT            = UCONST64(1) << 20;
-const DecoratorSet IN_CONCURRENT_ROOT = UCONST64(1) << 21;
-const DecoratorSet IN_ARCHIVE_ROOT    = UCONST64(1) << 22;
+const DecoratorSet IN_HEAP            = UCONST64(1) << 19;
+const DecoratorSet IN_HEAP_ARRAY      = UCONST64(1) << 20;
+const DecoratorSet IN_ROOT            = UCONST64(1) << 21;
+const DecoratorSet IN_CONCURRENT_ROOT = UCONST64(1) << 22;
+const DecoratorSet IN_ARCHIVE_ROOT    = UCONST64(1) << 23;
 const DecoratorSet IN_DECORATOR_MASK  = IN_HEAP | IN_HEAP_ARRAY |
                                         IN_ROOT | IN_CONCURRENT_ROOT |
                                         IN_ARCHIVE_ROOT;
 
 // == Value Decorators ==
 // * OOP_NOT_NULL: This property can make certain barriers faster such as compressing oops.
-const DecoratorSet OOP_NOT_NULL       = UCONST64(1) << 23;
+const DecoratorSet OOP_NOT_NULL       = UCONST64(1) << 24;
 const DecoratorSet OOP_DECORATOR_MASK = OOP_NOT_NULL;
 
 // == Arraycopy Decorators ==
-// * ARRAYCOPY_DEST_NOT_INITIALIZED: This property can be important to e.g. SATB barriers by
-//   marking that the previous value uninitialized nonsense rather than a real value.
 // * ARRAYCOPY_CHECKCAST: This property means that the class of the objects in source
 //   are not guaranteed to be subclasses of the class of the destination array. This requires
 //   a check-cast barrier during the copying operation. If this is not set, it is assumed
@@ -222,14 +224,12 @@ const DecoratorSet OOP_DECORATOR_MASK = OOP_NOT_NULL;
 // * ARRAYCOPY_ARRAYOF: The copy is in the arrayof form.
 // * ARRAYCOPY_ATOMIC: The accesses have to be atomic over the size of its elements.
 // * ARRAYCOPY_ALIGNED: The accesses have to be aligned on a HeapWord.
-const DecoratorSet ARRAYCOPY_DEST_NOT_INITIALIZED = UCONST64(1) << 24;
 const DecoratorSet ARRAYCOPY_CHECKCAST            = UCONST64(1) << 25;
 const DecoratorSet ARRAYCOPY_DISJOINT             = UCONST64(1) << 26;
 const DecoratorSet ARRAYCOPY_ARRAYOF              = UCONST64(1) << 27;
 const DecoratorSet ARRAYCOPY_ATOMIC               = UCONST64(1) << 28;
 const DecoratorSet ARRAYCOPY_ALIGNED              = UCONST64(1) << 29;
-const DecoratorSet ARRAYCOPY_DECORATOR_MASK       = ARRAYCOPY_DEST_NOT_INITIALIZED |
-                                                    ARRAYCOPY_CHECKCAST | ARRAYCOPY_DISJOINT |
+const DecoratorSet ARRAYCOPY_DECORATOR_MASK       = ARRAYCOPY_CHECKCAST | ARRAYCOPY_DISJOINT |
                                                     ARRAYCOPY_DISJOINT | ARRAYCOPY_ARRAYOF |
                                                     ARRAYCOPY_ATOMIC | ARRAYCOPY_ALIGNED;
 
@@ -343,8 +343,8 @@ class Access: public AllStatic {
 
   template <DecoratorSet expected_mo_decorators>
   static void verify_primitive_decorators() {
-    const DecoratorSet primitive_decorators = (AS_DECORATOR_MASK ^ AS_NO_KEEPALIVE) | IN_HEAP |
-                                               IN_HEAP_ARRAY;
+    const DecoratorSet primitive_decorators = (AS_DECORATOR_MASK ^ AS_NO_KEEPALIVE ^ AS_DEST_NOT_INITIALIZED) |
+                                              IN_HEAP | IN_HEAP_ARRAY;
     verify_decorators<expected_mo_decorators | primitive_decorators>();
   }
 

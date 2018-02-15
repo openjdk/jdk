@@ -32,6 +32,8 @@
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/fakeRttiSupport.hpp"
 
+class JavaThread;
+
 // This class provides the interface between a barrier implementation and
 // the rest of the system.
 
@@ -107,17 +109,17 @@ public:
   static void static_write_ref_array_pre(HeapWord* start, size_t count);
   static void static_write_ref_array_post(HeapWord* start, size_t count);
 
+  // Support for optimizing compilers to call the barrier set on slow path allocations
+  // that did not enter a TLAB. Used for e.g. ReduceInitialCardMarks.
+  // The allocation is safe to use iff it returns true. If not, the slow-path allocation
+  // is redone until it succeeds. This can e.g. prevent allocations from the slow path
+  // to be in old.
+  virtual void on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {}
+  virtual void flush_deferred_barriers(JavaThread* thread) {}
+  virtual void make_parsable(JavaThread* thread) {}
+
 protected:
   virtual void write_ref_array_work(MemRegion mr) = 0;
-
-public:
-  // (For efficiency reasons, this operation is specialized for certain
-  // barrier types.  Semantically, it should be thought of as a call to the
-  // virtual "_work" function below, which must implement the barrier.)
-  void write_region(MemRegion mr);
-
-protected:
-  virtual void write_region_work(MemRegion mr) = 0;
 
 public:
   // Inform the BarrierSet that the the covered heap region that starts

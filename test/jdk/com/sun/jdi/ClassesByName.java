@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  *  loaded class list can be found with classesByName..
  *  @author Robert Field
  *
- *  @run build JDIScaffold VMConnection
+ *  @run build TestScaffold VMConnection
  *  @run compile -g HelloWorld.java
  *  @run build ClassesByName
  *
@@ -41,21 +41,18 @@ import com.sun.jdi.request.*;
 import java.util.List;
 import java.util.Iterator;
 
-public class ClassesByName extends JDIScaffold {
-    final String[] args;
+public class ClassesByName extends TestScaffold {
 
     public static void main(String args[]) throws Exception {
         new ClassesByName(args).startTests();
     }
 
     ClassesByName(String args[]) throws Exception {
-        super();
-        this.args = args;
+        super(args);
     }
 
     protected void runTests() throws Exception {
-        connect(args);
-        waitForVMStart();
+        startUp("ClassesByName");
 
         List all = vm().allClasses();
         for (Iterator it = all.iterator(); it.hasNext(); ) {
@@ -71,6 +68,6 @@ public class ClassesByName extends JDIScaffold {
         }
 
         // Allow application to complete
-        resumeToVMDeath();
+        resumeToVMDisconnect();
     }
 }
