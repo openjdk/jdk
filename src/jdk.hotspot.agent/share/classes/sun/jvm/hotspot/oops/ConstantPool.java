@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -339,24 +339,28 @@ public class ConstantPool extends Metadata implements ClassConstants {
   }
 
   // returns null, if not resolved.
-  public InstanceKlass getFieldOrMethodKlassRefAt(int which) {
+  public Klass getFieldOrMethodKlassRefAt(int which) {
     int refIndex = getFieldOrMethodAt(which);
     int klassIndex = extractLowShortFromInt(refIndex);
-    return (InstanceKlass) getKlassAt(klassIndex);
+    return getKlassAt(klassIndex);
   }
 
   // returns null, if not resolved.
   public Method getMethodRefAt(int which) {
-    InstanceKlass klass = getFieldOrMethodKlassRefAt(which);
+    Klass klass = getFieldOrMethodKlassRefAt(which);
     if (klass == null) return null;
     Symbol name = getNameRefAt(which);
     Symbol sig  = getSignatureRefAt(which);
-    return klass.findMethod(name, sig);
+    // Consider the super class for arrays. (java.lang.Object)
+    if (klass.isArrayKlass()) {
+       klass = klass.getJavaSuper();
+    }
+    return ((InstanceKlass)klass).findMethod(name, sig);
   }
 
   // returns null, if not resolved.
   public Field getFieldRefAt(int which) {
-    InstanceKlass klass = getFieldOrMethodKlassRefAt(which);
+    InstanceKlass klass = (InstanceKlass)getFieldOrMethodKlassRefAt(which);
     if (klass == null) return null;
     Symbol name = getNameRefAt(which);
     Symbol sig  = getSignatureRefAt(which);

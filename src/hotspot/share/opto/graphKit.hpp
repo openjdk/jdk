@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -755,8 +755,10 @@ class GraphKit : public Phase {
   Node* just_allocated_object(Node* current_control);
 
   static bool use_ReduceInitialCardMarks() {
-    return (ReduceInitialCardMarks
-            && Universe::heap()->can_elide_tlab_store_barriers());
+    BarrierSet *bs = Universe::heap()->barrier_set();
+    return bs->is_a(BarrierSet::CardTableModRef)
+           && barrier_set_cast<CardTableModRefBS>(bs)->can_elide_tlab_store_barriers()
+           && ReduceInitialCardMarks;
   }
 
   // Sync Ideal and Graph kits.

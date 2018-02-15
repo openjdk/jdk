@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3168,4 +3168,17 @@ frame SharedRuntime::look_for_reserved_stack_annotated_method(JavaThread* thread
     }
   }
   return activation;
+}
+
+void SharedRuntime::on_slowpath_allocation_exit(JavaThread* thread) {
+  // After any safepoint, just before going back to compiled code,
+  // we inform the GC that we will be doing initializing writes to
+  // this object in the future without emitting card-marks, so
+  // GC may take any compensating steps.
+
+  oop new_obj = thread->vm_result();
+  if (new_obj == NULL) return;
+
+  BarrierSet *bs = Universe::heap()->barrier_set();
+  bs->on_slowpath_allocation_exit(thread, new_obj);
 }

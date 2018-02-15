@@ -883,13 +883,11 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all, int mc_all, int md_all)
   const char *sep = "--------------------+---------------------------+---------------------------+--------------------------";
   const char *hdr = "                        ro_cnt   ro_bytes     % |   rw_cnt   rw_bytes     % |  all_cnt  all_bytes     %";
 
-  ResourceMark rm;
   LogMessage(cds) msg;
-  stringStream info_stream;
 
-  info_stream.print_cr("Detailed metadata info (excluding od/st regions; rw stats include md/mc regions):");
-  info_stream.print_cr("%s", hdr);
-  info_stream.print_cr("%s", sep);
+  msg.info("Detailed metadata info (excluding od/st regions; rw stats include md/mc regions):");
+  msg.info("%s", hdr);
+  msg.info("%s", sep);
   for (int type = 0; type < int(_number_of_types); type ++) {
     const char *name = type_name((Type)type);
     int ro_count = _counts[RO][type];
@@ -903,7 +901,7 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all, int mc_all, int md_all)
     double rw_perc = percent_of(rw_bytes, rw_all);
     double perc    = percent_of(bytes, ro_all + rw_all);
 
-    info_stream.print_cr(fmt_stats, name,
+    msg.info(fmt_stats, name,
                          ro_count, ro_bytes, ro_perc,
                          rw_count, rw_bytes, rw_perc,
                          count, bytes, perc);
@@ -921,8 +919,8 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all, int mc_all, int md_all)
   double all_rw_perc = percent_of(all_rw_bytes, rw_all);
   double all_perc    = percent_of(all_bytes, ro_all + rw_all);
 
-  info_stream.print_cr("%s", sep);
-  info_stream.print_cr(fmt_stats, "Total",
+  msg.info("%s", sep);
+  msg.info(fmt_stats, "Total",
                        all_ro_count, all_ro_bytes, all_ro_perc,
                        all_rw_count, all_rw_bytes, all_rw_perc,
                        all_count, all_bytes, all_perc);
@@ -930,7 +928,6 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all, int mc_all, int md_all)
   assert(all_ro_bytes == ro_all, "everything should have been counted");
   assert(all_rw_bytes == rw_all, "everything should have been counted");
 
-  msg.info("%s", info_stream.as_string());
 #undef fmt_stats
 }
 

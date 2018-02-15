@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,37 +37,36 @@
 // one blob. Otherwise, it will load string from file when requested.
 class ElfStringTable: CHeapObj<mtInternal> {
   friend class ElfFile;
- public:
-  ElfStringTable(FILE* file, Elf_Shdr shdr, int index);
+private:
+  ElfStringTable*   _next;
+  int               _index;     // section index
+  ElfSection        _section;
+  FILE* const       _fd;
+  NullDecoder::decoder_status _status;
+
+public:
+  ElfStringTable(FILE* const file, Elf_Shdr& shdr, int index);
   ~ElfStringTable();
 
   // section index
-  int index() { return m_index; };
+  int index() const { return _index; };
 
   // get string at specified offset
-  bool string_at(int offset, char* buf, int buflen);
+  bool string_at(size_t offset, char* buf, int buflen);
 
   // get status code
-  NullDecoder::decoder_status get_status() { return m_status; };
+  NullDecoder::decoder_status get_status() const {
+    return _status;
+  }
 
- protected:
-  ElfStringTable*        m_next;
+private:
+  void set_next(ElfStringTable* next) {
+    _next = next;
+  }
 
-  // section index
-  int                      m_index;
-
-  // holds complete string table if can
-  // allocate enough memory
-  const char*              m_table;
-
-  // file contains string table
-  FILE*                    m_file;
-
-  // section header
-  Elf_Shdr                 m_shdr;
-
-  // error code
-  NullDecoder::decoder_status  m_status;
+  ElfStringTable* next() const {
+    return _next;
+  }
 };
 
 #endif // !_WINDOWS && !__APPLE__
