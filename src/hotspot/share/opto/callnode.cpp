@@ -1441,8 +1441,10 @@ Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseTran
       if (!allow_new_nodes) return NULL;
       // Create a cast which is control dependent on the initialization to
       // propagate the fact that the array length must be positive.
+      InitializeNode* init = initialization();
+      assert(init != NULL, "initialization not found");
       length = new CastIINode(length, narrow_length_type);
-      length->set_req(0, initialization()->proj_out_or_null(0));
+      length->set_req(0, init->proj_out_or_null(0));
     }
   }
 
