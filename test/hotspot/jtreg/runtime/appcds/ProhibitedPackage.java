@@ -26,7 +26,6 @@
  * @test
  * @summary AppCDS handling of prohibited package.
  * @requires vm.cds
- * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
