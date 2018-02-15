@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ public class VMProps implements Callable<Map<String, String>> {
         // vm.cds is true if the VM is compiled with cds support.
         map.put("vm.cds", vmCDS());
         map.put("vm.cds.custom.loaders", vmCDSForCustomLoaders());
+        map.put("vm.cds.archived.java.heap", vmCDSForArchivedJavaHeap());
         // vm.graal.enabled is true if Graal is used as JIT
         map.put("vm.graal.enabled", isGraalEnabled());
         map.put("docker.support", dockerSupport());
@@ -300,10 +301,23 @@ public class VMProps implements Callable<Map<String, String>> {
     /**
      * Check for CDS support for custom loaders.
      *
-     * @return true if CDS is supported for customer loader by the VM to be tested.
+     * @return true if CDS provides support for customer loader in the VM to be tested.
      */
     protected String vmCDSForCustomLoaders() {
         if (vmCDS().equals("true") && Platform.areCustomLoadersSupportedForCDS()) {
+            return "true";
+        } else {
+            return "false";
+        }
+    }
+
+    /**
+     * Check for CDS support for archived Java heap regions.
+     *
+     * @return true if CDS provides support for archive Java heap regions in the VM to be tested.
+     */
+    protected String vmCDSForArchivedJavaHeap() {
+      if (vmCDS().equals("true") && WB.isJavaHeapArchiveSupported()) {
             return "true";
         } else {
             return "false";
