@@ -44,6 +44,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "prims/wbtestmethods/parserTests.hpp"
 #include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"

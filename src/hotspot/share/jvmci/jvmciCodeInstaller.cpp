@@ -36,6 +36,7 @@
 #include "jvmci/jvmciRuntime.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "utilities/align.hpp"
