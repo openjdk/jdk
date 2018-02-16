@@ -684,14 +684,12 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         }
 
         if ((id == fast_new_instance_id || id == fast_new_instance_init_check_id) &&
-            UseTLAB && FastTLABRefill) {
+            UseTLAB && Universe::heap()->supports_inline_contig_alloc()) {
           Label slow_path;
           Register obj_size = r2;
           Register t1       = r19;
           Register t2       = r4;
           assert_different_registers(klass, obj, obj_size, t1, t2);
-
-          __ stp(r5, r19, Address(__ pre(sp, -2 * wordSize)));
 
           if (id == fast_new_instance_init_check_id) {
             // make sure the klass is initialized
@@ -716,37 +714,21 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           }
 #endif // ASSERT
 
-          // if we got here then the TLAB allocation failed, so try
-          // refilling the TLAB or allocating directly from eden.
-          Label retry_tlab, try_eden;
-          __ tlab_refill(retry_tlab, try_eden, slow_path); // does not destroy r3 (klass), returns r5
-
-          __ bind(retry_tlab);
-
           // get the instance size (size is postive so movl is fine for 64bit)
           __ ldrw(obj_size, Address(klass, Klass::layout_helper_offset()));
 
-          __ tlab_allocate(obj, obj_size, 0, t1, t2, slow_path);
-
-          __ initialize_object(obj, klass, obj_size, 0, t1, t2, /* is_tlab_allocated */ true);
-          __ verify_oop(obj);
-          __ ldp(r5, r19, Address(__ post(sp, 2 * wordSize)));
-          __ ret(lr);
-
-          __ bind(try_eden);
-          // get the instance size (size is postive so movl is fine for 64bit)
-          __ ldrw(obj_size, Address(klass, Klass::layout_helper_offset()));
+          __ str(r19, Address(__ pre(sp, -wordSize)));
 
           __ eden_allocate(obj, obj_size, 0, t1, slow_path);
           __ incr_allocated_bytes(rthread, obj_size, 0, rscratch1);
 
           __ initialize_object(obj, klass, obj_size, 0, t1, t2, /* is_tlab_allocated */ false);
           __ verify_oop(obj);
-          __ ldp(r5, r19, Address(__ post(sp, 2 * wordSize)));
+          __ ldr(r19, Address(__ post(sp, wordSize)));
           __ ret(lr);
 
           __ bind(slow_path);
-          __ ldp(r5, r19, Address(__ post(sp, 2 * wordSize)));
+          __ ldr(r19, Address(__ post(sp, wordSize)));
         }
 
         __ enter();
@@ -814,7 +796,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         }
 #endif // ASSERT
 
-        if (UseTLAB && FastTLABRefill) {
+        if (UseTLAB && Universe::heap()->supports_inline_contig_alloc()) {
           Register arr_size = r4;
           Register t1       = r2;
           Register t2       = r5;
@@ -826,45 +808,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ cmpw(length, rscratch1);
           __ br(Assembler::HI, slow_path);
 
-          // if we got here then the TLAB allocation failed, so try
-          // refilling the TLAB or allocating directly from eden.
-          Label retry_tlab, try_eden;
-          const Register thread =
-            __ tlab_refill(retry_tlab, try_eden, slow_path); // preserves r19 & r3, returns rthread
-
-          __ bind(retry_tlab);
-
           // get the allocation size: round_up(hdr + length << (layout_helper & 0x1F))
           // since size is positive ldrw does right thing on 64bit
           __ ldrw(t1, Address(klass, Klass::layout_helper_offset()));
-          __ lslvw(arr_size, length, t1);
-          __ ubfx(t1, t1, Klass::_lh_header_size_shift,
-                  exact_log2(Klass::_lh_header_size_mask + 1));
-          __ add(arr_size, arr_size, t1);
-          __ add(arr_size, arr_size, MinObjAlignmentInBytesMask); // align up
-          __ andr(arr_size, arr_size, ~MinObjAlignmentInBytesMask);
-
-          __ tlab_allocate(obj, arr_size, 0, t1, t2, slow_path);  // preserves arr_size
-
-          __ initialize_header(obj, klass, length, t1, t2);
-          __ ldrb(t1, Address(klass, in_bytes(Klass::layout_helper_offset()) + (Klass::_lh_header_size_shift / BitsPerByte)));
-          assert(Klass::_lh_header_size_shift % BitsPerByte == 0, "bytewise");
-          assert(Klass::_lh_header_size_mask <= 0xFF, "bytewise");
-          __ andr(t1, t1, Klass::_lh_header_size_mask);
-          __ sub(arr_size, arr_size, t1);  // body length
-          __ add(t1, t1, obj);       // body start
-          if (!ZeroTLAB) {
-           __ initialize_body(t1, arr_size, 0, t2);
-          }
-          __ verify_oop(obj);
-
-          __ ret(lr);
-
-          __ bind(try_eden);
-          // get the allocation size: round_up(hdr + length << (layout_helper & 0x1F))
-          // since size is positive ldrw does right thing on 64bit
-          __ ldrw(t1, Address(klass, Klass::layout_helper_offset()));
-          // since size is postive movw does right thing on 64bit
+          // since size is positive movw does right thing on 64bit
           __ movw(arr_size, length);
           __ lslvw(arr_size, length, t1);
           __ ubfx(t1, t1, Klass::_lh_header_size_shift,

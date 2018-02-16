@@ -346,11 +346,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ set_info("fast new_instance init check", dont_gc_arguments);
         }
 
-        if ((id == fast_new_instance_id || id == fast_new_instance_init_check_id) &&
-            UseTLAB && FastTLABRefill) {
-          // Sapjvm: must call RT to generate allocation events.
-        }
-
         OopMap* map = save_live_registers_except_r2(sasm);
         int call_offset = __ call_RT(obj, noreg, CAST_FROM_FN_PTR(address, new_instance), klass);
         oop_maps = new OopMapSet();
@@ -410,10 +405,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ bind(ok);
         }
 #endif // ASSERT
-
-        if (UseTLAB && FastTLABRefill) {
-          // sapjvm: must call RT to generate allocation events.
-        }
 
         OopMap* map = save_live_registers_except_r2(sasm);
         int call_offset;

@@ -2336,9 +2336,6 @@ void MacroAssembler::tlab_allocate(
   std(new_top, in_bytes(JavaThread::tlab_top_offset()), R16_thread);
   //verify_tlab(); not implemented
 }
-void MacroAssembler::tlab_refill(Label& retry_tlab, Label& try_eden, Label& slow_case) {
-  unimplemented("tlab_refill");
-}
 void MacroAssembler::incr_allocated_bytes(RegisterOrConstant size_in_bytes, Register t1, Register t2) {
   unimplemented("incr_allocated_bytes");
 }

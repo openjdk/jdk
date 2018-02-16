@@ -531,7 +531,6 @@ class MacroAssembler: public Assembler {
     Register t2,                       // temp register
     Label&   slow_case                 // continuation point if fast allocation fails
   );
-  Register tlab_refill(Label& retry_tlab, Label& try_eden, Label& slow_case); // returns TLS address
   void zero_memory(Register address, Register length_in_bytes, int offset_in_bytes, Register temp);
 
   void incr_allocated_bytes(Register thread,
