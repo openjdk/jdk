@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * loaded class list are prepared classes.
  * @author Robert Field
  *
- * @run build JDIScaffold VMConnection
+ * @run build TestScaffold VMConnection
  * @run compile -g InnerTarg.java
  * @run build UnpreparedClasses
  *
@@ -41,22 +41,18 @@ import com.sun.jdi.request.*;
 import java.util.List;
 import java.util.Iterator;
 
-public class UnpreparedClasses extends JDIScaffold {
-    final String[] args;
+public class UnpreparedClasses extends TestScaffold {
 
     public static void main(String args[]) throws Exception {
         new UnpreparedClasses(args).startTests();
     }
 
     UnpreparedClasses(String args[]) throws Exception {
-        super();
-        this.args = args;
+        super(args);
     }
 
     protected void runTests() throws Exception {
-        connect(args);
-        waitForVMStart();
-        resumeTo("InnerTarg", "go", "()V");
+        startTo("InnerTarg", "go", "()V");
 
         List all = vm().allClasses();
         for (Iterator it = all.iterator(); it.hasNext(); ) {
@@ -73,6 +69,6 @@ public class UnpreparedClasses extends JDIScaffold {
         }
 
         // Allow application to complete
-        resumeToVMDeath();
+        resumeToVMDisconnect();
     }
 }
