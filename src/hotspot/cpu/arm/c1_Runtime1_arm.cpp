@@ -722,10 +722,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         const Register result = R0;
         const Register klass  = R1;
 
-        if (UseTLAB && FastTLABRefill && id != new_instance_id) {
+        if (UseTLAB && Universe::heap()->supports_inline_contig_alloc() && id != new_instance_id) {
           // We come here when TLAB allocation failed.
-          // In this case we either refill TLAB or allocate directly from eden.
-          Label retry_tlab, try_eden, slow_case, slow_case_no_pop;
+          // In this case we try to allocate directly from eden.
+          Label slow_case, slow_case_no_pop;
 
           // Make sure the class is fully initialized
           if (id == fast_new_instance_init_check_id) {
@@ -742,17 +742,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
           __ raw_push(R4, R5, LR);
 
-          __ tlab_refill(result, obj_size, tmp1, tmp2, obj_end, try_eden, slow_case);
-
-          __ bind(retry_tlab);
-          __ ldr_u32(obj_size, Address(klass, Klass::layout_helper_offset()));
-          __ tlab_allocate(result, obj_end, tmp1, obj_size, slow_case);              // initializes result and obj_end
-          __ initialize_object(result, obj_end, klass, noreg /* len */, tmp1, tmp2,
-                               instanceOopDesc::header_size() * HeapWordSize, -1,
-                               /* is_tlab_allocated */ true);
-          __ raw_pop_and_ret(R4, R5);
-
-          __ bind(try_eden);
           __ ldr_u32(obj_size, Address(klass, Klass::layout_helper_offset()));
           __ eden_allocate(result, obj_end, tmp1, tmp2, obj_size, slow_case);        // initializes result and obj_end
           __ incr_allocated_bytes(obj_size, tmp2);
@@ -803,10 +792,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         const Register klass  = R1;
         const Register length = R2;
 
-        if (UseTLAB && FastTLABRefill) {
+        if (UseTLAB && Universe::heap()->supports_inline_contig_alloc()) {
           // We come here when TLAB allocation failed.
-          // In this case we either refill TLAB or allocate directly from eden.
-          Label retry_tlab, try_eden, slow_case, slow_case_no_pop;
+          // In this case we try to allocate directly from eden.
+          Label slow_case, slow_case_no_pop;
 
 #ifdef AARCH64
           __ mov_slow(Rtemp, C1_MacroAssembler::max_array_allocation_length);
@@ -825,40 +814,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
           __ raw_push(R4, R5, LR);
 
-          __ tlab_refill(result, arr_size, tmp1, tmp2, tmp3, try_eden, slow_case);
-
-          __ bind(retry_tlab);
-          // Get the allocation size: round_up((length << (layout_helper & 0xff)) + header_size)
-          __ ldr_u32(tmp1, Address(klass, Klass::layout_helper_offset()));
-          __ mov(arr_size, MinObjAlignmentInBytesMask);
-          __ and_32(tmp2, tmp1, (unsigned int)(Klass::_lh_header_size_mask << Klass::_lh_header_size_shift));
-
-#ifdef AARCH64
-          __ lslv_w(tmp3, length, tmp1);
-          __ add(arr_size, arr_size, tmp3);
-#else
-          __ add(arr_size, arr_size, AsmOperand(length, lsl, tmp1));
-#endif // AARCH64
-
-          __ add(arr_size, arr_size, AsmOperand(tmp2, lsr, Klass::_lh_header_size_shift));
-          __ align_reg(arr_size, arr_size, MinObjAlignmentInBytes);
-
-          // tlab_allocate initializes result and obj_end, and preserves tmp2 which contains header_size
-          __ tlab_allocate(result, obj_end, tmp1, arr_size, slow_case);
-
-          assert_different_registers(result, obj_end, klass, length, tmp1, tmp2);
-          __ initialize_header(result, klass, length, tmp1);
-
-          __ add(tmp2, result, AsmOperand(tmp2, lsr, Klass::_lh_header_size_shift));
-          if (!ZeroTLAB) {
-            __ initialize_body(tmp2, obj_end, tmp1);
-          }
-
-          __ membar(MacroAssembler::StoreStore, tmp1);
-
-          __ raw_pop_and_ret(R4, R5);
-
-          __ bind(try_eden);
           // Get the allocation size: round_up((length << (layout_helper & 0xff)) + header_size)
           __ ldr_u32(tmp1, Address(klass, Klass::layout_helper_offset()));
           __ mov(arr_size, MinObjAlignmentInBytesMask);
