@@ -1914,7 +1914,7 @@ WB_END
 
 // Elf decoder
 WB_ENTRY(void, WB_DisableElfSectionCache(JNIEnv* env))
-#if !defined(_WINDOWS) && !defined(__APPLE__)
+#if !defined(_WINDOWS) && !defined(__APPLE__) && !defined(_AIX)
   ElfFile::_do_not_cache_elf_section = true;
 #endif
 WB_END
