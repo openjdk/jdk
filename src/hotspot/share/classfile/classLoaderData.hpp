@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,9 @@ class ClassLoaderDataGraph : public AllStatic {
   // allocations until class unloading
   static bool _metaspace_oom;
 
+  static volatile size_t  _num_instance_classes;
+  static volatile size_t  _num_array_classes;
+
   static ClassLoaderData* add(Handle class_loader, bool anonymous, TRAPS);
   static void post_class_unload_events();
  public:
@@ -154,6 +157,15 @@ class ClassLoaderDataGraph : public AllStatic {
   static void print_creation(outputStream* out, Handle loader, ClassLoaderData* cld, TRAPS);
 
   static bool unload_list_contains(const void* x);
+
+  // instance and array class counters
+  static inline size_t num_instance_classes();
+  static inline size_t num_array_classes();
+  static inline void inc_instance_classes(size_t count);
+  static inline void dec_instance_classes(size_t count);
+  static inline void inc_array_classes(size_t count);
+  static inline void dec_array_classes(size_t count);
+
 #ifndef PRODUCT
   static bool contains_loader_data(ClassLoaderData* loader_data);
 #endif
@@ -344,7 +356,15 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   }
   bool is_system_class_loader_data() const;
   bool is_platform_class_loader_data() const;
+
+  // Returns true if this class loader data is for the boot class loader.
+  // (Note that the class loader data may be anonymous.)
+  bool is_boot_class_loader_data() const {
+    return class_loader() == NULL;
+  }
+
   bool is_builtin_class_loader_data() const;
+  bool is_permanent_class_loader_data() const;
 
   // The Metaspace is created lazily so may be NULL.  This
   // method will allocate a Metaspace if needed.

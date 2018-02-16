@@ -84,10 +84,6 @@ public:
   // The number of blocks of entries.  Useful for sizing parallel iteration.
   size_t block_count() const;
 
-  // The number of blocks with no allocated entries.  Useful for sizing
-  // parallel iteration and scheduling block deletion.
-  size_t empty_block_count() const;
-
   // Total number of blocks * memory allocation per block, plus
   // bookkeeping overhead, including this storage object.
   size_t total_memory_usage() const;
@@ -107,14 +103,13 @@ public:
   // postcondition: *result == NULL.
   oop* allocate();
 
-  // Deallocates ptr, after setting its value to NULL. Locks _allocate_mutex.
+  // Deallocates ptr.  No locking.
   // precondition: ptr is a valid allocated entry.
   // precondition: *ptr == NULL.
   void release(const oop* ptr);
 
   // Releases all the ptrs.  Possibly faster than individual calls to
-  // release(oop*).  Best if ptrs is sorted by address.  Locks
-  // _allocate_mutex.
+  // release(oop*).  Best if ptrs is sorted by address.  No locking.
   // precondition: All elements of ptrs are valid allocated entries.
   // precondition: *ptrs[i] == NULL, for i in [0,size).
   void release(const oop* const* ptrs, size_t size);
@@ -160,8 +155,8 @@ public:
   // Block cleanup functions are for the exclusive use of the GC.
   // Both stop deleting if there is an in-progress concurrent iteration.
   // Concurrent deletion locks both the allocate_mutex and the active_mutex.
-  void delete_empty_blocks_safepoint(size_t retain = 1);
-  void delete_empty_blocks_concurrent(size_t retain = 1);
+  void delete_empty_blocks_safepoint();
+  void delete_empty_blocks_concurrent();
 
   // Debugging and logging support.
   const char* name() const;
@@ -231,6 +226,7 @@ private:
   BlockList _active_list;
   BlockList _allocate_list;
   Block* volatile _active_head;
+  Block* volatile _deferred_updates;
 
   Mutex* _allocate_mutex;
   Mutex* _active_mutex;
@@ -238,16 +234,12 @@ private:
   // Counts are volatile for racy unlocked accesses.
   volatile size_t _allocation_count;
   volatile size_t _block_count;
-  volatile size_t _empty_block_count;
   // mutable because this gets set even for const iteration.
   mutable bool _concurrent_iteration_active;
 
   Block* find_block_or_null(const oop* ptr) const;
-  bool is_valid_block_locked_or_safepoint(const Block* block) const;
-  EntryStatus allocation_status_validating_block(const Block* block, const oop* ptr) const;
-  void check_release(const Block* block, const oop* ptr) const NOT_DEBUG_RETURN;
-  void release_from_block(Block& block, uintx release_bitmask);
   void delete_empty_block(const Block& block);
+  bool reduce_deferred_updates();
 
   static void assert_at_safepoint() NOT_DEBUG_RETURN;
 

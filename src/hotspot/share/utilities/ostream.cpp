@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -947,18 +947,11 @@ void ostream_exit() {
     delete classlist_file;
   }
 #endif
-  {
-      // we temporaly disable PrintMallocFree here
-      // as otherwise it'll lead to using of almost deleted
-      // tty or defaultStream::instance in logging facility
-      // of HeapFree(), see 6391258
-      DEBUG_ONLY(FlagSetting fs(PrintMallocFree, false);)
-      if (tty != defaultStream::instance) {
-          delete tty;
-      }
-      if (defaultStream::instance != NULL) {
-          delete defaultStream::instance;
-      }
+  if (tty != defaultStream::instance) {
+    delete tty;
+  }
+  if (defaultStream::instance != NULL) {
+    delete defaultStream::instance;
   }
   tty = NULL;
   xtty = NULL;

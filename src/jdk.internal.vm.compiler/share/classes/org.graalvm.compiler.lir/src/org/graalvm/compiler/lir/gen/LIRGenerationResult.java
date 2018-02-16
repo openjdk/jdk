@@ -22,7 +22,8 @@
  */
 package org.graalvm.compiler.lir.gen;
 
-import jdk.vm.ci.code.RegisterConfig;
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.Equivalence;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.CompilationIdentifier.Verbosity;
 import org.graalvm.compiler.debug.DebugContext;
@@ -30,10 +31,9 @@ import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.framemap.FrameMap;
 import org.graalvm.compiler.lir.framemap.FrameMapBuilder;
-import org.graalvm.util.EconomicMap;
-import org.graalvm.util.Equivalence;
 
 import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.code.RegisterConfig;
 
 public class LIRGenerationResult {
 

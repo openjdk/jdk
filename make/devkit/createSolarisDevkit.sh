@@ -73,7 +73,8 @@ DEVKIT_NAME=SS${SOLARIS_STUDIO_VERSION}-Solaris${SOLARIS_VERSION}
 DEVKIT_ROOT=${BUILD_DIR}/${DEVKIT_NAME}
 BUNDLE_NAME=${DEVKIT_NAME}.tar.gz
 BUNDLE=${BUILD_DIR}/${BUNDLE_NAME}
-INSTALL_ROOT=${BUILD_DIR}/install-root
+INSTALL_ROOT=${BUILD_DIR}/install-root-$SOLARIS_VERSION
+INSTALL_ROOT_TOOLS=${BUILD_DIR}/install-root-tools-$SOLARIS_VERSION
 SYSROOT=${DEVKIT_ROOT}/sysroot
 SOLARIS_STUDIO_SUBDIR=SS${SOLARIS_STUDIO_VERSION}
 SOLARIS_STUDIO_DIR=${DEVKIT_ROOT}/${SOLARIS_STUDIO_SUBDIR}
@@ -92,17 +93,27 @@ else
   echo "Skipping installing packages"
 fi
 
+# Since we have implicitly been running 11.2 tools for a long time, we need
+# to pick them for the tools dir in the devkit. Create a separate install-root
+# for it.
+if [ ! -d $INSTALL_ROOT_TOOLS ]; then
+  echo "Creating $INSTALL_ROOT_TOOLS and installing packages"
+  pkg image-create $INSTALL_ROOT_TOOLS
+  pkg -R $INSTALL_ROOT_TOOLS set-publisher -P -g ${PUBLISHER_URI} solaris
+  sudo pkg -R $INSTALL_ROOT_TOOLS install --accept \
+      entire@0.5.11-0.175.2.5.0.5.0 \
+      system/linker \
+      developer/base-developer-utilities \
+      developer/gnu-binutils
+else
+  echo "Skipping installing tools packages"
+fi
+
 if [ ! -d $SYSROOT ]; then
   echo "Copying from $INSTALL_ROOT to $SYSROOT"
   mkdir -p $SYSROOT
   cp -rH $INSTALL_ROOT/lib $SYSROOT/
-  mkdir $SYSROOT/usr $DEVKIT_ROOT/gnu
-  # Some of the tools in sysroot are needed in the OpenJDK build but cannot be
-  # run from their current location due to relative runtime paths in the
-  # binaries. Move the sysroot/usr/bin directory to the outer bin and have them
-  # be runnable from there to force them to link to the system libraries
-  cp -rH $INSTALL_ROOT/usr/bin $DEVKIT_ROOT
-  cp -rH $INSTALL_ROOT/usr/gnu/bin $DEVKIT_ROOT/gnu/
+  mkdir $SYSROOT/usr
   cp -rH $INSTALL_ROOT/usr/lib $SYSROOT/usr/
   cp -rH $INSTALL_ROOT/usr/include $SYSROOT/usr/
   pkg -R $INSTALL_ROOT list > $SYSROOT/pkg-list.txt
@@ -110,10 +121,36 @@ else
   echo "Skipping copying to $SYSROOT"
 fi
 
+if [ ! -d $DEVKIT_ROOT/tools ]; then
+  echo "Copying from $INSTALL_ROOT_TOOLS to $DEVKIT_ROOT/tools"
+  # Some of the tools in sysroot are needed in the OpenJDK build. We need
+  # to copy them into a tools dir, including their specific libraries.
+  mkdir -p $DEVKIT_ROOT/tools/usr/bin/sparcv9 $DEVKIT_ROOT/tools/lib/sparcv9 \
+      $DEVKIT_ROOT/tools/usr/gnu/bin
+  cp $INSTALL_ROOT_TOOLS/usr/bin/{ar,nm,strip,ld,ldd} \
+       $DEVKIT_ROOT/tools/usr/bin/
+  cp $INSTALL_ROOT_TOOLS/usr/bin/sparcv9/{ar,nm,strip,ld,ldd} \
+       $DEVKIT_ROOT/tools/usr/bin/sparcv9/
+  cp $INSTALL_ROOT_TOOLS/usr/sbin/dtrace $DEVKIT_ROOT/tools/usr/bin/
+  cp $INSTALL_ROOT_TOOLS/usr/sbin/sparcv9/dtrace $DEVKIT_ROOT/tools/usr/bin/sparcv9/
+  cp -rH $INSTALL_ROOT_TOOLS/usr/gnu/bin/* $DEVKIT_ROOT/tools/usr/gnu/bin/
+  cp $INSTALL_ROOT_TOOLS/lib/{libelf.so*,libld.so*,liblddbg.so*} \
+      $DEVKIT_ROOT/tools/lib/
+  cp $INSTALL_ROOT_TOOLS/lib/sparcv9/{libelf.so*,libld.so*,liblddbg.so*} \
+      $DEVKIT_ROOT/tools/lib/sparcv9/
+  for t in $(ls $DEVKIT_ROOT/tools/usr/gnu/bin); do
+    if [ -f $DEVKIT_ROOT/tools/usr/gnu/bin/$t ]; then
+      ln -s ../gnu/bin/$t $DEVKIT_ROOT/tools/usr/bin/g$t
+    fi
+  done
+else
+  echo "Skipping copying to tools dir $DEVKIT_ROOT/tools"
+fi
+
 if [ ! -d $SOLARIS_STUDIO_DIR ]; then
   echo "Copying Solaris Studio from $SOLARIS_STUDIO_SRC"
-  cp -rH $SOLARIS_STUDIO_SRC ${SOLARIS_STUDIO_DIR%/*}
-  mv ${SOLARIS_STUDIO_DIR%/*}/${SOLARIS_STUDIO_SRC##*/} $SOLARIS_STUDIO_DIR
+  mkdir -p ${SOLARIS_STUDIO_DIR}
+  cp -rH $SOLARIS_STUDIO_SRC/. ${SOLARIS_STUDIO_DIR}/
   # Solaris Studio 12.4 requires /lib/libmmheap.so.1 to run, but this lib is not
   # installed by default on all Solaris systems. Sneak it in from the sysroot to
   # make it run OOTB on more systems.
@@ -123,10 +160,9 @@ else
 fi
 
 echo "Copying gnu make to $DEVKIT_ROOT/bin"
-mkdir -p $DEVKIT_ROOT/bin
-cp $GNU_MAKE $DEVKIT_ROOT/bin/
-if [ ! -e $DEVKIT_ROOT/bin/gmake ]; then
-  ln -s make $DEVKIT_ROOT/bin/gmake
+cp $GNU_MAKE $DEVKIT_ROOT/tools/usr/bin/
+if [ ! -e $DEVKIT_ROOT/tools/usr/bin/gmake ]; then
+  ln -s make $DEVKIT_ROOT/tools/usr/bin/gmake
 fi
 
 # Create the devkit.info file
@@ -136,7 +172,7 @@ rm -f $INFO_FILE
 echo "# This file describes to configure how to interpret the contents of this devkit" >> $INFO_FILE
 echo "DEVKIT_NAME=\"Solaris Studio $SOLARIS_STUDIO_VERSION - Solaris $SOLARIS_VERSION - $ARCH\"" >> $INFO_FILE
 echo "DEVKIT_TOOLCHAIN_PATH=\"\$DEVKIT_ROOT/$SOLARIS_STUDIO_SUBDIR/bin:\$DEVKIT_ROOT/bin\"" >> $INFO_FILE
-echo "DEVKIT_EXTRA_PATH=\"\$DEVKIT_ROOT/bin\"" >> $INFO_FILE
+echo "DEVKIT_EXTRA_PATH=\"\$DEVKIT_ROOT/tools/usr/bin\"" >> $INFO_FILE
 echo "DEVKIT_SYSROOT=\"\$DEVKIT_ROOT/sysroot\"" >> $INFO_FILE
 
 if [ ! -e $BUNDLE ]; then

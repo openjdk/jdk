@@ -175,6 +175,16 @@ AC_DEFUN([FLAGS_SETUP_SYSROOT_FLAGS],
         $1SYSROOT_CFLAGS="-I-xbuiltin -I[$]$1SYSROOT/usr/include"
         $1SYSROOT_LDFLAGS="-L[$]$1SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
             -L[$]$1SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR"
+        # If the devkit contains the ld linker, make sure we use it.
+        AC_PATH_PROG(SOLARIS_LD, ld, , $DEVKIT_TOOLCHAIN_PATH:$DEVKIT_EXTRA_PATH)
+        # Make sure this ld is runnable.
+        if test -f "$SOLARIS_LD"; then
+          if "$SOLARIS_LD" -V > /dev/null 2> /dev/null; then
+            $1SYSROOT_LDFLAGS="[$]$1SYSROOT_LDFLAGS -Yl,$(dirname $SOLARIS_LD)"
+          else
+            AC_MSG_WARN([Could not run $SOLARIS_LD found in devkit, reverting to system ld])
+          fi
+        fi
       fi
     elif test "x$TOOLCHAIN_TYPE" = xgcc; then
       $1SYSROOT_CFLAGS="--sysroot=[$]$1SYSROOT"
@@ -1030,9 +1040,9 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
         -qalias=noansi -qstrict -qtls=default -qlanglvl=c99vla \
         -qlanglvl=noredefmac -qnortti -qnoeh -qignerrno"
     # We need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
-    # Hotspot now overflows its 64K TOC (currently only for slowdebug),
-    # so for slowdebug we build with '-qpic=large -bbigtoc'.
-    if test "x$DEBUG_LEVEL" = xslowdebug; then
+    # Hotspot now overflows its 64K TOC (currently only for debug),
+    # so for debug we build with '-qpic=large -bbigtoc'.
+    if test "x$DEBUG_LEVEL" = xslowdebug || test "x$DEBUG_LEVEL" = xfastdebug; then
       $2JVM_CFLAGS="[$]$2JVM_CFLAGS -qpic=large"
     fi
   elif test "x$OPENJDK_$1_OS" = xbsd; then
@@ -1284,9 +1294,9 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
     $2LDFLAGS_JDK="${$2LDFLAGS_JDK} $LDFLAGS_XLC"
     $2JVM_LDFLAGS="[$]$2JVM_LDFLAGS $LDFLAGS_XLC"
     # We need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
-    # Hotspot now overflows its 64K TOC (currently only for slowdebug),
-    # so for slowdebug we build with '-qpic=large -bbigtoc'.
-    if test "x$DEBUG_LEVEL" = xslowdebug; then
+    # Hotspot now overflows its 64K TOC (currently only for debug),
+    # so we build with '-qpic=large -bbigtoc'.
+    if test "x$DEBUG_LEVEL" = xslowdebug || test "x$DEBUG_LEVEL" = xfastdebug; then
       $2JVM_LDFLAGS="[$]$2JVM_LDFLAGS -bbigtoc"
     fi
   fi

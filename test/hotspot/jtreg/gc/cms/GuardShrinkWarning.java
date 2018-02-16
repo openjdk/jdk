@@ -23,10 +23,9 @@
 
 /**
  * @test GuardShrinkWarning
+ * @key gc regression
  * @summary Remove warning about CMS generation shrinking.
  * @bug 8012111
- * @key gc
- * @key regression
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
