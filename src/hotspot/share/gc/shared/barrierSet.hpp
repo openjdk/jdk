@@ -115,7 +115,8 @@ public:
   // is redone until it succeeds. This can e.g. prevent allocations from the slow path
   // to be in old.
   virtual void on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {}
-  virtual void flush_deferred_barriers(JavaThread* thread) {}
+  virtual void on_thread_attach(JavaThread* thread) {}
+  virtual void on_thread_detach(JavaThread* thread) {}
   virtual void make_parsable(JavaThread* thread) {}
 
 protected:

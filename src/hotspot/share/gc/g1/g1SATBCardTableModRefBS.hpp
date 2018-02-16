@@ -154,7 +154,8 @@ class G1SATBCardTableLoggingModRefBS: public G1SATBCardTableModRefBS {
   void write_ref_field_post(T* field, oop new_val);
   void write_ref_field_post_slow(volatile jbyte* byte);
 
-  virtual void flush_deferred_barriers(JavaThread* thread);
+  virtual void on_thread_attach(JavaThread* thread);
+  virtual void on_thread_detach(JavaThread* thread);
 
   virtual bool card_mark_must_follow_store() const {
     return true;

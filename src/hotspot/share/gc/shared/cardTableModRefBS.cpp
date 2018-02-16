@@ -627,7 +627,7 @@ void CardTableModRefBS::flush_deferred_card_mark_barrier(JavaThread* thread) {
 #endif
 }
 
-void CardTableModRefBS::flush_deferred_barriers(JavaThread* thread) {
+void CardTableModRefBS::on_thread_detach(JavaThread* thread) {
   // The deferred store barriers must all have been flushed to the
   // card-table (or other remembered set structure) before GC starts
   // processing the card-table (or other remembered set).
