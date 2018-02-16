@@ -3862,7 +3862,7 @@ bool os::Linux::release_memory_special_huge_tlbfs(char* base, size_t bytes) {
 bool os::release_memory_special(char* base, size_t bytes) {
   bool res;
   if (MemTracker::tracking_level() > NMT_minimal) {
-    Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
+    Tracker tkr(Tracker::release);
     res = os::Linux::release_memory_special_impl(base, bytes);
     if (res) {
       tkr.record((address)base, bytes);

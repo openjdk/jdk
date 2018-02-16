@@ -893,17 +893,11 @@ public:
   develop(bool, TraceJavaAssertions, false,                                 \
           "Trace java language assertions")                                 \
                                                                             \
-  notproduct(bool, PrintMallocFree, false,                                  \
-          "Trace calls to C heap malloc/free allocation")                   \
-                                                                            \
   notproduct(bool, VerifyCodeCache, false,                                  \
           "Verify code cache on memory allocation/deallocation")            \
                                                                             \
   develop(bool, UseMallocOnly, false,                                       \
           "Use only malloc/free for allocation (no resource area/arena)")   \
-                                                                            \
-  develop(bool, PrintMalloc, false,                                         \
-          "Print all malloc/free calls")                                    \
                                                                             \
   develop(bool, PrintMallocStatistics, false,                               \
           "Print malloc/free statistics")                                   \
@@ -3545,7 +3539,7 @@ public:
           "(-1 means no change)")                                           \
           range(-1, 127)                                                    \
                                                                             \
-  product(bool, CompilerThreadHintNoPreempt, true,                          \
+  product(bool, CompilerThreadHintNoPreempt, false,                         \
           "(Solaris only) Give compiler threads an extra quanta")           \
                                                                             \
   product(bool, VMThreadHintNoPreempt, false,                               \

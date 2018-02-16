@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1840,7 +1840,7 @@ void PerfMemory::detach(char* addr, size_t bytes, TRAPS) {
 
   if (MemTracker::tracking_level() > NMT_minimal) {
     // it does not go through os api, the operation has to record from here
-    Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
+    Tracker tkr(Tracker::release);
     remove_file_mapping(addr);
     tkr.record((address)addr, bytes);
   } else {

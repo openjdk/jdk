@@ -97,10 +97,11 @@ public class CLDRCalendarDataProviderImpl extends CalendarDataProviderImpl {
     }
 
     private static Optional<Integer> retrieveInteger(String src, String region) {
-        return Arrays.stream(src.split(";"))
-            .filter(entry -> entry.contains(region))
-            .map(entry -> entry.substring(0, entry.indexOf(":")))
-            .findAny()
-            .map(Integer::parseInt);
+        int regionIndex = src.indexOf(region);
+        if (regionIndex >= 0) {
+            int start = src.lastIndexOf(';', regionIndex) + 1;
+            return Optional.of(Integer.parseInt(src, start, src.indexOf(':', start), 10));
+        }
+        return Optional.empty();
     }
 }

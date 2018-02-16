@@ -77,7 +77,10 @@ public class ScriptEngineManager  {
 
     private void init(final ClassLoader loader) {
         globalScope = new SimpleBindings();
-        engineSpis = new TreeSet<ScriptEngineFactory>(Comparator.comparing(ScriptEngineFactory::getEngineName));
+        engineSpis = new TreeSet<ScriptEngineFactory>(Comparator.comparing(
+            ScriptEngineFactory::getEngineName,
+            Comparator.nullsLast(Comparator.naturalOrder()))
+        );
         nameAssociations = new HashMap<String, ScriptEngineFactory>();
         extensionAssociations = new HashMap<String, ScriptEngineFactory>();
         mimeTypeAssociations = new HashMap<String, ScriptEngineFactory>();

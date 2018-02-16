@@ -36,18 +36,18 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
                                                           class */
 
     private static ReferenceQueue<Object> queue = new ReferenceQueue<>();
+
+    /** Head of doubly linked list of Finalizers awaiting finalization. */
     private static Finalizer unfinalized = null;
+
+    /** Lock guarding access to unfinalized list. */
     private static final Object lock = new Object();
 
-    private Finalizer
-        next = null,
-        prev = null;
+    private Finalizer next, prev;
 
-    private boolean hasBeenFinalized() {
-        return (next == this);
-    }
-
-    private void add() {
+    private Finalizer(Object finalizee) {
+        super(finalizee, queue);
+        // push onto unfinalized
         synchronized (lock) {
             if (unfinalized != null) {
                 this.next = unfinalized;
@@ -55,31 +55,6 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
             }
             unfinalized = this;
         }
-    }
-
-    private void remove() {
-        synchronized (lock) {
-            if (unfinalized == this) {
-                if (this.next != null) {
-                    unfinalized = this.next;
-                } else {
-                    unfinalized = this.prev;
-                }
-            }
-            if (this.next != null) {
-                this.next.prev = this.prev;
-            }
-            if (this.prev != null) {
-                this.prev.next = this.next;
-            }
-            this.next = this;   /* Indicates that this has been finalized */
-            this.prev = this;
-        }
-    }
-
-    private Finalizer(Object finalizee) {
-        super(finalizee, queue);
-        add();
     }
 
     static ReferenceQueue<Object> getQueue() {
@@ -91,11 +66,24 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
         new Finalizer(finalizee);
     }
 
-    private void runFinalizer(JavaLangAccess jla) {
-        synchronized (this) {
-            if (hasBeenFinalized()) return;
-            remove();
+    private void deregisterAndRunFinalizer(JavaLangAccess jla) {
+        synchronized (lock) {
+            if (this.next == this)      // already finalized
+                return;
+            // unlink from unfinalized
+            if (unfinalized == this)
+                unfinalized = this.next;
+            else
+                this.prev.next = this.next;
+            if (this.next != null)
+                this.next.prev = this.prev;
+            this.prev = null;
+            this.next = this;           // mark as finalized
         }
+        runFinalizer(jla);
+    }
+
+    private void runFinalizer(JavaLangAccess jla) {
         try {
             Object finalizee = this.get();
             if (finalizee != null && !(finalizee instanceof java.lang.Enum)) {
@@ -155,11 +143,8 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
                     return;
                 final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
                 running = true;
-                for (;;) {
-                    Finalizer f = (Finalizer)queue.poll();
-                    if (f == null) break;
-                    f.runFinalizer(jla);
-                }
+                for (Finalizer f; (f = (Finalizer)queue.poll()) != null; )
+                    f.deregisterAndRunFinalizer(jla);
             }
         });
     }
@@ -179,11 +164,15 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
                 final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
                 running = true;
                 for (;;) {
+                    // "pollFirst" from unfinalized
                     Finalizer f;
                     synchronized (lock) {
                         f = unfinalized;
                         if (f == null) break;
                         unfinalized = f.next;
+                        if (unfinalized != null)
+                            unfinalized.prev = null;
+                        f.next = f; // mark as finalized
                     }
                     f.runFinalizer(jla);
                 }}});
@@ -214,7 +203,7 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
             for (;;) {
                 try {
                     Finalizer f = (Finalizer)queue.remove();
-                    f.runFinalizer(jla);
+                    f.deregisterAndRunFinalizer(jla);
                 } catch (InterruptedException x) {
                     // ignore and continue
                 }

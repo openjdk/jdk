@@ -39,9 +39,8 @@ import java.util.Random;
 
 /**
  * @test TestUnifiedLoggingSwitchStress
+ * @key gc stress
  * @summary Switches gc log level on fly while stressing memory/gc
- * @key gc
- * @key stress
  * @requires !vm.flightRecorder
  * @library /test/lib /
  * @modules java.management java.base/jdk.internal.misc

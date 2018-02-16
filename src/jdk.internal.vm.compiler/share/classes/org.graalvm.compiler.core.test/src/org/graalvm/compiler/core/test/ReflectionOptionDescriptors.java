@@ -31,13 +31,13 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.MapCursor;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionDescriptor;
 import org.graalvm.compiler.options.OptionDescriptors;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.util.EconomicMap;
-import org.graalvm.util.MapCursor;
 
 /**
  * An implementation of {@link OptionDescriptor} that uses reflection to create descriptors from a

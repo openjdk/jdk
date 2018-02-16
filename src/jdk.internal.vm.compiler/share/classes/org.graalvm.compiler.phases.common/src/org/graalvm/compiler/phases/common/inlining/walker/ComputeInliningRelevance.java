@@ -25,6 +25,8 @@ package org.graalvm.compiler.phases.common.inlining.walker;
 import java.util.ArrayList;
 import java.util.function.ToDoubleFunction;
 
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.Equivalence;
 import org.graalvm.compiler.core.common.SuppressFBWarnings;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeWorkList;
@@ -43,8 +45,6 @@ import org.graalvm.compiler.nodes.MergeNode;
 import org.graalvm.compiler.nodes.StartNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.common.inlining.InliningUtil;
-import org.graalvm.util.Equivalence;
-import org.graalvm.util.EconomicMap;
 
 public class ComputeInliningRelevance {
 

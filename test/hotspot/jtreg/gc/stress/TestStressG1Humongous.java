@@ -23,8 +23,7 @@
 
 /*
  * @test TestStressG1Humongous
- * @key gc
- * @key stress
+ * @key gc stress
  * @summary Stress G1 by humongous allocations in situation near OOM
  * @requires vm.gc.G1
  * @requires !vm.flightRecorder

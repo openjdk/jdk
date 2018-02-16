@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1556,8 +1556,6 @@ void GraphBuilder::method_return(Value x, bool ignore_return) {
       }
       if (profile_return() && x->type()->is_object_kind()) {
         ciMethod* caller = state()->scope()->method();
-        ciMethodData* md = caller->method_data_or_null();
-        ciProfileData* data = md->bci_to_data(invoke_bci);
         profile_return_type(x, method(), caller, invoke_bci);
       }
     }

@@ -2761,7 +2761,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ciMethodData* md = method->method_data_or_null();
   assert(md != NULL, "Sanity");
   ciProfileData* data = md->bci_to_data(bci);
-  assert(data->is_CounterData(), "need CounterData for calls");
+  assert(data != NULL && data->is_CounterData(), "need CounterData for calls");
   assert(op->mdo()->is_single_cpu(),  "mdo must be allocated");
   Register mdo  = op->mdo()->as_register();
   assert(op->tmp1()->is_double_cpu(), "tmp1 must be allocated");

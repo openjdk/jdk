@@ -2206,7 +2206,7 @@ char* os::reserve_memory_special(size_t bytes, size_t alignment, char* req_addr,
 
 bool os::release_memory_special(char* base, size_t bytes) {
   if (MemTracker::tracking_level() > NMT_minimal) {
-    Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
+    Tracker tkr(Tracker::release);
     // detaching the SHM segment will also delete it, see reserve_memory_special()
     int rslt = shmdt(base);
     if (rslt == 0) {
