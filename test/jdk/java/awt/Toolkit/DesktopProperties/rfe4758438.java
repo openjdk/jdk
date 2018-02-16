@@ -28,6 +28,7 @@ import java.io.InputStream;
 
 /*
  * @test
+ * @key headful
  * @bug 4758438
  * @summary Testcase to check the implementation of RFE 4758438
  *          The RFE suggests that the GNOME desktop properties

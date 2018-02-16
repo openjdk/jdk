@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @key headful
  * @bug 8189201
  * @summary [macosx] NotSerializableException during JFrame with MenuBar
  *          serialization
