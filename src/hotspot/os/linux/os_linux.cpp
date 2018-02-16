@@ -629,6 +629,10 @@ static void NOINLINE _expand_stack_to(address bottom) {
   }
 }
 
+void os::Linux::expand_stack_to(address bottom) {
+  _expand_stack_to(bottom);
+}
+
 bool os::Linux::manually_expand_stack(JavaThread * t, address addr) {
   assert(t!=NULL, "just checking");
   assert(t->osthread()->expanding_stack(), "expand should be set");
