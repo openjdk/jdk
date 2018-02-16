@@ -768,7 +768,7 @@ var getJibProfilesDependencies = function (input, common) {
         linux_x64: "gcc4.9.2-OEL6.4+1.2",
         macosx_x64: "Xcode6.3-MacOSX10.9+1.0",
         solaris_x64: "SS12u4-Solaris11u1+1.0",
-        solaris_sparcv9: "SS12u4-Solaris11u1+1.0",
+        solaris_sparcv9: "SS12u4-Solaris11u1+1.1",
         windows_x64: "VS2013SP4+1.0",
         linux_aarch64: "gcc-linaro-aarch64-linux-gnu-4.8-2013.11_linux+1.0",
         linux_arm: (input.profile != null && input.profile.indexOf("hflt") >= 0
