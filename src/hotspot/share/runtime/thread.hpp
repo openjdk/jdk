@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1075,8 +1075,6 @@ class JavaThread: public Thread {
   DirtyCardQueue _dirty_card_queue;      // Thread-local log for dirty cards.
   // Set of all such queues.
   static DirtyCardQueueSet _dirty_card_queue_set;
-
-  void flush_barrier_queues();
 #endif // INCLUDE_ALL_GCS
 
   friend class VMThread;
