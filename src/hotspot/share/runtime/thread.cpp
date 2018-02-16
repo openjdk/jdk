@@ -2027,12 +2027,6 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
 }
 
 #if INCLUDE_ALL_GCS
-// Flush G1-related queues.
-void JavaThread::flush_barrier_queues() {
-  satb_mark_queue().flush();
-  dirty_card_queue().flush();
-}
-
 void JavaThread::initialize_queues() {
   assert(!SafepointSynchronize::is_at_safepoint(),
          "we should not be at a safepoint");
@@ -2076,11 +2070,7 @@ void JavaThread::cleanup_failed_attach_current_thread() {
     tlab().make_parsable(true);  // retire TLAB, if any
   }
 
-#if INCLUDE_ALL_GCS
-  if (UseG1GC) {
-    flush_barrier_queues();
-  }
-#endif // INCLUDE_ALL_GCS
+  BarrierSet::barrier_set()->flush_deferred_barriers(this);
 
   Threads::remove(this);
   this->smr_delete();
