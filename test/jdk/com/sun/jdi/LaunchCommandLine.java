@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Test launcher command line construction
  * @author Gordon Hirsch
  *
- * @run build JDIScaffold VMConnection
+ * @run build TestScaffold VMConnection
  * @run compile -g HelloWorld.java
  * @run build LaunchCommandLine
  *
@@ -39,14 +39,14 @@ import com.sun.jdi.request.*;
 
 import java.util.List;
 
-public class LaunchCommandLine extends JDIScaffold {
+public class LaunchCommandLine extends TestScaffold {
     public static void main(String args[]) throws Exception {
         new LaunchCommandLine(args).startTests();
     }
 
     LaunchCommandLine(String args[]) {
         // args are set in code below
-        super();
+        super(args);
     }
 
     protected void runTests() throws Exception {
@@ -96,7 +96,7 @@ public class LaunchCommandLine extends JDIScaffold {
         }
 
         // Allow application to complete
-        resumeToVMDeath();
+        resumeToVMDisconnect();
     }
 
 }
