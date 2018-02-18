@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2328,7 +2328,7 @@ void ObjectMonitor::DeferredInitialize() {
   if (SyncKnobs == NULL) SyncKnobs = "";
 
   size_t sz = strlen(SyncKnobs);
-  char * knobs = (char *) malloc(sz + 2);
+  char * knobs = (char *) os::malloc(sz + 2, mtInternal);
   if (knobs == NULL) {
     vm_exit_out_of_memory(sz + 2, OOM_MALLOC_ERROR, "Parse SyncKnobs");
     guarantee(0, "invariant");
@@ -2393,7 +2393,7 @@ void ObjectMonitor::DeferredInitialize() {
     ObjectMonitor::_sync_FailedSpins = NULL;
   }
 
-  free(knobs);
+  os::free(knobs);
   OrderAccess::fence();
   InitDone = 1;
 }
