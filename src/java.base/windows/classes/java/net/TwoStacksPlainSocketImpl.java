@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,42 +29,13 @@ import java.io.FileDescriptor;
 import sun.net.ResourceManager;
 
 /*
- * This class defines the plain SocketImpl that is used for all
- * Windows version lower than Vista. It adds support for IPv6 on
- * these platforms where available.
- *
- * For backward compatibility Windows platforms that do not have IPv6
- * support also use this implementation, and fd1 gets set to null
- * during socket creation.
+ * This class defines the plain SocketImpl that is used when
+ * the System property java.net.preferIPv4Stack is set to true.
  *
  * @author Chris Hegarty
  */
 
-class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
-{
-    /* second fd, used for ipv6 on windows only.
-     * fd1 is used for listeners and for client sockets at initialization
-     * until the socket is connected. Up to this point fd always refers
-     * to the ipv4 socket and fd1 to the ipv6 socket. After the socket
-     * becomes connected, fd always refers to the connected socket
-     * (either v4 or v6) and fd1 is closed.
-     *
-     * For ServerSockets, fd always refers to the v4 listener and
-     * fd1 the v6 listener.
-     */
-    private FileDescriptor fd1;
-
-    /*
-     * Needed for ipv6 on windows because we need to know
-     * if the socket is bound to ::0 or 0.0.0.0, when a caller
-     * asks for it. Otherwise we don't know which socket to ask.
-     */
-    private InetAddress anyLocalBoundAddr = null;
-
-    /* to prevent starvation when listening on two sockets, this is
-     * is used to hold the id of the last socket we accepted on.
-     */
-    private int lastfd = -1;
+class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl {
 
     // true if this socket is exclusively bound
     private final boolean exclusiveBind;
@@ -85,43 +56,11 @@ class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
         exclusiveBind = exclBind;
     }
 
-    /**
-     * Creates a socket with a boolean that specifies whether this
-     * is a stream socket (true) or an unconnected UDP socket (false).
-     */
-    protected synchronized void create(boolean stream) throws IOException {
-        fd1 = new FileDescriptor();
-        try {
-            super.create(stream);
-        } catch (IOException e) {
-            fd1 = null;
-            throw e;
-        }
-    }
-
-     /**
-     * Binds the socket to the specified address of the specified local port.
-     * @param address the address
-     * @param port the port
-     */
-    protected synchronized void bind(InetAddress address, int lport)
-        throws IOException
-    {
-        super.bind(address, lport);
-        if (address.isAnyLocalAddress()) {
-            anyLocalBoundAddr = address;
-        }
-    }
-
     public Object getOption(int opt) throws SocketException {
         if (isClosedOrPending()) {
             throw new SocketException("Socket Closed");
         }
         if (opt == SO_BINDADDR) {
-            if (fd != null && fd1 != null ) {
-                /* must be unbound or else bound to anyLocal */
-                return anyLocalBoundAddr;
-            }
             InetAddressContainer in = new InetAddressContainer();
             socketGetOption(opt, in);
             return in.addr;
@@ -161,7 +100,7 @@ class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
     @Override
     protected void close() throws IOException {
         synchronized(fdLock) {
-            if (fd != null || fd1 != null) {
+            if (fd != null) {
                 if (!stream) {
                     ResourceManager.afterUdpClose();
                 }
@@ -172,7 +111,6 @@ class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
                     closePending = true;
                     socketClose();
                     fd = null;
-                    fd1 = null;
                     return;
                 } else {
                     /*
@@ -191,39 +129,11 @@ class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
         }
     }
 
-    @Override
-    void reset() throws IOException {
-        if (fd != null || fd1 != null) {
-            socketClose();
-        }
-        fd = null;
-        fd1 = null;
-        super.reset();
-    }
-
-    /*
-     * Return true if already closed or close is pending
-     */
-    @Override
-    public boolean isClosedOrPending() {
-        /*
-         * Lock on fdLock to ensure that we wait if a
-         * close is in progress.
-         */
-        synchronized (fdLock) {
-            if (closePending || (fd == null && fd1 == null)) {
-                return true;
-            } else {
-                return false;
-            }
-        }
-    }
-
     /* Native methods */
 
     static native void initProto();
 
-    native void socketCreate(boolean isServer) throws IOException;
+    native void socketCreate(boolean stream) throws IOException;
 
     native void socketConnect(InetAddress address, int port, int timeout)
         throws IOException;
