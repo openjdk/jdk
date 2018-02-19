@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,9 +132,9 @@ class CollectorPolicy : public CHeapObj<mtGC> {
 
   virtual CardTableRS* create_rem_set(MemRegion reserved);
 
-  MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
-                                               size_t size,
-                                               Metaspace::MetadataType mdtype);
+  virtual MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
+                                                       size_t size,
+                                                       Metaspace::MetadataType mdtype);
 };
 
 class ClearedAllSoftRefs : public StackObj {
