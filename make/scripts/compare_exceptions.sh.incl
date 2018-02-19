@@ -428,8 +428,13 @@ if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
       ./bin/xjc.exe
       "
 
+  SORT_SYMBOLS="
+      ./bin/fontmanager.dll
+      "
+
   ACCEPTED_DIS_DIFF="
       ./bin/jabswitch.exe
+      ./bin/fontmanager.dll
       "
 
   if [ "$OPENJDK_TARGET_CPU" = "x86" ]; then

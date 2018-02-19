@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ diff_text() {
             $SED -e '/[<>] \* from.*\.idl/d' \
                  -e '/[<>] .*[0-9]\{4\}_[0-9]\{2\}_[0-9]\{2\}_[0-9]\{2\}_[0-9]\{2\}-b[0-9]\{2\}.*/d' \
                  -e '/[<>] .*[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}-[0-9]\{6\}.*/d' \
-                 -e '/[<>] \*.*[0-9]\{4\} [0-9][0-9]*:[0-9]\{2\}:[0-9]\{2\}.*/d' \
+                 -e '/[<>] \*.*[0-9]\{4\} \(at \)*[0-9][0-9]*:[0-9]\{2\}:[0-9]\{2\}.*/d' \
                  -e '/\/\/ Generated from input file.*/d' \
                  -e '/\/\/ This file was generated AUTOMATICALLY from a template file.*/d' \
                  -e '/\/\/ java GenerateCharacter.*/d')
@@ -102,9 +102,12 @@ diff_text() {
     # Ignore date strings in class files.
     # Anonymous lambda classes get randomly assigned counters in their names.
     if test "x$SUFFIX" = "xclass"; then
-        if [ "$NAME" = "SystemModules.class" ]; then
-            # The SystemModules.class is not comparable. The way it is generated is
-            # too random. It can even be of different size for no apparent reason.
+        if [ "$NAME" = "SystemModules\$all.class" ] \
+           || [ "$NAME" = "SystemModules\$default.class" ]; then
+            # The SystemModules\$*.classes are not comparable as they contain the
+            # module hashes which would require a whole other level of
+            # reproducible builds to get reproducible. There is also random
+            # order of map initialization.
             TMP=""
         elif [ "$NAME" = "module-info.class" ]; then
             # The module-info.class have several issues with random ordering of
@@ -654,7 +657,6 @@ compare_bin_file() {
         # pdb files.
         PDB_DIRS="$(ls -d \
             {$OTHER,$THIS}/support/modules_{cmds,libs}/{*,*/*} \
-            {$OTHER,$THIS}/support/demos/image/jvmti/*/lib \
             {$OTHER,$THIS}/support/native/java.base/java_objs \
             )"
         export _NT_SYMBOL_PATH="$(echo $PDB_DIRS | tr ' ' ';')"
@@ -1001,6 +1003,12 @@ compare_all_libs() {
         -o -name '*.dll' -o -name '*.obj' -o -name '*.o' -o -name '*.a' \
         -o -name '*.cpl' \) | $SORT | $FILTER)
 
+    # On macos, filter out the dSYM debug symbols files as they are also
+    # named *.dylib.
+    if [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
+        LIBS=$(echo "$LIBS" | $GREP -v '\.dSYM/')
+    fi
+
     if [ -n "$LIBS" ]; then
         echo Libraries...
         print_binary_diff_header
@@ -1041,7 +1049,7 @@ compare_all_execs() {
             -o -name '*.jfc' -o -name '*.dat'  -o -name 'release' -o -name '*.dir'\
             -o -name '*.sym' -o -name '*.idl' -o -name '*.h' -o -name '*.access' \
             -o -name '*.template' -o -name '*.policy' -o -name '*.security' \
-            -o -name 'COPYRIGHT' -o -name '*.1' \
+            -o -name 'COPYRIGHT' -o -name '*.1' -o -name '*.debuginfo' \
             -o -name 'classlist' \) | $SORT | $FILTER)
     fi
 
@@ -1219,7 +1227,7 @@ if [ "$STRIP_ALL" = "true" ] && [ -z "$STRIP" ]; then
   STRIP_ALL=false
 fi
 
-COMPARE_ROOT=/tmp/cimages.$USER
+COMPARE_ROOT=$OUTPUTDIR/compare-support
 if [ "$CLEAN_OUTPUT" = "true" ]; then
     echo Cleaning old output in $COMPARE_ROOT.
     $RM -rf $COMPARE_ROOT
