@@ -57,7 +57,7 @@ public class JImageListTest extends JImageCliTest {
                             .map(s -> s.substring(s.indexOf(':') + 1).trim())
                             .collect(Collectors.toList());
                     assertTrue(modules.size() > 0, "Image contains at least one module.");
-                    assertTrue(modules.indexOf("java.base") > 0, "Module java.base found.");
+                    assertTrue(modules.contains("java.base"), "Module java.base found.");
                 });
     }
 
@@ -88,7 +88,7 @@ public class JImageListTest extends JImageCliTest {
                             .map(s -> s.substring(s.indexOf(':') + 1).trim())
                             .collect(Collectors.toList());
                     assertTrue(modules.size() > 0, "Image contains at least one module.");
-                    assertTrue(modules.indexOf("java.base") > 0, "Module java.base found.");
+                    assertTrue(modules.contains("java.base"), "Module java.base found.");
 
                     Set<String> entries = Stream.of(lines)
                             .filter(s -> { return !s.startsWith("Module: ") && !s.startsWith("Offset"); })
