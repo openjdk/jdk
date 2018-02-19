@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -454,10 +454,7 @@ void LogConfiguration::describe_available(outputStream* out){
   out->cr();
 
   out->print("Available log tags:");
-  for (size_t i = 1; i < LogTag::Count; i++) {
-    out->print("%s %s", (i == 1 ? "" : ","), LogTag::name(static_cast<LogTagType>(i)));
-  }
-  out->cr();
+  LogTag::list_tags(out);
 
   LogTagSet::describe_tagsets(out);
 }
@@ -494,13 +491,12 @@ void LogConfiguration::print_command_line_help(FILE* out) {
   }
   jio_fprintf(out, "\n Decorators can also be specified as 'none' for no decoration.\n\n");
 
-  jio_fprintf(out, "Available log tags:\n");
-  for (size_t i = 1; i < LogTag::Count; i++) {
-    jio_fprintf(out, "%s %s", (i == 1 ? "" : ","), LogTag::name(static_cast<LogTagType>(i)));
-  }
-  jio_fprintf(out, "\n Specifying 'all' instead of a tag combination matches all tag combinations.\n\n");
-
   fileStream stream(out, false);
+  stream.print_cr("Available log tags:");
+  LogTag::list_tags(&stream);
+  stream.print_cr(" Specifying 'all' instead of a tag combination matches all tag combinations.");
+  stream.cr();
+
   LogTagSet::describe_tagsets(&stream);
 
   jio_fprintf(out, "\nAvailable log outputs:\n"

@@ -192,6 +192,7 @@ class LogTag : public AllStatic {
   }
 
   static LogTag::type from_string(const char *str);
+  static void list_tags(outputStream* out);
 
  private:
   static const char* _name[];
