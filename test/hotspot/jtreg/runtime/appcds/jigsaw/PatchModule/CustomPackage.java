@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,12 +72,12 @@ public class CustomPackage {
                 "PatchMain", "javax.naming.myspi.NamingManager");
         TestCommon.checkDump(output, "Preload Warning: Cannot find javax/naming/myspi/NamingManager");
 
-        output = TestCommon.execCommon(
+        TestCommon.run(
             "-XX:+UnlockDiagnosticVMOptions",
             "--patch-module=java.naming=" + moduleJar,
             "-Xlog:class+load",
             "-Xlog:class+path=info",
-            "PatchMain", "javax.naming.myspi.NamingManager");
-        TestCommon.checkExec(output, "I pass!");
+            "PatchMain", "javax.naming.myspi.NamingManager")
+          .assertNormalExit("I pass!");
     }
 }

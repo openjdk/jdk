@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,15 +239,6 @@ inline bool G1CollectedHeap::is_in_young(const oop obj) {
     return false;
   }
   return heap_region_containing(obj)->is_young();
-}
-
-// We don't need barriers for initializing stores to objects
-// in the young gen: for the SATB pre-barrier, there is no
-// pre-value that needs to be remembered; for the remembered-set
-// update logging post-barrier, we don't maintain remembered set
-// information for young gen objects.
-inline bool G1CollectedHeap::can_elide_initializing_store_barrier(oop new_obj) {
-  return is_in_young(new_obj);
 }
 
 inline bool G1CollectedHeap::is_obj_dead(const oop obj) const {

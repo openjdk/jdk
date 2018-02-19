@@ -450,7 +450,7 @@ void TemplateTable::sipush() {
 
 void TemplateTable::ldc(bool wide) {
   transition(vtos, vtos);
-  Label call_ldc, notFloat, notClass, Done;
+  Label call_ldc, notFloat, notClass, notInt, Done;
   const Register RcpIndex = Z_tmp_1;
   const Register Rtags = Z_ARG2;
 
@@ -500,22 +500,17 @@ void TemplateTable::ldc(bool wide) {
   __ z_bru(Done);
 
   __ bind(notFloat);
-#ifdef ASSERT
-  {
-    Label   L;
-
-    __ z_cli(0, Raddr_type, JVM_CONSTANT_Integer);
-    __ z_bre(L);
-    // String and Object are rewritten to fast_aldc.
-    __ stop("unexpected tag type in ldc");
-
-    __ bind(L);
-  }
-#endif
+  __ z_cli(0, Raddr_type, JVM_CONSTANT_Integer);
+  __ z_brne(notInt);
 
   // itos
   __ mem2reg_opt(Z_tos, Address(Z_tmp_2, RcpOffset, base_offset), false);
   __ push_i(Z_tos);
+  __ z_bru(Done);
+
+  // assume the tag is for condy; if not, the VM runtime will tell us
+  __ bind(notInt);
+  condy_helper(Done);
 
   __ bind(Done);
 }
@@ -528,15 +523,23 @@ void TemplateTable::fast_aldc(bool wide) {
 
   const Register index = Z_tmp_2;
   int            index_size = wide ? sizeof(u2) : sizeof(u1);
-  Label          L_resolved;
+  Label          L_do_resolve, L_resolved;
 
   // We are resolved if the resolved reference cache entry contains a
   // non-null object (CallSite, etc.).
   __ get_cache_index_at_bcp(index, 1, index_size);  // Load index.
   __ load_resolved_reference_at_index(Z_tos, index);
   __ z_ltgr(Z_tos, Z_tos);
-  __ z_brne(L_resolved);
+  __ z_bre(L_do_resolve);
 
+  // Convert null sentinel to NULL.
+  __ load_const_optimized(Z_R1_scratch, (intptr_t)Universe::the_null_sentinel_addr());
+  __ z_cg(Z_tos, Address(Z_R1_scratch));
+  __ z_brne(L_resolved);
+  __ clear_reg(Z_tos);
+  __ z_bru(L_resolved);
+
+  __ bind(L_do_resolve);
   // First time invocation - must resolve first.
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc);
   __ load_const_optimized(Z_ARG1, (int)bytecode());
@@ -548,7 +551,7 @@ void TemplateTable::fast_aldc(bool wide) {
 
 void TemplateTable::ldc2_w() {
   transition(vtos, vtos);
-  Label Long, Done;
+  Label notDouble, notLong, Done;
 
   // Z_tmp_1 = index of cp entry
   __ get_2_byte_integer_at_bcp(Z_tmp_1, 1, InterpreterMacroAssembler::Unsigned);
@@ -566,19 +569,130 @@ void TemplateTable::ldc2_w() {
 
   // Check type.
   __ z_cli(0, Z_tos, JVM_CONSTANT_Double);
-  __ z_brne(Long);
-
+  __ z_brne(notDouble);
   // dtos
   __ mem2freg_opt(Z_ftos, Address(Z_tmp_2, Z_tmp_1, base_offset));
   __ push_d();
   __ z_bru(Done);
 
-  __ bind(Long);
+  __ bind(notDouble);
+  __ z_cli(0, Z_tos, JVM_CONSTANT_Long);
+  __ z_brne(notLong);
   // ltos
   __ mem2reg_opt(Z_tos, Address(Z_tmp_2, Z_tmp_1, base_offset));
   __ push_l();
+  __ z_bru(Done);
+
+  __ bind(notLong);
+  condy_helper(Done);
 
   __ bind(Done);
+}
+
+void TemplateTable::condy_helper(Label& Done) {
+  const Register obj   = Z_tmp_1;
+  const Register off   = Z_tmp_2;
+  const Register flags = Z_ARG1;
+  const Register rarg  = Z_ARG2;
+  __ load_const_optimized(rarg, (int)bytecode());
+  call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc), rarg);
+  __ get_vm_result_2(flags);
+
+  // VMr = obj = base address to find primitive value to push
+  // VMr2 = flags = (tos, off) using format of CPCE::_flags
+  assert(ConstantPoolCacheEntry::field_index_mask == 0xffff, "or use other instructions");
+  __ z_llghr(off, flags);
+  const Address field(obj, off);
+
+  // What sort of thing are we loading?
+  __ z_srl(flags, ConstantPoolCacheEntry::tos_state_shift);
+  // Make sure we don't need to mask flags for tos_state after the above shift.
+  ConstantPoolCacheEntry::verify_tos_state_shift();
+
+  switch (bytecode()) {
+  case Bytecodes::_ldc:
+  case Bytecodes::_ldc_w:
+    {
+      // tos in (itos, ftos, stos, btos, ctos, ztos)
+      Label notInt, notFloat, notShort, notByte, notChar, notBool;
+      __ z_cghi(flags, itos);
+      __ z_brne(notInt);
+      // itos
+      __ z_l(Z_tos, field);
+      __ push(itos);
+      __ z_bru(Done);
+
+      __ bind(notInt);
+      __ z_cghi(flags, ftos);
+      __ z_brne(notFloat);
+      // ftos
+      __ z_le(Z_ftos, field);
+      __ push(ftos);
+      __ z_bru(Done);
+
+      __ bind(notFloat);
+      __ z_cghi(flags, stos);
+      __ z_brne(notShort);
+      // stos
+      __ z_lh(Z_tos, field);
+      __ push(stos);
+      __ z_bru(Done);
+
+      __ bind(notShort);
+      __ z_cghi(flags, btos);
+      __ z_brne(notByte);
+      // btos
+      __ z_lb(Z_tos, field);
+      __ push(btos);
+      __ z_bru(Done);
+
+      __ bind(notByte);
+      __ z_cghi(flags, ctos);
+      __ z_brne(notChar);
+      // ctos
+      __ z_llh(Z_tos, field);
+      __ push(ctos);
+      __ z_bru(Done);
+
+      __ bind(notChar);
+      __ z_cghi(flags, ztos);
+      __ z_brne(notBool);
+      // ztos
+      __ z_lb(Z_tos, field);
+      __ push(ztos);
+      __ z_bru(Done);
+
+      __ bind(notBool);
+      break;
+    }
+
+  case Bytecodes::_ldc2_w:
+    {
+      Label notLong, notDouble;
+      __ z_cghi(flags, ltos);
+      __ z_brne(notLong);
+      // ltos
+      __ z_lg(Z_tos, field);
+      __ push(ltos);
+      __ z_bru(Done);
+
+      __ bind(notLong);
+      __ z_cghi(flags, dtos);
+      __ z_brne(notDouble);
+      // dtos
+      __ z_ld(Z_ftos, field);
+      __ push(dtos);
+      __ z_bru(Done);
+
+      __ bind(notDouble);
+      break;
+    }
+
+  default:
+    ShouldNotReachHere();
+  }
+
+  __ stop("bad ldc/condy");
 }
 
 void TemplateTable::locals_index(Register reg, int offset) {

@@ -236,8 +236,8 @@ public:
   // and not free, and return the number of regions newly committed in commit_count.
   bool allocate_containing_regions(MemRegion range, size_t* commit_count, WorkGang* pretouch_workers);
 
-  // Apply blk->doHeapRegion() on all committed regions in address order,
-  // terminating the iteration early if doHeapRegion() returns true.
+  // Apply blk->do_heap_region() on all committed regions in address order,
+  // terminating the iteration early if do_heap_region() returns true.
   void iterate(HeapRegionClosure* blk) const;
 
   void par_iterate(HeapRegionClosure* blk, HeapRegionClaimer* hrclaimer, const uint start_index) const;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ oop_arraycopy_in_heap(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t
   if (!HasDecorator<decorators, ARRAYCOPY_CHECKCAST>::value) {
     // Optimized covariant case
     bs->write_ref_array_pre(dst, (int)length,
-                            HasDecorator<decorators, ARRAYCOPY_DEST_NOT_INITIALIZED>::value);
+                            HasDecorator<decorators, AS_DEST_NOT_INITIALIZED>::value);
     Raw::oop_arraycopy(src_obj, dst_obj, src, dst, length);
     bs->write_ref_array((HeapWord*)dst, length);
   } else {
