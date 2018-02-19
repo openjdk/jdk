@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,10 @@ class CardTableModRefBS: public ModRefBarrierSet {
     last_card                   =  8,
     CT_MR_BS_last_reserved      = 16
   };
+
+  // Used in support of ReduceInitialCardMarks; only consulted if COMPILER2
+  // or INCLUDE_JVMCI is being used
+  bool _defer_initial_card_mark;
 
   // a word's worth (row) of clean card values
   static const intptr_t clean_card_row = (intptr_t)(-1);
@@ -180,8 +184,8 @@ class CardTableModRefBS: public ModRefBarrierSet {
   CardTableModRefBS(MemRegion whole_heap, const BarrierSet::FakeRtti& fake_rtti);
   ~CardTableModRefBS();
 
- protected:
-  void write_region_work(MemRegion mr) {
+ public:
+  void write_region(MemRegion mr) {
     dirty_MemRegion(mr);
   }
 
@@ -313,6 +317,49 @@ class CardTableModRefBS: public ModRefBarrierSet {
   void verify_region(MemRegion mr, jbyte val, bool val_equals) PRODUCT_RETURN;
   void verify_not_dirty_region(MemRegion mr) PRODUCT_RETURN;
   void verify_dirty_region(MemRegion mr) PRODUCT_RETURN;
+
+  // ReduceInitialCardMarks
+  void initialize_deferred_card_mark_barriers();
+
+  // If the CollectedHeap was asked to defer a store barrier above,
+  // this informs it to flush such a deferred store barrier to the
+  // remembered set.
+  void flush_deferred_card_mark_barrier(JavaThread* thread);
+
+  // Can a compiler initialize a new object without store barriers?
+  // This permission only extends from the creation of a new object
+  // via a TLAB up to the first subsequent safepoint. If such permission
+  // is granted for this heap type, the compiler promises to call
+  // defer_store_barrier() below on any slow path allocation of
+  // a new object for which such initializing store barriers will
+  // have been elided. G1, like CMS, allows this, but should be
+  // ready to provide a compensating write barrier as necessary
+  // if that storage came out of a non-young region. The efficiency
+  // of this implementation depends crucially on being able to
+  // answer very efficiently in constant time whether a piece of
+  // storage in the heap comes from a young region or not.
+  // See ReduceInitialCardMarks.
+  virtual bool can_elide_tlab_store_barriers() const {
+    return true;
+  }
+
+  // If a compiler is eliding store barriers for TLAB-allocated objects,
+  // we will be informed of a slow-path allocation by a call
+  // to on_slowpath_allocation_exit() below. Such a call precedes the
+  // initialization of the object itself, and no post-store-barriers will
+  // be issued. Some heap types require that the barrier strictly follows
+  // the initializing stores. (This is currently implemented by deferring the
+  // barrier until the next slow-path allocation or gc-related safepoint.)
+  // This interface answers whether a particular barrier type needs the card
+  // mark to be thus strictly sequenced after the stores.
+  virtual bool card_mark_must_follow_store() const = 0;
+
+  virtual bool is_in_young(oop obj) const = 0;
+
+  virtual void on_slowpath_allocation_exit(JavaThread* thread, oop new_obj);
+  virtual void flush_deferred_barriers(JavaThread* thread);
+
+  virtual void make_parsable(JavaThread* thread) { flush_deferred_card_mark_barrier(thread); }
 
   template <DecoratorSet decorators, typename BarrierSetT = CardTableModRefBS>
   class AccessBarrier: public ModRefBarrierSet::AccessBarrier<decorators, BarrierSetT> {};

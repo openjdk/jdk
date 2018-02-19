@@ -47,7 +47,7 @@ HeapWord* G1Allocator::attempt_allocation_force(size_t word_size, AllocationCont
 inline HeapWord* G1PLABAllocator::plab_allocate(InCSetState dest,
                                                 size_t word_sz,
                                                 AllocationContext_t context) {
-  G1PLAB* buffer = alloc_buffer(dest, context);
+  PLAB* buffer = alloc_buffer(dest, context);
   if (_survivor_alignment_bytes == 0 || !dest.is_young()) {
     return buffer->allocate(word_sz);
   } else {

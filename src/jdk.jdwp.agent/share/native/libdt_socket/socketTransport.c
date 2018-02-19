@@ -398,7 +398,7 @@ mask_s2u(const char *instr, uint32_t *mask) {
        return instr;
     }
 
-    *mask = htonl(-1 << (32 - m));
+    *mask = htonl((uint32_t)(~0) << (32 - m));
     return s;
 }
 

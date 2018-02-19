@@ -1197,7 +1197,7 @@ public:
   }
 
   // Iterate over heap regions, in address order, terminating the
-  // iteration early if the "doHeapRegion" method returns "true".
+  // iteration early if the "do_heap_region" method returns "true".
   void heap_region_iterate(HeapRegionClosure* blk) const;
 
   // Return the region with the given index. It assumes the index is valid.
@@ -1272,35 +1272,7 @@ public:
   size_t max_tlab_size() const;
   size_t unsafe_max_tlab_alloc(Thread* ignored) const;
 
-  // Can a compiler initialize a new object without store barriers?
-  // This permission only extends from the creation of a new object
-  // via a TLAB up to the first subsequent safepoint. If such permission
-  // is granted for this heap type, the compiler promises to call
-  // defer_store_barrier() below on any slow path allocation of
-  // a new object for which such initializing store barriers will
-  // have been elided. G1, like CMS, allows this, but should be
-  // ready to provide a compensating write barrier as necessary
-  // if that storage came out of a non-young region. The efficiency
-  // of this implementation depends crucially on being able to
-  // answer very efficiently in constant time whether a piece of
-  // storage in the heap comes from a young region or not.
-  // See ReduceInitialCardMarks.
-  virtual bool can_elide_tlab_store_barriers() const {
-    return true;
-  }
-
-  virtual bool card_mark_must_follow_store() const {
-    return true;
-  }
-
   inline bool is_in_young(const oop obj);
-
-  // We don't need barriers for initializing stores to objects
-  // in the young gen: for the SATB pre-barrier, there is no
-  // pre-value that needs to be remembered; for the remembered-set
-  // update logging post-barrier, we don't maintain remembered set
-  // information for young gen objects.
-  virtual inline bool can_elide_initializing_store_barrier(oop new_obj);
 
   // Returns "true" iff the given word_size is "very large".
   static bool is_humongous(size_t word_size) {

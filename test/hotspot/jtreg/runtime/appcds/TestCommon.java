@@ -28,6 +28,7 @@ import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Platform;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
+import jdk.test.lib.cds.CDSTestUtils.Result;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import java.io.File;
@@ -189,6 +190,14 @@ public class TestCommon extends CDSTestUtils {
         AppCDSOptions opts = (new AppCDSOptions());
         opts.addSuffix(suffix);
         return runWithArchive(opts);
+    }
+
+    // This is the new API for running a Java process with CDS enabled.
+    // See comments in the CDSTestUtils.Result class for how to use this method.
+    public static Result run(String... suffix) throws Exception {
+        AppCDSOptions opts = (new AppCDSOptions());
+        opts.addSuffix(suffix);
+        return new Result(opts, runWithArchive(opts));
     }
 
 

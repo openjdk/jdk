@@ -25,7 +25,7 @@
  * @test
  * @bug 8186046
  * @summary Test bootstrap methods returning the wrong type
- * @requires os.arch == "x86_64"
+ * @requires os.arch != "sparcv9"
  * @library /lib/testlibrary/bytecode /java/lang/invoke/common
  * @build jdk.experimental.bytecode.BasicClassBuilder test.java.lang.invoke.lib.InstructionHelper
  * @run testng CondyWrongType

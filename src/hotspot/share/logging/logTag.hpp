@@ -60,6 +60,7 @@
   LOG_TAG(cset) \
   LOG_TAG(data) \
   LOG_TAG(datacreation) \
+  LOG_TAG(decoder) \
   LOG_TAG(defaultmethods) \
   LOG_TAG(dump) \
   LOG_TAG(ergo) \

@@ -70,10 +70,10 @@ public class DummyClassesInBootClassPath {
         }
         String[] arguments = new String[argsList.size()];
         arguments = argsList.toArray(arguments);
-        OutputAnalyzer execOutput = TestCommon.execCommon(
+        Testcommon.run(
             "--add-modules", "java.activation", "-Xbootclasspath/a:" + appJar,
-            "DummyClassHelper", arguments[0], arguments[1]);
-        checkOutput(execOutput, classNames);
+            "DummyClassHelper", arguments[0], arguments[1])
+          .assertNormalExit(output -> checkOutput(output, classNames));
 
         JarBuilder.build(true, "WhiteBox", "sun/hotspot/WhiteBox");
         String whiteBoxJar = TestCommon.getTestJar("WhiteBox.jar");
@@ -87,8 +87,8 @@ public class DummyClassesInBootClassPath {
         String[] opts = {"-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
             "--add-modules", "java.activation", bootClassPath, "-Xlog:class+path=trace",
             "DummyClassHelper", arguments[0], arguments[1], arguments[2]};
-        execOutput = TestCommon.execCommon(opts);
-        checkOutput(execOutput, classNames);
+        Testcommon.run(opts)
+          .assertNormalExit(output -> checkOutput(output, classNames));
     }
 }
 

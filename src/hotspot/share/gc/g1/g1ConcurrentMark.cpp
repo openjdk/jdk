@@ -591,7 +591,7 @@ private:
     G1ClearBitmapHRClosure(G1CMBitMap* bitmap, G1ConcurrentMark* cm) : HeapRegionClosure(), _cm(cm), _bitmap(bitmap) {
     }
 
-    virtual bool doHeapRegion(HeapRegion* r) {
+    virtual bool do_heap_region(HeapRegion* r) {
       size_t const chunk_size_in_words = G1ClearBitMapTask::chunk_size() / HeapWordSize;
 
       HeapWord* cur = r->bottom();
@@ -638,7 +638,7 @@ public:
   }
 
   bool is_complete() {
-    return _cl.complete();
+    return _cl.is_complete();
   }
 };
 
@@ -694,7 +694,7 @@ class CheckBitmapClearHRClosure : public HeapRegionClosure {
   CheckBitmapClearHRClosure(G1CMBitMap* bitmap) : _bitmap(bitmap) {
   }
 
-  virtual bool doHeapRegion(HeapRegion* r) {
+  virtual bool do_heap_region(HeapRegion* r) {
     // This closure can be called concurrently to the mutator, so we must make sure
     // that the result of the getNextMarkedWordAddress() call is compared to the
     // value passed to it as limit to detect any found bits.
@@ -707,12 +707,12 @@ class CheckBitmapClearHRClosure : public HeapRegionClosure {
 bool G1ConcurrentMark::next_mark_bitmap_is_clear() {
   CheckBitmapClearHRClosure cl(_next_mark_bitmap);
   _g1h->heap_region_iterate(&cl);
-  return cl.complete();
+  return cl.is_complete();
 }
 
 class NoteStartOfMarkHRClosure: public HeapRegionClosure {
 public:
-  bool doHeapRegion(HeapRegion* r) {
+  bool do_heap_region(HeapRegion* r) {
     r->note_start_of_marking();
     return false;
   }
@@ -1094,7 +1094,7 @@ public:
   const uint old_regions_removed() { return _old_regions_removed; }
   const uint humongous_regions_removed() { return _humongous_regions_removed; }
 
-  bool doHeapRegion(HeapRegion *hr) {
+  bool do_heap_region(HeapRegion *hr) {
     _g1->reset_gc_time_stamps(hr);
     hr->note_end_of_marking();
 
@@ -1135,7 +1135,7 @@ public:
     G1NoteEndOfConcMarkClosure g1_note_end(_g1h, &local_cleanup_list,
                                            &hrrs_cleanup_task);
     _g1h->heap_region_par_iterate_from_worker_offset(&g1_note_end, &_hrclaimer, worker_id);
-    assert(g1_note_end.complete(), "Shouldn't have yielded!");
+    assert(g1_note_end.is_complete(), "Shouldn't have yielded!");
 
     // Now update the lists
     _g1h->remove_from_old_sets(g1_note_end.old_regions_removed(), g1_note_end.humongous_regions_removed());
@@ -2922,7 +2922,7 @@ G1PrintRegionLivenessInfoClosure::G1PrintRegionLivenessInfoClosure(const char* p
                           "(bytes)", "(bytes)");
 }
 
-bool G1PrintRegionLivenessInfoClosure::doHeapRegion(HeapRegion* r) {
+bool G1PrintRegionLivenessInfoClosure::do_heap_region(HeapRegion* r) {
   const char* type       = r->get_type_str();
   HeapWord* bottom       = r->bottom();
   HeapWord* end          = r->end();

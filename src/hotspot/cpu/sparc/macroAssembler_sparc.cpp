@@ -1411,9 +1411,14 @@ void MacroAssembler::untested(const char* what) {
 
 
 void MacroAssembler::unimplemented(const char* what) {
-  char* b = new char[1024];
-  jio_snprintf(b, 1024, "unimplemented: %s", what);
-  stop(b);
+  const char* buf = NULL;
+  {
+    ResourceMark rm;
+    stringStream ss;
+    ss.print("unimplemented: %s", what);
+    buf = code_string(ss.as_string());
+  }
+  stop(buf);
 }
 
 
