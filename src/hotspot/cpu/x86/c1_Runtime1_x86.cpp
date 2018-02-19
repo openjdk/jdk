@@ -1031,7 +1031,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           // refilling the TLAB or allocating directly from eden.
           Label retry_tlab, try_eden;
           const Register thread = NOT_LP64(rdi) LP64_ONLY(r15_thread);
-          NOT_LP64(get_thread(thread_reg));
+          NOT_LP64(__ get_thread(thread));
 
           __ bind(try_eden);
           // get the instance size (size is postive so movl is fine for 64bit)
@@ -1140,7 +1140,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
           // Using t2 for non 64-bit.
           const Register thread = NOT_LP64(t2) LP64_ONLY(r15_thread);
-          NOT_LP64(get_thread(thread_reg));
+          NOT_LP64(__ get_thread(thread));
           __ incr_allocated_bytes(thread, arr_size, 0);
 
           __ initialize_header(obj, klass, length, t1, t2);
