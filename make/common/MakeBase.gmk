@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -545,8 +545,18 @@ else ifeq ($(OPENJDK_TARGET_OS),macosx)
   define install-file
 	$(call MakeTargetDir)
 	$(RM) '$(call DecodeSpace, $@)'
-	$(CP) -fRP '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'
-	if [ -n "`$(XATTR) -ls '$(call DecodeSpace, $@)'`" ]; then $(XATTR) -cs '$(call DecodeSpace, $@)'; fi
+        # Work around a weirdness with cp on Macosx. When copying a symlink, if
+        # the target of the link is write protected (e.g. 444), cp will add
+        # write permission for the user on the target file (644). Avoid this by
+        # using ln to create a new link instead.
+	if [ -h '$(call DecodeSpace, $<)' ]; then \
+	  $(LN) -s "`$(READLINK) '$(call DecodeSpace, $<)'`" '$(call DecodeSpace, $@)'; \
+	else \
+	  $(CP) -fRP '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'; \
+	fi
+	if [ -n "`$(XATTR) -ls '$(call DecodeSpace, $@)'`" ]; then \
+	  $(XATTR) -cs '$(call DecodeSpace, $@)'; \
+	fi
   endef
 else
   define install-file
@@ -1000,6 +1010,7 @@ endif
 # Param 2 - The command to run
 ExecuteWithLog = \
   $(call LogCmdlines, Exececuting: [$(strip $2)]) \
+  $(call MakeDir, $(dir $(strip $1))) \
   $(call WriteFile, $2, $(strip $1).cmdline) \
   ( $(strip $2) > >($(TEE) $(strip $1).log) 2> >($(TEE) $(strip $1).log >&2) || \
       ( exitcode=$(DOLLAR)? && \

@@ -258,16 +258,12 @@ AC_DEFUN([BASIC_REMOVE_SYMBOLIC_LINKS],
     if test "x$READLINK_TESTED" != yes; then
       # On MacOSX there is a readlink tool with a different
       # purpose than the GNU readlink tool. Check the found readlink.
-      ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
-      if test "x$ISGNU" = x; then
-        # A readlink that we do not know how to use.
-        # Are there other non-GNU readlinks out there?
-        READLINK_TESTED=yes
-        READLINK=
-      fi
+      READLINK_ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
+      # If READLINK_ISGNU is empty, then it's a non-GNU readlink. Don't use it.
+      READLINK_TESTED=yes
     fi
 
-    if test "x$READLINK" != x; then
+    if test "x$READLINK" != x && "x$READLINK_ISGNU" != x; then
       $1=`$READLINK -f [$]$1`
     else
       # Save the current directory for restoring afterwards
@@ -494,6 +490,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   BASIC_REQUIRE_PROGS(MV, mv)
   BASIC_REQUIRE_PROGS(NAWK, [nawk gawk awk])
   BASIC_REQUIRE_PROGS(PRINTF, printf)
+  BASIC_REQUIRE_PROGS(READLINK, [greadlink readlink])
   BASIC_REQUIRE_PROGS(RM, rm)
   BASIC_REQUIRE_PROGS(RMDIR, rmdir)
   BASIC_REQUIRE_PROGS(SH, sh)
@@ -525,7 +522,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
 
   # These are not required on all platforms
   BASIC_PATH_PROGS(CYGPATH, cygpath)
-  BASIC_PATH_PROGS(READLINK, [greadlink readlink])
   BASIC_PATH_PROGS(DF, df)
   BASIC_PATH_PROGS(CPIO, [cpio bsdcpio])
   BASIC_PATH_PROGS(NICE, nice)
