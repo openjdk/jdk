@@ -622,16 +622,12 @@ class GCCauseSetter : StackObj {
   GCCause::Cause _previous_cause;
  public:
   GCCauseSetter(CollectedHeap* heap, GCCause::Cause cause) {
-    assert(SafepointSynchronize::is_at_safepoint(),
-           "This method manipulates heap state without locking");
     _heap = heap;
     _previous_cause = _heap->gc_cause();
     _heap->set_gc_cause(cause);
   }
 
   ~GCCauseSetter() {
-    assert(SafepointSynchronize::is_at_safepoint(),
-          "This method manipulates heap state without locking");
     _heap->set_gc_cause(_previous_cause);
   }
 };
