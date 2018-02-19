@@ -466,7 +466,6 @@ tools/launcher/FXLauncherTest.java                              8068049 linux-al
 
 tools/jimage/JImageExtractTest.java                             8170120 generic-all
 tools/jimage/JImageListTest.java                                8170120 generic-all
-tools/jimage/JImageVerifyTest.java                              8170120 generic-all
 
 ############################################################################
 
