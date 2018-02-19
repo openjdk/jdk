@@ -175,6 +175,16 @@ AC_DEFUN([FLAGS_SETUP_SYSROOT_FLAGS],
         $1SYSROOT_CFLAGS="-I-xbuiltin -I[$]$1SYSROOT/usr/include"
         $1SYSROOT_LDFLAGS="-L[$]$1SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
             -L[$]$1SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR"
+        # If the devkit contains the ld linker, make sure we use it.
+        AC_PATH_PROG(SOLARIS_LD, ld, , $DEVKIT_TOOLCHAIN_PATH:$DEVKIT_EXTRA_PATH)
+        # Make sure this ld is runnable.
+        if test -f "$SOLARIS_LD"; then
+          if "$SOLARIS_LD" -V > /dev/null 2> /dev/null; then
+            $1SYSROOT_LDFLAGS="[$]$1SYSROOT_LDFLAGS -Yl,$(dirname $SOLARIS_LD)"
+          else
+            AC_MSG_WARN([Could not run $SOLARIS_LD found in devkit, reverting to system ld])
+          fi
+        fi
       fi
     elif test "x$TOOLCHAIN_TYPE" = xgcc; then
       $1SYSROOT_CFLAGS="--sysroot=[$]$1SYSROOT"
