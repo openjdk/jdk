@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ DEFAULT_VERSION_FEATURE=11
 DEFAULT_VERSION_INTERIM=0
 DEFAULT_VERSION_UPDATE=0
 DEFAULT_VERSION_PATCH=0
-DEFAULT_VERSION_DATE=2018-03-20
+DEFAULT_VERSION_DATE=2018-09-18
 DEFAULT_VERSION_CLASSFILE_MAJOR=55  # "`$EXPR $DEFAULT_VERSION_FEATURE + 44`"
 DEFAULT_VERSION_CLASSFILE_MINOR=0
 
