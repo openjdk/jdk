@@ -104,7 +104,7 @@ class TrialParser extends JavacParser {
         while (token.kind != EOF) {
             if (token.pos > 0 && token.pos <= endPosTable.errorEndPos) {
                 // error recovery
-                skip(true, false, false, false);
+                skip(true, false, false, false, false);
                 if (token.kind == EOF) {
                     break;
                 }

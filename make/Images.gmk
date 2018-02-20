@@ -134,18 +134,22 @@ $(JDK_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
     $(call DependOnVariable, JDK_MODULES_LIST) $(BASE_RELEASE_FILE)
 	$(ECHO) Creating jdk jimage
 	$(RM) -r $(JDK_IMAGE_DIR)
-	$(JLINK_TOOL) --add-modules $(JDK_MODULES_LIST) \
-	    $(JLINK_JDK_EXTRA_OPTS) \
-	    --output $(JDK_IMAGE_DIR)
+	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/images/jdk, \
+	    $(JLINK_TOOL) --add-modules $(JDK_MODULES_LIST) \
+	        $(JLINK_JDK_EXTRA_OPTS) \
+	        --output $(JDK_IMAGE_DIR) \
+	)
 	$(TOUCH) $@
 
 $(JRE_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
     $(call DependOnVariable, JRE_MODULES_LIST) $(BASE_RELEASE_FILE)
 	$(ECHO) Creating jre jimage
 	$(RM) -r $(JRE_IMAGE_DIR)
-	$(JLINK_TOOL) --add-modules $(JRE_MODULES_LIST) \
-	    $(JLINK_JRE_EXTRA_OPTS) \
-	    --output $(JRE_IMAGE_DIR)
+	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/images/jre, \
+	    $(JLINK_TOOL) --add-modules $(JRE_MODULES_LIST) \
+	        $(JLINK_JRE_EXTRA_OPTS) \
+	        --output $(JRE_IMAGE_DIR) \
+	)
 	$(TOUCH) $@
 
 
@@ -153,27 +157,33 @@ $(JRE_COMPACT1_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
     $(call DependOnVariable, JRE_COMPACT1_MODULES_LIST) $(BASE_RELEASE_FILE)
 	$(ECHO) Creating jre compact1 jimage
 	$(RM) -r $(JRE_COMPACT1_IMAGE_DIR)
-	$(JLINK_TOOL) --add-modules $(JRE_COMPACT1_MODULES_LIST) \
-	    $(JLINK_JRE_EXTRA_OPTS) \
-	    --output $(JRE_COMPACT1_IMAGE_DIR)
+	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/images/jre_compact1, \
+	    $(JLINK_TOOL) --add-modules $(JRE_COMPACT1_MODULES_LIST) \
+	        $(JLINK_JRE_EXTRA_OPTS) \
+	        --output $(JRE_COMPACT1_IMAGE_DIR) \
+	)
 	$(TOUCH) $@
 
 $(JRE_COMPACT2_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
     $(call DependOnVariable, JRE_COMPACT2_MODULES_LIST) $(BASE_RELEASE_FILE)
 	$(ECHO) Creating jre compact2 jimage
 	$(RM) -r $(JRE_COMPACT2_IMAGE_DIR)
-	$(JLINK_TOOL) --add-modules $(JRE_COMPACT2_MODULES_LIST) \
-	    $(JLINK_JRE_EXTRA_OPTS) \
-	    --output $(JRE_COMPACT2_IMAGE_DIR)
+	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/images/jre_compact2, \
+	    $(JLINK_TOOL) --add-modules $(JRE_COMPACT2_MODULES_LIST) \
+	        $(JLINK_JRE_EXTRA_OPTS) \
+	        --output $(JRE_COMPACT2_IMAGE_DIR) \
+	)
 	$(TOUCH) $@
 
 $(JRE_COMPACT3_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
     $(call DependOnVariable, JRE_COMPACT3_MODULES_LIST) $(BASE_RELEASE_FILE)
 	$(ECHO) Creating jre compact3 jimage
 	$(RM) -r $(JRE_COMPACT3_IMAGE_DIR)
-	$(JLINK_TOOL) --add-modules $(JRE_COMPACT3_MODULES_LIST) \
-	    $(JLINK_JRE_EXTRA_OPTS) \
-	    --output $(JRE_COMPACT3_IMAGE_DIR)
+	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/images/jre_compact3, \
+	    $(JLINK_TOOL) --add-modules $(JRE_COMPACT3_MODULES_LIST) \
+	        $(JLINK_JRE_EXTRA_OPTS) \
+	        --output $(JRE_COMPACT3_IMAGE_DIR) \
+	)
 	$(TOUCH) $@
 
 TOOL_JRE_TARGETS := $(JRE_IMAGE_DIR)/$(JIMAGE_TARGET_FILE)
