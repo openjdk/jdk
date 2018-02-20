@@ -27,6 +27,7 @@ package jdk.tools.jlink.internal.plugins;
 import java.util.Map;
 import java.util.function.Predicate;
 import jdk.tools.jlink.plugin.Plugin;
+import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
@@ -49,7 +50,13 @@ public final class ExcludePlugin implements Plugin {
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         in.transformAndCopy((resource) -> {
             if (resource.type().equals(ResourcePoolEntry.Type.CLASS_OR_RESOURCE)) {
-                resource = predicate.test(resource.path()) ? resource : null;
+                boolean shouldExclude = !predicate.test(resource.path());
+                // do not allow filtering module-info.class to avoid mutating module graph.
+                if (shouldExclude &&
+                    resource.path().equals("/" + resource.moduleName() + "/module-info.class")) {
+                    throw new PluginException("Cannot exclude " + resource.path());
+                }
+                return shouldExclude? null : resource;
             }
             return resource;
         }, out);
