@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -656,11 +656,9 @@ class MacroAssembler: public Assembler {
   // Support for serializing memory accesses between threads
   void serialize_memory(Register thread, Register tmp);
 
-#ifdef _LP64
+  // If thread_reg is != noreg the code assumes the register passed contains
+  // the thread (required on 64 bit).
   void safepoint_poll(Label& slow_path, Register thread_reg, Register temp_reg);
-#else
-  void safepoint_poll(Label& slow_path);
-#endif
 
   void verify_tlab();
 
