@@ -1,4 +1,4 @@
-T8131742.java:8:38: compiler.err.expected3: ',', ')', '['
+T8131742.java:8:31: compiler.err.expected: ')'
 T8131742.java:8:39: compiler.err.this.as.identifier
-T8131742.java:8:43: compiler.err.expected: ';'
+T8131742.java:8:43: compiler.err.expected: token.identifier
 3 errors

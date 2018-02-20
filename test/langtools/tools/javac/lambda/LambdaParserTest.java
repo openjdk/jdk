@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
  */
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import combo.ComboInstance;
 import combo.ComboParameter;
@@ -105,26 +106,44 @@ public class LambdaParserTest extends ComboInstance<LambdaParserTest> {
         }
     }
 
+    enum SourceKind {
+        SOURCE_9("9"),
+        SOURCE_10("10");
+
+        String sourceNumber;
+
+        SourceKind(String sourceNumber) {
+            this.sourceNumber = sourceNumber;
+        }
+    }
+
     enum LambdaParameterKind implements ComboParameter {
-        IMPLICIT(""),
-        EXPLIICT_SIMPLE("A"),
-        EXPLIICT_SIMPLE_ARR1("A[]"),
-        EXPLIICT_SIMPLE_ARR2("A[][]"),
-        EXPLICIT_VARARGS("A..."),
-        EXPLICIT_GENERIC1("A<X>"),
-        EXPLICIT_GENERIC2("A<? extends X, ? super Y>"),
-        EXPLICIT_GENERIC2_VARARGS("A<? extends X, ? super Y>..."),
-        EXPLICIT_GENERIC2_ARR1("A<? extends X, ? super Y>[]"),
-        EXPLICIT_GENERIC2_ARR2("A<? extends X, ? super Y>[][]");
 
-        String parameterType;
+        IMPLICIT_1("", ExplicitKind.IMPLICIT),
+        IMPLICIT_2("var", ExplicitKind.IMPLICIT_VAR),
+        EXPLIICT_SIMPLE("A", ExplicitKind.EXPLICIT),
+        EXPLIICT_SIMPLE_ARR1("A[]", ExplicitKind.EXPLICIT),
+        EXPLIICT_SIMPLE_ARR2("A[][]", ExplicitKind.EXPLICIT),
+        EXPLICIT_VARARGS("A...", ExplicitKind.EXPLICIT),
+        EXPLICIT_GENERIC1("A<X>", ExplicitKind.EXPLICIT),
+        EXPLICIT_GENERIC2("A<? extends X, ? super Y>", ExplicitKind.EXPLICIT),
+        EXPLICIT_GENERIC2_VARARGS("A<? extends X, ? super Y>...", ExplicitKind.EXPLICIT),
+        EXPLICIT_GENERIC2_ARR1("A<? extends X, ? super Y>[]", ExplicitKind.EXPLICIT),
+        EXPLICIT_GENERIC2_ARR2("A<? extends X, ? super Y>[][]", ExplicitKind.EXPLICIT);
 
-        LambdaParameterKind(String parameterType) {
-            this.parameterType = parameterType;
+        enum ExplicitKind {
+            IMPLICIT,
+            IMPLICIT_VAR,
+            EXPLICIT;
         }
 
-        boolean explicit() {
-            return this != IMPLICIT;
+        String parameterType;
+        ExplicitKind explicitKind;
+
+
+        LambdaParameterKind(String parameterType, ExplicitKind ekind) {
+            this.parameterType = parameterType;
+            this.explicitKind = ekind;
         }
 
         boolean isVarargs() {
@@ -136,12 +155,23 @@ public class LambdaParserTest extends ComboInstance<LambdaParserTest> {
         public String expand(String optParameter) {
             return parameterType;
         }
+
+        ExplicitKind explicitKind(SourceKind sk) {
+            switch (explicitKind) {
+                case IMPLICIT_VAR:
+                    return (sk == SourceKind.SOURCE_9) ?
+                            ExplicitKind.EXPLICIT : ExplicitKind.IMPLICIT_VAR;
+                default:
+                    return explicitKind;
+            }
+        }
     }
 
     enum ModifierKind implements ComboParameter {
         NONE(""),
         FINAL("final"),
-        PUBLIC("public");
+        PUBLIC("public"),
+        ANNO("@A");
 
         String modifier;
 
@@ -152,7 +182,8 @@ public class LambdaParserTest extends ComboInstance<LambdaParserTest> {
         boolean compatibleWith(LambdaParameterKind pk) {
             switch (this) {
                 case PUBLIC: return false;
-                case FINAL: return pk != LambdaParameterKind.IMPLICIT;
+                case ANNO:
+                case FINAL: return pk != LambdaParameterKind.IMPLICIT_1;
                 case NONE: return true;
                 default: throw new AssertionError("Invalid modifier kind " + this);
             }
@@ -208,6 +239,7 @@ public class LambdaParserTest extends ComboInstance<LambdaParserTest> {
         new ComboTestHelper<LambdaParserTest>()
                 .withFilter(LambdaParserTest::redundantTestFilter)
                 .withFilter(LambdaParserTest::badImplicitFilter)
+                .withDimension("SOURCE", (x, sk) -> x.sk = sk, SourceKind.values())
                 .withDimension("LAMBDA", (x, lk) -> x.lk = lk, LambdaKind.values())
                 .withDimension("NAME", (x, name) -> x.pn = name, LambdaParameterName.values())
                 .withArrayDimension("TYPE", (x, type, idx) -> x.pks[idx] = type, 2, LambdaParameterKind.values())
@@ -221,6 +253,7 @@ public class LambdaParserTest extends ComboInstance<LambdaParserTest> {
     ModifierKind[] mks = new ModifierKind[2];
     LambdaKind lk;
     LambdaParameterName pn;
+    SourceKind sk;
 
     boolean badImplicitFilter() {
         return !(mks[0] != ModifierKind.NONE && lk.isShort());
@@ -240,13 +273,15 @@ public class LambdaParserTest extends ComboInstance<LambdaParserTest> {
         return true;
     }
 
-    String template = "class Test {\n" +
-                      "   SAM s = #{EXPR};\n" +
-                      "}";
+    String template = "@interface A { }\n" +
+            "class Test {\n" +
+            "   SAM s = #{EXPR};\n" +
+            "}";
 
     @Override
     public void doWork() throws IOException {
         newCompilationTask()
+                .withOptions(Arrays.asList("-source", sk.sourceNumber))
                 .withSourceFromTemplate(template)
                 .parse(this::check);
     }
@@ -256,7 +291,7 @@ public class LambdaParserTest extends ComboInstance<LambdaParserTest> {
                 (lk.arity() > 1 && !mks[1].compatibleWith(pks[1]));
 
         if (lk.arity() == 2 &&
-                (pks[0].explicit() != pks[1].explicit() ||
+                (pks[0].explicitKind(sk) != pks[1].explicitKind(sk) ||
                 pks[0].isVarargs())) {
             errorExpected = true;
         }
