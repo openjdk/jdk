@@ -691,7 +691,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
     LIBS := $(BUILD_LIBFONTMANAGER_FONTLIB), \
     LIBS_unix := -lawt -ljava -ljvm $(LIBM) $(LIBCXX), \
     LIBS_linux := -lc, \
-    LIBS_solaris := -lawt_headless -lc, \
+    LIBS_solaris := -lc, \
     LIBS_aix := -lawt_headless,\
     LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib user32.lib gdi32.lib \
         $(WIN_AWT_LIB), \
