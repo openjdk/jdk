@@ -116,8 +116,24 @@ final class BootstrapMethodInvoker {
                                                         argv[0], argv[1]);
                         break;
                     case 3:
-                        result = bootstrapMethod.invoke(caller, name, type,
-                                                        argv[0], argv[1], argv[2]);
+                        // Special case the LambdaMetafactory::metafactory BSM
+                        //
+                        // By invoking exactly, we can avoid generating a number of
+                        // classes on first (and subsequent) lambda initialization,
+                        // most of which won't be shared with other invoke uses.
+                        MethodType bsmType = bootstrapMethod.type();
+                        if (isLambdaMetafactoryIndyBSM(bsmType)) {
+                            result = (CallSite)bootstrapMethod
+                                    .invokeExact(caller, name, (MethodType)type, (MethodType)argv[0],
+                                                 (MethodHandle)argv[1], (MethodType)argv[2]);
+                        } else if (isLambdaMetafactoryCondyBSM(bsmType)) {
+                            result = bootstrapMethod
+                                    .invokeExact(caller, name, (Class<?>)type, (MethodType)argv[0],
+                                                 (MethodHandle)argv[1], (MethodType)argv[2]);
+                        } else {
+                            result = bootstrapMethod.invoke(caller, name, type,
+                                                            argv[0], argv[1], argv[2]);
+                        }
                         break;
                     case 4:
                         result = bootstrapMethod.invoke(caller, name, type,
@@ -173,6 +189,30 @@ final class BootstrapMethodInvoker {
             // Wrap anything else in BootstrapMethodError
             throw new BootstrapMethodError("bootstrap method initialization exception", ex);
         }
+    }
+
+    private static final MethodType LMF_INDY_MT = MethodType.methodType(CallSite.class,
+            Lookup.class, String.class, MethodType.class, MethodType.class, MethodHandle.class, MethodType.class);
+
+    private static final MethodType LMF_CONDY_MT = MethodType.methodType(Object.class,
+            Lookup.class, String.class, Class.class, MethodType.class, MethodHandle.class, MethodType.class);
+
+    /**
+     * @return true iff the BSM method type exactly matches
+     *         {@see java.lang.invoke.LambdaMetafactory#metafactory(
+     *          MethodHandles.Lookup,String,Class,MethodType,MethodHandle,MethodType)}
+     */
+    private static boolean isLambdaMetafactoryCondyBSM(MethodType bsmType) {
+        return bsmType == LMF_CONDY_MT;
+    }
+
+    /**
+     * @return true iff the BSM method type exactly matches
+     *         {@see java.lang.invoke.LambdaMetafactory#metafactory(
+     *          MethodHandles.Lookup,String,MethodType,MethodType,MethodHandle,MethodType)}
+     */
+    private static boolean isLambdaMetafactoryIndyBSM(MethodType bsmType) {
+        return bsmType == LMF_INDY_MT;
     }
 
     /** The JVM produces java.lang.Integer values to box
