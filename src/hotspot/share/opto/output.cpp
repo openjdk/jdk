@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2575,7 +2575,7 @@ void Scheduling::anti_do_def( Block *b, Node *def, OptoReg::Name def_reg, int is
   }
 
   Node *kill = def;             // Rename 'def' to more descriptive 'kill'
-  debug_only( def = (Node*)0xdeadbeef; )
+  debug_only( def = (Node*)((intptr_t)0xdeadbeef); )
 
   // After some number of kills there _may_ be a later def
   Node *later_def = NULL;
