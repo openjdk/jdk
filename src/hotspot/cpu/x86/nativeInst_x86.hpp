@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -704,14 +704,18 @@ inline bool NativeInstruction::is_far_jump()     { return is_mov_literal64(); }
 inline bool NativeInstruction::is_cond_jump()    { return (int_at(0) & 0xF0FF) == 0x800F /* long jump */ ||
                                                           (ubyte_at(0) & 0xF0) == 0x70;  /* short jump */ }
 inline bool NativeInstruction::is_safepoint_poll() {
-#ifdef AMD64
   if (SafepointMechanism::uses_thread_local_poll()) {
+#ifdef AMD64
     const bool has_rex_prefix = ubyte_at(0) == NativeTstRegMem::instruction_rex_b_prefix;
     const int test_offset = has_rex_prefix ? 1 : 0;
+#else
+    const int test_offset = 0;
+#endif
     const bool is_test_opcode = ubyte_at(test_offset) == NativeTstRegMem::instruction_code_memXregl;
     const bool is_rax_target = (ubyte_at(test_offset + 1) & NativeTstRegMem::modrm_mask) == NativeTstRegMem::modrm_reg;
     return is_test_opcode && is_rax_target;
   }
+#ifdef AMD64
   // Try decoding a near safepoint first:
   if (ubyte_at(0) == NativeTstRegMem::instruction_code_memXregl &&
       ubyte_at(1) == 0x05) { // 00 rax 101

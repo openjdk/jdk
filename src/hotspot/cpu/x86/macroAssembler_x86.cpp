@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3767,10 +3767,17 @@ void MacroAssembler::serialize_memory(Register thread, Register tmp) {
   movl(as_Address(ArrayAddress(page, index)), tmp);
 }
 
-#ifdef _LP64
 void MacroAssembler::safepoint_poll(Label& slow_path, Register thread_reg, Register temp_reg) {
   if (SafepointMechanism::uses_thread_local_poll()) {
-    testb(Address(r15_thread, Thread::polling_page_offset()), SafepointMechanism::poll_bit());
+#ifdef _LP64
+    assert(thread_reg == r15_thread, "should be");
+#else
+    if (thread_reg == noreg) {
+      thread_reg = temp_reg;
+      get_thread(thread_reg);
+    }
+#endif
+    testb(Address(thread_reg, Thread::polling_page_offset()), SafepointMechanism::poll_bit());
     jcc(Assembler::notZero, slow_path); // handshake bit set implies poll
   } else {
     cmp32(ExternalAddress(SafepointSynchronize::address_of_state()),
@@ -3778,13 +3785,6 @@ void MacroAssembler::safepoint_poll(Label& slow_path, Register thread_reg, Regis
     jcc(Assembler::notEqual, slow_path);
   }
 }
-#else
-void MacroAssembler::safepoint_poll(Label& slow_path) {
-  cmp32(ExternalAddress(SafepointSynchronize::address_of_state()),
-      SafepointSynchronize::_not_synchronized);
-  jcc(Assembler::notEqual, slow_path);
-}
-#endif
 
 // Calls to C land
 //

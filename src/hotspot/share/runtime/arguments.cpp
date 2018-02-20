@@ -1826,6 +1826,13 @@ jint Arguments::set_ergonomics_flags() {
   }
 #endif
 
+#if defined(IA32)
+  // Only server compiler can optimize safepoints well enough.
+  if (!is_server_compilation_mode_vm()) {
+    FLAG_SET_ERGO_IF_DEFAULT(bool, ThreadLocalHandshakes, false);
+  }
+#endif
+
   set_conservative_max_heap_alignment();
 
 #ifndef ZERO
