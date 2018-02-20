@@ -43,6 +43,7 @@ import tests.JImageGenerator;
  * @test
  * @summary Test image creation
  * @bug 8189777
+ * @bug 8194922
  * @author Jean-Francois Denise
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../lib
@@ -274,6 +275,15 @@ public class JLinkTest {
             String[] res = {".jcov", "/META-INF/"};
             Path imageDir = helper.generateDefaultImage(userOptions2, moduleName).assertSuccess();
             helper.checkImage(imageDir, moduleName, res, null);
+        }
+
+        // module-info.class should not be excluded
+        {
+            String[] userOptions = { "--exclude-resources", "/jdk_8194922/module-info.class" };
+            String moduleName = "jdk_8194922";
+            helper.generateDefaultJModule(moduleName);
+            helper.generateDefaultImage(userOptions, moduleName).
+                assertFailure("Cannot exclude /jdk_8194922/module-info.class");
         }
 
         // default compress
