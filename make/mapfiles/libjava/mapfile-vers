@@ -203,7 +203,6 @@ SUNWprivate_1.1 {
 		Java_java_lang_Runtime_freeMemory;
 		Java_java_lang_Runtime_maxMemory;
 		Java_java_lang_Runtime_gc;
-		Java_java_lang_Runtime_runFinalization0;
 		Java_java_lang_Runtime_totalMemory;
 		Java_java_lang_Runtime_availableProcessors;
 		Java_java_lang_SecurityManager_getClassContext;
