@@ -35,6 +35,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.StringTokenizer;
+
+import jdk.internal.misc.SharedSecrets;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
@@ -702,9 +704,6 @@ public class Runtime {
      */
     public native void gc();
 
-    /* Wormhole for calling java.lang.ref.Finalizer.runFinalization */
-    private static native void runFinalization0();
-
     /**
      * Runs the finalization methods of any objects pending finalization.
      * Calling this method suggests that the Java virtual machine expend
@@ -724,7 +723,7 @@ public class Runtime {
      * @see     java.lang.Object#finalize()
      */
     public void runFinalization() {
-        runFinalization0();
+        SharedSecrets.getJavaLangRefAccess().runFinalization();
     }
 
     /**
