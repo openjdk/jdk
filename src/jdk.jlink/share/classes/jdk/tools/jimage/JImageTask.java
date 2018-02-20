@@ -386,7 +386,7 @@ class JImageTask {
 
         for (File file : options.jimages) {
             if (!file.exists() || !file.isFile()) {
-                throw TASK_HELPER.newBadArgs("err.not.a.jimage", file.getName());
+                throw TASK_HELPER.newBadArgs("err.not.a.jimage", file);
             }
 
             try (BasicImageReader reader = BasicImageReader.open(file.toPath())) {
@@ -431,6 +431,8 @@ class JImageTask {
                         }
                     }
                 }
+            } catch (IOException ioe) {
+                throw TASK_HELPER.newBadArgs("err.invalid.jimage", file, ioe.getMessage());
             }
         }
     }
