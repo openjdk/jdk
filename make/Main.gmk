@@ -641,8 +641,11 @@ else
 
   generate-exported-symbols: java.base-libs jdk.jdwp.agent-libs
 
+  # If not already set, set the JVM variant target so that the JVM will be built.
+  JVM_MAIN_LIB_TARGETS ?= hotspot-$(JVM_VARIANT_MAIN)-libs
+
   # Building one JVM variant is enough to start building the other libs
-  $(LIBS_TARGETS): hotspot-$(JVM_VARIANT_MAIN)-libs
+  $(LIBS_TARGETS): $(JVM_MAIN_LIB_TARGETS)
 
   $(LAUNCHER_TARGETS): java.base-libs
 
@@ -719,8 +722,11 @@ else
     java.base-jmod: jrtfs-jar $(filter-out java.base-jmod, $(JMOD_TARGETS))
   endif
 
-  # Building java.base-jmod requires all of hotspot to be built.
-  java.base-jmod: hotspot
+  # If not already set, set the JVM target so that the JVM will be built.
+  JVM_MAIN_TARGETS ?= hotspot
+   
+  # Building java.base-jmod requires all of VM (ie hotspot) to be built.
+  java.base-jmod: $(JVM_MAIN_TARGETS) 
 
   # Declare dependencies from <module>-jmod to all other module targets
   # When creating a BUILDJDK, the java compilation has already been done by the
@@ -746,7 +752,7 @@ else
   # in java.base-copy) and tzdb.dat (done in java.base-gendata) to the
   # appropriate location otherwise jimage, jlink and jmod won't start. This
   # also applies when creating the buildjdk.
-  DEFAULT_JMOD_DEPS := java.base-libs java.base-copy java.base-gendata \
+  DEFAULT_JMOD_DEPS += java.base-libs java.base-copy java.base-gendata \
       jdk.jlink-launchers
   # When cross compiling and buildjdk is to be created, depend on creating the
   # buildjdk instead of the default dependencies.
@@ -822,8 +828,11 @@ else
 
   docs-reference-api-modulegraph: exploded-image buildtools-modules
 
+  # If not already set, then set the JVM specific docs targets
+  JVM_DOCS_TARGETS ?= hotspot-$(JVM_VARIANT_MAIN)-gensrc
+  
   # The gensrc steps for hotspot and jdk.jdi create html spec files.
-  docs-jdk-specs: hotspot-$(JVM_VARIANT_MAIN)-gensrc jdk.jdi-gensrc \
+  docs-jdk-specs: $(JVM_DOCS_TARGETS) jdk.jdi-gensrc \
       docs-jdk-index
 
   docs-jdk-index: exploded-image buildtools-modules
@@ -890,8 +899,10 @@ endif
 ################################################################################
 # Virtual targets without recipes
 
+# If not already set, set the JVM specific tools targets
+JVM_TOOLS_TARGETS ?= buildtools-hotspot
 buildtools: buildtools-langtools interim-langtools interim-rmic \
-    buildtools-jdk buildtools-hotspot
+    buildtools-jdk $(JVM_TOOLS_TARGETS)
 
 hotspot: $(HOTSPOT_VARIANT_TARGETS) hotspot-jsig
 
@@ -934,7 +945,7 @@ $(foreach m, $(LAUNCHER_MODULES), $(eval $m: $m-launchers))
 $(foreach m, $(ALL_COPY_MODULES), $(eval $m: $m-copy))
 
 # Building java.base includes building all of hotspot.
-java.base: hotspot
+java.base: $(JVM_MAIN_TARGETS)
 
 demos: demos-jdk
 
@@ -1001,10 +1012,15 @@ endif
 # This target builds the documentation image
 docs-image: docs-jdk
 
+# If not already set, set the JVM specific targets to build the test image
+JVM_TEST_IMAGE_TARGETS ?= test-image-hotspot-jtreg-native test-image-hotspot-gtest
+
 # This target builds the test image
-test-image: prepare-test-image test-image-hotspot-jtreg-native \
-    test-image-jdk-jtreg-native test-image-failure-handler test-image-hotspot-gtest \
-    test-image-demos-jdk
+test-image: prepare-test-image \
+    test-image-jdk-jtreg-native test-image-failure-handler \
+    test-image-demos-jdk $(JVM_TEST_IMAGE_TARGETS)
+
+################################################################################
 
 # all-images builds all our deliverables as images.
 all-images: product-images test-image docs-image
@@ -1143,6 +1159,8 @@ create-main-targets-include:
 	      $(MAKESUPPORT_OUTPUTDIR)/main-targets.gmk
 
 ################################################################################
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, Main-post.gmk))
 
 .PHONY: $(ALL_TARGETS)
 
