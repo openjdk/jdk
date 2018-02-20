@@ -691,6 +691,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           Register t2       = r4;
           assert_different_registers(klass, obj, obj_size, t1, t2);
 
+          __ stp(r19, zr, Address(__ pre(sp, -2 * wordSize)));
+
           if (id == fast_new_instance_init_check_id) {
             // make sure the klass is initialized
             __ ldrb(rscratch1, Address(klass, InstanceKlass::init_state_offset()));
@@ -717,18 +719,16 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           // get the instance size (size is postive so movl is fine for 64bit)
           __ ldrw(obj_size, Address(klass, Klass::layout_helper_offset()));
 
-          __ str(r19, Address(__ pre(sp, -wordSize)));
-
           __ eden_allocate(obj, obj_size, 0, t1, slow_path);
           __ incr_allocated_bytes(rthread, obj_size, 0, rscratch1);
 
           __ initialize_object(obj, klass, obj_size, 0, t1, t2, /* is_tlab_allocated */ false);
           __ verify_oop(obj);
-          __ ldr(r19, Address(__ post(sp, wordSize)));
+          __ ldp(r19, zr, Address(__ post(sp, 2 * wordSize)));
           __ ret(lr);
 
           __ bind(slow_path);
-          __ ldr(r19, Address(__ post(sp, wordSize)));
+          __ ldp(r19, zr, Address(__ post(sp, 2 * wordSize)));
         }
 
         __ enter();
