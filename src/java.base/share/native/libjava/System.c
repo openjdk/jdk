@@ -125,7 +125,6 @@ Java_java_lang_System_identityHashCode(JNIEnv *env, jobject this, jobject x)
   #define JAVA_SPECIFICATION_VENDOR "Oracle Corporation"
 #endif
 
-static int fmtdefault; // boolean value
 jobject fillI18nProps(JNIEnv *env, jobject props, char *baseKey,
                       char *platformDispVal, char *platformFmtVal,
                       jmethodID putID, jmethodID getPropID) {
@@ -141,16 +140,9 @@ jobject fillI18nProps(JNIEnv *env, jobject props, char *baseKey,
         const char *baseVal = "";
 
         /* user.xxx base property */
-        if (fmtdefault) {
-            if (platformFmtVal) {
-                PUTPROP(props, baseKey, platformFmtVal);
-                baseVal = platformFmtVal;
-            }
-        } else {
-            if (platformDispVal) {
-                PUTPROP(props, baseKey, platformDispVal);
-                baseVal = platformDispVal;
-            }
+        if (platformDispVal) {
+            PUTPROP(props, baseKey, platformDispVal);
+            baseVal = platformDispVal;
         }
 
         /* user.xxx.display property */
@@ -402,16 +394,6 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
 
     ret = JVM_InitProperties(env, props);
 
-    /* Check the compatibility flag */
-    GETPROP(props, "sun.locale.formatasdefault", jVMVal);
-    if (jVMVal) {
-        const char * val = (*env)->GetStringUTFChars(env, jVMVal, 0);
-        CHECK_NULL_RETURN(val, NULL);
-        fmtdefault = !strcmp(val, "true");
-        (*env)->ReleaseStringUTFChars(env, jVMVal, val);
-        (*env)->DeleteLocalRef(env, jVMVal);
-    }
-
     /* reconstruct i18n related properties */
     fillI18nProps(env, props, "user.language", sprops->display_language,
         sprops->format_language, putID, getPropID);
@@ -430,11 +412,7 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
          */
         PUTPROP(props, "file.encoding", sprops->encoding);
 #else
-        if (fmtdefault) {
-            PUTPROP(props, "file.encoding", sprops->encoding);
-        } else {
-            PUTPROP(props, "file.encoding", sprops->sun_jnu_encoding);
-        }
+        PUTPROP(props, "file.encoding", sprops->sun_jnu_encoding);
 #endif
     } else {
         (*env)->DeleteLocalRef(env, jVMVal);
