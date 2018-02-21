@@ -35,21 +35,21 @@ NamedThread* currentNamedthread() {
   return (NamedThread*)Thread::current();
 }
 
-const uint GCId::create() {
+uint GCId::create() {
   return _next_id++;
 }
 
-const uint GCId::peek() {
+uint GCId::peek() {
   return _next_id;
 }
 
-const uint GCId::current() {
+uint GCId::current() {
   const uint gc_id = currentNamedthread()->gc_id();
   assert(gc_id != undefined(), "Using undefined GC id.");
   return gc_id;
 }
 
-const uint GCId::current_or_undefined() {
+uint GCId::current_or_undefined() {
   return Thread::current()->is_Named_thread() ? currentNamedthread()->gc_id() : undefined();
 }
 
@@ -66,28 +66,14 @@ size_t GCId::print_prefix(char* buf, size_t len) {
   return 0;
 }
 
-GCIdMark::GCIdMark() : _gc_id(GCId::create()) {
-  currentNamedthread()->set_gc_id(_gc_id);
+GCIdMark::GCIdMark() : _previous_gc_id(currentNamedthread()->gc_id()) {
+  currentNamedthread()->set_gc_id(GCId::create());
 }
 
-GCIdMark::GCIdMark(uint gc_id) : _gc_id(gc_id) {
-  currentNamedthread()->set_gc_id(_gc_id);
+GCIdMark::GCIdMark(uint gc_id) : _previous_gc_id(currentNamedthread()->gc_id()) {
+  currentNamedthread()->set_gc_id(gc_id);
 }
 
 GCIdMark::~GCIdMark() {
-  currentNamedthread()->set_gc_id(GCId::undefined());
-}
-
-GCIdMarkAndRestore::GCIdMarkAndRestore() : _gc_id(GCId::create()) {
-  _previous_gc_id = currentNamedthread()->gc_id();
-  currentNamedthread()->set_gc_id(_gc_id);
-}
-
-GCIdMarkAndRestore::GCIdMarkAndRestore(uint gc_id) : _gc_id(gc_id) {
-  _previous_gc_id = currentNamedthread()->gc_id();
-  currentNamedthread()->set_gc_id(_gc_id);
-}
-
-GCIdMarkAndRestore::~GCIdMarkAndRestore() {
   currentNamedthread()->set_gc_id(_previous_gc_id);
 }

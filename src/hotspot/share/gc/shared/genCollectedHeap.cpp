@@ -367,7 +367,7 @@ void GenCollectedHeap::do_collection(bool           full,
     return; // GC is disabled (e.g. JNI GetXXXCritical operation)
   }
 
-  GCIdMarkAndRestore gc_id_mark;
+  GCIdMark gc_id_mark;
 
   const bool do_clear_all_soft_refs = clear_all_soft_refs ||
                           collector_policy()->should_clear_all_soft_refs();
@@ -442,7 +442,7 @@ void GenCollectedHeap::do_collection(bool           full,
 
       if (do_young_collection) {
         // We did a young GC. Need a new GC id for the old GC.
-        GCIdMarkAndRestore gc_id_mark;
+        GCIdMark gc_id_mark;
         GCTraceTime(Info, gc) t("Pause Full", NULL, gc_cause(), true);
         collect_generation(_old_gen, full, size, is_tlab, run_verification && VerifyGCLevel <= 1, do_clear_all_soft_refs, true);
       } else {

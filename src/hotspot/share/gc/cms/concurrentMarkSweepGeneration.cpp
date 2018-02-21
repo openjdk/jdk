@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -5551,7 +5551,7 @@ void CMSCollector::reset_stw() {
   // already have the lock
   assert(_collectorState == Resetting, "just checking");
   assert_lock_strong(bitMapLock());
-  GCIdMarkAndRestore gc_id_mark(_cmsThread->gc_id());
+  GCIdMark gc_id_mark(_cmsThread->gc_id());
   _markBitMap.clear_all();
   _collectorState = Idling;
   register_gc_end();
