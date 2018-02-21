@@ -59,8 +59,8 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/exceptions.hpp"
 #include "utilities/elfFile.hpp"
+#include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_CDS
 #include "prims/cdsoffsets.hpp"
@@ -80,7 +80,6 @@
 #endif // INCLUDE_NMT
 
 #ifdef LINUX
-#include "utilities/elfFile.hpp"
 #include "osContainer_linux.hpp"
 #endif
 
