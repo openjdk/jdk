@@ -206,6 +206,7 @@ public class WhiteBox {
   public native long NMTMalloc(long size);
   public native void NMTFree(long mem);
   public native long NMTReserveMemory(long size);
+  public native long NMTAttemptReserveMemoryAt(long addr, long size);
   public native void NMTCommitMemory(long addr, long size);
   public native void NMTUncommitMemory(long addr, long size);
   public native void NMTReleaseMemory(long addr, long size);
