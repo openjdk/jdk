@@ -361,7 +361,6 @@
   template(run_finalizers_on_exit_name,               "runFinalizersOnExit")                      \
   template(dispatchUncaughtException_name,            "dispatchUncaughtException")                \
   template(loadClass_name,                            "loadClass")                                \
-  template(loadClassInternal_name,                    "loadClassInternal")                        \
   template(get_name,                                  "get")                                      \
   template(put_name,                                  "put")                                      \
   template(type_name,                                 "type")                                     \

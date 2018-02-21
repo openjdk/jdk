@@ -520,8 +520,8 @@ static SpecialFlag const special_jvm_flags[] = {
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
-  { "MustCallLoadClassInternal",    JDK_Version::jdk(10), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "UnsyncloadClass",              JDK_Version::jdk(10), JDK_Version::undefined(), JDK_Version::undefined() },
+  { "MustCallLoadClassInternal",    JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
+  { "UnsyncloadClass",              JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
   { "ConvertSleepToYield",           JDK_Version::jdk(9),      JDK_Version::jdk(10), JDK_Version::jdk(11) },

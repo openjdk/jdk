@@ -1142,11 +1142,6 @@ public:
   diagnostic(bool, DynamicallyResizeSystemDictionaries, true,               \
           "Dynamically resize system dictionaries as needed")               \
                                                                             \
-  diagnostic(bool, UnsyncloadClass, false,                                  \
-          "Unstable: VM calls loadClass unsynchronized. Custom "            \
-          "class loader must call VM synchronized for findClass "           \
-          "and defineClass.")                                               \
-                                                                            \
   product(bool, AlwaysLockClassLoader, false,                               \
           "Require the VM to acquire the class loader lock before calling " \
           "loadClass() even for class loaders registering "                 \
@@ -1155,9 +1150,6 @@ public:
   product(bool, AllowParallelDefineClass, false,                            \
           "Allow parallel defineClass requests for class loaders "          \
           "registering as parallel capable")                                \
-                                                                            \
-  product(bool, MustCallLoadClassInternal, false,                           \
-          "Call loadClassInternal() rather than loadClass()")               \
                                                                             \
   product_pd(bool, DontYieldALot,                                           \
           "Throw away obvious excess yield calls")                          \
