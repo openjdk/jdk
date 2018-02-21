@@ -23,6 +23,7 @@
  */
 
 /* @test
+ * @key headful
  * @summary verify rendering of MORX fonts on OS X.
  * @bug 8031462
  */

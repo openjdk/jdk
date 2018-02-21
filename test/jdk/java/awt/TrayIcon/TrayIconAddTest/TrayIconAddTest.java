@@ -27,6 +27,7 @@ import java.awt.image.BufferedImage;
 
 /*
  * @test
+ * @key headful
  * @summary Tests the add method of the SystemTray. Checks if it
  *          throws proper exceptions in case of invalid arguments and adds the
  *          TrayIcon correctly in case of a proper argument

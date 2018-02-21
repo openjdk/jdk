@@ -27,6 +27,7 @@ import java.awt.image.BufferedImage;
 
 /*
  * @test
+ * @key headful
  * @summary Check if ActionEvent triggered when a TrayIcon is double
  *          (single, on Mac) clicked is visible by an AWTEventListener
  *          added to the Toolkit. It also checks if all listeners are

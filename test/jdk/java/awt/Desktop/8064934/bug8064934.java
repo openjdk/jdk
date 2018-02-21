@@ -23,6 +23,8 @@
 
 /* @test
  * @bug 8064934
+ * @key headful
+ * @requires (os.family == "windows")
  * @summary Incorrect Exception message from java.awt.Desktop.open()
  * @author Dmitry Markov
  * @library ../../../../lib/testlibrary

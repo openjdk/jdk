@@ -21,7 +21,8 @@
  * questions.
  */
 /**
- * @test @bug 8058785
+ * @test
+ * @bug 8058785
  * @summary Displaying border around the disabled component's tool tip text
  * @run main/manual TestDisabledToolTipBorder
  */
