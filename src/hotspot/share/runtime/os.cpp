@@ -1706,7 +1706,7 @@ char* os::attempt_reserve_memory_at(size_t bytes, char* addr, int file_desc) {
   } else {
     result = pd_attempt_reserve_memory_at(bytes, addr);
     if (result != NULL) {
-      MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC);
+      MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
     }
   }
   return result;
