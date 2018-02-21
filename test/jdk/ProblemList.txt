@@ -111,6 +111,8 @@
 
 # jdk_awt
 
+java/awt/BasicStroke/DashScaleMinWidth.java 8198411 windows-all
+java/awt/BasicStroke/DashZeroWidth.java 8198411 windows-all
 java/awt/event/MouseEvent/MouseClickTest/MouseClickTest.html 8168389 windows-all,macosx-all
 java/awt/Focus/ActualFocusedWindowTest/ActualFocusedWindowBlockingTest.java 8168408 windows-all
 java/awt/Focus/FocusOwnerFrameOnClick/FocusOwnerFrameOnClick.java 8081489 generic-all
@@ -120,6 +122,7 @@ java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusSetVisibleTest.java 6848407 
 java/awt/Frame/MaximizedUndecorated/MaximizedUndecorated.java 8022302 generic-all
 
 java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-all
+java/awt/FileDialog/8003399/bug8003399.java 8198334 windows-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion.java 8060176 windows-all,macosx-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_1.java 8060176 windows-all,macosx-all
 java/awt/dnd/BadSerializaionTest/BadSerializationTest.java 8039082 generic-all
@@ -135,11 +138,13 @@ java/awt/Mixing/AWT_Mixing/JSplitPaneOverlapping.java 8194765 windows-all
 java/awt/Mixing/AWT_Mixing/MixingPanelsResizing.java 8049405 generic-all
 java/awt/Focus/ActualFocusedWindowTest/ActualFocusedWindowRetaining.java 6829264 generic-all
 java/awt/datatransfer/DragImage/MultiResolutionDragImageTest.java 8080982 generic-all
+java/awt/datatransfer/SystemFlavorMap/AddFlavorTest.java 8079268 linux-all
 java/awt/Toolkit/ScreenInsetsTest/ScreenInsetsTest.java 6829250 windows-all
 java/awt/LightweightComponent/LightweightEventTest/LightweightEventTest.java 8159252 windows-all
 java/awt/EventDispatchThread/HandleExceptionOnEDT/HandleExceptionOnEDT.java 6990210 generic-all
 java/awt/EventDispatchThread/LoopRobustness/LoopRobustness.html 4931413 windows-all
 java/awt/FullScreen/FullScreenInsets/FullScreenInsets.java 7019055 windows-all
+java/awt/FullScreen/UninitializedDisplayModeChangeTest/UninitializedDisplayModeChangeTest.java 8198335 windows-all
 java/awt/Focus/8013611/JDK8013611.java 8175366 windows-all
 java/awt/Focus/6981400/Test1.java 8029675 windows-all
 java/awt/Focus/6981400/Test3.java 8173264 generic-all
@@ -175,12 +180,20 @@ java/awt/TrayIcon/PopupMenuLeakTest/PopupMenuLeakTest.java 8196440 linux-all
 java/awt/Window/Grab/GrabTest.java 8196019 windows-all
 java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucentWindowClick.java 8196020 windows-all
 java/awt/font/TextLayout/CombiningPerf.java 8192931 generic-all
+java/awt/font/TextLayout/TextLayoutBounds.java 8169188 macosx-all
+java/awt/font/MonospacedGlyphWidth/MonospacedGlyphWidthTest.java 8198412 linux-all,solaris-all
+java/awt/font/StyledMetrics/BoldSpace.java 8198422 linux-all
+java/awt/FontMetrics/FontCrash.java 8198336 windows-all
 java/awt/image/DrawImage/IncorrectAlphaSurface2SW.java 8056077 generic-all
 java/awt/image/DrawImage/IncorrectClipXorModeSW2Surface.java 8196025 windows-all
 java/awt/image/DrawImage/IncorrectClipXorModeSurface2Surface.java 8196025 windows-all
 java/awt/image/DrawImage/IncorrectSourceOffset.java 8196086 windows-all
 java/awt/image/DrawImage/IncorrectUnmanagedImageRotatedClip.java 8196087 windows-all
+java/awt/image/MultiResolutionImage/MultiResolutionDrawImageWithTransformTest.java 8198390 generic-all
 java/awt/print/Headless/HeadlessPrinterJob.java 8196088 windows-all
+java/awt/print/PrinterJob/TestPgfmtSetMPA.java 8198343 generic-all
+sun/awt/datatransfer/SuplementaryCharactersTransferTest.java 8011371 generic-all
+sun/awt/shell/ShellFolderMemoryLeak.java 8197794 windows-all
 sun/java2d/DirectX/OnScreenRenderingResizeTest/OnScreenRenderingResizeTest.java 8022403 generic-all
 sun/java2d/DirectX/OverriddenInsetsTest/OverriddenInsetsTest.java 8196102 generic-all
 sun/java2d/DirectX/RenderingToCachedGraphicsTest/RenderingToCachedGraphicsTest.java 8196180 windows-all
@@ -196,10 +209,14 @@ java/awt/FullScreen/DisplayChangeVITest/DisplayChangeVITest.java 8169469 windows
 java/awt/FullScreen/NonExistentDisplayModeTest/NonExistentDisplayModeTest.java 8196187 windows-all
 java/awt/Graphics/ClippedCopyAreaTest/ClippedCopyAreaTest.java 8196436 linux-all
 java/awt/Graphics/CopyScaledArea/CopyScaledAreaTest.java 8196189 windows-all
+java/awt/Graphics2D/DrawString/DrawRotatedStringUsingRotatedFont.java 8197796 generic-all
 java/awt/GraphicsDevice/CloneConfigsTest.java 8196190 windows-all
 java/awt/TextArea/TextAreaScrolling/TextAreaScrolling.java 8196300 windows-all
 java/awt/print/PrinterJob/Margins.java 8196301 windows-all
+java/awt/print/PrinterJob/PSQuestionMark.java 7003378 windows-all
+java/awt/print/PrinterJob/GlyphPositions.java 7003378 windows-all
 java/awt/Choice/PopupPosTest/PopupPosTest.html 8192930 windows-all
+java/awt/Component/CreateImage/CreateImage.java 8198334  windows-all
 java/awt/Component/GetScreenLocTest.java 4753654 windows-all
 java/awt/Choice/SelectCurrentItemTest/SelectCurrentItemTest.html 8192929 windows-all
 java/awt/Dialog/MakeWindowAlwaysOnTop/MakeWindowAlwaysOnTop.java 7054586 windows-all
@@ -265,6 +282,8 @@ java/awt/Modal/ToBack/ToBackTKModal2Test.java 8196441 linux-all
 java/awt/Modal/ToBack/ToBackTKModal3Test.java 8196441 linux-all
 java/awt/Modal/ToBack/ToBackTKModal4Test.java 8196441 linux-all
 java/awt/List/SingleModeDeselect/SingleModeDeselect.java 8196301 windows-all
+
+javax/print/PrintSEUmlauts/PrintSEUmlauts.java 8135174 generic-all
 
 
 ############################################################################
@@ -400,6 +419,9 @@ javax/sound/sampled/Mixers/DisabledAssertionCrash.java 7067310 generic-all
 
 # jdk_swing
 
+com/sun/java/swing/plaf/windows/Test8173145.java 8198334 windows-all
+
+javax/swing/border/Test6981576.java 8198339 generic-all
 javax/swing/JComponent/7154030/bug7154030.java 7190978 generic-all
 javax/swing/JInternalFrame/8160248/JInternalFrameDraggingTest.java 8186513 generic-all
 javax/swing/JComboBox/ConsumedKeyTest/ConsumedKeyTest.java 8067986 generic-all
@@ -411,6 +433,7 @@ javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentCanvas.java 8
 javax/swing/JComboBox/8033069/bug8033069ScrollBar.java 8163367 generic-all
 javax/swing/JColorChooser/Test6541987.java 8143021 windows-all,linux-all
 javax/swing/JTable/7124218/SelectEditTableCell.java 8148958 linux-all
+javax/swing/JTable/4235420/bug4235420.java 8079127 linux-all,macosx-all
 javax/swing/JTree/DnD/LastNodeLowerHalfDrop.java 8159131 linux-all
 javax/swing/JFileChooser/8041694/bug8041694.java 8196302 windows-all
 javax/swing/JInternalFrame/8069348/bug8069348.java 8196303 windows-all
@@ -422,6 +445,7 @@ javax/swing/JComboBox/8032878/bug8032878.java 8196092 windows-all
 javax/swing/JComboBox/8057893/bug8057893.java 8169953 windows-all
 javax/swing/JComboBox/8072767/bug8072767.java 8196093 windows-all
 javax/swing/JComponent/4337267/bug4337267.java 8146451 windows-all
+javax/swing/JEditorPane/5076514/bug5076514.java 8198321 generic-all
 javax/swing/JEditorPane/6917744/bug6917744.java 8194767 generic-all
 javax/swing/JFileChooser/4524490/bug4524490.java 8042380 generic-all
 javax/swing/JFileChooser/8002077/bug8002077.java 8196094 windows-all
@@ -434,18 +458,34 @@ javax/swing/JPopupMenu/6675802/bug6675802.java 8196097 windows-all
 javax/swing/JTabbedPane/8007563/Test8007563.java 8051591 generic-all
 javax/swing/SwingUtilities/TestBadBreak/TestBadBreak.java 8160720 generic-all
 javax/swing/plaf/basic/BasicTextUI/8001470/bug8001470.java 8196098 windows-all
+javax/swing/plaf/basic/Test6984643.java 8198340 windows-all
 javax/swing/text/CSSBorder/6796710/bug6796710.java 8196099 windows-all
 javax/swing/text/DefaultCaret/HidingSelection/HidingSelectionTest.java 8194048 windows-all
 javax/swing/text/JTextComponent/5074573/bug5074573.java 8196100 windows-all
 javax/swing/JFileChooser/6798062/bug6798062.java 8146446 windows-all
-javax/swing/plaf/basic/BasicGraphicsUtils/8132119/bug8132119.java 8196434 linux-all
+javax/swing/plaf/basic/BasicGraphicsUtils/8132119/bug8132119.java 8196434 linux-all,solaris-all
 javax/swing/JComboBox/8032878/bug8032878.java 8196439 linux-all
 javax/swing/JComboBox/8182031/ComboPopupTest.java 8196465 linux-all
-javax/swing/JFileChooser/6738668/bug6738668.java 8194946 linux-all,macosx-all
+javax/swing/JFileChooser/6738668/bug6738668.java 8194946 generic-all
 javax/swing/JFileChooser/8021253/bug8021253.java 8169954 windows-all,linux-all
-javax/swing/JFileChooser/8062561/bug8062561.java 8196466 linux-all
+javax/swing/JFileChooser/8062561/bug8062561.java 8196466 linux-all,macosx-all
+javax/swing/JFileChooser/FileSystemView/FileSystemViewListenerLeak.java 8198342 generic-all
 javax/swing/JInternalFrame/Test6325652.java 8196467 linux-all
-
+javax/swing/MultiUIDefaults/Test6860438.java 8198391 generic-all
+javax/swing/UITest/UITest.java 8198392 generic-all
+javax/swing/plaf/basic/BasicComboBoxEditor/Test8015336.java 8198394 linux-all,macosx-all
+javax/swing/plaf/metal/MetalLookAndFeel/Test8039750.java 8198395 generic-all
+javax/swing/text/DevanagariEditor.java 8198397 linux-all
+javax/swing/JColorChooser/Test6199676.java 8198398 linux-all,macosx-all
+javax/swing/JTable/6735286/bug6735286.java 8198398 linux-all,macosx-all
+javax/swing/SpringLayout/4726194/bug4726194.java 8198399 generic-all
+javax/swing/SwingUtilities/6797139/bug6797139.java 8198400 generic-all
+javax/swing/text/html/parser/Parser/6836089/bug6836089.java 8198401 linux-all,macosx-all
+javax/swing/JTable/8133919/DrawGridLinesTest.java 8198407 generic-all
+javax/swing/text/html/StyleSheet/BackgroundImage/BackgroundImagePosition.java 8198409 generic-all
+javax/swing/text/AbstractDocument/DocumentInsert/DocumentInsertAtWrongPositionTest.java 8198396 generic-all
+javax/swing/JFileChooser/6868611/bug6868611.java 7059834 windows-all
+javax/swing/SwingWorker/6493680/bug6493680.java 8198410 windows-all
 
 ############################################################################
 

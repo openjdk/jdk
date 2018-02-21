@@ -40,7 +40,8 @@ import jdk.test.lib.Platform;
 import java.awt.image.MultiResolutionImage;
 
 /**
- * @test @bug 8011059
+ * @test
+ * @bug 8011059
  * @key headful
  * @author Alexander Scherbatiy
  * @summary [macosx] Make JDK demos look perfect on retina displays

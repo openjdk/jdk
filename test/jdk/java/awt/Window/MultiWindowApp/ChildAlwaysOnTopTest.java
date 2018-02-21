@@ -22,8 +22,10 @@
  */
 
 /**
- * @test @summary setAlwaysOnTop doesn't behave correctly in Linux/Solaris under
- *                certain scenarios
+ * @test
+ * @key headful
+ * @summary setAlwaysOnTop doesn't behave correctly in Linux/Solaris under
+ *          certain scenarios
  * @bug 8021961
  * @author Semyon Sadetsky
  * @run main ChildAlwaysOnTopTest

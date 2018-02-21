@@ -42,7 +42,8 @@ import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
 
 /**
- * @test @bug 6488522
+ * @test
+ * @bug 6488522
  * @summary Check the compression support in imageio ImageWriters
  * @run main ImageWriterCompressionTest
  */

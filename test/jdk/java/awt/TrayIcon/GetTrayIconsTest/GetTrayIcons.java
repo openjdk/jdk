@@ -26,6 +26,7 @@ import java.awt.image.BufferedImage;
 
 /*
  * @test
+ * @key headful
  * @summary Check the getTrayIcons method of the SystemTray
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
  * @run main GetTrayIcons

@@ -32,6 +32,7 @@ import javax.print.attribute.standard.PrinterName;
 /*
  * @test
  * @bug 8032693
+ * @key printer
  * @summary Test that lpstat and JDK agree whether there are printers.
  */
 public class CountPrintServices {
