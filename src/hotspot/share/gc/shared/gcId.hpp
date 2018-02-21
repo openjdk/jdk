@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ class GCId : public AllStatic {
   // Returns the currently active GC id. Asserts that there is an active GC id.
   static const uint current();
   // Same as current() but can return undefined() if no GC id is currently active
-  static const uint current_raw();
+  static const uint current_or_undefined();
   // Returns the next expected GCId.
   static const uint peek();
   static const uint undefined() { return UNDEFINED; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,18 +44,19 @@ const uint GCId::peek() {
 }
 
 const uint GCId::current() {
-  assert(currentNamedthread()->gc_id() != undefined(), "Using undefined GC id.");
-  return current_raw();
+  const uint gc_id = currentNamedthread()->gc_id();
+  assert(gc_id != undefined(), "Using undefined GC id.");
+  return gc_id;
 }
 
-const uint GCId::current_raw() {
-  return currentNamedthread()->gc_id();
+const uint GCId::current_or_undefined() {
+  return Thread::current()->is_Named_thread() ? currentNamedthread()->gc_id() : undefined();
 }
 
 size_t GCId::print_prefix(char* buf, size_t len) {
   Thread* thread = Thread::current_or_null();
-  if (thread != NULL && thread->is_Named_thread()) {
-    uint gc_id = current_raw();
+  if (thread != NULL) {
+    uint gc_id = current_or_undefined();
     if (gc_id != undefined()) {
       int ret = jio_snprintf(buf, len, "GC(%u) ", gc_id);
       assert(ret > 0, "Failed to print prefix. Log buffer too small?");
@@ -78,12 +79,12 @@ GCIdMark::~GCIdMark() {
 }
 
 GCIdMarkAndRestore::GCIdMarkAndRestore() : _gc_id(GCId::create()) {
-  _previous_gc_id = GCId::current_raw();
+  _previous_gc_id = currentNamedthread()->gc_id();
   currentNamedthread()->set_gc_id(_gc_id);
 }
 
 GCIdMarkAndRestore::GCIdMarkAndRestore(uint gc_id) : _gc_id(gc_id) {
-  _previous_gc_id = GCId::current_raw();
+  _previous_gc_id = currentNamedthread()->gc_id();
   currentNamedthread()->set_gc_id(_gc_id);
 }
 
