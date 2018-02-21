@@ -60,7 +60,7 @@ class ParserTest<var extends AutoCloseable> {
         List<? extends var> l2; //error
         List<? super var> l3; //error
         try {
-            Function<var, String> f = (var x2) -> ""; //ok
+            Function<var, String> f = (var x2) -> ""; //error
         } catch (var ex) { } //error
     }
 
