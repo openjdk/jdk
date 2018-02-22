@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8169519 8168615
+ * @bug 8169519 8168615 8176474
  * @summary Tests for JDI connector failure
  * @modules jdk.jshell/jdk.jshell jdk.jshell/jdk.jshell.spi jdk.jshell/jdk.jshell.execution
  * @run testng JdiBogusHostListenExecutionControlTest
@@ -40,7 +40,9 @@ import static org.testng.Assert.fail;
 public class JdiBogusHostListenExecutionControlTest {
 
     private static final String EXPECTED_ERROR =
-            "Launching JShell execution engine threw: Failed remote listen: java.net.SocketException: Unresolved address @ com.sun.jdi.SocketListe";
+            "Launching JShell execution engine threw: Failed remote listen:";
+    private static final String EXPECTED_LOCATION =
+            "@ com.sun.jdi.SocketListen";
 
     public void badOptionListenTest() {
         try {
@@ -50,7 +52,10 @@ public class JdiBogusHostListenExecutionControlTest {
                     .executionEngine("jdi:hostname(BattyRumbleBuckets-Snurfle-99-Blip)")
                     .build();
         } catch (IllegalStateException ex) {
-            assertTrue(ex.getMessage().startsWith(EXPECTED_ERROR), ex.getMessage());
+            assertTrue(ex.getMessage().startsWith(EXPECTED_ERROR),
+                    ex.getMessage() + "\nExpected: " + EXPECTED_ERROR);
+            assertTrue(ex.getMessage().contains(EXPECTED_LOCATION),
+                    ex.getMessage() + "\nExpected: " + EXPECTED_LOCATION);
             return;
         }
         fail("Expected IllegalStateException");
