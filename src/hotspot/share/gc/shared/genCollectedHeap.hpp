@@ -456,6 +456,17 @@ public:
 
 
 private:
+  // Return true if an allocation should be attempted in the older generation
+  // if it fails in the younger generation.  Return false, otherwise.
+  bool should_try_older_generation_allocation(size_t word_size) const;
+
+  // Try to allocate space by expanding the heap.
+  HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
+
+  HeapWord* mem_allocate_work(size_t size,
+                              bool is_tlab,
+                              bool* gc_overhead_limit_was_exceeded);
+
   // Override
   void check_for_non_bad_heap_word_value(HeapWord* addr,
     size_t size) PRODUCT_RETURN;
