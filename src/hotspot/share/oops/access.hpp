@@ -55,6 +55,7 @@
 // * atomic_xchg_at: Atomically swap a new value at an internal pointer address if previous value matched the compared value.
 // * arraycopy: Copy data from one heap array to another heap array.
 // * clone: Clone the contents of an object to a newly allocated object.
+// * resolve: Resolve a stable to-space invariant oop that is guaranteed not to relocate its payload until a subsequent thread transition.
 
 typedef uint64_t DecoratorSet;
 
@@ -69,12 +70,15 @@ const DecoratorSet INTERNAL_VALUE_IS_OOP             = UCONST64(1) << 2;
 
 // == Internal build-time Decorators ==
 // * INTERNAL_BT_BARRIER_ON_PRIMITIVES: This is set in the barrierSetConfig.hpp file.
+// * INTERNAL_BT_TO_SPACE_INVARIANT: This is set in the barrierSetConfig.hpp file iff
+//   no GC is bundled in the build that is to-space invariant.
 const DecoratorSet INTERNAL_BT_BARRIER_ON_PRIMITIVES = UCONST64(1) << 3;
+const DecoratorSet INTERNAL_BT_TO_SPACE_INVARIANT    = UCONST64(1) << 4;
 
 // == Internal run-time Decorators ==
 // * INTERNAL_RT_USE_COMPRESSED_OOPS: This decorator will be set in runtime resolved
 //   access backends iff UseCompressedOops is true.
-const DecoratorSet INTERNAL_RT_USE_COMPRESSED_OOPS   = UCONST64(1) << 4;
+const DecoratorSet INTERNAL_RT_USE_COMPRESSED_OOPS   = UCONST64(1) << 5;
 
 const DecoratorSet INTERNAL_DECORATOR_MASK           = INTERNAL_CONVERT_COMPRESSED_OOP | INTERNAL_VALUE_IS_OOP |
                                                        INTERNAL_BT_BARRIER_ON_PRIMITIVES | INTERNAL_RT_USE_COMPRESSED_OOPS;
@@ -138,12 +142,12 @@ const DecoratorSet INTERNAL_DECORATOR_MASK           = INTERNAL_CONVERT_COMPRESS
 //    - Guarantees from MO_RELAXED loads and MO_RELAXED stores hold.
 //  * MO_SEQ_CST: Sequentially consistent xchg.
 //    - Guarantees from MO_SEQ_CST loads and MO_SEQ_CST stores hold.
-const DecoratorSet MO_UNORDERED      = UCONST64(1) << 5;
-const DecoratorSet MO_VOLATILE       = UCONST64(1) << 6;
-const DecoratorSet MO_RELAXED        = UCONST64(1) << 7;
-const DecoratorSet MO_ACQUIRE        = UCONST64(1) << 8;
-const DecoratorSet MO_RELEASE        = UCONST64(1) << 9;
-const DecoratorSet MO_SEQ_CST        = UCONST64(1) << 10;
+const DecoratorSet MO_UNORDERED      = UCONST64(1) << 6;
+const DecoratorSet MO_VOLATILE       = UCONST64(1) << 7;
+const DecoratorSet MO_RELAXED        = UCONST64(1) << 8;
+const DecoratorSet MO_ACQUIRE        = UCONST64(1) << 9;
+const DecoratorSet MO_RELEASE        = UCONST64(1) << 10;
+const DecoratorSet MO_SEQ_CST        = UCONST64(1) << 11;
 const DecoratorSet MO_DECORATOR_MASK = MO_UNORDERED | MO_VOLATILE | MO_RELAXED |
                                        MO_ACQUIRE | MO_RELEASE | MO_SEQ_CST;
 
@@ -166,10 +170,10 @@ const DecoratorSet MO_DECORATOR_MASK = MO_UNORDERED | MO_VOLATILE | MO_RELAXED |
 //   responsibility of performing the access and what barriers to be performed to the GC. This is the default.
 //   Note that primitive accesses will only be resolved on the barrier set if the appropriate build-time
 //   decorator for enabling primitive barriers is enabled for the build.
-const DecoratorSet AS_RAW                  = UCONST64(1) << 11;
-const DecoratorSet AS_DEST_NOT_INITIALIZED = UCONST64(1) << 12;
-const DecoratorSet AS_NO_KEEPALIVE         = UCONST64(1) << 13;
-const DecoratorSet AS_NORMAL               = UCONST64(1) << 14;
+const DecoratorSet AS_RAW                  = UCONST64(1) << 12;
+const DecoratorSet AS_DEST_NOT_INITIALIZED = UCONST64(1) << 13;
+const DecoratorSet AS_NO_KEEPALIVE         = UCONST64(1) << 14;
+const DecoratorSet AS_NORMAL               = UCONST64(1) << 15;
 const DecoratorSet AS_DECORATOR_MASK       = AS_RAW | AS_DEST_NOT_INITIALIZED |
                                              AS_NO_KEEPALIVE | AS_NORMAL;
 
@@ -182,10 +186,10 @@ const DecoratorSet AS_DECORATOR_MASK       = AS_RAW | AS_DEST_NOT_INITIALIZED |
 // * ON_UNKNOWN_OOP_REF: The memory access is performed on a reference of unknown strength.
 //   This could for example come from the unsafe API.
 // * Default (no explicit reference strength specified): ON_STRONG_OOP_REF
-const DecoratorSet ON_STRONG_OOP_REF  = UCONST64(1) << 15;
-const DecoratorSet ON_WEAK_OOP_REF    = UCONST64(1) << 16;
-const DecoratorSet ON_PHANTOM_OOP_REF = UCONST64(1) << 17;
-const DecoratorSet ON_UNKNOWN_OOP_REF = UCONST64(1) << 18;
+const DecoratorSet ON_STRONG_OOP_REF  = UCONST64(1) << 16;
+const DecoratorSet ON_WEAK_OOP_REF    = UCONST64(1) << 17;
+const DecoratorSet ON_PHANTOM_OOP_REF = UCONST64(1) << 18;
+const DecoratorSet ON_UNKNOWN_OOP_REF = UCONST64(1) << 19;
 const DecoratorSet ON_DECORATOR_MASK  = ON_STRONG_OOP_REF | ON_WEAK_OOP_REF |
                                         ON_PHANTOM_OOP_REF | ON_UNKNOWN_OOP_REF;
 
@@ -200,18 +204,18 @@ const DecoratorSet ON_DECORATOR_MASK  = ON_STRONG_OOP_REF | ON_WEAK_OOP_REF |
 // * IN_CONCURRENT_ROOT: The access is performed in an off-heap data structure pointing into the Java heap,
 //   but is notably not scanned during safepoints. This is sometimes a special case for some GCs and
 //   implies that it is also an IN_ROOT.
-const DecoratorSet IN_HEAP            = UCONST64(1) << 19;
-const DecoratorSet IN_HEAP_ARRAY      = UCONST64(1) << 20;
-const DecoratorSet IN_ROOT            = UCONST64(1) << 21;
-const DecoratorSet IN_CONCURRENT_ROOT = UCONST64(1) << 22;
-const DecoratorSet IN_ARCHIVE_ROOT    = UCONST64(1) << 23;
+const DecoratorSet IN_HEAP            = UCONST64(1) << 20;
+const DecoratorSet IN_HEAP_ARRAY      = UCONST64(1) << 21;
+const DecoratorSet IN_ROOT            = UCONST64(1) << 22;
+const DecoratorSet IN_CONCURRENT_ROOT = UCONST64(1) << 23;
+const DecoratorSet IN_ARCHIVE_ROOT    = UCONST64(1) << 24;
 const DecoratorSet IN_DECORATOR_MASK  = IN_HEAP | IN_HEAP_ARRAY |
                                         IN_ROOT | IN_CONCURRENT_ROOT |
                                         IN_ARCHIVE_ROOT;
 
 // == Value Decorators ==
 // * OOP_NOT_NULL: This property can make certain barriers faster such as compressing oops.
-const DecoratorSet OOP_NOT_NULL       = UCONST64(1) << 24;
+const DecoratorSet OOP_NOT_NULL       = UCONST64(1) << 25;
 const DecoratorSet OOP_DECORATOR_MASK = OOP_NOT_NULL;
 
 // == Arraycopy Decorators ==
@@ -224,11 +228,11 @@ const DecoratorSet OOP_DECORATOR_MASK = OOP_NOT_NULL;
 // * ARRAYCOPY_ARRAYOF: The copy is in the arrayof form.
 // * ARRAYCOPY_ATOMIC: The accesses have to be atomic over the size of its elements.
 // * ARRAYCOPY_ALIGNED: The accesses have to be aligned on a HeapWord.
-const DecoratorSet ARRAYCOPY_CHECKCAST            = UCONST64(1) << 25;
-const DecoratorSet ARRAYCOPY_DISJOINT             = UCONST64(1) << 26;
-const DecoratorSet ARRAYCOPY_ARRAYOF              = UCONST64(1) << 27;
-const DecoratorSet ARRAYCOPY_ATOMIC               = UCONST64(1) << 28;
-const DecoratorSet ARRAYCOPY_ALIGNED              = UCONST64(1) << 29;
+const DecoratorSet ARRAYCOPY_CHECKCAST            = UCONST64(1) << 26;
+const DecoratorSet ARRAYCOPY_DISJOINT             = UCONST64(1) << 27;
+const DecoratorSet ARRAYCOPY_ARRAYOF              = UCONST64(1) << 28;
+const DecoratorSet ARRAYCOPY_ATOMIC               = UCONST64(1) << 29;
+const DecoratorSet ARRAYCOPY_ALIGNED              = UCONST64(1) << 30;
 const DecoratorSet ARRAYCOPY_DECORATOR_MASK       = ARRAYCOPY_CHECKCAST | ARRAYCOPY_DISJOINT |
                                                     ARRAYCOPY_DISJOINT | ARRAYCOPY_ARRAYOF |
                                                     ARRAYCOPY_ATOMIC | ARRAYCOPY_ALIGNED;
@@ -296,6 +300,9 @@ namespace AccessInternal {
 
   template <DecoratorSet decorators>
   void clone(oop src, oop dst, size_t size);
+
+  template <DecoratorSet decorators>
+  oop resolve(oop src);
 
   // Infer the type that should be returned from a load.
   template <typename P, DecoratorSet decorators>
@@ -499,6 +506,11 @@ public:
     typedef typename AccessInternal::OopOrNarrowOop<T>::type OopType;
     OopType new_oop_value = new_value;
     return AccessInternal::atomic_xchg<decorators | INTERNAL_VALUE_IS_OOP>(new_oop_value, addr);
+  }
+
+  static oop resolve(oop obj) {
+    verify_decorators<INTERNAL_EMPTY>();
+    return AccessInternal::resolve<decorators>(obj);
   }
 };
 

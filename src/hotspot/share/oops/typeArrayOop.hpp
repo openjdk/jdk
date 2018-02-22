@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,62 +41,27 @@ private:
   }
 
  protected:
-  jchar*    char_base()   const { return (jchar*)   base(T_CHAR); }
-  jboolean* bool_base()   const { return (jboolean*)base(T_BOOLEAN); }
-  jbyte*    byte_base()   const { return (jbyte*)   base(T_BYTE); }
-  jint*     int_base()    const { return (jint*)    base(T_INT); }
-  jlong*    long_base()   const { return (jlong*)   base(T_LONG); }
-  jshort*   short_base()  const { return (jshort*)  base(T_SHORT); }
-  jfloat*   float_base()  const { return (jfloat*)  base(T_FLOAT); }
-  jdouble*  double_base() const { return (jdouble*) base(T_DOUBLE); }
+  jchar*    char_base()   const;
+  jboolean* bool_base()   const;
+  jbyte*    byte_base()   const;
+  jint*     int_base()    const;
+  jlong*    long_base()   const;
+  jshort*   short_base()  const;
+  jfloat*   float_base()  const;
+  jdouble*  double_base() const;
 
   friend class TypeArrayKlass;
 
  public:
-  jbyte* byte_at_addr(int which) const {
-    assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-    return &byte_base()[which];
-  }
-
-  jboolean* bool_at_addr(int which) const {
-    assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-    return &bool_base()[which];
-  }
-
-  jchar* char_at_addr(int which) const {
-    assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-    return &char_base()[which];
-  }
-
-  jint* int_at_addr(int which) const {
-    assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-    return &int_base()[which];
-  }
-
-  jshort* short_at_addr(int which) const {
-    assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-    return &short_base()[which];
-  }
-
-  jushort* ushort_at_addr(int which) const {  // for field descriptor arrays
-    assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-    return (jushort*) &short_base()[which];
-  }
-
-  jlong* long_at_addr(int which) const {
-    assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-    return &long_base()[which];
-  }
-
-  jfloat* float_at_addr(int which) const {
-    assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-    return &float_base()[which];
-  }
-
-  jdouble* double_at_addr(int which) const {
-    assert(is_within_bounds(which), "index %d out of bounds %d", which, length());
-    return &double_base()[which];
-  }
+  jbyte* byte_at_addr(int which) const;
+  jboolean* bool_at_addr(int which) const;
+  jchar* char_at_addr(int which) const;
+  jint* int_at_addr(int which) const;
+  jshort* short_at_addr(int which) const;
+  jushort* ushort_at_addr(int which) const;
+  jlong* long_at_addr(int which) const;
+  jfloat* float_at_addr(int which) const;
+  jdouble* double_at_addr(int which) const;
 
   jbyte byte_at(int which) const;
   void byte_at_put(int which, jbyte contents);

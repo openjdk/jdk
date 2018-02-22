@@ -52,7 +52,8 @@ namespace AccessInternal {
     BARRIER_ATOMIC_XCHG,
     BARRIER_ATOMIC_XCHG_AT,
     BARRIER_ARRAYCOPY,
-    BARRIER_CLONE
+    BARRIER_CLONE,
+    BARRIER_RESOLVE
   };
 
   template <DecoratorSet decorators, typename T>
@@ -100,6 +101,7 @@ namespace AccessInternal {
 
     typedef bool (*arraycopy_func_t)(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t length);
     typedef void (*clone_func_t)(oop src, oop dst, size_t size);
+    typedef oop (*resolve_func_t)(oop obj);
   };
 
   template <DecoratorSet decorators, typename T, BarrierType barrier> struct AccessFunction {};
@@ -119,6 +121,7 @@ namespace AccessInternal {
   ACCESS_GENERATE_ACCESS_FUNCTION(BARRIER_ATOMIC_XCHG_AT, atomic_xchg_at_func_t);
   ACCESS_GENERATE_ACCESS_FUNCTION(BARRIER_ARRAYCOPY, arraycopy_func_t);
   ACCESS_GENERATE_ACCESS_FUNCTION(BARRIER_CLONE, clone_func_t);
+  ACCESS_GENERATE_ACCESS_FUNCTION(BARRIER_RESOLVE, resolve_func_t);
 #undef ACCESS_GENERATE_ACCESS_FUNCTION
 
   template <DecoratorSet decorators, typename T, BarrierType barrier_type>
@@ -379,6 +382,8 @@ public:
   static bool oop_arraycopy(arrayOop src_obj, arrayOop dst_obj, HeapWord* src, HeapWord* dst, size_t length);
 
   static void clone(oop src, oop dst, size_t size);
+
+  static oop resolve(oop obj) { return obj; }
 };
 
 #endif // SHARE_VM_RUNTIME_ACCESSBACKEND_HPP
