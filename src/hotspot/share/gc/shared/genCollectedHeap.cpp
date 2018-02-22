@@ -62,15 +62,23 @@
 #include "utilities/stack.inline.hpp"
 #include "utilities/vmError.hpp"
 
-GenCollectedHeap::GenCollectedHeap(GenCollectorPolicy *policy) :
+GenCollectedHeap::GenCollectedHeap(GenCollectorPolicy *policy,
+                                   Generation::Name young,
+                                   Generation::Name old) :
   CollectedHeap(),
   _rem_set(NULL),
+  _young_gen_spec(new GenerationSpec(young,
+                                     policy->initial_young_size(),
+                                     policy->max_young_size(),
+                                     policy->gen_alignment())),
+  _old_gen_spec(new GenerationSpec(old,
+                                   policy->initial_old_size(),
+                                   policy->max_old_size(),
+                                   policy->gen_alignment())),
   _gen_policy(policy),
   _soft_ref_gen_policy(),
   _process_strong_tasks(new SubTasksDone(GCH_PS_NumElements)),
-  _full_collections_completed(0)
-{
-  assert(policy != NULL, "Sanity check");
+  _full_collections_completed(0) {
 }
 
 jint GenCollectedHeap::initialize() {
@@ -101,12 +109,12 @@ jint GenCollectedHeap::initialize() {
   _rem_set = new CardTableRS(reserved_region());
   set_barrier_set(rem_set()->bs());
 
-  ReservedSpace young_rs = heap_rs.first_part(gen_policy()->young_gen_spec()->max_size(), false, false);
-  _young_gen = gen_policy()->young_gen_spec()->init(young_rs, rem_set());
-  heap_rs = heap_rs.last_part(gen_policy()->young_gen_spec()->max_size());
+  ReservedSpace young_rs = heap_rs.first_part(_young_gen_spec->max_size(), false, false);
+  _young_gen = _young_gen_spec->init(young_rs, rem_set());
+  heap_rs = heap_rs.last_part(_young_gen_spec->max_size());
 
-  ReservedSpace old_rs = heap_rs.first_part(gen_policy()->old_gen_spec()->max_size(), false, false);
-  _old_gen = gen_policy()->old_gen_spec()->init(old_rs, rem_set());
+  ReservedSpace old_rs = heap_rs.first_part(_old_gen_spec->max_size(), false, false);
+  _old_gen = _old_gen_spec->init(old_rs, rem_set());
   clear_incremental_collection_failed();
 
   return JNI_OK;
@@ -129,12 +137,9 @@ char* GenCollectedHeap::allocate(size_t alignment,
   const size_t pageSize = UseLargePages ? os::large_page_size() : os::vm_page_size();
   assert(alignment % pageSize == 0, "Must be");
 
-  GenerationSpec* young_spec = gen_policy()->young_gen_spec();
-  GenerationSpec* old_spec = gen_policy()->old_gen_spec();
-
   // Check for overflow.
-  size_t total_reserved = young_spec->max_size() + old_spec->max_size();
-  if (total_reserved < young_spec->max_size()) {
+  size_t total_reserved = _young_gen_spec->max_size() + _old_gen_spec->max_size();
+  if (total_reserved < _young_gen_spec->max_size()) {
     vm_exit_during_initialization("The size of the object heap + VM data exceeds "
                                   "the maximum representable size");
   }
@@ -170,6 +175,14 @@ void GenCollectedHeap::post_initialize() {
 void GenCollectedHeap::ref_processing_init() {
   _young_gen->ref_processor_init();
   _old_gen->ref_processor_init();
+}
+
+GenerationSpec* GenCollectedHeap::young_gen_spec() const {
+  return _young_gen_spec;
+}
+
+GenerationSpec* GenCollectedHeap::old_gen_spec() const {
+  return _old_gen_spec;
 }
 
 size_t GenCollectedHeap::capacity() const {
