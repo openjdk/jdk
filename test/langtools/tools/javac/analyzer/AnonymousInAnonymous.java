@@ -26,7 +26,7 @@
  * @bug 8197439
  * @summary Check anonymous class in anonymous class, where the nested one becomes
  *          unresolvable with lambda conversion.
- * @compile/ref=AnonymousInAnonymous.out -XDfind=lambda -XDrawDiagnostics AnonymousInAnonymous.java
+ * @compile -XDfind=lambda -Werror AnonymousInAnonymous.java
  */
 
 public class AnonymousInAnonymous {
