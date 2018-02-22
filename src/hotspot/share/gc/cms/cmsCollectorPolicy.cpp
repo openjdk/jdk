@@ -59,17 +59,6 @@ void ConcurrentMarkSweepPolicy::initialize_generations() {
                                        _initial_old_size, _max_old_size, _gen_alignment);
 }
 
-void ConcurrentMarkSweepPolicy::initialize_size_policy(size_t init_eden_size,
-                                               size_t init_promo_size,
-                                               size_t init_survivor_size) {
-  double max_gc_pause_sec = ((double) MaxGCPauseMillis)/1000.0;
-  _size_policy = new AdaptiveSizePolicy(init_eden_size,
-                                        init_promo_size,
-                                        init_survivor_size,
-                                        max_gc_pause_sec,
-                                        GCTimeRatio);
-}
-
 void ConcurrentMarkSweepPolicy::initialize_gc_policy_counters() {
   // initialize the policy counters - 2 collectors, 2 generations
   _gc_policy_counters = new GCPolicyCounters("ParNew:CMS", 2, 2);

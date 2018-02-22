@@ -113,9 +113,6 @@ protected:
 
   GCPolicyCounters* _gc_policy_counters;
 
-  // The sizing of the heap is controlled by a sizing policy.
-  AdaptiveSizePolicy* _size_policy;
-
   void initialize_flags();
   void initialize_size_info();
 
@@ -171,13 +168,6 @@ protected:
   size_t young_gen_size_lower_bound();
 
   size_t old_gen_size_lower_bound();
-
-  // Adaptive size policy
-  AdaptiveSizePolicy* size_policy() { return _size_policy; }
-
-  virtual void initialize_size_policy(size_t init_eden_size,
-                                      size_t init_promo_size,
-                                      size_t init_survivor_size);
 };
 
 class MarkSweepPolicy : public GenCollectorPolicy {

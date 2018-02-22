@@ -25,12 +25,12 @@
 #ifndef SHARE_VM_GC_SHARED_GENCOLLECTEDHEAP_HPP
 #define SHARE_VM_GC_SHARED_GENCOLLECTEDHEAP_HPP
 
-#include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectorPolicy.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/softRefGenPolicy.hpp"
 
+class AdaptiveSizePolicy;
 class StrongRootsScope;
 class SubTasksDone;
 class WorkGang;
@@ -72,6 +72,9 @@ private:
   GenCollectorPolicy* _gen_policy;
 
   SoftRefGenPolicy _soft_ref_gen_policy;
+
+  // The sizing of the heap is controlled by a sizing policy.
+  AdaptiveSizePolicy* _size_policy;
 
   // Indicates that the most recent previous incremental collection failed.
   // The flag is cleared when an action is taken that might clear the
@@ -155,6 +158,10 @@ public:
   // Returns JNI_OK on success
   virtual jint initialize();
 
+  void initialize_size_policy(size_t init_eden_size,
+                              size_t init_promo_size,
+                              size_t init_survivor_size);
+
   // Does operations required after initialization has been done.
   void post_initialize();
 
@@ -173,7 +180,7 @@ public:
 
   // Adaptive size policy
   virtual AdaptiveSizePolicy* size_policy() {
-    return gen_policy()->size_policy();
+    return _size_policy;
   }
 
   // Return the (conservative) maximum heap alignment

@@ -30,6 +30,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
+#include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
@@ -111,6 +112,17 @@ jint GenCollectedHeap::initialize() {
   return JNI_OK;
 }
 
+void GenCollectedHeap::initialize_size_policy(size_t init_eden_size,
+                                              size_t init_promo_size,
+                                              size_t init_survivor_size) {
+  const double max_gc_pause_sec = ((double) MaxGCPauseMillis) / 1000.0;
+  _size_policy = new AdaptiveSizePolicy(init_eden_size,
+                                        init_promo_size,
+                                        init_survivor_size,
+                                        max_gc_pause_sec,
+                                        GCTimeRatio);
+}
+
 char* GenCollectedHeap::allocate(size_t alignment,
                                  ReservedSpace* heap_rs){
   // Now figure out the total size.
@@ -148,9 +160,9 @@ void GenCollectedHeap::post_initialize() {
   check_gen_kinds();
   DefNewGeneration* def_new_gen = (DefNewGeneration*)_young_gen;
 
-  _gen_policy->initialize_size_policy(def_new_gen->eden()->capacity(),
-                                      _old_gen->capacity(),
-                                      def_new_gen->from()->capacity());
+  initialize_size_policy(def_new_gen->eden()->capacity(),
+                         _old_gen->capacity(),
+                         def_new_gen->from()->capacity());
 
   _gen_policy->initialize_gc_policy_counters();
 }
@@ -332,12 +344,12 @@ HeapWord* GenCollectedHeap::mem_allocate_work(size_t size,
       // will be thrown.  Clear gc_overhead_limit_exceeded
       // so that the overhead exceeded does not persist.
 
-      const bool limit_exceeded = gen_policy()->size_policy()->gc_overhead_limit_exceeded();
+      const bool limit_exceeded = size_policy()->gc_overhead_limit_exceeded();
       const bool softrefs_clear = soft_ref_policy()->all_soft_refs_clear();
 
       if (limit_exceeded && softrefs_clear) {
         *gc_overhead_limit_was_exceeded = true;
-        gen_policy()->size_policy()->set_gc_overhead_limit_exceeded(false);
+        size_policy()->set_gc_overhead_limit_exceeded(false);
         if (op.result() != NULL) {
           CollectedHeap::fill_with_object(op.result(), size);
         }
