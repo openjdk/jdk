@@ -50,9 +50,7 @@ CollectorPolicy::CollectorPolicy() :
     _heap_alignment(0),
     _initial_heap_byte_size(InitialHeapSize),
     _max_heap_byte_size(MaxHeapSize),
-    _min_heap_byte_size(Arguments::min_heap_size()),
-    _should_clear_all_soft_refs(false),
-    _all_soft_refs_clear(false)
+    _min_heap_byte_size(Arguments::min_heap_size())
 {}
 
 #ifdef ASSERT
@@ -145,16 +143,6 @@ void CollectorPolicy::initialize_size_info() {
   DEBUG_ONLY(CollectorPolicy::assert_size_info();)
 }
 
-bool CollectorPolicy::use_should_clear_all_soft_refs(bool v) {
-  bool result = _should_clear_all_soft_refs;
-  set_should_clear_all_soft_refs(false);
-  return result;
-}
-
-void CollectorPolicy::cleared_all_soft_refs() {
-  _all_soft_refs_clear = true;
-}
-
 size_t CollectorPolicy::compute_heap_alignment() {
   // The card marking array and the offset arrays for old generations are
   // committed in os pages as well. Make sure they are entirely full (to
@@ -208,17 +196,6 @@ void GenCollectorPolicy::initialize_size_policy(size_t init_eden_size,
                                         init_survivor_size,
                                         max_gc_pause_sec,
                                         GCTimeRatio);
-}
-
-void GenCollectorPolicy::cleared_all_soft_refs() {
-  // If near gc overhear limit, continue to clear SoftRefs.  SoftRefs may
-  // have been cleared in the last collection but if the gc overhear
-  // limit continues to be near, SoftRefs should still be cleared.
-  if (size_policy() != NULL) {
-    _should_clear_all_soft_refs = size_policy()->gc_overhead_limit_near();
-  }
-
-  CollectorPolicy::cleared_all_soft_refs();
 }
 
 size_t GenCollectorPolicy::young_gen_size_lower_bound() {

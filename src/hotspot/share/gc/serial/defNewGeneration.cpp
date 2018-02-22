@@ -616,9 +616,6 @@ void DefNewGeneration::collect(bool   full,
   assert(gch->no_allocs_since_save_marks(),
          "save marks have not been newly set.");
 
-  // Not very pretty.
-  CollectorPolicy* cp = gch->collector_policy();
-
   FastScanClosure fsc_with_no_gc_barrier(this, false);
   FastScanClosure fsc_with_gc_barrier(this, true);
 

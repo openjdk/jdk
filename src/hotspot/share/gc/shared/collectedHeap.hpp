@@ -50,6 +50,7 @@ class GCTracer;
 class GCMemoryManager;
 class MemoryPool;
 class MetaspaceSummary;
+class SoftRefPolicy;
 class Thread;
 class ThreadClosure;
 class VirtualSpaceSummary;
@@ -441,6 +442,9 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   // Return the CollectorPolicy for the heap
   virtual CollectorPolicy* collector_policy() const = 0;
+
+  // Return the SoftRefPolicy for the heap;
+  virtual SoftRefPolicy* soft_ref_policy() = 0;
 
   virtual GrowableArray<GCMemoryManager*> memory_managers() = 0;
   virtual GrowableArray<MemoryPool*> memory_pools() = 0;

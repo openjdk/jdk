@@ -49,6 +49,7 @@
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/plab.hpp"
 #include "gc/shared/preservedMarks.hpp"
+#include "gc/shared/softRefPolicy.hpp"
 #include "memory/memRegion.hpp"
 #include "services/memoryManager.hpp"
 #include "utilities/stack.hpp"
@@ -149,6 +150,8 @@ private:
 
   WorkGang* _workers;
   G1CollectorPolicy* _collector_policy;
+
+  SoftRefPolicy      _soft_ref_policy;
 
   GCMemoryManager _memory_manager;
   GCMemoryManager _full_gc_memory_manager;
@@ -997,6 +1000,8 @@ public:
   G1CollectionSet* collection_set() { return &_collection_set; }
 
   virtual CollectorPolicy* collector_policy() const;
+
+  virtual SoftRefPolicy* soft_ref_policy();
 
   // Adaptive size policy.  No such thing for g1.
   virtual AdaptiveSizePolicy* size_policy() { return NULL; }
