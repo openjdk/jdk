@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/serial/defNewGeneration.inline.hpp"
+#include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/ageTable.inline.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectorCounters.hpp"
@@ -685,7 +686,7 @@ void DefNewGeneration::collect(bool   full,
 
     // A successful scavenge should restart the GC time limit count which is
     // for full GC's.
-    AdaptiveSizePolicy* size_policy = gch->gen_policy()->size_policy();
+    AdaptiveSizePolicy* size_policy = gch->size_policy();
     size_policy->reset_gc_overhead_limit_count();
     assert(!gch->incremental_collection_failed(), "Should be clear");
   } else {

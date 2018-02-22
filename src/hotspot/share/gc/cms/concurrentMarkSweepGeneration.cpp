@@ -300,8 +300,7 @@ void CMSCollector::ref_processor_init() {
 }
 
 AdaptiveSizePolicy* CMSCollector::size_policy() {
-  CMSHeap* heap = CMSHeap::heap();
-  return heap->gen_policy()->size_policy();
+  return CMSHeap::heap()->size_policy();
 }
 
 void ConcurrentMarkSweepGeneration::initialize_performance_counters() {

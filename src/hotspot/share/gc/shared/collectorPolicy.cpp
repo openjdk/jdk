@@ -172,8 +172,7 @@ GenCollectorPolicy::GenCollectorPolicy() :
     _max_old_size(0),
     _gen_alignment(0),
     _young_gen_spec(NULL),
-    _old_gen_spec(NULL),
-    _size_policy(NULL)
+    _old_gen_spec(NULL)
 {}
 
 size_t GenCollectorPolicy::scale_by_NewRatio_aligned(size_t base_size) {
@@ -184,18 +183,6 @@ size_t GenCollectorPolicy::bound_minus_alignment(size_t desired_size,
                                                  size_t maximum_size) {
   size_t max_minus = maximum_size - _gen_alignment;
   return desired_size < max_minus ? desired_size : max_minus;
-}
-
-
-void GenCollectorPolicy::initialize_size_policy(size_t init_eden_size,
-                                                size_t init_promo_size,
-                                                size_t init_survivor_size) {
-  const double max_gc_pause_sec = ((double) MaxGCPauseMillis) / 1000.0;
-  _size_policy = new AdaptiveSizePolicy(init_eden_size,
-                                        init_promo_size,
-                                        init_survivor_size,
-                                        max_gc_pause_sec,
-                                        GCTimeRatio);
 }
 
 size_t GenCollectorPolicy::young_gen_size_lower_bound() {

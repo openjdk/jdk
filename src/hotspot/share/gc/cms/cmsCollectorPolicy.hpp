@@ -36,10 +36,6 @@ class ConcurrentMarkSweepPolicy : public GenCollectorPolicy {
   ConcurrentMarkSweepPolicy() {}
 
   void initialize_gc_policy_counters();
-
-  virtual void initialize_size_policy(size_t init_eden_size,
-                                      size_t init_promo_size,
-                                      size_t init_survivor_size);
 };
 
 #endif // SHARE_VM_GC_CMS_CMSCOLLECTORPOLICY_HPP
