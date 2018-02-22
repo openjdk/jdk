@@ -147,7 +147,7 @@ class ConstantPool : public Metadata {
     assert(is_within_bounds(which), "index out of bounds");
     assert(!tag_at(which).is_unresolved_klass() && !tag_at(which).is_unresolved_klass_in_error(), "Corrupted constant pool");
     // Uses volatile because the klass slot changes without a lock.
-    intptr_t adr = OrderAccess::load_acquire(obj_at_addr_raw(which));
+    intptr_t adr = OrderAccess::load_acquire(obj_at_addr(which));
     assert(adr != 0 || which == 0, "cp entry for klass should not be zero");
     return CPSlot(adr);
   }
@@ -157,7 +157,7 @@ class ConstantPool : public Metadata {
     assert(s.value() != 0, "Caught something");
     *(intptr_t*)&base()[which] = s.value();
   }
-  intptr_t* obj_at_addr_raw(int which) const {
+  intptr_t* obj_at_addr(int which) const {
     assert(is_within_bounds(which), "index out of bounds");
     return (intptr_t*) &base()[which];
   }
