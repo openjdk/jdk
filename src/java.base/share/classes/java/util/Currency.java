@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.spi.CurrencyNameProvider;
+import java.util.stream.Collectors;
 import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleServiceProviderPool;
 import sun.util.logging.PlatformLogger;
@@ -77,7 +78,10 @@ import sun.util.logging.PlatformLogger;
  * JP=JPZ,999,0
  * </code>
  * <p>
- * will supersede the currency data for Japan.
+ * will supersede the currency data for Japan. If JPZ is one of the existing
+ * ISO 4217 currency code referred by other countries, the existing
+ * JPZ currency data is updated with the given numeric code and minor
+ * unit value.
  *
  * <p>
  * <code>
@@ -92,6 +96,11 @@ import sun.util.logging.PlatformLogger;
  * and the remainder of entries in file are processed. For instances where duplicate
  * country code entries exist, the behavior of the Currency information for that
  * {@code Currency} is undefined and the remainder of entries in file are processed.
+ * <p>
+ * If multiple property entries with same currency code but different numeric code
+ * and/or minor unit are encountered, those entries are ignored and the remainder
+ * of entries in file are processed.
+ *
  * <p>
  * It is recommended to use {@link java.math.BigDecimal} class while dealing
  * with {@code Currency} or monetary values as it provides better handling of floating
@@ -237,19 +246,17 @@ public final class Currency implements Serializable {
                         try (FileReader fr = new FileReader(propFile)) {
                             props.load(fr);
                         }
-                        Set<String> keys = props.stringPropertyNames();
                         Pattern propertiesPattern =
-                            Pattern.compile("([A-Z]{3})\\s*,\\s*(\\d{3})\\s*,\\s*" +
-                                "(\\d+)\\s*,?\\s*(\\d{4}-\\d{2}-\\d{2}T\\d{2}:" +
-                                "\\d{2}:\\d{2})?");
-                        for (String key : keys) {
-                           replaceCurrencyData(propertiesPattern,
-                               key.toUpperCase(Locale.ROOT),
-                               props.getProperty(key).toUpperCase(Locale.ROOT));
-                        }
+                                Pattern.compile("([A-Z]{3})\\s*,\\s*(\\d{3})\\s*,\\s*" +
+                                        "(\\d+)\\s*,?\\s*(\\d{4}-\\d{2}-\\d{2}T\\d{2}:" +
+                                        "\\d{2}:\\d{2})?");
+                        List<CurrencyProperty> currencyEntries
+                                = getValidCurrencyData(props, propertiesPattern);
+                        currencyEntries.forEach(Currency::replaceCurrencyData);
                     }
                 } catch (IOException e) {
-                    info("currency.properties is ignored because of an IOException", e);
+                    CurrencyProperty.info("currency.properties is ignored"
+                            + " because of an IOException", e);
                 }
                 return null;
             }
@@ -769,71 +776,111 @@ public final class Currency implements Serializable {
     }
 
     /**
-     * Replaces currency data found in the currencydata.properties file
+     * Parse currency data found in the properties file (that
+     * java.util.currency.data designates) to a List of CurrencyProperty
+     * instances. Also, remove invalid entries and the multiple currency
+     * code inconsistencies.
      *
-     * @param pattern regex pattern for the properties
-     * @param ctry country code
-     * @param curdata currency data.  This is a comma separated string that
-     *    consists of "three-letter alphabet code", "three-digit numeric code",
-     *    and "one-digit (0-9) default fraction digit".
-     *    For example, "JPZ,392,0".
-     *    An optional UTC date can be appended to the string (comma separated)
-     *    to allow a currency change take effect after date specified.
-     *    For example, "JP=JPZ,999,0,2014-01-01T00:00:00" has no effect unless
-     *    UTC time is past 1st January 2014 00:00:00 GMT.
+     * @param props properties containing currency data
+     * @param pattern regex pattern for the properties entry
+     * @return list of parsed property entries
      */
-    private static void replaceCurrencyData(Pattern pattern, String ctry, String curdata) {
+    private static List<CurrencyProperty> getValidCurrencyData(Properties props,
+            Pattern pattern) {
 
-        if (ctry.length() != 2) {
-            // ignore invalid country code
-            info("currency.properties entry for " + ctry +
-                    " is ignored because of the invalid country code.", null);
-            return;
-        }
+        Set<String> keys = props.stringPropertyNames();
+        List<CurrencyProperty> propertyEntries = new ArrayList<>();
 
-        Matcher m = pattern.matcher(curdata);
-        if (!m.find() || (m.group(4) == null && countOccurrences(curdata, ',') >= 3)) {
-            // format is not recognized.  ignore the data
-            // if group(4) date string is null and we've 4 values, bad date value
-            info("currency.properties entry for " + ctry +
-                    " ignored because the value format is not recognized.", null);
-            return;
-        }
+        // remove all invalid entries and parse all valid currency properties
+        // entries to a group of CurrencyProperty, classified by currency code
+        Map<String, List<CurrencyProperty>> currencyCodeGroup = keys.stream()
+                .map(k -> CurrencyProperty
+                .getValidEntry(k.toUpperCase(Locale.ROOT),
+                        props.getProperty(k).toUpperCase(Locale.ROOT),
+                        pattern)).flatMap(o -> o.stream())
+                .collect(Collectors.groupingBy(entry -> entry.currencyCode));
 
-        try {
-            if (m.group(4) != null && !isPastCutoverDate(m.group(4))) {
-                info("currency.properties entry for " + ctry +
-                        " ignored since cutover date has not passed :" + curdata, null);
-                return;
+        // check each group for inconsistencies
+        currencyCodeGroup.forEach((curCode, list) -> {
+            boolean inconsistent = CurrencyProperty
+                    .containsInconsistentInstances(list);
+            if (inconsistent) {
+                list.forEach(prop -> CurrencyProperty.info("The property"
+                        + " entry for " + prop.country + " is inconsistent."
+                        + " Ignored.", null));
+            } else {
+                propertyEntries.addAll(list);
             }
-        } catch (ParseException ex) {
-            info("currency.properties entry for " + ctry +
-                        " ignored since exception encountered :" + ex.getMessage(), null);
-            return;
-        }
+        });
 
-        String code = m.group(1);
-        int numeric = Integer.parseInt(m.group(2));
+        return propertyEntries;
+    }
+
+    /**
+     * Replaces currency data found in the properties file that
+     * java.util.currency.data designates. This method is invoked for
+     * each valid currency entry.
+     *
+     * @param prop CurrencyProperty instance of the valid property entry
+     */
+    private static void replaceCurrencyData(CurrencyProperty prop) {
+
+
+        String ctry = prop.country;
+        String code = prop.currencyCode;
+        int numeric = prop.numericCode;
+        int fraction = prop.fraction;
         int entry = numeric << NUMERIC_CODE_SHIFT;
-        int fraction = Integer.parseInt(m.group(3));
-        if (fraction > SIMPLE_CASE_COUNTRY_MAX_DEFAULT_DIGITS) {
-            info("currency.properties entry for " + ctry +
-                " ignored since the fraction is more than " +
-                SIMPLE_CASE_COUNTRY_MAX_DEFAULT_DIGITS + ":" + curdata, null);
-            return;
-        }
 
         int index = SpecialCaseEntry.indexOf(code, fraction, numeric);
 
-        /* if a country switches from simple case to special case or
+
+        // If a new entry changes the numeric code/dfd of an existing
+        // currency code, update it in the sc list at the respective
+        // index and also change it in the other currencies list and
+        // main table (if that currency code is also used as a
+        // simple case).
+
+        // If all three components do not match with the new entry,
+        // but the currency code exists in the special case list
+        // update the sc entry with the new entry
+        int scCurrencyCodeIndex = -1;
+        if (index == -1) {
+            scCurrencyCodeIndex = SpecialCaseEntry.currencyCodeIndex(code);
+            if (scCurrencyCodeIndex != -1) {
+                //currency code exists in sc list, then update the old entry
+                specialCasesList.set(scCurrencyCodeIndex,
+                        new SpecialCaseEntry(code, fraction, numeric));
+
+                // also update the entry in other currencies list
+                OtherCurrencyEntry oe = OtherCurrencyEntry.findEntry(code);
+                if (oe != null) {
+                    int oIndex = otherCurrenciesList.indexOf(oe);
+                    otherCurrenciesList.set(oIndex, new OtherCurrencyEntry(
+                            code, fraction, numeric));
+                }
+            }
+        }
+
+        /* If a country switches from simple case to special case or
          * one special case to other special case which is not present
-         * in the sc arrays then insert the new entry in special case arrays
+         * in the sc arrays then insert the new entry in special case arrays.
+         * If an entry with given currency code exists, update with the new
+         * entry.
          */
         if (index == -1 && (ctry.charAt(0) != code.charAt(0)
                 || ctry.charAt(1) != code.charAt(1))) {
 
-            specialCasesList.add(new SpecialCaseEntry(code, fraction, numeric));
-            index = specialCasesList.size() - 1;
+            if(scCurrencyCodeIndex == -1) {
+                specialCasesList.add(new SpecialCaseEntry(code, fraction,
+                        numeric));
+                index = specialCasesList.size() - 1;
+            } else {
+                index = scCurrencyCodeIndex;
+            }
+
+            // update the entry in main table if it exists as a simple case
+            updateMainTableEntry(code, fraction, numeric);
         }
 
         if (index == -1) {
@@ -848,32 +895,29 @@ public final class Currency implements Serializable {
         setMainTableEntry(ctry.charAt(0), ctry.charAt(1), entry);
     }
 
-    private static boolean isPastCutoverDate(String s) throws ParseException {
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.ROOT);
-        format.setTimeZone(TimeZone.getTimeZone("UTC"));
-        format.setLenient(false);
-        long time = format.parse(s.trim()).getTime();
-        return System.currentTimeMillis() > time;
+    // update the entry in maintable for any simple case found, if a new
+    // entry as a special case updates the entry in sc list with
+    // existing currency code
+    private static void updateMainTableEntry(String code, int fraction,
+            int numeric) {
+        // checking the existence of currency code in mainTable
+        int tableEntry = getMainTableEntry(code.charAt(0), code.charAt(1));
+        int entry = numeric << NUMERIC_CODE_SHIFT;
+        if ((tableEntry & COUNTRY_TYPE_MASK) == SIMPLE_CASE_COUNTRY_MASK
+                && tableEntry != INVALID_COUNTRY_ENTRY
+                && code.charAt(2) - 'A' == (tableEntry
+                & SIMPLE_CASE_COUNTRY_FINAL_CHAR_MASK)) {
 
-    }
-
-    private static int countOccurrences(String value, char match) {
-        int count = 0;
-        for (char c : value.toCharArray()) {
-            if (c == match) {
-               ++count;
-            }
-        }
-        return count;
-    }
-
-    private static void info(String message, Throwable t) {
-        PlatformLogger logger = PlatformLogger.getLogger("java.util.Currency");
-        if (logger.isLoggable(PlatformLogger.Level.INFO)) {
-            if (t != null) {
-                logger.info(message, t);
-            } else {
-                logger.info(message);
+            int numericCode = (tableEntry & NUMERIC_CODE_MASK)
+                    >> NUMERIC_CODE_SHIFT;
+            int defaultFractionDigits = (tableEntry
+                    & SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_MASK)
+                    >> SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_SHIFT;
+            if (numeric != numericCode || fraction != defaultFractionDigits) {
+                // update the entry in main table
+                entry |= (fraction << SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_SHIFT)
+                        | (code.charAt(2) - 'A');
+                setMainTableEntry(code.charAt(0), code.charAt(1), entry);
             }
         }
     }
@@ -959,6 +1003,25 @@ public final class Currency implements Serializable {
             return fractionAndNumericCode;
         }
 
+        // get the index based on currency code
+        private static int currencyCodeIndex(String code) {
+            int size = specialCasesList.size();
+            for (int index = 0; index < size; index++) {
+                SpecialCaseEntry scEntry = specialCasesList.get(index);
+                if (scEntry.oldCurrency.equals(code) && (scEntry.cutOverTime == Long.MAX_VALUE
+                        || System.currentTimeMillis() < scEntry.cutOverTime)) {
+                    //consider only when there is no new currency or cutover time is not passed
+                    return index;
+                } else if (scEntry.newCurrency.equals(code)
+                        && System.currentTimeMillis() >= scEntry.cutOverTime) {
+                    //consider only if the cutover time is passed
+                    return index;
+                }
+            }
+            return -1;
+        }
+
+
         // convert the special case entry to sc arrays index
         private static int toIndex(int tableEntry) {
             return (tableEntry & SPECIAL_CASE_COUNTRY_INDEX_MASK) - SPECIAL_CASE_COUNTRY_INDEX_DELTA;
@@ -995,6 +1058,136 @@ public final class Currency implements Serializable {
                 }
             }
             return null;
+        }
+
+    }
+
+
+    /*
+     * Used to represent an entry of the properties file that
+     * java.util.currency.data designates
+     *
+     * - country: country representing the currency entry
+     * - currencyCode: currency code
+     * - fraction: default fraction digit
+     * - numericCode: numeric code
+     * - date: cutover date
+     */
+    private static class CurrencyProperty {
+        final private String country;
+        final private String currencyCode;
+        final private int fraction;
+        final private int numericCode;
+        final private String date;
+
+        private CurrencyProperty(String country, String currencyCode,
+                int fraction, int numericCode, String date) {
+            this.country = country;
+            this.currencyCode = currencyCode;
+            this.fraction = fraction;
+            this.numericCode = numericCode;
+            this.date = date;
+        }
+
+        /**
+         * Check the valid currency data and create/return an Optional instance
+         * of CurrencyProperty
+         *
+         * @param ctry    country representing the currency data
+         * @param curData currency data of the given {@code ctry}
+         * @param pattern regex pattern for the properties entry
+         * @return Optional containing CurrencyProperty instance, If valid;
+         *         empty otherwise
+         */
+        private static Optional<CurrencyProperty> getValidEntry(String ctry,
+                String curData,
+                Pattern pattern) {
+
+            CurrencyProperty prop = null;
+
+            if (ctry.length() != 2) {
+                // Invalid country code. Ignore the entry.
+            } else {
+
+                prop = parseProperty(ctry, curData, pattern);
+                // if the property entry failed any of the below checked
+                // criteria it is ignored
+                if (prop == null
+                        || (prop.date == null && curData.chars()
+                                .map(c -> c == ',' ? 1 : 0).sum() >= 3)) {
+                    // format is not recognized.  ignore the data if date
+                    // string is null and we've 4 values, bad date value
+                    prop = null;
+                } else if (prop.fraction
+                        > SIMPLE_CASE_COUNTRY_MAX_DEFAULT_DIGITS) {
+                    prop = null;
+                } else {
+                    try {
+                        if (prop.date != null
+                                && !isPastCutoverDate(prop.date)) {
+                            prop = null;
+                        }
+                    } catch (ParseException ex) {
+                        prop = null;
+                    }
+                }
+            }
+
+            if (prop == null) {
+                info("The property entry for " + ctry + " is invalid."
+                        + " Ignored.", null);
+            }
+
+            return Optional.ofNullable(prop);
+        }
+
+        /*
+         * Parse properties entry and return CurrencyProperty instance
+         */
+        private static CurrencyProperty parseProperty(String ctry,
+                String curData, Pattern pattern) {
+            Matcher m = pattern.matcher(curData);
+            if (!m.find()) {
+                return null;
+            } else {
+                return new CurrencyProperty(ctry, m.group(1),
+                        Integer.parseInt(m.group(3)),
+                        Integer.parseInt(m.group(2)), m.group(4));
+            }
+        }
+
+        /**
+         * Checks if the given list contains multiple inconsistent currency instances
+         */
+        private static boolean containsInconsistentInstances(
+                List<CurrencyProperty> list) {
+            int numCode = list.get(0).numericCode;
+            int fractionDigit = list.get(0).fraction;
+            return list.stream().anyMatch(prop -> prop.numericCode != numCode
+                    || prop.fraction != fractionDigit);
+        }
+
+        private static boolean isPastCutoverDate(String s)
+                throws ParseException {
+            SimpleDateFormat format = new SimpleDateFormat(
+                    "yyyy-MM-dd'T'HH:mm:ss", Locale.ROOT);
+            format.setTimeZone(TimeZone.getTimeZone("UTC"));
+            format.setLenient(false);
+            long time = format.parse(s.trim()).getTime();
+            return System.currentTimeMillis() > time;
+
+        }
+
+        private static void info(String message, Throwable t) {
+            PlatformLogger logger = PlatformLogger
+                    .getLogger("java.util.Currency");
+            if (logger.isLoggable(PlatformLogger.Level.INFO)) {
+                if (t != null) {
+                    logger.info(message, t);
+                } else {
+                    logger.info(message);
+                }
+            }
         }
 
     }
