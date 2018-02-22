@@ -114,8 +114,6 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   // that the request in _should_clear_all_soft_refs has been fulfilled.
   virtual void cleared_all_soft_refs();
 
-  virtual CardTableRS* create_rem_set(MemRegion reserved);
-
   virtual MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
                                                        size_t size,
                                                        Metaspace::MetadataType mdtype);
