@@ -157,18 +157,11 @@ protected:
   // The sizing of the heap is controlled by a sizing policy.
   AdaptiveSizePolicy* _size_policy;
 
-  // Return true if an allocation should be attempted in the older generation
-  // if it fails in the younger generation.  Return false, otherwise.
-  virtual bool should_try_older_generation_allocation(size_t word_size) const;
-
   void initialize_flags();
   void initialize_size_info();
 
   DEBUG_ONLY(void assert_flags();)
   DEBUG_ONLY(void assert_size_info();)
-
-  // Try to allocate space by expanding the heap.
-  virtual HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
 
   // Compute max heap alignment.
   size_t compute_max_alignment();
@@ -219,12 +212,6 @@ protected:
   size_t young_gen_size_lower_bound();
 
   size_t old_gen_size_lower_bound();
-
-  HeapWord* mem_allocate_work(size_t size,
-                              bool is_tlab,
-                              bool* gc_overhead_limit_was_exceeded);
-
-  HeapWord *satisfy_failed_allocation(size_t size, bool is_tlab);
 
   // Adaptive size policy
   AdaptiveSizePolicy* size_policy() { return _size_policy; }
