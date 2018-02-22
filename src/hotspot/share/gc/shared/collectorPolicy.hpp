@@ -75,7 +75,7 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   CollectorPolicy();
 
  public:
-  virtual void initialize_all() {
+  void initialize_all() {
     initialize_alignments();
     initialize_flags();
     initialize_size_info();
@@ -108,9 +108,6 @@ protected:
   // time. When using large pages they can differ.
   size_t _gen_alignment;
 
-  GenerationSpec* _young_gen_spec;
-  GenerationSpec* _old_gen_spec;
-
   GCPolicyCounters* _gc_policy_counters;
 
   void initialize_flags();
@@ -142,28 +139,11 @@ protected:
   size_t initial_old_size()   { return _initial_old_size; }
   size_t max_old_size()       { return _max_old_size; }
 
-  GenerationSpec* young_gen_spec() const {
-    assert(_young_gen_spec != NULL, "_young_gen_spec should have been initialized");
-    return _young_gen_spec;
-  }
-
-  GenerationSpec* old_gen_spec() const {
-    assert(_old_gen_spec != NULL, "_old_gen_spec should have been initialized");
-    return _old_gen_spec;
-  }
-
   // Performance Counter support
   GCPolicyCounters* counters()     { return _gc_policy_counters; }
 
   // Create the jstat counters for the GC policy.
   virtual void initialize_gc_policy_counters() = 0;
-
-  virtual void initialize_generations() { };
-
-  virtual void initialize_all() {
-    CollectorPolicy::initialize_all();
-    initialize_generations();
-  }
 
   size_t young_gen_size_lower_bound();
 
@@ -173,7 +153,6 @@ protected:
 class MarkSweepPolicy : public GenCollectorPolicy {
  protected:
   void initialize_alignments();
-  void initialize_generations();
 
  public:
   MarkSweepPolicy() {}

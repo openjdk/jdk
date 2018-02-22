@@ -52,13 +52,6 @@ void ConcurrentMarkSweepPolicy::initialize_alignments() {
   _heap_alignment = compute_heap_alignment();
 }
 
-void ConcurrentMarkSweepPolicy::initialize_generations() {
-  _young_gen_spec = new GenerationSpec(Generation::ParNew, _initial_young_size,
-                                       _max_young_size, _gen_alignment);
-  _old_gen_spec   = new GenerationSpec(Generation::ConcurrentMarkSweep,
-                                       _initial_old_size, _max_old_size, _gen_alignment);
-}
-
 void ConcurrentMarkSweepPolicy::initialize_gc_policy_counters() {
   // initialize the policy counters - 2 collectors, 2 generations
   _gc_policy_counters = new GCPolicyCounters("ParNew:CMS", 2, 2);

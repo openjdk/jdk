@@ -30,7 +30,6 @@
 class ConcurrentMarkSweepPolicy : public GenCollectorPolicy {
  protected:
   void initialize_alignments();
-  void initialize_generations();
 
  public:
   ConcurrentMarkSweepPolicy() {}

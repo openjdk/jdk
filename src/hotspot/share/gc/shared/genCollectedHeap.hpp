@@ -31,6 +31,7 @@
 #include "gc/shared/softRefGenPolicy.hpp"
 
 class AdaptiveSizePolicy;
+class GenerationSpec;
 class StrongRootsScope;
 class SubTasksDone;
 class WorkGang;
@@ -64,6 +65,9 @@ public:
 private:
   Generation* _young_gen;
   Generation* _old_gen;
+
+  GenerationSpec* _young_gen_spec;
+  GenerationSpec* _old_gen_spec;
 
   // The singleton CardTable Remembered Set.
   CardTableRS* _rem_set;
@@ -149,7 +153,9 @@ protected:
   // we absolutely __must__ clear soft refs?
   bool must_clear_all_soft_refs();
 
-  GenCollectedHeap(GenCollectorPolicy *policy);
+  GenCollectedHeap(GenCollectorPolicy *policy,
+                   Generation::Name young,
+                   Generation::Name old);
 
   virtual void check_gen_kinds() = 0;
 
@@ -170,6 +176,9 @@ public:
 
   bool is_young_gen(const Generation* gen) const { return gen == _young_gen; }
   bool is_old_gen(const Generation* gen) const { return gen == _old_gen; }
+
+  GenerationSpec* young_gen_spec() const;
+  GenerationSpec* old_gen_spec() const;
 
   // The generational collector policy.
   GenCollectorPolicy* gen_policy() const { return _gen_policy; }

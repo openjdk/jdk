@@ -64,7 +64,12 @@ public:
 };
 
 CMSHeap::CMSHeap(GenCollectorPolicy *policy) :
-  GenCollectedHeap(policy), _eden_pool(NULL), _survivor_pool(NULL), _old_pool(NULL) {
+    GenCollectedHeap(policy,
+                     Generation::ParNew,
+                     Generation::ConcurrentMarkSweep),
+    _eden_pool(NULL),
+    _survivor_pool(NULL),
+    _old_pool(NULL) {
   _workers = new WorkGang("GC Thread", ParallelGCThreads,
                           /* are_GC_task_threads */true,
                           /* are_ConcurrentGC_threads */false);
