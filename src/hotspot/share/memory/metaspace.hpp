@@ -87,7 +87,7 @@ class Metaspace : public CHeapObj<mtClass> {
   friend class MetaspaceGC;
   friend class MetaspaceAux;
   friend class MetaspaceShared;
-  friend class CollectorPolicy;
+  friend class CollectedHeap;
   friend class PrintCLDMetaspaceInfoClosure;
 
  public:

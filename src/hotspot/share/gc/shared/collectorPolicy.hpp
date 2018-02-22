@@ -113,10 +113,6 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   // Called by the GC after Soft Refs have been cleared to indicate
   // that the request in _should_clear_all_soft_refs has been fulfilled.
   virtual void cleared_all_soft_refs();
-
-  virtual MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
-                                                       size_t size,
-                                                       Metaspace::MetadataType mdtype);
 };
 
 class ClearedAllSoftRefs : public StackObj {
