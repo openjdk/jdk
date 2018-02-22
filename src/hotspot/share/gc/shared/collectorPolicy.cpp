@@ -546,8 +546,3 @@ void MarkSweepPolicy::initialize_alignments() {
   _space_alignment = _gen_alignment = (size_t)Generation::GenGrain;
   _heap_alignment = compute_heap_alignment();
 }
-
-void MarkSweepPolicy::initialize_gc_policy_counters() {
-  // Initialize the policy counters - 2 collectors, 2 generations.
-  _gc_policy_counters = new GCPolicyCounters("Copy:MSC", 2, 2);
-}

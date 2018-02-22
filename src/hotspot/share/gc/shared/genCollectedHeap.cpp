@@ -36,6 +36,7 @@
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/gcPolicyCounters.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
@@ -64,7 +65,8 @@
 
 GenCollectedHeap::GenCollectedHeap(GenCollectorPolicy *policy,
                                    Generation::Name young,
-                                   Generation::Name old) :
+                                   Generation::Name old,
+                                   const char* policy_counters_name) :
   CollectedHeap(),
   _rem_set(NULL),
   _young_gen_spec(new GenerationSpec(young,
@@ -77,6 +79,7 @@ GenCollectedHeap::GenCollectedHeap(GenCollectorPolicy *policy,
                                    policy->gen_alignment())),
   _gen_policy(policy),
   _soft_ref_gen_policy(),
+  _gc_policy_counters(new GCPolicyCounters(policy_counters_name, 2, 2)),
   _process_strong_tasks(new SubTasksDone(GCH_PS_NumElements)),
   _full_collections_completed(0) {
 }
@@ -168,8 +171,6 @@ void GenCollectedHeap::post_initialize() {
   initialize_size_policy(def_new_gen->eden()->capacity(),
                          _old_gen->capacity(),
                          def_new_gen->from()->capacity());
-
-  _gen_policy->initialize_gc_policy_counters();
 }
 
 void GenCollectedHeap::ref_processing_init() {

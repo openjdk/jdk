@@ -1887,7 +1887,7 @@ void CMSCollector::collect_in_background(GCCause::Cause cause) {
   }
 
   // Should this be in gc_epilogue?
-  collector_policy()->counters()->update_counters();
+  heap->counters()->update_counters();
 
   {
     // Clear _foregroundGCShouldWait and, in the event that the
