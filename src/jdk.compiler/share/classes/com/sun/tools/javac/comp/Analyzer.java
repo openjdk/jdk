@@ -304,7 +304,7 @@ public class Analyzer {
 
         @Override
         List<JCLambda> rewrite(JCNewClass oldTree){
-            JCMethodDecl md = (JCMethodDecl)decls(oldTree.def).head;
+            JCMethodDecl md = (JCMethodDecl)copier.copy(decls(oldTree.def).head);
             List<JCVariableDecl> params = md.params;
             JCBlock body = md.body;
             JCLambda newTree = make.at(oldTree).Lambda(params, body);
