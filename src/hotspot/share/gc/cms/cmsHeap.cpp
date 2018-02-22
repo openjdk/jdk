@@ -66,7 +66,8 @@ public:
 CMSHeap::CMSHeap(GenCollectorPolicy *policy) :
     GenCollectedHeap(policy,
                      Generation::ParNew,
-                     Generation::ConcurrentMarkSweep),
+                     Generation::ConcurrentMarkSweep,
+                     "ParNew::CMS"),
     _eden_pool(NULL),
     _survivor_pool(NULL),
     _old_pool(NULL) {

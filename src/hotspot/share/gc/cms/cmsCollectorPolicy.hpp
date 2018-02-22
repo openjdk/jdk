@@ -33,8 +33,6 @@ class ConcurrentMarkSweepPolicy : public GenCollectorPolicy {
 
  public:
   ConcurrentMarkSweepPolicy() {}
-
-  void initialize_gc_policy_counters();
 };
 
 #endif // SHARE_VM_GC_CMS_CMSCOLLECTORPOLICY_HPP

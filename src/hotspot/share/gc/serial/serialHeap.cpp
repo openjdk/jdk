@@ -31,7 +31,8 @@
 SerialHeap::SerialHeap(GenCollectorPolicy* policy) :
     GenCollectedHeap(policy,
                      Generation::DefNew,
-                     Generation::MarkSweepCompact),
+                     Generation::MarkSweepCompact,
+                     "Copy:MSC"),
     _eden_pool(NULL),
     _survivor_pool(NULL),
     _old_pool(NULL) {

@@ -565,7 +565,7 @@ void DefNewGeneration::adjust_desired_tenuring_threshold() {
   _tenuring_threshold = age_table()->compute_tenuring_threshold(desired_survivor_size);
 
   if (UsePerfData) {
-    GCPolicyCounters* gc_counters = GenCollectedHeap::heap()->gen_policy()->counters();
+    GCPolicyCounters* gc_counters = GenCollectedHeap::heap()->counters();
     gc_counters->tenuring_threshold()->set_value(_tenuring_threshold);
     gc_counters->desired_survivor_size()->set_value(desired_survivor_size * oopSize);
   }
@@ -951,7 +951,7 @@ void DefNewGeneration::gc_epilogue(bool full) {
 
   // update the generation and space performance counters
   update_counters();
-  gch->gen_policy()->counters()->update_counters();
+  gch->counters()->update_counters();
 }
 
 void DefNewGeneration::record_spaces_top() {

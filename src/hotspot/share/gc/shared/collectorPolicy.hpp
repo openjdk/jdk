@@ -53,7 +53,6 @@ class ConcurrentMarkSweepPolicy;
 class G1CollectorPolicy;
 #endif // INCLUDE_ALL_GCS
 
-class GCPolicyCounters;
 class MarkSweepPolicy;
 
 class CollectorPolicy : public CHeapObj<mtGC> {
@@ -108,8 +107,6 @@ protected:
   // time. When using large pages they can differ.
   size_t _gen_alignment;
 
-  GCPolicyCounters* _gc_policy_counters;
-
   void initialize_flags();
   void initialize_size_info();
 
@@ -139,12 +136,6 @@ protected:
   size_t initial_old_size()   { return _initial_old_size; }
   size_t max_old_size()       { return _max_old_size; }
 
-  // Performance Counter support
-  GCPolicyCounters* counters()     { return _gc_policy_counters; }
-
-  // Create the jstat counters for the GC policy.
-  virtual void initialize_gc_policy_counters() = 0;
-
   size_t young_gen_size_lower_bound();
 
   size_t old_gen_size_lower_bound();
@@ -156,8 +147,6 @@ class MarkSweepPolicy : public GenCollectorPolicy {
 
  public:
   MarkSweepPolicy() {}
-
-  void initialize_gc_policy_counters();
 };
 
 #endif // SHARE_VM_GC_SHARED_COLLECTORPOLICY_HPP

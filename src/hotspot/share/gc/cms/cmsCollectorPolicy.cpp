@@ -51,8 +51,3 @@ void ConcurrentMarkSweepPolicy::initialize_alignments() {
   _space_alignment = _gen_alignment = (uintx)Generation::GenGrain;
   _heap_alignment = compute_heap_alignment();
 }
-
-void ConcurrentMarkSweepPolicy::initialize_gc_policy_counters() {
-  // initialize the policy counters - 2 collectors, 2 generations
-  _gc_policy_counters = new GCPolicyCounters("ParNew:CMS", 2, 2);
-}
