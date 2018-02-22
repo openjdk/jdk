@@ -114,22 +114,6 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   // that the request in _should_clear_all_soft_refs has been fulfilled.
   virtual void cleared_all_soft_refs();
 
-  // Identification methods.
-  virtual GenCollectorPolicy*           as_generation_policy()            { return NULL; }
-  virtual MarkSweepPolicy*              as_mark_sweep_policy()            { return NULL; }
-#if INCLUDE_ALL_GCS
-  virtual ConcurrentMarkSweepPolicy*    as_concurrent_mark_sweep_policy() { return NULL; }
-#endif // INCLUDE_ALL_GCS
-  // Note that these are not virtual.
-  bool is_generation_policy()            { return as_generation_policy() != NULL; }
-  bool is_mark_sweep_policy()            { return as_mark_sweep_policy() != NULL; }
-#if INCLUDE_ALL_GCS
-  bool is_concurrent_mark_sweep_policy() { return as_concurrent_mark_sweep_policy() != NULL; }
-#else  // INCLUDE_ALL_GCS
-  bool is_concurrent_mark_sweep_policy() { return false; }
-#endif // INCLUDE_ALL_GCS
-
-
   virtual CardTableRS* create_rem_set(MemRegion reserved);
 
   virtual MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
@@ -231,8 +215,6 @@ protected:
   // Create the jstat counters for the GC policy.
   virtual void initialize_gc_policy_counters() = 0;
 
-  virtual GenCollectorPolicy* as_generation_policy() { return this; }
-
   virtual void initialize_generations() { };
 
   virtual void initialize_all() {
@@ -268,8 +250,6 @@ class MarkSweepPolicy : public GenCollectorPolicy {
 
  public:
   MarkSweepPolicy() {}
-
-  MarkSweepPolicy* as_mark_sweep_policy() { return this; }
 
   void initialize_gc_policy_counters();
 };

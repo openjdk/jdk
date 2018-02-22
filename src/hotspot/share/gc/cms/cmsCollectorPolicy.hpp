@@ -35,8 +35,6 @@ class ConcurrentMarkSweepPolicy : public GenCollectorPolicy {
  public:
   ConcurrentMarkSweepPolicy() {}
 
-  ConcurrentMarkSweepPolicy* as_concurrent_mark_sweep_policy() { return this; }
-
   void initialize_gc_policy_counters();
 
   virtual void initialize_size_policy(size_t init_eden_size,
