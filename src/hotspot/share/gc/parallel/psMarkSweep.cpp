@@ -98,7 +98,7 @@ void PSMarkSweep::invoke(bool maximum_heap_compaction) {
   }
 
   const bool clear_all_soft_refs =
-    heap->collector_policy()->should_clear_all_soft_refs();
+    heap->soft_ref_policy()->should_clear_all_soft_refs();
 
   uint count = maximum_heap_compaction ? 1 : MarkSweepAlwaysCompactCount;
   UIntFlagSetting flag_setting(MarkSweepAlwaysCompactCount, count);
@@ -126,7 +126,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 
   // The scope of casr should end after code that can change
   // CollectorPolicy::_should_clear_all_soft_refs.
-  ClearedAllSoftRefs casr(clear_all_softrefs, heap->collector_policy());
+  ClearedAllSoftRefs casr(clear_all_softrefs, heap->soft_ref_policy());
 
   PSYoungGen* young_gen = heap->young_gen();
   PSOldGen* old_gen = heap->old_gen();
@@ -320,7 +320,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
                                              max_eden_size,
                                              true /* full gc*/,
                                              gc_cause,
-                                             heap->collector_policy());
+                                             heap->soft_ref_policy());
 
         size_policy->decay_supplemental_growth(true /* full gc*/);
 

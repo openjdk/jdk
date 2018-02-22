@@ -1496,7 +1496,7 @@ void CMSCollector::acquire_control_and_collect(bool full,
                                          max_eden_size,
                                          full,
                                          gc_cause,
-                                         heap->collector_policy());
+                                         heap->soft_ref_policy());
 
   // Reset the expansion cause, now that we just completed
   // a collection cycle.

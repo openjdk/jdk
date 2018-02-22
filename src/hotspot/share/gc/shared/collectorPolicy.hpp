@@ -72,17 +72,6 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   size_t _space_alignment;
   size_t _heap_alignment;
 
-  // Set to true when policy wants soft refs cleared.
-  // Reset to false by gc after it clears all soft refs.
-  bool _should_clear_all_soft_refs;
-
-  // Set to true by the GC if the just-completed gc cleared all
-  // softrefs.  This is set to true whenever a gc clears all softrefs, and
-  // set to false each time gc returns to the mutator.  For example, in the
-  // ParallelScavengeHeap case the latter would be done toward the end of
-  // mem_allocate() where it returns op.result()
-  bool _all_soft_refs_clear;
-
   CollectorPolicy();
 
  public:
@@ -101,36 +90,6 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   size_t initial_heap_byte_size() { return _initial_heap_byte_size; }
   size_t max_heap_byte_size()     { return _max_heap_byte_size; }
   size_t min_heap_byte_size()     { return _min_heap_byte_size; }
-
-  bool should_clear_all_soft_refs() { return _should_clear_all_soft_refs; }
-  void set_should_clear_all_soft_refs(bool v) { _should_clear_all_soft_refs = v; }
-  // Returns the current value of _should_clear_all_soft_refs.
-  // _should_clear_all_soft_refs is set to false as a side effect.
-  bool use_should_clear_all_soft_refs(bool v);
-  bool all_soft_refs_clear() { return _all_soft_refs_clear; }
-  void set_all_soft_refs_clear(bool v) { _all_soft_refs_clear = v; }
-
-  // Called by the GC after Soft Refs have been cleared to indicate
-  // that the request in _should_clear_all_soft_refs has been fulfilled.
-  virtual void cleared_all_soft_refs();
-};
-
-class ClearedAllSoftRefs : public StackObj {
-  bool _clear_all_soft_refs;
-  CollectorPolicy* _collector_policy;
- public:
-  ClearedAllSoftRefs(bool clear_all_soft_refs,
-                     CollectorPolicy* collector_policy) :
-    _clear_all_soft_refs(clear_all_soft_refs),
-    _collector_policy(collector_policy) {}
-
-  ~ClearedAllSoftRefs() {
-    if (_clear_all_soft_refs) {
-      _collector_policy->cleared_all_soft_refs();
-    }
-  }
-
-  bool should_clear() { return _clear_all_soft_refs; }
 };
 
 class GenCollectorPolicy : public CollectorPolicy {
@@ -219,9 +178,6 @@ protected:
   virtual void initialize_size_policy(size_t init_eden_size,
                                       size_t init_promo_size,
                                       size_t init_survivor_size);
-
-  virtual void cleared_all_soft_refs();
-
 };
 
 class MarkSweepPolicy : public GenCollectorPolicy {

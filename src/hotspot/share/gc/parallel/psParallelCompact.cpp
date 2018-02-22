@@ -1707,7 +1707,7 @@ void PSParallelCompact::invoke(bool maximum_heap_compaction) {
   }
 
   const bool clear_all_soft_refs =
-    heap->collector_policy()->should_clear_all_soft_refs();
+    heap->soft_ref_policy()->should_clear_all_soft_refs();
 
   PSParallelCompact::invoke_no_policy(clear_all_soft_refs ||
                                       maximum_heap_compaction);
@@ -1741,7 +1741,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   // The scope of casr should end after code that can change
   // CollectorPolicy::_should_clear_all_soft_refs.
   ClearedAllSoftRefs casr(maximum_heap_compaction,
-                          heap->collector_policy());
+                          heap->soft_ref_policy());
 
   if (ZapUnusedHeapArea) {
     // Save information needed to minimize mangling
@@ -1869,7 +1869,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
                                              max_eden_size,
                                              true /* full gc*/,
                                              gc_cause,
-                                             heap->collector_policy());
+                                             heap->soft_ref_policy());
 
         size_policy->decay_supplemental_growth(true /* full gc*/);
 

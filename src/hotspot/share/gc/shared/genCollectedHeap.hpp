@@ -29,6 +29,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectorPolicy.hpp"
 #include "gc/shared/generation.hpp"
+#include "gc/shared/softRefGenPolicy.hpp"
 
 class StrongRootsScope;
 class SubTasksDone;
@@ -69,6 +70,8 @@ private:
 
   // The generational collector policy.
   GenCollectorPolicy* _gen_policy;
+
+  SoftRefGenPolicy _soft_ref_gen_policy;
 
   // Indicates that the most recent previous incremental collection failed.
   // The flag is cleared when an action is taken that might clear the
@@ -165,6 +168,8 @@ public:
   GenCollectorPolicy* gen_policy() const { return _gen_policy; }
 
   virtual CollectorPolicy* collector_policy() const { return gen_policy(); }
+
+  virtual SoftRefPolicy* soft_ref_policy() { return &_soft_ref_gen_policy; }
 
   // Adaptive size policy
   virtual AdaptiveSizePolicy* size_policy() {

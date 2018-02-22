@@ -65,6 +65,7 @@ GenCollectedHeap::GenCollectedHeap(GenCollectorPolicy *policy) :
   CollectedHeap(),
   _rem_set(NULL),
   _gen_policy(policy),
+  _soft_ref_gen_policy(),
   _process_strong_tasks(new SubTasksDone(GCH_PS_NumElements)),
   _full_collections_completed(0)
 {
@@ -150,6 +151,7 @@ void GenCollectedHeap::post_initialize() {
   _gen_policy->initialize_size_policy(def_new_gen->eden()->capacity(),
                                       _old_gen->capacity(),
                                       def_new_gen->from()->capacity());
+
   _gen_policy->initialize_gc_policy_counters();
 }
 
@@ -331,7 +333,7 @@ HeapWord* GenCollectedHeap::mem_allocate_work(size_t size,
       // so that the overhead exceeded does not persist.
 
       const bool limit_exceeded = gen_policy()->size_policy()->gc_overhead_limit_exceeded();
-      const bool softrefs_clear = gen_policy()->all_soft_refs_clear();
+      const bool softrefs_clear = soft_ref_policy()->all_soft_refs_clear();
 
       if (limit_exceeded && softrefs_clear) {
         *gc_overhead_limit_was_exceeded = true;
@@ -522,9 +524,9 @@ void GenCollectedHeap::do_collection(bool           full,
   GCIdMark gc_id_mark;
 
   const bool do_clear_all_soft_refs = clear_all_soft_refs ||
-                          collector_policy()->should_clear_all_soft_refs();
+                          soft_ref_policy()->should_clear_all_soft_refs();
 
-  ClearedAllSoftRefs casr(do_clear_all_soft_refs, collector_policy());
+  ClearedAllSoftRefs casr(do_clear_all_soft_refs, soft_ref_policy());
 
   const size_t metadata_prev_used = MetaspaceAux::used_bytes();
 
@@ -720,7 +722,7 @@ HeapWord* GenCollectedHeap::satisfy_failed_allocation(size_t size, bool is_tlab)
     return result;
   }
 
-  assert(!gen_policy()->should_clear_all_soft_refs(),
+  assert(!soft_ref_policy()->should_clear_all_soft_refs(),
     "Flag should have been handled and cleared prior to this point");
 
   // What else?  We might try synchronous finalization later.  If the total
