@@ -93,6 +93,18 @@ void os_init_globals() {
   os::init_globals();
 }
 
+static time_t get_timezone(const struct tm* time_struct) {
+#if defined(_ALLBSD_SOURCE)
+  return time_struct->tm_gmtoff;
+#elif defined(_WINDOWS)
+  long zone;
+  _get_timezone(&zone);
+  return static_cast<time_t>(zone);
+#else
+  return timezone;
+#endif
+}
+
 // Fill in buffer with current local time as an ISO-8601 string.
 // E.g., yyyy-mm-ddThh:mm:ss-zzzz.
 // Returns buffer, or NULL if it failed.
@@ -137,11 +149,7 @@ char* os::iso8601_time(char* buffer, size_t buffer_length, bool utc) {
       return NULL;
     }
   }
-#if defined(_ALLBSD_SOURCE)
-  const time_t zone = (time_t) time_struct.tm_gmtoff;
-#else
-  const time_t zone = timezone;
-#endif
+  const time_t zone = get_timezone(&time_struct);
 
   // If daylight savings time is in effect,
   // we are 1 hour East of our time zone
