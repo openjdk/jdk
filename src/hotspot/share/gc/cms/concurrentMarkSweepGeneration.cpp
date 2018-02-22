@@ -1182,8 +1182,6 @@ bool CMSCollector::shouldConcurrentCollect() {
   // this is not likely to be productive in practice because it's probably too
   // late anyway.
   CMSHeap* heap = CMSHeap::heap();
-  assert(heap->collector_policy()->is_generation_policy(),
-         "You may want to check the correctness of the following");
   if (heap->incremental_collection_will_fail(true /* consult_young */)) {
     log.print("CMSCollector: collect because incremental collection will fail ");
     return true;

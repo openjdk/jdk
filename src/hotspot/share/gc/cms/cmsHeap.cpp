@@ -77,7 +77,6 @@ jint CMSHeap::initialize() {
 
   // If we are running CMS, create the collector responsible
   // for collecting the CMS generations.
-  assert(collector_policy()->is_concurrent_mark_sweep_policy(), "must be CMS policy");
   if (!create_cms_collector()) {
     return JNI_ENOMEM;
   }
@@ -152,11 +151,10 @@ void CMSHeap::print_on_error(outputStream* st) const {
 bool CMSHeap::create_cms_collector() {
   assert(old_gen()->kind() == Generation::ConcurrentMarkSweep,
          "Unexpected generation kinds");
-  assert(gen_policy()->is_concurrent_mark_sweep_policy(), "Unexpected policy type");
   CMSCollector* collector =
     new CMSCollector((ConcurrentMarkSweepGeneration*) old_gen(),
                      rem_set(),
-                     gen_policy()->as_concurrent_mark_sweep_policy());
+                     (ConcurrentMarkSweepPolicy*) gen_policy());
 
   if (collector == NULL || !collector->completed_initialization()) {
     if (collector) {
