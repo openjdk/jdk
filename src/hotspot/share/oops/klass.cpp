@@ -577,21 +577,15 @@ const char* Klass::external_name() const {
   if (is_instance_klass()) {
     const InstanceKlass* ik = static_cast<const InstanceKlass*>(this);
     if (ik->is_anonymous()) {
-      intptr_t hash = 0;
-      if (ik->java_mirror() != NULL) {
-        // java_mirror might not be created yet, return 0 as hash.
-        hash = ik->java_mirror()->identity_hash();
-      }
-      char     hash_buf[40];
-      sprintf(hash_buf, "/" UINTX_FORMAT, (uintx)hash);
-      size_t   hash_len = strlen(hash_buf);
-
-      size_t result_len = name()->utf8_length();
-      char*  result     = NEW_RESOURCE_ARRAY(char, result_len + hash_len + 1);
-      name()->as_klass_external_name(result, (int) result_len + 1);
-      assert(strlen(result) == result_len, "");
-      strcpy(result + result_len, hash_buf);
-      assert(strlen(result) == result_len + hash_len, "");
+      char addr_buf[20];
+      jio_snprintf(addr_buf, 20, "/" INTPTR_FORMAT, p2i(ik));
+      size_t addr_len = strlen(addr_buf);
+      size_t name_len = name()->utf8_length();
+      char*  result   = NEW_RESOURCE_ARRAY(char, name_len + addr_len + 1);
+      name()->as_klass_external_name(result, (int) name_len + 1);
+      assert(strlen(result) == name_len, "");
+      strcpy(result + name_len, addr_buf);
+      assert(strlen(result) == name_len + addr_len, "");
       return result;
     }
   }
