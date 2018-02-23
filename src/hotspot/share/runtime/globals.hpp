@@ -842,9 +842,6 @@ public:
   product(bool, FailOverToOldVerifier, true,                                \
           "Fail over to old verifier when split verifier fails")            \
                                                                             \
-  develop(bool, ShowSafepointMsgs, false,                                   \
-          "Show message about safepoint synchronization")                   \
-                                                                            \
   product(bool, SafepointTimeout, false,                                    \
           "Time out and warn or fail after SafepointTimeoutDelay "          \
           "milliseconds if failed to reach safepoint")                      \
