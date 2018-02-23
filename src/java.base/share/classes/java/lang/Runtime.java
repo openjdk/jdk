@@ -79,18 +79,14 @@ public class Runtime {
      * serves as a status code; by convention, a nonzero status code indicates
      * abnormal termination.
      *
-     * <p> The virtual machine's shutdown sequence consists of two phases.  In
-     * the first phase all registered {@link #addShutdownHook shutdown hooks},
-     * if any, are started in some unspecified order and allowed to run
-     * concurrently until they finish.  In the second phase all uninvoked
-     * finalizers are run if {@link #runFinalizersOnExit finalization-on-exit}
-     * has been enabled.  Once this is done the virtual machine {@link #halt halts}.
+     * <p> All registered {@linkplain #addShutdownHook shutdown hooks}, if any,
+     * are started in some unspecified order and allowed to run concurrently
+     * until they finish.  Once this is done the virtual machine
+     * {@linkplain #halt halts}.
      *
-     * <p> If this method is invoked after the virtual machine has begun its
-     * shutdown sequence then if shutdown hooks are being run this method will
-     * block indefinitely.  If shutdown hooks have already been run and on-exit
-     * finalization has been enabled then this method halts the virtual machine
-     * with the given status code if the status is nonzero; otherwise, it
+     * <p> If this method is invoked after all shutdown hooks have already
+     * been run and the status is nonzero then this method halts the
+     * virtual machine with the given status code. Otherwise, this method
      * blocks indefinitely.
      *
      * <p> The {@link System#exit(int) System.exit} method is the
@@ -109,7 +105,6 @@ public class Runtime {
      * @see java.lang.SecurityManager#checkExit(int)
      * @see #addShutdownHook
      * @see #removeShutdownHook
-     * @see #runFinalizersOnExit
      * @see #halt(int)
      */
     public void exit(int status) {
@@ -142,10 +137,9 @@ public class Runtime {
      * thread.  When the virtual machine begins its shutdown sequence it will
      * start all registered shutdown hooks in some unspecified order and let
      * them run concurrently.  When all the hooks have finished it will then
-     * run all uninvoked finalizers if finalization-on-exit has been enabled.
-     * Finally, the virtual machine will halt.  Note that daemon threads will
-     * continue to run during the shutdown sequence, as will non-daemon threads
-     * if shutdown was initiated by invoking the {@link #exit exit} method.
+     * halt. Note that daemon threads will continue to run during the shutdown
+     * sequence, as will non-daemon threads if shutdown was initiated by
+     * invoking the {@link #exit exit} method.
      *
      * <p> Once the shutdown sequence has begun it can be stopped only by
      * invoking the {@link #halt halt} method, which forcibly
@@ -255,10 +249,9 @@ public class Runtime {
      *
      * <p> This method should be used with extreme caution.  Unlike the
      * {@link #exit exit} method, this method does not cause shutdown
-     * hooks to be started and does not run uninvoked finalizers if
-     * finalization-on-exit has been enabled.  If the shutdown sequence has
-     * already been initiated then this method does not wait for any running
-     * shutdown hooks or finalizers to finish their work.
+     * hooks to be started.  If the shutdown sequence has already been
+     * initiated then this method does not wait for any running
+     * shutdown hooks to finish their work.
      *
      * @param  status
      *         Termination status. By convention, a nonzero status code
@@ -283,46 +276,6 @@ public class Runtime {
             sm.checkExit(status);
         }
         Shutdown.halt(status);
-    }
-
-    /**
-     * Enable or disable finalization on exit; doing so specifies that the
-     * finalizers of all objects that have finalizers that have not yet been
-     * automatically invoked are to be run before the Java runtime exits.
-     * By default, finalization on exit is disabled.
-     *
-     * <p>If there is a security manager,
-     * its {@code checkExit} method is first called
-     * with 0 as its argument to ensure the exit is allowed.
-     * This could result in a SecurityException.
-     *
-     * @param value true to enable finalization on exit, false to disable
-     * @deprecated  This method is inherently unsafe.  It may result in
-     *      finalizers being called on live objects while other threads are
-     *      concurrently manipulating those objects, resulting in erratic
-     *      behavior or deadlock.
-     *      This method is subject to removal in a future version of Java SE.
-     *
-     * @throws  SecurityException
-     *        if a security manager exists and its {@code checkExit}
-     *        method doesn't allow the exit.
-     *
-     * @see     java.lang.Runtime#exit(int)
-     * @see     java.lang.Runtime#gc()
-     * @see     java.lang.SecurityManager#checkExit(int)
-     * @since   1.1
-     */
-    @Deprecated(since="1.2", forRemoval=true)
-    public static void runFinalizersOnExit(boolean value) {
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            try {
-                security.checkExit(0);
-            } catch (SecurityException e) {
-                throw new SecurityException("runFinalizersOnExit");
-            }
-        }
-        Shutdown.setRunFinalizersOnExit(value);
     }
 
     /**

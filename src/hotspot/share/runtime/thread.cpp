@@ -4202,10 +4202,9 @@ void JavaThread::invoke_shutdown_hooks() {
     // SystemDictionary::resolve_or_null will return null if there was
     // an exception.  If we cannot load the Shutdown class, just don't
     // call Shutdown.shutdown() at all.  This will mean the shutdown hooks
-    // and finalizers (if runFinalizersOnExit is set) won't be run.
-    // Note that if a shutdown hook was registered or runFinalizersOnExit
-    // was called, the Shutdown class would have already been loaded
-    // (Runtime.addShutdownHook and runFinalizersOnExit will load it).
+    // won't be run.  Note that if a shutdown hook was registered,
+    // the Shutdown class would have already been loaded
+    // (Runtime.addShutdownHook will load it).
     JavaValue result(T_VOID);
     JavaCalls::call_static(&result,
                            shutdown_klass,
@@ -4228,7 +4227,7 @@ void JavaThread::invoke_shutdown_hooks() {
 //   + Wait until we are the last non-daemon thread to execute
 //     <-- every thing is still working at this moment -->
 //   + Call java.lang.Shutdown.shutdown(), which will invoke Java level
-//        shutdown hooks, run finalizers if finalization-on-exit
+//        shutdown hooks
 //   + Call before_exit(), prepare for VM exit
 //      > run VM level shutdown hooks (they are registered through JVM_OnExit(),
 //        currently the only user of this mechanism is File.deleteOnExit())
