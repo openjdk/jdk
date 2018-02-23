@@ -125,13 +125,6 @@ public:
 
   // from javaCalls.cpp
   operator jobject () const           { return (jobject)obj(); }
-  // from javaClasses.cpp
-  operator JavaThread* () const       { return (JavaThread*)obj(); }
-
-#ifndef _LP64
-  // from jvm.cpp
-  operator jlong* () const            { return (jlong*)obj(); }
-#endif
 
   // from parNewGeneration and other things that want to get to the end of
   // an oop for stuff (like ObjArrayKlass.cpp)
