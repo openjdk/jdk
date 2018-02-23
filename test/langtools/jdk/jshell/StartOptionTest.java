@@ -230,7 +230,7 @@ public class StartOptionTest {
             startCo(s -> {
                 assertTrue(s.split("\n").length >= 5, "Not enough help-extra lines: " + s);
                 assertTrue(s.contains("--add-exports"), "Expected --add-exports: " + s);
-                assertTrue(s.contains("--execution"), "Expected --add-exports: " + s);
+                assertTrue(s.contains("--execution"), "Expected --execution: " + s);
                 assertFalse(s.contains("Welcome"), "Unexpected start: " + s);
             }, opt);
         }

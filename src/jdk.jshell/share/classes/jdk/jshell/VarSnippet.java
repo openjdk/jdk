@@ -79,9 +79,9 @@ public class VarSnippet extends DeclarationSnippet {
 
     @Override
     String importLine(JShell state) {
-        return "import static " + classFullName() + "." + name() + ";\n" +
+        return "import static " + classFullName() + "." + name() + ";   " +
                anonymousClasses.stream()
-                               .map(c -> "import static " + classFullName() + "." + c + ";\n")
+                               .map(c -> "import static " + classFullName() + "." + c + ";   ")
                                .collect(Collectors.joining());
     }
 
