@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,8 +75,7 @@ public class XMLStreamWriterImpl implements XMLStreamWriter {
     //pretty print by default
     private boolean _doIndent = true;
     //The system line separator for writing out line breaks.
-    private char[] _lineSep =
-            System.getProperty("line.separator").toCharArray();
+    private char[] _lineSep = System.lineSeparator().toCharArray();
 
     public XMLStreamWriterImpl(OutputStream os) throws XMLStreamException {
         this(os, XMLStreamWriter.DEFAULT_CHARSET);

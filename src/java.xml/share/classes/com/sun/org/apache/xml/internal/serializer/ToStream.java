@@ -138,8 +138,7 @@ abstract public class ToStream extends SerializerBase {
      * but this value can be set through the xsl:output
      * extension attribute xalan:line-separator.
      */
-    protected char[] m_lineSep =
-        SecuritySupport.getSystemProperty("line.separator").toCharArray();
+    protected char[] m_lineSep = System.lineSeparator().toCharArray();
 
     /**
      * True if the the system line separator is to be used.
