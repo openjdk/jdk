@@ -133,7 +133,10 @@ OopMap* CodeInstaller::create_oop_map(Handle debug_info, TRAPS) {
   if (!reference_map->is_a(HotSpotReferenceMap::klass())) {
     JVMCI_ERROR_NULL("unknown reference map: %s", reference_map->klass()->signature_name());
   }
-  if (HotSpotReferenceMap::maxRegisterSize(reference_map) > 16) {
+  if (!_has_wide_vector && SharedRuntime::is_wide_vector(HotSpotReferenceMap::maxRegisterSize(reference_map))) {
+    if (SharedRuntime::polling_page_vectors_safepoint_handler_blob() == NULL) {
+      JVMCI_ERROR_NULL("JVMCI is producing code using vectors larger than the runtime supports");
+    }
     _has_wide_vector = true;
   }
   OopMap* map = new OopMap(_total_frame_size, _parameter_count);
