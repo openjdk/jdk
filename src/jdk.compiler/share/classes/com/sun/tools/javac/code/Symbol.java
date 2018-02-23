@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -568,14 +568,14 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         return hiddenSym;
     }
 
-    /** Is this symbol inherited into a given class?
+    /** Is this symbol accessible in a given class?
      *  PRE: If symbol's owner is a interface,
      *       it is already assumed that the interface is a superinterface
-     *       of given class.
+     *       the given class.
      *  @param clazz  The class for which we want to establish membership.
      *                This must be a subclass of the member's owner.
      */
-    public boolean isInheritedIn(Symbol clazz, Types types) {
+    public final boolean isAccessibleIn(Symbol clazz, Types types) {
         switch ((int)(flags_field & Flags.AccessFlags)) {
         default: // error recovery
         case PUBLIC:
@@ -601,6 +601,17 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             }
             return (clazz.flags() & INTERFACE) == 0;
         }
+    }
+
+    /** Is this symbol inherited into a given class?
+     *  PRE: If symbol's owner is a interface,
+     *       it is already assumed that the interface is a superinterface
+     *       of the given class.
+     *  @param clazz  The class for which we want to establish membership.
+     *                This must be a subclass of the member's owner.
+     */
+    public boolean isInheritedIn(Symbol clazz, Types types) {
+        return isAccessibleIn(clazz, types);
     }
 
     /** The (variable or method) symbol seen as a member of given
