@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8055008
+ * @bug 8055008 8197901
  * @summary Redefine EMCP and non-EMCP methods that are running in an infinite loop
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -31,8 +31,9 @@
  *          java.instrument
  *          jdk.jartool/sun.tools.jar
  * @run main RedefineClassHelper
- * @run main/othervm -javaagent:redefineagent.jar -Xlog:redefine+class+iklass+add=trace,redefine+class+iklass+purge=trace RedefineRunningMethods
+ * @run main/othervm -javaagent:redefineagent.jar -Xlog:redefine+class+iklass+add=trace,redefine+class+iklass+purge=trace,all=trace:file=all.log RedefineRunningMethods
  */
+// Test is executed with full trace logging redirected to a file to ensure there is no crash during logging anonymous classes - see JDK-8197901
 public class RedefineRunningMethods {
 
     public static String newB =
