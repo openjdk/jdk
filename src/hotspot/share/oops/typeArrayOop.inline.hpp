@@ -104,7 +104,7 @@ inline jboolean typeArrayOopDesc::bool_at(int which) const {
 }
 inline void typeArrayOopDesc::bool_at_put(int which, jboolean contents) {
   ptrdiff_t offset = element_offset<jboolean>(T_BOOLEAN, which);
-  HeapAccess<IN_HEAP_ARRAY>::store_at(as_oop(), offset, ((jint)contents) & 1);
+  HeapAccess<IN_HEAP_ARRAY>::store_at(as_oop(), offset, jboolean(contents & 1));
 }
 
 inline jchar typeArrayOopDesc::char_at(int which) const {
@@ -130,7 +130,7 @@ inline jshort typeArrayOopDesc::short_at(int which) const {
   return HeapAccess<IN_HEAP_ARRAY>::load_at(as_oop(), offset);
 }
 inline void typeArrayOopDesc::short_at_put(int which, jshort contents) {
-  ptrdiff_t offset = element_offset<jshort>(T_BOOLEAN, which);
+  ptrdiff_t offset = element_offset<jshort>(T_SHORT, which);
   HeapAccess<IN_HEAP_ARRAY>::store_at(as_oop(), offset, contents);
 }
 
