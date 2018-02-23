@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,6 @@
  */
 
 package java.util.regex;
-
-import sun.security.action.GetPropertyAction;
-
 
 /**
  * Unchecked exception thrown to indicate a syntax error in a
@@ -93,9 +90,6 @@ public class PatternSyntaxException
         return pattern;
     }
 
-    private static final String nl =
-            GetPropertyAction.privilegedGetProperty("line.separator");
-
     /**
      * Returns a multi-line string containing the description of the syntax
      * error and its index, the erroneous regular-expression pattern, and a
@@ -110,10 +104,10 @@ public class PatternSyntaxException
             sb.append(" near index ");
             sb.append(index);
         }
-        sb.append(nl);
+        sb.append(System.lineSeparator());
         sb.append(pattern);
         if (index >= 0) {
-            sb.append(nl);
+            sb.append(System.lineSeparator());
             for (int i = 0; i < index; i++) sb.append(' ');
             sb.append('^');
         }
