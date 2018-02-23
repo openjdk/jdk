@@ -74,11 +74,12 @@ SUNWprivate_1.1 {
 		JNU_ThrowStringIndexOutOfBoundsException;
 		JNU_ToString;
 
-		Java_java_io_FileDescriptor_cleanupClose0;
+		Java_java_io_FileCleanable_cleanupClose0;
 		Java_java_io_FileDescriptor_close0;
 		Java_java_io_FileDescriptor_initIDs;
 		Java_java_io_FileDescriptor_sync;
 		Java_java_io_FileDescriptor_getAppend;
+		Java_java_io_FileDescriptor_getHandle;
 		Java_java_io_FileInputStream_available0;
 		Java_java_io_FileInputStream_initIDs;
 		Java_java_io_FileInputStream_open0;

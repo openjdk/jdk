@@ -22,51 +22,59 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.net;
+
+package java.io;
 
 import jdk.internal.misc.JavaIOFileDescriptorAccess;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.ref.CleanerFactory;
 import jdk.internal.ref.PhantomCleanable;
 
-import java.io.FileDescriptor;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.lang.ref.Cleaner;
 
-
 /**
- * Cleanable for a socket/datagramsocket FileDescriptor when it becomes phantom reachable.
- * Create a cleanup if the raw fd != -1. Windows closes sockets using the fd.
+ * Cleanable for a FileDescriptor when it becomes phantom reachable.
+ * For regular fds on Unix and regular handles on Windows
+ * register a cleanup if fd != -1 or handle != -1.
+ * <p>
  * Subclassed from {@code PhantomCleanable} so that {@code clear} can be
- * called to disable the cleanup when the socket fd is closed by any means
- * other than calling {@link FileDescriptor#close}.
- * Otherwise, it might incorrectly close the handle or fd after it has been reused.
+ * called to disable the cleanup when the handle is closed by any means other
+ * than calling {@link FileDescriptor#close}.
+ * Otherwise, it might incorrectly close the handle after it has been reused.
  */
-final class SocketCleanable extends PhantomCleanable<FileDescriptor> {
+final class FileCleanable extends PhantomCleanable<FileDescriptor> {
 
-    // Access to FileDescriptor private fields
+    // Access to FileDescriptor private fields;
+    // avoids making fd and handle package private
     private static final JavaIOFileDescriptorAccess fdAccess =
             SharedSecrets.getJavaIOFileDescriptorAccess();
 
-    // Native function to call NET_SocketClose(fd)
-    // Used only for last chance cleanup.
-    private static native void cleanupClose0(int fd) throws IOException;
+    /*
+     * Raw close of the file fd and/or handle.
+     * Used only for last chance cleanup.
+     */
+    private static native void cleanupClose0(int fd, long handle) throws IOException;
 
     // The raw fd to close
     private final int fd;
 
+    // The handle to close
+    private final long handle;
+
     /**
-     * Register a socket specific Cleanable with the FileDescriptor
-     * if the FileDescriptor is non-null and the raw fd is != -1.
+     * Register a Cleanable with the FileDescriptor
+     * if the FileDescriptor is non-null and valid.
+     * @implNote
+     * A exception (OutOfMemoryException) will leave the FileDescriptor
+     * having allocated resources and leak the fd/handle.
      *
      * @param fdo the FileDescriptor; may be null
      */
     static void register(FileDescriptor fdo) {
         if (fdo != null && fdo.valid()) {
             int fd = fdAccess.get(fdo);
-            fdAccess.registerCleanup(fdo,
-                    new SocketCleanable(fdo, CleanerFactory.cleaner(), fd));
+            long handle = fdAccess.getHandle(fdo);
+            fdo.registerCleanup(new FileCleanable(fdo, CleanerFactory.cleaner(), fd, handle));
         }
     }
 
@@ -76,7 +84,7 @@ final class SocketCleanable extends PhantomCleanable<FileDescriptor> {
      */
     static void unregister(FileDescriptor fdo) {
         if (fdo != null) {
-            fdAccess.unregisterCleanup(fdo);
+            fdo.unregisterCleanup();
         }
     }
 
@@ -86,10 +94,12 @@ final class SocketCleanable extends PhantomCleanable<FileDescriptor> {
      * @param obj     the object to monitor
      * @param cleaner the cleaner
      * @param fd      file descriptor to close
+     * @param handle  handle to close
      */
-    private SocketCleanable(FileDescriptor obj, Cleaner cleaner, int fd) {
+    private FileCleanable(FileDescriptor obj, Cleaner cleaner, int fd, long handle) {
         super(obj, cleaner);
         this.fd = fd;
+        this.handle = handle;
     }
 
     /**
@@ -98,7 +108,7 @@ final class SocketCleanable extends PhantomCleanable<FileDescriptor> {
     @Override
     protected void performCleanup() {
         try {
-            cleanupClose0(fd);
+            cleanupClose0(fd, handle);
         } catch (IOException ioe) {
             throw new UncheckedIOException("close", ioe);
         }
