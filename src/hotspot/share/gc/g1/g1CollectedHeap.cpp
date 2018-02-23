@@ -1995,7 +1995,6 @@ bool  G1CollectedHeap::is_user_requested_concurrent_full_gc(GCCause::Cause cause
   switch (cause) {
     case GCCause::_java_lang_system_gc:                 return ExplicitGCInvokesConcurrent;
     case GCCause::_dcmd_gc_run:                         return ExplicitGCInvokesConcurrent;
-    case GCCause::_update_allocation_context_stats_inc: return true;
     case GCCause::_wb_conc_mark:                        return true;
     default :                                           return false;
   }
@@ -2547,8 +2546,6 @@ void G1CollectedHeap::gc_epilogue(bool full) {
   double start = os::elapsedTime();
   resize_all_tlabs();
   g1_policy()->phase_times()->record_resize_tlab_time_ms((os::elapsedTime() - start) * 1000.0);
-
-  allocation_context_stats().update(full);
 
   MemoryService::track_memory_usage();
   // We have just completed a GC. Update the soft reference
