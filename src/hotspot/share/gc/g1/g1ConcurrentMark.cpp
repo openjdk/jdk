@@ -1276,7 +1276,6 @@ void G1ConcurrentMark::cleanup() {
   // We reclaimed old regions so we should calculate the sizes to make
   // sure we update the old gen/space data.
   g1h->g1mm()->update_sizes();
-  g1h->allocation_context_stats().update_after_mark();
 }
 
 void G1ConcurrentMark::complete_cleanup() {

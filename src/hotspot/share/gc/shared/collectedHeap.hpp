@@ -607,20 +607,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
     return (CIFireOOMAt > 1 && _fire_out_of_memory_count >= CIFireOOMAt);
   }
 #endif
-
- public:
-  // Copy the current allocation context statistics for the specified contexts.
-  // For each context in contexts, set the corresponding entries in the totals
-  // and accuracy arrays to the current values held by the statistics.  Each
-  // array should be of length len.
-  // Returns true if there are more stats available.
-  virtual bool copy_allocation_context_stats(const jint* contexts,
-                                             jlong* totals,
-                                             jbyte* accuracy,
-                                             jint len) {
-    return false;
-  }
-
 };
 
 // Class to set and reset the GC cause for a CollectedHeap.
