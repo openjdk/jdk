@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,11 @@ import java.awt.Toolkit;
 /**
  * @test
  * @key headful
- * @bug 8065739
+ * @bug 8065739 8129569
+ * @requires (os.family == "mac")
  * @summary [macosx] Frame warps to lower left of screen when displayed
  * @author Alexandr Scherbatiy
+ * @run main MaximizedToUnmaximized
  */
 public class MaximizedToUnmaximized {
 
