@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -824,7 +824,6 @@ class ConstantPool : public Metadata {
   static bool    has_method_type_at_if_loaded      (const constantPoolHandle& this_cp, int which);
   static oop         method_type_at_if_loaded      (const constantPoolHandle& this_cp, int which);
   static Klass*            klass_at_if_loaded      (const constantPoolHandle& this_cp, int which);
-  static Klass*        klass_ref_at_if_loaded      (const constantPoolHandle& this_cp, int which);
 
   // Routines currently used for annotations (only called by jvm.cpp) but which might be used in the
   // future by other Java code. These take constant pool indices rather than
