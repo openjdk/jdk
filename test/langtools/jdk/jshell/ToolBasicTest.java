@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953 8080347 8154714 8166649 8167643 8170162 8172102 8165405 8174796 8174797 8175304 8167554 8180508
+ * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953 8080347 8154714 8166649 8167643 8170162 8172102 8165405 8174796 8174797 8175304 8167554 8180508 8166232
  * @summary Tests for Basic tests for REPL tool
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -652,6 +652,10 @@ public class ToolBasicTest extends ReplToolTesting {
 
     public void testHistoryReference() {
         test(false, new String[]{"--no-startup"},
+                a -> assertCommand(a, "System.err.println(99)", "", "", null, "", "99\n"),
+                a -> assertCommand(a, "/exit", "")
+        );
+        test(false, new String[]{"--no-startup"},
                 a -> assertCommand(a, "System.err.println(1)", "", "", null, "", "1\n"),
                 a -> assertCommand(a, "System.err.println(2)", "", "", null, "", "2\n"),
                 a -> assertCommand(a, "/-2", "System.err.println(1)", "", null, "", "1\n"),
@@ -661,6 +665,16 @@ public class ToolBasicTest extends ReplToolTesting {
                                                     "System.err.println(2)\n" +
                                                     "System.err.println(1)\n" +
                                                     "/history\n"),
+                a -> assertCommand(a, "/history -all",
+                                                    "/debug 0\n" +
+                                                    "System.err.println(99)\n" +
+                                                    "/exit\n" +
+                                                    "/debug 0\n" +
+                                                    "System.err.println(1)\n" +
+                                                    "System.err.println(2)\n" +
+                                                    "System.err.println(1)\n" +
+                                                    "/history\n" +
+                                                    "/history -all\n"),
                 a -> assertCommand(a, "/-2", "System.err.println(2)", "", null, "", "2\n"),
                 a -> assertCommand(a, "/!", "System.err.println(2)", "", null, "", "2\n"),
                 a -> assertCommand(a, "/2", "System.err.println(2)", "", null, "", "2\n"),
