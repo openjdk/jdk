@@ -291,7 +291,7 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
   outputStream* out = output();
   const char* scale = current_scale();
   const NativeCallStack*  stack = reserved_rgn->call_stack();
-  bool all_committed = reserved_rgn->all_committed();
+  bool all_committed = reserved_rgn->size() == reserved_rgn->committed_size();
   const char* region_type = (all_committed ? "reserved and committed" : "reserved");
   out->print_cr(" ");
   print_virtual_memory_region(region_type, reserved_rgn->base(), reserved_rgn->size());
@@ -303,7 +303,17 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
     stack->print_on(out, 4);
   }
 
-  if (all_committed) return;
+  if (all_committed) {
+    CommittedRegionIterator itr = reserved_rgn->iterate_committed_regions();
+    const CommittedMemoryRegion* committed_rgn = itr.next();
+    if (committed_rgn->size() == reserved_rgn->size() && committed_rgn->call_stack()->equals(*stack)) {
+      // One region spanning the entire reserved region, with the same stack trace.
+      // Don't print this regions because the "reserved and committed" line above
+      // already indicates that the region is comitted.
+      assert(itr.next() == NULL, "Unexpectedly more than one regions");
+      return;
+    }
+  }
 
   CommittedRegionIterator itr = reserved_rgn->iterate_committed_regions();
   const CommittedMemoryRegion* committed_rgn;
@@ -745,4 +755,3 @@ void MemDetailDiffReporter::diff_virtual_memory_site(const NativeCallStack* stac
 
   out->print_cr(")\n");
  }
-

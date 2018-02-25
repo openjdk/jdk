@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3767,10 +3767,17 @@ void MacroAssembler::serialize_memory(Register thread, Register tmp) {
   movl(as_Address(ArrayAddress(page, index)), tmp);
 }
 
-#ifdef _LP64
 void MacroAssembler::safepoint_poll(Label& slow_path, Register thread_reg, Register temp_reg) {
   if (SafepointMechanism::uses_thread_local_poll()) {
-    testb(Address(r15_thread, Thread::polling_page_offset()), SafepointMechanism::poll_bit());
+#ifdef _LP64
+    assert(thread_reg == r15_thread, "should be");
+#else
+    if (thread_reg == noreg) {
+      thread_reg = temp_reg;
+      get_thread(thread_reg);
+    }
+#endif
+    testb(Address(thread_reg, Thread::polling_page_offset()), SafepointMechanism::poll_bit());
     jcc(Assembler::notZero, slow_path); // handshake bit set implies poll
   } else {
     cmp32(ExternalAddress(SafepointSynchronize::address_of_state()),
@@ -3778,13 +3785,6 @@ void MacroAssembler::safepoint_poll(Label& slow_path, Register thread_reg, Regis
     jcc(Assembler::notEqual, slow_path);
   }
 }
-#else
-void MacroAssembler::safepoint_poll(Label& slow_path) {
-  cmp32(ExternalAddress(SafepointSynchronize::address_of_state()),
-      SafepointSynchronize::_not_synchronized);
-  jcc(Assembler::notEqual, slow_path);
-}
-#endif
 
 // Calls to C land
 //
@@ -5602,121 +5602,6 @@ void MacroAssembler::tlab_allocate(Register obj,
     subptr(var_size_in_bytes, obj);
   }
   verify_tlab();
-}
-
-// Preserves rbx, and rdx.
-Register MacroAssembler::tlab_refill(Label& retry,
-                                     Label& try_eden,
-                                     Label& slow_case) {
-  Register top = rax;
-  Register t1  = rcx; // object size
-  Register t2  = rsi;
-  Register thread_reg = NOT_LP64(rdi) LP64_ONLY(r15_thread);
-  assert_different_registers(top, thread_reg, t1, t2, /* preserve: */ rbx, rdx);
-  Label do_refill, discard_tlab;
-
-  if (!Universe::heap()->supports_inline_contig_alloc()) {
-    // No allocation in the shared eden.
-    jmp(slow_case);
-  }
-
-  NOT_LP64(get_thread(thread_reg));
-
-  movptr(top, Address(thread_reg, in_bytes(JavaThread::tlab_top_offset())));
-  movptr(t1,  Address(thread_reg, in_bytes(JavaThread::tlab_end_offset())));
-
-  // calculate amount of free space
-  subptr(t1, top);
-  shrptr(t1, LogHeapWordSize);
-
-  // Retain tlab and allocate object in shared space if
-  // the amount free in the tlab is too large to discard.
-  cmpptr(t1, Address(thread_reg, in_bytes(JavaThread::tlab_refill_waste_limit_offset())));
-  jcc(Assembler::lessEqual, discard_tlab);
-
-  // Retain
-  // %%% yuck as movptr...
-  movptr(t2, (int32_t) ThreadLocalAllocBuffer::refill_waste_limit_increment());
-  addptr(Address(thread_reg, in_bytes(JavaThread::tlab_refill_waste_limit_offset())), t2);
-  if (TLABStats) {
-    // increment number of slow_allocations
-    addl(Address(thread_reg, in_bytes(JavaThread::tlab_slow_allocations_offset())), 1);
-  }
-  jmp(try_eden);
-
-  bind(discard_tlab);
-  if (TLABStats) {
-    // increment number of refills
-    addl(Address(thread_reg, in_bytes(JavaThread::tlab_number_of_refills_offset())), 1);
-    // accumulate wastage -- t1 is amount free in tlab
-    addl(Address(thread_reg, in_bytes(JavaThread::tlab_fast_refill_waste_offset())), t1);
-  }
-
-  // if tlab is currently allocated (top or end != null) then
-  // fill [top, end + alignment_reserve) with array object
-  testptr(top, top);
-  jcc(Assembler::zero, do_refill);
-
-  // set up the mark word
-  movptr(Address(top, oopDesc::mark_offset_in_bytes()), (intptr_t)markOopDesc::prototype()->copy_set_hash(0x2));
-  // set the length to the remaining space
-  subptr(t1, typeArrayOopDesc::header_size(T_INT));
-  addptr(t1, (int32_t)ThreadLocalAllocBuffer::alignment_reserve());
-  shlptr(t1, log2_intptr(HeapWordSize/sizeof(jint)));
-  movl(Address(top, arrayOopDesc::length_offset_in_bytes()), t1);
-  // set klass to intArrayKlass
-  // dubious reloc why not an oop reloc?
-  movptr(t1, ExternalAddress((address)Universe::intArrayKlassObj_addr()));
-  // store klass last.  concurrent gcs assumes klass length is valid if
-  // klass field is not null.
-  store_klass(top, t1);
-
-  movptr(t1, top);
-  subptr(t1, Address(thread_reg, in_bytes(JavaThread::tlab_start_offset())));
-  incr_allocated_bytes(thread_reg, t1, 0);
-
-  // refill the tlab with an eden allocation
-  bind(do_refill);
-  movptr(t1, Address(thread_reg, in_bytes(JavaThread::tlab_size_offset())));
-  shlptr(t1, LogHeapWordSize);
-  // allocate new tlab, address returned in top
-  eden_allocate(top, t1, 0, t2, slow_case);
-
-  // Check that t1 was preserved in eden_allocate.
-#ifdef ASSERT
-  if (UseTLAB) {
-    Label ok;
-    Register tsize = rsi;
-    assert_different_registers(tsize, thread_reg, t1);
-    push(tsize);
-    movptr(tsize, Address(thread_reg, in_bytes(JavaThread::tlab_size_offset())));
-    shlptr(tsize, LogHeapWordSize);
-    cmpptr(t1, tsize);
-    jcc(Assembler::equal, ok);
-    STOP("assert(t1 != tlab size)");
-    should_not_reach_here();
-
-    bind(ok);
-    pop(tsize);
-  }
-#endif
-  movptr(Address(thread_reg, in_bytes(JavaThread::tlab_start_offset())), top);
-  movptr(Address(thread_reg, in_bytes(JavaThread::tlab_top_offset())), top);
-  addptr(top, t1);
-  subptr(top, (int32_t)ThreadLocalAllocBuffer::alignment_reserve_in_bytes());
-  movptr(Address(thread_reg, in_bytes(JavaThread::tlab_end_offset())), top);
-
-  if (ZeroTLAB) {
-    // This is a fast TLAB refill, therefore the GC is not notified of it.
-    // So compiled code must fill the new TLAB with zeroes.
-    movptr(top, Address(thread_reg, in_bytes(JavaThread::tlab_start_offset())));
-    zero_memory(top, t1, 0, t2);
-  }
-
-  verify_tlab();
-  jmp(retry);
-
-  return thread_reg; // for use by caller
 }
 
 // Preserves the contents of address, destroys the contents length_in_bytes and temp.

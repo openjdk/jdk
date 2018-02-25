@@ -28,6 +28,7 @@
 #include "gc/shared/barrierSet.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
@@ -41,9 +42,11 @@
 #include "runtime/init.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
+#include "runtime/vmThread.hpp"
 #include "services/heapDumper.hpp"
 #include "utilities/align.hpp"
 
+class ClassLoaderData;
 
 #ifdef ASSERT
 int CollectedHeap::_fire_out_of_memory_count = 0;
@@ -231,6 +234,80 @@ void CollectedHeap::collect_as_vm_thread(GCCause::Cause cause) {
     default:
       ShouldNotReachHere(); // Unexpected use of this function
   }
+}
+
+MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
+                                                            size_t word_size,
+                                                            Metaspace::MetadataType mdtype) {
+  uint loop_count = 0;
+  uint gc_count = 0;
+  uint full_gc_count = 0;
+
+  assert(!Heap_lock->owned_by_self(), "Should not be holding the Heap_lock");
+
+  do {
+    MetaWord* result = loader_data->metaspace_non_null()->allocate(word_size, mdtype);
+    if (result != NULL) {
+      return result;
+    }
+
+    if (GCLocker::is_active_and_needs_gc()) {
+      // If the GCLocker is active, just expand and allocate.
+      // If that does not succeed, wait if this thread is not
+      // in a critical section itself.
+      result = loader_data->metaspace_non_null()->expand_and_allocate(word_size, mdtype);
+      if (result != NULL) {
+        return result;
+      }
+      JavaThread* jthr = JavaThread::current();
+      if (!jthr->in_critical()) {
+        // Wait for JNI critical section to be exited
+        GCLocker::stall_until_clear();
+        // The GC invoked by the last thread leaving the critical
+        // section will be a young collection and a full collection
+        // is (currently) needed for unloading classes so continue
+        // to the next iteration to get a full GC.
+        continue;
+      } else {
+        if (CheckJNICalls) {
+          fatal("Possible deadlock due to allocating while"
+                " in jni critical section");
+        }
+        return NULL;
+      }
+    }
+
+    {  // Need lock to get self consistent gc_count's
+      MutexLocker ml(Heap_lock);
+      gc_count      = Universe::heap()->total_collections();
+      full_gc_count = Universe::heap()->total_full_collections();
+    }
+
+    // Generate a VM operation
+    VM_CollectForMetadataAllocation op(loader_data,
+                                       word_size,
+                                       mdtype,
+                                       gc_count,
+                                       full_gc_count,
+                                       GCCause::_metadata_GC_threshold);
+    VMThread::execute(&op);
+
+    // If GC was locked out, try again. Check before checking success because the
+    // prologue could have succeeded and the GC still have been locked out.
+    if (op.gc_locked()) {
+      continue;
+    }
+
+    if (op.prologue_succeeded()) {
+      return op.result();
+    }
+    loop_count++;
+    if ((QueuedAllocationWarningCount > 0) &&
+        (loop_count % QueuedAllocationWarningCount == 0)) {
+      log_warning(gc, ergo)("satisfy_failed_metadata_allocation() retries %d times,"
+                            " size=" SIZE_FORMAT, loop_count, word_size);
+    }
+  } while (true);  // Until a GC is done
 }
 
 void CollectedHeap::set_barrier_set(BarrierSet* barrier_set) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -505,6 +505,8 @@ protected:
   // For classes, this returns the name with a leading 'L' and a trailing ';'
   //     and the package separators as '/'.
   virtual const char* signature_name() const;
+
+  const char* class_loader_and_module_name() const;
 
   // type testing operations
 #ifdef ASSERT

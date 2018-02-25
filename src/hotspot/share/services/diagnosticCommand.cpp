@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "gc/shared/vmGCOperations.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
@@ -88,6 +89,7 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHierarchyDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SymboltableDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<StringtableDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<MetaspaceDCmd>(full_export, true, false));
 #if INCLUDE_JVMTI // Both JVMTI and SERVICES have to be enabled to have this dcmd
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIAgentLoadDCmd>(full_export, true, false));
 #endif // INCLUDE_JVMTI

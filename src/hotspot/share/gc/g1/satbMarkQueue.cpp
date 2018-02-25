@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,8 @@ SATBMarkQueue::SATBMarkQueue(SATBMarkQueueSet* qset, bool permanent) :
   // them with their active field set to false. If a thread is
   // created during a cycle and its SATB queue needs to be activated
   // before the thread starts running, we'll need to set its active
-  // field to true. This is done in JavaThread::initialize_queues().
+  // field to true. This is done in G1SATBCardTableLoggingModRefBS::
+  // on_thread_attach().
   PtrQueue(qset, permanent, false /* active */)
 { }
 

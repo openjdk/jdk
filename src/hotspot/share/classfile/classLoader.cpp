@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,6 @@ PerfCounter*    ClassLoader::_sync_JVMFindLoadedClassLockFreeCounter = NULL;
 PerfCounter*    ClassLoader::_sync_JVMDefineClassLockFreeCounter = NULL;
 PerfCounter*    ClassLoader::_sync_JNIDefineClassLockFreeCounter = NULL;
 PerfCounter*    ClassLoader::_unsafe_defineClassCallCounter = NULL;
-PerfCounter*    ClassLoader::_isUnsyncloadClass = NULL;
 PerfCounter*    ClassLoader::_load_instance_class_failCounter = NULL;
 
 GrowableArray<ModuleClassPathList*>* ClassLoader::_patch_mod_entries = NULL;
@@ -1642,9 +1641,6 @@ void ClassLoader::initialize() {
     // of the bug fix of 6365597. They are mainly focused on finding out
     // the behavior of system & user-defined classloader lock, whether
     // ClassLoader.loadClass/findClass is being called synchronized or not.
-    // Also two additional counters are created to see whether 'UnsyncloadClass'
-    // flag is being set or not and how many times load_instance_class call
-    // fails with linkageError etc.
     NEWPERFEVENTCOUNTER(_sync_systemLoaderLockContentionRate, SUN_CLS,
                         "systemLoaderLockContentionRate");
     NEWPERFEVENTCOUNTER(_sync_nonSystemLoaderLockContentionRate, SUN_CLS,
@@ -1660,14 +1656,8 @@ void ClassLoader::initialize() {
     NEWPERFEVENTCOUNTER(_unsafe_defineClassCallCounter, SUN_CLS,
                         "unsafeDefineClassCalls");
 
-    NEWPERFEVENTCOUNTER(_isUnsyncloadClass, SUN_CLS, "isUnsyncloadClassSet");
     NEWPERFEVENTCOUNTER(_load_instance_class_failCounter, SUN_CLS,
                         "loadInstanceClassFailRate");
-
-    // increment the isUnsyncloadClass counter if UnsyncloadClass is set.
-    if (UnsyncloadClass) {
-      _isUnsyncloadClass->inc();
-    }
   }
 
   // lookup zip library entry points

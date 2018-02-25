@@ -143,6 +143,7 @@ bool LIRGenerator::can_inline_as_constant(LIR_Const* c) const {
 
 
 LIR_Opr LIRGenerator::safepoint_poll_register() {
+  NOT_LP64( if (SafepointMechanism::uses_thread_local_poll()) { return new_register(T_ADDRESS); } )
   return LIR_OprFact::illegalOpr;
 }
 
@@ -1515,7 +1516,7 @@ void LIRGenerator::do_If(If* x) {
   if (x->is_safepoint()) {
     // increment backedge counter if needed
     increment_backedge_counter(state_for(x, x->state_before()), x->profiled_bci());
-    __ safepoint(LIR_OprFact::illegalOpr, state_for(x, x->state_before()));
+    __ safepoint(safepoint_poll_register(), state_for(x, x->state_before()));
   }
   set_no_result(x);
 

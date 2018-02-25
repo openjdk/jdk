@@ -49,6 +49,7 @@
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/plab.hpp"
 #include "gc/shared/preservedMarks.hpp"
+#include "gc/shared/softRefPolicy.hpp"
 #include "memory/memRegion.hpp"
 #include "services/memoryManager.hpp"
 #include "utilities/stack.hpp"
@@ -150,6 +151,8 @@ private:
   WorkGang* _workers;
   G1CollectorPolicy* _collector_policy;
 
+  SoftRefPolicy      _soft_ref_policy;
+
   GCMemoryManager _memory_manager;
   GCMemoryManager _full_gc_memory_manager;
 
@@ -222,9 +225,6 @@ private:
   // Class that handles archive allocation ranges.
   G1ArchiveAllocator* _archive_allocator;
 
-  // Statistics for each allocation context
-  AllocationContextStats _allocation_context_stats;
-
   // GC allocation statistics policy for survivors.
   G1EvacStats _survivor_evac_stats;
 
@@ -277,8 +277,7 @@ private:
   // (b) cause == _g1_humongous_allocation
   // (c) cause == _java_lang_system_gc and +ExplicitGCInvokesConcurrent.
   // (d) cause == _dcmd_gc_run and +ExplicitGCInvokesConcurrent.
-  // (e) cause == _update_allocation_context_stats_inc
-  // (f) cause == _wb_conc_mark
+  // (e) cause == _wb_conc_mark
   bool should_do_concurrent_full_gc(GCCause::Cause cause);
 
   // indicates whether we are in young or mixed GC mode
@@ -579,8 +578,6 @@ public:
 
   // Determines PLAB size for a given destination.
   inline size_t desired_plab_sz(InCSetState dest);
-
-  inline AllocationContextStats& allocation_context_stats();
 
   // Do anything common to GC's.
   void gc_prologue(bool full);
@@ -998,8 +995,7 @@ public:
 
   virtual CollectorPolicy* collector_policy() const;
 
-  // Adaptive size policy.  No such thing for g1.
-  virtual AdaptiveSizePolicy* size_policy() { return NULL; }
+  virtual SoftRefPolicy* soft_ref_policy();
 
   virtual GrowableArray<GCMemoryManager*> memory_managers();
   virtual GrowableArray<MemoryPool*> memory_pools();
@@ -1129,11 +1125,6 @@ public:
   // "System.gc".  This probably implies as full a collection as the
   // "CollectedHeap" supports.
   virtual void collect(GCCause::Cause cause);
-
-  virtual bool copy_allocation_context_stats(const jint* contexts,
-                                             jlong* totals,
-                                             jbyte* accuracy,
-                                             jint len);
 
   // True iff an evacuation has failed in the most-recent collection.
   bool evacuation_failed() { return _evacuation_failed; }

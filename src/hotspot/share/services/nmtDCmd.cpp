@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,6 @@ NMTDCmd::NMTDCmd(outputStream* output,
   _detail("detail", "request runtime to report memory allocation >= "
            "1K by each callsite.",
            "BOOLEAN", false, "false"),
-  _metadata("metadata", "request runtime to report metadata information",
-           "BOOLEAN", false, "false"),
   _baseline("baseline", "request runtime to baseline current memory usage, " \
             "so it can be compared against in later time.",
             "BOOLEAN", false, "false"),
@@ -61,7 +59,6 @@ NMTDCmd::NMTDCmd(outputStream* output,
        "STRING", false, "KB") {
   _dcmdparser.add_dcmd_option(&_summary);
   _dcmdparser.add_dcmd_option(&_detail);
-  _dcmdparser.add_dcmd_option(&_metadata);
   _dcmdparser.add_dcmd_option(&_baseline);
   _dcmdparser.add_dcmd_option(&_summary_diff);
   _dcmdparser.add_dcmd_option(&_detail_diff);
@@ -97,7 +94,6 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
   int nopt = 0;
   if (_summary.is_set() && _summary.value()) { ++nopt; }
   if (_detail.is_set() && _detail.value()) { ++nopt; }
-  if (_metadata.is_set() && _metadata.value()) { ++nopt; }
   if (_baseline.is_set() && _baseline.value()) { ++nopt; }
   if (_summary_diff.is_set() && _summary_diff.value()) { ++nopt; }
   if (_detail_diff.is_set() && _detail_diff.value()) { ++nopt; }
@@ -127,10 +123,6 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
       return;
     }
     report(false, scale_unit);
-  } else if (_metadata.value()) {
-      size_t scale = get_scale(_scale.value());
-      VM_PrintMetadata op(output(), scale);
-      VMThread::execute(&op);
   } else if (_baseline.value()) {
     MemBaseline& baseline = MemTracker::get_baseline();
     if (!baseline.baseline(MemTracker::tracking_level() != NMT_detail)) {

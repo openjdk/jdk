@@ -40,6 +40,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/fieldStreams.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/biasedLocking.hpp"
