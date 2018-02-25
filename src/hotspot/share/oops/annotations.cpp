@@ -31,6 +31,7 @@
 #include "memory/oopFactory.hpp"
 #include "oops/annotations.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "utilities/ostream.hpp"
 
 // Allocate annotations in metadata area

@@ -32,6 +32,7 @@
 #include "oops/fieldStreams.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/javaCalls.hpp"
 #include "jvmci/jvmciRuntime.hpp"

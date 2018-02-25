@@ -3952,8 +3952,7 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
       // Only start a GC if the bootstrapping has completed.
 
       // Try to clean out some memory and retry.
-      result = Universe::heap()->collector_policy()->satisfy_failed_metadata_allocation(
-          loader_data, word_size, mdtype);
+      result = Universe::heap()->satisfy_failed_metadata_allocation(loader_data, word_size, mdtype);
     }
   }
 

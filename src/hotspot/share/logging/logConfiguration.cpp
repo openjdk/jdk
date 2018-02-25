@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,8 @@
 #include "logging/logDiagnosticCommand.hpp"
 #include "logging/logFileOutput.hpp"
 #include "logging/logOutput.hpp"
+#include "logging/logSelectionList.hpp"
 #include "logging/logStream.hpp"
-#include "logging/logTagLevelExpression.hpp"
 #include "logging/logTagSet.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -207,7 +207,7 @@ void LogConfiguration::delete_output(size_t idx) {
   delete output;
 }
 
-void LogConfiguration::configure_output(size_t idx, const LogTagLevelExpression& tag_level_expression, const LogDecorators& decorators) {
+void LogConfiguration::configure_output(size_t idx, const LogSelectionList& selections, const LogDecorators& decorators) {
   assert(ConfigurationLock::current_thread_has_lock(), "Must hold configuration lock to call this function.");
   assert(idx < _n_outputs, "Invalid index, idx = " SIZE_FORMAT " and _n_outputs = " SIZE_FORMAT, idx, _n_outputs);
   LogOutput* output = _outputs[idx];
@@ -217,7 +217,7 @@ void LogConfiguration::configure_output(size_t idx, const LogTagLevelExpression&
 
   bool enabled = false;
   for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
-    LogLevelType level = tag_level_expression.level_for(*ts);
+    LogLevelType level = selections.level_for(*ts);
 
     // Ignore tagsets that do not, and will not log on the output
     if (!ts->has_output(output) && (level == LogLevel::NotMentioned || level == LogLevel::Off)) {
@@ -299,11 +299,11 @@ void LogConfiguration::disable_logging() {
 void LogConfiguration::configure_stdout(LogLevelType level, int exact_match, ...) {
   size_t i;
   va_list ap;
-  LogTagLevelExpression expr;
+  LogTagType tags[LogTag::MaxTags];
   va_start(ap, exact_match);
   for (i = 0; i < LogTag::MaxTags; i++) {
     LogTagType tag = static_cast<LogTagType>(va_arg(ap, int));
-    expr.add_tag(tag);
+    tags[i] = tag;
     if (tag == LogTag::__NO_TAG) {
       assert(i > 0, "Must specify at least one tag!");
       break;
@@ -313,17 +313,14 @@ void LogConfiguration::configure_stdout(LogLevelType level, int exact_match, ...
          "Too many tags specified! Can only have up to " SIZE_FORMAT " tags in a tag set.", LogTag::MaxTags);
   va_end(ap);
 
-  if (!exact_match) {
-    expr.set_allow_other_tags();
-  }
-  expr.set_level(level);
-  expr.new_combination();
-  assert(expr.verify_tagsets(),
-         "configure_stdout() called with invalid/non-existing tag set");
+  LogSelection selection(tags, !exact_match, level);
+  assert(selection.tag_sets_selected() > 0,
+         "configure_stdout() called with invalid/non-existing log selection");
+  LogSelectionList list(selection);
 
   // Apply configuration to stdout (output #0), with the same decorators as before.
   ConfigurationLock cl;
-  configure_output(0, expr, _outputs[0]->decorators());
+  configure_output(0, list, _outputs[0]->decorators());
   notify_update_listeners();
 }
 
@@ -382,7 +379,7 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
 }
 
 bool LogConfiguration::parse_log_arguments(const char* outputstr,
-                                           const char* what,
+                                           const char* selectionstr,
                                            const char* decoratorstr,
                                            const char* output_options,
                                            outputStream* errstream) {
@@ -391,8 +388,8 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
     outputstr = "stdout";
   }
 
-  LogTagLevelExpression expr;
-  if (!expr.parse(what, errstream)) {
+  LogSelectionList selections;
+  if (!selections.parse(selectionstr, errstream)) {
     return false;
   }
 
@@ -433,9 +430,9 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
       return false;
     }
   }
-  configure_output(idx, expr, decorators);
+  configure_output(idx, selections, decorators);
   notify_update_listeners();
-  expr.verify_tagsets(errstream);
+  selections.verify_selections(errstream);
   return true;
 }
 
@@ -454,10 +451,7 @@ void LogConfiguration::describe_available(outputStream* out){
   out->cr();
 
   out->print("Available log tags:");
-  for (size_t i = 1; i < LogTag::Count; i++) {
-    out->print("%s %s", (i == 1 ? "" : ","), LogTag::name(static_cast<LogTagType>(i)));
-  }
-  out->cr();
+  LogTag::list_tags(out);
 
   LogTagSet::describe_tagsets(out);
 }
@@ -494,13 +488,12 @@ void LogConfiguration::print_command_line_help(FILE* out) {
   }
   jio_fprintf(out, "\n Decorators can also be specified as 'none' for no decoration.\n\n");
 
-  jio_fprintf(out, "Available log tags:\n");
-  for (size_t i = 1; i < LogTag::Count; i++) {
-    jio_fprintf(out, "%s %s", (i == 1 ? "" : ","), LogTag::name(static_cast<LogTagType>(i)));
-  }
-  jio_fprintf(out, "\n Specifying 'all' instead of a tag combination matches all tag combinations.\n\n");
-
   fileStream stream(out, false);
+  stream.print_cr("Available log tags:");
+  LogTag::list_tags(&stream);
+  stream.print_cr(" Specifying 'all' instead of a tag combination matches all tag combinations.");
+  stream.cr();
+
   LogTagSet::describe_tagsets(&stream);
 
   jio_fprintf(out, "\nAvailable log outputs:\n"

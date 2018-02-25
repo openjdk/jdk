@@ -357,7 +357,7 @@ class CardTableModRefBS: public ModRefBarrierSet {
   virtual bool is_in_young(oop obj) const = 0;
 
   virtual void on_slowpath_allocation_exit(JavaThread* thread, oop new_obj);
-  virtual void flush_deferred_barriers(JavaThread* thread);
+  virtual void on_thread_detach(JavaThread* thread);
 
   virtual void make_parsable(JavaThread* thread) { flush_deferred_card_mark_barrier(thread); }
 

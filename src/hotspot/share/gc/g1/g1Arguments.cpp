@@ -40,9 +40,6 @@ size_t G1Arguments::conservative_max_heap_alignment() {
 void G1Arguments::initialize_flags() {
   GCArguments::initialize_flags();
   assert(UseG1GC, "Error");
-#if defined(COMPILER1) || INCLUDE_JVMCI
-  FastTLABRefill = false;
-#endif
   FLAG_SET_DEFAULT(ParallelGCThreads, Abstract_VM_Version::parallel_worker_threads());
   if (ParallelGCThreads == 0) {
     assert(!FLAG_IS_DEFAULT(ParallelGCThreads), "The default value for ParallelGCThreads should not be 0.");

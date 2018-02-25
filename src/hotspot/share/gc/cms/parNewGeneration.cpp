@@ -889,7 +889,7 @@ void ParNewGeneration::collect(bool   full,
 
   _gc_timer->register_gc_start();
 
-  AdaptiveSizePolicy* size_policy = gch->gen_policy()->size_policy();
+  AdaptiveSizePolicy* size_policy = gch->size_policy();
   WorkGang* workers = gch->workers();
   assert(workers != NULL, "Need workgang for parallel work");
   uint active_workers =
@@ -1490,4 +1490,3 @@ void ParNewGeneration::restore_preserved_marks() {
   SharedRestorePreservedMarksTaskExecutor task_executor(CMSHeap::heap()->workers());
   _preserved_marks_set.restore(&task_executor);
 }
-

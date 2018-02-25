@@ -27,6 +27,7 @@
 #ifdef __APPLE__
 #include "jvm.h"
 #include "decoder_machO.hpp"
+#include "memory/allocation.inline.hpp"
 
 #include <cxxabi.h>
 #include <mach-o/loader.h>

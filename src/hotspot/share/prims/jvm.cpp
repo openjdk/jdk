@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,9 +166,8 @@ static void trace_class_resolution_impl(Klass* to_class, TRAPS) {
       }
     } else if (last_caller != NULL &&
                last_caller->method_holder()->name() ==
-               vmSymbols::java_lang_ClassLoader() &&
-               (last_caller->name() == vmSymbols::loadClassInternal_name() ||
-                last_caller->name() == vmSymbols::loadClass_name())) {
+                 vmSymbols::java_lang_ClassLoader() &&
+               last_caller->name() == vmSymbols::loadClass_name()) {
       found_it = true;
     } else if (!vfst.at_end()) {
       if (vfst.method()->is_native()) {

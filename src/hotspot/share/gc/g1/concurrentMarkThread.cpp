@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,8 +267,6 @@ void ConcurrentMarkThread::run_service() {
     GCIdMark gc_id_mark;
 
     cm()->concurrent_cycle_start();
-
-    assert(GCId::current() != GCId::undefined(), "GC id should have been set up by the initial mark GC.");
 
     GCTraceConcTime(Info, gc) tt("Concurrent Cycle");
     {

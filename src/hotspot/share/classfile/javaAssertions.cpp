@@ -31,6 +31,7 @@
 #include "memory/oopFactory.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 
 bool                            JavaAssertions::_userDefault = false;
