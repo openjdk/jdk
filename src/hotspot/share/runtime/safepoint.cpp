@@ -78,6 +78,8 @@ volatile int  SafepointSynchronize::_waiting_to_block = 0;
 volatile int SafepointSynchronize::_safepoint_counter = 0;
 int SafepointSynchronize::_current_jni_active_count = 0;
 long  SafepointSynchronize::_end_of_last_safepoint = 0;
+int SafepointSynchronize::_defer_thr_suspend_loop_count = 4000;
+static const int safepoint_spin_before_yield = 2000;
 static volatile int PageArmed = 0 ;        // safepoint polling page is RO|RW vs PROT_NONE
 static volatile int TryingToBlock = 0 ;    // proximate value -- for advisory use only
 static bool timeout_error_printed = false;
@@ -191,12 +193,10 @@ void SafepointSynchronize::begin() {
       // Make interpreter safepoint aware
       Interpreter::notice_safepoints();
 
-      if (DeferPollingPageLoopCount < 0) {
-        // Make polling safepoint aware
-        guarantee (PageArmed == 0, "invariant") ;
-        PageArmed = 1 ;
-        os::make_polling_page_unreadable();
-      }
+      // Make polling safepoint aware
+      guarantee (PageArmed == 0, "invariant") ;
+      PageArmed = 1 ;
+      os::make_polling_page_unreadable();
     }
 
     // Consider using active_processor_count() ... but that call is expensive.
@@ -309,19 +309,21 @@ void SafepointSynchronize::begin() {
           // 9. On windows consider using the return value from SwitchThreadTo()
           //    to drive subsequent spin/SwitchThreadTo()/Sleep(N) decisions.
 
-          if (SafepointMechanism::uses_global_page_poll() && int(iterations) == DeferPollingPageLoopCount) {
-            guarantee (PageArmed == 0, "invariant") ;
-            PageArmed = 1 ;
-            os::make_polling_page_unreadable();
+          if (int(iterations) == -1) { // overflow - something is wrong.
+            // We can only overflow here when we are using global
+            // polling pages. We keep this guarantee in its original
+            // form so that searches of the bug database for this
+            // failure mode find the right bugs.
+            guarantee (PageArmed == 0, "invariant");
           }
 
           // Instead of (ncpus > 1) consider either (still_running < (ncpus + EPSILON)) or
           // ((still_running + _waiting_to_block - TryingToBlock)) < ncpus)
           ++steps ;
-          if (ncpus > 1 && steps < SafepointSpinBeforeYield) {
+          if (ncpus > 1 && steps < safepoint_spin_before_yield) {
             SpinPause() ;     // MP-Polite spin
           } else
-            if (steps < DeferThrSuspendLoopCount) {
+            if (steps < _defer_thr_suspend_loop_count) {
               os::naked_yield() ;
             } else {
               os::naked_short_sleep(1);
@@ -1190,7 +1192,6 @@ jlong  SafepointSynchronize::_max_vmop_time = 0;
 float  SafepointSynchronize::_ts_of_current_safepoint = 0.0f;
 
 static jlong  cleanup_end_time = 0;
-static bool   need_to_track_page_armed_status = false;
 static bool   init_done = false;
 
 // Helper method to print the header.
@@ -1201,11 +1202,6 @@ static void print_header() {
   tty->print("          vmop                            "
              "[ threads:    total initially_running wait_to_block ]"
              "[ time:    spin   block    sync cleanup    vmop ] ");
-
-  // no page armed status printed out if it is always armed.
-  if (need_to_track_page_armed_status) {
-    tty->print("page_armed ");
-  }
 
   tty->print_cr("page_trap_count");
 }
@@ -1229,9 +1225,6 @@ void SafepointSynchronize::deferred_initialize_stat() {
   guarantee(_safepoint_stats != NULL,
             "not enough memory for safepoint instrumentation data");
 
-  if (DeferPollingPageLoopCount >= 0) {
-    need_to_track_page_armed_status = true;
-  }
   init_done = true;
 }
 
@@ -1269,10 +1262,6 @@ void SafepointSynchronize::update_statistics_on_spin_end() {
   spstat->_nof_threads_wait_to_block = _waiting_to_block;
   if (spstat->_nof_initial_running_threads != 0) {
     spstat->_time_to_spin = cur_time - spstat->_time_to_spin;
-  }
-
-  if (need_to_track_page_armed_status) {
-    spstat->_page_armed = (PageArmed == 1);
   }
 
   // Records the start time of waiting for to block. Updated when block is done.
@@ -1363,9 +1352,6 @@ void SafepointSynchronize::print_statistics() {
                (int64_t)(sstats->_time_to_do_cleanups / MICROUNITS),
                (int64_t)(sstats->_time_to_exec_vmop / MICROUNITS));
 
-    if (need_to_track_page_armed_status) {
-      tty->print(INT32_FORMAT_W(10) " ", sstats->_page_armed);
-    }
     tty->print_cr(INT32_FORMAT_W(15) " ", sstats->_nof_threads_hit_page_trap);
   }
 }
@@ -1392,12 +1378,7 @@ void SafepointSynchronize::print_stat_on_exit() {
   tty->cr();
 
   // Print out polling page sampling status.
-  if (!need_to_track_page_armed_status) {
-    tty->print_cr("Polling page always armed");
-  } else {
-    tty->print_cr("Defer polling page loop count = " INTX_FORMAT "\n",
-                  DeferPollingPageLoopCount);
-  }
+  tty->print_cr("Polling page always armed");
 
   for (int index = 0; index < VM_Operation::VMOp_Terminating; index++) {
     if (_safepoint_reasons[index] != 0) {
