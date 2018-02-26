@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "logTestFixture.hpp"
 #include "logTestUtils.inline.hpp"
 #include "logging/logConfiguration.hpp"
+#include "logging/logOutput.hpp"
 #include "memory/resourceArea.hpp"
 #include "unittest.hpp"
 #include "utilities/ostream.hpp"
@@ -38,10 +39,12 @@ LogTestFixture::LogTestFixture() {
                          ::testing::UnitTest::GetInstance()->current_test_info()->name());
   EXPECT_GT(ret, 0) << "_filename buffer issue";
   TestLogFileName = _filename;
+
+  snapshot_config();
 }
 
 LogTestFixture::~LogTestFixture() {
-  restore_default_log_config();
+  restore_config();
   delete_file(TestLogFileName);
 }
 
@@ -61,7 +64,42 @@ bool LogTestFixture::set_log_config(const char* output,
   return success;
 }
 
-void LogTestFixture::restore_default_log_config() {
+void LogTestFixture::snapshot_config() {
+  _n_snapshots = LogConfiguration::_n_outputs;
+  _configuration_snapshot = NEW_C_HEAP_ARRAY(char*, _n_snapshots, mtLogging);
+  for (size_t i = 0; i < _n_snapshots; i++) {
+    ResourceMark rm;
+    stringStream ss;
+    LogConfiguration::_outputs[i]->describe(&ss);
+    _configuration_snapshot[i] = os::strdup_check_oom(ss.as_string(), mtLogging);
+  }
+}
+
+void LogTestFixture::restore_config() {
   LogConfiguration::disable_logging();
-  set_log_config("stdout", "all=warning");
+  for (size_t i = 0; i < _n_snapshots; i++) {
+    // Restore the config based on the saved output description string.
+    // The string has the following format: '<name> <selection> <decorators>[ <options>]'
+    // Extract the different parameters by replacing the spaces with NULLs.
+    char* str = _configuration_snapshot[i];
+
+    char* name = str;
+    str = strchr(str, ' ');
+    *str++ = '\0';
+
+    char* selection = str;
+    str = strchr(str, ' ');
+    *str++ = '\0';
+
+    char* decorators = str;
+
+    char* options = NULL;
+    str = strchr(str, ' ');
+    if (str != NULL) {
+      *str++ = '\0';
+      options = str;
+    }
+
+    set_log_config(name, selection, decorators, options != NULL ? options : "");
+  }
 }
