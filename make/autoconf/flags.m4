@@ -1200,7 +1200,7 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     LDFLAGS_MICROSOFT="-nologo -opt:ref"
     $2LDFLAGS_JDK="[$]$2LDFLAGS_JDK $LDFLAGS_MICROSOFT -incremental:no"
-    $2JVM_LDFLAGS="[$]$2JVM_LDFLAGS $LDFLAGS_MICROSOFT -opt:icf,8 -subsystem:windows -base:0x8000000"
+    $2JVM_LDFLAGS="[$]$2JVM_LDFLAGS $LDFLAGS_MICROSOFT -opt:icf,8 -subsystem:windows -base:0x8000000 -ignore:4281"
     if test "x$OPENJDK_$1_CPU_BITS" = "x32"; then
       LDFLAGS_SAFESH="-safeseh"
       $2LDFLAGS_JDK="[$]$2LDFLAGS_JDK $LDFLAGS_SAFESH"
