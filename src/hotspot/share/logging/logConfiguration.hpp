@@ -38,6 +38,7 @@ class LogSelectionList;
 // are iterated over and updated accordingly.
 class LogConfiguration : public AllStatic {
  friend class VMError;
+ friend class LogTestFixture;
  public:
   // Function for listeners
   typedef void (*UpdateListenerFunction)(void);
