@@ -25,7 +25,7 @@
  * @test
  * @bug 8186046
  * @summary Test for condy BSMs returning primitive values or null
- * @requires os.arch == "x86_64"
+ * @requires os.arch != "sparcv9"
  * @library /lib/testlibrary/bytecode
  * @build jdk.experimental.bytecode.BasicClassBuilder
  * @run testng CondyReturnPrimitiveTest

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -171,6 +171,20 @@ ifeq ($(USE_FAILURE_HANDLER), true)
       JTREG_FAILURE_HANDLER_OPTIONS += -J-Djava.library.path="$(FAILURE_HANDLER_DIR_MIXED)"
     endif
   endif
+endif
+
+
+# Optionally create a CDS archive before running tests
+ifeq ($(GENERATE_CDS_ARCHIVE), true)
+  CDS_ARCHIVE_FILE := $(ABS_TEST_OUTPUT_DIR)/cds_archive.jsa
+
+  $(CDS_ARCHIVE_FILE): $(PRODUCT_HOME)
+	$(PRODUCT_HOME)/bin/java -XX:+UnlockDiagnosticVMOptions \
+	    -XX:SharedArchiveFile=$(shell $(GETMIXEDPATH) "$(CDS_ARCHIVE_FILE)") -Xshare:dump
+
+  CDS_VM_ARGS := -XX:+UnlockDiagnosticVMOptions -XX:SharedArchiveFile=$(shell $(GETMIXEDPATH) "$(CDS_ARCHIVE_FILE)")
+  JTREG_TEST_OPTIONS += $(addprefix -vmoption:, $(CDS_VM_ARGS))
+  TEST_PREREQS += $(CDS_ARCHIVE_FILE)
 endif
 
 # Expect JPRT to set JPRT_ARCHIVE_BUNDLE (path to zip bundle for results)
@@ -444,7 +458,7 @@ endif
 PHONY_LIST += jtreg_exists
 
 # Run jtreg
-jtreg_tests: prep jtreg_exists $(PRODUCT_HOME)
+jtreg_tests: prep jtreg_exists $(PRODUCT_HOME) $(TEST_PREREQS)
 	(                                                                    \
 	  ( JT_HOME=$(shell $(GETMIXEDPATH) "$(JT_HOME)");                   \
 	    export JT_HOME;                                                  \

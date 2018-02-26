@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,7 @@ public class JvmtiAddPath {
     static void run(String[] extra_matches, String cp, String... args) throws Exception {
         String[] opts = {"-cp", cp, "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI", use_whitebox_jar};
         opts = TestCommon.concat(opts, args);
-        OutputAnalyzer output = TestCommon.execCommon(opts);
-        TestCommon.checkExec(output, extra_matches);
+        TestCommon.run(opts).assertNormalExit(extra_matches);
     }
 
     public static void main(String[] args) throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -99,7 +99,7 @@
   : "memory", "cc");                                                    \
 }
 
-static void pd_conjoint_words(HeapWord* from, HeapWord* to, size_t count) {
+static void pd_conjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
   __asm volatile( "prfm pldl1strm, [%[s], #0];" :: [s]"r"(from) : "memory");
   if (__builtin_expect(count <= 8, 1)) {
     COPY_SMALL(from, to, count);
@@ -108,7 +108,7 @@ static void pd_conjoint_words(HeapWord* from, HeapWord* to, size_t count) {
   _Copy_conjoint_words(from, to, count);
 }
 
-static void pd_disjoint_words(HeapWord* from, HeapWord* to, size_t count) {
+static void pd_disjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
   if (__builtin_constant_p(count)) {
     memcpy(to, from, count * sizeof(HeapWord));
     return;
@@ -121,7 +121,7 @@ static void pd_disjoint_words(HeapWord* from, HeapWord* to, size_t count) {
   _Copy_disjoint_words(from, to, count);
 }
 
-static void pd_disjoint_words_atomic(HeapWord* from, HeapWord* to, size_t count) {
+static void pd_disjoint_words_atomic(const HeapWord* from, HeapWord* to, size_t count) {
   __asm volatile( "prfm pldl1strm, [%[s], #0];" :: [s]"r"(from) : "memory");
   if (__builtin_expect(count <= 8, 1)) {
     COPY_SMALL(from, to, count);
@@ -130,56 +130,56 @@ static void pd_disjoint_words_atomic(HeapWord* from, HeapWord* to, size_t count)
   _Copy_disjoint_words(from, to, count);
 }
 
-static void pd_aligned_conjoint_words(HeapWord* from, HeapWord* to, size_t count) {
+static void pd_aligned_conjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
   pd_conjoint_words(from, to, count);
 }
 
-static void pd_aligned_disjoint_words(HeapWord* from, HeapWord* to, size_t count) {
+static void pd_aligned_disjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
   pd_disjoint_words(from, to, count);
 }
 
-static void pd_conjoint_bytes(void* from, void* to, size_t count) {
+static void pd_conjoint_bytes(const void* from, void* to, size_t count) {
   (void)memmove(to, from, count);
 }
 
-static void pd_conjoint_bytes_atomic(void* from, void* to, size_t count) {
+static void pd_conjoint_bytes_atomic(const void* from, void* to, size_t count) {
   pd_conjoint_bytes(from, to, count);
 }
 
-static void pd_conjoint_jshorts_atomic(jshort* from, jshort* to, size_t count) {
+static void pd_conjoint_jshorts_atomic(const jshort* from, jshort* to, size_t count) {
   _Copy_conjoint_jshorts_atomic(from, to, count);
 }
 
-static void pd_conjoint_jints_atomic(jint* from, jint* to, size_t count) {
+static void pd_conjoint_jints_atomic(const jint* from, jint* to, size_t count) {
   _Copy_conjoint_jints_atomic(from, to, count);
 }
 
-static void pd_conjoint_jlongs_atomic(jlong* from, jlong* to, size_t count) {
+static void pd_conjoint_jlongs_atomic(const jlong* from, jlong* to, size_t count) {
   _Copy_conjoint_jlongs_atomic(from, to, count);
 }
 
-static void pd_conjoint_oops_atomic(oop* from, oop* to, size_t count) {
+static void pd_conjoint_oops_atomic(const oop* from, oop* to, size_t count) {
   assert(BytesPerLong == BytesPerOop, "jlongs and oops must be the same size");
-  _Copy_conjoint_jlongs_atomic((jlong*)from, (jlong*)to, count);
+  _Copy_conjoint_jlongs_atomic((const jlong*)from, (jlong*)to, count);
 }
 
-static void pd_arrayof_conjoint_bytes(HeapWord* from, HeapWord* to, size_t count) {
+static void pd_arrayof_conjoint_bytes(const HeapWord* from, HeapWord* to, size_t count) {
   _Copy_arrayof_conjoint_bytes(from, to, count);
 }
 
-static void pd_arrayof_conjoint_jshorts(HeapWord* from, HeapWord* to, size_t count) {
+static void pd_arrayof_conjoint_jshorts(const HeapWord* from, HeapWord* to, size_t count) {
   _Copy_arrayof_conjoint_jshorts(from, to, count);
 }
 
-static void pd_arrayof_conjoint_jints(HeapWord* from, HeapWord* to, size_t count) {
+static void pd_arrayof_conjoint_jints(const HeapWord* from, HeapWord* to, size_t count) {
    _Copy_arrayof_conjoint_jints(from, to, count);
 }
 
-static void pd_arrayof_conjoint_jlongs(HeapWord* from, HeapWord* to, size_t count) {
+static void pd_arrayof_conjoint_jlongs(const HeapWord* from, HeapWord* to, size_t count) {
   _Copy_arrayof_conjoint_jlongs(from, to, count);
 }
 
-static void pd_arrayof_conjoint_oops(HeapWord* from, HeapWord* to, size_t count) {
+static void pd_arrayof_conjoint_oops(const HeapWord* from, HeapWord* to, size_t count) {
   assert(!UseCompressedOops, "foo!");
   assert(BytesPerLong == BytesPerOop, "jlongs and oops must be the same size");
   _Copy_arrayof_conjoint_jlongs(from, to, count);

@@ -4372,7 +4372,7 @@ void ChunkManager_test_list_index() {
 // ChunkManagerReturnTest stresses taking/returning chunks from the ChunkManager. It takes and
 // returns chunks from/to the ChunkManager while keeping track of the expected ChunkManager
 // content.
-class ChunkManagerReturnTestImpl {
+class ChunkManagerReturnTestImpl : public CHeapObj<mtClass> {
 
   VirtualSpaceNode _vsn;
   ChunkManager _cm;

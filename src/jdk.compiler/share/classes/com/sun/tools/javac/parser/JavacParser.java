@@ -1673,6 +1673,8 @@ public class JavacParser implements Parser {
         CAST,
         EXPLICIT_LAMBDA,
         IMPLICIT_LAMBDA,
+        IMPLICIT_LAMBDA_ALL_VAR,
+        BAD_LAMBDA,
         PARENS
     }
 
@@ -1681,7 +1683,90 @@ public class JavacParser implements Parser {
                 formalParameters(true) :
                 implicitParameters(hasParens);
 
+        if (explicitParams) {
+            LambdaClassfier lambdaClassfier = new LambdaClassfier();
+            for (JCVariableDecl param: params) {
+                if (param.vartype != null &&
+                        isRestrictedLocalVarTypeName(param.vartype) &&
+                        param.vartype.hasTag(TYPEARRAY)) {
+                    log.error(DiagnosticFlag.SYNTAX, param.pos, Errors.VarNotAllowedArray);
+                }
+                if (param.vartype != null && param.name != names.empty) {
+                    if (isRestrictedLocalVarTypeName(param.vartype)) {
+                        lambdaClassfier.addImplicitVarParameter();
+                    } else {
+                        lambdaClassfier.addExplicitParameter();
+                    }
+                }
+                if (param.vartype == null && param.name != names.empty ||
+                    param.vartype != null && param.name == names.empty) {
+                    lambdaClassfier.addImplicitParameter();
+                }
+                if (lambdaClassfier.result() == ParensResult.BAD_LAMBDA) {
+                    break;
+                }
+            }
+            if (lambdaClassfier.diagFragment != null) {
+                log.error(DiagnosticFlag.SYNTAX, pos, Errors.InvalidLambdaParameterDeclaration(lambdaClassfier.diagFragment));
+            }
+        }
         return lambdaExpressionOrStatementRest(params, pos);
+    }
+
+    class LambdaClassfier {
+        ParensResult kind; //ParensResult.EXPLICIT_LAMBDA;
+        Fragment diagFragment;
+        List<JCVariableDecl> params;
+
+        void addExplicitParameter() {
+            reduce(ParensResult.EXPLICIT_LAMBDA);
+        }
+
+        void addImplicitVarParameter() {
+           reduce(ParensResult.IMPLICIT_LAMBDA_ALL_VAR);
+        }
+
+        void addImplicitParameter() {
+            reduce(ParensResult.IMPLICIT_LAMBDA);
+        }
+
+        private void reduce(ParensResult newKind) {
+            if (kind == null) {
+                kind = newKind;
+            } else if (kind != newKind && kind != ParensResult.BAD_LAMBDA) {
+                ParensResult currentKind = kind;
+                kind = ParensResult.BAD_LAMBDA;
+                switch (currentKind) {
+                    case EXPLICIT_LAMBDA:
+                        if (newKind == ParensResult.IMPLICIT_LAMBDA) {
+                            diagFragment = Fragments.ImplicitAndExplicitNotAllowed;
+                        } else if (newKind == ParensResult.IMPLICIT_LAMBDA_ALL_VAR) {
+                            diagFragment = Fragments.VarAndExplicitNotAllowed;
+                        }
+                        break;
+                    case IMPLICIT_LAMBDA:
+                        if (newKind == ParensResult.EXPLICIT_LAMBDA) {
+                            diagFragment = Fragments.ImplicitAndExplicitNotAllowed;
+                        } else if (newKind == ParensResult.IMPLICIT_LAMBDA_ALL_VAR) {
+                            diagFragment = Fragments.VarAndImplicitNotAllowed;
+                        }
+                        break;
+                    case IMPLICIT_LAMBDA_ALL_VAR:
+                        if (newKind == ParensResult.EXPLICIT_LAMBDA) {
+                            diagFragment = Fragments.VarAndExplicitNotAllowed;
+                        } else if (newKind == ParensResult.IMPLICIT_LAMBDA) {
+                            diagFragment = Fragments.VarAndImplicitNotAllowed;
+                        }
+                        break;
+                    default:
+                        throw new AssertionError("unexpected option for field kind");
+                }
+            }
+        }
+
+        ParensResult result() {
+            return kind;
+        }
     }
 
     JCExpression lambdaExpressionOrStatementRest(List<JCVariableDecl> args, int pos) {
@@ -3044,7 +3129,21 @@ public class JavacParser implements Parser {
                     return toP(F.at(pos).ReceiverVarDef(mods, pn, type));
                 }
             } else {
-                name = ident();
+                if (!lambdaParameter ||
+                        LAX_IDENTIFIER.accepts(token.kind) ||
+                        mods.flags != Flags.PARAMETER ||
+                        mods.annotations.nonEmpty()) {
+                    name = ident();
+                } else {
+                    /** if it is a lambda parameter and the token kind is not an identifier,
+                     *  and there are no modifiers or annotations, then this means that the compiler
+                     *  supposed the lambda to be explicit but it can contain a mix of implicit,
+                     *  var or explicit parameters. So we assign the error name to the parameter name
+                     *  instead of issuing an error and analyze the lambda parameters as a whole at
+                     *  a higher level.
+                     */
+                    name = names.empty;
+                }
             }
         }
         if ((mods.flags & Flags.VARARGS) != 0 &&
@@ -3947,7 +4046,7 @@ public class JavacParser implements Parser {
         // need to distinguish between vararg annos and array annos
         // look at typeAnnotationsPushedBack comment
         this.permitTypeAnnotationsPushBack = true;
-        JCExpression type = parseType();
+        JCExpression type = parseType(lambdaParameter);
         this.permitTypeAnnotationsPushBack = false;
 
         if (token.kind == ELLIPSIS) {

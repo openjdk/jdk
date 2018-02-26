@@ -195,15 +195,14 @@ line separators) and is thus subject to quoting.
 **EXAMPLE OUTPUT**
 
 Given the following method declaration and annotation from the
-`java.lang.Runtime` class,
+`java.lang.Character` class,
 
-            @Deprecated(since="1.2",
-                        forRemoval=true)
-            public static void runFinalizersOnExit(boolean value)
+            @Deprecated(since="1.1")
+            public static boolean isJavaLetter(char ch)
 
 the following line will be emitted from **jdeprscan -Xprint-csv**:
 
-            METHOD,java/lang/Runtime,runFinalizersOnExit(Z)V,1.2,true
+            METHOD,java/lang/Character,isJavaLetter(C)Z,1.1,false
 
 
 [RFC]: https://www.ietf.org/rfc/rfc4180.txt

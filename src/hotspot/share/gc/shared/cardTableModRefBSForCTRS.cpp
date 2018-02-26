@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,3 +121,6 @@ void CardTableModRefBSForCTRS::non_clean_card_iterate_possibly_parallel(
   }
 }
 
+bool CardTableModRefBSForCTRS::is_in_young(oop obj) const {
+  return GenCollectedHeap::heap()->is_in_young(obj);
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -643,10 +643,7 @@ class MethodHandleNatives {
 
     static boolean canBeCalledVirtual(MemberName mem) {
         assert(mem.isInvocable());
-        Class<?> defc = mem.getDeclaringClass();
         switch (mem.getName()) {
-        case "checkMemberAccess":
-            return canBeCalledVirtual(mem, java.lang.SecurityManager.class);
         case "getContextClassLoader":
             return canBeCalledVirtual(mem, java.lang.Thread.class);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,7 @@ public final class DHParameters extends AlgorithmParametersSpi {
      * Returns a formatted string describing the parameters.
      */
     protected String engineToString() {
-        String LINE_SEP = System.getProperty("line.separator");
+        String LINE_SEP = System.lineSeparator();
 
         StringBuilder sb
             = new StringBuilder("SunJCE Diffie-Hellman Parameters:"

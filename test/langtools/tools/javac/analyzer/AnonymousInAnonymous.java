@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,27 @@
  * questions.
  */
 
-/* @test
-   @bug 4119554
-   @summary runFinalizersOnExit(true) causes JIT to be unloaded and
-            crashes the VM.  Interim fix for 1.2 beta4 -- don't unload
-            native libraries loaded by system classes.
-   @run main/othervm ExitFinalizersAndJIT
-*/
+/*
+ * @test
+ * @bug 8197439
+ * @summary Check anonymous class in anonymous class, where the nested one becomes
+ *          unresolvable with lambda conversion.
+ * @compile -XDfind=lambda -Werror AnonymousInAnonymous.java
+ */
 
-public class ExitFinalizersAndJIT {
-    public static void main(String[] args) throws Exception {
-        System.runFinalizersOnExit(true);
+public class AnonymousInAnonymous {
+    static void s(I1 i) {}
+    static {
+        s(
+            new I1() {
+                public I2 get() {
+                    return new I2() {
+                    };
+                }
+            });
+    }
+    public static interface I1 {
+        public static class I2 { }
+        public I2 get();
     }
 }

@@ -74,11 +74,12 @@ SUNWprivate_1.1 {
 		JNU_ThrowStringIndexOutOfBoundsException;
 		JNU_ToString;
 
-		Java_java_io_FileDescriptor_cleanupClose0;
+		Java_java_io_FileCleanable_cleanupClose0;
 		Java_java_io_FileDescriptor_close0;
 		Java_java_io_FileDescriptor_initIDs;
 		Java_java_io_FileDescriptor_sync;
 		Java_java_io_FileDescriptor_getAppend;
+		Java_java_io_FileDescriptor_getHandle;
 		Java_java_io_FileInputStream_available0;
 		Java_java_io_FileInputStream_initIDs;
 		Java_java_io_FileInputStream_open0;
@@ -142,7 +143,6 @@ SUNWprivate_1.1 {
                 Java_java_lang_StackStreamFactory_checkStackWalkModes;
                 Java_java_lang_StackStreamFactory_00024AbstractStackWalker_callStackWalk;
                 Java_java_lang_StackStreamFactory_00024AbstractStackWalker_fetchStackFrames;
-		Java_java_lang_Shutdown_runAllFinalizers;
 		Java_java_lang_StrictMath_IEEEremainder;
 		Java_java_lang_StrictMath_acos;
 		Java_java_lang_StrictMath_asin;

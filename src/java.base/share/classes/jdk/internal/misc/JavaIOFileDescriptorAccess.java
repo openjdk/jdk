@@ -40,7 +40,7 @@ public interface JavaIOFileDescriptorAccess {
     public boolean getAppend(FileDescriptor fdo);
     public void close(FileDescriptor fdo) throws IOException;
     public void registerCleanup(FileDescriptor fdo);
-    public void registerCleanup(FileDescriptor fdo, PhantomCleanable<Object> cleanable);
+    public void registerCleanup(FileDescriptor fdo, PhantomCleanable<FileDescriptor> cleanable);
     public void unregisterCleanup(FileDescriptor fdo);
 
     // Only valid on Windows

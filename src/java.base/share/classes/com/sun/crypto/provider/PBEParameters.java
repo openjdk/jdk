@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,7 @@ public final class PBEParameters extends AlgorithmParametersSpi {
      * Returns a formatted string describing the parameters.
      */
     protected String engineToString() {
-        String LINE_SEP = System.getProperty("line.separator");
+        String LINE_SEP = System.lineSeparator();
         String saltString = LINE_SEP + "    salt:" + LINE_SEP + "[";
         HexDumpEncoder encoder = new HexDumpEncoder();
         saltString += encoder.encodeBuffer(salt);

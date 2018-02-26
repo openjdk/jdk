@@ -49,12 +49,13 @@ public class Basic {
     static Runtime rt = Runtime.getRuntime();
     static PrintStream out = System.out;
 
+    // Expect that no finalizer is invoked at exit
     @DataProvider(name = "testcase")
     public Object[][] getTestCase() {
         return new Object[][] {
-            { "fallThrough", 0, "h1", "f1" },
-            { "exit0",       0, "h1", "f1" },
-            { "exit0NoHook", 0, "",   "f1" },
+            { "fallThrough", 0, "h1", "" },
+            { "exit0",       0, "h1", "" },
+            { "exit0NoHook", 0, "",   "" },
             { "exit1",       1, "h1", "" },
             { "exit1NoHook", 1, "",   "" },
             { "halt",        0, "",   "" },
@@ -112,19 +113,16 @@ public class Basic {
     public static void fallThrough() throws Exception {
         rt.addShutdownHook(new Hook("h1"));
         Fin f = new Fin("f1");
-        rt.runFinalizersOnExit(true);
     }
 
     public static void exit0() throws Exception {
         rt.addShutdownHook(new Hook("h1"));
         Fin f = new Fin("f1");
-        rt.runFinalizersOnExit(true);
         rt.exit(0);
     }
 
     public static void exit0NoHook() throws Exception {
         Fin f = new Fin("f1");
-        rt.runFinalizersOnExit(true);
         rt.exit(0);
     }
 
@@ -132,13 +130,11 @@ public class Basic {
     public static void exit1() throws Exception {
         rt.addShutdownHook(new Hook("h1"));
         Fin f = new Fin("f1");
-        rt.runFinalizersOnExit(true);
         rt.exit(1);
     }
 
     public static void exit1NoHook() throws Exception {
         Fin f = new Fin("f1");
-        rt.runFinalizersOnExit(true);
         rt.exit(1);
     }
 
@@ -146,13 +142,11 @@ public class Basic {
         rt.addShutdownHook(new Hook("h1") {
             public void go() { rt.halt(1); }});
         Fin f = new Fin("f1") { public void go() { rt.halt(1); }};
-        rt.runFinalizersOnExit(true);
         rt.halt(0);
     }
 
     public static void haltNoHook() throws Exception {
         Fin f = new Fin("f1") { public void go() { rt.halt(1); }};
-        rt.runFinalizersOnExit(true);
         rt.halt(0);
     }
 
@@ -160,7 +154,6 @@ public class Basic {
         rt.addShutdownHook(new Hook("h1") {
             public void go() { rt.halt(0); }});
         Fin f = new Fin("f1");
-        rt.runFinalizersOnExit(true);
         rt.exit(1);
     }
 
@@ -191,52 +184,9 @@ public class Basic {
         rt.exit(1);
     }
 
-
-    /* The following two methods are provided for manual testing only.
-     * Neither test is suitable for being run from within the harness.
-     */
-
-    public static void awt() throws Exception {
-        final Frame f = new Frame();
-        final TextArea ta = new TextArea();
-        Fin fx = new Fin("f1");
-        rt.runFinalizersOnExit(true);
-        rt.addShutdownHook(new Hook("h1") {
-            public void go() {
-                ta.setText("Hooked!");
-                out.println("Hooked!");
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException x) { }
-                ta.append("\nSleep 1");
-                out.println("Sleep 1");
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException x) { }
-                ta.append("\nSleep 2");
-                out.println("Sleep 2");
-            }});
-        f.addWindowListener(new WindowAdapter() {
-            public void windowClosing(WindowEvent e) {
-                out.println("Closing...");
-                ta.setText("Closing...");
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException x) { }
-                f.dispose();
-                rt.exit(42);
-            }});
-        ta.setText("Terminate me!");
-        f.add(ta);
-        f.pack();
-        f.show();
-        Thread.sleep(10000);
-    }
-
     /* For INT, HUP, TERM */
     public static void stall() throws Exception {
         Fin f = new Fin("f1");
-        rt.runFinalizersOnExit(true);
         rt.addShutdownHook(new Hook("h1"));
         out.print("Type ^C now: ");
         out.flush();

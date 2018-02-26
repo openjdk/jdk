@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,8 @@ public:
     jbyte val = _byte_map[card_index];
     return (val & (clean_card_mask_val() | deferred_card_val())) == deferred_card_val();
   }
+
+  virtual bool is_in_young(oop obj) const;
 };
 
 template<>
@@ -145,12 +147,18 @@ class G1SATBCardTableLoggingModRefBS: public G1SATBCardTableModRefBS {
   // above no longer applies.
   void invalidate(MemRegion mr);
 
-  void write_region_work(MemRegion mr)    { invalidate(mr); }
+  void write_region(MemRegion mr)         { invalidate(mr); }
   void write_ref_array_work(MemRegion mr) { invalidate(mr); }
 
   template <DecoratorSet decorators, typename T>
   void write_ref_field_post(T* field, oop new_val);
   void write_ref_field_post_slow(volatile jbyte* byte);
+
+  virtual void flush_deferred_barriers(JavaThread* thread);
+
+  virtual bool card_mark_must_follow_store() const {
+    return true;
+  }
 
   // Callbacks for runtime accesses.
   template <DecoratorSet decorators, typename BarrierSetT = G1SATBCardTableLoggingModRefBS>
