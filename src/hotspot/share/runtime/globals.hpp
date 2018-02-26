@@ -1723,13 +1723,13 @@ public:
           "enough work per iteration")                                      \
           range(0, max_intx)                                                \
                                                                             \
-  /* 4096 = CardTableModRefBS::card_size_in_words * BitsPerWord */          \
+  /* 4096 = CardTable::card_size_in_words * BitsPerWord */                  \
   product(size_t, CMSRescanMultiple, 32,                                    \
           "Size (in cards) of CMS parallel rescan task")                    \
           range(1, SIZE_MAX / 4096)                                         \
           constraint(CMSRescanMultipleConstraintFunc,AfterMemoryInit)       \
                                                                             \
-  /* 4096 = CardTableModRefBS::card_size_in_words * BitsPerWord */          \
+  /* 4096 = CardTable::card_size_in_words * BitsPerWord */                  \
   product(size_t, CMSConcMarkMultiple, 32,                                  \
           "Size (in cards) of CMS concurrent MT marking task")              \
           range(1, SIZE_MAX / 4096)                                         \

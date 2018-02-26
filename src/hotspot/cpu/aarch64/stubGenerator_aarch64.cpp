@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +26,8 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_aarch64.hpp"
 #include "oops/instanceOop.hpp"
@@ -652,9 +654,7 @@ class StubGenerator: public StubCodeGenerator {
         __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre), 2);
         __ pop(saved_regs, sp);
         break;
-      case BarrierSet::CardTableForRS:
-      case BarrierSet::CardTableExtension:
-      case BarrierSet::ModRef:
+      case BarrierSet::CardTableModRef:
         break;
       default:
         ShouldNotReachHere();
@@ -695,16 +695,16 @@ class StubGenerator: public StubCodeGenerator {
           __ pop(saved_regs, sp);
         }
         break;
-      case BarrierSet::CardTableForRS:
-      case BarrierSet::CardTableExtension:
+      case BarrierSet::CardTableModRef:
         {
-          CardTableModRefBS* ct = (CardTableModRefBS*)bs;
-          assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
+          CardTableModRefBS* ctbs = barrier_set_cast<CardTableModRefBS>(bs);
+          CardTable* ct = ctbs->card_table();
+          assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
           Label L_loop;
 
-           __ lsr(start, start, CardTableModRefBS::card_shift);
-           __ lsr(end, end, CardTableModRefBS::card_shift);
+           __ lsr(start, start, CardTable::card_shift);
+           __ lsr(end, end, CardTable::card_shift);
            __ sub(end, end, start); // number of bytes to copy
 
           const Register count = end; // 'end' register contains bytes count now

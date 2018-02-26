@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,12 +236,12 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
                       young_gen->to_space()->is_empty();
     young_gen_empty = eden_empty && survivors_empty;
 
-    ModRefBarrierSet* modBS = barrier_set_cast<ModRefBarrierSet>(heap->barrier_set());
+    PSCardTable* card_table = heap->card_table();
     MemRegion old_mr = heap->old_gen()->reserved();
     if (young_gen_empty) {
-      modBS->clear(MemRegion(old_mr.start(), old_mr.end()));
+      card_table->clear(MemRegion(old_mr.start(), old_mr.end()));
     } else {
-      modBS->invalidate(MemRegion(old_mr.start(), old_mr.end()));
+      card_table->invalidate(MemRegion(old_mr.start(), old_mr.end()));
     }
 
     // Delete metaspaces for unloaded class loaders and clean up loader_data graph

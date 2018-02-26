@@ -27,6 +27,7 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "compiler/disassembler.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableModRefBS.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
@@ -45,6 +46,7 @@
 #include "runtime/thread.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -5407,9 +5409,10 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
   Address buffer(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
                                        DirtyCardQueue::byte_offset_of_buf()));
 
-  CardTableModRefBS* ct =
+  CardTableModRefBS* ctbs =
     barrier_set_cast<CardTableModRefBS>(Universe::heap()->barrier_set());
-  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
+  CardTable* ct = ctbs->card_table();
+  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
   Label done;
   Label runtime;
@@ -5432,24 +5435,24 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
   const Register cardtable = tmp2;
 
   movptr(card_addr, store_addr);
-  shrptr(card_addr, CardTableModRefBS::card_shift);
+  shrptr(card_addr, CardTable::card_shift);
   // Do not use ExternalAddress to load 'byte_map_base', since 'byte_map_base' is NOT
   // a valid address and therefore is not properly handled by the relocation code.
-  movptr(cardtable, (intptr_t)ct->byte_map_base);
+  movptr(cardtable, (intptr_t)ct->byte_map_base());
   addptr(card_addr, cardtable);
 
-  cmpb(Address(card_addr, 0), (int)G1SATBCardTableModRefBS::g1_young_card_val());
+  cmpb(Address(card_addr, 0), (int)G1CardTable::g1_young_card_val());
   jcc(Assembler::equal, done);
 
   membar(Assembler::Membar_mask_bits(Assembler::StoreLoad));
-  cmpb(Address(card_addr, 0), (int)CardTableModRefBS::dirty_card_val());
+  cmpb(Address(card_addr, 0), (int)CardTable::dirty_card_val());
   jcc(Assembler::equal, done);
 
 
   // storing a region crossing, non-NULL oop, card is clean.
   // dirty card and log.
 
-  movb(Address(card_addr, 0), (int)CardTableModRefBS::dirty_card_val());
+  movb(Address(card_addr, 0), (int)CardTable::dirty_card_val());
 
   cmpl(queue_index, 0);
   jcc(Assembler::equal, runtime);
@@ -5494,14 +5497,14 @@ void MacroAssembler::store_check(Register obj) {
   // Does a store check for the oop in register obj. The content of
   // register obj is destroyed afterwards.
   BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->kind() == BarrierSet::CardTableForRS ||
-         bs->kind() == BarrierSet::CardTableExtension,
+  assert(bs->kind() == BarrierSet::CardTableModRef,
          "Wrong barrier set kind");
 
-  CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(bs);
-  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
+  CardTableModRefBS* ctbs = barrier_set_cast<CardTableModRefBS>(bs);
+  CardTable* ct = ctbs->card_table();
+  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
-  shrptr(obj, CardTableModRefBS::card_shift);
+  shrptr(obj, CardTable::card_shift);
 
   Address card_addr;
 
@@ -5510,7 +5513,7 @@ void MacroAssembler::store_check(Register obj) {
   // So this essentially converts an address to a displacement and it will
   // never need to be relocated. On 64bit however the value may be too
   // large for a 32bit displacement.
-  intptr_t disp = (intptr_t) ct->byte_map_base;
+  intptr_t disp = (intptr_t) ct->byte_map_base();
   if (is_simm32(disp)) {
     card_addr = Address(noreg, obj, Address::times_1, disp);
   } else {
@@ -5518,12 +5521,12 @@ void MacroAssembler::store_check(Register obj) {
     // displacement and done in a single instruction given favorable mapping and a
     // smarter version of as_Address. However, 'ExternalAddress' generates a relocation
     // entry and that entry is not properly handled by the relocation code.
-    AddressLiteral cardtable((address)ct->byte_map_base, relocInfo::none);
+    AddressLiteral cardtable((address)ct->byte_map_base(), relocInfo::none);
     Address index(noreg, obj, Address::times_1);
     card_addr = as_Address(ArrayAddress(cardtable, index));
   }
 
-  int dirty = CardTableModRefBS::dirty_card_val();
+  int dirty = CardTable::dirty_card_val();
   if (UseCondCardMark) {
     Label L_already_dirty;
     if (UseConcMarkSweepGC) {

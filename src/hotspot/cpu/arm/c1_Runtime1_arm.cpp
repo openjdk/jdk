@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,9 @@
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
+#include "ci/ciUtilities.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_arm.hpp"
 #include "oops/compiledICHolder.hpp"
@@ -40,6 +43,7 @@
 #include "utilities/align.hpp"
 #include "vmreg_arm.inline.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #endif
 
@@ -608,8 +612,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         __ set_info("g1_post_barrier_slow_id", dont_gc_arguments);
 
-        BarrierSet* bs = Universe::heap()->barrier_set();
-        CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(bs);
         Label done;
         Label recheck;
         Label runtime;
@@ -619,8 +621,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Address buffer(Rthread, in_bytes(JavaThread::dirty_card_queue_offset() +
                                          DirtyCardQueue::byte_offset_of_buf()));
 
-        AddressLiteral cardtable((address)ct->byte_map_base, relocInfo::none);
-        assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
+        AddressLiteral cardtable(ci_card_table_address_as<address>(), relocInfo::none);
 
         // save at least the registers that need saving if the runtime is called
 #ifdef AARCH64
@@ -649,12 +650,12 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         // explicitly specify that 'cardtable' has a relocInfo::none
         // type.
         __ lea(r_card_base_1, cardtable);
-        __ add(r_card_addr_0, r_card_base_1, AsmOperand(r_obj_0, lsr, CardTableModRefBS::card_shift));
+        __ add(r_card_addr_0, r_card_base_1, AsmOperand(r_obj_0, lsr, CardTable::card_shift));
 
         // first quick check without barrier
         __ ldrb(r_tmp2, Address(r_card_addr_0));
 
-        __ cmp(r_tmp2, (int)G1SATBCardTableModRefBS::g1_young_card_val());
+        __ cmp(r_tmp2, (int)G1CardTable::g1_young_card_val());
         __ b(recheck, ne);
 
         __ bind(done);
@@ -675,14 +676,14 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         // reload card state after the barrier that ensures the stored oop was visible
         __ ldrb(r_tmp2, Address(r_card_addr_0));
 
-        assert(CardTableModRefBS::dirty_card_val() == 0, "adjust this code");
+        assert(CardTable::dirty_card_val() == 0, "adjust this code");
         __ cbz(r_tmp2, done);
 
         // storing region crossing non-NULL, card is clean.
         // dirty card and log.
 
-        assert(0 == (int)CardTableModRefBS::dirty_card_val(), "adjust this code");
-        if (((intptr_t)ct->byte_map_base & 0xff) == 0) {
+        assert(0 == (int)CardTable::dirty_card_val(), "adjust this code");
+        if ((ci_card_table_address_as<intptr_t>() & 0xff) == 0) {
           // Card table is aligned so the lowest byte of the table address base is zero.
           __ strb(r_card_base_1, Address(r_card_addr_0));
         } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,10 +68,10 @@ void G1CardLiveData::initialize(size_t max_capacity, uint num_max_regions) {
   assert(max_capacity % num_max_regions == 0,
          "Given capacity must be evenly divisible by region size.");
   size_t region_size = max_capacity / num_max_regions;
-  assert(region_size % (G1SATBCardTableModRefBS::card_size * BitsPerWord) == 0,
+  assert(region_size % (G1CardTable::card_size * BitsPerWord) == 0,
          "Region size must be evenly divisible by area covered by a single word.");
   _max_capacity = max_capacity;
-  _cards_per_region = region_size / G1SATBCardTableModRefBS::card_size;
+  _cards_per_region = region_size / G1CardTable::card_size;
 
   _live_regions_size_in_bits = live_region_bitmap_size_in_bits();
   _live_regions = allocate_large_bitmap(_live_regions_size_in_bits);
@@ -85,11 +85,11 @@ void G1CardLiveData::pretouch() {
 }
 
 size_t G1CardLiveData::live_region_bitmap_size_in_bits() const {
-  return _max_capacity / (_cards_per_region << G1SATBCardTableModRefBS::card_shift);
+  return _max_capacity / (_cards_per_region << G1CardTable::card_shift);
 }
 
 size_t G1CardLiveData::live_card_bitmap_size_in_bits() const {
-  return _max_capacity >> G1SATBCardTableModRefBS::card_shift;
+  return _max_capacity >> G1CardTable::card_shift;
 }
 
 // Helper class that provides functionality to generate the Live Data Count
@@ -132,7 +132,7 @@ private:
 
   void clear_card_bitmap_range(HeapWord* start, HeapWord* end) {
     BitMap::idx_t start_idx = card_live_bitmap_index_for(start);
-    BitMap::idx_t end_idx = card_live_bitmap_index_for(align_up(end, CardTableModRefBS::card_size));
+    BitMap::idx_t end_idx = card_live_bitmap_index_for(align_up(end, CardTable::card_size));
 
     _card_bm.clear_range(start_idx, end_idx);
   }
@@ -140,7 +140,7 @@ private:
   // Mark the card liveness bitmap for the object spanning from start to end.
   void mark_card_bitmap_range(HeapWord* start, HeapWord* end) {
     BitMap::idx_t start_idx = card_live_bitmap_index_for(start);
-    BitMap::idx_t end_idx = card_live_bitmap_index_for(align_up(end, CardTableModRefBS::card_size));
+    BitMap::idx_t end_idx = card_live_bitmap_index_for(align_up(end, CardTable::card_size));
 
     assert((end_idx - start_idx) > 0, "Trying to mark zero sized range.");
 
@@ -168,7 +168,7 @@ public:
     // by the card shift -- address 0 corresponds to card number 0.  One
     // must subtract the card num of the bottom of the heap to obtain a
     // card table index.
-    BitMap::idx_t card_num = uintptr_t(addr) >> CardTableModRefBS::card_shift;
+    BitMap::idx_t card_num = uintptr_t(addr) >> G1CardTable::card_shift;
     return card_num - _heap_card_bias;
   }
 
@@ -262,7 +262,7 @@ public:
     // Calculate the card number for the bottom of the heap. Used
     // in biasing indexes into the accounting card bitmaps.
     _heap_card_bias =
-      uintptr_t(base_address) >> CardTableModRefBS::card_shift;
+      uintptr_t(base_address) >> G1CardTable::card_shift;
   }
 };
 

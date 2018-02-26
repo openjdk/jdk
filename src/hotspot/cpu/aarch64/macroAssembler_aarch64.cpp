@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,8 +29,9 @@
 #include "jvm.h"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
 #include "interpreter/interpreter.hpp"
-
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_aarch64.hpp"
@@ -46,6 +47,7 @@
 #include "runtime/thread.hpp"
 
 #if INCLUDE_ALL_GCS
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -3615,16 +3617,16 @@ void MacroAssembler::store_check(Register obj) {
   // register obj is destroyed afterwards.
 
   BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->kind() == BarrierSet::CardTableForRS ||
-         bs->kind() == BarrierSet::CardTableExtension,
+  assert(bs->kind() == BarrierSet::CardTableModRef,
          "Wrong barrier set kind");
 
-  CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(bs);
-  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
+  CardTableModRefBS* ctbs = barrier_set_cast<CardTableModRefBS>(bs);
+  CardTable* ct = ctbs->card_table();
+  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
-  lsr(obj, obj, CardTableModRefBS::card_shift);
+  lsr(obj, obj, CardTable::card_shift);
 
-  assert(CardTableModRefBS::dirty_card_val() == 0, "must be");
+  assert(CardTable::dirty_card_val() == 0, "must be");
 
   load_byte_map_base(rscratch1);
 
@@ -4126,8 +4128,9 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
                                        DirtyCardQueue::byte_offset_of_buf()));
 
   BarrierSet* bs = Universe::heap()->barrier_set();
-  CardTableModRefBS* ct = (CardTableModRefBS*)bs;
-  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
+  CardTableModRefBS* ctbs = barrier_set_cast<CardTableModRefBS>(bs);
+  CardTable* ct = ctbs->card_table();
+  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
   Label done;
   Label runtime;
@@ -4144,20 +4147,20 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
 
   // storing region crossing non-NULL, is card already dirty?
 
-  ExternalAddress cardtable((address) ct->byte_map_base);
-  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
+  ExternalAddress cardtable((address) ct->byte_map_base());
+  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
   const Register card_addr = tmp;
 
-  lsr(card_addr, store_addr, CardTableModRefBS::card_shift);
+  lsr(card_addr, store_addr, CardTable::card_shift);
 
   // get the address of the card
   load_byte_map_base(tmp2);
   add(card_addr, card_addr, tmp2);
   ldrb(tmp2, Address(card_addr));
-  cmpw(tmp2, (int)G1SATBCardTableModRefBS::g1_young_card_val());
+  cmpw(tmp2, (int)G1CardTable::g1_young_card_val());
   br(Assembler::EQ, done);
 
-  assert((int)CardTableModRefBS::dirty_card_val() == 0, "must be 0");
+  assert((int)CardTable::dirty_card_val() == 0, "must be 0");
 
   membar(Assembler::StoreLoad);
 

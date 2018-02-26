@@ -29,25 +29,31 @@
 
 #if INCLUDE_ALL_GCS
 #define FOR_EACH_CONCRETE_INCLUDE_ALL_GC_BARRIER_SET_DO(f) \
-  f(CardTableExtension)                                    \
   f(G1SATBCTLogging)
 #else
 #define FOR_EACH_CONCRETE_INCLUDE_ALL_GC_BARRIER_SET_DO(f)
 #endif
 
+#if INCLUDE_ALL_GCS
+#define FOR_EACH_ABSTRACT_INCLUDE_ALL_GC_BARRIER_SET_DO(f) \
+  f(G1SATBCT)
+#else
+#define FOR_EACH_ABSTRACT_INCLUDE_ALL_GC_BARRIER_SET_DO(f)
+#endif
+
 // Do something for each concrete barrier set part of the build.
 #define FOR_EACH_CONCRETE_BARRIER_SET_DO(f)          \
-  f(CardTableForRS)                                  \
+  f(CardTableModRef)                                 \
   FOR_EACH_CONCRETE_INCLUDE_ALL_GC_BARRIER_SET_DO(f)
+
+#define FOR_EACH_ABSTRACT_BARRIER_SET_DO(f)          \
+  f(ModRef)                                          \
+  FOR_EACH_ABSTRACT_INCLUDE_ALL_GC_BARRIER_SET_DO(f)
 
 // Do something for each known barrier set.
 #define FOR_EACH_BARRIER_SET_DO(f)    \
-  f(ModRef)                           \
-  f(CardTableModRef)                  \
-  f(CardTableForRS)                   \
-  f(CardTableExtension)               \
-  f(G1SATBCT)                         \
-  f(G1SATBCTLogging)
+  FOR_EACH_ABSTRACT_BARRIER_SET_DO(f) \
+  FOR_EACH_CONCRETE_BARRIER_SET_DO(f)
 
 // To enable runtime-resolution of GC barriers on primitives, please
 // define SUPPORT_BARRIER_ON_PRIMITIVES.

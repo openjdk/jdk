@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
     public static final GraalHotSpotVMConfig INJECTED_VMCONFIG = null;
 
     private final boolean isJDK8 = System.getProperty("java.specification.version").compareTo("1.9") < 0;
+    private final int JDKVersion = isJDK8 ? 8 : Integer.parseInt(System.getProperty("java.specification.version"));
     public final String osName = getHostOSName();
     public final String osArch = getHostArchitectureName();
     public final boolean windowsOs = System.getProperty("os.name", "").startsWith("Windows");
@@ -554,8 +555,12 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
 
     public final int logOfHRGrainBytes = getFieldValue("HeapRegion::LogOfHRGrainBytes", Integer.class, "int");
 
-    public final byte dirtyCardValue = isJDK8 ? getFieldValue("CompilerToVM::Data::dirty_card", Byte.class, "int") : getConstant("CardTableModRefBS::dirty_card", Byte.class);
-    public final byte g1YoungCardValue = isJDK8 ? getFieldValue("CompilerToVM::Data::g1_young_card", Byte.class, "int") : getConstant("G1SATBCardTableModRefBS::g1_young_gen", Byte.class);
+    public final byte dirtyCardValue = JDKVersion >= 11 ? getConstant("CardTable::dirty_card", Byte.class) :
+                                         (JDKVersion > 8 ? getConstant("CardTableModRefBS::dirty_card", Byte.class) :
+                                         getFieldValue("CompilerToVM::Data::dirty_card", Byte.class, "int"));
+    public final byte g1YoungCardValue = JDKVersion >= 11 ? getConstant("G1CardTable::g1_young_gen", Byte.class) :
+                                           (JDKVersion > 8 ? getConstant("G1SATBCardTableModRefBS::g1_young_gen", Byte.class) :
+                                           getFieldValue("CompilerToVM::Data::g1_young_card", Byte.class, "int"));
 
     public final long cardtableStartAddress = getFieldValue("CompilerToVM::Data::cardtable_start_address", Long.class, "jbyte*");
     public final int cardtableShift = getFieldValue("CompilerToVM::Data::cardtable_shift", Integer.class, "int");
