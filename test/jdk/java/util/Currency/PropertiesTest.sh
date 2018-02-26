@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 # @test
 # @bug 6332666 6863624 7180362 8003846 8074350 8074351 8130246 8149735 7102969
-#      8157138
+#      8157138 8190904
 # @summary tests the capability of replacing the currency data with user
 #     specified currency properties file
 # @build PropertiesTest
@@ -122,6 +122,11 @@ if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 # run bug8157138 test
 echo ''
 ${WRITABLEJDK}${FS}bin${FS}java ${TESTVMOPTS} -cp ${TESTCLASSES} PropertiesTest bug8157138
+if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
+
+# run bug8190904 test
+echo ''
+${WRITABLEJDK}${FS}bin${FS}java ${TESTVMOPTS} -cp ${TESTCLASSES} PropertiesTest bug8190904
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 
 # Cleanup

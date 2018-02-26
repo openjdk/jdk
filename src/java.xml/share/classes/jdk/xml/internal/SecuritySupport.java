@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import java.util.ResourceBundle;
  * This class contains utility methods for reading resources in the JAXP packages
  */
 public class SecuritySupport {
-    public final static String NEWLINE = getSystemProperty("line.separator", "\n");
+    public final static String NEWLINE = System.lineSeparator();
 
     /**
      * Cache for properties in java.home/conf/jaxp.properties

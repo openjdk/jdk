@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241 8176110 8177466
+ * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241 8176110 8177466 8197439
  * @summary Test Completion and Documentation
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -659,6 +659,10 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertCompletionIncludesExcludes("v.|", true, Set.of("run()", "length()"), Set.of());
         assertCompletion("Runnable r = |", true, "v");
         assertCompletion("CharSequence r = |", true);
+    }
+
+    public void testCompletionInAnonymous() {
+        assertCompletionIncludesExcludes("new Undefined() { int i = \"\".l|", Set.of("length()"), Set.of());
     }
 
     @BeforeMethod

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073 8173848 8174041 8173916 8174028 8174262 8174797 8177079 8180508 8177466 8172154 8192979 8191842
+ * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073 8173848 8174041 8173916 8174028 8174262 8174797 8177079 8180508 8177466 8172154 8192979 8191842 8198573
  * @summary Simple jshell tool tests
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -791,6 +791,17 @@ public class ToolSimpleTest extends ReplToolTesting {
                 (a) -> assertCommandOutputContains(a, "var list = Stream.of(1, 2, 3).map(j -> new Object() { int i = j; }).collect(Collectors.toList());",
                                                       "list"),
                 (a) -> assertCommandOutputContains(a, "/vars list", "|    List<<anonymous class extending Object>> list = ")
+        );
+    }
+
+    // This is mainly interesting in the TestLocalSimpleTest case (8198573)
+    @Test
+    public void testUpdateFalsePositive() {
+        test(
+                a -> assertClass(a, "class A { int a() { int error = 0; return error; } }", "class", "A"),
+                a -> assertVariable(a, "A", "a", "new A()", "A@.+"),
+                a -> assertVariable(a, "int", "error", "4711", "4711"),
+                a -> assertCommandOutputContains(a, "a", "A@")
         );
     }
 }

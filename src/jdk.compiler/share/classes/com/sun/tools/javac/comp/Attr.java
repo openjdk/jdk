@@ -2193,8 +2193,7 @@ public class Attr extends JCTree.Visitor {
         List<Type> argtypes = argtypesBuf.toList();
         List<Type> typeargtypes = attribTypes(tree.typeargs, localEnv);
 
-        // If we have made no mistakes in the class type...
-        if (clazztype.hasTag(CLASS)) {
+        if (clazztype.hasTag(CLASS) || clazztype.hasTag(ERROR)) {
             // Enums may not be instantiated except implicitly
             if ((clazztype.tsym.flags_field & Flags.ENUM) != 0 &&
                 (!env.tree.hasTag(VARDEF) ||
@@ -2381,7 +2380,8 @@ public class Attr extends JCTree.Visitor {
                 // If we already errored, be careful to avoid a further avalanche. ErrorType answers
                 // false for isInterface call even when the original type is an interface.
                 boolean implementing = clazztype.tsym.isInterface() ||
-                        clazztype.isErroneous() && clazztype.getOriginalType().tsym.isInterface();
+                        clazztype.isErroneous() && !clazztype.getOriginalType().hasTag(NONE) &&
+                        clazztype.getOriginalType().tsym.isInterface();
 
                 if (implementing) {
                     cdef.implementing = List.of(clazz);
@@ -2413,7 +2413,8 @@ public class Attr extends JCTree.Visitor {
                     finalargtypes = finalargtypes.map(deferredAttr.deferredCopier);
                 }
 
-                clazztype = cdef.sym.type;
+                clazztype = clazztype.hasTag(ERROR) ? types.createErrorType(cdef.sym.type)
+                                                    : cdef.sym.type;
                 Symbol sym = tree.constructor = rs.resolveConstructor(
                         tree.pos(), localEnv, clazztype, finalargtypes, typeargtypes);
                 Assert.check(!sym.kind.isResolutionError());
@@ -5080,7 +5081,7 @@ public class Attr extends JCTree.Visitor {
          */
         private Type dummyMethodType(JCMethodDecl md) {
             Type restype = syms.unknownType;
-            if (md != null && md.restype.hasTag(TYPEIDENT)) {
+            if (md != null && md.restype != null && md.restype.hasTag(TYPEIDENT)) {
                 JCPrimitiveTypeTree prim = (JCPrimitiveTypeTree)md.restype;
                 if (prim.typetag == VOID)
                     restype = syms.voidType;

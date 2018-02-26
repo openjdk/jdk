@@ -1457,6 +1457,7 @@ public class JShellTool implements MessageHandler {
     static final CompletionProvider EMPTY_COMPLETION_PROVIDER = new FixedCompletionProvider();
     private static final CompletionProvider SNIPPET_HISTORY_OPTION_COMPLETION_PROVIDER = new FixedCompletionProvider("-all", "-start ", "-history");
     private static final CompletionProvider SAVE_OPTION_COMPLETION_PROVIDER = new FixedCompletionProvider("-all ", "-start ", "-history ");
+    private static final CompletionProvider HISTORY_OPTION_COMPLETION_PROVIDER = new FixedCompletionProvider("-all");
     private static final CompletionProvider SNIPPET_OPTION_COMPLETION_PROVIDER = new FixedCompletionProvider("-all", "-start " );
     private static final FixedCompletionProvider COMMAND_LINE_LIKE_OPTIONS_COMPLETION_PROVIDER = new FixedCompletionProvider(
             "-class-path ", "-module-path ", "-add-modules ", "-add-exports ");
@@ -1657,6 +1658,11 @@ public class JShellTool implements MessageHandler {
         };
     }
 
+    // /history command completion
+    private static CompletionProvider historyCompletion() {
+        return optionCompletion(HISTORY_OPTION_COMPLETION_PROVIDER);
+    }
+
     // /reload command completion
     private static CompletionProvider reloadCompletion() {
         return optionCompletion(RELOAD_OPTIONS_COMPLETION_PROVIDER);
@@ -1781,8 +1787,8 @@ public class JShellTool implements MessageHandler {
                 this::cmdReload,
                 reloadCompletion()));
         registerCommand(new Command("/history",
-                arg -> cmdHistory(),
-                EMPTY_COMPLETION_PROVIDER));
+                this::cmdHistory,
+                historyCompletion()));
         registerCommand(new Command("/debug",
                 this::cmdDebug,
                 EMPTY_COMPLETION_PROVIDER,
@@ -2423,9 +2429,14 @@ public class JShellTool implements MessageHandler {
         hardrb(key);
     }
 
-    private boolean cmdHistory() {
+    private boolean cmdHistory(String rawArgs) {
+        ArgTokenizer at = new ArgTokenizer("/history", rawArgs.trim());
+        at.allowedOptions("-all");
+        if (!checkOptionsAndRemainingInput(at)) {
+            return false;
+        }
         cmdout.println();
-        for (String s : input.currentSessionHistory()) {
+        for (String s : input.history(!at.hasOption("-all"))) {
             // No number prefix, confusing with snippet ids
             cmdout.printf("%s\n", s);
         }
@@ -2935,7 +2946,7 @@ public class JShellTool implements MessageHandler {
 
     private boolean cmdList(String arg) {
         if (arg.length() >= 2 && "-history".startsWith(arg)) {
-            return cmdHistory();
+            return cmdHistory("");
         }
         Stream<Snippet> stream = argsOptionsToSnippets(state::snippets,
                 this::mainActive, arg, "/list");
@@ -3183,7 +3194,7 @@ public class JShellTool implements MessageHandler {
                 CREATE, TRUNCATE_EXISTING, WRITE)) {
             if (at.hasOption("-history")) {
                 // they want history (commands and snippets), ignore the snippet stream
-                for (String s : input.currentSessionHistory()) {
+                for (String s : input.history(true)) {
                     writer.write(s);
                     writer.write("\n");
                 }
@@ -3862,7 +3873,7 @@ abstract class NonInteractiveIOContext extends IOContext {
     }
 
     @Override
-    public Iterable<String> currentSessionHistory() {
+    public Iterable<String> history(boolean currentSession) {
         return Collections.emptyList();
     }
 

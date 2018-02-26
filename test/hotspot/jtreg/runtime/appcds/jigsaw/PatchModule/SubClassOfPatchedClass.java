@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,13 +92,13 @@ public class SubClassOfPatchedClass {
 
         String classPath = appJar + File.pathSeparator + classDir;
         System.out.println("classPath: " + classPath);
-        output = TestCommon.execCommon(
+        TestCommon.run(
             "-XX:+UnlockDiagnosticVMOptions",
             "-cp", classPath,
             "--patch-module=java.naming=" + moduleJar,
             "-Xlog:class+load",
-            "PatchMain", "javax.naming.Reference", "mypackage.MyReference");
-        TestCommon.checkExec(output,
+            "PatchMain", "javax.naming.Reference", "mypackage.MyReference")
+          .assertNormalExit(
             "I pass!",
             "MyReference source: file:");
     }

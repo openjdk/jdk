@@ -178,39 +178,6 @@ public:
   }
 };
 
-class G1PLAB: public PLAB {
-private:
-  bool _retired;
-
-public:
-  G1PLAB(size_t gclab_word_size);
-  virtual ~G1PLAB() {
-    guarantee(_retired, "Allocation buffer has not been retired");
-  }
-
-  // The amount of space in words wasted within the PLAB including
-  // waste due to refills and alignment.
-  size_t wasted() const { return _wasted; }
-
-  virtual void set_buf(HeapWord* buf, size_t word_size) {
-    PLAB::set_buf(buf, word_size);
-    _retired = false;
-  }
-
-  virtual void retire() {
-    if (_retired) {
-      return;
-    }
-    PLAB::retire();
-    _retired = true;
-  }
-
-  virtual void flush_and_retire_stats(PLABStats* stats) {
-    PLAB::flush_and_retire_stats(stats);
-    _retired = true;
-  }
-};
-
 // Manages the PLABs used during garbage collection. Interface for allocation from PLABs.
 // Needs to handle multiple contexts, extra alignment in any "survivor" area and some
 // statistics.
@@ -231,7 +198,7 @@ protected:
   size_t _direct_allocated[InCSetState::Num];
 
   virtual void flush_and_retire_stats() = 0;
-  virtual G1PLAB* alloc_buffer(InCSetState dest, AllocationContext_t context) = 0;
+  virtual PLAB* alloc_buffer(InCSetState dest, AllocationContext_t context) = 0;
 
   // Calculate the survivor space object alignment in bytes. Returns that or 0 if
   // there are no restrictions on survivor alignment.
@@ -292,14 +259,14 @@ public:
 // The default PLAB allocator for G1. Keeps the current (single) PLAB for survivor
 // and old generation allocation.
 class G1DefaultPLABAllocator : public G1PLABAllocator {
-  G1PLAB  _surviving_alloc_buffer;
-  G1PLAB  _tenured_alloc_buffer;
-  G1PLAB* _alloc_buffers[InCSetState::Num];
+  PLAB  _surviving_alloc_buffer;
+  PLAB  _tenured_alloc_buffer;
+  PLAB* _alloc_buffers[InCSetState::Num];
 
 public:
   G1DefaultPLABAllocator(G1Allocator* _allocator);
 
-  virtual G1PLAB* alloc_buffer(InCSetState dest, AllocationContext_t context) {
+  virtual PLAB* alloc_buffer(InCSetState dest, AllocationContext_t context) {
     assert(dest.is_valid(),
            "Allocation buffer index out-of-bounds: " CSETSTATE_FORMAT, dest.value());
     assert(_alloc_buffers[dest.value()] != NULL,

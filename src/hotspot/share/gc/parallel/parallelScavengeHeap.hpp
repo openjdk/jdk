@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,21 +204,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   size_t tlab_capacity(Thread* thr) const;
   size_t tlab_used(Thread* thr) const;
   size_t unsafe_max_tlab_alloc(Thread* thr) const;
-
-  // Can a compiler initialize a new object without store barriers?
-  // This permission only extends from the creation of a new object
-  // via a TLAB up to the first subsequent safepoint.
-  virtual bool can_elide_tlab_store_barriers() const {
-    return true;
-  }
-
-  virtual bool card_mark_must_follow_store() const {
-    return false;
-  }
-
-  // Return true if we don't we need a store barrier for
-  // initializing stores to an object at this address.
-  virtual bool can_elide_initializing_store_barrier(oop new_obj);
 
   void object_iterate(ObjectClosure* cl);
   void safe_object_iterate(ObjectClosure* cl) { object_iterate(cl); }

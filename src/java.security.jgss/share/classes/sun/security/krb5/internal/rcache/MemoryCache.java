@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,9 @@
 
 package sun.security.krb5.internal.rcache;
 
-import java.util.*;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import sun.security.krb5.internal.KerberosTime;
 import sun.security.krb5.internal.KrbApErrException;
 import sun.security.krb5.internal.ReplayCache;
@@ -48,31 +50,18 @@ public class MemoryCache extends ReplayCache {
     private static final int lifespan = KerberosTime.getDefaultSkew();
     private static final boolean DEBUG = sun.security.krb5.internal.Krb5.DEBUG;
 
-    private final Map<String,AuthList> content = new HashMap<>();
+    private final Map<String,AuthList> content = new ConcurrentHashMap<>();
 
     @Override
     public synchronized void checkAndStore(KerberosTime currTime, AuthTimeWithHash time)
             throws KrbApErrException {
         String key = time.client + "|" + time.server;
-        AuthList rc = content.get(key);
+        content.computeIfAbsent(key, k -> new AuthList(lifespan))
+                .put(time, currTime);
         if (DEBUG) {
             System.out.println("MemoryCache: add " + time + " to " + key);
         }
-        if (rc == null) {
-            rc = new AuthList(lifespan);
-            rc.put(time, currTime);
-            if (!rc.isEmpty()) {
-                content.put(key, rc);
-            }
-        } else {
-            if (DEBUG) {
-                System.out.println("MemoryCache: Existing AuthList:\n" + rc);
-            }
-            rc.put(time, currTime);
-            if (rc.isEmpty()) {
-                content.remove(key);
-            }
-        }
+        // TODO: clean up AuthList entries with only expired AuthTimeWithHash objects.
     }
 
     public String toString() {

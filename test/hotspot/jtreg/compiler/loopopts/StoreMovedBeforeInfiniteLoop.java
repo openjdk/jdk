@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,34 +21,36 @@
  * questions.
  */
 
-/* @test
-   @bug 4116016
-   @summary Ensure that finalizers are not invoked more than once when on-exit
-            finalization is enabled and a finalizer invokes System.exit after
-            System.exit has already been invoked
-   @build FinExit
-   @run shell FinExit.sh
+/**
+ * @test
+ * @bug 8197563
+ * @summary assert(is_Loop()) crash in PhaseIdealLoop::try_move_store_before_loop()
+ *
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=StoreMovedBeforeInfiniteLoop::test  StoreMovedBeforeInfiniteLoop
+ *
  */
 
-
-public class FinExit {
-
-    boolean finalized = false;
-
-    public void finalize() {
-        if (finalized) {
-            System.out.println("2");
-        } else {
-            finalized = true;
-            System.out.println("1");
-            System.exit(0);
-        }
+public class StoreMovedBeforeInfiniteLoop {
+    public static void main(String[] args) {
+        field = -1;
+        test(new Object());
     }
 
-    public static void main(String[] args) throws Exception {
-        System.runFinalizersOnExit(true);
-        Object o = new FinExit();
-        System.exit(0);
+    static int field;
+
+    static int constant() {
+        return 65;
     }
 
+    private static int test(Object o) {
+        do {
+            if (field <= 0) {
+                return -109;
+            }
+            do {
+                field = 4;
+            } while (constant() >= 0);
+        } while (o == null);
+        return -109;
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,7 +30,8 @@
 #include "memory/allocation.inline.hpp"
 #include "utilities/elfFuncDescTable.hpp"
 
-ElfFuncDescTable::ElfFuncDescTable(FILE* file, Elf_Shdr shdr, int index) {
+ElfFuncDescTable::ElfFuncDescTable(FILE* file, Elf_Shdr shdr, int index) :
+  _file(file), _index(index), _section(file, shdr) {
   assert(file, "null file handle");
   // The actual function address (i.e. function entry point) is always the
   // first value in the function descriptor (on IA64 and PPC64 they look as follows):
@@ -39,62 +40,33 @@ ElfFuncDescTable::ElfFuncDescTable(FILE* file, Elf_Shdr shdr, int index) {
   // Unfortunately 'shdr.sh_entsize' doesn't always seem to contain this size (it's zero on PPC64) so we can't assert
   // assert(IA64_ONLY(2) PPC64_ONLY(3) * sizeof(address) == shdr.sh_entsize, "Size mismatch for '.opd' section entries");
 
-  m_funcDescs = NULL;
-  m_file = file;
-  m_index = index;
-  m_status = NullDecoder::no_error;
-
-  // try to load the function descriptor table
-  long cur_offset = ftell(file);
-  if (cur_offset != -1) {
-    // call malloc so we can back up if memory allocation fails.
-    m_funcDescs = (address*)os::malloc(shdr.sh_size, mtInternal);
-    if (m_funcDescs) {
-      if (fseek(file, shdr.sh_offset, SEEK_SET) ||
-          fread((void*)m_funcDescs, shdr.sh_size, 1, file) != 1 ||
-          fseek(file, cur_offset, SEEK_SET)) {
-        m_status = NullDecoder::file_invalid;
-        os::free(m_funcDescs);
-        m_funcDescs = NULL;
-      }
-    }
-    if (!NullDecoder::is_error(m_status)) {
-      memcpy(&m_shdr, &shdr, sizeof(Elf_Shdr));
-    }
-  } else {
-    m_status = NullDecoder::file_invalid;
-  }
+  _status = _section.status();
 }
 
 ElfFuncDescTable::~ElfFuncDescTable() {
-  if (m_funcDescs != NULL) {
-    os::free(m_funcDescs);
-  }
 }
 
 address ElfFuncDescTable::lookup(Elf_Word index) {
-  if (NullDecoder::is_error(m_status)) {
+  if (NullDecoder::is_error(_status)) {
     return NULL;
   }
 
-  if (m_funcDescs != NULL) {
-    if (m_shdr.sh_size > 0 && m_shdr.sh_addr <= index && index <= m_shdr.sh_addr + m_shdr.sh_size) {
-      // Notice that 'index' is a byte-offset into the function descriptor table.
-      return m_funcDescs[(index - m_shdr.sh_addr) / sizeof(address)];
-    }
+  address*  func_descs = cached_func_descs();
+  const Elf_Shdr* shdr = _section.section_header();
+  if (!(shdr->sh_size > 0 && shdr->sh_addr <= index && index <= shdr->sh_addr + shdr->sh_size)) {
+    // don't put the whole decoder in error mode if we just tried a wrong index
     return NULL;
+  }
+
+  if (func_descs != NULL) {
+    return func_descs[(index - shdr->sh_addr) / sizeof(address)];
   } else {
-    long cur_pos;
+    MarkedFileReader mfd(_file);
     address addr;
-    if (!(m_shdr.sh_size > 0 && m_shdr.sh_addr <= index && index <= m_shdr.sh_addr + m_shdr.sh_size)) {
-      // don't put the whole decoder in error mode if we just tried a wrong index
-      return NULL;
-    }
-    if ((cur_pos = ftell(m_file)) == -1 ||
-        fseek(m_file, m_shdr.sh_offset + index - m_shdr.sh_addr, SEEK_SET) ||
-        fread(&addr, sizeof(addr), 1, m_file) != 1 ||
-        fseek(m_file, cur_pos, SEEK_SET)) {
-      m_status = NullDecoder::file_invalid;
+    if (!mfd.has_mark() ||
+        !mfd.set_position(shdr->sh_offset + index - shdr->sh_addr) ||
+        !mfd.read((void*)&addr, sizeof(addr))) {
+      _status = NullDecoder::file_invalid;
       return NULL;
     }
     return addr;

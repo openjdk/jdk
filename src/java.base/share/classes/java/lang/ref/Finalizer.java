@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
         new Finalizer(finalizee);
     }
 
-    private void deregisterAndRunFinalizer(JavaLangAccess jla) {
+    private void runFinalizer(JavaLangAccess jla) {
         synchronized (lock) {
             if (this.next == this)      // already finalized
                 return;
@@ -80,17 +80,14 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
             this.prev = null;
             this.next = this;           // mark as finalized
         }
-        runFinalizer(jla);
-    }
 
-    private void runFinalizer(JavaLangAccess jla) {
         try {
             Object finalizee = this.get();
             if (finalizee != null && !(finalizee instanceof java.lang.Enum)) {
                 jla.invokeFinalize(finalizee);
 
-                /* Clear stack slot containing this variable, to decrease
-                   the chances of false retention with a conservative GC */
+                // Clear stack slot containing this variable, to decrease
+                // the chances of false retention with a conservative GC
                 finalizee = null;
             }
         } catch (Throwable x) { }
@@ -98,17 +95,14 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
     }
 
     /* Create a privileged secondary finalizer thread in the system thread
-       group for the given Runnable, and wait for it to complete.
-
-       This method is used by both runFinalization and runFinalizersOnExit.
-       The former method invokes all pending finalizers, while the latter
-       invokes all uninvoked finalizers if on-exit finalization has been
-       enabled.
-
-       These two methods could have been implemented by offloading their work
-       to the regular finalizer thread and waiting for that thread to finish.
-       The advantage of creating a fresh thread, however, is that it insulates
-       invokers of these methods from a stalled or deadlocked finalizer thread.
+     * group for the given Runnable, and wait for it to complete.
+     *
+     * This method is used by runFinalization.
+     *
+     * It could have been implemented by offloading the work to the
+     * regular finalizer thread and waiting for that thread to finish.
+     * The advantage of creating a fresh thread, however, is that it insulates
+     * invokers of that method from a stalled or deadlocked finalizer thread.
      */
     private static void forkSecondaryFinalizer(final Runnable proc) {
         AccessController.doPrivileged(
@@ -144,38 +138,9 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
                 final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
                 running = true;
                 for (Finalizer f; (f = (Finalizer)queue.poll()) != null; )
-                    f.deregisterAndRunFinalizer(jla);
+                    f.runFinalizer(jla);
             }
         });
-    }
-
-    /* Invoked by java.lang.Shutdown */
-    static void runAllFinalizers() {
-        if (VM.initLevel() == 0) {
-            return;
-        }
-
-        forkSecondaryFinalizer(new Runnable() {
-            private volatile boolean running;
-            public void run() {
-                // in case of recursive call to run()
-                if (running)
-                    return;
-                final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
-                running = true;
-                for (;;) {
-                    // "pollFirst" from unfinalized
-                    Finalizer f;
-                    synchronized (lock) {
-                        f = unfinalized;
-                        if (f == null) break;
-                        unfinalized = f.next;
-                        if (unfinalized != null)
-                            unfinalized.prev = null;
-                        f.next = f; // mark as finalized
-                    }
-                    f.runFinalizer(jla);
-                }}});
     }
 
     private static class FinalizerThread extends Thread {
@@ -203,7 +168,7 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
             for (;;) {
                 try {
                     Finalizer f = (Finalizer)queue.remove();
-                    f.deregisterAndRunFinalizer(jla);
+                    f.runFinalizer(jla);
                 } catch (InterruptedException x) {
                     // ignore and continue
                 }

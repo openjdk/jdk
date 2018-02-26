@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -541,32 +541,6 @@ oop Universe::swap_reference_pending_list(oop list) {
 
 #undef assert_pll_locked
 #undef assert_pll_ownership
-
-
-static bool has_run_finalizers_on_exit = false;
-
-void Universe::run_finalizers_on_exit() {
-  if (has_run_finalizers_on_exit) return;
-  has_run_finalizers_on_exit = true;
-
-  // Called on VM exit. This ought to be run in a separate thread.
-  log_trace(ref)("Callback to run finalizers on exit");
-  {
-    PRESERVE_EXCEPTION_MARK;
-    Klass* finalizer_klass = SystemDictionary::Finalizer_klass();
-    JavaValue result(T_VOID);
-    JavaCalls::call_static(
-      &result,
-      finalizer_klass,
-      vmSymbols::run_finalizers_on_exit_name(),
-      vmSymbols::void_method_signature(),
-      THREAD
-    );
-    // Ignore any pending exceptions
-    CLEAR_PENDING_EXCEPTION;
-  }
-}
-
 
 // initialize_vtable could cause gc if
 // 1) we specified true to initialize_vtable and

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -41,7 +41,6 @@ import javax.xml.transform.ErrorListener;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
-import jdk.xml.internal.SecuritySupport;
 import org.w3c.dom.Node;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -52,7 +51,7 @@ import org.xml.sax.SAXException;
  * serializers (xml, html, text ...) that write output to a stream.
  *
  * @xsl.usage internal
- * @LastModified: Nov 2017
+ * @LastModified: Feb 2018
  */
 abstract public class ToStream extends SerializerBase {
 
@@ -138,8 +137,7 @@ abstract public class ToStream extends SerializerBase {
      * but this value can be set through the xsl:output
      * extension attribute xalan:line-separator.
      */
-    protected char[] m_lineSep =
-        SecuritySupport.getSystemProperty("line.separator").toCharArray();
+    protected char[] m_lineSep = System.lineSeparator().toCharArray();
 
     /**
      * True if the the system line separator is to be used.

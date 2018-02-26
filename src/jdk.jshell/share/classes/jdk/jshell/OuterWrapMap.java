@@ -64,7 +64,7 @@ class OuterWrapMap {
 
     private CompoundWrap wrappedInClass(String className, String imports, List<Wrap> wraps) {
         List<Object> elems = new ArrayList<>(wraps.size() + 2);
-        elems.add(imports +
+        elems.add(imports + "\n" +
                 "class " + className + " {\n");
         elems.addAll(wraps);
         elems.add("}\n");

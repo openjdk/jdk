@@ -80,8 +80,8 @@ import javax.lang.model.element.TypeElement;
  *  - handling of covariant overrides
  *  - handling of override of method found in multiple superinterfaces
  *  - convert type/method/field output to Java source like syntax, e.g.
- *      instead of java/lang/Runtime.runFinalizersOnExit(Z)V
- *      print void java.lang.Runtime.runFinalizersOnExit(boolean)
+ *      instead of java/lang/Character.isJavaLetter(C)Z
+ *      print void java.lang.Character.isJavaLetter(char)boolean
  *  - more example output in man page
  *  - more rigorous GNU style option parsing; use joptsimple?
  *

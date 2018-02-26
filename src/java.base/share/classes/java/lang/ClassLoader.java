@@ -1922,7 +1922,7 @@ public abstract class ClassLoader {
             case 3:
                 String msg = "getSystemClassLoader cannot be called during the system class loader instantiation";
                 throw new IllegalStateException(msg);
-            case 4:
+            default:
                 // system fully initialized
                 assert VM.isBooted() && scl != null;
                 SecurityManager sm = System.getSecurityManager();
@@ -1930,8 +1930,6 @@ public abstract class ClassLoader {
                     checkClassLoaderPermission(scl, Reflection.getCallerClass());
                 }
                 return scl;
-            default:
-                throw new InternalError("should not reach here");
         }
     }
 

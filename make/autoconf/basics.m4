@@ -263,7 +263,7 @@ AC_DEFUN([BASIC_REMOVE_SYMBOLIC_LINKS],
       READLINK_TESTED=yes
     fi
 
-    if test "x$READLINK" != x && "x$READLINK_ISGNU" != x; then
+    if test "x$READLINK" != x && test "x$READLINK_ISGNU" != x; then
       $1=`$READLINK -f [$]$1`
     else
       # Save the current directory for restoring afterwards

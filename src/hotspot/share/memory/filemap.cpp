@@ -410,14 +410,11 @@ bool FileMapInfo::open_for_read() {
 // Write the FileMapInfo information to the file.
 
 void FileMapInfo::open_for_write() {
- _full_path = Arguments::GetSharedArchivePath();
-  if (log_is_enabled(Info, cds)) {
-    ResourceMark rm;
-    LogMessage(cds) msg;
-    stringStream info_stream;
-    info_stream.print_cr("Dumping shared data to file: ");
-    info_stream.print_cr("   %s", _full_path);
-    msg.info("%s", info_stream.as_string());
+  _full_path = Arguments::GetSharedArchivePath();
+  LogMessage(cds) msg;
+  if (msg.is_info()) {
+    msg.info("Dumping shared data to file: ");
+    msg.info("   %s", _full_path);
   }
 
 #ifdef _WINDOWS  // On Windows, need WRITE permission to remove the file.
