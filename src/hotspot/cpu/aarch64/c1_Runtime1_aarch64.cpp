@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,6 +30,8 @@
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "compiler/disassembler.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_aarch64.hpp"
 #include "oops/compiledICHolder.hpp"
@@ -42,6 +44,7 @@
 #include "runtime/vframeArray.hpp"
 #include "vmreg_aarch64.inline.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #endif
 
@@ -1162,10 +1165,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         // arg0: store_address
         Address store_addr(rfp, 2*BytesPerWord);
 
-        BarrierSet* bs = Universe::heap()->barrier_set();
-        CardTableModRefBS* ct = (CardTableModRefBS*)bs;
-        assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
-
         Label done;
         Label runtime;
 
@@ -1186,13 +1185,13 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         assert_different_registers(card_offset, byte_map_base, rscratch1);
 
         f.load_argument(0, card_offset);
-        __ lsr(card_offset, card_offset, CardTableModRefBS::card_shift);
+        __ lsr(card_offset, card_offset, CardTable::card_shift);
         __ load_byte_map_base(byte_map_base);
         __ ldrb(rscratch1, Address(byte_map_base, card_offset));
-        __ cmpw(rscratch1, (int)G1SATBCardTableModRefBS::g1_young_card_val());
+        __ cmpw(rscratch1, (int)G1CardTable::g1_young_card_val());
         __ br(Assembler::EQ, done);
 
-        assert((int)CardTableModRefBS::dirty_card_val() == 0, "must be 0");
+        assert((int)CardTable::dirty_card_val() == 0, "must be 0");
 
         __ membar(Assembler::StoreLoad);
         __ ldrb(rscratch1, Address(byte_map_base, card_offset));

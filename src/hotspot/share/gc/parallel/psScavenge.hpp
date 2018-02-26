@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_GC_PARALLEL_PSSCAVENGE_HPP
 #define SHARE_VM_GC_PARALLEL_PSSCAVENGE_HPP
 
-#include "gc/parallel/cardTableExtension.hpp"
+#include "gc/parallel/psCardTable.hpp"
 #include "gc/parallel/psVirtualspace.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/gcTrace.hpp"
@@ -67,7 +67,7 @@ class PSScavenge: AllStatic {
   // Flags/counters
   static ReferenceProcessor*  _ref_processor;        // Reference processor for scavenging.
   static PSIsAliveClosure     _is_alive_closure;     // Closure used for reference processing
-  static CardTableExtension*  _card_table;           // We cache the card table for fast access.
+  static PSCardTable*         _card_table;           // We cache the card table for fast access.
   static bool                 _survivor_overflow;    // Overflow this collection
   static uint                 _tenuring_threshold;   // tenuring threshold for next scavenge
   static elapsedTimer         _accumulated_time;     // total time spent on scavenge
@@ -89,7 +89,7 @@ class PSScavenge: AllStatic {
   static inline void save_to_space_top_before_gc();
 
   // Private accessors
-  static CardTableExtension* const card_table()       { assert(_card_table != NULL, "Sanity"); return _card_table; }
+  static PSCardTable* const card_table()           { assert(_card_table != NULL, "Sanity"); return _card_table; }
   static const ParallelScavengeTracer* gc_tracer() { return &_gc_tracer; }
 
  public:

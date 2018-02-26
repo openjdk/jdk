@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,19 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_CARDTABLEMODREFBS_INLINE_HPP
-#define SHARE_VM_GC_SHARED_CARDTABLEMODREFBS_INLINE_HPP
+#ifndef SHARE_VM_GC_G1_G1CARDTABLE_INLINE_HPP
+#define SHARE_VM_GC_G1_G1CARDTABLE_INLINE_HPP
 
-#include "gc/shared/cardTableModRefBS.hpp"
-#include "gc/shared/cardTable.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "gc/g1/g1CardTable.hpp"
 
-template <DecoratorSet decorators, typename T>
-inline void CardTableModRefBS::write_ref_field_post(T* field, oop newVal) {
-  volatile jbyte* byte = _card_table->byte_for(field);
-  if (UseConcMarkSweepGC) {
-    // Perform a releasing store if using CMS so that it may
-    // scan and clear the cards concurrently during pre-cleaning.
-    OrderAccess::release_store(byte, CardTable::dirty_card_val());
+void G1CardTable::set_card_claimed(size_t card_index) {
+  jbyte val = _byte_map[card_index];
+  if (val == clean_card_val()) {
+    val = (jbyte)claimed_card_val();
   } else {
-    *byte = CardTable::dirty_card_val();
+    val |= (jbyte)claimed_card_val();
   }
+  _byte_map[card_index] = val;
 }
 
-#endif // SHARE_VM_GC_SHARED_CARDTABLEMODREFBS_INLINE_HPP
+#endif // SHARE_VM_GC_G1_G1CARDTABLE_INLINE_HPP

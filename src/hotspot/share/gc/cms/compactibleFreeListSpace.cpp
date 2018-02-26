@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,9 +88,9 @@ CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs, M
   _parDictionaryAllocLock(Mutex::leaf - 1,  // == rank(ExpandHeap_lock) - 1
                           "CompactibleFreeListSpace._dict_par_lock", true,
                           Monitor::_safepoint_check_never),
-  _rescan_task_size(CardTableModRefBS::card_size_in_words * BitsPerWord *
+  _rescan_task_size(CardTable::card_size_in_words * BitsPerWord *
                     CMSRescanMultiple),
-  _marking_task_size(CardTableModRefBS::card_size_in_words * BitsPerWord *
+  _marking_task_size(CardTable::card_size_in_words * BitsPerWord *
                     CMSConcMarkMultiple),
   _collector(NULL),
   _preconsumptionDirtyCardClosure(NULL)
@@ -609,7 +609,7 @@ public:
   FreeListSpaceDCTOC(CompactibleFreeListSpace* sp,
                      CMSCollector* collector,
                      ExtendedOopClosure* cl,
-                     CardTableModRefBS::PrecisionStyle precision,
+                     CardTable::PrecisionStyle precision,
                      HeapWord* boundary,
                      bool parallel) :
     FilteringDCTOC(sp, cl, precision, boundary),
@@ -693,7 +693,7 @@ FreeListSpaceDCTOC__walk_mem_region_with_cl_DEFN(FilteringClosure)
 
 DirtyCardToOopClosure*
 CompactibleFreeListSpace::new_dcto_cl(ExtendedOopClosure* cl,
-                                      CardTableModRefBS::PrecisionStyle precision,
+                                      CardTable::PrecisionStyle precision,
                                       HeapWord* boundary,
                                       bool parallel) {
   return new FreeListSpaceDCTOC(this, _collector, cl, precision, boundary, parallel);
@@ -2828,7 +2828,7 @@ void CompactibleFreeListSpace:: par_get_chunk_of_blocks(size_t word_sz, size_t n
 }
 
 const size_t CompactibleFreeListSpace::max_flag_size_for_task_size() const {
-  const size_t ergo_max = _old_gen->reserved().word_size() / (CardTableModRefBS::card_size_in_words * BitsPerWord);
+  const size_t ergo_max = _old_gen->reserved().word_size() / (CardTable::card_size_in_words * BitsPerWord);
   return ergo_max;
 }
 
@@ -2865,15 +2865,15 @@ initialize_sequential_subtasks_for_marking(int n_threads,
   // The "size" of each task is fixed according to rescan_task_size.
   assert(n_threads > 0, "Unexpected n_threads argument");
   const size_t task_size = marking_task_size();
-  assert(task_size > CardTableModRefBS::card_size_in_words &&
-         (task_size %  CardTableModRefBS::card_size_in_words == 0),
+  assert(task_size > CardTable::card_size_in_words &&
+         (task_size %  CardTable::card_size_in_words == 0),
          "Otherwise arithmetic below would be incorrect");
   MemRegion span = _old_gen->reserved();
   if (low != NULL) {
     if (span.contains(low)) {
       // Align low down to  a card boundary so that
       // we can use block_offset_careful() on span boundaries.
-      HeapWord* aligned_low = align_down(low, CardTableModRefBS::card_size);
+      HeapWord* aligned_low = align_down(low, CardTable::card_size);
       // Clip span prefix at aligned_low
       span = span.intersection(MemRegion(aligned_low, span.end()));
     } else if (low > span.end()) {
@@ -2881,7 +2881,7 @@ initialize_sequential_subtasks_for_marking(int n_threads,
     } // else use entire span
   }
   assert(span.is_empty() ||
-         ((uintptr_t)span.start() %  CardTableModRefBS::card_size == 0),
+         ((uintptr_t)span.start() %  CardTable::card_size == 0),
         "span should start at a card boundary");
   size_t n_tasks = (span.word_size() + task_size - 1)/task_size;
   assert((n_tasks == 0) == span.is_empty(), "Inconsistency");

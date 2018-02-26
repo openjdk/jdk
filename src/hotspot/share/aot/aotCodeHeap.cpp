@@ -25,7 +25,10 @@
 
 #include "aot/aotCodeHeap.hpp"
 #include "aot/aotLoader.hpp"
+#include "ci/ciUtilities.hpp"
 #include "classfile/javaAssertions.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "interpreter/abstractInterpreter.hpp"
@@ -539,8 +542,7 @@ void AOTCodeHeap::link_global_lib_symbols() {
     _lib_symbols_initialized = true;
 
     CollectedHeap* heap = Universe::heap();
-    CardTableModRefBS* ct = (CardTableModRefBS*)(heap->barrier_set());
-    SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_card_table_address", address, ct->byte_map_base);
+    SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_card_table_address", address, ci_card_table_address());
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_heap_top_address", address, (heap->supports_inline_contig_alloc() ? heap->top_addr() : NULL));
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_heap_end_address", address, (heap->supports_inline_contig_alloc() ? heap->end_addr() : NULL));
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_polling_page", address, os::get_polling_page());

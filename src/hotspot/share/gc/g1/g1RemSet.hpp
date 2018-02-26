@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/g1CardLiveData.hpp"
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1RemSetSummary.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "memory/allocation.hpp"
@@ -72,7 +73,7 @@ private:
   G1CollectedHeap* _g1;
   size_t _num_conc_refined_cards; // Number of cards refined concurrently to the mutator.
 
-  CardTableModRefBS*     _ct_bs;
+  G1CardTable*           _ct;
   G1Policy*              _g1p;
   G1HotCardCache*        _hot_card_cache;
 
@@ -93,7 +94,7 @@ public:
   void cleanupHRRS();
 
   G1RemSet(G1CollectedHeap* g1,
-           CardTableModRefBS* ct_bs,
+           G1CardTable* ct,
            G1HotCardCache* hot_card_cache);
   ~G1RemSet();
 
@@ -162,7 +163,7 @@ class G1ScanRSForRegionClosure : public HeapRegionClosure {
   CodeBlobClosure* _code_root_cl;
 
   G1BlockOffsetTable* _bot;
-  G1SATBCardTableModRefBS *_ct_bs;
+  G1CardTable *_ct;
 
   double _strong_code_root_scan_time_sec;
   uint   _worker_i;

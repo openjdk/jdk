@@ -47,10 +47,6 @@ public:
   virtual void invalidate(MemRegion mr) = 0;
   virtual void write_region(MemRegion mr) = 0;
 
-  // The caller guarantees that "mr" contains no references.  (Perhaps it's
-  // objects have been moved elsewhere.)
-  virtual void clear(MemRegion mr) = 0;
-
   // The ModRef abstraction introduces pre and post barriers
   template <DecoratorSet decorators, typename BarrierSetT>
   class AccessBarrier: public BarrierSet::AccessBarrier<decorators, BarrierSetT> {
