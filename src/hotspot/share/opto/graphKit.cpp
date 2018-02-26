@@ -3809,6 +3809,13 @@ void GraphKit::add_predicate(int nargs) {
 //----------------------------- store barriers ----------------------------
 #define __ ideal.
 
+bool GraphKit::use_ReduceInitialCardMarks() {
+  BarrierSet *bs = Universe::heap()->barrier_set();
+  return bs->is_a(BarrierSet::CardTableModRef)
+         && barrier_set_cast<CardTableModRefBS>(bs)->can_elide_tlab_store_barriers()
+         && ReduceInitialCardMarks;
+}
+
 void GraphKit::sync_kit(IdealKit& ideal) {
   set_all_memory(__ merged_memory());
   set_i_o(__ i_o());
