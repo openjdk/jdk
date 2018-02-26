@@ -72,10 +72,16 @@ static LogSelection parse_internal(char *str, outputStream* errstream) {
   LogLevelType level = LogLevel::Unspecified;
   char* equals = strchr(str, '=');
   if (equals != NULL) {
-    level = LogLevel::from_string(equals + 1);
+    const char* levelstr = equals + 1;
+    level = LogLevel::from_string(levelstr);
     if (level == LogLevel::Invalid) {
       if (errstream != NULL) {
-        errstream->print_cr("Invalid level '%s' in log selection.", equals + 1);
+        errstream->print("Invalid level '%s' in log selection.", levelstr);
+        LogLevelType match = LogLevel::fuzzy_match(levelstr);
+        if (match != LogLevel::Invalid) {
+          errstream->print(" Did you mean '%s'?", LogLevel::name(match));
+        }
+        errstream->cr();
       }
       return LogSelection::Invalid;
     }
@@ -109,7 +115,12 @@ static LogSelection parse_internal(char *str, outputStream* errstream) {
     LogTagType tag = LogTag::from_string(cur_tag);
     if (tag == LogTag::__NO_TAG) {
       if (errstream != NULL) {
-        errstream->print_cr("Invalid tag '%s' in log selection.", cur_tag);
+        errstream->print("Invalid tag '%s' in log selection.", cur_tag);
+        LogTagType match =  LogTag::fuzzy_match(cur_tag);
+        if (match != LogTag::__NO_TAG) {
+          errstream->print(" Did you mean '%s'?", LogTag::name(match));
+        }
+        errstream->cr();
       }
       return LogSelection::Invalid;
     }

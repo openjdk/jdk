@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,12 @@
  *
  */
 
-#ifndef SHARE_VM_UTILITIES_STRINGUTILS_HPP
-#define SHARE_VM_UTILITIES_STRINGUTILS_HPP
+#include "precompiled.hpp"
+#include "utilities/stringUtils.hpp"
+#include "unittest.hpp"
 
-#include "memory/allocation.hpp"
-
-class StringUtils : AllStatic {
-public:
-  // Replace the substring <from> with another string <to>. <to> must be
-  // no longer than <from>. The input string is modified in-place.
-  //
-  // Replacement is done in a single pass left-to-right. So replace_no_expand("aaa", "aa", "a")
-  // will result in "aa", not "a".
-  //
-  // Returns the count of substrings that have been replaced.
-  static int replace_no_expand(char* string, const char* from, const char* to);
-
-  // Compute string similarity based on Dice's coefficient
-  static double similarity(const char* str1, size_t len1, const char* str2, size_t len2);
-};
-
-#endif // SHARE_VM_UTILITIES_STRINGUTILS_HPP
+TEST(StringUtils, similarity) {
+  const char* str1 = "the quick brown fox jumps over the lazy dog";
+  const char* str2 = "the quick brown fox jumps over the lazy doh";
+  EXPECT_NEAR(0.95349, StringUtils::similarity(str1, strlen(str1), str2, strlen(str2)), 1e-5);
+}
