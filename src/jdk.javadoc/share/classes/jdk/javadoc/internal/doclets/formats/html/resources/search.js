@@ -76,6 +76,25 @@ function getHighlightedText(item) {
     }
     return label;
 }
+function getURLPrefix(ui) {
+    var urlPrefix="";
+    if (useModuleDirectories) {
+        var slash = "/";
+        if (ui.item.category === catModules) {
+            return ui.item.l + slash;
+        } else if (ui.item.category === catPackages) {
+            return ui.item.m + slash;
+        } else if (ui.item.category === catTypes || ui.item.category === catMembers) {
+            $.each(packageSearchIndex, function(index, item) {
+                if (ui.item.p == item.l) {
+                    urlPrefix = item.m + slash;
+                }
+            });
+            return urlPrefix;
+        }
+    }
+    return urlPrefix;
+}
 var watermark = 'Search';
 $(function() {
     $("#search").val('');
@@ -314,22 +333,26 @@ $(function() {
         },
         select: function(event, ui) {
             if (ui.item.l !== noResult.l) {
-                var url = "";
+                var url = getURLPrefix(ui);
                 if (ui.item.category === catModules) {
-                    url = ui.item.l + "-summary.html";
+                    if (useModuleDirectories) {
+                        url += "module-summary.html";
+                    } else {
+                        url = ui.item.l + "-summary.html";
+                    }
                 } else if (ui.item.category === catPackages) {
-                    url = ui.item.l.replace(/\./g, '/') + "/package-summary.html";
+                    url += ui.item.l.replace(/\./g, '/') + "/package-summary.html";
                 } else if (ui.item.category === catTypes) {
                     if (ui.item.p === "<Unnamed>") {
-                        url = ui.item.l + ".html";
+                        url += ui.item.l + ".html";
                     } else {
-                        url = ui.item.p.replace(/\./g, '/') + "/" + ui.item.l + ".html";
+                        url += ui.item.p.replace(/\./g, '/') + "/" + ui.item.l + ".html";
                     }
                 } else if (ui.item.category === catMembers) {
                     if (ui.item.p === "<Unnamed>") {
-                        url = ui.item.c + ".html" + "#";
+                        url += ui.item.c + ".html" + "#";
                     } else {
-                        url = ui.item.p.replace(/\./g, '/') + "/" + ui.item.c + ".html" + "#";
+                        url += ui.item.p.replace(/\./g, '/') + "/" + ui.item.c + ".html" + "#";
                     }
                     if (ui.item.url) {
                         url += ui.item.url;
