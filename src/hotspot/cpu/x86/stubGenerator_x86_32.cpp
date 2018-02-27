@@ -706,6 +706,7 @@ class StubGenerator: public StubCodeGenerator {
            __ bind(filtered);
          }
         break;
+#endif // INCLUDE_ALL_GCS
       case BarrierSet::CardTableModRef:
         break;
       default      :

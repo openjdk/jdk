@@ -3710,7 +3710,7 @@ void MacroAssembler::g1_write_barrier_post(Register Rstore_addr,
   assert_different_registers(Rstore_addr, Rnew_val, Rtmp1, Rtmp2); // Most probably, Rnew_val == Rtmp3.
 
   G1SATBCardTableModRefBS* bs = (G1SATBCardTableModRefBS*) Universe::heap()->barrier_set();
-  G1CardTable* ct = bs->card_table();
+  CardTable* ct = bs->card_table();
   assert(bs->kind() == BarrierSet::G1SATBCTLogging, "wrong barrier");
 
   BLOCK_COMMENT("g1_write_barrier_post {");
@@ -3750,8 +3750,8 @@ void MacroAssembler::g1_write_barrier_post(Register Rstore_addr,
   Rbase = noreg; // end of lifetime
 
   // Filter young.
-  assert((unsigned int)G1SATBCardTableModRefBS::g1_young_card_val() <= 255, "otherwise check this code");
-  z_cli(0, Rcard_addr, (int)G1SATBCardTableModRefBS::g1_young_card_val());
+  assert((unsigned int)G1CardTable::g1_young_card_val() <= 255, "otherwise check this code");
+  z_cli(0, Rcard_addr, (int)G1CardTable::g1_young_card_val());
   z_bre(filtered);
 
   // Check the card value. If dirty, we're done.
