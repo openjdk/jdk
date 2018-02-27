@@ -209,8 +209,7 @@ public final class ConstantBootstraps {
      * Returns the result of invoking a method handle with the provided
      * arguments.
      *
-     * @param lookup the lookup context describing the class performing the
-     * operation (normally stacked by the JVM)
+     * @param lookup unused
      * @param name unused
      * @param type the type of the value to be returned, which must be
      * compatible with the return type of the method handle
