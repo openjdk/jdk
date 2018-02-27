@@ -2048,21 +2048,21 @@ public:
     starti;
     f(0,31), f((int)T & 1, 30);
     f(op1, 29, 21), f(0, 20, 16), f(op2, 15, 12);
-    f((int)T >> 1, 11, 10), rf(Xn, 5), rf(Vt, 0);
+    f((int)T >> 1, 11, 10), srf(Xn, 5), rf(Vt, 0);
   }
   void ld_st(FloatRegister Vt, SIMD_Arrangement T, Register Xn,
              int imm, int op1, int op2) {
     starti;
     f(0,31), f((int)T & 1, 30);
     f(op1 | 0b100, 29, 21), f(0b11111, 20, 16), f(op2, 15, 12);
-    f((int)T >> 1, 11, 10), rf(Xn, 5), rf(Vt, 0);
+    f((int)T >> 1, 11, 10), srf(Xn, 5), rf(Vt, 0);
   }
   void ld_st(FloatRegister Vt, SIMD_Arrangement T, Register Xn,
              Register Xm, int op1, int op2) {
     starti;
     f(0,31), f((int)T & 1, 30);
     f(op1 | 0b100, 29, 21), rf(Xm, 16), f(op2, 15, 12);
-    f((int)T >> 1, 11, 10), rf(Xn, 5), rf(Vt, 0);
+    f((int)T >> 1, 11, 10), srf(Xn, 5), rf(Vt, 0);
   }
 
  void ld_st(FloatRegister Vt, SIMD_Arrangement T, Address a, int op1, int op2) {
