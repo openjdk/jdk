@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -21,6 +21,7 @@
 
 package com.sun.org.apache.xerces.internal.impl;
 
+import com.sun.org.apache.xerces.internal.impl.io.MalformedByteSequenceException;
 import com.sun.org.apache.xerces.internal.impl.msg.XMLMessageFormatter;
 import com.sun.org.apache.xerces.internal.util.AugmentationsImpl;
 import com.sun.org.apache.xerces.internal.util.XMLAttributesIteratorImpl;
@@ -45,6 +46,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.xml.internal.stream.XMLBufferListener;
 import com.sun.xml.internal.stream.XMLEntityStorage;
 import com.sun.xml.internal.stream.dtd.DTDGrammarUtil;
+import java.io.CharConversionException;
 import java.io.EOFException;
 import java.io.IOException;
 import javax.xml.XMLConstants;
@@ -3075,6 +3077,20 @@ public class XMLDocumentFragmentScannerImpl
 
                 }//switch
             }
+             // encoding errors
+             catch (MalformedByteSequenceException e) {
+                 fErrorReporter.reportError(e.getDomain(), e.getKey(),
+                    e.getArguments(), XMLErrorReporter.SEVERITY_FATAL_ERROR, e);
+                 return -1;
+             }
+             catch (CharConversionException e) {
+                fErrorReporter.reportError(
+                        XMLMessageFormatter.XML_DOMAIN,
+                        "CharConversionFailure",
+                        null,
+                        XMLErrorReporter.SEVERITY_FATAL_ERROR, e);
+                 return -1;
+             }
             // premature end of file
             catch (EOFException e) {
                 endOfFileHook(e);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -46,6 +46,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
 import com.sun.org.apache.xerces.internal.xs.AttributePSVI;
 import com.sun.org.apache.xerces.internal.xs.ElementPSVI;
 import com.sun.org.apache.xerces.internal.xs.PSVIProvider;
+import java.io.CharConversionException;
 import java.io.IOException;
 import java.util.Locale;
 import javax.xml.XMLConstants;
@@ -1143,7 +1144,7 @@ public abstract class AbstractSAXParser
         // wrap XNI exceptions as SAX exceptions
         catch (XMLParseException e) {
             Exception ex = e.getException();
-            if (ex == null) {
+            if (ex == null || ex instanceof CharConversionException) {
                 // must be a parser exception; mine it for locator info and throw
                 // a SAXParseException
                 LocatorImpl locatorImpl = new LocatorImpl(){
@@ -1163,7 +1164,9 @@ public abstract class AbstractSAXParser
                 locatorImpl.setSystemId(e.getExpandedSystemId());
                 locatorImpl.setLineNumber(e.getLineNumber());
                 locatorImpl.setColumnNumber(e.getColumnNumber());
-                throw new SAXParseException(e.getMessage(), locatorImpl);
+                throw (ex == null) ?
+                        new SAXParseException(e.getMessage(), locatorImpl) :
+                        new SAXParseException(e.getMessage(), locatorImpl, ex);
             }
             if (ex instanceof SAXException) {
                 // why did we create an XMLParseException?
@@ -1216,7 +1219,7 @@ public abstract class AbstractSAXParser
         // wrap XNI exceptions as SAX exceptions
         catch (XMLParseException e) {
             Exception ex = e.getException();
-            if (ex == null) {
+            if (ex == null || ex instanceof CharConversionException) {
                 // must be a parser exception; mine it for locator info and throw
                 // a SAXParseException
                 LocatorImpl locatorImpl = new LocatorImpl() {
@@ -1236,7 +1239,9 @@ public abstract class AbstractSAXParser
                 locatorImpl.setSystemId(e.getExpandedSystemId());
                 locatorImpl.setLineNumber(e.getLineNumber());
                 locatorImpl.setColumnNumber(e.getColumnNumber());
-                throw new SAXParseException(e.getMessage(), locatorImpl);
+                throw (ex == null) ?
+                        new SAXParseException(e.getMessage(), locatorImpl) :
+                        new SAXParseException(e.getMessage(), locatorImpl, ex);
             }
             if (ex instanceof SAXException) {
                 // why did we create an XMLParseException?

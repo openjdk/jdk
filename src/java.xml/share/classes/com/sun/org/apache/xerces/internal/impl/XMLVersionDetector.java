@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,9 +20,11 @@
 
 package com.sun.org.apache.xerces.internal.impl;
 
+import java.io.CharConversionException;
 import java.io.EOFException;
 import java.io.IOException;
 
+import com.sun.org.apache.xerces.internal.impl.io.MalformedByteSequenceException;
 import com.sun.org.apache.xerces.internal.impl.msg.XMLMessageFormatter;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.xni.XMLString;
@@ -196,7 +198,21 @@ public class XMLVersionDetector {
             return Constants.XML_VERSION_1_0;
             // premature end of file
         }
-        catch (EOFException e) {
+        // encoding errors
+        catch (MalformedByteSequenceException e) {
+            fErrorReporter.reportError(e.getDomain(), e.getKey(),
+                    e.getArguments(), XMLErrorReporter.SEVERITY_FATAL_ERROR, e);
+            scanner.detectingVersion = false;
+            return Constants.XML_VERSION_1_0;
+        } catch (CharConversionException e) {
+            fErrorReporter.reportError(
+                    XMLMessageFormatter.XML_DOMAIN,
+                    "CharConversionFailure",
+                     null,
+                     XMLErrorReporter.SEVERITY_FATAL_ERROR, e);
+            scanner.detectingVersion = false;
+            return Constants.XML_VERSION_1_0;
+        } catch (EOFException e) {
             fErrorReporter.reportError(
                 XMLMessageFormatter.XML_DOMAIN,
                 "PrematureEOF",
