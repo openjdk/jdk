@@ -426,6 +426,7 @@ public class HtmlDocletWriter {
                 .setCharset(configuration.charset)
                 .addKeywords(metakeywords)
                 .setStylesheets(configuration.getMainStylesheet(), configuration.getAdditionalStylesheets())
+                .setUseModuleDirectories(configuration.useModuleDirectories)
                 .setIndex(configuration.createindex, mainBodyScript);
 
         Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(), head.toContent(), body);
