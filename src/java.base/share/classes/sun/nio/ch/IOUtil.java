@@ -55,8 +55,7 @@ public class IOUtil {
         throws IOException
     {
         if (src instanceof DirectBuffer) {
-            return writeFromNativeBuffer(fd, src, position,
-                                         directIO, alignment, nd);
+            return writeFromNativeBuffer(fd, src, position, directIO, alignment, nd);
         }
 
         // Substitute a native buffer
@@ -77,8 +76,7 @@ public class IOUtil {
             // Do not update src until we see how many bytes were written
             src.position(pos);
 
-            int n = writeFromNativeBuffer(fd, bb, position,
-                                          directIO, alignment, nd);
+            int n = writeFromNativeBuffer(fd, bb, position, directIO, alignment, nd);
             if (n > 0) {
                 // now update src
                 src.position(pos + n);
@@ -232,8 +230,7 @@ public class IOUtil {
         if (dst.isReadOnly())
             throw new IllegalArgumentException("Read-only buffer");
         if (dst instanceof DirectBuffer)
-            return readIntoNativeBuffer(fd, dst, position,
-                    directIO, alignment, nd);
+            return readIntoNativeBuffer(fd, dst, position, directIO, alignment, nd);
 
         // Substitute a native buffer
         ByteBuffer bb;
@@ -245,8 +242,7 @@ public class IOUtil {
             bb = Util.getTemporaryDirectBuffer(rem);
         }
         try {
-            int n = readIntoNativeBuffer(fd, bb, position,
-                    directIO, alignment,nd);
+            int n = readIntoNativeBuffer(fd, bb, position, directIO, alignment,nd);
             bb.flip();
             if (n > 0)
                 dst.put(bb);
