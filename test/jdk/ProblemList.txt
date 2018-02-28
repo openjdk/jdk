@@ -486,6 +486,10 @@ com/sun/jdi/sde/SourceDebugExtensionTest.java                   8158066 windows-
 
 com/sun/jdi/NashornPopFrameTest.java                            8187143 generic-all
 
+com/sun/jdi/EarlyReturnTest.java                                8198803 generic-all
+com/sun/jdi/EarlyReturnNegativeTest.java                        8198803 generic-all
+com/sun/jdi/MethodExitReturnValuesTest.java                     8198803 generic-all
+
 ############################################################################
 
 # jdk_time
