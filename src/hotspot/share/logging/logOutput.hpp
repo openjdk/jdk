@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,12 @@ class LogOutput : public CHeapObj<mtLogging> {
 
  private:
   static const size_t InitialConfigBufferSize = 256;
+
+  // Track if the output has been reconfigured dynamically during runtime.
+  // The status is set each time the configuration of the output is modified,
+  // and is reset once after logging initialization is complete.
+  bool _reconfigured;
+
   char* _config_string;
   size_t _config_string_buffer_size;
 
@@ -65,11 +71,15 @@ class LogOutput : public CHeapObj<mtLogging> {
     return _decorators;
   }
 
+  bool is_reconfigured() const {
+    return _reconfigured;
+  }
+
   const char* config_string() const {
     return _config_string;
   }
 
-  LogOutput() : _config_string(NULL), _config_string_buffer_size(0) {
+  LogOutput() : _reconfigured(false), _config_string(NULL), _config_string_buffer_size(0) {
   }
 
   virtual ~LogOutput();
