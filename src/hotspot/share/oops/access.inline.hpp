@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,6 +203,13 @@ namespace AccessInternal {
   struct PostRuntimeDispatch<GCBarrierType, BARRIER_CLONE, decorators>: public AllStatic {
     static void access_barrier(oop src, oop dst, size_t size) {
       GCBarrierType::clone_in_heap(src, dst, size);
+    }
+  };
+
+  template <class GCBarrierType, DecoratorSet decorators>
+  struct PostRuntimeDispatch<GCBarrierType, BARRIER_RESOLVE, decorators>: public AllStatic {
+    static oop access_barrier(oop obj) {
+      return GCBarrierType::resolve(obj);
     }
   };
 
@@ -443,6 +450,22 @@ namespace AccessInternal {
     }
   };
 
+  template <DecoratorSet decorators, typename T>
+  struct RuntimeDispatch<decorators, T, BARRIER_RESOLVE>: AllStatic {
+    typedef typename AccessFunction<decorators, T, BARRIER_RESOLVE>::type func_t;
+    static func_t _resolve_func;
+
+    static oop resolve_init(oop obj) {
+      func_t function = BarrierResolver<decorators, func_t, BARRIER_RESOLVE>::resolve_barrier();
+      _resolve_func = function;
+      return function(obj);
+    }
+
+    static inline oop resolve(oop obj) {
+      return _resolve_func(obj);
+    }
+  };
+
   // Initialize the function pointers to point to the resolving function.
   template <DecoratorSet decorators, typename T>
   typename AccessFunction<decorators, T, BARRIER_STORE>::type
@@ -484,6 +507,10 @@ namespace AccessInternal {
   typename AccessFunction<decorators, T, BARRIER_CLONE>::type
   RuntimeDispatch<decorators, T, BARRIER_CLONE>::_clone_func = &clone_init;
 
+  template <DecoratorSet decorators, typename T>
+  typename AccessFunction<decorators, T, BARRIER_RESOLVE>::type
+  RuntimeDispatch<decorators, T, BARRIER_RESOLVE>::_resolve_func = &resolve_init;
+
   // Step 3: Pre-runtime dispatching.
   // The PreRuntimeDispatch class is responsible for filtering the barrier strength
   // decorators. That is, for AS_RAW, it hardwires the accesses without a runtime
@@ -491,11 +518,12 @@ namespace AccessInternal {
   // not possible.
   struct PreRuntimeDispatch: AllStatic {
     template<DecoratorSet decorators>
-    static bool can_hardwire_raw() {
-      return !HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value || // primitive access
-             !HasDecorator<decorators, INTERNAL_CONVERT_COMPRESSED_OOP>::value || // don't care about compressed oops (oop* address)
-             HasDecorator<decorators, INTERNAL_RT_USE_COMPRESSED_OOPS>::value; // we can infer we use compressed oops (narrowOop* address)
-    }
+    struct CanHardwireRaw: public IntegralConstant<
+      bool,
+      !HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value || // primitive access
+      !HasDecorator<decorators, INTERNAL_CONVERT_COMPRESSED_OOP>::value || // don't care about compressed oops (oop* address)
+      HasDecorator<decorators, INTERNAL_RT_USE_COMPRESSED_OOPS>::value> // we can infer we use compressed oops (narrowOop* address)
+    {};
 
     static const DecoratorSet convert_compressed_oops = INTERNAL_RT_USE_COMPRESSED_OOPS | INTERNAL_CONVERT_COMPRESSED_OOP;
 
@@ -507,16 +535,21 @@ namespace AccessInternal {
 
     template <DecoratorSet decorators, typename T>
     inline static typename EnableIf<
-      HasDecorator<decorators, AS_RAW>::value>::type
+      HasDecorator<decorators, AS_RAW>::value && CanHardwireRaw<decorators>::value>::type
     store(void* addr, T value) {
       typedef RawAccessBarrier<decorators & RAW_DECORATOR_MASK> Raw;
-      if (can_hardwire_raw<decorators>()) {
-        if (HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value) {
-          Raw::oop_store(addr, value);
-        } else {
-          Raw::store(addr, value);
-        }
-      } else if (UseCompressedOops) {
+      if (HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value) {
+        Raw::oop_store(addr, value);
+      } else {
+        Raw::store(addr, value);
+      }
+    }
+
+    template <DecoratorSet decorators, typename T>
+    inline static typename EnableIf<
+      HasDecorator<decorators, AS_RAW>::value && !CanHardwireRaw<decorators>::value>::type
+    store(void* addr, T value) {
+      if (UseCompressedOops) {
         const DecoratorSet expanded_decorators = decorators | convert_compressed_oops;
         PreRuntimeDispatch::store<expanded_decorators>(addr, value);
       } else {
@@ -558,16 +591,21 @@ namespace AccessInternal {
 
     template <DecoratorSet decorators, typename T>
     inline static typename EnableIf<
-      HasDecorator<decorators, AS_RAW>::value, T>::type
+      HasDecorator<decorators, AS_RAW>::value && CanHardwireRaw<decorators>::value, T>::type
     load(void* addr) {
       typedef RawAccessBarrier<decorators & RAW_DECORATOR_MASK> Raw;
-      if (can_hardwire_raw<decorators>()) {
-        if (HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value) {
-          return Raw::template oop_load<T>(addr);
-        } else {
-          return Raw::template load<T>(addr);
-        }
-      } else if (UseCompressedOops) {
+      if (HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value) {
+        return Raw::template oop_load<T>(addr);
+      } else {
+        return Raw::template load<T>(addr);
+      }
+    }
+
+    template <DecoratorSet decorators, typename T>
+    inline static typename EnableIf<
+      HasDecorator<decorators, AS_RAW>::value && !CanHardwireRaw<decorators>::value, T>::type
+    load(void* addr) {
+      if (UseCompressedOops) {
         const DecoratorSet expanded_decorators = decorators | convert_compressed_oops;
         return PreRuntimeDispatch::load<expanded_decorators, T>(addr);
       } else {
@@ -609,16 +647,21 @@ namespace AccessInternal {
 
     template <DecoratorSet decorators, typename T>
     inline static typename EnableIf<
-      HasDecorator<decorators, AS_RAW>::value, T>::type
+      HasDecorator<decorators, AS_RAW>::value && CanHardwireRaw<decorators>::value, T>::type
     atomic_cmpxchg(T new_value, void* addr, T compare_value) {
       typedef RawAccessBarrier<decorators & RAW_DECORATOR_MASK> Raw;
-      if (can_hardwire_raw<decorators>()) {
-        if (HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value) {
-          return Raw::oop_atomic_cmpxchg(new_value, addr, compare_value);
-        } else {
-          return Raw::atomic_cmpxchg(new_value, addr, compare_value);
-        }
-      } else if (UseCompressedOops) {
+      if (HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value) {
+        return Raw::oop_atomic_cmpxchg(new_value, addr, compare_value);
+      } else {
+        return Raw::atomic_cmpxchg(new_value, addr, compare_value);
+      }
+    }
+
+    template <DecoratorSet decorators, typename T>
+    inline static typename EnableIf<
+      HasDecorator<decorators, AS_RAW>::value && !CanHardwireRaw<decorators>::value, T>::type
+    atomic_cmpxchg(T new_value, void* addr, T compare_value) {
+      if (UseCompressedOops) {
         const DecoratorSet expanded_decorators = decorators | convert_compressed_oops;
         return PreRuntimeDispatch::atomic_cmpxchg<expanded_decorators>(new_value, addr, compare_value);
       } else {
@@ -661,16 +704,21 @@ namespace AccessInternal {
 
     template <DecoratorSet decorators, typename T>
     inline static typename EnableIf<
-      HasDecorator<decorators, AS_RAW>::value, T>::type
+      HasDecorator<decorators, AS_RAW>::value && CanHardwireRaw<decorators>::value, T>::type
     atomic_xchg(T new_value, void* addr) {
       typedef RawAccessBarrier<decorators & RAW_DECORATOR_MASK> Raw;
-      if (can_hardwire_raw<decorators>()) {
-        if (HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value) {
-          return Raw::oop_atomic_xchg(new_value, addr);
-        } else {
-          return Raw::atomic_xchg(new_value, addr);
-        }
-      } else if (UseCompressedOops) {
+      if (HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value) {
+        return Raw::oop_atomic_xchg(new_value, addr);
+      } else {
+        return Raw::atomic_xchg(new_value, addr);
+      }
+    }
+
+    template <DecoratorSet decorators, typename T>
+    inline static typename EnableIf<
+      HasDecorator<decorators, AS_RAW>::value && !CanHardwireRaw<decorators>::value, T>::type
+    atomic_xchg(T new_value, void* addr) {
+      if (UseCompressedOops) {
         const DecoratorSet expanded_decorators = decorators | convert_compressed_oops;
         return PreRuntimeDispatch::atomic_xchg<expanded_decorators>(new_value, addr);
       } else {
@@ -745,6 +793,21 @@ namespace AccessInternal {
     clone(oop src, oop dst, size_t size) {
       RuntimeDispatch<decorators, oop, BARRIER_CLONE>::clone(src, dst, size);
     }
+
+    template <DecoratorSet decorators>
+    inline static typename EnableIf<
+      HasDecorator<decorators, INTERNAL_BT_TO_SPACE_INVARIANT>::value, oop>::type
+    resolve(oop obj) {
+      typedef RawAccessBarrier<decorators & RAW_DECORATOR_MASK> Raw;
+      return Raw::resolve(obj);
+    }
+
+    template <DecoratorSet decorators>
+    inline static typename EnableIf<
+      !HasDecorator<decorators, INTERNAL_BT_TO_SPACE_INVARIANT>::value, oop>::type
+    resolve(oop obj) {
+      return RuntimeDispatch<decorators, oop, BARRIER_RESOLVE>::resolve(obj);
+    }
   };
 
   // This class adds implied decorators that follow according to decorator rules.
@@ -767,7 +830,9 @@ namespace AccessInternal {
       ((IN_HEAP_ARRAY & barrier_strength_default) != 0 ? IN_HEAP : INTERNAL_EMPTY);
     static const DecoratorSet conc_root_is_root = heap_array_is_in_heap |
       ((IN_CONCURRENT_ROOT & heap_array_is_in_heap) != 0 ? IN_ROOT : INTERNAL_EMPTY);
-    static const DecoratorSet value = conc_root_is_root | BT_BUILDTIME_DECORATORS;
+    static const DecoratorSet archive_root_is_root = conc_root_is_root |
+      ((IN_ARCHIVE_ROOT & conc_root_is_root) != 0 ? IN_ROOT : INTERNAL_EMPTY);
+    static const DecoratorSet value = archive_root_is_root | BT_BUILDTIME_DECORATORS;
   };
 
   // Step 2: Reduce types.
@@ -798,6 +863,13 @@ namespace AccessInternal {
   }
 
   template <DecoratorSet decorators>
+  inline void store_reduce_types(narrowOop* addr, narrowOop value) {
+    const DecoratorSet expanded_decorators = decorators | INTERNAL_CONVERT_COMPRESSED_OOP |
+                                             INTERNAL_RT_USE_COMPRESSED_OOPS;
+    PreRuntimeDispatch::store<expanded_decorators>(addr, value);
+  }
+
+  template <DecoratorSet decorators>
   inline void store_reduce_types(HeapWord* addr, oop value) {
     const DecoratorSet expanded_decorators = decorators | INTERNAL_CONVERT_COMPRESSED_OOP;
     PreRuntimeDispatch::store<expanded_decorators>(addr, value);
@@ -816,7 +888,16 @@ namespace AccessInternal {
   }
 
   template <DecoratorSet decorators>
-  inline oop atomic_cmpxchg_reduce_types(oop new_value, HeapWord* addr, oop compare_value) {
+  inline narrowOop atomic_cmpxchg_reduce_types(narrowOop new_value, narrowOop* addr, narrowOop compare_value) {
+    const DecoratorSet expanded_decorators = decorators | INTERNAL_CONVERT_COMPRESSED_OOP |
+                                             INTERNAL_RT_USE_COMPRESSED_OOPS;
+    return PreRuntimeDispatch::atomic_cmpxchg<expanded_decorators>(new_value, addr, compare_value);
+  }
+
+  template <DecoratorSet decorators>
+  inline oop atomic_cmpxchg_reduce_types(oop new_value,
+                                         HeapWord* addr,
+                                         oop compare_value) {
     const DecoratorSet expanded_decorators = decorators | INTERNAL_CONVERT_COMPRESSED_OOP;
     return PreRuntimeDispatch::atomic_cmpxchg<expanded_decorators>(new_value, addr, compare_value);
   }
@@ -835,6 +916,13 @@ namespace AccessInternal {
   }
 
   template <DecoratorSet decorators>
+  inline narrowOop atomic_xchg_reduce_types(narrowOop new_value, narrowOop* addr) {
+    const DecoratorSet expanded_decorators = decorators | INTERNAL_CONVERT_COMPRESSED_OOP |
+                                             INTERNAL_RT_USE_COMPRESSED_OOPS;
+    return PreRuntimeDispatch::atomic_xchg<expanded_decorators>(new_value, addr);
+  }
+
+  template <DecoratorSet decorators>
   inline oop atomic_xchg_reduce_types(oop new_value, HeapWord* addr) {
     const DecoratorSet expanded_decorators = decorators | INTERNAL_CONVERT_COMPRESSED_OOP;
     return PreRuntimeDispatch::atomic_xchg<expanded_decorators>(new_value, addr);
@@ -846,9 +934,10 @@ namespace AccessInternal {
   }
 
   template <DecoratorSet decorators, typename T>
-  inline oop load_reduce_types(narrowOop* addr) {
-    const DecoratorSet expanded_decorators = decorators | INTERNAL_CONVERT_COMPRESSED_OOP | INTERNAL_RT_USE_COMPRESSED_OOPS;
-    return PreRuntimeDispatch::load<expanded_decorators, oop>(addr);
+  inline typename OopOrNarrowOop<T>::type load_reduce_types(narrowOop* addr) {
+    const DecoratorSet expanded_decorators = decorators | INTERNAL_CONVERT_COMPRESSED_OOP |
+                                             INTERNAL_RT_USE_COMPRESSED_OOPS;
+    return PreRuntimeDispatch::load<expanded_decorators, typename OopOrNarrowOop<T>::type>(addr);
   }
 
   template <DecoratorSet decorators, typename T>
@@ -1004,6 +1093,12 @@ namespace AccessInternal {
     const DecoratorSet expanded_decorators = DecoratorFixup<decorators>::value;
     PreRuntimeDispatch::clone<expanded_decorators>(src, dst, size);
   }
+
+  template <DecoratorSet decorators>
+  inline oop resolve(oop obj) {
+    const DecoratorSet expanded_decorators = DecoratorFixup<decorators>::value;
+    return PreRuntimeDispatch::resolve<expanded_decorators>(obj);
+  }
 }
 
 template <DecoratorSet decorators>
@@ -1013,6 +1108,7 @@ void Access<decorators>::verify_decorators() {
   const DecoratorSet barrier_strength_decorators = decorators & AS_DECORATOR_MASK;
   STATIC_ASSERT(barrier_strength_decorators == 0 || ( // make sure barrier strength decorators are disjoint if set
     (barrier_strength_decorators ^ AS_NO_KEEPALIVE) == 0 ||
+    (barrier_strength_decorators ^ AS_DEST_NOT_INITIALIZED) == 0 ||
     (barrier_strength_decorators ^ AS_RAW) == 0 ||
     (barrier_strength_decorators ^ AS_NORMAL) == 0
   ));
@@ -1037,7 +1133,8 @@ void Access<decorators>::verify_decorators() {
     (location_decorators ^ IN_ROOT) == 0 ||
     (location_decorators ^ IN_HEAP) == 0 ||
     (location_decorators ^ (IN_HEAP | IN_HEAP_ARRAY)) == 0 ||
-    (location_decorators ^ (IN_ROOT | IN_CONCURRENT_ROOT)) == 0
+    (location_decorators ^ (IN_ROOT | IN_CONCURRENT_ROOT)) == 0 ||
+    (location_decorators ^ (IN_ROOT | IN_ARCHIVE_ROOT)) == 0
   ));
 }
 

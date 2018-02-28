@@ -32,8 +32,9 @@
  *     /test/hotspot/jtreg/runtime/SharedArchiveFile /test/hotspot/jtreg/testlibrary/jvmti
  *     /test/hotspot/jtreg/runtime/appcds/customLoader
  *     /test/hotspot/jtreg/runtime/appcds/customLoader/test-classes
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires vm.flavor != "minimal"
+ * @requires !vm.graal.enabled
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar
  *          java.management

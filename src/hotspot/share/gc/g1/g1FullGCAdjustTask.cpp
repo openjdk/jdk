@@ -56,7 +56,7 @@ class G1AdjustRegionClosure : public HeapRegionClosure {
     _bitmap(bitmap),
     _worker_id(worker_id) { }
 
-  bool doHeapRegion(HeapRegion* r) {
+  bool do_heap_region(HeapRegion* r) {
     G1AdjustAndRebuildClosure cl(_worker_id);
     if (r->is_humongous()) {
       oop obj = oop(r->humongous_start_region()->bottom());

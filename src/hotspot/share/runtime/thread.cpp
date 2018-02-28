@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "prims/jvm_misc.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -1994,20 +1995,10 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     JvmtiExport::cleanup_thread(this);
   }
 
-  // We must flush any deferred card marks before removing a thread from
-  // the list of active threads.
-  Universe::heap()->flush_deferred_store_barrier(this);
-  assert(deferred_card_mark().is_empty(), "Should have been flushed");
-
-#if INCLUDE_ALL_GCS
-  // We must flush the G1-related buffers before removing a thread
-  // from the list of active threads. We must do this after any deferred
-  // card marks have been flushed (above) so that any entries that are
-  // added to the thread's dirty card queue as a result are not lost.
-  if (UseG1GC) {
-    flush_barrier_queues();
-  }
-#endif // INCLUDE_ALL_GCS
+  // We must flush any deferred card marks and other various GC barrier
+  // related buffers (e.g. G1 SATB buffer and G1 dirty card queue buffer)
+  // before removing a thread from the list of active threads.
+  BarrierSet::barrier_set()->on_thread_detach(this);
 
   log_info(os, thread)("JavaThread %s (tid: " UINTX_FORMAT ").",
     exit_type == JavaThread::normal_exit ? "exiting" : "detaching",
@@ -2036,36 +2027,6 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   }
 }
 
-#if INCLUDE_ALL_GCS
-// Flush G1-related queues.
-void JavaThread::flush_barrier_queues() {
-  satb_mark_queue().flush();
-  dirty_card_queue().flush();
-}
-
-void JavaThread::initialize_queues() {
-  assert(!SafepointSynchronize::is_at_safepoint(),
-         "we should not be at a safepoint");
-
-  SATBMarkQueue& satb_queue = satb_mark_queue();
-  SATBMarkQueueSet& satb_queue_set = satb_mark_queue_set();
-  // The SATB queue should have been constructed with its active
-  // field set to false.
-  assert(!satb_queue.is_active(), "SATB queue should not be active");
-  assert(satb_queue.is_empty(), "SATB queue should be empty");
-  // If we are creating the thread during a marking cycle, we should
-  // set the active field of the SATB queue to true.
-  if (satb_queue_set.is_active()) {
-    satb_queue.set_active(true);
-  }
-
-  DirtyCardQueue& dirty_queue = dirty_card_queue();
-  // The dirty card queue should have been constructed with its
-  // active field set to true.
-  assert(dirty_queue.is_active(), "dirty card queue should be active");
-}
-#endif // INCLUDE_ALL_GCS
-
 void JavaThread::cleanup_failed_attach_current_thread() {
   if (active_handles() != NULL) {
     JNIHandleBlock* block = active_handles();
@@ -2086,18 +2047,11 @@ void JavaThread::cleanup_failed_attach_current_thread() {
     tlab().make_parsable(true);  // retire TLAB, if any
   }
 
-#if INCLUDE_ALL_GCS
-  if (UseG1GC) {
-    flush_barrier_queues();
-  }
-#endif // INCLUDE_ALL_GCS
+  BarrierSet::barrier_set()->on_thread_detach(this);
 
   Threads::remove(this);
   this->smr_delete();
 }
-
-
-
 
 JavaThread* JavaThread::active() {
   Thread* thread = Thread::current();
@@ -3200,7 +3154,7 @@ void JavaThread::print_stack_on(outputStream* st) {
   RegisterMap reg_map(this);
   vframe* start_vf = last_java_vframe(&reg_map);
   int count = 0;
-  for (vframe* f = start_vf; f; f = f->sender()) {
+  for (vframe* f = start_vf; f != NULL; f = f->sender()) {
     if (f->is_java_frame()) {
       javaVFrame* jvf = javaVFrame::cast(f);
       java_lang_Throwable::print_stack_element(st, jvf->method(), jvf->bci());
@@ -3213,9 +3167,9 @@ void JavaThread::print_stack_on(outputStream* st) {
       // Ignore non-Java frames
     }
 
-    // Bail-out case for too deep stacks
+    // Bail-out case for too deep stacks if MaxJavaStackTraceDepth > 0
     count++;
-    if (MaxJavaStackTraceDepth == count) return;
+    if (MaxJavaStackTraceDepth > 0 && MaxJavaStackTraceDepth == count) return;
   }
 }
 
@@ -4039,9 +3993,16 @@ static OnLoadEntry_t lookup_on_load(AgentLibrary* agent,
         }
         if (library == NULL) {
           const char *sub_msg = " on the library path, with error: ";
-          size_t len = strlen(msg) + strlen(name) + strlen(sub_msg) + strlen(ebuf) + 1;
+          const char *sub_msg2 = "\nModule java.instrument may be missing from runtime image.";
+
+          size_t len = strlen(msg) + strlen(name) + strlen(sub_msg) +
+                       strlen(ebuf) + strlen(sub_msg2) + 1;
           char *buf = NEW_C_HEAP_ARRAY(char, len, mtThread);
-          jio_snprintf(buf, len, "%s%s%s%s", msg, name, sub_msg, ebuf);
+          if (!agent->is_instrument_lib()) {
+            jio_snprintf(buf, len, "%s%s%s%s", msg, name, sub_msg, ebuf);
+          } else {
+            jio_snprintf(buf, len, "%s%s%s%s%s", msg, name, sub_msg, ebuf, sub_msg2);
+          }
           // If we can't find the agent, exit.
           vm_exit_during_initialization(buf, NULL);
           FREE_C_HEAP_ARRAY(char, buf);
@@ -4195,10 +4156,9 @@ void JavaThread::invoke_shutdown_hooks() {
     // SystemDictionary::resolve_or_null will return null if there was
     // an exception.  If we cannot load the Shutdown class, just don't
     // call Shutdown.shutdown() at all.  This will mean the shutdown hooks
-    // and finalizers (if runFinalizersOnExit is set) won't be run.
-    // Note that if a shutdown hook was registered or runFinalizersOnExit
-    // was called, the Shutdown class would have already been loaded
-    // (Runtime.addShutdownHook and runFinalizersOnExit will load it).
+    // won't be run.  Note that if a shutdown hook was registered,
+    // the Shutdown class would have already been loaded
+    // (Runtime.addShutdownHook will load it).
     JavaValue result(T_VOID);
     JavaCalls::call_static(&result,
                            shutdown_klass,
@@ -4221,7 +4181,7 @@ void JavaThread::invoke_shutdown_hooks() {
 //   + Wait until we are the last non-daemon thread to execute
 //     <-- every thing is still working at this moment -->
 //   + Call java.lang.Shutdown.shutdown(), which will invoke Java level
-//        shutdown hooks, run finalizers if finalization-on-exit
+//        shutdown hooks
 //   + Call before_exit(), prepare for VM exit
 //      > run VM level shutdown hooks (they are registered through JVM_OnExit(),
 //        currently the only user of this mechanism is File.deleteOnExit())
@@ -4345,9 +4305,8 @@ void Threads::add(JavaThread* p, bool force_daemon) {
   // The threads lock must be owned at this point
   assert_locked_or_safepoint(Threads_lock);
 
-  // See the comment for this method in thread.hpp for its purpose and
-  // why it is called here.
-  p->initialize_queues();
+  BarrierSet::barrier_set()->on_thread_attach(p);
+
   p->set_next(_thread_list);
   _thread_list = p;
 

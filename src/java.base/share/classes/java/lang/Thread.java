@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,9 +150,6 @@ class Thread implements Runnable {
     private Thread         threadQ;
     private long           eetop;
 
-    /* Whether or not to single_step this thread. */
-    private boolean     single_step;
-
     /* Whether or not the thread is a daemon thread. */
     private boolean     daemon = false;
 
@@ -234,9 +231,10 @@ class Thread implements Runnable {
     /* Set the blocker field; invoked via jdk.internal.misc.SharedSecrets
      * from java.nio code
      */
-    void blockedOn(Interruptible b) {
-        synchronized (blockerLock) {
-            blocker = b;
+    static void blockedOn(Interruptible b) {
+        Thread me = Thread.currentThread();
+        synchronized (me.blockerLock) {
+            me.blocker = b;
         }
     }
 
@@ -1009,18 +1007,22 @@ class Thread implements Runnable {
      * @spec JSR-51
      */
     public void interrupt() {
-        if (this != Thread.currentThread())
+        Thread me = Thread.currentThread();
+        if (this != me)
             checkAccess();
 
-        synchronized (blockerLock) {
-            Interruptible b = blocker;
-            if (b != null) {
-                interrupt0();           // Just to set the interrupt flag
-                b.interrupt(this);
-                return;
+        // set interrupt status
+        interrupt0();
+
+        // thread may be blocked in an I/O operation
+        if (this != me && blocker != null) {
+            synchronized (blockerLock) {
+                Interruptible b = blocker;
+                if (b != null) {
+                    b.interrupt(this);
+                }
             }
         }
-        interrupt0();
     }
 
     /**

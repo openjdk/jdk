@@ -67,7 +67,7 @@ public class BootLoader {
     // ServiceCatalog for the boot class loader
     private static final ServicesCatalog SERVICES_CATALOG = ServicesCatalog.create();
 
-    // ClassLoaderValue map for boot class loader
+    // ClassLoaderValue map for the boot class loader
     private static final ConcurrentHashMap<?, ?> CLASS_LOADER_VALUE_MAP
         = new ConcurrentHashMap<>();
 

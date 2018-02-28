@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,10 +76,10 @@ class arrayOopDesc : public oopDesc {
     return header_size(type) * HeapWordSize;
   }
 
-  // Returns the address of the first element.
-  void* base(BasicType type) const {
-    return (void*) (((intptr_t) this) + base_offset_in_bytes(type));
-  }
+  // Returns the address of the first element. The elements in the array will not
+  // relocate from this address until a subsequent thread transition.
+  inline void* base(BasicType type) const;
+  inline void* base_raw(BasicType type) const; // GC barrier invariant
 
   // Tells whether index is within bounds.
   bool is_within_bounds(int index) const        { return 0 <= index && index < length(); }

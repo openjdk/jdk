@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,12 @@
 
 /**
  * @test
- * @bug 8146156 8159548
+ * @bug 8146156 8159548 8060094
  * @modules jdk.localedata
  * @summary test whether uppercasing follows Locale.Category.FORMAT locale.
+ *          Also test whether the uppercasing uses the locale specified to the
+ *          Formatter API.
+ *
  * @run main/othervm FormatLocale
  */
 
@@ -38,7 +41,6 @@ import java.util.Formatter;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
-import java.util.Locale.Category;
 import java.util.TimeZone;
 import java.util.stream.IntStream;
 
@@ -50,40 +52,81 @@ public class FormatLocale {
         "%S",
         "%S",
         "%TB",
-        "%G");
+        "%G",
+        "%C");
+
     static final List<Object> src = List.of(
         "Turkish",
         "Turkish",
         LocalDate.of(2016, Month.APRIL, 1),
-        Float.valueOf(100_000_000));
+        Float.valueOf(100_000_000),
+        'i');
+
+    static final List<Locale> defaultLocale = List.of(
+            Locale.ENGLISH,
+            TURKISH,
+            TURKISH,
+            Locale.FRANCE,
+            TURKISH);
+
     static final List<Locale> formatLocale = List.of(
-        Locale.ENGLISH,
-        TURKISH,
-        TURKISH,
-        Locale.FRANCE);
-    static final List<String> expected = List.of(
-        "TURKISH",
-        "TURK\u0130SH",
-        "N\u0130SAN",
-        "1,00000E+08");
+            TURKISH,
+            Locale.ENGLISH,
+            Locale.FRANCE,
+            Locale.ENGLISH,
+            Locale.ENGLISH);
+
+    static final List<String> expectedWithDefaultLocale = List.of(
+            "TURKISH",
+            "TURK\u0130SH",
+            "N\u0130SAN",
+            "1,00000E+08",
+            "\u0130");
+
+    static final List<String> expectedWithFormatLocale = List.of(
+            "TURK\u0130SH",
+            "TURKISH",
+            "AVRIL",
+            "1.00000E+08",
+            "I");
 
     static void formatLocaleTest() {
         StringBuilder sb = new StringBuilder();
 
+        // checks whether upper casing follows Locale.Category.FORMAT locale
         IntStream.range(0, src.size()).forEach(i -> {
             sb.setLength(0);
-            Locale.setDefault(Locale.Category.FORMAT, formatLocale.get(i));
+            Locale.setDefault(Locale.Category.FORMAT, defaultLocale.get(i));
             new Formatter(sb).format(conversions.get(i), src.get(i));
-            if (!sb.toString().equals(expected.get(i))) {
+            if (!sb.toString().equals(expectedWithDefaultLocale.get(i))) {
                 throw new RuntimeException(
-                    "Wrong uppercasing with Formatter.format(" +
-                    "\"" + conversions.get(i) + "\"" +
-                    ") in locale "
-                    + formatLocale.get(i) +
-                    ". Expected: " + expected.get(i) +
-                    " Returned: " + sb.toString());
+                        "Wrong uppercasing while using Formatter.format(" +
+                                "\"" + conversions.get(i) + "\"" +
+                                ") with the default locale: '"
+                                + defaultLocale.get(i) +
+                                "'. Expected: " + expectedWithDefaultLocale.get(i) +
+                                " Returned: " + sb.toString());
             }
         });
+
+        // checks whether upper casing uses the locale set during creation of
+        // Formatter instance, instead of the default locale
+        IntStream.range(0, src.size()).forEach(i -> {
+            sb.setLength(0);
+            Locale.setDefault(Locale.Category.FORMAT, defaultLocale.get(i));
+            new Formatter(sb, formatLocale.get(i)).format(conversions.get(i),
+                    src.get(i));
+            if (!sb.toString().equals(expectedWithFormatLocale.get(i))) {
+                throw new RuntimeException(
+                        "Wrong uppercasing while using Formatter.format(" +
+                                "\"" + conversions.get(i) + "\"" +
+                                ") with the locale specified during instance" +
+                                " creation: '" + formatLocale.get(i) +
+                                "'. Expected: " + expectedWithFormatLocale.get(i) +
+                                " Returned: " + sb.toString());
+            }
+        });
+
     }
 
     static void nullLocaleTest() {

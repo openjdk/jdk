@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -796,6 +796,25 @@ class ConstantPoolVisitor implements ConstantPool.Visitor<String, Integer> {
                 xpool.add(new Element("CONSTANT_InvokeDynamic",
                           new String[]{"id", p.toString()},
                           value));
+
+            } catch (ConstantPoolException ex) {
+                ex.printStackTrace();
+            }
+        }
+        return value;
+    }
+
+    @Override
+    public String visitDynamicConstant(ConstantPool.CONSTANT_Dynamic_info c, Integer p) {
+        String value = slist.get(p);
+        if (value == null) {
+            try {
+                value = bsmlist.get(c.bootstrap_method_attr_index) + " "
+                        + visit(cfpool.get(c.name_and_type_index), c.name_and_type_index);
+                slist.set(p, value);
+                xpool.add(new Element("CONSTANT_Dynamic",
+                                      new String[]{"id", p.toString()},
+                                      value));
 
             } catch (ConstantPoolException ex) {
                 ex.printStackTrace();

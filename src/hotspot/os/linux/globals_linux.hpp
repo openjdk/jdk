@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,11 @@
                                                                         \
   product(bool, UseContainerSupport, true,                              \
           "Enable detection and runtime container configuration support") \
+                                                                        \
+  product(bool, PreferContainerQuotaForCPUCount, true,                  \
+          "Calculate the container CPU availability based on the value" \
+          " of quotas (if set), when true. Otherwise, use the CPU"    \
+          " shares value, provided it is less than quota.")             \
                                                                         \
   diagnostic(bool, UseCpuAllocPath, false,                              \
              "Use CPU_ALLOC code path in os::active_processor_count ")

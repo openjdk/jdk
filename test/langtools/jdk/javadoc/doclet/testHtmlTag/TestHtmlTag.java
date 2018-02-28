@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,11 +119,11 @@ public class TestHtmlTag extends JavadocTester {
                 + "\n"
                 + " <p>\n"
                 + " A new instance of the <code>DatatypeFactory</code> is created through the\n"
-                + " <a href=\"../pkg3/A.DatatypeFactory.html#newInstance--\"><code>newInstance()</code></a> method that uses the following implementation\n"
+                + " <a href=\"#newInstance--\"><code>newInstance()</code></a> method that uses the following implementation\n"
                 + " resolution mechanisms to determine an implementation:</p>\n"
                 + " <ol>\n"
                 + " <li>\n"
-                + " If the system property specified by <a href=\"../pkg3/A.DatatypeFactory.html#DATATYPEFACTORY_PROPERTY\"><code>DATATYPEFACTORY_PROPERTY</code></a>,\n"
+                + " If the system property specified by <a href=\"#DATATYPEFACTORY_PROPERTY\"><code>DATATYPEFACTORY_PROPERTY</code></a>,\n"
                 + " \"<code>javax.xml.datatype.DatatypeFactory</code>\", exists, a class with\n"
                 + " the name of the property value is instantiated. Any Exception thrown\n"
                 + " during the instantiation process is wrapped as a\n"
@@ -148,7 +148,7 @@ public class TestHtmlTag extends JavadocTester {
                 + " </li>\n"
                 + " <li>\n"
                 + " The final mechanism is to attempt to instantiate the <code>Class</code>\n"
-                + " specified by <a href=\"../pkg3/A.DatatypeFactory.html#DATATYPEFACTORY_IMPLEMENTATION_CLASS\">"
+                + " specified by <a href=\"#DATATYPEFACTORY_IMPLEMENTATION_CLASS\">"
                 + "<code>DATATYPEFACTORY_IMPLEMENTATION_CLASS</code></a>. Any Exception\n"
                 + " thrown during the instantiation process is wrapped as a\n"
                 + " <code>IllegalStateException</code>.\n"

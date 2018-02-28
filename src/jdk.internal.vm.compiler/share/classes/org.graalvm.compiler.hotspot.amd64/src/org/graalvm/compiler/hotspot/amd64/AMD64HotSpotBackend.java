@@ -30,6 +30,7 @@ import static org.graalvm.compiler.core.common.GraalOptions.CanOmitFrame;
 import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.core.common.GraalOptions.ZapStackOnMethodEntry;
 
+import org.graalvm.collections.EconomicSet;
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.asm.amd64.AMD64Address;
@@ -66,7 +67,6 @@ import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.util.EconomicSet;
 
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.amd64.AMD64Kind;

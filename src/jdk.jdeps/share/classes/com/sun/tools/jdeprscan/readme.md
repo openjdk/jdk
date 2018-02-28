@@ -1,6 +1,6 @@
 <!--
 
-Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -134,30 +134,30 @@ of deprecated APIs listed is affected by the `--release` and the
 The output is a report that lists program elements that use deprecated
 APIs. Output is subject to change.
 
-Consider the following declarations from Java SE 9:
+Consider the following declarations:
 
         // java.lang.Boolean
 
         @Deprecated(since="9")
         public Boolean(boolean value)
 
-        // java.lang.Runtime
+        // java.lang.Thread
 
-        @Deprecated(since="1.2", forRemoval=true)
-        public static void runFinalizersOnExit(boolean value)
+        @Deprecated(since="1.5", forRemoval=true)
+        public void destroy()
 
 Running **jdeprscan** over a class that calls these methods will result
 in output something like the following:
 
         class Example uses method java/lang/Boolean.<init>(Z)V deprecated
-        class Example uses method java/lang/Runtime.runFinalizersOnExit(Z)V deprecated for removal
+        class Example uses method java/lang/Thread.destroy()V deprecated for removal
 
 Running **jdeprscan** with the `--list` option will result in output
 including something like the following:
 
         ...
         @Deprecated(since="9") java.lang.Boolean(boolean)
-        @Deprecated(since="1.2", forRemoval=true) void java.lang.Runtime.runFinalizersOnExit(boolean)
+        @Deprecated(since="1.5", forRemoval=true) void java.lang.Thread.destroy()
         ...
 
 **NOTES**

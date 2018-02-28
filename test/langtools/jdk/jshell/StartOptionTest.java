@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,7 +214,7 @@ public class StartOptionTest {
 
     // Test that the usage message is printed
     public void testUsage() {
-        for (String opt : new String[]{"-h", "--help"}) {
+        for (String opt : new String[]{"-?", "-h", "--help"}) {
             startCo(s -> {
                 assertTrue(s.split("\n").length >= 7, "Not enough usage lines: " + s);
                 assertTrue(s.startsWith("Usage:   jshell <option>..."), "Unexpect usage start: " + s);
@@ -230,7 +230,7 @@ public class StartOptionTest {
             startCo(s -> {
                 assertTrue(s.split("\n").length >= 5, "Not enough help-extra lines: " + s);
                 assertTrue(s.contains("--add-exports"), "Expected --add-exports: " + s);
-                assertTrue(s.contains("--execution"), "Expected --add-exports: " + s);
+                assertTrue(s.contains("--execution"), "Expected --execution: " + s);
                 assertFalse(s.contains("Welcome"), "Unexpected start: " + s);
             }, opt);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary Class-Path: attribute in MANIFEST file
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -69,29 +68,30 @@ public class ClassPathAttr {
                                                           "CpAttr4",
                                                           "CpAttr5"));
 
-      OutputAnalyzer output = TestCommon.execCommon(
+      TestCommon.run(
           "-cp", cp,
-          "CpAttr1");
-      TestCommon.checkExec(output);
+          "CpAttr1")
+        .assertNormalExit();
 
       // Logging test for class+path.
-      output = TestCommon.execCommon(
+      TestCommon.run(
           "-Xlog:class+path",
           "-cp", cp,
-          "CpAttr1");
-      if (!TestCommon.isUnableToMap(output)){
-        output.shouldMatch("checking shared classpath entry: .*cpattr2.jar");
-        output.shouldMatch("checking shared classpath entry: .*cpattr3.jar");
-      }
+          "CpAttr1")
+        .assertNormalExit(output -> {
+            output.shouldMatch("checking shared classpath entry: .*cpattr2.jar");
+            output.shouldMatch("checking shared classpath entry: .*cpattr3.jar");
+          });
+
       //  Make sure aliased TraceClassPaths still works
-      output = TestCommon.execCommon(
+      TestCommon.run(
           "-XX:+TraceClassPaths",
           "-cp", cp,
-          "CpAttr1");
-      if (!TestCommon.isUnableToMap(output)){
-        output.shouldMatch("checking shared classpath entry: .*cpattr2.jar");
-        output.shouldMatch("checking shared classpath entry: .*cpattr3.jar");
-      }
+          "CpAttr1")
+        .assertNormalExit(output -> {
+            output.shouldMatch("checking shared classpath entry: .*cpattr2.jar");
+            output.shouldMatch("checking shared classpath entry: .*cpattr3.jar");
+          });
     }
   }
 

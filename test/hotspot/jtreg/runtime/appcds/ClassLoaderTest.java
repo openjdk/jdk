@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary Initiating and defining classloader test.
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -36,7 +35,7 @@
  * @compile test-classes/ForNameTest.java
  * @compile test-classes/BootClassPathAppendHelper.java
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main ClassLoaderTest
  */
 

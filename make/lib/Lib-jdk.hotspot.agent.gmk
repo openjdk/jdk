@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -98,12 +98,12 @@ endif
 ################################################################################
 
 $(eval $(call SetupNativeCompilation, BUILD_LIBSA, \
+    NAME := $(SA_NAME), \
     TOOLCHAIN := $(SA_TOOLCHAIN), \
     OPTIMIZATION := NONE, \
     DISABLED_WARNINGS_microsoft := 4267, \
     DISABLED_WARNINGS_gcc := sign-compare, \
     DISABLED_WARNINGS_CXX_solstudio := truncwarn unknownpragma, \
-    LIBRARY := $(SA_NAME), \
     OUTPUT_DIR := $(call FindLibDirForModule, $(MODULE)), \
     SRC := $(SA_SRC), \
     EXCLUDE_FILES := test.c saproc_audit.cpp $(SA_EXCLUDE_FILES), \

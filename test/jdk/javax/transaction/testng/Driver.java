@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2918, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,9 @@
 
 /**
  * @test
- * @modules java.sql java.transaction
+ * @modules java.sql
  * @compile
- *   test/transaction/InvalidTransactionExceptionTests.java
- *   test/transaction/TransactionRequiredExceptionTests.java
- *   test/transaction/TransactionRolledbackExceptionTests.java
  *   test/transaction/XAExceptionTests.java
  *   util/SerializedTransactionExceptions.java
- * @run testng/othervm test.transaction.InvalidTransactionExceptionTests
- * @run testng/othervm test.transaction.TransactionRequiredExceptionTests
- * @run testng/othervm test.transaction.TransactionRolledbackExceptionTests
- * @run testng/othervm util.SerializedTransactionExceptions
+ * @run testng/othervm test.transaction.XAExceptionTests
  */

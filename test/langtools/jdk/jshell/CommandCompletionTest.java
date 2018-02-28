@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8144095 8164825 8169818 8153402 8165405 8177079 8178013 8167554
+ * @bug 8144095 8164825 8169818 8153402 8165405 8177079 8178013 8167554 8166232
  * @summary Test Command Completion
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -120,6 +120,14 @@ public class CommandCompletionTest extends ReplToolTesting {
                 a -> assertCompletion(a, "/list |", false, "-all", "-history", "-start ", "1 ", "xray "),
                 a -> assertCompletion(a, "/list x|", false, "xray "),
                 a -> assertCompletion(a, "/list xray |", false)
+        );
+    }
+
+    @Test
+    public void testHistory() {
+        test(false, new String[] {"--no-startup"},
+                a -> assertCompletion(a, "/hi|", false, "/history "),
+                a -> assertCompletion(a, "/history |", false, "-all")
         );
     }
 

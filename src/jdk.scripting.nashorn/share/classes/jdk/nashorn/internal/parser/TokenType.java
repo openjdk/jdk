@@ -191,7 +191,6 @@ public enum TokenType {
     TEMPLATE_MIDDLE(LITERAL,  null),
     TEMPLATE_TAIL  (LITERAL,  null),
 
-    COMMALEFT      (IR,       null),
     DECPOSTFIX     (IR,       null),
     INCPOSTFIX     (IR,       null),
     SPREAD_ARGUMENT(IR,       null),

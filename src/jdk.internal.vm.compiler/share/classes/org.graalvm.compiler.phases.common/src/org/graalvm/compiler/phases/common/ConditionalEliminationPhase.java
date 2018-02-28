@@ -26,6 +26,10 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
 
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.Equivalence;
+import org.graalvm.collections.MapCursor;
+import org.graalvm.collections.Pair;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp;
@@ -87,10 +91,6 @@ import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase;
 import org.graalvm.compiler.phases.schedule.SchedulePhase.SchedulingStrategy;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
-import org.graalvm.util.EconomicMap;
-import org.graalvm.util.Equivalence;
-import org.graalvm.util.MapCursor;
-import org.graalvm.util.Pair;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.TriState;
@@ -124,7 +124,11 @@ public class ConditionalEliminationPhase extends BasePhase<PhaseContext> {
                 if (moveGuards) {
                     cfg.visitDominatorTree(new MoveGuardsUpwards(), graph.hasValueProxies());
                 }
-                SchedulePhase.run(graph, SchedulingStrategy.EARLIEST, cfg);
+                try (DebugContext.Scope scheduleScope = graph.getDebug().scope(SchedulePhase.class)) {
+                    SchedulePhase.run(graph, SchedulingStrategy.EARLIEST_WITH_GUARD_ORDER, cfg);
+                } catch (Throwable t) {
+                    throw graph.getDebug().handle(t);
+                }
                 ScheduleResult r = graph.getLastSchedule();
                 blockToNodes = r.getBlockToNodesMap();
                 nodeToBlock = r.getNodeToBlockMap();
@@ -662,7 +666,7 @@ public class ConditionalEliminationPhase extends BasePhase<PhaseContext> {
                      */
                     InputFilter v = new InputFilter(original);
                     thisGuard.getCondition().applyInputs(v);
-                    if (v.ok && foldGuard(thisGuard, pendingGuard, newStamp, rewireGuardFunction)) {
+                    if (v.ok && foldGuard(thisGuard, pendingGuard, result.toBoolean(), newStamp, rewireGuardFunction)) {
                         return true;
                     }
                 }
@@ -670,19 +674,34 @@ public class ConditionalEliminationPhase extends BasePhase<PhaseContext> {
             return false;
         }
 
-        protected boolean foldGuard(DeoptimizingGuard thisGuard, DeoptimizingGuard otherGuard, Stamp guardedValueStamp, GuardRewirer rewireGuardFunction) {
+        protected boolean foldGuard(DeoptimizingGuard thisGuard, DeoptimizingGuard otherGuard, boolean outcome, Stamp guardedValueStamp, GuardRewirer rewireGuardFunction) {
             if (otherGuard.getAction() == thisGuard.getAction() && otherGuard.getSpeculation() == thisGuard.getSpeculation()) {
                 LogicNode condition = (LogicNode) thisGuard.getCondition().copyWithInputs();
+                /*
+                 * We have ...; guard(C1); guard(C2);...
+                 *
+                 * Where the first guard is `otherGuard` and the second one `thisGuard`.
+                 *
+                 * Depending on `outcome`, we have C2 => C1 or C2 => !C1.
+                 *
+                 * - If C2 => C1, `mustDeopt` below is false and we transform to ...; guard(C2); ...
+                 *
+                 * - If C2 => !C1, `mustDeopt` is true and we transform to ..; guard(C1); deopt;
+                 */
                 GuardRewirer rewirer = (guard, result, innerGuardedValueStamp, newInput) -> {
-                    if (rewireGuardFunction.rewire(guard, result, innerGuardedValueStamp, newInput)) {
-                        otherGuard.setCondition(condition, thisGuard.isNegated());
+                    // `result` is `outcome`, `guard` is `otherGuard`
+                    boolean mustDeopt = result == otherGuard.isNegated();
+                    if (rewireGuardFunction.rewire(guard, mustDeopt == thisGuard.isNegated(), innerGuardedValueStamp, newInput)) {
+                        if (!mustDeopt) {
+                            otherGuard.setCondition(condition, thisGuard.isNegated());
+                        }
                         return true;
                     }
                     condition.safeDelete();
                     return false;
                 };
                 // Move the later test up
-                return rewireGuards(otherGuard, !thisGuard.isNegated(), null, guardedValueStamp, rewirer);
+                return rewireGuards(otherGuard, outcome, null, guardedValueStamp, rewirer);
             }
             return false;
         }

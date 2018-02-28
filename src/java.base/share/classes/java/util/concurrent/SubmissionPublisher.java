@@ -753,8 +753,10 @@ public class SubmissionPublisher<T> implements Publisher<T>,
                     else
                         pred.next = next;
                 }
-                else
+                else {
                     subs.add(b.subscriber);
+                    pred = b;
+                }
             }
         }
         return subs;

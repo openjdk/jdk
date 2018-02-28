@@ -119,16 +119,12 @@ Java_java_lang_System_identityHashCode(JNIEnv *env, jobject this, jobject x)
 #define VENDOR_URL_BUG "http://bugreport.java.com/bugreport/"
 #endif
 
-#define JAVA_MAX_SUPPORTED_VERSION 54
-#define JAVA_MAX_SUPPORTED_MINOR_VERSION 0
-
 #ifdef JAVA_SPECIFICATION_VENDOR /* Third party may NOT overwrite this. */
   #error "ERROR: No override of JAVA_SPECIFICATION_VENDOR is allowed"
 #else
   #define JAVA_SPECIFICATION_VENDOR "Oracle Corporation"
 #endif
 
-static int fmtdefault; // boolean value
 jobject fillI18nProps(JNIEnv *env, jobject props, char *baseKey,
                       char *platformDispVal, char *platformFmtVal,
                       jmethodID putID, jmethodID getPropID) {
@@ -144,16 +140,9 @@ jobject fillI18nProps(JNIEnv *env, jobject props, char *baseKey,
         const char *baseVal = "";
 
         /* user.xxx base property */
-        if (fmtdefault) {
-            if (platformFmtVal) {
-                PUTPROP(props, baseKey, platformFmtVal);
-                baseVal = platformFmtVal;
-            }
-        } else {
-            if (platformDispVal) {
-                PUTPROP(props, baseKey, platformDispVal);
-                baseVal = platformDispVal;
-            }
+        if (platformDispVal) {
+            PUTPROP(props, baseKey, platformDispVal);
+            baseVal = platformDispVal;
         }
 
         /* user.xxx.display property */
@@ -227,8 +216,8 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
     PUTPROP(props, "java.vendor.url", VENDOR_URL);
     PUTPROP(props, "java.vendor.url.bug", VENDOR_URL_BUG);
 
-    jio_snprintf(buf, sizeof(buf), "%d.%d", JAVA_MAX_SUPPORTED_VERSION,
-                                            JAVA_MAX_SUPPORTED_MINOR_VERSION);
+    jio_snprintf(buf, sizeof(buf), "%d.%d", JVM_CLASSFILE_MAJOR_VERSION,
+                                            JVM_CLASSFILE_MINOR_VERSION);
     PUTPROP(props, "java.class.version", buf);
 
     if (sprops->awt_toolkit) {
@@ -405,16 +394,6 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
 
     ret = JVM_InitProperties(env, props);
 
-    /* Check the compatibility flag */
-    GETPROP(props, "sun.locale.formatasdefault", jVMVal);
-    if (jVMVal) {
-        const char * val = (*env)->GetStringUTFChars(env, jVMVal, 0);
-        CHECK_NULL_RETURN(val, NULL);
-        fmtdefault = !strcmp(val, "true");
-        (*env)->ReleaseStringUTFChars(env, jVMVal, val);
-        (*env)->DeleteLocalRef(env, jVMVal);
-    }
-
     /* reconstruct i18n related properties */
     fillI18nProps(env, props, "user.language", sprops->display_language,
         sprops->format_language, putID, getPropID);
@@ -433,11 +412,7 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
          */
         PUTPROP(props, "file.encoding", sprops->encoding);
 #else
-        if (fmtdefault) {
-            PUTPROP(props, "file.encoding", sprops->encoding);
-        } else {
-            PUTPROP(props, "file.encoding", sprops->sun_jnu_encoding);
-        }
+        PUTPROP(props, "file.encoding", sprops->sun_jnu_encoding);
 #endif
     } else {
         (*env)->DeleteLocalRef(env, jVMVal);

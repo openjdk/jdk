@@ -42,11 +42,10 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.word.LocationIdentity;
 
 import jdk.vm.ci.meta.Value;
-import sun.misc.Unsafe;
 
 /**
  * Represents the lowered version of an atomic read-and-write operation like
- * {@link Unsafe#getAndSetInt(Object, long, int)} .
+ * {@link sun.misc.Unsafe#getAndSetInt(Object, long, int)}.
  */
 @NodeInfo(allowedUsageTypes = {Memory}, cycles = CYCLES_8, size = SIZE_2)
 public final class LoweredAtomicReadAndWriteNode extends FixedAccessNode implements StateSplit, LIRLowerableAccess, MemoryCheckpoint.Single {

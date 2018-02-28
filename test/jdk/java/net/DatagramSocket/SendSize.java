@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /* @test
  *
  * @bug 4095393
- *
+ * @test main SendSize
  * @summary this tests a regression in 1.2, beta 2 and earlier where
  * the DatagramPackets sent the entire buffer, not the buffer length
  * of the packet.
@@ -43,8 +43,12 @@ public class SendSize {
 
     public static void main(String[] args) throws Exception {
         DatagramSocket serverSocket = new DatagramSocket();
-        new ServerThread(serverSocket).start();
-        new ClientThread(serverSocket.getLocalPort()).start();
+        Thread server = new ServerThread(serverSocket);
+        server.start();
+        Thread client = new ClientThread(serverSocket.getLocalPort());
+        client.start();
+        server.join();
+        client.join();
     }
 
     static class ServerThread extends Thread {
@@ -58,24 +62,26 @@ public class SendSize {
             try {
                 System.err.println("started server thread: " + server);
                 byte[] buf = new byte[1024];
-                DatagramPacket receivePacket = new DatagramPacket(buf,
-                                                                  buf.length);
-                server.receive(receivePacket);
-                int len = receivePacket.getLength();
-                switch(len) {
-                case packetLength:
-                    System.out.println("receive length is: " + len);
-                    break;
-                default:
-                    throw new RuntimeException(
-                        "receive length is: " + len +
-                        ", send length: " + packetLength +
-                        ", buffer length: " + buf.length);
+                for (int i = 0; i < 10; i++) {
+                    DatagramPacket receivePacket = new DatagramPacket(buf,
+                            buf.length);
+                    server.receive(receivePacket);
+                    int len = receivePacket.getLength();
+                    switch (len) {
+                        case packetLength:
+                            System.out.println("receive length is: " + len);
+                            break;
+                        default:
+                            throw new RuntimeException(
+                                    "receive length is: " + len +
+                                            ", send length: " + packetLength +
+                                            ", buffer length: " + buf.length);
+                    }
                 }
                 return;
             } catch (Exception e) {
                 e.printStackTrace();
-                throw new RuntimeException("caugth: " + e);
+                throw new RuntimeException("caught: " + e);
             } finally {
                 if (server != null) { server.close(); }
             }

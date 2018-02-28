@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,4 +36,11 @@ public interface JavaLangRefAccess {
      * {@link java.lang.ref.Reference}s, {@code false} otherwise.
      */
     boolean waitForReferenceProcessing() throws InterruptedException;
+
+    /**
+     * Runs the finalization methods of any objects pending finalization.
+     *
+     * Invoked by Runtime.runFinalization()
+     */
+    void runFinalization();
 }

@@ -30,7 +30,7 @@
 #include "ci/ciUtilities.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/typeArrayOop.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 
 // ciArray
 //

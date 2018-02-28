@@ -25,7 +25,6 @@
 
 package java.io;
 
-import java.lang.reflect.Method;
 import java.nio.channels.FileChannel;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.misc.JavaIOFileDescriptorAccess;
@@ -238,7 +237,7 @@ class FileOutputStream extends OutputStream
         open(name, append);
         altFinalizer = AltFinalizer.get(this);
         if (altFinalizer == null) {
-            fd.registerCleanup();         // open set the fd, register the cleanup
+            FileCleanable.register(fd);   // open sets the fd, register the cleanup
         }
     }
 

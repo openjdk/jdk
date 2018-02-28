@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "gc/parallel/cardTableExtension.hpp"
 #include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
-#include "gc/parallel/parallelScavengeHeap.hpp"
+#include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psTasks.hpp"
@@ -676,4 +676,8 @@ HeapWord* CardTableExtension::lowest_prev_committed_start(int ind) const {
     }
   }
   return min_start;
+}
+
+bool CardTableExtension::is_in_young(oop obj) const {
+  return ParallelScavengeHeap::heap()->is_in_young(obj);
 }

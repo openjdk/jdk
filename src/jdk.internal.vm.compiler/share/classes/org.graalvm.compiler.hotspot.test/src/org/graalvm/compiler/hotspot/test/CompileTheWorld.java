@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,8 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.UnmodifiableEconomicMap;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.bytecode.Bytecodes;
 import org.graalvm.compiler.core.CompilerThreadFactory;
@@ -85,8 +87,6 @@ import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.options.OptionsParser;
 import org.graalvm.compiler.serviceprovider.JDK9Method;
-import org.graalvm.util.EconomicMap;
-import org.graalvm.util.UnmodifiableEconomicMap;
 
 import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
 import jdk.vm.ci.hotspot.HotSpotCompilationRequest;
@@ -553,7 +553,6 @@ public final class CompileTheWorld {
                     classFileCounter++;
 
                     if (className.startsWith("jdk.management.") ||
-                                    className.startsWith("jdk.internal.cmm.*") ||
                                     // GR-5881: The class initializer for
                                     // sun.tools.jconsole.OutputViewer
                                     // spawns non-daemon threads for redirecting sysout and syserr.

@@ -3226,7 +3226,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
                n->Opcode() == Op_EncodeISOArray) {
       // get the memory projection
       n = n->find_out_with(Op_SCMemProj);
-      assert(n->Opcode() == Op_SCMemProj, "memory projection required");
+      assert(n != NULL && n->Opcode() == Op_SCMemProj, "memory projection required");
     } else {
       assert(n->is_Mem(), "memory node required.");
       Node *addr = n->in(MemNode::Address);
@@ -3250,7 +3250,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       } else if (n->is_LoadStore()) {
         // get the memory projection
         n = n->find_out_with(Op_SCMemProj);
-        assert(n->Opcode() == Op_SCMemProj, "memory projection required");
+        assert(n != NULL && n->Opcode() == Op_SCMemProj, "memory projection required");
       }
     }
     // push user on appropriate worklist

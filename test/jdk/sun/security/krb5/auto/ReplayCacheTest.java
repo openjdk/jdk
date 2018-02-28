@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
 
 /*
  * @test
- * @bug 7118809 8001326
- * @run main/othervm ReplayCacheTest jvm
- * @run main/othervm ReplayCacheTest dfl
+ * @bug 7118809 8001326 8194486
  * @summary rcache deadlock
+ * @library /test/lib
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts ReplayCacheTest jvm
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts ReplayCacheTest dfl
  */
 
 import java.io.File;

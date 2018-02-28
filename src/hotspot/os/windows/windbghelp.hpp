@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_WINDOWS_VM_DBGHELPLOADER_HPP
-#define OS_WINDOWS_VM_DBGHELPLOADER_HPP
+#ifndef OS_WINDOWS_WINDBGHELP_HPP
+#define OS_WINDOWS_WINDBGHELP_HPP
 
 #include <windows.h>
 #include <imagehlp.h>
@@ -71,6 +71,5 @@ namespace WindowsDbgHelp {
 
 };
 
-
-#endif // OS_WINDOWS_VM_DBGHELPLOADER_HPP
+#endif // OS_WINDOWS_WINDBGHELP_HPP
 

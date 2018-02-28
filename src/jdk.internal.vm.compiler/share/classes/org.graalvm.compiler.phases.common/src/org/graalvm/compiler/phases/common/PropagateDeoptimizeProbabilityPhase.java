@@ -22,6 +22,9 @@
  */
 package org.graalvm.compiler.phases.common;
 
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.EconomicSet;
+import org.graalvm.collections.MapCursor;
 import org.graalvm.compiler.graph.NodeStack;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractDeoptimizeNode;
@@ -32,9 +35,6 @@ import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
-import org.graalvm.util.EconomicMap;
-import org.graalvm.util.EconomicSet;
-import org.graalvm.util.MapCursor;
 
 /**
  * This phase will make sure that the branch leading towards this deopt has 0.0 probability.

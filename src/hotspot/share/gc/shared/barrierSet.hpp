@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@
 #include "oops/accessBackend.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/fakeRttiSupport.hpp"
+
+class JavaThread;
 
 // This class provides the interface between a barrier implementation and
 // the rest of the system.
@@ -107,17 +109,18 @@ public:
   static void static_write_ref_array_pre(HeapWord* start, size_t count);
   static void static_write_ref_array_post(HeapWord* start, size_t count);
 
+  // Support for optimizing compilers to call the barrier set on slow path allocations
+  // that did not enter a TLAB. Used for e.g. ReduceInitialCardMarks.
+  // The allocation is safe to use iff it returns true. If not, the slow-path allocation
+  // is redone until it succeeds. This can e.g. prevent allocations from the slow path
+  // to be in old.
+  virtual void on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {}
+  virtual void on_thread_attach(JavaThread* thread) {}
+  virtual void on_thread_detach(JavaThread* thread) {}
+  virtual void make_parsable(JavaThread* thread) {}
+
 protected:
   virtual void write_ref_array_work(MemRegion mr) = 0;
-
-public:
-  // (For efficiency reasons, this operation is specialized for certain
-  // barrier types.  Semantically, it should be thought of as a call to the
-  // virtual "_work" function below, which must implement the barrier.)
-  void write_region(MemRegion mr);
-
-protected:
-  virtual void write_region_work(MemRegion mr) = 0;
 
 public:
   // Inform the BarrierSet that the the covered heap region that starts
@@ -147,9 +150,8 @@ public:
   // 3) Provide specializations for BarrierSet::GetName and BarrierSet::GetType.
   template <DecoratorSet decorators, typename BarrierSetT>
   class AccessBarrier: protected RawAccessBarrier<decorators> {
-  protected:
+  private:
     typedef RawAccessBarrier<decorators> Raw;
-    typedef typename BarrierSetT::template AccessBarrier<decorators> CRTPAccessBarrier;
 
   public:
     // Primitive heap accesses. These accessors get resolved when
@@ -270,6 +272,10 @@ public:
     // Clone barrier support
     static void clone_in_heap(oop src, oop dst, size_t size) {
       Raw::clone(src, dst, size);
+    }
+
+    static oop resolve(oop obj) {
+      return Raw::resolve(obj);
     }
   };
 };

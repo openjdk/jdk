@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 4235519 8004212 8005394 8007298 8006295 8006315 8006530 8007379 8008925
- *      8014217 8025003 8026330 8028397 8129544 8165243
+ *      8014217 8025003 8026330 8028397 8129544 8165243 8176379
  * @summary tests java.util.Base64
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
@@ -73,6 +73,21 @@ public class TestBase64 {
             test(Base64.getMimeEncoder(len, nl_2),
                  Base64.getMimeDecoder(),
                  numRuns, numBytes);
+            test(Base64.getMimeEncoder(len, nl_3),
+                 Base64.getMimeDecoder(),
+                 numRuns, numBytes);
+        }
+
+        // test mime case with < 4 length
+        for (int len = 0; len < 4; len++) {
+            test(Base64.getMimeEncoder(len, nl_1),
+                 Base64.getMimeDecoder(),
+                 numRuns, numBytes);
+
+            test(Base64.getMimeEncoder(len, nl_2),
+                 Base64.getMimeDecoder(),
+                 numRuns, numBytes);
+
             test(Base64.getMimeEncoder(len, nl_3),
                  Base64.getMimeDecoder(),
                  numRuns, numBytes);

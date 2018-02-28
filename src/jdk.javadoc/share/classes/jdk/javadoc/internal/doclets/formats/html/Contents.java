@@ -140,11 +140,6 @@ public class Contents {
     public final Content navServices;
     public final Content nestedClassSummary;
     public final Content newPage;
-    public final Content nextClassLabel;
-    public final Content nextLabel;
-    public final Content nextLetter;
-    public final Content nextModuleLabel;
-    public final Content nextPackageLabel;
     public final Content noFramesLabel;
     public final Content noScriptMessage;
     public final Content openModuleLabel;
@@ -155,11 +150,6 @@ public class Contents {
     public final Content packageLabel;
     public final Content package_;
     public final Content packagesLabel;
-    public final Content prevClassLabel;
-    public final Content prevLabel;
-    public final Content prevLetter;
-    public final Content prevModuleLabel;
-    public final Content prevPackageLabel;
     public final Content properties;
     public final Content propertyLabel;
     public final Content propertyDetailsLabel;
@@ -275,11 +265,6 @@ public class Contents {
         navServices = getContent("doclet.navServices");
         nestedClassSummary = getContent("doclet.Nested_Class_Summary");
         newPage = new Comment(resources.getText("doclet.New_Page"));
-        nextClassLabel = getNonBreakContent("doclet.Next_Class");
-        nextLabel = getNonBreakContent("doclet.Next");
-        nextLetter = getContent("doclet.Next_Letter");
-        nextModuleLabel = getNonBreakContent("doclet.Next_Module");
-        nextPackageLabel = getNonBreakContent("doclet.Next_Package");
         noFramesLabel = getNonBreakContent("doclet.No_Frames");
         noScriptMessage = getContent("doclet.No_Script_Message");
         openedTo = getContent("doclet.OpenedTo");
@@ -290,11 +275,6 @@ public class Contents {
         packageLabel = getContent("doclet.Package");
         package_ = getContent("doclet.package");
         packagesLabel = getContent("doclet.Packages");
-        prevClassLabel = getNonBreakContent("doclet.Prev_Class");
-        prevLabel = getContent("doclet.Prev");
-        prevLetter = getContent("doclet.Prev_Letter");
-        prevModuleLabel = getNonBreakContent("doclet.Prev_Module");
-        prevPackageLabel = getNonBreakContent("doclet.Prev_Package");
         properties = getContent("doclet.Properties");
         propertyLabel = getContent("doclet.Property");
         propertyDetailsLabel = getContent("doclet.Property_Detail");

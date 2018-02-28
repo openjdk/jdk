@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,14 +141,6 @@ public abstract class Reference<T> {
     }
 
     /*
-     * system property to disable clearing before enqueuing.
-     */
-    private static final class ClearBeforeEnqueue {
-        static final boolean DISABLE =
-            Boolean.getBoolean("jdk.lang.ref.disableClearBeforeEnqueue");
-    }
-
-    /*
      * Atomically get and clear (set to null) the VM's pending list.
      */
     private static native Reference<Object> getAndClearReferencePendingList();
@@ -243,6 +235,11 @@ public abstract class Reference<T> {
             {
                 return Reference.waitForReferenceProcessing();
             }
+
+            @Override
+            public void runFinalization() {
+                Finalizer.runFinalization();
+            }
         });
     }
 
@@ -299,8 +296,7 @@ public abstract class Reference<T> {
      *           it was not registered with a queue when it was created
      */
     public boolean enqueue() {
-        if (!ClearBeforeEnqueue.DISABLE)
-            this.referent = null;
+        this.referent = null;
         return this.queue.enqueue(this);
     }
 

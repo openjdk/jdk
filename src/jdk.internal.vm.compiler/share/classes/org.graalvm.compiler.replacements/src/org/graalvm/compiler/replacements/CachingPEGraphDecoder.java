@@ -24,6 +24,7 @@ package org.graalvm.compiler.replacements;
 
 import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.INLINE_AFTER_PARSING;
 
+import org.graalvm.collections.EconomicMap;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.java.GraphBuilderPhase;
@@ -43,7 +44,6 @@ import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.ConvertDeoptimizeToGuardPhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
 import org.graalvm.compiler.phases.util.Providers;
-import org.graalvm.util.EconomicMap;
 
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.meta.ResolvedJavaMethod;

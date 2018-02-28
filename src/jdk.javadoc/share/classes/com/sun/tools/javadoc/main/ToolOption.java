@@ -45,7 +45,8 @@ import com.sun.tools.javac.util.Options;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-@Deprecated
+@Deprecated(since="9", forRemoval=true)
+@SuppressWarnings("removal")
 public enum ToolOption {
     // ----- options for underlying compiler -----
 

@@ -27,6 +27,7 @@ import static org.graalvm.compiler.serviceprovider.JDK9Method.Java8OrEarlier;
 import java.lang.reflect.Type;
 import java.util.Set;
 
+import org.graalvm.collections.EconomicSet;
 import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
@@ -42,7 +43,6 @@ import org.graalvm.compiler.nodes.type.StampTool;
 import org.graalvm.compiler.phases.tiers.CompilerConfiguration;
 import org.graalvm.compiler.replacements.nodes.MacroNode;
 import org.graalvm.compiler.serviceprovider.JDK9Method;
-import org.graalvm.util.EconomicSet;
 
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import jdk.vm.ci.meta.JavaKind;
@@ -122,7 +122,7 @@ final class HotSpotInvocationPlugins extends InvocationPlugins {
      * of its module dependencies are trusted.
      */
     @Override
-    protected boolean canBeIntrinsified(ResolvedJavaType declaringClass) {
+    public boolean canBeIntrinsified(ResolvedJavaType declaringClass) {
         if (declaringClass instanceof HotSpotResolvedJavaType) {
             Class<?> javaClass = ((HotSpotResolvedJavaType) declaringClass).mirror();
             if (Java8OrEarlier) {

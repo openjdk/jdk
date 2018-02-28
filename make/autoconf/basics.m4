@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -258,16 +258,12 @@ AC_DEFUN([BASIC_REMOVE_SYMBOLIC_LINKS],
     if test "x$READLINK_TESTED" != yes; then
       # On MacOSX there is a readlink tool with a different
       # purpose than the GNU readlink tool. Check the found readlink.
-      ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
-      if test "x$ISGNU" = x; then
-        # A readlink that we do not know how to use.
-        # Are there other non-GNU readlinks out there?
-        READLINK_TESTED=yes
-        READLINK=
-      fi
+      READLINK_ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
+      # If READLINK_ISGNU is empty, then it's a non-GNU readlink. Don't use it.
+      READLINK_TESTED=yes
     fi
 
-    if test "x$READLINK" != x; then
+    if test "x$READLINK" != x && test "x$READLINK_ISGNU" != x; then
       $1=`$READLINK -f [$]$1`
     else
       # Save the current directory for restoring afterwards
@@ -336,7 +332,6 @@ AC_DEFUN_ONCE([BASIC_INIT],
   DATE_WHEN_CONFIGURED=`LANG=C date`
   AC_SUBST(DATE_WHEN_CONFIGURED)
   AC_MSG_NOTICE([Configuration created at $DATE_WHEN_CONFIGURED.])
-  AC_MSG_NOTICE([configure script generated at timestamp $DATE_WHEN_GENERATED.])
 ])
 
 # Test that variable $1 denoting a program is not empty. If empty, exit with an error.
@@ -495,6 +490,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   BASIC_REQUIRE_PROGS(MV, mv)
   BASIC_REQUIRE_PROGS(NAWK, [nawk gawk awk])
   BASIC_REQUIRE_PROGS(PRINTF, printf)
+  BASIC_REQUIRE_PROGS(READLINK, [greadlink readlink])
   BASIC_REQUIRE_PROGS(RM, rm)
   BASIC_REQUIRE_PROGS(RMDIR, rmdir)
   BASIC_REQUIRE_PROGS(SH, sh)
@@ -526,7 +522,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
 
   # These are not required on all platforms
   BASIC_PATH_PROGS(CYGPATH, cygpath)
-  BASIC_PATH_PROGS(READLINK, [greadlink readlink])
   BASIC_PATH_PROGS(DF, df)
   BASIC_PATH_PROGS(CPIO, [cpio bsdcpio])
   BASIC_PATH_PROGS(NICE, nice)
@@ -586,69 +581,71 @@ AC_DEFUN([BASIC_EVAL_DEVKIT_VARIABLE],
 AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
 [
   AC_ARG_WITH([devkit], [AS_HELP_STRING([--with-devkit],
-      [use this devkit for compilers, tools and resources])],
-      [
-        BASIC_FIXUP_PATH([with_devkit])
-        DEVKIT_ROOT="$with_devkit"
-        # Check for a meta data info file in the root of the devkit
-        if test -f "$DEVKIT_ROOT/devkit.info"; then
-          . $DEVKIT_ROOT/devkit.info
-          # This potentially sets the following:
-          # A descriptive name of the devkit
-          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_NAME])
-          # Corresponds to --with-extra-path
-          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_EXTRA_PATH])
-          # Corresponds to --with-toolchain-path
-          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_TOOLCHAIN_PATH])
-          # Corresponds to --with-sysroot
-          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_SYSROOT])
+      [use this devkit for compilers, tools and resources])])
 
-          # Identifies the Visual Studio version in the devkit
-          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_VS_VERSION])
-          # The Visual Studio include environment variable
-          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_VS_INCLUDE])
-          # The Visual Studio lib environment variable
-          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_VS_LIB])
-          # Corresponds to --with-msvcr-dll
-          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_MSVCR_DLL])
-          # Corresponds to --with-msvcp-dll
-          BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_MSVCP_DLL])
-        fi
+  if test "x$with_devkit" = xyes; then
+    AC_MSG_ERROR([--with-devkit must have a value])
+  elif test "x$with_devkit" != x && test "x$with_devkit" != xno; then
+    BASIC_FIXUP_PATH([with_devkit])
+    DEVKIT_ROOT="$with_devkit"
+    # Check for a meta data info file in the root of the devkit
+    if test -f "$DEVKIT_ROOT/devkit.info"; then
+      . $DEVKIT_ROOT/devkit.info
+      # This potentially sets the following:
+      # A descriptive name of the devkit
+      BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_NAME])
+      # Corresponds to --with-extra-path
+      BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_EXTRA_PATH])
+      # Corresponds to --with-toolchain-path
+      BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_TOOLCHAIN_PATH])
+      # Corresponds to --with-sysroot
+      BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_SYSROOT])
 
-        AC_MSG_CHECKING([for devkit])
-        if test "x$DEVKIT_NAME" != x; then
-          AC_MSG_RESULT([$DEVKIT_NAME in $DEVKIT_ROOT])
-        else
-          AC_MSG_RESULT([$DEVKIT_ROOT])
-        fi
+      # Identifies the Visual Studio version in the devkit
+      BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_VS_VERSION])
+      # The Visual Studio include environment variable
+      BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_VS_INCLUDE])
+      # The Visual Studio lib environment variable
+      BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_VS_LIB])
+      # Corresponds to --with-msvcr-dll
+      BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_MSVCR_DLL])
+      # Corresponds to --with-msvcp-dll
+      BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_MSVCP_DLL])
+    fi
 
-        BASIC_PREPEND_TO_PATH([EXTRA_PATH],$DEVKIT_EXTRA_PATH)
+    AC_MSG_CHECKING([for devkit])
+    if test "x$DEVKIT_NAME" != x; then
+      AC_MSG_RESULT([$DEVKIT_NAME in $DEVKIT_ROOT])
+    else
+      AC_MSG_RESULT([$DEVKIT_ROOT])
+    fi
 
-        # Fallback default of just /bin if DEVKIT_PATH is not defined
-        if test "x$DEVKIT_TOOLCHAIN_PATH" = x; then
-          DEVKIT_TOOLCHAIN_PATH="$DEVKIT_ROOT/bin"
-        fi
-        BASIC_PREPEND_TO_PATH([TOOLCHAIN_PATH],$DEVKIT_TOOLCHAIN_PATH)
+    BASIC_PREPEND_TO_PATH([EXTRA_PATH],$DEVKIT_EXTRA_PATH)
 
-        # If DEVKIT_SYSROOT is set, use that, otherwise try a couple of known
-        # places for backwards compatiblity.
-        if test "x$DEVKIT_SYSROOT" != x; then
-          SYSROOT="$DEVKIT_SYSROOT"
-        elif test -d "$DEVKIT_ROOT/$host_alias/libc"; then
-          SYSROOT="$DEVKIT_ROOT/$host_alias/libc"
-        elif test -d "$DEVKIT_ROOT/$host/sys-root"; then
-          SYSROOT="$DEVKIT_ROOT/$host/sys-root"
-        fi
+    # Fallback default of just /bin if DEVKIT_PATH is not defined
+    if test "x$DEVKIT_TOOLCHAIN_PATH" = x; then
+      DEVKIT_TOOLCHAIN_PATH="$DEVKIT_ROOT/bin"
+    fi
+    BASIC_PREPEND_TO_PATH([TOOLCHAIN_PATH],$DEVKIT_TOOLCHAIN_PATH)
 
-        if test "x$DEVKIT_ROOT" != x; then
-          DEVKIT_LIB_DIR="$DEVKIT_ROOT/lib"
-          if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-            DEVKIT_LIB_DIR="$DEVKIT_ROOT/lib64"
-          fi
-          AC_SUBST(DEVKIT_LIB_DIR)
-        fi
-      ]
-  )
+    # If DEVKIT_SYSROOT is set, use that, otherwise try a couple of known
+    # places for backwards compatiblity.
+    if test "x$DEVKIT_SYSROOT" != x; then
+      SYSROOT="$DEVKIT_SYSROOT"
+    elif test -d "$DEVKIT_ROOT/$host_alias/libc"; then
+      SYSROOT="$DEVKIT_ROOT/$host_alias/libc"
+    elif test -d "$DEVKIT_ROOT/$host/sys-root"; then
+      SYSROOT="$DEVKIT_ROOT/$host/sys-root"
+    fi
+
+    if test "x$DEVKIT_ROOT" != x; then
+      DEVKIT_LIB_DIR="$DEVKIT_ROOT/lib"
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        DEVKIT_LIB_DIR="$DEVKIT_ROOT/lib64"
+      fi
+      AC_SUBST(DEVKIT_LIB_DIR)
+    fi
+  fi
 
   # You can force the sysroot if the sysroot encoded into the compiler tools
   # is not correct.
@@ -813,6 +810,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
           | $SED -e 's/config.log//g' \
               -e 's/configure.log//g' \
               -e 's/confdefs.h//g' \
+              -e 's/configure-support//g' \
               -e 's/ //g' \
           | $TR -d '\n'`
       if test "x$filtered_files" != x; then
@@ -1185,9 +1183,6 @@ AC_DEFUN_ONCE([BASIC_CHECK_SRC_PERMS],
 
 AC_DEFUN_ONCE([BASIC_TEST_USABILITY_ISSUES],
 [
-  # Did user specify any unknown variables?
-  BASIC_CHECK_LEFTOVER_OVERRIDDEN
-
   AC_MSG_CHECKING([if build directory is on local disk])
   BASIC_CHECK_DIR_ON_LOCAL_DISK($OUTPUTDIR,
       [OUTPUT_DIR_IS_LOCAL="yes"],

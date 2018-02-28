@@ -30,6 +30,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.lang.management.ThreadMXBean;
 
+import org.graalvm.collections.EconomicMap;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugOptions;
@@ -37,7 +38,6 @@ import org.graalvm.compiler.debug.Management;
 import org.graalvm.compiler.debug.TimerKey;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.util.EconomicMap;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;

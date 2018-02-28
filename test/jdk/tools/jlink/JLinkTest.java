@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,9 @@ import tests.JImageGenerator;
  * @test
  * @summary Test image creation
  * @bug 8189777
+ * @bug 8194922
  * @author Jean-Francois Denise
+ * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../lib
  * @modules java.base/jdk.internal.jimage
  *          jdk.jdeps/com.sun.tools.classfile
@@ -273,6 +275,15 @@ public class JLinkTest {
             String[] res = {".jcov", "/META-INF/"};
             Path imageDir = helper.generateDefaultImage(userOptions2, moduleName).assertSuccess();
             helper.checkImage(imageDir, moduleName, res, null);
+        }
+
+        // module-info.class should not be excluded
+        {
+            String[] userOptions = { "--exclude-resources", "/jdk_8194922/module-info.class" };
+            String moduleName = "jdk_8194922";
+            helper.generateDefaultJModule(moduleName);
+            helper.generateDefaultImage(userOptions, moduleName).
+                assertFailure("Cannot exclude /jdk_8194922/module-info.class");
         }
 
         // default compress

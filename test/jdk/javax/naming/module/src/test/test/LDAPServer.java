@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.math.BigInteger;
 import java.net.*;
 import java.util.*;
 import java.util.regex.*;
-import javax.xml.bind.DatatypeConverter;
 
 /*
  * A dummy LDAP server.
@@ -151,7 +150,7 @@ public class LDAPServer {
      * Add an LDAP encoding to the cache (by messageID key).
      */
     private void addToCache(String hexString) throws IOException {
-        byte[] encoding = DatatypeConverter.parseHexBinary(hexString);
+        byte[] encoding = parseHexBinary(hexString);
         int[] ids = getIDs(encoding);
         int messageID = ids[0];
         List<byte[]> encodings = cache.get(messageID);
@@ -246,5 +245,52 @@ public class LDAPServer {
         default:
             return "Unknown";
         }
+    }
+
+    public static  byte[] parseHexBinary(String s) {
+
+        final int len = s.length();
+
+        // "111" is not a valid hex encoding.
+        if (len % 2 != 0) {
+            throw new IllegalArgumentException("hexBinary needs to be even-length: " + s);
+        }
+
+        byte[] out = new byte[len / 2];
+
+        for (int i = 0; i < len; i += 2) {
+            int h = hexToBin(s.charAt(i));
+            int l = hexToBin(s.charAt(i + 1));
+            if (h == -1 || l == -1) {
+                throw new IllegalArgumentException("contains illegal character for hexBinary: " + s);
+            }
+
+            out[i / 2] = (byte) (h * 16 + l);
+        }
+
+        return out;
+    }
+
+    private static int hexToBin(char ch) {
+        if ('0' <= ch && ch <= '9') {
+            return ch - '0';
+        }
+        if ('A' <= ch && ch <= 'F') {
+            return ch - 'A' + 10;
+        }
+        if ('a' <= ch && ch <= 'f') {
+            return ch - 'a' + 10;
+        }
+        return -1;
+    }
+    private static final char[] hexCode = "0123456789ABCDEF".toCharArray();
+
+    public static String printHexBinary(byte[] data) {
+        StringBuilder r = new StringBuilder(data.length * 2);
+        for (byte b : data) {
+            r.append(hexCode[(b >> 4) & 0xF]);
+            r.append(hexCode[(b & 0xF)]);
+        }
+        return r.toString();
     }
 }

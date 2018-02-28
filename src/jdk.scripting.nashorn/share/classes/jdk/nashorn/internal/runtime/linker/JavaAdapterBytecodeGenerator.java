@@ -1083,7 +1083,7 @@ final class JavaAdapterBytecodeGenerator {
 
         // Simply invoke super.finalize()
         mv.visitVarInsn(ALOAD, 0);
-        mv.checkcast(Type.getType(generatedClassName));
+        mv.checkcast(Type.getType('L' + generatedClassName + ';'));
         mv.invokespecial(superClassName, "finalize", VOID_METHOD_DESCRIPTOR, false);
 
         mv.visitInsn(RETURN);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,7 +204,9 @@ SystemProperty::SystemProperty(const char* key, const char* value, bool writeabl
   _writeable = writeable;
 }
 
-AgentLibrary::AgentLibrary(const char* name, const char* options, bool is_absolute_path, void* os_lib) {
+AgentLibrary::AgentLibrary(const char* name, const char* options,
+               bool is_absolute_path, void* os_lib,
+               bool instrument_lib) {
   _name = AllocateHeap(strlen(name)+1, mtArguments);
   strcpy(_name, name);
   if (options == NULL) {
@@ -218,6 +220,7 @@ AgentLibrary::AgentLibrary(const char* name, const char* options, bool is_absolu
   _next = NULL;
   _state = agent_invalid;
   _is_static_lib = false;
+  _is_instrument_lib = instrument_lib;
 }
 
 // Check if head of 'option' matches 'name', and sets 'tail' to the remaining
@@ -292,6 +295,10 @@ void Arguments::add_init_library(const char* name, char* options) {
 
 void Arguments::add_init_agent(const char* name, char* options, bool absolute_path) {
   _agentList.add(new AgentLibrary(name, options, absolute_path, NULL));
+}
+
+void Arguments::add_instrument_agent(const char* name, char* options, bool absolute_path) {
+  _agentList.add(new AgentLibrary(name, options, absolute_path, NULL, true));
 }
 
 // Late-binding agents not started via arguments
@@ -501,31 +508,37 @@ static SpecialFlag const special_jvm_flags[] = {
   { "MaxRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "MinRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
-  { "UseMembar",                    JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
-  { "FastTLABRefill",               JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
+  { "UseMembar",                    JDK_Version::jdk(10), JDK_Version::undefined(), JDK_Version::undefined() },
   { "SafepointSpinBeforeYield",     JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "DeferThrSuspendLoopCount",     JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "DeferPollingPageLoopCount",    JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
-  { "UseCGroupMemoryLimitForHeap",  JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::jdk(11) },
   { "IgnoreUnverifiableClassesDuringDump", JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
-  { "CheckEndorsedAndExtDirs",      JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
+  { "CheckEndorsedAndExtDirs",      JDK_Version::jdk(10), JDK_Version::undefined(), JDK_Version::undefined() },
+  { "CompilerThreadHintNoPreempt",  JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
+  { "VMThreadHintNoPreempt",        JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
-  { "MustCallLoadClassInternal",    JDK_Version::jdk(10), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "UnsyncloadClass",              JDK_Version::jdk(10), JDK_Version::undefined(), JDK_Version::undefined() },
+  { "MustCallLoadClassInternal",    JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
+  { "UnsyncloadClass",              JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
   { "ConvertSleepToYield",           JDK_Version::jdk(9),      JDK_Version::jdk(10), JDK_Version::jdk(11) },
   { "ConvertYieldToSleep",           JDK_Version::jdk(9),      JDK_Version::jdk(10), JDK_Version::jdk(11) },
   { "MinSleepInterval",              JDK_Version::jdk(9),      JDK_Version::jdk(10), JDK_Version::jdk(11) },
+  { "CheckAssertionStatusDirectives",JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
+  { "PrintMallocFree",               JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
+  { "PrintMalloc",                   JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
+  { "ShowSafepointMsgs",             JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
+  { "FastTLABRefill",                JDK_Version::jdk(10),     JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "PermSize",                      JDK_Version::undefined(), JDK_Version::jdk(8),  JDK_Version::undefined() },
   { "MaxPermSize",                   JDK_Version::undefined(), JDK_Version::jdk(8),  JDK_Version::undefined() },
   { "SharedReadWriteSize",           JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "SharedReadOnlySize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "SharedMiscDataSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "SharedMiscCodeSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
+  { "UseUTCFileTimestamp",           JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   { "dep > obs",                    JDK_Version::jdk(9), JDK_Version::jdk(8), JDK_Version::undefined() },
@@ -678,6 +691,14 @@ static bool lookup_special_flag(const char *flag_name, size_t skip_index) {
   return false;
 }
 
+// Verifies the correctness of the entries in the special_jvm_flags table.
+// If there is a semantic error (i.e. a bug in the table) such as the obsoletion
+// version being earlier than the deprecation version, then a warning is issued
+// and verification fails - by returning false. If it is detected that the table
+// is out of date, with respect to the current version, then a warning is issued
+// but verification does not fail. This allows the VM to operate when the version
+// is first updated, without needing to update all the impacted flags at the
+// same time.
 static bool verify_special_jvm_flags() {
   bool success = true;
   for (size_t i = 0; special_jvm_flags[i].name != NULL; i++) {
@@ -713,8 +734,8 @@ static bool verify_special_jvm_flags() {
       // if flag has become obsolete it should not have a "globals" flag defined anymore.
       if (!version_less_than(JDK_Version::current(), flag.obsolete_in)) {
         if (Flag::find_flag(flag.name) != NULL) {
-          warning("Global variable for obsolete special flag entry \"%s\" should be removed", flag.name);
-          success = false;
+          // Temporarily disable the warning: 8196739
+          // warning("Global variable for obsolete special flag entry \"%s\" should be removed", flag.name);
         }
       }
     }
@@ -723,8 +744,8 @@ static bool verify_special_jvm_flags() {
       // if flag has become expired it should not have a "globals" flag defined anymore.
       if (!version_less_than(JDK_Version::current(), flag.expired_in)) {
         if (Flag::find_flag(flag.name) != NULL) {
-          warning("Global variable for expired flag entry \"%s\" should be removed", flag.name);
-          success = false;
+          // Temporarily disable the warning: 8196739
+          // warning("Global variable for expired flag entry \"%s\" should be removed", flag.name);
         }
       }
     }
@@ -1806,6 +1827,13 @@ jint Arguments::set_ergonomics_flags() {
   }
 #endif
 
+#if defined(IA32)
+  // Only server compiler can optimize safepoints well enough.
+  if (!is_server_compilation_mode_vm()) {
+    FLAG_SET_ERGO_IF_DEFAULT(bool, ThreadLocalHandshakes, false);
+  }
+#endif
+
   set_conservative_max_heap_alignment();
 
 #ifndef ZERO
@@ -1845,32 +1873,6 @@ void Arguments::set_heap_size() {
   julong phys_mem =
     FLAG_IS_DEFAULT(MaxRAM) ? MIN2(os::physical_memory(), (julong)MaxRAM)
                             : (julong)MaxRAM;
-
-  // Experimental support for CGroup memory limits
-  if (UseCGroupMemoryLimitForHeap) {
-    // This is a rough indicator that a CGroup limit may be in force
-    // for this process
-    const char* lim_file = "/sys/fs/cgroup/memory/memory.limit_in_bytes";
-    FILE *fp = fopen(lim_file, "r");
-    if (fp != NULL) {
-      julong cgroup_max = 0;
-      int ret = fscanf(fp, JULONG_FORMAT, &cgroup_max);
-      if (ret == 1 && cgroup_max > 0) {
-        // If unlimited, cgroup_max will be a very large, but unspecified
-        // value, so use initial phys_mem as a limit
-        log_info(gc, heap)("Setting phys_mem to the min of cgroup limit ("
-                           JULONG_FORMAT "MB) and initial phys_mem ("
-                           JULONG_FORMAT "MB)", cgroup_max/M, phys_mem/M);
-        phys_mem = MIN2(cgroup_max, phys_mem);
-      } else {
-        warning("Unable to read/parse cgroup memory limit from %s: %s",
-                lim_file, errno != 0 ? strerror(errno) : "unknown error");
-      }
-      fclose(fp);
-    } else {
-      warning("Unable to open cgroup memory limit file %s (%s)", lim_file, strerror(errno));
-    }
-  }
 
   // Convert deprecated flags
   if (FLAG_IS_DEFAULT(MaxRAMPercentage) &&
@@ -2795,7 +2797,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         size_t length = strlen(tail) + 1;
         char *options = NEW_C_HEAP_ARRAY(char, length, mtArguments);
         jio_snprintf(options, length, "%s", tail);
-        add_init_agent("instrument", options, false);
+        add_instrument_agent("instrument", options, false);
         // java agents need module java.instrument
         if (!create_numbered_property("jdk.module.addmods", "java.instrument", addmods_count++)) {
           return JNI_ENOMEM;
@@ -3474,27 +3476,6 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     return JNI_ENOMEM;
   }
 #endif
-
-  // If we are running in a headless jre, force java.awt.headless property
-  // to be true unless the property has already been set.
-  // Also allow the OS environment variable JAVA_AWT_HEADLESS to set headless state.
-  if (os::is_headless_jre()) {
-    const char* headless = Arguments::get_property("java.awt.headless");
-    if (headless == NULL) {
-      const char *headless_env = ::getenv("JAVA_AWT_HEADLESS");
-      if (headless_env == NULL) {
-        if (!add_property("java.awt.headless=true")) {
-          return JNI_ENOMEM;
-        }
-      } else {
-        char buffer[256];
-        jio_snprintf(buffer, sizeof(buffer), "java.awt.headless=%s", headless_env);
-        if (!add_property(buffer)) {
-          return JNI_ENOMEM;
-        }
-      }
-    }
-  }
 
   if (!check_vm_args_consistency()) {
     return JNI_ERR;

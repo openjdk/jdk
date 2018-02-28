@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,17 +30,9 @@
  * @library /test/lib
  * @run main/othervm test.DefineClass defineClass
  * @run main/othervm test.DefineClass defineSystemClass
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions
-                     -XX:+UnsyncloadClass -XX:+AllowParallelDefineClass
+ * @run main/othervm -XX:+AllowParallelDefineClass
                      test.DefineClass defineClassParallel
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions
-                     -XX:+UnsyncloadClass -XX:-AllowParallelDefineClass
-                     test.DefineClass defineClassParallel
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions
-                     -XX:-UnsyncloadClass -XX:+AllowParallelDefineClass
-                     test.DefineClass defineClassParallel
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions
-                     -XX:-UnsyncloadClass -XX:-AllowParallelDefineClass
+ * @run main/othervm -XX:-AllowParallelDefineClass
                      test.DefineClass defineClassParallel
  * @run main/othervm -Djdk.attach.allowAttachSelf test.DefineClass redefineClass
  * @run main/othervm -Djdk.attach.allowAttachSelf test.DefineClass redefineClassWithError
@@ -126,7 +119,7 @@ public class DefineClass {
             }
             catch (LinkageError jle) {
                 // Expected with a parallel capable class loader and
-                // -XX:+UnsyncloadClass or -XX:+AllowParallelDefineClass
+                // -XX:+AllowParallelDefineClass
                 pcl.incrementLinkageErrors();
             }
 
@@ -320,7 +313,7 @@ public class DefineClass {
             }
             System.out.print("Counted " + pcl.getLinkageErrors() + " LinkageErrors ");
             System.out.println(pcl.getLinkageErrors() == 0 ?
-                    "" : "(use -XX:+UnsyncloadClass and/or -XX:+AllowParallelDefineClass to avoid this)");
+                    "" : "(use -XX:+AllowParallelDefineClass to avoid this)");
             System.gc();
             System.out.println("System.gc()");
             // After System.gc() we expect to remain with two instances: one is the initial version which is

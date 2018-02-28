@@ -76,6 +76,13 @@ private:
   static unsigned int hash_string(oop string);
   static unsigned int alt_hash_string(const jchar* s, int len);
 
+  // Accessors for the string roots in the hashtable entries.
+  // Use string_object_no_keepalive() only when the value is not returned
+  // outside of a scope where a thread transition is possible.
+  static oop string_object(HashtableEntry<oop, mtSymbol>* entry);
+  static oop string_object_no_keepalive(HashtableEntry<oop, mtSymbol>* entry);
+  static void set_string_object(HashtableEntry<oop, mtSymbol>* entry, oop string);
+
   StringTable() : RehashableHashtable<oop, mtSymbol>((int)StringTableSize,
                               sizeof (HashtableEntry<oop, mtSymbol>)) {}
 

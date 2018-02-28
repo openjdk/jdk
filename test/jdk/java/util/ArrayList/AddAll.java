@@ -28,7 +28,12 @@
  * @author  Josh Bloch
  */
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Vector;
+import java.util.WeakHashMap;
 
 public class AddAll {
     public static void main(String[] args) {

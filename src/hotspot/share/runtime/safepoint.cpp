@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ void SafepointSynchronize::begin() {
 
   int nof_threads = Threads::number_of_threads();
 
-  log_debug(safepoint)("Safepoint synchronization initiated. (%d)", nof_threads);
+  log_debug(safepoint)("Safepoint synchronization initiated. (%d threads)", nof_threads);
 
   RuntimeService::record_safepoint_begin();
 
@@ -407,9 +407,7 @@ void SafepointSynchronize::begin() {
   // Update the count of active JNI critical regions
   GCLocker::set_jni_lock_count(_current_jni_active_count);
 
-  if (log_is_enabled(Debug, safepoint)) {
-    log_debug(safepoint)("Entering safepoint region: %s", VMThread::vm_safepoint_description());
-  }
+  log_info(safepoint)("Entering safepoint region: %s", VMThread::vm_safepoint_description());
 
   RuntimeService::record_safepoint_synchronized();
   if (PrintSafepointStatistics) {
@@ -496,14 +494,14 @@ void SafepointSynchronize::end() {
           cur_state->restart(); // TSS _running
           SafepointMechanism::disarm_local_poll(current); // release store, local state -> polling page
         }
-        log_debug(safepoint)("Leaving safepoint region");
+        log_info(safepoint)("Leaving safepoint region");
       } else {
         // Set to not synchronized, so the threads will not go into the signal_thread_blocked method
         // when they get restarted.
         _state = _not_synchronized;
         OrderAccess::fence();
 
-        log_debug(safepoint)("Leaving safepoint region");
+        log_info(safepoint)("Leaving safepoint region");
 
         // Start suspended threads
         jtiwh.rewind();
@@ -895,10 +893,6 @@ void SafepointSynchronize::handle_polling_page_exception(JavaThread *thread) {
     assert(SafepointSynchronize::is_synchronizing(), "polling encountered outside safepoint synchronization");
   }
 
-  if (ShowSafepointMsgs) {
-    tty->print("handle_polling_page_exception: ");
-  }
-
   if (PrintSafepointStatistics) {
     inc_page_trap_count();
   }
@@ -1100,9 +1094,6 @@ void ThreadSafepointState::handle_polling_page_exception() {
          "polling page exception on thread not running state: %u", uint(t));
 
   // Step 1: Find the nmethod from the return address
-  if (ShowSafepointMsgs && Verbose) {
-    tty->print_cr("Polling page exception at " INTPTR_FORMAT, p2i(thread()->saved_exception_pc()));
-  }
   address real_return_addr = thread()->saved_exception_pc();
 
   CodeBlob *cb = CodeCache::find_blob(real_return_addr);
@@ -1423,32 +1414,3 @@ void SafepointSynchronize::print_stat_on_exit() {
                 INT64_FORMAT_W(5) " ms",
                 (int64_t)(_max_vmop_time / MICROUNITS));
 }
-
-// ------------------------------------------------------------------------------------------------
-// Non-product code
-
-#ifndef PRODUCT
-
-void SafepointSynchronize::print_state() {
-  if (_state == _not_synchronized) {
-    tty->print_cr("not synchronized");
-  } else if (_state == _synchronizing || _state == _synchronized) {
-    tty->print_cr("State: %s", (_state == _synchronizing) ? "synchronizing" :
-                  "synchronized");
-
-    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *cur = jtiwh.next(); ) {
-       cur->safepoint_state()->print();
-    }
-  }
-}
-
-void SafepointSynchronize::safepoint_msg(const char* format, ...) {
-  if (ShowSafepointMsgs) {
-    va_list ap;
-    va_start(ap, format);
-    tty->vprint_cr(format, ap);
-    va_end(ap);
-  }
-}
-
-#endif // !PRODUCT

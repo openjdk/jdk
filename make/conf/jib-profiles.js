@@ -200,7 +200,7 @@ var getJibProfiles = function (input) {
     data.configuration_make_arg = "CONF_NAME=";
 
     // Exclude list to use when Jib creates a source bundle
-    data.src_bundle_excludes = "./build webrev* */webrev* */*/webrev* */*/*/webrev* .hg */.hg */*/.hg */*/*/.hg";
+    data.src_bundle_excludes = "./build .build webrev* */webrev* */*/webrev* */*/*/webrev* .hg */.hg */*/.hg */*/*/.hg";
     // Include list to use when creating a minimal jib source bundle which
     // contains just the jib configuration files.
     data.conf_bundle_includes = "*/conf/jib-profiles.* make/autoconf/version-numbers"
@@ -411,7 +411,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-x64": {
             target_os: "linux",
             target_cpu: "x64",
-            dependencies: ["devkit", "graphviz", "pandoc"],
+            dependencies: ["devkit", "autoconf", "graphviz", "pandoc"],
             configure_args: concat(common.configure_args_64bit,
                 "--enable-full-docs", "--with-zlib=system"),
             default_make_targets: ["docs-bundles"],
@@ -421,7 +421,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "linux",
             target_cpu: "x86",
             build_cpu: "x64",
-            dependencies: ["devkit"],
+            dependencies: ["devkit", "autoconf"],
             configure_args: concat(common.configure_args_32bit,
                 "--with-jvm-variants=minimal,server", "--with-zlib=system"),
         },
@@ -429,7 +429,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "macosx-x64": {
             target_os: "macosx",
             target_cpu: "x64",
-            dependencies: ["devkit", "freetype"],
+            dependencies: ["devkit", "autoconf", "freetype"],
             configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
                 "--with-macosx-version-max=10.7.0"),
         },
@@ -437,7 +437,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "solaris-x64": {
             target_os: "solaris",
             target_cpu: "x64",
-            dependencies: ["devkit", "cups"],
+            dependencies: ["devkit", "autoconf", "cups"],
             configure_args: concat(common.configure_args_64bit,
                 "--with-zlib=system", "--enable-dtrace"),
         },
@@ -445,7 +445,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "solaris-sparcv9": {
             target_os: "solaris",
             target_cpu: "sparcv9",
-            dependencies: ["devkit", "cups"],
+            dependencies: ["devkit", "autoconf", "cups"],
             configure_args: concat(common.configure_args_64bit,
                 "--with-zlib=system", "--enable-dtrace"),
         },
@@ -453,7 +453,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "windows-x64": {
             target_os: "windows",
             target_cpu: "x64",
-            dependencies: ["devkit", "freetype"],
+            dependencies: ["devkit", "autoconf", "freetype"],
             configure_args: concat(common.configure_args_64bit),
         },
 
@@ -461,7 +461,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "windows",
             target_cpu: "x86",
             build_cpu: "x64",
-            dependencies: ["devkit", "freetype"],
+            dependencies: ["devkit", "autoconf", "freetype"],
             configure_args: concat(common.configure_args_32bit),
         },
 
@@ -469,7 +469,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "linux",
             target_cpu: "aarch64",
             build_cpu: "x64",
-            dependencies: ["devkit", "build_devkit", "cups", "headless_stubs"],
+            dependencies: ["devkit", "autoconf", "build_devkit", "cups", "headless_stubs"],
             configure_args: [
                 "--with-cpu-port=arm64",
                 "--with-jvm-variants=server",
@@ -482,7 +482,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "linux",
             target_cpu: "arm",
             build_cpu: "x64",
-            dependencies: ["devkit", "build_devkit", "cups"],
+            dependencies: ["devkit", "autoconf", "build_devkit", "cups"],
             configure_args: [
                 "--with-jvm-variants=minimal1,client",
                 "--with-x=" + input.get("devkit", "install_path") + "/arm-linux-gnueabihf/libc/usr/X11R6-PI",
@@ -768,7 +768,7 @@ var getJibProfilesDependencies = function (input, common) {
         linux_x64: "gcc4.9.2-OEL6.4+1.2",
         macosx_x64: "Xcode6.3-MacOSX10.9+1.0",
         solaris_x64: "SS12u4-Solaris11u1+1.0",
-        solaris_sparcv9: "SS12u4-Solaris11u1+1.0",
+        solaris_sparcv9: "SS12u4-Solaris11u1+1.1",
         windows_x64: "VS2013SP4+1.0",
         linux_aarch64: "gcc-linaro-aarch64-linux-gnu-4.8-2013.11_linux+1.0",
         linux_arm: (input.profile != null && input.profile.indexOf("hflt") >= 0
@@ -829,7 +829,7 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "javare",
             revision: "4.2",
-            build_number: "b10",
+            build_number: "b12",
             checksum_file: "MD5_VALUES",
             file: "jtreg_bin-4.2.zip",
             environment_name: "JT_HOME",
@@ -852,6 +852,17 @@ var getJibProfilesDependencies = function (input, common) {
             },
 
             environment_path: makeBinDir
+        },
+
+        autoconf: {
+            organization: common.organization,
+            ext: "tar.gz",
+            revision: "2.69+1.0.1",
+            module: (input.build_os == "windows"
+                ? "autoconf-" + input.build_osenv_platform
+                : "autoconf-" + input.build_platform),
+            configure_args: "",
+            environment_path: input.get("autoconf", "install_path")
         },
 
         freetype: {
@@ -878,6 +889,7 @@ var getJibProfilesDependencies = function (input, common) {
             configure_args: "PANDOC=" + input.get("pandoc", "install_path") + "/pandoc/pandoc",
             environment_path: input.get("pandoc", "install_path") + "/pandoc"
         },
+
         // This adds java jib as a dependency for the test artifacts resolver
         jib: {
             organization: "com.oracle.java.jib",
@@ -1078,7 +1090,7 @@ var versionArgs = function(input, common) {
         args = concat(args,
                       // This needs to be changed when we start building release candidates
                       // with-version-pre must be set to ea for 'ea' and empty for fcs build
-                      "--with-version-pre=",
+                      "--with-version-pre=ea",
                       "--without-version-opt");
     } else {
         args = concat(args, "--with-version-opt=" + common.build_id);

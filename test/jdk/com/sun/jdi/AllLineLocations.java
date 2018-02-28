@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Test ReferenceType.allLineLocations
  * @author Gordon Hirsch
  *
- * @run build JDIScaffold VMConnection
+ * @run build TestScaffold VMConnection
  * @run compile -g RefTypes.java
  * @run build AllLineLocations
  *
@@ -39,26 +39,22 @@ import com.sun.jdi.request.*;
 
 import java.util.List;
 
-public class AllLineLocations extends JDIScaffold {
-    final String[] args;
+public class AllLineLocations extends TestScaffold {
 
     public static void main(String args[]) throws Exception {
         new AllLineLocations(args).startTests();
     }
 
     AllLineLocations(String args[]) {
-        super();
-        this.args = args;
+        super(args);
     }
 
     protected void runTests() throws Exception {
-        connect(args);
-        waitForVMStart();
 
         /*
          * Get to a point where the classes are loaded.
          */
-        BreakpointEvent bp = resumeTo("RefTypes", "loadClasses", "()V");
+        BreakpointEvent bp = startTo("RefTypes", "loadClasses", "()V");
         stepOut(bp.thread());
 
         /*
@@ -220,6 +216,6 @@ public class AllLineLocations extends JDIScaffold {
         System.out.println("AbstractAndNative: passed");
 
         // Allow application to complete
-        resumeToVMDeath();
+        resumeToVMDisconnect();
     }
 }

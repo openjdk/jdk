@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,9 +48,9 @@ public class ClhsdbInspect {
             LingeredApp.startApp(null, theApp);
             System.out.println("Started LingeredApp with pid " + theApp.getPid());
 
-            // Run the 'jstack -v' command to get the address of a Method*
-            // and the oop address of a java.lang.ref.ReferenceQueue$Lock
-            // object
+            // Run the 'jstack -v' command to get the address of a Method*,
+            // the oop address of a java.lang.ref.ReferenceQueue$Lock
+            // and the oop address of a java.lang.Class object
             List<String> cmds = List.of("jstack -v");
 
             String jstackOutput = test.run(theApp.getPid(), cmds, null, null);
@@ -62,26 +62,37 @@ public class ClhsdbInspect {
                 return;
             }
 
-            String addressString = null;
             Map<String, String> tokensMap = new HashMap<>();
-            tokensMap.put("waiting to lock",
+            tokensMap.put("(a java.lang.Class for LingeredAppWithLock)",
                           "instance of Oop for java/lang/Class");
-            tokensMap.put("Method\\*=", "Type is Method");
-            tokensMap.put("waiting to re-lock in wait",
+            tokensMap.put("Method*=", "Type is Method");
+            tokensMap.put("(a java.lang.ref.ReferenceQueue$Lock)",
                           "instance of Oop for java/lang/ref/ReferenceQueue$Lock");
+
+            String[] lines = jstackOutput.split("\\R");
 
             for (String key: tokensMap.keySet()) {
                 cmds = new ArrayList<String>();
                 Map<String, List<String>> expStrMap = new HashMap<>();
 
-                String[] snippets = jstackOutput.split(key);
-                String[] tokens = snippets[1].split(" ");
-                for (String token: tokens) {
-                    if (token.contains("0x")) {
-                        addressString = token.replace("<", "").replace(">", "");
-                        break;
-                    }
-                }
+                String addressString = null;
+                for (String line : lines) {
+                    if (line.contains(key)) {
+                        // Escape the token "Method*=" because the split method uses
+                        // a regex, not just a straight String.
+                        String escapedKey = key.replace("*","\\*");
+                        String[] words = line.split(escapedKey+"|[ ]");
+                        for (String word : words) {
+                            word = word.replace("<","").replace(">","");
+                            if (word.startsWith("0x")) {
+                                addressString = word;
+                                break;
+                            }
+                        }
+                        if (addressString != null)
+                            break;
+                      }
+                  }
 
                 String cmd = "inspect " + addressString;
                 cmds.add(cmd);

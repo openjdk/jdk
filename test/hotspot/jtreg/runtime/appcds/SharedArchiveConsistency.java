@@ -23,20 +23,19 @@
  */
 
 /*
- *  @test
- *  @summary SharedArchiveConsistency
- *   AppCDS does not support uncompressed oops
- *  @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
- *  @library /test/lib
- *  @modules java.base/jdk.internal.misc
- *           java.compiler
- *           java.management
- *           jdk.jartool/sun.tools.jar
- *           jdk.internal.jvmstat/sun.jvmstat.monitor
- *  @build sun.hotspot.WhiteBox
- *  @compile test-classes/Hello.java
- *  @run main ClassFileInstaller sun.hotspot.WhiteBox
- *  @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI SharedArchiveConsistency
+ * @test
+ * @summary SharedArchiveConsistency
+ * @requires vm.cds
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.compiler
+ *          java.management
+ *          jdk.jartool/sun.tools.jar
+ *          jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @build sun.hotspot.WhiteBox
+ * @compile test-classes/Hello.java
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI SharedArchiveConsistency
  */
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Utils;

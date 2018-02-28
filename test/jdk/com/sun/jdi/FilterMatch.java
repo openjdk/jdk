@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary addClassFilter("Foo") acts like "Foo*"
  * @author Robert Field/Jim Holmlund
  *
- * @run build JDIScaffold VMConnection
+ * @run build TestScaffold VMConnection
  * @run compile -g HelloWorld.java
  * @run driver FilterMatch
  */
@@ -46,105 +46,95 @@ import com.sun.jdi.*;
 import com.sun.jdi.event.*;
 import com.sun.jdi.request.*;
 
-public class FilterMatch extends JDIScaffold {
+public class FilterMatch extends TestScaffold {
 
-    static boolean listenCalled;
+    EventSet eventSet = null;
+    boolean stepCompleted = false;
 
     public static void main(String args[]) throws Exception {
-        new FilterMatch().startTests();
+        new FilterMatch(args).startTests();
     }
 
-    public FilterMatch() {
-        super();
-    }
-
-    private void listen() {
-        TargetAdapter adapter = new TargetAdapter() {
-            EventSet set = null;
-
-            public boolean eventSetReceived(EventSet set) {
-                this.set = set;
-                return false;
-            }
-
-            // This gets called if all filters match.
-            public boolean stepCompleted(StepEvent event) {
-                listenCalled = true;
-                System.out.println("listen: line#=" + event.location().lineNumber()
-                                   + " event=" + event);
-                // disable the step and then run to completion
-                StepRequest str= (StepRequest)event.request();
-                str.disable();
-                set.resume();
-                return false;
-            }
-        };
-        listenCalled = false;
-        addListener(adapter);
+    public FilterMatch(String args[]) {
+        super(args);
     }
 
     protected void runTests() throws Exception {
-        String[] args = new String[2];
-        args[0] = "-connect";
-        args[1] = "com.sun.jdi.CommandLineLaunch:main=HelloWorld";
-
-        connect(args);
-        waitForVMStart();
-
-        // VM has started, but hasn't started running the test program yet.
+        /*
+         * Get to the top of HelloWorld main() to determine referenceType and mainThread
+         */
+        BreakpointEvent bpe = startToMain("HelloWorld");
+        ReferenceType referenceType = (ClassType)bpe.location().declaringType();
+        mainThread = bpe.thread();
         EventRequestManager requestManager = vm().eventRequestManager();
-        ReferenceType referenceType = resumeToPrepareOf("HelloWorld").referenceType();
 
-        // The debuggee is stopped
-        // I don't think we really have to set a bkpt and then do a step,
-        // we should just be able to do a step.  Problem is the
-        // createStepRequest call needs a thread and I don't know
-        // yet where to get one other than from the bkpt handling :-(
-        Location location = findLocation(referenceType, 3);
-        BreakpointRequest request
-            = requestManager.createBreakpointRequest(location);
+        Location loc = findLocation(referenceType, 3);
+        BreakpointRequest bpRequest = requestManager.createBreakpointRequest(loc);
 
-        request.enable();
+        try {
+            addListener(this);
+        } catch (Exception ex){
+            ex.printStackTrace();
+            failure("failure: Could not add listener");
+            throw new Exception("FilterMatch: failed");
+        }
 
-        // This does a resume, so we shouldn't come back to it until
-        // the debuggee has run and hit the bkpt.
-        BreakpointEvent event = (BreakpointEvent)waitForRequestedEvent(request);
+        bpRequest.enable();
 
-        // The bkpt was hit; remove it.
-        requestManager.deleteEventRequest(request);  // remove BP
-
-        StepRequest request1 = requestManager.createStepRequest(event.thread(),
+        StepRequest stepRequest = requestManager.createStepRequest(mainThread,
                                   StepRequest.STEP_LINE,StepRequest.STEP_OVER);
 
         // These patterns all match HelloWorld.  Since they all match, our
         // listener should get called and the test will pass.  If any of them
         // are erroneously determined to _not_ match, then our listener will
         // not get called and the test will fail.
-        request1.addClassFilter("*");
+        stepRequest.addClassFilter("*");
 
-        request1.addClassFilter("H*");
-        request1.addClassFilter("He*");
-        request1.addClassFilter("HelloWorld*");
+        stepRequest.addClassFilter("H*");
+        stepRequest.addClassFilter("He*");
+        stepRequest.addClassFilter("HelloWorld*");
 
-        request1.addClassFilter("*d");
-        request1.addClassFilter("*ld");
-        request1.addClassFilter("*HelloWorld");
+        stepRequest.addClassFilter("*d");
+        stepRequest.addClassFilter("*ld");
+        stepRequest.addClassFilter("*HelloWorld");
 
-        request1.addClassFilter("HelloWorld");
+        stepRequest.addClassFilter("HelloWorld");
 
         // As a test, uncomment this line and the test should fail.
-        //request1.addClassFilter("x");
+        //stepRequest.addClassFilter("x");
 
-        request1.enable();
-        listen();
+        stepRequest.enable();
 
         vm().resume();
 
-        waitForVMDeath();
+        waitForVMDisconnect();
 
-        if ( !listenCalled){
+        if (!stepCompleted) {
             throw new Exception( "Failed: Event filtered out.");
         }
         System.out.println( "Passed: Event not filtered out.");
+    }
+
+    // ****************  event handlers **************
+
+    public void eventSetReceived(EventSet set) {
+        this.eventSet = set;
+    }
+
+    // This gets called if all filters match.
+    public void stepCompleted(StepEvent event) {
+        stepCompleted = true;
+        System.out.println("StepEvent at" + event.location());
+        // disable the step and then run to completion
+        StepRequest str = (StepRequest)event.request();
+        str.disable();
+        eventSet.resume();
+    }
+
+    public void breakpointReached(BreakpointEvent event) {
+        System.out.println("BreakpointEvent at" + event.location());
+        BreakpointRequest bpr = (BreakpointRequest)event.request();
+        // The bkpt was hit; disable it.
+        bpr.disable();
     }
 }

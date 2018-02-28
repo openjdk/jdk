@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,29 +40,27 @@
  */
 class ElfSymbolTable: public CHeapObj<mtInternal> {
   friend class ElfFile;
- public:
-  ElfSymbolTable(FILE* file, Elf_Shdr shdr);
+private:
+  ElfSymbolTable*  _next;
+
+  // file contains string table
+  FILE* const      _fd;
+
+  // corresponding section
+  ElfSection      _section;
+
+  NullDecoder::decoder_status _status;
+public:
+  ElfSymbolTable(FILE* const file, Elf_Shdr& shdr);
   ~ElfSymbolTable();
 
   // search the symbol that is nearest to the specified address.
   bool lookup(address addr, int* stringtableIndex, int* posIndex, int* offset, ElfFuncDescTable* funcDescTable);
 
-  NullDecoder::decoder_status get_status() { return m_status; };
-
- protected:
-  ElfSymbolTable*  m_next;
-
-  // holds a complete symbol table section if
-  // can allocate enough memory
-  Elf_Sym*            m_symbols;
-
-  // file contains string table
-  FILE*               m_file;
-
-  // section header
-  Elf_Shdr            m_shdr;
-
-  NullDecoder::decoder_status  m_status;
+  NullDecoder::decoder_status get_status() const { return _status; };
+private:
+  ElfSymbolTable* next() const { return _next; }
+  void set_next(ElfSymbolTable* next) { _next = next; }
 
   bool compare(const Elf_Sym* sym, address addr, int* stringtableIndex, int* posIndex, int* offset, ElfFuncDescTable* funcDescTable);
 };

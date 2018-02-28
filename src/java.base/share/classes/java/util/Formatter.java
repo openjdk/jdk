@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -284,11 +284,11 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * {@code 'A'}, and {@code 'T'}) are the same as those for the corresponding
  * lower-case conversion characters except that the result is converted to
  * upper case according to the rules of the prevailing {@link java.util.Locale
- * Locale}.  The result is equivalent to the following invocation of {@link
- * String#toUpperCase(Locale)}
+ * Locale}. If there is no explicit locale specified, either at the
+ * construction of the instance or as a parameter to its method
+ * invocation, then the {@link java.util.Locale.Category#FORMAT default locale}
+ * is used.
  *
- * <pre>
- *    out.toUpperCase(Locale.getDefault(Locale.Category.FORMAT)) </pre>
  *
  * <table class="striped">
  * <caption style="display:none">genConv</caption>
@@ -709,11 +709,10 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * {@code 'G'}, {@code 'A'}, and {@code 'T'}) are the same as those for the
  * corresponding lower-case conversion characters except that the result is
  * converted to upper case according to the rules of the prevailing {@link
- * java.util.Locale Locale}.  The result is equivalent to the following
- * invocation of {@link String#toUpperCase(Locale)}
- *
- * <pre>
- *    out.toUpperCase(Locale.getDefault(Locale.Category.FORMAT)) </pre>
+ * java.util.Locale Locale}. If there is no explicit locale specified,
+ * either at the construction of the instance or as a parameter to its method
+ * invocation, then the {@link java.util.Locale.Category#FORMAT default locale}
+ * is used.
  *
  * <h4><a id="dgen">General</a></h4>
  *
@@ -2897,16 +2896,16 @@ public final class Formatter implements Closeable, Flushable {
                 break;
             case Conversion.CHARACTER:
             case Conversion.CHARACTER_UPPER:
-                printCharacter(arg);
+                printCharacter(arg, l);
                 break;
             case Conversion.BOOLEAN:
-                printBoolean(arg);
+                printBoolean(arg, l);
                 break;
             case Conversion.STRING:
                 printString(arg, l);
                 break;
             case Conversion.HASHCODE:
-                printHashCode(arg);
+                printHashCode(arg, l);
                 break;
             case Conversion.LINE_SEPARATOR:
                 a.append(System.lineSeparator());
@@ -2921,7 +2920,7 @@ public final class Formatter implements Closeable, Flushable {
 
         private void printInteger(Object arg, Locale l) throws IOException {
             if (arg == null)
-                print("null");
+                print("null", l);
             else if (arg instanceof Byte)
                 print(((Byte)arg).byteValue(), l);
             else if (arg instanceof Short)
@@ -2938,7 +2937,7 @@ public final class Formatter implements Closeable, Flushable {
 
         private void printFloat(Object arg, Locale l) throws IOException {
             if (arg == null)
-                print("null");
+                print("null", l);
             else if (arg instanceof Float)
                 print(((Float)arg).floatValue(), l);
             else if (arg instanceof Double)
@@ -2951,7 +2950,7 @@ public final class Formatter implements Closeable, Flushable {
 
         private void printDateTime(Object arg, Locale l) throws IOException {
             if (arg == null) {
-                print("null");
+                print("null", l);
                 return;
             }
             Calendar cal = null;
@@ -2982,9 +2981,9 @@ public final class Formatter implements Closeable, Flushable {
             print(cal, c, l);
         }
 
-        private void printCharacter(Object arg) throws IOException {
+        private void printCharacter(Object arg, Locale l) throws IOException {
             if (arg == null) {
-                print("null");
+                print("null", l);
                 return;
             }
             String s = null;
@@ -3011,7 +3010,7 @@ public final class Formatter implements Closeable, Flushable {
             } else {
                 failConversion(c, arg);
             }
-            print(s);
+            print(s, l);
         }
 
         private void printString(Object arg, Locale l) throws IOException {
@@ -3024,13 +3023,13 @@ public final class Formatter implements Closeable, Flushable {
                 if (f.contains(Flags.ALTERNATE))
                     failMismatch(Flags.ALTERNATE, 's');
                 if (arg == null)
-                    print("null");
+                    print("null", l);
                 else
-                    print(arg.toString());
+                    print(arg.toString(), l);
             }
         }
 
-        private void printBoolean(Object arg) throws IOException {
+        private void printBoolean(Object arg, Locale l) throws IOException {
             String s;
             if (arg != null)
                 s = ((arg instanceof Boolean)
@@ -3038,22 +3037,27 @@ public final class Formatter implements Closeable, Flushable {
                      : Boolean.toString(true));
             else
                 s = Boolean.toString(false);
-            print(s);
+            print(s, l);
         }
 
-        private void printHashCode(Object arg) throws IOException {
+        private void printHashCode(Object arg, Locale l) throws IOException {
             String s = (arg == null
                         ? "null"
                         : Integer.toHexString(arg.hashCode()));
-            print(s);
+            print(s, l);
         }
 
-        private void print(String s) throws IOException {
+        private void print(String s, Locale l) throws IOException {
             if (precision != -1 && precision < s.length())
                 s = s.substring(0, precision);
             if (f.contains(Flags.UPPERCASE))
-                s = s.toUpperCase(Locale.getDefault(Locale.Category.FORMAT));
+                s = toUpperCaseWithLocale(s, l);
             appendJustified(a, s);
+        }
+
+        private String toUpperCaseWithLocale(String s, Locale l) {
+            return s.toUpperCase(Objects.requireNonNullElse(l,
+                    Locale.getDefault(Locale.Category.FORMAT)));
         }
 
         private Appendable appendJustified(Appendable a, CharSequence cs) throws IOException {
@@ -3276,7 +3280,7 @@ public final class Formatter implements Closeable, Flushable {
                     trailingZeros(sb, width - len);
                 }
                 if (f.contains(Flags.UPPERCASE))
-                    s = s.toUpperCase(Locale.getDefault(Locale.Category.FORMAT));
+                    s = toUpperCaseWithLocale(s, l);
                 sb.append(s);
             }
 
@@ -3351,7 +3355,7 @@ public final class Formatter implements Closeable, Flushable {
                     trailingZeros(sb, width - len);
                 }
                 if (f.contains(Flags.UPPERCASE))
-                    s = s.toUpperCase(Locale.getDefault(Locale.Category.FORMAT));
+                    s = toUpperCaseWithLocale(s, l);
                 sb.append(s);
             }
 
@@ -3950,7 +3954,7 @@ public final class Formatter implements Closeable, Flushable {
 
             // justify based on width
             if (f.contains(Flags.UPPERCASE)) {
-                appendJustified(a, sb.toString().toUpperCase(Locale.getDefault(Locale.Category.FORMAT)));
+                appendJustified(a, toUpperCaseWithLocale(sb.toString(), l));
             } else {
                 appendJustified(a, sb);
             }
@@ -4132,8 +4136,7 @@ public final class Formatter implements Closeable, Flushable {
                 StringBuilder tsb = new StringBuilder();
                 print(tsb, t, DateTime.AM_PM, l);
 
-                sb.append(tsb.toString().toUpperCase(Objects.requireNonNullElse(l,
-                                               Locale.getDefault(Locale.Category.FORMAT))));
+                sb.append(toUpperCaseWithLocale(tsb.toString(), l));
                 break;
             }
             case DateTime.DATE_TIME:    { // 'c' (Sat Nov 04 12:02:33 EST 1999)
@@ -4171,7 +4174,7 @@ public final class Formatter implements Closeable, Flushable {
             print(sb, t, c, l);
             // justify based on width
             if (f.contains(Flags.UPPERCASE)) {
-                appendJustified(a, sb.toString().toUpperCase(Locale.getDefault(Locale.Category.FORMAT)));
+                appendJustified(a, toUpperCaseWithLocale(sb.toString(), l));
             } else {
                 appendJustified(a, sb);
             }
@@ -4373,8 +4376,7 @@ public final class Formatter implements Closeable, Flushable {
                     // this may be in wrong place for some locales
                     StringBuilder tsb = new StringBuilder();
                     print(tsb, t, DateTime.AM_PM, l);
-                    sb.append(tsb.toString().toUpperCase(Objects.requireNonNullElse(l,
-                                        Locale.getDefault(Locale.Category.FORMAT))));
+                    sb.append(toUpperCaseWithLocale(tsb.toString(), l));
                     break;
                 }
                 case DateTime.DATE_TIME:    { // 'c' (Sat Nov 04 12:02:33 EST 1999)

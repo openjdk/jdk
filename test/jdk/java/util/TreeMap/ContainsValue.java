@@ -27,7 +27,8 @@
  * @summary TreeMap.containsValue throws NullPointerExc for empty TreeMap
  */
 
-import java.util.*;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class ContainsValue {
     public static void main(String[] args) {

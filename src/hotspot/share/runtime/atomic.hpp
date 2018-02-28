@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,8 @@ enum cmpxchg_memory_order {
 
 class Atomic : AllStatic {
 public:
-  // Atomic operations on jlong types are not available on all 32-bit
-  // platforms. If atomic ops on jlongs are defined here they must only
+  // Atomic operations on int64 types are not available on all 32-bit
+  // platforms. If atomic ops on int64 are defined here they must only
   // be used from code that verifies they are available at runtime and
   // can provide an alternative action if not - see supports_cx8() for
   // a means to test availability.
@@ -131,6 +131,7 @@ public:
                                      cmpxchg_memory_order order = memory_order_conservative);
 
 private:
+WINDOWS_ONLY(public:) // VS2017 warns (C2027) use of undefined type if IsPointerConvertible is declared private
   // Test whether From is implicitly convertible to To.
   // From and To must be pointer types.
   // Note: Provides the limited subset of C++11 std::is_convertible
@@ -639,16 +640,16 @@ struct Atomic::AddImpl<
 //
 // Use the ATOMIC_SHORT_PAIR macro (see macros.hpp) to get the desired alignment.
 template<>
-struct Atomic::AddImpl<jshort, jshort> VALUE_OBJ_CLASS_SPEC {
-  jshort operator()(jshort add_value, jshort volatile* dest) const {
+struct Atomic::AddImpl<short, short> VALUE_OBJ_CLASS_SPEC {
+  short operator()(short add_value, short volatile* dest) const {
 #ifdef VM_LITTLE_ENDIAN
     assert((intx(dest) & 0x03) == 0x02, "wrong alignment");
-    jint new_value = Atomic::add(add_value << 16, (volatile jint*)(dest-1));
+    int new_value = Atomic::add(add_value << 16, (volatile int*)(dest-1));
 #else
     assert((intx(dest) & 0x03) == 0x00, "wrong alignment");
-    jint new_value = Atomic::add(add_value << 16, (volatile jint*)(dest));
+    int new_value = Atomic::add(add_value << 16, (volatile int*)(dest));
 #endif
-    return (jshort)(new_value >> 16); // preserves sign
+    return (short)(new_value >> 16); // preserves sign
   }
 };
 
@@ -807,7 +808,7 @@ inline T Atomic::CmpxchgByteUsingInt::operator()(T exchange_value,
   do {
     // value to swap in matches current value ...
     uint32_t new_value = cur;
-    // ... except for the one jbyte we want to update
+    // ... except for the one byte we want to update
     reinterpret_cast<uint8_t*>(&new_value)[offset] = canon_exchange_value;
 
     uint32_t res = cmpxchg(new_value, aligned_dest, cur, order);

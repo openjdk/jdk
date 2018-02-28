@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,16 @@
 
 package java.util.jar;
 
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.Collection;
-import java.util.AbstractSet;
-import java.util.Iterator;
-import java.util.Locale;
+
 import sun.util.logging.PlatformLogger;
-import java.util.Comparator;
 
 /**
  * The Attributes class maps Manifest attribute names to associated string

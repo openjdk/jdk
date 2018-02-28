@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,56 +84,56 @@ public class TestUseOption extends JavadocTester {
           "that return types with arguments of type"
         );
         checkOutput("pkg1/class-use/UsedClass.html", true,
-          "<a href=\"../../pkg1/C1.html#methodInC1ReturningType--\">methodInC1ReturningType</a>"
+          "<a href=\"../C1.html#methodInC1ReturningType--\">methodInC1ReturningType</a>"
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
-          "Classes in <a href=\"../../pkg1/package-summary.html\">pkg1</a> that implement " +
-          "<a href=\"../../pkg1/UsedInterface.html\" title=\"interface in pkg1\">UsedInterface</a>"
+          "Classes in <a href=\"../package-summary.html\">pkg1</a> that implement " +
+          "<a href=\"../UsedInterface.html\" title=\"interface in pkg1\">UsedInterface</a>"
         );
         checkOutput("pkg1/class-use/UsedInterfaceA.html", true,
-          "Classes in <a href=\"../../pkg1/package-summary.html\">pkg1</a> that implement " +
-          "<a href=\"../../pkg1/UsedInterfaceA.html\" title=\"interface in pkg1\">UsedInterfaceA</a>"
+          "Classes in <a href=\"../package-summary.html\">pkg1</a> that implement " +
+          "<a href=\"../UsedInterfaceA.html\" title=\"interface in pkg1\">UsedInterfaceA</a>"
         );
         checkOutput("pkg1/class-use/UsedClass.html", false,
            "methodInC1Protected"
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
-           "<a href=\"../../pkg1/AnAbstract.html\" title=\"class in pkg1\">AnAbstract</a>"
+           "<a href=\"../AnAbstract.html\" title=\"class in pkg1\">AnAbstract</a>"
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
-            "../../pkg1/C10.html#withReturningTypeParameters--"
+            "../C10.html#withReturningTypeParameters--"
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
-            "../../pkg1/C10.html#withTypeParametersOfType-java.lang.Class-"
+            "../C10.html#withTypeParametersOfType-java.lang.Class-"
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
-            "\"../../pkg1/package-summary.html\">pkg1</a> that return " +
-            "<a href=\"../../pkg1/UsedInterface.html\" title=\"interface in pkg1\""
+            "\"../package-summary.html\">pkg1</a> that return " +
+            "<a href=\"../UsedInterface.html\" title=\"interface in pkg1\""
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
-            "<a href=\"../../pkg1/C10.html#addAll-pkg1.UsedInterface...-\">addAll</a>"
+            "<a href=\"../C10.html#addAll-pkg1.UsedInterface...-\">addAll</a>"
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
-            "<a href=\"../../pkg1/C10.html#create-pkg1.UsedInterfaceA-pkg1." +
+            "<a href=\"../C10.html#create-pkg1.UsedInterfaceA-pkg1." +
             "UsedInterface-java.lang.String-\">"
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
-            "<a href=\"../../pkg1/C10.html#withTypeParametersOfType-java.lang.Class-\">" +
+            "<a href=\"../C10.html#withTypeParametersOfType-java.lang.Class-\">" +
             "withTypeParametersOfType</a>"
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
-            "Subinterfaces of <a href=\"../../pkg1/UsedInterface.html\" title=\"interface in pkg1\">"
-            + "UsedInterface</a> in <a href=\"../../pkg1/package-summary.html\">pkg1",
+            "Subinterfaces of <a href=\"../UsedInterface.html\" title=\"interface in pkg1\">"
+            + "UsedInterface</a> in <a href=\"../package-summary.html\">pkg1",
             "<td class=\"colFirst\"><code>interface&nbsp;</code></td>\n<th class=\"colSecond\" scope=\"row\">"
-            + "<code><span class=\"memberNameLink\"><a href=\"../../pkg1/SubInterface.html\" "
+            + "<code><span class=\"memberNameLink\"><a href=\"../SubInterface.html\" "
             + "title=\"interface in pkg1\">SubInterface</a>&lt;T&gt;</span></code></th>"
         );
         checkOutput("pkg1/class-use/UsedThrowable.html", true,
-            "Methods in <a href=\"../../pkg1/package-summary.html\">pkg1</a> that throw "
-            + "<a href=\"../../pkg1/UsedThrowable.html\" title=\"class in pkg1\">UsedThrowable</a>",
+            "Methods in <a href=\"../package-summary.html\">pkg1</a> that throw "
+            + "<a href=\"../UsedThrowable.html\" title=\"class in pkg1\">UsedThrowable</a>",
             "<td class=\"colFirst\"><code>void</code></td>\n<th class=\"colSecond\" scope=\"row\"><span class="
             + "\"typeNameLabel\">C1.</span><code><span class=\"memberNameLink\">"
-            + "<a href=\"../../pkg1/C1.html#methodInC1ThrowsThrowable--\">methodInC1ThrowsThrowable"
+            + "<a href=\"../C1.html#methodInC1ThrowsThrowable--\">methodInC1ThrowsThrowable"
             + "</a></span>()</code></th>"
         );
     }
@@ -169,9 +169,9 @@ public class TestUseOption extends JavadocTester {
                 "-package", "unique");
         checkExit(Exit.OK);
         checkUnique("unique/class-use/UseMe.html",
-                "<a href=\"../../unique/C1.html#umethod1-unique.UseMe-unique.UseMe:A-\">",
-                "<a href=\"../../unique/C1.html#umethod2-unique.UseMe-unique.UseMe-\">",
-                "<a href=\"../../unique/C1.html#umethod3-unique.UseMe-unique.UseMe-\">",
-                "<a href=\"../../unique/C1.html#C1-unique.UseMe-unique.UseMe-\">");
+                "<a href=\"../C1.html#umethod1-unique.UseMe-unique.UseMe:A-\">",
+                "<a href=\"../C1.html#umethod2-unique.UseMe-unique.UseMe-\">",
+                "<a href=\"../C1.html#umethod3-unique.UseMe-unique.UseMe-\">",
+                "<a href=\"../C1.html#C1-unique.UseMe-unique.UseMe-\">");
     }
 }

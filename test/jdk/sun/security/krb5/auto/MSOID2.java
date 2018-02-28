@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
 
 /*
  * @test
- * @bug 8078439
+ * @bug 8078439 8194486
  * @summary SPNEGO auth fails if client proposes MS krb5 OID
+ * @library /test/lib
  * @compile -XDignore.symbol.file MSOID2.java
- * @run main/othervm MSOID2
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts MSOID2
  */
 
 import sun.security.jgss.GSSUtil;

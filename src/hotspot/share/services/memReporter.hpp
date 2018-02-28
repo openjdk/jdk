@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,8 @@ class MemSummaryReporter : public MemReporterBase {
  private:
   MallocMemorySnapshot*   _malloc_snapshot;
   VirtualMemorySnapshot*  _vm_snapshot;
-  size_t                  _class_count;
+  size_t                  _instance_class_count;
+  size_t                  _array_class_count;
 
  public:
   // This constructor is for normal reporting from a recent baseline.
@@ -102,7 +103,8 @@ class MemSummaryReporter : public MemReporterBase {
     size_t scale = K) : MemReporterBase(output, scale),
     _malloc_snapshot(baseline.malloc_memory_snapshot()),
     _vm_snapshot(baseline.virtual_memory_snapshot()),
-    _class_count(baseline.class_count()) { }
+    _instance_class_count(baseline.instance_class_count()),
+    _array_class_count(baseline.array_class_count()) { }
 
 
   // Generate summary report

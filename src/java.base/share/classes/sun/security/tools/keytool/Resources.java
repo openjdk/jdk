@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,12 +45,12 @@ public class Resources extends java.util.ListResourceBundle {
         {"option.1.set.twice", "The %s option is specified multiple times. All except the last one will be ignored."},
         {"multiple.commands.1.2", "Only one command is allowed: both %1$s and %2$s were specified."},
         {"Use.keytool.help.for.all.available.commands",
-                 "Use \"keytool -help\" for all available commands"},
+                 "Use \"keytool -?, -h, or --help\" for this help message"},
         {"Key.and.Certificate.Management.Tool",
                  "Key and Certificate Management Tool"},
         {"Commands.", "Commands:"},
         {"Use.keytool.command.name.help.for.usage.of.command.name",
-                "Use \"keytool -command_name -help\" for usage of command_name.\n" +
+                "Use \"keytool -command_name --help\" for usage of command_name.\n" +
                 "Use the -conf <url> option to specify a pre-configured options file."},
         // keytool: help: commands
         {"Generates.a.certificate.request",
@@ -462,7 +462,7 @@ public class Resources extends java.util.ListResourceBundle {
         {"with.weak", "%s (weak)"},
         {"key.bit", "%1$d-bit %2$s key"},
         {"key.bit.weak", "%1$d-bit %2$s key (weak)"},
-        {"unknown.size.1", "unknown size %s key"},
+        {"unknown.size.1", "%s key of unknown size"},
         {".PATTERN.printX509Cert.with.weak",
                 "Owner: {0}\nIssuer: {1}\nSerial number: {2}\nValid from: {3} until: {4}\nCertificate fingerprints:\n\t SHA1: {5}\n\t SHA256: {6}\nSignature algorithm name: {7}\nSubject Public Key Algorithm: {8}\nVersion: {9}"},
         {"PKCS.10.with.weak",

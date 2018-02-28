@@ -49,6 +49,7 @@ import org.graalvm.compiler.hotspot.meta.HotSpotStampProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotSuitesProvider;
 import org.graalvm.compiler.hotspot.word.HotSpotWordTypes;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
+import org.graalvm.compiler.nodes.spi.LoweringProvider;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.CompilerConfiguration;
 import org.graalvm.compiler.phases.util.Providers;
@@ -136,7 +137,7 @@ public class AArch64HotSpotBackendFactory implements HotSpotBackendFactory {
                 replacements = createReplacements(graalRuntime.getOptions(), p, snippetReflection, bytecodeProvider);
             }
             try (InitTimer rt = timer("create GraphBuilderPhase plugins")) {
-                plugins = createGraphBuilderPlugins(compilerConfiguration, config, constantReflection, foreignCalls, metaAccess, snippetReflection, replacements, wordTypes, stampProvider);
+                plugins = createGraphBuilderPlugins(compilerConfiguration, config, constantReflection, foreignCalls, lowerer, metaAccess, snippetReflection, replacements, wordTypes, stampProvider);
                 replacements.setGraphBuilderPlugins(plugins);
             }
             try (InitTimer rt = timer("create Suites provider")) {
@@ -152,9 +153,10 @@ public class AArch64HotSpotBackendFactory implements HotSpotBackendFactory {
     }
 
     protected Plugins createGraphBuilderPlugins(CompilerConfiguration compilerConfiguration, GraalHotSpotVMConfig config, HotSpotConstantReflectionProvider constantReflection,
-                    HotSpotHostForeignCallsProvider foreignCalls, HotSpotMetaAccessProvider metaAccess, HotSpotSnippetReflectionProvider snippetReflection, HotSpotReplacementsImpl replacements,
-                    HotSpotWordTypes wordTypes, HotSpotStampProvider stampProvider) {
-        Plugins plugins = HotSpotGraphBuilderPlugins.create(compilerConfiguration, config, wordTypes, metaAccess, constantReflection, snippetReflection, foreignCalls, stampProvider, replacements);
+                    HotSpotHostForeignCallsProvider foreignCalls, LoweringProvider lowerer, HotSpotMetaAccessProvider metaAccess, HotSpotSnippetReflectionProvider snippetReflection,
+                    HotSpotReplacementsImpl replacements, HotSpotWordTypes wordTypes, HotSpotStampProvider stampProvider) {
+        Plugins plugins = HotSpotGraphBuilderPlugins.create(compilerConfiguration, config, wordTypes, metaAccess, constantReflection, snippetReflection, foreignCalls, lowerer, stampProvider,
+                        replacements);
         AArch64GraphBuilderPlugins.register(plugins, replacements.getDefaultReplacementBytecodeProvider());
         return plugins;
     }

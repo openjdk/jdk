@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,7 @@ public class TestHtmlVersion extends JavadocTester {
                 "<!DOCTYPE HTML>",
                 "<meta name=\"dc.created\"",
                 "<main role=\"main\">\n"
-                + "<h1 class=\"bar\"><a href=\"../pkg/package-summary.html\" target=\"classFrame\">pkg</a></h1>",
+                + "<h1 class=\"bar\"><a href=\"package-summary.html\" target=\"classFrame\">pkg</a></h1>",
                 "<section role=\"region\">\n"
                 + "<h2 title=\"Interfaces\">Interfaces</h2>",
                 "<section role=\"region\">\n"
@@ -598,7 +598,7 @@ public class TestHtmlVersion extends JavadocTester {
                 "<section role=\"region\"><a id=\"pkg\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Uses of <a href=\"../../pkg1/RegClass.html\" title=\"class in pkg1\">RegClass</a> in <a href=\"../../pkg/package-summary.html\">pkg</a></h3>\n"
+                + "<h3>Uses of <a href=\"../RegClass.html\" title=\"class in pkg1\">RegClass</a> in <a href=\"../../pkg/package-summary.html\">pkg</a></h3>\n"
                 + "<table class=\"useSummary\">",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
@@ -667,7 +667,7 @@ public class TestHtmlVersion extends JavadocTester {
                 "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
                 "<meta name=\"date\"",
                 "<body>\n"
-                + "<h1 class=\"bar\"><a href=\"../pkg/package-summary.html\" target=\"classFrame\">pkg</a></h1>");
+                + "<h1 class=\"bar\"><a href=\"package-summary.html\" target=\"classFrame\">pkg</a></h1>");
 
         // Negated test for package-summary page
         checkOutput("pkg/package-summary.html", false,
@@ -1040,7 +1040,7 @@ public class TestHtmlVersion extends JavadocTester {
                 "<li class=\"blockList\"><a name=\"pkg\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Uses of <a href=\"../../pkg1/RegClass.html\" title=\"class in pkg1\">RegClass</a> in <a href=\"../../pkg/package-summary.html\">pkg</a></h3>\n"
+                + "<h3>Uses of <a href=\"../RegClass.html\" title=\"class in pkg1\">RegClass</a> in <a href=\"../../pkg/package-summary.html\">pkg</a></h3>\n"
                 + "<table class=\"useSummary\" summary=\"Use table, listing fields, and an explanation\">");
 
         // Negated test for main index page
@@ -1100,7 +1100,7 @@ public class TestHtmlVersion extends JavadocTester {
                 "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
                 "<meta name=\"date\"",
                 "<body>\n"
-                + "<h1 class=\"bar\"><a href=\"../pkg/package-summary.html\" target=\"classFrame\">pkg</a></h1>");
+                + "<h1 class=\"bar\"><a href=\"package-summary.html\" target=\"classFrame\">pkg</a></h1>");
 
         // Test for package-summary page
         checkOutput("pkg/package-summary.html", true,
@@ -1486,7 +1486,7 @@ public class TestHtmlVersion extends JavadocTester {
                 "<li class=\"blockList\"><a name=\"pkg\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Uses of <a href=\"../../pkg1/RegClass.html\" title=\"class in pkg1\">RegClass</a> in <a href=\"../../pkg/package-summary.html\">pkg</a></h3>\n"
+                + "<h3>Uses of <a href=\"../RegClass.html\" title=\"class in pkg1\">RegClass</a> in <a href=\"../../pkg/package-summary.html\">pkg</a></h3>\n"
                 + "<table class=\"useSummary\" summary=\"Use table, listing fields, and an explanation\">");
 
         // Test for main index page
@@ -1551,7 +1551,7 @@ public class TestHtmlVersion extends JavadocTester {
                 "<!DOCTYPE HTML>",
                 "<meta name=\"dc.created\"",
                 "<main role=\"main\">\n"
-                + "<h1 class=\"bar\"><a href=\"../pkg/package-summary.html\" target=\"classFrame\">pkg</a></h1>",
+                + "<h1 class=\"bar\"><a href=\"package-summary.html\" target=\"classFrame\">pkg</a></h1>",
                 "<section role=\"region\">\n"
                 + "<h2 title=\"Interfaces\">Interfaces</h2>",
                 "<section role=\"region\">\n"
@@ -1988,7 +1988,7 @@ public class TestHtmlVersion extends JavadocTester {
                 "<section role=\"region\"><a id=\"pkg\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<h3>Uses of <a href=\"../../pkg1/RegClass.html\" title=\"class in pkg1\">RegClass</a> in <a href=\"../../pkg/package-summary.html\">pkg</a></h3>\n"
+                + "<h3>Uses of <a href=\"../RegClass.html\" title=\"class in pkg1\">RegClass</a> in <a href=\"../../pkg/package-summary.html\">pkg</a></h3>\n"
                 + "\n"
                 + "<table class=\"useSummary\">",
                 "<footer role=\"contentinfo\">\n"

@@ -38,7 +38,7 @@ import jdk.test.lib.process.ProcessTools;
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @build GetObjectSizeOverflowAgent
- * @run main ClassFileInstaller GetObjectSizeOverflowAgent
+ * @run driver ClassFileInstaller GetObjectSizeOverflowAgent
  * @run main GetObjectSizeOverflow
  */
 public class GetObjectSizeOverflow {

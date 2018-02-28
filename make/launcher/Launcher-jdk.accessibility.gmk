@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,9 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   JABSWITCH_SRC := $(TOPDIR)/src/jdk.accessibility/windows/native/jabswitch
   ACCESSBRIDGE_SRC := $(TOPDIR)/src/jdk.accessibility/windows/native/common
 
-  $(eval $(call SetupNativeCompilation,BUILD_JABSWITCH, \
+  $(eval $(call SetupNativeCompilation, BUILD_JABSWITCH, \
+      NAME := jabswitch, \
+      TYPE := EXECUTABLE, \
       SRC := $(JABSWITCH_SRC), \
       INCLUDE_FILES := jabswitch.cpp, \
       CFLAGS := $(filter-out -Zc:wchar_t-, $(CFLAGS_JDKEXE)) -Zc:wchar_t \
@@ -44,7 +46,6 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       LIBS := advapi32.lib version.lib user32.lib, \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/jdk.accessibility/jabswitch, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_cmds/jdk.accessibility, \
-      PROGRAM := jabswitch, \
       VERSIONINFO_RESOURCE := $(ACCESSBRIDGE_SRC)/AccessBridgeStatusWindow.RC, \
       RC_FLAGS := $(RC_FLAGS) \
           -D "JDK_FNAME=jabswitch.exe" \
@@ -70,6 +71,8 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   # Parameter 2 ACCESSBRIDGE_ARCH_ -D suffix
 
     $$(eval $$(call SetupNativeCompilation, BUILD_JACCESSINSPECTOR$1, \
+      NAME := jaccessinspector$1, \
+      TYPE := EXECUTABLE, \
       SRC := $(TOPDIR)/jaccessinspector $(TOPDIR)/common \
           $(TOPDIR)/toolscommon $(TOPDIR)/bridge, \
       CFLAGS := $$(CFLAGS_JDKEXE) $(TOOLS_CFLAGS) -DACCESSBRIDGE_ARCH_$2 -EHsc, \
@@ -77,7 +80,6 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       LIBS := advapi32.lib user32.lib, \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/jdk.accessibility/jaccessinspector$1, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_cmds/jdk.accessibility, \
-      PROGRAM := jaccessinspector$1, \
       VERSIONINFO_RESOURCE := $(TOPDIR)/jaccessinspector/jaccessinspectorWindow.rc, \
       RC_FLAGS := $$(RC_FLAGS) \
           -D "JDK_FNAME=jaccessinspector$1.exe" \
@@ -96,7 +98,9 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   # Parameter 1 File name suffix
   # Parameter 2 ACCESSBRIDGE_ARCH_ -D suffix
 
-    $$(eval $$(call SetupNativeCompilation,BUILD_JACCESSWALKER$1, \
+    $$(eval $$(call SetupNativeCompilation, BUILD_JACCESSWALKER$1, \
+      NAME := jaccesswalker$1, \
+      TYPE := EXECUTABLE, \
       SRC := $(TOPDIR)/jaccesswalker $(TOPDIR)/common \
           $(TOPDIR)/toolscommon $(TOPDIR)/bridge, \
       CFLAGS := $$(CFLAGS_JDKEXE) $(TOOLS_CFLAGS) -DACCESSBRIDGE_ARCH_$2 -EHsc, \
@@ -104,7 +108,6 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       LIBS := advapi32.lib comctl32.lib gdi32.lib user32.lib, \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/jdk.accessibility/jaccesswalker$1, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_cmds/jdk.accessibility, \
-      PROGRAM := jaccesswalker$1, \
       VERSIONINFO_RESOURCE := $(TOPDIR)/jaccesswalker/jaccesswalkerWindow.rc, \
       RC_FLAGS := $$(RC_FLAGS) \
           -D "JDK_FNAME=jaccesswalker$1.exe" \

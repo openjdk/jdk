@@ -3771,9 +3771,9 @@ public class Collections {
                  * Ensure that we don't get an ArrayStoreException even if
                  * s.toArray returns an array of something other than Object
                  */
-                Object[] dest = (CheckedEntry.class.isInstance(
-                    source.getClass().getComponentType()) ? source :
-                                 new Object[source.length]);
+                Object[] dest = (source.getClass() == Object[].class)
+                    ? source
+                    : new Object[source.length];
 
                 for (int i = 0; i < source.length; i++)
                     dest[i] = checkedEntry((Map.Entry<K,V>)source[i],

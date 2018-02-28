@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/plab.hpp"
 #include "gc/shared/preservedMarks.hpp"
+#include "gc/shared/softRefPolicy.hpp"
 #include "memory/memRegion.hpp"
 #include "services/memoryManager.hpp"
 #include "utilities/stack.hpp"
@@ -125,7 +126,6 @@ class G1CollectedHeap : public CollectedHeap {
   friend class VM_CollectForMetadataAllocation;
   friend class VM_G1CollectForAllocation;
   friend class VM_G1CollectFull;
-  friend class VM_G1IncCollectionPause;
   friend class VMStructs;
   friend class MutatorAllocRegion;
   friend class G1FullCollector;
@@ -150,6 +150,8 @@ private:
 
   WorkGang* _workers;
   G1CollectorPolicy* _collector_policy;
+
+  SoftRefPolicy      _soft_ref_policy;
 
   GCMemoryManager _memory_manager;
   GCMemoryManager _full_gc_memory_manager;
@@ -223,9 +225,6 @@ private:
   // Class that handles archive allocation ranges.
   G1ArchiveAllocator* _archive_allocator;
 
-  // Statistics for each allocation context
-  AllocationContextStats _allocation_context_stats;
-
   // GC allocation statistics policy for survivors.
   G1EvacStats _survivor_evac_stats;
 
@@ -278,8 +277,7 @@ private:
   // (b) cause == _g1_humongous_allocation
   // (c) cause == _java_lang_system_gc and +ExplicitGCInvokesConcurrent.
   // (d) cause == _dcmd_gc_run and +ExplicitGCInvokesConcurrent.
-  // (e) cause == _update_allocation_context_stats_inc
-  // (f) cause == _wb_conc_mark
+  // (e) cause == _wb_conc_mark
   bool should_do_concurrent_full_gc(GCCause::Cause cause);
 
   // indicates whether we are in young or mixed GC mode
@@ -454,35 +452,20 @@ protected:
   virtual HeapWord* mem_allocate(size_t word_size,
                                  bool*  gc_overhead_limit_was_exceeded);
 
-  // The following three methods take a gc_count_before_ret
-  // parameter which is used to return the GC count if the method
-  // returns NULL. Given that we are required to read the GC count
-  // while holding the Heap_lock, and these paths will take the
-  // Heap_lock at some point, it's easier to get them to read the GC
-  // count while holding the Heap_lock before they return NULL instead
-  // of the caller (namely: mem_allocate()) having to also take the
-  // Heap_lock just to read the GC count.
-
   // First-level mutator allocation attempt: try to allocate out of
   // the mutator alloc region without taking the Heap_lock. This
   // should only be used for non-humongous allocations.
-  inline HeapWord* attempt_allocation(size_t word_size,
-                                      uint* gc_count_before_ret,
-                                      uint* gclocker_retry_count_ret);
+  inline HeapWord* attempt_allocation(size_t word_size);
 
   // Second-level mutator allocation attempt: take the Heap_lock and
   // retry the allocation attempt, potentially scheduling a GC
   // pause. This should only be used for non-humongous allocations.
   HeapWord* attempt_allocation_slow(size_t word_size,
-                                    AllocationContext_t context,
-                                    uint* gc_count_before_ret,
-                                    uint* gclocker_retry_count_ret);
+                                    AllocationContext_t context);
 
   // Takes the Heap_lock and attempts a humongous allocation. It can
   // potentially schedule a GC pause.
-  HeapWord* attempt_allocation_humongous(size_t word_size,
-                                         uint* gc_count_before_ret,
-                                         uint* gclocker_retry_count_ret);
+  HeapWord* attempt_allocation_humongous(size_t word_size);
 
   // Allocation attempt that should be called during safepoints (e.g.,
   // at the end of a successful GC). expect_null_mutator_alloc_region
@@ -595,8 +578,6 @@ public:
 
   // Determines PLAB size for a given destination.
   inline size_t desired_plab_sz(InCSetState dest);
-
-  inline AllocationContextStats& allocation_context_stats();
 
   // Do anything common to GC's.
   void gc_prologue(bool full);
@@ -1014,8 +995,7 @@ public:
 
   virtual CollectorPolicy* collector_policy() const;
 
-  // Adaptive size policy.  No such thing for g1.
-  virtual AdaptiveSizePolicy* size_policy() { return NULL; }
+  virtual SoftRefPolicy* soft_ref_policy();
 
   virtual GrowableArray<GCMemoryManager*> memory_managers();
   virtual GrowableArray<MemoryPool*> memory_pools();
@@ -1076,6 +1056,11 @@ public:
 
   virtual bool is_maximal_no_gc() const {
     return _hrm.available() == 0;
+  }
+
+  // Returns whether there are any regions left in the heap for allocation.
+  bool has_regions_left_for_allocation() const {
+    return !is_maximal_no_gc() || num_free_regions() != 0;
   }
 
   // The current number of regions in the heap.
@@ -1141,11 +1126,6 @@ public:
   // "CollectedHeap" supports.
   virtual void collect(GCCause::Cause cause);
 
-  virtual bool copy_allocation_context_stats(const jint* contexts,
-                                             jlong* totals,
-                                             jbyte* accuracy,
-                                             jint len);
-
   // True iff an evacuation has failed in the most-recent collection.
   bool evacuation_failed() { return _evacuation_failed; }
 
@@ -1208,7 +1188,7 @@ public:
   }
 
   // Iterate over heap regions, in address order, terminating the
-  // iteration early if the "doHeapRegion" method returns "true".
+  // iteration early if the "do_heap_region" method returns "true".
   void heap_region_iterate(HeapRegionClosure* blk) const;
 
   // Return the region with the given index. It assumes the index is valid.
@@ -1283,35 +1263,7 @@ public:
   size_t max_tlab_size() const;
   size_t unsafe_max_tlab_alloc(Thread* ignored) const;
 
-  // Can a compiler initialize a new object without store barriers?
-  // This permission only extends from the creation of a new object
-  // via a TLAB up to the first subsequent safepoint. If such permission
-  // is granted for this heap type, the compiler promises to call
-  // defer_store_barrier() below on any slow path allocation of
-  // a new object for which such initializing store barriers will
-  // have been elided. G1, like CMS, allows this, but should be
-  // ready to provide a compensating write barrier as necessary
-  // if that storage came out of a non-young region. The efficiency
-  // of this implementation depends crucially on being able to
-  // answer very efficiently in constant time whether a piece of
-  // storage in the heap comes from a young region or not.
-  // See ReduceInitialCardMarks.
-  virtual bool can_elide_tlab_store_barriers() const {
-    return true;
-  }
-
-  virtual bool card_mark_must_follow_store() const {
-    return true;
-  }
-
   inline bool is_in_young(const oop obj);
-
-  // We don't need barriers for initializing stores to objects
-  // in the young gen: for the SATB pre-barrier, there is no
-  // pre-value that needs to be remembered; for the remembered-set
-  // update logging post-barrier, we don't maintain remembered set
-  // information for young gen objects.
-  virtual inline bool can_elide_initializing_store_barrier(oop new_obj);
 
   // Returns "true" iff the given word_size is "very large".
   static bool is_humongous(size_t word_size) {

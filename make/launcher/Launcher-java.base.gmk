@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,8 @@ $(eval $(call SetupBuildLauncher, keytool, \
 
 ifeq ($(OPENJDK_TARGET_OS), linux)
   $(eval $(call SetupNativeCompilation, BUILD_JEXEC, \
+      NAME := jexec, \
+      TYPE := EXECUTABLE, \
       SRC := $(TOPDIR)/src/$(MODULE)/unix/native/launcher, \
       INCLUDE_FILES := jexec.c, \
       OPTIMIZATION := LOW, \
@@ -83,7 +85,6 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
       LDFLAGS := $(LDFLAGS_JDKEXE), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jexec_obj, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
-      PROGRAM := jexec, \
   ))
 
   TARGETS += $(BUILD_JEXEC)
@@ -93,6 +94,8 @@ endif
 
 ifneq ($(findstring $(OPENJDK_TARGET_OS), macosx solaris aix), )
   $(eval $(call SetupNativeCompilation, BUILD_JSPAWNHELPER, \
+      NAME := jspawnhelper, \
+      TYPE := EXECUTABLE, \
       SRC := $(TOPDIR)/src/$(MODULE)/unix/native/jspawnhelper, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKEXE) -I$(TOPDIR)/src/$(MODULE)/unix/native/libjava, \
@@ -100,7 +103,6 @@ ifneq ($(findstring $(OPENJDK_TARGET_OS), macosx solaris aix), )
       LDFLAGS := $(LDFLAGS_JDKEXE), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jspawnhelper, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
-      PROGRAM := jspawnhelper, \
   ))
 
   TARGETS += $(BUILD_JSPAWNHELPER)

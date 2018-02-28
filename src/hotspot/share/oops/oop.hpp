@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/shared/specialized_oop_closures.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
+#include "oops/access.hpp"
 #include "oops/metadata.hpp"
 #include "utilities/macros.hpp"
 
@@ -118,29 +119,31 @@ class oopDesc {
  protected:
   inline oop        as_oop() const { return const_cast<oopDesc*>(this); }
 
- private:
-  // field addresses in oop
-  inline void*      field_base(int offset)          const;
-
-  inline jbyte*     byte_field_addr(int offset)     const;
-  inline jchar*     char_field_addr(int offset)     const;
-  inline jboolean*  bool_field_addr(int offset)     const;
-  inline jint*      int_field_addr(int offset)      const;
-  inline jshort*    short_field_addr(int offset)    const;
-  inline jlong*     long_field_addr(int offset)     const;
-  inline jfloat*    float_field_addr(int offset)    const;
-  inline jdouble*   double_field_addr(int offset)   const;
-  inline Metadata** metadata_field_addr(int offset) const;
-
  public:
-  // Need this as public for garbage collection.
-  template <class T> inline T* obj_field_addr(int offset) const;
+  // field addresses in oop
+  inline void* field_addr(int offset)     const;
+  inline void* field_addr_raw(int offset) const;
 
-  // Needed for javaClasses
-  inline address* address_field_addr(int offset) const;
+  // Need this as public for garbage collection.
+  template <class T> inline T* obj_field_addr_raw(int offset) const;
 
   inline static bool is_null(oop obj)       { return obj == NULL; }
   inline static bool is_null(narrowOop obj) { return obj == 0; }
+
+  // Standard compare function returns negative value if o1 < o2
+  //                                   0              if o1 == o2
+  //                                   positive value if o1 > o2
+  inline static int  compare(oop o1, oop o2) {
+    void* o1_addr = (void*)o1;
+    void* o2_addr = (void*)o2;
+    if (o1_addr < o2_addr) {
+      return -1;
+    } else if (o1_addr > o2_addr) {
+      return 1;
+    } else {
+      return 0;
+    }
+  }
 
   // Decode an oop pointer from a narrowOop if compressed.
   // These are overloaded for oop and narrowOop as are the other functions
@@ -178,6 +181,8 @@ class oopDesc {
   static inline void encode_store_heap_oop(oop* p, oop v);
 
   // Access to fields in a instanceOop through these methods.
+  template <DecoratorSet decorator>
+  oop obj_field_access(int offset) const;
   oop obj_field(int offset) const;
   void obj_field_put(int offset, oop value);
   void obj_field_put_raw(int offset, oop value);

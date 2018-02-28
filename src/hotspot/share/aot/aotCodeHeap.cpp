@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ void AOTLib::verify_config() {
 }
 
 AOTLib::~AOTLib() {
-  free((void*) _name);
+  os::free((void*) _name);
 }
 
 AOTCodeHeap::~AOTCodeHeap() {
@@ -207,7 +207,7 @@ AOTCodeHeap::~AOTCodeHeap() {
 }
 
 AOTLib::AOTLib(void* handle, const char* name, int dso_id) : _valid(true), _dl_handle(handle), _dso_id(dso_id) {
-  _name = (const char*) strdup(name);
+  _name = (const char*) os::strdup(name);
 
   // Verify that VM runs with the same parameters as AOT tool.
   _config = (AOTConfiguration*) load_symbol("A.config");

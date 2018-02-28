@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@ import static org.testng.Assert.assertTrue;
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.IsoFields;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
@@ -444,4 +445,40 @@ public class TestLocalDate extends AbstractTest {
         }
     }
 
+    @DataProvider(name="quarterYearsToAdd")
+    Object[][] provider_quarterYearsToAdd() {
+        return new Object[][] {
+            {Long.valueOf(-1000000000)},
+            {Long.valueOf(-256)},
+            {Long.valueOf(-255)},
+            {Long.valueOf(-1)},
+            {Long.valueOf(0)},
+            {Long.valueOf(1)},
+            {Long.valueOf(255)},
+            {Long.valueOf(256)},
+            {Long.valueOf(1000000000)},
+        };
+    }
+
+    @Test(dataProvider="quarterYearsToAdd")
+    public void test_plus_QuarterYears(long quarterYears) {
+        LocalDate t0 = TEST_2007_07_15
+                .plus(quarterYears, IsoFields.QUARTER_YEARS);
+        LocalDate t1 = TEST_2007_07_15
+                .plus(quarterYears, ChronoUnit.MONTHS)
+                .plus(quarterYears, ChronoUnit.MONTHS)
+                .plus(quarterYears, ChronoUnit.MONTHS);
+        assertEquals(t0, t1);
+    }
+
+    @Test(dataProvider="quarterYearsToAdd")
+    public void test_minus_QuarterYears(long quarterYears) {
+        LocalDate t0 = TEST_2007_07_15
+                .minus(quarterYears, IsoFields.QUARTER_YEARS);
+        LocalDate t1 = TEST_2007_07_15
+                .minus(quarterYears, ChronoUnit.MONTHS)
+                .minus(quarterYears, ChronoUnit.MONTHS)
+                .minus(quarterYears, ChronoUnit.MONTHS);
+        assertEquals(t0, t1);
+    }
 }

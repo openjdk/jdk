@@ -22,6 +22,8 @@
  */
 package org.graalvm.compiler.core.phases;
 
+import org.graalvm.collections.EconomicSet;
+import org.graalvm.collections.Equivalence;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Graph.NodeEvent;
 import org.graalvm.compiler.graph.Graph.NodeEventScope;
@@ -32,8 +34,6 @@ import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.common.util.HashSetNodeEventListener;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
-import org.graalvm.util.EconomicSet;
-import org.graalvm.util.Equivalence;
 
 /**
  * A utility phase for detecting when a phase would change the graph and reporting extra information

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,6 @@ import com.sun.source.util.DocTrees;
 import com.sun.source.util.SimpleDocTreeVisitor;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.model.JavacTypes;
-import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils.DocCommentDuo;
 import jdk.javadoc.internal.doclets.toolkit.Messages;

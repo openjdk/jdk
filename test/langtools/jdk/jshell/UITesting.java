@@ -135,8 +135,19 @@ public class UITesting {
     }
 
     protected void waitOutput(StringBuilder out, String expected) {
+        waitOutput(out, expected, null);
+    }
+
+    // Return true if expected is found, false if secondary is found,
+    // otherwise, time out with an IllegalStateException
+    protected boolean waitOutput(StringBuilder out, String expected, String secondary) {
         expected = expected.replaceAll("\n", laxLineEndings ? "\r?\n" : System.getProperty("line.separator"));
         Pattern expectedPattern = Pattern.compile(expected, Pattern.DOTALL);
+        Pattern secondaryPattern = null;
+        if (secondary != null) {
+            secondary = secondary.replaceAll("\n", laxLineEndings ? "\r?\n" : System.getProperty("line.separator"));
+            secondaryPattern = Pattern.compile(secondary, Pattern.DOTALL);
+        }
         synchronized (out) {
             long s = System.currentTimeMillis();
 
@@ -144,7 +155,14 @@ public class UITesting {
                 Matcher m = expectedPattern.matcher(out);
                 if (m.find()) {
                     out.delete(0, m.end());
-                    return ;
+                    return true;
+                }
+                if (secondaryPattern != null) {
+                    m = secondaryPattern.matcher(out);
+                    if (m.find()) {
+                        out.delete(0, m.end());
+                        return false;
+                    }
                 }
                 long e =  System.currentTimeMillis();
                 if ((e - s) > TIMEOUT) {

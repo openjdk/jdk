@@ -598,11 +598,11 @@ void os::print_register_info(outputStream *st, const void *context) {
 
 #ifndef AARCH64
 
-typedef jlong cmpxchg_long_func_t(jlong, jlong, volatile jlong*);
+typedef int64_t cmpxchg_long_func_t(int64_t, int64_t, volatile int64_t*);
 
 cmpxchg_long_func_t* os::atomic_cmpxchg_long_func = os::atomic_cmpxchg_long_bootstrap;
 
-jlong os::atomic_cmpxchg_long_bootstrap(jlong compare_value, jlong exchange_value, volatile jlong* dest) {
+int64_t os::atomic_cmpxchg_long_bootstrap(int64_t compare_value, int64_t exchange_value, volatile int64_t* dest) {
   // try to use the stub:
   cmpxchg_long_func_t* func = CAST_TO_FN_PTR(cmpxchg_long_func_t*, StubRoutines::atomic_cmpxchg_long_entry());
 
@@ -612,16 +612,16 @@ jlong os::atomic_cmpxchg_long_bootstrap(jlong compare_value, jlong exchange_valu
   }
   assert(Threads::number_of_threads() == 0, "for bootstrap only");
 
-  jlong old_value = *dest;
+  int64_t old_value = *dest;
   if (old_value == compare_value)
     *dest = exchange_value;
   return old_value;
 }
-typedef jlong load_long_func_t(const volatile jlong*);
+typedef int64_t load_long_func_t(const volatile int64_t*);
 
 load_long_func_t* os::atomic_load_long_func = os::atomic_load_long_bootstrap;
 
-jlong os::atomic_load_long_bootstrap(const volatile jlong* src) {
+int64_t os::atomic_load_long_bootstrap(const volatile int64_t* src) {
   // try to use the stub:
   load_long_func_t* func = CAST_TO_FN_PTR(load_long_func_t*, StubRoutines::atomic_load_long_entry());
 
@@ -631,15 +631,15 @@ jlong os::atomic_load_long_bootstrap(const volatile jlong* src) {
   }
   assert(Threads::number_of_threads() == 0, "for bootstrap only");
 
-  jlong old_value = *src;
+  int64_t old_value = *src;
   return old_value;
 }
 
-typedef void store_long_func_t(jlong, volatile jlong*);
+typedef void store_long_func_t(int64_t, volatile int64_t*);
 
 store_long_func_t* os::atomic_store_long_func = os::atomic_store_long_bootstrap;
 
-void os::atomic_store_long_bootstrap(jlong val, volatile jlong* dest) {
+void os::atomic_store_long_bootstrap(int64_t val, volatile int64_t* dest) {
   // try to use the stub:
   store_long_func_t* func = CAST_TO_FN_PTR(store_long_func_t*, StubRoutines::atomic_store_long_entry());
 
@@ -652,11 +652,11 @@ void os::atomic_store_long_bootstrap(jlong val, volatile jlong* dest) {
   *dest = val;
 }
 
-typedef jint  atomic_add_func_t(jint add_value, volatile jint *dest);
+typedef int32_t  atomic_add_func_t(int32_t add_value, volatile int32_t *dest);
 
 atomic_add_func_t * os::atomic_add_func = os::atomic_add_bootstrap;
 
-jint  os::atomic_add_bootstrap(jint add_value, volatile jint *dest) {
+int32_t  os::atomic_add_bootstrap(int32_t add_value, volatile int32_t *dest) {
   atomic_add_func_t * func = CAST_TO_FN_PTR(atomic_add_func_t*,
                                             StubRoutines::atomic_add_entry());
   if (func != NULL) {
@@ -664,16 +664,16 @@ jint  os::atomic_add_bootstrap(jint add_value, volatile jint *dest) {
     return (*func)(add_value, dest);
   }
 
-  jint old_value = *dest;
+  int32_t old_value = *dest;
   *dest = old_value + add_value;
   return (old_value + add_value);
 }
 
-typedef jint  atomic_xchg_func_t(jint exchange_value, volatile jint *dest);
+typedef int32_t  atomic_xchg_func_t(int32_t exchange_value, volatile int32_t *dest);
 
 atomic_xchg_func_t * os::atomic_xchg_func = os::atomic_xchg_bootstrap;
 
-jint  os::atomic_xchg_bootstrap(jint exchange_value, volatile jint *dest) {
+int32_t  os::atomic_xchg_bootstrap(int32_t exchange_value, volatile int32_t *dest) {
   atomic_xchg_func_t * func = CAST_TO_FN_PTR(atomic_xchg_func_t*,
                                             StubRoutines::atomic_xchg_entry());
   if (func != NULL) {
@@ -681,16 +681,16 @@ jint  os::atomic_xchg_bootstrap(jint exchange_value, volatile jint *dest) {
     return (*func)(exchange_value, dest);
   }
 
-  jint old_value = *dest;
+  int32_t old_value = *dest;
   *dest = exchange_value;
   return (old_value);
 }
 
-typedef jint cmpxchg_func_t(jint, jint, volatile jint*);
+typedef int32_t cmpxchg_func_t(int32_t, int32_t, volatile int32_t*);
 
 cmpxchg_func_t* os::atomic_cmpxchg_func = os::atomic_cmpxchg_bootstrap;
 
-jint os::atomic_cmpxchg_bootstrap(jint compare_value, jint exchange_value, volatile jint* dest) {
+int32_t os::atomic_cmpxchg_bootstrap(int32_t compare_value, int32_t exchange_value, volatile int32_t* dest) {
   // try to use the stub:
   cmpxchg_func_t* func = CAST_TO_FN_PTR(cmpxchg_func_t*, StubRoutines::atomic_cmpxchg_entry());
 
@@ -700,7 +700,7 @@ jint os::atomic_cmpxchg_bootstrap(jint compare_value, jint exchange_value, volat
   }
   assert(Threads::number_of_threads() == 0, "for bootstrap only");
 
-  jint old_value = *dest;
+  int32_t old_value = *dest;
   if (old_value == compare_value)
     *dest = exchange_value;
   return old_value;

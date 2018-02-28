@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,13 +235,7 @@ private:
   size_t const _page_size;
 public:
   G1PretouchTask(char* start_address, char* end_address, size_t page_size) :
-    AbstractGangTask("G1 PreTouch",
-                     Universe::is_fully_initialized() &&
-                     Thread::current()->is_Named_thread() ? GCId::current_raw() :
-                                                            // During VM initialization there is
-                                                            // no GC cycle that this task can be
-                                                            // associated with.
-                                                            GCId::undefined()),
+    AbstractGangTask("G1 PreTouch"),
     _cur_addr(start_address),
     _start_addr(start_address),
     _end_addr(end_address),

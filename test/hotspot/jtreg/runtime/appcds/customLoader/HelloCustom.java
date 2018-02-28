@@ -25,17 +25,16 @@
 /*
  * @test
  * @summary Hello World test for AppCDS custom loader support
- * (NOTE: AppCDS does not support uncompressed oops)
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires vm.cds.custom.loaders
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile test-classes/Hello.java test-classes/CustomLoadee.java
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller -jar hello.jar Hello
- * @run main ClassFileInstaller -jar hello_custom.jar CustomLoadee
- * @run main ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller -jar hello.jar Hello
+ * @run driver ClassFileInstaller -jar hello_custom.jar CustomLoadee
+ * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
  * @run main HelloCustom
  */
 

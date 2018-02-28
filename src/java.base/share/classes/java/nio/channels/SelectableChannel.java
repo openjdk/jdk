@@ -121,7 +121,7 @@ public abstract class SelectableChannel
     //   keySet, may be empty but is never null, typ. a tiny array
     //   boolean isRegistered, protected by key set
     //   regLock, lock object to prevent duplicate registrations
-    //   boolean isBlocking, protected by regLock
+    //   blocking mode, protected by regLock
 
     /**
      * Tells whether or not this channel is currently registered with any

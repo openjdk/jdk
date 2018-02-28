@@ -389,7 +389,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         }
 
         if ((id == fast_new_instance_id || id == fast_new_instance_init_check_id) &&
-            UseTLAB && FastTLABRefill) {
+            UseTLAB && Universe::heap()->supports_inline_contig_alloc()) {
           Label slow_path;
           Register G1_obj_size = G1;
           Register G3_t1 = G3;
@@ -424,25 +424,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ bind(ok);
           }
 #endif // ASSERT
-          // if we got here then the TLAB allocation failed, so try
-          // refilling the TLAB or allocating directly from eden.
-          Label retry_tlab, try_eden;
-          __ tlab_refill(retry_tlab, try_eden, slow_path); // preserves G5_klass
 
-          __ bind(retry_tlab);
-
-          // get the instance size
-          __ ld(G5_klass, in_bytes(Klass::layout_helper_offset()), G1_obj_size);
-
-          __ tlab_allocate(O0_obj, G1_obj_size, 0, G3_t1, slow_path);
-
-          __ initialize_object(O0_obj, G5_klass, G1_obj_size, 0, G3_t1, G4_t2, /* is_tlab_allocated */ true);
-          __ verify_oop(O0_obj);
-          __ mov(O0, I0);
-          __ ret();
-          __ delayed()->restore();
-
-          __ bind(try_eden);
+          // If we got here then the TLAB allocation failed, so try allocating directly from eden.
           // get the instance size
           __ ld(G5_klass, in_bytes(Klass::layout_helper_offset()), G1_obj_size);
           __ eden_allocate(O0_obj, G1_obj_size, 0, G3_t1, G4_t2, slow_path);
@@ -507,73 +490,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ bind(ok);
         }
 #endif // ASSERT
-
-        if (UseTLAB && FastTLABRefill) {
-          Label slow_path;
-          Register G1_arr_size = G1;
-          Register G3_t1 = G3;
-          Register O1_t2 = O1;
-          assert_different_registers(G5_klass, G4_length, G1_arr_size, G3_t1, O1_t2);
-
-          // check that array length is small enough for fast path
-          __ set(C1_MacroAssembler::max_array_allocation_length, G3_t1);
-          __ cmp(G4_length, G3_t1);
-          __ br(Assembler::greaterUnsigned, false, Assembler::pn, slow_path);
-          __ delayed()->nop();
-
-          // if we got here then the TLAB allocation failed, so try
-          // refilling the TLAB or allocating directly from eden.
-          Label retry_tlab, try_eden;
-          __ tlab_refill(retry_tlab, try_eden, slow_path); // preserves G4_length and G5_klass
-
-          __ bind(retry_tlab);
-
-          // get the allocation size: (length << (layout_helper & 0x1F)) + header_size
-          __ ld(klass_lh, G3_t1);
-          __ sll(G4_length, G3_t1, G1_arr_size);
-          __ srl(G3_t1, Klass::_lh_header_size_shift, G3_t1);
-          __ and3(G3_t1, Klass::_lh_header_size_mask, G3_t1);
-          __ add(G1_arr_size, G3_t1, G1_arr_size);
-          __ add(G1_arr_size, MinObjAlignmentInBytesMask, G1_arr_size);  // align up
-          __ and3(G1_arr_size, ~MinObjAlignmentInBytesMask, G1_arr_size);
-
-          __ tlab_allocate(O0_obj, G1_arr_size, 0, G3_t1, slow_path);  // preserves G1_arr_size
-
-          __ initialize_header(O0_obj, G5_klass, G4_length, G3_t1, O1_t2);
-          __ ldub(klass_lh, G3_t1, klass_lh_header_size_offset);
-          __ sub(G1_arr_size, G3_t1, O1_t2);  // body length
-          __ add(O0_obj, G3_t1, G3_t1);       // body start
-          if (!ZeroTLAB) {
-            __ initialize_body(G3_t1, O1_t2);
-          }
-          __ verify_oop(O0_obj);
-          __ retl();
-          __ delayed()->nop();
-
-          __ bind(try_eden);
-          // get the allocation size: (length << (layout_helper & 0x1F)) + header_size
-          __ ld(klass_lh, G3_t1);
-          __ sll(G4_length, G3_t1, G1_arr_size);
-          __ srl(G3_t1, Klass::_lh_header_size_shift, G3_t1);
-          __ and3(G3_t1, Klass::_lh_header_size_mask, G3_t1);
-          __ add(G1_arr_size, G3_t1, G1_arr_size);
-          __ add(G1_arr_size, MinObjAlignmentInBytesMask, G1_arr_size);
-          __ and3(G1_arr_size, ~MinObjAlignmentInBytesMask, G1_arr_size);
-
-          __ eden_allocate(O0_obj, G1_arr_size, 0, G3_t1, O1_t2, slow_path);  // preserves G1_arr_size
-          __ incr_allocated_bytes(G1_arr_size, G3_t1, O1_t2);
-
-          __ initialize_header(O0_obj, G5_klass, G4_length, G3_t1, O1_t2);
-          __ ldub(klass_lh, G3_t1, klass_lh_header_size_offset);
-          __ sub(G1_arr_size, G3_t1, O1_t2);  // body length
-          __ add(O0_obj, G3_t1, G3_t1);       // body start
-          __ initialize_body(G3_t1, O1_t2);
-          __ verify_oop(O0_obj);
-          __ retl();
-          __ delayed()->nop();
-
-          __ bind(slow_path);
-        }
 
         if (id == new_type_array_id) {
           oop_maps = generate_stub_call(sasm, I0, CAST_FROM_FN_PTR(address, new_type_array), G5_klass, G4_length);

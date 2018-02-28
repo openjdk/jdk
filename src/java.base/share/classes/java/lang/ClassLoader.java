@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -648,21 +648,6 @@ public abstract class ClassLoader {
             }
         }
         return lock;
-    }
-
-    // This method is invoked by the virtual machine to load a class.
-    private Class<?> loadClassInternal(String name)
-        throws ClassNotFoundException
-    {
-        // For backward compatibility, explicitly lock on 'this' when
-        // the current class loader is not parallel capable.
-        if (parallelLockMap == null) {
-            synchronized (this) {
-                 return loadClass(name);
-            }
-        } else {
-            return loadClass(name);
-        }
     }
 
     // Invoked by the VM after loading class with this loader.
@@ -1876,14 +1861,15 @@ public abstract class ClassLoader {
      * value until the system is fully initialized.
      *
      * <p> The name of the built-in system class loader is {@code "app"}.
-     * The class path used by the built-in system class loader is determined
-     * by the system property "{@code java.class.path}" during early
-     * initialization of the VM. If the system property is not defined,
-     * or its value is an empty string, then there is no class path
-     * when the initial module is a module on the application module path,
-     * i.e. <em>a named module</em>. If the initial module is not on
-     * the application module path then the class path defaults to
-     * the current working directory.
+     * The system property "{@code java.class.path}" is read during early
+     * initialization of the VM to determine the class path.
+     * An empty value of "{@code java.class.path}" property is interpreted
+     * differently depending on whether the initial module (the module
+     * containing the main class) is named or unnamed:
+     * If named, the built-in system class loader will have no class path and
+     * will search for classes and resources using the application module path;
+     * otherwise, if unnamed, it will set the class path to the current
+     * working directory.
      *
      * @return  The system {@code ClassLoader}
      *
@@ -1921,7 +1907,7 @@ public abstract class ClassLoader {
             case 3:
                 String msg = "getSystemClassLoader cannot be called during the system class loader instantiation";
                 throw new IllegalStateException(msg);
-            case 4:
+            default:
                 // system fully initialized
                 assert VM.isBooted() && scl != null;
                 SecurityManager sm = System.getSecurityManager();
@@ -1929,8 +1915,6 @@ public abstract class ClassLoader {
                     checkClassLoaderPermission(scl, Reflection.getCallerClass());
                 }
                 return scl;
-            default:
-                throw new InternalError("should not reach here");
         }
     }
 

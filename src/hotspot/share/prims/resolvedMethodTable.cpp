@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "memory/allocation.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/method.hpp"
 #include "oops/symbol.hpp"
@@ -33,10 +34,20 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
-#endif
 
+
+oop ResolvedMethodEntry::object() {
+  return RootAccess<ON_PHANTOM_OOP_REF>::oop_load(literal_addr());
+}
+
+oop ResolvedMethodEntry::object_no_keepalive() {
+  // The AS_NO_KEEPALIVE peeks at the oop without keeping it alive.
+  // This is dangerous in general but is okay if the loaded oop does
+  // not leak out past a thread transition where a safepoint can happen.
+  // A subsequent oop_load without AS_NO_KEEPALIVE (the object() accessor)
+  // keeps the oop alive before doing so.
+  return RootAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(literal_addr());
+}
 
 ResolvedMethodTable::ResolvedMethodTable()
   : Hashtable<oop, mtClass>(_table_size, sizeof(ResolvedMethodEntry)) { }
@@ -44,13 +55,18 @@ ResolvedMethodTable::ResolvedMethodTable()
 oop ResolvedMethodTable::lookup(int index, unsigned int hash, Method* method) {
   for (ResolvedMethodEntry* p = bucket(index); p != NULL; p = p->next()) {
     if (p->hash() == hash) {
-      oop target = p->literal();
+
+      // Peek the object to check if it is the right target.
+      oop target = p->object_no_keepalive();
+
       // The method is in the table as a target already
       if (java_lang_invoke_ResolvedMethodName::vmtarget(target) == method) {
         ResourceMark rm;
         log_debug(membername, table) ("ResolvedMethod entry found for %s index %d",
                                        method->name_and_sig_as_C_string(), index);
-        return target;
+        // The object() accessor makes sure the target object is kept alive before
+        // leaking out.
+        return p->object();
       }
     }
   }
@@ -70,18 +86,6 @@ oop ResolvedMethodTable::lookup(Method* method) {
   return lookup(index, hash, method);
 }
 
-// Tell the GC that this oop was looked up in the table
-static void ensure_oop_alive(oop mname) {
-  // A lookup in the ResolvedMethodTable could return an object that was previously
-  // considered dead. The SATB part of G1 needs to get notified about this
-  // potential resurrection, otherwise the marking might not find the object.
-#if INCLUDE_ALL_GCS
-  if (UseG1GC && mname != NULL) {
-    G1SATBCardTableModRefBS::enqueue(mname);
-  }
-#endif
-}
-
 oop ResolvedMethodTable::basic_add(Method* method, oop rmethod_name) {
   assert_locked_or_safepoint(ResolvedMethodTable_lock);
 
@@ -91,7 +95,6 @@ oop ResolvedMethodTable::basic_add(Method* method, oop rmethod_name) {
   // One was added while aquiring the lock
   oop entry = lookup(index, hash, method);
   if (entry != NULL) {
-    ensure_oop_alive(entry);
     return entry;
   }
 
@@ -100,14 +103,13 @@ oop ResolvedMethodTable::basic_add(Method* method, oop rmethod_name) {
   ResourceMark rm;
   log_debug(membername, table) ("ResolvedMethod entry added for %s index %d",
                                  method->name_and_sig_as_C_string(), index);
-  return p->literal();
+  return rmethod_name;
 }
 
 ResolvedMethodTable* ResolvedMethodTable::_the_table = NULL;
 
 oop ResolvedMethodTable::find_method(Method* method) {
   oop entry = _the_table->lookup(method);
-  ensure_oop_alive(entry);
   return entry;
 }
 
@@ -147,12 +149,12 @@ void ResolvedMethodTable::unlink(BoolObjectClosure* is_alive) {
     ResolvedMethodEntry* entry = _the_table->bucket(i);
     while (entry != NULL) {
       _oops_counted++;
-      if (is_alive->do_object_b(entry->literal())) {
+      if (is_alive->do_object_b(entry->object_no_keepalive())) {
         p = entry->next_addr();
       } else {
         _oops_removed++;
         if (log_is_enabled(Debug, membername, table)) {
-          Method* m = (Method*)java_lang_invoke_ResolvedMethodName::vmtarget(entry->literal());
+          Method* m = (Method*)java_lang_invoke_ResolvedMethodName::vmtarget(entry->object_no_keepalive());
           ResourceMark rm;
           log_debug(membername, table) ("ResolvedMethod entry removed for %s index %d",
                                            m->name_and_sig_as_C_string(), i);
@@ -185,7 +187,7 @@ void ResolvedMethodTable::print() {
     ResolvedMethodEntry* entry = bucket(i);
     while (entry != NULL) {
       tty->print("%d : ", i);
-      oop rmethod_name = entry->literal();
+      oop rmethod_name = entry->object_no_keepalive();
       rmethod_name->print();
       Method* m = (Method*)java_lang_invoke_ResolvedMethodName::vmtarget(rmethod_name);
       m->print();
@@ -203,8 +205,7 @@ void ResolvedMethodTable::adjust_method_entries(bool * trace_name_printed) {
   for (int i = 0; i < _the_table->table_size(); ++i) {
     ResolvedMethodEntry* entry = _the_table->bucket(i);
     while (entry != NULL) {
-
-      oop mem_name = entry->literal();
+      oop mem_name = entry->object_no_keepalive();
       Method* old_method = (Method*)java_lang_invoke_ResolvedMethodName::vmtarget(mem_name);
 
       if (old_method->is_old()) {

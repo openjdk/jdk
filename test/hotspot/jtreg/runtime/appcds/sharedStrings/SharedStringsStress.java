@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,7 @@
 /*
  * @test
  * @summary Write a lots of shared strings.
- * Feature support: G1GC only, compressed oops/kptrs, 64-bit os, not on windows
- * @requires (sun.arch.data.model != "32") & (os.family != "windows")
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
- * @requires vm.gc.G1
+ * @requires vm.cds.archived.java.heap
  * @library /test/hotspot/jtreg/runtime/appcds /test/lib
  * @modules jdk.jartool/sun.tools.jar
  * @build HelloString

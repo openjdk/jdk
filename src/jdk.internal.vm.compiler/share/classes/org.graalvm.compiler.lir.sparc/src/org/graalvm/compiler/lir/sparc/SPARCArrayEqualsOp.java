@@ -36,9 +36,6 @@ import static org.graalvm.compiler.asm.sparc.SPARCAssembler.ConditionFlag.Less;
 import static org.graalvm.compiler.asm.sparc.SPARCAssembler.ConditionFlag.NotEqual;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.asm.sparc.SPARCAddress;
 import org.graalvm.compiler.asm.sparc.SPARCMacroAssembler;
@@ -52,7 +49,6 @@ import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.sparc.SPARCKind;
-import sun.misc.Unsafe;
 
 /**
  * Emits code which compares two arrays of the same length.
@@ -82,9 +78,8 @@ public final class SPARCArrayEqualsOp extends SPARCLIRInstruction {
         assert !kind.isNumericFloat() : "Float arrays comparison (bitwise_equal || both_NaN) isn't supported";
         this.kind = kind;
 
-        Class<?> arrayClass = Array.newInstance(kind.toJavaClass(), 0).getClass();
-        this.arrayBaseOffset = UNSAFE.arrayBaseOffset(arrayClass);
-        this.arrayIndexScale = UNSAFE.arrayIndexScale(arrayClass);
+        this.arrayBaseOffset = tool.getProviders().getArrayOffsetProvider().arrayBaseOffset(kind);
+        this.arrayIndexScale = tool.getProviders().getArrayOffsetProvider().arrayScalingFactor(kind);
 
         this.resultValue = result;
         this.array1Value = array1;
@@ -244,22 +239,6 @@ public final class SPARCArrayEqualsOp extends SPARCLIRInstruction {
                 }
             } else {
                 masm.bind(compare2Bytes);
-            }
-        }
-    }
-
-    private static final Unsafe UNSAFE = initUnsafe();
-
-    private static Unsafe initUnsafe() {
-        try {
-            return Unsafe.getUnsafe();
-        } catch (SecurityException se) {
-            try {
-                Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-                theUnsafe.setAccessible(true);
-                return (Unsafe) theUnsafe.get(Unsafe.class);
-            } catch (Exception e) {
-                throw new RuntimeException("exception while trying to get Unsafe", e);
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -712,19 +712,19 @@ public class JavacFiler implements Filer, Closeable {
     }
 
     private void checkNameAndExistence(ModuleSymbol mod, String typename, boolean allowUnnamedPackageInfo) throws FilerException {
-        // TODO: Check if type already exists on source or class path?
-        // If so, use warning message key proc.type.already.exists
         checkName(typename, allowUnnamedPackageInfo);
-        ClassSymbol existing;
+        ClassSymbol existing = elementUtils.getTypeElement(typename);
         boolean alreadySeen = aggregateGeneratedSourceNames.contains(Pair.of(mod, typename)) ||
                               aggregateGeneratedClassNames.contains(Pair.of(mod, typename)) ||
                               initialClassNames.contains(typename) ||
-                              ((existing = elementUtils.getTypeElement(typename)) != null &&
-                               initialInputs.contains(existing.sourcefile));
+                              (existing != null && initialInputs.contains(existing.sourcefile));
         if (alreadySeen) {
             if (lint)
                 log.warning(Warnings.ProcTypeRecreate(typename));
             throw new FilerException("Attempt to recreate a file for type " + typename);
+        }
+        if (lint && existing != null) {
+            log.warning(Warnings.ProcTypeAlreadyExists(typename));
         }
         if (!mod.isUnnamed() && !typename.contains(".")) {
             throw new FilerException("Attempt to create a type in unnamed package of a named module: " + typename);

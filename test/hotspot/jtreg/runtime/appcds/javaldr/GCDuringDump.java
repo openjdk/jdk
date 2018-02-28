@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @test
  * @summary When dumping the CDS archive, try to cause garbage collection while classes are being loaded.
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds /test/hotspot/jtreg/runtime/appcds/test-classes
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires vm.flavor != "minimal"
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar
@@ -67,13 +67,13 @@ public class GCDuringDump {
             TestCommon.testDump(appJar, TestCommon.list("Hello"),
                                 extraArg, "-Xmx32m", gcLog);
 
-            OutputAnalyzer output = TestCommon.execCommon(
+            TestCommon.run(
                 "-cp", appJar,
                 "-Xmx32m",
                 "-XX:+PrintSharedSpaces",
                 gcLog,
-                "Hello");
-            TestCommon.checkExec(output);
+                "Hello")
+              .assertNormalExit();
         }
     }
 }

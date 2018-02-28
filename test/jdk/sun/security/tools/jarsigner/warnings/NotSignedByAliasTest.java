@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,29 +49,19 @@ public class NotSignedByAliasTest extends Test {
         Utils.createFiles(FIRST_FILE);
         JarUtils.createJar(UNSIGNED_JARFILE, FIRST_FILE);
 
-        // create first key pair for signing
-        keytool(
-                "-genkey",
-                "-alias", FIRST_KEY_ALIAS,
-                "-keyalg", KEY_ALG,
-                "-keysize", Integer.toString(KEY_SIZE),
-                "-keystore", KEYSTORE,
-                "-storepass", PASSWORD,
-                "-keypass", PASSWORD,
-                "-dname", "CN=First",
-                "-validity", Integer.toString(VALIDITY)).shouldHaveExitValue(0);
+        createAlias(CA_KEY_ALIAS);
 
         // create first key pair for signing
-        keytool(
-                "-genkey",
-                "-alias", SECOND_KEY_ALIAS,
-                "-keyalg", KEY_ALG,
-                "-keysize", Integer.toString(KEY_SIZE),
-                "-keystore", KEYSTORE,
-                "-storepass", PASSWORD,
-                "-keypass", PASSWORD,
-                "-dname", "CN=Second",
-                "-validity", Integer.toString(VALIDITY)).shouldHaveExitValue(0);
+        createAlias(FIRST_KEY_ALIAS);
+        issueCert(
+                FIRST_KEY_ALIAS,
+                "-validity", Integer.toString(VALIDITY));
+
+        // create first key pair for signing
+        createAlias(SECOND_KEY_ALIAS);
+        issueCert(
+                SECOND_KEY_ALIAS,
+                "-validity", Integer.toString(VALIDITY));
 
         // sign jar with first key
         OutputAnalyzer analyzer = jarsigner(

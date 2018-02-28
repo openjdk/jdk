@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -419,7 +419,7 @@ void TemplateTable::sipush() {
 void TemplateTable::ldc(bool wide) {
   transition(vtos, vtos);
   Register rarg = NOT_LP64(rcx) LP64_ONLY(c_rarg1);
-  Label call_ldc, notFloat, notClass, Done;
+  Label call_ldc, notFloat, notClass, notInt, Done;
 
   if (wide) {
     __ get_unsigned_2_byte_index_at_bcp(rbx, 1);
@@ -465,19 +465,18 @@ void TemplateTable::ldc(bool wide) {
   __ jmp(Done);
 
   __ bind(notFloat);
-#ifdef ASSERT
-  {
-    Label L;
-    __ cmpl(rdx, JVM_CONSTANT_Integer);
-    __ jcc(Assembler::equal, L);
-    // String and Object are rewritten to fast_aldc
-    __ stop("unexpected tag type in ldc");
-    __ bind(L);
-  }
-#endif
-  // itos JVM_CONSTANT_Integer only
+  __ cmpl(rdx, JVM_CONSTANT_Integer);
+  __ jccb(Assembler::notEqual, notInt);
+
+  // itos
   __ movl(rax, Address(rcx, rbx, Address::times_ptr, base_offset));
   __ push(itos);
+  __ jmp(Done);
+
+  // assume the tag is for condy; if not, the VM runtime will tell us
+  __ bind(notInt);
+  condy_helper(Done);
+
   __ bind(Done);
 }
 
@@ -487,6 +486,7 @@ void TemplateTable::fast_aldc(bool wide) {
 
   Register result = rax;
   Register tmp = rdx;
+  Register rarg = NOT_LP64(rcx) LP64_ONLY(c_rarg1);
   int index_size = wide ? sizeof(u2) : sizeof(u1);
 
   Label resolved;
@@ -496,16 +496,27 @@ void TemplateTable::fast_aldc(bool wide) {
   assert_different_registers(result, tmp);
   __ get_cache_index_at_bcp(tmp, 1, index_size);
   __ load_resolved_reference_at_index(result, tmp);
-  __ testl(result, result);
+  __ testptr(result, result);
   __ jcc(Assembler::notZero, resolved);
 
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc);
 
   // first time invocation - must resolve first
-  __ movl(tmp, (int)bytecode());
-  __ call_VM(result, entry, tmp);
-
+  __ movl(rarg, (int)bytecode());
+  __ call_VM(result, entry, rarg);
   __ bind(resolved);
+
+  { // Check for the null sentinel.
+    // If we just called the VM, that already did the mapping for us,
+    // but it's harmless to retry.
+    Label notNull;
+    ExternalAddress null_sentinel((address)Universe::the_null_sentinel_addr());
+    __ movptr(tmp, null_sentinel);
+    __ cmpptr(tmp, result);
+    __ jccb(Assembler::notEqual, notNull);
+    __ xorptr(result, result);  // NULL object reference
+    __ bind(notNull);
+  }
 
   if (VerifyOops) {
     __ verify_oop(result);
@@ -514,7 +525,7 @@ void TemplateTable::fast_aldc(bool wide) {
 
 void TemplateTable::ldc2_w() {
   transition(vtos, vtos);
-  Label Long, Done;
+  Label notDouble, notLong, Done;
   __ get_unsigned_2_byte_index_at_bcp(rbx, 1);
 
   __ get_cpool_and_tags(rcx, rax);
@@ -522,23 +533,141 @@ void TemplateTable::ldc2_w() {
   const int tags_offset = Array<u1>::base_offset_in_bytes();
 
   // get type
-  __ cmpb(Address(rax, rbx, Address::times_1, tags_offset),
-          JVM_CONSTANT_Double);
-  __ jccb(Assembler::notEqual, Long);
+  __ movzbl(rdx, Address(rax, rbx, Address::times_1, tags_offset));
+  __ cmpl(rdx, JVM_CONSTANT_Double);
+  __ jccb(Assembler::notEqual, notDouble);
 
   // dtos
   __ load_double(Address(rcx, rbx, Address::times_ptr, base_offset));
   __ push(dtos);
 
-  __ jmpb(Done);
-  __ bind(Long);
+  __ jmp(Done);
+  __ bind(notDouble);
+  __ cmpl(rdx, JVM_CONSTANT_Long);
+  __ jccb(Assembler::notEqual, notLong);
 
   // ltos
   __ movptr(rax, Address(rcx, rbx, Address::times_ptr, base_offset + 0 * wordSize));
   NOT_LP64(__ movptr(rdx, Address(rcx, rbx, Address::times_ptr, base_offset + 1 * wordSize)));
   __ push(ltos);
+  __ jmp(Done);
+
+  __ bind(notLong);
+  condy_helper(Done);
 
   __ bind(Done);
+}
+
+void TemplateTable::condy_helper(Label& Done) {
+  const Register obj = rax;
+  const Register off = rbx;
+  const Register flags = rcx;
+  const Register rarg = NOT_LP64(rcx) LP64_ONLY(c_rarg1);
+  __ movl(rarg, (int)bytecode());
+  call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc), rarg);
+#ifndef _LP64
+  // borrow rdi from locals
+  __ get_thread(rdi);
+  __ get_vm_result_2(flags, rdi);
+  __ restore_locals();
+#else
+  __ get_vm_result_2(flags, r15_thread);
+#endif
+  // VMr = obj = base address to find primitive value to push
+  // VMr2 = flags = (tos, off) using format of CPCE::_flags
+  __ movl(off, flags);
+  __ andl(off, ConstantPoolCacheEntry::field_index_mask);
+  const Address field(obj, off, Address::times_1, 0*wordSize);
+
+  // What sort of thing are we loading?
+  __ shrl(flags, ConstantPoolCacheEntry::tos_state_shift);
+  __ andl(flags, ConstantPoolCacheEntry::tos_state_mask);
+
+  switch (bytecode()) {
+  case Bytecodes::_ldc:
+  case Bytecodes::_ldc_w:
+    {
+      // tos in (itos, ftos, stos, btos, ctos, ztos)
+      Label notInt, notFloat, notShort, notByte, notChar, notBool;
+      __ cmpl(flags, itos);
+      __ jcc(Assembler::notEqual, notInt);
+      // itos
+      __ movl(rax, field);
+      __ push(itos);
+      __ jmp(Done);
+
+      __ bind(notInt);
+      __ cmpl(flags, ftos);
+      __ jcc(Assembler::notEqual, notFloat);
+      // ftos
+      __ load_float(field);
+      __ push(ftos);
+      __ jmp(Done);
+
+      __ bind(notFloat);
+      __ cmpl(flags, stos);
+      __ jcc(Assembler::notEqual, notShort);
+      // stos
+      __ load_signed_short(rax, field);
+      __ push(stos);
+      __ jmp(Done);
+
+      __ bind(notShort);
+      __ cmpl(flags, btos);
+      __ jcc(Assembler::notEqual, notByte);
+      // btos
+      __ load_signed_byte(rax, field);
+      __ push(btos);
+      __ jmp(Done);
+
+      __ bind(notByte);
+      __ cmpl(flags, ctos);
+      __ jcc(Assembler::notEqual, notChar);
+      // ctos
+      __ load_unsigned_short(rax, field);
+      __ push(ctos);
+      __ jmp(Done);
+
+      __ bind(notChar);
+      __ cmpl(flags, ztos);
+      __ jcc(Assembler::notEqual, notBool);
+      // ztos
+      __ load_signed_byte(rax, field);
+      __ push(ztos);
+      __ jmp(Done);
+
+      __ bind(notBool);
+      break;
+    }
+
+  case Bytecodes::_ldc2_w:
+    {
+      Label notLong, notDouble;
+      __ cmpl(flags, ltos);
+      __ jcc(Assembler::notEqual, notLong);
+      // ltos
+      __ movptr(rax, field);
+      NOT_LP64(__ movptr(rdx, field.plus_disp(4)));
+      __ push(ltos);
+      __ jmp(Done);
+
+      __ bind(notLong);
+      __ cmpl(flags, dtos);
+      __ jcc(Assembler::notEqual, notDouble);
+      // dtos
+      __ load_double(field);
+      __ push(dtos);
+      __ jmp(Done);
+
+      __ bind(notDouble);
+      break;
+    }
+
+  default:
+    ShouldNotReachHere();
+  }
+
+  __ stop("bad ldc/condy");
 }
 
 void TemplateTable::locals_index(Register reg, int offset) {
@@ -2563,11 +2692,16 @@ void TemplateTable::_return(TosState state) {
     __ bind(skip_register_finalizer);
   }
 
-#ifdef _LP64
   if (SafepointMechanism::uses_thread_local_poll() && _desc->bytecode() != Bytecodes::_return_register_finalizer) {
     Label no_safepoint;
     NOT_PRODUCT(__ block_comment("Thread-local Safepoint poll"));
+#ifdef _LP64
     __ testb(Address(r15_thread, Thread::polling_page_offset()), SafepointMechanism::poll_bit());
+#else
+    const Register thread = rdi;
+    __ get_thread(thread);
+    __ testb(Address(thread, Thread::polling_page_offset()), SafepointMechanism::poll_bit());
+#endif
     __ jcc(Assembler::zero, no_safepoint);
     __ push(state);
     __ call_VM(noreg, CAST_FROM_FN_PTR(address,
@@ -2575,7 +2709,6 @@ void TemplateTable::_return(TosState state) {
     __ pop(state);
     __ bind(no_safepoint);
   }
-#endif
 
   // Narrow result if state is itos but result type is smaller.
   // Need to narrow in the return bytecode rather than in generate_return_entry
@@ -3869,7 +4002,6 @@ void TemplateTable::_new() {
   Label done;
   Label initialize_header;
   Label initialize_object;  // including clearing the fields
-  Label allocate_shared;
 
   __ get_cpool_and_tags(rcx, rax);
 
@@ -3895,12 +4027,19 @@ void TemplateTable::_new() {
   __ testl(rdx, Klass::_lh_instance_slow_path_bit);
   __ jcc(Assembler::notZero, slow_case);
 
+  // Allocate the instance:
+  //  If TLAB is enabled:
+  //    Try to allocate in the TLAB.
+  //    If fails, go to the slow path.
+  //  Else If inline contiguous allocations are enabled:
+  //    Try to allocate in eden.
+  //    If fails due to heap end, go to slow path.
   //
-  // Allocate the instance
-  // 1) Try to allocate in the TLAB
-  // 2) if fail and the object is large allocate in the shared Eden
-  // 3) if the above fails (or is not applicable), go to a slow case
-  // (creates a new TLAB, etc.)
+  //  If TLAB is enabled OR inline contiguous is enabled:
+  //    Initialize the allocation.
+  //    Exit.
+  //
+  //  Go to slow path.
 
   const bool allow_shared_alloc =
     Universe::heap()->supports_inline_contig_alloc();
@@ -3916,7 +4055,7 @@ void TemplateTable::_new() {
     __ movptr(rax, Address(thread, in_bytes(JavaThread::tlab_top_offset())));
     __ lea(rbx, Address(rax, rdx, Address::times_1));
     __ cmpptr(rbx, Address(thread, in_bytes(JavaThread::tlab_end_offset())));
-    __ jcc(Assembler::above, allow_shared_alloc ? allocate_shared : slow_case);
+    __ jcc(Assembler::above, slow_case);
     __ movptr(Address(thread, in_bytes(JavaThread::tlab_top_offset())), rbx);
     if (ZeroTLAB) {
       // the fields have been already cleared
@@ -3925,40 +4064,40 @@ void TemplateTable::_new() {
       // initialize both the header and fields
       __ jmp(initialize_object);
     }
-  }
-
-  // Allocation in the shared Eden, if allowed.
-  //
-  // rdx: instance size in bytes
-  if (allow_shared_alloc) {
-    __ bind(allocate_shared);
-
-    ExternalAddress heap_top((address)Universe::heap()->top_addr());
-    ExternalAddress heap_end((address)Universe::heap()->end_addr());
-
-    Label retry;
-    __ bind(retry);
-    __ movptr(rax, heap_top);
-    __ lea(rbx, Address(rax, rdx, Address::times_1));
-    __ cmpptr(rbx, heap_end);
-    __ jcc(Assembler::above, slow_case);
-
-    // Compare rax, with the top addr, and if still equal, store the new
-    // top addr in rbx, at the address of the top addr pointer. Sets ZF if was
-    // equal, and clears it otherwise. Use lock prefix for atomicity on MPs.
+  } else {
+    // Allocation in the shared Eden, if allowed.
     //
-    // rax,: object begin
-    // rbx,: object end
     // rdx: instance size in bytes
-    __ locked_cmpxchgptr(rbx, heap_top);
+    if (allow_shared_alloc) {
+      ExternalAddress heap_top((address)Universe::heap()->top_addr());
+      ExternalAddress heap_end((address)Universe::heap()->end_addr());
 
-    // if someone beat us on the allocation, try again, otherwise continue
-    __ jcc(Assembler::notEqual, retry);
+      Label retry;
+      __ bind(retry);
+      __ movptr(rax, heap_top);
+      __ lea(rbx, Address(rax, rdx, Address::times_1));
+      __ cmpptr(rbx, heap_end);
+      __ jcc(Assembler::above, slow_case);
 
-    __ incr_allocated_bytes(thread, rdx, 0);
+      // Compare rax, with the top addr, and if still equal, store the new
+      // top addr in rbx, at the address of the top addr pointer. Sets ZF if was
+      // equal, and clears it otherwise. Use lock prefix for atomicity on MPs.
+      //
+      // rax,: object begin
+      // rbx,: object end
+      // rdx: instance size in bytes
+      __ locked_cmpxchgptr(rbx, heap_top);
+
+      // if someone beat us on the allocation, try again, otherwise continue
+      __ jcc(Assembler::notEqual, retry);
+
+      __ incr_allocated_bytes(thread, rdx, 0);
+    }
   }
 
-  if (UseTLAB || Universe::heap()->supports_inline_contig_alloc()) {
+  // If UseTLAB or allow_shared_alloc are true, the object is created above and
+  // there is an initialize need. Otherwise, skip and go to the slow path.
+  if (UseTLAB || allow_shared_alloc) {
     // The object is initialized before the header.  If the object size is
     // zero, go directly to the header initialization.
     __ bind(initialize_object);

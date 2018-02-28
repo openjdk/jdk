@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,7 +296,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
       // change byte-ordering and go via cache
       i = remapInstructionOperandFromCache(which);
     } else {
-      if (getTagAt(which).isInvokeDynamic()) {
+      if (getTagAt(which).isInvokeDynamic() || getTagAt(which).isDynamicConstant()) {
         int poolIndex = invokeDynamicNameAndTypeRefIndexAt(which);
         Assert.that(getTagAt(poolIndex).isNameAndType(), "");
         return poolIndex;
@@ -339,24 +339,28 @@ public class ConstantPool extends Metadata implements ClassConstants {
   }
 
   // returns null, if not resolved.
-  public InstanceKlass getFieldOrMethodKlassRefAt(int which) {
+  public Klass getFieldOrMethodKlassRefAt(int which) {
     int refIndex = getFieldOrMethodAt(which);
     int klassIndex = extractLowShortFromInt(refIndex);
-    return (InstanceKlass) getKlassAt(klassIndex);
+    return getKlassAt(klassIndex);
   }
 
   // returns null, if not resolved.
   public Method getMethodRefAt(int which) {
-    InstanceKlass klass = getFieldOrMethodKlassRefAt(which);
+    Klass klass = getFieldOrMethodKlassRefAt(which);
     if (klass == null) return null;
     Symbol name = getNameRefAt(which);
     Symbol sig  = getSignatureRefAt(which);
-    return klass.findMethod(name, sig);
+    // Consider the super class for arrays. (java.lang.Object)
+    if (klass.isArrayKlass()) {
+       klass = klass.getJavaSuper();
+    }
+    return ((InstanceKlass)klass).findMethod(name, sig);
   }
 
   // returns null, if not resolved.
   public Field getFieldRefAt(int which) {
-    InstanceKlass klass = getFieldOrMethodKlassRefAt(which);
+    InstanceKlass klass = (InstanceKlass)getFieldOrMethodKlassRefAt(which);
     if (klass == null) return null;
     Symbol name = getNameRefAt(which);
     Symbol sig  = getSignatureRefAt(which);
@@ -429,10 +433,10 @@ public class ConstantPool extends Metadata implements ClassConstants {
     return res;
   }
 
-  /** Lookup for multi-operand (InvokeDynamic) entries. */
+  /** Lookup for multi-operand (InvokeDynamic, Dynamic) entries. */
   public short[] getBootstrapSpecifierAt(int i) {
     if (Assert.ASSERTS_ENABLED) {
-      Assert.that(getTagAt(i).isInvokeDynamic(), "Corrupted constant pool");
+      Assert.that(getTagAt(i).isInvokeDynamic() || getTagAt(i).isDynamicConstant(), "Corrupted constant pool");
     }
     int bsmSpec = extractLowShortFromInt(this.getIntAt(i));
     U2Array operands = getOperands();
@@ -468,6 +472,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
     case JVM_CONSTANT_NameAndType:        return "JVM_CONSTANT_NameAndType";
     case JVM_CONSTANT_MethodHandle:       return "JVM_CONSTANT_MethodHandle";
     case JVM_CONSTANT_MethodType:         return "JVM_CONSTANT_MethodType";
+    case JVM_CONSTANT_Dynamic:            return "JVM_CONSTANT_Dynamic";
     case JVM_CONSTANT_InvokeDynamic:      return "JVM_CONSTANT_InvokeDynamic";
     case JVM_CONSTANT_Invalid:            return "JVM_CONSTANT_Invalid";
     case JVM_CONSTANT_UnresolvedClass:    return "JVM_CONSTANT_UnresolvedClass";
@@ -524,6 +529,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
         case JVM_CONSTANT_NameAndType:
         case JVM_CONSTANT_MethodHandle:
         case JVM_CONSTANT_MethodType:
+        case JVM_CONSTANT_Dynamic:
         case JVM_CONSTANT_InvokeDynamic:
           visitor.doInt(new IntField(new NamedFieldIdentifier(nameForTag(ctag)), indexOffset(index), true), true);
           break;

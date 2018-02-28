@@ -30,7 +30,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 
-import jdk.vm.ci.code.RegisterConfig;
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.Equivalence;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.debug.CounterKey;
@@ -43,11 +44,10 @@ import org.graalvm.compiler.lir.StandardOp.ValueMoveOp;
 import org.graalvm.compiler.lir.framemap.FrameMap;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.phases.PostAllocationOptimizationPhase;
-import org.graalvm.util.EconomicMap;
-import org.graalvm.util.Equivalence;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.RegisterArray;
+import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.RegisterValue;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.TargetDescription;

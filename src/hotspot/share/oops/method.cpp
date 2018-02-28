@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -446,7 +446,7 @@ MethodCounters* Method::build_method_counters(Method* m, TRAPS) {
 
 bool Method::init_method_counters(MethodCounters* counters) {
   // Try to install a pointer to MethodCounters, return true on success.
-  return Atomic::cmpxchg(counters, &_method_counters, (MethodCounters*)NULL) == NULL;
+  return Atomic::replace_if_null(counters, &_method_counters);
 }
 
 void Method::cleanup_inline_caches() {
@@ -2180,7 +2180,7 @@ bool Method::is_valid_method() const {
   } else if ((intptr_t(this) & (wordSize-1)) != 0) {
     // Quick sanity check on pointer.
     return false;
-  } else if (MetaspaceShared::is_in_shared_space(this)) {
+  } else if (is_shared()) {
     return MetaspaceShared::is_valid_shared_method(this);
   } else if (Metaspace::contains_non_shared(this)) {
     return has_method_vptr((const void*)this);

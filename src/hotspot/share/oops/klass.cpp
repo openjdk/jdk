@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -577,21 +577,15 @@ const char* Klass::external_name() const {
   if (is_instance_klass()) {
     const InstanceKlass* ik = static_cast<const InstanceKlass*>(this);
     if (ik->is_anonymous()) {
-      intptr_t hash = 0;
-      if (ik->java_mirror() != NULL) {
-        // java_mirror might not be created yet, return 0 as hash.
-        hash = ik->java_mirror()->identity_hash();
-      }
-      char     hash_buf[40];
-      sprintf(hash_buf, "/" UINTX_FORMAT, (uintx)hash);
-      size_t   hash_len = strlen(hash_buf);
-
-      size_t result_len = name()->utf8_length();
-      char*  result     = NEW_RESOURCE_ARRAY(char, result_len + hash_len + 1);
-      name()->as_klass_external_name(result, (int) result_len + 1);
-      assert(strlen(result) == result_len, "");
-      strcpy(result + result_len, hash_buf);
-      assert(strlen(result) == result_len + hash_len, "");
+      char addr_buf[20];
+      jio_snprintf(addr_buf, 20, "/" INTPTR_FORMAT, p2i(ik));
+      size_t addr_len = strlen(addr_buf);
+      size_t name_len = name()->utf8_length();
+      char*  result   = NEW_RESOURCE_ARRAY(char, name_len + addr_len + 1);
+      name()->as_klass_external_name(result, (int) name_len + 1);
+      assert(strlen(result) == name_len, "");
+      strcpy(result + name_len, addr_buf);
+      assert(strlen(result) == name_len + addr_len, "");
       return result;
     }
   }
@@ -737,4 +731,82 @@ bool Klass::verify_itable_index(int i) {
   return true;
 }
 
-#endif
+#endif // PRODUCT
+
+// The caller of class_loader_and_module_name() (or one of its callers)
+// must use a ResourceMark in order to correctly free the result.
+const char* Klass::class_loader_and_module_name() const {
+  const char* delim = "/";
+  size_t delim_len = strlen(delim);
+
+  const char* fqn = external_name();
+  // Length of message to return; always include FQN
+  size_t msglen = strlen(fqn) + 1;
+
+  bool has_cl_name = false;
+  bool has_mod_name = false;
+  bool has_version = false;
+
+  // Use class loader name, if exists and not builtin
+  const char* class_loader_name = "";
+  ClassLoaderData* cld = class_loader_data();
+  assert(cld != NULL, "class_loader_data should not be NULL");
+  if (!cld->is_builtin_class_loader_data()) {
+    // If not builtin, look for name
+    oop loader = class_loader();
+    if (loader != NULL) {
+      oop class_loader_name_oop = java_lang_ClassLoader::name(loader);
+      if (class_loader_name_oop != NULL) {
+        class_loader_name = java_lang_String::as_utf8_string(class_loader_name_oop);
+        if (class_loader_name != NULL && class_loader_name[0] != '\0') {
+          has_cl_name = true;
+          msglen += strlen(class_loader_name) + delim_len;
+        }
+      }
+    }
+  }
+
+  const char* module_name = "";
+  const char* version = "";
+  const Klass* bottom_klass = is_objArray_klass() ?
+    ObjArrayKlass::cast(this)->bottom_klass() : this;
+  if (bottom_klass->is_instance_klass()) {
+    ModuleEntry* module = InstanceKlass::cast(bottom_klass)->module();
+    // Use module name, if exists
+    if (module->is_named()) {
+      has_mod_name = true;
+      module_name = module->name()->as_C_string();
+      msglen += strlen(module_name);
+      // Use version if exists and is not a jdk module
+      if (module->is_non_jdk_module() && module->version() != NULL) {
+        has_version = true;
+        version = module->version()->as_C_string();
+        msglen += strlen("@") + strlen(version);
+      }
+    }
+  } else {
+    // klass is an array of primitives, so its module is java.base
+    module_name = JAVA_BASE_NAME;
+  }
+
+  if (has_cl_name || has_mod_name) {
+    msglen += delim_len;
+  }
+
+  char* message = NEW_RESOURCE_ARRAY_RETURN_NULL(char, msglen);
+
+  // Just return the FQN if error in allocating string
+  if (message == NULL) {
+    return fqn;
+  }
+
+  jio_snprintf(message, msglen, "%s%s%s%s%s%s%s",
+               class_loader_name,
+               (has_cl_name) ? delim : "",
+               (has_mod_name) ? module_name : "",
+               (has_version) ? "@" : "",
+               (has_version) ? version : "",
+               (has_cl_name || has_mod_name) ? delim : "",
+               fqn);
+  return message;
+}

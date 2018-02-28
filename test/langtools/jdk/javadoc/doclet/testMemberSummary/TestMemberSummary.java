@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,19 +50,19 @@ public class TestMemberSummary extends JavadocTester {
 
         checkOutput("pkg/PublicChild.html", true,
                 // Check return type in member summary.
-                "<code><a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">PublicChild</a></code></td>\n"
-                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\"><a href=\"../pkg/PublicChild.html#returnTypeTest--\">"
+                "<code><a href=\"PublicChild.html\" title=\"class in pkg\">PublicChild</a></code></td>\n"
+                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\"><a href=\"#returnTypeTest--\">"
                 + "returnTypeTest</a></span>()</code>",
                 // Check return type in member detail.
-                "<pre>public&nbsp;<a href=\"../pkg/PublicChild.html\" title=\"class in pkg\">"
+                "<pre>public&nbsp;<a href=\"PublicChild.html\" title=\"class in pkg\">"
                 + "PublicChild</a>&nbsp;returnTypeTest()</pre>",
                 "<th class=\"colConstructorName\" scope=\"row\"><code><span class=\"memberNameLink\">"
-                + "<a href=\"../pkg/PublicChild.html#PublicChild--\">PublicChild</a></span>()</code></th>");
+                + "<a href=\"#PublicChild--\">PublicChild</a></span>()</code></th>");
 
         checkOutput("pkg/PrivateParent.html", true,
                 "<td class=\"colFirst\"><code>private </code></td>\n"
                 + "<th class=\"colConstructorName\" scope=\"row\"><code><span class=\"memberNameLink\">"
-                + "<a href=\"../pkg/PrivateParent.html#PrivateParent-int-\">PrivateParent</a></span>&#8203;(int&nbsp;i)</code>"
+                + "<a href=\"#PrivateParent-int-\">PrivateParent</a></span>&#8203;(int&nbsp;i)</code>"
                 + "</th>");
 
         // Legacy anchor dimensions (6290760)
