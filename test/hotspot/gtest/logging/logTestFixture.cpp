@@ -31,7 +31,7 @@
 #include "unittest.hpp"
 #include "utilities/ostream.hpp"
 
-LogTestFixture::LogTestFixture() {
+LogTestFixture::LogTestFixture() : _configuration_snapshot(NULL), _n_snapshots(0) {
   // Set up TestLogFileName to include PID, testcase name and test name
   int ret = jio_snprintf(_filename, sizeof(_filename), "testlog.pid%d.%s.%s.log",
                          os::current_process_id(),
@@ -45,6 +45,7 @@ LogTestFixture::LogTestFixture() {
 
 LogTestFixture::~LogTestFixture() {
   restore_config();
+  clear_snapshot();
   delete_file(TestLogFileName);
 }
 
@@ -65,6 +66,7 @@ bool LogTestFixture::set_log_config(const char* output,
 }
 
 void LogTestFixture::snapshot_config() {
+  clear_snapshot();
   _n_snapshots = LogConfiguration::_n_outputs;
   _configuration_snapshot = NEW_C_HEAP_ARRAY(char*, _n_snapshots, mtLogging);
   for (size_t i = 0; i < _n_snapshots; i++) {
@@ -102,4 +104,17 @@ void LogTestFixture::restore_config() {
 
     set_log_config(name, selection, decorators, options != NULL ? options : "");
   }
+}
+
+void LogTestFixture::clear_snapshot() {
+  if (_configuration_snapshot == NULL) {
+    return;
+  }
+  assert(_n_snapshots > 0, "non-null array should have at least 1 element");
+  for (size_t i = 0; i < _n_snapshots; i++) {
+    os::free(_configuration_snapshot[i]);
+  }
+  FREE_C_HEAP_ARRAY(char*, _configuration_snapshot);
+  _configuration_snapshot = NULL;
+  _n_snapshots = 0;
 }
