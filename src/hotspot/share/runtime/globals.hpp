@@ -2444,15 +2444,15 @@ public:
           "ImplicitNullChecks don't work (PPC64).")                         \
                                                                             \
   product(bool, PrintSafepointStatistics, false,                            \
-          "Print statistics about safepoint synchronization")               \
+          "(Deprecated) Print statistics about safepoint synchronization")  \
                                                                             \
   product(intx, PrintSafepointStatisticsCount, 300,                         \
-          "Total number of safepoint statistics collected "                 \
+          "(Deprecated) Total number of safepoint statistics collected "    \
           "before printing them out")                                       \
           range(1, max_intx)                                                \
                                                                             \
   product(intx, PrintSafepointStatisticsTimeout,  -1,                       \
-          "Print safepoint statistics only when safepoint takes "           \
+          "(Deprecated) Print safepoint statistics only when safepoint takes "  \
           "more than PrintSafepointSatisticsTimeout in millis")             \
   LP64_ONLY(range(-1, max_intx/MICROUNITS))                                 \
   NOT_LP64(range(-1, max_intx))                                             \
