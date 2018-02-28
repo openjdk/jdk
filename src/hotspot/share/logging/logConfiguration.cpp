@@ -536,45 +536,45 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
 
   out->print_cr("Some examples:");
   out->print_cr(" -Xlog");
-  out->print_cr("\t Log all messages using 'info' level to stdout with 'uptime', 'levels' and 'tags' decorations.");
+  out->print_cr("\t Log all messages up to 'info' level to stdout with 'uptime', 'levels' and 'tags' decorations.");
   out->print_cr("\t (Equivalent to -Xlog:all=info:stdout:uptime,levels,tags).");
   out->cr();
 
   out->print_cr(" -Xlog:gc");
-  out->print_cr("\t Log messages tagged with 'gc' tag using 'info' level to stdout, with default decorations.");
+  out->print_cr("\t Log messages tagged with 'gc' tag up to 'info' level to stdout, with default decorations.");
   out->cr();
 
   out->print_cr(" -Xlog:gc,safepoint");
-  out->print_cr("\t Log messages tagged either with 'gc' or 'safepoint' tags, both using 'info' level, to stdout, with default decorations.");
+  out->print_cr("\t Log messages tagged either with 'gc' or 'safepoint' tags, both up to 'info' level, to stdout, with default decorations.");
   out->print_cr("\t (Messages tagged with both 'gc' and 'safepoint' will not be logged.)");
   out->cr();
 
   out->print_cr(" -Xlog:gc+ref=debug");
-  out->print_cr("\t Log messages tagged with both 'gc' and 'ref' tags, using 'debug' level, to stdout, with default decorations.");
+  out->print_cr("\t Log messages tagged with both 'gc' and 'ref' tags, up to 'debug' level, to stdout, with default decorations.");
   out->print_cr("\t (Messages tagged only with one of the two tags will not be logged.)");
   out->cr();
 
   out->print_cr(" -Xlog:gc=debug:file=gc.txt:none");
-  out->print_cr("\t Log messages tagged with 'gc' tag using 'debug' level to file 'gc.txt' with no decorations.");
+  out->print_cr("\t Log messages tagged with 'gc' tag up to 'debug' level to file 'gc.txt' with no decorations.");
   out->cr();
 
   out->print_cr(" -Xlog:gc=trace:file=gctrace.txt:uptimemillis,pids:filecount=5,filesize=1m");
-  out->print_cr("\t Log messages tagged with 'gc' tag using 'trace' level to a rotating fileset of 5 files of size 1MB,");
+  out->print_cr("\t Log messages tagged with 'gc' tag up to 'trace' level to a rotating fileset of 5 files of size 1MB,");
   out->print_cr("\t using the base name 'gctrace.txt', with 'uptimemillis' and 'pid' decorations.");
   out->cr();
 
   out->print_cr(" -Xlog:gc::uptime,tid");
-  out->print_cr("\t Log messages tagged with 'gc' tag using 'info' level to output 'stdout', using 'uptime' and 'tid' decorations.");
+  out->print_cr("\t Log messages tagged with 'gc' tag up to 'info' level to output 'stdout', using 'uptime' and 'tid' decorations.");
   out->cr();
 
   out->print_cr(" -Xlog:gc*=info,safepoint*=off");
-  out->print_cr("\t Log messages tagged with at least 'gc' using 'info' level, but turn off logging of messages tagged with 'safepoint'.");
+  out->print_cr("\t Log messages tagged with at least 'gc' up to 'info' level, but turn off logging of messages tagged with 'safepoint'.");
   out->print_cr("\t (Messages tagged with both 'gc' and 'safepoint' will not be logged.)");
   out->cr();
 
   out->print_cr(" -Xlog:disable -Xlog:safepoint=trace:safepointtrace.txt");
   out->print_cr("\t Turn off all logging, including warnings and errors,");
-  out->print_cr("\t and then enable messages tagged with 'safepoint' using 'trace' level to file 'safepointtrace.txt'.");
+  out->print_cr("\t and then enable messages tagged with 'safepoint' up to 'trace' level to file 'safepointtrace.txt'.");
 }
 
 void LogConfiguration::rotate_all_outputs() {
