@@ -63,8 +63,8 @@ endif
 # exclusive to the gtest libjvm.so.
 
 $(eval $(call SetupNativeCompilation, BUILD_GTEST_LIBJVM, \
+    NAME := jvm, \
     TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
-    LIBRARY := jvm, \
     OUTPUT_DIR := $(JVM_OUTPUTDIR)/gtest, \
     OBJECT_DIR := $(JVM_OUTPUTDIR)/gtest/objs, \
     SRC := $(GTEST_TEST_SRC), \
@@ -108,7 +108,8 @@ TARGETS += $(BUILD_GTEST_LIBJVM)
 
 $(eval $(call SetupNativeCompilation, BUILD_GTEST_LAUNCHER, \
     TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
-    PROGRAM := gtestLauncher, \
+    NAME := gtestLauncher, \
+    TYPE := EXECUTABLE, \
     OUTPUT_DIR := $(JVM_OUTPUTDIR)/gtest, \
     EXTRA_FILES := $(GTEST_LAUNCHER_SRC), \
     OBJECT_DIR := $(JVM_OUTPUTDIR)/gtest/launcher-objs, \
