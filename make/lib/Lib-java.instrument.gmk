@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,8 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   LIBINSTRUMENT_CFLAGS += -Dstrcasecmp=stricmp
 endif
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBINSTRUMENT, \
-    LIBRARY := instrument, \
+$(eval $(call SetupNativeCompilation, BUILD_LIBINSTRUMENT, \
+    NAME := instrument, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBINSTRUMENT_SRC), \
     OPTIMIZATION := LOW, \

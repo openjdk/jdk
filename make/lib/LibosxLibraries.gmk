@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       -I$(SUPPORT_OUTPUTDIR)/headers/java.desktop \
       #
 
-  $(eval $(call SetupNativeCompilation,BUILD_LIBOSX, \
-      LIBRARY := osx, \
+  $(eval $(call SetupNativeCompilation, BUILD_LIBOSX, \
+      NAME := osx, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBOSX_DIRS), \
       OPTIMIZATION := LOW, \
