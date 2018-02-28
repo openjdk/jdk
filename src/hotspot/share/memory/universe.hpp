@@ -220,7 +220,6 @@ class Universe: AllStatic {
   static size_t _heap_used_at_last_gc;
 
   static CollectedHeap* create_heap();
-  static CollectedHeap* create_heap_ext();
   static jint initialize_heap();
   static void initialize_basic_type_mirrors(TRAPS);
   static void fixup_mirrors(TRAPS);
