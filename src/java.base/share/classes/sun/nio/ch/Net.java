@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,30 @@
 
 package sun.nio.ch;
 
-import java.io.*;
-import java.net.*;
-import java.nio.channels.*;
-import java.util.*;
+import java.io.FileDescriptor;
+import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.ProtocolFamily;
+import java.net.SocketAddress;
+import java.net.SocketException;
+import java.net.SocketOption;
+import java.net.StandardProtocolFamily;
+import java.net.StandardSocketOptions;
+import java.net.UnknownHostException;
+import java.nio.channels.AlreadyBoundException;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.NotYetBoundException;
+import java.nio.channels.NotYetConnectedException;
+import java.nio.channels.UnresolvedAddressException;
+import java.nio.channels.UnsupportedAddressTypeException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Enumeration;
+
 import sun.net.ext.ExtendedSocketOptions;
 import sun.security.action.GetPropertyAction;
 
@@ -113,6 +131,16 @@ public class Net {
         InetAddress addr = isa.getAddress();
         if (!(addr instanceof Inet4Address || addr instanceof Inet6Address))
             throw new IllegalArgumentException("Invalid address type");
+        return isa;
+    }
+
+    static InetSocketAddress checkAddress(SocketAddress sa, ProtocolFamily family) {
+        InetSocketAddress isa = checkAddress(sa);
+        if (family == StandardProtocolFamily.INET) {
+            InetAddress addr = isa.getAddress();
+            if (!(addr instanceof Inet4Address))
+                throw new UnsupportedAddressTypeException();
+        }
         return isa;
     }
 
