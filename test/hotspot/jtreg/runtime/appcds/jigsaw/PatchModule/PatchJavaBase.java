@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @summary sharing is disabled if java.base is patch at runtime
  * @library ../..
  * @library /test/hotspot/jtreg/testlibrary
@@ -64,10 +64,11 @@ public class PatchJavaBase {
                 "PatchMain", "java.lang.NewClass");
         TestCommon.checkDump(output, "Loading classes to share");
 
-        output = TestCommon.execCommon(
+        TestCommon.run(
             "-XX:+UnlockDiagnosticVMOptions",
             "--patch-module=java.base=" + moduleJar,
-            "PatchMain", "java.lang.NewClass");
-        output.shouldContain("CDS is disabled when java.base module is patched");
+            "PatchMain", "java.lang.NewClass")
+          .assertAbnormalExit("Unable to use shared archive",
+                              "CDS is disabled when java.base module is patched");
     }
 }

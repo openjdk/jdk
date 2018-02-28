@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,20 +52,22 @@ public class TestJcmdDefaults {
     private static final String JCMD_LIST_REGEX = "(?s)^\\d+\\s*.*";
 
     public static void main(String[] args) throws Exception {
+        testJcmdUsage("-?");
         testJcmdUsage("-h");
-        testJcmdUsage("-help");
+        testJcmdUsage("--help");
         testJcmdDefaults();
         testJcmdDefaults("-l");
     }
 
     /**
+     * jcmd -J-XX:+UsePerfData -?
      * jcmd -J-XX:+UsePerfData -h
-     * jcmd -J-XX:+UsePerfData -help
+     * jcmd -J-XX:+UsePerfData --help
      */
     private static void testJcmdUsage(String... jcmdArgs) throws Exception {
         OutputAnalyzer output = JcmdBase.jcmdNoPid(VM_ARGS, jcmdArgs);
 
-        assertNotEquals(output.getExitValue(), 0);
+        assertEquals(output.getExitValue(), 0);
         verifyOutputAgainstFile(output);
     }
 

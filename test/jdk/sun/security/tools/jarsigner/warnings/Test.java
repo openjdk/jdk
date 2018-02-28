@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ public abstract class Test {
     static final String FIRST_FILE = "first.txt";
     static final String SECOND_FILE = "second.txt";
     static final String PASSWORD = "password";
-    static final String BOTH_KEYS_KEYSTORE = "both_keys.jks";
     static final String FIRST_KEY_KEYSTORE = "first_key.jks";
     static final String KEYSTORE = "keystore.jks";
     static final String FIRST_KEY_ALIAS = "first";
@@ -55,11 +54,13 @@ public abstract class Test {
     static final String CERT_REQUEST_FILENAME = "test.req";
     static final String CERT_FILENAME = "test.crt";
     static final String CA_KEY_ALIAS = "ca";
+    static final String CA2_KEY_ALIAS = "ca2";
     static final int KEY_SIZE = 2048;
     static final int TIMEOUT = 6 * 60 * 1000;   // in millis
     static final int VALIDITY = 365;
 
     static final String WARNING = "Warning:";
+    static final String WARNING_OR_ERROR = "(Warning|Error):";
 
     static final String CHAIN_NOT_VALIDATED_VERIFYING_WARNING
             = "This jar contains entries "
@@ -154,14 +155,72 @@ public abstract class Test {
     static final int ALIAS_NOT_IN_STORE_EXIT_CODE = 32;
     static final int NOT_SIGNED_BY_ALIAS_EXIT_CODE = 32;
 
+    protected void createAlias(String alias, String ... options)
+            throws Throwable {
+        List<String> cmd = new ArrayList<>();
+        cmd.addAll(List.of(
+                "-genkeypair",
+                "-alias", alias,
+                "-keyalg", KEY_ALG,
+                "-keysize", Integer.toString(KEY_SIZE),
+                "-keystore", KEYSTORE,
+                "-storepass", PASSWORD,
+                "-keypass", PASSWORD,
+                "-dname", "CN=" + alias));
+        cmd.addAll(Arrays.asList(options));
+
+        keytool(cmd.toArray(new String[cmd.size()]))
+                .shouldHaveExitValue(0);
+    }
+
+    protected void issueCert(String alias, String ... options)
+            throws Throwable {
+        keytool("-certreq",
+                "-alias", alias,
+                "-keystore", KEYSTORE,
+                "-storepass", PASSWORD,
+                "-keypass", PASSWORD,
+                "-file", alias + ".req")
+                    .shouldHaveExitValue(0);
+
+        List<String> cmd = new ArrayList<>();
+        cmd.addAll(List.of(
+                "-gencert",
+                "-alias", CA_KEY_ALIAS,
+                "-infile", alias + ".req",
+                "-outfile", alias + ".cert",
+                "-keystore", KEYSTORE,
+                "-storepass", PASSWORD,
+                "-keypass", PASSWORD,
+                "-file", alias + ".req"));
+        cmd.addAll(Arrays.asList(options));
+
+        keytool(cmd.toArray(new String[cmd.size()]))
+                .shouldHaveExitValue(0);
+
+        keytool("-importcert",
+                "-alias", alias,
+                "-keystore", KEYSTORE,
+                "-storepass", PASSWORD,
+                "-keypass", PASSWORD,
+                "-file", alias + ".cert")
+                    .shouldHaveExitValue(0);
+    }
+
     protected void checkVerifying(OutputAnalyzer analyzer, int expectedExitCode,
             String... warnings) {
         analyzer.shouldHaveExitValue(expectedExitCode);
+        int count = 0;
         for (String warning : warnings) {
-            analyzer.shouldContain(warning);
+            if (warning.startsWith("!")) {
+                analyzer.shouldNotContain(warning.substring(1));
+            } else {
+                count++;
+                analyzer.shouldContain(warning);
+            }
         }
-        if (warnings.length > 0) {
-            analyzer.shouldContain(WARNING);
+        if (count > 0) {
+            analyzer.shouldMatch(WARNING_OR_ERROR);
         }
         if (expectedExitCode == 0) {
             analyzer.shouldContain(JAR_VERIFIED);
@@ -172,11 +231,17 @@ public abstract class Test {
 
     protected void checkSigning(OutputAnalyzer analyzer, String... warnings) {
         analyzer.shouldHaveExitValue(0);
+        int count = 0;
         for (String warning : warnings) {
-            analyzer.shouldContain(warning);
+            if (warning.startsWith("!")) {
+                analyzer.shouldNotContain(warning.substring(1));
+            } else {
+                count++;
+                analyzer.shouldContain(warning);
+            }
         }
-        if (warnings.length > 0) {
-            analyzer.shouldContain(WARNING);
+        if (count > 0) {
+            analyzer.shouldMatch(WARNING_OR_ERROR);
         }
         analyzer.shouldContain(JAR_SIGNED);
     }

@@ -87,6 +87,6 @@ public abstract class DeclarationSnippet extends PersistentSnippet {
 
     @Override
     String importLine(JShell state) {
-        return "import static " + classFullName() + "." + name() + ";\n";
+        return "import static " + classFullName() + "." + name() + ";  ";
     }
 }

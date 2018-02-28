@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
  *          manifest of a main application JAR
  */
 
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -41,12 +42,22 @@ import java.util.jar.Manifest;
 import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.ProcessTools;
 
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 
 @Test
 public class AddExportsAndOpensInManifest {
+
+    private String testName;
+    private int testCaseNum;
+
+    @BeforeMethod
+    public void getTestName(Method m){
+        testName = m.getName();
+        testCaseNum = 0;
+    }
 
     /**
      * Package Test1 and Test2 into a JAR file with the given attributes
@@ -67,7 +78,7 @@ public class AddExportsAndOpensInManifest {
         }
 
         // create the JAR file with Test1 and Test2
-        Path jarfile = Paths.get("test.jar");
+        Path jarfile = Paths.get(String.format("%s-%s.jar", testName, ++testCaseNum));
         Files.deleteIfExists(jarfile);
 
         Path classes = Paths.get(System.getProperty("test.classes", ""));
@@ -172,5 +183,4 @@ public class AddExportsAndOpensInManifest {
         attrs = "Main-Class=Test1,Add-Opens=java.base/jdk.internal.DoesNotExit";
         runExpectingFail(attrs, "IllegalAccessError");
     }
-
 }

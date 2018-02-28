@@ -90,8 +90,7 @@ public class ThreadLocalRandomTest extends JSR166TestCase {
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
         final java.lang.reflect.Method m;
         try {
-            m = ThreadLocalRandom.class.getDeclaredMethod(
-                    "next", new Class[] { int.class });
+            m = ThreadLocalRandom.class.getDeclaredMethod("next", int.class);
             m.setAccessible(true);
         } catch (SecurityException acceptable) {
             // Security manager may deny access
@@ -382,7 +381,7 @@ public class ThreadLocalRandomTest extends JSR166TestCase {
         // Don't use main thread's ThreadLocalRandom - it is likely to
         // be polluted by previous tests.
         final AtomicReference<ThreadLocalRandom> threadLocalRandom =
-            new AtomicReference<ThreadLocalRandom>();
+            new AtomicReference<>();
         final AtomicLong rand = new AtomicLong();
 
         long firstRand = 0;

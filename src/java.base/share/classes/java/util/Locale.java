@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -808,17 +808,26 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     static Locale getInstance(BaseLocale baseloc, LocaleExtensions extensions) {
-        LocaleKey key = new LocaleKey(baseloc, extensions);
-        return LOCALECACHE.get(key);
+        if (extensions == null) {
+            return LOCALECACHE.get(baseloc);
+        } else {
+            LocaleKey key = new LocaleKey(baseloc, extensions);
+            return LOCALECACHE.get(key);
+        }
     }
 
-    private static class Cache extends LocaleObjectCache<LocaleKey, Locale> {
+    private static class Cache extends LocaleObjectCache<Object, Locale> {
         private Cache() {
         }
 
         @Override
-        protected Locale createObject(LocaleKey key) {
-            return new Locale(key.base, key.exts);
+        protected Locale createObject(Object key) {
+            if (key instanceof BaseLocale) {
+                return new Locale((BaseLocale)key, null);
+            } else {
+                LocaleKey lk = (LocaleKey)key;
+                return new Locale(lk.base, lk.exts);
+            }
         }
     }
 
@@ -1937,9 +1946,10 @@ public final class Locale implements Cloneable, Serializable {
      * script (country(, extension)*)<br>
      * country (extension)*<br>
      * </blockquote>
-     * depending on which fields are specified in the locale.  If the
-     * language, script, country, and variant fields are all empty,
-     * this function returns the empty string.
+     * depending on which fields are specified in the locale. The field
+     * separator in the above parentheses, denoted as a comma character, may
+     * be localized depending on the locale. If the language, script, country,
+     * and variant fields are all empty, this function returns the empty string.
      *
      * @return The name of the locale appropriate to display.
      */
@@ -1962,9 +1972,10 @@ public final class Locale implements Cloneable, Serializable {
      * script (country(, extension)*)<br>
      * country (extension)*<br>
      * </blockquote>
-     * depending on which fields are specified in the locale.  If the
-     * language, script, country, and variant fields are all empty,
-     * this function returns the empty string.
+     * depending on which fields are specified in the locale. The field
+     * separator in the above parentheses, denoted as a comma character, may
+     * be localized depending on the locale. If the language, script, country,
+     * and variant fields are all empty, this function returns the empty string.
      *
      * @param inLocale The locale for which to retrieve the display name.
      * @return The name of the locale appropriate to display.

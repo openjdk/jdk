@@ -28,7 +28,8 @@
  * @author Josh Bloch
  */
 
-import java.util.*;
+import java.util.Hashtable;
+import java.util.Map;
 
 public class HashCode {
     public static void main(String[] args) throws Exception {

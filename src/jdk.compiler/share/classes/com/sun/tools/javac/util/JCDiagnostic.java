@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -295,7 +295,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         /**
          * Create a new error key.
          */
-        Error errorKey(String code, Object... args) {
+        public Error errorKey(String code, Object... args) {
             return (Error)DiagnosticInfo.of(ERROR, prefix, code, args);
         }
 
@@ -309,7 +309,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         /**
          * Create a new note key.
          */
-        Note noteKey(String code, Object... args) {
+        public Note noteKey(String code, Object... args) {
             return (Note)DiagnosticInfo.of(NOTE, prefix, code, args);
         }
 
@@ -527,6 +527,23 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
             }
         }
 
+        /**
+         * Returns the code for this diagnostic info, provided mainly for backward compatibility
+         */
+        public String getCode() {
+            return code;
+        }
+
+        /**
+         * Returns the arguments for this diagnostic info, provided mainly for backward compatibility
+         */
+        public Object[] getArgs() {
+            return args;
+        }
+
+        public void setArgs(Object[] args) {
+            this.args = args;
+        }
     }
 
     /**

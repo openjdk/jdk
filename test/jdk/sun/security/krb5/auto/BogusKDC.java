@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,12 @@ import javax.security.auth.login.LoginException;
 
 /*
  * @test
- * @bug 4515853 8075297
+ * @bug 4515853 8075297 8194486
  * @summary Checks that Kerberos client tries slave KDC
  *          if master KDC is not responding
- * @run main/othervm BogusKDC
+ * @library /test/lib
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BogusKDC
  */
 public class BogusKDC {
 

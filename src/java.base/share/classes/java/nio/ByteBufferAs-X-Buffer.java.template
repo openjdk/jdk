@@ -36,9 +36,6 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
 
 #if[rw]
 
-    // Cached unsafe-access object
-    private static final Unsafe unsafe = Bits.unsafe();
-
     protected final ByteBuffer bb;
 
 #end[rw]
@@ -72,6 +69,11 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
 #else[rw]
         super(bb, mark, pos, lim, cap, addr);
 #end[rw]
+    }
+
+    @Override
+    Object base() {
+        return bb.hb;
     }
 
     public $Type$Buffer slice() {
@@ -117,20 +119,20 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
     }
 
     public $type$ get() {
-        $memtype$ x = unsafe.get$Memtype$Unaligned(bb.hb, byteOffset(nextGetIndex()),
+        $memtype$ x = UNSAFE.get$Memtype$Unaligned(bb.hb, byteOffset(nextGetIndex()),
             {#if[boB]?true:false});
         return $fromBits$(x);
     }
 
     public $type$ get(int i) {
-        $memtype$ x = unsafe.get$Memtype$Unaligned(bb.hb, byteOffset(checkIndex(i)),
+        $memtype$ x = UNSAFE.get$Memtype$Unaligned(bb.hb, byteOffset(checkIndex(i)),
             {#if[boB]?true:false});
         return $fromBits$(x);
     }
 
 #if[streamableType]
    $type$ getUnchecked(int i) {
-        $memtype$ x = unsafe.get$Memtype$Unaligned(bb.hb, byteOffset(i),
+        $memtype$ x = UNSAFE.get$Memtype$Unaligned(bb.hb, byteOffset(i),
             {#if[boB]?true:false});
         return $fromBits$(x);
     }
@@ -141,7 +143,7 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
     public $Type$Buffer put($type$ x) {
 #if[rw]
         $memtype$ y = $toBits$(x);
-        unsafe.put$Memtype$Unaligned(bb.hb, byteOffset(nextPutIndex()), y,
+        UNSAFE.put$Memtype$Unaligned(bb.hb, byteOffset(nextPutIndex()), y,
             {#if[boB]?true:false});
         return this;
 #else[rw]
@@ -152,7 +154,7 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
     public $Type$Buffer put(int i, $type$ x) {
 #if[rw]
         $memtype$ y = $toBits$(x);
-        unsafe.put$Memtype$Unaligned(bb.hb, byteOffset(checkIndex(i)), y,
+        UNSAFE.put$Memtype$Unaligned(bb.hb, byteOffset(checkIndex(i)), y,
             {#if[boB]?true:false});
         return this;
 #else[rw]
@@ -241,4 +243,9 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
 #end[boL]
     }
 
+#if[char]
+    ByteOrder charRegionOrder() {
+        return order();
+    }
+#end[char]
 }

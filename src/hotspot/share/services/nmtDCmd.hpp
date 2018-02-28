@@ -39,7 +39,6 @@ class NMTDCmd: public DCmdWithParser {
  protected:
   DCmdArgument<bool>  _summary;
   DCmdArgument<bool>  _detail;
-  DCmdArgument<bool>  _metadata;
   DCmdArgument<bool>  _baseline;
   DCmdArgument<bool>  _summary_diff;
   DCmdArgument<bool>  _detail_diff;

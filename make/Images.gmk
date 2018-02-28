@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ JRE_MODULES += $(filter $(ALL_MODULES), $(BOOT_MODULES) \
     $(PLATFORM_MODULES) $(JRE_TOOL_MODULES))
 JDK_MODULES += $(ALL_MODULES)
 
-# Modules list for compact builds 
+# Modules list for compact builds
 JRE_COMPACT1_MODULES := \
     java.logging \
     java.scripting \
@@ -134,18 +134,22 @@ $(JDK_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
     $(call DependOnVariable, JDK_MODULES_LIST) $(BASE_RELEASE_FILE)
 	$(ECHO) Creating jdk jimage
 	$(RM) -r $(JDK_IMAGE_DIR)
-	$(JLINK_TOOL) --add-modules $(JDK_MODULES_LIST) \
-	    $(JLINK_JDK_EXTRA_OPTS) \
-	    --output $(JDK_IMAGE_DIR)
+	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/images/jdk, \
+	    $(JLINK_TOOL) --add-modules $(JDK_MODULES_LIST) \
+	        $(JLINK_JDK_EXTRA_OPTS) \
+	        --output $(JDK_IMAGE_DIR) \
+	)
 	$(TOUCH) $@
 
 $(JRE_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
     $(call DependOnVariable, JRE_MODULES_LIST) $(BASE_RELEASE_FILE)
 	$(ECHO) Creating jre jimage
 	$(RM) -r $(JRE_IMAGE_DIR)
-	$(JLINK_TOOL) --add-modules $(JRE_MODULES_LIST) \
-	    $(JLINK_JRE_EXTRA_OPTS) \
-	    --output $(JRE_IMAGE_DIR)
+	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/images/jre, \
+	    $(JLINK_TOOL) --add-modules $(JRE_MODULES_LIST) \
+	        $(JLINK_JRE_EXTRA_OPTS) \
+	        --output $(JRE_IMAGE_DIR) \
+	)
 	$(TOUCH) $@
 
 
@@ -153,27 +157,33 @@ $(JRE_COMPACT1_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
     $(call DependOnVariable, JRE_COMPACT1_MODULES_LIST) $(BASE_RELEASE_FILE)
 	$(ECHO) Creating jre compact1 jimage
 	$(RM) -r $(JRE_COMPACT1_IMAGE_DIR)
-	$(JLINK_TOOL) --add-modules $(JRE_COMPACT1_MODULES_LIST) \
-	    $(JLINK_JRE_EXTRA_OPTS) \
-	    --output $(JRE_COMPACT1_IMAGE_DIR)
+	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/images/jre_compact1, \
+	    $(JLINK_TOOL) --add-modules $(JRE_COMPACT1_MODULES_LIST) \
+	        $(JLINK_JRE_EXTRA_OPTS) \
+	        --output $(JRE_COMPACT1_IMAGE_DIR) \
+	)
 	$(TOUCH) $@
 
 $(JRE_COMPACT2_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
     $(call DependOnVariable, JRE_COMPACT2_MODULES_LIST) $(BASE_RELEASE_FILE)
 	$(ECHO) Creating jre compact2 jimage
 	$(RM) -r $(JRE_COMPACT2_IMAGE_DIR)
-	$(JLINK_TOOL) --add-modules $(JRE_COMPACT2_MODULES_LIST) \
-	    $(JLINK_JRE_EXTRA_OPTS) \
-	    --output $(JRE_COMPACT2_IMAGE_DIR)
+	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/images/jre_compact2, \
+	    $(JLINK_TOOL) --add-modules $(JRE_COMPACT2_MODULES_LIST) \
+	        $(JLINK_JRE_EXTRA_OPTS) \
+	        --output $(JRE_COMPACT2_IMAGE_DIR) \
+	)
 	$(TOUCH) $@
 
 $(JRE_COMPACT3_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
     $(call DependOnVariable, JRE_COMPACT3_MODULES_LIST) $(BASE_RELEASE_FILE)
 	$(ECHO) Creating jre compact3 jimage
 	$(RM) -r $(JRE_COMPACT3_IMAGE_DIR)
-	$(JLINK_TOOL) --add-modules $(JRE_COMPACT3_MODULES_LIST) \
-	    $(JLINK_JRE_EXTRA_OPTS) \
-	    --output $(JRE_COMPACT3_IMAGE_DIR)
+	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/images/jre_compact3, \
+	    $(JLINK_TOOL) --add-modules $(JRE_COMPACT3_MODULES_LIST) \
+	        $(JLINK_JRE_EXTRA_OPTS) \
+	        --output $(JRE_COMPACT3_IMAGE_DIR) \
+	)
 	$(TOUCH) $@
 
 TOOL_JRE_TARGETS := $(JRE_IMAGE_DIR)/$(JIMAGE_TARGET_FILE)
@@ -199,7 +209,6 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       rmid.1 \
       rmiregistry.1 \
       servertool.1 \
-      tnameserv.1 \
       unpack200.1
 
   JDK_MAN_PAGES += \
@@ -223,11 +232,7 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       jstat.1 \
       jstatd.1 \
       rmic.1 \
-      schemagen.1 \
-      serialver.1 \
-      wsgen.1 \
-      wsimport.1 \
-      xjc.1
+      serialver.1
 
   # This variable is potentially overridden in the closed makefile.
   MAN_SRC_BASEDIR ?= $(TOPDIR)/src

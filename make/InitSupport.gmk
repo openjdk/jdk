@@ -361,6 +361,12 @@ else # $(HAS_SPEC)=true
 
   BUILD_LOG_PIPE := > >($(TEE) -a $(BUILD_LOG)) 2> >($(TEE) -a $(BUILD_LOG) >&2) && wait
 
+  ifneq ($(CUSTOM_ROOT), )
+    topdir=$(CUSTOM_ROOT)
+  else
+    topdir=$(TOPDIR)
+  endif
+
   # Parse COMPARE_BUILD into COMPARE_BUILD_*
   # Syntax: COMPARE_BUILD=CONF=<configure options>:PATCH=<patch file>:
   #         MAKE=<make targets>:COMP_OPTS=<compare script options>:
@@ -373,7 +379,7 @@ else # $(HAS_SPEC)=true
   # FAIL can be set to false to have the return value of compare be ignored.
   define ParseCompareBuild
     ifneq ($$(COMPARE_BUILD), )
-      COMPARE_BUILD_OUTPUTDIR := $(TOPDIR)/build/compare-build/$(CONF_NAME)
+      COMPARE_BUILD_OUTPUTDIR := $(topdir)/build/compare-build/$(CONF_NAME)
       COMPARE_BUILD_FAIL := true
 
       ifneq ($$(findstring :, $$(COMPARE_BUILD)), )
@@ -412,9 +418,9 @@ else # $(HAS_SPEC)=true
         endif
       endif
       ifneq ($$(COMPARE_BUILD_PATCH), )
-        ifneq ($$(wildcard $$(TOPDIR)/$$(COMPARE_BUILD_PATCH)), )
+        ifneq ($$(wildcard $$(topdir)/$$(COMPARE_BUILD_PATCH)), )
           # Assume relative path, if file exists
-          COMPARE_BUILD_PATCH := $$(wildcard $$(TOPDIR)/$$(COMPARE_BUILD_PATCH))
+          COMPARE_BUILD_PATCH := $$(wildcard $$(topdir)/$$(COMPARE_BUILD_PATCH))
         else ifeq ($$(wildcard $$(COMPARE_BUILD_PATCH)), )
           $$(error Patch file $$(COMPARE_BUILD_PATCH) does not exist)
         endif
@@ -431,9 +437,9 @@ else # $(HAS_SPEC)=true
         # Apply patch, if any
 	$(if $(COMPARE_BUILD_PATCH), $(PATCH) -p1 < $(COMPARE_BUILD_PATCH))
         # Move the first build away temporarily
-	$(RM) -r $(TOPDIR)/build/.compare-build-temp
-	$(MKDIR) -p $(TOPDIR)/build/.compare-build-temp
-	$(MV) $(OUTPUTDIR) $(TOPDIR)/build/.compare-build-temp
+	$(RM) -r $(topdir)/build/.compare-build-temp
+	$(MKDIR) -p $(topdir)/build/.compare-build-temp
+	$(MV) $(OUTPUTDIR) $(topdir)/build/.compare-build-temp
         # Restore an old compare-build, or create a new compare-build directory.
 	if test -d $(COMPARE_BUILD_OUTPUTDIR); then \
 	  $(MV) $(COMPARE_BUILD_OUTPUTDIR) $(OUTPUTDIR); \
@@ -443,7 +449,7 @@ else # $(HAS_SPEC)=true
         # Re-run configure with the same arguments (and possibly some additional),
         # must be done after patching.
 	( cd $(OUTPUTDIR) && PATH="$(ORIGINAL_PATH)" \
-	    $(BASH) $(TOPDIR)/configure $(CONFIGURE_COMMAND_LINE) $(COMPARE_BUILD_CONF))
+	    $(BASH) $(topdir)/configure $(CONFIGURE_COMMAND_LINE) $(COMPARE_BUILD_CONF))
   endef
 
   # Cleanup after a compare build
@@ -451,10 +457,10 @@ else # $(HAS_SPEC)=true
         # If running with a COMPARE_BUILD patch, reverse-apply it
 	$(if $(COMPARE_BUILD_PATCH), $(PATCH) -R -p1 < $(COMPARE_BUILD_PATCH))
         # Move this build away and restore the original build
-	$(MKDIR) -p $(TOPDIR)/build/compare-build
+	$(MKDIR) -p $(topdir)/build/compare-build
 	$(MV) $(OUTPUTDIR) $(COMPARE_BUILD_OUTPUTDIR)
-	$(MV) $(TOPDIR)/build/.compare-build-temp/$(CONF_NAME) $(OUTPUTDIR)
-	$(RM) -r $(TOPDIR)/build/.compare-build-temp
+	$(MV) $(topdir)/build/.compare-build-temp/$(CONF_NAME) $(OUTPUTDIR)
+	$(RM) -r $(topdir)/build/.compare-build-temp
   endef
 
   # Do the actual comparison of two builds

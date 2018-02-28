@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4008296 4008293 4190090 4193729
+ * @bug 4008296 4008293 4190090 4193729 4358774
  * @summary Check for correct handling of parameters to
  *          XXXXInputStream.read(b, off, len).
  *
@@ -196,6 +196,11 @@ public class ReadParams {
         doTest(ifs);
         doTest1(ifs);
         ifs.close();
+
+        InputStream nis = InputStream.nullInputStream();
+        doTest(nis);
+        doTest1(nis);
+        nis.close();
 
         /* cleanup */
         fn.delete();

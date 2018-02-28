@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
 
- Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -184,12 +184,12 @@
 </xsl:template>
 
 <xsl:template match="ptrtype" mode="funcdescription">
-  <p/>
+  <div class="sep"/>
   <xsl:apply-templates select="nullok" mode="funcdescription"/>
 </xsl:template>
 
 <xsl:template match="inptr" mode="funcdescription">
-  <p/>
+  <div class="sep"/>
   <xsl:variable name="child" select="child::*[position()=1]"/>
   <xsl:text>Agent passes in a pointer</xsl:text>
   <xsl:if test="name($child)!='void'">
@@ -203,7 +203,7 @@
 </xsl:template>
 
 <xsl:template match="inbuf" mode="funcdescription">
-  <p/>
+  <div class="sep"/>
   <xsl:variable name="child" select="child::*[position()=1]"/>
   <xsl:text>Agent passes in </xsl:text>
   <xsl:choose>
@@ -228,7 +228,7 @@
 </xsl:template>
 
 <xsl:template match="outptr" mode="funcdescription">
-  <p/>
+  <div class="sep"/>
   <xsl:text>Agent passes a pointer to a </xsl:text>
   <code>
     <xsl:apply-templates select="child::*[position()=1]" mode="signature"/> 
@@ -244,7 +244,7 @@
 </xsl:template>
 
 <xsl:template match="allocbuf" mode="funcdescription">
-  <p/>
+  <div class="sep"/>
   <xsl:text>Agent passes a pointer to a </xsl:text>
   <code>
     <xsl:apply-templates select="child::*[position()=1]" mode="signature"/> 
@@ -284,7 +284,7 @@
 </xsl:template>
 
 <xsl:template match="allocallocbuf" mode="funcdescription">
-  <p/>
+  <div class="sep"/>
   <xsl:text>Agent passes a pointer to a </xsl:text>
   <code>
     <xsl:apply-templates select="child::*[position()=1]" mode="signature"/> 
@@ -328,7 +328,7 @@
 </xsl:template>
 
 <xsl:template match="outbuf" mode="funcdescription">
-  <p/>
+  <div class="sep"/>
   <xsl:text>Agent passes an array </xsl:text>
   <xsl:if test="count(@incount)=1 and @incount!=''">
     <xsl:text>large enough to hold </xsl:text>
@@ -358,7 +358,7 @@
 </xsl:template>
 
 <xsl:template match="agentbuf" mode="funcdescription">
-  <p/>
+  <div class="sep"/>
   <xsl:apply-templates select="nullok" mode="funcdescription"/>
   <xsl:apply-templates select="child::*[position()=1]" mode="returndescription">
     <xsl:with-param name="plural" select="'plural'"/>

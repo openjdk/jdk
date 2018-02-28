@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -183,6 +183,8 @@ define SetupBuildLauncherBody
   endif
 
   $$(eval $$(call SetupNativeCompilation, BUILD_LAUNCHER_$1, \
+      NAME := $1, \
+      TYPE := EXECUTABLE, \
       EXTRA_FILES := $(LAUNCHER_SRC)/main.c, \
       OPTIMIZATION := $$($1_OPTIMIZATION), \
       CFLAGS := $$($1_CFLAGS) \
@@ -211,7 +213,6 @@ define SetupBuildLauncherBody
           $$($1_LIBS_windows), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/$1_objs, \
       OUTPUT_DIR := $$($1_OUTPUT_DIR), \
-      PROGRAM := $1, \
       VERSIONINFO_RESOURCE := $$($1_VERSION_INFO_RESOURCE), \
       RC_FLAGS := $$(RC_FLAGS) \
           -D "JDK_FNAME=$1$(EXE_SUFFIX)" \

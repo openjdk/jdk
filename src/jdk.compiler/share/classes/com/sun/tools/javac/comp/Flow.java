@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+import com.sun.tools.javac.util.JCDiagnostic.Error;
+import com.sun.tools.javac.util.JCDiagnostic.Warning;
 
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.tree.JCTree.*;
@@ -1183,10 +1185,10 @@ public class Flow {
                 // exception, that would have been covered in the branch above
                 if (chk.diff(catchableThrownTypes, caughtInTry).isEmpty() &&
                         !isExceptionOrThrowable(exc)) {
-                    String key = catchableThrownTypes.length() == 1 ?
-                            "unreachable.catch" :
-                            "unreachable.catch.1";
-                    log.warning(pos, key, catchableThrownTypes);
+                    Warning key = catchableThrownTypes.length() == 1 ?
+                            Warnings.UnreachableCatch(catchableThrownTypes) :
+                            Warnings.UnreachableCatch1(catchableThrownTypes);
+                    log.warning(pos, key);
                 }
             }
         }
@@ -1617,7 +1619,7 @@ public class Flow {
                                       Errors.FinalParameterMayNotBeAssigned(sym));
                         }
                     } else if (!uninits.isMember(sym.adr)) {
-                        log.error(pos, flowKind.errKey, sym);
+                        log.error(pos, diags.errorKey(flowKind.errKey, sym));
                     } else {
                         uninit(sym);
                     }
@@ -1656,14 +1658,14 @@ public class Flow {
         /** Check that trackable variable is initialized.
          */
         void checkInit(DiagnosticPosition pos, VarSymbol sym) {
-            checkInit(pos, sym, "var.might.not.have.been.initialized");
+            checkInit(pos, sym, Errors.VarMightNotHaveBeenInitialized(sym));
         }
 
-        void checkInit(DiagnosticPosition pos, VarSymbol sym, String errkey) {
+        void checkInit(DiagnosticPosition pos, VarSymbol sym, Error errkey) {
             if ((sym.adr >= firstadr || sym.owner.kind != TYP) &&
                 trackable(sym) &&
                 !inits.isMember(sym.adr)) {
-                log.error(pos, errkey, sym);
+                log.error(pos, errkey);
                 inits.incl(sym.adr);
             }
         }
@@ -1894,7 +1896,7 @@ public class Flow {
                                 // the ctor is default(synthesized) or not
                                 if (isSynthesized) {
                                     checkInit(TreeInfo.diagnosticPositionFor(var, vardecl),
-                                        var, "var.not.initialized.in.default.constructor");
+                                        var, Errors.VarNotInitializedInDefaultConstructor(var));
                                 } else {
                                     checkInit(TreeInfo.diagEndPos(tree.body), var);
                                 }

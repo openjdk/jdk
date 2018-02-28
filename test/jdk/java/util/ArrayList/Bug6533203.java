@@ -27,7 +27,9 @@
  * @summary AbstractList.ListItr.add might corrupt iterator state if enclosing add throws
  */
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
 
 @SuppressWarnings({"serial","unchecked"})
 public class Bug6533203 {

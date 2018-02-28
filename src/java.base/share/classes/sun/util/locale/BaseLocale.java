@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@
  */
 
 package sun.util.locale;
-import java.lang.ref.SoftReference;
 
+import java.lang.ref.SoftReference;
 import java.util.StringJoiner;
 
 public final class BaseLocale {
@@ -48,26 +48,28 @@ public final class BaseLocale {
 
     private volatile int hash;
 
-    // This method must be called only when creating the Locale.* constants.
-    private BaseLocale(String language, String region) {
-        this.language = language;
-        this.script = "";
-        this.region = region;
-        this.variant = "";
-    }
-
-    private BaseLocale(String language, String script, String region, String variant) {
-        this.language = (language != null) ? LocaleUtils.toLowerString(language).intern() : "";
-        this.script = (script != null) ? LocaleUtils.toTitleString(script).intern() : "";
-        this.region = (region != null) ? LocaleUtils.toUpperString(region).intern() : "";
-        this.variant = (variant != null) ? variant.intern() : "";
+    // This method must be called with normalize = false only when creating the
+    // Locale.* constants and non-normalized BaseLocale$Keys used for lookup.
+    private BaseLocale(String language, String script, String region, String variant,
+                       boolean normalize) {
+        if (normalize) {
+            this.language = LocaleUtils.toLowerString(language).intern();
+            this.script = LocaleUtils.toTitleString(script).intern();
+            this.region = LocaleUtils.toUpperString(region).intern();
+            this.variant = variant.intern();
+        } else {
+            this.language = language;
+            this.script = script;
+            this.region = region;
+            this.variant = variant;
+        }
     }
 
     // Called for creating the Locale.* constants. No argument
     // validation is performed.
     public static BaseLocale createInstance(String language, String region) {
-        BaseLocale base = new BaseLocale(language, region);
-        CACHE.put(new Key(language, region), base);
+        BaseLocale base = new BaseLocale(language, "", region, "", false);
+        CACHE.put(new Key(base), base);
         return base;
     }
 
@@ -84,7 +86,7 @@ public final class BaseLocale {
             }
         }
 
-        Key key = new Key(language, script, region, variant);
+        Key key = new Key(language, script, region, variant, false);
         BaseLocale baseLocale = CACHE.get(key);
         return baseLocale;
     }
@@ -123,16 +125,16 @@ public final class BaseLocale {
     @Override
     public String toString() {
         StringJoiner sj = new StringJoiner(", ");
-        if (language.length() > 0) {
+        if (!language.isEmpty()) {
             sj.add("language=" + language);
         }
-        if (script.length() > 0) {
+        if (!script.isEmpty()) {
             sj.add("script=" + script);
         }
-        if (region.length() > 0) {
+        if (!region.isEmpty()) {
             sj.add("region=" + region);
         }
-        if (variant.length() > 0) {
+        if (!variant.isEmpty()) {
             sj.add("variant=" + variant);
         }
         return sj.toString();
@@ -155,10 +157,17 @@ public final class BaseLocale {
     }
 
     private static final class Key {
-        private final SoftReference<String> lang;
-        private final SoftReference<String> scrt;
-        private final SoftReference<String> regn;
-        private final SoftReference<String> vart;
+        /**
+         * Keep a SoftReference to the Key data if normalized (actually used
+         * as a cache key) and not initialized via the constant creation path.
+         *
+         * This allows us to avoid creating SoftReferences on lookup Keys
+         * (which are short-lived) and for Locales created via
+         * Locale#createConstant.
+         */
+        private final SoftReference<BaseLocale> holderRef;
+        private final BaseLocale holder;
+
         private final boolean normalized;
         private final int hash;
 
@@ -166,15 +175,16 @@ public final class BaseLocale {
          * Creates a Key. language and region must be normalized
          * (intern'ed in the proper case).
          */
-        private Key(String language, String region) {
-            assert language.intern() == language
-                   && region.intern() == region;
-
-            lang = new SoftReference<>(language);
-            scrt = new SoftReference<>("");
-            regn = new SoftReference<>(region);
-            vart = new SoftReference<>("");
+        private Key(BaseLocale locale) {
+            this.holder = locale;
+            this.holderRef = null;
             this.normalized = true;
+            String language = locale.getLanguage();
+            String region = locale.getRegion();
+            assert LocaleUtils.toLowerString(language).intern() == language
+                    && LocaleUtils.toUpperString(region).intern() == region
+                    && locale.getVariant() == ""
+                    && locale.getScript() == "";
 
             int h = language.hashCode();
             if (region != "") {
@@ -186,51 +196,64 @@ public final class BaseLocale {
             hash = h;
         }
 
-        public Key(String language, String script, String region, String variant) {
-            this(language, script, region, variant, false);
+        private Key(String language, String script, String region,
+                    String variant, boolean normalize) {
+            if (language == null) {
+                language = "";
+            }
+            if (script == null) {
+                script = "";
+            }
+            if (region == null) {
+                region = "";
+            }
+            if (variant == null) {
+                variant = "";
+            }
+
+            BaseLocale locale = new BaseLocale(language, script, region, variant, normalize);
+            this.normalized = normalize;
+            if (normalized) {
+                this.holderRef = new SoftReference<>(locale);
+                this.holder = null;
+            } else {
+                this.holderRef = null;
+                this.holder = locale;
+            }
+            this.hash = hashCode(locale);
         }
 
-        private Key(String language, String script, String region,
-                    String variant, boolean normalized) {
+        public int hashCode() {
+            return hash;
+        }
+
+        private int hashCode(BaseLocale locale) {
             int h = 0;
-            if (language != null) {
-                lang = new SoftReference<>(language);
-                int len = language.length();
-                for (int i = 0; i < len; i++) {
-                    h = 31*h + LocaleUtils.toLower(language.charAt(i));
-                }
-            } else {
-                lang = new SoftReference<>("");
+            String lang = locale.getLanguage();
+            int len = lang.length();
+            for (int i = 0; i < len; i++) {
+                h = 31*h + LocaleUtils.toLower(lang.charAt(i));
             }
-            if (script != null) {
-                scrt = new SoftReference<>(script);
-                int len = script.length();
-                for (int i = 0; i < len; i++) {
-                    h = 31*h + LocaleUtils.toLower(script.charAt(i));
-                }
-            } else {
-                scrt = new SoftReference<>("");
+            String scrt = locale.getScript();
+            len = scrt.length();
+            for (int i = 0; i < len; i++) {
+                h = 31*h + LocaleUtils.toLower(scrt.charAt(i));
             }
-            if (region != null) {
-                regn = new SoftReference<>(region);
-                int len = region.length();
-                for (int i = 0; i < len; i++) {
-                    h = 31*h + LocaleUtils.toLower(region.charAt(i));
-                }
-            } else {
-                regn = new SoftReference<>("");
+            String regn = locale.getRegion();
+            len = regn.length();
+            for (int i = 0; i < len; i++) {
+                h = 31*h + LocaleUtils.toLower(regn.charAt(i));
             }
-            if (variant != null) {
-                vart = new SoftReference<>(variant);
-                int len = variant.length();
-                for (int i = 0; i < len; i++) {
-                    h = 31*h + variant.charAt(i);
-                }
-            } else {
-                vart = new SoftReference<>("");
+            String vart = locale.getVariant();
+            len = vart.length();
+            for (int i = 0; i < len; i++) {
+                h = 31*h + vart.charAt(i);
             }
-            hash = h;
-            this.normalized = normalized;
+            return h;
+        }
+
+        private BaseLocale getBaseLocale() {
+            return (holder == null) ? holderRef.get() : holder;
         }
 
         @Override
@@ -238,33 +261,19 @@ public final class BaseLocale {
             if (this == obj) {
                 return true;
             }
-
             if (obj instanceof Key && this.hash == ((Key)obj).hash) {
-                String tl = this.lang.get();
-                String ol = ((Key)obj).lang.get();
-                if (tl != null && ol != null &&
-                    LocaleUtils.caseIgnoreMatch(ol, tl)) {
-                    String ts = this.scrt.get();
-                    String os = ((Key)obj).scrt.get();
-                    if (ts != null && os != null &&
-                        LocaleUtils.caseIgnoreMatch(os, ts)) {
-                        String tr = this.regn.get();
-                        String or = ((Key)obj).regn.get();
-                        if (tr != null && or != null &&
-                            LocaleUtils.caseIgnoreMatch(or, tr)) {
-                            String tv = this.vart.get();
-                            String ov = ((Key)obj).vart.get();
-                            return (ov != null && ov.equals(tv));
-                        }
-                    }
+                BaseLocale other = ((Key) obj).getBaseLocale();
+                BaseLocale locale = this.getBaseLocale();
+                if (other != null && locale != null
+                    && LocaleUtils.caseIgnoreMatch(other.getLanguage(), locale.getLanguage())
+                    && LocaleUtils.caseIgnoreMatch(other.getScript(), locale.getScript())
+                    && LocaleUtils.caseIgnoreMatch(other.getRegion(), locale.getRegion())
+                    // variant is case sensitive in JDK!
+                    && other.getVariant().equals(locale.getVariant())) {
+                    return true;
                 }
             }
             return false;
-        }
-
-        @Override
-        public int hashCode() {
-            return hash;
         }
 
         public static Key normalize(Key key) {
@@ -272,12 +281,11 @@ public final class BaseLocale {
                 return key;
             }
 
-            String lang = LocaleUtils.toLowerString(key.lang.get()).intern();
-            String scrt = LocaleUtils.toTitleString(key.scrt.get()).intern();
-            String regn = LocaleUtils.toUpperString(key.regn.get()).intern();
-            String vart = key.vart.get().intern(); // preserve upper/lower cases
-
-            return new Key(lang, scrt, regn, vart, true);
+            // Only normalized keys may be softly referencing the data holder
+            assert (key.holder != null && key.holderRef == null);
+            BaseLocale locale = key.holder;
+            return new Key(locale.getLanguage(), locale.getScript(),
+                    locale.getRegion(), locale.getVariant(), true);
         }
     }
 
@@ -288,18 +296,12 @@ public final class BaseLocale {
 
         @Override
         protected Key normalizeKey(Key key) {
-            assert key.lang.get() != null &&
-                   key.scrt.get() != null &&
-                   key.regn.get() != null &&
-                   key.vart.get() != null;
-
             return Key.normalize(key);
         }
 
         @Override
         protected BaseLocale createObject(Key key) {
-            return new BaseLocale(key.lang.get(), key.scrt.get(),
-                                  key.regn.get(), key.vart.get());
+            return Key.normalize(key).getBaseLocale();
         }
     }
 }

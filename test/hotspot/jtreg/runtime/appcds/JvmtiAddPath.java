@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,14 @@
 /*
  * @test
  * @summary JvmtiEnv::AddToBootstrapClassLoaderSearch and JvmtiEnv::AddToSystemClassLoaderSearch should disable AppCDS
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @bug 8060592
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jartool/sun.tools.jar
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @compile test-classes/Hello.java
  * @compile test-classes/JvmtiApp.java
  * @run main JvmtiAddPath
@@ -60,8 +59,7 @@ public class JvmtiAddPath {
     static void run(String[] extra_matches, String cp, String... args) throws Exception {
         String[] opts = {"-cp", cp, "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI", use_whitebox_jar};
         opts = TestCommon.concat(opts, args);
-        OutputAnalyzer output = TestCommon.execCommon(opts);
-        TestCommon.checkExec(output, extra_matches);
+        TestCommon.run(opts).assertNormalExit(extra_matches);
     }
 
     public static void main(String[] args) throws Exception {

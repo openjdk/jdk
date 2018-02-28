@@ -26,9 +26,9 @@
  * @bug 4409582
  * @summary Test all info returned by modification watchpoints
  * @author Daniel Prusa (or someone in the FFJ group)
- * @author Robert Field (modified to JDIScaffold)
+ * @author Robert Field
  *
- * @run build JDIScaffold VMConnection
+ * @run build TestScaffold VMConnection
  * @run compile -g ModificationWatchpoints.java
  * @run driver ModificationWatchpoints
  */

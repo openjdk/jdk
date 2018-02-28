@@ -28,7 +28,10 @@
  *          *after* the set/add/remove operations were performed.
  */
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
+import java.util.List;
+import java.util.ListIterator;
 
 public class FailFastIterator {
     public static void main(String[] args) throws Exception {

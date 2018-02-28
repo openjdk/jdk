@@ -77,7 +77,10 @@ public class ScriptEngineManager  {
 
     private void init(final ClassLoader loader) {
         globalScope = new SimpleBindings();
-        engineSpis = new HashSet<ScriptEngineFactory>();
+        engineSpis = new TreeSet<ScriptEngineFactory>(Comparator.comparing(
+            ScriptEngineFactory::getEngineName,
+            Comparator.nullsLast(Comparator.naturalOrder()))
+        );
         nameAssociations = new HashMap<String, ScriptEngineFactory>();
         extensionAssociations = new HashMap<String, ScriptEngineFactory>();
         mimeTypeAssociations = new HashMap<String, ScriptEngineFactory>();
@@ -400,7 +403,7 @@ public class ScriptEngineManager  {
     }
 
     /** Set of script engine factories discovered. */
-    private HashSet<ScriptEngineFactory> engineSpis;
+    private TreeSet<ScriptEngineFactory> engineSpis;
 
     /** Map of engine name to script engine factory. */
     private HashMap<String, ScriptEngineFactory> nameAssociations;

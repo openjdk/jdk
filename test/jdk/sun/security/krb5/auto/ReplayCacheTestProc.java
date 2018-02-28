@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
 
 /*
  * @test
- * @bug 7152176 8168518 8172017
+ * @bug 7152176 8168518 8172017 8014628 8194486
  * @summary More krb5 tests
  * @library ../../../../java/security/testlibrary/ /test/lib
  * @build jdk.test.lib.Platform
- * @run main/othervm/timeout=300 ReplayCacheTestProc
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm/timeout=300 -Djdk.net.hosts.file=TestHosts
+ *      ReplayCacheTestProc
  */
 
 import java.io.*;
@@ -132,8 +134,13 @@ public class ReplayCacheTestProc {
                 kdc.addPrincipalRandKey(service(i));
             }
 
+            // Native lib might not support aes-sha2
+            KDC.saveConfig(OneKDC.KRB5_CONF, kdc,
+                    "default_tkt_enctypes = aes128-cts",
+                    "default_tgs_enctypes = aes128-cts");
+
+            // Write KTAB after krb5.conf so it contains no aes-sha2 keys
             kdc.writeKtab(OneKDC.KTAB);
-            KDC.saveConfig(OneKDC.KRB5_CONF, kdc);
 
             // User-provided libs
             String userLibs = System.getProperty("test.libs");
@@ -155,6 +162,7 @@ public class ReplayCacheTestProc {
             }
 
             pi = Proc.create("ReplayCacheTestProc").debug("C")
+                    .inheritProp("jdk.net.hosts.file")
                     .args("initiator")
                     .start();
 
@@ -367,9 +375,11 @@ public class ReplayCacheTestProc {
         }
         if (type.startsWith("J")) {
             if (lib == null) {
-                p = Proc.create("ReplayCacheTestProc");
+                p = Proc.create("ReplayCacheTestProc")
+                        .inheritProp("jdk.net.hosts.file");
             } else {
-                p = Proc.create("ReplayCacheTestProc", lib);
+                p = Proc.create("ReplayCacheTestProc", lib)
+                        .inheritProp("jdk.net.hosts.file");
             }
             p.prop("sun.security.krb5.rcache", "dfl")
                     .prop("java.io.tmpdir", cwd);
@@ -382,6 +392,7 @@ public class ReplayCacheTestProc {
                     .env("KRB5_CONFIG", OneKDC.KRB5_CONF)
                     .env("KRB5_KTNAME", OneKDC.KTAB)
                     .env("KRB5RCACHEDIR", cwd)
+                    .inheritProp("jdk.net.hosts.file")
                     .prop("sun.security.jgss.native", "true")
                     .prop("javax.security.auth.useSubjectCredsOnly", "false")
                     .prop("sun.security.nativegss.debug", "true");

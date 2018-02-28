@@ -23,34 +23,37 @@
 package org.graalvm.compiler.hotspot.nodes;
 
 import org.graalvm.compiler.graph.NodeClass;
+import org.graalvm.compiler.nodeinfo.InputType;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 
 @NodeInfo
 public abstract class ArrayRangeWriteBarrier extends WriteBarrier implements Lowerable {
 
     public static final NodeClass<ArrayRangeWriteBarrier> TYPE = NodeClass.create(ArrayRangeWriteBarrier.class);
-    @Input ValueNode object;
-    @Input ValueNode startIndex;
+    @Input(InputType.Association) AddressNode address;
     @Input ValueNode length;
 
-    protected ArrayRangeWriteBarrier(NodeClass<? extends ArrayRangeWriteBarrier> c, ValueNode object, ValueNode startIndex, ValueNode length) {
+    private final int elementStride;
+
+    protected ArrayRangeWriteBarrier(NodeClass<? extends ArrayRangeWriteBarrier> c, AddressNode address, ValueNode length, int elementStride) {
         super(c);
-        this.object = object;
-        this.startIndex = startIndex;
+        this.address = address;
         this.length = length;
+        this.elementStride = elementStride;
     }
 
-    public ValueNode getObject() {
-        return object;
-    }
-
-    public ValueNode getStartIndex() {
-        return startIndex;
+    public AddressNode getAddress() {
+        return address;
     }
 
     public ValueNode getLength() {
         return length;
+    }
+
+    public int getElementStride() {
+        return elementStride;
     }
 }

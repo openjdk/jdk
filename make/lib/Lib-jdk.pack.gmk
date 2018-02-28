@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ include LibCommon.gmk
 
 ################################################################################
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBUNPACK, \
-    LIBRARY := unpack, \
+$(eval $(call SetupNativeCompilation, BUILD_LIBUNPACK, \
+    NAME := unpack, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(TOPDIR)/src/jdk.pack/share/native/libunpack \
         $(TOPDIR)/src/jdk.pack/share/native/common-unpack, \
@@ -40,6 +40,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBUNPACK, \
         -I$(TOPDIR)/src/jdk.pack/share/native/common-unpack \
         $(LIBJAVA_HEADER_FLAGS), \
     CFLAGS_release := -DPRODUCT, \
+    DISABLED_WARNINGS_gcc := implicit-fallthrough, \
     MAPFILE := $(TOPDIR)/make/mapfiles/libunpack/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \

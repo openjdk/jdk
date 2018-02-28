@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "metaprogramming/conditional.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "metaprogramming/integralConstant.hpp"
+#include "metaprogramming/isSame.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -51,14 +52,15 @@ namespace AccessInternal {
     BARRIER_ATOMIC_XCHG,
     BARRIER_ATOMIC_XCHG_AT,
     BARRIER_ARRAYCOPY,
-    BARRIER_CLONE
+    BARRIER_CLONE,
+    BARRIER_RESOLVE
   };
 
-  template <DecoratorSet decorators>
+  template <DecoratorSet decorators, typename T>
   struct MustConvertCompressedOop: public IntegralConstant<bool,
     HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value &&
-    HasDecorator<decorators, INTERNAL_CONVERT_COMPRESSED_OOP>::value &&
-    HasDecorator<decorators, INTERNAL_RT_USE_COMPRESSED_OOPS>::value> {};
+    IsSame<typename HeapOopType<decorators>::type, narrowOop>::value &&
+    IsSame<T, oop>::value> {};
 
   // This metafunction returns an appropriate oop type if the value is oop-like
   // and otherwise returns the same type T.
@@ -99,6 +101,7 @@ namespace AccessInternal {
 
     typedef bool (*arraycopy_func_t)(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t length);
     typedef void (*clone_func_t)(oop src, oop dst, size_t size);
+    typedef oop (*resolve_func_t)(oop obj);
   };
 
   template <DecoratorSet decorators, typename T, BarrierType barrier> struct AccessFunction {};
@@ -118,6 +121,7 @@ namespace AccessInternal {
   ACCESS_GENERATE_ACCESS_FUNCTION(BARRIER_ATOMIC_XCHG_AT, atomic_xchg_at_func_t);
   ACCESS_GENERATE_ACCESS_FUNCTION(BARRIER_ARRAYCOPY, arraycopy_func_t);
   ACCESS_GENERATE_ACCESS_FUNCTION(BARRIER_CLONE, clone_func_t);
+  ACCESS_GENERATE_ACCESS_FUNCTION(BARRIER_RESOLVE, resolve_func_t);
 #undef ACCESS_GENERATE_ACCESS_FUNCTION
 
   template <DecoratorSet decorators, typename T, BarrierType barrier_type>
@@ -172,13 +176,13 @@ protected:
   // Only encode if INTERNAL_VALUE_IS_OOP
   template <DecoratorSet idecorators, typename T>
   static inline typename EnableIf<
-    AccessInternal::MustConvertCompressedOop<idecorators>::value,
+    AccessInternal::MustConvertCompressedOop<idecorators, T>::value,
     typename HeapOopType<idecorators>::type>::type
   encode_internal(T value);
 
   template <DecoratorSet idecorators, typename T>
   static inline typename EnableIf<
-    !AccessInternal::MustConvertCompressedOop<idecorators>::value, T>::type
+    !AccessInternal::MustConvertCompressedOop<idecorators, T>::value, T>::type
   encode_internal(T value) {
     return value;
   }
@@ -192,12 +196,12 @@ protected:
   // Only decode if INTERNAL_VALUE_IS_OOP
   template <DecoratorSet idecorators, typename T>
   static inline typename EnableIf<
-    AccessInternal::MustConvertCompressedOop<idecorators>::value, T>::type
+    AccessInternal::MustConvertCompressedOop<idecorators, T>::value, T>::type
   decode_internal(typename HeapOopType<idecorators>::type value);
 
   template <DecoratorSet idecorators, typename T>
   static inline typename EnableIf<
-    !AccessInternal::MustConvertCompressedOop<idecorators>::value, T>::type
+    !AccessInternal::MustConvertCompressedOop<idecorators, T>::value, T>::type
   decode_internal(T value) {
     return value;
   }
@@ -378,6 +382,8 @@ public:
   static bool oop_arraycopy(arrayOop src_obj, arrayOop dst_obj, HeapWord* src, HeapWord* dst, size_t length);
 
   static void clone(oop src, oop dst, size_t size);
+
+  static oop resolve(oop obj) { return obj; }
 };
 
 #endif // SHARE_VM_RUNTIME_ACCESSBACKEND_HPP

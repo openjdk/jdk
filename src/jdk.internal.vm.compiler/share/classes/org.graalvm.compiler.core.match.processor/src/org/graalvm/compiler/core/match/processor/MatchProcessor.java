@@ -58,6 +58,9 @@ import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.EconomicSet;
+import org.graalvm.collections.Equivalence;
 import org.graalvm.compiler.core.gen.NodeMatchRules;
 import org.graalvm.compiler.core.match.ComplexMatchResult;
 import org.graalvm.compiler.core.match.MatchRule;
@@ -70,9 +73,6 @@ import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Position;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.serviceprovider.ServiceProvider;
-import org.graalvm.util.Equivalence;
-import org.graalvm.util.EconomicMap;
-import org.graalvm.util.EconomicSet;
 
 /**
  * Processes classes annotated with {@link MatchRule}. A {@link MatchStatementSet} service is

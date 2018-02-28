@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,6 +141,7 @@ class Universe: AllStatic {
   static oop          _system_thread_group;           // Reference to the system thread group object
 
   static objArrayOop  _the_empty_class_klass_array;   // Canonicalized obj array of type java.lang.Class
+  static oop          _the_null_sentinel;             // A unique object pointer unused except as a sentinel for null.
   static oop          _the_null_string;               // A cache of "null" as a Java string
   static oop          _the_min_jint_string;          // A cache of "-2147483648" as a Java string
   static LatestMethodCache* _finalizer_register_cache; // static method for registering finalizable objects
@@ -179,8 +180,6 @@ class Universe: AllStatic {
   // The object used as an exception dummy when exceptions are thrown for
   // the vm thread.
   static oop          _vm_exception;
-
-  static oop          _allocation_context_notification_obj;
 
   // References waiting to be transferred to the ReferenceHandler
   static oop          _reference_pending_list;
@@ -322,6 +321,9 @@ class Universe: AllStatic {
 
   static Method*      do_stack_walk_method()          { return _do_stack_walk_cache->get_method(); }
 
+  static oop          the_null_sentinel()             { return _the_null_sentinel;             }
+  static address      the_null_sentinel_addr()        { return (address) &_the_null_sentinel;  }
+
   // Function to initialize these
   static void initialize_known_methods(TRAPS);
 
@@ -329,9 +331,6 @@ class Universe: AllStatic {
   static oop          arithmetic_exception_instance() { return _arithmetic_exception_instance; }
   static oop          virtual_machine_error_instance() { return _virtual_machine_error_instance; }
   static oop          vm_exception()                  { return _vm_exception; }
-
-  static inline oop   allocation_context_notification_obj();
-  static inline void  set_allocation_context_notification_obj(oop obj);
 
   // Reference pending list manipulation.  Access is protected by
   // Heap_lock.  The getter, setter and predicate require the caller
@@ -459,9 +458,6 @@ class Universe: AllStatic {
   static bool        on_page_boundary(void* addr);
   static bool        should_fill_in_stack_trace(Handle throwable);
   static void check_alignment(uintx size, uintx alignment, const char* name);
-
-  // Finalizer support.
-  static void run_finalizers_on_exit();
 
   // Iteration
 

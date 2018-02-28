@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,10 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
+
+// Implementation of InterpreterMacroAssembler.
+
+// This file specializes the assembler with interpreter-specific macros.
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) // nothing
@@ -488,6 +492,8 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
   // Add in the index.
   add(result, tmp, result);
   load_heap_oop(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result, is_null);
+  // The resulting oop is null if the reference is not yet resolved.
+  // It is Universe::the_null_sentinel() if the reference resolved to NULL via condy.
 }
 
 // load cpool->resolved_klass_at(index)

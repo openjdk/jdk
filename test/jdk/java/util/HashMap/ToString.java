@@ -28,7 +28,8 @@
  *          contained null keys or values.
  */
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ToString {
     public static void main(String[] args) throws Exception {

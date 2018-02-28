@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ public class JNIHandleBlock extends VMObject {
 
   /** Debugging routine only. Returns non-null JNIHandleBlock
       containing the JNI handle or null if this handle block and its
-      successors did not contain it (or if the handle was deleted). */
+      successors did not contain it. */
   public JNIHandleBlock blockContainingHandle(Address jniHandle) {
     JNIHandleBlock cur = this;
     while (cur != null) {
@@ -144,8 +144,8 @@ public class JNIHandleBlock extends VMObject {
 
     Address oopAddr = addr.addOffsetTo(handlesField.getOffset() + x * VM.getVM().getOopSize());
     OopHandle handle = oopAddr.getOopHandleAt(0);
-    if (VM.getVM().getUniverse().isInReserved(handle) && !VM.getVM().getJNIHandles().isDeletedHandle(handle)) {
-      /* the oop handle is valid only if it is not freed (i.e. reserved in heap) and is not a deleted oop */
+    if (VM.getVM().getUniverse().isInReserved(handle)) {
+      /* the oop handle is valid only if it is not freed (i.e. reserved in heap) */
       return oopAddr;
     } else {
       return null;

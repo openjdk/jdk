@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "symbolengine.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/ostream.hpp"
 #include "windbghelp.hpp"
 
 #include <windows.h>

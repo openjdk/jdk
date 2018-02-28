@@ -60,6 +60,7 @@ public class Head {
     private boolean showTimestamp;
     private boolean showGeneratedBy;    // temporary: for compatibility
     private boolean showMetaCreated;    // temporary: for compatibility
+    private boolean useModuleDirectories;
     private DocFile mainStylesheetFile;
     private List<DocFile> additionalStylesheetFiles = Collections.emptyList();
     private boolean index;
@@ -171,6 +172,17 @@ public class Head {
     public Head setStylesheets(DocFile main, List<DocFile> additional) {
         this.mainStylesheetFile = main;
         this.additionalStylesheetFiles = additional;
+        return this;
+    }
+
+    /**
+     * Sets whether the module directories should be used. This is used to set the JavaScript variable.
+     *
+     * @param useModuleDirectories true if the module directories should be used
+     * @return  this object
+     */
+    public Head setUseModuleDirectories(boolean useModuleDirectories) {
+        this.useModuleDirectories = useModuleDirectories;
         return this;
     }
 
@@ -305,7 +317,9 @@ public class Head {
                 String ptrPath = pathToRoot.isEmpty() ? "." : pathToRoot.getPath();
                 mainBodyScript.append("var pathtoroot = ")
                         .appendStringLiteral(ptrPath + "/")
-                        .append(";loadScripts(document, \'script\');");
+                        .append(";\n")
+                        .append("var useModuleDirectories = " + useModuleDirectories + ";\n")
+                        .append("loadScripts(document, \'script\');");
             }
             addJQueryFile(tree, DocPaths.JSZIP_MIN);
             addJQueryFile(tree, DocPaths.JSZIPUTILS_MIN);

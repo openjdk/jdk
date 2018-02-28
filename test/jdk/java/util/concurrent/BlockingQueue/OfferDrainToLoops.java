@@ -79,7 +79,7 @@ public class OfferDrainToLoops {
         final long timeoutMillis = 10L * 1000L;
         final SplittableRandom rnd = new SplittableRandom();
 
-        /** Poor man's bounded buffer. */
+        // Poor man's bounded buffer.
         final AtomicLong approximateCount = new AtomicLong(0L);
 
         abstract class CheckedThread extends Thread {

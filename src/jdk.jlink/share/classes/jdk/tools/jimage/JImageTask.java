@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ class JImageTask {
 
         new Option<JImageTask>(false, (task, option, arg) -> {
             task.options.help = true;
-        }, "--help", "-h"),
+        }, "--help", "-h", "-?"),
 
         new Option<JImageTask>(false, (task, option, arg) -> {
             task.options.verbose = true;
@@ -386,7 +386,7 @@ class JImageTask {
 
         for (File file : options.jimages) {
             if (!file.exists() || !file.isFile()) {
-                throw TASK_HELPER.newBadArgs("err.not.a.jimage", file.getName());
+                throw TASK_HELPER.newBadArgs("err.not.a.jimage", file);
             }
 
             try (BasicImageReader reader = BasicImageReader.open(file.toPath())) {
@@ -431,6 +431,8 @@ class JImageTask {
                         }
                     }
                 }
+            } catch (IOException ioe) {
+                throw TASK_HELPER.newBadArgs("err.invalid.jimage", file, ioe.getMessage());
             }
         }
     }

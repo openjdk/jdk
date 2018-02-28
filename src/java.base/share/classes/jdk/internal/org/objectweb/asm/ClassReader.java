@@ -185,7 +185,7 @@ public class ClassReader {
     public ClassReader(final byte[] b, final int off, final int len) {
         this.b = b;
         // checks the class version
-        if (readShort(off + 6) > Opcodes.V10) {
+        if (readShort(off + 6) > Opcodes.V11) {
             throw new IllegalArgumentException();
         }
         // parses the constant pool
@@ -205,6 +205,10 @@ public class ClassReader {
             case ClassWriter.FLOAT:
             case ClassWriter.NAME_TYPE:
             case ClassWriter.INDY:
+            // @@@ ClassWriter.CONDY
+            // Enables MethodHandles.lookup().defineClass to function correctly
+            // when it reads the class name
+            case 17:
                 size = 5;
                 break;
             case ClassWriter.LONG:

@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @summary a simple test to ensure that class is loaded from jar file in --patch-module at runtime
  * @library ../..
  * @library /test/hotspot/jtreg/testlibrary
@@ -70,12 +70,12 @@ public class Simple {
                 "PatchMain", "javax.naming.spi.NamingManager");
         TestCommon.checkDump(output, "Loading classes to share");
 
-        output = TestCommon.execCommon(
+        TestCommon.run(
             "-XX:+UnlockDiagnosticVMOptions",
             "--patch-module=java.naming=" + moduleJar,
             "-Xlog:class+load",
             "-Xlog:class+path=info",
-            "PatchMain", "javax.naming.spi.NamingManager");
-        TestCommon.checkExec(output, "I pass!");
+            "PatchMain", "javax.naming.spi.NamingManager")
+          .assertNormalExit("I pass!");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8164437
+ * @bug 8164437 8194486
  * @summary GSSContext type when jdk.security.jgss is not available
  * @library /test/lib
  * @compile -XDignore.symbol.file ModuleName.java
@@ -33,7 +33,8 @@
  *        jdk.test.lib.JDKToolLauncher
  *        jdk.test.lib.Platform
  *        jdk.test.lib.process.*
- * @run main/othervm ModuleName
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts ModuleName
  */
 
 import jdk.test.lib.process.ProcessTools;
@@ -58,6 +59,7 @@ public class ModuleName {
                             arg.startsWith("--add-opens="))
                     .forEach(cmd::add);
             cmd.addAll(List.of(
+                    "-Djdk.net.hosts.file=TestHosts",
                     "-Dtest.src=" + System.getProperty("test.src"),
                     "--add-modules",
                         "java.base,java.security.jgss,jdk.security.auth",

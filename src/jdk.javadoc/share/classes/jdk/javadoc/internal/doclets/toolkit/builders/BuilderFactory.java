@@ -88,59 +88,47 @@ public class BuilderFactory {
      * Return the builder that builds the package summary.
      *
      * @param pkg the package being documented.
-     * @param prevPkg the previous package being documented.
-     * @param nextPkg the next package being documented.
      * @return the builder that builds the package summary.
      */
-    public AbstractBuilder getPackageSummaryBuilder(PackageElement pkg, PackageElement prevPkg,
-            PackageElement nextPkg) {
+    public AbstractBuilder getPackageSummaryBuilder(PackageElement pkg) {
         return PackageSummaryBuilder.getInstance(context, pkg,
-            writerFactory.getPackageSummaryWriter(pkg, prevPkg, nextPkg));
+            writerFactory.getPackageSummaryWriter(pkg));
     }
 
     /**
      * Return the builder that builds the module summary.
      *
      * @param mdle the module being documented.
-     * @param prevModule the previous module being documented.
-     * @param nextModule the next module being documented.
      * @return the builder that builds the module summary.
      */
-    public AbstractBuilder getModuleSummaryBuilder(ModuleElement mdle, ModuleElement prevModule,
-            ModuleElement nextModule) {
+    public AbstractBuilder getModuleSummaryBuilder(ModuleElement mdle) {
         return ModuleSummaryBuilder.getInstance(context, mdle,
-            writerFactory.getModuleSummaryWriter(mdle, prevModule, nextModule));
+            writerFactory.getModuleSummaryWriter(mdle));
     }
 
     /**
      * Return the builder for the class.
      *
      * @param typeElement the class being documented.
-     * @param prevClass the previous class that was documented.
-     * @param nextClass the next class being documented.
      * @param classTree the class tree.
      * @return the writer for the class.  Return null if this
      * writer is not supported by the doclet.
      */
-    public AbstractBuilder getClassBuilder(TypeElement typeElement,
-            TypeElement prevClass, TypeElement nextClass, ClassTree classTree) {
+    public AbstractBuilder getClassBuilder(TypeElement typeElement, ClassTree classTree) {
         return ClassBuilder.getInstance(context, typeElement,
-            writerFactory.getClassWriter(typeElement, prevClass, nextClass, classTree));
+            writerFactory.getClassWriter(typeElement, classTree));
     }
 
     /**
      * Return the builder for the annotation type.
      *
      * @param annotationType the annotation type being documented.
-     * @param prevType the previous type that was documented.
-     * @param nextType the next type being documented.
      * @return the writer for the annotation type.  Return null if this
      * writer is not supported by the doclet.
      */
-    public AbstractBuilder getAnnotationTypeBuilder(
-        TypeElement annotationType, TypeMirror prevType, TypeMirror nextType) {
+    public AbstractBuilder getAnnotationTypeBuilder(TypeElement annotationType) {
         return AnnotationTypeBuilder.getInstance(context, annotationType,
-            writerFactory.getAnnotationTypeWriter(annotationType, prevType, nextType));
+            writerFactory.getAnnotationTypeWriter(annotationType));
     }
 
     /**

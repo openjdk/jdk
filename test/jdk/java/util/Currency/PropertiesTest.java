@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ public class PropertiesTest {
             bug7102969();
         } else if (args.length == 1 && args[0].equals("bug8157138")) {
             bug8157138();
+        } else if (args.length == 1 && args[0].equals("bug8190904")) {
+            bug8190904();
         } else {
             System.err.println("Usage:  java PropertiesTest -d <dumpfile>");
             System.err.println("        java PropertiesTest -c <beforedump> <afterdump> <propsfile>");
@@ -118,8 +120,9 @@ public class PropertiesTest {
         for (String key: keys) {
             String val = p.getProperty(key);
             try {
-                if (countOccurrences(val, ',') == 3 && !isPastCutoverDate(val)) {
-                    System.out.println("Skipping since date is in future");
+                if (val.chars().map(c -> c == ',' ? 1 : 0).sum() >= 3
+                        && !isPastCutoverDate(val)) {
+                    System.out.println("Skipping " + key + " since date is in future");
                     continue; // skip since date in future (no effect)
                 }
             } catch (ParseException pe) {
@@ -129,6 +132,13 @@ public class PropertiesTest {
             String afterVal = after.getProperty(key);
             System.out.printf("Testing key: %s, val: %s... ", key, val);
             System.out.println("AfterVal is : " + afterVal);
+
+            if (afterVal == null) {
+                System.out.println("Testing key " + key + " is ignored"
+                        + " because of the inconsistent numeric code and/or"
+                        + " dfd for the given currency code: "+val);
+                continue;
+            }
 
             Matcher m = propertiesPattern.matcher(val.toUpperCase(Locale.ROOT));
             if (!m.find()) {
@@ -166,22 +176,24 @@ public class PropertiesTest {
             System.out.printf("Success!\n");
         }
         if (!after.isEmpty()) {
-            StringBuilder sb = new StringBuilder()
-                .append("Currency data replacement failed.  Unnecessary modification was(were) made for the following currencies:\n");
+
             keys = after.stringPropertyNames();
             for (String key : keys) {
-                sb.append("    country: ")
-                .append(key)
-                .append(" currency: ")
-                .append(after.getProperty(key))
-                .append("\n");
+                String modified = after.getProperty(key);
+                if(!p.containsValue(modified)) {
+                    throw new RuntimeException("Unnecessary modification was"
+                            + " made to county: "+ key + " with currency value:"
+                                    + " " + modified);
+                } else {
+                    System.out.println(key + " modified by an entry in"
+                            + " currency.properties with currency value "
+                            + modified);
+                }
             }
-            throw new RuntimeException(sb.toString());
         }
     }
 
     private static void bug7102969() {
-
         // check the correct overriding of special case entries
         Currency cur = Currency.getInstance(new Locale("", "JP"));
         if (!cur.getCurrencyCode().equals("ABC")) {
@@ -248,6 +260,41 @@ public class PropertiesTest {
 
     }
 
+    private static void bug8190904() {
+        // should throw IllegalArgumentException as currency code
+        // does not exist as valid ISO 4217 code and failed to load
+        // from currency.properties file because of inconsistent numeric/dfd
+        try {
+            Currency.getInstance("MCC");
+            throw new RuntimeException("[FAILED: Should throw"
+                    + " IllegalArgumentException for invalid currency code]");
+        } catch (IllegalArgumentException ex) {
+            // expected to throw IllegalArgumentException
+        }
+
+        // should keep the XOF instance as XOF,952,0, as the XOF entries in
+        // currency.properties IT=XOF,952,1, XY=XOF,955,0 are ignored because
+        // of inconsistency in numeric code and/or dfd
+        checkCurrencyInstance("XOF", 952, 0);
+        // property entry "AS=USD,841,2" should change all occurences
+        // of USD with USD,841,2
+        checkCurrencyInstance("USD", 841, 2);
+    }
+
+    /**
+     * Test the numeric code and fraction of the Currency instance obtained
+     * by given currencyCode, with the expected numericCode and fraction
+     */
+    private static void checkCurrencyInstance(String currencyCode,
+            int numericCode, int fraction) {
+        Currency cur = Currency.getInstance(currencyCode);
+        if (cur.getNumericCode() != numericCode
+                || cur.getDefaultFractionDigits() != fraction) {
+            throw new RuntimeException("[FAILED: Incorrect numeric code or"
+                    + " dfd for currency code: " + currencyCode + "]");
+        }
+    }
+
     private static boolean isPastCutoverDate(String s)
             throws IndexOutOfBoundsException, NullPointerException, ParseException {
         String dateString = s.substring(s.lastIndexOf(',')+1, s.length()).trim();
@@ -263,13 +310,4 @@ public class PropertiesTest {
         }
     }
 
-    private static int countOccurrences(String value, char match) {
-        int count = 0;
-        for (char c : value.toCharArray()) {
-            if (c == match) {
-               ++count;
-            }
-        }
-        return count;
-    }
 }

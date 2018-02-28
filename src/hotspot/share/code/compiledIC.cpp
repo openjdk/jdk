@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,7 +224,7 @@ bool CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecod
     assert(bytecode == Bytecodes::_invokeinterface, "");
     int itable_index = call_info->itable_index();
     entry = VtableStubs::find_itable_stub(itable_index);
-    if (entry == false) {
+    if (entry == NULL) {
       return false;
     }
 #ifdef ASSERT
@@ -417,7 +417,7 @@ void CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
     bool static_bound = info.is_optimized() || (info.cached_metadata() == NULL);
 #ifdef ASSERT
     CodeBlob* cb = CodeCache::find_blob_unsafe(info.entry());
-    assert (cb->is_compiled(), "must be compiled!");
+    assert (cb != NULL && cb->is_compiled(), "must be compiled!");
 #endif /* ASSERT */
 
     // This is MT safe if we come from a clean-cache and go through a

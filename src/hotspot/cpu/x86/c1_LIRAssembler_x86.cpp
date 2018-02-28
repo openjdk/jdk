@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -529,12 +529,16 @@ void LIR_Assembler::return_op(LIR_Opr result) {
 
   if (SafepointMechanism::uses_thread_local_poll()) {
 #ifdef _LP64
-    __ movptr(rscratch1, Address(r15_thread, Thread::polling_page_offset()));
-    __ relocate(relocInfo::poll_return_type);
-    __ testl(rax, Address(rscratch1, 0));
+    const Register poll_addr = rscratch1;
+    __ movptr(poll_addr, Address(r15_thread, Thread::polling_page_offset()));
 #else
-    ShouldNotReachHere();
+    const Register poll_addr = rbx;
+    assert(FrameMap::is_caller_save_register(poll_addr), "will overwrite");
+    __ get_thread(poll_addr);
+    __ movptr(poll_addr, Address(poll_addr, Thread::polling_page_offset()));
 #endif
+    __ relocate(relocInfo::poll_return_type);
+    __ testl(rax, Address(poll_addr, 0));
   } else {
     AddressLiteral polling_page(os::get_polling_page(), relocInfo::poll_return_type);
 
@@ -555,16 +559,20 @@ int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
   int offset = __ offset();
   if (SafepointMechanism::uses_thread_local_poll()) {
 #ifdef _LP64
-    __ movptr(rscratch1, Address(r15_thread, Thread::polling_page_offset()));
+    const Register poll_addr = rscratch1;
+    __ movptr(poll_addr, Address(r15_thread, Thread::polling_page_offset()));
+#else
+    assert(tmp->is_cpu_register(), "needed");
+    const Register poll_addr = tmp->as_register();
+    __ get_thread(poll_addr);
+    __ movptr(poll_addr, Address(poll_addr, in_bytes(Thread::polling_page_offset())));
+#endif
     add_debug_info_for_branch(info);
     __ relocate(relocInfo::poll_type);
     address pre_pc = __ pc();
-    __ testl(rax, Address(rscratch1, 0));
+    __ testl(rax, Address(poll_addr, 0));
     address post_pc = __ pc();
-    guarantee(pointer_delta(post_pc, pre_pc, 1) == 3, "must be exact length");
-#else
-    ShouldNotReachHere();
-#endif
+    guarantee(pointer_delta(post_pc, pre_pc, 1) == 2 LP64_ONLY(+1), "must be exact length");
   } else {
     AddressLiteral polling_page(os::get_polling_page(), relocInfo::poll_type);
     if (Assembler::is_polling_page_far()) {
@@ -1543,10 +1551,10 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
 
 void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
   if (op->init_check()) {
+    add_debug_info_for_null_check_here(op->stub()->info());
     __ cmpb(Address(op->klass()->as_register(),
                     InstanceKlass::init_state_offset()),
                     InstanceKlass::fully_initialized);
-    add_debug_info_for_null_check_here(op->stub()->info());
     __ jcc(Assembler::notEqual, *op->stub()->entry());
   }
   __ allocate_object(op->obj()->as_register(),
@@ -2580,7 +2588,9 @@ void LIR_Assembler::arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, 
     move_regs(lreg, rax);
 
     int idivl_offset = __ corrected_idivl(rreg);
-    add_debug_info_for_div0(idivl_offset, info);
+    if (ImplicitDiv0Checks) {
+      add_debug_info_for_div0(idivl_offset, info);
+    }
     if (code == lir_irem) {
       move_regs(rdx, dreg); // result is in rdx
     } else {
@@ -3502,7 +3512,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ciMethodData* md = method->method_data_or_null();
   assert(md != NULL, "Sanity");
   ciProfileData* data = md->bci_to_data(bci);
-  assert(data->is_CounterData(), "need CounterData for calls");
+  assert(data != NULL && data->is_CounterData(), "need CounterData for calls");
   assert(op->mdo()->is_single_cpu(),  "mdo must be allocated");
   Register mdo  = op->mdo()->as_register();
   __ mov_metadata(mdo, md->constant_encoding());

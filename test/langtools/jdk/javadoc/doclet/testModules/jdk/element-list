@@ -310,8 +310,6 @@ module:jdk.localedata
 module:jdk.management
 com.sun.management
 module:jdk.management.agent
-module:jdk.management.cmm
-jdk.management.cmm
 module:jdk.management.jfr
 jdk.management.jfr
 module:jdk.management.resource

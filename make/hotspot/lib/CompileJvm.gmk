@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,8 @@ JVM_CFLAGS_INCLUDES += \
     -I$(TOPDIR)/src/hotspot/share/precompiled \
     -I$(TOPDIR)/src/hotspot/share/include \
     -I$(TOPDIR)/src/hotspot/os/$(HOTSPOT_TARGET_OS_TYPE)/include \
-    -I$(TOPDIR)/src/java.base/share/native/include \
-    -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/include \
+    -I$(SUPPORT_OUTPUTDIR)/modules_include/java.base \
+    -I$(SUPPORT_OUTPUTDIR)/modules_include/java.base/$(OPENJDK_TARGET_OS_INCLUDE_SUBDIR) \
     -I$(TOPDIR)/src/java.base/share/native/libjimage \
     #
 
@@ -210,8 +210,8 @@ JVM_STRIPFLAGS ?= $(STRIPFLAGS)
 # Now set up the actual compilation of the main hotspot native library
 
 $(eval $(call SetupNativeCompilation, BUILD_LIBJVM, \
+    NAME := jvm, \
     TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
-    LIBRARY := jvm, \
     OUTPUT_DIR := $(JVM_LIB_OUTPUTDIR), \
     SRC := $(JVM_SRC_DIRS), \
     EXCLUDES := $(JVM_EXCLUDES), \

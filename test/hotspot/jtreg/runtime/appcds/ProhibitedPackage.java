@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 /*
  * @test
  * @summary AppCDS handling of prohibited package.
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -78,10 +76,10 @@ public class ProhibitedPackage {
         OutputAnalyzer output;
 
         // -Xshare:on
-        output = TestCommon.execCommon(
+        TestCommon.run(
             "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
-            "-cp", appJar, "-Xlog:class+load=info", "ProhibitedHelper");
-        TestCommon.checkExec(output, "Prohibited package name: java.lang");
+            "-cp", appJar, "-Xlog:class+load=info", "ProhibitedHelper")
+          .assertNormalExit("Prohibited package name: java.lang");
 
         // -Xshare:auto
         output = TestCommon.execAuto(

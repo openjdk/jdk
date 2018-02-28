@@ -24,6 +24,7 @@
 #
 
 include CopyCommon.gmk
+include TextFileProcessing.gmk
 
 $(eval $(call IncludeCustomExtension, copy/Copy-java.base.gmk))
 
@@ -242,5 +243,18 @@ ifeq ($(ENABLE_LIBFFI_BUNDLING), true)
 
   TARGETS += $(COPY_LIBFFI)
 endif
+
+################################################################################
+# Generate classfile_constants.h
+
+$(eval $(call SetupTextFileProcessing, CREATE_CLASSFILE_CONSTANTS_H, \
+    SOURCE_FILES := $(TOPDIR)/src/java.base/share/native/include/classfile_constants.h.template, \
+    OUTPUT_FILE := $(SUPPORT_OUTPUTDIR)/modules_include/java.base/classfile_constants.h, \
+    REPLACEMENTS := \
+        @@VERSION_CLASSFILE_MAJOR@@ => $(VERSION_CLASSFILE_MAJOR) ; \
+        @@VERSION_CLASSFILE_MINOR@@ => $(VERSION_CLASSFILE_MINOR) ; , \
+))
+
+TARGETS += $(CREATE_CLASSFILE_CONSTANTS_H)
 
 ################################################################################

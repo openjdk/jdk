@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,9 +166,8 @@ static void trace_class_resolution_impl(Klass* to_class, TRAPS) {
       }
     } else if (last_caller != NULL &&
                last_caller->method_holder()->name() ==
-               vmSymbols::java_lang_ClassLoader() &&
-               (last_caller->name() == vmSymbols::loadClassInternal_name() ||
-                last_caller->name() == vmSymbols::loadClass_name())) {
+                 vmSymbols::java_lang_ClassLoader() &&
+               last_caller->name() == vmSymbols::loadClass_name()) {
       found_it = true;
     } else if (!vfst.at_end()) {
       if (vfst.method()->is_native()) {
@@ -678,16 +677,8 @@ JVM_END
 // Misc. class handling ///////////////////////////////////////////////////////////
 
 
-JVM_ENTRY(jclass, JVM_GetCallerClass(JNIEnv* env, int depth))
+JVM_ENTRY(jclass, JVM_GetCallerClass(JNIEnv* env))
   JVMWrapper("JVM_GetCallerClass");
-
-  // Pre-JDK 8 and early builds of JDK 8 don't have a CallerSensitive annotation; or
-  // sun.reflect.Reflection.getCallerClass with a depth parameter is provided
-  // temporarily for existing code to use until a replacement API is defined.
-  if (SystemDictionary::reflect_CallerSensitive_klass() == NULL || depth != JVM_CALLER_DEPTH) {
-    Klass* k = thread->security_get_caller_class(depth);
-    return (k == NULL) ? NULL : (jclass) JNIHandles::make_local(env, k->java_mirror());
-  }
 
   // Getting the class of the caller frame.
   //
@@ -2220,6 +2211,8 @@ JVM_ENTRY(jbyte, JVM_ConstantPoolGetTagAt(JNIEnv *env, jobject obj, jobject unus
       result = JVM_CONSTANT_MethodType;
   } else if (tag.is_method_handle_in_error()) {
       result = JVM_CONSTANT_MethodHandle;
+  } else if (tag.is_dynamic_constant_in_error()) {
+      result = JVM_CONSTANT_Dynamic;
   }
   return result;
 }

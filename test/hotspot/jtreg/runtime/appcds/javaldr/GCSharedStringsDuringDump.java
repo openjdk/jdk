@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,12 @@
  * @summary Similar to GCDuringDumping.java, this test adds the -XX:SharedArchiveConfigFile
  *          option for testing the interaction with GC and shared strings.
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds /test/hotspot/jtreg/runtime/appcds/test-classes
- * @requires (sun.arch.data.model != "32") & (os.family != "windows")
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
- * @requires vm.flavor != "minimal"
- * @requires vm.gc.G1
+ * @requires vm.cds.archived.java.heap
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar
  *          java.management
  * @build sun.hotspot.WhiteBox GCDuringDumpTransformer GCSharedStringsDuringDumpWb
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm/timeout=480 GCSharedStringsDuringDump
  */
 
@@ -94,8 +91,6 @@ public class GCSharedStringsDuringDump {
             OutputAnalyzer output = TestCommon.dump(
                                 appJar, TestCommon.list("GCSharedStringsDuringDumpWb"),
                                 bootClassPath, extraArg, "-Xmx32m", gcLog,
-                                "-XX:+UseCompressedOops", "-XX:+UseG1GC",
-                                "-XX:SharedReadOnlySize=30m",
                                 "-XX:SharedArchiveConfigFile=" + sharedArchiveCfgFile);
 
             if (output.getStdout().contains("Too many string space regions") ||
@@ -108,24 +103,20 @@ public class GCSharedStringsDuringDump {
                 TestCommon.testDump(
                     appJar, TestCommon.list("GCSharedStringsDuringDumpWb"),
                     bootClassPath, extraArg, "-Xmx8g", "-XX:NewSize=8m", gcLog,
-                    "-XX:+UseCompressedOops", "-XX:+UseG1GC",
-                    "-XX:SharedReadOnlySize=30m",
                     "-XX:SharedArchiveConfigFile=" + sharedArchiveCfgFile);
             }
 
-            output = TestCommon.execCommon(
+            TestCommon.run(
                 "-cp", appJar,
                 bootClassPath,
                 "-Xmx32m",
                 "-XX:+PrintSharedSpaces",
-                "-XX:+UseCompressedOops",
-                "-XX:+UseG1GC",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI",
                 "-XX:SharedReadOnlySize=30m",
                 gcLog,
-                "GCSharedStringsDuringDumpWb");
-            TestCommon.checkExec(output);
+                "GCSharedStringsDuringDumpWb")
+              .assertNormalExit();
         }
     }
 }

@@ -33,6 +33,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/cpCache.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -177,6 +178,7 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
       // instruction somehow links to a non-interface method (in Object).
       // In that case, the method has no itable index and must be invoked as a virtual.
       // Set a flag to keep track of this corner case.
+      assert(method->is_public(), "Calling non-public method in Object with invokeinterface");
       change_to_virtual = true;
 
       // ...and fall through as if we were handling invokevirtual:
@@ -740,13 +742,16 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
 
 #if INCLUDE_CDS_JAVA_HEAP
 oop ConstantPoolCache::archived_references() {
-  assert(UseSharedSpaces, "UseSharedSpaces expected.");
-  return oopDesc::decode_heap_oop(_archived_references);
+  // Loading an archive root forces the oop to become strongly reachable.
+  // For example, if it is loaded during concurrent marking in a SATB
+  // collector, it will be enqueued to the SATB queue, effectively
+  // shading the previously white object gray.
+  return RootAccess<IN_ARCHIVE_ROOT>::oop_load(&_archived_references);
 }
 
 void ConstantPoolCache::set_archived_references(oop o) {
   assert(DumpSharedSpaces, "called only during runtime");
-  _archived_references = oopDesc::encode_heap_oop(o);
+  RootAccess<IN_ARCHIVE_ROOT>::oop_store(&_archived_references, o);
 }
 #endif
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public class TestModuleServicesLink extends JavadocTester {
                 "--module", "m");
         checkExit(Exit.OK);
 
-        checkOutput("m-summary.html", true,
+        checkOutput("m/module-summary.html", true,
                 "<a href=\"#module.description\">Description</a>&nbsp;|"
                 + "&nbsp;Modules&nbsp;|"
                 + "&nbsp;<a href=\"#packages.summary\">Packages</a>&nbsp;|"
@@ -92,7 +92,7 @@ public class TestModuleServicesLink extends JavadocTester {
                 "--module", "m");
         checkExit(Exit.OK);
 
-        checkOutput("m-summary.html", true,
+        checkOutput("m/module-summary.html", true,
                 "<a href=\"#module.description\">Description</a>&nbsp;|"
                 + "&nbsp;Modules&nbsp;|"
                 + "&nbsp;<a href=\"#packages.summary\">Packages</a>&nbsp;|"
@@ -114,7 +114,7 @@ public class TestModuleServicesLink extends JavadocTester {
                 "--module", "m");
         checkExit(Exit.OK);
 
-        checkOutput("m-summary.html", true,
+        checkOutput("m/module-summary.html", true,
                 "Description&nbsp;|&nbsp;Modules&nbsp;|"
                 + "&nbsp;<a href=\"#packages.summary\">Packages</a>&nbsp;|"
                 + "&nbsp;Services");

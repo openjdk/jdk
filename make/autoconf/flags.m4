@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -175,6 +175,16 @@ AC_DEFUN([FLAGS_SETUP_SYSROOT_FLAGS],
         $1SYSROOT_CFLAGS="-I-xbuiltin -I[$]$1SYSROOT/usr/include"
         $1SYSROOT_LDFLAGS="-L[$]$1SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
             -L[$]$1SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR"
+        # If the devkit contains the ld linker, make sure we use it.
+        AC_PATH_PROG(SOLARIS_LD, ld, , $DEVKIT_TOOLCHAIN_PATH:$DEVKIT_EXTRA_PATH)
+        # Make sure this ld is runnable.
+        if test -f "$SOLARIS_LD"; then
+          if "$SOLARIS_LD" -V > /dev/null 2> /dev/null; then
+            $1SYSROOT_LDFLAGS="[$]$1SYSROOT_LDFLAGS -Yl,$(dirname $SOLARIS_LD)"
+          else
+            AC_MSG_WARN([Could not run $SOLARIS_LD found in devkit, reverting to system ld])
+          fi
+        fi
       fi
     elif test "x$TOOLCHAIN_TYPE" = xgcc; then
       $1SYSROOT_CFLAGS="--sysroot=[$]$1SYSROOT"
@@ -918,7 +928,6 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
         -MD -Zc:wchar_t- -W3 -wd4800 \
         -DWIN32_LEAN_AND_MEAN \
         -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE \
-        -D_WINSOCK_DEPRECATED_NO_WARNINGS \
         -DWIN32 -DIAL"
     if test "x$OPENJDK_$1_CPU" = xx86_64; then
       $2COMMON_CCXXFLAGS_JDK="[$]$2COMMON_CCXXFLAGS_JDK -D_AMD64_ -Damd64"
@@ -1031,9 +1040,9 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
         -qalias=noansi -qstrict -qtls=default -qlanglvl=c99vla \
         -qlanglvl=noredefmac -qnortti -qnoeh -qignerrno"
     # We need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
-    # Hotspot now overflows its 64K TOC (currently only for slowdebug),
-    # so for slowdebug we build with '-qpic=large -bbigtoc'.
-    if test "x$DEBUG_LEVEL" = xslowdebug; then
+    # Hotspot now overflows its 64K TOC (currently only for debug),
+    # so for debug we build with '-qpic=large -bbigtoc'.
+    if test "x$DEBUG_LEVEL" = xslowdebug || test "x$DEBUG_LEVEL" = xfastdebug; then
       $2JVM_CFLAGS="[$]$2JVM_CFLAGS -qpic=large"
     fi
   elif test "x$OPENJDK_$1_OS" = xbsd; then
@@ -1113,10 +1122,11 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
 
   # Additional macosx handling
   if test "x$OPENJDK_$1_OS" = xmacosx; then
-    # MACOSX_VERSION_MIN is the c++ and ld is -mmacosx-version-min argument. The expected
-    # format is X.Y.Z. It's hard-coded to the minimum OSX version on which the
-    # JDK can be built and makes the linked binaries compatible even if built on
-    # a newer version of the OS.
+    # MACOSX_VERSION_MIN specifies the lowest version of Macosx that the built
+    # binaries should be compatible with, even if compiled on a newer version
+    # of the OS. It currently has a hard coded value. Setting this also limits
+    # exposure to API changes in header files. Bumping this is likely to
+    # require code changes to build.
     MACOSX_VERSION_MIN=10.7.0
     AC_SUBST(MACOSX_VERSION_MIN)
 
@@ -1150,6 +1160,7 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
     $2JVM_CFLAGS="[$]$2JVM_CFLAGS \
         -DMAC_OS_X_VERSION_MIN_REQUIRED=\$(subst .,,\$(MACOSX_VERSION_MIN)) \
         -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
+    $2ARFLAGS="$2$ARFLAGS -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
 
     if test -n "$MACOSX_VERSION_MAX"; then
         $2COMMON_CCXXFLAGS_JDK="[$]$2COMMON_CCXXFLAGS_JDK \
@@ -1162,9 +1173,7 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
   # Setup some hard coded includes
   $2COMMON_CCXXFLAGS_JDK="[$]$2COMMON_CCXXFLAGS_JDK \
       -I\$(SUPPORT_OUTPUTDIR)/modules_include/java.base \
-      -I${TOPDIR}/src/java.base/share/native/include \
-      -I${TOPDIR}/src/java.base/$OPENJDK_$1_OS/native/include \
-      -I${TOPDIR}/src/java.base/$OPENJDK_$1_OS_TYPE/native/include \
+      -I\$(SUPPORT_OUTPUTDIR)/modules_include/java.base/\$(OPENJDK_TARGET_OS_INCLUDE_SUBDIR) \
       -I${TOPDIR}/src/java.base/share/native/libjava \
       -I${TOPDIR}/src/java.base/$OPENJDK_$1_OS_TYPE/native/libjava \
       -I${TOPDIR}/src/hotspot/share/include \
@@ -1285,9 +1294,9 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER],
     $2LDFLAGS_JDK="${$2LDFLAGS_JDK} $LDFLAGS_XLC"
     $2JVM_LDFLAGS="[$]$2JVM_LDFLAGS $LDFLAGS_XLC"
     # We need '-qminimaltoc' or '-qpic=large -bbigtoc' if the TOC overflows.
-    # Hotspot now overflows its 64K TOC (currently only for slowdebug),
-    # so for slowdebug we build with '-qpic=large -bbigtoc'.
-    if test "x$DEBUG_LEVEL" = xslowdebug; then
+    # Hotspot now overflows its 64K TOC (currently only for debug),
+    # so we build with '-qpic=large -bbigtoc'.
+    if test "x$DEBUG_LEVEL" = xslowdebug || test "x$DEBUG_LEVEL" = xfastdebug; then
       $2JVM_LDFLAGS="[$]$2JVM_LDFLAGS -bbigtoc"
     fi
   fi

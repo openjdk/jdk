@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,8 +183,6 @@ public class MissingClassTest {
             ok = false;
         } catch (IOException e) {
             Throwable cause = e.getCause();
-            if (isInstance(cause, "org.omg.CORBA.MARSHAL"))  // see CR 4935098
-                cause = cause.getCause();
             if (cause instanceof ClassNotFoundException) {
                 System.out.println("Success: got an IOException wrapping " +
                                    "a ClassNotFoundException");
@@ -207,8 +205,6 @@ public class MissingClassTest {
             ok = false;
         } catch (IOException e) {
             Throwable wrapped = e.getCause();
-            if (isInstance(wrapped, "org.omg.CORBA.MARSHAL"))  // see CR 4935098
-                wrapped = wrapped.getCause();
             if (wrapped instanceof ClassNotFoundException) {
                 System.out.println("Success: got an IOException wrapping " +
                                    "a ClassNotFoundException: " +
@@ -260,8 +256,6 @@ public class MissingClassTest {
                 ok = false;
             } catch (IOException e) {
                 Throwable cause = e.getCause();
-                if (isInstance(cause, "org.omg.CORBA.MARSHAL"))  // see CR 4935098
-                    cause = cause.getCause();
                 if (cause instanceof ClassNotFoundException) {
                     System.out.println("Success: got an IOException " +
                                        "wrapping a ClassNotFoundException");

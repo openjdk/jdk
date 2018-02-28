@@ -28,6 +28,7 @@
 tier1 = \
     :jdk_lang \
     :jdk_util \
+    :jdk_svc_sanity \
     sun/nio/cs/ISO8859x.java \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
@@ -267,13 +268,10 @@ jdk_other = \
     javax/naming \
     javax/script \
     javax/smartcardio \
-    javax/transaction \
     javax/xml \
     -javax/xml/crypto \
     jdk/internal/jline \
     com/sun/jndi \
-    com/sun/corba \
-    org/omg/CORBA \
     lib/testlibrary
 
 #

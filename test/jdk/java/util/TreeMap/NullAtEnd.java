@@ -28,8 +28,9 @@
  * @author  Martin Buchholz
  */
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Comparator;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 public class NullAtEnd {
     static volatile int passed = 0, failed = 0;

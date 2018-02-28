@@ -86,8 +86,6 @@
 
 #define JAVA_CLASSFILE_MAGIC              0xCAFEBABE
 #define JAVA_MIN_SUPPORTED_VERSION        45
-#define JAVA_MAX_SUPPORTED_VERSION        54
-#define JAVA_MAX_SUPPORTED_MINOR_VERSION  0
 
 // Used for two backward compatibility reasons:
 // - to check for new additions to the class file format in JDK1.5
@@ -109,6 +107,8 @@
 #define JAVA_9_VERSION                    53
 
 #define JAVA_10_VERSION                   54
+
+#define JAVA_11_VERSION                   55
 
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == 19 || bad_constant == 20) && _major_version >= JAVA_9_VERSION,
@@ -202,6 +202,21 @@ void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const s
         else {
           ShouldNotReachHere();
         }
+        break;
+      }
+      case JVM_CONSTANT_Dynamic : {
+        if (_major_version < Verifier::DYNAMICCONSTANT_MAJOR_VERSION) {
+          classfile_parse_error(
+              "Class file version does not support constant tag %u in class file %s",
+              tag, CHECK);
+        }
+        cfs->guarantee_more(5, CHECK);  // bsm_index, nt, tag/access_flags
+        const u2 bootstrap_specifier_index = cfs->get_u2_fast();
+        const u2 name_and_type_index = cfs->get_u2_fast();
+        if (_max_bootstrap_specifier_index < (int) bootstrap_specifier_index) {
+          _max_bootstrap_specifier_index = (int) bootstrap_specifier_index;  // collect for later
+        }
+        cp->dynamic_constant_at_put(index, bootstrap_specifier_index, name_and_type_index);
         break;
       }
       case JVM_CONSTANT_InvokeDynamic : {
@@ -536,6 +551,21 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
           ref_index, CHECK);
         break;
       }
+      case JVM_CONSTANT_Dynamic: {
+        const int name_and_type_ref_index =
+          cp->invoke_dynamic_name_and_type_ref_index_at(index);
+
+        check_property(valid_cp_range(name_and_type_ref_index, length) &&
+          cp->tag_at(name_and_type_ref_index).is_name_and_type(),
+          "Invalid constant pool index %u in class file %s",
+          name_and_type_ref_index, CHECK);
+        // bootstrap specifier index must be checked later,
+        // when BootstrapMethods attr is available
+
+        // Mark the constant pool as having a CONSTANT_Dynamic_info structure
+        cp->set_has_dynamic_constant();
+        break;
+      }
       case JVM_CONSTANT_InvokeDynamic: {
         const int name_and_type_ref_index =
           cp->invoke_dynamic_name_and_type_ref_index_at(index);
@@ -624,6 +654,27 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
             // Format check field name and signature
             verify_legal_field_name(name, CHECK);
             verify_legal_field_signature(name, sig, CHECK);
+          }
+        }
+        break;
+      }
+      case JVM_CONSTANT_Dynamic: {
+        const int name_and_type_ref_index =
+          cp->name_and_type_ref_index_at(index);
+        // already verified to be utf8
+        const int name_ref_index =
+          cp->name_ref_index_at(name_and_type_ref_index);
+        // already verified to be utf8
+        const int signature_ref_index =
+          cp->signature_ref_index_at(name_and_type_ref_index);
+        const Symbol* const name = cp->symbol_at(name_ref_index);
+        const Symbol* const signature = cp->symbol_at(signature_ref_index);
+        if (_need_verify) {
+          // CONSTANT_Dynamic's name and signature are verified above, when iterating NameAndType_info.
+          // Need only to be sure signature is non-zero length and the right type.
+          if (signature->utf8_length() == 0 ||
+              signature->byte_at(0) == JVM_SIGNATURE_FUNC) {
+            throwIllegalSignature("CONSTANT_Dynamic", name, signature, CHECK);
           }
         }
         break;
@@ -4642,11 +4693,11 @@ static bool has_illegal_visibility(jint flags) {
 }
 
 static bool is_supported_version(u2 major, u2 minor){
-  const u2 max_version = JAVA_MAX_SUPPORTED_VERSION;
+  const u2 max_version = JVM_CLASSFILE_MAJOR_VERSION;
   return (major >= JAVA_MIN_SUPPORTED_VERSION) &&
          (major <= max_version) &&
          ((major != max_version) ||
-          (minor <= JAVA_MAX_SUPPORTED_MINOR_VERSION));
+          (minor <= JVM_CLASSFILE_MINOR_VERSION));
 }
 
 void ClassFileParser::verify_legal_field_modifiers(jint flags,
@@ -5808,8 +5859,8 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
       _class_name->as_C_string(),
       _major_version,
       _minor_version,
-      JAVA_MAX_SUPPORTED_VERSION,
-      JAVA_MAX_SUPPORTED_MINOR_VERSION);
+      JVM_CLASSFILE_MAJOR_VERSION,
+      JVM_CLASSFILE_MINOR_VERSION);
     return;
   }
 

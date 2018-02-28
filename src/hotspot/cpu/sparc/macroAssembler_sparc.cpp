@@ -1411,9 +1411,14 @@ void MacroAssembler::untested(const char* what) {
 
 
 void MacroAssembler::unimplemented(const char* what) {
-  char* b = new char[1024];
-  jio_snprintf(b, 1024, "unimplemented: %s", what);
-  stop(b);
+  const char* buf = NULL;
+  {
+    ResourceMark rm;
+    stringStream ss;
+    ss.print("unimplemented: %s", what);
+    buf = code_string(ss.as_string());
+  }
+  stop(buf);
 }
 
 
@@ -3235,127 +3240,6 @@ void MacroAssembler::tlab_allocate(
   // update the tlab top pointer
   st_ptr(free, G2_thread, in_bytes(JavaThread::tlab_top_offset()));
   verify_tlab();
-}
-
-
-void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case) {
-  Register top = O0;
-  Register t1 = G1;
-  Register t2 = G3;
-  Register t3 = O1;
-  assert_different_registers(top, t1, t2, t3, G4, G5 /* preserve G4 and G5 */);
-  Label do_refill, discard_tlab;
-
-  if (!Universe::heap()->supports_inline_contig_alloc()) {
-    // No allocation in the shared eden.
-    ba(slow_case);
-    delayed()->nop();
-  }
-
-  ld_ptr(G2_thread, in_bytes(JavaThread::tlab_top_offset()), top);
-  ld_ptr(G2_thread, in_bytes(JavaThread::tlab_end_offset()), t1);
-  ld_ptr(G2_thread, in_bytes(JavaThread::tlab_refill_waste_limit_offset()), t2);
-
-  // calculate amount of free space
-  sub(t1, top, t1);
-  srl_ptr(t1, LogHeapWordSize, t1);
-
-  // Retain tlab and allocate object in shared space if
-  // the amount free in the tlab is too large to discard.
-  cmp(t1, t2);
-
-  brx(Assembler::lessEqual, false, Assembler::pt, discard_tlab);
-  // increment waste limit to prevent getting stuck on this slow path
-  if (Assembler::is_simm13(ThreadLocalAllocBuffer::refill_waste_limit_increment())) {
-    delayed()->add(t2, ThreadLocalAllocBuffer::refill_waste_limit_increment(), t2);
-  } else {
-    delayed()->nop();
-    // set64 does not use the temp register if the given constant is 32 bit. So
-    // we can just use any register; using G0 results in ignoring of the upper 32 bit
-    // of that value.
-    set64(ThreadLocalAllocBuffer::refill_waste_limit_increment(), t3, G0);
-    add(t2, t3, t2);
-  }
-
-  st_ptr(t2, G2_thread, in_bytes(JavaThread::tlab_refill_waste_limit_offset()));
-  if (TLABStats) {
-    // increment number of slow_allocations
-    ld(G2_thread, in_bytes(JavaThread::tlab_slow_allocations_offset()), t2);
-    add(t2, 1, t2);
-    stw(t2, G2_thread, in_bytes(JavaThread::tlab_slow_allocations_offset()));
-  }
-  ba(try_eden);
-  delayed()->nop();
-
-  bind(discard_tlab);
-  if (TLABStats) {
-    // increment number of refills
-    ld(G2_thread, in_bytes(JavaThread::tlab_number_of_refills_offset()), t2);
-    add(t2, 1, t2);
-    stw(t2, G2_thread, in_bytes(JavaThread::tlab_number_of_refills_offset()));
-    // accumulate wastage
-    ld(G2_thread, in_bytes(JavaThread::tlab_fast_refill_waste_offset()), t2);
-    add(t2, t1, t2);
-    stw(t2, G2_thread, in_bytes(JavaThread::tlab_fast_refill_waste_offset()));
-  }
-
-  // if tlab is currently allocated (top or end != null) then
-  // fill [top, end + alignment_reserve) with array object
-  br_null_short(top, Assembler::pn, do_refill);
-
-  set((intptr_t)markOopDesc::prototype()->copy_set_hash(0x2), t2);
-  st_ptr(t2, top, oopDesc::mark_offset_in_bytes()); // set up the mark word
-  // set klass to intArrayKlass
-  sub(t1, typeArrayOopDesc::header_size(T_INT), t1);
-  add(t1, ThreadLocalAllocBuffer::alignment_reserve(), t1);
-  sll_ptr(t1, log2_intptr(HeapWordSize/sizeof(jint)), t1);
-  st(t1, top, arrayOopDesc::length_offset_in_bytes());
-  set((intptr_t)Universe::intArrayKlassObj_addr(), t2);
-  ld_ptr(t2, 0, t2);
-  // store klass last.  concurrent gcs assumes klass length is valid if
-  // klass field is not null.
-  store_klass(t2, top);
-  verify_oop(top);
-
-  ld_ptr(G2_thread, in_bytes(JavaThread::tlab_start_offset()), t1);
-  sub(top, t1, t1); // size of tlab's allocated portion
-  incr_allocated_bytes(t1, t2, t3);
-
-  // refill the tlab with an eden allocation
-  bind(do_refill);
-  ld_ptr(G2_thread, in_bytes(JavaThread::tlab_size_offset()), t1);
-  sll_ptr(t1, LogHeapWordSize, t1);
-  // allocate new tlab, address returned in top
-  eden_allocate(top, t1, 0, t2, t3, slow_case);
-
-  st_ptr(top, G2_thread, in_bytes(JavaThread::tlab_start_offset()));
-  st_ptr(top, G2_thread, in_bytes(JavaThread::tlab_top_offset()));
-#ifdef ASSERT
-  // check that tlab_size (t1) is still valid
-  {
-    Label ok;
-    ld_ptr(G2_thread, in_bytes(JavaThread::tlab_size_offset()), t2);
-    sll_ptr(t2, LogHeapWordSize, t2);
-    cmp_and_br_short(t1, t2, Assembler::equal, Assembler::pt, ok);
-    STOP("assert(t1 == tlab_size)");
-    should_not_reach_here();
-
-    bind(ok);
-  }
-#endif // ASSERT
-  add(top, t1, top); // t1 is tlab_size
-  sub(top, ThreadLocalAllocBuffer::alignment_reserve_in_bytes(), top);
-  st_ptr(top, G2_thread, in_bytes(JavaThread::tlab_end_offset()));
-
-  if (ZeroTLAB) {
-    // This is a fast TLAB refill, therefore the GC is not notified of it.
-    // So compiled code must fill the new TLAB with zeroes.
-    ld_ptr(G2_thread, in_bytes(JavaThread::tlab_start_offset()), t2);
-    zero_memory(t2, t1);
-  }
-  verify_tlab();
-  ba(retry);
-  delayed()->nop();
 }
 
 void MacroAssembler::zero_memory(Register base, Register index) {

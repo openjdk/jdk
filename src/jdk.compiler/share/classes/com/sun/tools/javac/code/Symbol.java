@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -568,14 +568,14 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         return hiddenSym;
     }
 
-    /** Is this symbol inherited into a given class?
+    /** Is this symbol accessible in a given class?
      *  PRE: If symbol's owner is a interface,
      *       it is already assumed that the interface is a superinterface
-     *       of given class.
+     *       the given class.
      *  @param clazz  The class for which we want to establish membership.
      *                This must be a subclass of the member's owner.
      */
-    public boolean isInheritedIn(Symbol clazz, Types types) {
+    public final boolean isAccessibleIn(Symbol clazz, Types types) {
         switch ((int)(flags_field & Flags.AccessFlags)) {
         default: // error recovery
         case PUBLIC:
@@ -601,6 +601,17 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             }
             return (clazz.flags() & INTERFACE) == 0;
         }
+    }
+
+    /** Is this symbol inherited into a given class?
+     *  PRE: If symbol's owner is a interface,
+     *       it is already assumed that the interface is a superinterface
+     *       of the given class.
+     *  @param clazz  The class for which we want to establish membership.
+     *                This must be a subclass of the member's owner.
+     */
+    public boolean isInheritedIn(Symbol clazz, Types types) {
+        return isAccessibleIn(clazz, types);
     }
 
     /** The (variable or method) symbol seen as a member of given
@@ -1628,9 +1639,6 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         /** The parameters of the method. */
         public List<VarSymbol> params = null;
 
-        /** The names of the parameters */
-        public List<Name> savedParameterNames;
-
         /** For an annotation type element, its default value if any.
          *  The value is null if none appeared in the method
          *  declaration.
@@ -1886,57 +1894,18 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         public List<VarSymbol> params() {
             owner.complete();
             if (params == null) {
-                // If ClassReader.saveParameterNames has been set true, then
-                // savedParameterNames will be set to a list of names that
-                // matches the types in type.getParameterTypes().  If any names
-                // were not found in the class file, those names in the list will
-                // be set to the empty name.
-                // If ClassReader.saveParameterNames has been set false, then
-                // savedParameterNames will be null.
-                List<Name> paramNames = savedParameterNames;
-                savedParameterNames = null;
-                // discard the provided names if the list of names is the wrong size.
-                if (paramNames == null || paramNames.size() != type.getParameterTypes().size()) {
-                    paramNames = List.nil();
-                }
-                ListBuffer<VarSymbol> buf = new ListBuffer<>();
-                List<Name> remaining = paramNames;
-                // assert: remaining and paramNames are both empty or both
-                // have same cardinality as type.getParameterTypes()
+                ListBuffer<VarSymbol> newParams = new ListBuffer<>();
                 int i = 0;
                 for (Type t : type.getParameterTypes()) {
-                    Name paramName;
-                    if (remaining.isEmpty()) {
-                        // no names for any parameters available
-                        paramName = createArgName(i, paramNames);
-                    } else {
-                        paramName = remaining.head;
-                        remaining = remaining.tail;
-                        if (paramName.isEmpty()) {
-                            // no name for this specific parameter
-                            paramName = createArgName(i, paramNames);
-                        }
-                    }
-                    buf.append(new VarSymbol(PARAMETER, paramName, t, this));
+                    Name paramName = name.table.fromString("arg" + i);
+                    VarSymbol param = new VarSymbol(PARAMETER, paramName, t, this);
+                    newParams.append(param);
                     i++;
                 }
-                params = buf.toList();
+                params = newParams.toList();
             }
+            Assert.checkNonNull(params);
             return params;
-        }
-
-        // Create a name for the argument at position 'index' that is not in
-        // the exclude list. In normal use, either no names will have been
-        // provided, in which case the exclude list is empty, or all the names
-        // will have been provided, in which case this method will not be called.
-        private Name createArgName(int index, List<Name> exclude) {
-            String prefix = "arg";
-            while (true) {
-                Name argName = name.table.fromString(prefix + index);
-                if (!exclude.contains(argName))
-                    return argName;
-                prefix += "$";
-            }
         }
 
         public Symbol asMemberOf(Type site, Types types) {

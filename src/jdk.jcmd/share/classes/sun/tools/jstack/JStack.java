@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,11 @@ public class JStack {
             if (!arg.startsWith("-")) {
                 break;
             }
-            if (arg.equals("-help") || arg.equals("-h")) {
+            if (arg.equals("-?")     ||
+                arg.equals("-h")     ||
+                arg.equals("--help") ||
+                // -help: legacy.
+                arg.equals("-help")) {
                 usage(0);
             }
             else {
@@ -171,7 +175,7 @@ public class JStack {
         System.err.println("");
         System.err.println("Options:");
         System.err.println("    -l  long listing. Prints additional information about locks");
-        System.err.println("    -h or -help to print this help message");
+        System.err.println("    -? -h --help -help to print this help message");
         System.exit(exit);
     }
 }

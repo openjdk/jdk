@@ -64,9 +64,6 @@ private:
 public:
   static void initialize();
 
-  // may have to adjust always capabilities when VM initialization has completed
-  static void recompute_always_capabilities();
-
   // queries and actions
   static void get_potential_capabilities(const jvmtiCapabilities *current,
                                          const jvmtiCapabilities *prohibited,

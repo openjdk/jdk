@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3952,8 +3952,7 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
       // Only start a GC if the bootstrapping has completed.
 
       // Try to clean out some memory and retry.
-      result = Universe::heap()->collector_policy()->satisfy_failed_metadata_allocation(
-          loader_data, word_size, mdtype);
+      result = Universe::heap()->satisfy_failed_metadata_allocation(loader_data, word_size, mdtype);
     }
   }
 
@@ -4070,7 +4069,7 @@ void Metaspace::print_on(outputStream* out) const {
 }
 
 bool Metaspace::contains(const void* ptr) {
-  if (UseSharedSpaces && MetaspaceShared::is_in_shared_space(ptr)) {
+  if (MetaspaceShared::is_in_shared_metaspace(ptr)) {
     return true;
   }
   return contains_non_shared(ptr);
@@ -4372,7 +4371,7 @@ void ChunkManager_test_list_index() {
 // ChunkManagerReturnTest stresses taking/returning chunks from the ChunkManager. It takes and
 // returns chunks from/to the ChunkManager while keeping track of the expected ChunkManager
 // content.
-class ChunkManagerReturnTestImpl {
+class ChunkManagerReturnTestImpl : public CHeapObj<mtClass> {
 
   VirtualSpaceNode _vsn;
   ChunkManager _cm;

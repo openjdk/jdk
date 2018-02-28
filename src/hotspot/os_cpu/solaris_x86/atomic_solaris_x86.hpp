@@ -28,16 +28,16 @@
 // For Sun Studio - implementation is in solaris_x86_64.il.
 
 extern "C" {
-  jint _Atomic_add(jint add_value, volatile jint* dest);
-  jlong _Atomic_add_long(jlong add_value, volatile jlong* dest);
+  int32_t _Atomic_add(int32_t add_value, volatile int32_t* dest);
+  int64_t _Atomic_add_long(int64_t add_value, volatile int64_t* dest);
 
-  jint _Atomic_xchg(jint exchange_value, volatile jint* dest);
-  jbyte _Atomic_cmpxchg_byte(jbyte exchange_value, volatile jbyte* dest,
-                             jbyte compare_value);
-  jint _Atomic_cmpxchg(jint exchange_value, volatile jint* dest,
-                       jint compare_value);
-  jlong _Atomic_cmpxchg_long(jlong exchange_value, volatile jlong* dest,
-                             jlong compare_value);
+  int32_t _Atomic_xchg(int32_t exchange_value, volatile int32_t* dest);
+  int8_t  _Atomic_cmpxchg_byte(int8_t exchange_value, volatile int8_t* dest,
+                               int8_t compare_value);
+  int32_t _Atomic_cmpxchg(int32_t exchange_value, volatile int32_t* dest,
+                          int32_t compare_value);
+  int64_t _Atomic_cmpxchg_long(int64_t exchange_value, volatile int64_t* dest,
+                               int64_t compare_value);
 }
 
 template<size_t byte_size>
@@ -55,8 +55,8 @@ inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest) co
   STATIC_ASSERT(4 == sizeof(I));
   STATIC_ASSERT(4 == sizeof(D));
   return PrimitiveConversions::cast<D>(
-    _Atomic_add(PrimitiveConversions::cast<jint>(add_value),
-                reinterpret_cast<jint volatile*>(dest)));
+    _Atomic_add(PrimitiveConversions::cast<int32_t>(add_value),
+                reinterpret_cast<int32_t volatile*>(dest)));
 }
 
 // Not using add_using_helper; see comment for cmpxchg.
@@ -66,8 +66,8 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) co
   STATIC_ASSERT(8 == sizeof(I));
   STATIC_ASSERT(8 == sizeof(D));
   return PrimitiveConversions::cast<D>(
-    _Atomic_add_long(PrimitiveConversions::cast<jlong>(add_value),
-                     reinterpret_cast<jlong volatile*>(dest)));
+    _Atomic_add_long(PrimitiveConversions::cast<int64_t>(add_value),
+                     reinterpret_cast<int64_t volatile*>(dest)));
 }
 
 template<>
@@ -76,11 +76,11 @@ inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
                                              T volatile* dest) const {
   STATIC_ASSERT(4 == sizeof(T));
   return PrimitiveConversions::cast<T>(
-    _Atomic_xchg(PrimitiveConversions::cast<jint>(exchange_value),
-                 reinterpret_cast<jint volatile*>(dest)));
+    _Atomic_xchg(PrimitiveConversions::cast<int32_t>(exchange_value),
+                 reinterpret_cast<int32_t volatile*>(dest)));
 }
 
-extern "C" jlong _Atomic_xchg_long(jlong exchange_value, volatile jlong* dest);
+extern "C" int64_t _Atomic_xchg_long(int64_t exchange_value, volatile int64_t* dest);
 
 template<>
 template<typename T>
@@ -88,8 +88,8 @@ inline T Atomic::PlatformXchg<8>::operator()(T exchange_value,
                                              T volatile* dest) const {
   STATIC_ASSERT(8 == sizeof(T));
   return PrimitiveConversions::cast<T>(
-    _Atomic_xchg_long(PrimitiveConversions::cast<jlong>(exchange_value),
-                      reinterpret_cast<jlong volatile*>(dest)));
+    _Atomic_xchg_long(PrimitiveConversions::cast<int64_t>(exchange_value),
+                      reinterpret_cast<int64_t volatile*>(dest)));
 }
 
 // Not using cmpxchg_using_helper here, because some configurations of
@@ -106,9 +106,9 @@ inline T Atomic::PlatformCmpxchg<1>::operator()(T exchange_value,
                                                 cmpxchg_memory_order order) const {
   STATIC_ASSERT(1 == sizeof(T));
   return PrimitiveConversions::cast<T>(
-    _Atomic_cmpxchg_byte(PrimitiveConversions::cast<jbyte>(exchange_value),
-                         reinterpret_cast<jbyte volatile*>(dest),
-                         PrimitiveConversions::cast<jbyte>(compare_value)));
+    _Atomic_cmpxchg_byte(PrimitiveConversions::cast<int8_t>(exchange_value),
+                         reinterpret_cast<int8_t volatile*>(dest),
+                         PrimitiveConversions::cast<int8_t>(compare_value)));
 }
 
 template<>
@@ -119,9 +119,9 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T exchange_value,
                                                 cmpxchg_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
   return PrimitiveConversions::cast<T>(
-    _Atomic_cmpxchg(PrimitiveConversions::cast<jint>(exchange_value),
-                    reinterpret_cast<jint volatile*>(dest),
-                    PrimitiveConversions::cast<jint>(compare_value)));
+    _Atomic_cmpxchg(PrimitiveConversions::cast<int32_t>(exchange_value),
+                    reinterpret_cast<int32_t volatile*>(dest),
+                    PrimitiveConversions::cast<int32_t>(compare_value)));
 }
 
 template<>
@@ -132,9 +132,9 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
                                                 cmpxchg_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
   return PrimitiveConversions::cast<T>(
-    _Atomic_cmpxchg_long(PrimitiveConversions::cast<jlong>(exchange_value),
-                         reinterpret_cast<jlong volatile*>(dest),
-                         PrimitiveConversions::cast<jlong>(compare_value)));
+    _Atomic_cmpxchg_long(PrimitiveConversions::cast<int64_t>(exchange_value),
+                         reinterpret_cast<int64_t volatile*>(dest),
+                         PrimitiveConversions::cast<int64_t>(compare_value)));
 }
 
 #endif // OS_CPU_SOLARIS_X86_VM_ATOMIC_SOLARIS_X86_HPP

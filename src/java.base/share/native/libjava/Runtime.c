@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,19 +63,6 @@ JNIEXPORT void JNICALL
 Java_java_lang_Runtime_gc(JNIEnv *env, jobject this)
 {
     JVM_GC();
-}
-
-JNIEXPORT void JNICALL
-Java_java_lang_Runtime_runFinalization0(JNIEnv *env, jobject this)
-{
-    jclass cl;
-    jmethodID mid;
-
-    if ((cl = (*env)->FindClass(env, "java/lang/ref/Finalizer"))
-        && (mid = (*env)->GetStaticMethodID(env, cl,
-                                            "runFinalization", "()V"))) {
-        (*env)->CallStaticVoidMethod(env, cl, mid);
-    }
 }
 
 JNIEXPORT jint JNICALL

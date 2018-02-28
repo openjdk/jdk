@@ -26,8 +26,7 @@
  * @test
  * @summary AppCDS handling of protection domain in custom loaders.
  *
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires vm.cds.custom.loaders
  *
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds

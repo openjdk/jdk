@@ -27,9 +27,7 @@ package jdk.internal.misc;
 
 import static java.lang.Thread.State.*;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.Properties;
-import java.util.Collections;
 
 public class VM {
 
@@ -38,6 +36,8 @@ public class VM {
     private static final int MODULE_SYSTEM_INITED        = 2;
     private static final int SYSTEM_LOADER_INITIALIZING  = 3;
     private static final int SYSTEM_BOOTED               = 4;
+    private static final int SYSTEM_SHUTDOWN             = 5;
+
 
     // 0, 1, 2, ...
     private static volatile int initLevel;
@@ -52,7 +52,7 @@ public class VM {
      */
     public static void initLevel(int value) {
         synchronized (lock) {
-            if (value <= initLevel || value > SYSTEM_BOOTED)
+            if (value <= initLevel || value > SYSTEM_SHUTDOWN)
                 throw new InternalError("Bad level: " + value);
             initLevel = value;
             lock.notifyAll();
@@ -92,6 +92,23 @@ public class VM {
      */
     public static boolean isBooted() {
         return initLevel >= SYSTEM_BOOTED;
+    }
+
+    /**
+     * Set shutdown state.  Shutdown completes when all registered shutdown
+     * hooks have been run.
+     *
+     * @see java.lang.Shutdown
+     */
+    public static void shutdown() {
+        initLevel(SYSTEM_SHUTDOWN);
+    }
+
+    /**
+     * Returns {@code true} if the VM has been shutdown
+     */
+    public static boolean isShutdown() {
+        return initLevel == SYSTEM_SHUTDOWN;
     }
 
     // A user-settable upper limit on the maximum amount of allocatable direct

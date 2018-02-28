@@ -38,8 +38,6 @@ public enum GCCause {
   _wb_young_gc ("WhiteBox Initiated Young GC"),
   _wb_conc_mark ("WhiteBox Initiated Concurrent Mark"),
   _wb_full_gc ("WhiteBox Initiated Full GC"),
-  _update_allocation_context_stats_inc ("Update Allocation Context Stats"),
-  _update_allocation_context_stats_full ("Update Allocation Context Stats"),
 
   _no_gc ("No GC"),
   _no_cause_specified ("Unknown GCCause"),

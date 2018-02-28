@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,7 @@ OPENJDK_TARGET_CPU_ISADIR:=@OPENJDK_TARGET_CPU_ISADIR@
 OPENJDK_TARGET_CPU_LEGACY:=@OPENJDK_TARGET_CPU_LEGACY@
 OPENJDK_TARGET_CPU_LEGACY_LIB:=@OPENJDK_TARGET_CPU_LEGACY_LIB@
 OPENJDK_TARGET_CPU_OSARCH:=@OPENJDK_TARGET_CPU_OSARCH@
+OPENJDK_TARGET_OS_INCLUDE_SUBIDR:=@OPENJDK_TARGET_OS_INCLUDE_SUBDIR@
 
 HOTSPOT_TARGET_OS := @HOTSPOT_TARGET_OS@
 HOTSPOT_TARGET_OS_TYPE := @HOTSPOT_TARGET_OS_TYPE@
@@ -99,6 +100,8 @@ OPENJDK_BUILD_CPU:=@OPENJDK_BUILD_CPU@
 OPENJDK_BUILD_CPU_ARCH:=@OPENJDK_BUILD_CPU_ARCH@
 OPENJDK_BUILD_CPU_BITS:=@OPENJDK_BUILD_CPU_BITS@
 OPENJDK_BUILD_CPU_ENDIAN:=@OPENJDK_BUILD_CPU_ENDIAN@
+
+OPENJDK_BUILD_OS_INCLUDE_SUBIDR:=@OPENJDK_TARGET_OS_INCLUDE_SUBDIR@
 
 # Target platform value in ModuleTarget class file attribute.
 OPENJDK_MODULE_TARGET_PLATFORM:=@OPENJDK_MODULE_TARGET_PLATFORM@
@@ -189,6 +192,10 @@ VERSION_DATE := @VERSION_DATE@
 # Vendor version string
 VENDOR_VERSION_STRING := @VENDOR_VERSION_STRING@
 
+# Class-file version
+VERSION_CLASSFILE_MAJOR := @VERSION_CLASSFILE_MAJOR@
+VERSION_CLASSFILE_MINOR := @VERSION_CLASSFILE_MINOR@
+
 # Convenience CFLAGS settings for passing version information into native programs.
 VERSION_CFLAGS := \
     -DVERSION_FEATURE=$(VERSION_FEATURE) \
@@ -204,6 +211,8 @@ VERSION_CFLAGS := \
     -DVERSION_SPECIFICATION='"$(VERSION_SPECIFICATION)"' \
     -DVERSION_DATE='"$(VERSION_DATE)"' \
     -DVENDOR_VERSION_STRING='"$(VENDOR_VERSION_STRING)"' \
+    -DVERSION_CLASSFILE_MAJOR=$(VERSION_CLASSFILE_MAJOR) \
+    -DVERSION_CLASSFILE_MINOR=$(VERSION_CLASSFILE_MINOR) \
     #
 
 ifneq ($(COMPANY_NAME),)
@@ -212,9 +221,9 @@ ifneq ($(COMPANY_NAME),)
   # Only export "VENDOR" to the build if COMPANY_NAME contains a real value.
   # Otherwise the default value for VENDOR, which is used to set the "java.vendor"
   # and "java.vm.vendor" properties is hard-coded into the source code (i.e. in
-  # System.c in the jdk for "vm.vendor" and vm_version.cpp in the VM for "java.vm.vendor") 
+  # System.c in the jdk for "vm.vendor" and vm_version.cpp in the VM for "java.vm.vendor")
   ifneq ($(COMPANY_NAME), N/A)
-    VERSION_CFLAGS += -DVENDOR='"$(COMPANY_NAME)"' 
+    VERSION_CFLAGS += -DVENDOR='"$(COMPANY_NAME)"'
   endif
 endif
 
@@ -604,6 +613,8 @@ INTERIM_LANGTOOLS_BASE_MODULES := java.compiler jdk.compiler jdk.javadoc
 INTERIM_LANGTOOLS_MODULES := $(addsuffix .interim, $(INTERIM_LANGTOOLS_BASE_MODULES))
 INTERIM_LANGTOOLS_ADD_EXPORTS := \
     --add-exports java.base/sun.reflect.annotation=jdk.compiler.interim \
+    --add-exports java.base/jdk.internal.jmod=jdk.compiler.interim \
+    --add-exports java.base/jdk.internal.misc=jdk.compiler.interim \
     #
 INTERIM_LANGTOOLS_MODULES_COMMA := $(strip $(subst $(SPACE),$(COMMA),$(strip \
     $(INTERIM_LANGTOOLS_MODULES))))
@@ -618,14 +629,11 @@ JAVADOC_MAIN_CLASS = -m jdk.javadoc.interim/jdk.javadoc.internal.tool.Main
 
 INTERIM_RMIC_BASE_MODULES := jdk.rmic
 INTERIM_RMIC_MODULES := $(addsuffix .interim, $(INTERIM_RMIC_BASE_MODULES))
-INTERIM_RMIC_ADD_EXPORTS := \
-    --add-exports java.corba/com.sun.corba.se.impl.util=jdk.rmic.interim \
     #
 # Use = to delay expansion of PathList since it's not available in this file.
-INTERIM_RMIC_ARGS = --limit-modules java.base,jdk.compiler,jdk.javadoc,java.corba \
+INTERIM_RMIC_ARGS = --limit-modules java.base,jdk.compiler,jdk.javadoc \
     --module-path $(call PathList, $(BUILDTOOLS_OUTPUTDIR)/interim_rmic_modules \
         $(BUILDTOOLS_OUTPUTDIR)/interim_langtools_modules) \
-    $(INTERIM_RMIC_ADD_EXPORTS) \
     #
 
 # You run the new javac using the boot jdk with $(BOOT_JDK)/bin/java $(NEW_JAVAC) ...
@@ -677,6 +685,7 @@ NICE:=@NICE@
 PANDOC:=@FIXPATH@ @PANDOC@
 PATCH:=@PATCH@
 PRINTF:=@PRINTF@
+READLINK:=@READLINK@
 RM:=@RM@
 RMDIR:=@RMDIR@
 SED:=@SED@
@@ -726,6 +735,8 @@ ENABLE_INTREE_EC:=@ENABLE_INTREE_EC@
 USE_EXTERNAL_LIBJPEG:=@USE_EXTERNAL_LIBJPEG@
 USE_EXTERNAL_LIBGIF:=@USE_EXTERNAL_LIBGIF@
 USE_EXTERNAL_LIBZ:=@USE_EXTERNAL_LIBZ@
+LIBZ_CFLAGS:=@LIBZ_CFLAGS@
+LIBZ_LIBS:=@LIBZ_LIBS@
 LIBZIP_CAN_USE_MMAP:=@LIBZIP_CAN_USE_MMAP@
 MSVCR_DLL:=@MSVCR_DLL@
 MSVCP_DLL:=@MSVCP_DLL@

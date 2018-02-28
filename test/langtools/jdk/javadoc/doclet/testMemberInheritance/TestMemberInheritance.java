@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,56 +50,56 @@ public class TestMemberInheritance extends JavadocTester {
 
         checkOutput("pkg/SubClass.html", true,
                 // Public field should be inherited
-                "<a href=\"../pkg/BaseClass.html#pubField\">",
+                "<a href=\"BaseClass.html#pubField\">",
                 // Public method should be inherited
-                "<a href=\"../pkg/BaseClass.html#pubMethod--\">",
+                "<a href=\"BaseClass.html#pubMethod--\">",
                 // Public inner class should be inherited.
-                "<a href=\"../pkg/BaseClass.pubInnerClass.html\" title=\"class in pkg\">",
+                "<a href=\"BaseClass.pubInnerClass.html\" title=\"class in pkg\">",
                 // Protected field should be inherited
-                "<a href=\"../pkg/BaseClass.html#proField\">",
+                "<a href=\"BaseClass.html#proField\">",
                 // Protected method should be inherited
-                "<a href=\"../pkg/BaseClass.html#proMethod--\">",
+                "<a href=\"BaseClass.html#proMethod--\">",
                 // Protected inner class should be inherited.
-                "<a href=\"../pkg/BaseClass.proInnerClass.html\" title=\"class in pkg\">",
+                "<a href=\"BaseClass.proInnerClass.html\" title=\"class in pkg\">",
                 // New labels as of 1.5.0
                 "Nested classes/interfaces inherited from class&nbsp;pkg."
-                + "<a href=\"../pkg/BaseClass.html\" title=\"class in pkg\">BaseClass</a>",
+                + "<a href=\"BaseClass.html\" title=\"class in pkg\">BaseClass</a>",
                 "Nested classes/interfaces inherited from interface&nbsp;pkg."
-                + "<a href=\"../pkg/BaseInterface.html\" title=\"interface in pkg\">BaseInterface</a>");
+                + "<a href=\"BaseInterface.html\" title=\"interface in pkg\">BaseInterface</a>");
 
         checkOutput("pkg/BaseClass.html", true,
                 // Test overriding/implementing methods with generic parameters.
                 "<dl>\n"
                 + "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n"
-                + "<dd><code><a href=\"../pkg/BaseInterface.html#getAnnotation-java.lang.Class-\">"
+                + "<dd><code><a href=\"BaseInterface.html#getAnnotation-java.lang.Class-\">"
                 + "getAnnotation</a></code>&nbsp;in interface&nbsp;<code>"
-                + "<a href=\"../pkg/BaseInterface.html\" title=\"interface in pkg\">"
+                + "<a href=\"BaseInterface.html\" title=\"interface in pkg\">"
                 + "BaseInterface</a></code></dd>\n"
                 + "</dl>");
 
         checkOutput("diamond/Z.html", true,
                 // Test diamond inheritance member summary (6256068)
-                "<code><a href=\"../diamond/A.html#aMethod--\">aMethod</a></code>");
+                "<code><a href=\"A.html#aMethod--\">aMethod</a></code>");
 
         checkOutput("inheritDist/C.html", true,
                 // Test that doc is inherited from closed parent (6270645)
                 "<div class=\"block\">m1-B</div>");
 
         checkOutput("pkg/SubClass.html", false,
-                "<a href=\"../pkg/BaseClass.html#staticMethod--\">staticMethod</a></code>");
+                "<a href=\"BaseClass.html#staticMethod--\">staticMethod</a></code>");
 
         checkOutput("pkg1/Implementer.html", true,
                 // ensure the method makes it
                 "<td class=\"colFirst\"><code>static java.time.Period</code></td>\n"
                 + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
-                + "<a href=\"../pkg1/Implementer.html#between-java.time.LocalDate-java.time.LocalDate-\">"
+                + "<a href=\"#between-java.time.LocalDate-java.time.LocalDate-\">"
                 + "between</a></span>&#8203;(java.time.LocalDate&nbsp;startDateInclusive,\n"
                 + "       java.time.LocalDate&nbsp;endDateExclusive)</code></th>");
 
         checkOutput("pkg1/Implementer.html", false,
-                "<h3>Methods inherited from interface&nbsp;pkg1.<a href=\"../pkg1/Interface.html\""
+                "<h3>Methods inherited from interface&nbsp;pkg1.<a href=\"Interface.html\""
                 + " title=\"interface in pkg1\">Interface</a></h3>\n"
-                + "<code><a href=\"../pkg1/Interface.html#between-java.time.chrono.ChronoLocalDate"
+                + "<code><a href=\"Interface.html#between-java.time.chrono.ChronoLocalDate"
                 + "-java.time.chrono.ChronoLocalDate-\">between</a></code>"
         );
     }

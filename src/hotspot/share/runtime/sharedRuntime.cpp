@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1922,95 +1922,27 @@ char* SharedRuntime::generate_class_cast_message(
   vframeStream vfst(thread, true);
   assert(!vfst.at_end(), "Java frame must exist");
   Bytecode_checkcast cc(vfst.method(), vfst.method()->bcp_from(vfst.bci()));
-  Klass* target_klass = vfst.method()->constants()->klass_at(
-    cc.index(), thread);
-  return generate_class_cast_message(caster_klass, target_klass);
+  constantPoolHandle cpool(thread, vfst.method()->constants());
+  Klass* target_klass = ConstantPool::klass_at_if_loaded(cpool, cc.index());
+  Symbol* target_klass_name = NULL;
+  if (target_klass == NULL) {
+    // This klass should be resolved, but just in case, get the name in the klass slot.
+    target_klass_name = cpool->klass_name_at(cc.index());
+  }
+  return generate_class_cast_message(caster_klass, target_klass, target_klass_name);
 }
 
-// The caller of class_loader_and_module_name() (or one of its callers)
+
+// The caller of generate_class_cast_message() (or one of its callers)
 // must use a ResourceMark in order to correctly free the result.
-const char* class_loader_and_module_name(Klass* klass) {
-  const char* delim = "/";
-  size_t delim_len = strlen(delim);
-
-  const char* fqn = klass->external_name();
-  // Length of message to return; always include FQN
-  size_t msglen = strlen(fqn) + 1;
-
-  bool has_cl_name = false;
-  bool has_mod_name = false;
-  bool has_version = false;
-
-  // Use class loader name, if exists and not builtin
-  const char* class_loader_name = "";
-  ClassLoaderData* cld = klass->class_loader_data();
-  assert(cld != NULL, "class_loader_data should not be NULL");
-  if (!cld->is_builtin_class_loader_data()) {
-    // If not builtin, look for name
-    oop loader = klass->class_loader();
-    if (loader != NULL) {
-      oop class_loader_name_oop = java_lang_ClassLoader::name(loader);
-      if (class_loader_name_oop != NULL) {
-        class_loader_name = java_lang_String::as_utf8_string(class_loader_name_oop);
-        if (class_loader_name != NULL && class_loader_name[0] != '\0') {
-          has_cl_name = true;
-          msglen += strlen(class_loader_name) + delim_len;
-        }
-      }
-    }
-  }
-
-  const char* module_name = "";
-  const char* version = "";
-  Klass* bottom_klass = klass->is_objArray_klass() ?
-    ObjArrayKlass::cast(klass)->bottom_klass() : klass;
-  if (bottom_klass->is_instance_klass()) {
-    ModuleEntry* module = InstanceKlass::cast(bottom_klass)->module();
-    // Use module name, if exists
-    if (module->is_named()) {
-      has_mod_name = true;
-      module_name = module->name()->as_C_string();
-      msglen += strlen(module_name);
-      // Use version if exists and is not a jdk module
-      if (module->is_non_jdk_module() && module->version() != NULL) {
-        has_version = true;
-        version = module->version()->as_C_string();
-        msglen += strlen("@") + strlen(version);
-      }
-    }
-  } else {
-    // klass is an array of primitives, so its module is java.base
-    module_name = JAVA_BASE_NAME;
-  }
-
-  if (has_cl_name || has_mod_name) {
-    msglen += delim_len;
-  }
-
-  char* message = NEW_RESOURCE_ARRAY_RETURN_NULL(char, msglen);
-
-  // Just return the FQN if error in allocating string
-  if (message == NULL) {
-    return fqn;
-  }
-
-  jio_snprintf(message, msglen, "%s%s%s%s%s%s%s",
-               class_loader_name,
-               (has_cl_name) ? delim : "",
-               (has_mod_name) ? module_name : "",
-               (has_version) ? "@" : "",
-               (has_version) ? version : "",
-               (has_cl_name || has_mod_name) ? delim : "",
-               fqn);
-  return message;
-}
-
 char* SharedRuntime::generate_class_cast_message(
-    Klass* caster_klass, Klass* target_klass) {
+    Klass* caster_klass, Klass* target_klass, Symbol* target_klass_name) {
 
-  const char* caster_name = class_loader_and_module_name(caster_klass);
+  const char* caster_name = caster_klass->class_loader_and_module_name();
 
-  const char* target_name = class_loader_and_module_name(target_klass);
+  assert(target_klass != NULL || target_klass_name != NULL, "one must be provided");
+  const char* target_name = target_klass == NULL ? target_klass_name->as_C_string() :
+                                                   target_klass->class_loader_and_module_name();
 
   size_t msglen = strlen(caster_name) + strlen(" cannot be cast to ") + strlen(target_name) + 1;
 
@@ -3168,4 +3100,17 @@ frame SharedRuntime::look_for_reserved_stack_annotated_method(JavaThread* thread
     }
   }
   return activation;
+}
+
+void SharedRuntime::on_slowpath_allocation_exit(JavaThread* thread) {
+  // After any safepoint, just before going back to compiled code,
+  // we inform the GC that we will be doing initializing writes to
+  // this object in the future without emitting card-marks, so
+  // GC may take any compensating steps.
+
+  oop new_obj = thread->vm_result();
+  if (new_obj == NULL) return;
+
+  BarrierSet *bs = Universe::heap()->barrier_set();
+  bs->on_slowpath_allocation_exit(thread, new_obj);
 }
