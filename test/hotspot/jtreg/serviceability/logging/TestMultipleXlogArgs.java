@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public class TestMultipleXlogArgs {
                                                                   "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         // -Xlog:logging=trace means that the log configuration will be printed.
-        String stdoutConfigLine = "\\[logging *\\] #0: stdout .*";
+        String stdoutConfigLine = "\\[logging *\\]  #0: stdout .*";
         // Ensure logging=trace has overwritten logging=debug
         output.shouldMatch(stdoutConfigLine + "logging=trace").shouldNotMatch(stdoutConfigLine + "logging=debug");
         // Make sure safepoint=info is printed exactly once even though we're setting it twice
