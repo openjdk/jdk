@@ -220,8 +220,7 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
 
   output->_reconfigured = true;
 
-  // Clear the previous config description
-  output->clear_config_string();
+  size_t on_level[LogLevel::Count] = {0};
 
   bool enabled = false;
   for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
@@ -229,6 +228,7 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
 
     // Ignore tagsets that do not, and will not log on the output
     if (!ts->has_output(output) && (level == LogLevel::NotMentioned || level == LogLevel::Off)) {
+      on_level[LogLevel::Off]++;
       continue;
     }
 
@@ -241,20 +241,18 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
     // Set the new level, if it changed
     if (level != LogLevel::NotMentioned) {
       ts->set_output_level(output, level);
+    } else {
+      // Look up the previously set level for this output on this tagset
+      level = ts->level_for(output);
     }
 
     if (level != LogLevel::Off) {
       // Keep track of whether or not the output is ever used by some tagset
       enabled = true;
-
-      if (level == LogLevel::NotMentioned) {
-        // Look up the previously set level for this output on this tagset
-        level = ts->level_for(output);
-      }
-
-      // Update the config description with this tagset and level
-      output->add_to_config_string(ts, level);
     }
+
+    // Track of the number of tag sets on each level
+    on_level[level]++;
   }
 
   // It is now safe to set the new decorators for the actual output
@@ -265,17 +263,14 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
     ts->update_decorators();
   }
 
-  if (enabled) {
-    assert(strlen(output->config_string()) > 0,
-           "Should always have a config description if the output is enabled.");
-  } else if (idx > 1) {
-    // Output is unused and should be removed.
+  if (!enabled && idx > 1) {
+    // Output is unused and should be removed, unless it is stdout/stderr (idx < 2)
     delete_output(idx);
-  } else {
-    // Output is either stdout or stderr, which means we can't remove it.
-    // Update the config description to reflect that the output is disabled.
-    output->set_config_string("all=off");
+    return;
   }
+
+  output->update_config_string(on_level);
+  assert(strlen(output->config_string()) > 0, "should always have a config description");
 }
 
 void LogConfiguration::disable_output(size_t idx) {
