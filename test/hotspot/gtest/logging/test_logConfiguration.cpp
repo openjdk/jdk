@@ -113,7 +113,7 @@ TEST_VM_F(LogConfigurationTest, describe) {
   EXPECT_FALSE(is_described(TestLogFileName)) << "Test output already exists!";
   set_log_config(TestLogFileName, what);
   EXPECT_TRUE(is_described(TestLogFileName));
-  EXPECT_TRUE(is_described("logging=trace"));
+  EXPECT_TRUE(is_described("all=trace"));
 }
 
 // Test updating an existing log output
@@ -125,7 +125,7 @@ TEST_VM_F(LogConfigurationTest, update_output) {
 
     // Verify configuration using LogConfiguration::describe
     EXPECT_TRUE(is_described("#0: stdout"));
-    EXPECT_TRUE(is_described("logging=info"));
+    EXPECT_TRUE(is_described("all=info"));
 
     // Verify by iterating over tagsets
     LogOutput* o = &StdoutLog;
@@ -154,7 +154,7 @@ TEST_VM_F(LogConfigurationTest, add_new_output) {
 
   // Verify new output using LogConfiguration::describe
   EXPECT_TRUE(is_described(TestLogFileName));
-  EXPECT_TRUE(is_described("logging=trace"));
+  EXPECT_TRUE(is_described("all=trace"));
 
   // Also verify by iterating over tagsets, checking levels on tagsets
   for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
@@ -265,7 +265,7 @@ TEST_VM_F(LogConfigurationTest, parse_command_line_arguments) {
   bool success = LogConfiguration::parse_command_line_arguments(buf);
   EXPECT_TRUE(success) << "Error parsing valid command line arguments '" << buf << "'";
   // Ensure the new configuration applied
-  EXPECT_TRUE(is_described("logging=debug"));
+  EXPECT_TRUE(is_described("logging*=debug"));
   EXPECT_TRUE(is_described(_all_decorators));
 
   // Test the configuration of file outputs as well

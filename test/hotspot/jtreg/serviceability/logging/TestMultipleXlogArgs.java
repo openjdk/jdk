@@ -37,7 +37,7 @@ public class TestMultipleXlogArgs {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:logging=debug",
                                                                   "-Xlog:logging=trace",
                                                                   "-Xlog:defaultmethods=trace",
-                                                                  "-Xlog:defaultmethods=off",
+                                                                  "-Xlog:defaultmethods=warning",
                                                                   "-Xlog:safepoint=info",
                                                                   "-Xlog:safepoint=info",
                                                                   "-version");
@@ -48,7 +48,7 @@ public class TestMultipleXlogArgs {
         output.shouldMatch(stdoutConfigLine + "logging=trace").shouldNotMatch(stdoutConfigLine + "logging=debug");
         // Make sure safepoint=info is printed exactly once even though we're setting it twice
         output.shouldMatch(stdoutConfigLine + "safepoint=info").shouldNotMatch(stdoutConfigLine + "safepoint=info.*safepoint=info");
-        // Shouldn't see defaultmethods at all, because disabled tags are not listed
+        // Shouldn't see defaultmethods at all, because it should be covered by the initial 'all=warning' config
         output.shouldNotMatch(stdoutConfigLine + "defaultmethods");
         output.shouldHaveExitValue(0);
     }

@@ -32,6 +32,7 @@
 
 class LogDecorations;
 class LogMessageBuffer;
+class LogSelection;
 class LogTagSet;
 
 // The base class/interface for log outputs.
@@ -52,15 +53,17 @@ class LogOutput : public CHeapObj<mtLogging> {
   char* _config_string;
   size_t _config_string_buffer_size;
 
+  // Adds the log selection to the config description (e.g. "tag1+tag2*=level").
+  void add_to_config_string(const LogSelection& selection);
+
  protected:
   LogDecorators _decorators;
 
-  // Clears any previous config description in preparation of reconfiguration.
-  void clear_config_string();
-  // Adds the tagset on the given level to the config description (e.g. "tag1+tag2=level").
-  void add_to_config_string(const LogTagSet* ts, LogLevelType level);
   // Replaces the current config description with the given string.
   void set_config_string(const char* string);
+
+  // Update the config string for this output to reflect its current configuration
+  void update_config_string(const size_t on_level[LogLevel::Count]);
 
  public:
   void set_decorators(const LogDecorators &decorators) {

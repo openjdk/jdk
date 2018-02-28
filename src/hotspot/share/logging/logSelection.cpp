@@ -170,6 +170,25 @@ bool LogSelection::selects(const LogTagSet& ts) const {
   return true;
 }
 
+static bool contains(LogTagType tag, const LogTagType tags[LogTag::MaxTags], size_t ntags) {
+  for (size_t i = 0; i < ntags; i++) {
+    if (tags[i] == tag) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool LogSelection::consists_of(const LogTagType tags[LogTag::MaxTags]) const {
+  size_t i;
+  for (i = 0; tags[i] != LogTag::__NO_TAG; i++) {
+    if (!contains(tags[i], _tags, _ntags)) {
+      return false;
+    }
+  }
+  return i == _ntags;
+}
+
 size_t LogSelection::ntags() const {
   return _ntags;
 }

@@ -59,6 +59,7 @@ class LogSelection : public StackObj {
   size_t tag_sets_selected() const;
 
   bool selects(const LogTagSet& ts) const;
+  bool consists_of(const LogTagType tags[LogTag::MaxTags]) const;
 
   int describe_tags(char* buf, size_t bufsize) const;
   int describe(char* buf, size_t bufsize) const;
