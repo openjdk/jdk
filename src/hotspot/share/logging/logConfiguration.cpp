@@ -78,6 +78,11 @@ bool ConfigurationLock::current_thread_has_lock() {
 #endif
 
 void LogConfiguration::post_initialize() {
+  // Reset the reconfigured status of all outputs
+  for (size_t i = 0; i < _n_outputs; i++) {
+    _outputs[i]->_reconfigured = false;
+  }
+
   LogDiagnosticCommand::registerCommand();
   Log(logging) log;
   if (log.is_info()) {
@@ -212,6 +217,8 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
   assert(ConfigurationLock::current_thread_has_lock(), "Must hold configuration lock to call this function.");
   assert(idx < _n_outputs, "Invalid index, idx = " SIZE_FORMAT " and _n_outputs = " SIZE_FORMAT, idx, _n_outputs);
   LogOutput* output = _outputs[idx];
+
+  output->_reconfigured = true;
 
   // Clear the previous config description
   output->clear_config_string();
@@ -447,7 +454,7 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
   return true;
 }
 
-void LogConfiguration::describe_available(outputStream* out){
+void LogConfiguration::describe_available(outputStream* out) {
   out->print("Available log levels:");
   for (size_t i = 0; i < LogLevel::Count; i++) {
     out->print("%s %s", (i == 0 ? "" : ","), LogLevel::name(static_cast<LogLevelType>(i)));
@@ -467,11 +474,14 @@ void LogConfiguration::describe_available(outputStream* out){
   LogTagSet::describe_tagsets(out);
 }
 
-void LogConfiguration::describe_current_configuration(outputStream* out){
+void LogConfiguration::describe_current_configuration(outputStream* out) {
   out->print_cr("Log output configuration:");
   for (size_t i = 0; i < _n_outputs; i++) {
     out->print(" #" SIZE_FORMAT ": ", i);
     _outputs[i]->describe(out);
+    if (_outputs[i]->is_reconfigured()) {
+      out->print(" (reconfigured)");
+    }
     out->cr();
   }
 }
