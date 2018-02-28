@@ -141,7 +141,7 @@ void LogTagSet::vwrite(LogLevelType level, const char* fmt, va_list args) {
 static const size_t TagSetBufferSize = 128;
 
 void LogTagSet::describe_tagsets(outputStream* out) {
-  out->print_cr("Described tag combinations:");
+  out->print_cr("Described tag sets:");
   for (const LogTagSetDescription* d = tagset_descriptions; d->tagset != NULL; d++) {
     char buf[TagSetBufferSize];
     d->tagset->label(buf, sizeof(buf), "+");
@@ -169,7 +169,7 @@ void LogTagSet::list_all_tagsets(outputStream* out) {
   qsort(tagset_labels, _ntagsets, sizeof(*tagset_labels), qsort_strcmp);
 
   // Print and then free the labels
-  out->print("All available tag sets: ");
+  out->print("Available tag sets: ");
   for (idx = 0; idx < _ntagsets; idx++) {
     out->print("%s%s", (idx == 0 ? "" : ", "), tagset_labels[idx]);
     os::free(tagset_labels[idx]);

@@ -3096,7 +3096,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     } else if (match_option(option, "-Xlog", &tail)) {
       bool ret = false;
       if (strcmp(tail, ":help") == 0) {
-        LogConfiguration::print_command_line_help(defaultStream::output_stream());
+        fileStream stream(defaultStream::output_stream());
+        LogConfiguration::print_command_line_help(&stream);
         vm_exit(0);
       } else if (strcmp(tail, ":disable") == 0) {
         LogConfiguration::disable_logging();
@@ -3109,7 +3110,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       }
       if (ret == false) {
         jio_fprintf(defaultStream::error_stream(),
-                    "Invalid -Xlog option '-Xlog%s'\n",
+                    "Invalid -Xlog option '-Xlog%s', see error log for details.\n",
                     tail);
         return JNI_EINVAL;
       }
