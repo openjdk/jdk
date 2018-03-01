@@ -63,6 +63,7 @@ class ServiceUtil : public AllStatic {
           return true;
         }
       }
+      fatal("visible_oop: should never reach here #1");
       return false;
     }
     // object arrays are visible if they aren't system object arrays
@@ -74,6 +75,7 @@ class ServiceUtil : public AllStatic {
       return true;
     }
     // everything else (Method*s, ...) aren't visible
+    fatal("visible_oop: should never reach here #2");
     return false;
   };   // end of visible_oop()
 

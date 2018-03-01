@@ -928,6 +928,12 @@ class InvokerBytecodeGenerator {
         if (member == null)  return false;
         if (member.isConstructor())  return false;
         Class<?> cls = member.getDeclaringClass();
+        // Fast-path non-private members declared by MethodHandles, which is a common
+        // case
+        if (MethodHandle.class.isAssignableFrom(cls) && !member.isPrivate()) {
+            assert(isStaticallyInvocableType(member.getMethodOrFieldType()));
+            return true;
+        }
         if (cls.isArray() || cls.isPrimitive())
             return false;  // FIXME
         if (cls.isAnonymousClass() || cls.isLocalClass())
@@ -936,12 +942,8 @@ class InvokerBytecodeGenerator {
             return false;  // not on BCP
         if (ReflectUtil.isVMAnonymousClass(cls)) // FIXME: switch to supported API once it is added
             return false;
-        MethodType mtype = member.getMethodOrFieldType();
-        if (!isStaticallyNameable(mtype.returnType()))
+        if (!isStaticallyInvocableType(member.getMethodOrFieldType()))
             return false;
-        for (Class<?> ptype : mtype.parameterArray())
-            if (!isStaticallyNameable(ptype))
-                return false;
         if (!member.isPrivate() && VerifyAccess.isSamePackage(MethodHandle.class, cls))
             return true;   // in java.lang.invoke package
         if (member.isPublic() && isStaticallyNameable(cls))
@@ -949,9 +951,22 @@ class InvokerBytecodeGenerator {
         return false;
     }
 
+    private static boolean isStaticallyInvocableType(MethodType mtype) {
+        if (!isStaticallyNameable(mtype.returnType()))
+            return false;
+        for (Class<?> ptype : mtype.parameterArray())
+            if (!isStaticallyNameable(ptype))
+                return false;
+        return true;
+    }
+
     static boolean isStaticallyNameable(Class<?> cls) {
         if (cls == Object.class)
             return true;
+        if (MethodHandle.class.isAssignableFrom(cls)) {
+            assert(!ReflectUtil.isVMAnonymousClass(cls));
+            return true;
+        }
         while (cls.isArray())
             cls = cls.getComponentType();
         if (cls.isPrimitive())

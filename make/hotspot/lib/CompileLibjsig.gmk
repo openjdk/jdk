@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
     LIB_OUTPUTDIR := $(call FindLibDirForModule, java.base)
 
     $(eval $(call SetupNativeCompilation, BUILD_LIBJSIG, \
-        LIBRARY := jsig, \
+        NAME := jsig, \
         SRC := $(LIBJSIG_SRC_DIR), \
         OUTPUT_DIR := $(LIB_OUTPUTDIR), \
         LANG := C, \

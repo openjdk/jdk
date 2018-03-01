@@ -36,6 +36,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/javaCalls.hpp"

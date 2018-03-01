@@ -896,7 +896,7 @@ class OopStorageTestParIteration::Task : public AbstractGangTask {
 
 public:
   Task(const char* name, Storage* storage, VerifyState* vstate) :
-    AbstractGangTask(name, GCId::undefined()),
+    AbstractGangTask(name),
     _state(storage),
     _vstate(vstate)
   {}
@@ -915,7 +915,7 @@ template<bool concurrent, bool is_const>
 class OopStorageTestParIteration::TaskUsingOopsDo : public AbstractGangTask {
 public:
   TaskUsingOopsDo(const char* name, OopStorage* storage, VerifyState* vstate) :
-    AbstractGangTask(name, GCId::undefined()),
+    AbstractGangTask(name),
     _state(storage),
     _vstate(vstate)
   {}

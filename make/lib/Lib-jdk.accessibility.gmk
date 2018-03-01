@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,8 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
     # Parameter 1 Suffix
     # Parameter 2 ACCESSBRIDGE_ARCH_ suffix
 
-    $(call SetupNativeCompilation,BUILD_JAVAACCESSBRIDGE$1, \
-        LIBRARY = javaaccessbridge$1, \
+    $(call SetupNativeCompilation, BUILD_JAVAACCESSBRIDGE$1, \
+        NAME := javaaccessbridge$1, \
         OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
         SRC := $(JAVA_AB_SRCDIR), \
         OPTIMIZATION := LOW, \
@@ -71,8 +71,8 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   define SetupWinDLL
     # Parameter 1 Suffix
     # Parameter 2 ACCESSBRIDGE_ARCH_ suffix
-    $(call SetupNativeCompilation,BUILD_WINDOWSACCESSBRIDGE$1, \
-        LIBRARY = windowsaccessbridge$1, \
+    $(call SetupNativeCompilation, BUILD_WINDOWSACCESSBRIDGE$1, \
+        NAME := windowsaccessbridge$1, \
         OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
         SRC := $(WIN_AB_SRCDIR), \
         OPTIMIZATION := LOW, \
@@ -99,8 +99,8 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 
   define SetupAccessBridgeSysInfo
 
-    $(call SetupNativeCompilation,BUILD_ACCESSBRIDGESYSINFO, \
-        LIBRARY = jabsysinfo, \
+    $(call SetupNativeCompilation, BUILD_ACCESSBRIDGESYSINFO, \
+        NAME := jabsysinfo, \
         OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
         SRC := $(SYSINFO_SRCDIR), \
         OPTIMIZATION := LOW, \

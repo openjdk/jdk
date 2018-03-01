@@ -28,6 +28,7 @@
 tier1 = \
     :jdk_lang \
     :jdk_util \
+    :jdk_svc_sanity \
     sun/nio/cs/ISO8859x.java \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \

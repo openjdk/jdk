@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,11 @@ class AllStatic {
 //------------------------------Chunk------------------------------------------
 // Linked list of raw memory chunks
 class Chunk: public CHeapObj {
+ private:
+  // This ordinary operator delete is needed even though not used, so the
+  // below two-argument operator delete will be treated as a placement
+  // delete rather than an ordinary sized delete; see C++14 3.7.4.2/p2.
+  void operator delete(void* p);
  public:
   void* operator new(size_t size, size_t length) throw();
   void  operator delete(void* p, size_t length);

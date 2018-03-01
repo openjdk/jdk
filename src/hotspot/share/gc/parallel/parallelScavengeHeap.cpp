@@ -331,7 +331,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
         // excesses).  Fill op.result() with a filler object so that the
         // heap remains parsable.
         const bool limit_exceeded = size_policy()->gc_overhead_limit_exceeded();
-        const bool softrefs_clear = collector_policy()->all_soft_refs_clear();
+        const bool softrefs_clear = soft_ref_policy()->all_soft_refs_clear();
 
         if (limit_exceeded && softrefs_clear) {
           *gc_overhead_limit_was_exceeded = true;

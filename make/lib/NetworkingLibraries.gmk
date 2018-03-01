@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 
 LIBNET_SRC_DIRS := $(call FindSrcDirsForLib, java.base, net)
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBNET, \
-    LIBRARY := net, \
+$(eval $(call SetupNativeCompilation, BUILD_LIBNET, \
+    NAME := net, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBNET_SRC_DIRS), \
     OPTIMIZATION := LOW, \

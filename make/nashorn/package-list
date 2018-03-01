@@ -261,7 +261,6 @@ jdk.jshell
 jdk.jshell.execution
 jdk.jshell.spi
 jdk.jshell.tool
-jdk.management.cmm
 jdk.management.jfr
 jdk.management.resource
 jdk.nashorn.api.scripting

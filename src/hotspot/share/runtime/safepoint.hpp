@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,10 +191,6 @@ public:
   static bool is_cleanup_needed();
   static void do_cleanup_tasks();
 
-  // Debugging
-  static void print_state()                                PRODUCT_RETURN;
-  static void safepoint_msg(const char* format, ...) ATTRIBUTE_PRINTF(1, 2) PRODUCT_RETURN;
-
   static void deferred_initialize_stat();
   static void print_stat_on_exit();
   inline static void inc_vmop_coalesced_count() { _coalesced_vmop_count++; }
@@ -258,15 +254,6 @@ class ThreadSafepointState: public CHeapObj<mtInternal> {
   // Initialize
   static void create(JavaThread *thread);
   static void destroy(JavaThread *thread);
-
-  void safepoint_msg(const char* format, ...) ATTRIBUTE_PRINTF(2, 3) {
-    if (ShowSafepointMsgs) {
-      va_list ap;
-      va_start(ap, format);
-      tty->vprint_cr(format, ap);
-      va_end(ap);
-    }
-  }
 };
 
 

@@ -59,6 +59,7 @@
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/g1/vm_operations_g1.hpp"
+#include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
@@ -1168,7 +1169,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
   }
 
   const bool do_clear_all_soft_refs = clear_all_soft_refs ||
-      collector_policy()->should_clear_all_soft_refs();
+      soft_ref_policy()->should_clear_all_soft_refs();
 
   G1FullCollector collector(this, &_full_gc_memory_manager, explicit_gc, do_clear_all_soft_refs);
   GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause(), true);
@@ -1343,7 +1344,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation(size_t word_size,
     return result;
   }
 
-  assert(!collector_policy()->should_clear_all_soft_refs(),
+  assert(!soft_ref_policy()->should_clear_all_soft_refs(),
          "Flag should have been handled and cleared prior to this point");
 
   // What else?  We might try synchronous finalization later.  If the total
@@ -1463,6 +1464,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   CollectedHeap(),
   _young_gen_sampling_thread(NULL),
   _collector_policy(collector_policy),
+  _soft_ref_policy(),
   _memory_manager("G1 Young Generation", "end of minor GC"),
   _full_gc_memory_manager("G1 Old Generation", "end of major GC"),
   _eden_pool(NULL),
@@ -1893,6 +1895,10 @@ CollectorPolicy* G1CollectedHeap::collector_policy() const {
   return _collector_policy;
 }
 
+SoftRefPolicy* G1CollectedHeap::soft_ref_policy() {
+  return &_soft_ref_policy;
+}
+
 size_t G1CollectedHeap::capacity() const {
   return _hrm.length() * HeapRegion::GrainBytes;
 }
@@ -1989,7 +1995,6 @@ bool  G1CollectedHeap::is_user_requested_concurrent_full_gc(GCCause::Cause cause
   switch (cause) {
     case GCCause::_java_lang_system_gc:                 return ExplicitGCInvokesConcurrent;
     case GCCause::_dcmd_gc_run:                         return ExplicitGCInvokesConcurrent;
-    case GCCause::_update_allocation_context_stats_inc: return true;
     case GCCause::_wb_conc_mark:                        return true;
     default :                                           return false;
   }
@@ -2541,8 +2546,6 @@ void G1CollectedHeap::gc_epilogue(bool full) {
   double start = os::elapsedTime();
   resize_all_tlabs();
   g1_policy()->phase_times()->record_resize_tlab_time_ms((os::elapsedTime() - start) * 1000.0);
-
-  allocation_context_stats().update(full);
 
   MemoryService::track_memory_usage();
   // We have just completed a GC. Update the soft reference

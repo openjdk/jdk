@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,14 +36,13 @@ LIBDT_SOCKET_CPPFLAGS := \
     -I$(TOPDIR)/src/jdk.jdwp.agent/share/native/include \
     #
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBDT_SOCKET, \
-    LIBRARY := dt_socket, \
+$(eval $(call SetupNativeCompilation, BUILD_LIBDT_SOCKET, \
+    NAME := dt_socket, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBDT_SOCKET_SRC), \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) -DUSE_MMAP \
         $(LIBDT_SOCKET_CPPFLAGS), \
-    DISABLED_WARNINGS_gcc := shift-negative-value, \
     MAPFILE := $(TOPDIR)/make/mapfiles/libdt_socket/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -74,8 +73,8 @@ LIBJDWP_CPPFLAGS := \
     $(addprefix -I, $(LIBJDWP_SRC))
 
 # JDWP_LOGGING causes log messages to be compiled into the library.
-$(eval $(call SetupNativeCompilation,BUILD_LIBJDWP, \
-    LIBRARY := jdwp, \
+$(eval $(call SetupNativeCompilation, BUILD_LIBJDWP, \
+    NAME := jdwp, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBJDWP_SRC), \
     OPTIMIZATION := LOW, \
