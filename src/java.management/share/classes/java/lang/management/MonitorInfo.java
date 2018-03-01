@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,11 +116,10 @@ public class MonitorInfo extends LockInfo {
      * <tbody style="text-align:left">
      * <tr>
      *   <th scope="row">lockedStackFrame</th>
-     *   <td><code>CompositeData as specified in the
-     *       <a href="ThreadInfo.html#StackTrace">stackTrace</a>
-     *       attribute defined in the {@link ThreadInfo#from
-     *       ThreadInfo.from} method.
-     *       </code></td>
+     *   <td><a href="ThreadInfo.html#stackTraceElement">
+     *       {@code CompositeData} for {@code StackTraceElement}</a> as specified
+     *       in {@link ThreadInfo#from(CompositeData)} method.
+     *   </td>
      * </tr>
      * <tr>
      *   <th scope="row">lockedStackDepth</th>
@@ -134,7 +133,7 @@ public class MonitorInfo extends LockInfo {
      * @throws IllegalArgumentException if {@code cd} does not
      *   represent a {@code MonitorInfo} with the attributes described
      *   above.
-
+     *
      * @return a {@code MonitorInfo} object represented
      *         by {@code cd} if {@code cd} is not {@code null};
      *         {@code null} otherwise.
