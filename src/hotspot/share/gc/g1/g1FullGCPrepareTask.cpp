@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::reset_region_metadata(Heap
   hr->reset_gc_time_stamp();
   hr->rem_set()->clear();
 
-  _g1h->g1_barrier_set()->clear(MemRegion(hr->bottom(), hr->end()));
+  _g1h->card_table()->clear(MemRegion(hr->bottom(), hr->end()));
 
   if (_g1h->g1_hot_card_cache()->use_cache()) {
     _g1h->g1_hot_card_cache()->reset_card_counts(hr);

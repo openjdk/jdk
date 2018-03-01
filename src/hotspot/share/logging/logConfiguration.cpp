@@ -78,19 +78,25 @@ bool ConfigurationLock::current_thread_has_lock() {
 #endif
 
 void LogConfiguration::post_initialize() {
+  // Reset the reconfigured status of all outputs
+  for (size_t i = 0; i < _n_outputs; i++) {
+    _outputs[i]->_reconfigured = false;
+  }
+
   LogDiagnosticCommand::registerCommand();
   Log(logging) log;
   if (log.is_info()) {
     log.info("Log configuration fully initialized.");
     log_develop_info(logging)("Develop logging is available.");
-    if (log.is_debug()) {
-      LogStream debug_stream(log.debug());
-      describe(&debug_stream);
-      if (log.is_trace()) {
-        LogStream trace_stream(log.trace());
-        LogTagSet::list_all_tagsets(&trace_stream);
-      }
-    }
+
+    LogStream info_stream(log.info());
+    describe_available(&info_stream);
+
+    LogStream debug_stream(log.debug());
+    LogTagSet::list_all_tagsets(&debug_stream);
+
+    ConfigurationLock cl;
+    describe_current_configuration(&info_stream);
   }
 }
 
@@ -211,6 +217,8 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
   assert(ConfigurationLock::current_thread_has_lock(), "Must hold configuration lock to call this function.");
   assert(idx < _n_outputs, "Invalid index, idx = " SIZE_FORMAT " and _n_outputs = " SIZE_FORMAT, idx, _n_outputs);
   LogOutput* output = _outputs[idx];
+
+  output->_reconfigured = true;
 
   // Clear the previous config description
   output->clear_config_string();
@@ -364,14 +372,24 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
   bool success = parse_log_arguments(output, what, decorators, output_options, &ss);
 
   if (ss.size() > 0) {
-    errbuf[strlen(errbuf) - 1] = '\0'; // Strip trailing newline
     // If it failed, log the error. If it didn't fail, but something was written
     // to the stream, log it as a warning.
-    if (!success) {
-      log_error(logging)("%s", ss.base());
-    } else {
-      log_warning(logging)("%s", ss.base());
-    }
+    LogLevelType level = success ? LogLevel::Warning : LogLevel::Error;
+
+    Log(logging) log;
+    char* start = errbuf;
+    char* end = strchr(start, '\n');
+    assert(end != NULL, "line must end with newline '%s'", start);
+    do {
+      assert(start < errbuf + sizeof(errbuf) &&
+             end < errbuf + sizeof(errbuf),
+             "buffer overflow");
+      *end = '\0';
+      log.write(level, "%s", start);
+      start = end + 1;
+      end = strchr(start, '\n');
+      assert(end != NULL || *start == '\0', "line must end with newline '%s'", start);
+    } while (end != NULL);
   }
 
   os::free(copy);
@@ -436,7 +454,7 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
   return true;
 }
 
-void LogConfiguration::describe_available(outputStream* out){
+void LogConfiguration::describe_available(outputStream* out) {
   out->print("Available log levels:");
   for (size_t i = 0; i < LogLevel::Count; i++) {
     out->print("%s %s", (i == 0 ? "" : ","), LogLevel::name(static_cast<LogLevelType>(i)));
@@ -456,11 +474,14 @@ void LogConfiguration::describe_available(outputStream* out){
   LogTagSet::describe_tagsets(out);
 }
 
-void LogConfiguration::describe_current_configuration(outputStream* out){
+void LogConfiguration::describe_current_configuration(outputStream* out) {
   out->print_cr("Log output configuration:");
   for (size_t i = 0; i < _n_outputs; i++) {
-    out->print("#" SIZE_FORMAT ": ", i);
+    out->print(" #" SIZE_FORMAT ": ", i);
     _outputs[i]->describe(out);
+    if (_outputs[i]->is_reconfigured()) {
+      out->print(" (reconfigured)");
+    }
     out->cr();
   }
 }
@@ -471,68 +492,89 @@ void LogConfiguration::describe(outputStream* out) {
   describe_current_configuration(out);
 }
 
-void LogConfiguration::print_command_line_help(FILE* out) {
-  jio_fprintf(out, "-Xlog Usage: -Xlog[:[what][:[output][:[decorators][:output-options]]]]\n"
-              "\t where 'what' is a combination of tags and levels of the form tag1[+tag2...][*][=level][,...]\n"
-              "\t Unless wildcard (*) is specified, only log messages tagged with exactly the tags specified will be matched.\n\n");
+void LogConfiguration::print_command_line_help(outputStream* out) {
+  out->print_cr("-Xlog Usage: -Xlog[:[selections][:[output][:[decorators][:output-options]]]]");
+  out->print_cr("\t where 'selections' are combinations of tags and levels of the form tag1[+tag2...][*][=level][,...]");
+  out->print_cr("\t NOTE: Unless wildcard (*) is specified, only log messages tagged with exactly the tags specified will be matched.");
+  out->cr();
 
-  jio_fprintf(out, "Available log levels:\n");
+  out->print_cr("Available log levels:");
   for (size_t i = 0; i < LogLevel::Count; i++) {
-    jio_fprintf(out, "%s %s", (i == 0 ? "" : ","), LogLevel::name(static_cast<LogLevelType>(i)));
+    out->print("%s %s", (i == 0 ? "" : ","), LogLevel::name(static_cast<LogLevelType>(i)));
   }
+  out->cr();
+  out->cr();
 
-  jio_fprintf(out, "\n\nAvailable log decorators: \n");
+  out->print_cr("Available log decorators: ");
   for (size_t i = 0; i < LogDecorators::Count; i++) {
     LogDecorators::Decorator d = static_cast<LogDecorators::Decorator>(i);
-    jio_fprintf(out, "%s %s (%s)", (i == 0 ? "" : ","), LogDecorators::name(d), LogDecorators::abbreviation(d));
+    out->print("%s %s (%s)", (i == 0 ? "" : ","), LogDecorators::name(d), LogDecorators::abbreviation(d));
   }
-  jio_fprintf(out, "\n Decorators can also be specified as 'none' for no decoration.\n\n");
+  out->cr();
+  out->print_cr(" Decorators can also be specified as 'none' for no decoration.");
+  out->cr();
 
-  fileStream stream(out, false);
-  stream.print_cr("Available log tags:");
-  LogTag::list_tags(&stream);
-  stream.print_cr(" Specifying 'all' instead of a tag combination matches all tag combinations.");
-  stream.cr();
+  out->print_cr("Available log tags:");
+  LogTag::list_tags(out);
+  out->print_cr(" Specifying 'all' instead of a tag combination matches all tag combinations.");
+  out->cr();
 
-  LogTagSet::describe_tagsets(&stream);
+  LogTagSet::describe_tagsets(out);
 
-  jio_fprintf(out, "\nAvailable log outputs:\n"
-              " stdout, stderr, file=<filename>\n"
-              " Specifying %%p and/or %%t in the filename will expand to the JVM's PID and startup timestamp, respectively.\n\n"
+  out->print_cr("\nAvailable log outputs:");
+  out->print_cr(" stdout/stderr");
+  out->print_cr(" file=<filename>");
+  out->print_cr("  If the filename contains %%p and/or %%t, they will expand to the JVM's PID and startup timestamp, respectively.");
+  out->print_cr("  Additional output-options for file outputs:");
+  out->print_cr("   filesize=..  - Target byte size for log rotation (supports K/M/G suffix)."
+                                    " If set to 0, log rotation will not trigger automatically,"
+                                    " but can be performed manually (see the VM.log DCMD).");
+  out->print_cr("   filecount=.. - Number of files to keep in rotation (not counting the active file)."
+                                    " If set to 0, log rotation is disabled."
+                                    " This will cause existing log files to be overwritten.");
+  out->cr();
 
-              "Some examples:\n"
-              " -Xlog\n"
-              "\t Log all messages using 'info' level to stdout with 'uptime', 'levels' and 'tags' decorations.\n"
-              "\t (Equivalent to -Xlog:all=info:stdout:uptime,levels,tags).\n\n"
+  out->print_cr("Some examples:");
+  out->print_cr(" -Xlog");
+  out->print_cr("\t Log all messages up to 'info' level to stdout with 'uptime', 'levels' and 'tags' decorations.");
+  out->print_cr("\t (Equivalent to -Xlog:all=info:stdout:uptime,levels,tags).");
+  out->cr();
 
-              " -Xlog:gc\n"
-              "\t Log messages tagged with 'gc' tag using 'info' level to stdout, with default decorations.\n\n"
+  out->print_cr(" -Xlog:gc");
+  out->print_cr("\t Log messages tagged with 'gc' tag up to 'info' level to stdout, with default decorations.");
+  out->cr();
 
-              " -Xlog:gc,safepoint\n"
-              "\t Log messages tagged either with 'gc' or 'safepoint' tags, both using 'info' level, to stdout, with default decorations.\n"
-              "\t (Messages tagged with both 'gc' and 'safepoint' will not be logged.)\n\n"
+  out->print_cr(" -Xlog:gc,safepoint");
+  out->print_cr("\t Log messages tagged either with 'gc' or 'safepoint' tags, both up to 'info' level, to stdout, with default decorations.");
+  out->print_cr("\t (Messages tagged with both 'gc' and 'safepoint' will not be logged.)");
+  out->cr();
 
-              " -Xlog:gc+ref=debug\n"
-              "\t Log messages tagged with both 'gc' and 'ref' tags, using 'debug' level, to stdout, with default decorations.\n"
-              "\t (Messages tagged only with one of the two tags will not be logged.)\n\n"
+  out->print_cr(" -Xlog:gc+ref=debug");
+  out->print_cr("\t Log messages tagged with both 'gc' and 'ref' tags, up to 'debug' level, to stdout, with default decorations.");
+  out->print_cr("\t (Messages tagged only with one of the two tags will not be logged.)");
+  out->cr();
 
-              " -Xlog:gc=debug:file=gc.txt:none\n"
-              "\t Log messages tagged with 'gc' tag using 'debug' level to file 'gc.txt' with no decorations.\n\n"
+  out->print_cr(" -Xlog:gc=debug:file=gc.txt:none");
+  out->print_cr("\t Log messages tagged with 'gc' tag up to 'debug' level to file 'gc.txt' with no decorations.");
+  out->cr();
 
-              " -Xlog:gc=trace:file=gctrace.txt:uptimemillis,pids:filecount=5,filesize=1m\n"
-              "\t Log messages tagged with 'gc' tag using 'trace' level to a rotating fileset of 5 files of size 1MB,\n"
-              "\t using the base name 'gctrace.txt', with 'uptimemillis' and 'pid' decorations.\n\n"
+  out->print_cr(" -Xlog:gc=trace:file=gctrace.txt:uptimemillis,pids:filecount=5,filesize=1m");
+  out->print_cr("\t Log messages tagged with 'gc' tag up to 'trace' level to a rotating fileset of 5 files of size 1MB,");
+  out->print_cr("\t using the base name 'gctrace.txt', with 'uptimemillis' and 'pid' decorations.");
+  out->cr();
 
-              " -Xlog:gc::uptime,tid\n"
-              "\t Log messages tagged with 'gc' tag using 'info' level to output 'stdout', using 'uptime' and 'tid' decorations.\n\n"
+  out->print_cr(" -Xlog:gc::uptime,tid");
+  out->print_cr("\t Log messages tagged with 'gc' tag up to 'info' level to output 'stdout', using 'uptime' and 'tid' decorations.");
+  out->cr();
 
-              " -Xlog:gc*=info,safepoint*=off\n"
-              "\t Log messages tagged with at least 'gc' using 'info' level, but turn off logging of messages tagged with 'safepoint'.\n"
-              "\t (Messages tagged with both 'gc' and 'safepoint' will not be logged.)\n\n"
+  out->print_cr(" -Xlog:gc*=info,safepoint*=off");
+  out->print_cr("\t Log messages tagged with at least 'gc' up to 'info' level, but turn off logging of messages tagged with 'safepoint'.");
+  out->print_cr("\t (Messages tagged with both 'gc' and 'safepoint' will not be logged.)");
+  out->cr();
 
-              " -Xlog:disable -Xlog:safepoint=trace:safepointtrace.txt\n"
-              "\t Turn off all logging, including warnings and errors,\n"
-              "\t and then enable messages tagged with 'safepoint' using 'trace' level to file 'safepointtrace.txt'.\n");
+  out->print_cr(" -Xlog:disable -Xlog:safepoint=trace:safepointtrace.txt");
+  out->print_cr("\t Turn off all logging, including warnings and errors,");
+  out->print_cr("\t and then enable messages tagged with 'safepoint' up to 'trace' level to file 'safepointtrace.txt'.");
 }
 
 void LogConfiguration::rotate_all_outputs() {

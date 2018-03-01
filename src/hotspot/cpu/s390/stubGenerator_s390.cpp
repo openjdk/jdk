@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +26,8 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "registerSaver_s390.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "nativeInst_s390.hpp"
@@ -722,8 +724,7 @@ class StubGenerator: public StubCodeGenerator {
           __ bind(filtered);
         }
         break;
-      case BarrierSet::CardTableForRS:
-      case BarrierSet::CardTableExtension:
+      case BarrierSet::CardTableModRef:
       case BarrierSet::ModRef:
         break;
       default:
@@ -761,14 +762,14 @@ class StubGenerator: public StubCodeGenerator {
           }
         }
         break;
-      case BarrierSet::CardTableForRS:
-      case BarrierSet::CardTableExtension:
+      case BarrierSet::CardTableModRef:
         // These cases formerly known as
         //   void array_store_check(Register addr, Register count, bool branchToEnd).
         {
           NearLabel doXC, done;
-          CardTableModRefBS* ct = (CardTableModRefBS*)bs;
-          assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
+          CardTableModRefBS* ctbs = barrier_set_cast<CardTableModRefBS>(bs);
+          CardTable* ct = ctbs->card_table();
+          assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
           assert_different_registers(Z_R0, Z_R1, addr, count);
 
           // Nothing to do if count <= 0.
@@ -787,11 +788,11 @@ class StubGenerator: public StubCodeGenerator {
           __ add2reg_with_index(count, -BytesPerHeapOop, count, addr);
 
           // Get base address of card table.
-          __ load_const_optimized(Z_R1, (address)ct->byte_map_base);
+          __ load_const_optimized(Z_R1, (address)ct->byte_map_base());
 
           // count = (count>>shift) - (addr>>shift)
-          __ z_srlg(addr,  addr,  CardTableModRefBS::card_shift);
-          __ z_srlg(count, count, CardTableModRefBS::card_shift);
+          __ z_srlg(addr,  addr,  CardTable::card_shift);
+          __ z_srlg(count, count, CardTable::card_shift);
 
           // Prefetch first elements of card table for update.
           if (VM_Version::has_Prefetch()) {

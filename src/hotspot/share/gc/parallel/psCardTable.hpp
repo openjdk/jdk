@@ -22,17 +22,18 @@
  *
  */
 
-#ifndef SHARE_VM_GC_PARALLEL_CARDTABLEEXTENSION_HPP
-#define SHARE_VM_GC_PARALLEL_CARDTABLEEXTENSION_HPP
+#ifndef SHARE_VM_GC_PARALLEL_PSCARDTABLE_HPP
+#define SHARE_VM_GC_PARALLEL_PSCARDTABLE_HPP
 
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "oops/oop.hpp"
 
 class MutableSpace;
 class ObjectStartArray;
 class PSPromotionManager;
 class GCTaskQueue;
 
-class CardTableExtension : public CardTableModRefBS {
+class PSCardTable: public CardTable {
  private:
   // Support methods for resizing the card table.
   // resize_commit_uncommit() returns true if the pages were committed or
@@ -43,21 +44,18 @@ class CardTableExtension : public CardTableModRefBS {
   void resize_update_committed_table(int changed_region, MemRegion new_region);
   void resize_update_covered_table(int changed_region, MemRegion new_region);
 
- protected:
+  void verify_all_young_refs_precise_helper(MemRegion mr);
 
-  static void verify_all_young_refs_precise_helper(MemRegion mr);
-
- public:
   enum ExtendedCardValue {
-    youngergen_card   = CardTableModRefBS::CT_MR_BS_last_reserved + 1,
-    verify_card       = CardTableModRefBS::CT_MR_BS_last_reserved + 5
+    youngergen_card   = CT_MR_BS_last_reserved + 1,
+    verify_card       = CT_MR_BS_last_reserved + 5
   };
 
-  CardTableExtension(MemRegion whole_heap) :
-    CardTableModRefBS(
-      whole_heap,
-      BarrierSet::FakeRtti(BarrierSet::CardTableExtension))
-    { }
+ public:
+  PSCardTable(MemRegion whole_heap) : CardTable(whole_heap, /* scanned_concurrently */ false) {}
+
+  static jbyte youngergen_card_val() { return youngergen_card; }
+  static jbyte verify_card_val()     { return verify_card; }
 
   // Scavenge support
   void scavenge_contents_parallel(ObjectStartArray* start_array,
@@ -66,10 +64,6 @@ class CardTableExtension : public CardTableModRefBS {
                                   PSPromotionManager* pm,
                                   uint stripe_number,
                                   uint stripe_total);
-
-  // Verification
-  static void verify_all_young_refs_imprecise();
-  static void verify_all_young_refs_precise();
 
   bool addr_is_marked_imprecise(void *addr);
   bool addr_is_marked_precise(void *addr);
@@ -88,6 +82,9 @@ class CardTableExtension : public CardTableModRefBS {
     *byte = youngergen_card;
   }
 
+  // ReduceInitialCardMarks support
+  bool is_in_young(oop obj) const;
+
   // Adaptive size policy support
   // Allows adjustment of the base and size of the covered regions
   void resize_covered_region(MemRegion new_region);
@@ -102,29 +99,14 @@ class CardTableExtension : public CardTableModRefBS {
   HeapWord* lowest_prev_committed_start(int ind) const;
 
 #ifdef ASSERT
-
   bool is_valid_card_address(jbyte* addr) {
     return (addr >= _byte_map) && (addr < _byte_map + _byte_map_size);
   }
-
 #endif // ASSERT
 
-  // ReduceInitialCardMarks support
-  virtual bool is_in_young(oop obj) const;
-
-  virtual bool card_mark_must_follow_store() const {
-    return false;
-  }
+  // Verification
+  void verify_all_young_refs_imprecise();
+  void verify_all_young_refs_precise();
 };
 
-template<>
-struct BarrierSet::GetName<CardTableExtension> {
-  static const BarrierSet::Name value = BarrierSet::CardTableExtension;
-};
-
-template<>
-struct BarrierSet::GetType<BarrierSet::CardTableExtension> {
-  typedef ::CardTableExtension type;
-};
-
-#endif // SHARE_VM_GC_PARALLEL_CARDTABLEEXTENSION_HPP
+#endif // SHARE_VM_GC_PARALLEL_PSCARDTABLE

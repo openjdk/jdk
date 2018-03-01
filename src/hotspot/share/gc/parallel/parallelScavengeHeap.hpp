@@ -30,6 +30,7 @@
 #include "gc/parallel/psGCAdaptivePolicyCounters.hpp"
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/parallel/psYoungGen.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectorPolicy.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
@@ -46,6 +47,7 @@ class GCTaskManager;
 class MemoryManager;
 class MemoryPool;
 class PSAdaptiveSizePolicy;
+class PSCardTable;
 class PSHeapSummary;
 
 class ParallelScavengeHeap : public CollectedHeap {
@@ -124,6 +126,9 @@ class ParallelScavengeHeap : public CollectedHeap {
   static ParallelScavengeHeap* heap();
 
   static GCTaskManager* const gc_task_manager() { return _gc_task_manager; }
+
+  CardTableModRefBS* barrier_set();
+  PSCardTable* card_table();
 
   AdjoiningGenerations* gens() { return _gens; }
 

@@ -45,6 +45,18 @@ TEST(LogTag, from_string) {
   }
 }
 
+TEST(LogTag, fuzzy_match) {
+  for (size_t i = 1; i < LogTag::Count; i++) {
+    LogTagType tag = static_cast<LogTagType>(i);
+    EXPECT_EQ(tag, LogTag::fuzzy_match(LogTag::name(tag)));
+  }
+
+  EXPECT_EQ(LogTag::_logging, LogTag::fuzzy_match("loggin"));
+  EXPECT_EQ(LogTag::_logging, LogTag::fuzzy_match("loging"));
+
+  EXPECT_EQ(LogTag::__NO_TAG, LogTag::fuzzy_match("unrecognizabletag"));
+}
+
 TEST(LogTag, name) {
   // Verify for each tag from the macro
 #define LOG_TAG(tag) \

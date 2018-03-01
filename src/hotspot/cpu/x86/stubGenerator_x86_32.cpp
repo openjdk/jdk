@@ -25,6 +25,8 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_x86.hpp"
 #include "oops/instanceOop.hpp"
@@ -705,9 +707,7 @@ class StubGenerator: public StubCodeGenerator {
          }
         break;
 #endif // INCLUDE_ALL_GCS
-      case BarrierSet::CardTableForRS:
-      case BarrierSet::CardTableExtension:
-      case BarrierSet::ModRef:
+      case BarrierSet::CardTableModRef:
         break;
       default      :
         ShouldNotReachHere();
@@ -739,22 +739,22 @@ class StubGenerator: public StubCodeGenerator {
         break;
 #endif // INCLUDE_ALL_GCS
 
-      case BarrierSet::CardTableForRS:
-      case BarrierSet::CardTableExtension:
+      case BarrierSet::CardTableModRef:
         {
-          CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(bs);
-          assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
+          CardTableModRefBS* ctbs = barrier_set_cast<CardTableModRefBS>(bs);
+          CardTable* ct = ctbs->card_table();
+          assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
           Label L_loop;
           const Register end = count;  // elements count; end == start+count-1
           assert_different_registers(start, end);
 
           __ lea(end,  Address(start, count, Address::times_ptr, -wordSize));
-          __ shrptr(start, CardTableModRefBS::card_shift);
-          __ shrptr(end,   CardTableModRefBS::card_shift);
+          __ shrptr(start, CardTable::card_shift);
+          __ shrptr(end,   CardTable::card_shift);
           __ subptr(end, start); // end --> count
         __ BIND(L_loop);
-          intptr_t disp = (intptr_t) ct->byte_map_base;
+        intptr_t disp = (intptr_t) ct->byte_map_base();
           Address cardtable(start, count, Address::times_1, disp);
           __ movb(cardtable, 0);
           __ decrement(count);

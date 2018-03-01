@@ -414,9 +414,9 @@ void OSContainer::init() {
 
 }
 
-char * OSContainer::container_type() {
+const char * OSContainer::container_type() {
   if (is_containerized()) {
-    return (char *)"cgroupv1";
+    return "cgroupv1";
   } else {
     return NULL;
   }
