@@ -514,9 +514,8 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
                                                                                                                                      \
   nonstatic_field(GenCollectedHeap,            _young_gen,                                    Generation*)                           \
   nonstatic_field(GenCollectedHeap,            _old_gen,                                      Generation*)                           \
-                                                                                                                                     \
-  nonstatic_field(GenCollectorPolicy,          _young_gen_spec,                               GenerationSpec*)                       \
-  nonstatic_field(GenCollectorPolicy,          _old_gen_spec,                                 GenerationSpec*)                       \
+  nonstatic_field(GenCollectedHeap,            _young_gen_spec,                               GenerationSpec*)                       \
+  nonstatic_field(GenCollectedHeap,            _old_gen_spec,                                 GenerationSpec*)                       \
                                                                                                                                      \
   nonstatic_field(HeapWord,                    i,                                             char*)                                 \
                                                                                                                                      \
@@ -1470,7 +1469,6 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
            declare_type(DefNewGeneration,             Generation)         \
            declare_type(CardGeneration,               Generation)         \
            declare_type(TenuredGeneration,            CardGeneration)     \
-  declare_toplevel_type(GenCollectorPolicy)                               \
   declare_toplevel_type(Space)                                            \
            declare_type(CompactibleSpace,             Space)              \
            declare_type(ContiguousSpace,              CompactibleSpace)   \

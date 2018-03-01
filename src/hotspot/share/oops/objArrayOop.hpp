@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,8 @@ class objArrayOopDesc : public arrayOopDesc {
   friend class CSetMarkOopClosure;
   friend class G1ParScanPartialArrayClosure;
 
-  template <class T> T* obj_at_addr(int index) const {
-    assert(is_within_bounds(index), "index out of bounds");
-    return &((T*)base())[index];
-  }
+  template <class T> T* obj_at_addr(int index) const;
+  template <class T> T* obj_at_addr_raw(int index) const;
 
   template <class T>
   static ptrdiff_t obj_at_offset(int index) {
@@ -84,7 +82,8 @@ private:
   }
 
   // base is the address following the header.
-  HeapWord* base() const      { return (HeapWord*) arrayOopDesc::base(T_OBJECT); }
+  HeapWord* base() const;
+  HeapWord* base_raw() const;
 
   // Accessing
   oop obj_at(int index) const;

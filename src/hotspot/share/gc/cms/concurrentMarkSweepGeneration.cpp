@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -300,8 +300,7 @@ void CMSCollector::ref_processor_init() {
 }
 
 AdaptiveSizePolicy* CMSCollector::size_policy() {
-  CMSHeap* heap = CMSHeap::heap();
-  return heap->gen_policy()->size_policy();
+  return CMSHeap::heap()->size_policy();
 }
 
 void ConcurrentMarkSweepGeneration::initialize_performance_counters() {
@@ -1182,8 +1181,6 @@ bool CMSCollector::shouldConcurrentCollect() {
   // this is not likely to be productive in practice because it's probably too
   // late anyway.
   CMSHeap* heap = CMSHeap::heap();
-  assert(heap->collector_policy()->is_generation_policy(),
-         "You may want to check the correctness of the following");
   if (heap->incremental_collection_will_fail(true /* consult_young */)) {
     log.print("CMSCollector: collect because incremental collection will fail ");
     return true;
@@ -1498,7 +1495,7 @@ void CMSCollector::acquire_control_and_collect(bool full,
                                          max_eden_size,
                                          full,
                                          gc_cause,
-                                         heap->collector_policy());
+                                         heap->soft_ref_policy());
 
   // Reset the expansion cause, now that we just completed
   // a collection cycle.
@@ -1890,7 +1887,7 @@ void CMSCollector::collect_in_background(GCCause::Cause cause) {
   }
 
   // Should this be in gc_epilogue?
-  collector_policy()->counters()->update_counters();
+  heap->counters()->update_counters();
 
   {
     // Clear _foregroundGCShouldWait and, in the event that the
@@ -5551,7 +5548,7 @@ void CMSCollector::reset_stw() {
   // already have the lock
   assert(_collectorState == Resetting, "just checking");
   assert_lock_strong(bitMapLock());
-  GCIdMarkAndRestore gc_id_mark(_cmsThread->gc_id());
+  GCIdMark gc_id_mark(_cmsThread->gc_id());
   _markBitMap.clear_all();
   _collectorState = Idling;
   register_gc_end();

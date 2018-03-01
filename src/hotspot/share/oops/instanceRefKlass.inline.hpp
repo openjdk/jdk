@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
 
 template <bool nv, typename T, class OopClosureType, class Contains>
 void InstanceRefKlass::do_referent(oop obj, OopClosureType* closure, Contains& contains) {
-  T* referent_addr = (T*)java_lang_ref_Reference::referent_addr(obj);
+  T* referent_addr = (T*)java_lang_ref_Reference::referent_addr_raw(obj);
   if (contains(referent_addr)) {
     Devirtualizer<nv>::do_oop(closure, referent_addr);
   }
@@ -45,7 +45,7 @@ void InstanceRefKlass::do_referent(oop obj, OopClosureType* closure, Contains& c
 
 template <bool nv, typename T, class OopClosureType, class Contains>
 void InstanceRefKlass::do_next(oop obj, OopClosureType* closure, Contains& contains) {
-  T* next_addr = (T*)java_lang_ref_Reference::next_addr(obj);
+  T* next_addr = (T*)java_lang_ref_Reference::next_addr_raw(obj);
   if (contains(next_addr)) {
     Devirtualizer<nv>::do_oop(closure, next_addr);
   }
@@ -53,7 +53,7 @@ void InstanceRefKlass::do_next(oop obj, OopClosureType* closure, Contains& conta
 
 template <bool nv, typename T, class OopClosureType, class Contains>
 void InstanceRefKlass::do_discovered(oop obj, OopClosureType* closure, Contains& contains) {
-  T* discovered_addr = (T*)java_lang_ref_Reference::discovered_addr(obj);
+  T* discovered_addr = (T*)java_lang_ref_Reference::discovered_addr_raw(obj);
   if (contains(discovered_addr)) {
     Devirtualizer<nv>::do_oop(closure, discovered_addr);
   }
@@ -63,7 +63,7 @@ template <typename T, class OopClosureType>
 bool InstanceRefKlass::try_discover(oop obj, ReferenceType type, OopClosureType* closure) {
   ReferenceProcessor* rp = closure->ref_processor();
   if (rp != NULL) {
-    T referent_oop = oopDesc::load_heap_oop((T*)java_lang_ref_Reference::referent_addr(obj));
+    T referent_oop = oopDesc::load_heap_oop((T*)java_lang_ref_Reference::referent_addr_raw(obj));
     if (!oopDesc::is_null(referent_oop)) {
       oop referent = oopDesc::decode_heap_oop_not_null(referent_oop);
       if (!referent->is_gc_marked()) {
@@ -86,7 +86,7 @@ void InstanceRefKlass::oop_oop_iterate_discovery(oop obj, ReferenceType type, Oo
   do_referent<nv, T>(obj, closure, contains);
 
   // Treat discovered as normal oop, if ref is not "active" (next non-NULL).
-  T next_oop  = oopDesc::load_heap_oop((T*)java_lang_ref_Reference::next_addr(obj));
+  T next_oop  = oopDesc::load_heap_oop((T*)java_lang_ref_Reference::next_addr_raw(obj));
   if (!oopDesc::is_null(next_oop)) {
     do_discovered<nv, T>(obj, closure, contains);
   }
@@ -189,9 +189,9 @@ void InstanceRefKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure,
 #ifdef ASSERT
 template <typename T>
 void InstanceRefKlass::trace_reference_gc(const char *s, oop obj) {
-  T* referent_addr   = (T*) java_lang_ref_Reference::referent_addr(obj);
-  T* next_addr       = (T*) java_lang_ref_Reference::next_addr(obj);
-  T* discovered_addr = (T*) java_lang_ref_Reference::discovered_addr(obj);
+  T* referent_addr   = (T*) java_lang_ref_Reference::referent_addr_raw(obj);
+  T* next_addr       = (T*) java_lang_ref_Reference::next_addr_raw(obj);
+  T* discovered_addr = (T*) java_lang_ref_Reference::discovered_addr_raw(obj);
 
   log_develop_trace(gc, ref)("InstanceRefKlass %s for obj " PTR_FORMAT, s, p2i(obj));
   log_develop_trace(gc, ref)("     referent_addr/* " PTR_FORMAT " / " PTR_FORMAT,

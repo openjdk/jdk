@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.lang.management;
 
+import javax.management.openmbean.ArrayType;
 import javax.management.openmbean.CompositeData;
 import sun.management.ManagementFactoryHelper;
 import sun.management.ThreadInfoCompositeData;
@@ -110,7 +111,6 @@ public class ThreadInfo {
     private StackTraceElement[] stackTrace;
     private MonitorInfo[]       lockedMonitors;
     private LockInfo[]          lockedSynchronizers;
-
     private static MonitorInfo[] EMPTY_MONITORS = new MonitorInfo[0];
     private static LockInfo[] EMPTY_SYNCS = new LockInfo[0];
 
@@ -264,6 +264,11 @@ public class ThreadInfo {
     /*
      * Constructs a {@code ThreadInfo} object from a
      * {@link CompositeData CompositeData}.
+     *
+     * @throws IllegalArgumentException if the given CompositeData does not
+     * contain all of the attributes defined for ThreadInfo of version <= N.
+     *
+     * @see ThreadInfo#from
      */
     private ThreadInfo(CompositeData cd) {
         ThreadInfoCompositeData ticd = ThreadInfoCompositeData.getInstance(cd);
@@ -281,41 +286,11 @@ public class ThreadInfo {
         suspended = ticd.suspended();
         inNative = ticd.inNative();
         stackTrace = ticd.stackTrace();
-
-        // 6.0 attributes
-        if (ticd.hasV6()) {
-            lock = ticd.lockInfo();
-            lockedMonitors = ticd.lockedMonitors();
-            lockedSynchronizers = ticd.lockedSynchronizers();
-        } else {
-            // lockInfo is a new attribute added in 1.6 ThreadInfo
-            // If cd is a 5.0 version, construct the LockInfo object
-            //  from the lockName value.
-            if (lockName != null) {
-                String result[] = lockName.split("@");
-                if (result.length == 2) {
-                    int identityHashCode = Integer.parseInt(result[1], 16);
-                    lock = new LockInfo(result[0], identityHashCode);
-                } else {
-                    assert result.length == 2;
-                    lock = null;
-                }
-            } else {
-                lock = null;
-            }
-            lockedMonitors = EMPTY_MONITORS;
-            lockedSynchronizers = EMPTY_SYNCS;
-        }
-
-        // 9.0 attributes
-        if (ticd.isCurrentVersion()) {
-            daemon = ticd.isDaemon();
-            priority = ticd.getPriority();
-        } else {
-            // Not ideal, but unclear what else we can do.
-            daemon = false;
-            priority = Thread.NORM_PRIORITY;
-        }
+        lock = ticd.lockInfo();
+        lockedMonitors = ticd.lockedMonitors();
+        lockedSynchronizers = ticd.lockedSynchronizers();
+        daemon = ticd.isDaemon();
+        priority = ticd.getPriority();
     }
 
     /**
@@ -692,52 +667,105 @@ public class ThreadInfo {
     /**
      * Returns a {@code ThreadInfo} object represented by the
      * given {@code CompositeData}.
-     * The given {@code CompositeData} must contain the following attributes
-     * unless otherwise specified below:
+     *
+     * <a id="attributes"></a>
+     * A {@code CompositeData} representing a {@code ThreadInfo} of
+     * version <em>N</em> must contain all of the attributes defined
+     * in version &le; <em>N</em> unless specified otherwise.
+     * The same rule applies the composite type of the given
+     * {@code CompositeData} and transitively to attributes whose
+     * {@linkplain CompositeData#getCompositeType() type} or
+     * {@linkplain ArrayType#getElementOpenType() component type} is
+     * {@code CompositeType}.
+     * <p>
+     * A {@code CompositeData} representing {@code ThreadInfo} of
+     * version <em>N</em> contains {@code "stackTrace"} attribute and
+     * {@code "lockedMonitors"} attribute representing
+     * an array of {@code StackTraceElement} and
+     * an array of {@link MonitorInfo} respectively
+     * and their types are of version <em>N</em>.
+     * The {@code "lockedStackFrame"} attribute in
+     * {@link MonitorInfo#from(CompositeData) MonitorInfo}'s composite type
+     * must represent {@code StackTraceElement} of the same version <em>N</em>.
+     * Otherwise, this method will throw {@code IllegalArgumentException}.
+     *
      * <table class="striped" style="margin-left:2em">
-     * <caption style="display:none">The attributes and their types the given CompositeData contains</caption>
+     * <caption style="display:none">The attributes and their types for ThreadInfo's composite data</caption>
      * <thead>
      * <tr>
      *   <th scope="col">Attribute Name</th>
      *   <th scope="col">Type</th>
+     *   <th scope="col">Since</th>
      * </tr>
      * </thead>
      * <tbody style="text-align:left">
      * <tr>
      *   <th scope="row">threadId</th>
      *   <td>{@code java.lang.Long}</td>
+     *   <td>5</td>
      * </tr>
      * <tr>
      *   <th scope="row">threadName</th>
      *   <td>{@code java.lang.String}</td>
+     *   <td>5</td>
      * </tr>
      * <tr>
      *   <th scope="row">threadState</th>
      *   <td>{@code java.lang.String}</td>
+     *   <td>5</td>
      * </tr>
      * <tr>
      *   <th scope="row">suspended</th>
      *   <td>{@code java.lang.Boolean}</td>
+     *   <td>5</td>
      * </tr>
      * <tr>
      *   <th scope="row">inNative</th>
      *   <td>{@code java.lang.Boolean}</td>
+     *   <td>5</td>
      * </tr>
      * <tr>
      *   <th scope="row">blockedCount</th>
      *   <td>{@code java.lang.Long}</td>
+     *   <td>5</td>
      * </tr>
      * <tr>
      *   <th scope="row">blockedTime</th>
      *   <td>{@code java.lang.Long}</td>
+     *   <td>5</td>
      * </tr>
      * <tr>
      *   <th scope="row">waitedCount</th>
      *   <td>{@code java.lang.Long}</td>
+     *   <td>5</td>
      * </tr>
      * <tr>
      *   <th scope="row">waitedTime</th>
      *   <td>{@code java.lang.Long}</td>
+     *   <td>5</td>
+     * </tr>
+     * <tr>
+     *   <th scope="row">lockName</th>
+     *   <td>{@code java.lang.String}</td>
+     *   <td>5</td>
+     * </tr>
+     * <tr>
+     *   <th scope="row">lockOwnerId</th>
+     *   <td>{@code java.lang.Long}</td>
+     *   <td>5</td>
+     * </tr>
+     * <tr>
+     *   <th scope="row">lockOwnerName</th>
+     *   <td>{@code java.lang.String}</td>
+     *   <td>5</td>
+     * </tr>
+     * <tr>
+     *   <th scope="row"><a id="StackTrace">stackTrace</a></th>
+     *   <td>{@code javax.management.openmbean.CompositeData[]}, each element
+     *       is a {@code CompositeData} representing {@code StackTraceElement}
+     *       as specified <a href="#stackTraceElement">below</a>.
+     *   </td>
+     *   <td>5</td>
      * </tr>
      * <tr>
      *   <th scope="row">lockInfo</th>
@@ -745,78 +773,21 @@ public class ThreadInfo {
      *       - the mapped type for {@link LockInfo} as specified in the
      *         {@link LockInfo#from} method.
      *       <p>
-     *       If {@code cd} does not contain this attribute,
+     *       If the given {@code CompositeData} does not contain this attribute,
      *       the {@code LockInfo} object will be constructed from
-     *       the value of the {@code lockName} attribute. </td>
-     * </tr>
-     * <tr>
-     *   <th scope="row">lockName</th>
-     *   <td>{@code java.lang.String}</td>
-     * </tr>
-     * <tr>
-     *   <th scope="row">lockOwnerId</th>
-     *   <td>{@code java.lang.Long}</td>
-     * </tr>
-     * <tr>
-     *   <th scope="row">lockOwnerName</th>
-     *   <td>{@code java.lang.String}</td>
-     * </tr>
-     * <tr>
-     *   <th scope="row"><a id="StackTrace">stackTrace</a></th>
-     *   <td>{@code javax.management.openmbean.CompositeData[]}
-     *       <p>
-     *       Each element is a {@code CompositeData} representing
-     *       StackTraceElement containing the following attributes:
-     *       <table class="striped" style="margin-left:2em">
-     *       <caption style="display:none">The attributes and their types the given CompositeData contains</caption>
-     *       <thead style="text-align:center">
-     *       <tr>
-     *         <th scope="col">Attribute Name</th>
-     *         <th scope="col">Type</th>
-     *       </tr>
-     *       </thead>
-     *       <tbody style="text-align:left">
-     *       <tr>
-     *         <th scope="row">moduleName</th>
-     *         <td>{@code java.lang.String}</td>
-     *       </tr>
-     *       <tr>
-     *         <th scope="row">moduleVersion</th>
-     *         <td>{@code java.lang.String}</td>
-     *       </tr>
-     *       <tr>
-     *         <th scope="row">className</th>
-     *         <td>{@code java.lang.String}</td>
-     *       </tr>
-     *       <tr>
-     *         <th scope="row">methodName</th>
-     *         <td>{@code java.lang.String}</td>
-     *       </tr>
-     *       <tr>
-     *         <th scope="row">fileName</th>
-     *         <td>{@code java.lang.String}</td>
-     *       </tr>
-     *       <tr>
-     *         <th scope="row">lineNumber</th>
-     *         <td>{@code java.lang.Integer}</td>
-     *       </tr>
-     *       <tr>
-     *         <th scope="row">nativeMethod</th>
-     *         <td>{@code java.lang.Boolean}</td>
-     *       </tr>
-     *       </tbody>
-     *       </table>
-     *   </td>
+     *       the value of the {@code lockName} attribute.</td>
+     *    <td>6</td>
      * </tr>
      * <tr>
      *   <th scope="row">lockedMonitors</th>
      *   <td>{@code javax.management.openmbean.CompositeData[]}
      *       whose element type is the mapped type for
      *       {@link MonitorInfo} as specified in the
-     *       {@link MonitorInfo#from Monitor.from} method.
+     *       {@link MonitorInfo#from MonitorInfo.from} method.
      *       <p>
-     *       If {@code cd} does not contain this attribute,
-     *       this attribute will be set to an empty array. </td>
+     *       If the given {@code CompositeData} does not contain this attribute,
+     *       this attribute will be set to an empty array.</td>
+     *    <td>6</td>
      * </tr>
      * <tr>
      *   <th scope="row">lockedSynchronizers</th>
@@ -824,25 +795,93 @@ public class ThreadInfo {
      *       whose element type is the mapped type for
      *       {@link LockInfo} as specified in the {@link LockInfo#from} method.
      *       <p>
-     *       If {@code cd} does not contain this attribute,
-     *       this attribute will be set to an empty array. </td>
+     *       If the given {@code CompositeData} does not contain this attribute,
+     *       this attribute will be set to an empty array.</td>
+     *    <td>6</td>
      * </tr>
      * <tr>
      *   <th scope="row">daemon</th>
-     *   <td>{@code java.lang.Boolean}</td>
+     *   <td>{@code java.lang.Boolean}
+     *       <p>
+     *       If the given {@code CompositeData} does not contain this attribute,
+     *       this attribute will be set to {@code false}.</td>
+     *    <td>9</td>
      * </tr>
      * <tr>
      *   <th scope="row">priority</th>
+     *   <td>{@code java.lang.Integer}
+     *       <p>
+     *       If the given {@code CompositeData} does not contain this attribute,
+     *       This attribute will be set to {@link Thread#NORM_PRIORITY}.</td>
+     *    <td>9</td>
+     * </tr>
+     * </tbody>
+     * </table>
+     *
+     * <a id="stackTraceElement">A {@code CompositeData} representing
+     * {@code StackTraceElement}</a> of version <em>N</em> must contain
+     * all of the attributes defined in version &le; <em>N</em>
+     * unless specified otherwise.
+     *
+     * <table class="striped" style="margin-left:2em">
+     * <caption style="display:none">The attributes and their types for StackTraceElement's composite data</caption>
+     * <thead style="text-align:center">
+     * <tr>
+     *   <th scope="col">Attribute Name</th>
+     *   <th scope="col">Type</th>
+     *   <th scope="col">Since</th>
+     * </tr>
+     * </thead>
+     * <tbody style="text-align:left">
+     * <tr>
+     *   <th scope="row">classLoaderName</th>
+     *   <td>{@code java.lang.String}</td>
+     *   <td>9</td>
+     * </tr>
+     * <tr>
+     *   <th scope="row">moduleName</th>
+     *   <td>{@code java.lang.String}</td>
+     *   <td>9</td>
+     * </tr>
+     * <tr>
+     *   <th scope="row">moduleVersion</th>
+     *   <td>{@code java.lang.String}</td>
+     *   <td>9</td>
+     * </tr>
+     * <tr>
+     *   <th scope="row">className</th>
+     *   <td>{@code java.lang.String}</td>
+     *   <td>5</td>
+     * </tr>
+     * <tr>
+     *   <th scope="row">methodName</th>
+     *   <td>{@code java.lang.String}</td>
+     *   <td>5</td>
+     * </tr>
+     * <tr>
+     *   <th scope="row">fileName</th>
+     *   <td>{@code java.lang.String}</td>
+     *   <td>5</td>
+     * </tr>
+     * <tr>
+     *   <th scope="row">lineNumber</th>
      *   <td>{@code java.lang.Integer}</td>
+     *   <td>5</td>
+     * </tr>
+     * <tr>
+     *   <th scope="row">nativeMethod</th>
+     *   <td>{@code java.lang.Boolean}</td>
+     *   <td>5</td>
      * </tr>
      * </tbody>
      * </table>
      *
      * @param cd {@code CompositeData} representing a {@code ThreadInfo}
      *
-     * @throws IllegalArgumentException if {@code cd} does not
-     *   represent a {@code ThreadInfo} with the attributes described
-     *   above.
+     * @throws IllegalArgumentException if the given {@code cd} and
+     *         its composite type does not contain all of
+     *         <a href="#attributes">the attributes</a> defined for a
+     *         {@code ThreadInfo} of a specific runtime version.
      *
      * @return a {@code ThreadInfo} object represented
      *         by {@code cd} if {@code cd} is not {@code null};

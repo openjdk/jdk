@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -114,8 +114,8 @@ endif # OPENJDK_TARGET_OS solaris
 
 LIBJSOUND_CFLAGS += -DEXTRA_SOUND_JNI_LIBS='"$(EXTRA_SOUND_JNI_LIBS)"'
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBJSOUND, \
-    LIBRARY := jsound, \
+$(eval $(call SetupNativeCompilation, BUILD_LIBJSOUND, \
+    NAME := jsound, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBJSOUND_SRC_DIRS), \
     INCLUDE_FILES := $(LIBJSOUND_SRC_FILES), \
@@ -149,8 +149,8 @@ TARGETS += $(BUILD_LIBJSOUND)
 
 ifneq ($(filter jsoundalsa, $(EXTRA_SOUND_JNI_LIBS)), )
 
-  $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUNDALSA, \
-      LIBRARY := jsoundalsa, \
+  $(eval $(call SetupNativeCompilation, BUILD_LIBJSOUNDALSA, \
+      NAME := jsoundalsa, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBJSOUND_SRC_DIRS), \
       INCLUDE_FILES := Utilities.c $(LIBJSOUND_MIDIFILES) $(LIBJSOUND_PORTFILES) \
@@ -186,8 +186,8 @@ endif
 
 ifneq ($(filter jsoundds, $(EXTRA_SOUND_JNI_LIBS)), )
 
-  $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUNDDS, \
-      LIBRARY := jsoundds, \
+  $(eval $(call SetupNativeCompilation, BUILD_LIBJSOUNDDS, \
+      NAME := jsoundds, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBJSOUND_SRC_DIRS), \
       INCLUDE_FILES := Utilities.c $(LIBJSOUND_DAUDIOFILES) \

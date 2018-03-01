@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,6 @@ class ClassLoader: AllStatic {
   static PerfCounter* _sync_JNIDefineClassLockFreeCounter;
 
   static PerfCounter* _unsafe_defineClassCallCounter;
-  static PerfCounter* _isUnsyncloadClass;
   static PerfCounter* _load_instance_class_failCounter;
 
   // The boot class path consists of 3 ordered pieces:

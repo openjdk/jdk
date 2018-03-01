@@ -220,8 +220,39 @@ bool G1SATBCardTableModRefBS::is_in_young(oop obj) const {
   return *p == g1_young_card_val();
 }
 
-void G1SATBCardTableLoggingModRefBS::flush_deferred_barriers(JavaThread* thread) {
-  CardTableModRefBS::flush_deferred_barriers(thread);
+void G1SATBCardTableLoggingModRefBS::on_thread_attach(JavaThread* thread) {
+  // This method initializes the SATB and dirty card queues before a
+  // JavaThread is added to the Java thread list. Right now, we don't
+  // have to do anything to the dirty card queue (it should have been
+  // activated when the thread was created), but we have to activate
+  // the SATB queue if the thread is created while a marking cycle is
+  // in progress. The activation / de-activation of the SATB queues at
+  // the beginning / end of a marking cycle is done during safepoints
+  // so we have to make sure this method is called outside one to be
+  // able to safely read the active field of the SATB queue set. Right
+  // now, it is called just before the thread is added to the Java
+  // thread list in the Threads::add() method. That method is holding
+  // the Threads_lock which ensures we are outside a safepoint. We
+  // cannot do the obvious and set the active field of the SATB queue
+  // when the thread is created given that, in some cases, safepoints
+  // might happen between the JavaThread constructor being called and the
+  // thread being added to the Java thread list (an example of this is
+  // when the structure for the DestroyJavaVM thread is created).
+  assert(!SafepointSynchronize::is_at_safepoint(), "We should not be at a safepoint");
+  assert(!thread->satb_mark_queue().is_active(), "SATB queue should not be active");
+  assert(thread->satb_mark_queue().is_empty(), "SATB queue should be empty");
+  assert(thread->dirty_card_queue().is_active(), "Dirty card queue should be active");
+
+  // If we are creating the thread during a marking cycle, we should
+  // set the active field of the SATB queue to true.
+  if (thread->satb_mark_queue_set().is_active()) {
+    thread->satb_mark_queue().set_active(true);
+  }
+}
+
+void G1SATBCardTableLoggingModRefBS::on_thread_detach(JavaThread* thread) {
+  // Flush any deferred card marks, SATB buffers and dirty card queue buffers
+  CardTableModRefBS::on_thread_detach(thread);
   thread->satb_mark_queue().flush();
   thread->dirty_card_queue().flush();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -531,7 +531,6 @@ class MacroAssembler: public Assembler {
     Register t2,                       // temp register
     Label&   slow_case                 // continuation point if fast allocation fails
   );
-  Register tlab_refill(Label& retry_tlab, Label& try_eden, Label& slow_case); // returns TLS address
   void zero_memory(Register address, Register length_in_bytes, int offset_in_bytes, Register temp);
 
   void incr_allocated_bytes(Register thread,
@@ -657,11 +656,9 @@ class MacroAssembler: public Assembler {
   // Support for serializing memory accesses between threads
   void serialize_memory(Register thread, Register tmp);
 
-#ifdef _LP64
+  // If thread_reg is != noreg the code assumes the register passed contains
+  // the thread (required on 64 bit).
   void safepoint_poll(Label& slow_path, Register thread_reg, Register temp_reg);
-#else
-  void safepoint_poll(Label& slow_path);
-#endif
 
   void verify_tlab();
 

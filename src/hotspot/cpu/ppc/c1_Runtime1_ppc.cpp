@@ -413,34 +413,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           assert(id == fast_new_instance_init_check_id, "bad StubID");
           __ set_info("fast new_instance init check", dont_gc_arguments);
         }
+
         // We don't support eden allocation.
-//        if ((id == fast_new_instance_id || id == fast_new_instance_init_check_id) &&
-//            UseTLAB && FastTLABRefill) {
-//          if (id == fast_new_instance_init_check_id) {
-//            // make sure the klass is initialized
-//            __ lbz(R0, in_bytes(InstanceKlass::init_state_offset()), R3_ARG1);
-//            __ cmpwi(CCR0, R0, InstanceKlass::fully_initialized);
-//            __ bne(CCR0, slow_path);
-//          }
-//#ifdef ASSERT
-//          // assert object can be fast path allocated
-//          {
-//            Label ok, not_ok;
-//          __ lwz(R0, in_bytes(Klass::layout_helper_offset()), R3_ARG1);
-//          // make sure it's an instance (LH > 0)
-//          __ cmpwi(CCR0, R0, 0);
-//          __ ble(CCR0, not_ok);
-//          __ testbitdi(CCR0, R0, R0, Klass::_lh_instance_slow_path_bit);
-//          __ beq(CCR0, ok);
-//
-//          __ bind(not_ok);
-//          __ stop("assert(can be fast path allocated)");
-//          __ bind(ok);
-//          }
-//#endif // ASSERT
-//          // We don't support eden allocation.
-//          __ bind(slow_path);
-//        }
+
         oop_maps = generate_stub_call(sasm, R3_RET, CAST_FROM_FN_PTR(address, new_instance), R4_ARG2);
       }
       break;

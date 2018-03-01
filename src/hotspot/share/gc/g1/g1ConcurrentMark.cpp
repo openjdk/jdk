@@ -38,6 +38,7 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
+#include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
@@ -1275,7 +1276,6 @@ void G1ConcurrentMark::cleanup() {
   // We reclaimed old regions so we should calculate the sizes to make
   // sure we update the old gen/space data.
   g1h->g1mm()->update_sizes();
-  g1h->allocation_context_stats().update_after_mark();
 }
 
 void G1ConcurrentMark::complete_cleanup() {

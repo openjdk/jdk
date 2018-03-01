@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,17 @@
  *
  */
 
-#ifndef SHARE_VM_SERVICES_ALLOCATION_CONTEXT_SERVICE_HPP
-#define SHARE_VM_SERVICES_ALLOCATION_CONTEXT_SERVICE_HPP
+#ifndef SHARE_VM_GC_SHARED_SOFTREFGENPOLICY_HPP
+#define SHARE_VM_GC_SHARED_SOFTREFGENPOLICY_HPP
 
-#include "utilities/exceptions.hpp"
+#include "gc/shared/softRefPolicy.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-class AllocationContextService: public AllStatic {
+class AdaptiveSizePolicy;
+
+class SoftRefGenPolicy : public SoftRefPolicy {
 public:
-  static inline bool should_notify();
-  static inline void notify(TRAPS);
+  virtual void cleared_all_soft_refs();
 };
 
-bool AllocationContextService::should_notify() { return false; }
-void AllocationContextService::notify(TRAPS) { }
-
-#endif // SHARE_VM_SERVICES_ALLOCATION_CONTEXT_SERVICE_HPP
+#endif // SHARE_VM_GC_SHARED_SOFTREFGENPOLICY_HPP

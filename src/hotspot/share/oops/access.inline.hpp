@@ -206,6 +206,13 @@ namespace AccessInternal {
     }
   };
 
+  template <class GCBarrierType, DecoratorSet decorators>
+  struct PostRuntimeDispatch<GCBarrierType, BARRIER_RESOLVE, decorators>: public AllStatic {
+    static oop access_barrier(oop obj) {
+      return GCBarrierType::resolve(obj);
+    }
+  };
+
   // Resolving accessors with barriers from the barrier set happens in two steps.
   // 1. Expand paths with runtime-decorators, e.g. is UseCompressedOops on or off.
   // 2. Expand paths for each BarrierSet available in the system.
@@ -443,6 +450,22 @@ namespace AccessInternal {
     }
   };
 
+  template <DecoratorSet decorators, typename T>
+  struct RuntimeDispatch<decorators, T, BARRIER_RESOLVE>: AllStatic {
+    typedef typename AccessFunction<decorators, T, BARRIER_RESOLVE>::type func_t;
+    static func_t _resolve_func;
+
+    static oop resolve_init(oop obj) {
+      func_t function = BarrierResolver<decorators, func_t, BARRIER_RESOLVE>::resolve_barrier();
+      _resolve_func = function;
+      return function(obj);
+    }
+
+    static inline oop resolve(oop obj) {
+      return _resolve_func(obj);
+    }
+  };
+
   // Initialize the function pointers to point to the resolving function.
   template <DecoratorSet decorators, typename T>
   typename AccessFunction<decorators, T, BARRIER_STORE>::type
@@ -483,6 +506,10 @@ namespace AccessInternal {
   template <DecoratorSet decorators, typename T>
   typename AccessFunction<decorators, T, BARRIER_CLONE>::type
   RuntimeDispatch<decorators, T, BARRIER_CLONE>::_clone_func = &clone_init;
+
+  template <DecoratorSet decorators, typename T>
+  typename AccessFunction<decorators, T, BARRIER_RESOLVE>::type
+  RuntimeDispatch<decorators, T, BARRIER_RESOLVE>::_resolve_func = &resolve_init;
 
   // Step 3: Pre-runtime dispatching.
   // The PreRuntimeDispatch class is responsible for filtering the barrier strength
@@ -765,6 +792,21 @@ namespace AccessInternal {
       !HasDecorator<decorators, AS_RAW>::value>::type
     clone(oop src, oop dst, size_t size) {
       RuntimeDispatch<decorators, oop, BARRIER_CLONE>::clone(src, dst, size);
+    }
+
+    template <DecoratorSet decorators>
+    inline static typename EnableIf<
+      HasDecorator<decorators, INTERNAL_BT_TO_SPACE_INVARIANT>::value, oop>::type
+    resolve(oop obj) {
+      typedef RawAccessBarrier<decorators & RAW_DECORATOR_MASK> Raw;
+      return Raw::resolve(obj);
+    }
+
+    template <DecoratorSet decorators>
+    inline static typename EnableIf<
+      !HasDecorator<decorators, INTERNAL_BT_TO_SPACE_INVARIANT>::value, oop>::type
+    resolve(oop obj) {
+      return RuntimeDispatch<decorators, oop, BARRIER_RESOLVE>::resolve(obj);
     }
   };
 
@@ -1050,6 +1092,12 @@ namespace AccessInternal {
   inline void clone(oop src, oop dst, size_t size) {
     const DecoratorSet expanded_decorators = DecoratorFixup<decorators>::value;
     PreRuntimeDispatch::clone<expanded_decorators>(src, dst, size);
+  }
+
+  template <DecoratorSet decorators>
+  inline oop resolve(oop obj) {
+    const DecoratorSet expanded_decorators = DecoratorFixup<decorators>::value;
+    return PreRuntimeDispatch::resolve<expanded_decorators>(obj);
   }
 }
 

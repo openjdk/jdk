@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,6 @@ class ConcurrentMarkSweepPolicy;
 class G1CollectorPolicy;
 #endif // INCLUDE_ALL_GCS
 
-class GCPolicyCounters;
 class MarkSweepPolicy;
 
 class CollectorPolicy : public CHeapObj<mtGC> {
@@ -72,21 +71,10 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   size_t _space_alignment;
   size_t _heap_alignment;
 
-  // Set to true when policy wants soft refs cleared.
-  // Reset to false by gc after it clears all soft refs.
-  bool _should_clear_all_soft_refs;
-
-  // Set to true by the GC if the just-completed gc cleared all
-  // softrefs.  This is set to true whenever a gc clears all softrefs, and
-  // set to false each time gc returns to the mutator.  For example, in the
-  // ParallelScavengeHeap case the latter would be done toward the end of
-  // mem_allocate() where it returns op.result()
-  bool _all_soft_refs_clear;
-
   CollectorPolicy();
 
  public:
-  virtual void initialize_all() {
+  void initialize_all() {
     initialize_alignments();
     initialize_flags();
     initialize_size_info();
@@ -101,58 +89,6 @@ class CollectorPolicy : public CHeapObj<mtGC> {
   size_t initial_heap_byte_size() { return _initial_heap_byte_size; }
   size_t max_heap_byte_size()     { return _max_heap_byte_size; }
   size_t min_heap_byte_size()     { return _min_heap_byte_size; }
-
-  bool should_clear_all_soft_refs() { return _should_clear_all_soft_refs; }
-  void set_should_clear_all_soft_refs(bool v) { _should_clear_all_soft_refs = v; }
-  // Returns the current value of _should_clear_all_soft_refs.
-  // _should_clear_all_soft_refs is set to false as a side effect.
-  bool use_should_clear_all_soft_refs(bool v);
-  bool all_soft_refs_clear() { return _all_soft_refs_clear; }
-  void set_all_soft_refs_clear(bool v) { _all_soft_refs_clear = v; }
-
-  // Called by the GC after Soft Refs have been cleared to indicate
-  // that the request in _should_clear_all_soft_refs has been fulfilled.
-  virtual void cleared_all_soft_refs();
-
-  // Identification methods.
-  virtual GenCollectorPolicy*           as_generation_policy()            { return NULL; }
-  virtual MarkSweepPolicy*              as_mark_sweep_policy()            { return NULL; }
-#if INCLUDE_ALL_GCS
-  virtual ConcurrentMarkSweepPolicy*    as_concurrent_mark_sweep_policy() { return NULL; }
-#endif // INCLUDE_ALL_GCS
-  // Note that these are not virtual.
-  bool is_generation_policy()            { return as_generation_policy() != NULL; }
-  bool is_mark_sweep_policy()            { return as_mark_sweep_policy() != NULL; }
-#if INCLUDE_ALL_GCS
-  bool is_concurrent_mark_sweep_policy() { return as_concurrent_mark_sweep_policy() != NULL; }
-#else  // INCLUDE_ALL_GCS
-  bool is_concurrent_mark_sweep_policy() { return false; }
-#endif // INCLUDE_ALL_GCS
-
-
-  virtual CardTableRS* create_rem_set(MemRegion reserved);
-
-  MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
-                                               size_t size,
-                                               Metaspace::MetadataType mdtype);
-};
-
-class ClearedAllSoftRefs : public StackObj {
-  bool _clear_all_soft_refs;
-  CollectorPolicy* _collector_policy;
- public:
-  ClearedAllSoftRefs(bool clear_all_soft_refs,
-                     CollectorPolicy* collector_policy) :
-    _clear_all_soft_refs(clear_all_soft_refs),
-    _collector_policy(collector_policy) {}
-
-  ~ClearedAllSoftRefs() {
-    if (_clear_all_soft_refs) {
-      _collector_policy->cleared_all_soft_refs();
-    }
-  }
-
-  bool should_clear() { return _clear_all_soft_refs; }
 };
 
 class GenCollectorPolicy : public CollectorPolicy {
@@ -171,26 +107,11 @@ protected:
   // time. When using large pages they can differ.
   size_t _gen_alignment;
 
-  GenerationSpec* _young_gen_spec;
-  GenerationSpec* _old_gen_spec;
-
-  GCPolicyCounters* _gc_policy_counters;
-
-  // The sizing of the heap is controlled by a sizing policy.
-  AdaptiveSizePolicy* _size_policy;
-
-  // Return true if an allocation should be attempted in the older generation
-  // if it fails in the younger generation.  Return false, otherwise.
-  virtual bool should_try_older_generation_allocation(size_t word_size) const;
-
   void initialize_flags();
   void initialize_size_info();
 
   DEBUG_ONLY(void assert_flags();)
   DEBUG_ONLY(void assert_size_info();)
-
-  // Try to allocate space by expanding the heap.
-  virtual HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
 
   // Compute max heap alignment.
   size_t compute_max_alignment();
@@ -215,63 +136,17 @@ protected:
   size_t initial_old_size()   { return _initial_old_size; }
   size_t max_old_size()       { return _max_old_size; }
 
-  GenerationSpec* young_gen_spec() const {
-    assert(_young_gen_spec != NULL, "_young_gen_spec should have been initialized");
-    return _young_gen_spec;
-  }
-
-  GenerationSpec* old_gen_spec() const {
-    assert(_old_gen_spec != NULL, "_old_gen_spec should have been initialized");
-    return _old_gen_spec;
-  }
-
-  // Performance Counter support
-  GCPolicyCounters* counters()     { return _gc_policy_counters; }
-
-  // Create the jstat counters for the GC policy.
-  virtual void initialize_gc_policy_counters() = 0;
-
-  virtual GenCollectorPolicy* as_generation_policy() { return this; }
-
-  virtual void initialize_generations() { };
-
-  virtual void initialize_all() {
-    CollectorPolicy::initialize_all();
-    initialize_generations();
-  }
-
   size_t young_gen_size_lower_bound();
 
   size_t old_gen_size_lower_bound();
-
-  HeapWord* mem_allocate_work(size_t size,
-                              bool is_tlab,
-                              bool* gc_overhead_limit_was_exceeded);
-
-  HeapWord *satisfy_failed_allocation(size_t size, bool is_tlab);
-
-  // Adaptive size policy
-  AdaptiveSizePolicy* size_policy() { return _size_policy; }
-
-  virtual void initialize_size_policy(size_t init_eden_size,
-                                      size_t init_promo_size,
-                                      size_t init_survivor_size);
-
-  virtual void cleared_all_soft_refs();
-
 };
 
 class MarkSweepPolicy : public GenCollectorPolicy {
  protected:
   void initialize_alignments();
-  void initialize_generations();
 
  public:
   MarkSweepPolicy() {}
-
-  MarkSweepPolicy* as_mark_sweep_policy() { return this; }
-
-  void initialize_gc_policy_counters();
 };
 
 #endif // SHARE_VM_GC_SHARED_COLLECTORPOLICY_HPP
