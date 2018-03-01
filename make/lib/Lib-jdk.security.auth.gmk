@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   LIBJAAS_NAME := jaas_nt
 endif
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBJAAS, \
-    LIBRARY := $(LIBJAAS_NAME), \
+$(eval $(call SetupNativeCompilation, BUILD_LIBJAAS, \
+    NAME := $(LIBJAAS_NAME), \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(call FindSrcDirsForLib, jdk.security.auth, jaas), \
     OPTIMIZATION := LOW, \

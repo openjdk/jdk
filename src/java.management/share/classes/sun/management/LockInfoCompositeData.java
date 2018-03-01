@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,15 +58,15 @@ public class LockInfoCompositeData extends LazyCompositeData {
 
     protected CompositeData getCompositeData() {
         // CONTENTS OF THIS ARRAY MUST BE SYNCHRONIZED WITH
-        // lockInfoItemNames!
+        // LOCK_INFO_ATTRIBUTES!
         final Object[] lockInfoItemValues = {
             new String(lock.getClassName()),
             lock.getIdentityHashCode(),
         };
 
         try {
-            return new CompositeDataSupport(lockInfoCompositeType,
-                                            lockInfoItemNames,
+            return new CompositeDataSupport(LOCK_INFO_COMPOSITE_TYPE,
+                                            LOCK_INFO_ATTRIBUTES,
                                             lockInfoItemValues);
         } catch (OpenDataException e) {
             // Should never reach here
@@ -74,10 +74,10 @@ public class LockInfoCompositeData extends LazyCompositeData {
         }
     }
 
-    private static final CompositeType lockInfoCompositeType;
+    private static final CompositeType LOCK_INFO_COMPOSITE_TYPE;
     static {
         try {
-            lockInfoCompositeType = (CompositeType)
+            LOCK_INFO_COMPOSITE_TYPE = (CompositeType)
                 MappedMXBeanType.toOpenType(LockInfo.class);
         } catch (OpenDataException e) {
             // Should never reach here
@@ -85,13 +85,13 @@ public class LockInfoCompositeData extends LazyCompositeData {
         }
     }
 
-    static CompositeType getLockInfoCompositeType() {
-        return lockInfoCompositeType;
+    static CompositeType compositeType() {
+        return LOCK_INFO_COMPOSITE_TYPE;
     }
 
     private static final String CLASS_NAME         = "className";
     private static final String IDENTITY_HASH_CODE = "identityHashCode";
-    private static final String[] lockInfoItemNames = {
+    private static final String[] LOCK_INFO_ATTRIBUTES = {
         CLASS_NAME,
         IDENTITY_HASH_CODE,
     };
@@ -104,7 +104,7 @@ public class LockInfoCompositeData extends LazyCompositeData {
             throw new NullPointerException("Null CompositeData");
         }
 
-        if (!isTypeMatched(lockInfoCompositeType, cd.getCompositeType())) {
+        if (!isTypeMatched(LOCK_INFO_COMPOSITE_TYPE, cd.getCompositeType())) {
             throw new IllegalArgumentException(
                 "Unexpected composite type for LockInfo");
         }

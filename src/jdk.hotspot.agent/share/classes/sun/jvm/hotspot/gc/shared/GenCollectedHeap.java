@@ -54,12 +54,10 @@ public class GenCollectedHeap extends CollectedHeap {
 
     youngGenField = type.getAddressField("_young_gen");
     oldGenField = type.getAddressField("_old_gen");
+    youngGenSpecField = type.getAddressField("_young_gen_spec");
+    oldGenSpecField = type.getAddressField("_old_gen_spec");
 
     genFactory = new GenerationFactory();
-
-    Type collectorPolicyType = db.lookupType("GenCollectorPolicy");
-    youngGenSpecField = collectorPolicyType.getAddressField("_young_gen_spec");
-    oldGenSpecField = collectorPolicyType.getAddressField("_old_gen_spec");
   }
 
   public GenCollectedHeap(Address addr) {

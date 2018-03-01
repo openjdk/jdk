@@ -43,6 +43,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "runtime/fieldType.hpp"
 #include "runtime/init.hpp"
 #include "runtime/javaCalls.hpp"
@@ -545,12 +546,6 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
     }
   }
 }
-
-
-Klass* ConstantPool::klass_ref_at_if_loaded(const constantPoolHandle& this_cp, int which) {
-  return klass_at_if_loaded(this_cp, this_cp->klass_ref_index_at(which));
-}
-
 
 Method* ConstantPool::method_at_if_loaded(const constantPoolHandle& cpool,
                                                    int which) {

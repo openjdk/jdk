@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,21 +233,11 @@ bool oopDesc::is_array()     const { return klass()->is_array_klass();     }
 bool oopDesc::is_objArray()  const { return klass()->is_objArray_klass();  }
 bool oopDesc::is_typeArray() const { return klass()->is_typeArray_klass(); }
 
-void*      oopDesc::field_base(int offset)          const { return (void*)&((char*)this)[offset]; }
+void*    oopDesc::field_addr_raw(int offset)     const { return reinterpret_cast<void*>(cast_from_oop<intptr_t>(as_oop()) + offset); }
+void*    oopDesc::field_addr(int offset)         const { return Access<>::resolve(as_oop())->field_addr_raw(offset); }
 
-jbyte*     oopDesc::byte_field_addr(int offset)     const { return (jbyte*)    field_base(offset); }
-jchar*     oopDesc::char_field_addr(int offset)     const { return (jchar*)    field_base(offset); }
-jboolean*  oopDesc::bool_field_addr(int offset)     const { return (jboolean*) field_base(offset); }
-jint*      oopDesc::int_field_addr(int offset)      const { return (jint*)     field_base(offset); }
-jshort*    oopDesc::short_field_addr(int offset)    const { return (jshort*)   field_base(offset); }
-jlong*     oopDesc::long_field_addr(int offset)     const { return (jlong*)    field_base(offset); }
-jfloat*    oopDesc::float_field_addr(int offset)    const { return (jfloat*)   field_base(offset); }
-jdouble*   oopDesc::double_field_addr(int offset)   const { return (jdouble*)  field_base(offset); }
-Metadata** oopDesc::metadata_field_addr(int offset) const { return (Metadata**)field_base(offset); }
-
-template <class T> T* oopDesc::obj_field_addr(int offset) const { return (T*)  field_base(offset); }
-address*   oopDesc::address_field_addr(int offset)  const { return (address*)  field_base(offset); }
-
+template <class T>
+T*       oopDesc::obj_field_addr_raw(int offset) const { return (T*) field_addr_raw(offset); }
 
 // Functions for getting and setting oops within instance objects.
 // If the oops are compressed, the type passed to these overloaded functions

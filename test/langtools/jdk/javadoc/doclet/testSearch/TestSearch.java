@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881
- *      8181622 8182263 8074407 8187521
+ *      8181622 8182263 8074407 8187521 8198522
  * @summary Test the search feature of javadoc.
  * @author bpatel
  * @library ../lib
@@ -43,7 +43,7 @@ public class TestSearch extends JavadocTester {
     void test1() {
         javadoc("-d", "out-1", "-sourcepath", "-use", testSrc("UnnamedPkgClass.java"));
         checkExit(Exit.OK);
-        checkSearchOutput("UnnamedPkgClass.html", true);
+        checkSearchOutput("UnnamedPkgClass.html", true, true);
         checkJqueryAndImageFiles(true);
         checkSearchJS();
         checkFiles(false,
@@ -249,6 +249,16 @@ public class TestSearch extends JavadocTester {
                 "type-search-index.js");
     }
 
+    @Test
+    void testNoModuleDirectories() {
+        javadoc("-d", "out-noMdlDir", "--no-module-directories", "-Xdoclint:none",
+                "-sourcepath", testSrc,
+                "-use", "pkg", "pkg1", "pkg2", "pkg3");
+        checkExit(Exit.OK);
+        checkSearchOutput(true, false);
+        checkSearchJS();
+    }
+
     void checkDocLintErrors() {
         checkOutput(Output.OUT, true,
                 "A sample method. Testing search tag for {@index \"unclosed quote}.",
@@ -258,10 +268,14 @@ public class TestSearch extends JavadocTester {
     }
 
     void checkSearchOutput(boolean expectedOutput) {
-        checkSearchOutput("overview-summary.html", expectedOutput);
+        checkSearchOutput("overview-summary.html", expectedOutput, true);
     }
 
-    void checkSearchOutput(String fileName, boolean expectedOutput) {
+    void checkSearchOutput(boolean expectedOutput, boolean moduleDirectoriesVar) {
+        checkSearchOutput("overview-summary.html", expectedOutput, moduleDirectoriesVar);
+    }
+
+    void checkSearchOutput(String fileName, boolean expectedOutput, boolean moduleDirectoriesVar) {
         // Test for search related markup
         checkOutput(fileName, expectedOutput,
                 "<link rel=\"stylesheet\" type=\"text/css\" href=\"jquery/jquery-ui.css\" title=\"Style\">\n",
@@ -272,7 +286,9 @@ public class TestSearch extends JavadocTester {
                 "<![endif]-->\n",
                 "<script type=\"text/javascript\" src=\"jquery/jquery-1.10.2.js\"></script>\n",
                 "<script type=\"text/javascript\" src=\"jquery/jquery-ui.js\"></script>",
-                "var pathtoroot = \"./\";loadScripts(document, 'script');",
+                "var pathtoroot = \"./\";\n"
+                + "var useModuleDirectories = " + moduleDirectoriesVar + ";\n"
+                + "loadScripts(document, 'script');",
                 "<ul class=\"navListSearch\">\n",
                 "<li><label for=\"search\">SEARCH:</label>\n"
                 + "<input type=\"text\" id=\"search\" value=\"search\" disabled=\"disabled\">\n"
@@ -503,7 +519,26 @@ public class TestSearch extends JavadocTester {
                 + "        if ($(this).val() == watermark) {\n"
                 + "            $(this).val('').removeClass('watermark');\n"
                 + "        }\n"
-                + "    });");
+                + "    });",
+                "function getURLPrefix(ui) {\n"
+                + "    var urlPrefix=\"\";\n"
+                + "    if (useModuleDirectories) {\n"
+                + "        var slash = \"/\";\n"
+                + "        if (ui.item.category === catModules) {\n"
+                + "            return ui.item.l + slash;\n"
+                + "        } else if (ui.item.category === catPackages) {\n"
+                + "            return ui.item.m + slash;\n"
+                + "        } else if (ui.item.category === catTypes || ui.item.category === catMembers) {\n"
+                + "            $.each(packageSearchIndex, function(index, item) {\n"
+                + "                if (ui.item.p == item.l) {\n"
+                + "                    urlPrefix = item.m + slash;\n"
+                + "                }\n"
+                + "            });\n"
+                + "            return urlPrefix;\n"
+                + "        }\n"
+                + "    }\n"
+                + "    return urlPrefix;\n"
+                + "}");
     }
 
     void checkSingleIndexSearchTagDuplication() {

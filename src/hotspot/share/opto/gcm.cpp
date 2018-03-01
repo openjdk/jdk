@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1486,7 +1486,7 @@ void PhaseCFG::global_code_motion() {
   }
 #endif
   // Dead.
-  _node_latency = (GrowableArray<uint> *)0xdeadbeef;
+  _node_latency = (GrowableArray<uint> *)((intptr_t)0xdeadbeef);
 }
 
 bool PhaseCFG::do_global_code_motion() {
