@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,14 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * or method in this class will cause a {@link NullPointerException} to be
  * thrown.
  *
+ * @apiNote
+ * {@code StringBuilder} implements {@code Comparable} but does not override
+ * {@link Object#equals equals}. Thus, the natural ordering of {@code StringBuilder}
+ * is inconsistent with equals. Care should be exercised if {@code StringBuilder}
+ * objects are used as keys in a {@code SortedMap} or elements in a {@code SortedSet}.
+ * See {@link Comparable}, {@link java.util.SortedMap SortedMap}, or
+ * {@link java.util.SortedSet SortedSet} for more information.
+ *
  * @author      Michael McCloskey
  * @see         java.lang.StringBuffer
  * @see         java.lang.String
@@ -76,7 +84,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  */
 public final class StringBuilder
     extends AbstractStringBuilder
-    implements java.io.Serializable, CharSequence
+    implements java.io.Serializable, Comparable<StringBuilder>, CharSequence
 {
 
     /** use serialVersionUID for interoperability */
@@ -128,6 +136,31 @@ public final class StringBuilder
     public StringBuilder(CharSequence seq) {
         this(seq.length() + 16);
         append(seq);
+    }
+
+    /**
+     * Compares two {@code StringBuilder} instances lexicographically. This method
+     * follows the same rules for lexicographical comparison as defined in the
+     * {@linkplain java.lang.CharSequence#compare(java.lang.CharSequence,
+     * java.lang.CharSequence)  CharSequence.compare(this, another)} method.
+     *
+     * <p>
+     * For finer-grained, locale-sensitive String comparison, refer to
+     * {@link java.text.Collator}.
+     *
+     * @param another the {@code StringBuilder} to be compared with
+     *
+     * @return  the value {@code 0} if this {@code StringBuilder} contains the same
+     * character sequence as that of the argument {@code StringBuilder}; a negative integer
+     * if this {@code StringBuilder} is lexicographically less than the
+     * {@code StringBuilder} argument; or a positive integer if this {@code StringBuilder}
+     * is lexicographically greater than the {@code StringBuilder} argument.
+     *
+     * @since 11
+     */
+    @Override
+    public int compareTo(StringBuilder another) {
+        return super.compareTo(another);
     }
 
     @Override
