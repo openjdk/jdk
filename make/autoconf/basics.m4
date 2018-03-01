@@ -1127,6 +1127,8 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
       fi
     fi
     BASIC_REQUIRE_PROGS(SETFILE, SetFile)
+  elif test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
+    BASIC_REQUIRE_PROGS(ELFEDIT, elfedit)
   fi
 ])
 
