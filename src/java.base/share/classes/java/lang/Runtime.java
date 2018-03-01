@@ -275,6 +275,7 @@ public class Runtime {
         if (sm != null) {
             sm.checkExit(status);
         }
+        Shutdown.beforeHalt();
         Shutdown.halt(status);
     }
 

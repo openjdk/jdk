@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, Red Hat Inc. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -995,6 +995,7 @@ definitions %{
 
 source_hpp %{
 
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableModRefBS.hpp"
 #include "opto/addnode.hpp"
 
@@ -4438,8 +4439,8 @@ encode %{
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
                Assembler::byte, /*acquire*/ false, /*release*/ true,
                /*weak*/ false, noreg);
-  %}  
-    
+  %}
+
 
   // The only difference between aarch64_enc_cmpxchg and
   // aarch64_enc_cmpxchg_acq is that we use load-acquire in the
@@ -5845,7 +5846,7 @@ operand immByteMapBase()
 %{
   // Get base of card map
   predicate(Universe::heap()->barrier_set()->is_a(BarrierSet::CardTableModRef) &&
-    (jbyte*)n->get_ptr() == ((CardTableModRefBS*)(Universe::heap()->barrier_set()))->byte_map_base);
+            (jbyte*)n->get_ptr() == ((CardTableModRefBS*)(Universe::heap()->barrier_set()))->card_table()->byte_map_base());
   match(ConP);
 
   op_cost(0);

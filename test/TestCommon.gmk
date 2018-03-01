@@ -325,13 +325,14 @@ ifndef JT_HOME
 endif
 
 # Problematic tests to be excluded
-PROBLEM_LISTS=$(call MixedDirs,$(wildcard ProblemList.txt))
+EXTRA_PROBLEM_LISTS :=
+PROBLEM_LISTS := ProblemList.txt $(EXTRA_PROBLEM_LISTS)
 
 # Create exclude list for this platform and arch
 ifdef NO_EXCLUDES
   JTREG_EXCLUSIONS =
 else
-  JTREG_EXCLUSIONS = $(PROBLEM_LISTS:%=-exclude:%)
+  JTREG_EXCLUSIONS = $(addprefix -exclude:, $(wildcard $(PROBLEM_LISTS)))
 endif
 
 # convert list of directories to dos paths

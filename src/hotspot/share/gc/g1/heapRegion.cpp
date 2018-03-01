@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ void HeapRegion::setup_heap_region_size(size_t initial_heap_size, size_t max_hea
   guarantee((size_t) 1 << LogOfHRGrainWords == GrainWords, "sanity");
 
   guarantee(CardsPerRegion == 0, "we should only set it once");
-  CardsPerRegion = GrainBytes >> CardTableModRefBS::card_shift;
+  CardsPerRegion = GrainBytes >> G1CardTable::card_shift;
 
   if (G1HeapRegionSize != GrainBytes) {
     FLAG_SET_ERGO(size_t, G1HeapRegionSize, GrainBytes);
@@ -139,9 +139,8 @@ void HeapRegion::par_clear() {
   assert(capacity() == HeapRegion::GrainBytes, "should be back to normal");
   HeapRegionRemSet* hrrs = rem_set();
   hrrs->clear();
-  CardTableModRefBS* ct_bs =
-    barrier_set_cast<CardTableModRefBS>(G1CollectedHeap::heap()->barrier_set());
-  ct_bs->clear(MemRegion(bottom(), end()));
+  G1CardTable* ct = G1CollectedHeap::heap()->card_table();
+  ct->clear(MemRegion(bottom(), end()));
 }
 
 void HeapRegion::calc_gc_efficiency() {
@@ -463,7 +462,7 @@ void HeapRegion::print_on(outputStream* st) const {
 class G1VerificationClosure : public OopClosure {
 protected:
   G1CollectedHeap* _g1h;
-  CardTableModRefBS* _bs;
+  G1CardTable *_ct;
   oop _containing_obj;
   bool _failures;
   int _n_failures;
@@ -473,7 +472,7 @@ public:
   // _vo == UseNextMarking -> use "next" marking information,
   // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS.
   G1VerificationClosure(G1CollectedHeap* g1h, VerifyOption vo) :
-    _g1h(g1h), _bs(barrier_set_cast<CardTableModRefBS>(g1h->barrier_set())),
+    _g1h(g1h), _ct(g1h->card_table()),
     _containing_obj(NULL), _failures(false), _n_failures(0), _vo(vo) {
   }
 
@@ -576,9 +575,9 @@ public:
       if (from != NULL && to != NULL &&
         from != to &&
         !to->is_pinned()) {
-        jbyte cv_obj = *_bs->byte_for_const(_containing_obj);
-        jbyte cv_field = *_bs->byte_for_const(p);
-        const jbyte dirty = CardTableModRefBS::dirty_card_val();
+        jbyte cv_obj = *_ct->byte_for_const(_containing_obj);
+        jbyte cv_field = *_ct->byte_for_const(p);
+        const jbyte dirty = G1CardTable::dirty_card_val();
 
         bool is_bad = !(from->is_young()
           || to->rem_set()->contains_reference(p)
@@ -834,7 +833,6 @@ void G1ContiguousSpace::clear(bool mangle_space) {
   CompactibleSpace::clear(mangle_space);
   reset_bot();
 }
-
 #ifndef PRODUCT
 void G1ContiguousSpace::mangle_unused_area() {
   mangle_unused_area_complete();

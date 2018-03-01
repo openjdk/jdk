@@ -23,11 +23,13 @@
  */
 #include "precompiled.hpp"
 #include "utilities/ostream.hpp"
+#include "logging/log.hpp"
 #include "logging/logSelection.hpp"
 #include "logging/logTagSet.hpp"
 #include "runtime/os.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/quickSort.hpp"
 
 const LogSelection LogSelection::Invalid;
 
@@ -72,10 +74,16 @@ static LogSelection parse_internal(char *str, outputStream* errstream) {
   LogLevelType level = LogLevel::Unspecified;
   char* equals = strchr(str, '=');
   if (equals != NULL) {
-    level = LogLevel::from_string(equals + 1);
+    const char* levelstr = equals + 1;
+    level = LogLevel::from_string(levelstr);
     if (level == LogLevel::Invalid) {
       if (errstream != NULL) {
-        errstream->print_cr("Invalid level '%s' in log selection.", equals + 1);
+        errstream->print("Invalid level '%s' in log selection.", levelstr);
+        LogLevelType match = LogLevel::fuzzy_match(levelstr);
+        if (match != LogLevel::Invalid) {
+          errstream->print(" Did you mean '%s'?", LogLevel::name(match));
+        }
+        errstream->cr();
       }
       return LogSelection::Invalid;
     }
@@ -109,7 +117,12 @@ static LogSelection parse_internal(char *str, outputStream* errstream) {
     LogTagType tag = LogTag::from_string(cur_tag);
     if (tag == LogTag::__NO_TAG) {
       if (errstream != NULL) {
-        errstream->print_cr("Invalid tag '%s' in log selection.", cur_tag);
+        errstream->print("Invalid tag '%s' in log selection.", cur_tag);
+        LogTagType match =  LogTag::fuzzy_match(cur_tag);
+        if (match != LogTag::__NO_TAG) {
+          errstream->print(" Did you mean '%s'?", LogTag::name(match));
+        }
+        errstream->cr();
       }
       return LogSelection::Invalid;
     }
@@ -199,4 +212,121 @@ int LogSelection::describe(char* buf, size_t bufsize) const {
   }
   tot_written += written;
   return tot_written;
+}
+
+double LogSelection::similarity(const LogSelection& other) const {
+  // Compute Soerensen-Dice coefficient as the similarity measure
+  size_t intersecting = 0;
+  for (size_t i = 0; i < _ntags; i++) {
+    for (size_t j = 0; j < other._ntags; j++) {
+      if (_tags[i] == other._tags[j]) {
+        intersecting++;
+        break;
+      }
+    }
+  }
+  return 2.0 * intersecting / (_ntags + other._ntags);
+}
+
+// Comparator used for sorting LogSelections based on their similarity to a specific LogSelection.
+// A negative return value means that 'a' is more similar to 'ref' than 'b' is, while a positive
+// return value means that 'b' is more similar.
+// For the sake of giving short and effective suggestions, when two selections have an equal
+// similarity score, the selection with the fewer tags (selecting the most tag sets) is considered
+// more similar.
+class SimilarityComparator {
+  const LogSelection& _ref;
+ public:
+  SimilarityComparator(const LogSelection& ref) : _ref(ref) {
+  }
+  int operator()(const LogSelection& a, const LogSelection& b) const {
+    const double epsilon = 1.0e-6;
+
+    // Sort by similarity (descending)
+    double s = _ref.similarity(b) - _ref.similarity(a);
+    if (fabs(s) > epsilon) {
+      return s < 0 ? -1 : 1;
+    }
+
+    // Then by number of tags (ascending)
+    int t = static_cast<int>(a.ntags() - (int)b.ntags());
+    if (t != 0) {
+      return t;
+    }
+
+    // Lastly by tag sets selected (descending)
+    return static_cast<int>(b.tag_sets_selected() - a.tag_sets_selected());
+  }
+};
+
+static const size_t suggestion_cap = 5;
+static const double similarity_requirement = 0.3;
+void LogSelection::suggest_similar_matching(outputStream* out) const {
+  LogSelection suggestions[suggestion_cap];
+  uint nsuggestions = 0;
+
+  // See if simply adding a wildcard would make the selection match
+  if (!_wildcard) {
+    LogSelection sel(_tags, true, _level);
+    if (sel.tag_sets_selected() > 0) {
+      suggestions[nsuggestions++] = sel;
+    }
+  }
+
+  // Check for matching tag sets with a single tag mismatching (a tag too many or short a tag)
+  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+    LogTagType tags[LogTag::MaxTags] = { LogTag::__NO_TAG };
+    for (size_t i = 0; i < ts->ntags(); i++) {
+      tags[i] = ts->tag(i);
+    }
+
+    // Suggest wildcard selection unless the wildcard doesn't match anything extra
+    LogSelection sel(tags, true, _level);
+    if (sel.tag_sets_selected() == 1) {
+      sel = LogSelection(tags, false, _level);
+    }
+
+    double score = similarity(sel);
+
+    // Ignore suggestions with too low similarity
+    if (score < similarity_requirement) {
+      continue;
+    }
+
+    // Cap not reached, simply add the new suggestion and continue searching
+    if (nsuggestions < suggestion_cap) {
+      suggestions[nsuggestions++] = sel;
+      continue;
+    }
+
+    // Find the least matching suggestion already found, and if the new suggestion is a better match, replace it
+    double min = 1.0;
+    size_t pos = -1;
+    for (size_t i = 0; i < nsuggestions; i++) {
+      double score = similarity(suggestions[i]);
+      if (score < min) {
+        min = score;
+        pos = i;
+      }
+    }
+    if (score > min) {
+      suggestions[pos] = sel;
+    }
+  }
+
+  if (nsuggestions == 0) {
+    // Found no similar enough selections to suggest.
+    return;
+  }
+
+  // Sort found suggestions to suggest the best one first
+  SimilarityComparator sc(*this);
+  QuickSort::sort(suggestions, nsuggestions, sc, false);
+
+  out->print("Did you mean any of the following?");
+  for (size_t i = 0; i < nsuggestions; i++) {
+    char buf[128];
+    suggestions[i].describe_tags(buf, sizeof(buf));
+    out->print(" %s", buf);
+  }
 }

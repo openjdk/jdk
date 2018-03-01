@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,18 @@ TEST(LogLevel, from_string) {
   EXPECT_EQ(LogLevel::Invalid, LogLevel::from_string("  info"));
   EXPECT_EQ(LogLevel::Invalid, LogLevel::from_string("=info"));
   EXPECT_EQ(LogLevel::Invalid, LogLevel::from_string("infodebugwarning"));
+}
+
+TEST(LogLevel, fuzzy_match) {
+  for (size_t i = 1; i < LogLevel::Count; i++) {
+    LogLevelType level = static_cast<LogLevelType>(i);
+    ASSERT_EQ(level, LogLevel::fuzzy_match(LogLevel::name(level)));
+  }
+
+  ASSERT_EQ(LogLevel::Warning, LogLevel::fuzzy_match("warn"));
+  ASSERT_EQ(LogLevel::Error, LogLevel::fuzzy_match("err"));
+
+  ASSERT_EQ(LogLevel::Invalid, LogLevel::fuzzy_match("unknown"));
 }
 
 TEST(LogLevel, name) {

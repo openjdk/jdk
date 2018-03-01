@@ -105,6 +105,14 @@ static time_t get_timezone(const struct tm* time_struct) {
 #endif
 }
 
+int os::snprintf(char* buf, size_t len, const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  int result = os::vsnprintf(buf, len, fmt, args);
+  va_end(args);
+  return result;
+}
+
 // Fill in buffer with current local time as an ISO-8601 string.
 // E.g., yyyy-mm-ddThh:mm:ss-zzzz.
 // Returns buffer, or NULL if it failed.

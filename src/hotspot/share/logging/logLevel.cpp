@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "logging/logLevel.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/stringUtils.hpp"
 
 const char* LogLevel::_name[] = {
   "off",
@@ -39,4 +40,20 @@ LogLevelType LogLevel::from_string(const char* str) {
     }
   }
   return Invalid;
+}
+
+LogLevelType LogLevel::fuzzy_match(const char *level) {
+  size_t len = strlen(level);
+  LogLevelType match = LogLevel::Invalid;
+  double best = 0.4; // required similarity to be considered a match
+  for (uint i = 1; i < Count; i++) {
+    LogLevelType cur = static_cast<LogLevelType>(i);
+    const char* levelname = LogLevel::name(cur);
+    double score = StringUtils::similarity(level, len, levelname, strlen(levelname));
+    if (score >= best) {
+      match = cur;
+      best= score;
+    }
+  }
+  return match;
 }

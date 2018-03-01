@@ -1017,12 +1017,12 @@ void PSParallelCompact::post_compact()
   bool young_gen_empty = eden_empty && from_space->is_empty() &&
     to_space->is_empty();
 
-  ModRefBarrierSet* modBS = barrier_set_cast<ModRefBarrierSet>(heap->barrier_set());
+  PSCardTable* ct = heap->card_table();
   MemRegion old_mr = heap->old_gen()->reserved();
   if (young_gen_empty) {
-    modBS->clear(MemRegion(old_mr.start(), old_mr.end()));
+    ct->clear(MemRegion(old_mr.start(), old_mr.end()));
   } else {
-    modBS->invalidate(MemRegion(old_mr.start(), old_mr.end()));
+    ct->invalidate(MemRegion(old_mr.start(), old_mr.end()));
   }
 
   // Delete metaspaces for unloaded class loaders and clean up loader_data graph

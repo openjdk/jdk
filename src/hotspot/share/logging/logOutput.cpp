@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,15 +84,20 @@ void LogOutput::add_to_config_string(const LogTagSet* ts, LogLevelType level) {
 
 void LogOutput::describe(outputStream *out) {
   out->print("%s ", name());
-  out->print_raw(config_string());
-  out->print(" ");
-  char delimiter[2] = {0};
+  out->print_raw(config_string()); // raw printed because length might exceed O_BUFLEN
+
+  bool has_decorator = false;
+  char delimiter = ' ';
   for (size_t d = 0; d < LogDecorators::Count; d++) {
     LogDecorators::Decorator decorator = static_cast<LogDecorators::Decorator>(d);
     if (decorators().is_decorator(decorator)) {
-      out->print("%s%s", delimiter, LogDecorators::name(decorator));
-      *delimiter = ',';
+      has_decorator = true;
+      out->print("%c%s", delimiter, LogDecorators::name(decorator));
+      delimiter = ',';
     }
+  }
+  if (!has_decorator) {
+    out->print(" none");
   }
 }
 

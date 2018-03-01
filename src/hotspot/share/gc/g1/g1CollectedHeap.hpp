@@ -28,6 +28,7 @@
 #include "gc/g1/evacuationInfo.hpp"
 #include "gc/g1/g1AllocationContext.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
@@ -150,6 +151,7 @@ private:
 
   WorkGang* _workers;
   G1CollectorPolicy* _collector_policy;
+  G1CardTable* _card_table;
 
   SoftRefPolicy      _soft_ref_policy;
 
@@ -1177,6 +1179,10 @@ public:
   }
 
   G1HotCardCache* g1_hot_card_cache() const { return _hot_card_cache; }
+
+  G1CardTable* card_table() const {
+    return _card_table;
+  }
 
   // Iteration functions.
 

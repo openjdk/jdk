@@ -62,6 +62,12 @@ class LogSelection : public StackObj {
 
   int describe_tags(char* buf, size_t bufsize) const;
   int describe(char* buf, size_t bufsize) const;
+
+  // List similar selections that matches existing tag sets on the given outputstream
+  void suggest_similar_matching(outputStream* out) const;
+
+  // Compute a similarity measure in the range [0, 1], where higher means more similar
+  double similarity(const LogSelection& other) const;
 };
 
 #endif // SHARE_VM_LOGGING_LOGSELECTION_HPP

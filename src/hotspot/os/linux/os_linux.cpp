@@ -177,20 +177,17 @@ julong os::Linux::available_memory() {
 
   if (OSContainer::is_containerized()) {
     jlong mem_limit, mem_usage;
-    if ((mem_limit = OSContainer::memory_limit_in_bytes()) > 0) {
-      if ((mem_usage = OSContainer::memory_usage_in_bytes()) > 0) {
-        if (mem_limit > mem_usage) {
-          avail_mem = (julong)mem_limit - (julong)mem_usage;
-        } else {
-          avail_mem = 0;
-        }
-        log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
-        return avail_mem;
-      } else {
-        log_debug(os,container)("container memory usage call failed: " JLONG_FORMAT, mem_usage);
-      }
-    } else {
-      log_debug(os,container)("container memory unlimited or failed: " JLONG_FORMAT, mem_limit);
+    if ((mem_limit = OSContainer::memory_limit_in_bytes()) < 1) {
+      log_debug(os, container)("container memory limit %s: " JLONG_FORMAT ", using host value",
+                             mem_limit == OSCONTAINER_ERROR ? "failed" : "unlimited", mem_limit);
+    }
+    if (mem_limit > 0 && (mem_usage = OSContainer::memory_usage_in_bytes()) < 1) {
+      log_debug(os, container)("container memory usage failed: " JLONG_FORMAT ", using host value", mem_usage);
+    }
+    if (mem_limit > 0 && mem_usage > 0 ) {
+      avail_mem = mem_limit > mem_usage ? (julong)mem_limit - (julong)mem_usage : 0;
+      log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
+      return avail_mem;
     }
   }
 
@@ -201,22 +198,18 @@ julong os::Linux::available_memory() {
 }
 
 julong os::physical_memory() {
+  jlong phys_mem = 0;
   if (OSContainer::is_containerized()) {
     jlong mem_limit;
     if ((mem_limit = OSContainer::memory_limit_in_bytes()) > 0) {
       log_trace(os)("total container memory: " JLONG_FORMAT, mem_limit);
-      return (julong)mem_limit;
-    } else {
-      if (mem_limit == OSCONTAINER_ERROR) {
-        log_debug(os,container)("container memory limit call failed");
-      }
-      if (mem_limit == -1) {
-        log_debug(os,container)("container memory unlimited, using host value");
-      }
+      return phys_mem;
     }
+    log_debug(os, container)("container memory limit %s: " JLONG_FORMAT ", using host value",
+                            mem_limit == OSCONTAINER_ERROR ? "failed" : "unlimited", mem_limit);
   }
 
-  jlong phys_mem = Linux::physical_memory();
+  phys_mem = Linux::physical_memory();
   log_trace(os)("total system memory: " JLONG_FORMAT, phys_mem);
   return phys_mem;
 }
@@ -2135,63 +2128,54 @@ void os::Linux::print_full_memory_info(outputStream* st) {
 }
 
 void os::Linux::print_container_info(outputStream* st) {
-  if (OSContainer::is_containerized()) {
-    st->print("container (cgroup) information:\n");
-
-    char *p = OSContainer::container_type();
-    if (p == NULL)
-      st->print("container_type() failed\n");
-    else {
-      st->print("container_type: %s\n", p);
-    }
-
-    p = OSContainer::cpu_cpuset_cpus();
-    if (p == NULL)
-      st->print("cpu_cpuset_cpus() failed\n");
-    else {
-      st->print("cpu_cpuset_cpus: %s\n", p);
-      free(p);
-    }
-
-    p = OSContainer::cpu_cpuset_memory_nodes();
-    if (p < 0)
-      st->print("cpu_memory_nodes() failed\n");
-    else {
-      st->print("cpu_memory_nodes: %s\n", p);
-      free(p);
-    }
-
-    int i = OSContainer::active_processor_count();
-    if (i < 0)
-      st->print("active_processor_count() failed\n");
-    else
-      st->print("active_processor_count: %d\n", i);
-
-    i = OSContainer::cpu_quota();
-    st->print("cpu_quota: %d\n", i);
-
-    i = OSContainer::cpu_period();
-    st->print("cpu_period: %d\n", i);
-
-    i = OSContainer::cpu_shares();
-    st->print("cpu_shares: %d\n", i);
-
-    jlong j = OSContainer::memory_limit_in_bytes();
-    st->print("memory_limit_in_bytes: " JLONG_FORMAT "\n", j);
-
-    j = OSContainer::memory_and_swap_limit_in_bytes();
-    st->print("memory_and_swap_limit_in_bytes: " JLONG_FORMAT "\n", j);
-
-    j = OSContainer::memory_soft_limit_in_bytes();
-    st->print("memory_soft_limit_in_bytes: " JLONG_FORMAT "\n", j);
-
-    j = OSContainer::OSContainer::memory_usage_in_bytes();
-    st->print("memory_usage_in_bytes: " JLONG_FORMAT "\n", j);
-
-    j = OSContainer::OSContainer::memory_max_usage_in_bytes();
-    st->print("memory_max_usage_in_bytes: " JLONG_FORMAT "\n", j);
-    st->cr();
+  if (!OSContainer::is_containerized()) {
+    return;
   }
+
+  st->print("container (cgroup) information:\n");
+
+  const char *p_ct = OSContainer::container_type();
+  st->print("container_type: %s\n", p_ct != NULL ? p_ct : "failed");
+
+  char *p = OSContainer::cpu_cpuset_cpus();
+  st->print("cpu_cpuset_cpus: %s\n", p != NULL ? p : "failed");
+  free(p);
+
+  p = OSContainer::cpu_cpuset_memory_nodes();
+  st->print("cpu_memory_nodes: %s\n", p != NULL ? p : "failed");
+  free(p);
+
+  int i = OSContainer::active_processor_count();
+  if (i > 0) {
+    st->print("active_processor_count: %d\n", i);
+  } else {
+    st->print("active_processor_count: failed\n");
+  }
+
+  i = OSContainer::cpu_quota();
+  st->print("cpu_quota: %d\n", i);
+
+  i = OSContainer::cpu_period();
+  st->print("cpu_period: %d\n", i);
+
+  i = OSContainer::cpu_shares();
+  st->print("cpu_shares: %d\n", i);
+
+  jlong j = OSContainer::memory_limit_in_bytes();
+  st->print("memory_limit_in_bytes: " JLONG_FORMAT "\n", j);
+
+  j = OSContainer::memory_and_swap_limit_in_bytes();
+  st->print("memory_and_swap_limit_in_bytes: " JLONG_FORMAT "\n", j);
+
+  j = OSContainer::memory_soft_limit_in_bytes();
+  st->print("memory_soft_limit_in_bytes: " JLONG_FORMAT "\n", j);
+
+  j = OSContainer::OSContainer::memory_usage_in_bytes();
+  st->print("memory_usage_in_bytes: " JLONG_FORMAT "\n", j);
+
+  j = OSContainer::OSContainer::memory_max_usage_in_bytes();
+  st->print("memory_max_usage_in_bytes: " JLONG_FORMAT "\n", j);
+  st->cr();
 }
 
 void os::print_memory_info(outputStream* st) {
