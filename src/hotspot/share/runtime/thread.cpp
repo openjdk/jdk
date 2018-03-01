@@ -3863,10 +3863,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {
-    // Initialize JVMCI eagerly if JVMCIPrintProperties is enabled.
+    // Initialize JVMCI eagerly when it is explicitly requested.
+    // Or when JVMCIPrintProperties is enabled.
     // The JVMCI Java initialization code will read this flag and
     // do the printing if it's set.
-    bool init = JVMCIPrintProperties;
+    bool init = EagerJVMCI || JVMCIPrintProperties;
 
     if (!init) {
       // 8145270: Force initialization of JVMCI runtime otherwise requests for blocking
