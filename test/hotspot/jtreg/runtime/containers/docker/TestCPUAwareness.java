@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,14 +94,23 @@ public class TestCPUAwareness {
             // Test subset of cpuset with one element
             if (cpuSet.size() >= 1) {
                 String testCpuSet = CPUSetsReader.listToString(cpuSet, 1);
-                testAPCCombo(testCpuSet, 200*1000, 100*1000,   4*1024, 1);
+                testAPCCombo(testCpuSet, 200*1000, 100*1000,   4*1024, true, 1);
             }
 
             // Test subset of cpuset with two elements
             if (cpuSet.size() >= 2) {
                 String testCpuSet = CPUSetsReader.listToString(cpuSet, 2);
-                testAPCCombo(testCpuSet, 200*1000, 100*1000, 4*1024, 2);
-                testAPCCombo(testCpuSet, 200*1000, 100*1000, 1*1024, 2);
+                testAPCCombo(testCpuSet, 200*1000, 100*1000, 4*1024, true, 2);
+                testAPCCombo(testCpuSet, 200*1000, 100*1000, 1023,   true, 2);
+                testAPCCombo(testCpuSet, 200*1000, 100*1000, 1023,   false,  1);
+            }
+
+            // Test subset of cpuset with three elements
+            if (cpuSet.size() >= 3) {
+                String testCpuSet = CPUSetsReader.listToString(cpuSet, 3);
+                testAPCCombo(testCpuSet, 100*1000, 100*1000, 2*1024, true, 1);
+                testAPCCombo(testCpuSet, 200*1000, 100*1000, 1023,   true, 2);
+                testAPCCombo(testCpuSet, 200*1000, 100*1000, 1023,   false,  1);
             }
         }
     }
@@ -159,12 +168,14 @@ public class TestCPUAwareness {
 
     // Test correctess of automatically selected active processor cound
     private static void testAPCCombo(String cpuset, int quota, int period, int shares,
-                                         int expectedAPC) throws Exception {
+                                     boolean usePreferContainerQuotaForCPUCount,
+                                     int expectedAPC) throws Exception {
         Common.logNewTestCase("test APC Combo");
         System.out.println("cpuset = " + cpuset);
         System.out.println("quota = " + quota);
         System.out.println("period = " + period);
         System.out.println("shares = " + period);
+        System.out.println("usePreferContainerQuotaForCPUCount = " + usePreferContainerQuotaForCPUCount);
         System.out.println("expectedAPC = " + expectedAPC);
 
         expectedAPC = adjustExpectedAPCForAvailableCPUs(expectedAPC);
@@ -174,6 +185,9 @@ public class TestCPUAwareness {
             .addDockerOpts("--cpu-period=" + period)
             .addDockerOpts("--cpu-quota=" + quota)
             .addDockerOpts("--cpu-shares=" + shares);
+
+        if (!usePreferContainerQuotaForCPUCount) opts.addJavaOpts("-XX:-PreferContainerQuotaForCPUCount");
+
         Common.run(opts)
             .shouldMatch("active_processor_count.*" + expectedAPC);
     }

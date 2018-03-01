@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "gc/shared/specialized_oop_closures.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/objArrayKlass.hpp"
-#include "oops/objArrayOop.hpp"
+#include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 
 oop objArrayOopDesc::atomic_compare_exchange_oop(int index, oop exchange_value,

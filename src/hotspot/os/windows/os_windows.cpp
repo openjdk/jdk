@@ -979,11 +979,6 @@ void os::shutdown() {
 }
 
 
-static BOOL (WINAPI *_MiniDumpWriteDump)(HANDLE, DWORD, HANDLE, MINIDUMP_TYPE,
-                                         PMINIDUMP_EXCEPTION_INFORMATION,
-                                         PMINIDUMP_USER_STREAM_INFORMATION,
-                                         PMINIDUMP_CALLBACK_INFORMATION);
-
 static HANDLE dumpFile = NULL;
 
 // Check if dump file can be created.

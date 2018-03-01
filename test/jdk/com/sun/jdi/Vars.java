@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @summary Test Method.variables() and the like.
  * @author Robert Field
  *
- * @run build JDIScaffold VMConnection
+ * @run build TestScaffold VMConnection
  * @run compile -g Vars.java
  * @run driver Vars
  */
@@ -68,14 +68,12 @@ class TestVars extends AbstractTestVars {
 /*
  * "Vars" test runs TestVars and makes LocalVariable queries
  */
-public class Vars extends JDIScaffold {
-    final String[] args;
+public class Vars extends TestScaffold {
 
     boolean failed = false;
 
     Vars(String args[]) {
-        super();
-        this.args = args;
+        super(args);
     }
 
     public static void main(String[] args) throws Exception {
@@ -144,16 +142,10 @@ public class Vars extends JDIScaffold {
     }
 
     protected void runTests() throws Exception {
-        List argList = new ArrayList(Arrays.asList(args));
-        argList.add("TestVars");
-        System.out.println("run args: " + argList);
-        connect((String[])argList.toArray(args));
-        waitForVMStart();
-
         /*
          * Get to a point where the classes are loaded.
          */
-        BreakpointEvent bp = resumeTo("TestVars", "hi", "()V");
+        BreakpointEvent bp = startTo("TestVars", "hi", "()V");
 
         /*
          * These classes should have no line numbers, except for
@@ -196,7 +188,7 @@ public class Vars extends JDIScaffold {
         test(method, ARGUMENTS, "normal/arguments", "sh,lo");
 
         // Allow application to complete
-        resumeToVMDeath();
+        resumeToVMDisconnect();
 
         if (failed) {
             throw new Exception("Vars: failed");

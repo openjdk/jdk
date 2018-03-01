@@ -119,26 +119,13 @@ class oopDesc {
  protected:
   inline oop        as_oop() const { return const_cast<oopDesc*>(this); }
 
- private:
-  // field addresses in oop
-  inline void*      field_base(int offset)          const;
-
-  inline jbyte*     byte_field_addr(int offset)     const;
-  inline jchar*     char_field_addr(int offset)     const;
-  inline jboolean*  bool_field_addr(int offset)     const;
-  inline jint*      int_field_addr(int offset)      const;
-  inline jshort*    short_field_addr(int offset)    const;
-  inline jlong*     long_field_addr(int offset)     const;
-  inline jfloat*    float_field_addr(int offset)    const;
-  inline jdouble*   double_field_addr(int offset)   const;
-  inline Metadata** metadata_field_addr(int offset) const;
-
  public:
-  // Need this as public for garbage collection.
-  template <class T> inline T* obj_field_addr(int offset) const;
+  // field addresses in oop
+  inline void* field_addr(int offset)     const;
+  inline void* field_addr_raw(int offset) const;
 
-  // Needed for javaClasses
-  inline address* address_field_addr(int offset) const;
+  // Need this as public for garbage collection.
+  template <class T> inline T* obj_field_addr_raw(int offset) const;
 
   inline static bool is_null(oop obj)       { return obj == NULL; }
   inline static bool is_null(narrowOop obj) { return obj == 0; }

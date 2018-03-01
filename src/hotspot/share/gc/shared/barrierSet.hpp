@@ -115,7 +115,8 @@ public:
   // is redone until it succeeds. This can e.g. prevent allocations from the slow path
   // to be in old.
   virtual void on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {}
-  virtual void flush_deferred_barriers(JavaThread* thread) {}
+  virtual void on_thread_attach(JavaThread* thread) {}
+  virtual void on_thread_detach(JavaThread* thread) {}
   virtual void make_parsable(JavaThread* thread) {}
 
 protected:
@@ -271,6 +272,10 @@ public:
     // Clone barrier support
     static void clone_in_heap(oop src, oop dst, size_t size) {
       Raw::clone(src, dst, size);
+    }
+
+    static oop resolve(oop obj) {
+      return Raw::resolve(obj);
     }
   };
 };

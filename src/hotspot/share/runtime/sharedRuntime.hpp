@@ -318,7 +318,7 @@ class SharedRuntime: AllStatic {
   // The caller (or one of it's callers) must use a ResourceMark
   // in order to correctly free the result.
   //
-  static char* generate_class_cast_message(Klass* caster_klass, Klass* target_klass);
+  static char* generate_class_cast_message(Klass* caster_klass, Klass* target_klass, Symbol* target_klass_name = NULL);
 
   // Resolves a call site- may patch in the destination of the call into the
   // compiled code.

@@ -717,7 +717,7 @@ tools/pack200/CommandLineTests.java                             8059906 generic-
 
 tools/launcher/FXLauncherTest.java                              8068049 linux-all,macosx-all
 
-tools/jimage/JImageExtractTest.java                             8198405 windows-all
+tools/jimage/JImageExtractTest.java                             8198405,8198819 generic-all
 tools/jimage/JImageListTest.java                                8198405 windows-all
 
 ############################################################################
@@ -735,6 +735,10 @@ com/sun/jdi/GetLocalVariables4Test.sh                           8067354 windows-
 com/sun/jdi/sde/SourceDebugExtensionTest.java                   8158066 windows-all
 
 com/sun/jdi/NashornPopFrameTest.java                            8187143 generic-all
+
+com/sun/jdi/EarlyReturnTest.java                                8198803 generic-all
+com/sun/jdi/EarlyReturnNegativeTest.java                        8198803 generic-all
+com/sun/jdi/MethodExitReturnValuesTest.java                     8198803 generic-all
 
 ############################################################################
 

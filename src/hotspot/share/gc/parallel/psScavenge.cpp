@@ -228,8 +228,8 @@ bool PSScavenge::invoke() {
 
   if (need_full_gc) {
     GCCauseSetter gccs(heap, GCCause::_adaptive_size_policy);
-    CollectorPolicy* cp = heap->collector_policy();
-    const bool clear_all_softrefs = cp->should_clear_all_soft_refs();
+    SoftRefPolicy* srp = heap->soft_ref_policy();
+    const bool clear_all_softrefs = srp->should_clear_all_soft_refs();
 
     if (UseParallelOldGC) {
       full_gc_done = PSParallelCompact::invoke_no_policy(clear_all_softrefs);
@@ -569,7 +569,7 @@ bool PSScavenge::invoke_no_policy() {
                                                max_eden_size,
                                                false /* not full gc*/,
                                                gc_cause,
-                                               heap->collector_policy());
+                                               heap->soft_ref_policy());
 
           size_policy->decay_supplemental_growth(false /* not full gc*/);
         }

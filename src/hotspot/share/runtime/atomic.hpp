@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,6 +131,7 @@ public:
                                      cmpxchg_memory_order order = memory_order_conservative);
 
 private:
+WINDOWS_ONLY(public:) // VS2017 warns (C2027) use of undefined type if IsPointerConvertible is declared private
   // Test whether From is implicitly convertible to To.
   // From and To must be pointer types.
   // Note: Provides the limited subset of C++11 std::is_convertible

@@ -881,15 +881,15 @@ class java_lang_ref_Reference: AllStatic {
   static inline oop referent(oop ref);
   static inline void set_referent(oop ref, oop value);
   static inline void set_referent_raw(oop ref, oop value);
-  static inline HeapWord* referent_addr(oop ref);
+  static inline HeapWord* referent_addr_raw(oop ref);
   static inline oop next(oop ref);
   static inline void set_next(oop ref, oop value);
   static inline void set_next_raw(oop ref, oop value);
-  static inline HeapWord* next_addr(oop ref);
+  static inline HeapWord* next_addr_raw(oop ref);
   static inline oop discovered(oop ref);
   static inline void set_discovered(oop ref, oop value);
   static inline void set_discovered_raw(oop ref, oop value);
-  static inline HeapWord* discovered_addr(oop ref);
+  static inline HeapWord* discovered_addr_raw(oop ref);
   static bool is_referent_field(oop obj, ptrdiff_t offset);
   static inline bool is_phantom(oop ref);
 };
@@ -1229,8 +1229,8 @@ class java_lang_ClassLoader : AllStatic {
  public:
   static void compute_offsets();
 
-  static ClassLoaderData** loader_data_addr(oop loader);
   static ClassLoaderData* loader_data(oop loader);
+  static ClassLoaderData* cmpxchg_loader_data(ClassLoaderData* new_data, oop loader, ClassLoaderData* expected_data);
 
   static oop parent(oop loader);
   static oop name(oop loader);

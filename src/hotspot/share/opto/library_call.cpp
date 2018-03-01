@@ -2408,7 +2408,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   offset = argument(2);  // type: long
   // We currently rely on the cookies produced by Unsafe.xxxFieldOffset
   // to be plain byte offsets, which are also the same as those accepted
-  // by oopDesc::field_base.
+  // by oopDesc::field_addr.
   assert(Unsafe_field_offset_to_byte_offset(11) == 11,
          "fieldOffset must be byte-scaled");
   // 32-bit machines ignore the high half!
@@ -2838,7 +2838,7 @@ bool LibraryCallKit::inline_unsafe_load_store(const BasicType type, const LoadSt
   // Build field offset expression.
   // We currently rely on the cookies produced by Unsafe.xxxFieldOffset
   // to be plain byte offsets, which are also the same as those accepted
-  // by oopDesc::field_base.
+  // by oopDesc::field_addr.
   assert(Unsafe_field_offset_to_byte_offset(11) == 11, "fieldOffset must be byte-scaled");
   // 32-bit machines ignore the high half of long offsets
   offset = ConvL2X(offset);

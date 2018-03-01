@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,14 +68,14 @@ void STWGCTimer::register_gc_end(const Ticks& time) {
   GCTimer::register_gc_end(time);
 }
 
-void ConcurrentGCTimer::register_gc_pause_start(const char* name) {
+void ConcurrentGCTimer::register_gc_pause_start(const char* name, const Ticks& time) {
   assert(!_is_concurrent_phase_active, "A pause phase can't be started while a concurrent phase is active.");
-  GCTimer::register_gc_pause_start(name);
+  GCTimer::register_gc_pause_start(name, time);
 }
 
-void ConcurrentGCTimer::register_gc_pause_end() {
+void ConcurrentGCTimer::register_gc_pause_end(const Ticks& time) {
   assert(!_is_concurrent_phase_active, "A pause phase can't be ended while a concurrent phase is active.");
-  GCTimer::register_gc_pause_end();
+  GCTimer::register_gc_pause_end(time);
 }
 
 void ConcurrentGCTimer::register_gc_concurrent_start(const char* name, const Ticks& time) {

@@ -44,15 +44,9 @@ import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.SocketChannel;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
-import java.util.concurrent.TimeUnit;
+import static java.util.concurrent.TimeUnit.*;
 
 // Make a socket channel look like a socket.
-//
-// The only aspects of java.net.Socket-hood that we don't attempt to emulate
-// here are the interrupted-I/O exceptions (which our Solaris implementations
-// attempt to support) and the sending of urgent data.  Otherwise an adapted
-// socket should look enough like a real java.net.Socket to fool most of the
-// developers most of the time, right down to the exception message strings.
 //
 // The methods in this class are defined in exactly the same order as in
 // java.net.Socket so as to simplify tracking future changes to that class.
@@ -61,7 +55,6 @@ import java.util.concurrent.TimeUnit;
 class SocketAdaptor
     extends Socket
 {
-
     // The channel being adapted
     private final SocketChannelImpl sc;
 
@@ -102,38 +95,40 @@ class SocketAdaptor
                 throw new IllegalBlockingModeException();
 
             try {
+                // no timeout
                 if (timeout == 0) {
                     sc.connect(remote);
                     return;
                 }
 
+                // timed connect
                 sc.configureBlocking(false);
                 try {
                     if (sc.connect(remote))
                         return;
-                    long timeoutNanos =
-                        TimeUnit.NANOSECONDS.convert(timeout,
-                            TimeUnit.MILLISECONDS);
-                    for (;;) {
-                        if (!sc.isOpen())
-                            throw new ClosedChannelException();
-                        long startTime = System.nanoTime();
-
-                        int result = sc.poll(Net.POLLCONN, timeout);
-                        if (result > 0 && sc.finishConnect())
-                            break;
-                        timeoutNanos -= System.nanoTime() - startTime;
-                        if (timeoutNanos <= 0) {
-                            try {
-                                sc.close();
-                            } catch (IOException x) { }
-                            throw new SocketTimeoutException();
-                        }
-                    }
                 } finally {
                     try {
                         sc.configureBlocking(true);
                     } catch (ClosedChannelException e) { }
+                }
+
+                long timeoutNanos = NANOSECONDS.convert(timeout, MILLISECONDS);
+                long to = timeout;
+                for (;;) {
+                    long startTime = System.nanoTime();
+                    if (sc.pollConnected(to)) {
+                        boolean connected = sc.finishConnect();
+                        assert connected;
+                        break;
+                    }
+                    timeoutNanos -= System.nanoTime() - startTime;
+                    if (timeoutNanos <= 0) {
+                        try {
+                            sc.close();
+                        } catch (IOException x) { }
+                        throw new SocketTimeoutException();
+                    }
+                    to = MILLISECONDS.convert(timeoutNanos, NANOSECONDS);
                 }
 
             } catch (Exception x) {
@@ -152,11 +147,11 @@ class SocketAdaptor
     }
 
     public InetAddress getInetAddress() {
-        SocketAddress remote = sc.remoteAddress();
+        InetSocketAddress remote = sc.remoteAddress();
         if (remote == null) {
             return null;
         } else {
-            return ((InetSocketAddress)remote).getAddress();
+            return remote.getAddress();
         }
     }
 
@@ -171,20 +166,20 @@ class SocketAdaptor
     }
 
     public int getPort() {
-        SocketAddress remote = sc.remoteAddress();
+        InetSocketAddress remote = sc.remoteAddress();
         if (remote == null) {
             return 0;
         } else {
-            return ((InetSocketAddress)remote).getPort();
+            return remote.getPort();
         }
     }
 
     public int getLocalPort() {
-        SocketAddress local = sc.localAddress();
+        InetSocketAddress local = sc.localAddress();
         if (local == null) {
             return -1;
         } else {
-            return ((InetSocketAddress)local).getPort();
+            return local.getPort();
         }
     }
 
@@ -202,34 +197,22 @@ class SocketAdaptor
                 if (!sc.isBlocking())
                     throw new IllegalBlockingModeException();
 
-                if (timeout == 0)
+                // no timeout
+                long to = SocketAdaptor.this.timeout;
+                if (to == 0)
                     return sc.read(bb);
 
-                sc.configureBlocking(false);
-                try {
-                    int n;
-                    if ((n = sc.read(bb)) != 0)
-                        return n;
-                    long timeoutNanos =
-                        TimeUnit.NANOSECONDS.convert(timeout,
-                            TimeUnit.MILLISECONDS);
-                    for (;;) {
-                        if (!sc.isOpen())
-                            throw new ClosedChannelException();
-                        long startTime = System.nanoTime();
-                        int result = sc.poll(Net.POLLIN, timeout);
-                        if (result > 0) {
-                            if ((n = sc.read(bb)) != 0)
-                                return n;
-                        }
-                        timeoutNanos -= System.nanoTime() - startTime;
-                        if (timeoutNanos <= 0)
-                            throw new SocketTimeoutException();
+                // timed read
+                long timeoutNanos = NANOSECONDS.convert(to, MILLISECONDS);
+                for (;;) {
+                    long startTime = System.nanoTime();
+                    if (sc.pollRead(to)) {
+                        return sc.read(bb);
                     }
-                } finally {
-                    try {
-                        sc.configureBlocking(true);
-                    } catch (ClosedChannelException e) { }
+                    timeoutNanos -= System.nanoTime() - startTime;
+                    if (timeoutNanos <= 0)
+                        throw new SocketTimeoutException();
+                    to = MILLISECONDS.convert(timeoutNanos, NANOSECONDS);
                 }
             }
         }
@@ -453,5 +436,4 @@ class SocketAdaptor
     public boolean isOutputShutdown() {
         return !sc.isOutputOpen();
     }
-
 }

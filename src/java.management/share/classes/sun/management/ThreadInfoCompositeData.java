@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,16 @@ package sun.management;
 import java.lang.management.ThreadInfo;
 import java.lang.management.MonitorInfo;
 import java.lang.management.LockInfo;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Stream;
+import javax.management.openmbean.ArrayType;
 import javax.management.openmbean.CompositeType;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.OpenDataException;
+import javax.management.openmbean.OpenType;
 
 /**
  * A CompositeData for ThreadInfo for the local management support.
@@ -41,33 +47,19 @@ import javax.management.openmbean.OpenDataException;
 public class ThreadInfoCompositeData extends LazyCompositeData {
     private final ThreadInfo threadInfo;
     private final CompositeData cdata;
-    private final boolean currentVersion;
-    private final boolean hasV6;
 
     private ThreadInfoCompositeData(ThreadInfo ti) {
         this.threadInfo = ti;
-        this.currentVersion = true;
         this.cdata = null;
-        this.hasV6 = true;
     }
 
     private ThreadInfoCompositeData(CompositeData cd) {
         this.threadInfo = null;
-        this.currentVersion = ThreadInfoCompositeData.isCurrentVersion(cd);
         this.cdata = cd;
-        this.hasV6 = ThreadInfoCompositeData.hasV6(cd);
     }
 
     public ThreadInfo getThreadInfo() {
         return threadInfo;
-    }
-
-    public boolean hasV6() {
-        return hasV6;
-    }
-
-    public boolean isCurrentVersion() {
-        return currentVersion;
     }
 
     public static ThreadInfoCompositeData getInstance(CompositeData cd) {
@@ -112,7 +104,7 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
         }
 
         // CONTENTS OF THIS ARRAY MUST BE SYNCHRONIZED WITH
-        // threadInfoItemNames!
+        // THREAD_INFO_ATTRIBUTES!
         final Object[] threadInfoItemValues = {
             threadInfo.getThreadId(),
             threadInfo.getThreadName(),
@@ -126,8 +118,8 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
             threadInfo.getLockOwnerId(),
             threadInfo.getLockOwnerName(),
             stackTraceData,
-                threadInfo.isSuspended(),
-                threadInfo.isInNative(),
+            threadInfo.isSuspended(),
+            threadInfo.isInNative(),
             lockedMonitorsData,
             lockedSyncsData,
             threadInfo.isDaemon(),
@@ -135,8 +127,8 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
         };
 
         try {
-            return new CompositeDataSupport(threadInfoCompositeType,
-                                            threadInfoItemNames,
+            return new CompositeDataSupport(compositeType(),
+                                            THREAD_INFO_ATTRIBTUES,
                                             threadInfoItemValues);
         } catch (OpenDataException e) {
             // Should never reach here
@@ -164,7 +156,7 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
     private static final String LOCKED_MONITORS = "lockedMonitors";
     private static final String LOCKED_SYNCS    = "lockedSynchronizers";
 
-    private static final String[] threadInfoItemNames = {
+    private static final String[] V5_ATTRIBUTES = {
         THREAD_ID,
         THREAD_NAME,
         THREAD_STATE,
@@ -172,109 +164,28 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
         BLOCKED_COUNT,
         WAITED_TIME,
         WAITED_COUNT,
-        LOCK_INFO,
         LOCK_NAME,
         LOCK_OWNER_ID,
         LOCK_OWNER_NAME,
         STACK_TRACE,
         SUSPENDED,
-        IN_NATIVE,
-        LOCKED_MONITORS,
-        LOCKED_SYNCS,
-        DAEMON,
-        PRIORITY,
+        IN_NATIVE
     };
 
-    // New attributes added in 6.0 ThreadInfo
-    private static final String[] threadInfoV6Attributes = {
+    private static final String[] V6_ATTRIBUTES = {
         LOCK_INFO,
         LOCKED_MONITORS,
         LOCKED_SYNCS,
     };
 
-    private static final String[] threadInfoV9Attributes = {
+    private static final String[] V9_ATTRIBUTES = {
         DAEMON,
         PRIORITY,
     };
 
-    // Current version of ThreadInfo
-    private static final CompositeType threadInfoCompositeType;
-    // Previous version of ThreadInfo
-    private static final CompositeType threadInfoV6CompositeType;
-    // Previous-previous version of ThreadInfo
-    private static final CompositeType threadInfoV5CompositeType;
-    private static final CompositeType lockInfoCompositeType;
-    static {
-        try {
-            threadInfoCompositeType = (CompositeType)
-                MappedMXBeanType.toOpenType(ThreadInfo.class);
-            // Form a CompositeType for JDK 5.0 ThreadInfo version
-
-            threadInfoV5CompositeType =
-                TypeVersionMapper.getInstance().getVersionedCompositeType(
-                    threadInfoCompositeType, TypeVersionMapper.V5
-                );
-
-            threadInfoV6CompositeType =
-                TypeVersionMapper.getInstance().getVersionedCompositeType(
-                    threadInfoCompositeType, TypeVersionMapper.V6
-                );
-        } catch (OpenDataException e) {
-            // Should never reach here
-            throw new AssertionError(e);
-        }
-
-        // Each CompositeData object has its CompositeType associated
-        // with it.  So we can get the CompositeType representing LockInfo
-        // from a mapped CompositeData for any LockInfo object.
-        // Thus we construct a random LockInfo object and pass it
-        // to LockInfoCompositeData to do the conversion.
-        Object o = new Object();
-        LockInfo li = new LockInfo(o.getClass().getName(),
-                                   System.identityHashCode(o));
-        CompositeData cd = LockInfoCompositeData.toCompositeData(li);
-        lockInfoCompositeType = cd.getCompositeType();
-    }
-
-    static boolean isV5Attribute(String itemName) {
-        for (String n : threadInfoV6Attributes) {
-            if (itemName.equals(n)) {
-                return false;
-            }
-        }
-        for (String n : threadInfoV9Attributes) {
-            if (itemName.equals(n)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    static boolean isV6Attribute(String itemName) {
-        for (String n : threadInfoV9Attributes) {
-            if (itemName.equals(n)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public static boolean isCurrentVersion(CompositeData cd) {
-        if (cd == null) {
-            throw new NullPointerException("Null CompositeData");
-        }
-
-        return isTypeMatched(threadInfoCompositeType, cd.getCompositeType());
-    }
-
-    private static boolean hasV6(CompositeData cd) {
-        if (cd == null) {
-            throw new NullPointerException("Null CompositeData");
-        }
-
-        return isTypeMatched(threadInfoCompositeType, cd.getCompositeType()) ||
-               isTypeMatched(threadInfoV6CompositeType, cd.getCompositeType());
-     }
+    private static final String[] THREAD_INFO_ATTRIBTUES =
+        Stream.of(V5_ATTRIBUTES, V6_ATTRIBUTES, V9_ATTRIBUTES)
+              .flatMap(Arrays::stream).toArray(String[]::new);
 
     public long threadId() {
         return getLong(cdata, THREAD_ID);
@@ -333,12 +244,18 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
         return getBoolean(cdata, IN_NATIVE);
     }
 
+    /*
+     * if daemon attribute is not present, default to false.
+     */
     public boolean isDaemon() {
-        return getBoolean(cdata, DAEMON);
+        return cdata.containsKey(DAEMON) ? getBoolean(cdata, DAEMON) : false;
     }
 
+    /*
+     * if priority attribute is not present, default to norm priority.
+     */
     public int getPriority(){
-        return getInt(cdata, PRIORITY);
+        return cdata.containsKey(PRIORITY) ? getInt(cdata, PRIORITY) : Thread.NORM_PRIORITY;
     }
 
     public StackTraceElement[] stackTrace() {
@@ -356,13 +273,37 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
         return stackTrace;
     }
 
-    // 6.0 new attributes
+    /*
+     * lockInfo is a new attribute added in JDK 6 ThreadInfo
+     * If cd is a 5.0 version, construct the LockInfo object
+     * from the lockName value.
+     */
     public LockInfo lockInfo() {
-        CompositeData lockInfoData = (CompositeData) cdata.get(LOCK_INFO);
-        return LockInfo.from(lockInfoData);
+        if (cdata.containsKey(LOCK_INFO)) {
+            CompositeData lockInfoData = (CompositeData) cdata.get(LOCK_INFO);
+            return LockInfo.from(lockInfoData);
+        } else {
+            String lockName = lockName();
+            LockInfo lock = null;
+            if (lockName != null) {
+                String result[] = lockName.split("@");
+                if (result.length == 2) {
+                    int identityHashCode = Integer.parseInt(result[1], 16);
+                    lock = new LockInfo(result[0], identityHashCode);
+                }
+            }
+            return lock;
+        }
     }
 
+    /**
+     * Returns an empty array if locked_monitors attribute is not present.
+     */
     public MonitorInfo[] lockedMonitors() {
+        if (!cdata.containsKey(LOCKED_MONITORS)) {
+            return new MonitorInfo[0];
+        }
+
         CompositeData[] lockedMonitorsData =
             (CompositeData[]) cdata.get(LOCKED_MONITORS);
 
@@ -377,7 +318,14 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
         return monitors;
     }
 
+    /**
+     * Returns an empty array if locked_monitors attribute is not present.
+     */
     public LockInfo[] lockedSynchronizers() {
+        if (!cdata.containsKey(LOCKED_SYNCS)) {
+            return new LockInfo[0];
+        }
+
         CompositeData[] lockedSyncsData =
             (CompositeData[]) cdata.get(LOCKED_SYNCS);
 
@@ -391,7 +339,8 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
         return locks;
     }
 
-    /** Validate if the input CompositeData has the expected
+    /**
+     * Validate if the input CompositeData has the expected
      * CompositeType (i.e. contain all attributes with expected
      * names and types).
      */
@@ -401,62 +350,98 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
         }
 
         CompositeType type = cd.getCompositeType();
-        boolean currentVersion = true;
-        if (!isTypeMatched(threadInfoCompositeType, type)) {
-            currentVersion = false;
-            // check if cd is an older version
-            if (!isTypeMatched(threadInfoV5CompositeType, type) &&
-                !isTypeMatched(threadInfoV6CompositeType, type)) {
-                throw new IllegalArgumentException(
-                    "Unexpected composite type for ThreadInfo");
-            }
+        int version;
+        if (Arrays.stream(V9_ATTRIBUTES).anyMatch(type::containsKey)) {
+            version = Runtime.version().feature();
+        } else if (Arrays.stream(V6_ATTRIBUTES).anyMatch(type::containsKey)) {
+            version = 6;
+        } else {
+            version = 5;
         }
 
-        CompositeData[] stackTraceData =
-            (CompositeData[]) cd.get(STACK_TRACE);
-        if (stackTraceData == null) {
+        if (!isTypeMatched(ThreadInfoCompositeTypes.ofVersion(version), type)) {
             throw new IllegalArgumentException(
-                "StackTraceElement[] is missing");
-        }
-        if (stackTraceData.length > 0) {
-            StackTraceElementCompositeData.validateCompositeData(stackTraceData[0]);
-        }
-
-        // validate v6 attributes
-        if (currentVersion) {
-            CompositeData li = (CompositeData) cd.get(LOCK_INFO);
-            if (li != null) {
-                if (!isTypeMatched(lockInfoCompositeType,
-                                   li.getCompositeType())) {
-                    throw new IllegalArgumentException(
-                        "Unexpected composite type for \"" +
-                        LOCK_INFO + "\" attribute.");
-                }
-            }
-
-            CompositeData[] lms = (CompositeData[]) cd.get(LOCKED_MONITORS);
-            if (lms == null) {
-                throw new IllegalArgumentException("MonitorInfo[] is null");
-            }
-            if (lms.length > 0) {
-                MonitorInfoCompositeData.validateCompositeData(lms[0]);
-            }
-
-            CompositeData[] lsyncs = (CompositeData[]) cd.get(LOCKED_SYNCS);
-            if (lsyncs == null) {
-                throw new IllegalArgumentException("LockInfo[] is null");
-            }
-            if (lsyncs.length > 0) {
-                if (!isTypeMatched(lockInfoCompositeType,
-                                   lsyncs[0].getCompositeType())) {
-                    throw new IllegalArgumentException(
-                        "Unexpected composite type for \"" +
-                        LOCKED_SYNCS + "\" attribute.");
-                }
-            }
-
+                "Unexpected composite type for ThreadInfo of version " + version);
         }
     }
 
+    public static CompositeType compositeType() {
+        return ThreadInfoCompositeTypes.compositeTypes.get(0);
+    }
+
+    static class ThreadInfoCompositeTypes {
+        static final int CURRENT =  Runtime.version().feature();
+        static final Map<Integer, CompositeType> compositeTypes = initCompositeTypes();
+        /*
+         * Returns CompositeType of the given runtime version
+         */
+        static CompositeType ofVersion(int version) {
+            return compositeTypes.get(version);
+        }
+
+        static Map<Integer, CompositeType> initCompositeTypes() {
+            Map<Integer, CompositeType> types = new HashMap<>();
+            CompositeType ctype = initCompositeType();
+            types.put(CURRENT, ctype);
+            types.put(5, initV5CompositeType(ctype));
+            types.put(6, initV6CompositeType(ctype));
+            return types;
+        }
+
+        static CompositeType initCompositeType() {
+            try {
+                return (CompositeType)MappedMXBeanType.toOpenType(ThreadInfo.class);
+            } catch (OpenDataException e) {
+                // Should never reach here
+                throw new AssertionError(e);
+            }
+        }
+
+        static CompositeType initV5CompositeType(CompositeType threadInfoCompositeType) {
+            try {
+                OpenType<?>[] v5Types = new OpenType<?>[V5_ATTRIBUTES.length];
+                for (int i = 0; i < v5Types.length; i++) {
+                    String name = V5_ATTRIBUTES[i];
+                    v5Types[i] = name.equals(STACK_TRACE)
+                        ? new ArrayType<>(1, StackTraceElementCompositeData.v5CompositeType())
+                        : threadInfoCompositeType.getType(name);
+                }
+                return new CompositeType("ThreadInfo",
+                                         "JDK 5 ThreadInfo",
+                                         V5_ATTRIBUTES,
+                                         V5_ATTRIBUTES,
+                                         v5Types);
+            } catch (OpenDataException e) {
+                // Should never reach here
+                throw new AssertionError(e);
+            }
+        }
+
+        static CompositeType initV6CompositeType(CompositeType threadInfoCompositeType) {
+            try {
+                String[] v6Names = Stream.of(V5_ATTRIBUTES, V6_ATTRIBUTES)
+                    .flatMap(Arrays::stream).toArray(String[]::new);
+                OpenType<?>[] v6Types = new OpenType<?>[v6Names.length];
+                for (int i = 0; i < v6Names.length; i++) {
+                    String name = v6Names[i];
+                    OpenType<?> ot = threadInfoCompositeType.getType(name);
+                    if (name.equals(STACK_TRACE)) {
+                        ot = new ArrayType<>(1, StackTraceElementCompositeData.v5CompositeType());
+                    } else if (name.equals(LOCKED_MONITORS)) {
+                        ot = new ArrayType<>(1, MonitorInfoCompositeData.v6CompositeType());
+                    }
+                    v6Types[i] = ot;
+                }
+                return new CompositeType("ThreadInfo",
+                                         "JDK 6 ThreadInfo",
+                                         v6Names,
+                                         v6Names,
+                                         v6Types);
+            } catch (OpenDataException e) {
+                // Should never reach here
+                throw new AssertionError(e);
+            }
+        }
+    }
     private static final long serialVersionUID = 2464378539119753175L;
 }

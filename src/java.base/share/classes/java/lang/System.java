@@ -2080,8 +2080,8 @@ public final class System {
             E[] getEnumConstantsShared(Class<E> klass) {
                 return klass.getEnumConstantsShared();
             }
-            public void blockedOn(Thread t, Interruptible b) {
-                t.blockedOn(b);
+            public void blockedOn(Interruptible b) {
+                Thread.blockedOn(b);
             }
             public void registerShutdownHook(int slot, boolean registerShutdownInProgress, Runnable hook) {
                 Shutdown.add(slot, registerShutdownInProgress, hook);

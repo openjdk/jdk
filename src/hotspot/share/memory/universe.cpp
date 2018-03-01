@@ -134,7 +134,6 @@ oop Universe::_null_ptr_exception_instance            = NULL;
 oop Universe::_arithmetic_exception_instance          = NULL;
 oop Universe::_virtual_machine_error_instance         = NULL;
 oop Universe::_vm_exception                           = NULL;
-oop Universe::_allocation_context_notification_obj    = NULL;
 oop Universe::_reference_pending_list                 = NULL;
 
 Array<int>* Universe::_the_empty_int_array            = NULL;
@@ -213,7 +212,6 @@ void Universe::oops_do(OopClosure* f, bool do_all) {
   f->do_oop((oop*)&_main_thread_group);
   f->do_oop((oop*)&_system_thread_group);
   f->do_oop((oop*)&_vm_exception);
-  f->do_oop((oop*)&_allocation_context_notification_obj);
   f->do_oop((oop*)&_reference_pending_list);
   debug_only(f->do_oop((oop*)&_fullgc_alot_dummy_array);)
 }

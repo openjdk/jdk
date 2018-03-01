@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * won't be returned by classesByName.
  * @author Robert Field
  *
- * @run build JDIScaffold VMConnection
+ * @run build TestScaffold VMConnection
  * @run compile -g InnerTarg.java
  * @run build UnpreparedByName
  *
@@ -41,22 +41,18 @@ import com.sun.jdi.request.*;
 import java.util.List;
 import java.util.Iterator;
 
-public class UnpreparedByName extends JDIScaffold {
-    final String[] args;
+public class UnpreparedByName extends TestScaffold {
 
     public static void main(String args[]) throws Exception {
         new UnpreparedByName(args).startTests();
     }
 
     UnpreparedByName(String args[]) throws Exception {
-        super();
-        this.args = args;
+        super(args);
     }
 
     protected void runTests() throws Exception {
-        connect(args);
-        waitForVMStart();
-        resumeTo("InnerTarg", "go", "()V");
+        startTo("InnerTarg", "go", "()V");
 
         List classes = vm().classesByName("InnerTarg$TheInner");
         if (classes.size() == 0) {
@@ -75,6 +71,6 @@ public class UnpreparedByName extends JDIScaffold {
         }
 
         // Allow application to complete
-        resumeToVMDeath();
+        resumeToVMDisconnect();
     }
 }

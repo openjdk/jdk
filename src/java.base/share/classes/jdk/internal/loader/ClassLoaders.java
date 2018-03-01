@@ -54,39 +54,27 @@ public class ClassLoaders {
     private static final PlatformClassLoader PLATFORM_LOADER;
     private static final AppClassLoader APP_LOADER;
 
-    /**
-     * Creates the built-in class loaders
-     */
+    // Creates the built-in class loaders.
     static {
-
         // -Xbootclasspath/a or -javaagent with Boot-Class-Path attribute
-        URLClassPath bcp = null;
-        String s = VM.getSavedProperty("jdk.boot.class.path.append");
-        if (s != null && s.length() > 0)
-            bcp = new URLClassPath(s, true);
+        String append = VM.getSavedProperty("jdk.boot.class.path.append");
+        BOOT_LOADER =
+            new BootClassLoader((append != null && append.length() > 0)
+                ? new URLClassPath(append, true)
+                : null);
+        PLATFORM_LOADER = new PlatformClassLoader(BOOT_LOADER);
 
-        // we have a class path if -cp is specified or -m is not specified.
-        // If neither is specified then default to -cp <working directory>
-        // If -cp is not specified and -m is specified, the value of
-        // java.class.path is an empty string, then no class path.
-        String mainMid = System.getProperty("jdk.module.main");
+        // A class path is required when no initial module is specified.
+        // In this case the class path defaults to "", meaning the current
+        // working directory.  When an initial module is specified, on the
+        // contrary, we drop this historic interpretation of the empty
+        // string and instead treat it as unspecified.
         String cp = System.getProperty("java.class.path");
-        if (mainMid == null) {
-            // no main module specified so class path required
-            if (cp == null) {
-                cp = "";
-            }
-        } else {
-            // main module specified, ignore empty class path
-            if (cp != null && cp.length() == 0) {
-                cp = null;
-            }
+        if (cp == null || cp.length() == 0) {
+            String initialModuleName = System.getProperty("jdk.module.main");
+            cp = (initialModuleName == null) ? "" : null;
         }
         URLClassPath ucp = new URLClassPath(cp, false);
-
-        // create the class loaders
-        BOOT_LOADER = new BootClassLoader(bcp);
-        PLATFORM_LOADER = new PlatformClassLoader(BOOT_LOADER);
         APP_LOADER = new AppClassLoader(PLATFORM_LOADER, ucp);
     }
 
