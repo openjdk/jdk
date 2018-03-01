@@ -197,7 +197,7 @@ class Bytecode_member_ref: public Bytecode {
   BasicType    result_type() const;              // returns the result type of the getfield or invoke
 };
 
-// Abstraction for invoke_{virtual, static, interface, special}
+// Abstraction for invoke_{virtual, static, interface, special, dynamic, handle}
 
 class Bytecode_invoke: public Bytecode_member_ref {
  protected:
@@ -230,6 +230,8 @@ class Bytecode_invoke: public Bytecode_member_ref {
                                                           is_invokehandle(); }
 
   bool has_appendix()                            { return cpcache_entry()->has_appendix(); }
+
+  int size_of_parameters() const;
 
  private:
   // Helper to skip verification.   Used is_valid() to check if the result is really an invoke
