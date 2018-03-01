@@ -363,6 +363,25 @@ size_t os::current_stack_size() {
   return sz;
 }
 
+size_t os::committed_stack_size(address bottom, size_t size) {
+  MEMORY_BASIC_INFORMATION minfo;
+  address top = bottom + size;
+  size_t committed_size = 0;
+
+  while (committed_size < size) {
+    // top is exclusive
+    VirtualQuery(top - 1, &minfo, sizeof(minfo));
+    if ((minfo.State & MEM_COMMIT) != 0) {
+      committed_size += minfo.RegionSize;
+      top -= minfo.RegionSize;
+    } else {
+      break;
+    }
+  }
+
+  return MIN2(committed_size, size);
+}
+
 struct tm* os::localtime_pd(const time_t* clock, struct tm* res) {
   const struct tm* time_struct_ptr = localtime(clock);
   if (time_struct_ptr != NULL) {
