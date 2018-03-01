@@ -118,7 +118,7 @@ static void generate_all_subsets_of(LogTagType result[MaxSubsets][LogTag::MaxTag
     // Make subset the first element in the result array initially
     subset = result[0];
   }
-  assert((void*) subset >= result && (void*) subset < result + sizeof(result),
+  assert((void*) subset >= &result[0] && (void*) subset <= &result[MaxSubsets - 1],
          "subset should always point to element in result");
 
   if (depth == LogTag::MaxTags || tags[depth] == LogTag::__NO_TAG) {
