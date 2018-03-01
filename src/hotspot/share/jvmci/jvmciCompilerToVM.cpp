@@ -36,6 +36,7 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compileBroker.hpp"
