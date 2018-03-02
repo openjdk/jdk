@@ -803,10 +803,10 @@ InitializeEncoding(JNIEnv *env, const char *encname)
             (strcmp(encname, "ISO-8859-1") == 0)) {
             fastEncoding = FAST_8859_1;
         } else if (strcmp(encname, "UTF-8") == 0) {
-            fastEncoding = FAST_UTF_8;
             jstring enc = (*env)->NewStringUTF(env, encname);
             if (enc == NULL)
                 return;
+            fastEncoding = FAST_UTF_8;
             jnuEncoding = (jstring)(*env)->NewGlobalRef(env, enc);
             (*env)->DeleteLocalRef(env, enc);
         } else if (strcmp(encname, "ISO646-US") == 0) {
@@ -818,10 +818,10 @@ InitializeEncoding(JNIEnv *env, const char *encname)
             strcmp(encname, "utf-16le") == 0) {
             fastEncoding = FAST_CP1252;
         } else {
-            fastEncoding = NO_FAST_ENCODING;
             jstring enc = (*env)->NewStringUTF(env, encname);
             if (enc == NULL)
                 return;
+            fastEncoding = NO_FAST_ENCODING;
             jnuEncoding = (jstring)(*env)->NewGlobalRef(env, enc);
             (*env)->DeleteLocalRef(env, enc);
         }
