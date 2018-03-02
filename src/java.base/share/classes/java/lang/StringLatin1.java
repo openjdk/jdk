@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,10 @@ final class StringLatin1 {
     public static int compareTo(byte[] value, byte[] other) {
         int len1 = value.length;
         int len2 = other.length;
+        return compareTo(value, other, len1, len2);
+    }
+
+    public static int compareTo(byte[] value, byte[] other, int len1, int len2) {
         int lim = Math.min(len1, len2);
         for (int k = 0; k < lim; k++) {
             if (value[k] != other[k]) {
@@ -116,6 +120,20 @@ final class StringLatin1 {
     public static int compareToUTF16(byte[] value, byte[] other) {
         int len1 = length(value);
         int len2 = StringUTF16.length(other);
+        return compareToUTF16Values(value, other, len1, len2);
+    }
+
+    /*
+     * Checks the boundary and then compares the byte arrays.
+     */
+    public static int compareToUTF16(byte[] value, byte[] other, int len1, int len2) {
+        checkOffset(len1, length(value));
+        checkOffset(len2, StringUTF16.length(other));
+
+        return compareToUTF16Values(value, other, len1, len2);
+    }
+
+    private static int compareToUTF16Values(byte[] value, byte[] other, int len1, int len2) {
         int lim = Math.min(len1, len2);
         for (int k = 0; k < lim; k++) {
             char c1 = getChar(value, k);

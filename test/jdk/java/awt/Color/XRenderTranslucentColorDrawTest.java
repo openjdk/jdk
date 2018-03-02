@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug      8176795
  * @summary  Test verifies that we get proper color when we draw translucent
  *           color over an opaque color using X Render extension in Linux.

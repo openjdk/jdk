@@ -78,7 +78,7 @@ public class NormalizerAPITest extends IntlTest {
     /*
      * Check if normalize(null) throws NullPointerException as expected.
      */
-    void Test_NullPointerException_java_normalize() {
+    public void Test_NullPointerException_java_normalize() {
         boolean error = false;
 
         /* Check null as String to be normalized */
@@ -107,7 +107,7 @@ public class NormalizerAPITest extends IntlTest {
     /*
      * Check if normalize(null) throws NullPointerException as expected.
      */
-    void Test_NullPointerException_sun_normalize() {
+    public void Test_NullPointerException_sun_normalize() {
         boolean error = false;
 
         for (int j = 0; j < options.length; j++) {
@@ -138,7 +138,7 @@ public class NormalizerAPITest extends IntlTest {
     /*
      * Check if isNormalized(null) throws NullPointerException as expected.
      */
-    void Test_NullPointerException_java_isNormalized() {
+    public void Test_NullPointerException_java_isNormalized() {
         boolean error = false;
 
         for (int i = 0; i < forms.length; i++) {
@@ -167,7 +167,7 @@ public class NormalizerAPITest extends IntlTest {
     /*
      * Check if isNormalized(null) throws NullPointerException as expected.
      */
-    void Test_NullPointerException_sun_isNormalized() {
+    public void Test_NullPointerException_sun_isNormalized() {
         boolean error = false;
 
         for (int j = 0; j < options.length; j++) {
@@ -199,7 +199,7 @@ public class NormalizerAPITest extends IntlTest {
      * Check if isNormalized("") doesn't throw NullPointerException and returns
      * "" as expected.
      */
-    void Test_No_NullPointerException_java_normalize() {
+    public void Test_No_NullPointerException_java_normalize() {
         boolean error = false;
 
         for (int i = 0; i < forms.length; i++) {
@@ -223,7 +223,7 @@ public class NormalizerAPITest extends IntlTest {
      * Check if isNormalized("") doesn't throw NullPointerException and returns
      * "" as expected.
      */
-    void Test_No_NullPointerException_sun_normalize() {
+    public void Test_No_NullPointerException_sun_normalize() {
         boolean error = false;
 
         for (int j = 0; j < options.length; j++) {
@@ -248,7 +248,7 @@ public class NormalizerAPITest extends IntlTest {
      * Check if isNormalized("") doesn't throw NullPointerException and returns
      * "" as expected.
      */
-    void Test_No_NullPointerException_java_isNormalized() {
+    public void Test_No_NullPointerException_java_isNormalized() {
         boolean error = false;
 
         for (int i = 0; i < forms.length; i++) {
@@ -271,7 +271,7 @@ public class NormalizerAPITest extends IntlTest {
      * Check if isNormalized("") doesn't throw NullPointerException and returns
      * "" as expected.
      */
-    void Test_No_NullPointerException_sun_isNormalized() {
+    public void Test_No_NullPointerException_sun_isNormalized() {
         boolean error = false;
 
         for (int j = 0; j < options.length; j++) {
@@ -296,7 +296,7 @@ public class NormalizerAPITest extends IntlTest {
      * Check if normalize() and isNormalized() work as expected for every
      * known class which implement CharSequence Interface.
      */
-    void Test_CharSequence() {
+    public void Test_CharSequence() {
 
         check_CharSequence(String.valueOf(inputData),
                            String.valueOf(outputData));

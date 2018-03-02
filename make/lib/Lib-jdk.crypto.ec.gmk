@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,8 @@ ifeq ($(ENABLE_INTREE_EC), true)
     ECC_JNI_SOLSPARC_FILTER := -xregs=no%appl
   endif
 
-  $(eval $(call SetupNativeCompilation,BUILD_LIBSUNEC, \
-      LIBRARY := sunec, \
+  $(eval $(call SetupNativeCompilation, BUILD_LIBSUNEC, \
+      NAME := sunec, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBSUNEC_SRC), \
       TOOLCHAIN := TOOLCHAIN_LINK_CXX, \

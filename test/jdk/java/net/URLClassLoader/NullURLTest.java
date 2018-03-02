@@ -71,14 +71,14 @@ public class NullURLTest {
         } catch (NullPointerException e) {
             // expected
         }
-        // This section should be uncommented if 8026517 is fixed.
-//        try {
-//            loader = new URLClassLoader(invalidURLArray);
-//            System.err.println("URLClassLoader(invalidURLArray) did not throw NPE");
-//            failures++;
-//        } catch (NullPointerException e) {
-//            // expected
-//        }
+
+        try {
+            loader = new URLClassLoader(invalidURLArray);
+            System.err.println("URLClassLoader(invalidURLArray) did not throw NPE");
+            failures++;
+        } catch (NullPointerException e) {
+            // expected
+        }
 
         try {
             loader = new URLClassLoader(validURLArray, null);
@@ -93,14 +93,14 @@ public class NullURLTest {
         } catch (NullPointerException e) {
             // expected
         }
-        // This section should be uncommented if 8026517 is fixed.
-//        try {
-//            loader = new URLClassLoader(invalidURLArray, null);
-//            System.err.println("URLClassLoader(invalidURLArray, null) did not throw NPE");
-//            failures++;
-//        } catch (NullPointerException e) {
-//            // expected
-//        }
+
+        try {
+            loader = new URLClassLoader(invalidURLArray, null);
+            System.err.println("URLClassLoader(invalidURLArray, null) did not throw NPE");
+            failures++;
+        } catch (NullPointerException e) {
+            // expected
+        }
 
         try {
             loader = new URLClassLoader(validURLArray, null, null);
@@ -115,14 +115,14 @@ public class NullURLTest {
         } catch (NullPointerException e) {
             // expected
         }
-        // This section should be uncommented if 8026517 is fixed.
-//        try {
-//            loader = new URLClassLoader(invalidURLArray, null, null);
-//            System.err.println("URLClassLoader(invalidURLArray, null, null) did not throw NPE");
-//            failures++;
-//        } catch (NullPointerException e) {
-//            // expected
-//        }
+
+        try {
+            loader = new URLClassLoader(invalidURLArray, null, null);
+            System.err.println("URLClassLoader(invalidURLArray, null, null) did not throw NPE");
+            failures++;
+        } catch (NullPointerException e) {
+            // expected
+        }
 
         try {
             loader = URLClassLoader.newInstance(validURLArray);
@@ -137,14 +137,14 @@ public class NullURLTest {
         } catch (NullPointerException e) {
             // expected
         }
-        // This section should be uncommented if 8026517 is fixed.
-//        try {
-//            loader = URLClassLoader.newInstance(invalidURLArray);
-//            System.err.println("URLClassLoader.newInstance(invalidURLArray) did not throw NPE");
-//            failures++;
-//        } catch (NullPointerException e) {
-//            // expected
-//        }
+
+        try {
+            loader = URLClassLoader.newInstance(invalidURLArray);
+            System.err.println("URLClassLoader.newInstance(invalidURLArray) did not throw NPE");
+            failures++;
+        } catch (NullPointerException e) {
+            // expected
+        }
 
         try {
             loader = URLClassLoader.newInstance(validURLArray, null);
@@ -159,14 +159,14 @@ public class NullURLTest {
         } catch (NullPointerException e) {
             // expected
         }
-        // This section should be uncommented if 8026517 is fixed.
-//        try {
-//            loader = URLClassLoader.newInstance(invalidURLArray, null);
-//            System.err.println("URLClassLoader.newInstance(invalidURLArray, null) did not throw NPE");
-//            failures++;
-//        } catch (NullPointerException e) {
-//            // expected
-//        }
+
+        try {
+            loader = URLClassLoader.newInstance(invalidURLArray, null);
+            System.err.println("URLClassLoader.newInstance(invalidURLArray, null) did not throw NPE");
+            failures++;
+        } catch (NullPointerException e) {
+            // expected
+        }
 
         if (failures != 0) {
             throw new Exception("URLClassLoader NullURLTest had "+failures+" failures!");

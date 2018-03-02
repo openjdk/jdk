@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 include LibCommon.gmk
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
-  # JavaNativeFoundation framework not supported in static builds 
+  # JavaNativeFoundation framework not supported in static builds
   ifneq ($(STATIC_BUILD), true)
 
   ################################################################################
@@ -36,8 +36,8 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
         $(LIBJAVA_HEADER_FLAGS) \
         -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
 
-    $(eval $(call SetupNativeCompilation,BUILD_LIBOSXSECURITY, \
-        LIBRARY := osxsecurity, \
+    $(eval $(call SetupNativeCompilation, BUILD_LIBOSXSECURITY, \
+        NAME := osxsecurity, \
         OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
         SRC := $(LIBOSXSECURITY_DIRS), \
         OPTIMIZATION := LOW, \

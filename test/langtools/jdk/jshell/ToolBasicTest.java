@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953 8080347 8154714 8166649 8167643 8170162 8172102 8165405 8174796 8174797 8175304 8167554 8180508 8166232
+ * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953 8080347 8154714 8166649 8167643 8170162 8172102 8165405 8174796 8174797 8175304 8167554 8180508 8166232 8196133
  * @summary Tests for Basic tests for REPL tool
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -347,6 +347,34 @@ public class ToolBasicTest extends ReplToolTesting {
                         "|  Invalid '--class-path' argument: " + t1.toString()),
                 (a) -> assertCommand(a, "/env --class-path " + t2.toString(),
                         "|  Invalid '--class-path' argument: " + t2.toString())
+        );
+    }
+
+    private String makeBadSourceJar() {
+        Compiler compiler = new Compiler();
+        Path outDir = Paths.get("testClasspathJar");
+        Path src = compiler.getPath(outDir.resolve("pkg/A.java"));
+        compiler.writeToFile(src, "package pkg; /** \u0086 */public class A { public String toString() { return \"A\"; } }");
+        String jarName = "test.jar";
+        compiler.jar(outDir, jarName, "pkg/A.java");
+        return compiler.getPath(outDir).resolve(jarName).toString();
+    }
+
+    public void testBadSourceJarClasspath() {
+        String jarPath = makeBadSourceJar();
+        test(
+                (a) -> assertCommand(a, "/env --class-path " + jarPath,
+                        "|  Setting new options and restoring state."),
+                (a) -> assertCommandOutputStartsWith(a, "new pkg.A();",
+                        "|  Error:\n"
+                        + "|  cannot find symbol\n"
+                        + "|    symbol:   class A")
+        );
+        test(new String[]{"--class-path", jarPath},
+                (a) -> assertCommandOutputStartsWith(a, "new pkg.A();",
+                        "|  Error:\n"
+                        + "|  cannot find symbol\n"
+                        + "|    symbol:   class A")
         );
     }
 

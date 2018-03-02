@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ include LibCommon.gmk
 
 ################################################################################
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBRMI, \
-    LIBRARY := rmi, \
+$(eval $(call SetupNativeCompilation, BUILD_LIBRMI, \
+    NAME := rmi, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(TOPDIR)/src/java.rmi/share/native/librmi, \
     OPTIMIZATION := LOW, \

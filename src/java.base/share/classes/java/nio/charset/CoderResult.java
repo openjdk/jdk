@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,8 @@ package java.nio.charset;
 
 import java.lang.ref.WeakReference;
 import java.nio.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
-import java.util.HashMap;
-
 
 /**
  * A description of the result state of a coder.
@@ -197,14 +196,12 @@ public class CoderResult {
 
         protected abstract CoderResult create(int len);
 
-        private synchronized CoderResult get(int len) {
-            if (len <= 0)
-                throw new IllegalArgumentException("Non-positive length");
+        private CoderResult get(int len) {
             Integer k = len;
             WeakReference<CoderResult> w;
             CoderResult e = null;
             if (cache == null) {
-                cache = new HashMap<>();
+                cache = new ConcurrentHashMap<>();
             } else if ((w = cache.get(k)) != null) {
                 e = w.get();
             }
@@ -214,14 +211,20 @@ public class CoderResult {
             }
             return e;
         }
-
     }
 
-    private static Cache malformedCache
+    private static final Cache malformedCache
         = new Cache() {
                 public CoderResult create(int len) {
                     return new CoderResult(CR_MALFORMED, len);
                 }};
+
+    private static final CoderResult[] malformed4 = new CoderResult[] {
+        new CoderResult(CR_MALFORMED, 1),
+        new CoderResult(CR_MALFORMED, 2),
+        new CoderResult(CR_MALFORMED, 3),
+        new CoderResult(CR_MALFORMED, 4),
+    };
 
     /**
      * Static factory method that returns the unique object describing a
@@ -233,14 +236,25 @@ public class CoderResult {
      * @return  The requested coder-result object
      */
     public static CoderResult malformedForLength(int length) {
+        if (length <= 0)
+            throw new IllegalArgumentException("Non-positive length");
+        if (length <= 4)
+            return malformed4[length - 1];
         return malformedCache.get(length);
     }
 
-    private static Cache unmappableCache
+    private static final Cache unmappableCache
         = new Cache() {
                 public CoderResult create(int len) {
                     return new CoderResult(CR_UNMAPPABLE, len);
                 }};
+
+    private static final CoderResult[] unmappable4 = new CoderResult[] {
+        new CoderResult(CR_UNMAPPABLE, 1),
+        new CoderResult(CR_UNMAPPABLE, 2),
+        new CoderResult(CR_UNMAPPABLE, 3),
+        new CoderResult(CR_UNMAPPABLE, 4),
+    };
 
     /**
      * Static factory method that returns the unique result object describing
@@ -252,6 +266,10 @@ public class CoderResult {
      * @return  The requested coder-result object
      */
     public static CoderResult unmappableForLength(int length) {
+        if (length <= 0)
+            throw new IllegalArgumentException("Non-positive length");
+        if (length <= 4)
+            return unmappable4[length - 1];
         return unmappableCache.get(length);
     }
 

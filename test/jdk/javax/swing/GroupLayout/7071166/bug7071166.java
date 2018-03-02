@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,22 @@
  * @author Pavel Porvatov
  */
 
-import javax.swing.*;
-import static javax.swing.SwingConstants.*;
-import java.awt.*;
+import java.awt.Container;
+
+import javax.swing.JButton;
+import javax.swing.LayoutStyle;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
+
+import static javax.swing.SwingConstants.EAST;
+import static javax.swing.SwingConstants.NORTH;
+import static javax.swing.SwingConstants.NORTH_EAST;
+import static javax.swing.SwingConstants.NORTH_WEST;
+import static javax.swing.SwingConstants.SOUTH;
+import static javax.swing.SwingConstants.SOUTH_EAST;
+import static javax.swing.SwingConstants.SOUTH_WEST;
+import static javax.swing.SwingConstants.WEST;
 
 public class bug7071166 {
     private static final int[] POSITIONS = {NORTH, EAST, SOUTH, WEST, // valid positions
@@ -38,8 +51,11 @@ public class bug7071166 {
 
     public static void main(String[] args) throws Exception {
         for (UIManager.LookAndFeelInfo lookAndFeelInfo : UIManager.getInstalledLookAndFeels()) {
-            UIManager.setLookAndFeel(lookAndFeelInfo.getClassName());
-
+            try {
+                UIManager.setLookAndFeel(lookAndFeelInfo.getClassName());
+            } catch (final UnsupportedLookAndFeelException ignored) {
+                continue;
+            }
             System.out.println("LookAndFeel: " + lookAndFeelInfo.getName());
 
             SwingUtilities.invokeAndWait(new Runnable() {

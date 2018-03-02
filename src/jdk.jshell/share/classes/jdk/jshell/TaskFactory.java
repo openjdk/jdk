@@ -311,15 +311,18 @@ class TaskFactory {
             return fm.createSourceFileObject(w, w.classFullName(), w.wrapped());
         }
 
+        /**
+         * Get the source information from the wrap.  If this is external, or
+         * otherwise does not have wrap info, just use source code.
+         * @param d the Diagnostic from the compiler
+         * @return the corresponding Diag
+         */
         @Override
         public Diag diag(Diagnostic<? extends JavaFileObject> d) {
-            SourceMemoryJavaFileObject smjfo = (SourceMemoryJavaFileObject) d.getSource();
-            if (smjfo == null) {
-                // Handle failure that doesn't preserve mapping
-                return new StringSourceHandler().diag(d);
-            }
-            OuterWrap w = (OuterWrap) smjfo.getOrigin();
-            return w.wrapDiag(d);
+            JavaFileObject jfo = d.getSource();
+            return jfo instanceof SourceMemoryJavaFileObject
+                    ? ((OuterWrap) ((SourceMemoryJavaFileObject) jfo).getOrigin()).wrapDiag(d)
+                    : new StringSourceHandler().diag(d);
         }
     }
 

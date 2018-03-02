@@ -26,6 +26,7 @@ import java.awt.image.BufferedImage;
 
 /*
  * @test
+ * @key headful
  * @summary Check the return value of the getActionCommand method
  *          of the ActionEvent triggered when TrayIcon is double clicked
  *          (single clicked, on Mac)

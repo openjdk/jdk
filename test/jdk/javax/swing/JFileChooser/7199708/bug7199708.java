@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,10 @@ import javax.swing.UIManager;
 /**
  * @test
  * @key headful
- * @bug 7199708 8159587
+ * @bug 7199708 8159587 8198005
  * @author Alexander Scherbatiy
  * @summary FileChooser crashs when opening large folder
- * @run main bug7199708
+ * @run main/timeout=240 bug7199708
  */
 public class bug7199708 {
 
@@ -53,72 +53,88 @@ public class bug7199708 {
     private static volatile int locationX;
     private static volatile int locationY;
     private static volatile int width;
+    private static File largeFolder;
+    private static File files[] = new File[FILE_NUMBER];
 
     public static void main(String[] args) throws Exception {
 
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
-        final File folder = createLargeFolder();
-        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+        try {
+            final File folder = createLargeFolder();
+            UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
 
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                fileChooser = new JFileChooser(folder);
-                fileChooser.showSaveDialog(null);
-            }
-        });
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    fileChooser = new JFileChooser(folder);
+                    fileChooser.showSaveDialog(null);
+                }
+            });
 
-        robot.waitForIdle();
+            robot.waitForIdle();
 
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                final String detailsTooltip = UIManager.getString("FileChooser."
-                        + "detailsViewButtonToolTipText", fileChooser.getLocale());
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    final String detailsTooltip =
+                        UIManager.getString("FileChooser."
+                        + "detailsViewButtonToolTipText",
+                          fileChooser.getLocale());
 
-                doAction(fileChooser, new ComponentAction() {
-                    @Override
-                    public boolean accept(Component component) {
-                        return (component instanceof AbstractButton)
+                    doAction(fileChooser, new ComponentAction() {
+                        @Override
+                        public boolean accept(Component component) {
+                            return (component instanceof AbstractButton)
                                 && detailsTooltip.equals(
                                 ((AbstractButton) component).getToolTipText());
-                    }
+                        }
 
-                    @Override
-                    public void perform(Component component) {
-                        ((AbstractButton) component).doClick();
-                    }
-                });
+                        @Override
+                        public void perform(Component component) {
+                            ((AbstractButton) component).doClick();
+                        }
+                    });
 
-                doAction(fileChooser, new ComponentAction() {
-                    @Override
-                    public boolean accept(Component component) {
-                        return (component instanceof JTable);
-                    }
+                    doAction(fileChooser, new ComponentAction() {
+                        @Override
+                        public boolean accept(Component component) {
+                            return (component instanceof JTable);
+                        }
 
-                    @Override
-                    public void perform(Component component) {
-                        Point tableLocation = component.getLocationOnScreen();
-                        locationX = (int) tableLocation.getX();
-                        locationY = (int) tableLocation.getY();
-                        width = (int) fileChooser.getBounds().getWidth();
-                    }
-                });
-            }
-        });
+                        @Override
+                        public void perform(Component component) {
+                            Point tableLocation = component.getLocationOnScreen();
+                            locationX = (int) tableLocation.getX();
+                            locationY = (int) tableLocation.getY();
+                            width = (int) fileChooser.getBounds().getWidth();
+                        }
+                    });
+                }
+            });
 
-        robot.waitForIdle();
-
-        int d = 25;
-        for (int i = 0; i < width / d; i++) {
-            robot.mouseMove(locationX + i * d, locationY + 5);
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
             robot.waitForIdle();
-        }
 
-        robot.keyPress(KeyEvent.VK_ESCAPE);
-        robot.keyRelease(KeyEvent.VK_ESCAPE);
+            int d = 25;
+            for (int i = 0; i < width / d; i++) {
+                robot.mouseMove(locationX + i * d, locationY + 5);
+                robot.waitForIdle();
+                robot.mousePress(InputEvent.BUTTON1_MASK);
+                robot.waitForIdle();
+                robot.mouseRelease(InputEvent.BUTTON1_MASK);
+                robot.waitForIdle();
+            }
+
+            robot.keyPress(KeyEvent.VK_ESCAPE);
+            robot.waitForIdle();
+            robot.keyRelease(KeyEvent.VK_ESCAPE);
+            robot.waitForIdle();
+
+        } finally {
+            for (int i = 0; i < FILE_NUMBER; i++) {
+                Files.delete(files[i].toPath());
+            }
+            Files.delete(largeFolder.toPath());
+        }
     }
 
     static void doAction(Component component, ComponentAction action) {
@@ -134,13 +150,11 @@ public class bug7199708 {
     private static File createLargeFolder() {
         try {
 
-            File largeFolder = Files.createTempDirectory("large_folder").toFile();
-            largeFolder.deleteOnExit();
+            largeFolder = Files.createTempDirectory("large_folder").toFile();
 
             for (int i = 0; i < FILE_NUMBER; i++) {
-                File file = new File(largeFolder, "File_" + i + ".txt");
-                file.createNewFile();
-                file.deleteOnExit();
+                files[i] = new File(largeFolder, "File_" + i + ".txt");
+                files[i].createNewFile();
             }
             return largeFolder;
         } catch (IOException ex) {

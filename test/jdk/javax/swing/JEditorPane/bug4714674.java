@@ -27,7 +27,7 @@
    @author Peter Zhelezniakov
    @modules java.desktop
             jdk.httpserver
-   @run main bug4714674
+   @run main/othervm bug4714674
 */
 
 import javax.swing.*;

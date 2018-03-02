@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 import javax.swing.JComboBox;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.metal.MetalComboBoxUI;
 
 public class bug6632953 {
@@ -43,6 +44,8 @@ public class bug6632953 {
                         : UIManager.getInstalledLookAndFeels()) {
                     try {
                         UIManager.setLookAndFeel(lafInfo.getClassName());
+                    } catch (UnsupportedLookAndFeelException ignored) {
+                        continue;
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }

@@ -24,6 +24,7 @@
 /*
  @test
  @bug 8147841
+ @key headful
  @summary Updating Tray Icon popup menu does not update menu items on Mac OS X
  @run main/manual UpdatePopupMenu
  */

@@ -23,8 +23,8 @@
 
 /**
  * @test
- * @bug 6358034
- * @bug 6568560
+ * @bug 6358034 6568560
+ * @key headful
  * @summary Tests that no exception is thrown when display mode is changed
  *          externally
  * @compile UninitializedDisplayModeChangeTest.java DisplayModeChanger.java

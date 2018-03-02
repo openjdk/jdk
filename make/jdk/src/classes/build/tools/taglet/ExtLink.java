@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,14 +49,14 @@ import static jdk.javadoc.doclet.Taglet.Location.*;
  * will produce the following html
  * <p>
  * {@code
- * Please see <a href="https://www.oracle.com/pls/topic/lookup?ctx=javase9&id=Borealis">a spectacular</a> sight.
+ * Please see <a href="https://www.oracle.com/pls/topic/lookup?ctx=javase10&id=Borealis">a spectacular</a> sight.
  * }
  */
 public class ExtLink implements Taglet {
 
     static final String TAG_NAME = "extLink";
 
-    static final String URL = "https://www.oracle.com/pls/topic/lookup?ctx=javase9&amp;id=";
+    static final String URL = "https://www.oracle.com/pls/topic/lookup?ctx=javase10&amp;id=";
 
     static final Pattern TAG_PATTERN = Pattern.compile("(?s)(\\s*)(?<name>\\w+)(\\s+)(?<desc>.*)$");
 
