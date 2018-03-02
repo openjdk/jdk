@@ -2162,7 +2162,6 @@ JVM_ENTRY(void, JVM_RegisterWhiteBoxMethods(JNIEnv* env, jclass wbclass))
       Handle loader(THREAD, ik->class_loader());
       if (loader.is_null()) {
         WhiteBox::register_methods(env, wbclass, thread, methods, sizeof(methods) / sizeof(methods[0]));
-        WhiteBox::register_extended(env, wbclass, thread);
         WhiteBox::set_used();
       }
     }
