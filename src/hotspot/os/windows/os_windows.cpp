@@ -1537,7 +1537,7 @@ int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
     result = _vsnprintf(buf, len, fmt, args);
     // If output (including NUL terminator) is truncated, the buffer
     // won't be NUL terminated.  Add the trailing NUL specified by C99.
-    if ((result < 0) || (result >= len)) {
+    if ((result < 0) || ((size_t)result >= len)) {
       buf[len - 1] = '\0';
     }
   }
