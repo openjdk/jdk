@@ -85,10 +85,6 @@ private:
   void verify_after_marking();
 
   void run_task(AbstractGangTask* task);
-
-  // Prepare compaction extension support.
-  void prepare_compaction_ext();
-  void prepare_compaction_common();
 };
 
 
