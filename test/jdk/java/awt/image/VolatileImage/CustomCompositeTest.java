@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,11 @@
 /*
  * @test
  * @key headful
- * @bug     7124347
+ * @bug     7124347 8198613
  * @summary Verifies that rendering with XOR composite, and arbitraty
  *          custom composite doesn not cause internal errors.
  *
- * @run     main/othervm -Dsun.java2d.opengl=True CustomCompositeTest
+ * @run     main/othervm CustomCompositeTest
  */
 
 import java.awt.AWTException;

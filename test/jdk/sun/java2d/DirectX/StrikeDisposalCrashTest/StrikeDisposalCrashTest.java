@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,12 @@
 /**
  * @test
  * @key headful
- * @bug 6705443
+ * @bug 6705443 8198613
  * @summary tests that we don't crash during exit if font strikes were disposed
  * during the lifetime of the application
  *
  * @run main/othervm -Dsun.java2d.font.reftype=weak StrikeDisposalCrashTest
  * @run main/othervm -Dsun.java2d.font.reftype=weak -Dsun.java2d.noddraw=true StrikeDisposalCrashTest
- * @run main/othervm -Dsun.java2d.font.reftype=weak -Dsun.java2d.opengl=True StrikeDisposalCrashTest
  */
 
 import java.awt.Font;

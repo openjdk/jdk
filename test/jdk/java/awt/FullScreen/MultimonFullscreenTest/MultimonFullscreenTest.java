@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,7 @@
 
 /**
  * @test
- * @bug 5041219
- * @bug 5101561
- * @bug 5035272
- * @bug 5096011
- * @bug 5101712
- * @bug 5098624
+ * @bug 5041219 5101561 5035272 5096011 5101712 5098624 8198613
  * @summary Here are a few assertions worth verification:
  *  - the fullscreen window is positioned at 0,0
  *  - the fs window appears on the correct screen
@@ -49,7 +44,7 @@
  * @run main/manual/othervm -Dsun.java2d.pmoffscreen=false MultimonFullscreenTest
  * @run main/manual/othervm -Dsun.java2d.d3d=True MultimonFullscreenTest
  * @run main/manual/othervm -Dsun.java2d.noddraw=true MultimonFullscreenTest
- * @run main/manual/othervm -Dsun.java2d.opengl=True MultimonFullscreenTest
+ * @run main/manual/othervm MultimonFullscreenTest
  */
 
 import java.awt.Button;

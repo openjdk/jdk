@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 /*
  * @test
  * @key headful
- * @bug     8040617
+ * @bug     8040617 8198613
  * @summary Test verifies that an attempt to get an accelerated copy of
  *          a huge buffered image does not result in an OOME.
  *
