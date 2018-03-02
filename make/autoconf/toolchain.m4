@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -783,7 +783,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
         fi
 
         BUILD_SYSROOT="$BUILD_DEVKIT_SYSROOT"
-        FLAGS_SETUP_SYSROOT_FLAGS([BUILD_])
 
          # Fallback default of just /bin if DEVKIT_PATH is not defined
         if test "x$BUILD_DEVKIT_TOOLCHAIN_PATH" = x; then
@@ -830,8 +829,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
     BUILD_AS="$AS"
     BUILD_OBJCOPY="$OBJCOPY"
     BUILD_STRIP="$STRIP"
-    BUILD_SYSROOT_CFLAGS="$SYSROOT_CFLAGS"
-    BUILD_SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS"
     BUILD_AR="$AR"
 
     TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS([], [OPENJDK_BUILD_])
@@ -843,8 +840,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
   AC_SUBST(BUILD_LDCXX)
   AC_SUBST(BUILD_NM)
   AC_SUBST(BUILD_AS)
-  AC_SUBST(BUILD_SYSROOT_CFLAGS)
-  AC_SUBST(BUILD_SYSROOT_LDFLAGS)
   AC_SUBST(BUILD_AR)
 ])
 
@@ -876,24 +871,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
     # If this is a --hash-style=gnu system, use --hash-style=both, why?
     HAS_GNU_HASH=`$CC -dumpspecs 2>/dev/null | $GREP 'hash-style=gnu'`
     # This is later checked when setting flags.
-
-    # "-Og" suppported for GCC 4.8 and later
-    CFLAG_OPTIMIZE_DEBUG_FLAG="-Og"
-    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$CFLAG_OPTIMIZE_DEBUG_FLAG],
-      IF_TRUE: [HAS_CFLAG_OPTIMIZE_DEBUG=true],
-      IF_FALSE: [HAS_CFLAG_OPTIMIZE_DEBUG=false])
-
-    # "-z relro" supported in GNU binutils 2.17 and later
-    LINKER_RELRO_FLAG="-Wl,-z,relro"
-    FLAGS_LINKER_CHECK_ARGUMENTS(ARGUMENT: [$LINKER_RELRO_FLAG],
-      IF_TRUE: [HAS_LINKER_RELRO=true],
-      IF_FALSE: [HAS_LINKER_RELRO=false])
-
-    # "-z now" supported in GNU binutils 2.11 and later
-    LINKER_NOW_FLAG="-Wl,-z,now"
-    FLAGS_LINKER_CHECK_ARGUMENTS(ARGUMENT: [$LINKER_NOW_FLAG],
-      IF_TRUE: [HAS_LINKER_NOW=true],
-      IF_FALSE: [HAS_LINKER_NOW=false])
   fi
 
   # Check for broken SuSE 'ld' for which 'Only anonymous version tag is allowed
