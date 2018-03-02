@@ -26,7 +26,6 @@
 #define SHARE_VM_GC_G1_G1COLLECTEDHEAP_HPP
 
 #include "gc/g1/evacuationInfo.hpp"
-#include "gc/g1/g1AllocationContext.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
@@ -413,12 +412,11 @@ protected:
   // humongous region.
   HeapWord* humongous_obj_allocate_initialize_regions(uint first,
                                                       uint num_regions,
-                                                      size_t word_size,
-                                                      AllocationContext_t context);
+                                                      size_t word_size);
 
   // Attempt to allocate a humongous object of the given size. Return
   // NULL if unsuccessful.
-  HeapWord* humongous_obj_allocate(size_t word_size, AllocationContext_t context);
+  HeapWord* humongous_obj_allocate(size_t word_size);
 
   // The following two methods, allocate_new_tlab() and
   // mem_allocate(), are the two main entry points from the runtime
@@ -462,8 +460,7 @@ protected:
   // Second-level mutator allocation attempt: take the Heap_lock and
   // retry the allocation attempt, potentially scheduling a GC
   // pause. This should only be used for non-humongous allocations.
-  HeapWord* attempt_allocation_slow(size_t word_size,
-                                    AllocationContext_t context);
+  HeapWord* attempt_allocation_slow(size_t word_size);
 
   // Takes the Heap_lock and attempts a humongous allocation. It can
   // potentially schedule a GC pause.
@@ -474,7 +471,6 @@ protected:
   // specifies whether the mutator alloc region is expected to be NULL
   // or not.
   HeapWord* attempt_allocation_at_safepoint(size_t word_size,
-                                            AllocationContext_t context,
                                             bool expect_null_mutator_alloc_region);
 
   // These methods are the "callbacks" from the G1AllocRegion class.
@@ -509,7 +505,6 @@ protected:
   // This function does everything necessary/possible to satisfy a
   // failed allocation request (including collection, expansion, etc.)
   HeapWord* satisfy_failed_allocation(size_t word_size,
-                                      AllocationContext_t context,
                                       bool* succeeded);
 private:
   // Internal helpers used during full GC to split it up to
@@ -524,7 +519,6 @@ private:
 
   // Helper method for satisfy_failed_allocation()
   HeapWord* satisfy_failed_allocation_helper(size_t word_size,
-                                             AllocationContext_t context,
                                              bool do_gc,
                                              bool clear_all_soft_refs,
                                              bool expect_null_mutator_alloc_region,
@@ -535,7 +529,7 @@ protected:
   // to support an allocation of the given "word_size".  If
   // successful, perform the allocation and return the address of the
   // allocated block, or else "NULL".
-  HeapWord* expand_and_allocate(size_t word_size, AllocationContext_t context);
+  HeapWord* expand_and_allocate(size_t word_size);
 
   // Preserve any referents discovered by concurrent marking that have not yet been
   // copied by the STW pause.
