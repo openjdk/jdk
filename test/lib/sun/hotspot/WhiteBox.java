@@ -439,16 +439,6 @@ public class WhiteBox {
   // CPU features
   public native String getCPUFeatures();
 
-  // Native extensions
-  public native long getHeapUsageForContext(int context);
-  public native long getHeapRegionCountForContext(int context);
-  private native int getContextForObject0(Object obj);
-  public         int getContextForObject(Object obj) {
-    Objects.requireNonNull(obj);
-    return getContextForObject0(obj);
-  }
-  public native void printRegionInfo(int context);
-
   // VM flags
   public native boolean isConstantVMFlag(String name);
   public native boolean isLockedVMFlag(String name);
