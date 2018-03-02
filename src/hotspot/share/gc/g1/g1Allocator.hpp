@@ -67,8 +67,6 @@ public:
   G1Allocator(G1CollectedHeap* heap) : _g1h(heap) { }
   virtual ~G1Allocator() { }
 
-  static G1Allocator* create_allocator(G1CollectedHeap* g1h);
-
 #ifdef ASSERT
   // Do we currently have an active mutator region to allocate into?
   bool has_mutator_alloc_region(AllocationContext_t context) { return mutator_alloc_region(context)->get() != NULL; }
@@ -222,8 +220,6 @@ protected:
 public:
   G1PLABAllocator(G1Allocator* allocator);
   virtual ~G1PLABAllocator() { }
-
-  static G1PLABAllocator* create_allocator(G1Allocator* allocator);
 
   virtual void waste(size_t& wasted, size_t& undo_wasted) = 0;
 
