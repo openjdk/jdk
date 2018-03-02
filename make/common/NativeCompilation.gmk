@@ -567,7 +567,7 @@ define SetupNativeCompilationBody
 
   ifneq ($$($1_REORDER), )
     $1_EXTRA_CFLAGS += $$(C_FLAG_REORDER)
-    $1_EXTRA_CXXFLAGS += $$(CXX_FLAG_REORDER)
+    $1_EXTRA_CXXFLAGS += $$(C_FLAG_REORDER)
   endif
 
   # Pass the library name for static JNI library naming

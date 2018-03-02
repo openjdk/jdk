@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -277,13 +277,9 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
   if test "x$OPENJDK_TARGET_CPU" = xarm; then
     HOTSPOT_TARGET_CPU=arm_32
     HOTSPOT_TARGET_CPU_DEFINE="ARM32"
-    JVM_LDFLAGS="$JVM_LDFLAGS -fsigned-char"
-    JVM_CFLAGS="$JVM_CFLAGS -DARM -fsigned-char"
   elif test "x$OPENJDK_TARGET_CPU" = xaarch64 && test "x$HOTSPOT_TARGET_CPU_PORT" = xarm64; then
     HOTSPOT_TARGET_CPU=arm_64
     HOTSPOT_TARGET_CPU_ARCH=arm
-    JVM_LDFLAGS="$JVM_LDFLAGS -fsigned-char"
-    JVM_CFLAGS="$JVM_CFLAGS -DARM -fsigned-char"
   fi
 
   # Verify that dependencies are met for explicitly set features.
