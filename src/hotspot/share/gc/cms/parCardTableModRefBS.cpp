@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/vmThread.hpp"
 
-void CardTableModRefBSForCTRS::
+void CardTableRS::
 non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
                                      OopsInGenClosure* cl,
                                      CardTableRS* ct,
@@ -82,7 +82,7 @@ non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
 }
 
 void
-CardTableModRefBSForCTRS::
+CardTableRS::
 process_stride(Space* sp,
                MemRegion used,
                jint stride, int n_strides,
@@ -162,7 +162,7 @@ process_stride(Space* sp,
 }
 
 void
-CardTableModRefBSForCTRS::
+CardTableRS::
 process_chunk_boundaries(Space* sp,
                          DirtyCardToOopClosure* dcto_cl,
                          MemRegion chunk_mr,
@@ -371,7 +371,7 @@ process_chunk_boundaries(Space* sp,
 }
 
 void
-CardTableModRefBSForCTRS::
+CardTableRS::
 get_LNC_array_for_space(Space* sp,
                         jbyte**& lowest_non_clean,
                         uintptr_t& lowest_non_clean_base_chunk_index,

@@ -71,6 +71,7 @@
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/jniPeriodicChecker.hpp"
 #include "runtime/memprofiler.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -3863,10 +3864,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {
-    // Initialize JVMCI eagerly if JVMCIPrintProperties is enabled.
+    // Initialize JVMCI eagerly when it is explicitly requested.
+    // Or when JVMCIPrintProperties is enabled.
     // The JVMCI Java initialization code will read this flag and
     // do the printing if it's set.
-    bool init = JVMCIPrintProperties;
+    bool init = EagerJVMCI || JVMCIPrintProperties;
 
     if (!init) {
       // 8145270: Force initialization of JVMCI runtime otherwise requests for blocking
@@ -4216,6 +4218,12 @@ bool Threads::destroy_vm() {
       // and wait as a suspend-equivalent condition.
       Threads_lock->wait(!Mutex::_no_safepoint_check_flag, 0,
                          Mutex::_as_suspend_equivalent_flag);
+  }
+
+  EventShutdown e;
+  if (e.should_commit()) {
+    e.set_reason("No remaining non-daemon Java threads");
+    e.commit();
   }
 
   // Hang forever on exit if we are reporting an error.

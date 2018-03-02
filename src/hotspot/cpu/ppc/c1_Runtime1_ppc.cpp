@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,9 @@
 #include "c1/c1_Defs.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
+#include "ci/ciUtilities.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_ppc.hpp"
 #include "oops/compiledICHolder.hpp"
@@ -40,6 +43,7 @@
 #include "utilities/macros.hpp"
 #include "vmreg_ppc.inline.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #endif
 
@@ -795,7 +799,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Register tmp = R0;
         Register addr = R14;
         Register tmp2 = R15;
-        jbyte* byte_map_base = ((CardTableModRefBS*)bs)->byte_map_base;
+        jbyte* byte_map_base = ci_card_table_address();
 
         Label restart, refill, ret;
 
@@ -803,26 +807,26 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ std(addr, -8, R1_SP);
         __ std(tmp2, -16, R1_SP);
 
-        __ srdi(addr, R0, CardTableModRefBS::card_shift); // Addr is passed in R0.
+        __ srdi(addr, R0, CardTable::card_shift); // Addr is passed in R0.
         __ load_const_optimized(/*cardtable*/ tmp2, byte_map_base, tmp);
         __ add(addr, tmp2, addr);
         __ lbz(tmp, 0, addr); // tmp := [addr + cardtable]
 
         // Return if young card.
-        __ cmpwi(CCR0, tmp, G1SATBCardTableModRefBS::g1_young_card_val());
+        __ cmpwi(CCR0, tmp, G1CardTable::g1_young_card_val());
         __ beq(CCR0, ret);
 
         // Return if sequential consistent value is already dirty.
         __ membar(Assembler::StoreLoad);
         __ lbz(tmp, 0, addr); // tmp := [addr + cardtable]
 
-        __ cmpwi(CCR0, tmp, G1SATBCardTableModRefBS::dirty_card_val());
+        __ cmpwi(CCR0, tmp, G1CardTable::dirty_card_val());
         __ beq(CCR0, ret);
 
         // Not dirty.
 
         // First, dirty it.
-        __ li(tmp, G1SATBCardTableModRefBS::dirty_card_val());
+        __ li(tmp, G1CardTable::dirty_card_val());
         __ stb(tmp, 0, addr);
 
         int dirty_card_q_index_byte_offset =

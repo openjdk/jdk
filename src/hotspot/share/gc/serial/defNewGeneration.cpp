@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,7 +189,7 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
                 (HeapWord*)_virtual_space.high());
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
-  gch->barrier_set()->resize_covered_region(cmr);
+  gch->rem_set()->resize_covered_region(cmr);
 
   _eden_space = new ContiguousSpace();
   _from_space = new ContiguousSpace();
@@ -454,7 +454,7 @@ void DefNewGeneration::compute_new_size() {
                              SpaceDecorator::DontMangle);
     MemRegion cmr((HeapWord*)_virtual_space.low(),
                   (HeapWord*)_virtual_space.high());
-    gch->barrier_set()->resize_covered_region(cmr);
+    gch->rem_set()->resize_covered_region(cmr);
 
     log_debug(gc, ergo, heap)(
         "New generation size " SIZE_FORMAT "K->" SIZE_FORMAT "K [eden=" SIZE_FORMAT "K,survivor=" SIZE_FORMAT "K]",
@@ -634,7 +634,7 @@ void DefNewGeneration::collect(bool   full,
   {
     // DefNew needs to run with n_threads == 0, to make sure the serial
     // version of the card table scanning code is used.
-    // See: CardTableModRefBSForCTRS::non_clean_card_iterate_possibly_parallel.
+    // See: CardTableRS::non_clean_card_iterate_possibly_parallel.
     StrongRootsScope srs(0);
 
     gch->young_process_roots(&srs,

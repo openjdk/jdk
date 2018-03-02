@@ -38,6 +38,7 @@ class LogSelectionList;
 // are iterated over and updated accordingly.
 class LogConfiguration : public AllStatic {
  friend class VMError;
+ friend class LogTestFixture;
  public:
   // Function for listeners
   typedef void (*UpdateListenerFunction)(void);
@@ -118,7 +119,7 @@ class LogConfiguration : public AllStatic {
   static void describe(outputStream* out);
 
   // Prints usage help for command line log configuration.
-  static void print_command_line_help(FILE* out);
+  static void print_command_line_help(outputStream* out);
 
   // Rotates all LogOutput
   static void rotate_all_outputs();

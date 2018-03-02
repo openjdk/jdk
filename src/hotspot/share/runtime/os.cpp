@@ -105,6 +105,14 @@ static time_t get_timezone(const struct tm* time_struct) {
 #endif
 }
 
+int os::snprintf(char* buf, size_t len, const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  int result = os::vsnprintf(buf, len, fmt, args);
+  va_end(args);
+  return result;
+}
+
 // Fill in buffer with current local time as an ISO-8601 string.
 // E.g., yyyy-mm-ddThh:mm:ss-zzzz.
 // Returns buffer, or NULL if it failed.
@@ -236,6 +244,13 @@ OSReturn os::get_priority(const Thread* const thread, ThreadPriority& priority) 
   priority = (ThreadPriority)p;
   return OS_OK;
 }
+
+
+#if !defined(LINUX) && !defined(_WINDOWS)
+size_t os::committed_stack_size(address bottom, size_t size) {
+  return size;
+}
+#endif
 
 bool os::dll_build_name(char* buffer, size_t size, const char* fname) {
   int n = jio_snprintf(buffer, size, "%s%s%s", JNI_LIB_PREFIX, fname, JNI_LIB_SUFFIX);

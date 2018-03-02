@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,9 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
+#include "utilities/ostream.hpp"
 #include "unittest.hpp"
 
 static size_t small_page_size() {
@@ -150,3 +152,118 @@ TEST_VM_ASSERT_MSG(os, page_size_for_region_with_zero_min_pages, "sanity") {
   os::page_size_for_region_aligned(region_size, 0); // should assert
 }
 #endif
+
+//////////////////////////////////////////////////////////////////////////////
+// Test os::vsnprintf and friends.
+
+static void check_snprintf_result(int expected, size_t limit, int actual, bool expect_count) {
+  if (expect_count || ((size_t)expected < limit)) {
+    ASSERT_EQ(expected, actual);
+  } else {
+    ASSERT_GT(0, actual);
+  }
+}
+
+// PrintFn is expected to be int (*)(char*, size_t, const char*, ...).
+// But jio_snprintf is a C-linkage function with that signature, which
+// has a different type on some platforms (like Solaris).
+template<typename PrintFn>
+static void test_snprintf(PrintFn pf, bool expect_count) {
+  const char expected[] = "abcdefghijklmnopqrstuvwxyz";
+  const int expected_len = sizeof(expected) - 1;
+  const size_t padding_size = 10;
+  char buffer[2 * (sizeof(expected) + padding_size)];
+  char check_buffer[sizeof(buffer)];
+  const char check_char = '1';  // Something not in expected.
+  memset(check_buffer, check_char, sizeof(check_buffer));
+  const size_t sizes_to_test[] = {
+    sizeof(buffer) - padding_size,       // Fits, with plenty of space to spare.
+    sizeof(buffer)/2,                    // Fits, with space to spare.
+    sizeof(buffer)/4,                    // Doesn't fit.
+    sizeof(expected) + padding_size + 1, // Fits, with a little room to spare
+    sizeof(expected) + padding_size,     // Fits exactly.
+    sizeof(expected) + padding_size - 1, // Doesn't quite fit.
+    2,                                   // One char + terminating NUL.
+    1,                                   // Only space for terminating NUL.
+    0 };                                 // No space at all.
+  for (unsigned i = 0; i < ARRAY_SIZE(sizes_to_test); ++i) {
+    memset(buffer, check_char, sizeof(buffer)); // To catch stray writes.
+    size_t test_size = sizes_to_test[i];
+    ResourceMark rm;
+    stringStream s;
+    s.print("test_size: " SIZE_FORMAT, test_size);
+    SCOPED_TRACE(s.as_string());
+    size_t prefix_size = padding_size;
+    guarantee(test_size <= (sizeof(buffer) - prefix_size), "invariant");
+    size_t write_size = MIN2(sizeof(expected), test_size);
+    size_t suffix_size = sizeof(buffer) - prefix_size - write_size;
+    char* write_start = buffer + prefix_size;
+    char* write_end = write_start + write_size;
+
+    int result = pf(write_start, test_size, "%s", expected);
+
+    check_snprintf_result(expected_len, test_size, result, expect_count);
+
+    // Verify expected output.
+    if (test_size > 0) {
+      ASSERT_EQ(0, strncmp(write_start, expected, write_size - 1));
+      // Verify terminating NUL of output.
+      ASSERT_EQ('\0', write_start[write_size - 1]);
+    } else {
+      guarantee(test_size == 0, "invariant");
+      guarantee(write_size == 0, "invariant");
+      guarantee(prefix_size + suffix_size == sizeof(buffer), "invariant");
+      guarantee(write_start == write_end, "invariant");
+    }
+
+    // Verify no scribbling on prefix or suffix.
+    ASSERT_EQ(0, strncmp(buffer, check_buffer, prefix_size));
+    ASSERT_EQ(0, strncmp(write_end, check_buffer, suffix_size));
+  }
+
+  // Special case of 0-length buffer with empty (except for terminator) output.
+  check_snprintf_result(0, 0, pf(NULL, 0, "%s", ""), expect_count);
+  check_snprintf_result(0, 0, pf(NULL, 0, ""), expect_count);
+}
+
+// This is probably equivalent to os::snprintf, but we're being
+// explicit about what we're testing here.
+static int vsnprintf_wrapper(char* buf, size_t len, const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  int result = os::vsnprintf(buf, len, fmt, args);
+  va_end(args);
+  return result;
+}
+
+TEST(os, vsnprintf) {
+  test_snprintf(vsnprintf_wrapper, true);
+}
+
+TEST(os, snprintf) {
+  test_snprintf(os::snprintf, true);
+}
+
+// These are declared in jvm.h; test here, with related functions.
+extern "C" {
+int jio_vsnprintf(char*, size_t, const char*, va_list);
+int jio_snprintf(char*, size_t, const char*, ...);
+}
+
+// This is probably equivalent to jio_snprintf, but we're being
+// explicit about what we're testing here.
+static int jio_vsnprintf_wrapper(char* buf, size_t len, const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  int result = jio_vsnprintf(buf, len, fmt, args);
+  va_end(args);
+  return result;
+}
+
+TEST(os, jio_vsnprintf) {
+  test_snprintf(jio_vsnprintf_wrapper, false);
+}
+
+TEST(os, jio_snprintf) {
+  test_snprintf(jio_snprintf, false);
+}

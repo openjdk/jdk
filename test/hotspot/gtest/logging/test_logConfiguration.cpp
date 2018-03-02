@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ TEST_VM_F(LogConfigurationTest, describe) {
   EXPECT_FALSE(is_described(TestLogFileName)) << "Test output already exists!";
   set_log_config(TestLogFileName, what);
   EXPECT_TRUE(is_described(TestLogFileName));
-  EXPECT_TRUE(is_described("logging=trace"));
+  EXPECT_TRUE(is_described("all=trace"));
 }
 
 // Test updating an existing log output
@@ -125,7 +125,7 @@ TEST_VM_F(LogConfigurationTest, update_output) {
 
     // Verify configuration using LogConfiguration::describe
     EXPECT_TRUE(is_described("#0: stdout"));
-    EXPECT_TRUE(is_described("logging=info"));
+    EXPECT_TRUE(is_described("all=info"));
 
     // Verify by iterating over tagsets
     LogOutput* o = &StdoutLog;
@@ -154,7 +154,7 @@ TEST_VM_F(LogConfigurationTest, add_new_output) {
 
   // Verify new output using LogConfiguration::describe
   EXPECT_TRUE(is_described(TestLogFileName));
-  EXPECT_TRUE(is_described("logging=trace"));
+  EXPECT_TRUE(is_described("all=trace"));
 
   // Also verify by iterating over tagsets, checking levels on tagsets
   for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
@@ -225,7 +225,7 @@ TEST_VM_F(LogConfigurationTest, reconfigure_decorators) {
 
   // Now reconfigure logging on stderr with no decorators
   set_log_config("stderr", "all=off", "none");
-  EXPECT_TRUE(is_described("#1: stderr all=off \n")) << "Expecting no decorators";
+  EXPECT_TRUE(is_described("#1: stderr all=off none (reconfigured)\n")) << "Expecting no decorators";
 }
 
 // Test that invalid options cause configuration errors
@@ -265,7 +265,7 @@ TEST_VM_F(LogConfigurationTest, parse_command_line_arguments) {
   bool success = LogConfiguration::parse_command_line_arguments(buf);
   EXPECT_TRUE(success) << "Error parsing valid command line arguments '" << buf << "'";
   // Ensure the new configuration applied
-  EXPECT_TRUE(is_described("logging=debug"));
+  EXPECT_TRUE(is_described("logging*=debug"));
   EXPECT_TRUE(is_described(_all_decorators));
 
   // Test the configuration of file outputs as well
@@ -383,7 +383,7 @@ TEST_VM_F(LogConfigurationTest, parse_invalid_tagset) {
   bool success = LogConfiguration::parse_log_arguments("stdout", invalid_tagset, NULL, NULL, &ss);
   const char* msg = ss.as_string();
   EXPECT_TRUE(success) << "Should only cause a warning, not an error";
-  EXPECT_TRUE(string_contains_substring(msg, "No tag set matches selection(s):"));
+  EXPECT_TRUE(string_contains_substring(msg, "No tag set matches selection:"));
   EXPECT_TRUE(string_contains_substring(msg, invalid_tagset));
 }
 
@@ -412,4 +412,49 @@ TEST_VM_F(LogConfigurationTest, output_name_normalization) {
   ret = jio_snprintf(buf, sizeof(buf), "file=%s", TestLogFileName);
   ASSERT_NE(-1, ret);
   delete_file(buf);
+}
+
+static size_t count_occurrences(const char* haystack, const char* needle) {
+  size_t count = 0;
+  for (const char* p = strstr(haystack, needle); p != NULL; p = strstr(p + 1, needle)) {
+    count++;
+  }
+  return count;
+}
+
+TEST_OTHER_VM(LogConfiguration, output_reconfigured) {
+  ResourceMark rm;
+  stringStream ss;
+
+  EXPECT_FALSE(is_described("(reconfigured)"));
+
+  bool success = LogConfiguration::parse_log_arguments("#1", "all=warning", NULL, NULL, &ss);
+  ASSERT_TRUE(success);
+  EXPECT_EQ(0u, ss.size());
+
+  LogConfiguration::describe(&ss);
+  EXPECT_EQ(1u, count_occurrences(ss.as_string(), "(reconfigured)"));
+
+  ss.reset();
+  LogConfiguration::configure_stdout(LogLevel::Info, false, LOG_TAGS(logging));
+  LogConfiguration::describe(&ss);
+  EXPECT_EQ(2u, count_occurrences(ss.as_string(), "(reconfigured)"));
+}
+
+TEST_VM_F(LogConfigurationTest, suggest_similar_selection) {
+  static const char* nonexisting_tagset = "logging+start+exit+safepoint+gc";
+
+  ResourceMark rm;
+  stringStream ss;
+  LogConfiguration::parse_log_arguments("stdout", nonexisting_tagset, NULL, NULL, &ss);
+
+  const char* suggestion = ss.as_string();
+  SCOPED_TRACE(suggestion);
+  EXPECT_TRUE(string_contains_substring(ss.as_string(), "Did you mean any of the following?"));
+  EXPECT_TRUE(string_contains_substring(suggestion, "logging") ||
+              string_contains_substring(suggestion, "start") ||
+              string_contains_substring(suggestion, "exit") ||
+              string_contains_substring(suggestion, "safepoint") ||
+              string_contains_substring(suggestion, "gc")) <<
+                  "suggestion must contain AT LEAST one of the tags in user supplied selection";
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   G1CollectedHeap* _g1h;
   RefToScanQueue*  _refs;
   DirtyCardQueue   _dcq;
-  G1SATBCardTableModRefBS* _ct_bs;
+  G1CardTable*     _ct;
   G1EvacuationRootClosures* _closures;
 
   G1PLABAllocator*  _plab_allocator;
@@ -72,7 +72,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 #define PADDING_ELEM_NUM (DEFAULT_CACHE_LINE_SIZE / sizeof(size_t))
 
   DirtyCardQueue& dirty_card_queue()             { return _dcq;  }
-  G1SATBCardTableModRefBS* ctbs()                { return _ct_bs; }
+  G1CardTable* ct()                              { return _ct; }
 
   InCSetState dest(InCSetState original) const {
     assert(original.is_valid(),
@@ -104,10 +104,10 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
     // If the field originates from the to-space, we don't need to include it
     // in the remembered set updates.
     if (!from->is_young()) {
-      size_t card_index = ctbs()->index_for(p);
+      size_t card_index = ct()->index_for(p);
       // If the card hasn't been added to the buffer, do it.
-      if (ctbs()->mark_card_deferred(card_index)) {
-        dirty_card_queue().enqueue((jbyte*)ctbs()->byte_for_index(card_index));
+      if (ct()->mark_card_deferred(card_index)) {
+        dirty_card_queue().enqueue((jbyte*)ct()->byte_for_index(card_index));
       }
     }
   }

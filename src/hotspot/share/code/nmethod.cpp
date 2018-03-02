@@ -44,6 +44,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -346,8 +346,9 @@ class SlowSignatureHandler
     _from -= Interpreter::stackElementSize;
 
     if (_num_args < Argument::n_float_register_parameters_c-1) {
+      assert((_num_args*2) < BitsPerWord, "_num_args*2 is out of range");
       *_reg_args++ = from_obj;
-      *_fp_identifiers |= (intptr_t)(0x01 << (_num_args*2)); // mark as float
+      *_fp_identifiers |= ((intptr_t)0x01 << (_num_args*2)); // mark as float
       _num_args++;
     } else {
       *_to++ = from_obj;
@@ -360,8 +361,9 @@ class SlowSignatureHandler
     _from -= 2*Interpreter::stackElementSize;
 
     if (_num_args < Argument::n_float_register_parameters_c-1) {
+      assert((_num_args*2) < BitsPerWord, "_num_args*2 is out of range");
       *_reg_args++ = from_obj;
-      *_fp_identifiers |= (intptr_t)(0x3 << (_num_args*2)); // mark as double
+      *_fp_identifiers |= ((intptr_t)0x3 << (_num_args*2)); // mark as double
       _num_args++;
     } else {
       *_to++ = from_obj;
