@@ -66,8 +66,9 @@ class MethodExitReturnValuesTarg {
     public static ClassLoader classLoaderValue;
     {
         try {
-            urls[0] = new URL("hi there");
-        } catch (java.net.MalformedURLException ee) {
+            urls[0] = new URL("file:/foo");
+        } catch (java.net.MalformedURLException ex) {
+            throw new AssertionError(ex);
         }
         classLoaderValue = new URLClassLoader(urls);
     }
