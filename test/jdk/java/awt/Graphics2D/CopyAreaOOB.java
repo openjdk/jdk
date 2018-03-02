@@ -24,11 +24,10 @@
 /*
  * @test
  * @key headful
- * @bug 6430601
+ * @bug 6430601 8198613
  * @summary Verifies that copyArea() works properly when the
  * destination parameters are outside the destination bounds.
  * @run main/othervm CopyAreaOOB
- * @run main/othervm -Dsun.java2d.opengl=True CopyAreaOOB
  * @author campbelc
  */
 

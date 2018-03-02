@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,13 @@
 /*
  @test
  @key headful
- @bug 6275887 6429971 6459792
+ @bug 6275887 6429971 6459792 8198613
  @summary Test that we don't crash when alt+tabbing in and out of
          fullscreen app
  @author Dmitri.Trembovetski@sun.com: area=FullScreen
  @run main/othervm/timeout=100  AltTabCrashTest -auto -changedm
  @run main/othervm/timeout=100 -Dsun.java2d.d3d=True AltTabCrashTest -auto -changedm
  @run main/othervm/timeout=100 -Dsun.java2d.d3d=True AltTabCrashTest -auto -usebs -changedm
- @run main/othervm/timeout=100 -Dsun.java2d.opengl=True AltTabCrashTest -auto
 */
 
 import java.awt.AWTException;

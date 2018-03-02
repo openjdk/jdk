@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,10 @@
 /*
  * @test
  * @key headful
- * @bug 5009033 6603000 6666362 8159142
+ * @bug 5009033 6603000 6666362 8159142 8198613
  * @summary Verifies that images transformed with bilinear filtering do not
  * leave artifacts at the edges.
  * @run main/othervm -Dsun.java2d.uiScale=2.5 DrawImageBilinear
- * @run main/othervm -Dsun.java2d.uiScale=2.5 -Dsun.java2d.opengl=True DrawImageBilinear
  * @run main/othervm -Dsun.java2d.uiScale=2.5 -Dsun.java2d.d3d=false DrawImageBilinear
  * @author campbelc
  */

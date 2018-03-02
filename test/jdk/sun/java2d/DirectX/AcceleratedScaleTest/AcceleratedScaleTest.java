@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,11 @@ import javax.imageio.ImageIO;
 /**
  * @test
  * @key headful
- * @bug 6429665
- * @bug 6588884
+ * @bug 6429665 6588884 8198613
  * @summary Tests that the transform is correctly handled
  * @author Dmitri.Trembovetski area=Graphics
  * @run main AcceleratedScaleTest
  * @run main/othervm -Dsun.java2d.d3d=true AcceleratedScaleTest
- * @run main/othervm -Dsun.java2d.opengl=true AcceleratedScaleTest
  */
 public class AcceleratedScaleTest {
     private static final int IMAGE_SIZE = 200;

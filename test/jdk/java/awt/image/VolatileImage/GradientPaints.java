@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,11 @@
 /*
  * @test
  * @key headful
- * @bug 6521533 6525997 7102282
- * @summary Verifies that the OGL-accelerated codepaths for GradientPaint,
+ * @bug 6521533 6525997 7102282 8198613
+ * @summary Verifies that the accelerated codepaths for GradientPaint,
  * LinearGradientPaint, and RadialGradientPaint produce results that are
  * sufficiently close to those produced by the software codepaths.
- * @run main/othervm -Dsun.java2d.uiScale=1 -Dsun.java2d.opengl=True GradientPaints
+ * @run main/othervm -Dsun.java2d.uiScale=1 GradientPaints
  * @author campbelc
  */
 

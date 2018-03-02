@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,13 @@
 
 /*
  * @test %I% %E%
- * @bug 6655001 6670649 6687141
+ * @bug 6655001 6670649 6687141 8198613
  * @summary Tests that hw acceleration doesn't affect translucent/shaped windows
  * @author Dmitri.Trembovetski@sun.com: area=Graphics
  * @compile -XDignore.symbol.file=true TranslucentShapedFrameTest.java
  * @compile -XDignore.symbol.file=true TSFrame.java
  * @run main/manual/othervm TranslucentShapedFrameTest
  * @run main/manual/othervm -Dsun.java2d.noddraw=true TranslucentShapedFrameTest
- * @run main/manual/othervm -Dsun.java2d.opengl=True TranslucentShapedFrameTest
  */
 import java.awt.Color;
 import java.awt.Frame;
