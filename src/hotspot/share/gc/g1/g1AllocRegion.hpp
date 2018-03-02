@@ -53,9 +53,6 @@ private:
   // correct use of init() and release()).
   HeapRegion* volatile _alloc_region;
 
-  // Allocation context associated with this alloc region.
-  AllocationContext_t _allocation_context;
-
   // It keeps track of the distinct number of regions that are used
   // for allocation in the active interval of this object, i.e.,
   // between a call to init() and a call to release(). The count
@@ -139,9 +136,6 @@ public:
     // Make sure that the dummy region does not escape this class.
     return (hr == _dummy_region) ? NULL : hr;
   }
-
-  void set_allocation_context(AllocationContext_t context) { _allocation_context = context; }
-  AllocationContext_t  allocation_context() { return _allocation_context; }
 
   uint count() { return _count; }
 
