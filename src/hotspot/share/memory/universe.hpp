@@ -294,6 +294,16 @@ class Universe: AllStatic {
   static oop short_mirror()                 { return check_mirror(_short_mirror); }
   static oop void_mirror()                  { return check_mirror(_void_mirror); }
 
+  static void set_int_mirror(oop m)         { _int_mirror = m;    }
+  static void set_float_mirror(oop m)       { _float_mirror = m;  }
+  static void set_double_mirror(oop m)      { _double_mirror = m; }
+  static void set_byte_mirror(oop m)        { _byte_mirror = m;   }
+  static void set_bool_mirror(oop m)        { _bool_mirror = m;   }
+  static void set_char_mirror(oop m)        { _char_mirror = m;   }
+  static void set_long_mirror(oop m)        { _long_mirror = m;   }
+  static void set_short_mirror(oop m)       { _short_mirror = m;  }
+  static void set_void_mirror(oop m)        { _void_mirror = m;   }
+
   // table of same
   static oop _mirrors[T_VOID+1];
 
