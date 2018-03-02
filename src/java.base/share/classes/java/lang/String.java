@@ -3005,9 +3005,8 @@ public final class String
         final byte[] multiple = new byte[limit];
         System.arraycopy(value, 0, multiple, 0, len);
         int copied = len;
-        for (int next = copied << 1; next < limit && 0 < next; next = next << 1) {
+        for (; copied < limit - copied; copied <<= 1) {
             System.arraycopy(multiple, 0, multiple, copied, copied);
-            copied = next;
         }
         System.arraycopy(multiple, 0, multiple, copied, limit - copied);
         return new String(multiple, coder);
