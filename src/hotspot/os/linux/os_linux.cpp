@@ -203,7 +203,7 @@ julong os::physical_memory() {
     jlong mem_limit;
     if ((mem_limit = OSContainer::memory_limit_in_bytes()) > 0) {
       log_trace(os)("total container memory: " JLONG_FORMAT, mem_limit);
-      return phys_mem;
+      return mem_limit;
     }
     log_debug(os, container)("container memory limit %s: " JLONG_FORMAT ", using host value",
                             mem_limit == OSCONTAINER_ERROR ? "failed" : "unlimited", mem_limit);
