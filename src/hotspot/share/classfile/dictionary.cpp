@@ -481,6 +481,7 @@ static bool is_jfr_event_class(Klass *k) {
 void Dictionary::reorder_dictionary_for_sharing() {
 
   // Copy all the dictionary entries into a single master list.
+  assert(DumpSharedSpaces, "Should only be used at dump time");
 
   DictionaryEntry* master_list = NULL;
   for (int i = 0; i < table_size(); ++i) {
@@ -488,7 +489,7 @@ void Dictionary::reorder_dictionary_for_sharing() {
     while (p != NULL) {
       DictionaryEntry* next = p->next();
       InstanceKlass*ik = p->instance_klass();
-      if (ik->signers() != NULL) {
+      if (ik->has_signer_and_not_archived()) {
         // We cannot include signed classes in the archive because the certificates
         // used during dump time may be different than those used during
         // runtime (due to expiration, etc).
