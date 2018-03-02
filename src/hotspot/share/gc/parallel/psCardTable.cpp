@@ -23,10 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/parallel/cardTableExtension.hpp"
 #include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
+#include "gc/parallel/psCardTable.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psTasks.hpp"
@@ -39,9 +39,9 @@
 // may be either dirty or newgen.
 class CheckForUnmarkedOops : public OopClosure {
  private:
-  PSYoungGen*         _young_gen;
-  CardTableExtension* _card_table;
-  HeapWord*           _unmarked_addr;
+  PSYoungGen*  _young_gen;
+  PSCardTable* _card_table;
+  HeapWord*    _unmarked_addr;
 
  protected:
   template <class T> void do_oop_work(T* p) {
@@ -56,7 +56,7 @@ class CheckForUnmarkedOops : public OopClosure {
   }
 
  public:
-  CheckForUnmarkedOops(PSYoungGen* young_gen, CardTableExtension* card_table) :
+  CheckForUnmarkedOops(PSYoungGen* young_gen, PSCardTable* card_table) :
     _young_gen(young_gen), _card_table(card_table), _unmarked_addr(NULL) { }
 
   virtual void do_oop(oop* p)       { CheckForUnmarkedOops::do_oop_work(p); }
@@ -71,16 +71,14 @@ class CheckForUnmarkedOops : public OopClosure {
 // precise or imprecise, dirty or newgen.
 class CheckForUnmarkedObjects : public ObjectClosure {
  private:
-  PSYoungGen*         _young_gen;
-  CardTableExtension* _card_table;
+  PSYoungGen*  _young_gen;
+  PSCardTable* _card_table;
 
  public:
   CheckForUnmarkedObjects() {
     ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
     _young_gen = heap->young_gen();
-    _card_table = barrier_set_cast<CardTableExtension>(heap->barrier_set());
-    // No point in asserting barrier set type here. Need to make CardTableExtension
-    // a unique barrier set type.
+    _card_table = heap->card_table();
   }
 
   // Card marks are not precise. The current system can leave us with
@@ -99,8 +97,8 @@ class CheckForUnmarkedObjects : public ObjectClosure {
 // Checks for precise marking of oops as newgen.
 class CheckForPreciseMarks : public OopClosure {
  private:
-  PSYoungGen*         _young_gen;
-  CardTableExtension* _card_table;
+  PSYoungGen*  _young_gen;
+  PSCardTable* _card_table;
 
  protected:
   template <class T> void do_oop_work(T* p) {
@@ -112,7 +110,7 @@ class CheckForPreciseMarks : public OopClosure {
   }
 
  public:
-  CheckForPreciseMarks( PSYoungGen* young_gen, CardTableExtension* card_table ) :
+  CheckForPreciseMarks(PSYoungGen* young_gen, PSCardTable* card_table) :
     _young_gen(young_gen), _card_table(card_table) { }
 
   virtual void do_oop(oop* p)       { CheckForPreciseMarks::do_oop_work(p); }
@@ -128,12 +126,12 @@ class CheckForPreciseMarks : public OopClosure {
 // when the space is empty, fix the calculation of
 // end_card to allow sp_top == sp->bottom().
 
-void CardTableExtension::scavenge_contents_parallel(ObjectStartArray* start_array,
-                                                    MutableSpace* sp,
-                                                    HeapWord* space_top,
-                                                    PSPromotionManager* pm,
-                                                    uint stripe_number,
-                                                    uint stripe_total) {
+void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
+                                             MutableSpace* sp,
+                                             HeapWord* space_top,
+                                             PSPromotionManager* pm,
+                                             uint stripe_number,
+                                             uint stripe_total) {
   int ssize = 128; // Naked constant!  Work unit = 64k.
   int dirty_card_count = 0;
 
@@ -320,7 +318,7 @@ void CardTableExtension::scavenge_contents_parallel(ObjectStartArray* start_arra
 }
 
 // This should be called before a scavenge.
-void CardTableExtension::verify_all_young_refs_imprecise() {
+void PSCardTable::verify_all_young_refs_imprecise() {
   CheckForUnmarkedObjects check;
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
@@ -330,26 +328,21 @@ void CardTableExtension::verify_all_young_refs_imprecise() {
 }
 
 // This should be called immediately after a scavenge, before mutators resume.
-void CardTableExtension::verify_all_young_refs_precise() {
+void PSCardTable::verify_all_young_refs_precise() {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSOldGen* old_gen = heap->old_gen();
 
-  CheckForPreciseMarks check(
-    heap->young_gen(),
-    barrier_set_cast<CardTableExtension>(heap->barrier_set()));
+  CheckForPreciseMarks check(heap->young_gen(), this);
 
   old_gen->oop_iterate_no_header(&check);
 
   verify_all_young_refs_precise_helper(old_gen->object_space()->used_region());
 }
 
-void CardTableExtension::verify_all_young_refs_precise_helper(MemRegion mr) {
-  CardTableExtension* card_table =
-    barrier_set_cast<CardTableExtension>(ParallelScavengeHeap::heap()->barrier_set());
-
-  jbyte* bot = card_table->byte_for(mr.start());
-  jbyte* top = card_table->byte_for(mr.end());
-  while(bot <= top) {
+void PSCardTable::verify_all_young_refs_precise_helper(MemRegion mr) {
+  jbyte* bot = byte_for(mr.start());
+  jbyte* top = byte_for(mr.end());
+  while (bot <= top) {
     assert(*bot == clean_card || *bot == verify_card, "Found unwanted or unknown card mark");
     if (*bot == verify_card)
       *bot = youngergen_card;
@@ -357,7 +350,7 @@ void CardTableExtension::verify_all_young_refs_precise_helper(MemRegion mr) {
   }
 }
 
-bool CardTableExtension::addr_is_marked_imprecise(void *addr) {
+bool PSCardTable::addr_is_marked_imprecise(void *addr) {
   jbyte* p = byte_for(addr);
   jbyte val = *p;
 
@@ -376,7 +369,7 @@ bool CardTableExtension::addr_is_marked_imprecise(void *addr) {
 }
 
 // Also includes verify_card
-bool CardTableExtension::addr_is_marked_precise(void *addr) {
+bool PSCardTable::addr_is_marked_precise(void *addr) {
   jbyte* p = byte_for(addr);
   jbyte val = *p;
 
@@ -404,8 +397,7 @@ bool CardTableExtension::addr_is_marked_precise(void *addr) {
 // The method resize_covered_region_by_end() is analogous to
 // CardTableModRefBS::resize_covered_region() but
 // for regions that grow or shrink at the low end.
-void CardTableExtension::resize_covered_region(MemRegion new_region) {
-
+void PSCardTable::resize_covered_region(MemRegion new_region) {
   for (int i = 0; i < _cur_covered_regions; i++) {
     if (_covered[i].start() == new_region.start()) {
       // Found a covered region with the same start as the
@@ -439,13 +431,13 @@ void CardTableExtension::resize_covered_region(MemRegion new_region) {
   resize_covered_region_by_start(new_region);
 }
 
-void CardTableExtension::resize_covered_region_by_start(MemRegion new_region) {
-  CardTableModRefBS::resize_covered_region(new_region);
+void PSCardTable::resize_covered_region_by_start(MemRegion new_region) {
+  CardTable::resize_covered_region(new_region);
   debug_only(verify_guard();)
 }
 
-void CardTableExtension::resize_covered_region_by_end(int changed_region,
-                                                      MemRegion new_region) {
+void PSCardTable::resize_covered_region_by_end(int changed_region,
+                                               MemRegion new_region) {
   assert(SafepointSynchronize::is_at_safepoint(),
     "Only expect an expansion at the low end at a GC");
   debug_only(verify_guard();)
@@ -484,8 +476,8 @@ void CardTableExtension::resize_covered_region_by_end(int changed_region,
   debug_only(verify_guard();)
 }
 
-bool CardTableExtension::resize_commit_uncommit(int changed_region,
-                                                MemRegion new_region) {
+bool PSCardTable::resize_commit_uncommit(int changed_region,
+                                         MemRegion new_region) {
   bool result = false;
   // Commit new or uncommit old pages, if necessary.
   MemRegion cur_committed = _committed[changed_region];
@@ -506,13 +498,12 @@ bool CardTableExtension::resize_commit_uncommit(int changed_region,
 #ifdef ASSERT
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   assert(cur_committed.start() == align_up(cur_committed.start(), os::vm_page_size()),
-    "Starts should have proper alignment");
+         "Starts should have proper alignment");
 #endif
 
   jbyte* new_start = byte_for(new_region.start());
   // Round down because this is for the start address
-  HeapWord* new_start_aligned =
-    (HeapWord*)align_down((uintptr_t)new_start, os::vm_page_size());
+  HeapWord* new_start_aligned = align_down((HeapWord*)new_start, os::vm_page_size());
   // The guard page is always committed and should not be committed over.
   // This method is used in cases where the generation is growing toward
   // lower addresses but the guard region is still at the end of the
@@ -579,21 +570,20 @@ bool CardTableExtension::resize_commit_uncommit(int changed_region,
   return result;
 }
 
-void CardTableExtension::resize_update_committed_table(int changed_region,
-                                                       MemRegion new_region) {
+void PSCardTable::resize_update_committed_table(int changed_region,
+                                                MemRegion new_region) {
 
   jbyte* new_start = byte_for(new_region.start());
   // Set the new start of the committed region
-  HeapWord* new_start_aligned =
-    (HeapWord*)align_down(new_start, os::vm_page_size());
+  HeapWord* new_start_aligned = align_down((HeapWord*)new_start, os::vm_page_size());
   MemRegion new_committed = MemRegion(new_start_aligned,
-    _committed[changed_region].end());
+                                      _committed[changed_region].end());
   _committed[changed_region] = new_committed;
   _committed[changed_region].set_start(new_start_aligned);
 }
 
-void CardTableExtension::resize_update_card_table_entries(int changed_region,
-                                                          MemRegion new_region) {
+void PSCardTable::resize_update_card_table_entries(int changed_region,
+                                                   MemRegion new_region) {
   debug_only(verify_guard();)
   MemRegion original_covered = _covered[changed_region];
   // Initialize the card entries.  Only consider the
@@ -610,8 +600,8 @@ void CardTableExtension::resize_update_card_table_entries(int changed_region,
   while (entry < end) { *entry++ = clean_card; }
 }
 
-void CardTableExtension::resize_update_covered_table(int changed_region,
-                                                     MemRegion new_region) {
+void PSCardTable::resize_update_covered_table(int changed_region,
+                                              MemRegion new_region) {
   // Update the covered region
   _covered[changed_region].set_start(new_region.start());
   _covered[changed_region].set_word_size(new_region.word_size());
@@ -665,7 +655,7 @@ void CardTableExtension::resize_update_covered_table(int changed_region,
 //                               -------------
 //                      ^ returns this
 
-HeapWord* CardTableExtension::lowest_prev_committed_start(int ind) const {
+HeapWord* PSCardTable::lowest_prev_committed_start(int ind) const {
   assert(_cur_covered_regions >= 0, "Expecting at least on region");
   HeapWord* min_start = _committed[ind].start();
   for (int j = 0; j < ind; j++) {
@@ -678,6 +668,6 @@ HeapWord* CardTableExtension::lowest_prev_committed_start(int ind) const {
   return min_start;
 }
 
-bool CardTableExtension::is_in_young(oop obj) const {
+bool PSCardTable::is_in_young(oop obj) const {
   return ParallelScavengeHeap::heap()->is_in_young(obj);
 }

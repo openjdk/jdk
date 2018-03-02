@@ -246,7 +246,7 @@ class MemTracker : AllStatic {
     if (addr != NULL) {
       // uses thread stack malloc slot for book keeping number of threads
       MallocMemorySummary::record_malloc(0, mtThreadStack);
-      record_virtual_memory_reserve_and_commit(addr, size, CALLER_PC, mtThreadStack);
+      record_virtual_memory_reserve(addr, size, CALLER_PC, mtThreadStack);
     }
   }
 

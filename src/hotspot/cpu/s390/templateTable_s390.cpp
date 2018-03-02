@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -260,8 +260,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
       }
       break;
 #endif // INCLUDE_ALL_GCS
-    case BarrierSet::CardTableForRS:
-    case BarrierSet::CardTableExtension:
+    case BarrierSet::CardTableModRef:
     {
       if (val_is_null) {
         __ store_heap_oop_null(val, offset, base);

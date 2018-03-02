@@ -38,6 +38,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
 // Complain every extra number of unplanned local refs

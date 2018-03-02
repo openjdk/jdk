@@ -734,14 +734,8 @@ CollectedHeap* Universe::create_heap() {
 // HeapBased - Use compressed oops with heap base + encoding.
 
 jint Universe::initialize_heap() {
-  jint status = JNI_ERR;
-
-  _collectedHeap = create_heap_ext();
-  if (_collectedHeap == NULL) {
-    _collectedHeap = create_heap();
-  }
-
-  status = _collectedHeap->initialize();
+  _collectedHeap = create_heap();
+  jint status = _collectedHeap->initialize();
   if (status != JNI_OK) {
     return status;
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@
 #include "c1/c1_Defs.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
+#include "ci/ciUtilities.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_x86.hpp"
 #include "oops/compiledICHolder.hpp"
@@ -39,6 +42,7 @@
 #include "utilities/macros.hpp"
 #include "vmreg_x86.inline.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #endif
 
@@ -1632,10 +1636,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         // arg0: store_address
         Address store_addr(rbp, 2*BytesPerWord);
 
-        CardTableModRefBS* ct =
-          barrier_set_cast<CardTableModRefBS>(Universe::heap()->barrier_set());
-        assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
-
         Label done;
         Label enqueued;
         Label runtime;
@@ -1657,25 +1657,25 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         const Register card_addr = rcx;
 
         f.load_argument(0, card_addr);
-        __ shrptr(card_addr, CardTableModRefBS::card_shift);
+        __ shrptr(card_addr, CardTable::card_shift);
         // Do not use ExternalAddress to load 'byte_map_base', since 'byte_map_base' is NOT
         // a valid address and therefore is not properly handled by the relocation code.
-        __ movptr(cardtable, (intptr_t)ct->byte_map_base);
+        __ movptr(cardtable, ci_card_table_address_as<intptr_t>());
         __ addptr(card_addr, cardtable);
 
         NOT_LP64(__ get_thread(thread);)
 
-        __ cmpb(Address(card_addr, 0), (int)G1SATBCardTableModRefBS::g1_young_card_val());
+        __ cmpb(Address(card_addr, 0), (int)G1CardTable::g1_young_card_val());
         __ jcc(Assembler::equal, done);
 
         __ membar(Assembler::Membar_mask_bits(Assembler::StoreLoad));
-        __ cmpb(Address(card_addr, 0), (int)CardTableModRefBS::dirty_card_val());
+        __ cmpb(Address(card_addr, 0), (int)CardTable::dirty_card_val());
         __ jcc(Assembler::equal, done);
 
         // storing region crossing non-NULL, card is clean.
         // dirty card and log.
 
-        __ movb(Address(card_addr, 0), (int)CardTableModRefBS::dirty_card_val());
+        __ movb(Address(card_addr, 0), (int)CardTable::dirty_card_val());
 
         const Register tmp = rdx;
         __ push(rdx);

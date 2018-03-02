@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/interfaceSupport.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/threadSMR.hpp"
@@ -628,6 +629,11 @@ Handle JVMCIRuntime::callStatic(const char* className, const char* methodName, c
     JavaCalls::call_static(&result, klass, runtime, sig, args, CHECK_(Handle()));
   }
   return Handle(THREAD, (oop)result.get_jobject());
+}
+
+Handle JVMCIRuntime::get_HotSpotJVMCIRuntime(TRAPS) {
+  initialize_JVMCI(CHECK_(Handle()));
+  return Handle(THREAD, JNIHandles::resolve_non_null(_HotSpotJVMCIRuntime_instance));
 }
 
 void JVMCIRuntime::initialize_HotSpotJVMCIRuntime(TRAPS) {

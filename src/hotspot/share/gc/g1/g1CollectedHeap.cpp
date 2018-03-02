@@ -52,6 +52,7 @@
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
+#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1YCTypes.hpp"
 #include "gc/g1/g1YoungRemSetSamplingThread.hpp"
@@ -103,10 +104,10 @@ class RedirtyLoggedCardTableEntryClosure : public CardTableEntryClosure {
  private:
   size_t _num_dirtied;
   G1CollectedHeap* _g1h;
-  G1SATBCardTableLoggingModRefBS* _g1_bs;
+  G1CardTable* _g1_ct;
 
   HeapRegion* region_for_card(jbyte* card_ptr) const {
-    return _g1h->heap_region_containing(_g1_bs->addr_for(card_ptr));
+    return _g1h->heap_region_containing(_g1_ct->addr_for(card_ptr));
   }
 
   bool will_become_free(HeapRegion* hr) const {
@@ -117,14 +118,14 @@ class RedirtyLoggedCardTableEntryClosure : public CardTableEntryClosure {
 
  public:
   RedirtyLoggedCardTableEntryClosure(G1CollectedHeap* g1h) : CardTableEntryClosure(),
-    _num_dirtied(0), _g1h(g1h), _g1_bs(g1h->g1_barrier_set()) { }
+    _num_dirtied(0), _g1h(g1h), _g1_ct(g1h->card_table()) { }
 
   bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
     HeapRegion* hr = region_for_card(card_ptr);
 
     // Should only dirty cards in regions that won't be freed.
     if (!will_become_free(hr)) {
-      *card_ptr = CardTableModRefBS::dirty_card_val();
+      *card_ptr = G1CardTable::dirty_card_val();
       _num_dirtied++;
     }
 
@@ -1465,6 +1466,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   _young_gen_sampling_thread(NULL),
   _collector_policy(collector_policy),
   _soft_ref_policy(),
+  _card_table(NULL),
   _memory_manager("G1 Young Generation", "end of minor GC"),
   _full_gc_memory_manager("G1 Old Generation", "end of major GC"),
   _eden_pool(NULL),
@@ -1616,11 +1618,13 @@ jint G1CollectedHeap::initialize() {
   initialize_reserved_region((HeapWord*)heap_rs.base(), (HeapWord*)(heap_rs.base() + heap_rs.size()));
 
   // Create the barrier set for the entire reserved region.
-  G1SATBCardTableLoggingModRefBS* bs
-    = new G1SATBCardTableLoggingModRefBS(reserved_region());
+  G1CardTable* ct = new G1CardTable(reserved_region());
+  ct->initialize();
+  G1SATBCardTableLoggingModRefBS* bs = new G1SATBCardTableLoggingModRefBS(ct);
   bs->initialize();
   assert(bs->is_a(BarrierSet::G1SATBCTLogging), "sanity");
   set_barrier_set(bs);
+  _card_table = ct;
 
   // Create the hot card cache.
   _hot_card_cache = new G1HotCardCache(this);
@@ -1651,8 +1655,8 @@ jint G1CollectedHeap::initialize() {
 
   G1RegionToSpaceMapper* cardtable_storage =
     create_aux_memory_mapper("Card Table",
-                             G1SATBCardTableLoggingModRefBS::compute_size(g1_rs.size() / HeapWordSize),
-                             G1SATBCardTableLoggingModRefBS::heap_map_factor());
+                             G1CardTable::compute_size(g1_rs.size() / HeapWordSize),
+                             G1CardTable::heap_map_factor());
 
   G1RegionToSpaceMapper* card_counts_storage =
     create_aux_memory_mapper("Card Counts Table",
@@ -1666,7 +1670,7 @@ jint G1CollectedHeap::initialize() {
     create_aux_memory_mapper("Next Bitmap", bitmap_size, G1CMBitMap::heap_map_factor());
 
   _hrm.initialize(heap_storage, prev_bitmap_storage, next_bitmap_storage, bot_storage, cardtable_storage, card_counts_storage);
-  g1_barrier_set()->initialize(cardtable_storage);
+  _card_table->initialize(cardtable_storage);
   // Do later initialization work for concurrent refinement.
   _hot_card_cache->initialize(card_counts_storage);
 
@@ -1676,7 +1680,7 @@ jint G1CollectedHeap::initialize() {
   guarantee((max_regions() - 1) <= max_region_idx, "too many regions");
 
   // Also create a G1 rem set.
-  _g1_rem_set = new G1RemSet(this, g1_barrier_set(), _hot_card_cache);
+  _g1_rem_set = new G1RemSet(this, _card_table, _hot_card_cache);
   _g1_rem_set->initialize(max_capacity(), max_regions());
 
   size_t max_cards_per_region = ((size_t)1 << (sizeof(CardIdx_t)*BitsPerByte-1)) - 1;
@@ -2691,17 +2695,17 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
       if (!r->rem_set()->is_empty()) {
         guarantee(r->rem_set()->occupancy_less_or_equal_than(G1RSetSparseRegionEntries),
                   "Found a not-small remembered set here. This is inconsistent with previous assumptions.");
-        G1SATBCardTableLoggingModRefBS* bs = g1h->g1_barrier_set();
+        G1CardTable* ct = g1h->card_table();
         HeapRegionRemSetIterator hrrs(r->rem_set());
         size_t card_index;
         while (hrrs.has_next(card_index)) {
-          jbyte* card_ptr = (jbyte*)bs->byte_for_index(card_index);
+          jbyte* card_ptr = (jbyte*)ct->byte_for_index(card_index);
           // The remembered set might contain references to already freed
           // regions. Filter out such entries to avoid failing card table
           // verification.
-          if (g1h->is_in_closed_subset(bs->addr_for(card_ptr))) {
-            if (*card_ptr != CardTableModRefBS::dirty_card_val()) {
-              *card_ptr = CardTableModRefBS::dirty_card_val();
+          if (g1h->is_in_closed_subset(ct->addr_for(card_ptr))) {
+            if (*card_ptr != G1CardTable::dirty_card_val()) {
+              *card_ptr = G1CardTable::dirty_card_val();
               _dcq.enqueue(card_ptr);
             }
           }

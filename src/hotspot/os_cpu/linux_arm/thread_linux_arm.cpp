@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/barrierSet.inline.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableModRefBS.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/metaspaceShared.hpp"
@@ -42,7 +43,7 @@ void JavaThread::cache_global_variables() {
   }
 
   if (bs->is_a(BarrierSet::CardTableModRef)) {
-    _card_table_base = (address) (barrier_set_cast<CardTableModRefBS>(bs)->byte_map_base);
+    _card_table_base = (address) (barrier_set_cast<CardTableModRefBS>(bs)->card_table()->byte_map_base());
   } else {
     _card_table_base = NULL;
   }

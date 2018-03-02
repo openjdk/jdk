@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #include "asm/codeBuffer.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "gc/shared/cardTableModRefBS.hpp"
@@ -50,6 +51,7 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -3502,12 +3504,13 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
 
 // Write to card table for modification at store_addr - register is destroyed afterwards.
 void MacroAssembler::card_write_barrier_post(Register store_addr, Register tmp) {
-  CardTableModRefBS* bs = (CardTableModRefBS*) Universe::heap()->barrier_set();
-  assert(bs->kind() == BarrierSet::CardTableForRS ||
-         bs->kind() == BarrierSet::CardTableExtension, "wrong barrier");
+  BarrierSet* bs = Universe::heap()->barrier_set();
+  CardTableModRefBS* ctbs = barrier_set_cast<CardTableModRefBS>(bs);
+  CardTable* ct = ctbs->card_table();
+  assert(bs->kind() == BarrierSet::CardTableModRef, "wrong barrier");
   assert_different_registers(store_addr, tmp);
-  z_srlg(store_addr, store_addr, CardTableModRefBS::card_shift);
-  load_absolute_address(tmp, (address)bs->byte_map_base);
+  z_srlg(store_addr, store_addr, CardTable::card_shift);
+  load_absolute_address(tmp, (address)ct->byte_map_base());
   z_agr(store_addr, tmp);
   z_mvi(0, store_addr, 0); // Store byte 0.
 }
@@ -3707,6 +3710,7 @@ void MacroAssembler::g1_write_barrier_post(Register Rstore_addr,
   assert_different_registers(Rstore_addr, Rnew_val, Rtmp1, Rtmp2); // Most probably, Rnew_val == Rtmp3.
 
   G1SATBCardTableModRefBS* bs = (G1SATBCardTableModRefBS*) Universe::heap()->barrier_set();
+  CardTable* ct = bs->card_table();
   assert(bs->kind() == BarrierSet::G1SATBCTLogging, "wrong barrier");
 
   BLOCK_COMMENT("g1_write_barrier_post {");
@@ -3733,33 +3737,33 @@ void MacroAssembler::g1_write_barrier_post(Register Rstore_addr,
   Rnew_val = noreg; // end of lifetime
 
   // Storing region crossing non-NULL, is card already dirty?
-  assert(sizeof(*bs->byte_map_base) == sizeof(jbyte), "adjust this code");
+  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
   assert_different_registers(Rtmp1, Rtmp2, Rtmp3);
   // Make sure not to use Z_R0 for any of these registers.
   Register Rcard_addr = (Rtmp1 != Z_R0_scratch) ? Rtmp1 : Rtmp3;
   Register Rbase      = (Rtmp2 != Z_R0_scratch) ? Rtmp2 : Rtmp3;
 
   // calculate address of card
-  load_const_optimized(Rbase, (address)bs->byte_map_base);        // Card table base.
-  z_srlg(Rcard_addr, Rstore_addr, CardTableModRefBS::card_shift); // Index into card table.
+  load_const_optimized(Rbase, (address)ct->byte_map_base());      // Card table base.
+  z_srlg(Rcard_addr, Rstore_addr, CardTable::card_shift);         // Index into card table.
   z_algr(Rcard_addr, Rbase);                                      // Explicit calculation needed for cli.
   Rbase = noreg; // end of lifetime
 
   // Filter young.
-  assert((unsigned int)G1SATBCardTableModRefBS::g1_young_card_val() <= 255, "otherwise check this code");
-  z_cli(0, Rcard_addr, (int)G1SATBCardTableModRefBS::g1_young_card_val());
+  assert((unsigned int)G1CardTable::g1_young_card_val() <= 255, "otherwise check this code");
+  z_cli(0, Rcard_addr, (int)G1CardTable::g1_young_card_val());
   z_bre(filtered);
 
   // Check the card value. If dirty, we're done.
   // This also avoids false sharing of the (already dirty) card.
   z_sync(); // Required to support concurrent cleaning.
-  assert((unsigned int)CardTableModRefBS::dirty_card_val() <= 255, "otherwise check this code");
-  z_cli(0, Rcard_addr, CardTableModRefBS::dirty_card_val()); // Reload after membar.
+  assert((unsigned int)CardTable::dirty_card_val() <= 255, "otherwise check this code");
+  z_cli(0, Rcard_addr, CardTable::dirty_card_val()); // Reload after membar.
   z_bre(filtered);
 
   // Storing a region crossing, non-NULL oop, card is clean.
   // Dirty card and log.
-  z_mvi(0, Rcard_addr, CardTableModRefBS::dirty_card_val());
+  z_mvi(0, Rcard_addr, CardTable::dirty_card_val());
 
   Register Rcard_addr_x = Rcard_addr;
   Register Rqueue_index = (Rtmp2 != Z_R0_scratch) ? Rtmp2 : Rtmp1;

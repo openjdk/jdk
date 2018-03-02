@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@
 class LogTestFixture : public testing::Test {
  private:
   char _filename[2 * K];
+  size_t _n_snapshots;
+  char** _configuration_snapshot;
 
  protected:
   const char* TestLogFileName;
@@ -45,6 +47,8 @@ class LogTestFixture : public testing::Test {
                              const char* options = "",
                              bool allow_failure = false);
 
-  static void restore_default_log_config();
+  void snapshot_config();
+  void restore_config();
+  void clear_snapshot();
 };
 

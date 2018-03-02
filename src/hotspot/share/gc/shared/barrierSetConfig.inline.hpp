@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,8 @@
 
 #include "gc/shared/modRefBarrierSet.inline.hpp"
 #include "gc/shared/cardTableModRefBS.inline.hpp"
-#include "gc/shared/cardTableModRefBSForCTRS.hpp"
 
 #if INCLUDE_ALL_GCS
-#include "gc/parallel/cardTableExtension.hpp"       // Parallel support
 #include "gc/g1/g1SATBCardTableModRefBS.inline.hpp" // G1 support
 #endif
 
