@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -61,11 +61,13 @@ define SetupTestFilesCompilationBody
     $1_OUTPUT_SUBDIR := lib
     $1_CFLAGS := $(CFLAGS_TESTLIB) $(CFLAGS_WARNINGS_ARE_ERRORS)
     $1_LDFLAGS := $(LDFLAGS_TESTLIB) $(call SET_SHARED_LIBRARY_ORIGIN)
+    $1_COMPILATION_TYPE := LIBRARY
   else ifeq ($$($1_TYPE), PROGRAM)
     $1_PREFIX = exe
     $1_OUTPUT_SUBDIR := bin
     $1_CFLAGS := $(CFLAGS_TESTEXE) $(CFLAGS_WARNINGS_ARE_ERRORS)
     $1_LDFLAGS := $(LDFLAGS_TESTEXE)
+    $1_COMPILATION_TYPE := EXECUTABLE
   else
     $$(error Unknown type: $$($1_TYPE))
   endif
@@ -78,7 +80,8 @@ define SetupTestFilesCompilationBody
   $$(foreach file, $$($1_FILE_LIST),\
     $$(eval name := $$(strip $$(patsubst $$($1_PREFIX)%, %, $$(basename $$(notdir $$(file)))))) \
     $$(eval $$(call SetupNativeCompilation, BUILD_TEST_$$(name), \
-        $$($1_TYPE) := $$(name), \
+        NAME := $$(name), \
+        TYPE := $$($1_COMPILATION_TYPE), \
         SRC := $$(patsubst %/,%,$$(dir $$(file))), \
         INCLUDE_FILES := $$(notdir $$(file)), \
         OBJECT_DIR := $$($1_OUTPUT_DIR)/support/$$($1_PREFIX)$$(name), \

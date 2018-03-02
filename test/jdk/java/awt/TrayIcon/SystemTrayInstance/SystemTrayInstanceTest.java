@@ -25,6 +25,7 @@ import java.awt.*;
 
 /*
  * @test
+ * @key headful
  * @summary Check the getSystemTray method of the SystemTray. Checks if
  *          a proper instance is returned in supported platforms and a proper
  *          exception is thrown in unsupported platforms

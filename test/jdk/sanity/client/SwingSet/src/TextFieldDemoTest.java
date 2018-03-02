@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,7 @@ public class TextFieldDemoTest {
         JButtonOperator jbo = new JButtonOperator(containerOperator, GO);
         JLabelOperator dowLabel = new JLabelOperator(containerOperator);
         Calendar calendar = Calendar.getInstance(Locale.ENGLISH);
+        calendar.setTime((Date) getUIValue(jtfo, jtf -> ((JFormattedTextField)jtf).getValue()));
 
         // Check default date Day of the Week
         jbo.push();

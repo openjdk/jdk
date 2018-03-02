@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,8 @@ class _AppMenuBarHandler {
         return instance;
     }
 
+    private static ScreenMenuBar defaultMenuBar;
+
     // callback from the native delegate -init function
     private static void initMenuStates(final boolean aboutMenuItemVisible,
                                        final boolean aboutMenuItemEnabled,
@@ -76,6 +78,9 @@ class _AppMenuBarHandler {
 
     void setDefaultMenuBar(final JMenuBar menuBar) {
         installDefaultMenuBar(menuBar);
+        if (menuBar == null) {
+            return;
+        }
 
         // scan the current frames, and see if any are foreground
         final Frame[] frames = Frame.getFrames();
@@ -100,8 +105,13 @@ class _AppMenuBarHandler {
     }
 
     static void installDefaultMenuBar(final JMenuBar menuBar) {
+
         if (menuBar == null) {
             // intentionally clearing the default menu
+            if (defaultMenuBar != null) {
+                defaultMenuBar.removeNotify();
+                defaultMenuBar = null;
+            }
             nativeSetDefaultMenuBar(0);
             return;
         }
@@ -124,7 +134,14 @@ class _AppMenuBarHandler {
             throw new IllegalStateException("Application.setDefaultMenuBar() only works if apple.laf.useScreenMenuBar=true");
         }
 
-        screenMenuBar.addNotify();
+        if (screenMenuBar != defaultMenuBar) {
+            if (defaultMenuBar != null) {
+                defaultMenuBar.removeNotify();
+            }
+            defaultMenuBar = screenMenuBar;
+            screenMenuBar.addNotify();
+        }
+
         final Object peer = AWTAccessor.getMenuComponentAccessor().getPeer(screenMenuBar);
         if (!(peer instanceof CMenuBar)) {
             // such a thing should not be possible

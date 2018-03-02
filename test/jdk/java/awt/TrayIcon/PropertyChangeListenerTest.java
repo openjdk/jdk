@@ -28,6 +28,7 @@ import java.beans.PropertyChangeListener;
 
 /*
  * @test
+ * @key headful
  * @summary Check if custom property change listener added
  *          to system tray works correctly
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)

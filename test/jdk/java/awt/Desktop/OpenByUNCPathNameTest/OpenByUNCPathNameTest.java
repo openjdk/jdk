@@ -23,6 +23,8 @@
 
 /* @test
    @bug 6550588
+   @key headful
+   @requires (os.family == "windows")
    @summary java.awt.Desktop cannot open file with Windows UNC filename
    @author Anton Litvinov
 */

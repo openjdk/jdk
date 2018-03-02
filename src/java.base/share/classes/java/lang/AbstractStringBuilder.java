@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,29 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
             value = StringUTF16.newBytesFor(capacity);
             coder = UTF16;
         }
+    }
+
+    /**
+     * Compares the objects of two AbstractStringBuilder implementations lexicographically.
+     *
+     * @since 11
+     */
+    int compareTo(AbstractStringBuilder another) {
+        if (this == another) {
+            return 0;
+        }
+
+        byte val1[] = value;
+        byte val2[] = another.value;
+        int count1 = this.count;
+        int count2 = another.count;
+
+        if (coder == another.coder) {
+            return isLatin1() ? StringLatin1.compareTo(val1, val2, count1, count2)
+                              : StringUTF16.compareTo(val1, val2, count1, count2);
+        }
+        return isLatin1() ? StringLatin1.compareToUTF16(val1, val2, count1, count2)
+                          : StringUTF16.compareToLatin1(val1, val2, count1, count2);
     }
 
     /**

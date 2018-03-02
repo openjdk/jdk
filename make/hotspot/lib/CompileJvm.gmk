@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -210,8 +210,8 @@ JVM_STRIPFLAGS ?= $(STRIPFLAGS)
 # Now set up the actual compilation of the main hotspot native library
 
 $(eval $(call SetupNativeCompilation, BUILD_LIBJVM, \
+    NAME := jvm, \
     TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
-    LIBRARY := jvm, \
     OUTPUT_DIR := $(JVM_LIB_OUTPUTDIR), \
     SRC := $(JVM_SRC_DIRS), \
     EXCLUDES := $(JVM_EXCLUDES), \

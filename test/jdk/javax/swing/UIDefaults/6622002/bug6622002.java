@@ -26,6 +26,7 @@
  * @bug 6622002
  * @author Alexander Potochkin
  * @summary UIDefault.ProxyLazyValue has unsafe reflection usage
+ * @run main/othervm bug6622002
  */
 
 import javax.swing.*;

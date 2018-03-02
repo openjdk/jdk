@@ -27,6 +27,7 @@ import java.awt.image.BufferedImage;
 
 /*
  * @test
+ * @key headful
  * @summary Check if MouseEvents triggered by TrayIcon are visible
  *          by an AWTEventListener added to the Toolkit. It also
  *          checks if all listeners are triggered when AWTEventListeners

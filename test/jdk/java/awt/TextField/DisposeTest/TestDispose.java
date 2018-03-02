@@ -27,6 +27,7 @@
 
 /* @test
  * @bug 7155298
+ * @key headful
  * @run main/othervm/timeout=60 TestDispose
  * @summary Editable TextField blocks GUI application from exit.
  * @author Sean Chou

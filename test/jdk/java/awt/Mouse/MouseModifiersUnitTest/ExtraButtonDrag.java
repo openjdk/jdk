@@ -22,7 +22,7 @@
  */
 
 /*
-  @test %I% %E%
+  @test
   @key headful
   @bug 6315717
   @summary verifies that drag events are coming for every button if the property is set to true

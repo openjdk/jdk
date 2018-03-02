@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,8 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
   BUILD_LIBMLIB_LDLIBS += $(LIBM) $(LIBDL)
 endif
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBMLIB_IMAGE, \
-    LIBRARY := mlib_image, \
+$(eval $(call SetupNativeCompilation, BUILD_LIBMLIB_IMAGE, \
+    NAME := mlib_image, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(BUILD_LIBMLIB_SRC), \
     EXCLUDE_FILES := mlib_c_ImageBlendTable.c, \
@@ -107,8 +107,8 @@ ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH), solaris-sparc)
 
   LIBMLIB_IMAGE_V_CFLAGS += $(filter-out -DMLIB_NO_LIBSUNMATH, $(BUILD_LIBMLIB_CFLAGS))
 
-  $(eval $(call SetupNativeCompilation,BUILD_LIBMLIB_IMAGE_V, \
-      LIBRARY := mlib_image_v, \
+  $(eval $(call SetupNativeCompilation, BUILD_LIBMLIB_IMAGE_V, \
+      NAME := mlib_image_v, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBMLIB_IMAGE_V_SRC), \
       EXCLUDE_FILES := $(BUILD_LIBMLIB_IMAGE_V_EXFILES), \
@@ -226,8 +226,8 @@ ifeq ($(TOOLCHAIN_TYPE), gcc)
   LIBAWT_CFLAGS += -fgcse-after-reload
 endif
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBAWT, \
-    LIBRARY := awt, \
+$(eval $(call SetupNativeCompilation, BUILD_LIBAWT, \
+    NAME := awt, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBAWT_DIRS), \
     EXCLUDES := $(LIBAWT_EXCLUDES), \
@@ -347,8 +347,8 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
       BUILD_LIBAWT_XAWT_debug_mem.c_CFLAGS := -w
    endif
 
-    $(eval $(call SetupNativeCompilation,BUILD_LIBAWT_XAWT, \
-        LIBRARY := awt_xawt, \
+    $(eval $(call SetupNativeCompilation, BUILD_LIBAWT_XAWT, \
+        NAME := awt_xawt, \
         OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
         SRC := $(LIBAWT_XAWT_DIRS), \
         EXCLUDES := $(LIBAWT_XAWT_EXCLUDES), \
@@ -406,8 +406,8 @@ else
   LIBLCMS_CPPFLAGS += $(addprefix -I, $(LIBLCMS_SRC))
 endif
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBLCMS, \
-    LIBRARY := lcms, \
+$(eval $(call SetupNativeCompilation, BUILD_LIBLCMS, \
+    NAME := lcms, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBLCMS_SRC), \
     INCLUDE_FILES := $(BUILD_LIBLCMS_INCLUDE_FILES), \
@@ -483,8 +483,8 @@ else
   BUILD_LIBJAVAJPEG_HEADERS := $(addprefix -I, $(LIBJAVAJPEG_SRC))
 endif
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBJAVAJPEG, \
-    LIBRARY := javajpeg, \
+$(eval $(call SetupNativeCompilation, BUILD_LIBJAVAJPEG, \
+    NAME := javajpeg, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBJAVAJPEG_SRC), \
     INCLUDE_FILES := $(BUILD_LIBJAVAJPEG_INCLUDE_FILES), \
@@ -547,8 +547,8 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS), windows macosx),)
     endif
   endif
 
-  $(eval $(call SetupNativeCompilation,BUILD_LIBAWT_HEADLESS, \
-      LIBRARY := awt_headless, \
+  $(eval $(call SetupNativeCompilation, BUILD_LIBAWT_HEADLESS, \
+      NAME := awt_headless, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBAWT_HEADLESS_DIRS), \
       EXCLUDES := $(LIBAWT_HEADLESS_EXCLUDES), \
@@ -657,8 +657,8 @@ ifeq ($(TOOLCHAIN_TYPE), gcc)
   BUILD_LIBFONTMANAGER_ExtensionSubtables.cpp_CXXFLAGS := -fno-strict-aliasing
 endif
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
-    LIBRARY := fontmanager, \
+$(eval $(call SetupNativeCompilation, BUILD_LIBFONTMANAGER, \
+    NAME := fontmanager, \
     OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfontmanager, \
     SRC := $(LIBFONTMANAGER_SRC), \
     EXCLUDE_FILES := $(LIBFONTMANAGER_EXCLUDE_FILES) \
@@ -691,7 +691,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
     LIBS := $(BUILD_LIBFONTMANAGER_FONTLIB), \
     LIBS_unix := -lawt -ljava -ljvm $(LIBM) $(LIBCXX), \
     LIBS_linux := -lc, \
-    LIBS_solaris := -lawt_headless -lc, \
+    LIBS_solaris := -lc, \
     LIBS_aix := -lawt_headless,\
     LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib user32.lib gdi32.lib \
         $(WIN_AWT_LIB), \
@@ -744,8 +744,8 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   ifeq ($(OPENJDK_TARGET_CPU), x86)
     KERNEL32_LIB := kernel32.lib
   endif
-  $(eval $(call SetupNativeCompilation,BUILD_LIBJAWT, \
-      LIBRARY := jawt, \
+  $(eval $(call SetupNativeCompilation, BUILD_LIBJAWT, \
+      NAME := jawt, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBJAWT_SRC), \
       INCLUDE_FILES := $(LIBJAWT_INCLUDE_FILES), \
@@ -804,8 +804,8 @@ else # OPENJDK_TARGET_OS not windows
     endif
   endif
 
-  $(eval $(call SetupNativeCompilation,BUILD_LIBJAWT, \
-      LIBRARY := jawt, \
+  $(eval $(call SetupNativeCompilation, BUILD_LIBJAWT, \
+      NAME := jawt, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBJAWT_SRC), \
       INCLUDE_FILES := $(JAWT_FILES), \
@@ -935,8 +935,8 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
     LIBSPLASHSCREEN_LIBS += $(X_LIBS) -lX11 -lXext $(LIBM) -lpthread -ldl
   endif
 
-  $(eval $(call SetupNativeCompilation,BUILD_LIBSPLASHSCREEN, \
-      LIBRARY := splashscreen, \
+  $(eval $(call SetupNativeCompilation, BUILD_LIBSPLASHSCREEN, \
+      NAME := splashscreen, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBSPLASHSCREEN_DIRS), \
       EXCLUDE_FILES := imageioJPEG.c jpegdecoder.c pngtest.c, \
@@ -1008,8 +1008,8 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
   LIBAWT_LWAWT_EXFILES := fontpath.c awt_Font.c X11Color.c
   LIBAWT_LWAWT_EXCLUDES := $(TOPDIR)/src/java.desktop/unix/native/common/awt/medialib
 
-  $(eval $(call SetupNativeCompilation,BUILD_LIBAWT_LWAWT, \
-      LIBRARY := awt_lwawt, \
+  $(eval $(call SetupNativeCompilation, BUILD_LIBAWT_LWAWT, \
+      NAME := awt_lwawt, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBAWT_LWAWT_DIRS), \
       INCLUDE_FILES := $(LIBAWT_LWAWT_FILES), \
@@ -1057,8 +1057,8 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
 
-  $(eval $(call SetupNativeCompilation,BUILD_LIBOSXUI, \
-      LIBRARY := osxui, \
+  $(eval $(call SetupNativeCompilation, BUILD_LIBOSXUI, \
+      NAME := osxui, \
       OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(TOPDIR)/src/java.desktop/macosx/native/libosxui, \
       OPTIMIZATION := LOW, \

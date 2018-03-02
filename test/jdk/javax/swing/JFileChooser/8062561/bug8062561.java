@@ -36,6 +36,8 @@ import javax.swing.filechooser.FileSystemView;
 /**
  * @test
  * @bug 8062561
+ * @key headful
+ * @requires (os.family == "windows")
  * @summary File system view returns null default directory
  * @library ../../../../lib/testlibrary
  * @modules java.desktop/sun.awt
