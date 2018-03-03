@@ -1056,15 +1056,6 @@ InstanceKlass* SystemDictionary::resolve_from_stream(Symbol* class_name,
                                                      Handle protection_domain,
                                                      ClassFileStream* st,
                                                      TRAPS) {
-#if INCLUDE_CDS
-  ResourceMark rm(THREAD);
-  if (DumpSharedSpaces && !class_loader.is_null() &&
-      !UseAppCDS && strcmp(class_name->as_C_string(), "Unnamed") != 0) {
-    // If AppCDS is not enabled, don't define the class at dump time (except for the "Unnamed"
-    // class, which is used by MethodHandles).
-    THROW_MSG_NULL(vmSymbols::java_lang_ClassNotFoundException(), class_name->as_C_string());
-  }
-#endif
 
   HandleMark hm(THREAD);
 
@@ -3079,13 +3070,17 @@ class CombineDictionariesClosure : public CLDClosure {
     }
 };
 
-// Combining platform and system loader dictionaries into boot loader dictionaries.
+// Combining platform and system loader dictionaries into boot loader dictionary.
 // During run time, we only have one shared dictionary.
 void SystemDictionary::combine_shared_dictionaries() {
   assert(DumpSharedSpaces, "dump time only");
-  Dictionary* master_dictionary = ClassLoaderData::the_null_class_loader_data()->dictionary();
-  CombineDictionariesClosure cdc(master_dictionary);
-  ClassLoaderDataGraph::cld_do(&cdc);
+  // If AppCDS isn't enabled, we only dump the classes in the boot loader dictionary
+  // into the shared archive.
+  if (UseAppCDS) {
+    Dictionary* master_dictionary = ClassLoaderData::the_null_class_loader_data()->dictionary();
+    CombineDictionariesClosure cdc(master_dictionary);
+    ClassLoaderDataGraph::cld_do(&cdc);
+  }
 
   // These tables are no longer valid or necessary. Keeping them around will
   // cause SystemDictionary::verify() to fail. Let's empty them.
