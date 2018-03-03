@@ -450,6 +450,11 @@ static void collect_array_classes(Klass* k) {
 
 class CollectClassesClosure : public KlassClosure {
   void do_klass(Klass* k) {
+    if (!UseAppCDS && !k->class_loader_data()->is_the_null_class_loader_data()) {
+      // AppCDS is not enabled. Let's omit non-boot classes.
+      return;
+    }
+
     if (!(k->is_instance_klass() && InstanceKlass::cast(k)->is_in_error_state())) {
       if (k->is_instance_klass() && InstanceKlass::cast(k)->signers() != NULL) {
         // Mark any class with signers and don't add to the _global_klass_objects
