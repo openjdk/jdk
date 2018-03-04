@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,20 +24,13 @@
  */
 
 /**
- * Defines the JDBC API.
- *
- * @uses java.sql.Driver
+ * Defines an API for supporting distributed transactions in JDBC.
  *
  * @moduleGraph
- * @since 9
+ * @since 11
  */
-module java.sql {
-    requires transitive java.logging;
-    requires transitive java.transaction.xa;
-    requires transitive java.xml;
+module java.transaction.xa {
 
-    exports java.sql;
-    exports javax.sql;
+    exports javax.transaction.xa;
 
-    uses java.sql.Driver;
 }

@@ -55,6 +55,7 @@ module java.se {
     requires transitive java.security.sasl;
     requires transitive java.sql;
     requires transitive java.sql.rowset;
+    requires transitive java.transaction.xa;
     requires transitive java.xml;
     requires transitive java.xml.crypto;
 }

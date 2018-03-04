@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,20 +24,13 @@
  */
 
 /**
- * Defines the JDBC API.
+ * Provides the API that defines the contract between the transaction manager
+ * and the resource manager, which allows the transaction manager to enlist
+ * and delist resource objects (supplied by the resource manager driver) in
+ * JTA transactions. The driver vendor for a specific resource manager provides
+ * the implementation of this API.
  *
- * @uses java.sql.Driver
- *
- * @moduleGraph
- * @since 9
+ * @since 1.4
  */
-module java.sql {
-    requires transitive java.logging;
-    requires transitive java.transaction.xa;
-    requires transitive java.xml;
 
-    exports java.sql;
-    exports javax.sql;
-
-    uses java.sql.Driver;
-}
+package javax.transaction.xa;

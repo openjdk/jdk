@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -24,20 +22,12 @@
  */
 
 /**
- * Defines the JDBC API.
- *
- * @uses java.sql.Driver
- *
- * @moduleGraph
- * @since 9
+ * @test
+ * @modules java.sql
+ * @compile
+ *   test/transaction/XAExceptionTests.java
+ *   util/SerializedTransactionExceptions.java
+ * @run testng/othervm JavaSqlModuleDriver
  */
-module java.sql {
-    requires transitive java.logging;
-    requires transitive java.transaction.xa;
-    requires transitive java.xml;
-
-    exports java.sql;
-    exports javax.sql;
-
-    uses java.sql.Driver;
+public class JavaSqlModuleDriver  extends test.transaction.XAExceptionTests {
 }
