@@ -64,7 +64,9 @@ public class DotFileTest {
                                     "java.xml -> java.base" )
             },
             { "java.sql",    Set.of("java.logging -> java.base",
+                                    "java.transaction.xa -> java.base",
                                     "java.sql -> java.logging",
+                                    "java.sql -> java.transaction.xa",
                                     "java.sql -> java.xml",
                                     "java.xml -> java.base" )
             }
@@ -79,7 +81,9 @@ public class DotFileTest {
                                     "java.xml -> java.base")
             },
             { "java.sql",    Set.of("java.logging -> java.base",
+                                    "java.transaction.xa -> java.base",
                                     "java.sql -> java.logging",
+                                    "java.sql -> java.transaction.xa",
                                     "java.sql -> java.xml",
                                     "java.xml -> java.base" )
             }

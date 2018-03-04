@@ -264,6 +264,7 @@ jdk_tools = \
 jdk_other = \
     java/sql \
     javax/sql \
+    javax/transaction \
     javax/rmi \
     javax/naming \
     javax/script \
