@@ -25,8 +25,8 @@
 
 package java.nio.charset;
 
-import java.lang.ref.WeakReference;
-import java.nio.*;
+import java.nio.BufferOverflowException;
+import java.nio.BufferUnderflowException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
@@ -190,34 +190,13 @@ public class CoderResult {
     public static final CoderResult OVERFLOW
         = new CoderResult(CR_OVERFLOW, 0);
 
-    private abstract static class Cache {
+    private static final class Cache {
+        static final Cache INSTANCE = new Cache();
+        private Cache() {}
 
-        private Map<Integer,WeakReference<CoderResult>> cache = null;
-
-        protected abstract CoderResult create(int len);
-
-        private CoderResult get(int len) {
-            Integer k = len;
-            WeakReference<CoderResult> w;
-            CoderResult e = null;
-            if (cache == null) {
-                cache = new ConcurrentHashMap<>();
-            } else if ((w = cache.get(k)) != null) {
-                e = w.get();
-            }
-            if (e == null) {
-                e = create(len);
-                cache.put(k, new WeakReference<>(e));
-            }
-            return e;
-        }
+        final Map<Integer, CoderResult> unmappable = new ConcurrentHashMap<>();
+        final Map<Integer, CoderResult> malformed  = new ConcurrentHashMap<>();
     }
-
-    private static final Cache malformedCache
-        = new Cache() {
-                public CoderResult create(int len) {
-                    return new CoderResult(CR_MALFORMED, len);
-                }};
 
     private static final CoderResult[] malformed4 = new CoderResult[] {
         new CoderResult(CR_MALFORMED, 1),
@@ -240,14 +219,9 @@ public class CoderResult {
             throw new IllegalArgumentException("Non-positive length");
         if (length <= 4)
             return malformed4[length - 1];
-        return malformedCache.get(length);
+        return Cache.INSTANCE.malformed.computeIfAbsent(length,
+                n -> new CoderResult(CR_MALFORMED, n));
     }
-
-    private static final Cache unmappableCache
-        = new Cache() {
-                public CoderResult create(int len) {
-                    return new CoderResult(CR_UNMAPPABLE, len);
-                }};
 
     private static final CoderResult[] unmappable4 = new CoderResult[] {
         new CoderResult(CR_UNMAPPABLE, 1),
@@ -270,7 +244,8 @@ public class CoderResult {
             throw new IllegalArgumentException("Non-positive length");
         if (length <= 4)
             return unmappable4[length - 1];
-        return unmappableCache.get(length);
+        return Cache.INSTANCE.unmappable.computeIfAbsent(length,
+                n -> new CoderResult(CR_UNMAPPABLE, n));
     }
 
     /**
