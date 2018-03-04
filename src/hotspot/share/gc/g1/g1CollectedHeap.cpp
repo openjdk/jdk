@@ -566,7 +566,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
 }
 
 void G1CollectedHeap::begin_archive_alloc_range(bool open) {
-  assert_at_safepoint(true /* should_be_vm_thread */);
+  assert_at_safepoint_on_vm_thread();
   if (_archive_allocator == NULL) {
     _archive_allocator = G1ArchiveAllocator::create_allocator(this, open);
   }
@@ -580,7 +580,7 @@ bool G1CollectedHeap::is_archive_alloc_too_large(size_t word_size) {
 }
 
 HeapWord* G1CollectedHeap::archive_mem_allocate(size_t word_size) {
-  assert_at_safepoint(true /* should_be_vm_thread */);
+  assert_at_safepoint_on_vm_thread();
   assert(_archive_allocator != NULL, "_archive_allocator not initialized");
   if (is_archive_alloc_too_large(word_size)) {
     return NULL;
@@ -590,7 +590,7 @@ HeapWord* G1CollectedHeap::archive_mem_allocate(size_t word_size) {
 
 void G1CollectedHeap::end_archive_alloc_range(GrowableArray<MemRegion>* ranges,
                                               size_t end_alignment_in_bytes) {
-  assert_at_safepoint(true /* should_be_vm_thread */);
+  assert_at_safepoint_on_vm_thread();
   assert(_archive_allocator != NULL, "_archive_allocator not initialized");
 
   // Call complete_archive to do the real work, filling in the MemRegion
@@ -983,7 +983,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
 
 HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(size_t word_size,
                                                            bool expect_null_mutator_alloc_region) {
-  assert_at_safepoint(true /* should_be_vm_thread */);
+  assert_at_safepoint_on_vm_thread();
   assert(!_allocator->has_mutator_alloc_region() || !expect_null_mutator_alloc_region,
          "the current alloc region was unexpectedly found to be non-NULL");
 
@@ -1154,7 +1154,7 @@ void G1CollectedHeap::print_heap_after_full_collection(G1HeapTransition* heap_tr
 
 bool G1CollectedHeap::do_full_collection(bool explicit_gc,
                                          bool clear_all_soft_refs) {
-  assert_at_safepoint(true /* should_be_vm_thread */);
+  assert_at_safepoint_on_vm_thread();
 
   if (GCLocker::check_active_before_gc()) {
     // Full GC was not completed.
@@ -1295,7 +1295,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
 
 HeapWord* G1CollectedHeap::satisfy_failed_allocation(size_t word_size,
                                                      bool* succeeded) {
-  assert_at_safepoint(true /* should_be_vm_thread */);
+  assert_at_safepoint_on_vm_thread();
 
   // Attempts to allocate followed by Full GC.
   HeapWord* result =
@@ -1347,7 +1347,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation(size_t word_size,
 // allocated block, or else "NULL".
 
 HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size) {
-  assert_at_safepoint(true /* should_be_vm_thread */);
+  assert_at_safepoint_on_vm_thread();
 
   _verifier->verify_region_sets_optional();
 
@@ -2817,7 +2817,7 @@ void G1CollectedHeap::start_new_collection_set() {
 
 bool
 G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
-  assert_at_safepoint(true /* should_be_vm_thread */);
+  assert_at_safepoint_on_vm_thread();
   guarantee(!is_gc_active(), "collection is not reentrant");
 
   if (GCLocker::check_active_before_gc()) {
@@ -4847,7 +4847,7 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
 };
 
 void G1CollectedHeap::eagerly_reclaim_humongous_regions() {
-  assert_at_safepoint(true);
+  assert_at_safepoint_on_vm_thread();
 
   if (!G1EagerReclaimHumongousObjects ||
       (!_has_humongous_reclaim_candidates && !log_is_enabled(Debug, gc, humongous))) {
@@ -5003,7 +5003,7 @@ public:
 };
 
 void G1CollectedHeap::tear_down_region_sets(bool free_list_only) {
-  assert_at_safepoint(true /* should_be_vm_thread */);
+  assert_at_safepoint_on_vm_thread();
 
   if (!free_list_only) {
     TearDownRegionSetsClosure cl(&_old_set);
@@ -5077,7 +5077,7 @@ public:
 };
 
 void G1CollectedHeap::rebuild_region_sets(bool free_list_only) {
-  assert_at_safepoint(true /* should_be_vm_thread */);
+  assert_at_safepoint_on_vm_thread();
 
   if (!free_list_only) {
     _eden.clear();

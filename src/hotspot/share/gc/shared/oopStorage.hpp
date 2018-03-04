@@ -241,8 +241,6 @@ private:
   void delete_empty_block(const Block& block);
   bool reduce_deferred_updates();
 
-  static void assert_at_safepoint() NOT_DEBUG_RETURN;
-
   template<typename F, typename Storage>
   static bool iterate_impl(F f, Storage* storage);
 

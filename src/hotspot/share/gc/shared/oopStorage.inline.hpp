@@ -30,6 +30,7 @@
 #include "metaprogramming/conditional.hpp"
 #include "metaprogramming/isConst.hpp"
 #include "oops/oop.hpp"
+#include "runtime/safepoint.hpp"
 #include "utilities/count_trailing_zeros.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
