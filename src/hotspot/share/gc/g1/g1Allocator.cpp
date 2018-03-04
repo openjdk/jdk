@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ void G1Allocator::reuse_retained_old_region(EvacuationInfo& evacuation_info,
 }
 
 void G1DefaultAllocator::init_gc_alloc_regions(EvacuationInfo& evacuation_info) {
-  assert_at_safepoint(true /* should_be_vm_thread */);
+  assert_at_safepoint_on_vm_thread();
 
   _survivor_is_full = false;
   _old_is_full = false;

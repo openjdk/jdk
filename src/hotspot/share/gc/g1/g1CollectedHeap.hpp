@@ -364,17 +364,11 @@ private:
                                    "should not be at a safepoint"));          \
   } while (0)
 
-#define assert_at_safepoint(_should_be_vm_thread_)                            \
+#define assert_at_safepoint_on_vm_thread()                                    \
   do {                                                                        \
-    assert(SafepointSynchronize::is_at_safepoint() &&                         \
-              ((_should_be_vm_thread_) == Thread::current()->is_VM_thread()), \
-           heap_locking_asserts_params("should be at a safepoint"));          \
-  } while (0)
-
-#define assert_not_at_safepoint()                                             \
-  do {                                                                        \
-    assert(!SafepointSynchronize::is_at_safepoint(),                          \
-           heap_locking_asserts_params("should not be at a safepoint"));      \
+    assert_at_safepoint();                                                    \
+    assert(Thread::current_or_null() != NULL, "no current thread");           \
+    assert(Thread::current()->is_VM_thread(), "current thread is not VM thread"); \
   } while (0)
 
 protected:

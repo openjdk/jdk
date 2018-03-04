@@ -85,12 +85,12 @@ inline HeapRegion* G1CollectedHeap::heap_region_containing(const T addr) const {
 }
 
 inline void G1CollectedHeap::reset_gc_time_stamp() {
-  assert_at_safepoint(true);
+  assert_at_safepoint_on_vm_thread();
   _gc_time_stamp = 0;
 }
 
 inline void G1CollectedHeap::increment_gc_time_stamp() {
-  assert_at_safepoint(true);
+  assert_at_safepoint_on_vm_thread();
   ++_gc_time_stamp;
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,7 +250,7 @@ bool DirtyCardQueueSet::refine_completed_buffer_concurrently(uint worker_i, size
 }
 
 bool DirtyCardQueueSet::apply_closure_during_gc(CardTableEntryClosure* cl, uint worker_i) {
-  assert_at_safepoint(false);
+  assert_at_safepoint();
   return apply_closure_to_completed_buffer(cl, worker_i, 0, true);
 }
 

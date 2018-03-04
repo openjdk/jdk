@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ inline bool G1ConcurrentMark::mark_in_next_bitmap(HeapRegion* const hr, oop cons
 #ifndef PRODUCT
 template<typename Fn>
 inline void G1CMMarkStack::iterate(Fn fn) const {
-  assert_at_safepoint(true);
+  assert_at_safepoint_on_vm_thread();
 
   size_t num_chunks = 0;
 
