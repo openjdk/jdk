@@ -1104,6 +1104,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
         }
 
         if ((e instanceof MouseEvent) && comp.isEnabled() &&
+            comp.isFocusable() &&
             (((comp instanceof TextComponent) &&
                     ((TextComponent)comp).isEditable()) ||
                 ((comp instanceof JTextComponent) &&
