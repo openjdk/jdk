@@ -313,8 +313,6 @@ private:
                                                          size_t size,
                                                          size_t translation_factor);
 
-  static G1Policy* create_g1_policy(STWGCTimer* gc_timer);
-
   void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 
   // These are macros so that, if the assert fires, we get the correct
