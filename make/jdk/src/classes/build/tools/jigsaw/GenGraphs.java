@@ -142,6 +142,7 @@ public class GenGraphs {
 
             ranks.add(Set.of("java.logging", "java.scripting", "java.xml"));
             ranks.add(Set.of("java.sql"));
+            ranks.add(Set.of("java.transaction.xa"));
             ranks.add(Set.of("java.compiler", "java.instrument"));
             ranks.add(Set.of("java.desktop", "java.management"));
 

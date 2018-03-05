@@ -28,8 +28,9 @@ import static org.testng.Assert.assertEquals;
 
 /*
  * @test
- * @bug 8077559
- * @summary Tests Compact String. This one is for String.compareTo.
+ * @bug 8077559 8137326
+ * @summary Tests Compact String. Verifies the compareTo method for String,
+ * StringBuilder and StringBuffer.
  * @run testng/othervm -XX:+CompactStrings CompareTo
  * @run testng/othervm -XX:-CompactStrings CompareTo
  */
@@ -86,6 +87,48 @@ public class CompareTo extends CompactString {
                                     expected,
                                     String.format(
                                             "testing String(%s).compareTo(%s), source : %s, ",
+                                            escapeNonASCIIs(data),
+                                            escapeNonASCIIs(anotherString),
+                                            source));
+                        });
+    }
+
+    /*
+     * Runs the same test with StringBuilder
+    */
+    @Test(dataProvider = "provider")
+    public void testStringBuilder(String str, String anotherString, int expected) {
+        StringBuilder another = new StringBuilder(anotherString);
+        map.get(str)
+                .forEach(
+                        (source, data) -> {
+                            StringBuilder sb = new StringBuilder(data);
+                            assertEquals(
+                                    sb.compareTo(another),
+                                    expected,
+                                    String.format(
+                                            "testing StringBuilder(%s).compareTo(%s), source : %s, ",
+                                            escapeNonASCIIs(data),
+                                            escapeNonASCIIs(anotherString),
+                                            source));
+                        });
+    }
+
+    /*
+     * Runs the same test with StringBuffer
+    */
+    @Test(dataProvider = "provider")
+    public void testStringBuffer(String str, String anotherString, int expected) {
+        StringBuffer another = new StringBuffer(anotherString);
+        map.get(str)
+                .forEach(
+                        (source, data) -> {
+                            StringBuffer sb = new StringBuffer(data);
+                            assertEquals(
+                                    sb.compareTo(another),
+                                    expected,
+                                    String.format(
+                                            "testing StringBuffer(%s).compareTo(%s), source : %s, ",
                                             escapeNonASCIIs(data),
                                             escapeNonASCIIs(anotherString),
                                             source));

@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2016, 2918, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,10 +24,13 @@
  */
 
 /**
- * @test
- * @modules java.sql
- * @compile
- *   test/transaction/XAExceptionTests.java
- *   util/SerializedTransactionExceptions.java
- * @run testng/othervm test.transaction.XAExceptionTests
+ * Provides the API that defines the contract between the transaction manager
+ * and the resource manager, which allows the transaction manager to enlist
+ * and delist resource objects (supplied by the resource manager driver) in
+ * JTA transactions. The driver vendor for a specific resource manager provides
+ * the implementation of this API.
+ *
+ * @since 1.4
  */
+
+package javax.transaction.xa;

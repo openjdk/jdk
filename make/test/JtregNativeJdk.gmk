@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ BUILD_JDK_JTREG_NATIVE_SRC += \
 
 ifneq ($(OPENJDK_TARGET_OS), windows)
     BUILD_JDK_JTREG_NATIVE_SRC += $(TOPDIR)/test/jdk/java/nio/channels/FileChannel/directio
+    BUILD_JDK_JTREG_NATIVE_SRC += $(TOPDIR)/test/jdk/java/nio/channels/spi/SelectorProvider/inheritedChannel
 endif
 
 BUILD_JDK_JTREG_OUTPUT_DIR := $(OUTPUTDIR)/support/test/jdk/jtreg/native
@@ -59,9 +60,14 @@ BUILD_JDK_JTREG_IMAGE_DIR := $(TEST_IMAGE_DIR)/jdk/jtreg
 ifeq ($(OPENJDK_TARGET_OS), windows)
     WIN_LIB_JAVA := $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib
     BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := $(WIN_LIB_JAVA)
+else ifeq ($(OPENJDK_TARGET_OS), linux)
+    BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := -ljava
+    BUILD_JDK_JTREG_LIBRARIES_LIBS_libDirectIO := -ljava
+    BUILD_JDK_JTREG_LIBRARIES_LIBS_libInheritedChannel := -ljava
 else ifeq ($(OPENJDK_TARGET_OS), solaris)
     BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := -ljava -lc
     BUILD_JDK_JTREG_LIBRARIES_LIBS_libDirectIO := -ljava -lc
+    BUILD_JDK_JTREG_LIBRARIES_LIBS_libInheritedChannel := -ljava -lc
 else
     BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := -ljava
     BUILD_JDK_JTREG_LIBRARIES_LIBS_libDirectIO := -ljava

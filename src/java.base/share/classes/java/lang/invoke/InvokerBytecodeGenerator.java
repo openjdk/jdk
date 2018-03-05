@@ -93,6 +93,10 @@ class InvokerBytecodeGenerator {
     private ClassWriter cw;
     private MethodVisitor mv;
 
+    /** Single element internal class name lookup cache. */
+    private Class<?> lastClass;
+    private String lastInternalName;
+
     private static final MemberName.Factory MEMBERNAME_FACTORY = MemberName.getFactory();
     private static final Class<?> HOST_CLASS = LambdaForm.class;
 
@@ -602,13 +606,18 @@ class InvokerBytecodeGenerator {
         mv.visitInsn(opcode);
     }
 
-    private static String getInternalName(Class<?> c) {
+    private String getInternalName(Class<?> c) {
         if (c == Object.class)             return OBJ;
         else if (c == Object[].class)      return OBJARY;
         else if (c == Class.class)         return CLS;
         else if (c == MethodHandle.class)  return MH;
         assert(VerifyAccess.isTypeVisible(c, Object.class)) : c.getName();
-        return c.getName().replace('.', '/');
+
+        if (c == lastClass) {
+            return lastInternalName;
+        }
+        lastClass = c;
+        return lastInternalName = c.getName().replace('.', '/');
     }
 
     private static MemberName resolveFrom(String name, MethodType type, Class<?> holder) {

@@ -26,11 +26,10 @@
  * @bug 8196770
  * @summary Verify capability to add a new entry to the directory using the
  *          ADD operation.
- * @modules java.xml.bind
- *          java.naming/com.sun.jndi.ldap
+ * @modules java.naming/com.sun.jndi.ldap
  * @library ../../lib/ /javax/naming/module/src/test/test/
  * @build LDAPServer LDAPTestUtils
- * @run main AddNewEntry
+ * @run main/othervm AddNewEntry
  */
 
 import javax.naming.NamingEnumeration;

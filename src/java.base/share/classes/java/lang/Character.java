@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -7568,12 +7568,33 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * specified {@code char}.  The result is a string of length
      * 1 consisting solely of the specified {@code char}.
      *
+     * @apiNote This method cannot handle <a
+     * href="#supplementary"> supplementary characters</a>. To support
+     * all Unicode characters, including supplementary characters, use
+     * the {@link #toString(int)} method.
+     *
      * @param c the {@code char} to be converted
      * @return the string representation of the specified {@code char}
      * @since 1.4
      */
     public static String toString(char c) {
         return String.valueOf(c);
+    }
+
+    /**
+     * Returns a {@code String} object representing the
+     * specified character (Unicode code point).  The result is a string of
+     * length 1 or 2, consisting solely of the specified {@code codePoint}.
+     *
+     * @param codePoint the {@code codePoint} to be converted
+     * @return the string representation of the specified {@code codePoint}
+     * @exception IllegalArgumentException if the specified
+     *      {@code codePoint} is not a {@linkplain #isValidCodePoint
+     *      valid Unicode code point}.
+     * @since 11
+     */
+    public static String toString(int codePoint) {
+        return String.valueOfCodePoint(codePoint);
     }
 
     /**
