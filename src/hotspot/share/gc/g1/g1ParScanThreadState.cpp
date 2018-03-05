@@ -329,7 +329,7 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
 G1ParScanThreadState* G1ParScanThreadStateSet::state_for_worker(uint worker_id) {
   assert(worker_id < _n_workers, "out of bounds access");
   if (_states[worker_id] == NULL) {
-    _states[worker_id] = new_par_scan_state(worker_id, _young_cset_length);
+    _states[worker_id] = new G1ParScanThreadState(_g1h, worker_id, _young_cset_length);
   }
   return _states[worker_id];
 }
