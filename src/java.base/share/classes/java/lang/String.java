@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3156,5 +3156,28 @@ public final class String
             throw new StringIndexOutOfBoundsException(
                 "begin " + begin + ", end " + end + ", length " + length);
         }
+    }
+
+    /**
+     * Returns the string representation of the {@code codePoint}
+     * argument.
+     *
+     * @param   codePoint a {@code codePoint}.
+     * @return  a string of length {@code 1} or {@code 2} containing
+     *          as its single character the argument {@code codePoint}.
+     * @throws IllegalArgumentException if the specified
+     *          {@code codePoint} is not a {@linkplain Character#isValidCodePoint
+     *          valid Unicode code point}.
+     */
+    static String valueOfCodePoint(int codePoint) {
+        if (COMPACT_STRINGS && StringLatin1.canEncode(codePoint)) {
+            return new String(StringLatin1.toBytes((char)codePoint), LATIN1);
+        } else if (Character.isBmpCodePoint(codePoint)) {
+            return new String(StringUTF16.toBytes((char)codePoint), UTF16);
+        } else if (Character.isSupplementaryCodePoint(codePoint)) {
+            return new String(StringUTF16.toBytesSupplementary(codePoint), UTF16);
+        }
+
+        throw new IllegalArgumentException("Not a valid Unicode code point");
     }
 }
