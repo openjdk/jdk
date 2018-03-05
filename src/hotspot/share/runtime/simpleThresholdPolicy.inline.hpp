@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_VM_RUNTIME_SIMPLETHRESHOLDPOLICY_INLINE_HPP
 
 #include "compiler/compilerOracle.hpp"
+#include "oops/method.inline.hpp"
 
 #ifdef TIERED
 
@@ -92,6 +93,14 @@ bool SimpleThresholdPolicy::is_trivial(Method* method) {
     return true;
   }
   return false;
+}
+
+inline CompLevel SimpleThresholdPolicy::comp_level(Method* method) {
+  CompiledMethod *nm = method->code();
+  if (nm != NULL && nm->is_in_use()) {
+    return (CompLevel)nm->comp_level();
+  }
+  return CompLevel_none;
 }
 
 #endif // TIERED

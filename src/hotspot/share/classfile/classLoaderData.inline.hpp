@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef SHARE_VM_CLASSFILE_CLASSLOADERDATA_INLINE_HPP
+#define SHARE_VM_CLASSFILE_CLASSLOADERDATA_INLINE_HPP
+
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
 #include "oops/oop.inline.hpp"
@@ -76,3 +79,5 @@ void ClassLoaderDataGraph::dec_array_classes(size_t count) {
   assert(count <= _num_array_classes, "Sanity");
   Atomic::sub(count, &_num_array_classes);
 }
+
+#endif // SHARE_VM_CLASSFILE_CLASSLOADERDATA_INLINE_HPP
