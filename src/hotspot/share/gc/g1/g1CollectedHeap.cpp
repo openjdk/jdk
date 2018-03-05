@@ -37,6 +37,7 @@
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
+#include "gc/g1/g1DefaultPolicy.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1FullCollector.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
@@ -1459,7 +1460,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   _old_pool(NULL),
   _gc_timer_stw(new (ResourceObj::C_HEAP, mtGC) STWGCTimer()),
   _gc_tracer_stw(new (ResourceObj::C_HEAP, mtGC) G1NewTracer()),
-  _g1_policy(create_g1_policy(_gc_timer_stw)),
+  _g1_policy(new G1DefaultPolicy(_gc_timer_stw)),
   _collection_set(this, _g1_policy),
   _dirty_card_queue_set(false),
   _is_alive_closure_cm(this),
