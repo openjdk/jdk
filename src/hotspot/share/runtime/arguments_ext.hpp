@@ -30,16 +30,11 @@
 
 class ArgumentsExt: AllStatic {
 public:
-  static inline void set_gc_specific_flags();
   // The argument processing extension. Returns true if there is
   // no additional parsing needed in Arguments::parse() for the option.
   // Otherwise returns false.
   static inline bool process_options(const JavaVMOption *option) { return false; }
   static inline void report_unsupported_options() { }
 };
-
-void ArgumentsExt::set_gc_specific_flags() {
-  Arguments::set_gc_specific_flags();
-}
 
 #endif // SHARE_VM_RUNTIME_ARGUMENTS_EXT_HPP

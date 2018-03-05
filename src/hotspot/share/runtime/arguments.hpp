@@ -539,7 +539,6 @@ class Arguments : AllStatic {
   // Adjusts the arguments after the OS have adjusted the arguments
   static jint adjust_after_os();
 
-  static void set_gc_specific_flags();
 #if INCLUDE_JVMCI
   // Check consistency of jvmci vm argument settings.
   static bool check_jvmci_args_consistency();

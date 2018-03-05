@@ -1856,11 +1856,6 @@ jint Arguments::set_ergonomics_flags() {
   return JNI_OK;
 }
 
-void Arguments::set_gc_specific_flags() {
-  // Set GC flags
-  GCArguments::arguments()->initialize_flags();
-}
-
 julong Arguments::limit_by_allocatable_memory(julong limit) {
   julong max_allocatable;
   julong result = limit;
@@ -4286,7 +4281,7 @@ jint Arguments::apply_ergo() {
   // Set heap size based on available physical memory
   set_heap_size();
 
-  ArgumentsExt::set_gc_specific_flags();
+  GCArguments::arguments()->initialize_flags();
 
   // Initialize Metaspace flags and alignments
   Metaspace::ergo_initialize();
