@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,11 +63,6 @@ public:
         assert(_app_paths_start_index == ClassLoaderExt::max_classpath_index, "must be");
       }
 #endif
-    }
-
-    bool check(const ClassFileStream* stream, const int classpath_index) {
-      CDS_ONLY(return ClassLoaderExt::check(this, stream, classpath_index);)
-      NOT_CDS(return true;)
     }
 
     bool should_verify(int classpath_index) {
@@ -155,10 +150,6 @@ public:
   static bool has_platform_or_app_classes() {
     return _has_app_classes || _has_platform_classes;
   }
-
-  static bool check(class ClassLoaderExt::Context *context,
-                    const ClassFileStream* stream,
-                    const int classpath_index);
 
   static void record_result(class ClassLoaderExt::Context *context,
                             Symbol* class_name,
