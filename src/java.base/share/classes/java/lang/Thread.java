@@ -1007,22 +1007,22 @@ class Thread implements Runnable {
      * @spec JSR-51
      */
     public void interrupt() {
-        Thread me = Thread.currentThread();
-        if (this != me)
+        if (this != Thread.currentThread()) {
             checkAccess();
 
-        // set interrupt status
-        interrupt0();
-
-        // thread may be blocked in an I/O operation
-        if (this != me && blocker != null) {
+            // thread may be blocked in an I/O operation
             synchronized (blockerLock) {
                 Interruptible b = blocker;
                 if (b != null) {
+                    interrupt0();  // set interrupt status
                     b.interrupt(this);
+                    return;
                 }
             }
         }
+
+        // set interrupt status
+        interrupt0();
     }
 
     /**

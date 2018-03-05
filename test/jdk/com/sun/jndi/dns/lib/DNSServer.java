@@ -23,7 +23,6 @@
 
 import sun.security.util.HexDumpEncoder;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -196,7 +195,7 @@ public class DNSServer implements Runnable {
      * Add an DNS encoding to the cache (by request message key).
      */
     private void addToCache(String hexString) {
-        byte[] encoding = DatatypeConverter.parseHexBinary(hexString);
+        byte[] encoding = parseHexBinary(hexString);
         if (encoding.length < DNS_HEADER_SIZE) {
             throw new RuntimeException("Invalid DNS message : " + hexString);
         }
@@ -260,5 +259,44 @@ public class DNSServer implements Runnable {
         payload[1] = packet.getData()[1];
 
         return payload;
+    }
+
+    public static byte[] parseHexBinary(String s) {
+
+        final int len = s.length();
+
+        // "111" is not a valid hex encoding.
+        if (len % 2 != 0) {
+            throw new IllegalArgumentException(
+                    "hexBinary needs to be even-length: " + s);
+        }
+
+        byte[] out = new byte[len / 2];
+
+        for (int i = 0; i < len; i += 2) {
+            int h = hexToBin(s.charAt(i));
+            int l = hexToBin(s.charAt(i + 1));
+            if (h == -1 || l == -1) {
+                throw new IllegalArgumentException(
+                        "contains illegal character for hexBinary: " + s);
+            }
+
+            out[i / 2] = (byte) (h * 16 + l);
+        }
+
+        return out;
+    }
+
+    private static int hexToBin(char ch) {
+        if ('0' <= ch && ch <= '9') {
+            return ch - '0';
+        }
+        if ('A' <= ch && ch <= 'F') {
+            return ch - 'A' + 10;
+        }
+        if ('a' <= ch && ch <= 'f') {
+            return ch - 'a' + 10;
+        }
+        return -1;
     }
 }

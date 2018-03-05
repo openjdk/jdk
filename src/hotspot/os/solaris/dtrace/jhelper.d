@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *  
+ *
  */
 
 /* This file is auto-generated */
@@ -30,7 +30,7 @@
 #ifdef DEBUG
 #define MARK_LINE this->line = __LINE__
 #else
-#define MARK_LINE 
+#define MARK_LINE
 #endif
 
 #ifdef _LP64
@@ -59,9 +59,8 @@ extern pointer __1cKBufferBlobG__vtbl_;
 #define copyin_int32(ADDR)  *(int32_t*)  copyin((pointer) (ADDR), sizeof(int32_t))
 #define copyin_uint8(ADDR)  *(uint8_t*)  copyin((pointer) (ADDR), sizeof(uint8_t))
 
-#define SAME(x) x
 #define copyin_offset(JVM_CONST)  JVM_CONST = \
-	copyin_int32(JvmOffsetsPtr + SAME(IDX_)JVM_CONST * sizeof(int32_t))
+	copyin_int32(JvmOffsetsPtr + IDX_##JVM_CONST * sizeof(int32_t))
 
 int init_done;
 
@@ -97,7 +96,7 @@ dtrace:helper:ustack:
 /!init_done && !this->done/
 {
   MARK_LINE;
-  
+
   copyin_offset(POINTER_SIZE);
   copyin_offset(COMPILER);
   copyin_offset(OFFSET_CollectedHeap_reserved);
@@ -158,7 +157,9 @@ dtrace:helper:ustack:
 #endif
 
   /* Read address of GrowableArray<CodeHeaps*> */
-  this->code_heaps_address = copyin_ptr(&``__1cJCodeCacheG_heaps_);
+  // this->code_heaps_address = copyin_ptr(&``__1cJCodeCacheG_heaps_);
+  this->code_heaps_address =  * ( uint64_t * ) copyin ( ( uint64_t ) ( &``__1cJCodeCacheG_heaps_ ) , sizeof ( uint64_t ) );
+
   /* Read address of _data array field in GrowableArray */
   this->code_heaps_array_address = copyin_ptr(this->code_heaps_address + OFFSET_GrowableArray_CodeHeap_data);
   this->number_of_heaps = copyin_uint32(this->code_heaps_address + OFFSET_GrowableArray_CodeHeap_len);
@@ -168,7 +169,9 @@ dtrace:helper:ustack:
   /*
    * Get Java heap bounds
    */
-  this->Universe_collectedHeap = copyin_ptr(&``__1cIUniverseO_collectedHeap_);
+  // this->Universe_collectedHeap = copyin_ptr(&``__1cIUniverseO_collectedHeap_);
+  this->Universe_collectedHeap =  * ( uint64_t * ) copyin ( ( uint64_t ) ( &``__1cIUniverseO_collectedHeap_ ) , sizeof ( uint64_t ) );
+
   this->heap_start = copyin_ptr(this->Universe_collectedHeap +
       OFFSET_CollectedHeap_reserved +
       OFFSET_MemRegion_start);
@@ -181,8 +184,8 @@ dtrace:helper:ustack:
 }
 
 /*
- * IMPORTANT: At the moment the ustack helper supports up to 5 code heaps in 
- * the code cache. If more code heaps are added the following probes have to 
+ * IMPORTANT: At the moment the ustack helper supports up to 5 code heaps in
+ * the code cache. If more code heaps are added the following probes have to
  * be extended. This is done by simply adding a probe to get the heap bounds
  * and another probe to set the code heap address of the newly created heap.
  */
@@ -197,7 +200,7 @@ dtrace:helper:ustack:
   /* CodeHeap 1 */
   init_done = 1;
   this->code_heap1_address = copyin_ptr(this->code_heaps_array_address);
-  this->code_heap1_low = copyin_ptr(this->code_heap1_address + 
+  this->code_heap1_low = copyin_ptr(this->code_heap1_address +
       OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_low);
   this->code_heap1_high = copyin_ptr(this->code_heap1_address +
       OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_high);
@@ -211,7 +214,7 @@ dtrace:helper:ustack:
   init_done = 2;
   this->code_heaps_array_address = this->code_heaps_array_address + POINTER_SIZE;
   this->code_heap2_address = copyin_ptr(this->code_heaps_array_address);
-  this->code_heap2_low = copyin_ptr(this->code_heap2_address + 
+  this->code_heap2_low = copyin_ptr(this->code_heap2_address +
       OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_low);
   this->code_heap2_high = copyin_ptr(this->code_heap2_address +
       OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_high);
@@ -224,7 +227,7 @@ dtrace:helper:ustack:
   init_done = 3;
   this->code_heaps_array_address = this->code_heaps_array_address + POINTER_SIZE;
   this->code_heap3_address = copyin_ptr(this->code_heaps_array_address);
-  this->code_heap3_low = copyin_ptr(this->code_heap3_address + 
+  this->code_heap3_low = copyin_ptr(this->code_heap3_address +
       OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_low);
   this->code_heap3_high = copyin_ptr(this->code_heap3_address +
       OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_high);
@@ -237,7 +240,7 @@ dtrace:helper:ustack:
   init_done = 4;
   this->code_heaps_array_address = this->code_heaps_array_address + POINTER_SIZE;
   this->code_heap4_address = copyin_ptr(this->code_heaps_array_address);
-  this->code_heap4_low = copyin_ptr(this->code_heap4_address + 
+  this->code_heap4_low = copyin_ptr(this->code_heap4_address +
       OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_low);
   this->code_heap4_high = copyin_ptr(this->code_heap4_address +
       OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_high);
@@ -250,7 +253,7 @@ dtrace:helper:ustack:
   init_done = 5;
   this->code_heaps_array_address = this->code_heaps_array_address + POINTER_SIZE;
   this->code_heap5_address = copyin_ptr(this->code_heaps_array_address);
-  this->code_heap5_low = copyin_ptr(this->code_heap5_address + 
+  this->code_heap5_low = copyin_ptr(this->code_heap5_address +
       OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_low);
   this->code_heap5_high = copyin_ptr(this->code_heap5_address +
       OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_high);
@@ -309,10 +312,10 @@ dtrace:helper:ustack:
 /!this->done && this->codecache/
 {
   MARK_LINE;
-  /* 
+  /*
    * Get code heap configuration
    */
-  this->code_heap_low = copyin_ptr(this->code_heap_address + 
+  this->code_heap_low = copyin_ptr(this->code_heap_address +
       OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_low);
   this->code_heap_segmap_low = copyin_ptr(this->code_heap_address +
       OFFSET_CodeHeap_segmap + OFFSET_VirtualSpace_low);
@@ -506,10 +509,10 @@ dtrace:helper:ustack:
   /*
    * Now we need to add a trailing '\0' and possibly a tag character.
    */
-  this->result[this->klassSymbolLength + 1 + 
+  this->result[this->klassSymbolLength + 1 +
       this->nameSymbolLength +
       this->signatureSymbolLength] = this->suffix;
-  this->result[this->klassSymbolLength + 2 + 
+  this->result[this->klassSymbolLength + 2 +
       this->nameSymbolLength +
       this->signatureSymbolLength] = '\0';
 
@@ -519,7 +522,7 @@ dtrace:helper:ustack:
 dtrace:helper:ustack:
 /this->done && this->error == (char *) NULL/
 {
-  this->result;   
+  this->result;
 }
 
 dtrace:helper:ustack:

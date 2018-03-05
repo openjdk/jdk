@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,35 +19,15 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-
-#include "generateJvmOffsets.h"
-
-const char *HELP =
-    "HELP: generateJvmOffsets {-header | -index | -table} \n";
-
-int main(int argc, const char *argv[]) {
-    GEN_variant gen_var;
-
-    if (argc != 2) {
-        printf("%s", HELP);
-        return 1;
-    }
-
-    if (0 == strcmp(argv[1], "-header")) {
-        gen_var = GEN_OFFSET;
-    }
-    else if (0 == strcmp(argv[1], "-index")) {
-        gen_var = GEN_INDEX;
-    }
-    else if (0 == strcmp(argv[1], "-table")) {
-        gen_var = GEN_TABLE;
-    }
-    else {
-        printf("%s", HELP);
-        return 1;
-    }
-    return generateJvmOffsets(gen_var);
+/**
+ * @test
+ * @modules java.transaction.xa
+ * @compile
+ *   test/transaction/XAExceptionTests.java
+ *   util/SerializedTransactionExceptions.java
+ * @run testng/othervm Driver
+ */
+public class Driver  extends test.transaction.XAExceptionTests {
 }

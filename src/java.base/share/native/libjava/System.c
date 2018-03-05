@@ -260,7 +260,6 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
         PUTPROP(props, "user.variant", sprops->variant);
     }
     PUTPROP(props, "file.encoding", sprops->encoding);
-    PUTPROP(props, "sun.jnu.encoding", sprops->sun_jnu_encoding);
     if (sprops->sun_stdout_encoding != NULL) {
         PUTPROP(props, "sun.stdout.encoding", sprops->sun_stdout_encoding);
     }
@@ -319,6 +318,7 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
     /* !!! DO NOT call PUTPROP_ForPlatformNString before this line !!!
      * !!! I18n properties have not been set up yet !!!
      */
+    InitializeEncoding(env, sprops->sun_jnu_encoding);
 
     /* Printing properties */
     /* Note: java.awt.printerjob is an implementation private property which
@@ -417,6 +417,9 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
     } else {
         (*env)->DeleteLocalRef(env, jVMVal);
     }
+
+    // Platform defined encoding properties override any on the command line
+    PUTPROP(props, "sun.jnu.encoding", sprops->sun_jnu_encoding);
 
     return ret;
 }
