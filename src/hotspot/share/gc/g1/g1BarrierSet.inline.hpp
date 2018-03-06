@@ -22,28 +22,29 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1SATBCARDTABLEMODREFBS_INLINE_HPP
-#define SHARE_VM_GC_G1_G1SATBCARDTABLEMODREFBS_INLINE_HPP
+#ifndef SHARE_VM_GC_G1_G1BARRIERSET_INLINE_HPP
+#define SHARE_VM_GC_G1_G1BARRIERSET_INLINE_HPP
 
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/shared/accessBarrierSupport.inline.hpp"
+#include "oops/oop.inline.hpp"
 
 template <DecoratorSet decorators, typename T>
-inline void G1SATBCardTableModRefBS::write_ref_field_pre(T* field) {
+inline void G1BarrierSet::write_ref_field_pre(T* field) {
   if (HasDecorator<decorators, AS_DEST_NOT_INITIALIZED>::value ||
       HasDecorator<decorators, AS_NO_KEEPALIVE>::value) {
     return;
   }
 
-  T heap_oop = oopDesc::load_heap_oop(field);
+  T heap_oop = RawAccess<MO_VOLATILE>::oop_load(field);
   if (!oopDesc::is_null(heap_oop)) {
     enqueue(oopDesc::decode_heap_oop_not_null(heap_oop));
   }
 }
 
 template <DecoratorSet decorators, typename T>
-inline void G1SATBCardTableLoggingModRefBS::write_ref_field_post(T* field, oop new_val) {
+inline void G1BarrierSet::write_ref_field_post(T* field, oop new_val) {
   volatile jbyte* byte = _card_table->byte_for(field);
   if (*byte != G1CardTable::g1_young_card_val()) {
     // Take a slow path for cards in old
@@ -51,7 +52,7 @@ inline void G1SATBCardTableLoggingModRefBS::write_ref_field_post(T* field, oop n
   }
 }
 
-inline void G1SATBCardTableModRefBS::enqueue_if_weak_or_archive(DecoratorSet decorators, oop value) {
+inline void G1BarrierSet::enqueue_if_weak_or_archive(DecoratorSet decorators, oop value) {
   assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "Reference strength must be known");
   // Archive roots need to be enqueued since they add subgraphs to the
   // Java heap that were not there at the snapshot when marking started.
@@ -68,7 +69,7 @@ inline void G1SATBCardTableModRefBS::enqueue_if_weak_or_archive(DecoratorSet dec
 
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
-inline oop G1SATBCardTableLoggingModRefBS::AccessBarrier<decorators, BarrierSetT>::
+inline oop G1BarrierSet::AccessBarrier<decorators, BarrierSetT>::
 oop_load_not_in_heap(T* addr) {
   oop value = ModRef::oop_load_not_in_heap(addr);
   enqueue_if_weak_or_archive(decorators, value);
@@ -77,7 +78,7 @@ oop_load_not_in_heap(T* addr) {
 
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
-inline oop G1SATBCardTableLoggingModRefBS::AccessBarrier<decorators, BarrierSetT>::
+inline oop G1BarrierSet::AccessBarrier<decorators, BarrierSetT>::
 oop_load_in_heap(T* addr) {
   oop value = ModRef::oop_load_in_heap(addr);
   enqueue_if_weak_or_archive(decorators, value);
@@ -85,7 +86,7 @@ oop_load_in_heap(T* addr) {
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
-inline oop G1SATBCardTableLoggingModRefBS::AccessBarrier<decorators, BarrierSetT>::
+inline oop G1BarrierSet::AccessBarrier<decorators, BarrierSetT>::
 oop_load_in_heap_at(oop base, ptrdiff_t offset) {
   oop value = ModRef::oop_load_in_heap_at(base, offset);
   enqueue_if_weak_or_archive(AccessBarrierSupport::resolve_possibly_unknown_oop_ref_strength<decorators>(base, offset), value);
@@ -94,15 +95,15 @@ oop_load_in_heap_at(oop base, ptrdiff_t offset) {
 
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
-inline void G1SATBCardTableLoggingModRefBS::AccessBarrier<decorators, BarrierSetT>::
+inline void G1BarrierSet::AccessBarrier<decorators, BarrierSetT>::
 oop_store_not_in_heap(T* addr, oop new_value) {
   if (HasDecorator<decorators, IN_CONCURRENT_ROOT>::value) {
     // For roots not scanned in a safepoint, we have to apply SATB barriers
     // even for roots.
-    G1SATBCardTableLoggingModRefBS *bs = barrier_set_cast<G1SATBCardTableLoggingModRefBS>(BarrierSet::barrier_set());
+    G1BarrierSet *bs = barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
     bs->write_ref_field_pre<decorators>(addr);
   }
   Raw::oop_store(addr, new_value);
 }
 
-#endif // SHARE_VM_GC_G1_G1SATBCARDTABLEMODREFBS_INLINE_HPP
+#endif // SHARE_VM_GC_G1_G1BARRIERSET_INLINE_HPP

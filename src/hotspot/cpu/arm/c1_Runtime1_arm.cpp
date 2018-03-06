@@ -43,8 +43,8 @@
 #include "utilities/align.hpp"
 #include "vmreg_arm.inline.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #endif
 
 // Note: Rtemp usage is this file should not impact C2 and should be

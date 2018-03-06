@@ -29,16 +29,9 @@
 
 #if INCLUDE_ALL_GCS
 #define FOR_EACH_CONCRETE_INCLUDE_ALL_GC_BARRIER_SET_DO(f) \
-  f(G1SATBCTLogging)
+  f(G1BarrierSet)
 #else
 #define FOR_EACH_CONCRETE_INCLUDE_ALL_GC_BARRIER_SET_DO(f)
-#endif
-
-#if INCLUDE_ALL_GCS
-#define FOR_EACH_ABSTRACT_INCLUDE_ALL_GC_BARRIER_SET_DO(f) \
-  f(G1SATBCT)
-#else
-#define FOR_EACH_ABSTRACT_INCLUDE_ALL_GC_BARRIER_SET_DO(f)
 #endif
 
 // Do something for each concrete barrier set part of the build.
@@ -47,8 +40,7 @@
   FOR_EACH_CONCRETE_INCLUDE_ALL_GC_BARRIER_SET_DO(f)
 
 #define FOR_EACH_ABSTRACT_BARRIER_SET_DO(f)          \
-  f(ModRef)                                          \
-  FOR_EACH_ABSTRACT_INCLUDE_ALL_GC_BARRIER_SET_DO(f)
+  f(ModRef)
 
 // Do something for each known barrier set.
 #define FOR_EACH_BARRIER_SET_DO(f)    \

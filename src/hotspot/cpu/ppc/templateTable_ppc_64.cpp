@@ -64,7 +64,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
 
   switch (barrier) {
 #if INCLUDE_ALL_GCS
-    case BarrierSet::G1SATBCTLogging:
+    case BarrierSet::G1BarrierSet:
       {
         // Load and record the previous value.
         __ g1_write_barrier_pre(Rbase, offset,

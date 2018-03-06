@@ -627,7 +627,7 @@ class StubGenerator: public StubCodeGenerator {
                                        Register preserve1 = noreg, Register preserve2 = noreg) {
     BarrierSet* const bs = Universe::heap()->barrier_set();
     switch (bs->kind()) {
-      case BarrierSet::G1SATBCTLogging:
+      case BarrierSet::G1BarrierSet:
         // With G1, don't generate the call if we statically know that the target in uninitialized
         if (!dest_uninitialized) {
           int spill_slots = 3;
@@ -689,7 +689,7 @@ class StubGenerator: public StubCodeGenerator {
     BarrierSet* const bs = Universe::heap()->barrier_set();
 
     switch (bs->kind()) {
-      case BarrierSet::G1SATBCTLogging:
+      case BarrierSet::G1BarrierSet:
         {
           int spill_slots = (preserve != noreg) ? 1 : 0;
           const int frame_size = align_up(frame::abi_reg_args_size + spill_slots * BytesPerWord, frame::alignment_in_bytes);

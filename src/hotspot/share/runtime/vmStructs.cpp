@@ -2237,8 +2237,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
                                                                           \
   declare_constant(BarrierSet::ModRef)                                    \
   declare_constant(BarrierSet::CardTableModRef)                           \
-  declare_constant(BarrierSet::G1SATBCT)                                  \
-  declare_constant(BarrierSet::G1SATBCTLogging)                           \
+  declare_constant(BarrierSet::G1BarrierSet)                              \
                                                                           \
   declare_constant(BOTConstants::LogN)                                    \
   declare_constant(BOTConstants::LogN_words)                              \

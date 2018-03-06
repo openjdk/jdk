@@ -2870,7 +2870,7 @@ class StubGenerator: public StubCodeGenerator {
   void gen_write_ref_array_pre_barrier(Register addr, Register count, int callee_saved_regs) {
     BarrierSet* bs = Universe::heap()->barrier_set();
     switch (bs->kind()) {
-    case BarrierSet::G1SATBCTLogging:
+    case BarrierSet::G1BarrierSet:
       {
         assert( addr->encoding() < callee_saved_regs, "addr must be saved");
         assert(count->encoding() < callee_saved_regs, "count must be saved");
@@ -2932,7 +2932,7 @@ class StubGenerator: public StubCodeGenerator {
     BarrierSet* bs = Universe::heap()->barrier_set();
 
     switch (bs->kind()) {
-    case BarrierSet::G1SATBCTLogging:
+    case BarrierSet::G1BarrierSet:
       {
         BLOCK_COMMENT("G1PostBarrier");
         if (addr != R0) {

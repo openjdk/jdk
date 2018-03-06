@@ -678,8 +678,7 @@ class StubGenerator: public StubCodeGenerator {
     assert_different_registers(start, count);
     BarrierSet* bs = Universe::heap()->barrier_set();
     switch (bs->kind()) {
-#if INCLUDE_ALL_GCS
-      case BarrierSet::G1SATBCTLogging:
+      case BarrierSet::G1BarrierSet:
         // With G1, don't generate the call if we statically know that the target in uninitialized
         if (!uninitialized_target) {
           Register thread = rax;
@@ -728,8 +727,7 @@ class StubGenerator: public StubCodeGenerator {
     BarrierSet* bs = Universe::heap()->barrier_set();
     assert_different_registers(start, count);
     switch (bs->kind()) {
-#if INCLUDE_ALL_GCS
-      case BarrierSet::G1SATBCTLogging:
+      case BarrierSet::G1BarrierSet:
         {
           __ pusha();                      // push registers
           __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post),

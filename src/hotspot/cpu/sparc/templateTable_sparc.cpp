@@ -55,7 +55,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
   assert(index == noreg || offset == 0, "only one offset");
   switch (barrier) {
 #if INCLUDE_ALL_GCS
-    case BarrierSet::G1SATBCTLogging:
+    case BarrierSet::G1BarrierSet:
       {
         // Load and record the previous value.
         __ g1_write_barrier_pre(base, index, offset,

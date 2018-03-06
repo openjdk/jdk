@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1BarrierSet.inline.hpp"
 #include "gc/g1/g1CardTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.inline.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/satbMarkQueue.hpp"
 #include "logging/log.hpp"
@@ -33,13 +33,12 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.inline.hpp"
 
-G1SATBCardTableModRefBS::G1SATBCardTableModRefBS(
-  G1CardTable* card_table,
-  const BarrierSet::FakeRtti& fake_rtti) :
-  CardTableModRefBS(card_table, fake_rtti.add_tag(BarrierSet::G1SATBCT))
+G1BarrierSet::G1BarrierSet(G1CardTable* card_table) :
+  CardTableModRefBS(card_table, BarrierSet::FakeRtti(BarrierSet::G1BarrierSet)),
+  _dcqs(JavaThread::dirty_card_queue_set())
 { }
 
-void G1SATBCardTableModRefBS::enqueue(oop pre_val) {
+void G1BarrierSet::enqueue(oop pre_val) {
   // Nulls should have been already filtered.
   assert(oopDesc::is_oop(pre_val, true), "Error");
 
@@ -55,7 +54,7 @@ void G1SATBCardTableModRefBS::enqueue(oop pre_val) {
 }
 
 template <class T> void
-G1SATBCardTableModRefBS::write_ref_array_pre_work(T* dst, int count) {
+G1BarrierSet::write_ref_array_pre_work(T* dst, int count) {
   if (!JavaThread::satb_mark_queue_set().is_active()) return;
   T* elem_ptr = dst;
   for (int i = 0; i < count; i++, elem_ptr++) {
@@ -66,24 +65,19 @@ G1SATBCardTableModRefBS::write_ref_array_pre_work(T* dst, int count) {
   }
 }
 
-void G1SATBCardTableModRefBS::write_ref_array_pre(oop* dst, int count, bool dest_uninitialized) {
+void G1BarrierSet::write_ref_array_pre(oop* dst, int count, bool dest_uninitialized) {
   if (!dest_uninitialized) {
     write_ref_array_pre_work(dst, count);
   }
 }
 
-void G1SATBCardTableModRefBS::write_ref_array_pre(narrowOop* dst, int count, bool dest_uninitialized) {
+void G1BarrierSet::write_ref_array_pre(narrowOop* dst, int count, bool dest_uninitialized) {
   if (!dest_uninitialized) {
     write_ref_array_pre_work(dst, count);
   }
 }
 
-G1SATBCardTableLoggingModRefBS::
-G1SATBCardTableLoggingModRefBS(G1CardTable* card_table) :
-  G1SATBCardTableModRefBS(card_table, BarrierSet::FakeRtti(G1SATBCTLogging)),
-  _dcqs(JavaThread::dirty_card_queue_set()) {}
-
-void G1SATBCardTableLoggingModRefBS::write_ref_field_post_slow(volatile jbyte* byte) {
+void G1BarrierSet::write_ref_field_post_slow(volatile jbyte* byte) {
   // In the slow path, we know a card is not young
   assert(*byte != G1CardTable::g1_young_card_val(), "slow path invoked without filtering");
   OrderAccess::storeload();
@@ -101,7 +95,7 @@ void G1SATBCardTableLoggingModRefBS::write_ref_field_post_slow(volatile jbyte* b
   }
 }
 
-void G1SATBCardTableLoggingModRefBS::invalidate(MemRegion mr) {
+void G1BarrierSet::invalidate(MemRegion mr) {
   if (mr.is_empty()) {
     return;
   }
@@ -141,7 +135,7 @@ void G1SATBCardTableLoggingModRefBS::invalidate(MemRegion mr) {
   }
 }
 
-void G1SATBCardTableLoggingModRefBS::on_thread_attach(JavaThread* thread) {
+void G1BarrierSet::on_thread_attach(JavaThread* thread) {
   // This method initializes the SATB and dirty card queues before a
   // JavaThread is added to the Java thread list. Right now, we don't
   // have to do anything to the dirty card queue (it should have been
@@ -171,7 +165,7 @@ void G1SATBCardTableLoggingModRefBS::on_thread_attach(JavaThread* thread) {
   }
 }
 
-void G1SATBCardTableLoggingModRefBS::on_thread_detach(JavaThread* thread) {
+void G1BarrierSet::on_thread_detach(JavaThread* thread) {
   // Flush any deferred card marks, SATB buffers and dirty card queue buffers
   CardTableModRefBS::on_thread_detach(thread);
   thread->satb_mark_queue().flush();

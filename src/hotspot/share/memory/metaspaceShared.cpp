@@ -38,7 +38,6 @@
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #endif
 #include "gc/shared/gcLocker.hpp"
 #include "interpreter/bytecodeStream.hpp"
