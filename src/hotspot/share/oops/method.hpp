@@ -809,7 +809,7 @@ class Method : public Metadata {
 
   // Clear methods
   static void clear_jmethod_ids(ClassLoaderData* loader_data);
-  static void print_jmethod_ids(ClassLoaderData* loader_data, outputStream* out) PRODUCT_RETURN;
+  static void print_jmethod_ids(const ClassLoaderData* loader_data, outputStream* out) PRODUCT_RETURN;
 
   // Get this method's jmethodID -- allocate if it doesn't exist
   jmethodID jmethod_id()                            { return method_holder()->get_jmethod_id(this); }
