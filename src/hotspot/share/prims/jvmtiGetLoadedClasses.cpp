@@ -31,7 +31,7 @@
 #include "runtime/thread.hpp"
 #include "utilities/stack.inline.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc/g1/g1BarrierSet.hpp"
 #endif
 
 
@@ -51,7 +51,7 @@ static void ensure_klass_alive(oop o) {
   // might not find the object.
 #if INCLUDE_ALL_GCS
   if (UseG1GC && o != NULL) {
-    G1SATBCardTableModRefBS::enqueue(o);
+    G1BarrierSet::enqueue(o);
   }
 #endif
 }

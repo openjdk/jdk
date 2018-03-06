@@ -154,7 +154,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
   assert(val == noreg || val == rax, "parameter is just for looks");
   switch (barrier) {
 #if INCLUDE_ALL_GCS
-    case BarrierSet::G1SATBCTLogging:
+    case BarrierSet::G1BarrierSet:
       {
         // flatten object address if needed
         // We do it regardless of precise because we need the registers

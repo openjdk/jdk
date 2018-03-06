@@ -51,9 +51,9 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/heapRegion.hpp"
 #endif
 
@@ -3709,9 +3709,9 @@ void MacroAssembler::g1_write_barrier_post(Register Rstore_addr,
 
   assert_different_registers(Rstore_addr, Rnew_val, Rtmp1, Rtmp2); // Most probably, Rnew_val == Rtmp3.
 
-  G1SATBCardTableModRefBS* bs = (G1SATBCardTableModRefBS*) Universe::heap()->barrier_set();
+  G1BarrierSet* bs = barrier_set_cast<G1BarrierSet>(Universe::heap()->barrier_set());
   CardTable* ct = bs->card_table();
-  assert(bs->kind() == BarrierSet::G1SATBCTLogging, "wrong barrier");
+  assert(bs->kind() == BarrierSet::G1BarrierSet, "wrong barrier");
 
   BLOCK_COMMENT("g1_write_barrier_post {");
 

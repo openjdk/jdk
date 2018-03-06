@@ -22,30 +22,27 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1SATBCARDTABLEMODREFBS_HPP
-#define SHARE_VM_GC_G1_G1SATBCARDTABLEMODREFBS_HPP
+#ifndef SHARE_VM_GC_G1_G1BARRIERSET_HPP
+#define SHARE_VM_GC_G1_G1BARRIERSET_HPP
 
-#include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/shared/cardTableModRefBS.hpp"
-#include "memory/memRegion.hpp"
-#include "oops/oop.hpp"
-#include "utilities/macros.hpp"
 
 class DirtyCardQueueSet;
-class G1SATBCardTableLoggingModRefBS;
 class CardTable;
 class G1CardTable;
 
 // This barrier is specialized to use a logging barrier to support
 // snapshot-at-the-beginning marking.
 
-class G1SATBCardTableModRefBS: public CardTableModRefBS {
+class G1BarrierSet: public CardTableModRefBS {
   friend class VMStructs;
-protected:
-  G1SATBCardTableModRefBS(G1CardTable* table, const BarrierSet::FakeRtti& fake_rtti);
-  ~G1SATBCardTableModRefBS() { }
+ private:
+  DirtyCardQueueSet& _dcqs;
 
-public:
+ public:
+  G1BarrierSet(G1CardTable* table);
+  ~G1BarrierSet() { }
+
   // Add "pre_val" to a set of objects that may have been disconnected from the
   // pre-marking object graph.
   static void enqueue(oop pre_val);
@@ -58,26 +55,6 @@ public:
 
   template <DecoratorSet decorators, typename T>
   void write_ref_field_pre(T* field);
-};
-
-template<>
-struct BarrierSet::GetName<G1SATBCardTableModRefBS> {
-  static const BarrierSet::Name value = BarrierSet::G1SATBCT;
-};
-
-template<>
-struct BarrierSet::GetType<BarrierSet::G1SATBCT> {
-  typedef G1SATBCardTableModRefBS type;
-};
-
-// Adds card-table logging to the post-barrier.
-// Usual invariant: all dirty cards are logged in the DirtyCardQueueSet.
-class G1SATBCardTableLoggingModRefBS: public G1SATBCardTableModRefBS {
- private:
-  DirtyCardQueueSet& _dcqs;
-
- public:
-  G1SATBCardTableLoggingModRefBS(G1CardTable* card_table);
 
   // NB: if you do a whole-heap invalidation, the "usual invariant" defined
   // above no longer applies.
@@ -94,7 +71,7 @@ class G1SATBCardTableLoggingModRefBS: public G1SATBCardTableModRefBS {
   virtual void on_thread_detach(JavaThread* thread);
 
   // Callbacks for runtime accesses.
-  template <DecoratorSet decorators, typename BarrierSetT = G1SATBCardTableLoggingModRefBS>
+  template <DecoratorSet decorators, typename BarrierSetT = G1BarrierSet>
   class AccessBarrier: public ModRefBarrierSet::AccessBarrier<decorators, BarrierSetT> {
     typedef ModRefBarrierSet::AccessBarrier<decorators, BarrierSetT> ModRef;
     typedef BarrierSet::AccessBarrier<decorators, BarrierSetT> Raw;
@@ -118,13 +95,13 @@ class G1SATBCardTableLoggingModRefBS: public G1SATBCardTableModRefBS {
 };
 
 template<>
-struct BarrierSet::GetName<G1SATBCardTableLoggingModRefBS> {
-  static const BarrierSet::Name value = BarrierSet::G1SATBCTLogging;
+struct BarrierSet::GetName<G1BarrierSet> {
+  static const BarrierSet::Name value = BarrierSet::G1BarrierSet;
 };
 
 template<>
-struct BarrierSet::GetType<BarrierSet::G1SATBCTLogging> {
-  typedef G1SATBCardTableLoggingModRefBS type;
+struct BarrierSet::GetType<BarrierSet::G1BarrierSet> {
+  typedef ::G1BarrierSet type;
 };
 
-#endif // SHARE_VM_GC_G1_G1SATBCARDTABLEMODREFBS_HPP
+#endif // SHARE_VM_GC_G1_G1BARRIERSET_HPP

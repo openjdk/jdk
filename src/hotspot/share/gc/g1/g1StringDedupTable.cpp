@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1StringDedupTable.hpp"
 #include "gc/shared/gcLocker.hpp"
@@ -383,7 +383,7 @@ void G1StringDedupTable::deduplicate(oop java_string, G1StringDedupStat& stat) {
   if (existing_value != NULL) {
     // Enqueue the reference to make sure it is kept alive. Concurrent mark might
     // otherwise declare it dead if there are no other strong references to this object.
-    G1SATBCardTableModRefBS::enqueue(existing_value);
+    G1BarrierSet::enqueue(existing_value);
 
     // Existing value found, deduplicate string
     java_lang_String::set_value(java_string, existing_value);

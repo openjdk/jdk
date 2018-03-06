@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_G1_G1COLLECTEDHEAP_HPP
 
 #include "gc/g1/evacuationInfo.hpp"
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
@@ -39,7 +40,6 @@
 #include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1InCSetState.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
 #include "gc/g1/g1YCTypes.hpp"
 #include "gc/g1/heapRegionManager.hpp"
@@ -1156,10 +1156,6 @@ public:
   }
 
   virtual bool is_in_closed_subset(const void* p) const;
-
-  G1SATBCardTableLoggingModRefBS* g1_barrier_set() {
-    return barrier_set_cast<G1SATBCardTableLoggingModRefBS>(barrier_set());
-  }
 
   G1HotCardCache* g1_hot_card_cache() const { return _hot_card_cache; }
 

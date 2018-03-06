@@ -44,9 +44,9 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/heapRegion.hpp"
 #endif // INCLUDE_ALL_GCS
 #ifdef COMPILER2
@@ -3171,8 +3171,8 @@ void MacroAssembler::g1_write_barrier_post(Register Rstore_addr, Register Rnew_v
   Label& filtered = (filtered_ext != NULL) ? *filtered_ext : filtered_int;
   assert_different_registers(Rstore_addr, Rnew_val, Rtmp1, Rtmp2);
 
-  G1SATBCardTableLoggingModRefBS* bs =
-    barrier_set_cast<G1SATBCardTableLoggingModRefBS>(Universe::heap()->barrier_set());
+  G1BarrierSet* bs =
+    barrier_set_cast<G1BarrierSet>(Universe::heap()->barrier_set());
   CardTable* ct = bs->card_table();
 
   // Does store cross heap regions?

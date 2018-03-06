@@ -53,7 +53,6 @@
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1YCTypes.hpp"
 #include "gc/g1/g1YoungRemSetSamplingThread.hpp"
@@ -1606,9 +1605,9 @@ jint G1CollectedHeap::initialize() {
   // Create the barrier set for the entire reserved region.
   G1CardTable* ct = new G1CardTable(reserved_region());
   ct->initialize();
-  G1SATBCardTableLoggingModRefBS* bs = new G1SATBCardTableLoggingModRefBS(ct);
+  G1BarrierSet* bs = new G1BarrierSet(ct);
   bs->initialize();
-  assert(bs->is_a(BarrierSet::G1SATBCTLogging), "sanity");
+  assert(bs->is_a(BarrierSet::G1BarrierSet), "sanity");
   set_barrier_set(bs);
   _card_table = ct;
 

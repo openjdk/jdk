@@ -25,10 +25,10 @@
 #ifndef SHARE_VM_GC_G1_G1COLLECTEDHEAP_INLINE_HPP
 #define SHARE_VM_GC_G1_G1COLLECTEDHEAP_INLINE_HPP
 
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/shared/taskqueue.hpp"

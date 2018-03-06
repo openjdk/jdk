@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_RUNTIME_ACCESS_INLINE_HPP
 #define SHARE_VM_RUNTIME_ACCESS_INLINE_HPP
 
-#include "gc/shared/barrierSet.inline.hpp"
+#include "gc/shared/barrierSetConfig.inline.hpp"
 #include "metaprogramming/conditional.hpp"
 #include "metaprogramming/isFloatingPoint.hpp"
 #include "metaprogramming/isIntegral.hpp"

@@ -148,7 +148,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
   assert(val == noreg || val == r0, "parameter is just for looks");
   switch (barrier) {
 #if INCLUDE_ALL_GCS
-    case BarrierSet::G1SATBCTLogging:
+    case BarrierSet::G1BarrierSet:
       {
         // flatten object address if needed
         if (obj.index() == noreg && obj.offset() == 0) {

@@ -206,7 +206,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
   __ verify_oop(val);
   switch (barrier) {
 #if INCLUDE_ALL_GCS
-    case BarrierSet::G1SATBCTLogging:
+    case BarrierSet::G1BarrierSet:
       {
 #ifdef ASSERT
         if (val_is_null) { // Check if the flag setting reflects reality.
