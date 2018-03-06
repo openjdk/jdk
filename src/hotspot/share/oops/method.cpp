@@ -2190,8 +2190,8 @@ bool Method::is_valid_method() const {
 }
 
 #ifndef PRODUCT
-void Method::print_jmethod_ids(ClassLoaderData* loader_data, outputStream* out) {
-  out->print_cr("jni_method_id count = %d", loader_data->jmethod_ids()->count_methods());
+void Method::print_jmethod_ids(const ClassLoaderData* loader_data, outputStream* out) {
+  out->print(" jni_method_id count = %d", loader_data->jmethod_ids()->count_methods());
 }
 #endif // PRODUCT
 

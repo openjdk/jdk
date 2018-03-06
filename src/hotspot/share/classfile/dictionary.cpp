@@ -605,13 +605,16 @@ void Dictionary::print_on(outputStream* st) const {
       Klass* e = probe->instance_klass();
       bool is_defining_class =
          (loader_data() == e->class_loader_data());
-      st->print("%4d: %s%s, loader ", index, is_defining_class ? " " : "^", e->external_name());
-      ClassLoaderData* loader_data = e->class_loader_data();
-      if (loader_data == NULL) {
+      st->print("%4d: %s%s", index, is_defining_class ? " " : "^", e->external_name());
+      ClassLoaderData* cld = e->class_loader_data();
+      if (cld == NULL) {
         // Shared class not restored yet in shared dictionary
-        st->print("<shared, not restored>");
-      } else {
-        loader_data->print_value_on(st);
+        st->print(", loader data <shared, not restored>");
+      } else if (!loader_data()->is_the_null_class_loader_data()) {
+        // Class loader output for the dictionary for the null class loader data is
+        // redundant and obvious.
+        st->print(", ");
+        cld->print_value_on(st);
       }
       st->cr();
     }

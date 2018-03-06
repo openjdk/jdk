@@ -499,7 +499,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
 
   // Make this class loader depend upon the class loader owning the class reference
   ClassLoaderData* this_key = this_cp->pool_holder()->class_loader_data();
-  this_key->record_dependency(k, CHECK_NULL); // Can throw OOM
+  this_key->record_dependency(k);
 
   // logging for class+resolve.
   if (log_is_enabled(Debug, class, resolve)){

@@ -184,13 +184,6 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
     return NULL;
   }
 
-  assert(ik != NULL, "invariant");
-
-  const bool publicize = !parser.is_internal();
-
-  // Add all classes to our internal class loader list here,
-  // including classes in the bootstrap (NULL) class loader.
-  loader_data->add_class(ik, publicize);
   return ik;
 }
 

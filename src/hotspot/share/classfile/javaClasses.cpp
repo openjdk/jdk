@@ -3300,7 +3300,7 @@ void java_lang_Module::set_name(oop module, oop value) {
   module->obj_field_put(name_offset, value);
 }
 
-ModuleEntry* java_lang_Module::module_entry(oop module, TRAPS) {
+ModuleEntry* java_lang_Module::module_entry(oop module) {
   assert(_module_entry_offset != -1, "Uninitialized module_entry_offset");
   assert(module != NULL, "module can't be null");
   assert(oopDesc::is_oop(module), "module must be oop");
@@ -3310,8 +3310,8 @@ ModuleEntry* java_lang_Module::module_entry(oop module, TRAPS) {
     // If the inject field containing the ModuleEntry* is null then return the
     // class loader's unnamed module.
     oop loader = java_lang_Module::loader(module);
-    Handle h_loader = Handle(THREAD, loader);
-    ClassLoaderData* loader_cld = SystemDictionary::register_loader(h_loader, CHECK_NULL);
+    Handle h_loader = Handle(Thread::current(), loader);
+    ClassLoaderData* loader_cld = SystemDictionary::register_loader(h_loader);
     return loader_cld->unnamed_module();
   }
   return module_entry;

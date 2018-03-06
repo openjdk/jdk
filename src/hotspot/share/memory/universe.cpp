@@ -460,10 +460,6 @@ void Universe::genesis(TRAPS) {
     assert(i == _fullgc_alot_dummy_array->length(), "just checking");
   }
   #endif
-
-  // Initialize dependency array for null class loader
-  ClassLoaderData::the_null_class_loader_data()->init_dependencies(CHECK);
-
 }
 
 void Universe::initialize_basic_type_mirrors(TRAPS) {

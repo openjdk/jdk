@@ -4382,7 +4382,7 @@ static void record_defined_class_dependencies(const InstanceKlass* defined_klass
     // add super class dependency
     Klass* const super = defined_klass->super();
     if (super != NULL) {
-      defining_loader_data->record_dependency(super, CHECK);
+      defining_loader_data->record_dependency(super);
     }
 
     // add super interface dependencies
@@ -4390,7 +4390,7 @@ static void record_defined_class_dependencies(const InstanceKlass* defined_klass
     if (local_interfaces != NULL) {
       const int length = local_interfaces->length();
       for (int i = 0; i < length; i++) {
-        defining_loader_data->record_dependency(local_interfaces->at(i), CHECK);
+        defining_loader_data->record_dependency(local_interfaces->at(i));
       }
     }
   }
@@ -5363,6 +5363,16 @@ InstanceKlass* ClassFileParser::create_instance_klass(bool changed_by_loadhook, 
 void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loadhook, TRAPS) {
   assert(ik != NULL, "invariant");
 
+  // Set name and CLD before adding to CLD
+  ik->set_class_loader_data(_loader_data);
+  ik->set_name(_class_name);
+
+  // Add all classes to our internal class loader list here,
+  // including classes in the bootstrap (NULL) class loader.
+  const bool publicize = !is_internal();
+
+  _loader_data->add_class(ik, publicize);
+
   set_klass_to_deallocate(ik);
 
   assert(_field_info != NULL, "invariant");
@@ -5377,7 +5387,6 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   ik->set_should_verify_class(_need_verify);
 
   // Not yet: supers are done below to support the new subtype-checking fields
-  ik->set_class_loader_data(_loader_data);
   ik->set_nonstatic_field_size(_field_info->nonstatic_field_size);
   ik->set_has_nonstatic_fields(_field_info->has_nonstatic_fields);
   assert(_fac != NULL, "invariant");
@@ -5407,8 +5416,6 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   // that changes, then InstanceKlass::idnum_can_increment()
   // has to be changed accordingly.
   ik->set_initial_method_idnum(ik->methods()->length());
-
-  ik->set_name(_class_name);
 
   if (is_anonymous()) {
     // _this_class_index is a CONSTANT_Class entry that refers to this
