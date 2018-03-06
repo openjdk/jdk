@@ -58,7 +58,6 @@ public class TestStdDoclet {
         cmdArgs.addAll(Arrays.asList(
                 "-classpath", ".", // insulates us from ambient classpath
                 "-Xdoclint:none",
-                "-html4",
                 "-package",
                 new File(testSrc, thisClassName + ".java").getPath()
         ));
