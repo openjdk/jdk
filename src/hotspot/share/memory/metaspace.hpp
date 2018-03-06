@@ -89,6 +89,7 @@ class Metaspace : public CHeapObj<mtClass> {
   friend class MetaspaceShared;
   friend class CollectedHeap;
   friend class PrintCLDMetaspaceInfoClosure;
+  friend class MetaspaceAllocationTest;
 
  public:
   enum MetadataType {
@@ -174,6 +175,11 @@ class Metaspace : public CHeapObj<mtClass> {
   static ChunkManager* get_chunk_manager(MetadataType mdtype) {
     assert(mdtype != MetadataTypeCount, "MetadaTypeCount can't be used as mdtype");
     return mdtype == ClassType ? chunk_manager_class() : chunk_manager_metadata();
+  }
+
+  // convenience function
+  static ChunkManager* get_chunk_manager(bool is_class) {
+    return is_class ? chunk_manager_class() : chunk_manager_metadata();
   }
 
   static const MetaspaceTracer* tracer() { return _tracer; }
