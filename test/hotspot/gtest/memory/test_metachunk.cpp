@@ -41,11 +41,16 @@ class MetachunkTest {
 };
 
 TEST(Metachunk, basic) {
-  size_t size = 2 * 1024 * 1024;
-  void* memory = malloc(size);
+  const ChunkIndex chunk_type = MediumIndex;
+  const bool is_class = false;
+  const size_t word_size = get_size_for_nonhumongous_chunktype(chunk_type, is_class);
+  // Allocate the chunk with correct alignment.
+  void* memory = malloc(word_size * BytesPerWord * 2);
   ASSERT_TRUE(NULL != memory) << "Failed to malloc 2MB";
 
-  Metachunk* metachunk = ::new (memory) Metachunk(size / BytesPerWord, NULL);
+  void* p_placement = align_up(memory, word_size * BytesPerWord);
+
+  Metachunk* metachunk = ::new (p_placement) Metachunk(chunk_type, is_class, word_size, NULL);
 
   EXPECT_EQ((MetaWord*) metachunk, metachunk->bottom());
   EXPECT_EQ((uintptr_t*) metachunk + metachunk->size(), metachunk->end());
