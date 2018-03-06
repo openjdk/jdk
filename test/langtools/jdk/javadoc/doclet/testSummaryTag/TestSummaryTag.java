@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @bug      8173425 8186332
+ * @bug      8173425 8186332 8182765
  * @summary  tests for the summary tag behavior
  * @library  ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -43,6 +43,63 @@ public class TestSummaryTag extends JavadocTester {
     @Test
     void test1() {
         javadoc("-d", "out1",
+                "-sourcepath", testSrc,
+                "p1");
+        checkExit(Exit.OK);
+
+        checkOutput("index-all.html", true,
+            "<dl>\n"
+            + "<dt><span class=\"memberNameLink\"><a href=\"p1/A.html#m()\">m()"
+            + "</a></span> - Method in class p1.<a href=\"p1/A.html\" title=\"class in p1\">A</a></dt>\n"
+            + "<dd>\n"
+            + "<div class=\"block\">First sentence</div>\n"
+            + "</dd>\n"
+            + "<dt><span class=\"memberNameLink\"><a href=\"p1/B.html#m()\">m()"
+            + "</a></span> - Method in class p1.<a href=\"p1/B.html\" title=\"class in p1\">B</a></dt>\n"
+            + "<dd>\n"
+            + "<div class=\"block\">First sentence</div>\n"
+            + "</dd>\n"
+            + "<dt><span class=\"memberNameLink\"><a href=\"p1/A.html#m1()\">m1()"
+            + "</a></span> - Method in class p1.<a href=\"p1/A.html\" title=\"class in p1\">A</a></dt>\n"
+            + "<dd>\n"
+            + "<div class=\"block\"> First sentence </div>\n"
+            + "</dd>\n"
+            + "<dt><span class=\"memberNameLink\"><a href=\"p1/A.html#m2()\">m2()"
+            + "</a></span> - Method in class p1.<a href=\"p1/A.html\" title=\"class in p1\">A</a></dt>\n"
+            + "<dd>\n"
+            + "<div class=\"block\">Some html &lt;foo&gt; &nbsp; codes</div>\n"
+            + "</dd>\n"
+            + "<dt><span class=\"memberNameLink\"><a href=\"p1/A.html#m3()\">m3()"
+            + "</a></span> - Method in class p1.<a href=\"p1/A.html\" title=\"class in p1\">A</a></dt>\n"
+            + "<dd>\n"
+            + "<div class=\"block\">First sentence </div>\n"
+            + "</dd>\n"
+            + "<dt><span class=\"memberNameLink\"><a href=\"p1/A.html#m4()\">m4()"
+            + "</a></span> - Method in class p1.<a href=\"p1/A.html\" title=\"class in p1\">A</a></dt>\n"
+            + "<dd>\n"
+            + "<div class=\"block\">First sentence i.e. the first sentence</div>\n"
+            + "</dd>\n"
+            + "</dl>\n",
+            "<div class=\"block\">The first... line</div>\n"
+        );
+
+        // make sure the second @summary's content is displayed correctly
+        checkOutput("p1/A.html", true,
+             "<li class=\"blockList\">\n"
+             + "<h4>m3</h4>\n"
+             + "<pre>public&nbsp;void&nbsp;m3()</pre>\n"
+             + "<div class=\"block\">First sentence  some text maybe second sentence.</div>\n"
+             + "</li>\n"
+        );
+
+        checkOutput("p1/package-summary.html", true,
+                "<div class=\"block\">The first... line second from ...</div>");
+    }
+
+    @Test
+    void test1_html4() {
+        javadoc("-d", "out1-html4",
+                "-html4",
                 "-sourcepath", testSrc,
                 "p1");
         checkExit(Exit.OK);
@@ -79,22 +136,10 @@ public class TestSummaryTag extends JavadocTester {
             + "<dd>\n"
             + "<div class=\"block\">First sentence i.e. the first sentence</div>\n"
             + "</dd>\n"
-            + "</dl>\n",
-            "<div class=\"block\">The first... line</div>\n"
+            + "</dl>\n"
         );
-
-        // make sure the second @summary's content is displayed correctly
-        checkOutput("p1/A.html", true,
-             "<li class=\"blockList\">\n"
-             + "<h4>m3</h4>\n"
-             + "<pre>public&nbsp;void&nbsp;m3()</pre>\n"
-             + "<div class=\"block\">First sentence  some text maybe second sentence.</div>\n"
-             + "</li>\n"
-        );
-
-        checkOutput("p1/package-summary.html", true,
-                "<div class=\"block\">The first... line second from ...</div>");
     }
+
     @Test
     void test2() {
         javadoc("-d", "out2",

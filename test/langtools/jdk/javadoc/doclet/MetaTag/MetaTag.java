@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4034096 4764726 6235799
+ * @bug      4034096 4764726 6235799 8182765
  * @summary  Add support for HTML keywords via META tag for
  *           class and member names to improve API search
  * @author   dkramer
@@ -58,23 +58,7 @@ public class MetaTag extends JavadocTester {
 
         checkExit(Exit.OK);
 
-        checkOutput("p1/C1.html", true,
-                "<meta name=\"keywords\" content=\"p1.C1 class\">",
-                "<meta name=\"keywords\" content=\"field1\">",
-                "<meta name=\"keywords\" content=\"field2\">",
-                "<meta name=\"keywords\" content=\"method1()\">",
-                "<meta name=\"keywords\" content=\"method2()\">");
-
-        checkOutput("p1/package-summary.html", true,
-                "<meta name=\"keywords\" content=\"p1 package\">");
-
-        checkOutput("overview-summary.html", true,
-                "<meta name=\"keywords\" content=\"Overview, Sample Packages\">");
-
-        // NOTE: Hopefully, this regression test is not run at midnight.  If the output
-        // was generated yesterday and this test is run today, the test will fail.
-        checkOutput("overview-summary.html", true,
-                "<meta name=\"date\" content=\"" + date() + "\">");
+        checkMeta("dc.created", true);
     }
 
     @Test
@@ -87,24 +71,55 @@ public class MetaTag extends JavadocTester {
         checkExit(Exit.OK);
 
         // No keywords when -keywords is not used.
-        checkOutput("p1/C1.html", false,
-                "<META NAME=\"keywords\" CONTENT=\"p1.C1 class\">",
-                "<META NAME=\"keywords\" CONTENT=\"field1\">",
-                "<META NAME=\"keywords\" CONTENT=\"field2\">",
-                "<META NAME=\"keywords\" CONTENT=\"method1()\">",
-                "<META NAME=\"keywords\" CONTENT=\"method2()\">");
+        checkMeta("dc.created", false);
+    }
 
-        checkOutput("p1/package-summary.html", false,
-                "<META NAME=\"keywords\" CONTENT=\"p1 package\">");
+    @Test
+    void testStandard_html4() {
+        javadoc("-d", "out-1-html4",
+                "-html4",
+                "-sourcepath", testSrc,
+                "-keywords",
+                "-doctitle", "Sample Packages",
+                "p1", "p2");
 
-        checkOutput("overview-summary.html", false,
-                "<META NAME=\"keywords\" CONTENT=\"Overview Summary, Sample Packages\">");
+        checkExit(Exit.OK);
 
-        // The date metatag should not show up when -notimestamp is used.
+        checkMeta("date", true);
+    }
+
+    @Test
+    void testNoTimestamp_html4() {
+        javadoc("-d", "out-2-html4",
+                "-html4",
+                "-sourcepath", testSrc,
+                "-notimestamp",
+                "-doctitle", "Sample Packages",
+                "p1", "p2");
+        checkExit(Exit.OK);
+
+        // No keywords when -keywords is not used.
+        checkMeta("date", false);
+    }
+
+    void checkMeta(String metaNameDate, boolean found) {
+        checkOutput("p1/C1.html", found,
+                "<meta name=\"keywords\" content=\"p1.C1 class\">",
+                "<meta name=\"keywords\" content=\"field1\">",
+                "<meta name=\"keywords\" content=\"field2\">",
+                "<meta name=\"keywords\" content=\"method1()\">",
+                "<meta name=\"keywords\" content=\"method2()\">");
+
+        checkOutput("p1/package-summary.html", found,
+                "<meta name=\"keywords\" content=\"p1 package\">");
+
+        checkOutput("overview-summary.html", found,
+                "<meta name=\"keywords\" content=\"Overview, Sample Packages\">");
+
         // NOTE: Hopefully, this regression test is not run at midnight.  If the output
         // was generated yesterday and this test is run today, the test will fail.
-        checkOutput("overview-summary.html", false,
-                "<META NAME=\"date\" CONTENT=\"" + date() + "\">");
+        checkOutput("overview-summary.html", found,
+                "<meta name=\"" + metaNameDate + "\" content=\"" + date() + "\">");
     }
 
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");

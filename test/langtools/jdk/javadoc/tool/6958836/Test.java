@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6958836 8002168
+ * @bug 6958836 8002168 8182765
  * @summary javadoc should support -Xmaxerrs and -Xmaxwarns
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  */
@@ -63,7 +63,6 @@ public class Test {
         // For some reason, this must be the first option when used.
         opts.addAll(list("-locale", "en_US"));
         opts.add("-Xdoclint:none");
-        opts.add("-html4");
         opts.addAll(list("-classpath", System.getProperty("test.src")));
         opts.addAll(list("-d", testOutDir.getPath()));
         opts.addAll(testOpts);

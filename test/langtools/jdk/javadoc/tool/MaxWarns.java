@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8005644
+ * @bug 8005644 8182765
  * @summary set default max errs and max warns
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  */
@@ -75,7 +75,7 @@ public class MaxWarns {
     String javadoc(File f) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
-        String[] args = { "-Xdoclint:none", "-html4", "-d", "api", f.getPath() };
+        String[] args = { "-Xdoclint:none", "-d", "api", f.getPath() };
         int rc = jdk.javadoc.internal.tool.Main.execute(args, pw);
         pw.flush();
         return sw.toString();
