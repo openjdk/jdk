@@ -42,6 +42,7 @@
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.MessageDigest;
 import java.security.Security;
 import javax.net.ssl.SSLSocket;
 
@@ -49,6 +50,7 @@ public class HandshakeHashCloneExhaustion extends SSLSocketTemplate {
 
     private static String[] protocol;
     private static String[] ciphersuite;
+    private static String[] mds = { "SHA", "MD5", "SHA-256" };
 
     /*
      * ==================
@@ -57,6 +59,14 @@ public class HandshakeHashCloneExhaustion extends SSLSocketTemplate {
     public static void main(String[] args) throws Exception {
         // Add in a non-cloneable MD5/SHA1/SHA-256 implementation
         Security.insertProviderAt(new MyProvider(), 1);
+        // make sure our provider is functioning
+        for (String s : mds) {
+            MessageDigest md = MessageDigest.getInstance(s);
+            String p = md.getProvider().getName();
+            if (!p.equals("MyProvider")) {
+                throw new RuntimeException("Unexpected provider: " + p);
+            }
+        }
 
         if (args.length != 2) {
             throw new Exception(
