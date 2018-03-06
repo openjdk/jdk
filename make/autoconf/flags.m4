@@ -236,7 +236,8 @@ AC_DEFUN_ONCE([FLAGS_PRE_TOOLCHAIN],
   if test "x$TOOLCHAIN_TYPE" = xxlc; then
     MACHINE_FLAG="-q${OPENJDK_TARGET_CPU_BITS}"
   elif test "x$TOOLCHAIN_TYPE" != xmicrosoft; then
-    if test "x$OPENJDK_TARGET_CPU" != xaarch64; then
+    if test "x$OPENJDK_TARGET_CPU" != xaarch64 &&
+        test "x$OPENJDK_TARGET_CPU" != xarm; then
       MACHINE_FLAG="-m${OPENJDK_TARGET_CPU_BITS}"
     fi
   fi
