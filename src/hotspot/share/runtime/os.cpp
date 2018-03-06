@@ -245,13 +245,6 @@ OSReturn os::get_priority(const Thread* const thread, ThreadPriority& priority) 
   return OS_OK;
 }
 
-
-#if !defined(LINUX) && !defined(_WINDOWS)
-size_t os::committed_stack_size(address bottom, size_t size) {
-  return size;
-}
-#endif
-
 bool os::dll_build_name(char* buffer, size_t size, const char* fname) {
   int n = jio_snprintf(buffer, size, "%s%s%s", JNI_LIB_PREFIX, fname, JNI_LIB_SUFFIX);
   return (n != -1);
