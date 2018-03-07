@@ -44,7 +44,7 @@
 #include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/fieldStreams.hpp"
@@ -3767,9 +3767,7 @@ void ClassFileParser::layout_fields(ConstantPool* cp,
   int next_static_oop_offset    = InstanceMirrorKlass::offset_of_static_fields();
   int next_static_double_offset = next_static_oop_offset +
                                       ((fac->count[STATIC_OOP]) * heapOopSize);
-  if ( fac->count[STATIC_DOUBLE] &&
-       (Universe::field_type_should_be_aligned(T_DOUBLE) ||
-        Universe::field_type_should_be_aligned(T_LONG)) ) {
+  if (fac->count[STATIC_DOUBLE]) {
     next_static_double_offset = align_up(next_static_double_offset, BytesPerLong);
   }
 
