@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,10 @@
  * questions.
  */
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-
 /*
  * @test
  * @key headful
- * @bug 8024627
+ * @bug 8024627 8190347
  * @summary Check if a JComboBox present in a window set with opacity less than
  *          1.0 shows a translucent drop down
  * Test Description: Check if TRANSLUCENT translucency type is supported on the
@@ -46,12 +41,32 @@ import java.awt.event.MouseEvent;
  * @run main TranslucentJComboBox
  */
 
+import javax.swing.JComponent;
+import javax.swing.JPanel;
+import javax.swing.RootPaneContainer;
+import javax.swing.JList;
+import javax.swing.JComboBox;
+import javax.swing.JPopupMenu;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
+import java.awt.GraphicsDevice;
+import java.awt.Container;
+import java.awt.BorderLayout;
+import java.awt.Point;
+import java.awt.Color;
+import java.awt.Window;
+import java.awt.EventQueue;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+
 public class TranslucentJComboBox extends Common {
 
     JComponent south;
     JComponent center;
     JPanel north;
     volatile boolean southClicked = false;
+
+    JPopupMenu popup = null;
 
     public static void main(String[] args) throws Exception {
         if (checkTranslucencyMode(GraphicsDevice.WindowTranslucency.TRANSLUCENT))
@@ -84,6 +99,24 @@ public class TranslucentJComboBox extends Common {
             jComboBox.addItem("item " + i);
         }
         south = jComboBox;
+        jComboBox.addPopupMenuListener(new PopupMenuListener() {
+
+            @Override
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+                popup = (JPopupMenu) jComboBox.getAccessibleContext()
+                        .getAccessibleChild(0);
+            }
+
+            @Override
+            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+
+            }
+
+            @Override
+            public void popupMenuCanceled(PopupMenuEvent e) {
+
+            }
+        });
 
         south.addMouseListener(new MouseAdapter() {
             @Override
@@ -142,12 +175,19 @@ public class TranslucentJComboBox extends Common {
                             ". Before click: " + c1 + ", after click: " + c1b +
                             ", expected is " + south.getBackground());
 
-        if (!c2.equals(c2b) && !south.getBackground().equals(c2b))
+        //This following check is only valid if the popup was created below the
+        // JComboBox and will be opaque or it is created above the JComboBox
+        // and it can not fit inside the JWindow along with JComboBox and will
+        // be opaque
+        if ( !c2.equals(c2b) && !south.getBackground().equals(c2b) &&
+                (popup.getLocationOnScreen().y > ls.y ||
+                        window.getHeight() < popup.getHeight() + south.getHeight()))
             throw new RuntimeException(
                     "Check for opaque drop down failed at point " + p2 +
                             ". Before click: " + c2 + ", after click: " + c2b +
                             ", expected is " + south.getBackground());
 
+        popup = null;
         EventQueue.invokeAndWait(this::dispose);
     }
 }
