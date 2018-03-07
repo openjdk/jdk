@@ -295,6 +295,7 @@ objArrayHandle CompilerToVM::initialize_intrinsics(TRAPS) {
   NOT_PRODUCT(do_intx_flag(CompileTheWorldStopAt))                         \
   do_intx_flag(ContendedPaddingWidth)                                      \
   do_bool_flag(DontCompileHugeMethods)                                     \
+  do_bool_flag(EagerJVMCI)                                                 \
   do_bool_flag(EnableContended)                                            \
   do_intx_flag(FieldsAllocationStyle)                                      \
   do_bool_flag(FoldStableValues)                                           \
