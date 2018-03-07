@@ -3043,6 +3043,9 @@ class CombineDictionariesClosure : public CLDClosure {
       _master_dictionary(master_dictionary) {}
     void do_cld(ClassLoaderData* cld) {
       ResourceMark rm;
+      if (cld->is_anonymous()) {
+        return;
+      }
       if (cld->is_system_class_loader_data() || cld->is_platform_class_loader_data()) {
         for (int i = 0; i < cld->dictionary()->table_size(); ++i) {
           Dictionary* curr_dictionary = cld->dictionary();
