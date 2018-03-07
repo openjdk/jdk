@@ -41,7 +41,7 @@ import java.util.Locale;
  * of different formats.
  *
  * <p>This class is neither thread-safe nor reusable. Calling the
- * <tt>parse()</tt> method more than once will yield undefined results.</p>
+ * <code>parse()</code> method more than once will yield undefined results.</p>
  */
 public class DateParser {
 
@@ -118,7 +118,7 @@ public class DateParser {
     }
 
     /**
-     * Construct a new <tt>DateParser</tt> instance for parsing the given string.
+     * Construct a new <code>DateParser</code> instance for parsing the given string.
      * @param string the string to be parsed
      */
     public DateParser(final String string) {
@@ -130,7 +130,7 @@ public class DateParser {
     /**
      * Try parsing the given string as date according to the extended ISO 8601 format
      * specified in ES5 15.9.1.15. Fall back to legacy mode if that fails.
-     * This method returns <tt>true</tt> if the string could be parsed.
+     * This method returns <code>true</code> if the string could be parsed.
      * @return true if the string could be parsed as date
      */
     public boolean parse() {
@@ -143,8 +143,8 @@ public class DateParser {
      *
      * <pre>  [('-'|'+')yy]yyyy[-MM[-dd]][Thh:mm[:ss[.sss]][Z|(+|-)hh:mm]] </pre>
      *
-     * <p>If the string does not contain a time zone offset, the <tt>TIMEZONE</tt> field
-     * is set to <tt>0</tt> (GMT).</p>
+     * <p>If the string does not contain a time zone offset, the <code>TIMEZONE</code> field
+     * is set to <code>0</code> (GMT).</p>
      * @return true if string represents a valid ES5 date string.
      */
     public boolean parseEcmaDate() {
@@ -221,14 +221,14 @@ public class DateParser {
     /**
      * Try parsing the date using a fuzzy algorithm that can handle a variety of formats.
      *
-     * <p>Numbers separated by <tt>':'</tt> are treated as time values, optionally followed by a
-     * millisecond value separated by <tt>'.'</tt>. Other number values are treated as date values.
+     * <p>Numbers separated by <code>':'</code> are treated as time values, optionally followed by a
+     * millisecond value separated by <code>'.'</code>. Other number values are treated as date values.
      * The exact sequence of day, month, and year values to apply is determined heuristically.</p>
      *
      * <p>English month names and selected time zone names as well as AM/PM markers are recognized
-     * and handled properly. Additionally, numeric time zone offsets such as <tt>(+|-)hh:mm</tt> or
-     * <tt>(+|-)hhmm</tt> are recognized. If the string does not contain a time zone offset
-     * the <tt>TIMEZONE</tt>field is left undefined, meaning the local time zone should be applied.</p>
+     * and handled properly. Additionally, numeric time zone offsets such as <code>(+|-)hh:mm</code> or
+     * <code>(+|-)hhmm</code> are recognized. If the string does not contain a time zone offset
+     * the <code>TIMEZONE</code>field is left undefined, meaning the local time zone should be applied.</p>
      *
      * <p>English weekday names are recognized but ignored. All text in parentheses is ignored as well.
      * All other text causes parsing to fail.</p>
@@ -331,10 +331,10 @@ public class DateParser {
     }
 
     /**
-     * Get the parsed date and time fields as an array of <tt>Integers</tt>.
+     * Get the parsed date and time fields as an array of <code>Integers</code>.
      *
      * <p>If parsing was successful, all fields are guaranteed to be set except for the
-     * <tt>TIMEZONE</tt> field which may be <tt>null</tt>, meaning that local time zone
+     * <code>TIMEZONE</code> field which may be <code>null</code>, meaning that local time zone
      * offset should be applied.</p>
      *
      * @return the parsed date fields
