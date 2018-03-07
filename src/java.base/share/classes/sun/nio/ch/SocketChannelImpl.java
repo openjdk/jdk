@@ -148,10 +148,35 @@ class SocketChannelImpl
         }
     }
 
-    // @throws ClosedChannelException if channel is closed
+    /**
+     * Checks that the channel is open.
+     *
+     * @throws ClosedChannelException if channel is closed (or closing)
+     */
     private void ensureOpen() throws ClosedChannelException {
         if (!isOpen())
             throw new ClosedChannelException();
+    }
+
+    /**
+     * Checks that the channel is open and connected.
+     *
+     * @apiNote This method uses the "state" field to check if the channel is
+     * open. It should never be used in conjuncion with isOpen or ensureOpen
+     * as these methods check AbstractInterruptibleChannel's closed field - that
+     * field is set before implCloseSelectableChannel is called and so before
+     * the state is changed.
+     *
+     * @throws ClosedChannelException if channel is closed (or closing)
+     * @throws NotYetConnectedException if open and not connected
+     */
+    private void ensureOpenAndConnected() throws ClosedChannelException {
+        int state = this.state;
+        if (state < ST_CONNECTED) {
+            throw new NotYetConnectedException();
+        } else if (state > ST_CONNECTED) {
+            throw new ClosedChannelException();
+        }
     }
 
     @Override
@@ -275,13 +300,14 @@ class SocketChannelImpl
         if (blocking) {
             // set hook for Thread.interrupt
             begin();
-        }
-        synchronized (stateLock) {
-            ensureOpen();
-            if (state != ST_CONNECTED)
-                throw new NotYetConnectedException();
-            if (blocking)
+
+            synchronized (stateLock) {
+                ensureOpenAndConnected();
+                // record thread so it can be signalled if needed
                 readerThread = NativeThread.current();
+            }
+        } else {
+            ensureOpenAndConnected();
         }
     }
 
@@ -385,15 +411,16 @@ class SocketChannelImpl
         if (blocking) {
             // set hook for Thread.interrupt
             begin();
-        }
-        synchronized (stateLock) {
-            ensureOpen();
-            if (isOutputClosed)
-                throw new ClosedChannelException();
-            if (state != ST_CONNECTED)
-                throw new NotYetConnectedException();
-            if (blocking)
+
+            synchronized (stateLock) {
+                ensureOpenAndConnected();
+                if (isOutputClosed)
+                    throw new ClosedChannelException();
+                // record thread so it can be signalled if needed
                 writerThread = NativeThread.current();
+            }
+        } else {
+            ensureOpenAndConnected();
         }
     }
 
@@ -612,8 +639,10 @@ class SocketChannelImpl
                 NetHooks.beforeTcpConnect(fd, isa.getAddress(), isa.getPort());
             remoteAddress = isa;
 
-            if (blocking)
+            if (blocking) {
+                // record thread so it can be signalled if needed
                 readerThread = NativeThread.current();
+            }
         }
     }
 
@@ -695,8 +724,10 @@ class SocketChannelImpl
             ensureOpen();
             if (state != ST_CONNECTIONPENDING)
                 throw new NoConnectionPendingException();
-            if (blocking)
+            if (blocking) {
+                // record thread so it can be signalled if needed
                 readerThread = NativeThread.current();
+            }
         }
     }
 
