@@ -462,8 +462,6 @@ class Universe: AllStatic {
   static bool is_module_initialized()                 { return _module_initialized; }
   static bool is_fully_initialized()                  { return _fully_initialized; }
 
-  static inline bool element_type_should_be_aligned(BasicType type);
-  static inline bool field_type_should_be_aligned(BasicType type);
   static bool        on_page_boundary(void* addr);
   static bool        should_fill_in_stack_trace(Handle throwable);
   static void check_alignment(uintx size, uintx alignment, const char* name);

@@ -37,7 +37,7 @@
 #include "logging/log.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/instanceKlass.hpp"
