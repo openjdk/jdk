@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,8 +293,7 @@ Java_sun_nio_ch_Net_connect0(JNIEnv *env, jclass clazz, jboolean preferIPv6,
     int sa_len = 0;
     int rv;
 
-    if (NET_InetAddressToSockaddr(env, iao, port, &sa, &sa_len,
-                                  preferIPv6) != 0) {
+    if (NET_InetAddressToSockaddr(env, iao, port, &sa, &sa_len, preferIPv6) != 0) {
         return IOS_THROWN;
     }
 
@@ -761,11 +760,11 @@ handleSocketError(JNIEnv *env, jint errorValue)
             break;
 #endif
         case ECONNREFUSED:
-            xn = JNU_JAVANETPKG "ConnectException";
-            break;
         case ETIMEDOUT:
+        case ENOTCONN:
             xn = JNU_JAVANETPKG "ConnectException";
             break;
+
         case EHOSTUNREACH:
             xn = JNU_JAVANETPKG "NoRouteToHostException";
             break;
