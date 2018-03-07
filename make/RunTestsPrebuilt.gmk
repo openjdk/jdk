@@ -113,6 +113,7 @@ $(eval $(call SetupVariable,JT_HOME))
 # These can have default values based on the ones above
 $(eval $(call SetupVariable,JDK_IMAGE_DIR,$(OUTPUTDIR)/images/jdk))
 $(eval $(call SetupVariable,TEST_IMAGE_DIR,$(OUTPUTDIR)/images/test))
+$(eval $(call SetupVariable,SYMBOLS_IMAGE_DIR,$(OUTPUTDIR)/images/symbols))
 
 # Provide default values for tools that we need
 $(eval $(call SetupVariable,MAKE,make,NO_CHECK))
@@ -245,6 +246,7 @@ $(call CreateNewSpec, $(NEW_SPEC), \
     JT_HOME := $(JT_HOME), \
     JDK_IMAGE_DIR := $(JDK_IMAGE_DIR), \
     TEST_IMAGE_DIR := $(TEST_IMAGE_DIR), \
+    SYMBOLS_IMAGE_DIR := $(SYMBOLS_IMAGE_DIR), \
     MAKE := $(MAKE), \
     BASH := $(BASH), \
     JIB_JAR := $(JIB_JAR), \

@@ -60,6 +60,18 @@ define SetTestOpt
   endif
 endef
 
+# Setup _NT_SYMBOL_PATH on Windows
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  ifndef _NT_SYMBOL_PATH
+    # Can't use PathList here as it adds quotes around the value.
+    _NT_SYMBOL_PATH := \
+        $(subst $(SPACE),;, $(foreach p, $(sort $(dir $(wildcard \
+        $(addprefix $(SYMBOLS_IMAGE_DIR)/bin/, *.pdb */*.pdb)))), $(call FixPath, $p)))
+    export _NT_SYMBOL_PATH
+    $(info _NT_SYMBOL_PATH $(_NT_SYMBOL_PATH))
+  endif
+endif
+
 ################################################################################
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, RunTests.gmk))
@@ -496,6 +508,11 @@ define SetupRunJtregTestBody
   $1_JTREG_BASIC_OPTIONS += -e:JIB_DATA_DIR
   # Some tests needs to find a boot JDK using the JDK8_HOME variable.
   $1_JTREG_BASIC_OPTIONS += -e:JDK8_HOME=$$(BOOT_JDK)
+  # If running on Windows, propagate the _NT_SYMBOL_PATH to enable
+  # symbol lookup in hserr files
+  ifeq ($$(OPENJDK_TARGET_OS), windows)
+    $1_JTREG_BASIC_OPTIONS += -e:_NT_SYMBOL_PATH
+  endif
 
   $1_JTREG_BASIC_OPTIONS += \
       $$(addprefix -javaoption:, $$(JTREG_JAVA_OPTIONS)) \
