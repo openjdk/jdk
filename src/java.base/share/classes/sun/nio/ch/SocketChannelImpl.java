@@ -96,7 +96,7 @@ class SocketChannelImpl
     private static final int ST_CLOSING = 3;
     private static final int ST_KILLPENDING = 4;
     private static final int ST_KILLED = 5;
-    private int state;
+    private volatile int state;  // need stateLock to change
 
     // IDs of native threads doing reads and writes, for signalling
     private long readerThread;
@@ -574,16 +574,12 @@ class SocketChannelImpl
 
     @Override
     public boolean isConnected() {
-        synchronized (stateLock) {
-            return (state == ST_CONNECTED);
-        }
+        return (state == ST_CONNECTED);
     }
 
     @Override
     public boolean isConnectionPending() {
-        synchronized (stateLock) {
-            return (state == ST_CONNECTIONPENDING);
-        }
+        return (state == ST_CONNECTIONPENDING);
     }
 
     /**
@@ -604,12 +600,13 @@ class SocketChannelImpl
         }
         synchronized (stateLock) {
             ensureOpen();
+            int state = this.state;
             if (state == ST_CONNECTED)
                 throw new AlreadyConnectedException();
             if (state == ST_CONNECTIONPENDING)
                 throw new ConnectionPendingException();
             assert state == ST_UNCONNECTED;
-            state = ST_CONNECTIONPENDING;
+            this.state = ST_CONNECTIONPENDING;
 
             if (localAddress == null)
                 NetHooks.beforeTcpConnect(fd, isa.getAddress(), isa.getPort());
@@ -985,20 +982,17 @@ class SocketChannelImpl
             return (newOps & ~oldOps) != 0;
         }
 
+        boolean connected = isConnected();
         if (((ops & Net.POLLIN) != 0) &&
-            ((intOps & SelectionKey.OP_READ) != 0) &&
-            (state == ST_CONNECTED))
+            ((intOps & SelectionKey.OP_READ) != 0) && connected)
             newOps |= SelectionKey.OP_READ;
 
         if (((ops & Net.POLLCONN) != 0) &&
-            ((intOps & SelectionKey.OP_CONNECT) != 0) &&
-            ((state == ST_UNCONNECTED) || (state == ST_CONNECTIONPENDING))) {
+            ((intOps & SelectionKey.OP_CONNECT) != 0) && isConnectionPending())
             newOps |= SelectionKey.OP_CONNECT;
-        }
 
         if (((ops & Net.POLLOUT) != 0) &&
-            ((intOps & SelectionKey.OP_WRITE) != 0) &&
-            (state == ST_CONNECTED))
+            ((intOps & SelectionKey.OP_WRITE) != 0) && connected)
             newOps |= SelectionKey.OP_WRITE;
 
         sk.nioReadyOps(newOps);
