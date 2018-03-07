@@ -331,7 +331,13 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   bool is_the_null_class_loader_data() const {
     return this == _the_null_class_loader_data;
   }
+
+  // Returns true if this class loader data is for the system class loader.
+  // (Note that the class loader data may be anonymous.)
   bool is_system_class_loader_data() const;
+
+  // Returns true if this class loader data is for the platform class loader.
+  // (Note that the class loader data may be anonymous.)
   bool is_platform_class_loader_data() const;
 
   // Returns true if this class loader data is for the boot class loader.
