@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,6 @@ class SignatureIterator: public ResourceObj {
   BasicType    _return_type;
 
   void expect(char c);
-  void skip_optional_size();
   int  parse_type();                   // returns the parameter size in words (0 for void)
   void check_signature_end();
 
