@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,6 @@ class FieldArrayInfo : public StackObj {
 
 class FieldType: public AllStatic {
  private:
-  static void skip_optional_size(Symbol* signature, int* index);
   static bool is_valid_array_signature(Symbol* signature);
  public:
 
