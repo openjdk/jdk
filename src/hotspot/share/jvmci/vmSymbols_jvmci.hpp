@@ -88,9 +88,12 @@
   template(jdk_vm_ci_code_site_ExceptionHandler,                  "jdk/vm/ci/code/site/ExceptionHandler")                  \
   template(jdk_vm_ci_code_site_Mark,                              "jdk/vm/ci/code/site/Mark")                              \
   template(jdk_vm_ci_code_site_Infopoint,                         "jdk/vm/ci/code/site/Infopoint")                         \
+  template(jdk_vm_ci_code_stack_InspectedFrameVisitor,            "jdk/vm/ci/code/stack/InspectedFrameVisitor")            \
   template(jdk_vm_ci_code_site_Site,                              "jdk/vm/ci/code/site/Site")                              \
   template(jdk_vm_ci_code_site_InfopointReason,                   "jdk/vm/ci/code/site/InfopointReason")                   \
   template(jdk_vm_ci_common_JVMCIError,                           "jdk/vm/ci/common/JVMCIError")                           \
+  template(visitFrame_name,                                       "visitFrame")                                            \
+  template(visitFrame_signature,                                  "(Ljdk/vm/ci/code/stack/InspectedFrame;)Ljava/lang/Object;") \
   template(adjustCompilationLevel_name,                           "adjustCompilationLevel")                                \
   template(adjustCompilationLevel_signature,                      "(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/String;ZI)I") \
   template(compileMethod_name,                                    "compileMethod")                                         \

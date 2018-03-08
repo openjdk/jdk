@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.code.stack.InspectedFrameVisitor;
 import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.JavaType;
@@ -514,13 +515,9 @@ final class CompilerToVM {
     native String getSymbol(long metaspaceSymbol);
 
     /**
-     * Looks for the next Java stack frame matching an entry in {@code methods}.
-     *
-     * @param frame the starting point of the search, where {@code null} refers to the topmost frame
-     * @param methods the methods to look for, where {@code null} means that any frame is returned
-     * @return the frame, or {@code null} if the end of the stack was reached during the search
+     * @see jdk.vm.ci.code.stack.StackIntrospection#iterateFrames
      */
-    native HotSpotStackFrameReference getNextStackFrame(HotSpotStackFrameReference frame, ResolvedJavaMethod[] methods, int initialSkip);
+    native <T> T iterateFrames(ResolvedJavaMethod[] initialMethods, ResolvedJavaMethod[] matchingMethods, int initialSkip, InspectedFrameVisitor<T> visitor);
 
     /**
      * Materializes all virtual objects within {@code stackFrame} and updates its locals.
