@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4789689 4905985 4927164 4827184 4993906 5004549 7025314 7010344 8025633 8026567 8162363
- *           8175200 8186332
+ *           8175200 8186332 8182765
  * @summary  Run Javadoc on a set of source files that demonstrate new
  *           language features.  Check the output to ensure that the new
  *           language features are properly documented.
@@ -46,8 +46,8 @@ public class TestNewLanguageFeatures extends JavadocTester {
     void test() {
         javadoc("-Xdoclint:none",
                 "-d", "out",
-                "-use", "-sourcepath",
-                testSrc,
+                "-use",
+                "-sourcepath", testSrc,
                 "pkg", "pkg1", "pkg2");
         checkExit(Exit.OK);
 
@@ -55,6 +55,21 @@ public class TestNewLanguageFeatures extends JavadocTester {
         checkTypeParameters();
         checkVarArgs();
         checkAnnotationTypeUsage();
+    }
+
+    @Test
+    void test_html4() {
+        javadoc("-Xdoclint:none",
+                "-d", "out-html4",
+                "-html4",
+                "-use",
+                "-sourcepath", testSrc,
+                "pkg", "pkg1", "pkg2");
+        checkExit(Exit.OK);
+
+        checkTypeParameters_html4();
+        checkVarArgs_html4();
+        checkAnnotationTypeUsage_html4();
     }
 
     //=================================
@@ -136,7 +151,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<td class=\"colFirst\"><code><a href=\"TypeParameters.html\" "
                 + "title=\"type parameter in TypeParameters\">E</a>[]</code></td>\n"
                 + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
-                + "<a href=\"#methodThatReturnsTypeParameterA-E:A-\">"
+                + "<a href=\"#methodThatReturnsTypeParameterA(E%5B%5D)\">"
                 + "methodThatReturnsTypeParameterA</a></span>&#8203;(<a href=\"TypeParameters.html\" "
                 + "title=\"type parameter in TypeParameters\">E</a>[]&nbsp;e)</code>",
                 "<pre>public&nbsp;<a href=\"TypeParameters.html\" "
@@ -146,7 +161,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<td class=\"colFirst\"><code>&lt;T extends java.lang.Object &amp; java.lang.Comparable&lt;? super T&gt;&gt;"
                 + "<br>T</code></td>\n"
                 + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
-                + "<a href=\"#methodtThatReturnsTypeParametersB-java.util.Collection-\">"
+                + "<a href=\"#methodtThatReturnsTypeParametersB(java.util.Collection)\">"
                 + "methodtThatReturnsTypeParametersB</a></span>&#8203;(java.util.Collection&lt;? extends T&gt;&nbsp;coll)</code>",
                 "<div class=\"block\">Returns TypeParameters</div>\n",
                 // Method takes a TypeVariable
@@ -154,7 +169,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 + "<a href=\"TypeParameters.html\" title=\"type parameter in TypeParameters\">E</a>"
                 + "</code></td>\n"
                 + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
-                + "<a href=\"#orElseThrow-java.util.function.Supplier-\">"
+                + "<a href=\"#orElseThrow(java.util.function.Supplier)\">"
                 + "orElseThrow</a></span>&#8203;(java.util.function.Supplier&lt;? extends X&gt;&nbsp;exceptionSupplier)</code>"
                 );
 
@@ -231,7 +246,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 + "pkg2\">Foo</a></span><span class=\"tabEnd\">&nbsp;</span></caption>",
                 "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">ClassUseTest1."
                 + "</span><code><span class=\"memberNameLink\"><a href=\"../"
-                + "ClassUseTest1.html#method-T-\">method</a></span>"
+                + "ClassUseTest1.html#method(T)\">method</a></span>"
                 + "&#8203;(T&nbsp;t)</code></th>",
                 "<caption><span>Fields in <a href=\"../"
                 + "package-summary.html\">pkg2</a> with type parameters of "
@@ -272,7 +287,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 + "</span></caption>",
                 "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">"
                 + "ClassUseTest1.</span><code><span class=\"memberNameLink\"><a href=\"../"
-                + "ClassUseTest1.html#method-T-\">method</a></span>"
+                + "ClassUseTest1.html#method(T)\">method</a></span>"
                 + "&#8203;(T&nbsp;t)</code></th>"
         );
 
@@ -295,7 +310,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 + "&nbsp;</span></caption>",
                 "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">ClassUseTest2."
                 + "</span><code><span class=\"memberNameLink\"><a href=\"../"
-                + "ClassUseTest2.html#method-T-\">method</a></span>"
+                + "ClassUseTest2.html#method(T)\">method</a></span>"
                 + "&#8203;(T&nbsp;t)</code></th>",
                 "<caption><span>Fields in <a href=\"../"
                 + "package-summary.html\">pkg2</a> declared as <a href=\"../"
@@ -336,7 +351,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 + "</span></caption>",
                 "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">ClassUseTest2."
                 + "</span><code><span class=\"memberNameLink\"><a href=\"../"
-                + "ClassUseTest2.html#method-T-\">method</a></span>"
+                + "ClassUseTest2.html#method(T)\">method</a></span>"
                 + "&#8203;(T&nbsp;t)</code></th>",
                 "<caption><span>Methods in <a href=\"../"
                 + "package-summary.html\">pkg2</a> that return types with "
@@ -371,7 +386,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 + "&nbsp;</span></caption>",
                 "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">ClassUseTest3"
                 + ".</span><code><span class=\"memberNameLink\"><a href=\"../ClassUseTest3."
-                + "html#method-T-\">method</a></span>&#8203;(T&nbsp;t)</code></th>",
+                + "html#method(T)\">method</a></span>&#8203;(T&nbsp;t)</code></th>",
                 "<td class=\"colFirst\"><code>&lt;T extends <a href=\"../"
                 + "ParamTest2.html\" title=\"class in pkg2\">"
                 + "ParamTest2</a>&lt;java.util.List&lt;? extends <a href=\".."
@@ -400,7 +415,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 + "pkg2\">Foo4</a></span><span class=\"tabEnd\">&nbsp;</span></caption>",
                 "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">ClassUseTest3."
                 + "</span><code><span class=\"memberNameLink\"><a href=\"../ClassUseTest3."
-                + "html#method-T-\">method</a></span>&#8203;(T&nbsp;t)</code>"
+                + "html#method(T)\">method</a></span>&#8203;(T&nbsp;t)</code>"
                 + "</th>",
                 "<caption><span>Methods in <a href=\"../"
                 + "package-summary.html\">pkg2</a> that return types with "
@@ -434,7 +449,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 + "<td class=\"colFirst\"><code>void</code></td>\n"
                 + "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">ClassUseTest3."
                 + "</span><code><span class=\"memberNameLink\"><a href=\"../ClassUseTest3."
-                + "html#method-java.util.Set-\">method</a></span>&#8203;(java."
+                + "html#method(java.util.Set)\">method</a></span>&#8203;(java."
                 + "util.Set&lt;<a href=\"../Foo4.html\" title=\""
                 + "class in pkg2\">Foo4</a>&gt;&nbsp;p)</code></th>",
                 "<caption><span>Constructor parameters in <a href=\"../"
@@ -442,6 +457,129 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 + "of type <a href=\"../Foo4.html\" title=\"class in "
                 + "pkg2\">Foo4</a></span><span class=\"tabEnd\">&nbsp;"
                 + "</span></caption>"
+        );
+
+        //=================================
+        // TYPE PARAMETER IN INDEX
+        //=================================
+        checkOutput("index-all.html", true,
+                "<span class=\"memberNameLink\"><a href=\"pkg2/Foo.html#method(java.util.Vector)\">"
+                + "method(Vector&lt;Object&gt;)</a></span>"
+        );
+
+        // TODO: duplicate of previous case; left in delibarately for now to simplify comparison testing
+        //=================================
+        // TYPE PARAMETER IN INDEX
+        //=================================
+        checkOutput("index-all.html", true,
+                "<span class=\"memberNameLink\"><a href=\"pkg2/Foo.html#method(java.util.Vector)\">"
+                + "method(Vector&lt;Object&gt;)</a></span>"
+        );
+
+        // No type parameters in class frame.
+        checkOutput("allclasses-frame.html", false,
+                "<a href=\"../pkg/TypeParameters.html\" title=\"class in pkg\">"
+                + "TypeParameters</a>&lt;<a href=\"../pkg/TypeParameters.html\" "
+                + "title=\"type parameter in TypeParameters\">E</a>&gt;"
+        );
+
+    }
+
+    //=================================
+    // TYPE PARAMETER TESTING
+    //=================================
+
+    void checkTypeParameters_html4() {
+        checkOutput("pkg/TypeParameters.html", true,
+                // Make sure the header is correct.
+                "<td class=\"colFirst\"><code><a href=\"TypeParameters.html\" "
+                + "title=\"type parameter in TypeParameters\">E</a>[]</code></td>\n"
+                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
+                + "<a href=\"#methodThatReturnsTypeParameterA-E:A-\">"
+                + "methodThatReturnsTypeParameterA</a></span>&#8203;(<a href=\"TypeParameters.html\" "
+                + "title=\"type parameter in TypeParameters\">E</a>[]&nbsp;e)</code>",
+                "<td class=\"colFirst\"><code>&lt;T extends java.lang.Object &amp; java.lang.Comparable&lt;? super T&gt;&gt;"
+                + "<br>T</code></td>\n"
+                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
+                + "<a href=\"#methodtThatReturnsTypeParametersB-java.util.Collection-\">"
+                + "methodtThatReturnsTypeParametersB</a></span>&#8203;(java.util.Collection&lt;? extends T&gt;&nbsp;coll)</code>",
+                "<div class=\"block\">Returns TypeParameters</div>\n",
+                // Method takes a TypeVariable
+                "<td class=\"colFirst\"><code>&lt;X extends java.lang.Throwable&gt;<br>"
+                + "<a href=\"TypeParameters.html\" title=\"type parameter in TypeParameters\">E</a>"
+                + "</code></td>\n"
+                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
+                + "<a href=\"#orElseThrow-java.util.function.Supplier-\">"
+                + "orElseThrow</a></span>&#8203;(java.util.function.Supplier&lt;? extends X&gt;&nbsp;exceptionSupplier)</code>"
+                );
+
+        //==============================================================
+        // Test Class-Use Documentation for Type Parameters.
+        //==============================================================
+        // ClassUseTest1: <T extends Foo & Foo2>
+        checkOutput("pkg2/class-use/Foo.html", true,
+                "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">ClassUseTest1."
+                + "</span><code><span class=\"memberNameLink\"><a href=\"../"
+                + "ClassUseTest1.html#method-T-\">method</a></span>"
+                + "&#8203;(T&nbsp;t)</code></th>"
+        );
+
+        checkOutput("pkg2/class-use/Foo2.html", true,
+                "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">"
+                + "ClassUseTest1.</span><code><span class=\"memberNameLink\"><a href=\"../"
+                + "ClassUseTest1.html#method-T-\">method</a></span>"
+                + "&#8203;(T&nbsp;t)</code></th>"
+        );
+
+        // ClassUseTest2: <T extends ParamTest<Foo3>>
+        checkOutput("pkg2/class-use/ParamTest.html", true,
+                "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">ClassUseTest2."
+                + "</span><code><span class=\"memberNameLink\"><a href=\"../"
+                + "ClassUseTest2.html#method-T-\">method</a></span>"
+                + "&#8203;(T&nbsp;t)</code></th>"
+        );
+
+        checkOutput("pkg2/class-use/Foo3.html", true,
+                "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">ClassUseTest2."
+                + "</span><code><span class=\"memberNameLink\"><a href=\"../"
+                + "ClassUseTest2.html#method-T-\">method</a></span>"
+                + "&#8203;(T&nbsp;t)</code></th>"
+        );
+
+        // ClassUseTest3: <T extends ParamTest2<List<? extends Foo4>>>
+        checkOutput("pkg2/class-use/ParamTest2.html", true,
+                "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">ClassUseTest3"
+                + ".</span><code><span class=\"memberNameLink\"><a href=\"../ClassUseTest3."
+                + "html#method-T-\">method</a></span>&#8203;(T&nbsp;t)</code></th>"
+        );
+
+        checkOutput("pkg2/class-use/Foo4.html", true,
+                "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">ClassUseTest3."
+                + "</span><code><span class=\"memberNameLink\"><a href=\"../ClassUseTest3."
+                + "html#method-T-\">method</a></span>&#8203;(T&nbsp;t)</code>"
+                + "</th>"
+        );
+
+        // Type parameters in constructor and method args
+        checkOutput("pkg2/class-use/Foo4.html", true,
+                "<caption><span>Method parameters in <a href=\"../"
+                + "package-summary.html\">pkg2</a> with type arguments of "
+                + "type <a href=\"../Foo4.html\" title=\"class in "
+                + "pkg2\">Foo4</a></span><span class=\"tabEnd\">&nbsp;"
+                + "</span></caption>\n"
+                + "<tr>\n"
+                + "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
+                + "<th class=\"colSecond\" scope=\"col\">Method</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
+                + "</tr>\n"
+                + "<tbody>\n"
+                + "<tr class=\"altColor\">\n"
+                + "<td class=\"colFirst\"><code>void</code></td>\n"
+                + "<th class=\"colSecond\" scope=\"row\"><span class=\"typeNameLabel\">ClassUseTest3."
+                + "</span><code><span class=\"memberNameLink\"><a href=\"../ClassUseTest3."
+                + "html#method-java.util.Set-\">method</a></span>&#8203;(java."
+                + "util.Set&lt;<a href=\"../Foo4.html\" title=\""
+                + "class in pkg2\">Foo4</a>&gt;&nbsp;p)</code></th>"
         );
 
         //=================================
@@ -461,19 +599,24 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 + "method(Vector&lt;Object&gt;)</a></span>"
         );
 
-        // No type parameters in class frame.
-        checkOutput("allclasses-frame.html", false,
-                "<a href=\"../pkg/TypeParameters.html\" title=\"class in pkg\">"
-                + "TypeParameters</a>&lt;<a href=\"../pkg/TypeParameters.html\" "
-                + "title=\"type parameter in TypeParameters\">E</a>&gt;"
-        );
-
     }
 
     //=================================
     // VAR ARG TESTING
     //=================================
     void checkVarArgs() {
+        checkOutput("pkg/VarArgs.html", true,
+                "(int...&nbsp;i)",
+                "(int[][]...&nbsp;i)",
+                "(int[]...)",
+                "<a href=\"TypeParameters.html\" title=\"class in pkg\">"
+                + "TypeParameters</a>...&nbsp;t");
+    }
+
+    //=================================
+    // VAR ARG TESTING
+    //=================================
+    void checkVarArgs_html4() {
         checkOutput("pkg/VarArgs.html", true,
                 "(int...&nbsp;i)",
                 "(int[][]...&nbsp;i)",
@@ -520,16 +663,16 @@ public class TestNewLanguageFeatures extends JavadocTester {
     void checkAnnotationTypeUsage() {
         checkOutput("pkg/package-summary.html", true,
                 // PACKAGE
-                "<a href=\"AnnotationType.html\" title=\"annotation in pkg\">@AnnotationType</a>(<a href=\"AnnotationType.html#optional--\">optional</a>=\"Package Annotation\",\n"
-                + "                <a href=\"AnnotationType.html#required--\">required</a>=1994)");
+                "<a href=\"AnnotationType.html\" title=\"annotation in pkg\">@AnnotationType</a>(<a href=\"AnnotationType.html#optional()\">optional</a>=\"Package Annotation\",\n"
+                + "                <a href=\"AnnotationType.html#required()\">required</a>=1994)");
 
         checkOutput("pkg/AnnotationTypeUsage.html", true,
                 // CLASS
                 "<pre><a href=\"AnnotationType.html\" "
                 + "title=\"annotation in pkg\">@AnnotationType</a>("
-                + "<a href=\"AnnotationType.html#optional--\">optional</a>"
+                + "<a href=\"AnnotationType.html#optional()\">optional</a>"
                 + "=\"Class Annotation\",\n"
-                + "                <a href=\"AnnotationType.html#required--\">"
+                + "                <a href=\"AnnotationType.html#required()\">"
                 + "required</a>=1994)\n"
                 + "public class <span class=\"typeNameLabel\">"
                 + "AnnotationTypeUsage</span>\n"
@@ -537,41 +680,41 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 // FIELD
                 "<pre><a href=\"AnnotationType.html\" "
                 + "title=\"annotation in pkg\">@AnnotationType</a>("
-                + "<a href=\"AnnotationType.html#optional--\">optional</a>"
+                + "<a href=\"AnnotationType.html#optional()\">optional</a>"
                 + "=\"Field Annotation\",\n"
-                + "                <a href=\"AnnotationType.html#required--\">"
+                + "                <a href=\"AnnotationType.html#required()\">"
                 + "required</a>=1994)\n"
                 + "public&nbsp;int field</pre>",
                 // CONSTRUCTOR
                 "<pre><a href=\"AnnotationType.html\" "
                 + "title=\"annotation in pkg\">@AnnotationType</a>("
-                + "<a href=\"AnnotationType.html#optional--\">optional</a>"
+                + "<a href=\"AnnotationType.html#optional()\">optional</a>"
                 + "=\"Constructor Annotation\",\n"
-                + "                <a href=\"AnnotationType.html#required--\">"
+                + "                <a href=\"AnnotationType.html#required()\">"
                 + "required</a>=1994)\n"
                 + "public&nbsp;AnnotationTypeUsage()</pre>",
                 // METHOD
                 "<pre><a href=\"AnnotationType.html\" "
                 + "title=\"annotation in pkg\">@AnnotationType</a>("
-                + "<a href=\"AnnotationType.html#optional--\">optional</a>"
+                + "<a href=\"AnnotationType.html#optional()\">optional</a>"
                 + "=\"Method Annotation\",\n"
-                + "                <a href=\"AnnotationType.html#required--\">"
+                + "                <a href=\"AnnotationType.html#required()\">"
                 + "required</a>=1994)\n"
                 + "public&nbsp;void&nbsp;method()</pre>",
                 // METHOD PARAMS
                 "<pre>public&nbsp;void&nbsp;methodWithParams&#8203;("
                 + "<a href=\"AnnotationType.html\" title=\"annotation in pkg\">"
-                + "@AnnotationType</a>(<a href=\"AnnotationType.html#optional--\">"
+                + "@AnnotationType</a>(<a href=\"AnnotationType.html#optional()\">"
                 + "optional</a>=\"Parameter Annotation\",<a "
-                + "href=\"AnnotationType.html#required--\">required</a>=1994)\n"
+                + "href=\"AnnotationType.html#required()\">required</a>=1994)\n"
                 + "                             int&nbsp;documented,\n"
                 + "                             int&nbsp;undocmented)</pre>",
                 // CONSTRUCTOR PARAMS
                 "<pre>public&nbsp;AnnotationTypeUsage&#8203;(<a "
                 + "href=\"AnnotationType.html\" title=\"annotation in pkg\">"
-                + "@AnnotationType</a>(<a href=\"AnnotationType.html#optional--\">"
+                + "@AnnotationType</a>(<a href=\"AnnotationType.html#optional()\">"
                 + "optional</a>=\"Constructor Param Annotation\",<a "
-                + "href=\"AnnotationType.html#required--\">required</a>=1994)\n"
+                + "href=\"AnnotationType.html#required()\">required</a>=1994)\n"
                 + "                           int&nbsp;documented,\n"
                 + "                           int&nbsp;undocmented)</pre>");
 
@@ -648,6 +791,101 @@ public class TestNewLanguageFeatures extends JavadocTester {
         //=================================
         checkOutput("pkg1/B.html", true,
                 // Integer
+                "<a href=\"A.html#d()\">d</a>=3.14,",
+                // Double
+                "<a href=\"A.html#d()\">d</a>=3.14,",
+                // Boolean
+                "<a href=\"A.html#b()\">b</a>=true,",
+                // String
+                "<a href=\"A.html#s()\">s</a>=\"sigh\",",
+                // Class
+                "<a href=\"A.html#c()\">c</a>=<a href=\"../pkg2/Foo.html\" title=\"class in pkg2\">Foo.class</a>,",
+                // Bounded Class
+                "<a href=\"A.html#w()\">w</a>=<a href=\"../pkg/TypeParameterSubClass.html\" title=\"class in pkg\">TypeParameterSubClass.class</a>,",
+                // Enum
+                "<a href=\"A.html#e()\">e</a>=<a href=\"../pkg/Coin.html#Penny\">Penny</a>,",
+                // Annotation Type
+                "<a href=\"A.html#a()\">a</a>=<a href=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">@AnnotationType</a>(<a href=\"../pkg/AnnotationType.html#optional()\">optional</a>=\"foo\",<a href=\"../pkg/AnnotationType.html#required()\">required</a>=1994),",
+                // String Array
+                "<a href=\"A.html#sa()\">sa</a>={\"up\",\"down\"},",
+                // Primitive
+                "<a href=\"A.html#primitiveClassTest()\">primitiveClassTest</a>=boolean.class,");
+
+        // XXX:  Add array test case after this if fixed:
+        //5020899: Incorrect internal representation of class-valued annotation elements
+        // Make sure that annotations are surrounded by <pre> and </pre>
+        checkOutput("pkg1/B.html", true,
+                "<pre><a href=\"A.html\" title=\"annotation in pkg1\">@A</a>",
+                "public interface <span class=\"typeNameLabel\">B</span></pre>");
+
+    }
+
+    //=================================
+    // ANNOTATION TYPE USAGE TESTING
+    //=================================
+    void checkAnnotationTypeUsage_html4() {
+        checkOutput("pkg/package-summary.html", true,
+                // PACKAGE
+                "<a href=\"AnnotationType.html\" title=\"annotation in pkg\">@AnnotationType</a>(<a href=\"AnnotationType.html#optional--\">optional</a>=\"Package Annotation\",\n"
+                + "                <a href=\"AnnotationType.html#required--\">required</a>=1994)");
+
+        checkOutput("pkg/AnnotationTypeUsage.html", true,
+                // CLASS
+                "<pre><a href=\"AnnotationType.html\" "
+                + "title=\"annotation in pkg\">@AnnotationType</a>("
+                + "<a href=\"AnnotationType.html#optional--\">optional</a>"
+                + "=\"Class Annotation\",\n"
+                + "                <a href=\"AnnotationType.html#required--\">"
+                + "required</a>=1994)\n"
+                + "public class <span class=\"typeNameLabel\">"
+                + "AnnotationTypeUsage</span>\n"
+                + "extends java.lang.Object</pre>",
+                // FIELD
+                "<pre><a href=\"AnnotationType.html\" "
+                + "title=\"annotation in pkg\">@AnnotationType</a>("
+                + "<a href=\"AnnotationType.html#optional--\">optional</a>"
+                + "=\"Field Annotation\",\n"
+                + "                <a href=\"AnnotationType.html#required--\">"
+                + "required</a>=1994)\n"
+                + "public&nbsp;int field</pre>",
+                // CONSTRUCTOR
+                "<pre><a href=\"AnnotationType.html\" "
+                + "title=\"annotation in pkg\">@AnnotationType</a>("
+                + "<a href=\"AnnotationType.html#optional--\">optional</a>"
+                + "=\"Constructor Annotation\",\n"
+                + "                <a href=\"AnnotationType.html#required--\">"
+                + "required</a>=1994)\n"
+                + "public&nbsp;AnnotationTypeUsage()</pre>",
+                // METHOD
+                "<pre><a href=\"AnnotationType.html\" "
+                + "title=\"annotation in pkg\">@AnnotationType</a>("
+                + "<a href=\"AnnotationType.html#optional--\">optional</a>"
+                + "=\"Method Annotation\",\n"
+                + "                <a href=\"AnnotationType.html#required--\">"
+                + "required</a>=1994)\n"
+                + "public&nbsp;void&nbsp;method()</pre>",
+                // METHOD PARAMS
+                "<pre>public&nbsp;void&nbsp;methodWithParams&#8203;("
+                + "<a href=\"AnnotationType.html\" title=\"annotation in pkg\">"
+                + "@AnnotationType</a>(<a href=\"AnnotationType.html#optional--\">"
+                + "optional</a>=\"Parameter Annotation\",<a "
+                + "href=\"AnnotationType.html#required--\">required</a>=1994)\n"
+                + "                             int&nbsp;documented,\n"
+                + "                             int&nbsp;undocmented)</pre>",
+                // CONSTRUCTOR PARAMS
+                "<pre>public&nbsp;AnnotationTypeUsage&#8203;(<a "
+                + "href=\"AnnotationType.html\" title=\"annotation in pkg\">"
+                + "@AnnotationType</a>(<a href=\"AnnotationType.html#optional--\">"
+                + "optional</a>=\"Constructor Param Annotation\",<a "
+                + "href=\"AnnotationType.html#required--\">required</a>=1994)\n"
+                + "                           int&nbsp;documented,\n"
+                + "                           int&nbsp;undocmented)</pre>");
+
+        //=================================
+        // ANNOTATION TYPE USAGE TESTING (All Different Types).
+        //=================================
+        checkOutput("pkg1/B.html", true,
+                // Integer
                 "<a href=\"A.html#d--\">d</a>=3.14,",
                 // Double
                 "<a href=\"A.html#d--\">d</a>=3.14,",
@@ -667,14 +905,5 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<a href=\"A.html#sa--\">sa</a>={\"up\",\"down\"},",
                 // Primitive
                 "<a href=\"A.html#primitiveClassTest--\">primitiveClassTest</a>=boolean.class,");
-
-        // XXX:  Add array test case after this if fixed:
-        //5020899: Incorrect internal representation of class-valued annotation elements
-        // Make sure that annotations are surrounded by <pre> and </pre>
-        checkOutput("pkg1/B.html", true,
-                "<pre><a href=\"A.html\" title=\"annotation in pkg1\">@A</a>",
-                "public interface <span class=\"typeNameLabel\">B</span></pre>");
-
     }
-
 }

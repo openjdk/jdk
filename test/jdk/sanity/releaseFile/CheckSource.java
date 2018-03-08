@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 
 /*
  * @test
- * @bug 8192837
- * @summary Test to verify release file does not contain closed repo info if it's open bundle
- * @run main NegativeSOURCETest
+ * @bug 8193660
+ * @summary Check SOURCE line in "release" file for closedjdk
+ * @run main CheckSource
  */
 
 import java.io.BufferedReader;
@@ -35,14 +35,14 @@ import java.io.FileReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-public class NegativeSOURCETest {
+public class CheckSource {
 
-    NegativeSOURCETest(String dataFile) {
+    CheckSource(String dataFile, boolean isOpenJDK) {
         // Read data files
-        readFile(dataFile);
+        readFile(dataFile, isOpenJDK);
     }
 
-    private void readFile(String fileName) {
+    private void readFile(String fileName, boolean isOpenJDK) {
         String fishForSOURCE = null;
 
         File file = new File(fileName);
@@ -80,10 +80,26 @@ public class NegativeSOURCETest {
         if (fishForSOURCE == null) {
             throw new RuntimeException("SOURCE line was not found!");
         } else {
-            // OK it was found, did it have closed/open in it?
-            if (fishForSOURCE.contains("closed") || fishForSOURCE.contains("open")) {
-                System.out.println("The offending string: " + fishForSOURCE);
-                throw new RuntimeException("The test failed, closed/open found!");
+            // OK it was found, did it have correct sources?
+            System.out.println("The source string found: " + fishForSOURCE);
+
+            // First it MUST have .: regardless of closed or openJDK
+            if (!fishForSOURCE.contains(".:")) {
+                throw new RuntimeException("The test failed, .: not found!");
+            }
+            // take out the .: source path
+            fishForSOURCE = fishForSOURCE.replace(".:", "");
+
+            // if its closedJDK it MUST have open:
+            if (!isOpenJDK && !fishForSOURCE.contains("open:")) {
+                throw new RuntimeException("The test failed, open: not found!");
+            }
+            // take out the open: source path
+            fishForSOURCE = fishForSOURCE.replace("open:", "");
+
+            // if any other source exists, that's an error
+            if (fishForSOURCE.contains(":")) {
+                throw new RuntimeException("The test failed, additional sources found!");
             }
         }
 
@@ -98,9 +114,7 @@ public class NegativeSOURCETest {
         System.out.println("JDK Path : " + jdkPath);
         System.out.println("Runtime Name : " + runtime);
 
-        if (runtime.contains("OpenJDK"))
-            new NegativeSOURCETest(jdkPath + "/release");
-        else
-            System.out.println("Test skipped: not an OpenJDK build.");
+        new CheckSource(jdkPath + "/release",
+                              runtime.contains("OpenJDK"));
     }
 }

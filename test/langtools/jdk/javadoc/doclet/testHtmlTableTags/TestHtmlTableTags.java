@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      6786688 8008164 8162363 8169819 8183037
+ * @bug      6786688 8008164 8162363 8169819 8183037 8182765
  * @summary  HTML tables should have table summary, caption and table headers.
  * @author   Bhavesh Patel
  * @library  ../lib
@@ -53,9 +53,93 @@ public class TestHtmlTableTags extends JavadocTester {
                 "pkg1", "pkg2");
         checkExit(Exit.OK);
 
-        checkHtmlTableSummaries();
+        checkHtmlTableTag();
         checkHtmlTableCaptions();
         checkHtmlTableHeaders();
+    }
+
+    @Test
+    void test_html4() {
+        javadoc("-d", "out-html4",
+                "-html4",
+                "-sourcepath", testSrc,
+                "-use",
+                "pkg1", "pkg2");
+        checkExit(Exit.OK);
+
+        checkHtmlTableSummaries();
+    }
+
+    /*
+     * Tests for validating table tag for HTML tables
+     */
+    void checkHtmlTableTag() {
+        //Package summary
+        checkOutput("pkg1/package-summary.html", true,
+                "<table class=\"typeSummary\">",
+                "<table class=\"typeSummary\">");
+
+        checkOutput("pkg2/package-summary.html", true,
+                "<table class=\"typeSummary\">",
+                "<table class=\"typeSummary\">");
+
+        // Class documentation
+        checkOutput("pkg1/C1.html", true,
+                "<table class=\"memberSummary\">",
+                "<table class=\"memberSummary\">");
+
+        checkOutput("pkg2/C2.html", true,
+                "<table class=\"memberSummary\">",
+                "<table class=\"memberSummary\">");
+
+        checkOutput("pkg2/C2.ModalExclusionType.html", true,
+                "<table class=\"memberSummary\">");
+
+        checkOutput("pkg2/C3.html", true,
+                "<table class=\"memberSummary\">");
+
+        checkOutput("pkg2/C4.html", true,
+                "<table class=\"memberSummary\">");
+
+        // Class use documentation
+        checkOutput("pkg1/class-use/I1.html", true,
+                "<table class=\"useSummary\">");
+
+        checkOutput("pkg1/class-use/C1.html", true,
+                "<table class=\"useSummary\">",
+                "<table class=\"useSummary\">");
+
+        checkOutput("pkg2/class-use/C2.html", true,
+                "<table class=\"useSummary\">",
+                "<table class=\"useSummary\">");
+
+        checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
+                "<table class=\"useSummary\">");
+
+        checkOutput("pkg2/class-use/C2.ModalExclusionType.html", true,
+                "<table class=\"useSummary\">");
+
+        // Package use documentation
+        checkOutput("pkg1/package-use.html", true,
+                "<table class=\"useSummary\">",
+                "<table class=\"useSummary\">");
+
+        checkOutput("pkg2/package-use.html", true,
+                "<table class=\"useSummary\">",
+                "<table class=\"useSummary\">");
+
+        // Deprecated
+        checkOutput("deprecated-list.html", true,
+                "<table class=\"deprecatedSummary\">",
+                "<table class=\"deprecatedSummary\">");
+
+        // Constant values
+        checkOutput("constant-values.html", true,
+                "<table class=\"constantsSummary\">");
+
+        // Overview Summary
+        checkOutput("overview-summary.html", true,
+                "<table class=\"overviewSummary\">");
     }
 
     /*

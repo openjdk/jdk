@@ -57,9 +57,6 @@ public class MimeTable implements FileNameMap {
                     "/etc/mailcap",
                     "/usr/etc/mailcap",
                     "/usr/local/etc/mailcap",
-                    System.getProperty("hotjava.home",
-                                           "/usr/local/hotjava")
-                        + "/lib/mailcap",
                 };
                 return null;
             }

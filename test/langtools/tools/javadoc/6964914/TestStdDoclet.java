@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6964914
+ * @bug 6964914 8182765
  * @summary javadoc does not output number of warnings using user written doclet
  */
 
@@ -57,7 +57,6 @@ public class TestStdDoclet {
         cmdArgs.add(javadoc.getPath());
         cmdArgs.addAll(Arrays.asList(
                 "-classpath", ".", // insulates us from ambient classpath
-                "-html4",
                 "-Xdoclint:none",
                 "-package",
                 new File(testSrc, thisClassName + ".java").getPath()
