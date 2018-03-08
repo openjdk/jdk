@@ -29,10 +29,11 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/handles.inline.hpp"
+#include "runtime/handles.hpp"
 #include "runtime/reflection.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 
 // A KlassStream is an abstract stream for streaming over self, superclasses
 // and (super)interfaces. Streaming is done in reverse order (subclasses first,

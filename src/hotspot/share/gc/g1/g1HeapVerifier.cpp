@@ -39,6 +39,7 @@
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/handles.inline.hpp"
 
 class VerifyRootsClosure: public OopClosure {
 private:

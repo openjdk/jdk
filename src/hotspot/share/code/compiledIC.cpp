@@ -37,6 +37,7 @@
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
