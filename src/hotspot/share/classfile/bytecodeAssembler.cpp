@@ -56,6 +56,11 @@ ConstantPool* BytecodeConstantPool::create_constant_pool(TRAPS) const {
   cp->set_pool_holder(_orig->pool_holder());
   _orig->copy_cp_to(1, _orig->length() - 1, cp, 1, CHECK_NULL);
 
+  // Preserve dynamic constant information from the original pool
+  if (_orig->has_dynamic_constant()) {
+    cp->set_has_dynamic_constant();
+  }
+
   for (int i = 0; i < _entries.length(); ++i) {
     BytecodeCPEntry entry = _entries.at(i);
     int idx = i + _orig->length();
