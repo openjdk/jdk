@@ -108,11 +108,7 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
 [
   # Debug symbols
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    if test "x$OPENJDK_TARGET_CPU_BITS" = "x64" && test "x$DEBUG_LEVEL" = "xfastdebug"; then
-      CFLAGS_DEBUG_SYMBOLS="-g1"
-    else
-      CFLAGS_DEBUG_SYMBOLS="-g"
-    fi
+    CFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     CFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
