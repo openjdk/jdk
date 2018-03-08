@@ -92,7 +92,7 @@ void ThrowException(JNIEnv *env, const char *exceptionName, DWORD dwError)
  * Overloaded 'operator new[]' variant, which will raise Java's
  * OutOfMemoryError in the case of a failure.
  */
-static void* operator new[](std::size_t size, JNIEnv *env)
+void* operator new[](std::size_t size, JNIEnv *env)
 {
     void* buf = ::operator new[](size, std::nothrow);
     if (buf == NULL) {
