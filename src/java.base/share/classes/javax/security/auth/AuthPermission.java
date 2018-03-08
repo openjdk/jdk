@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ package javax.security.auth;
  *
  * <p> The target name is the name of a security configuration parameter
  * (see below).  Currently the {@code AuthPermission} object is used to
- * guard access to the {@link Policy}, {@link Subject},
+ * guard access to the {@link Subject},
  * {@link javax.security.auth.login.LoginContext}, and
  * {@link javax.security.auth.login.Configuration} objects.
  *
@@ -119,21 +119,6 @@ package javax.security.auth;
  * <pre>
  *      createLoginContext -    allow code to instantiate a
  *                              {@code LoginContext}.
- * </pre>
- *
- * <p> {@code javax.security.auth.Policy} has been
- * deprecated in favor of {@code java.security.Policy}.
- * Therefore, the following target names have also been deprecated:
- *
- * <pre>
- *      getPolicy -             allow the caller to retrieve the system-wide
- *                              Subject-based access control policy.
- *
- *      setPolicy -             allow the caller to set the system-wide
- *                              Subject-based access control policy.
- *
- *      refreshPolicy -         allow the caller to refresh the system-wide
- *                              Subject-based access control policy.
  * </pre>
  *
  * @implNote
