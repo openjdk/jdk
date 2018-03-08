@@ -311,6 +311,9 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_PRNG_generateSeed
             }
 
             result = env->NewByteArray(length);
+            if (result == NULL) {
+                __leave;
+            }
             env->SetByteArrayRegion(result, 0, length, (jbyte*) pbData);
 
         } else { // length == 0
