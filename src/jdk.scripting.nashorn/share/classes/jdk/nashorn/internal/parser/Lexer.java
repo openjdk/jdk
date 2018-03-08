@@ -592,7 +592,7 @@ public class Lexer extends Scanner {
 
     /**
      * Check whether the given token represents the beginning of a literal. If so scan
-     * the literal and return <tt>true</tt>, otherwise return false.
+     * the literal and return <code>true</code>, otherwise return false.
      *
      * @param token the token.
      * @param startTokenType the token type.

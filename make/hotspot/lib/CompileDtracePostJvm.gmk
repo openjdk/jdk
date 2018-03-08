@@ -160,7 +160,9 @@ ifeq ($(call check-jvm-feature, dtrace), true)
 	    > $(DTRACE_SUPPORT_DIR)/$(@F).d))
 	$(call ExecuteWithLog, $@, $(DTRACE) $(DTRACE_FLAGS) -o $@ \
 	    -s $(DTRACE_SUPPORT_DIR)/$(@F).d)
-	$(call ExecuteWithLog, $@.elfedit, $(ELFEDIT) $(call GetElfeditCommands) $@)
+        ifeq ($(OPENJDK_TARGET_CPU_ARCH), sparc)
+	  $(call ExecuteWithLog, $@.elfedit, $(ELFEDIT) $(call GetElfeditCommands) $@)
+        endif
 
     ############################################################################
     # Build the stand-alone dtrace libraries

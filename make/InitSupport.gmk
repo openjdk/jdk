@@ -435,7 +435,7 @@ else # $(HAS_SPEC)=true
   define PrepareCompareBuild
 	$(ECHO) "Preparing for comparison rebuild"
         # Apply patch, if any
-	$(if $(COMPARE_BUILD_PATCH), $(PATCH) -p1 < $(COMPARE_BUILD_PATCH))
+	$(if $(COMPARE_BUILD_PATCH), cd $(topdir) && $(PATCH) -p1 < $(COMPARE_BUILD_PATCH))
         # Move the first build away temporarily
 	$(RM) -r $(topdir)/build/.compare-build-temp
 	$(MKDIR) -p $(topdir)/build/.compare-build-temp
@@ -455,7 +455,7 @@ else # $(HAS_SPEC)=true
   # Cleanup after a compare build
   define CleanupCompareBuild
         # If running with a COMPARE_BUILD patch, reverse-apply it
-	$(if $(COMPARE_BUILD_PATCH), $(PATCH) -R -p1 < $(COMPARE_BUILD_PATCH))
+	$(if $(COMPARE_BUILD_PATCH), cd $(topdir) && $(PATCH) -R -p1 < $(COMPARE_BUILD_PATCH))
         # Move this build away and restore the original build
 	$(MKDIR) -p $(topdir)/build/compare-build
 	$(MV) $(OUTPUTDIR) $(COMPARE_BUILD_OUTPUTDIR)

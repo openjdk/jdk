@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4663254 8016328 8025633 8026567 8081854
+ * @bug      4663254 8016328 8025633 8026567 8081854 8182765
  * @summary  Verify that spaces do not appear in hrefs and anchors.
  * @author   jamieh
  * @library  ../lib
@@ -50,6 +50,49 @@ public class TestHref extends JavadocTester {
 
         checkOutput("pkg/C1.html", true,
                 //External link.
+                "href=\"http://java.sun.com/j2se/1.4/docs/api/java/lang/Object.html?is-external=true#wait(long,int)\"",
+                //Member summary table link.
+                "href=\"#method(int,int,java.util.ArrayList)\"",
+                //Anchor test.
+                "<a id=\"method(int,int,java.util.ArrayList)\">\n"
+                + "<!--   -->\n"
+                + "</a>",
+                //Backward compatibility anchor test."pkg/C1.html",
+                "<a id=\"method(int,int,java.util.ArrayList)\">\n"
+                + "<!--   -->\n"
+                + "</a>");
+
+        checkOutput("pkg/C2.html", true,
+                //{@link} test.
+                "Link: <a href=\"C1.html#method(int,int,java.util.ArrayList)\">",
+                //@see test.
+                "See Also:</span></dt>\n"
+                + "<dd><a href=\"C1.html#method(int,int,java.util.ArrayList)\">"
+        );
+
+        checkOutput("pkg/C4.html", true,
+                //Header does not link to the page itself.
+                "Class C4&lt;E extends C4&lt;E&gt;&gt;</h2>",
+                //Signature does not link to the page itself.
+                "public abstract class <span class=\"typeNameLabel\">C4&lt;E extends C4&lt;E&gt;&gt;</span>"
+        );
+
+        checkOutput(Output.OUT, false,
+                "<a> tag is malformed");
+    }
+
+    @Test
+    void test_html4() {
+        javadoc("-Xdoclint:none",
+                "-d", "out-html4",
+                "-html4",
+                "-sourcepath", testSrc,
+                "-linkoffline", "http://java.sun.com/j2se/1.4/docs/api/", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/C1.html", true,
+                //External link.
                 "href=\"http://java.sun.com/j2se/1.4/docs/api/java/lang/Object.html?is-external=true#wait-long-int-\"",
                 //Member summary table link.
                 "href=\"#method-int-int-java.util.ArrayList-\"",
@@ -69,15 +112,5 @@ public class TestHref extends JavadocTester {
                 "See Also:</span></dt>\n"
                 + "<dd><a href=\"C1.html#method-int-int-java.util.ArrayList-\">"
         );
-
-        checkOutput("pkg/C4.html", true,
-                //Header does not link to the page itself.
-                "Class C4&lt;E extends C4&lt;E&gt;&gt;</h2>",
-                //Signature does not link to the page itself.
-                "public abstract class <span class=\"typeNameLabel\">C4&lt;E extends C4&lt;E&gt;&gt;</span>"
-        );
-
-        checkOutput(Output.OUT, false,
-                "<a> tag is malformed");
     }
 }

@@ -60,15 +60,15 @@ package jdk.nashorn.internal.runtime.linker;
  * Dangerous characters are the union of all characters forbidden
  * or otherwise restricted by the JVM specification,
  * plus their mates, if they are brackets
- * (<code><big><b>[</b></big></code> and <code><big><b>]</b></big></code>,
- * <code><big><b>&lt;</b></big></code> and <code><big><b>&gt;</b></big></code>),
- * plus, arbitrarily, the colon character <code><big><b>:</b></big></code>.
+ * (<code><b>[</b></code> and <code><b>]</b></code>,
+ * <code><b>&lt;</b></code> and <code><b>&gt;</b></code>),
+ * plus, arbitrarily, the colon character <code><b>:</b></code>.
  * There is no distinction between type, method, and field names.
  * This makes it easier to convert between mangled names of different
  * types, since they do not need to be decoded (demangled).
  * </p>
  * <p>
- * The escape character is backslash <code><big><b>\</b></big></code>
+ * The escape character is backslash <code><b>\</b></code>
  * (also known as reverse solidus).
  * This character is, until now, unheard of in bytecode names,
  * but traditional in the proposed role.
@@ -92,32 +92,32 @@ package jdk.nashorn.internal.runtime.linker;
  * </p>
  * <p>
  * The dangerous characters are
- * <code><big><b>/</b></big></code> (forward slash, used to delimit package components),
- * <code><big><b>.</b></big></code> (dot, also a package delimiter),
- * <code><big><b>;</b></big></code> (semicolon, used in signatures),
- * <code><big><b>$</b></big></code> (dollar, used in inner classes and synthetic members),
- * <code><big><b>&lt;</b></big></code> (left angle),
- * <code><big><b>&gt;</b></big></code> (right angle),
- * <code><big><b>[</b></big></code> (left square bracket, used in array types),
- * <code><big><b>]</b></big></code> (right square bracket, reserved in this scheme for language use),
- * and <code><big><b>:</b></big></code> (colon, reserved in this scheme for language use).
+ * <code><b>/</b></code> (forward slash, used to delimit package components),
+ * <code><b>.</b></code> (dot, also a package delimiter),
+ * <code><b>;</b></code> (semicolon, used in signatures),
+ * <code><b>$</b></code> (dollar, used in inner classes and synthetic members),
+ * <code><b>&lt;</b></code> (left angle),
+ * <code><b>&gt;</b></code> (right angle),
+ * <code><b>[</b></code> (left square bracket, used in array types),
+ * <code><b>]</b></code> (right square bracket, reserved in this scheme for language use),
+ * and <code><b>:</b></code> (colon, reserved in this scheme for language use).
  * Their replacements are, respectively,
- * <code><big><b>|</b></big></code> (vertical bar),
- * <code><big><b>,</b></big></code> (comma),
- * <code><big><b>?</b></big></code> (question mark),
- * <code><big><b>%</b></big></code> (percent),
- * <code><big><b>^</b></big></code> (caret),
- * <code><big><b>_</b></big></code> (underscore), and
- * <code><big><b>{</b></big></code> (left curly bracket),
- * <code><big><b>}</b></big></code> (right curly bracket),
- * <code><big><b>!</b></big></code> (exclamation mark).
+ * <code><b>|</b></code> (vertical bar),
+ * <code><b>,</b></code> (comma),
+ * <code><b>?</b></code> (question mark),
+ * <code><b>%</b></code> (percent),
+ * <code><b>^</b></code> (caret),
+ * <code><b>_</b></code> (underscore), and
+ * <code><b>{</b></code> (left curly bracket),
+ * <code><b>}</b></code> (right curly bracket),
+ * <code><b>!</b></code> (exclamation mark).
  * In addition, the replacement character for the escape character itself is
- * <code><big><b>-</b></big></code> (hyphen),
+ * <code><b>-</b></code> (hyphen),
  * and the replacement character for the null prefix is
- * <code><big><b>=</b></big></code> (equal sign).
+ * <code><b>=</b></code> (equal sign).
  * </p>
  * <p>
- * An escape character <code><big><b>\</b></big></code>
+ * An escape character <code><b>\</b></code>
  * followed by any of these replacement characters
  * is an escape sequence, and there are no other escape sequences.
  * An equal sign is only part of an escape sequence
@@ -135,16 +135,16 @@ package jdk.nashorn.internal.runtime.linker;
  * string can contain <cite>accidental escapes</cite>, apparent escape
  * sequences which must not be interpreted as manglings.
  * These are disabled by replacing their leading backslash with an
- * escape sequence (<code><big><b>\-</b></big></code>).  To mangle a string, three logical steps
+ * escape sequence (<code><b>\-</b></code>).  To mangle a string, three logical steps
  * are required, though they may be carried out in one pass:
  * </p>
  * <ol>
  *   <li>In each accidental escape, replace the backslash with an escape sequence
- * (<code><big><b>\-</b></big></code>).</li>
+ * (<code><b>\-</b></code>).</li>
  *   <li>Replace each dangerous character with an escape sequence
- * (<code><big><b>\|</b></big></code> for <code><big><b>/</b></big></code>, etc.).</li>
+ * (<code><b>\|</b></code> for <code><b>/</b></code>, etc.).</li>
  *   <li>If the first two steps introduced any change, <em>and</em>
- * if the string does not already begin with a backslash, prepend a null prefix (<code><big><b>\=</b></big></code>).</li>
+ * if the string does not already begin with a backslash, prepend a null prefix (<code><b>\=</b></code>).</li>
  * </ol>
  *
  * To demangle a mangled string that begins with an escape,
@@ -174,9 +174,9 @@ package jdk.nashorn.internal.runtime.linker;
  * is a many-to-one function.
  * A mangled string is defined as <cite>validly mangled</cite> if
  * it is in fact the unique mangling of its spelling string.
- * Three examples of invalidly mangled strings are <code><big><b>\=foo</b></big></code>,
- * <code><big><b>\-bar</b></big></code>, and <code><big><b>baz\!</b></big></code>, which demangle to <code><big><b>foo</b></big></code>, <code><big><b>\bar</b></big></code>, and
- * <code><big><b>baz\!</b></big></code>, but then remangle to <code><big><b>foo</b></big></code>, <code><big><b>\bar</b></big></code>, and <code><big><b>\=baz\-!</b></big></code>.
+ * Three examples of invalidly mangled strings are <code><b>\=foo</b></code>,
+ * <code><b>\-bar</b></code>, and <code><b>baz\!</b></code>, which demangle to <code><b>foo</b></code>, <code><b>\bar</b></code>, and
+ * <code><b>baz\!</b></code>, but then remangle to <code><b>foo</b></code>, <code><b>\bar</b></code>, and <code><b>\=baz\-!</b></code>.
  * If a language back-end or runtime is using mangled names,
  * it should never present an invalidly mangled bytecode
  * name to the JVM.  If the runtime encounters one,
@@ -237,10 +237,10 @@ package jdk.nashorn.internal.runtime.linker;
  * </p>
  * <p>
  * For example, an HTML-like spelling
- * <code><big><b>&lt;pre&gt;</b></big></code> mangles to
- * <code><big><b>\^pre\_</b></big></code> and could
+ * <code><b>&lt;pre&gt;</b></code> mangles to
+ * <code><b>\^pre\_</b></code> and could
  * display more cleanly as
- * <code><big><b>'&lt;pre&gt;'</b></big></code>,
+ * <code><b>'&lt;pre&gt;'</b></code>,
  * with the quotes included.
  * Such string-like conventions are <em>not</em> suitable
  * for mangled bytecode names, in part because
@@ -256,11 +256,11 @@ package jdk.nashorn.internal.runtime.linker;
  * which contain dangerous characters (like dots in field
  * names or brackets in method names) should not be
  * simply quoted.  The bytecode names
- * <code><big><b>\=phase\,1</b></big></code> and
- * <code><big><b>phase.1</b></big></code> are distinct,
+ * <code><b>\=phase\,1</b></code> and
+ * <code><b>phase.1</b></code> are distinct,
  * and in demangled displays they should be presented as
- * <code><big><b>'phase.1'</b></big></code> and something like
- * <code><big><b>'phase'.1</b></big></code>, respectively.
+ * <code><b>'phase.1'</b></code> and something like
+ * <code><b>'phase'.1</b></code>, respectively.
  * </p>
  */
 public final class NameCodec {

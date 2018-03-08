@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8194955
+ * @bug 8194955 8182765
  * @summary Warn when default HTML version is used.
  * @library ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -47,8 +47,11 @@ public class TestHtmlWarning extends JavadocTester {
     }
 
     private static final Path testFile = Paths.get("C.java");
-    private static final String warning =
-        "javadoc: warning - You have not specified the version of HTML to use.";
+    private static final String warning
+            = "javadoc: warning - You have specified the HTML version as HTML 4.01 by using the -html4 option.\n"
+            + "The default is currently HTML5 and the support for HTML 4.01 will be removed\n"
+            + "in a future release. To suppress this warning, please ensure that any HTML constructs\n"
+            + "in your comments are valid in HTML5, and remove the -html4 option.";
 
     @Test
     void testHtml4() {
@@ -57,7 +60,7 @@ public class TestHtmlWarning extends JavadocTester {
                 testFile.toString());
         checkExit(Exit.OK);
 
-        checkOutput(Output.OUT, false, warning);
+        checkOutput(Output.OUT, true, warning);
     }
 
     @Test
@@ -76,6 +79,6 @@ public class TestHtmlWarning extends JavadocTester {
                 testFile.toString());
         checkExit(Exit.OK);
 
-        checkOutput(Output.OUT, true, warning);
+        checkOutput(Output.OUT, false, warning);
     }
 }

@@ -743,10 +743,21 @@ var getJibProfilesProfiles = function (input, common, data) {
             dependencies: [ "devkit" ],
             environment_path: input.get("devkit", "install_path")
                 + "/Xcode.app/Contents/Developer/usr/bin"
-        }
+        };
         profiles["run-test"] = concatObjects(profiles["run-test"], macosxRunTestExtra);
         profiles["run-test-jprt"] = concatObjects(profiles["run-test-jprt"], macosxRunTestExtra);
         profiles["run-test-prebuilt"] = concatObjects(profiles["run-test-prebuilt"], macosxRunTestExtra);
+    }
+    // On windows we want the debug symbols available at test time
+    if (input.build_os == "windows") {
+        windowsRunTestPrebuiltExtra = {
+            dependencies: [ testedProfile + ".jdk_symbols" ],
+            environment: {
+                "PRODUCT_SYMBOLS_HOME": input.get(testedProfile + ".jdk_symbols", "home_path"),
+            }
+        };
+        profiles["run-test-prebuilt"] = concatObjects(profiles["run-test-prebuilt"],
+            windowsRunTestPrebuiltExtra);
     }
 
     // Generate the missing platform attributes

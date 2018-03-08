@@ -1696,6 +1696,11 @@ public class JavacParser implements Parser {
             if (lambdaClassifier.diagFragment != null) {
                 log.error(DiagnosticFlag.SYNTAX, pos, Errors.InvalidLambdaParameterDeclaration(lambdaClassifier.diagFragment));
             }
+            for (JCVariableDecl param: params) {
+                if (param.vartype != null && isRestrictedLocalVarTypeName(param.vartype)) {
+                    param.vartype = null;
+                }
+            }
         }
         return lambdaExpressionOrStatementRest(params, pos);
     }

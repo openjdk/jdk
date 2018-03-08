@@ -96,7 +96,7 @@ class SocketChannelImpl
     private static final int ST_CLOSING = 3;
     private static final int ST_KILLPENDING = 4;
     private static final int ST_KILLED = 5;
-    private int state;
+    private volatile int state;  // need stateLock to change
 
     // IDs of native threads doing reads and writes, for signalling
     private long readerThread;
@@ -148,10 +148,35 @@ class SocketChannelImpl
         }
     }
 
-    // @throws ClosedChannelException if channel is closed
+    /**
+     * Checks that the channel is open.
+     *
+     * @throws ClosedChannelException if channel is closed (or closing)
+     */
     private void ensureOpen() throws ClosedChannelException {
         if (!isOpen())
             throw new ClosedChannelException();
+    }
+
+    /**
+     * Checks that the channel is open and connected.
+     *
+     * @apiNote This method uses the "state" field to check if the channel is
+     * open. It should never be used in conjuncion with isOpen or ensureOpen
+     * as these methods check AbstractInterruptibleChannel's closed field - that
+     * field is set before implCloseSelectableChannel is called and so before
+     * the state is changed.
+     *
+     * @throws ClosedChannelException if channel is closed (or closing)
+     * @throws NotYetConnectedException if open and not connected
+     */
+    private void ensureOpenAndConnected() throws ClosedChannelException {
+        int state = this.state;
+        if (state < ST_CONNECTED) {
+            throw new NotYetConnectedException();
+        } else if (state > ST_CONNECTED) {
+            throw new ClosedChannelException();
+        }
     }
 
     @Override
@@ -275,13 +300,14 @@ class SocketChannelImpl
         if (blocking) {
             // set hook for Thread.interrupt
             begin();
-        }
-        synchronized (stateLock) {
-            ensureOpen();
-            if (state != ST_CONNECTED)
-                throw new NotYetConnectedException();
-            if (blocking)
+
+            synchronized (stateLock) {
+                ensureOpenAndConnected();
+                // record thread so it can be signalled if needed
                 readerThread = NativeThread.current();
+            }
+        } else {
+            ensureOpenAndConnected();
         }
     }
 
@@ -385,15 +411,16 @@ class SocketChannelImpl
         if (blocking) {
             // set hook for Thread.interrupt
             begin();
-        }
-        synchronized (stateLock) {
-            ensureOpen();
-            if (isOutputClosed)
-                throw new ClosedChannelException();
-            if (state != ST_CONNECTED)
-                throw new NotYetConnectedException();
-            if (blocking)
+
+            synchronized (stateLock) {
+                ensureOpenAndConnected();
+                if (isOutputClosed)
+                    throw new ClosedChannelException();
+                // record thread so it can be signalled if needed
                 writerThread = NativeThread.current();
+            }
+        } else {
+            ensureOpenAndConnected();
         }
     }
 
@@ -574,38 +601,48 @@ class SocketChannelImpl
 
     @Override
     public boolean isConnected() {
-        synchronized (stateLock) {
-            return (state == ST_CONNECTED);
-        }
+        return (state == ST_CONNECTED);
     }
 
     @Override
     public boolean isConnectionPending() {
-        synchronized (stateLock) {
-            return (state == ST_CONNECTIONPENDING);
-        }
+        return (state == ST_CONNECTIONPENDING);
     }
 
     /**
      * Marks the beginning of a connect operation that might block.
-     *
+     * @param blocking true if configured blocking
+     * @param isa the remote address
      * @throws ClosedChannelException if the channel is closed
      * @throws AlreadyConnectedException if already connected
      * @throws ConnectionPendingException is a connection is pending
+     * @throws IOException if the pre-connect hook fails
      */
-    private void beginConnect(boolean blocking) throws ClosedChannelException {
+    private void beginConnect(boolean blocking, InetSocketAddress isa)
+        throws IOException
+    {
         if (blocking) {
             // set hook for Thread.interrupt
             begin();
         }
         synchronized (stateLock) {
             ensureOpen();
+            int state = this.state;
             if (state == ST_CONNECTED)
                 throw new AlreadyConnectedException();
             if (state == ST_CONNECTIONPENDING)
                 throw new ConnectionPendingException();
-            if (blocking)
+            assert state == ST_UNCONNECTED;
+            this.state = ST_CONNECTIONPENDING;
+
+            if (localAddress == null)
+                NetHooks.beforeTcpConnect(fd, isa.getAddress(), isa.getPort());
+            remoteAddress = isa;
+
+            if (blocking) {
+                // record thread so it can be signalled if needed
                 readerThread = NativeThread.current();
+            }
         }
     }
 
@@ -614,11 +651,21 @@ class SocketChannelImpl
      *
      * @throws AsynchronousCloseException if the channel was closed due to this
      * thread being interrupted on a blocking connect operation.
+     * @throws IOException if completed and unable to obtain the local address
      */
     private void endConnect(boolean blocking, boolean completed)
-        throws AsynchronousCloseException
+        throws IOException
     {
         endRead(blocking, completed);
+
+        if (completed) {
+            synchronized (stateLock) {
+                if (state == ST_CONNECTIONPENDING) {
+                    localAddress = Net.localAddress(fd);
+                    state = ST_CONNECTED;
+                }
+            }
+        }
     }
 
     @Override
@@ -628,64 +675,37 @@ class SocketChannelImpl
         if (sm != null)
             sm.checkConnect(isa.getAddress().getHostAddress(), isa.getPort());
 
-        readLock.lock();
+        InetAddress ia = isa.getAddress();
+        if (ia.isAnyLocalAddress())
+            ia = InetAddress.getLocalHost();
+
         try {
-            writeLock.lock();
+            readLock.lock();
             try {
-                // notify before-connect hook
-                synchronized (stateLock) {
-                    if (state == ST_UNCONNECTED && localAddress == null) {
-                        NetHooks.beforeTcpConnect(fd, isa.getAddress(), isa.getPort());
-                    }
-                }
-
-                InetAddress ia = isa.getAddress();
-                if (ia.isAnyLocalAddress())
-                    ia = InetAddress.getLocalHost();
-
-                int n = 0;
-                boolean blocking = isBlocking();
+                writeLock.lock();
                 try {
+                    int n = 0;
+                    boolean blocking = isBlocking();
                     try {
-                        beginConnect(blocking);
-                        if (blocking) {
-                            do {
-                                n = Net.connect(fd, ia, isa.getPort());
-                            } while (n == IOStatus.INTERRUPTED && isOpen());
-                        } else {
+                        beginConnect(blocking, isa);
+                        do {
                             n = Net.connect(fd, ia, isa.getPort());
-                        }
+                        } while (n == IOStatus.INTERRUPTED && isOpen());
                     } finally {
-                        endConnect(blocking, n > 0);
+                        endConnect(blocking, (n > 0));
                     }
-                } catch (IOException x) {
-                    // connect failed, close socket
-                    close();
-                    throw x;
-                }
-
-                // connection may be established
-                synchronized (stateLock) {
-                    if (!isOpen())
-                        throw new AsynchronousCloseException();
-                    remoteAddress = isa;
-                    if (n > 0) {
-                        // connected established
-                        localAddress = Net.localAddress(fd);
-                        state = ST_CONNECTED;
-                        return true;
-                    } else {
-                        // connection pending
-                        assert !blocking;
-                        state = ST_CONNECTIONPENDING;
-                        return false;
-                    }
+                    assert IOStatus.check(n);
+                    return n > 0;
+                } finally {
+                    writeLock.unlock();
                 }
             } finally {
-                writeLock.unlock();
+                readLock.unlock();
             }
-        } finally {
-            readLock.unlock();
+        } catch (IOException ioe) {
+            // connect failed, close the channel
+            close();
+            throw ioe;
         }
     }
 
@@ -704,8 +724,10 @@ class SocketChannelImpl
             ensureOpen();
             if (state != ST_CONNECTIONPENDING)
                 throw new NoConnectionPendingException();
-            if (blocking)
+            if (blocking) {
+                // record thread so it can be signalled if needed
                 readerThread = NativeThread.current();
+            }
         }
     }
 
@@ -714,65 +736,62 @@ class SocketChannelImpl
      *
      * @throws AsynchronousCloseException if the channel was closed due to this
      * thread being interrupted on a blocking connect operation.
+     * @throws IOException if completed and unable to obtain the local address
      */
     private void endFinishConnect(boolean blocking, boolean completed)
-        throws AsynchronousCloseException
+        throws IOException
     {
         endRead(blocking, completed);
+
+        if (completed) {
+            synchronized (stateLock) {
+                if (state == ST_CONNECTIONPENDING) {
+                    localAddress = Net.localAddress(fd);
+                    state = ST_CONNECTED;
+                }
+            }
+        }
     }
 
     @Override
     public boolean finishConnect() throws IOException {
-        readLock.lock();
         try {
-            writeLock.lock();
+            readLock.lock();
             try {
-                // already connected?
-                synchronized (stateLock) {
-                    if (state == ST_CONNECTED)
-                        return true;
-                }
-
-                int n = 0;
-                boolean blocking = isBlocking();
+                writeLock.lock();
                 try {
+                    // no-op if already connected
+                    if (isConnected())
+                        return true;
+
+                    boolean blocking = isBlocking();
+                    boolean connected = false;
                     try {
                         beginFinishConnect(blocking);
+                        int n = 0;
                         if (blocking) {
                             do {
                                 n = checkConnect(fd, true);
-                            } while (n == 0 || (n == IOStatus.INTERRUPTED) && isOpen());
+                            } while ((n == 0 || n == IOStatus.INTERRUPTED) && isOpen());
                         } else {
                             n = checkConnect(fd, false);
                         }
+                        connected = (n > 0);
                     } finally {
-                        endFinishConnect(blocking, n > 0);
+                        endFinishConnect(blocking, connected);
                     }
-                } catch (IOException x) {
-                    close();
-                    throw x;
-                }
-
-                // post finishConnect, connection may be established
-                synchronized (stateLock) {
-                    if (!isOpen())
-                        throw new AsynchronousCloseException();
-                    if (n > 0) {
-                        // connection established
-                        localAddress = Net.localAddress(fd);
-                        state = ST_CONNECTED;
-                        return true;
-                    } else {
-                        // connection still pending
-                        assert !blocking;
-                        return false;
-                    }
+                    assert (blocking && connected) ^ !blocking;
+                    return connected;
+                } finally {
+                    writeLock.unlock();
                 }
             } finally {
-                writeLock.unlock();
+                readLock.unlock();
             }
-        } finally {
-            readLock.unlock();
+        } catch (IOException ioe) {
+            // connect failed, close the channel
+            close();
+            throw ioe;
         }
     }
 
@@ -994,20 +1013,17 @@ class SocketChannelImpl
             return (newOps & ~oldOps) != 0;
         }
 
+        boolean connected = isConnected();
         if (((ops & Net.POLLIN) != 0) &&
-            ((intOps & SelectionKey.OP_READ) != 0) &&
-            (state == ST_CONNECTED))
+            ((intOps & SelectionKey.OP_READ) != 0) && connected)
             newOps |= SelectionKey.OP_READ;
 
         if (((ops & Net.POLLCONN) != 0) &&
-            ((intOps & SelectionKey.OP_CONNECT) != 0) &&
-            ((state == ST_UNCONNECTED) || (state == ST_CONNECTIONPENDING))) {
+            ((intOps & SelectionKey.OP_CONNECT) != 0) && isConnectionPending())
             newOps |= SelectionKey.OP_CONNECT;
-        }
 
         if (((ops & Net.POLLOUT) != 0) &&
-            ((intOps & SelectionKey.OP_WRITE) != 0) &&
-            (state == ST_CONNECTED))
+            ((intOps & SelectionKey.OP_WRITE) != 0) && connected)
             newOps |= SelectionKey.OP_WRITE;
 
         sk.nioReadyOps(newOps);
