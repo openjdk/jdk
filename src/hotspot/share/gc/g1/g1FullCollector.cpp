@@ -43,6 +43,7 @@
 #include "gc/shared/weakProcessor.hpp"
 #include "logging/log.hpp"
 #include "runtime/biasedLocking.hpp"
+#include "runtime/handles.inline.hpp"
 #include "utilities/debug.hpp"
 
 static void clear_and_activate_derived_pointers() {
