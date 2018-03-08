@@ -396,7 +396,6 @@ endef
 #   ZIP_EXTERNAL_DEBUG_SYMBOLS Set to false to override global setting of debug symbol
 #       zipping
 #   CFLAGS_DEBUG_SYMBOLS Overrides the default cflags for enabling debug symbols
-#   CXXFLAGS_DEBUG_SYMBOLS Overrides the default cxxflags for enabling debug symbols
 #   STRIPFLAGS Optionally change the flags given to the strip command
 #   PRECOMPILED_HEADER Header file to use as precompiled header
 #   PRECOMPILED_HEADER_EXCLUDE List of source files that should not use PCH
@@ -577,9 +576,8 @@ define SetupNativeCompilationBody
 
   ifeq ($(COMPILE_WITH_DEBUG_SYMBOLS), true)
     $$(call SetIfEmpty, $1_CFLAGS_DEBUG_SYMBOLS, $(CFLAGS_DEBUG_SYMBOLS))
-    $$(call SetIfEmpty, $1_CXXFLAGS_DEBUG_SYMBOLS, $(CXXFLAGS_DEBUG_SYMBOLS))
     $1_EXTRA_CFLAGS += $$($1_CFLAGS_DEBUG_SYMBOLS)
-    $1_EXTRA_CXXFLAGS += $$($1_CXXFLAGS_DEBUG_SYMBOLS)
+    $1_EXTRA_CXXFLAGS += $$($1_CFLAGS_DEBUG_SYMBOLS)
   endif
 
   ifneq ($$($1_REORDER), )
