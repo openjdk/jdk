@@ -2533,6 +2533,17 @@ void ConstantPool::verify_on(outputStream* st) {
 }
 
 
+SymbolHashMap::~SymbolHashMap() {
+  SymbolHashMapEntry* next;
+  for (int i = 0; i < _table_size; i++) {
+    for (SymbolHashMapEntry* cur = bucket(i); cur != NULL; cur = next) {
+      next = cur->next();
+      delete(cur);
+    }
+  }
+  FREE_C_HEAP_ARRAY(SymbolHashMapBucket, _buckets);
+}
+
 void SymbolHashMap::add_entry(Symbol* sym, u2 value) {
   char *str = sym->as_utf8();
   unsigned int hash = compute_hash(str, sym->utf8_length());
