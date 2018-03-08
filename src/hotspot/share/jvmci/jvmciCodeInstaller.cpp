@@ -34,6 +34,7 @@
 #include "jvmci/jvmciJavaClasses.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciRuntime.hpp"
+#include "memory/allocation.inline.hpp"
 #include "oops/arrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"

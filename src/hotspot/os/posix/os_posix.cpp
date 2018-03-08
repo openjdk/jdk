@@ -23,10 +23,12 @@
  */
 
 #include "jvm.h"
+#include "memory/allocation.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/os.hpp"
+#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"

@@ -34,6 +34,7 @@
 #include "interpreter/abstractInterpreter.hpp"
 #include "jvmci/compilerRuntime.hpp"
 #include "jvmci/jvmciRuntime.hpp"
+#include "memory/allocation.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
