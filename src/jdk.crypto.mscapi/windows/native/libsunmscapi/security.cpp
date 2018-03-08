@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1598,38 +1598,47 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_RSAPublicKey_getModulus
  * Convert an array in big-endian byte order into little-endian byte order.
  */
 int convertToLittleEndian(JNIEnv *env, jbyteArray source, jbyte* destination,
-    int destinationLength) {
+        int destinationLength) {
 
-    int sourceLength = env->GetArrayLength(source);
+    int result = -1;
+    jbyte* sourceBytes = NULL;
 
-    jbyte* sourceBytes = env->GetByteArrayElements(source, 0);
-    if (sourceBytes == NULL) {
-        return -1;
-    }
+    __try {
+        int sourceLength = env->GetArrayLength(source);
 
-    int copyLen = sourceLength;
-    if (sourceLength > destinationLength) {
-        // source might include an extra sign byte
-        if (sourceLength == destinationLength + 1 && sourceBytes[0] == 0) {
-            copyLen--;
-        } else {
-            return -1;
+        sourceBytes = env->GetByteArrayElements(source, 0);
+        if (sourceBytes == NULL) {
+            __leave;
+        }
+
+        int copyLen = sourceLength;
+        if (sourceLength > destinationLength) {
+            // source might include an extra sign byte
+            if (sourceLength == destinationLength + 1 && sourceBytes[0] == 0) {
+                copyLen--;
+            } else {
+                __leave;
+            }
+        }
+
+        // Copy bytes from the end of the source array to the beginning of the
+        // destination array (until the destination array is full).
+        // This ensures that the sign byte from the source array will be excluded.
+        for (int i = 0; i < copyLen; i++) {
+            destination[i] = sourceBytes[sourceLength - 1 - i];
+        }
+        if (copyLen < destinationLength) {
+            memset(destination + copyLen, 0, destinationLength - copyLen);
+        }
+        result = destinationLength;
+    } __finally {
+        // Clean up.
+        if (sourceBytes) {
+            env->ReleaseByteArrayElements(source, sourceBytes, JNI_ABORT);
         }
     }
 
-    // Copy bytes from the end of the source array to the beginning of the
-    // destination array (until the destination array is full).
-    // This ensures that the sign byte from the source array will be excluded.
-    for (int i = 0; i < copyLen; i++) {
-        destination[i] = sourceBytes[sourceLength - 1 - i];
-    }
-    if (copyLen < destinationLength) {
-        memset(destination + copyLen, 0, destinationLength - copyLen);
-    }
-
-    env->ReleaseByteArrayElements(source, sourceBytes, JNI_ABORT);
-
-    return destinationLength;
+    return result;
 }
 
 /*
