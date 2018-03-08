@@ -221,7 +221,6 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBJVM, \
     EXTRA_OBJECT_FILES := $(DTRACE_EXTRA_OBJECT_FILES), \
     CFLAGS := $(JVM_CFLAGS), \
     CFLAGS_DEBUG_SYMBOLS := $(JVM_CFLAGS_SYMBOLS), \
-    CXXFLAGS_DEBUG_SYMBOLS := $(JVM_CFLAGS_SYMBOLS), \
     vm_version.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     arguments.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     DISABLED_WARNINGS_clang := tautological-compare, \

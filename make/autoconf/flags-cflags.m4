@@ -116,21 +116,15 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     CFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-    CFLAGS_DEBUG_SYMBOLS="-g -xs"
     # -g0 enables debug symbols without disabling inlining.
-    CXXFLAGS_DEBUG_SYMBOLS="-g0 -xs"
+    CFLAGS_DEBUG_SYMBOLS="-g0 -xs"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     CFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     CFLAGS_DEBUG_SYMBOLS="-Zi"
   fi
 
-  if test "x$CXXFLAGS_DEBUG_SYMBOLS" = x; then
-    # If we did not specify special flags for C++, use C version
-    CXXFLAGS_DEBUG_SYMBOLS="$CFLAGS_DEBUG_SYMBOLS"
-  fi
   AC_SUBST(CFLAGS_DEBUG_SYMBOLS)
-  AC_SUBST(CXXFLAGS_DEBUG_SYMBOLS)
 
   # FIXME: This was never used in the old build. What to do with it?
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
@@ -143,13 +137,7 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
 
   # Debug symbols for JVM_CFLAGS
   if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-    JVM_CFLAGS_SYMBOLS="$JVM_CFLAGS_SYMBOLS -xs"
-    if test "x$DEBUG_LEVEL" = xslowdebug; then
-      JVM_CFLAGS_SYMBOLS="$JVM_CFLAGS_SYMBOLS -g"
-    else
-      # -g0 does not disable inlining, which -g does.
-      JVM_CFLAGS_SYMBOLS="$JVM_CFLAGS_SYMBOLS -g0"
-    fi
+    JVM_CFLAGS_SYMBOLS="$JVM_CFLAGS_SYMBOLS -g0 -xs"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     JVM_CFLAGS_SYMBOLS="$JVM_CFLAGS_SYMBOLS -Z7 -d2Zi+"
   else
@@ -496,7 +484,6 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   if test "x$DEBUG_LEVEL" != xrelease; then
     DEBUG_OPTIONS_FLAGS_JDK="$CFLAGS_DEBUG_OPTIONS"
     DEBUG_SYMBOLS_CFLAGS_JDK="$CFLAGS_DEBUG_SYMBOLS"
-    DEBUG_SYMBOLS_CXXFLAGS_JDK="$CXXFLAGS_DEBUG_SYMBOLS"
   fi
 
   #### TOOLCHAIN DEFINES
@@ -556,6 +543,12 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     TOOLCHAIN_CFLAGS_JDK_CXXONLY="-features=no%except -norunpath -xnolib" # CXX only
     TOOLCHAIN_CFLAGS_JVM="-template=no%extdef -features=no%split_init \
         -library=stlport4 -mt -features=no%except"
+    if test "x$DEBUG_LEVEL" = xslowdebug; then
+      # Previously -g was used instead of -g0 for slowdebug; this is equivalent
+      # to setting +d.
+      TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM +d"
+    fi
+
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     TOOLCHAIN_CFLAGS_JDK="-qchars=signed -qfullpath -qsaveopt"  # add on both CFLAGS
     TOOLCHAIN_CFLAGS_JVM="-qtune=balanced \
@@ -825,16 +818,16 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
 
   CFLAGS_JDK_COMMON="$ALWAYS_CFLAGS_JDK $ALWAYS_DEFINES_JDK $TOOLCHAIN_CFLAGS_JDK \
       $OS_CFLAGS $CFLAGS_OS_DEF_JDK $DEBUG_CFLAGS_JDK $DEBUG_OPTIONS_FLAGS_JDK \
-      $WARNING_CFLAGS $WARNING_CFLAGS_JDK"
+      $WARNING_CFLAGS $WARNING_CFLAGS_JDK $DEBUG_SYMBOLS_CFLAGS_JDK"
 
   # Use ${$2EXTRA_CFLAGS} to block EXTRA_CFLAGS to be added to build flags.
   # (Currently we don't have any OPENJDK_BUILD_EXTRA_CFLAGS, but that might
   # change in the future.)
 
-  CFLAGS_JDK_COMMON_CONLY="$TOOLCHAIN_CFLAGS_JDK_CONLY $DEBUG_SYMBOLS_CFLAGS_JDK \
+  CFLAGS_JDK_COMMON_CONLY="$TOOLCHAIN_CFLAGS_JDK_CONLY  \
       $WARNING_CFLAGS_JDK_CONLY ${$2EXTRA_CFLAGS}"
   CFLAGS_JDK_COMMON_CXXONLY="$ALWAYS_DEFINES_JDK_CXXONLY $TOOLCHAIN_CFLAGS_JDK_CXXONLY \
-      $DEBUG_SYMBOLS_CXXFLAGS_JDK $WARNING_CFLAGS_JDK_CXXONLY ${$2EXTRA_CXXFLAGS}"
+      $WARNING_CFLAGS_JDK_CXXONLY ${$2EXTRA_CXXFLAGS}"
 
   $1_CFLAGS_JVM="${$1_DEFINES_CPU_JVM} ${$1_CFLAGS_CPU} ${$1_CFLAGS_CPU_JVM} ${$1_TOOLCHAIN_CFLAGS} ${$1_WARNING_CFLAGS_JVM}"
   $1_CFLAGS_JDK="${$1_DEFINES_CPU_JDK} ${$1_CFLAGS_CPU} ${$1_CFLAGS_CPU_JDK} ${$1_TOOLCHAIN_CFLAGS}"
