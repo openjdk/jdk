@@ -31,13 +31,20 @@ import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.artifacts.Artifact;
 import jdk.test.lib.artifacts.ArtifactResolver;
+import jdk.test.lib.artifacts.ArtifactResolverException;
 import java.nio.file.Path;
 import java.util.Map;
 
 @Artifact(organization = "gov.nist.math", name = "scimark", revision = "2.0", extension = "zip")
 public class Scimark {
     public static void main(String... args) throws Exception {
-        Map<String, Path> artifacts = ArtifactResolver.resolve(Scimark.class);
+        Map<String, Path> artifacts;
+        try {
+            artifacts = ArtifactResolver.resolve(Scimark.class);
+        } catch (ArtifactResolverException e) {
+            throw new Error("TESTBUG: Can not resolve artifacts for "
+                            + Scimark.class.getName(), e);
+        }
 
         OutputAnalyzer output = new OutputAnalyzer(ProcessTools.createJavaProcessBuilder(
             "-cp", artifacts.get("gov.nist.math.scimark-2.0").toString(),
