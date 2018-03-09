@@ -92,7 +92,6 @@ import static sun.security.util.ResourcesMgr.getAuthResourceString;
  *
  * <p> The following option is mandatory and must be specified in this
  * module's login {@link Configuration}:
- * <dl><dd>
  * <dl>
  * <dt> <code>userProvider=<b>ldap_urls</b></code>
  * </dt>
@@ -114,11 +113,10 @@ import static sun.security.util.ResourcesMgr.getAuthResourceString;
  *      is supported (once DNS has been configured to support such a service).
  *      It is enabled by omitting the hostname and port number components from
  *      the LDAP URL. </dd>
- * </dl></dl>
+ * </dl>
  *
  * <p> This module also recognizes the following optional {@link Configuration}
  *     options:
- * <dl><dd>
  * <dl>
  * <dt> <code>userFilter=<b>ldap_filter</b></code> </dt>
  * <dd> This option specifies the search filter to use to locate a user's
@@ -195,8 +193,7 @@ import static sun.security.util.ResourcesMgr.getAuthResourceString;
  *
  * <dt> {@code debug} </dt>
  * <dd> if {@code true}, debug messages are displayed on the standard
- *      output stream.
- * </dl>
+ *      output stream.</dd>
  * </dl>
  *
  * <p>
