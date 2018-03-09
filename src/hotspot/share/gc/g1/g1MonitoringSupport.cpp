@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,7 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   _g1h(g1h),
   _incremental_collection_counters(NULL),
   _full_collection_counters(NULL),
+  _conc_collection_counters(NULL),
   _old_collection_counters(NULL),
   _old_space_counters(NULL),
   _young_collection_counters(NULL),
@@ -105,6 +106,10 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   // old generation collection.
   _full_collection_counters =
     new CollectorCounters("G1 stop-the-world full collections", 1);
+  //   name "collector.2".  In a generational collector this would be the
+  // STW phases in concurrent collection.
+  _conc_collection_counters =
+    new CollectorCounters("G1 stop-the-world phases", 2);
 
   // timer sampling for all counters supporting sampling only update the
   // used value.  See the take_sample() method.  G1 requires both used and

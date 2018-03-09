@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
  * Results of running the JstatGcTool ("jstat -gc <pid>")
  *
  * Output example:
- * (S0C    S1C    S0U    S1U      EC       EU        OC         OU       MC     MU    CCSC   CCSU   YGC     YGCT    FGC    FGCT     GCT
- * 512.0  512.0   32.0   0.0   288768.0 168160.6  83968.0     288.1    4864.0 2820.3 512.0  279.7   18510 1559.208   0      0.000 1559.208
+ * S0C    S1C    S0U    S1U      EC       EU        OC         OU       MC     MU    CCSC   CCSU   YGC     YGCT    FGC    FGCT    CGC    CGCT     GCT
+ * 512.0  512.0   32.0   0.0   288768.0 168160.6  83968.0     288.1    4864.0 2820.3 512.0  279.7   18510 1559.208   0      0.000    0     0.0  1559.208
  *
  * Output description:
  * S0C     Current survivor space 0 capacity (KB).
@@ -45,6 +45,8 @@
  * YGCT    Young generation garbage collection time.
  * FGC     Number of full GC events.
  * FGCT    Full garbage collection time.
+ * CGC     Concurrent Collections (STW phase)
+ * CGCT    Concurrent Garbage Collection Time (STW phase)
  * GCT     Total garbage collection time.
  *
  */
@@ -101,6 +103,13 @@ public class JstatGcResults extends JstatResults {
         assertThat(GCT >= 0, "Incorrect time value for GCT");
         assertThat(GCT >= YGCT, "GCT < YGCT (total garbage collection time < young generation garbage collection time)");
 
+        int CGC = getIntValue("CGC");
+        float CGCT = getFloatValue("CGCT");
+        assertThat(CGCT >= 0, "Incorrect time value for CGCT");
+        if (CGC > 0) {
+            assertThat(CGCT > 0, "Number of concurrent GC events is " + CGC + ", but CGCT is 0");
+        }
+
         int FGC = getIntValue("FGC");
         float FGCT = getFloatValue("FGCT");
         assertThat(FGCT >= 0, "Incorrect time value for FGCT");
@@ -110,7 +119,7 @@ public class JstatGcResults extends JstatResults {
 
         assertThat(GCT >= FGCT, "GCT < YGCT (total garbage collection time < full generation garbage collection time)");
 
-        assertThat(checkFloatIsSum(GCT, YGCT, FGCT), "GCT != (YGCT + FGCT) " + "(GCT = " + GCT + ", YGCT = " + YGCT
-                + ", FGCT = " + FGCT + ", (YCGT + FGCT) = " + (YGCT + FGCT) + ")");
+        assertThat(checkFloatIsSum(GCT, YGCT, CGCT, FGCT), "GCT != (YGCT + CGCT + FGCT) " + "(GCT = " + GCT + ", YGCT = " + YGCT
+                + ", CGCT = " + CGCT + ", FGCT = " + FGCT + ", (YCGT + CGCT + FGCT) = " + (YGCT + CGCT + FGCT) + ")");
     }
 }
