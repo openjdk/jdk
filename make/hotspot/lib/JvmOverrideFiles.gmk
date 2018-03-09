@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -111,6 +111,9 @@ else ifeq ($(OPENJDK_TARGET_OS), solaris)
 
   endif
 
+  # Workaround for jvmciCompilerToVM.cpp long compilation time
+  BUILD_LIBJVM_jvmciCompilerToVMInit.cpp_OPTIMIZATION := NONE
+
 else ifeq ($(OPENJDK_TARGET_OS), macosx)
   # The copied fdlibm routines in these files must not be optimized
   BUILD_LIBJVM_sharedRuntimeTrans.cpp_CXXFLAGS := $(CXX_O_FLAG_NONE)
@@ -175,5 +178,10 @@ else ifeq ($(OPENJDK_TARGET_OS), windows)
       os_windows.cpp \
       os_windows_x86.cpp \
       osThread_windows.cpp \
+      jvmciCompilerToVMInit.cpp \
       #
+
+  # Workaround for jvmciCompilerToVM.cpp long compilation time
+  BUILD_LIBJVM_jvmciCompilerToVMInit.cpp_OPTIMIZATION := NONE
+
 endif
