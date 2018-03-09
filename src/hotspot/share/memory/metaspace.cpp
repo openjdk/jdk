@@ -4848,6 +4848,12 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   MetaWord* result = loader_data->metaspace_non_null()->allocate(word_size, mdtype);
 
   if (result == NULL) {
+    if (DumpSharedSpaces && THREAD->is_VM_thread()) {
+      tty->print_cr("Failed allocating metaspace object type %s of size " SIZE_FORMAT ". CDS dump aborted.",
+          MetaspaceObj::type_name(type), word_size * BytesPerWord);
+      vm_exit(1);
+    }
+
     tracer()->report_metaspace_allocation_failure(loader_data, word_size, type, mdtype);
 
     // Allocation failed.
