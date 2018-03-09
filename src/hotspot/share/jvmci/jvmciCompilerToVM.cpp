@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "code/scopeDesc.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/cpCache.inline.hpp"
