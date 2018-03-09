@@ -237,56 +237,56 @@ import static sun.security.util.ResourcesMgr.getAuthResourceString;
  * {@code useFirstPass = true}, no user prompt is made.
  * <p>Examples of some configuration values for Krb5LoginModule in
  * JAAS config file and the results are:
- * <blockquote><dl>
- * <dd><pre>{@code
+ * <blockquote>
+ * <pre>{@code
  * doNotPrompt = true}</pre>
  * This is an illegal combination since none of {@code useTicketCache,
  * useKeyTab, useFirstPass} and {@code tryFirstPass}
- * is set and the user can not be prompted for the password.</dd>
+ * is set and the user can not be prompted for the password.
  *
- * <dd><pre>{@code
+ * <pre>{@code
  * ticketCache = <filename>}</pre>
  * This is an illegal combination since {@code useTicketCache}
  * is not set to true and the ticketCache is set. A configuration error
- * will occur.</dd>
+ * will occur.
  *
- * <dd><pre>{@code
+ * <pre>{@code
  * renewTGT = true}</pre>
  * This is an illegal combination since {@code useTicketCache} is
- * not set to true and renewTGT is set. A configuration error will occur.</dd>
+ * not set to true and renewTGT is set. A configuration error will occur.
  *
- * <dd><pre>{@code
+ * <pre>{@code
  * storeKey = true  useTicketCache = true  doNotPrompt = true}</pre>
  * This is an illegal combination since  {@code storeKey} is set to
  * true but the key can not be obtained either by prompting the user or from
- * the keytab, or from the shared state. A configuration error will occur.</dd>
+ * the keytab, or from the shared state. A configuration error will occur.
  *
- * <dd><pre>{@code
+ * <pre>{@code
  * keyTab = <filename>  doNotPrompt = true}</pre>
  * This is an illegal combination since useKeyTab is not set to true and
- * the keyTab is set. A configuration error will occur.</dd>
+ * the keyTab is set. A configuration error will occur.
  *
- * <dd><pre>{@code
+ * <pre>{@code
  * debug = true}</pre>
  * Prompt the user for the principal name and the password.
  * Use the authentication exchange to get TGT from the KDC and
  * populate the {@code Subject} with the principal and TGT.
- * Output debug messages.</dd>
+ * Output debug messages.
  *
- * <dd><pre>{@code
+ * <pre>{@code
  * useTicketCache = true  doNotPrompt = true}</pre>
  * Check the default cache for TGT and populate the {@code Subject}
  * with the principal and TGT. If the TGT is not available,
- * do not prompt the user, instead fail the authentication.</dd>
+ * do not prompt the user, instead fail the authentication.
  *
- * <dd><pre>{@code
+ * <pre>{@code
  * principal = <name>  useTicketCache = true  doNotPrompt = true}</pre>
  * Get the TGT from the default cache for the principal and populate the
  * Subject's principal and private creds set. If ticket cache is
  * not available or does not contain the principal's TGT
- * authentication will fail.</dd>
+ * authentication will fail.
  *
- * <dd><pre>{@code
+ * <pre>{@code
  * useTicketCache = true
  * ticketCache = <file name>
  * useKeyTab = true
@@ -297,9 +297,9 @@ import static sun.security.util.ResourcesMgr.getAuthResourceString;
  * use the key in the keytab to perform authentication exchange with the
  * KDC and acquire the TGT.
  * The Subject will be populated with the principal and the TGT.
- * If the key is not available or valid then authentication will fail.</dd>
+ * If the key is not available or valid then authentication will fail.
  *
- * <dd><pre>{@code
+ * <pre>{@code
  * useTicketCache = true  ticketCache = <filename>}</pre>
  * The TGT will be obtained from the cache specified.
  * The Kerberos principal name used will be the principal name in
@@ -307,17 +307,17 @@ import static sun.security.util.ResourcesMgr.getAuthResourceString;
  * ticket cache the user will be prompted for the principal name
  * and the password. The TGT will be obtained using the authentication
  * exchange with the KDC.
- * The Subject will be populated with the TGT.</dd>
+ * The Subject will be populated with the TGT.
  *
- * <dd><pre>{@code
+ * <pre>{@code
  * useKeyTab = true  keyTab=<keytab filename>  principal = <principal name>  storeKey = true}</pre>
  * The key for the principal will be retrieved from the keytab.
  * If the key is not available in the keytab the user will be prompted
  * for the principal's password. The Subject will be populated
  * with the principal's key either from the keytab or derived from the
- * password entered.</dd>
+ * password entered.
  *
- * <dd><pre>{@code
+ * <pre>{@code
  * useKeyTab = true  keyTab = <keytabname>  storeKey = true  doNotPrompt = false}</pre>
  * The user will be prompted for the service principal name.
  * If the principal's
@@ -325,14 +325,14 @@ import static sun.security.util.ResourcesMgr.getAuthResourceString;
  * Subject's private credentials. An authentication exchange will be
  * attempted with the principal name and the key from the Keytab.
  * If successful the TGT will be added to the
- * Subject's private credentials set. Otherwise the authentication will fail.</dd>
+ * Subject's private credentials set. Otherwise the authentication will fail.
  *
- * <dd><pre>{@code
+ * <pre>{@code
  * isInitiator = false  useKeyTab = true  keyTab = <keytabname>  storeKey = true  principal = *}</pre>
  * The acceptor will be an unbound acceptor and it can act as any principal
- * as long that principal has keys in the keytab.</dd>
+ * as long that principal has keys in the keytab.
  *
- * <dd><pre>{@code
+ * <pre>{@code
  * useTicketCache = true
  * ticketCache = <file name>
  * useKeyTab = true
@@ -347,21 +347,21 @@ import static sun.security.util.ResourcesMgr.getAuthResourceString;
  * This secret key will be first retrieved from the keytab. If the key
  * is not available, the user will be prompted for the password. In either
  * case, the key derived from the password will be added to the
- * Subject's private credentials set.</dd>
+ * Subject's private credentials set.
  *
- * <dd><pre>{@code
+ * <pre>{@code
  * isInitiator = false}</pre>
  * Configured to act as acceptor only, credentials are not acquired
  * via AS exchange. For acceptors only, set this value to false.
- * For initiators, do not set this value to false.</dd>
+ * For initiators, do not set this value to false.
  *
- * <dd><pre>{@code
+ * <pre>{@code
  * isInitiator = true}</pre>
  * Configured to act as initiator, credentials are acquired
  * via AS exchange. For initiators, set this value to true, or leave this
- * option unset, in which case default value (true) will be used.</dd>
+ * option unset, in which case default value (true) will be used.
  *
- * </dl></blockquote>
+ * </blockquote>
  *
  * @author Ram Marti
  */
