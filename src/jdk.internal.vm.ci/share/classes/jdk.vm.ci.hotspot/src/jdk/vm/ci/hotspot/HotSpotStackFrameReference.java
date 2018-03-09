@@ -30,6 +30,8 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 public class HotSpotStackFrameReference implements InspectedFrame {
 
     private CompilerToVM compilerToVM;
+    // set in the VM when materializeVirtualObjects is called
+    @SuppressWarnings("unused") private boolean objectsMaterialized;
 
     // information used to find the stack frame
     private long stackPointer;

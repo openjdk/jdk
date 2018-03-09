@@ -38,7 +38,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/fieldStreams.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
@@ -689,10 +689,10 @@ bool java_lang_String::equals(oop str1, oop str2) {
   assert(str2->klass() == SystemDictionary::String_klass(),
          "must be java String");
   typeArrayOop value1    = java_lang_String::value_no_keepalive(str1);
-  int          length1   = java_lang_String::length(value1);
+  int          length1   = java_lang_String::length(str1);
   bool         is_latin1 = java_lang_String::is_latin1(str1);
   typeArrayOop value2    = java_lang_String::value_no_keepalive(str2);
-  int          length2   = java_lang_String::length(value2);
+  int          length2   = java_lang_String::length(str2);
   bool         is_latin2 = java_lang_String::is_latin1(str2);
 
   if ((length1 != length2) || (is_latin1 != is_latin2)) {
@@ -3300,7 +3300,7 @@ void java_lang_Module::set_name(oop module, oop value) {
   module->obj_field_put(name_offset, value);
 }
 
-ModuleEntry* java_lang_Module::module_entry(oop module, TRAPS) {
+ModuleEntry* java_lang_Module::module_entry(oop module) {
   assert(_module_entry_offset != -1, "Uninitialized module_entry_offset");
   assert(module != NULL, "module can't be null");
   assert(oopDesc::is_oop(module), "module must be oop");
@@ -3310,8 +3310,8 @@ ModuleEntry* java_lang_Module::module_entry(oop module, TRAPS) {
     // If the inject field containing the ModuleEntry* is null then return the
     // class loader's unnamed module.
     oop loader = java_lang_Module::loader(module);
-    Handle h_loader = Handle(THREAD, loader);
-    ClassLoaderData* loader_cld = SystemDictionary::register_loader(h_loader, CHECK_NULL);
+    Handle h_loader = Handle(Thread::current(), loader);
+    ClassLoaderData* loader_cld = SystemDictionary::register_loader(h_loader);
     return loader_cld->unnamed_module();
   }
   return module_entry;

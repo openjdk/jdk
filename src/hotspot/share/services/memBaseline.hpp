@@ -42,7 +42,7 @@ typedef LinkedListIterator<ReservedMemoryRegion>         VirtualMemoryAllocation
 /*
  * Baseline a memory snapshot
  */
-class MemBaseline VALUE_OBJ_CLASS_SPEC {
+class MemBaseline {
  public:
   enum BaselineThreshold {
     SIZE_THRESHOLD = K        // Only allocation size over this threshold will be baselined.

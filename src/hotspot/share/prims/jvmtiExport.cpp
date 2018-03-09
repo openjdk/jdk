@@ -31,6 +31,7 @@
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"

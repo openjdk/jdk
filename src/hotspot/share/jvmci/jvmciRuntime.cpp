@@ -34,6 +34,7 @@
 #include "jvmci/jvmciJavaClasses.hpp"
 #include "jvmci/jvmciEnv.hpp"
 #include "logging/log.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"

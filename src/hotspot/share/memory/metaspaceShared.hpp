@@ -38,7 +38,7 @@
 
 class FileMapInfo;
 
-class MetaspaceSharedStats VALUE_OBJ_CLASS_SPEC {
+class MetaspaceSharedStats {
 public:
   MetaspaceSharedStats() {
     memset(this, 0, sizeof(*this));

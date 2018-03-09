@@ -29,7 +29,7 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/templateTable.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"

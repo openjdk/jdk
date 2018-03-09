@@ -34,6 +34,7 @@
  *          java.base/jdk.internal.org.objectweb.asm.tree
  *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.code
+ *          jdk.internal.vm.ci/jdk.vm.ci.code.stack
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
  *
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper sun.hotspot.WhiteBox
@@ -91,6 +92,7 @@ import compiler.jvmci.common.CTVMUtilities;
 import compiler.testlibrary.CompilerUtils;
 import compiler.whitebox.CompilerWhiteBoxTest;
 import jdk.test.lib.Asserts;
+import jdk.vm.ci.code.stack.InspectedFrame;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotStackFrameReference;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -200,18 +202,30 @@ public class MaterializeVirtualObjectTest {
         // Materialize virtual objects on last invocation
         if (iteration == COMPILE_THRESHOLD) {
             // get frames and check not-null
-            HotSpotStackFrameReference materialized = CompilerToVMHelper.getNextStackFrame(
-                    /* topmost frame */ null, new ResolvedJavaMethod[]{MATERIALIZED_RESOLVED},
-                    /* don't skip any */ 0);
+            HotSpotStackFrameReference materialized = CompilerToVMHelper.iterateFrames(
+                new ResolvedJavaMethod[] {MATERIALIZED_RESOLVED},
+                null /* any */,
+                0,
+                f -> (HotSpotStackFrameReference) f);
             Asserts.assertNotNull(materialized, getName()
                     + " : got null frame for materialized method");
-            HotSpotStackFrameReference notMaterialized = CompilerToVMHelper.getNextStackFrame(
-                    /* topmost frame */ null, new ResolvedJavaMethod[]{NOT_MATERIALIZED_RESOLVED},
-                    /* don't skip any */ 0);
+            Asserts.assertTrue(materialized.isMethod(MATERIALIZED_RESOLVED),
+                "Expected materialized method but got " + materialized);
+            InspectedFrame notMaterialized = CompilerToVMHelper.iterateFrames(
+                new ResolvedJavaMethod[] {NOT_MATERIALIZED_RESOLVED},
+                null /* any */,
+                0,
+                f -> f);
             Asserts.assertNE(materialized, notMaterialized,
                     "Got same frame pointer for both tested frames");
+            Asserts.assertTrue(notMaterialized.isMethod(NOT_MATERIALIZED_RESOLVED),
+                "Expected notMaterialized method but got " + notMaterialized);
             Asserts.assertNotNull(notMaterialized, getName()
                     + " : got null frame for not materialized method");
+            Asserts.assertTrue(WB.isMethodCompiled(MATERIALIZED_METHOD), getName()
+                + " : materialized method not compiled");
+            Asserts.assertTrue(WB.isMethodCompiled(NOT_MATERIALIZED_METHOD),
+                getName() + " : not materialized method not compiled");
             // check that frames has virtual objects before materialization stage
             Asserts.assertTrue(materialized.hasVirtualObjects(), getName()
                     + ": materialized frame has no virtual object before materialization");

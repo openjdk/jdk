@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@
 
 class vtableEntry;
 
-class klassVtable VALUE_OBJ_CLASS_SPEC {
+class klassVtable {
   Klass*       _klass;            // my klass
   int          _tableOffset;      // offset of start of vtable data within klass
   int          _length;           // length of vtable (number of entries)
@@ -188,7 +188,7 @@ class klassVtable VALUE_OBJ_CLASS_SPEC {
 //    destination is compiled:
 //      from_compiled_code_entry_point -> nmethod entry point
 //      from_interpreter_entry_point   -> i2cadapter
-class vtableEntry VALUE_OBJ_CLASS_SPEC {
+class vtableEntry {
   friend class VMStructs;
   friend class JVMCIVMStructs;
 
@@ -234,7 +234,7 @@ inline Method** klassVtable::adr_method_at(int i) const {
 class klassItable;
 class itableMethodEntry;
 
-class itableOffsetEntry VALUE_OBJ_CLASS_SPEC {
+class itableOffsetEntry {
  private:
   Klass* _interface;
   int      _offset;
@@ -257,7 +257,7 @@ class itableOffsetEntry VALUE_OBJ_CLASS_SPEC {
 };
 
 
-class itableMethodEntry VALUE_OBJ_CLASS_SPEC {
+class itableMethodEntry {
  private:
   Method* _method;
 
@@ -294,7 +294,7 @@ class itableMethodEntry VALUE_OBJ_CLASS_SPEC {
 //    -- vtable for interface 2 ---
 //    ...
 //
-class klassItable VALUE_OBJ_CLASS_SPEC {
+class klassItable {
  private:
   InstanceKlass*       _klass;             // my klass
   int                  _table_offset;      // offset of start of itable data within klass (in words)

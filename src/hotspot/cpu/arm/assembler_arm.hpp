@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ enum AsmOffsetOp {
 
 
 // ARM Addressing Modes 2 and 3 - Load and store
-class Address VALUE_OBJ_CLASS_SPEC {
+class Address {
  private:
   Register  _base;
   Register  _index;
@@ -334,7 +334,7 @@ class Address VALUE_OBJ_CLASS_SPEC {
 };
 
 #ifdef COMPILER2
-class VFP VALUE_OBJ_CLASS_SPEC {
+class VFP {
   // Helper classes to detect whether a floating point constant can be
   // encoded in a fconstd or fconsts instruction
   // The conversion from the imm8, 8 bit constant, to the floating

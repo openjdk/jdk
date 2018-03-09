@@ -499,7 +499,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
 
   // Make this class loader depend upon the class loader owning the class reference
   ClassLoaderData* this_key = this_cp->pool_holder()->class_loader_data();
-  this_key->record_dependency(k, CHECK_NULL); // Can throw OOM
+  this_key->record_dependency(k);
 
   // logging for class+resolve.
   if (log_is_enabled(Debug, class, resolve)){
@@ -2532,6 +2532,17 @@ void ConstantPool::verify_on(outputStream* st) {
   }
 }
 
+
+SymbolHashMap::~SymbolHashMap() {
+  SymbolHashMapEntry* next;
+  for (int i = 0; i < _table_size; i++) {
+    for (SymbolHashMapEntry* cur = bucket(i); cur != NULL; cur = next) {
+      next = cur->next();
+      delete(cur);
+    }
+  }
+  FREE_C_HEAP_ARRAY(SymbolHashMapBucket, _buckets);
+}
 
 void SymbolHashMap::add_entry(Symbol* sym, u2 value) {
   char *str = sym->as_utf8();
