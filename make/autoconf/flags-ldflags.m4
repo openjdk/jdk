@@ -64,18 +64,6 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
 [
   # Setup basic LDFLAGS
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    # "-z relro" supported in GNU binutils 2.17 and later
-    LINKER_RELRO_FLAG="-Wl,-z,relro"
-    FLAGS_LINKER_CHECK_ARGUMENTS(ARGUMENT: [$LINKER_RELRO_FLAG],
-      IF_TRUE: [HAS_LINKER_RELRO=true],
-      IF_FALSE: [HAS_LINKER_RELRO=false])
-
-    # "-z now" supported in GNU binutils 2.11 and later
-    LINKER_NOW_FLAG="-Wl,-z,now"
-    FLAGS_LINKER_CHECK_ARGUMENTS(ARGUMENT: [$LINKER_NOW_FLAG],
-      IF_TRUE: [HAS_LINKER_NOW=true],
-      IF_FALSE: [HAS_LINKER_NOW=false])
-
     # If this is a --hash-style=gnu system, use --hash-style=both, why?
     # We have previously set HAS_GNU_HASH if this is the case
     if test -n "$HAS_GNU_HASH"; then
@@ -83,19 +71,13 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
       LIBJSIG_HASHSTYLE_LDFLAGS="-Wl,--hash-style=both"
     fi
 
-    # And since we now know that the linker is gnu, then add -z defs, to forbid
-    # undefined symbols in object files.
+    # Add -z defs, to forbid undefined symbols in object files.
     BASIC_LDFLAGS="$BASIC_LDFLAGS -Wl,-z,defs"
 
-    BASIC_LDFLAGS_JVM_ONLY="-Wl,-z,noexecstack -Wl,-O1"
+    BASIC_LDFLAGS_JVM_ONLY="-Wl,-z,noexecstack -Wl,-O1 -Wl,-z,relro"
 
     BASIC_LDFLAGS_JDK_LIB_ONLY="-Wl,-z,noexecstack"
     LIBJSIG_NOEXECSTACK_LDFLAGS="-Wl,-z,noexecstack"
-
-
-    if test "x$HAS_LINKER_RELRO" = "xtrue"; then
-      BASIC_LDFLAGS_JVM_ONLY="$BASIC_LDFLAGS_JVM_ONLY $LINKER_RELRO_FLAG"
-    fi
 
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     BASIC_LDFLAGS_JVM_ONLY="-mno-omit-leaf-frame-pointer -mstack-alignment=16 \
@@ -133,20 +115,16 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
   # Setup debug level-dependent LDFLAGS
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
-       if test x$DEBUG_LEVEL = xrelease; then
-          DEBUGLEVEL_LDFLAGS_JDK_ONLY="$DEBUGLEVEL_LDFLAGS_JDK_ONLY -Wl,-O1"
-       else
-          # mark relocations read only on (fast/slow) debug builds
-          if test "x$HAS_LINKER_RELRO" = "xtrue"; then
-            DEBUGLEVEL_LDFLAGS_JDK_ONLY="$LINKER_RELRO_FLAG"
-          fi
-       fi
-       if test x$DEBUG_LEVEL = xslowdebug; then
-          if test "x$HAS_LINKER_NOW" = "xtrue"; then
-            # do relocations at load
-            DEBUGLEVEL_LDFLAGS="$LINKER_NOW_FLAG"
-          fi
-       fi
+      if test x$DEBUG_LEVEL = xrelease; then
+        DEBUGLEVEL_LDFLAGS_JDK_ONLY="$DEBUGLEVEL_LDFLAGS_JDK_ONLY -Wl,-O1"
+      else
+        # mark relocations read only on (fast/slow) debug builds
+        DEBUGLEVEL_LDFLAGS_JDK_ONLY="-Wl,-z,relro"
+      fi
+      if test x$DEBUG_LEVEL = xslowdebug; then
+        # do relocations at load
+        DEBUGLEVEL_LDFLAGS="-Wl,-z,now"
+      fi
     fi
 
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
