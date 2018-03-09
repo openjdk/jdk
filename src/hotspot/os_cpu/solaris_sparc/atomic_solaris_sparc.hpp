@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 
 // Implement ADD using a CAS loop.
 template<size_t byte_size>
-struct Atomic::PlatformAdd VALUE_OBJ_CLASS_SPEC {
+struct Atomic::PlatformAdd {
   template<typename I, typename D>
   inline D operator()(I add_value, D volatile* dest) const {
     D old_value = *dest;

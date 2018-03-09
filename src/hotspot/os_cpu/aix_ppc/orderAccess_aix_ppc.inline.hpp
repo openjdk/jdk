@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2014 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -80,7 +80,6 @@ inline void OrderAccess::fence()      { inlasm_sync();   }
 
 template<size_t byte_size>
 struct OrderAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
-  VALUE_OBJ_CLASS_SPEC
 {
   template <typename T>
   T operator()(const volatile T* p) const { register T t = Atomic::load(p); inlasm_acquire_reg(t); return t; }

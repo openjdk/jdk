@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@
 //      ...
 //    }
 
-class KlassStream VALUE_OBJ_CLASS_SPEC {
+class KlassStream {
  protected:
   InstanceKlass*      _klass;           // current klass/interface iterated over
   InstanceKlass*      _base_klass;      // initial klass/interface to iterate over

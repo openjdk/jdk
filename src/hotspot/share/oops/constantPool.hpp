@@ -48,7 +48,7 @@
 
 class SymbolHashMap;
 
-class CPSlot VALUE_OBJ_CLASS_SPEC {
+class CPSlot {
  friend class ConstantPool;
   intptr_t _ptr;
   enum TagBits  {_pseudo_bit = 1};
@@ -67,7 +67,7 @@ class CPSlot VALUE_OBJ_CLASS_SPEC {
 
 // This represents a JVM_CONSTANT_Class, JVM_CONSTANT_UnresolvedClass, or
 // JVM_CONSTANT_UnresolvedClassInError slot in the constant pool.
-class CPKlassSlot VALUE_OBJ_CLASS_SPEC {
+class CPKlassSlot {
   // cp->symbol_at(_name_index) gives the name of the class.
   int _name_index;
 

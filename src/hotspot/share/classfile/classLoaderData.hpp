@@ -182,7 +182,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   friend class VMStructs;
 
  private:
-  class ChunkedHandleList VALUE_OBJ_CLASS_SPEC {
+  class ChunkedHandleList {
     struct Chunk : public CHeapObj<mtClass> {
       static const size_t CAPACITY = 32;
 

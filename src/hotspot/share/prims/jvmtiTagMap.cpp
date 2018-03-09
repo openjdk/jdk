@@ -1762,7 +1762,7 @@ static jvmtiHeapRootKind toJvmtiHeapRootKind(jvmtiHeapReferenceKind kind) {
 
 // Base class for all heap walk contexts. The base class maintains a flag
 // to indicate if the context is valid or not.
-class HeapWalkContext VALUE_OBJ_CLASS_SPEC {
+class HeapWalkContext {
  private:
   bool _valid;
  public:

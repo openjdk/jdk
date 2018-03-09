@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 
 // ReservedSpace is a data structure for reserving a contiguous address range.
 
-class ReservedSpace VALUE_OBJ_CLASS_SPEC {
+class ReservedSpace {
   friend class VMStructs;
  protected:
   char*  _base;
@@ -133,7 +133,7 @@ class ReservedCodeSpace : public ReservedSpace {
 
 // VirtualSpace is data structure for committing a previously reserved address range in smaller chunks.
 
-class VirtualSpace VALUE_OBJ_CLASS_SPEC {
+class VirtualSpace {
   friend class VMStructs;
  private:
   // Reserved area

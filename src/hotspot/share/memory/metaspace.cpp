@@ -3141,7 +3141,7 @@ void MetaspaceAux::print_waste(outputStream* out) {
   }
 }
 
-class MetadataStats VALUE_OBJ_CLASS_SPEC {
+class MetadataStats {
 private:
   size_t _capacity;
   size_t _used;
