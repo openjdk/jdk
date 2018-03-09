@@ -39,7 +39,7 @@
 /*
  * Virtual memory counter
  */
-class VirtualMemory VALUE_OBJ_CLASS_SPEC {
+class VirtualMemory {
  private:
   size_t     _reserved;
   size_t     _committed;
@@ -177,7 +177,7 @@ class VirtualMemorySummary : AllStatic {
 /*
  * A virtual memory region
  */
-class VirtualMemoryRegion VALUE_OBJ_CLASS_SPEC {
+class VirtualMemoryRegion {
  private:
   address      _base_address;
   size_t       _size;

@@ -87,9 +87,8 @@ class FieldPrinter: public FieldClosure {
 };
 #endif  // !PRODUCT
 
-// ValueObjs embedded in klass. Describes where oops are located in instances of
-// this klass.
-class OopMapBlock VALUE_OBJ_CLASS_SPEC {
+// Describes where oops are located in instances of this klass.
+class OopMapBlock {
  public:
   // Byte offset of the first oop mapped by this block.
   int offset() const          { return _offset; }

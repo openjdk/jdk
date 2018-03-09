@@ -196,14 +196,12 @@ class StackObj ALLOCATION_SUPER_CLASS_SPEC {
 // if the superclass does not have any virtual methods or
 // instance fields. The HotSpot implementation relies on this
 // not to happen. So never make a ValueObj class a direct subclass
-// of this object, but use the VALUE_OBJ_CLASS_SPEC class instead, e.g.,
 // like this:
 //
-//   class A VALUE_OBJ_CLASS_SPEC {
+//   class A {
 //     ...
 //   }
 //
-// With gcc and possible other compilers the VALUE_OBJ_CLASS_SPEC can
 // be defined as a an empty string "".
 //
 class _ValueObj {

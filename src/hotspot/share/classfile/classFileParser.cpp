@@ -1858,7 +1858,7 @@ class LVT_Hash : public AllStatic {
 
 
 // Class file LocalVariableTable elements.
-class Classfile_LVT_Element VALUE_OBJ_CLASS_SPEC {
+class Classfile_LVT_Element {
  public:
   u2 start_bci;
   u2 length;

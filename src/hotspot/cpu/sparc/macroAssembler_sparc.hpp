@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,7 +239,7 @@ REGISTER_DECLARATION(Register, Oissuing_pc , O1); // where the exception is comi
 // Note: A register location is represented via a Register, not
 //       via an address for efficiency & simplicity reasons.
 
-class Address VALUE_OBJ_CLASS_SPEC {
+class Address {
  private:
   Register           _base;           // Base register.
   RegisterOrConstant _index_or_disp;  // Index register or constant displacement.
@@ -320,7 +320,7 @@ class Address VALUE_OBJ_CLASS_SPEC {
 };
 
 
-class AddressLiteral VALUE_OBJ_CLASS_SPEC {
+class AddressLiteral {
  private:
   address          _address;
   RelocationHolder _rspec;
@@ -452,7 +452,7 @@ inline Address RegisterImpl::address_in_saved_window() const {
 // with the SPARC Application Binary Interface, or ABI.  This is
 // often referred to as the native or C calling convention.
 
-class Argument VALUE_OBJ_CLASS_SPEC {
+class Argument {
  private:
   int _number;
   bool _is_in;

@@ -42,7 +42,7 @@
 
 static const int JVM_IDENT_MAX = 256;
 
-class SharedClassPathEntry VALUE_OBJ_CLASS_SPEC {
+class SharedClassPathEntry {
 protected:
   bool   _is_dir;
   time_t _timestamp;          // jar/jimage timestamp,  0 if is directory or other

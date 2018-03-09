@@ -129,7 +129,7 @@ class Bytecode: public StackObj {
 
 
 // Abstractions for lookupswitch bytecode
-class LookupswitchPair VALUE_OBJ_CLASS_SPEC {
+class LookupswitchPair {
  private:
   const address _bcp;
 

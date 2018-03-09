@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@
 //     memory for memory management could be less than the amount of
 //     committed memory.  Its value may be undefined.
 
-class MemoryUsage VALUE_OBJ_CLASS_SPEC {
+class MemoryUsage {
 private:
   size_t _initSize;
   size_t _used;

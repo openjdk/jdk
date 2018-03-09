@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public:
   virtual void metadata_do(void f(Metadata*)) =0;
 };
 
-class GrowableCache VALUE_OBJ_CLASS_SPEC {
+class GrowableCache {
 
 private:
   // Object pointer passed into cache & listener functions.
@@ -451,7 +451,7 @@ public:
  * This is currently only used for posting compiled-method-load and unload
  * events, which we don't want posted from the compiler thread.
  */
-class JvmtiDeferredEvent VALUE_OBJ_CLASS_SPEC {
+class JvmtiDeferredEvent {
   friend class JvmtiDeferredEventQueue;
  private:
   typedef enum {

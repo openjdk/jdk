@@ -74,7 +74,7 @@ class ProfileData;
 // DataLayout
 //
 // Overlay for generic profiling data.
-class DataLayout VALUE_OBJ_CLASS_SPEC {
+class DataLayout {
   friend class VMStructs;
   friend class JVMCIVMStructs;
 
