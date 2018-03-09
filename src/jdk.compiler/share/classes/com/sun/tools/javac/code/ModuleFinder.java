@@ -89,6 +89,8 @@ public class ModuleFinder {
 
     private final JCDiagnostic.Factory diags;
 
+    private final DeferredCompletionFailureHandler dcfh;
+
     private ModuleNameReader moduleNameReader;
 
     public ModuleNameFromSourceReader moduleNameFromSourceReader;
@@ -111,6 +113,7 @@ public class ModuleFinder {
         classFinder = ClassFinder.instance(context);
 
         diags = JCDiagnostic.Factory.instance(context);
+        dcfh = DeferredCompletionFailureHandler.instance(context);
     }
 
     class ModuleLocationIterator implements Iterator<Set<Location>> {
@@ -227,7 +230,7 @@ public class ModuleFinder {
                     JCDiagnostic diag =
                         diags.fragment(Fragments.FileDoesNotContainModule);
                     ClassSymbol errModuleInfo = syms.defineClass(names.module_info, syms.errModule);
-                    throw new ClassFinder.BadClassFile(errModuleInfo, fo, diag, diags);
+                    throw new ClassFinder.BadClassFile(errModuleInfo, fo, diag, diags, dcfh);
                 }
                 break;
             case CLASS:

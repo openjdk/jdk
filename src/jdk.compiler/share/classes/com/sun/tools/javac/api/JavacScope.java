@@ -30,11 +30,14 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
+import com.sun.tools.javac.code.Kinds.Kind;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Assert;
+import com.sun.tools.javac.util.Filter;
 
 /**
  * Provides an implementation of Scope.
@@ -48,6 +51,11 @@ import com.sun.tools.javac.util.Assert;
  */
 public class JavacScope implements com.sun.source.tree.Scope {
 
+    private static final Filter<Symbol> VALIDATOR = sym -> {
+        sym.apiComplete();
+        return sym.kind != Kind.ERR;
+    };
+
     static JavacScope create(Env<AttrContext> env) {
         if (env.outer == null || env.outer == env) {
             //the "top-level" scope needs to return both imported and defined elements
@@ -55,7 +63,7 @@ public class JavacScope implements com.sun.source.tree.Scope {
             return new JavacScope(env) {
                 @Override @DefinedBy(Api.COMPILER_TREE)
                 public Iterable<? extends Element> getLocalElements() {
-                    return env.toplevel.namedImportScope.getSymbols();
+                    return env.toplevel.namedImportScope.getSymbols(VALIDATOR);
                 }
             };
         } else {
@@ -85,7 +93,7 @@ public class JavacScope implements com.sun.source.tree.Scope {
                 }
                 @DefinedBy(Api.COMPILER_TREE)
                 public Iterable<? extends Element> getLocalElements() {
-                    return env.toplevel.starImportScope.getSymbols();
+                    return env.toplevel.starImportScope.getSymbols(VALIDATOR);
                 }
             };
         }
