@@ -30,7 +30,9 @@ import java.io.IOException;
 import java.text.BreakIterator;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -179,6 +181,8 @@ public class JavacTrees extends DocTrees {
     private JavaFileManager fileManager;
     private ParserFactory parser;
     private Symtab syms;
+
+    private final Map<Type, Type> extraType2OriginalMap = new WeakHashMap<>();
 
     // called reflectively from Trees.instance(CompilationTask task)
     public static JavacTrees instance(JavaCompiler.CompilationTask task) {
@@ -1082,6 +1086,20 @@ public class JavacTrees extends DocTrees {
     public TypeMirror getOriginalType(javax.lang.model.type.ErrorType errorType) {
         if (errorType instanceof com.sun.tools.javac.code.Type.ErrorType) {
             return ((com.sun.tools.javac.code.Type.ErrorType)errorType).getOriginalType();
+        }
+        if (errorType instanceof com.sun.tools.javac.code.Type.ClassType &&
+            errorType.getKind() == TypeKind.ERROR) {
+            ClassType ct = (ClassType) errorType;
+            return extraType2OriginalMap.computeIfAbsent(ct, tt ->
+                    new ClassType(ct.getEnclosingType(), ct.typarams_field,
+                                  ct.tsym, ct.getMetadata()) {
+                        @Override
+                        public Type baseType() { return ct; }
+                        @Override
+                        public TypeKind getKind() {
+                            return TypeKind.DECLARED;
+                        }
+                    });
         }
 
         return com.sun.tools.javac.code.Type.noType;

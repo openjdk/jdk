@@ -43,7 +43,7 @@ public class b6341534 extends JavacTestingAbstractProcessor {
 
             try {
                 PackageElement PE = eltUtils.getPackageElement("dir1");
-                List<? extends Element> LEE = PE.getEnclosedElements();    /* <=This line elicits the error message.  */
+                List<? extends Element> LEE = PE.getEnclosedElements(); //should not crash here
                 for(Element e : LEE)
                     System.out.println("found " + e.toString() + " in dir1.");
             }

@@ -930,7 +930,8 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         }
     }
 
-    public static class ClassType extends Type implements DeclaredType {
+    public static class ClassType extends Type implements DeclaredType,
+                                                          javax.lang.model.type.ErrorType {
 
         /** The enclosing type of this type. If this is the type of an inner
          *  class, outer_field refers to the type of its enclosing
@@ -1141,7 +1142,8 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
         @DefinedBy(Api.LANGUAGE_MODEL)
         public TypeKind getKind() {
-            return TypeKind.DECLARED;
+            tsym.apiComplete();
+            return tsym.kind == TYP ? TypeKind.DECLARED : TypeKind.ERROR;
         }
 
         @DefinedBy(Api.LANGUAGE_MODEL)
