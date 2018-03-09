@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ class HandshakeOperation;
 // VM thread and JavaThread are serialized with the semaphore making sure
 // the operation is only done by either VM thread on behalf of the JavaThread
 // or the JavaThread itself.
-class HandshakeState VALUE_OBJ_CLASS_SPEC {
+class HandshakeState {
   HandshakeOperation* volatile _operation;
 
   Semaphore _semaphore;

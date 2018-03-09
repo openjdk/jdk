@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@
 // supported for stack locks just like inflated locks.
 
 // RTM locking counters
-class RTMLockingCounters VALUE_OBJ_CLASS_SPEC {
+class RTMLockingCounters {
  private:
   uintx _total_count; // Total RTM locks count
   uintx _abort_count; // Total aborts count

@@ -28,6 +28,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/guardedMemory.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"

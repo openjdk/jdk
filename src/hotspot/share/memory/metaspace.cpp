@@ -4044,7 +4044,7 @@ void MetaspaceAux::print_waste(outputStream* out) {
   }
 }
 
-class MetadataStats VALUE_OBJ_CLASS_SPEC {
+class MetadataStats {
 private:
   size_t _capacity;
   size_t _used;
@@ -4886,7 +4886,7 @@ void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_s
     if (log.is_debug()) {
       if (loader_data->metaspace_or_null() != NULL) {
         LogStream ls(log.debug());
-        loader_data->dump(&ls);
+        loader_data->print_value_on(&ls);
       }
     }
     LogStream ls(log.info());

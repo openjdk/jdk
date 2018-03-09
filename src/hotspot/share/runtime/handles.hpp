@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ class Klass;
 // Base class for all handles. Provides overloading of frequently
 // used operators for ease of use.
 
-class Handle VALUE_OBJ_CLASS_SPEC {
+class Handle {
  private:
   oop* _handle;
 

@@ -38,6 +38,7 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/debug.hpp"
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@
 // each log message for a given output. Decorators are always prepended in the order
 // declared above. For example, logging with 'uptime, level, tags' decorators results in:
 // [0,943s][info   ][logging] message.
-class LogDecorators VALUE_OBJ_CLASS_SPEC {
+class LogDecorators {
  public:
   enum Decorator {
 #define DECORATOR(name, abbr) name##_decorator,

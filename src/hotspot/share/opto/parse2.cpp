@@ -29,7 +29,7 @@
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "opto/addnode.hpp"
 #include "opto/castnode.hpp"

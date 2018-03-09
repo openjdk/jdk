@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_OOPS_CONSTANTPOOLOOP_HPP
 #define SHARE_VM_OOPS_CONSTANTPOOLOOP_HPP
 
-#include "memory/allocation.inline.hpp"
+#include "memory/allocation.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/cpCache.hpp"
 #include "oops/objArrayOop.hpp"
@@ -48,7 +48,7 @@
 
 class SymbolHashMap;
 
-class CPSlot VALUE_OBJ_CLASS_SPEC {
+class CPSlot {
  friend class ConstantPool;
   intptr_t _ptr;
   enum TagBits  {_pseudo_bit = 1};
@@ -67,7 +67,7 @@ class CPSlot VALUE_OBJ_CLASS_SPEC {
 
 // This represents a JVM_CONSTANT_Class, JVM_CONSTANT_UnresolvedClass, or
 // JVM_CONSTANT_UnresolvedClassInError slot in the constant pool.
-class CPKlassSlot VALUE_OBJ_CLASS_SPEC {
+class CPKlassSlot {
   // cp->symbol_at(_name_index) gives the name of the class.
   int _name_index;
 
@@ -1023,16 +1023,7 @@ class SymbolHashMap: public CHeapObj<mtSymbol> {
     return (entry == NULL) ? 0 : entry->value();
   }
 
-  ~SymbolHashMap() {
-    SymbolHashMapEntry* next;
-    for (int i = 0; i < _table_size; i++) {
-      for (SymbolHashMapEntry* cur = bucket(i); cur != NULL; cur = next) {
-        next = cur->next();
-        delete(cur);
-      }
-    }
-    FREE_C_HEAP_ARRAY(SymbolHashMapBucket, _buckets);
-  }
+  ~SymbolHashMap();
 }; // End SymbolHashMap class
 
 #endif // SHARE_VM_OOPS_CONSTANTPOOLOOP_HPP

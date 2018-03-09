@@ -36,6 +36,7 @@
 #include "jvmci/compilerRuntime.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "oops/method.inline.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -448,4 +449,3 @@ void AOTCompiledMethod::clear_inline_caches() {
     }
   }
 }
-

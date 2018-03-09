@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ class LogMessageBuffer;
 // The tagset represents a combination of tags that occur in a log call somewhere.
 // Tagsets are created automatically by the LogTagSetMappings and should never be
 // instantiated directly somewhere else.
-class LogTagSet VALUE_OBJ_CLASS_SPEC {
+class LogTagSet {
  private:
   static LogTagSet* _list;
   static size_t _ntagsets;

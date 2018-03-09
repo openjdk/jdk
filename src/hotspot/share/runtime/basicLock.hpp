@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "oops/markOop.hpp"
 #include "runtime/handles.hpp"
 
-class BasicLock VALUE_OBJ_CLASS_SPEC {
+class BasicLock {
   friend class VMStructs;
   friend class JVMCIVMStructs;
  private:
@@ -54,7 +54,7 @@ class BasicLock VALUE_OBJ_CLASS_SPEC {
 // alignment of the embedded BasicLock objects on such machines, we
 // put the embedded BasicLock at the beginning of the struct.
 
-class BasicObjectLock VALUE_OBJ_CLASS_SPEC {
+class BasicObjectLock {
   friend class VMStructs;
  private:
   BasicLock _lock;                                    // the lock, must be double word aligned

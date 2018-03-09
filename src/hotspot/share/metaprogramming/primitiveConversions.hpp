@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ inline T PrimitiveConversions::cast_using_union(U x) {
 
 // Give an informative error if the sizes differ.
 template<typename T, typename U>
-struct PrimitiveConversions::Cast<T, U, false> VALUE_OBJ_CLASS_SPEC {
+struct PrimitiveConversions::Cast<T, U, false> {
   STATIC_ASSERT(sizeof(T) == sizeof(U));
 };
 
@@ -113,7 +113,6 @@ template<typename T, typename U>
 struct PrimitiveConversions::Cast<
   T, U, true,
   typename EnableIf<IsIntegral<T>::value && IsIntegral<U>::value>::type>
-  VALUE_OBJ_CLASS_SPEC
 {
   T operator()(U x) const { return cast_using_union<T>(x); }
 };
@@ -125,7 +124,6 @@ struct PrimitiveConversions::Cast<
   typename EnableIf<IsIntegral<T>::value &&
                     (IsRegisteredEnum<U>::value ||
                      IsFloatingPoint<U>::value)>::type>
-  VALUE_OBJ_CLASS_SPEC
 {
   T operator()(U x) const { return cast_using_union<T>(x); }
 };
@@ -137,7 +135,6 @@ struct PrimitiveConversions::Cast<
   typename EnableIf<IsIntegral<U>::value &&
                     (IsRegisteredEnum<T>::value ||
                      IsFloatingPoint<T>::value)>::type>
-  VALUE_OBJ_CLASS_SPEC
 {
   T operator()(U x) const { return cast_using_union<T>(x); }
 };
@@ -147,7 +144,6 @@ template<typename T, typename U>
 struct PrimitiveConversions::Cast<
   T, U*, true,
   typename EnableIf<IsIntegral<T>::value>::type>
-  VALUE_OBJ_CLASS_SPEC
 {
   T operator()(U* x) const { return reinterpret_cast<T>(x); }
 };
@@ -157,7 +153,6 @@ template<typename T, typename U>
 struct PrimitiveConversions::Cast<
   T*, U, true,
   typename EnableIf<IsIntegral<U>::value>::type>
-  VALUE_OBJ_CLASS_SPEC
 {
   T* operator()(U x) const { return reinterpret_cast<T*>(x); }
 };

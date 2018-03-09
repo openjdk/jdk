@@ -130,7 +130,7 @@ namespace AccessInternal {
   template <DecoratorSet decorators, typename T, BarrierType barrier_type>
   typename AccessFunction<decorators, T, barrier_type>::type resolve_oop_barrier();
 
-  class AccessLocker VALUE_OBJ_CLASS_SPEC {
+  class AccessLocker {
   public:
     AccessLocker();
     ~AccessLocker();

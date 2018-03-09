@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ class InterpreterCodelet;
 // A little wrapper class to group tosca-specific entry points into a unit.
 // (tosca = Top-Of-Stack CAche)
 
-class EntryPoint VALUE_OBJ_CLASS_SPEC {
+class EntryPoint {
  private:
   address _entry[number_of_states];
 
@@ -62,7 +62,7 @@ class EntryPoint VALUE_OBJ_CLASS_SPEC {
 //------------------------------------------------------------------------------------------------------------------------
 // A little wrapper class to group tosca-specific dispatch tables into a unit.
 
-class DispatchTable VALUE_OBJ_CLASS_SPEC {
+class DispatchTable {
  public:
   enum { length = 1 << BitsPerByte };                 // an entry point for each byte value (also for undefined bytecodes)
 

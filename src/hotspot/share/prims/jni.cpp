@@ -42,7 +42,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/arrayOop.inline.hpp"
 #include "oops/instanceKlass.hpp"
@@ -4215,25 +4215,26 @@ jint JNICALL jni_AttachCurrentThread(JavaVM *vm, void **penv, void *_args) {
 
 jint JNICALL jni_DetachCurrentThread(JavaVM *vm)  {
   HOTSPOT_JNI_DETACHCURRENTTHREAD_ENTRY(vm);
-  VM_Exit::block_if_vm_exited();
 
   JNIWrapper("DetachCurrentThread");
 
   // If the thread has already been detached the operation is a no-op
   if (Thread::current_or_null() == NULL) {
-  HOTSPOT_JNI_DETACHCURRENTTHREAD_RETURN(JNI_OK);
+    HOTSPOT_JNI_DETACHCURRENTTHREAD_RETURN(JNI_OK);
     return JNI_OK;
   }
 
+  VM_Exit::block_if_vm_exited();
+
   JavaThread* thread = JavaThread::current();
   if (thread->has_last_Java_frame()) {
-  HOTSPOT_JNI_DETACHCURRENTTHREAD_RETURN((uint32_t) JNI_ERR);
+    HOTSPOT_JNI_DETACHCURRENTTHREAD_RETURN((uint32_t) JNI_ERR);
     // Can't detach a thread that's running java, that can't work.
     return JNI_ERR;
   }
 
   // Safepoint support. Have to do call-back to safepoint code, if in the
-  // middel of a safepoint operation
+  // middle of a safepoint operation
   ThreadStateTransition::transition_from_native(thread, _thread_in_vm);
 
   // XXX: Note that JavaThread::exit() call below removes the guards on the

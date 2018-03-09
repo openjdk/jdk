@@ -129,7 +129,7 @@ class PSPromotionManager;
 
 class CallInfo;
 
-class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
+class ConstantPoolCacheEntry {
   friend class VMStructs;
   friend class constantPoolCacheKlass;
   friend class ConstantPool;

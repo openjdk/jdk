@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ class vframeArray;
 // so that one physical frame can correspond to multiple source level
 // frames because of inlining.
 
-class frame VALUE_OBJ_CLASS_SPEC {
+class frame {
  private:
   // Instance variables:
   intptr_t* _sp; // stack pointer (from Thread::last_Java_sp)
@@ -426,7 +426,7 @@ class frame VALUE_OBJ_CLASS_SPEC {
 
 #ifndef PRODUCT
 // A simple class to describe a location on the stack
-class FrameValue VALUE_OBJ_CLASS_SPEC {
+class FrameValue {
  public:
   intptr_t* location;
   char* description;
