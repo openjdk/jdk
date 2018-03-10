@@ -252,7 +252,7 @@ class CodeBuffer;
 class CodeSection;
 class RelocIterator;
 
-class relocInfo VALUE_OBJ_CLASS_SPEC {
+class relocInfo {
   friend class RelocIterator;
  public:
   enum relocType {
@@ -469,7 +469,7 @@ inline relocInfo prefix_relocInfo(int datalen = 0) {
 // Holder for flyweight relocation objects.
 // Although the flyweight subclasses are of varying sizes,
 // the holder is "one size fits all".
-class RelocationHolder VALUE_OBJ_CLASS_SPEC {
+class RelocationHolder {
   friend class Relocation;
   friend class CodeSection;
 
@@ -640,7 +640,7 @@ class RelocIterator : public StackObj {
 // It represents the relocation data of relocation record.
 // So, the RelocIterator unpacks relocInfos into Relocations.
 
-class Relocation VALUE_OBJ_CLASS_SPEC {
+class Relocation {
   friend class RelocationHolder;
   friend class RelocIterator;
 

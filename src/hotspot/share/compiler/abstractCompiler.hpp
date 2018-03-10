@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,10 @@ typedef void (*initializer)(void);
 
 #if INCLUDE_JVMCI
 // Per-compiler statistics
-class CompilerStatistics VALUE_OBJ_CLASS_SPEC {
+class CompilerStatistics {
   friend class VMStructs;
 
-  class Data VALUE_OBJ_CLASS_SPEC {
+  class Data {
     friend class VMStructs;
   public:
     elapsedTimer _time;  // time spent compiling
