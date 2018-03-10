@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,7 +114,7 @@ class DepMem : public ResourceObj {
 };
 
 //------------------------------DepGraph---------------------------
-class DepGraph VALUE_OBJ_CLASS_SPEC {
+class DepGraph {
  protected:
   Arena* _arena;
   GrowableArray<DepMem*> _map;
@@ -190,7 +190,7 @@ public:
 
 // -----------------------------SWNodeInfo---------------------------------
 // Per node info needed by SuperWord
-class SWNodeInfo VALUE_OBJ_CLASS_SPEC {
+class SWNodeInfo {
  public:
   int         _alignment; // memory alignment for a node
   int         _depth;     // Max expression (DAG) depth from block start
@@ -222,7 +222,7 @@ class CMoveKit {
 // JVMCI: OrderedPair is moved up to deal with compilation issues on Windows
 //------------------------------OrderedPair---------------------------
 // Ordered pair of Node*.
-class OrderedPair VALUE_OBJ_CLASS_SPEC {
+class OrderedPair {
  protected:
   Node* _p1;
   Node* _p2;
@@ -544,7 +544,7 @@ class SuperWord : public ResourceObj {
 
 //------------------------------SWPointer---------------------------
 // Information about an address for dependence checking and vector alignment
-class SWPointer VALUE_OBJ_CLASS_SPEC {
+class SWPointer {
  protected:
   MemNode*   _mem;           // My memory reference node
   SuperWord* _slp;           // SuperWord class

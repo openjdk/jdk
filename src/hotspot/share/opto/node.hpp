@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1194,7 +1194,7 @@ inline bool NotANode(const Node* n) {
 #if OPTO_DU_ITERATOR_ASSERT
 
 // Common code for assertion checking on DU iterators.
-class DUIterator_Common VALUE_OBJ_CLASS_SPEC {
+class DUIterator_Common {
 #ifdef ASSERT
  protected:
   bool         _vdui;               // cached value of VerifyDUIterators
@@ -1618,7 +1618,7 @@ public:
 //-----------------------------Node_Notes--------------------------------------
 // Debugging or profiling annotations loosely and sparsely associated
 // with some nodes.  See Compile::node_notes_at for the accessor.
-class Node_Notes VALUE_OBJ_CLASS_SPEC {
+class Node_Notes {
   friend class VMStructs;
   JVMState* _jvms;
 

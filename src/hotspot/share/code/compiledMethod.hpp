@@ -75,7 +75,7 @@ class ExceptionCache : public CHeapObj<mtCode> {
 class nmethod;
 
 // cache pc descs found in earlier inquiries
-class PcDescCache VALUE_OBJ_CLASS_SPEC {
+class PcDescCache {
   friend class VMStructs;
  private:
   enum { cache_size = 4 };
@@ -109,7 +109,7 @@ public:
   PcDesc* scopes_pcs_end() const { return _upper; }
 };
 
-class PcDescContainer VALUE_OBJ_CLASS_SPEC {
+class PcDescContainer {
 private:
   PcDescCache _pc_desc_cache;
 public:
