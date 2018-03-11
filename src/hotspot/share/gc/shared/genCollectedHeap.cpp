@@ -558,7 +558,7 @@ void GenCollectedHeap::do_collection(bool           full,
 
   ClearedAllSoftRefs casr(do_clear_all_soft_refs, soft_ref_policy());
 
-  const size_t metadata_prev_used = MetaspaceAux::used_bytes();
+  const size_t metadata_prev_used = MetaspaceUtils::used_bytes();
 
   print_heap_before_gc();
 
@@ -644,7 +644,7 @@ void GenCollectedHeap::do_collection(bool           full,
     complete = complete || collected_old;
 
     print_heap_change(young_prev_used, old_prev_used);
-    MetaspaceAux::print_metaspace_change(metadata_prev_used);
+    MetaspaceUtils::print_metaspace_change(metadata_prev_used);
 
     // Adjust generation sizes.
     if (collected_old) {
@@ -655,7 +655,7 @@ void GenCollectedHeap::do_collection(bool           full,
     if (complete) {
       // Delete metaspaces for unloaded class loaders and clean up loader_data graph
       ClassLoaderDataGraph::purge();
-      MetaspaceAux::verify_metrics();
+      MetaspaceUtils::verify_metrics();
       // Resize the metaspace capacity after full collections
       MetaspaceGC::compute_new_size();
       update_full_collections_completed();
@@ -1258,7 +1258,7 @@ void GenCollectedHeap::verify(VerifyOption option /* ignored */) {
 void GenCollectedHeap::print_on(outputStream* st) const {
   _young_gen->print_on(st);
   _old_gen->print_on(st);
-  MetaspaceAux::print_on(st);
+  MetaspaceUtils::print_on(st);
 }
 
 void GenCollectedHeap::gc_threads_do(ThreadClosure* tc) const {
