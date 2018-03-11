@@ -85,7 +85,7 @@ class Metaspace : public CHeapObj<mtClass> {
   friend class SpaceManager;
   friend class VM_CollectForMetadataAllocation;
   friend class MetaspaceGC;
-  friend class MetaspaceAux;
+  friend class MetaspaceUtils;
   friend class MetaspaceShared;
   friend class CollectedHeap;
   friend class PrintCLDMetaspaceInfoClosure;
@@ -265,7 +265,7 @@ class Metaspace : public CHeapObj<mtClass> {
 
 };
 
-class MetaspaceAux : AllStatic {
+class MetaspaceUtils : AllStatic {
   static size_t free_chunks_total_words(Metaspace::MetadataType mdtype);
 
   // These methods iterate over the classloader data graph

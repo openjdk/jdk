@@ -197,18 +197,18 @@ void MemSummaryReporter::report_metadata(Metaspace::MetadataType type) const {
 
   outputStream* out = output();
   const char* scale = current_scale();
-  size_t committed   = MetaspaceAux::committed_bytes(type);
-  size_t used = MetaspaceAux::used_bytes(type);
-  size_t free = (MetaspaceAux::capacity_bytes(type) - used)
-              + MetaspaceAux::free_chunks_total_bytes(type)
-              + MetaspaceAux::free_bytes(type);
+  size_t committed   = MetaspaceUtils::committed_bytes(type);
+  size_t used = MetaspaceUtils::used_bytes(type);
+  size_t free = (MetaspaceUtils::capacity_bytes(type) - used)
+              + MetaspaceUtils::free_chunks_total_bytes(type)
+              + MetaspaceUtils::free_bytes(type);
 
   assert(committed >= used + free, "Sanity");
   size_t waste = committed - (used + free);
 
   out->print_cr("%27s (  %s)", " ", name);
   out->print("%27s (    ", " ");
-  print_total(MetaspaceAux::reserved_bytes(type), committed);
+  print_total(MetaspaceUtils::reserved_bytes(type), committed);
   out->print_cr(")");
   out->print_cr("%27s (    used=" SIZE_FORMAT "%s)", " ", amount_in_current_scale(used), scale);
   out->print_cr("%27s (    free=" SIZE_FORMAT "%s)", " ", amount_in_current_scale(free), scale);
