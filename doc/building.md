@@ -173,8 +173,8 @@ require a community effort to implement.)
 Internally in the build system, all paths are represented as Unix-style paths,
 e.g. `/cygdrive/c/hg/jdk9/Makefile` rather than `C:\hg\jdk9\Makefile`. This
 rule also applies to input to the build system, e.g. in arguments to
-`configure`. So, use `--with-freetype=/cygdrive/c/freetype` rather than
-`--with-freetype=c:\freetype`. For details on this conversion, see the section
+`configure`. So, use `--with-msvcr-dll=/cygdrive/c/msvcr100.dll` rather than
+`--with-msvcr-dll=c:\msvcr100.dll`. For details on this conversion, see the section
 on [Fixpath](#fixpath).
 
 #### Cygwin
@@ -444,43 +444,19 @@ and the lib directory separately.
 
 ### FreeType
 
-FreeType2 from [The FreeType Project](http://www.freetype.org/) is required on
-all platforms. At least version 2.3 is required.
+FreeType2 from [The FreeType Project](http://www.freetype.org/) is not required
+on any platform. The exception is on Unix-based platforms when configuring such
+that the build artifacts will reference a system installed library,
+rather than bundling OpenJDK's own copy.
 
   * To install on an apt-based Linux, try running `sudo apt-get install
-    libcups2-dev`.
+    libfreetype6-dev`.
   * To install on an rpm-based Linux, try running `sudo yum install
-    cups-devel`.
+    freetype-devel`.
   * To install on Solaris, try running `pkg install system/library/freetype-2`.
-  * To install on macOS, try running `brew install freetype`.
-  * To install on Windows, see [below](#building-freetype-on-windows).
 
-Use `--with-freetype=<path>` if `configure` does not properly locate your
-FreeType files.
-
-#### Building FreeType on Windows
-
-On Windows, there is no readily available compiled version of FreeType. OpenJDK
-can help you compile FreeType from source. Download the FreeType sources and
-unpack them into an arbitrary directory:
-
-```
-wget http://download.savannah.gnu.org/releases/freetype/freetype-2.5.3.tar.gz
-tar -xzf freetype-2.5.3.tar.gz
-```
-
-Then run `configure` with `--with-freetype-src=<freetype_src>`. This will
-automatically build the freetype library into `<freetype_src>/lib64` for 64-bit
-builds or into `<freetype_src>/lib32` for 32-bit builds. Afterwards you can
-always use `--with-freetype-include=<freetype_src>/include` and
-`--with-freetype-lib=<freetype_src>/lib[32|64]` for other builds.
-
-Alternatively you can unpack the sources like this to use the default
-directory:
-
-```
-tar --one-top-level=$HOME/freetype --strip-components=1 -xzf freetype-2.5.3.tar.gz
-```
+Use `--with-freetype-include=<path>` and `--with-freetype-lib=<path>`
+if `configure` does not automatically locate the platform FreeType files.
 
 ### CUPS
 

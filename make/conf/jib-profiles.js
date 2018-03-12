@@ -430,7 +430,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "macosx-x64": {
             target_os: "macosx",
             target_cpu: "x64",
-            dependencies: ["devkit", "autoconf", "freetype"],
+            dependencies: ["devkit", "autoconf"],
             configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
                 "--with-macosx-version-max=10.7.0"),
         },
@@ -454,7 +454,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "windows-x64": {
             target_os: "windows",
             target_cpu: "x64",
-            dependencies: ["devkit", "autoconf", "freetype"],
+            dependencies: ["devkit", "autoconf"],
             configure_args: concat(common.configure_args_64bit),
         },
 
@@ -462,7 +462,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "windows",
             target_cpu: "x86",
             build_cpu: "x64",
-            dependencies: ["devkit", "autoconf", "freetype"],
+            dependencies: ["devkit", "autoconf"],
             configure_args: concat(common.configure_args_32bit),
         },
 
@@ -810,12 +810,6 @@ var getJibProfilesDependencies = function (input, common) {
     var boot_jdk_platform = (input.build_os == "macosx" ? "osx" : input.build_os)
         + "-" + input.build_cpu;
 
-    var freetype_version = {
-        windows_x64: "2.7.1-v120+1.1",
-        windows_x86: "2.7.1-v120+1.1",
-        macosx_x64: "2.7.1-Xcode6.3-MacOSX10.9+1.0"
-    }[input.target_platform];
-
     var makeBinDir = (input.build_os == "windows"
         ? input.get("gnumake", "install_path") + "/cygwin/bin"
         : input.get("gnumake", "install_path") + "/bin");
@@ -890,13 +884,6 @@ var getJibProfilesDependencies = function (input, common) {
                 : "autoconf-" + input.build_platform),
             configure_args: "",
             environment_path: input.get("autoconf", "install_path")
-        },
-
-        freetype: {
-            organization: common.organization,
-            ext: "tar.gz",
-            revision: freetype_version,
-            module: "freetype-" + input.target_platform
         },
 
         graphviz: {
