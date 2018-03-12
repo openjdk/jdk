@@ -191,7 +191,7 @@
 <p>Windows XP is not a supported platform, but all newer Windows should be able to build OpenJDK.</p>
 <p>On Windows, it is important that you pay attention to the instructions in the <a href="#special-considerations">Special Considerations</a>.</p>
 <p>Windows is the only non-POSIX OS supported by OpenJDK, and as such, requires some extra care. A POSIX support layer is required to build on Windows. For OpenJDK 9, the only supported such layer is Cygwin. (Msys is no longer supported due to a too old bash; msys2 and the new Windows Subsystem for Linux (WSL) would likely be possible to support in a future version but that would require a community effort to implement.)</p>
-<p>Internally in the build system, all paths are represented as Unix-style paths, e.g. <code>/cygdrive/c/hg/jdk9/Makefile</code> rather than <code>C:\hg\jdk9\Makefile</code>. This rule also applies to input to the build system, e.g. in arguments to <code>configure</code>. So, use <code>--with-freetype=/cygdrive/c/freetype</code> rather than <code>--with-freetype=c:\freetype</code>. For details on this conversion, see the section on <a href="#fixpath">Fixpath</a>.</p>
+<p>Internally in the build system, all paths are represented as Unix-style paths, e.g. <code>/cygdrive/c/hg/jdk9/Makefile</code> rather than <code>C:\hg\jdk9\Makefile</code>. This rule also applies to input to the build system, e.g. in arguments to <code>configure</code>. So, use <code>--with-msvcr-dll=/cygdrive/c/msvcr100.dll</code> rather than <code>--with-msvcr-dll=c:\msvcr100.dll</code>. For details on this conversion, see the section on <a href="#fixpath">Fixpath</a>.</p>
 <h4 id="cygwin">Cygwin</h4>
 <p>A functioning <a href="http://www.cygwin.com/">Cygwin</a> environment is thus required for building OpenJDK on Windows. If you have a 64-bit OS, we strongly recommend using the 64-bit version of Cygwin.</p>
 <p><strong>Note:</strong> Cygwin has a model of continuously updating all packages without any easy way to install or revert to a specific version of a package. This means that whenever you add or update a package in Cygwin, you might (inadvertently) update tools that are used by the OpenJDK build process, and that can cause unexpected build problems.</p>
@@ -372,22 +372,13 @@ CC: Sun C++ 5.13 SunOS_i386 151846-10 2015/10/30</code></pre>
 <p>If a required library is not detected by <code>configure</code>, you need to provide the path to it. There are two forms of the <code>configure</code> arguments to point to an external library: <code>--with-&lt;LIB&gt;=&lt;path&gt;</code> or <code>--with-&lt;LIB&gt;-include=&lt;path to include&gt; --with-&lt;LIB&gt;-lib=&lt;path to lib&gt;</code>. The first variant is more concise, but require the include files an library files to reside in a default hierarchy under this directory. In most cases, it works fine.</p>
 <p>As a fallback, the second version allows you to point to the include directory and the lib directory separately.</p>
 <h3 id="freetype">FreeType</h3>
-<p>FreeType2 from <a href="http://www.freetype.org/">The FreeType Project</a> is required on all platforms. At least version 2.3 is required.</p>
+<p>FreeType2 from <a href="http://www.freetype.org/">The FreeType Project</a> is not required on any platform. The exception is on Unix-based platforms when configuring such that the build artifacts will reference a system installed library, rather than bundling OpenJDK's own copy.</p>
 <ul>
-<li>To install on an apt-based Linux, try running <code>sudo apt-get install libcups2-dev</code>.</li>
-<li>To install on an rpm-based Linux, try running <code>sudo yum install cups-devel</code>.</li>
+<li>To install on an apt-based Linux, try running <code>sudo apt-get install libfreetype6-dev</code>.</li>
+<li>To install on an rpm-based Linux, try running <code>sudo yum install freetype-devel</code>.</li>
 <li>To install on Solaris, try running <code>pkg install system/library/freetype-2</code>.</li>
-<li>To install on macOS, try running <code>brew install freetype</code>.</li>
-<li>To install on Windows, see <a href="#building-freetype-on-windows">below</a>.</li>
 </ul>
-<p>Use <code>--with-freetype=&lt;path&gt;</code> if <code>configure</code> does not properly locate your FreeType files.</p>
-<h4 id="building-freetype-on-windows">Building FreeType on Windows</h4>
-<p>On Windows, there is no readily available compiled version of FreeType. OpenJDK can help you compile FreeType from source. Download the FreeType sources and unpack them into an arbitrary directory:</p>
-<pre><code>wget http://download.savannah.gnu.org/releases/freetype/freetype-2.5.3.tar.gz
-tar -xzf freetype-2.5.3.tar.gz</code></pre>
-<p>Then run <code>configure</code> with <code>--with-freetype-src=&lt;freetype_src&gt;</code>. This will automatically build the freetype library into <code>&lt;freetype_src&gt;/lib64</code> for 64-bit builds or into <code>&lt;freetype_src&gt;/lib32</code> for 32-bit builds. Afterwards you can always use <code>--with-freetype-include=&lt;freetype_src&gt;/include</code> and <code>--with-freetype-lib=&lt;freetype_src&gt;/lib[32|64]</code> for other builds.</p>
-<p>Alternatively you can unpack the sources like this to use the default directory:</p>
-<pre><code>tar --one-top-level=$HOME/freetype --strip-components=1 -xzf freetype-2.5.3.tar.gz</code></pre>
+<p>Use <code>--with-freetype-include=&lt;path&gt;</code> and <code>--with-freetype-lib=&lt;path&gt;</code> if <code>configure</code> does not automatically locate the platform FreeType files.</p>
 <h3 id="cups">CUPS</h3>
 <p>CUPS, <a href="http://www.cups.org">Common UNIX Printing System</a> header files are required on all platforms, except Windows. Often these files are provided by your operating system.</p>
 <ul>

@@ -585,6 +585,46 @@ endif
 
 ################################################################################
 
+ifeq ($(FREETYPE_TO_USE), system)
+  LIBFREETYPE_CFLAGS := $(FREETYPE_CFLAGS)
+  LIBFREETYPE_LIBS := $(FREETYPE_LIBS)
+else
+  LIBFREETYPE_SRC := $(TOPDIR)/src/java.desktop/share/native/libfreetype
+  BUILD_LIBFREETYPE_HEADERS := $(addprefix -I, $(LIBFREETYPE_SRC)/include)
+  LIBFREETYPE_CFLAGS := $(BUILD_LIBFREETYPE_HEADERS)
+  ifeq ($(OPENJDK_TARGET_OS), windows)
+    LIBFREETYPE_LIBS := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfreetype/freetype.lib
+  else
+    LIBFREETYPE_LIBS := -lfreetype
+  endif
+
+  $(eval $(call SetupNativeCompilation, BUILD_LIBFREETYPE, \
+      NAME := freetype, \
+      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+      SRC := $(LIBFREETYPE_SRC)/src, \
+      OPTIMIZATION := HIGHEST, \
+      CFLAGS := $(CFLAGS_JDKLIB) $(BUILD_LIBFREETYPE_HEADERS) \
+          -DFT2_BUILD_LIBRARY, \
+      DISABLED_WARNINGS_solstudio := \
+         E_STATEMENT_NOT_REACHED \
+         E_END_OF_LOOP_CODE_NOT_REACHED, \
+      DISABLED_WARNINGS_microsoft := 4267 2220 4244, \
+      LDFLAGS := $(LDFLAGS_JDKLIB) \
+          $(call SET_SHARED_LIBRARY_ORIGIN), \
+      LIBS_solaris := -lc, \
+      VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
+      RC_FLAGS := $(RC_FLAGS) \
+          -D "JDK_FNAME=freetype.dll" \
+          -D "JDK_INTERNAL_NAME=freetype" \
+          -D "JDK_FTYPE=0x2L", \
+      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfreetype, \
+  ))
+
+  TARGETS += $(BUILD_LIBFREETYPE)
+endif
+
+###########################################################################
+
 LIBFONTMANAGER_SRC := $(TOPDIR)/src/java.desktop/share/native/libfontmanager \
     $(TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/libfontmanager
 LIBFONTMANAGER_CFLAGS := \
@@ -625,10 +665,10 @@ LIBFONTMANAGER_CFLAGS += $(HARFBUZZ_CFLAGS)
 
 #### End harfbuzz configuration
 
-LIBFONTMANAGER_CFLAGS += $(FREETYPE_CFLAGS)
+LIBFONTMANAGER_CFLAGS += $(LIBFREETYPE_CFLAGS)
 # This may be overridden in a custom makefile
 BUILD_LIBFONTMANAGER_MAPFILE ?= $(TOPDIR)/make/mapfiles/libfontmanager/mapfile-vers
-BUILD_LIBFONTMANAGER_FONTLIB += $(FREETYPE_LIBS)
+BUILD_LIBFONTMANAGER_FONTLIB += $(LIBFREETYPE_LIBS)
 
 LIBFONTMANAGER_OPTIMIZATION := HIGH
 
@@ -659,7 +699,7 @@ endif
 
 $(eval $(call SetupNativeCompilation, BUILD_LIBFONTMANAGER, \
     NAME := fontmanager, \
-    OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfontmanager, \
+    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBFONTMANAGER_SRC), \
     EXCLUDE_FILES := $(LIBFONTMANAGER_EXCLUDE_FILES) \
         AccelGlyphCache.c, \
@@ -703,25 +743,14 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBFONTMANAGER, \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfontmanager, \
 ))
 
-$(INSTALL_LIBRARIES_HERE)/$(call SHARED_LIBRARY,fontmanager): $(BUILD_LIBFONTMANAGER_TARGET)
-	$(install-file)
-        ifneq ($(FREETYPE_BUNDLE_LIB_PATH), )
-          ifeq ($(OPENJDK_TARGET_OS), macosx)
-            # If bundling freetype on macosx, we need to rewrite the rpath location
-            # in the libfontmanager library to point to the bundled location
-	    $(INSTALL_NAME_TOOL) -change \
-	        `$(OTOOL) -D $(FREETYPE_BUNDLE_LIB_PATH)/$(call SHARED_LIBRARY,freetype) | $(TAIL) -n1` \
-	        '@rpath/$(call SHARED_LIBRARY,freetype)' \
-	        $@
-          endif
-        endif
-
-BUILD_LIBFONTMANAGER += $(INSTALL_LIBRARIES_HERE)/$(call SHARED_LIBRARY,fontmanager)
-
 $(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT)
 
 ifneq (, $(findstring $(OPENJDK_TARGET_OS), solaris aix))
   $(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT_HEADLESS)
+endif
+
+ifeq ($(FREETYPE_TO_USE), bundled)
+  $(BUILD_LIBFONTMANAGER): $(BUILD_LIBFREETYPE)
 endif
 
 TARGETS += $(BUILD_LIBFONTMANAGER)

@@ -114,7 +114,7 @@ public class FileFontStrike extends PhysicalStrike {
     private static native boolean initNative();
     private static boolean isXPorLater = false;
     static {
-        if (FontUtilities.isWindows && !FontUtilities.useT2K &&
+        if (FontUtilities.isWindows && !FontUtilities.useJDKScaler &&
             !GraphicsEnvironment.isHeadless()) {
             isXPorLater = initNative();
         }
@@ -228,7 +228,7 @@ public class FileFontStrike extends PhysicalStrike {
          * the JDK rasteriser supplied one (see getGlyphImageFromWindows()).
          */
         if (FontUtilities.isWindows && isXPorLater &&
-            !FontUtilities.useT2K &&
+            !FontUtilities.useJDKScaler &&
             !GraphicsEnvironment.isHeadless() &&
             !fileFont.useJavaRasterizer &&
             (desc.aaHint == INTVAL_TEXT_ANTIALIAS_LCD_HRGB ||
