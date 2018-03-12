@@ -147,7 +147,8 @@ public final class GenerateJLIClassesPlugin implements Plugin {
                 "L_I", "L_L", "L_V", "LD_L", "LF_L", "LI_I", "LII_L", "LLI_L",
                 "LL_V", "LL_L", "L3_L", "L4_L", "L5_L", "L6_L", "L7_L",
                 "L8_L", "L9_L", "L10_L", "L10I_L", "L10II_L", "L10IIL_L",
-                "L11_L", "L12_L", "L13_L", "L14_L", "L14I_L", "L14II_L")
+                "L11_L", "L12_L", "L13_L", "L14_L", "L14I_L", "L14II_L"),
+            DMH_NEW_INVOKE_SPECIAL, Set.of("L_L", "LL_L")
         );
     }
 
