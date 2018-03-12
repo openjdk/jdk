@@ -369,8 +369,6 @@ private:
     assert(Thread::current()->is_VM_thread(), "current thread is not VM thread"); \
   } while (0)
 
-protected:
-
   // The young region list.
   G1EdenRegions _eden;
   G1SurvivorRegions _survivor;
@@ -498,7 +496,6 @@ protected:
   // failed allocation request (including collection, expansion, etc.)
   HeapWord* satisfy_failed_allocation(size_t word_size,
                                       bool* succeeded);
-private:
   // Internal helpers used during full GC to split it up to
   // increase readability.
   void abort_concurrent_cycle();
@@ -516,7 +513,6 @@ private:
                                              bool expect_null_mutator_alloc_region,
                                              bool* gc_succeeded);
 
-protected:
   // Attempting to expand the heap sufficiently
   // to support an allocation of the given "word_size".  If
   // successful, perform the allocation and return the address of the
@@ -711,11 +707,11 @@ public:
   // mapping failed, with the same non-overlapping and sorted MemRegion array.
   void dealloc_archive_regions(MemRegion* range, size_t count);
 
-protected:
+private:
 
   // Shrink the garbage-first heap by at most the given size (in bytes!).
   // (Rounds down to a HeapRegion boundary.)
-  virtual void shrink(size_t expand_bytes);
+  void shrink(size_t expand_bytes);
   void shrink_helper(size_t expand_bytes);
 
   #if TASKQUEUE_STATS
@@ -747,7 +743,7 @@ protected:
   bool do_collection_pause_at_safepoint(double target_pause_time_ms);
 
   // Actually do the work of evacuating the collection set.
-  virtual void evacuate_collection_set(G1ParScanThreadStateSet* per_thread_states);
+  void evacuate_collection_set(G1ParScanThreadStateSet* per_thread_states);
 
   void pre_evacuate_collection_set();
   void post_evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* pss);
@@ -1451,7 +1447,7 @@ public:
 public:
   size_t pending_card_num();
 
-protected:
+private:
   size_t _max_heap_capacity;
 };
 
