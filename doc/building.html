@@ -44,10 +44,7 @@
 <li><a href="#ibm-xl-cc">IBM XL C/C++</a></li>
 </ul></li>
 <li><a href="#boot-jdk-requirements">Boot JDK Requirements</a><ul>
-<li><a href="#jdk-8-on-linux">JDK 8 on Linux</a></li>
-<li><a href="#jdk-8-on-windows">JDK 8 on Windows</a></li>
-<li><a href="#jdk-8-on-macos">JDK 8 on macOS</a></li>
-<li><a href="#jdk-8-on-aix">JDK 8 on AIX</a></li>
+<li><a href="#getting-jdk-binaries">Getting JDK binaries</a></li>
 </ul></li>
 <li><a href="#external-library-requirements">External Library Requirements</a><ul>
 <li><a href="#freetype">FreeType</a></li>
@@ -364,16 +361,12 @@ CC: Sun C++ 5.13 SunOS_i386 151846-10 2015/10/30</code></pre>
 <p>See the <a href="http://cr.openjdk.java.net/~simonis/ppc-aix-port">OpenJDK PowerPC Port Status Page</a> for details.</p>
 <h2 id="boot-jdk-requirements">Boot JDK Requirements</h2>
 <p>Paradoxically, building OpenJDK requires a pre-existing JDK. This is called the &quot;boot JDK&quot;. The boot JDK does not have to be OpenJDK, though. If you are porting OpenJDK to a new platform, chances are that there already exists another JDK for that platform that is usable as boot JDK.</p>
-<p>The rule of thumb is that the boot JDK for building JDK major version <em>N</em> should be an JDK of major version <em>N-1</em>, so for building JDK 9 a JDK 8 would be suitable as boot JDK. However, OpenJDK should be able to &quot;build itself&quot;, so an up-to-date build of the current OpenJDK source is an acceptable alternative. If you are following the <em>N-1</em> rule, make sure you got the latest update version, since JDK 8 GA might not be able to build JDK 9 on all platforms.</p>
+<p>The rule of thumb is that the boot JDK for building JDK major version <em>N</em> should be a JDK of major version <em>N-1</em>, so for building JDK 9 a JDK 8 would be suitable as boot JDK. However, OpenJDK should be able to &quot;build itself&quot;, so an up-to-date build of the current OpenJDK source is an acceptable alternative. If you are following the <em>N-1</em> rule, make sure you've got the latest update version, since JDK 8 GA might not be able to build JDK 9 on all platforms.</p>
+<p>Early in the release cycle, version <em>N-1</em> may not yet have been released. In that case, the preferred boot JDK will be version <em>N-2</em> until version <em>N-1</em> is available.</p>
 <p>If the Boot JDK is not automatically detected, or the wrong JDK is picked, use <code>--with-boot-jdk</code> to point to the JDK to use.</p>
-<h3 id="jdk-8-on-linux">JDK 8 on Linux</h3>
-<p>On apt-based distros (like Debian and Ubuntu), <code>sudo apt-get install openjdk-8-jdk</code> is typically enough to install OpenJDK 8. On rpm-based distros (like Fedora and Red Hat), try <code>sudo yum install java-1.8.0-openjdk-devel</code>.</p>
-<h3 id="jdk-8-on-windows">JDK 8 on Windows</h3>
-<p>No pre-compiled binaries of OpenJDK 8 are readily available for Windows at the time of writing. An alternative is to download the <a href="http://www.oracle.com/technetwork/java/javase/downloads">Oracle JDK</a>. Another is the <a href="https://adoptopenjdk.net/">Adopt OpenJDK Project</a>, which publishes experimental prebuilt binaries for Windows.</p>
-<h3 id="jdk-8-on-macos">JDK 8 on macOS</h3>
-<p>No pre-compiled binaries of OpenJDK 8 are readily available for macOS at the time of writing. An alternative is to download the <a href="http://www.oracle.com/technetwork/java/javase/downloads">Oracle JDK</a>, or to install it using <code>brew cask install java</code>. Another option is the <a href="https://adoptopenjdk.net/">Adopt OpenJDK Project</a>, which publishes experimental prebuilt binaries for macOS.</p>
-<h3 id="jdk-8-on-aix">JDK 8 on AIX</h3>
-<p>No pre-compiled binaries of OpenJDK 8 are readily available for AIX at the time of writing. A starting point for working with OpenJDK on AIX is the <a href="http://openjdk.java.net/projects/ppc-aix-port/">PowerPC/AIX Port Project</a>.</p>
+<h3 id="getting-jdk-binaries">Getting JDK binaries</h3>
+<p>OpenJDK binaries for Linux, Windows and macOS can be downloaded from <a href="http://jdk.java.net">jdk.java.net</a>. An alternative is to download the <a href="http://www.oracle.com/technetwork/java/javase/downloads">Oracle JDK</a>. Another is the <a href="https://adoptopenjdk.net/">Adopt OpenJDK Project</a>, which publishes experimental prebuilt binaries for various platforms.</p>
+<p>On Linux you can also get OpenJDK from the Linux distribution. On apt-based distros (like Debian and Ubuntu), <code>sudo apt-get install openjdk-&lt;VERSION&gt;-jdk</code> is typically enough to install OpenJDK &lt;VERSION&gt;. On rpm-based distros (like Fedora and Red Hat), try <code>sudo yum install java-&lt;VERSION&gt;-openjdk-devel</code>.</p>
 <h2 id="external-library-requirements">External Library Requirements</h2>
 <p>Different platforms require different external libraries. In general, libraries are not optional - that is, they are either required or not used.</p>
 <p>If a required library is not detected by <code>configure</code>, you need to provide the path to it. There are two forms of the <code>configure</code> arguments to point to an external library: <code>--with-&lt;LIB&gt;=&lt;path&gt;</code> or <code>--with-&lt;LIB&gt;-include=&lt;path to include&gt; --with-&lt;LIB&gt;-lib=&lt;path to lib&gt;</code>. The first variant is more concise, but require the include files an library files to reside in a default hierarchy under this directory. In most cases, it works fine.</p>
@@ -758,12 +751,7 @@ cannot create ... Permission denied
 spawn failed</code></pre>
 <p>This can be a sign of a Cygwin problem. See the information about solving problems in the <a href="#cygwin">Cygwin</a> section. Rebooting the computer might help temporarily.</p>
 <h3 id="getting-help">Getting Help</h3>
-<p>If none of the suggestions in this document helps you, or if you find what you believe is a bug in the build system, please contact the Build Group by sending a mail to <script type="text/javascript">
-<!--
-h='&#x6f;&#112;&#x65;&#110;&#106;&#100;&#x6b;&#46;&#106;&#x61;&#118;&#x61;&#46;&#110;&#x65;&#116;';a='&#64;';n='&#98;&#x75;&#x69;&#108;&#100;&#x2d;&#100;&#x65;&#118;';e=n+a+h;
-document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'" clas'+'s="em' + 'ail">'+e+'<\/'+'a'+'>');
-// -->
-</script><noscript>&#98;&#x75;&#x69;&#108;&#100;&#x2d;&#100;&#x65;&#118;&#32;&#x61;&#116;&#32;&#x6f;&#112;&#x65;&#110;&#106;&#100;&#x6b;&#32;&#100;&#x6f;&#116;&#32;&#106;&#x61;&#118;&#x61;&#32;&#100;&#x6f;&#116;&#32;&#110;&#x65;&#116;</noscript>. Please include the relevant parts of the configure and/or build log.</p>
+<p>If none of the suggestions in this document helps you, or if you find what you believe is a bug in the build system, please contact the Build Group by sending a mail to <a href="mailto:build-dev@openjdk.java.net">build-dev@openjdk.java.net</a>. Please include the relevant parts of the configure and/or build log.</p>
 <p>If you need general help or advice about developing for OpenJDK, you can also contact the Adoption Group. See the section on <a href="#contributing-to-openjdk">Contributing to OpenJDK</a> for more information.</p>
 <h2 id="hints-and-suggestions-for-advanced-users">Hints and Suggestions for Advanced Users</h2>
 <h3 id="setting-up-a-forest-for-pushing-changes-defpath">Setting Up a Forest for Pushing Changes (defpath)</h3>

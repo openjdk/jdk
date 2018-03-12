@@ -37,8 +37,6 @@ GENSRC_X11WRAPPERS_OUTPUTDIR := $(GENSRC_X11WRAPPERS_OUTPUT_TOP)/sun/awt/X11
 GENSRC_X11WRAPPERS_DATADIR := $(TOPDIR)/make/data/x11wrappergen
 GENSRC_X11WRAPPERS_DATA := $(GENSRC_X11WRAPPERS_DATADIR)/sizes-$(OPENJDK_TARGET_CPU_BITS).txt
 
-$(info ExecuteWithLog is $(call ExecuteWithLog $(GENSRC_X11WRAPPERS_OUTPUT_TOP)/foobar, CMDLINE))
-
 # Run the tool on the offset files to generate several Java classes used in awt.
 $(GENSRC_X11WRAPPERS_MARKER): $(BUILD_TOOLS_JDK) $(GENSRC_X11WRAPPERS_DATA) \
     $(GENSRC_X11WRAPPERS_DATADIR)/xlibtypes.txt

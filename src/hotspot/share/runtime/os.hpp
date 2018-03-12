@@ -271,6 +271,10 @@ class os: AllStatic {
   static void map_stack_shadow_pages(address sp);
   static bool stack_shadow_pages_available(Thread *thread, const methodHandle& method, address sp);
 
+  // Return size of stack that is actually committed. For Java thread, the bottom should be above
+  // guard pages (stack grows downward)
+  static size_t committed_stack_size(address bottom, size_t size);
+
   // OS interface to Virtual Memory
 
   // Return the default page size.
@@ -639,8 +643,10 @@ class os: AllStatic {
   static void *find_agent_function(AgentLibrary *agent_lib, bool check_lib,
                                    const char *syms[], size_t syms_len);
 
-  // Write to stream
-  static int log_vsnprintf(char* buf, size_t len, const char* fmt, va_list args) ATTRIBUTE_PRINTF(3, 0);
+  // Provide C99 compliant versions of these functions, since some versions
+  // of some platforms don't.
+  static int vsnprintf(char* buf, size_t len, const char* fmt, va_list args) ATTRIBUTE_PRINTF(3, 0);
+  static int snprintf(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
 
   // Get host name in buffer provided
   static bool get_host_name(char* buf, size_t buflen);

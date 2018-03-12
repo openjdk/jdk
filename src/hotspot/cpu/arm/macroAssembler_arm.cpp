@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "ci/ciEnv.hpp"
 #include "code/nativeInst.hpp"
 #include "compiler/disassembler.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableModRefBS.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
@@ -43,6 +44,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -2265,7 +2267,8 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
                                    DirtyCardQueue::byte_offset_of_buf()));
 
   BarrierSet* bs = Universe::heap()->barrier_set();
-  CardTableModRefBS* ct = (CardTableModRefBS*)bs;
+  CardTableModRefBS* ctbs = barrier_set_cast<CardTableModRefBS>(bs);
+  CardTable* ct = ctbs->card_table();
   Label done;
   Label runtime;
 
@@ -2286,18 +2289,18 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
 
   // storing region crossing non-NULL, is card already dirty?
   const Register card_addr = tmp1;
-  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
+  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
-  mov_address(tmp2, (address)ct->byte_map_base, symbolic_Relocation::card_table_reference);
-  add(card_addr, tmp2, AsmOperand(store_addr, lsr, CardTableModRefBS::card_shift));
+  mov_address(tmp2, (address)ct->byte_map_base(), symbolic_Relocation::card_table_reference);
+  add(card_addr, tmp2, AsmOperand(store_addr, lsr, CardTable::card_shift));
 
   ldrb(tmp2, Address(card_addr));
-  cmp(tmp2, (int)G1SATBCardTableModRefBS::g1_young_card_val());
+  cmp(tmp2, (int)G1CardTable::g1_young_card_val());
   b(done, eq);
 
   membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreLoad), tmp2);
 
-  assert(CardTableModRefBS::dirty_card_val() == 0, "adjust this code");
+  assert(CardTable::dirty_card_val() == 0, "adjust this code");
   ldrb(tmp2, Address(card_addr));
   cbz(tmp2, done);
 
@@ -3023,7 +3026,6 @@ void MacroAssembler::set_narrow_oop(Register dst, jobject obj) {
 }
 
 #endif // COMPILER2
-
 // Must preserve condition codes, or C2 encodeKlass_not_null rule
 // must be changed.
 void MacroAssembler::encode_klass_not_null(Register r) {
@@ -3261,4 +3263,3 @@ void MacroAssembler::fast_unlock(Register Roop, Register Rbox, Register Rscratch
 
 }
 #endif // COMPILER2
-

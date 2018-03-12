@@ -29,6 +29,7 @@
 #include "code/oopRecorder.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/jniHandles.inline.hpp"
 
 #ifdef ASSERT
 template <class T> int ValueRecorder<T>::_find_index_calls = 0;

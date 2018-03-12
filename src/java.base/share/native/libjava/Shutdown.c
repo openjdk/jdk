@@ -29,6 +29,11 @@
 
 #include "java_lang_Shutdown.h"
 
+JNIEXPORT void JNICALL
+Java_java_lang_Shutdown_beforeHalt(JNIEnv *env, jclass ignored)
+{
+    JVM_BeforeHalt();
+}
 
 JNIEXPORT void JNICALL
 Java_java_lang_Shutdown_halt0(JNIEnv *env, jclass ignored, jint code)

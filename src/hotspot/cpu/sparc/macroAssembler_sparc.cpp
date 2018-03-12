@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "jvm.h"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableModRefBS.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
@@ -35,6 +36,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/interfaceSupport.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/safepoint.hpp"
@@ -44,6 +46,7 @@
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -658,7 +661,7 @@ void MacroAssembler::ic_call(address entry, bool emit_delay, jint method_index) 
 
 void MacroAssembler::card_table_write(jbyte* byte_map_base,
                                       Register tmp, Register obj) {
-  srlx(obj, CardTableModRefBS::card_shift, obj);
+  srlx(obj, CardTable::card_shift, obj);
   assert(tmp != obj, "need separate temp reg");
   set((address) byte_map_base, tmp);
   stb(G0, tmp, obj);
@@ -3574,17 +3577,17 @@ static void generate_dirty_card_log_enqueue(jbyte* byte_map_base) {
 
   Label not_already_dirty, restart, refill, young_card;
 
-  __ srlx(O0, CardTableModRefBS::card_shift, O0);
+  __ srlx(O0, CardTable::card_shift, O0);
   AddressLiteral addrlit(byte_map_base);
   __ set(addrlit, O1); // O1 := <card table base>
   __ ldub(O0, O1, O2); // O2 := [O0 + O1]
 
-  __ cmp_and_br_short(O2, G1SATBCardTableModRefBS::g1_young_card_val(), Assembler::equal, Assembler::pt, young_card);
+  __ cmp_and_br_short(O2, G1CardTable::g1_young_card_val(), Assembler::equal, Assembler::pt, young_card);
 
   __ membar(Assembler::Membar_mask_bits(Assembler::StoreLoad));
   __ ldub(O0, O1, O2); // O2 := [O0 + O1]
 
-  assert(CardTableModRefBS::dirty_card_val() == 0, "otherwise check this code");
+  assert(CardTable::dirty_card_val() == 0, "otherwise check this code");
   __ cmp_and_br_short(O2, G0, Assembler::notEqual, Assembler::pt, not_already_dirty);
 
   __ bind(young_card);
@@ -3664,6 +3667,7 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr, Register new_val
 
   G1SATBCardTableLoggingModRefBS* bs =
     barrier_set_cast<G1SATBCardTableLoggingModRefBS>(Universe::heap()->barrier_set());
+  CardTable* ct = bs->card_table();
 
   if (G1RSBarrierRegionFilter) {
     xor3(store_addr, new_val, tmp);
@@ -3704,7 +3708,8 @@ void g1_barrier_stubs_init() {
     if (dirty_card_log_enqueue == 0) {
       G1SATBCardTableLoggingModRefBS* bs =
         barrier_set_cast<G1SATBCardTableLoggingModRefBS>(heap->barrier_set());
-      generate_dirty_card_log_enqueue(bs->byte_map_base);
+      CardTable *ct = bs->card_table();
+      generate_dirty_card_log_enqueue(ct->byte_map_base());
       assert(dirty_card_log_enqueue != 0, "postcondition.");
     }
     if (satb_log_enqueue_with_frame == 0) {
@@ -3726,9 +3731,10 @@ void MacroAssembler::card_write_barrier_post(Register store_addr, Register new_v
   if (new_val == G0) return;
   CardTableModRefBS* bs =
     barrier_set_cast<CardTableModRefBS>(Universe::heap()->barrier_set());
-  assert(bs->kind() == BarrierSet::CardTableForRS ||
-         bs->kind() == BarrierSet::CardTableExtension, "wrong barrier");
-  card_table_write(bs->byte_map_base, tmp, store_addr);
+  CardTable* ct = bs->card_table();
+
+  assert(bs->kind() == BarrierSet::CardTableModRef, "wrong barrier");
+  card_table_write(ct->byte_map_base(), tmp, store_addr);
 }
 
 // ((OopHandle)result).resolve();

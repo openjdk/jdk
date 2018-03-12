@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.tools.JavaCompiler;
@@ -58,6 +59,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
     private List<String> files;
     private List<JavaFileObject> fileObjects;
     private JavaFileManager fileManager;
+    private Consumer<com.sun.source.util.JavacTask> callback;
 
     private JavaCompiler compiler;
     private StandardJavaFileManager internalFileManager;
@@ -254,6 +256,16 @@ public class JavacTask extends AbstractTask<JavacTask> {
     }
 
     /**
+     * Set a callback to be used by this task.
+     * @param callback the callback
+     * @return this task object
+     */
+    public JavacTask callback(Consumer<com.sun.source.util.JavacTask> callback) {
+        this.callback = callback;
+        return this;
+    }
+
+    /**
      * {@inheritDoc}
      * @return the name "javac"
      */
@@ -289,6 +301,9 @@ public class JavacTask extends AbstractTask<JavacTask> {
                 case CMDLINE:
                     if (fileManager != null) {
                         throw new IllegalStateException("file manager set in CMDLINE mode");
+                    }
+                    if (callback != null) {
+                        throw new IllegalStateException("callback set in CMDLINE mode");
                     }
                     rc = runCommand(direct.pw);
                     break;
@@ -333,7 +348,11 @@ public class JavacTask extends AbstractTask<JavacTask> {
                     allOpts,
                     classes,
                     allFiles);
-            return ((JavacTaskImpl) task).doCall().exitCode;
+            JavacTaskImpl taskImpl = (JavacTaskImpl) task;
+            if (callback != null) {
+                callback.accept(taskImpl);
+            }
+            return taskImpl.doCall().exitCode;
         } finally {
             if (internalFileManager != null)
                 internalFileManager.close();

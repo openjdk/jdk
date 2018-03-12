@@ -61,6 +61,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/perfData.hpp"
@@ -433,6 +434,16 @@ JVM_END
 // java.lang.Runtime /////////////////////////////////////////////////////////////////////////
 
 extern volatile jint vm_created;
+
+JVM_ENTRY_NO_ENV(void, JVM_BeforeHalt())
+  JVMWrapper("JVM_BeforeHalt");
+  EventShutdown event;
+  if (event.should_commit()) {
+    event.set_reason("Shutdown requested from Java");
+    event.commit();
+  }
+JVM_END
+
 
 JVM_ENTRY_NO_ENV(void, JVM_Halt(jint code))
   before_exit(thread);
@@ -2660,23 +2671,19 @@ extern "C" {
 
 ATTRIBUTE_PRINTF(3, 0)
 int jio_vsnprintf(char *str, size_t count, const char *fmt, va_list args) {
-  // see bug 4399518, 4417214
+  // Reject count values that are negative signed values converted to
+  // unsigned; see bug 4399518, 4417214
   if ((intptr_t)count <= 0) return -1;
 
-  int result = vsnprintf(str, count, fmt, args);
-  // Note: on truncation vsnprintf(3) on Unix returns numbers of
-  // characters which would have been written had the buffer been large
-  // enough; on Windows, it returns -1. We handle both cases here and
-  // always return -1, and perform null termination.
-  if ((result > 0 && (size_t)result >= count) || result == -1) {
-    str[count - 1] = '\0';
+  int result = os::vsnprintf(str, count, fmt, args);
+  if (result > 0 && (size_t)result >= count) {
     result = -1;
   }
 
   return result;
 }
 
-ATTRIBUTE_PRINTF(3, 0)
+ATTRIBUTE_PRINTF(3, 4)
 int jio_snprintf(char *str, size_t count, const char *fmt, ...) {
   va_list args;
   int len;
@@ -2686,7 +2693,7 @@ int jio_snprintf(char *str, size_t count, const char *fmt, ...) {
   return len;
 }
 
-ATTRIBUTE_PRINTF(2,3)
+ATTRIBUTE_PRINTF(2, 3)
 int jio_fprintf(FILE* f, const char *fmt, ...) {
   int len;
   va_list args;

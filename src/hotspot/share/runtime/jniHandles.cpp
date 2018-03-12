@@ -27,7 +27,7 @@
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/jniHandles.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.inline.hpp"
 #include "trace/traceMacros.hpp"
@@ -133,6 +133,18 @@ jobject JNIHandles::make_weak_global(Handle obj, AllocFailType alloc_failmode) {
     CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
   }
   return res;
+}
+
+// Resolve some erroneous cases to NULL, rather than treating them as
+// possibly unchecked errors.  In particular, deleted handles are
+// treated as NULL (though a deleted and later reallocated handle
+// isn't detected).
+oop JNIHandles::resolve_external_guard(jobject handle) {
+  oop result = NULL;
+  if (handle != NULL) {
+    result = resolve_impl<true /* external_guard */ >(handle);
+  }
+  return result;
 }
 
 oop JNIHandles::resolve_jweak(jweak handle) {

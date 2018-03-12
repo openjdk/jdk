@@ -41,7 +41,7 @@
 # To build the full set of crosstools for additional platforms, use a command
 # line looking like this:
 #
-# make tars platforms="x86_64-unknown-linux-gnu sparc64-unknown-linux-gnu"
+# make cross_compile_target="aarch64-linux-gnu" BASE_OS=Fedora27
 #
 # This is the makefile which iterates over all host and target platforms.
 #
@@ -57,8 +57,13 @@ $(info Building on platform $(me))
 #
 # By default just build for the current platform, which is assumed to be Linux
 #
-platforms := $(me)
-host_platforms := $(platforms)
+ifeq ($(cross_compile_target), )
+  platforms := $(me)
+  host_platforms := $(platforms)
+else
+  platforms := $(cross_compile_target)
+  host_platforms := $(me)
+endif
 target_platforms := $(platforms)
 $(info host_platforms $(host_platforms))
 $(info target_platforms $(target_platforms))

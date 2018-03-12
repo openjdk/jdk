@@ -38,6 +38,12 @@ void VirtualMemorySummary::initialize() {
   ::new ((void*)_snapshot) VirtualMemorySnapshot();
 }
 
+void VirtualMemorySummary::snapshot(VirtualMemorySnapshot* s) {
+  // Snapshot current thread stacks
+  VirtualMemoryTracker::snapshot_thread_stacks();
+  as_snapshot()->copy_to(s);
+}
+
 SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>* VirtualMemoryTracker::_reserved_regions;
 
 int compare_committed_region(const CommittedMemoryRegion& r1, const CommittedMemoryRegion& r2) {
@@ -286,6 +292,26 @@ void ReservedMemoryRegion::set_flag(MEMFLAGS f) {
   }
 }
 
+address ReservedMemoryRegion::thread_stack_uncommitted_bottom() const {
+  assert(flag() == mtThreadStack, "Only for thread stack");
+  LinkedListNode<CommittedMemoryRegion>* head = _committed_regions.head();
+  address bottom = base();
+  address top = base() + size();
+  while (head != NULL) {
+    address committed_top = head->data()->base() + head->data()->size();
+    if (committed_top < top) {
+      // committed stack guard pages, skip them
+      bottom = head->data()->base() + head->data()->size();
+      head = head->next();
+    } else {
+      assert(top == committed_top, "Sanity");
+      break;
+    }
+  }
+
+  return bottom;
+}
+
 bool VirtualMemoryTracker::initialize(NMT_TrackingLevel level) {
   if (level >= NMT_summary) {
     VirtualMemorySummary::initialize();
@@ -460,6 +486,32 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
   }
 }
 
+// Walk all known thread stacks, snapshot their committed ranges.
+class SnapshotThreadStackWalker : public VirtualMemoryWalker {
+public:
+  SnapshotThreadStackWalker() {}
+
+  bool do_allocation_site(const ReservedMemoryRegion* rgn) {
+    if (rgn->flag() == mtThreadStack) {
+      address stack_bottom = rgn->thread_stack_uncommitted_bottom();
+      size_t stack_size = rgn->base() + rgn->size() - stack_bottom;
+      size_t committed_size = os::committed_stack_size(stack_bottom, stack_size);
+      if (committed_size > 0) {
+        ReservedMemoryRegion* region = const_cast<ReservedMemoryRegion*>(rgn);
+        NativeCallStack ncs; // empty stack
+
+        // Stack grows downward
+        region->add_committed_region(rgn->base() + rgn->size() - committed_size, committed_size, ncs);
+      }
+    }
+    return true;
+  }
+};
+
+void VirtualMemoryTracker::snapshot_thread_stacks() {
+  SnapshotThreadStackWalker walker;
+  walk_virtual_memory(&walker);
+}
 
 bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   assert(_reserved_regions != NULL, "Sanity check");

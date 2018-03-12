@@ -123,15 +123,6 @@ protected:
   virtual void write_ref_array_work(MemRegion mr) = 0;
 
 public:
-  // Inform the BarrierSet that the the covered heap region that starts
-  // with "base" has been changed to have the given size (possibly from 0,
-  // for initialization.)
-  virtual void resize_covered_region(MemRegion new_region) = 0;
-
-  // If the barrier set imposes any alignment restrictions on boundaries
-  // within the heap, this function tells whether they are met.
-  virtual bool is_aligned(HeapWord* addr) = 0;
-
   // Print a description of the memory for the barrier set
   virtual void print_on(outputStream* st) const = 0;
 

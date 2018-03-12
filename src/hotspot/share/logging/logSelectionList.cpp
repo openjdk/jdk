@@ -40,18 +40,16 @@ bool LogSelectionList::verify_selections(outputStream* out) const {
         return false;
       }
 
-      if (valid) {
-        out->print("No tag set matches selection(s):");
-      }
+      out->print("No tag set matches selection:");
       valid = false;
 
       char buf[256];
       _selections[i].describe_tags(buf, sizeof(buf));
-      out->print(" %s", buf);
+      out->print(" %s. ", buf);
+
+      _selections[i].suggest_similar_matching(out);
+      out->cr();
     }
-  }
-  if (!valid && out != NULL) {
-    out->cr();
   }
   return valid;
 }

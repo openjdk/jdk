@@ -401,43 +401,31 @@ porting OpenJDK to a new platform, chances are that there already exists
 another JDK for that platform that is usable as boot JDK.
 
 The rule of thumb is that the boot JDK for building JDK major version *N*
-should be an JDK of major version *N-1*, so for building JDK 9 a JDK 8 would be
+should be a JDK of major version *N-1*, so for building JDK 9 a JDK 8 would be
 suitable as boot JDK. However, OpenJDK should be able to "build itself", so an
 up-to-date build of the current OpenJDK source is an acceptable alternative. If
-you are following the *N-1* rule, make sure you got the latest update version,
-since JDK 8 GA might not be able to build JDK 9 on all platforms.
+you are following the *N-1* rule, make sure you've got the latest update
+version, since JDK 8 GA might not be able to build JDK 9 on all platforms.
+
+Early in the release cycle, version *N-1* may not yet have been released. In
+that case, the preferred boot JDK will be version *N-2* until version *N-1*
+is available.
 
 If the Boot JDK is not automatically detected, or the wrong JDK is picked, use
 `--with-boot-jdk` to point to the JDK to use.
 
-### JDK 8 on Linux
+### Getting JDK binaries
 
-On apt-based distros (like Debian and Ubuntu), `sudo apt-get install
-openjdk-8-jdk` is typically enough to install OpenJDK 8. On rpm-based distros
-(like Fedora and Red Hat), try `sudo yum install java-1.8.0-openjdk-devel`.
+OpenJDK binaries for Linux, Windows and macOS can be downloaded from
+[jdk.java.net](http://jdk.java.net). An alternative is to download the
+[Oracle JDK](http://www.oracle.com/technetwork/java/javase/downloads). Another
+is the [Adopt OpenJDK Project](https://adoptopenjdk.net/), which publishes
+experimental prebuilt binaries for various platforms.
 
-### JDK 8 on Windows
-
-No pre-compiled binaries of OpenJDK 8 are readily available for Windows at the
-time of writing. An alternative is to download the [Oracle JDK](
-http://www.oracle.com/technetwork/java/javase/downloads). Another is the [Adopt
-OpenJDK Project](https://adoptopenjdk.net/), which publishes experimental
-prebuilt binaries for Windows.
-
-### JDK 8 on macOS
-
-No pre-compiled binaries of OpenJDK 8 are readily available for macOS at the
-time of writing. An alternative is to download the [Oracle JDK](
-http://www.oracle.com/technetwork/java/javase/downloads), or to install it
-using `brew cask install java`. Another option is the [Adopt OpenJDK Project](
-https://adoptopenjdk.net/), which publishes experimental prebuilt binaries for
-macOS.
-
-### JDK 8 on AIX
-
-No pre-compiled binaries of OpenJDK 8 are readily available for AIX at the
-time of writing. A starting point for working with OpenJDK on AIX is
-the [PowerPC/AIX Port Project](http://openjdk.java.net/projects/ppc-aix-port/).
+On Linux you can also get OpenJDK from the Linux distribution. On apt-based
+distros (like Debian and Ubuntu), `sudo apt-get install openjdk-<VERSION>-jdk`
+is typically enough to install OpenJDK \<VERSION\>. On rpm-based distros (like
+Fedora and Red Hat), try `sudo yum install java-<VERSION>-openjdk-devel`.
 
 ## External Library Requirements
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/stringUtils.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1_globals.hpp"
 #endif // INCLUDE_ALL_GCS
@@ -880,25 +881,6 @@ size_t Flag::get_name_length() {
   return _name_len;
 }
 
-// Compute string similarity based on Dice's coefficient
-static float str_similar(const char* str1, const char* str2, size_t len2) {
-  int len1 = (int) strlen(str1);
-  int total = len1 + (int) len2;
-
-  int hit = 0;
-
-  for (int i = 0; i < len1 -1; ++i) {
-    for (int j = 0; j < (int) len2 -1; ++j) {
-      if ((str1[i] == str2[j]) && (str1[i+1] == str2[j+1])) {
-        ++hit;
-        break;
-      }
-    }
-  }
-
-  return 2.0f * (float) hit / (float) total;
-}
-
 Flag* Flag::fuzzy_match(const char* name, size_t length, bool allow_locked) {
   float VMOptionsFuzzyMatchSimilarity = 0.7f;
   Flag* match = NULL;
@@ -906,7 +888,7 @@ Flag* Flag::fuzzy_match(const char* name, size_t length, bool allow_locked) {
   float max_score = -1;
 
   for (Flag* current = &flagTable[0]; current->_name != NULL; current++) {
-    score = str_similar(current->_name, name, length);
+    score = StringUtils::similarity(current->_name, strlen(current->_name), name, length);
     if (score > max_score) {
       max_score = score;
       match = current;

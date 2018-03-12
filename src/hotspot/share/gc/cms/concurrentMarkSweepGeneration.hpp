@@ -77,7 +77,7 @@ class SerialOldTracer;
 // methods are used). This is essentially a wrapper around the BitMap class,
 // with one bit per (1<<_shifter) HeapWords. (i.e. for the marking bit map,
 // we have _shifter == 0. and for the mod union table we have
-// shifter == CardTableModRefBS::card_shift - LogHeapWordSize.)
+// shifter == CardTable::card_shift - LogHeapWordSize.)
 // XXX 64-bit issues in BitMap?
 class CMSBitMap VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;

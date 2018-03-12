@@ -25,6 +25,9 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "ci/ciUtilities.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_x86.hpp"
 #include "oops/instanceOop.hpp"
@@ -1232,9 +1235,7 @@ class StubGenerator: public StubCodeGenerator {
            __ bind(filtered);
         }
          break;
-      case BarrierSet::CardTableForRS:
-      case BarrierSet::CardTableExtension:
-      case BarrierSet::ModRef:
+      case BarrierSet::CardTableModRef:
         break;
       default:
         ShouldNotReachHere();
@@ -1272,12 +1273,8 @@ class StubGenerator: public StubCodeGenerator {
           __ popa();
         }
         break;
-      case BarrierSet::CardTableForRS:
-      case BarrierSet::CardTableExtension:
+      case BarrierSet::CardTableModRef:
         {
-          CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(bs);
-          assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
-
           Label L_loop, L_done;
           const Register end = count;
 
@@ -1286,11 +1283,11 @@ class StubGenerator: public StubCodeGenerator {
 
           __ leaq(end, Address(start, count, TIMES_OOP, 0));  // end == start+count*oop_size
           __ subptr(end, BytesPerHeapOop); // end - 1 to make inclusive
-          __ shrptr(start, CardTableModRefBS::card_shift);
-          __ shrptr(end,   CardTableModRefBS::card_shift);
+          __ shrptr(start, CardTable::card_shift);
+          __ shrptr(end,   CardTable::card_shift);
           __ subptr(end, start); // end --> cards count
 
-          int64_t disp = (int64_t) ct->byte_map_base;
+          int64_t disp = ci_card_table_address_as<int64_t>();
           __ mov64(scratch, disp);
           __ addptr(start, scratch);
         __ BIND(L_loop);

@@ -1305,6 +1305,12 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     // are handled properly.
     reset_signal_handlers();
 
+    EventShutdown e;
+    if (e.should_commit()) {
+      e.set_reason("VM Error");
+      e.commit();
+    }
+
     TRACE_VM_ERROR();
 
   } else {

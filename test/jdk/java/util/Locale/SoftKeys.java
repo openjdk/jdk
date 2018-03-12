@@ -35,15 +35,25 @@ public class SoftKeys {
     private static final char[] CHARS = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
 
     public static void main(String[] args) {
-        // With 4 characters in "language", we'll fill up a 16M heap quickly,
-        // causing full GCs and SoftReference reclamation. Repeat at least two
-        // times to verify no NPEs appear when looking up Locale's whose
-        // softly referenced data in sun.util.locale.BaseLocale$Key might have
-        // been cleared.
-        for (int i = 0; i < 2; i++) {
-            for (int j = 0; j < 512*1024; j++) {
-                new Locale(langForInt(j), "", "");
+        try {
+            // With 4 characters in "language", we'll fill up a 16M heap quickly,
+            // causing full GCs and SoftReference reclamation. Repeat at least two
+            // times to verify no NPEs appear when looking up Locale's whose
+            // softly referenced data in sun.util.locale.BaseLocale$Key might have
+            // been cleared.
+            for (int i = 0; i < 2; i++) {
+                for (int j = 0; j < 512*1024; j++) {
+                    new Locale(langForInt(j), "", "");
+                }
             }
+        } catch (OutOfMemoryError e) {
+            // Can happen on some system configurations, and while increasing heap
+            // size would allow GC to keep up, it also makes it impractically hard
+            // to reproduce NPE issues that could arise when references are being
+            // cleared.
+
+            // Do a System.gc() to not throw an OOME again in the jtreg wrapper.
+            System.gc();
         }
     }
 

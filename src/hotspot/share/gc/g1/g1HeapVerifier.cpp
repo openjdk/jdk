@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -604,10 +604,9 @@ void G1HeapVerifier::verify_after_gc(G1VerifyType type) {
 #ifndef PRODUCT
 class G1VerifyCardTableCleanup: public HeapRegionClosure {
   G1HeapVerifier* _verifier;
-  G1SATBCardTableModRefBS* _ct_bs;
 public:
-  G1VerifyCardTableCleanup(G1HeapVerifier* verifier, G1SATBCardTableModRefBS* ct_bs)
-    : _verifier(verifier), _ct_bs(ct_bs) { }
+  G1VerifyCardTableCleanup(G1HeapVerifier* verifier)
+    : _verifier(verifier) { }
   virtual bool do_heap_region(HeapRegion* r) {
     if (r->is_survivor()) {
       _verifier->verify_dirty_region(r);
@@ -620,16 +619,16 @@ public:
 
 void G1HeapVerifier::verify_card_table_cleanup() {
   if (G1VerifyCTCleanup || VerifyAfterGC) {
-    G1VerifyCardTableCleanup cleanup_verifier(this, _g1h->g1_barrier_set());
+    G1VerifyCardTableCleanup cleanup_verifier(this);
     _g1h->heap_region_iterate(&cleanup_verifier);
   }
 }
 
 void G1HeapVerifier::verify_not_dirty_region(HeapRegion* hr) {
   // All of the region should be clean.
-  G1SATBCardTableModRefBS* ct_bs = _g1h->g1_barrier_set();
+  G1CardTable* ct = _g1h->card_table();
   MemRegion mr(hr->bottom(), hr->end());
-  ct_bs->verify_not_dirty_region(mr);
+  ct->verify_not_dirty_region(mr);
 }
 
 void G1HeapVerifier::verify_dirty_region(HeapRegion* hr) {
@@ -640,12 +639,12 @@ void G1HeapVerifier::verify_dirty_region(HeapRegion* hr) {
   // not dirty that area (one less thing to have to do while holding
   // a lock). So we can only verify that [bottom(),pre_dummy_top()]
   // is dirty.
-  G1SATBCardTableModRefBS* ct_bs = _g1h->g1_barrier_set();
+  G1CardTable* ct = _g1h->card_table();
   MemRegion mr(hr->bottom(), hr->pre_dummy_top());
   if (hr->is_young()) {
-    ct_bs->verify_g1_young_region(mr);
+    ct->verify_g1_young_region(mr);
   } else {
-    ct_bs->verify_dirty_region(mr);
+    ct->verify_dirty_region(mr);
   }
 }
 

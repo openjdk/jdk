@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,9 @@ public:
   //
   // Returns the count of substrings that have been replaced.
   static int replace_no_expand(char* string, const char* from, const char* to);
+
+  // Compute string similarity based on Dice's coefficient
+  static double similarity(const char* str1, size_t len1, const char* str2, size_t len2);
 };
 
 #endif // SHARE_VM_UTILITIES_STRINGUTILS_HPP

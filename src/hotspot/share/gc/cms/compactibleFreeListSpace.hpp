@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/cms/adaptiveFreeList.hpp"
 #include "gc/cms/promotionInfo.hpp"
 #include "gc/shared/blockOffsetTable.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/space.hpp"
 #include "logging/log.hpp"
 #include "memory/binaryTreeDictionary.hpp"
@@ -432,7 +433,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
 
   // Override: provides a DCTO_CL specific to this kind of space.
   DirtyCardToOopClosure* new_dcto_cl(ExtendedOopClosure* cl,
-                                     CardTableModRefBS::PrecisionStyle precision,
+                                     CardTable::PrecisionStyle precision,
                                      HeapWord* boundary,
                                      bool parallel);
 
