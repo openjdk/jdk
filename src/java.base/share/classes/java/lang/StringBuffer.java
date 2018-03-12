@@ -131,8 +131,8 @@ import jdk.internal.HotSpotIntrinsicCandidate;
      * the specified initial capacity.
      *
      * @param      capacity  the initial capacity.
-     * @exception  NegativeArraySizeException  if the {@code capacity}
-     *               argument is less than {@code 0}.
+     * @throws     NegativeArraySizeException  if the {@code capacity}
+     *             argument is less than {@code 0}.
      */
     @HotSpotIntrinsicCandidate
     public StringBuffer(int capacity) {
