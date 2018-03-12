@@ -48,6 +48,9 @@ public class VMDeprecatedOptions {
         {"UseMembar",                 "true"},
         {"CompilerThreadHintNoPreempt", "true"},
         {"VMThreadHintNoPreempt",       "false"},
+        {"PrintSafepointStatistics",    "false"},
+        {"PrintSafepointStatisticsCount", "3"},
+        {"PrintSafepointStatisticsTimeout", "3"},
 
         // deprecated alias flags (see also aliased_jvm_flags):
         {"DefaultMaxRAMFraction", "4"},

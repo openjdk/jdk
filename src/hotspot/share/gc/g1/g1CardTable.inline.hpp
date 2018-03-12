@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,19 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "memory/universe.hpp"
+#ifndef SHARE_VM_GC_G1_G1CARDTABLE_INLINE_HPP
+#define SHARE_VM_GC_G1_G1CARDTABLE_INLINE_HPP
 
-CollectedHeap* Universe::create_heap_ext() {
-  return NULL;
+#include "gc/g1/g1CardTable.hpp"
+
+void G1CardTable::set_card_claimed(size_t card_index) {
+  jbyte val = _byte_map[card_index];
+  if (val == clean_card_val()) {
+    val = (jbyte)claimed_card_val();
+  } else {
+    val |= (jbyte)claimed_card_val();
+  }
+  _byte_map[card_index] = val;
 }
+
+#endif // SHARE_VM_GC_G1_G1CARDTABLE_INLINE_HPP

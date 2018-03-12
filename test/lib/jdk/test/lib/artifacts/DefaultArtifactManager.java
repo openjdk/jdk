@@ -29,12 +29,13 @@ import java.nio.file.Paths;
 
 public class DefaultArtifactManager implements ArtifactManager {
     @Override
-    public Path resolve(Artifact artifact) throws FileNotFoundException {
+    public Path resolve(Artifact artifact) throws ArtifactResolverException {
         String name = artifact.name();
         String location = System.getProperty(artifactProperty(name));
         if (location == null) {
-            throw new FileNotFoundException("Couldn't automatically resolve dependency for " + name + " , revision " + artifact.revision() + "\n" +
-                                            "Please specify the location using " + artifactProperty(name));
+            throw new ArtifactResolverException("Couldn't automatically resolve dependency for " + name
+                    + " , revision " + artifact.revision() + "\n" +
+                    "Please specify the location using " + artifactProperty(name));
         }
         return Paths.get(location);
     }

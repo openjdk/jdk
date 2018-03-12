@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "interpreter/bytecodeStream.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -33,6 +32,7 @@
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/os.hpp"
 #include "runtime/relocator.hpp"
 #include "runtime/timerTrace.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -2151,10 +2151,10 @@ void GenerateOopMap::compute_map(TRAPS) {
 void GenerateOopMap::error_work(const char *format, va_list ap) {
   _got_error = true;
   char msg_buffer[512];
-  vsnprintf(msg_buffer, sizeof(msg_buffer), format, ap);
+  os::vsnprintf(msg_buffer, sizeof(msg_buffer), format, ap);
   // Append method name
   char msg_buffer2[512];
-  jio_snprintf(msg_buffer2, sizeof(msg_buffer2), "%s in method %s", msg_buffer, method()->name()->as_C_string());
+  os::snprintf(msg_buffer2, sizeof(msg_buffer2), "%s in method %s", msg_buffer, method()->name()->as_C_string());
   if (Thread::current()->can_call_java()) {
     _exception = Exceptions::new_exception(Thread::current(),
                   vmSymbols::java_lang_LinkageError(), msg_buffer2);

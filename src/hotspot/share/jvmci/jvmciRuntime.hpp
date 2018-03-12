@@ -73,10 +73,7 @@ class JVMCIRuntime: public AllStatic {
   /**
    * Gets the singleton HotSpotJVMCIRuntime instance, initializing it if necessary
    */
-  static Handle get_HotSpotJVMCIRuntime(TRAPS) {
-    initialize_JVMCI(CHECK_(Handle()));
-    return Handle(THREAD, JNIHandles::resolve_non_null(_HotSpotJVMCIRuntime_instance));
-  }
+  static Handle get_HotSpotJVMCIRuntime(TRAPS);
 
   static jobject get_HotSpotJVMCIRuntime_jobject(TRAPS) {
     initialize_JVMCI(CHECK_NULL);

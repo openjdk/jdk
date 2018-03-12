@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
 #include "memory/guardedMemory.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
+
+#define GEN_PURPOSE_TAG ((void *) ((uintptr_t)0xf000f000))
 
 static void guarded_memory_test_check(void* p, size_t sz, void* tag) {
   ASSERT_TRUE(p != NULL) << "NULL pointer given to check";
@@ -60,7 +62,7 @@ TEST(GuardedMemory, size) {
 TEST(GuardedMemory, basic) {
   u_char* basep =
           (u_char*) os::malloc(GuardedMemory::get_total_size(1), mtInternal);
-  GuardedMemory guarded(basep, 1, (void*) 0xf000f000);
+  GuardedMemory guarded(basep, 1, GEN_PURPOSE_TAG);
 
   EXPECT_EQ(badResourceValue, *basep)
           << "Expected guard in the form of badResourceValue";
@@ -68,7 +70,7 @@ TEST(GuardedMemory, basic) {
   u_char* userp = guarded.get_user_ptr();
   EXPECT_EQ(uninitBlockPad, *userp)
           << "Expected uninitialized data in the form of uninitBlockPad";
-  guarded_memory_test_check(userp, 1, (void*) 0xf000f000);
+  guarded_memory_test_check(userp, 1, GEN_PURPOSE_TAG);
 
   void* freep = guarded.release_for_freeing();
   EXPECT_EQ((u_char*) freep, basep) << "Expected the same pointer guard was ";
@@ -81,7 +83,7 @@ TEST(GuardedMemory, basic) {
 TEST(GuardedMemory, odd_sizes) {
   u_char* basep =
           (u_char*) os::malloc(GuardedMemory::get_total_size(1), mtInternal);
-  GuardedMemory guarded(basep, 1, (void*) 0xf000f000);
+  GuardedMemory guarded(basep, 1, GEN_PURPOSE_TAG);
 
   size_t sz = 0;
   do {
@@ -102,7 +104,7 @@ TEST(GuardedMemory, odd_sizes) {
 TEST(GuardedMemory, buffer_overrun_head) {
   u_char* basep =
           (u_char*) os::malloc(GuardedMemory::get_total_size(1), mtInternal);
-  GuardedMemory guarded(basep, 1, (void*) 0xf000f000);
+  GuardedMemory guarded(basep, 1, GEN_PURPOSE_TAG);
 
   guarded.wrap_with_guards(basep, 1);
   *basep = 0;
@@ -114,7 +116,7 @@ TEST(GuardedMemory, buffer_overrun_head) {
 TEST(GuardedMemory, buffer_overrun_tail) {
   u_char* basep =
           (u_char*) os::malloc(GuardedMemory::get_total_size(1), mtInternal);
-  GuardedMemory guarded(basep, 1, (void*) 0xf000f000);
+  GuardedMemory guarded(basep, 1, GEN_PURPOSE_TAG);
 
   size_t sz = 1;
   do {

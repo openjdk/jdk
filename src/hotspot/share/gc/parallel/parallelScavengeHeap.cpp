@@ -26,7 +26,6 @@
 #include "code/codeCache.hpp"
 #include "gc/parallel/adjoiningGenerations.hpp"
 #include "gc/parallel/adjoiningVirtualSpaces.hpp"
-#include "gc/parallel/cardTableExtension.hpp"
 #include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/generationSizer.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
@@ -70,7 +69,9 @@ jint ParallelScavengeHeap::initialize() {
 
   initialize_reserved_region((HeapWord*)heap_rs.base(), (HeapWord*)(heap_rs.base() + heap_rs.size()));
 
-  CardTableExtension* const barrier_set = new CardTableExtension(reserved_region());
+  PSCardTable* card_table = new PSCardTable(reserved_region());
+  card_table->initialize();
+  CardTableModRefBS* const barrier_set = new CardTableModRefBS(card_table);
   barrier_set->initialize();
   set_barrier_set(barrier_set);
 
@@ -623,6 +624,14 @@ ParallelScavengeHeap* ParallelScavengeHeap::heap() {
   assert(heap != NULL, "Uninitialized access to ParallelScavengeHeap::heap()");
   assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Not a ParallelScavengeHeap");
   return (ParallelScavengeHeap*)heap;
+}
+
+CardTableModRefBS* ParallelScavengeHeap::barrier_set() {
+  return barrier_set_cast<CardTableModRefBS>(CollectedHeap::barrier_set());
+}
+
+PSCardTable* ParallelScavengeHeap::card_table() {
+  return static_cast<PSCardTable*>(barrier_set()->card_table());
 }
 
 // Before delegating the resize to the young generation,

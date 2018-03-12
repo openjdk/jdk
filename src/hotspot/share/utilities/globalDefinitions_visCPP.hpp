@@ -147,14 +147,6 @@ inline int g_isfinite(jdouble f)                 { return _finite(f); }
 #pragma warning( disable : 4996 ) // unsafe string functions. Same as define _CRT_SECURE_NO_WARNINGS/_CRT_SECURE_NO_DEPRICATE
 #endif
 
-inline int vsnprintf(char* buf, size_t count, const char* fmt, va_list argptr) {
-  // If number of characters written == count, Windows doesn't write a
-  // terminating NULL, so we do it ourselves.
-  int ret = _vsnprintf(buf, count, fmt, argptr);
-  if (count > 0) buf[count-1] = '\0';
-  return ret;
-}
-
 // Portability macros
 #define PRAGMA_INTERFACE
 #define PRAGMA_IMPLEMENTATION

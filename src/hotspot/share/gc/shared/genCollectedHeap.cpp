@@ -31,6 +31,7 @@
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
@@ -110,7 +111,10 @@ jint GenCollectedHeap::initialize() {
   initialize_reserved_region((HeapWord*)heap_rs.base(), (HeapWord*)(heap_rs.base() + heap_rs.size()));
 
   _rem_set = new CardTableRS(reserved_region());
-  set_barrier_set(rem_set()->bs());
+  _rem_set->initialize();
+  CardTableModRefBS *bs = new CardTableModRefBS(_rem_set);
+  bs->initialize();
+  set_barrier_set(bs);
 
   ReservedSpace young_rs = heap_rs.first_part(_young_gen_spec->max_size(), false, false);
   _young_gen = _young_gen_spec->init(young_rs, rem_set());

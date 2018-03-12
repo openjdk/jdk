@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
 #include "c1/c1_Defs.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
+#include "ci/ciUtilities.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_sparc.hpp"
 #include "oops/compiledICHolder.hpp"
@@ -38,6 +41,7 @@
 #include "utilities/align.hpp"
 #include "vmreg_sparc.inline.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #endif
 
@@ -843,22 +847,22 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Register cardtable = G5;
         Register tmp  = G1_scratch;
         Register tmp2 = G3_scratch;
-        jbyte* byte_map_base = barrier_set_cast<CardTableModRefBS>(bs)->byte_map_base;
+        jbyte* byte_map_base = ci_card_table_address();
 
         Label not_already_dirty, restart, refill, young_card;
 
-        __ srlx(addr, CardTableModRefBS::card_shift, addr);
+        __ srlx(addr, CardTable::card_shift, addr);
 
         AddressLiteral rs(byte_map_base);
         __ set(rs, cardtable);         // cardtable := <card table base>
         __ ldub(addr, cardtable, tmp); // tmp := [addr + cardtable]
 
-        __ cmp_and_br_short(tmp, G1SATBCardTableModRefBS::g1_young_card_val(), Assembler::equal, Assembler::pt, young_card);
+        __ cmp_and_br_short(tmp, G1CardTable::g1_young_card_val(), Assembler::equal, Assembler::pt, young_card);
 
         __ membar(Assembler::Membar_mask_bits(Assembler::StoreLoad));
         __ ldub(addr, cardtable, tmp); // tmp := [addr + cardtable]
 
-        assert(CardTableModRefBS::dirty_card_val() == 0, "otherwise check this code");
+        assert(CardTable::dirty_card_val() == 0, "otherwise check this code");
         __ cmp_and_br_short(tmp, G0, Assembler::notEqual, Assembler::pt, not_already_dirty);
 
         __ bind(young_card);

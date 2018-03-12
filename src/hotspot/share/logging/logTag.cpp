@@ -23,6 +23,7 @@
  */
 #include "precompiled.hpp"
 #include "logging/logTag.hpp"
+#include "utilities/stringUtils.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/quickSort.hpp"
@@ -41,6 +42,22 @@ LogTagType LogTag::from_string(const char* str) {
     }
   }
   return __NO_TAG;
+}
+
+LogTagType LogTag::fuzzy_match(const char *str) {
+  size_t len = strlen(str);
+  LogTagType match = LogTag::__NO_TAG;
+  double best = 0.5; // required similarity to be considered a match
+  for (size_t i = 1; i < LogTag::Count; i++) {
+    LogTagType tag = static_cast<LogTagType>(i);
+    const char* tagname = LogTag::name(tag);
+    double score = StringUtils::similarity(tagname, strlen(tagname), str, len);
+    if (score >= best) {
+      match = tag;
+      best = score;
+    }
+  }
+  return match;
 }
 
 static int cmp_logtag(LogTagType a, LogTagType b) {

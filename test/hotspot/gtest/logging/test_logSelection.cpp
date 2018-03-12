@@ -184,6 +184,20 @@ TEST(LogSelection, equals) {
   EXPECT_NE(selection, fewer_tags);
 }
 
+TEST(LogSelection, consists_of) {
+  LogTagType tags[LogTag::MaxTags] = {
+      PREFIX_LOG_TAG(logging), PREFIX_LOG_TAG(test), PREFIX_LOG_TAG(_NO_TAG)
+  };
+  LogSelection s(tags, false, LogLevel::Off);
+  EXPECT_TRUE(s.consists_of(tags));
+
+  tags[2] = PREFIX_LOG_TAG(safepoint);
+  EXPECT_FALSE(s.consists_of(tags));
+
+  s = LogSelection(tags, true, LogLevel::Info);
+  EXPECT_TRUE(s.consists_of(tags));
+}
+
 TEST(LogSelection, describe_tags) {
   char buf[256];
   LogTagType tags[LogTag::MaxTags] = { PREFIX_LOG_TAG(logging), PREFIX_LOG_TAG(test), PREFIX_LOG_TAG(_NO_TAG) };

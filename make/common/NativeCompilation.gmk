@@ -289,13 +289,6 @@ define SetupCompileNativeFileBody
       # Include previously generated dependency information. (if it exists)
       -include $$($1_DEP)
       -include $$($1_DEP_TARGETS)
-
-      ifeq ($(TOOLCHAIN_TYPE), microsoft)
-        # To avoid name clashes between pdbs for objects and libs/execs, put
-        # object pdbs in a separate subdir.
-        $1_DEBUG_OUT_FLAGS := -Fd$$(strip $$(patsubst $$($$($1_BASE)_OBJECT_DIR)/%, \
-            $$($$($1_BASE)_OBJECT_DIR)/pdb/%, $$(patsubst %$(OBJ_SUFFIX),%.pdb,$$($1_OBJ))))
-      endif
     endif
 
     ifneq ($$(strip $$($1_CFLAGS) $$($1_CXXFLAGS) $$($1_OPTIMIZATION)), )
@@ -307,7 +300,7 @@ define SetupCompileNativeFileBody
     $$($1_OBJ): $$($1_SRC_FILE) $$($$($1_BASE)_COMPILE_VARDEPS_FILE) \
         $$($1_VARDEPS_FILE) | $$($$($1_BASE)_BUILD_INFO)
 	$$(call LogInfo, Compiling $$($1_FILENAME) (for $$($$($1_BASE)_BASENAME)))
-	$$(call MakeDir, $$(@D) $$(@D)/pdb)
+	$$(call MakeDir, $$(@D))
         ifneq ($(TOOLCHAIN_TYPE), microsoft)
           ifeq ($(TOOLCHAIN_TYPE)$$(filter %.s, $$($1_FILENAME)), solstudio)
             # The Solaris studio compiler doesn't output the full path to the
@@ -336,7 +329,7 @@ define SetupCompileNativeFileBody
           # on Windows. No need to save exit code from compilation since
           # pipefail is always active on Windows.
 	  $$(call ExecuteWithLog, $$@, \
-	      $$($1_COMPILER) $$($1_FLAGS) -showIncludes $$($1_DEBUG_OUT_FLAGS) \
+	      $$($1_COMPILER) $$($1_FLAGS) -showIncludes \
 	          $(CC_OUT_OPTION)$$($1_OBJ) $$($1_SRC_FILE)) \
 	      | $(TR) -d '\r' | $(GREP) -v -e "^Note: including file:" \
 	          -e "^$$($1_FILENAME)$$$$" || test "$$$$?" = "1" ; \
@@ -395,7 +388,6 @@ endef
 #   COPY_DEBUG_SYMBOLS Set to false to override global setting of debug symbol copying
 #   ZIP_EXTERNAL_DEBUG_SYMBOLS Set to false to override global setting of debug symbol
 #       zipping
-#   CFLAGS_DEBUG_SYMBOLS Overrides the default cflags for enabling debug symbols
 #   STRIPFLAGS Optionally change the flags given to the strip command
 #   PRECOMPILED_HEADER Header file to use as precompiled header
 #   PRECOMPILED_HEADER_EXCLUDE List of source files that should not use PCH
@@ -575,9 +567,8 @@ define SetupNativeCompilationBody
   endif
 
   ifeq ($(COMPILE_WITH_DEBUG_SYMBOLS), true)
-    $$(call SetIfEmpty, $1_CFLAGS_DEBUG_SYMBOLS, $(CFLAGS_DEBUG_SYMBOLS))
-    $1_EXTRA_CFLAGS += $$($1_CFLAGS_DEBUG_SYMBOLS)
-    $1_EXTRA_CXXFLAGS += $$($1_CFLAGS_DEBUG_SYMBOLS)
+    $1_EXTRA_CFLAGS += $$(CFLAGS_DEBUG_SYMBOLS)
+    $1_EXTRA_CXXFLAGS += $$(CFLAGS_DEBUG_SYMBOLS)
   endif
 
   ifneq ($$($1_REORDER), )

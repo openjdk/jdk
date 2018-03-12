@@ -94,7 +94,6 @@ class SafepointSynchronize : AllStatic {
     int    _nof_total_threads;                 // total number of Java threads
     int    _nof_initial_running_threads;       // total number of initially seen running threads
     int    _nof_threads_wait_to_block;         // total number of threads waiting for to block
-    bool   _page_armed;                        // true if polling page is armed, false otherwise
     int    _nof_threads_hit_page_trap;         // total number of threads hitting the page trap
     jlong  _time_to_spin;                      // total time in millis spent in spinning
     jlong  _time_to_wait_to_block;             // total time in millis spent in waiting for to block
@@ -107,6 +106,7 @@ class SafepointSynchronize : AllStatic {
   static volatile SynchronizeState _state;     // Threads might read this flag directly, without acquiring the Threads_lock
   static volatile int _waiting_to_block;       // number of threads we are waiting for to block
   static int _current_jni_active_count;        // Counts the number of active critical natives during the safepoint
+  static int _defer_thr_suspend_loop_count;    // Iterations before blocking VM threads
 
   // This counter is used for fast versions of jni_Get<Primitive>Field.
   // An even value means there is no ongoing safepoint operations.
@@ -202,6 +202,11 @@ public:
   static address address_of_state()                        { return (address)&_state; }
 
   static address safepoint_counter_addr()                  { return (address)&_safepoint_counter; }
+
+  // This method is only used for -Xconcurrentio support.
+  static void set_defer_thr_suspend_loop_count() {
+    _defer_thr_suspend_loop_count = 1;
+  }
 };
 
 // State class for a thread suspended at a safepoint
