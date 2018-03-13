@@ -1430,9 +1430,10 @@ public:
             "Use semaphore synchronization for the GC Threads, "            \
             "instead of synchronization based on mutexes")                  \
                                                                             \
-  product(bool, UseDynamicNumberOfGCThreads, false,                         \
-          "Dynamically choose the number of parallel threads "              \
-          "parallel gc will use")                                           \
+  product(bool, UseDynamicNumberOfGCThreads, true,                          \
+          "Dynamically choose the number of threads up to a maximum of "    \
+          "ParallelGCThreads parallel collectors will use for garbage "     \
+          "collection work")                                                \
                                                                             \
   diagnostic(bool, InjectGCWorkerCreationFailure, false,                    \
              "Inject thread creation failures for "                         \
