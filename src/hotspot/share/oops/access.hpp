@@ -402,10 +402,10 @@ public:
   }
 
   template <typename T>
-  static inline bool arraycopy(arrayOop src_obj, arrayOop dst_obj, T *src, T *dst, size_t length) {
+  static inline void arraycopy(arrayOop src_obj, arrayOop dst_obj, T *src, T *dst, size_t length) {
     verify_decorators<ARRAYCOPY_DECORATOR_MASK | IN_HEAP |
                       AS_DECORATOR_MASK>();
-    return AccessInternal::arraycopy<decorators>(src_obj, dst_obj, src, dst, length);
+    AccessInternal::arraycopy<decorators>(src_obj, dst_obj, src, dst, length);
   }
 
   // Oop heap accesses

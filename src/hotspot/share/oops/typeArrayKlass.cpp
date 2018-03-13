@@ -152,9 +152,9 @@ void TypeArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos
   // This is an attempt to make the copy_array fast.
   int l2es = log2_element_size();
   int ihs = array_header_in_bytes() / wordSize;
-  char* src = (char*) ((oop*)s + ihs) + ((size_t)src_pos << l2es);
-  char* dst = (char*) ((oop*)d + ihs) + ((size_t)dst_pos << l2es);
-  Copy::conjoint_memory_atomic(src, dst, (size_t)length << l2es);
+  void* src = (char*) (s->base(element_type())) + ((size_t)src_pos << l2es);
+  void* dst = (char*) (d->base(element_type())) + ((size_t)dst_pos << l2es);
+  HeapAccess<ARRAYCOPY_ATOMIC>::arraycopy(s, d, src, dst, (size_t)length << l2es);
 }
 
 
