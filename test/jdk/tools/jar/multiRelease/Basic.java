@@ -23,7 +23,7 @@
 
 /*
  * @test
- # @bug 8186087
+ # @bug 8186087 8196748
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.compiler
@@ -127,7 +127,7 @@ public class Basic extends MRTestBase {
             jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
                     "--release", release, "-C", classes.resolve("v10").toString(), ".")
                     .shouldHaveExitValue(SUCCESS)
-                    .shouldBeEmpty();
+                    .shouldBeEmptyIgnoreVMWarnings();
         }
         // invalid
         for (String release : List.of("9.0", "8", "v9",
@@ -335,7 +335,7 @@ public class Basic extends MRTestBase {
         jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
                 "--release", "9", "-C", classes.resolve("v9").toString(), ".")
                 .shouldHaveExitValue(SUCCESS)
-                .shouldBeEmpty();
+                .shouldBeEmptyIgnoreVMWarnings();
         jar("uf", jarfile,
                 "--release", "10", "-C", classes.resolve("v9").toString(), ".")
                 .shouldHaveExitValue(SUCCESS)
@@ -417,7 +417,7 @@ public class Basic extends MRTestBase {
                 "-C", classes.resolve("base").toString(), ".",
                 "--release", "9", "-C", classes.resolve("v9").toString(), ".")
                 .shouldNotHaveExitValue(SUCCESS)
-                .asLines();
+                .asLinesWithoutVMWarnings();
 
         /* "META-INF/versions/9/version/Nested$nested.class" is really NOT isolated
         assertTrue(output.size() == 4);
@@ -516,7 +516,7 @@ public class Basic extends MRTestBase {
                 "-C", classes.resolve("base").toString(), ".",
                 "--release", "10", "-C", classes.resolve("v10").toString(), ".")
                 .shouldHaveExitValue(SUCCESS)
-                .shouldBeEmpty();
+                .shouldBeEmptyIgnoreVMWarnings();
 
         try (JarFile jf = new JarFile(new File(jarfile), true,
                 ZipFile.OPEN_READ, JarFile.runtimeVersion())) {
