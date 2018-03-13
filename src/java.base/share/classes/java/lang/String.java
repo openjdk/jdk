@@ -3178,6 +3178,7 @@ public final class String
             return new String(StringUTF16.toBytesSupplementary(codePoint), UTF16);
         }
 
-        throw new IllegalArgumentException("Not a valid Unicode code point");
+        throw new IllegalArgumentException(
+            format("Not a valid Unicode code point: 0x%X", codePoint));
     }
 }
