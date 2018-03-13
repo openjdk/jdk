@@ -3590,7 +3590,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
          */
         public static UnicodeBlock of(int codePoint) {
             if (!isValidCodePoint(codePoint)) {
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException(
+                    String.format("Not a valid Unicode code point: 0x%X", codePoint));
             }
 
             int top, bottom, current;
@@ -3649,7 +3650,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
         public static final UnicodeBlock forName(String blockName) {
             UnicodeBlock block = map.get(blockName.toUpperCase(Locale.US));
             if (block == null) {
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException("Not a valid block name: "
+                            + blockName);
             }
             return block;
         }
@@ -7394,7 +7396,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
          */
         public static UnicodeScript of(int codePoint) {
             if (!isValidCodePoint(codePoint))
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException(
+                    String.format("Not a valid Unicode code point: 0x%X", codePoint));
             int type = getType(codePoint);
             // leave SURROGATE and PRIVATE_USE for table lookup
             if (type == UNASSIGNED)
@@ -8088,7 +8091,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
             toSurrogates(codePoint, dst, dstIndex);
             return 2;
         } else {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(
+                String.format("Not a valid Unicode code point: 0x%X", codePoint));
         }
     }
 
@@ -8116,7 +8120,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
             toSurrogates(codePoint, result, 0);
             return result;
         } else {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(
+                String.format("Not a valid Unicode code point: 0x%X", codePoint));
         }
     }
 
@@ -10178,7 +10183,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      */
     public static String getName(int codePoint) {
         if (!isValidCodePoint(codePoint)) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(
+                String.format("Not a valid Unicode code point: 0x%X", codePoint));
         }
         String name = CharacterName.getInstance().getName(codePoint);
         if (name != null)
