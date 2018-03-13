@@ -1638,6 +1638,8 @@ private:
   void popcntq(Register dst, Register src);
 #endif
 
+  void vpopcntd(XMMRegister dst, XMMRegister src, int vector_len);
+
   // Prefetches (SSE, SSE2, 3DNOW only)
 
   void prefetchnta(Address src);
