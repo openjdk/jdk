@@ -228,6 +228,38 @@ class VM_Version : public Abstract_VM_Version {
     } bits;
   };
 
+  union SefCpuid7Ecx {
+    uint32_t value;
+    struct {
+      uint32_t prefetchwt1 : 1,
+               avx512_vbmi : 1,
+                      umip : 1,
+                       pku : 1,
+                     ospke : 1,
+                           : 1,
+              avx512_vbmi2 : 1,
+                           : 1,
+                      gfni : 1,
+                      vaes : 1,
+                vpclmulqdq : 1,
+               avx512_vnni : 1,
+             avx512_bitalg : 1,
+                           : 1,
+          avx512_vpopcntdq : 1,
+                           : 17;
+    } bits;
+  };
+
+  union SefCpuid7Edx {
+    uint32_t value;
+    struct {
+      uint32_t             : 2,
+             avx512_4vnniw : 1,
+             avx512_4fmaps : 1,
+                           : 28;
+    } bits;
+  };
+
   union ExtCpuid1EEbx {
     uint32_t value;
     struct {
@@ -300,7 +332,8 @@ protected:
 #define CPU_AVX512VL ((uint64_t)UCONST64(0x200000000)) // EVEX instructions with smaller vector length
 #define CPU_SHA ((uint64_t)UCONST64(0x400000000))      // SHA instructions
 #define CPU_FMA ((uint64_t)UCONST64(0x800000000))      // FMA instructions
-#define CPU_VZEROUPPER ((uint64_t)UCONST64(0x1000000000))      // Vzeroupper instruction
+#define CPU_VZEROUPPER ((uint64_t)UCONST64(0x1000000000))       // Vzeroupper instruction
+#define CPU_AVX512_VPOPCNTDQ ((uint64_t)UCONST64(0x2000000000)) // Vector popcount
 
   enum Extended_Family {
     // AMD
@@ -353,8 +386,8 @@ protected:
     // cpuid function 7 (structured extended features)
     SefCpuid7Eax sef_cpuid7_eax;
     SefCpuid7Ebx sef_cpuid7_ebx;
-    uint32_t     sef_cpuid7_ecx; // unused currently
-    uint32_t     sef_cpuid7_edx; // unused currently
+    SefCpuid7Ecx sef_cpuid7_ecx;
+    SefCpuid7Edx sef_cpuid7_edx;
 
     // cpuid function 0xB (processor topology)
     // ecx = 0
@@ -507,6 +540,8 @@ protected:
           result |= CPU_AVX512BW;
         if (_cpuid_info.sef_cpuid7_ebx.bits.avx512vl != 0)
           result |= CPU_AVX512VL;
+        if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_vpopcntdq != 0)
+          result |= CPU_AVX512_VPOPCNTDQ;
       }
     }
     if(_cpuid_info.sef_cpuid7_ebx.bits.bmi1 != 0)
@@ -783,6 +818,7 @@ public:
   static bool supports_sha()        { return (_features & CPU_SHA) != 0; }
   static bool supports_fma()        { return (_features & CPU_FMA) != 0 && supports_avx(); }
   static bool supports_vzeroupper() { return (_features & CPU_VZEROUPPER) != 0; }
+  static bool supports_vpopcntdq()  { return (_features & CPU_AVX512_VPOPCNTDQ) != 0; }
 
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&
