@@ -25,14 +25,14 @@
 /**
  * @test
  * @summary Check that the verbose message of the AME is printed correctly.
- * @requires !(os.arch=="arm")
+ * @requires !(os.arch=="arm") & vm.flavor == "server" & !vm.emulatedClient & vm.compMode=="Xmixed" & (!vm.graal.enabled | vm.opt.TieredCompilation == true) & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel==4)
  * @library /test/lib /
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
  * @compile AbstractMethodErrorTest.java
  * @compile AME1_E.jasm AME2_C.jasm AME3_C.jasm AME4_E.jasm AME5_B.jasm AME6_B.jasm
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:-BackgroundCompilation -XX:-Inline
+ *                   -XX:CompileThreshold=1000 -XX:-BackgroundCompilation -XX:-Inline
  *                   -XX:CompileCommand=exclude,AbstractMethodErrorTest::test_ame1
  *                   AbstractMethodErrorTest
  */
@@ -162,6 +162,8 @@ public class AbstractMethodErrorTest {
                 System.out.println("Expected: " + expectedErrorMessageAME1_2 + "\n" +
                                    "but got:  " + errorMsg);
                 throw new RuntimeException("Wrong error message of AbstractMethodError.");
+            } else {
+                System.out.println("Passed with message: " + errorMsg);
             }
         } catch (Throwable e) {
             throw new RuntimeException("Caught unexpected exception: " + e);
@@ -259,6 +261,7 @@ public class AbstractMethodErrorTest {
                 throw new RuntimeException("Caught AbstractMethodError with empty message.");
             } else if (errorMsg.equals(expectedErrorMessageAME3_1)) {
                 // Expected test case thrown via LinkResolver::runtime_resolve_virtual_method().
+                System.out.println("Passed with message: " + errorMsg);
             } else {
                 System.out.println("Expected: " + expectedErrorMessageAME3_1 + "\n" +
                                    "but got:  " + errorMsg);
@@ -289,6 +292,7 @@ public class AbstractMethodErrorTest {
                 throw new RuntimeException("Caught AbstractMethodError with empty message.");
             } else if (errorMsg.equals(expectedErrorMessageAME3_2)) {
                 // Expected test case thrown via LinkResolver::runtime_resolve_virtual_method().
+                System.out.println("Passed with message: " + errorMsg);
             } else {
                 System.out.println("Expected: " + expectedErrorMessageAME3_2 + "\n" +
                                    "but got:  " + errorMsg);
@@ -335,6 +339,7 @@ public class AbstractMethodErrorTest {
                 throw new RuntimeException("Caught AbstractMethodError with empty message.");
             } else if (errorMsg.equals(expectedErrorMessageAME4)) {
                 // Expected test case.
+                System.out.println("Passed with message: " + errorMsg);
             } else if (enableChecks) {
                 System.out.println("Expected: " + expectedErrorMessageAME4 + "\n" +
                                    "but got:  " + errorMsg);

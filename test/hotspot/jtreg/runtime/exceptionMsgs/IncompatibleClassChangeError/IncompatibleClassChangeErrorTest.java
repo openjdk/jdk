@@ -26,14 +26,14 @@
  * @test
  * @summary Check that the verbose message of ICCE is printed correctly.
  *          The test forces errors in vtable stubs and interpreter.
- * @requires !(os.arch=="arm")
+ * @requires !(os.arch=="arm") & vm.flavor == "server" & !vm.emulatedClient & vm.compMode=="Xmixed" & (!vm.graal.enabled | vm.opt.TieredCompilation == true) & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel==4)
  * @library /test/lib /
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
  * @compile IncompatibleClassChangeErrorTest.java
  * @compile ImplementsSomeInterfaces.jasm ICC_B.jasm
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:-BackgroundCompilation -XX:-Inline
+ *                   -XX:CompileThreshold=1000 -XX:-BackgroundCompilation -XX:-Inline
  *                   -XX:CompileCommand=exclude,IncompatibleClassChangeErrorTest::test_iccInt
  *                   IncompatibleClassChangeErrorTest
  */
