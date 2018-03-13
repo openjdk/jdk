@@ -77,7 +77,6 @@ public class ResultSet {
         "line.separator",
         "file.separator",
         "file.encoding",
-        "file.encoding.pkg",
         "java.class.path",
         "java.library.path",
         "java.io.tmpdir",
