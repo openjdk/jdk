@@ -1248,9 +1248,9 @@ class SpaceManager : public CHeapObj<mtClass> {
   // Maximum number of small chunks to allocate to a SpaceManager
   static uint const _small_chunk_limit;
 
-  // Maximum number of specialize chunks to allocate for anonymous
+  // Maximum number of specialize chunks to allocate for anonymous and delegating
   // metadata space to a SpaceManager
-  static uint const _anon_metadata_specialize_chunk_limit;
+  static uint const _anon_and_delegating_metadata_specialize_chunk_limit;
 
   // Sum of all space in allocated chunks
   size_t _allocated_blocks_words;
@@ -1418,7 +1418,7 @@ class SpaceManager : public CHeapObj<mtClass> {
 };
 
 uint const SpaceManager::_small_chunk_limit = 4;
-uint const SpaceManager::_anon_metadata_specialize_chunk_limit = 4;
+uint const SpaceManager::_anon_and_delegating_metadata_specialize_chunk_limit = 4;
 
 const char* SpaceManager::_expand_lock_name =
   "SpaceManager chunk allocation lock";
@@ -3358,11 +3358,11 @@ size_t SpaceManager::calc_chunk_size(size_t word_size) {
   // Anonymous metadata space is usually small, with majority within 1K - 2K range and
   // rarely about 4K (64-bits JVM).
   // Instead of jumping to SmallChunk after initial chunk exhausted, keeping allocation
-  // from SpecializeChunk up to _anon_metadata_specialize_chunk_limit (4) reduces space waste
-  // from 60+% to around 30%.
-  if (_space_type == Metaspace::AnonymousMetaspaceType &&
+  // from SpecializeChunk up to _anon_or_delegating_metadata_specialize_chunk_limit (4)
+  // reduces space waste from 60+% to around 30%.
+  if ((_space_type == Metaspace::AnonymousMetaspaceType || _space_type == Metaspace::ReflectionMetaspaceType) &&
       _mdtype == Metaspace::NonClassType &&
-      sum_count_in_chunks_in_use(SpecializedIndex) < _anon_metadata_specialize_chunk_limit &&
+      sum_count_in_chunks_in_use(SpecializedIndex) < _anon_and_delegating_metadata_specialize_chunk_limit &&
       word_size + Metachunk::overhead() <= SpecializedChunk) {
     return SpecializedChunk;
   }
