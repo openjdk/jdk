@@ -247,7 +247,6 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
      *  user.language
      *  user.script, user.country, user.variant (if user's environment specifies them)
      *  file.encoding
-     *  file.encoding.pkg
      */
     PUTPROP(props, "user.language", sprops->language);
     if (sprops->script) {
@@ -266,7 +265,6 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
     if (sprops->sun_stderr_encoding != NULL) {
         PUTPROP(props, "sun.stderr.encoding", sprops->sun_stderr_encoding);
     }
-    PUTPROP(props, "file.encoding.pkg", "sun.io");
 
     /* unicode_encoding specifies the default endianness */
     PUTPROP(props, "sun.io.unicode.encoding", sprops->unicode_encoding);

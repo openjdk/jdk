@@ -122,9 +122,11 @@ public class ReachabilityFenceTest {
             }
         }
 
-        Reference.reachabilityFence(o);
-
-        return finalized.get();
+        try {
+            return finalized.get();
+        } finally {
+            Reference.reachabilityFence(o);
+        }
     }
 
     private static class MyFinalizeable {

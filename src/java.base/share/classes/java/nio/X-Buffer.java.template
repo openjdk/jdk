@@ -1749,11 +1749,6 @@ public abstract class $Type$Buffer
 
     abstract ByteBuffer slice(int pos, int lim);
 
-    // Unchecked accessors, for use by ByteBufferAs-X-Buffer classes
-    //
-    abstract byte _get(int i);                          // package-private
-    abstract void _put(int i, byte b);                  // package-private
-
     // #BIN
     //
     // Binary-data access methods  for short, char, int, long, float,
