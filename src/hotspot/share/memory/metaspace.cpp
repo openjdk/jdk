@@ -1694,8 +1694,11 @@ Metachunk* VirtualSpaceNode::take_from_committed(size_t chunk_word_size) {
 
   inc_container_count();
 
-  DEBUG_ONLY(chunk_manager->locked_verify());
-  DEBUG_ONLY(this->verify());
+  if (metaspace_slow_verify) {
+    DEBUG_ONLY(chunk_manager->locked_verify());
+    DEBUG_ONLY(this->verify());
+  }
+
   DEBUG_ONLY(do_verify_chunk(result));
 
   result->inc_use_count();
@@ -1946,8 +1949,10 @@ bool ChunkManager::attempt_to_coalesce_around_chunk(Metachunk* chunk, ChunkIndex
   // should not affect that count.
 
   // At the end of a chunk merge, run verification tests.
-  DEBUG_ONLY(this->locked_verify());
-  DEBUG_ONLY(vsn->verify());
+  if (metaspace_slow_verify) {
+    DEBUG_ONLY(this->locked_verify());
+    DEBUG_ONLY(vsn->verify());
+  }
 
   return true;
 }
@@ -2966,11 +2971,13 @@ Metachunk* ChunkManager::free_chunks_get(size_t word_size) {
 
   // Run some verifications (some more if we did a chunk split)
 #ifdef ASSERT
-  locked_verify();
-  VirtualSpaceNode* const vsn = chunk->container();
-  vsn->verify();
-  if (we_did_split_a_chunk) {
-    vsn->verify_free_chunks_are_ideally_merged();
+  if (metaspace_slow_verify) {
+    locked_verify();
+    VirtualSpaceNode* const vsn = chunk->container();
+    vsn->verify();
+    if (we_did_split_a_chunk) {
+      vsn->verify_free_chunks_are_ideally_merged();
+    }
   }
 #endif
 
