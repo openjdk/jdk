@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -184,9 +185,9 @@ public final class OutputAnalyzer {
   }
 
   /**
-   * Verify that the stdout and stderr contents of output buffer does not contain the string
+   * Verify that the stdout and stderr contents of output buffer are empty
    *
-   * @throws RuntimeException If the string was found
+   * @throws RuntimeException If the stdout and stderr are not empty
    */
   public OutputAnalyzer shouldBeEmpty() {
     if (!stdout.isEmpty()) {
@@ -271,6 +272,7 @@ public final class OutputAnalyzer {
    * @throws RuntimeException If the pattern was not found
    */
   public OutputAnalyzer stderrShouldMatch(String pattern) {
+
       Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
       if (!matcher.find()) {
           reportDiagnosticSummary();
@@ -485,4 +487,57 @@ public final class OutputAnalyzer {
   private List<String> asLines(String buffer) {
     return Arrays.asList(buffer.split("(\\r\\n|\\n|\\r)"));
   }
+
+
+  private static final String jvmwarningmsg = ".* VM warning:.*";
+
+  /**
+   * Verifies that the stdout and stderr contents of output buffer are empty, after
+   * filtering out the HotSpot warning messages.
+   *
+   * @throws RuntimeException If the stdout and stderr are not empty
+   */
+  public OutputAnalyzer shouldBeEmptyIgnoreVMWarnings() {
+    if (!stdout.isEmpty()) {
+        reportDiagnosticSummary();
+        throw new RuntimeException("stdout was not empty");
+    }
+    if (!stderr.replaceAll(jvmwarningmsg + "\\R", "").isEmpty()) {
+        reportDiagnosticSummary();
+        throw new RuntimeException("stderr was not empty");
+    }
+    return this;
+  }
+
+  /**
+   * Verify that the stderr contents of output buffer matches the pattern,
+   * after filtering out the Hotespot warning messages
+   *
+   * @param pattern
+   * @throws RuntimeException If the pattern was not found
+   */
+  public OutputAnalyzer stderrShouldMatchIgnoreVMWarnings(String pattern) {
+      String stderr = this.stderr.replaceAll(jvmwarningmsg + "\\R", "");
+      Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
+      if (!matcher.find()) {
+          reportDiagnosticSummary();
+          throw new RuntimeException("'" + pattern
+                + "' missing from stderr \n");
+      }
+      return this;
+  }
+
+  /**
+   * Returns the contents of the output buffer (stdout and stderr), without those
+   * JVM warning msgs, as list of strings. Output is split by newlines.
+   *
+   * @return Contents of the output buffer as list of strings
+   */
+  public List<String> asLinesWithoutVMWarnings() {
+      return Arrays.asList(getOutput().split("\\R"))
+              .stream()
+              .filter(Pattern.compile(jvmwarningmsg).asPredicate().negate())
+              .collect(Collectors.toList());
+  }
+
 }

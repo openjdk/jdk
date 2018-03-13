@@ -23,6 +23,7 @@
 
 /*
  * @test
+ # @bug 8196748
  * @summary Tests for API validator.
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -86,7 +87,7 @@ public class ApiValidatorTest extends MRTestBase {
                 ".");
         if (isAcceptable) {
             result.shouldHaveExitValue(SUCCESS)
-                    .shouldBeEmpty();
+                  .shouldBeEmptyIgnoreVMWarnings();
         } else {
             result.shouldNotHaveExitValue(SUCCESS)
                     .shouldContain("contains a class with different api from earlier version");
@@ -417,4 +418,3 @@ public class ApiValidatorTest extends MRTestBase {
         javac(classes, sourceFiles);
     }
 }
-
