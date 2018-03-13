@@ -504,8 +504,7 @@ void AwtToolkit::InitTouchKeyboardExeFilePath() {
 HWND AwtToolkit::GetTouchKeyboardWindow() {
     const TCHAR wndClassName[] = _T("IPTip_Main_Window");
     HWND hwnd = ::FindWindow(wndClassName, NULL);
-    if ((hwnd != NULL) && ::IsWindow(hwnd) && ::IsWindowEnabled(hwnd) &&
-        ::IsWindowVisible(hwnd)) {
+    if ((hwnd != NULL) && ::IsWindow(hwnd) && ::IsWindowEnabled(hwnd)) {
         return hwnd;
     }
     return NULL;
