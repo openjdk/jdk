@@ -1633,12 +1633,12 @@ private:
   void popcntl(Register dst, Address src);
   void popcntl(Register dst, Register src);
 
+  void vpopcntd(XMMRegister dst, XMMRegister src, int vector_len);
+
 #ifdef _LP64
   void popcntq(Register dst, Address src);
   void popcntq(Register dst, Register src);
 #endif
-
-  void vpopcntd(XMMRegister dst, XMMRegister src, int vector_len);
 
   // Prefetches (SSE, SSE2, 3DNOW only)
 
