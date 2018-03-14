@@ -206,8 +206,8 @@ define SetupBuildLauncherBody
       MAPFILE := $$($1_MAPFILE), \
       LIBS := $(JDKEXE_LIBS) $$($1_LIBS), \
       LIBS_unix := $$($1_LIBS_unix), \
-      LIBS_linux := -lpthread -ljli $(LIBDL) -lc, \
-      LIBS_solaris := -ljli -lthread $(LIBDL) -lc, \
+      LIBS_linux := -lpthread -ljli $(LIBDL), \
+      LIBS_solaris := -ljli -lthread $(LIBDL), \
       LIBS_windows := $$($1_WINDOWS_JLI_LIB) \
           $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib advapi32.lib \
           $$($1_LIBS_windows), \

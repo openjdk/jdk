@@ -99,29 +99,6 @@ BUILD_HOTSPOT_JTREG_NATIVE_SRC += \
     $(TOPDIR)/test/hotspot/jtreg/runtime/StackGuardPages
 endif
 
-ifeq ($(TOOLCHAIN_TYPE), solstudio)
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_liboverflow := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libSimpleClassFileLoadHook := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libCanGenerateAllClassHook := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libGetOwnedMonitorInfoTest := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libGetOwnedMonitorStackDepthInfoTest := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libGetNamedModuleTest := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libIsModifiableModuleTest := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libAddModuleReadsTest := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libAddModuleExportsAndOpensTest := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libAddModuleUsesAndProvidesTest := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libMAAClassFileLoadHook := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libMAAClassLoadPrepare := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libMAAThreadStart := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAllowedFunctions := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libRedefineDoubleDelete := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libHandshakeTransitionTest := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libHasNoEntryPoint := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libReturnError := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libCNLookUp := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libTestCheckedEnsureLocalCapacity := -lc
-endif
-
 ifeq ($(OPENJDK_TARGET_OS), linux)
     BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rw := -z noexecstack
     BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rwx := -z execstack

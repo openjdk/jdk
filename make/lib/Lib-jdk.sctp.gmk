@@ -47,7 +47,7 @@ ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
             $(call SET_SHARED_LIBRARY_ORIGIN), \
         LIBS_unix := -lnio -lnet -ljava -ljvm, \
         LIBS_linux := -lpthread $(LIBDL), \
-        LIBS_solaris := -lsocket -lc, \
+        LIBS_solaris := -lsocket, \
         OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libsctp, \
     ))
 

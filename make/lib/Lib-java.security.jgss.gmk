@@ -44,7 +44,6 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := $(LIBDL), \
-      LIBS_solaris := -lc, \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libj2gss, \
   ))
 

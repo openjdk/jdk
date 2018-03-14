@@ -175,7 +175,7 @@ ifeq ($(call check-jvm-feature, dtrace), true)
         SRC := $(TOPDIR)/src/java.base/solaris/native/libjvm_dtrace, \
         CFLAGS := -m64 -G -mt -KPIC, \
         LDFLAGS := -m64 -mt -xnolib $(SHARED_LIBRARY_FLAGS), \
-        LIBS := $(LIBDL) -lc -lthread -ldoor, \
+        LIBS := $(LIBDL) -lthread -ldoor, \
         MAPFILE := $(TOPDIR)/make/mapfiles/libjvm_dtrace/mapfile-vers, \
         OBJECT_DIR := $(LIBJVM_DTRACE_OUTPUTDIR)/objs, \
     ))
@@ -191,7 +191,6 @@ ifeq ($(call check-jvm-feature, dtrace), true)
         CFLAGS := -I$(JVM_VARIANT_OUTPUTDIR)/gensrc -I$(DTRACE_SUPPORT_DIR) \
             -m64 -G -mt -KPIC, \
         LDFLAGS := -m64 -mt -xnolib $(SHARED_LIBRARY_FLAGS), \
-        LIBS := -lc, \
         MAPFILE := $(TOPDIR)/make/mapfiles/libjvm_db/mapfile-vers, \
         OBJECT_DIR := $(LIBJVM_DB_OUTPUTDIR)/objs, \
     ))

@@ -60,8 +60,6 @@ ifeq ($(ENABLE_INTREE_EC), true)
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK), \
       LDFLAGS_macosx := $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := $(LIBCXX), \
-      LIBS_linux := -lc, \
-      LIBS_solaris := -lc, \
       VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
       RC_FLAGS := $(RC_FLAGS) \
           -D "JDK_FNAME=sunec.dll" \

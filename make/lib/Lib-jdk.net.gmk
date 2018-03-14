@@ -38,7 +38,7 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
       MAPFILE := $(TOPDIR)/make/mapfiles/libextnet/mapfile-solaris, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LIBS := -lsocket -lc -ljava, \
+      LIBS := -lsocket -ljava, \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libextnet, \
   ))
 
@@ -59,7 +59,7 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
       MAPFILE := $(TOPDIR)/make/mapfiles/libextnet/mapfile-linux, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LIBS := -ljvm -ljava -lc, \
+      LIBS := -ljvm -ljava, \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libextnet, \
   ))
 

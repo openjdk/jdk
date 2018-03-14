@@ -45,7 +45,7 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBPREFS, \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljvm, \
     LIBS_linux := -ljava, \
-    LIBS_solaris := -ljava -lc, \
+    LIBS_solaris := -ljava, \
     LIBS_aix := -ljava, \
     LIBS_macosx := -framework CoreFoundation -framework Foundation, \
     LIBS_windows := advapi32.lib jvm.lib $(WIN_JAVA_LIB), \
