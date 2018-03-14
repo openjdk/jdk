@@ -530,7 +530,7 @@ TEST_VM_F(OopStorageTest, invalid_pointer) {
 }
 #endif // DISABLE_GARBAGE_ALLOCATION_STATUS_TESTS
 
-class OopStorageTest::CountingIterateClosure VALUE_OBJ_CLASS_SPEC {
+class OopStorageTest::CountingIterateClosure {
 public:
   size_t _const_count;
   size_t _const_non_null;
@@ -672,7 +672,7 @@ const unsigned char OopStorageTestIteration::mark_invalid;
 const unsigned char OopStorageTestIteration::mark_const;
 const unsigned char OopStorageTestIteration::mark_non_const;
 
-class OopStorageTestIteration::VerifyState VALUE_OBJ_CLASS_SPEC {
+class OopStorageTestIteration::VerifyState {
 public:
   unsigned char _expected_mark;
   const oop* const* _entries;
@@ -742,7 +742,7 @@ private:
   }
 };
 
-class OopStorageTestIteration::VerifyFn VALUE_OBJ_CLASS_SPEC {
+class OopStorageTestIteration::VerifyFn {
 public:
   VerifyFn(VerifyState* state, uint worker_id = 0) :
     _state(state),
@@ -762,7 +762,7 @@ private:
   uint _worker_id;
 };
 
-class OopStorageTestIteration::VerifyClosure VALUE_OBJ_CLASS_SPEC {
+class OopStorageTestIteration::VerifyClosure {
 public:
   VerifyClosure(VerifyState* state, uint worker_id = 0) :
     _state(state),

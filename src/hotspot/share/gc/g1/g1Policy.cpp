@@ -97,7 +97,7 @@ void G1Policy::note_gc_start() {
   phase_times()->note_gc_start();
 }
 
-class G1YoungLengthPredictor VALUE_OBJ_CLASS_SPEC {
+class G1YoungLengthPredictor {
   const bool _during_cm;
   const double _base_time_ms;
   const double _base_free_regions;

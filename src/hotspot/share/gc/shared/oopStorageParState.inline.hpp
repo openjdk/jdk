@@ -27,14 +27,13 @@
 
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageParState.hpp"
-#include "memory/allocation.hpp"
 #include "metaprogramming/conditional.hpp"
 #include "utilities/macros.hpp"
 
 #if INCLUDE_ALL_GCS
 
 template<typename F>
-class OopStorage::BasicParState::AlwaysTrueFn VALUE_OBJ_CLASS_SPEC {
+class OopStorage::BasicParState::AlwaysTrueFn {
   F _f;
 
 public:

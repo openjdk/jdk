@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ void G1RemSetSummary::subtract_from(G1RemSetSummary* other) {
   _sampling_thread_vtime = other->sampling_thread_vtime() - _sampling_thread_vtime;
 }
 
-class RegionTypeCounter VALUE_OBJ_CLASS_SPEC {
+class RegionTypeCounter {
 private:
   const char* _name;
 

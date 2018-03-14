@@ -37,7 +37,7 @@ class Klass;
 // allocated and passed around via Handles within the VM. A handle is
 // simply an extra indirection allocated in a thread local handle area.
 //
-// A handle is a ValueObj, so it can be passed around as a value, can
+// A handle is a value object, so it can be passed around as a value, can
 // be used as a parameter w/o using &-passing, and can be returned as a
 // return value.
 //

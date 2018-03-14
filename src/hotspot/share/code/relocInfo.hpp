@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_CODE_RELOCINFO_HPP
 #define SHARE_VM_CODE_RELOCINFO_HPP
 
-#include "memory/allocation.hpp"
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
 
@@ -48,7 +47,7 @@ class NativeMovConstReg;
 //      oops in the code stream (strings, class loaders)
 //      Also, the source of relocation specs (oop_Relocation::spec, ...).
 //    RelocationHolder
-//      A ValueObj type which acts as a union holding a Relocation object.
+//      A value type which acts as a union holding a Relocation object.
 //      Represents a relocation spec passed into a CodeBuffer during assembly.
 //    RelocIterator
 //      A StackObj which iterates over the relocations associated with

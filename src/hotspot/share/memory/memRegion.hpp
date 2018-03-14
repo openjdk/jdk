@@ -34,7 +34,7 @@
 
 // Note that MemRegions are passed by value, not by reference.
 // The intent is that they remain very small and contain no
-// objects. _ValueObj should never be allocated in heap but we do
+// objects. These should never be allocated in heap but we do
 // create MemRegions (in CardTableModRefBS) in heap so operator
 // new and operator new [] added for this special case.
 
