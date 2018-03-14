@@ -950,7 +950,6 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
   endif
 
   ifeq ($(OPENJDK_TARGET_OS), macosx)
-    LIBSPLASHSCREEN_LDFLAGS := -L$(INSTALL_LIBRARIES_HERE)
     LIBSPLASHSCREEN_LIBS += \
         $(LIBM) -lpthread -liconv -losxapp \
         -framework ApplicationServices \
@@ -958,7 +957,6 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
         -framework Cocoa \
         -framework JavaNativeFoundation
   else ifeq ($(OPENJDK_TARGET_OS), windows)
-    LIBSPLASHSCREEN_LDFLAGS := -delayload:user32.dll
     LIBSPLASHSCREEN_LIBS += kernel32.lib user32.lib gdi32.lib delayimp.lib $(WIN_JAVA_LIB) jvm.lib
   else
     LIBSPLASHSCREEN_LIBS += $(X_LIBS) -lX11 -lXext $(LIBM) -lpthread -ldl
@@ -980,8 +978,10 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
           E_STATEMENT_NOT_REACHED, \
       DISABLED_WARNINGS_microsoft := 4018 4244 4267, \
       MAPFILE := $(TOPDIR)/make/mapfiles/libsplashscreen/mapfile-vers, \
-      LDFLAGS := $(LIBSPLASHSCREEN_LDFLAGS) $(LDFLAGS_JDKLIB) \
+      LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
+      LDFLAGS_macosx := -L$(INSTALL_LIBRARIES_HERE), \
+      LDFLAGS_windows := -delayload:user32.dll, \
       LIBS := $(JDKLIB_LIBS) $(LIBSPLASHSCREEN_LIBS) $(LIBZ_LIBS) \
           $(GIFLIB_LIBS) $(LIBJPEG_LIBS) $(PNG_LIBS), \
       LIBS_aix := -liconv, \
