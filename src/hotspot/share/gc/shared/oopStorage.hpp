@@ -175,7 +175,7 @@ NOT_AIX( private: )
   class Block;                  // Forward decl; defined in .inline.hpp file.
   class BlockList;              // Forward decl for BlockEntry friend decl.
 
-  class BlockEntry VALUE_OBJ_CLASS_SPEC {
+  class BlockEntry {
     friend class BlockList;
 
     // Members are mutable, and we deal exclusively with pointers to
@@ -193,7 +193,7 @@ NOT_AIX( private: )
     ~BlockEntry();
   };
 
-  class BlockList VALUE_OBJ_CLASS_SPEC {
+  class BlockList {
     const Block* _head;
     const Block* _tail;
     const BlockEntry& (*_get_entry)(const Block& block);

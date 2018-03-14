@@ -1859,7 +1859,7 @@ G1ConcurrentMark::claim_region(uint worker_id) {
 }
 
 #ifndef PRODUCT
-class VerifyNoCSetOops VALUE_OBJ_CLASS_SPEC {
+class VerifyNoCSetOops {
 private:
   G1CollectedHeap* _g1h;
   const char* _phase;

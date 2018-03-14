@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,11 @@
 #define SHARE_VM_GC_CMS_PROMOTIONINFO_HPP
 
 #include "gc/cms/freeChunk.hpp"
-#include "memory/allocation.hpp"
 
 // Forward declarations
 class CompactibleFreeListSpace;
 
-class PromotedObject VALUE_OBJ_CLASS_SPEC {
+class PromotedObject {
  private:
   enum {
     promoted_mask  = right_n_bits(2),   // i.e. 0x3
@@ -114,7 +113,7 @@ class SpoolBlock: public FreeChunk {
   void print() const { print_on(tty); }
 };
 
-class PromotionInfo VALUE_OBJ_CLASS_SPEC {
+class PromotionInfo {
   bool            _tracking;      // set if tracking
   CompactibleFreeListSpace* _space; // the space to which this belongs
   PromotedObject* _promoHead;     // head of list of promoted objects

@@ -42,9 +42,9 @@ class JvmtiEnv;
 //
 // Wrapper class for FramePop, used in the JvmtiFramePops class.
 //
-// Two problems: 1) this isn't being used as a ValueObj class, in
+// Two problems: 1) this isn't being used as a value class, in
 // several places there are constructors for it. 2) It seems like
-// overkill as a means to get an assert and name the geater than
+// overkill as a means to get an assert and name the greater than
 // operator.  I'm trying to to rewrite everything.
 
 class JvmtiFramePop {

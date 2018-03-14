@@ -3391,7 +3391,7 @@ public:
   size_t symbols_removed()   const { return (size_t)_symbols_removed; }
 };
 
-class G1CodeCacheUnloadingTask VALUE_OBJ_CLASS_SPEC {
+class G1CodeCacheUnloadingTask {
 private:
   static Monitor* _lock;
 

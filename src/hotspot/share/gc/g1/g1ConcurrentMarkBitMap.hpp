@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_VM_GC_G1_G1CONCURRENTMARKBITMAP_HPP
 
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
-#include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/bitMap.hpp"
@@ -39,7 +38,7 @@ class G1ConcurrentMark;
 class HeapRegion;
 
 // Closure for iteration over bitmaps
-class G1CMBitMapClosure VALUE_OBJ_CLASS_SPEC {
+class G1CMBitMapClosure {
 private:
   G1ConcurrentMark* const _cm;
   G1CMTask* const _task;
@@ -62,7 +61,7 @@ class G1CMBitMapMappingChangedListener : public G1MappingChangedListener {
 
 // A generic mark bitmap for concurrent marking.  This is essentially a wrapper
 // around the BitMap class that is based on HeapWords, with one bit per (1 << _shifter) HeapWords.
-class G1CMBitMap VALUE_OBJ_CLASS_SPEC {
+class G1CMBitMap {
 private:
   MemRegion _covered;    // The heap area covered by this bitmap.
 

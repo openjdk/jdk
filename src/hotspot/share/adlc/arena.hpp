@@ -25,16 +25,11 @@
 #ifndef SHARE_VM_ADLC_ARENA_HPP
 #define SHARE_VM_ADLC_ARENA_HPP
 
-// All classes in the virtual machine must be subclassed
-// by one of the following allocation classes:
+// All classes in adlc may be derived
+// from one of the following allocation classes:
 //
-//
-// For objects allocated in the C-heap (managed by: free & malloc).
+// For objects allocated in the C-heap (managed by: malloc & free).
 // - CHeapObj
-//
-//
-// For embedded objects.
-// - ValueObj
 //
 // For classes used as name spaces.
 // - AllStatic
@@ -47,15 +42,6 @@ class CHeapObj {
   void* new_array(size_t size);
 };
 
-
-// Base class for objects used as value objects.
-// Calling new or delete will result in fatal error.
-
-class ValueObj {
- public:
-  void* operator new(size_t size) throw();
-  void operator delete(void* p);
-};
 
 // Base class for classes that constitute name spaces.
 

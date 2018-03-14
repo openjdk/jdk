@@ -48,7 +48,7 @@ class UpwardsObjectClosure;
 class ObjectClosureCareful;
 class Klass;
 
-class LinearAllocBlock VALUE_OBJ_CLASS_SPEC {
+class LinearAllocBlock {
  public:
   LinearAllocBlock() : _ptr(0), _word_size(0), _refillSize(0),
     _allocation_size_limit(0) {}

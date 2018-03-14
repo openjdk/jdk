@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,11 +52,6 @@ enum ThreadState {
   SLEEPING,                     // Thread.sleep()
   ZOMBIE                        // All done, but not reclaimed yet
 };
-
-// I'd make OSThread a ValueObj embedded in Thread to avoid an indirection, but
-// the assembler test in java.cpp expects that it can install the OSThread of
-// the main thread into its own Thread at will.
-
 
 class OSThread: public CHeapObj<mtThread> {
   friend class VMStructs;
