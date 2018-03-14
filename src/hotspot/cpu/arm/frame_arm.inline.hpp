@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,10 +229,6 @@ inline JavaCallWrapper** frame::entry_frame_call_wrapper_addr() const {
 
 
 // Compiled frames
-
-inline bool frame::volatile_across_calls(Register reg) {
-  return true;
-}
 
 inline oop frame::saved_oop_result(RegisterMap* map) const {
   oop* result_adr = (oop*) map->location(R0->as_VMReg());
