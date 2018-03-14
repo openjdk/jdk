@@ -337,33 +337,6 @@ class frame {
   // tells whether there is another chunk of Delta stack above
   bool entry_frame_is_first() const;
 
-  // Compiled frames:
-
- public:
-  // Given the index of a local, and the number of argument words
-  // in this stack frame, tell which word of the stack frame to find
-  // the local in.  Arguments are stored above the ofp/rpc pair,
-  // while other locals are stored below it.
-  // Since monitors (BasicLock blocks) are also assigned indexes,
-  // but may have different storage requirements, their presence
-  // can also affect the calculation of offsets.
-  static int local_offset_for_compiler(int local_index, int nof_args, int max_nof_locals, int max_nof_monitors);
-
-  // Given the index of a monitor, etc., tell which word of the
-  // stack frame contains the start of the BasicLock block.
-  // Note that the local index by convention is the __higher__
-  // of the two indexes allocated to the block.
-  static int monitor_offset_for_compiler(int local_index, int nof_args, int max_nof_locals, int max_nof_monitors);
-
-  // Tell the smallest value that local_offset_for_compiler will attain.
-  // This is used to help determine how much stack frame to allocate.
-  static int min_local_offset_for_compiler(int nof_args, int max_nof_locals, int max_nof_monitors);
-
-  // Tells if this register must be spilled during a call.
-  // On Intel, all registers are smashed by calls.
-  static bool volatile_across_calls(Register reg);
-
-
   // Safepoints
 
  public:
@@ -415,8 +388,6 @@ class frame {
   static bool verify_return_pc(address x);
   // Usage:
   // assert(frame::verify_return_pc(return_address), "must be a return pc");
-
-  int pd_oop_map_offset_adjustment() const;
 
   NOT_PRODUCT(void pd_ps();)  // platform dependent frame printing
 

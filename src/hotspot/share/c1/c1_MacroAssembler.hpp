@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ class C1_MacroAssembler: public MacroAssembler {
   void build_frame(int frame_size_in_bytes, int bang_size_in_bytes);
   void remove_frame(int frame_size_in_bytes);
 
-  void unverified_entry(Register receiver, Register ic_klass);
   void verified_entry();
   void verify_stack_oop(int offset) PRODUCT_RETURN;
   void verify_not_null_oop(Register r)  PRODUCT_RETURN;

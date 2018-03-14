@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,13 +279,6 @@ void LIRGenerator::cmp_mem_int(LIR_Condition condition, LIR_Opr base, int disp, 
 
 
 void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr base, int disp, BasicType type, CodeEmitInfo* info) {
-  LIR_Opr o7opr = FrameMap::O7_opr;
-  __ load(new LIR_Address(base, disp, type), o7opr, info);
-  __ cmp(condition, reg, o7opr);
-}
-
-
-void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr base, LIR_Opr disp, BasicType type, CodeEmitInfo* info) {
   LIR_Opr o7opr = FrameMap::O7_opr;
   __ load(new LIR_Address(base, disp, type), o7opr, info);
   __ cmp(condition, reg, o7opr);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -223,10 +223,6 @@ void LIRGenerator::cmp_mem_int(LIR_Condition condition, LIR_Opr base, int disp, 
 }
 
 void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr base, int disp, BasicType type, CodeEmitInfo* info) {
-  __ cmp_reg_mem(condition, reg, new LIR_Address(base, disp, type), info);
-}
-
-void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr base, LIR_Opr disp, BasicType type, CodeEmitInfo* info) {
   __ cmp_reg_mem(condition, reg, new LIR_Address(base, disp, type), info);
 }
 
