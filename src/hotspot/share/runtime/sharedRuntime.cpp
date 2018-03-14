@@ -1476,13 +1476,17 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method_abstract(JavaThread*
   assert(callerFrame.is_compiled_frame(), "must be");
 
   // Install exception and return forward entry.
+  address res = StubRoutines::throw_AbstractMethodError_entry();
   JRT_BLOCK
     methodHandle callee = invoke.static_target(thread);
-    assert(!callee.is_null() && invoke.has_receiver(), "or we should not be here");
-    oop recv = callerFrame.retrieve_receiver(&reg_map);
-    LinkResolver::throw_abstract_method_error(callee, recv->klass(), thread);
+    if (!callee.is_null()) {
+      oop recv = callerFrame.retrieve_receiver(&reg_map);
+      Klass *recv_klass = (recv != NULL) ? recv->klass() : NULL;
+      LinkResolver::throw_abstract_method_error(callee, recv_klass, thread);
+      res = StubRoutines::forward_exception_entry();
+    }
   JRT_BLOCK_END
-  return StubRoutines::forward_exception_entry();
+  return res;
 JRT_END
 
 
