@@ -510,13 +510,13 @@ MetaspaceSnapshot::MetaspaceSnapshot() {
 void MetaspaceSnapshot::snapshot(Metaspace::MetadataType type, MetaspaceSnapshot& mss) {
   assert_valid_metadata_type(type);
 
-  mss._reserved_in_bytes[type]   = MetaspaceAux::reserved_bytes(type);
-  mss._committed_in_bytes[type]  = MetaspaceAux::committed_bytes(type);
-  mss._used_in_bytes[type]       = MetaspaceAux::used_bytes(type);
+  mss._reserved_in_bytes[type]   = MetaspaceUtils::reserved_bytes(type);
+  mss._committed_in_bytes[type]  = MetaspaceUtils::committed_bytes(type);
+  mss._used_in_bytes[type]       = MetaspaceUtils::used_bytes(type);
 
-  size_t free_in_bytes = (MetaspaceAux::capacity_bytes(type) - MetaspaceAux::used_bytes(type))
-                       + MetaspaceAux::free_chunks_total_bytes(type)
-                       + MetaspaceAux::free_bytes(type);
+  size_t free_in_bytes = (MetaspaceUtils::capacity_bytes(type) - MetaspaceUtils::used_bytes(type))
+                       + MetaspaceUtils::free_chunks_total_bytes(type)
+                       + MetaspaceUtils::free_bytes(type);
   mss._free_in_bytes[type] = free_in_bytes;
 }
 

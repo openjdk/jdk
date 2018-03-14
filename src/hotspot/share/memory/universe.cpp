@@ -1162,7 +1162,7 @@ void Universe::initialize_verify_flags() {
     } else if (strcmp(token, "classloader_data_graph") == 0) {
       verify_flags |= Verify_ClassLoaderDataGraph;
     } else if (strcmp(token, "metaspace") == 0) {
-      verify_flags |= Verify_MetaspaceAux;
+      verify_flags |= Verify_MetaspaceUtils;
     } else if (strcmp(token, "jni_handles") == 0) {
       verify_flags |= Verify_JNIHandles;
     } else if (strcmp(token, "codecache_oops") == 0) {
@@ -1234,9 +1234,9 @@ void Universe::verify(VerifyOption option, const char* prefix) {
     ClassLoaderDataGraph::verify();
   }
 #endif
-  if (should_verify_subset(Verify_MetaspaceAux)) {
-    log_debug(gc, verify)("MetaspaceAux");
-    MetaspaceAux::verify_free_chunks();
+  if (should_verify_subset(Verify_MetaspaceUtils)) {
+    log_debug(gc, verify)("MetaspaceUtils");
+    MetaspaceUtils::verify_free_chunks();
   }
   if (should_verify_subset(Verify_JNIHandles)) {
     log_debug(gc, verify)("JNIHandles");

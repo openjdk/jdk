@@ -186,7 +186,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     BiasedLocking::preserve_marks();
 
     // Capture metadata size before collection for sizing.
-    size_t metadata_prev_used = MetaspaceAux::used_bytes();
+    size_t metadata_prev_used = MetaspaceUtils::used_bytes();
 
     size_t old_gen_prev_used = old_gen->used_in_bytes();
     size_t young_gen_prev_used = young_gen->used_in_bytes();
@@ -247,7 +247,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 
     // Delete metaspaces for unloaded class loaders and clean up loader_data graph
     ClassLoaderDataGraph::purge();
-    MetaspaceAux::verify_metrics();
+    MetaspaceUtils::verify_metrics();
 
     BiasedLocking::restore_marks();
     CodeCache::gc_epilogue();
@@ -352,7 +352,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 
     young_gen->print_used_change(young_gen_prev_used);
     old_gen->print_used_change(old_gen_prev_used);
-    MetaspaceAux::print_metaspace_change(metadata_prev_used);
+    MetaspaceUtils::print_metaspace_change(metadata_prev_used);
 
     // Track memory usage and detect low memory
     MemoryService::track_memory_usage();

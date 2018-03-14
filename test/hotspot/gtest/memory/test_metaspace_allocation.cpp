@@ -225,7 +225,7 @@ protected:
     }
 #ifdef DEBUG_VERBOSE
     tty->print_cr("Test finished. ");
-    MetaspaceAux::print_metaspace_map(tty, mdType);
+    MetaspaceUtils::print_metaspace_map(tty, mdType);
     print_chunkmanager_statistics(tty, mdType);
 #endif
   }

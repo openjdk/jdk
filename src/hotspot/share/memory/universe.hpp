@@ -489,7 +489,7 @@ class Universe: AllStatic {
     Verify_CodeCache = 16,
     Verify_SystemDictionary = 32,
     Verify_ClassLoaderDataGraph = 64,
-    Verify_MetaspaceAux = 128,
+    Verify_MetaspaceUtils = 128,
     Verify_JNIHandles = 256,
     Verify_CodeCacheOops = 512,
     Verify_All = -1
