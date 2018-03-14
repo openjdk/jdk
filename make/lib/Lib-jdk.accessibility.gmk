@@ -50,7 +50,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
             $(addprefix -I,$(JAVA_AB_SRCDIR)) \
             -I$(ROOT_SRCDIR)/include/bridge \
             -DACCESSBRIDGE_ARCH_$2, \
-        LDFLAGS := $(LDFLAGS_JDKLIB) -subsystem:windows, \
+        LDFLAGS := $(LDFLAGS_JDKLIB), \
         LIBS := kernel32.lib user32.lib gdi32.lib \
             winspool.lib comdlg32.lib advapi32.lib shell32.lib \
             $(SUPPORT_OUTPUTDIR)/native/java.desktop/libjawt/jawt.lib \
@@ -80,7 +80,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
             $(addprefix -I,$(WIN_AB_SRCDIR)) \
             -I$(ROOT_SRCDIR)/include/bridge \
             -DACCESSBRIDGE_ARCH_$2, \
-        LDFLAGS := $(LDFLAGS_JDKLIB) -subsystem:windows \
+        LDFLAGS := $(LDFLAGS_JDKLIB) \
             -def:$(ROOT_SRCDIR)/libwindowsaccessbridge/WinAccessBridge.DEF, \
         LIBS := kernel32.lib user32.lib gdi32.lib \
             winspool.lib comdlg32.lib advapi32.lib shell32.lib \
@@ -105,8 +105,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
         SRC := $(SYSINFO_SRCDIR), \
         OPTIMIZATION := LOW, \
         CFLAGS := $(CFLAGS_JDKLIB) $(ACCESSBRIDGE_CFLAGS), \
-        LDFLAGS := $(LDFLAGS_JDKLIB) \
-            -subsystem:windows -machine:I386, \
+        LDFLAGS := $(LDFLAGS_JDKLIB), \
         VERSIONINFO_RESOURCE := $(ROOT_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
         RC_FLAGS := $(RC_FLAGS) \
             -D "JDK_FNAME=jabsysinfo.dll" \
