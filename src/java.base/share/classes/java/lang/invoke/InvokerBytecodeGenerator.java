@@ -649,6 +649,8 @@ class InvokerBytecodeGenerator {
             }
             case EXACT_INVOKER:             // fall-through
             case EXACT_LINKER:              // fall-through
+            case LINK_TO_CALL_SITE:         // fall-through
+            case LINK_TO_TARGET_METHOD:     // fall-through
             case GENERIC_INVOKER:           // fall-through
             case GENERIC_LINKER:            return resolveFrom(name, invokerType.basicType(), Invokers.Holder.class);
             case GET_OBJECT:                // fall-through

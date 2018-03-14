@@ -69,7 +69,9 @@ public final class GenerateJLIClassesPlugin implements Plugin {
 
     private static final String DELEGATING_HOLDER = "java/lang/invoke/DelegatingMethodHandle$Holder";
     private static final String BASIC_FORMS_HOLDER = "java/lang/invoke/LambdaForm$Holder";
-    private static final String INVOKERS_HOLDER = "java/lang/invoke/Invokers$Holder";
+
+    private static final String INVOKERS_HOLDER_NAME = "java.lang.invoke.Invokers$Holder";
+    private static final String INVOKERS_HOLDER_INTERNAL_NAME = INVOKERS_HOLDER_NAME.replace('.', '/');
 
     private static final JavaLangInvokeAccess JLIA
             = SharedSecrets.getJavaLangInvokeAccess();
@@ -77,6 +79,8 @@ public final class GenerateJLIClassesPlugin implements Plugin {
     Set<String> speciesTypes = Set.of();
 
     Set<String> invokerTypes = Set.of();
+
+    Set<String> callSiteTypes = Set.of();
 
     Map<String, Set<String>> dmhMethods = Map.of();
 
@@ -128,7 +132,7 @@ public final class GenerateJLIClassesPlugin implements Plugin {
      * @return the default invoker forms to generate.
      */
     private static Set<String> defaultInvokers() {
-        return Set.of("LL_L", "LL_I", "LILL_I", "L6_L");
+        return Set.of("LL_L", "LL_I", "LLLL_L", "LLLL_I", "LLIL_L", "LLIL_I", "L6_L");
     }
 
     /**
@@ -209,6 +213,8 @@ public final class GenerateJLIClassesPlugin implements Plugin {
         // ease finding methods in the generated code
         speciesTypes = new TreeSet<>(speciesTypes);
         invokerTypes = new TreeSet<>(invokerTypes);
+        callSiteTypes = new TreeSet<>(callSiteTypes);
+
         TreeMap<String, Set<String>> newDMHMethods = new TreeMap<>();
         for (Map.Entry<String, Set<String>> entry : dmhMethods.entrySet()) {
             newDMHMethods.put(entry.getKey(), new TreeSet<>(entry.getValue()));
@@ -229,8 +235,13 @@ public final class GenerateJLIClassesPlugin implements Plugin {
                     case "[LF_RESOLVE]":
                         String methodType = parts[3];
                         validateMethodType(methodType);
-                        if (parts[1].contains("Invokers")) {
-                            invokerTypes.add(methodType);
+                        if (parts[1].equals(INVOKERS_HOLDER_NAME)) {
+                            if ("linkToTargetMethod".equals(parts[2]) ||
+                                    "linkToCallSite".equals(parts[2])) {
+                                callSiteTypes.add(methodType);
+                            } else {
+                                invokerTypes.add(methodType);
+                            }
                         } else if (parts[1].contains("DirectMethodHandle")) {
                             String dmh = parts[2];
                             // ignore getObject etc for now (generated
@@ -294,10 +305,11 @@ public final class GenerateJLIClassesPlugin implements Plugin {
         // Copy all but DMH_ENTRY to out
         in.transformAndCopy(entry -> {
                 // filter out placeholder entries
-                if (entry.path().equals(DIRECT_METHOD_HOLDER_ENTRY) ||
-                    entry.path().equals(DELEGATING_METHOD_HOLDER_ENTRY) ||
-                    entry.path().equals(INVOKERS_HOLDER_ENTRY) ||
-                    entry.path().equals(BASIC_FORMS_HOLDER_ENTRY)) {
+                String path = entry.path();
+                if (path.equals(DIRECT_METHOD_HOLDER_ENTRY) ||
+                    path.equals(DELEGATING_METHOD_HOLDER_ENTRY) ||
+                    path.equals(INVOKERS_HOLDER_ENTRY) ||
+                    path.equals(BASIC_FORMS_HOLDER_ENTRY)) {
                     return null;
                 } else {
                     return entry;
@@ -361,21 +373,38 @@ public final class GenerateJLIClassesPlugin implements Plugin {
                 index++;
             }
         }
+
+        // The invoker type to ask for is retrieved by removing the first
+        // and the last argument, which needs to be of Object.class
         MethodType[] invokerMethodTypes = new MethodType[this.invokerTypes.size()];
         int i = 0;
         for (String invokerType : invokerTypes) {
-            // The invoker type to ask for is retrieved by removing the first
-            // and the last argument, which needs to be of Object.class
             MethodType mt = asMethodType(invokerType);
             final int lastParam = mt.parameterCount() - 1;
             if (mt.parameterCount() < 2 ||
                     mt.parameterType(0) != Object.class ||
                     mt.parameterType(lastParam) != Object.class) {
                 throw new PluginException(
-                        "Invoker type parameter must start and end with L");
+                        "Invoker type parameter must start and end with Object: " + invokerType);
             }
             mt = mt.dropParameterTypes(lastParam, lastParam + 1);
             invokerMethodTypes[i] = mt.dropParameterTypes(0, 1);
+            i++;
+        }
+
+        // The callSite type to ask for is retrieved by removing the last
+        // argument, which needs to be of Object.class
+        MethodType[] callSiteMethodTypes = new MethodType[this.callSiteTypes.size()];
+        i = 0;
+        for (String callSiteType : callSiteTypes) {
+            MethodType mt = asMethodType(callSiteType);
+            final int lastParam = mt.parameterCount() - 1;
+            if (mt.parameterCount() < 1 ||
+                    mt.parameterType(lastParam) != Object.class) {
+                throw new PluginException(
+                        "CallSite type parameter must end with Object: " + callSiteType);
+            }
+            callSiteMethodTypes[i] = mt.dropParameterTypes(lastParam, lastParam + 1);
             i++;
         }
         try {
@@ -390,8 +419,8 @@ public final class GenerateJLIClassesPlugin implements Plugin {
             ndata = ResourcePoolEntry.create(DELEGATING_METHOD_HOLDER_ENTRY, bytes);
             out.add(ndata);
 
-            bytes = JLIA.generateInvokersHolderClassBytes(INVOKERS_HOLDER,
-                    invokerMethodTypes);
+            bytes = JLIA.generateInvokersHolderClassBytes(INVOKERS_HOLDER_INTERNAL_NAME,
+                    invokerMethodTypes, callSiteMethodTypes);
             ndata = ResourcePoolEntry.create(INVOKERS_HOLDER_ENTRY, bytes);
             out.add(ndata);
 
@@ -409,7 +438,7 @@ public final class GenerateJLIClassesPlugin implements Plugin {
     private static final String BASIC_FORMS_HOLDER_ENTRY =
             "/java.base/" + BASIC_FORMS_HOLDER + ".class";
     private static final String INVOKERS_HOLDER_ENTRY =
-            "/java.base/" + INVOKERS_HOLDER + ".class";
+            "/java.base/" + INVOKERS_HOLDER_INTERNAL_NAME + ".class";
 
     // Convert LL -> LL, L3 -> LLL
     public static String expandSignature(String signature) {
