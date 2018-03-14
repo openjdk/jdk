@@ -61,7 +61,6 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBMLIB_IMAGE, \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(BUILD_LIBMLIB_LDLIBS) \
         $(JDKLIB_LIBS), \
-    LIBS_solaris := -lc, \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=mlib_image.dll" \
@@ -119,7 +118,7 @@ ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH), solaris-sparc)
       MAPFILE := $(BUILD_LIBMLIB_IMAGE_MAPFILE), \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LIBS := -ljava -ljvm -lc $(BUILD_LIBMLIB_LDLIBS), \
+      LIBS := -ljava -ljvm $(BUILD_LIBMLIB_LDLIBS), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libmlib_image_v, \
   ))
 
@@ -250,7 +249,7 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBAWT, \
         -delayload:comctl32.dll -delayload:shlwapi.dll, \
     LIBS_unix := -ljvm -ljava $(LIBM), \
     LIBS_linux :=  $(LIBDL), \
-    LIBS_solaris := $(LIBDL) -lc, \
+    LIBS_solaris := $(LIBDL), \
     LIBS_aix := $(LIBDL),\
     LIBS_macosx := -lmlib_image \
         -framework Cocoa \
@@ -330,7 +329,7 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
       endif
     endif
 
-    LIBAWT_XAWT_LIBS := $(LIBM) -lawt -lXext -lX11 -lXrender $(LIBDL) -lXtst -lXi -ljava -ljvm -lc
+    LIBAWT_XAWT_LIBS := $(LIBM) -lawt -lXext -lX11 -lXrender $(LIBDL) -lXtst -lXi -ljava -ljvm
 
     ifeq ($(OPENJDK_TARGET_OS), linux)
       LIBAWT_XAWT_LIBS += -lpthread
@@ -429,7 +428,6 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBLCMS, \
     LIBS_unix := -lawt -ljvm -ljava $(LCMS_LIBS), \
     LIBS_linux := $(LIBM), \
     LIBS_macosx := $(LIBM), \
-    LIBS_solaris := -lc, \
     LIBS_aix := $(LIBM),\
     LIBS_windows := $(WIN_AWT_LIB) $(WIN_JAVA_LIB), \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
@@ -569,7 +567,7 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS), windows macosx),)
       REORDER := $(LIBAWT_HEADLESS_REORDER), \
       LIBS_unix := -lawt -ljvm -ljava, \
       LIBS_linux := $(LIBM) $(LIBDL), \
-      LIBS_solaris := $(LIBM) $(LIBDL) $(LIBCXX) -lc, \
+      LIBS_solaris := $(LIBM) $(LIBDL) $(LIBCXX), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libawt_headless, \
   ))
 
@@ -611,7 +609,6 @@ else
       DISABLED_WARNINGS_microsoft := 4267 2220 4244, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LIBS_solaris := -lc, \
       VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
       RC_FLAGS := $(RC_FLAGS) \
           -D "JDK_FNAME=freetype.dll" \
@@ -730,8 +727,6 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBFONTMANAGER, \
     LDFLAGS_macosx := -undefined dynamic_lookup, \
     LIBS := $(BUILD_LIBFONTMANAGER_FONTLIB), \
     LIBS_unix := -lawt -ljava -ljvm $(LIBM) $(LIBCXX), \
-    LIBS_linux := -lc, \
-    LIBS_solaris := -lc, \
     LIBS_aix := -lawt_headless,\
     LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib user32.lib gdi32.lib \
         $(WIN_AWT_LIB), \

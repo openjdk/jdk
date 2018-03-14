@@ -42,7 +42,6 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBJ2PKCS11, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := $(LIBDL), \
-    LIBS_solaris := -lc, \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=j2pkcs11.dll" \

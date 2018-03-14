@@ -59,7 +59,7 @@ else ifeq ($(OPENJDK_TARGET_OS), solaris)
   SA_CFLAGS := $(CFLAGS_JDKLIB)
   SA_CXXFLAGS := $(CXXFLAGS_JDKLIB)
   SA_LDFLAGS := -mt $(LDFLAGS_CXX_JDK)
-  SA_LIBS := -ldl -ldemangle -lthread -lc -lproc
+  SA_LIBS := -ldl -ldemangle -lthread -lproc
 
 else ifeq ($(OPENJDK_TARGET_OS), macosx)
   SA_EXCLUDE_FILES := BsdDebuggerLocal.c ps_proc.c salibelf.c StubDebuggerLocal.c
