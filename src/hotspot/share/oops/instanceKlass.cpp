@@ -1014,6 +1014,10 @@ instanceOop InstanceKlass::allocate_instance(TRAPS) {
   return i;
 }
 
+instanceHandle InstanceKlass::allocate_instance_handle(TRAPS) {
+  return instanceHandle(THREAD, allocate_instance(THREAD));
+}
+
 void InstanceKlass::check_valid_for_instantiation(bool throwError, TRAPS) {
   if (is_interface() || is_abstract()) {
     ResourceMark rm(THREAD);

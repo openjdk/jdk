@@ -72,7 +72,7 @@ class Handle {
  public:
   // Constructors
   Handle()                                       { _handle = NULL; }
-  Handle(Thread* thread, oop obj);
+  inline Handle(Thread* thread, oop obj);
 
   // General access
   oop     operator () () const                   { return obj(); }
@@ -108,9 +108,7 @@ class Handle {
    public:                                       \
     /* Constructors */                           \
     type##Handle ()                              : Handle()                 {} \
-    type##Handle (Thread* thread, type##Oop obj) : Handle(thread, (oop)obj) { \
-      assert(is_null() || ((oop)obj)->is_a(), "illegal type");                \
-    }                                                                         \
+    inline type##Handle (Thread* thread, type##Oop obj); \
     \
     /* Operators for ease of use */              \
     type##Oop    operator () () const            { return obj(); } \
