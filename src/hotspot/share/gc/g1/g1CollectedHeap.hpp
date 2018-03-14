@@ -300,9 +300,6 @@ private:
   // this method will be found dead by the marking cycle).
   void allocate_dummy_regions() PRODUCT_RETURN;
 
-  // Clear RSets after a compaction. It also resets the GC time stamps.
-  void clear_rsets_post_compaction();
-
   // If the HR printer is active, dump the state of the regions in the
   // heap after a compaction.
   void print_hrm_post_compaction();
