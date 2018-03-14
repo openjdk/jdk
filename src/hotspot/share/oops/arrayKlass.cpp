@@ -37,6 +37,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/handles.inline.hpp"
 
 int ArrayKlass::static_size(int header_size) {
   // size of an array klass object
