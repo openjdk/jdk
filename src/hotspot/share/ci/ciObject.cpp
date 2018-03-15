@@ -207,7 +207,7 @@ void ciObject::init_flags_from(oop x) {
   int flags = 0;
   if (x != NULL) {
     assert(Universe::heap()->is_in_reserved(x), "must be");
-    if (x->is_scavengable())
+    if (Universe::heap()->is_scavengable(x))
       flags |= SCAVENGABLE_FLAG;
   }
   _ident |= flags;
