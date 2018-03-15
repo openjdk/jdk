@@ -29,6 +29,7 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "logging/log.hpp"
+#include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
