@@ -3711,17 +3711,12 @@ MetaWord* SpaceManager::allocate_work(size_t word_size) {
 }
 
 void SpaceManager::verify() {
-  // If there are blocks in the dictionary, then
-  // verification of chunks does not work since
-  // being in the dictionary alters a chunk.
-  if (block_freelists() != NULL && block_freelists()->total_size() == 0) {
-    for (ChunkIndex i = ZeroIndex; i < NumberOfInUseLists; i = next_chunk_index(i)) {
-      Metachunk* curr = chunks_in_use(i);
-      while (curr != NULL) {
-        DEBUG_ONLY(do_verify_chunk(curr);)
-        assert(curr->is_tagged_free() == false, "Chunk should be tagged as in use.");
-        curr = curr->next();
-      }
+  for (ChunkIndex i = ZeroIndex; i < NumberOfInUseLists; i = next_chunk_index(i)) {
+    Metachunk* curr = chunks_in_use(i);
+    while (curr != NULL) {
+      DEBUG_ONLY(do_verify_chunk(curr);)
+      assert(curr->is_tagged_free() == false, "Chunk should be tagged as in use.");
+      curr = curr->next();
     }
   }
 }
