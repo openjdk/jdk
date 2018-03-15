@@ -222,6 +222,19 @@ bool ClassLoaderData::ChunkedHandleList::contains(oop p) {
   return cl.found();
 }
 
+#ifndef PRODUCT
+bool ClassLoaderData::ChunkedHandleList::owner_of(oop* oop_handle) {
+  Chunk* chunk = _head;
+  while (chunk != NULL) {
+    if (&(chunk->_data[0]) <= oop_handle && oop_handle < &(chunk->_data[chunk->_size])) {
+      return true;
+    }
+    chunk = chunk->_next;
+  }
+  return false;
+}
+#endif // PRODUCT
+
 bool ClassLoaderData::claim() {
   if (_claimed == 1) {
     return false;
@@ -759,7 +772,7 @@ void ClassLoaderData::remove_handle(OopHandle h) {
   assert(!is_unloading(), "Do not remove a handle for a CLD that is unloading");
   oop* ptr = h.ptr_raw();
   if (ptr != NULL) {
-    assert(_handles.contains(*ptr), "Got unexpected handle " PTR_FORMAT, p2i(ptr));
+    assert(_handles.owner_of(ptr), "Got unexpected handle " PTR_FORMAT, p2i(ptr));
     // This root is not walked in safepoints, and hence requires an appropriate
     // decorator that e.g. maintains the SATB invariant in SATB collectors.
     RootAccess<IN_CONCURRENT_ROOT>::oop_store(ptr, oop(NULL));

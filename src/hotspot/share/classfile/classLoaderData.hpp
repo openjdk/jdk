@@ -205,6 +205,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
     // However, multiple threads can execute oops_do concurrently with add.
     oop* add(oop o);
     bool contains(oop p);
+    NOT_PRODUCT(bool owner_of(oop* p);)
     void oops_do(OopClosure* f);
 
     int count() const;
