@@ -1683,7 +1683,7 @@ public:
   { NOT_PRODUCT(_print_nm = NULL); }
   bool detected_scavenge_root() { return _detected_scavenge_root; }
   virtual void do_oop(oop* p) {
-    if ((*p) != NULL && (*p)->is_scavengable()) {
+    if ((*p) != NULL && Universe::heap()->is_scavengable(*p)) {
       NOT_PRODUCT(maybe_print(p));
       _detected_scavenge_root = true;
     }
@@ -2178,7 +2178,7 @@ public:
   DebugScavengeRoot(nmethod* nm) : _nm(nm), _ok(true) { }
   bool ok() { return _ok; }
   virtual void do_oop(oop* p) {
-    if ((*p) == NULL || !(*p)->is_scavengable())  return;
+    if ((*p) == NULL || !Universe::heap()->is_scavengable(*p))  return;
     if (_ok) {
       _nm->print_nmethod(true);
       _ok = false;
