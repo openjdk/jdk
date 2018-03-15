@@ -73,7 +73,7 @@ protected:
   struct {
     size_t allocated;
     Mutex* lock;
-    Metaspace* space;
+    ClassLoaderMetaspace* space;
     bool is_empty() const { return allocated == 0; }
     bool is_full() const { return allocated >= MAX_PER_METASPACE_ALLOCATION_WORDSIZE; }
   } _spaces[NUM_PARALLEL_METASPACES];
@@ -104,7 +104,7 @@ protected:
     // Let every ~10th space be an anonymous one to test different allocation patterns.
     const Metaspace::MetaspaceType msType = (os::random() % 100 < 10) ?
       Metaspace::AnonymousMetaspaceType : Metaspace::StandardMetaspaceType;
-    _spaces[i].space = new Metaspace(_spaces[i].lock, msType);
+    _spaces[i].space = new ClassLoaderMetaspace(_spaces[i].lock, msType);
     _spaces[i].allocated = 0;
     ASSERT_TRUE(_spaces[i].space != NULL);
   }
