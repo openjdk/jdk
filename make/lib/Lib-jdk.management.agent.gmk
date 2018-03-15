@@ -33,9 +33,8 @@ LIBMANAGEMENT_AGENT_CFLAGS := $(addprefix -I,$(LIBMANAGEMENT_AGENT_SRC)) \
     $(LIBJAVA_HEADER_FLAGS) \
     #
 
-$(eval $(call SetupNativeCompilation, BUILD_LIBMANAGEMENT_AGENT, \
+$(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT_AGENT, \
     NAME := management_agent, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBMANAGEMENT_AGENT_SRC), \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBMANAGEMENT_AGENT_CFLAGS), \
@@ -44,12 +43,6 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBMANAGEMENT_AGENT, \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(JDKLIB_LIBS), \
     LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib, \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=management_agent.dll" \
-        -D "JDK_INTERNAL_NAME=management_agent" \
-        -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libmanagement_agent, \
 ))
 
 $(BUILD_LIBMANAGEMENT_AGENT): $(call FindLib, java.base, java)

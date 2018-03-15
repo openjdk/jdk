@@ -449,7 +449,9 @@ class ProxyGenerator {
          */
         for (Class<?> intf : interfaces) {
             for (Method m : intf.getMethods()) {
-                addProxyMethod(m, intf);
+                if (!Modifier.isStatic(m.getModifiers())) {
+                    addProxyMethod(m, intf);
+                }
             }
         }
 

@@ -735,7 +735,7 @@ define SetupNativeCompilationBody
 		$$(call MakeDir, $$(@D) $$($1_OBJECT_DIR))
 		$$(call ExecuteWithLog, $$@, \
 		    $$($1_RC) $$($1_RC_FLAGS) $$($1_SYSROOT_CFLAGS) $(CC_OUT_OPTION)$$@ \
-		    $$($1_VERSIONINFO_RESOURCE))
+		    $$($1_VERSIONINFO_RESOURCE) 2>&1 )
                 # Windows RC compiler does not support -showIncludes, so we mis-use CL
                 # for this. Filter out RC specific arguments that are unknown to CL.
                 # For some unknown reason, in this case CL actually outputs the show
@@ -746,7 +746,7 @@ define SetupNativeCompilationBody
 		        $$($1_SYSROOT_CFLAGS) -showIncludes -nologo -TC \
 		        $(CC_OUT_OPTION)$$($1_RES_DEP).obj -P -Fi$$($1_RES_DEP).pp \
 		        $$($1_VERSIONINFO_RESOURCE)) 2>&1 \
-		    | $(GREP) -v -e "^Note: including file:" \
+		    | $(TR) -d '\r' | $(GREP) -v -e "^Note: including file:" \
 		        -e "^$$(notdir $$($1_VERSIONINFO_RESOURCE))$$$$" || test "$$$$?" = "1" ; \
 		$(ECHO) $$($1_RES): \\ > $$($1_RES_DEP) ; \
 		$(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_RES_DEP).obj.log >> $$($1_RES_DEP) ; \
@@ -870,7 +870,7 @@ define SetupNativeCompilationBody
     endif
 
     $1_VARDEPS := $$($1_LD) $$($1_SYSROOT_LDFLAGS) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) \
-        $$($1_LIBS) $$($1_EXTRA_LIBS) $$($1_CREATE_DEBUGINFO_CMDS) \
+        $$(GLOBAL_LIBS) $$($1_LIBS) $$($1_EXTRA_LIBS) $$($1_CREATE_DEBUGINFO_CMDS) \
         $$($1_STRIP_CMD)
     $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
         $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
@@ -924,8 +924,8 @@ define SetupNativeCompilationBody
                 ifeq ($(OPENJDK_TARGET_OS), windows)
 		  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
 		      $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
-		      $(LD_OUT_OPTION)$$@ $$($1_LD_OBJ_ARG) $$($1_RES) $$($1_LIBS) \
-		      $$($1_EXTRA_LIBS)) \
+		      $(LD_OUT_OPTION)$$@ $$($1_LD_OBJ_ARG) $$($1_RES) $$(GLOBAL_LIBS) \
+		      $$($1_LIBS) $$($1_EXTRA_LIBS)) \
 		      | $(GREP) -v "^   Creating library .*\.lib and object .*\.exp" || \
 		      test "$$$$?" = "1" ; \
 		  $$($1_CREATE_DEBUGINFO_CMDS)
@@ -934,8 +934,8 @@ define SetupNativeCompilationBody
 		  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
 		      $$(if $$($1_LINK_OBJS_RELATIVE), $$(CD) $$(OUTPUTDIR) ; ) \
 		      $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
-		      $(LD_OUT_OPTION)$$@ $$($1_LD_OBJ_ARG) $$($1_RES) $$($1_LIBS) \
-		      $$($1_EXTRA_LIBS)) ; \
+		      $(LD_OUT_OPTION)$$@ $$($1_LD_OBJ_ARG) $$($1_RES) $$(GLOBAL_LIBS) \
+		      $$($1_LIBS) $$($1_EXTRA_LIBS)) ; \
 		  $$($1_CREATE_DEBUGINFO_CMDS)
 		  $$($1_STRIP_CMD)
                 endif
@@ -972,7 +972,7 @@ define SetupNativeCompilationBody
   ifeq ($$($1_TYPE), EXECUTABLE)
     # A executable binary has been specified, setup the target for it.
     $1_VARDEPS := $$($1_LD) $$($1_SYSROOT_LDFLAGS) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) \
-        $$($1_LIBS) $$($1_EXTRA_LIBS) $$($1_MT) \
+        $$(GLOBAL_LIBS) $$($1_LIBS) $$($1_EXTRA_LIBS) $$($1_MT) \
         $$($1_CODESIGN) $$($1_CREATE_DEBUGINFO_CMDS) $$($1_MANIFEST_VERSION) \
         $$($1_STRIP_CMD)
     $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
@@ -991,7 +991,7 @@ define SetupNativeCompilationBody
 		    $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
 		        $(EXE_OUT_OPTION)$$($1_TARGET) \
 		        $$($1_ALL_OBJS) $$($1_RES) \
-		        $$($1_LIBS) $$($1_EXTRA_LIBS))
+		        $$(GLOBAL_LIBS) $$($1_LIBS) $$($1_EXTRA_LIBS))
                 ifeq ($(OPENJDK_TARGET_OS), windows)
                   ifneq ($$($1_MANIFEST), )
 		    $$($1_MT) -nologo -manifest $$($1_MANIFEST) -identity:"$$($1_NAME).exe, version=$$($1_MANIFEST_VERSION)" -outputresource:$$@;#1

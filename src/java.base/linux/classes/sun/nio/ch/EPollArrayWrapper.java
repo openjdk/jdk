@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,16 +93,10 @@ class EPollArrayWrapper {
     private final long pollArrayAddress;
 
     // The fd of the interrupt line going out
-    private int outgoingInterruptFD;
-
-    // The fd of the interrupt line coming in
-    private int incomingInterruptFD;
-
-    // The index of the interrupt FD
-    private int interruptedIndex;
+    private final int outgoingInterruptFD;
 
     // Number of updated pollfd entries
-    int updated;
+    private int updated;
 
     // object to synchronize fd registration changes
     private final Object updateLock = new Object();
@@ -125,7 +119,7 @@ class EPollArrayWrapper {
     private final BitSet registered = new BitSet();
 
 
-    EPollArrayWrapper() throws IOException {
+    EPollArrayWrapper(int fd0, int fd1) throws IOException {
         // creates the epoll file descriptor
         epfd = epollCreate();
 
@@ -133,11 +127,8 @@ class EPollArrayWrapper {
         int allocationSize = NUM_EPOLLEVENTS * SIZE_EPOLLEVENT;
         pollArray = new AllocatedNativeObject(allocationSize, true);
         pollArrayAddress = pollArray.address();
-    }
 
-    void initInterrupt(int fd0, int fd1) {
         outgoingInterruptFD = fd1;
-        incomingInterruptFD = fd0;
         epollCtl(epfd, EPOLL_CTL_ADD, fd0, EPOLLIN);
     }
 
@@ -255,22 +246,14 @@ class EPollArrayWrapper {
     /**
      * Close epoll file descriptor and free poll array
      */
-    void closeEPollFD() throws IOException {
+    void close() throws IOException {
         FileDispatcherImpl.closeIntFD(epfd);
         pollArray.free();
     }
 
     int poll(long timeout) throws IOException {
         updateRegistrations();
-        updated = epollWait(pollArrayAddress, NUM_EPOLLEVENTS, timeout, epfd);
-        for (int i=0; i<updated; i++) {
-            if (getDescriptor(i) == incomingInterruptFD) {
-                interruptedIndex = i;
-                interrupted = true;
-                break;
-            }
-        }
-        return updated;
+        return epollWait(pollArrayAddress, NUM_EPOLLEVENTS, timeout, epfd);
     }
 
     /**
@@ -306,23 +289,8 @@ class EPollArrayWrapper {
         }
     }
 
-    // interrupt support
-    private boolean interrupted = false;
-
     public void interrupt() {
         interrupt(outgoingInterruptFD);
-    }
-
-    public int interruptedIndex() {
-        return interruptedIndex;
-    }
-
-    boolean interrupted() {
-        return interrupted;
-    }
-
-    void clearInterrupted() {
-        interrupted = false;
     }
 
     static {

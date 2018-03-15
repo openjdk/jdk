@@ -44,6 +44,7 @@ include NativeCompilation.gmk
 #   TYPE Must be either PROGRAM or LIBRARY.
 #   SOURCE_DIRS A list of source directories to search
 #   OUTPUT_DIR Where to put the resulting files
+#   EXCLUDE A list of filenames to exclude from compilation
 SetupTestFilesCompilation = $(NamedParamsMacroTemplate)
 define SetupTestFilesCompilationBody
 
@@ -76,20 +77,23 @@ define SetupTestFilesCompilationBody
   $1_FILE_LIST := \
       $$(shell $$(FIND) $$($1_SOURCE_DIRS) -type f -name "$$($1_PREFIX)*.c")
 
+  $1_EXCLUDE_PATTERN := $$(addprefix %/, $$($1_EXCLUDE))
+  $1_FILTERED_FILE_LIST := $$(filter-out $$($1_EXCLUDE_PATTERN), $$($1_FILE_LIST))
+
   # Setup a compilation for each and every one of them
-  $$(foreach file, $$($1_FILE_LIST),\
-    $$(eval name := $$(strip $$(patsubst $$($1_PREFIX)%, %, $$(basename $$(notdir $$(file)))))) \
+  $$(foreach file, $$($1_FILTERED_FILE_LIST),\
+    $$(eval name := $$(strip $$(basename $$(notdir $$(file))))) \
+    $$(eval unprefixed_name := $$(patsubst $$($1_PREFIX)%, %, $$(name))) \
     $$(eval $$(call SetupNativeCompilation, BUILD_TEST_$$(name), \
-        NAME := $$(name), \
+        NAME := $$(unprefixed_name), \
         TYPE := $$($1_COMPILATION_TYPE), \
         SRC := $$(patsubst %/,%,$$(dir $$(file))), \
         INCLUDE_FILES := $$(notdir $$(file)), \
-        OBJECT_DIR := $$($1_OUTPUT_DIR)/support/$$($1_PREFIX)$$(name), \
+        OBJECT_DIR := $$($1_OUTPUT_DIR)/support/$$(name), \
         OUTPUT_DIR := $$($1_OUTPUT_DIR)/$$($1_OUTPUT_SUBDIR), \
-        LANG := C, \
-        CFLAGS := $$($1_CFLAGS) $$($1_CFLAGS_$$($1_PREFIX)$$(name)), \
-        LDFLAGS := $$($1_LDFLAGS) $$($1_LDFLAGS_$$($1_PREFIX)$$(name)), \
-        LIBS := $$($1_LIBS_$$($1_PREFIX)$$(name)), \
+        CFLAGS := $$($1_CFLAGS) $$($1_CFLAGS_$$(name)), \
+        LDFLAGS := $$($1_LDFLAGS) $$($1_LDFLAGS_$$(name)), \
+        LIBS := $$($1_LIBS_$$(name)), \
         OPTIMIZATION := LOW, \
         COPY_DEBUG_SYMBOLS := false, \
         STRIP_SYMBOLS := false, \

@@ -1,0 +1,119 @@
+#
+# Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+ifndef _JDK_NATIVE_COMPILATION_GMK
+_JDK_NATIVE_COMPILATION_GMK := 1
+
+ifeq ($(_MAKEBASE_GMK), )
+  $(error You must include MakeBase.gmk prior to including JdkNativeCompilation.gmk)
+endif
+
+include NativeCompilation.gmk
+
+# Setup make rules for creating a native shared library with suitable defaults
+# for the OpenJDK project.
+#
+# Parameter 1 is the name of the rule. This name is used as variable prefix,
+# and the targets generated are listed in a variable by that name.
+#
+# Remaining parameters are named arguments. These are all passed on to
+# SetupNativeCompilation, except for 
+#   EXTRA_RC_FLAGS -- additional RC_FLAGS to append.
+SetupJdkLibrary = $(NamedParamsMacroTemplate)
+define SetupJdkLibraryBody
+  ifeq ($$($1_OUTPUT_DIR), )
+    $1_OUTPUT_DIR := $$(call FindLibDirForModule, $$(MODULE))
+  endif
+
+  ifeq ($$($1_OBJECT_DIR), )
+    $1_OBJECT_DIR := $$(SUPPORT_OUTPUTDIR)/native/$$(MODULE)/lib$$($1_NAME)
+  endif
+
+  ifeq ($$($1_VERSIONINFO_RESOURCE), )
+    $1_VERSIONINFO_RESOURCE := $$(GLOBAL_VERSION_INFO_RESOURCE)
+  else ifeq ($$($1_VERSIONINFO_RESOURCE), DISABLE)
+    $1_VERSIONINFO_RESOURCE :=
+  endif
+
+  ifeq ($$($1_RC_FLAGS), )
+    $1_RC_FLAGS :=  $(RC_FLAGS) \
+        -D "JDK_FNAME=$$($1_NAME).dll" \
+        -D "JDK_INTERNAL_NAME=$$($1_NAME)" \
+        -D "JDK_FTYPE=0x2L"
+  else ifeq ($$($1_RC_FLAGS), DISABLE)
+    $1_RC_FLAGS :=
+  endif
+
+  $1_RC_FLAGS += $$($1_EXTRA_RC_FLAGS)
+
+  # Since we reuse the rule name ($1), all our arguments will pass through.
+  # We lose in transparency, but gain in brevity in this call...
+  $$(eval $$(call SetupNativeCompilation, $1, ))
+endef
+
+# Setup make rules for creating a native executable with suitable defaults for
+# the OpenJDK project.
+#
+# Parameter 1 is the name of the rule. This name is used as variable prefix,
+# and the targets generated are listed in a variable by that name.
+#
+# Remaining parameters are named arguments. These are all passed on to
+# SetupNativeCompilation, except for 
+#   EXTRA_RC_FLAGS -- additional RC_FLAGS to append.
+SetupJdkExecutable = $(NamedParamsMacroTemplate)
+define SetupJdkExecutableBody
+  $1_TYPE := EXECUTABLE
+
+  ifeq ($$($1_OUTPUT_DIR), )
+    $1_OUTPUT_DIR := $$(call FindExecutableDirForModule, $$(MODULE))
+  endif
+
+  ifeq ($$($1_OBJECT_DIR), )
+    $1_OBJECT_DIR := $$(SUPPORT_OUTPUTDIR)/native/$$(MODULE)/$$($1_NAME)
+  endif
+
+  ifeq ($$($1_VERSIONINFO_RESOURCE), )
+    $1_VERSIONINFO_RESOURCE := $$(GLOBAL_VERSION_INFO_RESOURCE)
+  else ifeq ($$($1_VERSIONINFO_RESOURCE), DISABLE)
+    $1_VERSIONINFO_RESOURCE :=
+  endif
+
+  ifeq ($$($1_RC_FLAGS), )
+    $1_RC_FLAGS :=  $(RC_FLAGS) \
+        -D "JDK_FNAME=$$($1_NAME).exe" \
+        -D "JDK_INTERNAL_NAME=$$($1_NAME)" \
+        -D "JDK_FTYPE=0x01L"
+  else ifeq ($$($1_RC_FLAGS), DISABLE)
+    $1_RC_FLAGS :=
+  endif
+
+  $1_RC_FLAGS += $$($1_EXTRA_RC_FLAGS)
+
+  # Since we reuse the rule name ($1), all our arguments will pass through.
+  # We lose in transparency, but gain in brevity in this call...
+  $$(eval $$(call SetupNativeCompilation, $1))
+endef
+
+endif # _JDK_NATIVE_COMPILATION_GMK

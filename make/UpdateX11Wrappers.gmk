@@ -78,7 +78,7 @@ $(eval $(call SetupNativeCompilation, BUILD_DATA_GENERATOR, \
     EXTRA_FILES := $(X11WRAPPERS_OUTPUT)/src/data_generator.c, \
     CFLAGS := $(X_CFLAGS) $(DATA_GENERATOR_INCLUDES) $(CFLAGS_JDKEXE), \
     LDFLAGS := $(LDFLAGS_JDKEXE), \
-    LIBS := $(X_LIBS) -lc, \
+    LIBS := $(X_LIBS), \
     OBJECT_DIR := $(X11WRAPPERS_OUTPUT)/objs, \
 ))
 

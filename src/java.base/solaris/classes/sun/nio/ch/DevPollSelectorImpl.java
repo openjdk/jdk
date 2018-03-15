@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,26 +37,25 @@ import java.util.*;
 class DevPollSelectorImpl
     extends SelectorImpl
 {
-
     // File descriptors used for interrupt
-    protected int fd0;
-    protected int fd1;
+    private final int fd0;
+    private final int fd1;
 
     // The poll object
-    DevPollArrayWrapper pollWrapper;
+    private final DevPollArrayWrapper pollWrapper;
 
     // Maps from file descriptors to keys
-    private Map<Integer,SelectionKeyImpl> fdToKey;
+    private final Map<Integer, SelectionKeyImpl> fdToKey;
 
     // True if this Selector has been closed
-    private boolean closed = false;
+    private boolean closed;
 
     // Lock for close/cleanup
-    private Object closeLock = new Object();
+    private final Object closeLock = new Object();
 
     // Lock for interrupt triggering and clearing
-    private Object interruptLock = new Object();
-    private boolean interruptTriggered = false;
+    private final Object interruptLock = new Object();
+    private boolean interruptTriggered;
 
     /**
      * Package private constructor called by factory method in
@@ -86,11 +85,16 @@ class DevPollSelectorImpl
         }
     }
 
+    private void ensureOpen() {
+        if (closed)
+            throw new ClosedSelectorException();
+    }
+
+    @Override
     protected int doSelect(long timeout)
         throws IOException
     {
-        if (closed)
-            throw new ClosedSelectorException();
+        ensureOpen();
         processDeregisterQueue();
         try {
             begin();
@@ -141,6 +145,7 @@ class DevPollSelectorImpl
         return numKeysUpdated;
     }
 
+    @Override
     protected void implClose() throws IOException {
         if (closed)
             return;
@@ -151,12 +156,9 @@ class DevPollSelectorImpl
             interruptTriggered = true;
         }
 
+        pollWrapper.close();
         FileDispatcherImpl.closeIntFD(fd0);
         FileDispatcherImpl.closeIntFD(fd1);
-
-        pollWrapper.release(fd0);
-        pollWrapper.closeDevPollFD();
-        selectedKeys = null;
 
         // Deregister channels
         Iterator<SelectionKey> i = keys.iterator();
@@ -168,16 +170,16 @@ class DevPollSelectorImpl
                 ((SelChImpl)selch).kill();
             i.remove();
         }
-        fd0 = -1;
-        fd1 = -1;
     }
 
+    @Override
     protected void implRegister(SelectionKeyImpl ski) {
         int fd = IOUtil.fdVal(ski.channel.getFD());
         fdToKey.put(Integer.valueOf(fd), ski);
         keys.add(ski);
     }
 
+    @Override
     protected void implDereg(SelectionKeyImpl ski) throws IOException {
         int i = ski.getIndex();
         assert (i >= 0);
@@ -193,13 +195,14 @@ class DevPollSelectorImpl
             ((SelChImpl)selch).kill();
     }
 
+    @Override
     public void putEventOps(SelectionKeyImpl sk, int ops) {
-        if (closed)
-            throw new ClosedSelectorException();
+        ensureOpen();
         int fd = IOUtil.fdVal(sk.channel.getFD());
         pollWrapper.setInterest(fd, ops);
     }
 
+    @Override
     public Selector wakeup() {
         synchronized (interruptLock) {
             if (!interruptTriggered) {

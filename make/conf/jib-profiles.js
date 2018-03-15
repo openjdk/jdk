@@ -528,6 +528,32 @@ var getJibProfilesProfiles = function (input, common, data) {
         profiles[debugName] = concatObjects(profiles[name],
                                             common.slowdebug_profile_base);
     });
+    // Generate testmake profiles for the main profile of each build host
+    // platform. This profile only runs the makefile tests.
+    // Ant is needed to run the idea project generator test.
+    var testmakeBase = {
+        dependencies: [ "ant" ],
+        environment: {
+            "ANT_HOME": input.get("ant", "install_path") + "/apache-ant-1.7.1"
+        }
+    };
+    [ "linux-x64", "macosx-x64", "solaris-sparcv9", "solaris-x64", "windows-x64"]
+        .forEach(function (name) {
+            var maketestName = name + "-testmake";
+            profiles[maketestName] = concatObjects(profiles[name], testmakeBase);
+            profiles[maketestName].default_make_targets = [ "test-make" ];
+        });
+    // Generate cmp-baseline profiles for each main profile. This profile does
+    // a compare build run with no changes to verify that the compare script
+    // has a clean baseline
+    common.main_profile_names.forEach(function (name) {
+        var cmpBaselineName = name + "-cmp-baseline";
+        profiles[cmpBaselineName] = clone(profiles[name]);
+        // Only compare the images target. This should pressumably be expanded
+        // to include more build targets when possible.
+        profiles[cmpBaselineName].default_make_targets = [ "images" ];
+        profiles[cmpBaselineName].make_args = [ "COMPARE_BUILD=CONF=" ];
+    });
 
     // Profiles for building the zero jvm variant. These are used for verification
     // in JPRT.
@@ -913,7 +939,15 @@ var getJibProfilesDependencies = function (input, common) {
             environment_name: "JIB_JAR",
             environment_value: input.get("jib", "install_path")
                 + "/jib-3.0-SNAPSHOT-distribution/lib/jib-3.0-SNAPSHOT.jar"
-       }
+        },
+
+        ant: {
+            organization: common.organization,
+            ext: "zip",
+            revision: "1.7.1+1.0",
+            configure_args: "",
+        },
+
     };
 
     // Need to add a value for the Visual Studio tools variable to make
