@@ -27,9 +27,8 @@ include LibCommon.gmk
 
 ################################################################################
 
-$(eval $(call SetupNativeCompilation, BUILD_LIBRMI, \
+$(eval $(call SetupJdkLibrary, BUILD_LIBRMI, \
     NAME := rmi, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(TOPDIR)/src/java.rmi/share/native/librmi, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) -I$(SUPPORT_OUTPUTDIR)/headers/java.rmi, \
@@ -38,12 +37,6 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBRMI, \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljvm, \
     LIBS_windows := jvm.lib, \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-         -D "JDK_FNAME=rmi.dll" \
-         -D "JDK_INTERNAL_NAME=rmi" \
-         -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/librmi, \
 ))
 
 $(BUILD_LIBRMI): $(call FindLib, java.base, java)

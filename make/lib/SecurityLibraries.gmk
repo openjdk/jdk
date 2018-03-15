@@ -36,9 +36,8 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
         $(LIBJAVA_HEADER_FLAGS) \
         -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
 
-    $(eval $(call SetupNativeCompilation, BUILD_LIBOSXSECURITY, \
+    $(eval $(call SetupJdkLibrary, BUILD_LIBOSXSECURITY, \
         NAME := osxsecurity, \
-        OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
         SRC := $(LIBOSXSECURITY_DIRS), \
         OPTIMIZATION := LOW, \
         CFLAGS := $(CFLAGS_JDKLIB) \
@@ -53,7 +52,6 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
             -framework CoreServices \
             -framework Security \
             $(JDKLIB_LIBS), \
-        OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libosxsecurity, \
     ))
 
     $(BUILD_LIBOSXSECURITY): $(BUILD_LIBJAVA)

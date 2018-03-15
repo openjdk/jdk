@@ -34,9 +34,8 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       -I$(SUPPORT_OUTPUTDIR)/headers/java.desktop \
       #
 
-  $(eval $(call SetupNativeCompilation, BUILD_LIBOSX, \
+  $(eval $(call SetupJdkLibrary, BUILD_LIBOSX, \
       NAME := osx, \
-      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBOSX_DIRS), \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
@@ -53,7 +52,6 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           -framework JavaRuntimeSupport \
           -framework SystemConfiguration \
           $(JDKLIB_LIBS), \
-      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libosx, \
   ))
 
   TARGETS += $(BUILD_LIBOSX)

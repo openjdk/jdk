@@ -23,7 +23,7 @@
 # questions.
 #
 
-include NativeCompilation.gmk
+include JdkNativeCompilation.gmk
 
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, lib/LibCommon.gmk))

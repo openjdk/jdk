@@ -56,9 +56,8 @@ ifeq ($(OPENJDK_TARGET_OS), aix)
   BUILD_LIBNIO_MAPFILE := $(TOPDIR)/make/mapfiles/libnio/mapfile-$(OPENJDK_TARGET_OS)
 endif
 
-$(eval $(call SetupNativeCompilation, BUILD_LIBNIO, \
+$(eval $(call SetupJdkLibrary, BUILD_LIBNIO, \
     NAME := nio, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(BUILD_LIBNIO_SRC), \
     EXCLUDE_FILES := $(BUILD_LIBNIO_EXFILES), \
     OPTIMIZATION := HIGH, \
@@ -78,12 +77,6 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBNIO, \
     LIBS_windows := jvm.lib ws2_32.lib $(WIN_JAVA_LIB) \
         $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libnet/net.lib \
         advapi32.lib, \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=nio.dll" \
-        -D "JDK_INTERNAL_NAME=nio" \
-        -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libnio, \
 ))
 
 TARGETS += $(BUILD_LIBNIO)

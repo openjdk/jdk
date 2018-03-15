@@ -53,9 +53,8 @@ ifneq ($(findstring $(OPENJDK_TARGET_OS), solaris linux), )
   endif
 endif
 
-$(eval $(call SetupNativeCompilation, BUILD_LIBMANAGEMENT_EXT, \
+$(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT_EXT, \
     NAME := management_ext, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBMANAGEMENT_EXT_SRC), \
     LANG := C, \
     OPTIMIZATION := $(LIBMANAGEMENT_EXT_OPTIMIZATION), \
@@ -67,12 +66,6 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBMANAGEMENT_EXT, \
     LIBS_solaris := -lkstat, \
     LIBS_aix := -lperfstat,\
     LIBS_windows := jvm.lib psapi.lib $(WIN_JAVA_LIB) advapi32.lib, \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=management_ext.dll" \
-        -D "JDK_INTERNAL_NAME=management_ext" \
-        -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libmanagement_ext, \
 ))
 
 $(BUILD_LIBMANAGEMENT_EXT): $(call FindLib, java.base, java)

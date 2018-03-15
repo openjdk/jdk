@@ -29,9 +29,8 @@ include LibCommon.gmk
 
 ifeq ($(OPENJDK_TARGET_OS), solaris)
 
-  $(eval $(call SetupNativeCompilation, BUILD_LIBEXTNET, \
+  $(eval $(call SetupJdkLibrary, BUILD_LIBEXTNET, \
       NAME := extnet, \
-      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(TOPDIR)/src/jdk.net/solaris/native/libextnet, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) -I$(SUPPORT_OUTPUTDIR)/headers/jdk.net, \
@@ -39,7 +38,6 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := -lsocket -ljava, \
-      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libextnet, \
   ))
 
   $(BUILD_LIBEXTNET): $(call FindLib, java.base, java)
@@ -50,9 +48,8 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), linux)
 
-  $(eval $(call SetupNativeCompilation, BUILD_LIBEXTNET, \
+  $(eval $(call SetupJdkLibrary, BUILD_LIBEXTNET, \
       NAME := extnet, \
-      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(TOPDIR)/src/jdk.net/linux/native/libextnet, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) -I$(SUPPORT_OUTPUTDIR)/headers/jdk.net, \
@@ -60,7 +57,6 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := -ljvm -ljava, \
-      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libextnet, \
   ))
 
   $(BUILD_LIBEXTNET): $(call FindLib, java.base, java)

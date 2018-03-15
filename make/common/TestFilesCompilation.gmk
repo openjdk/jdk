@@ -86,7 +86,6 @@ define SetupTestFilesCompilationBody
         INCLUDE_FILES := $$(notdir $$(file)), \
         OBJECT_DIR := $$($1_OUTPUT_DIR)/support/$$($1_PREFIX)$$(name), \
         OUTPUT_DIR := $$($1_OUTPUT_DIR)/$$($1_OUTPUT_SUBDIR), \
-        LANG := C, \
         CFLAGS := $$($1_CFLAGS) $$($1_CFLAGS_$$($1_PREFIX)$$(name)), \
         LDFLAGS := $$($1_LDFLAGS) $$($1_LDFLAGS_$$($1_PREFIX)$$(name)), \
         LIBS := $$($1_LIBS_$$($1_PREFIX)$$(name)), \
