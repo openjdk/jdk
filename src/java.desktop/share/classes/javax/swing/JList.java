@@ -2269,10 +2269,12 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
 
         int iMin = sm.getMinSelectionIndex();
         int iMax = sm.getMaxSelectionIndex();
+        int size = dm.getSize();
 
-        if ((iMin < 0) || (iMax < 0)) {
+        if ((iMin < 0) || (iMax < 0) || (iMin >= size)) {
             return new Object[0];
         }
+        iMax = iMax < size ? iMax : size - 1;
 
         Object[] rvTmp = new Object[1+ (iMax - iMin)];
         int n = 0;
@@ -2304,10 +2306,12 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
 
         int iMin = sm.getMinSelectionIndex();
         int iMax = sm.getMaxSelectionIndex();
+        int size = dm.getSize();
 
-        if ((iMin < 0) || (iMax < 0)) {
+        if ((iMin < 0) || (iMax < 0) || (iMin >= size)) {
             return Collections.emptyList();
         }
+        iMax = iMax < size ? iMax : size - 1;
 
         List<E> selectedItems = new ArrayList<E>();
         for(int i = iMin; i <= iMax; i++) {
@@ -2353,7 +2357,8 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
     @BeanProperty(bound = false)
     public E getSelectedValue() {
         int i = getMinSelectionIndex();
-        return (i == -1) ? null : getModel().getElementAt(i);
+        return ((i == -1) || (i >= getModel().getSize())) ? null :
+                getModel().getElementAt(i);
     }
 
 
