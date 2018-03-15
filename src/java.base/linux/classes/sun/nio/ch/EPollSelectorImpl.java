@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,16 +37,15 @@ import java.util.*;
 class EPollSelectorImpl
     extends SelectorImpl
 {
-
     // File descriptors used for interrupt
-    protected int fd0;
-    protected int fd1;
+    private final int fd0;
+    private final int fd1;
 
     // The poll object
-    EPollArrayWrapper pollWrapper;
+    private final EPollArrayWrapper pollWrapper;
 
     // Maps from file descriptors to keys
-    private Map<Integer,SelectionKeyImpl> fdToKey;
+    private final Map<Integer, SelectionKeyImpl> fdToKey;
 
     // True if this Selector has been closed
     private volatile boolean closed;
@@ -65,8 +64,7 @@ class EPollSelectorImpl
         fd0 = (int) (pipeFds >>> 32);
         fd1 = (int) pipeFds;
         try {
-            pollWrapper = new EPollArrayWrapper();
-            pollWrapper.initInterrupt(fd0, fd1);
+            pollWrapper = new EPollArrayWrapper(fd0, fd1);
             fdToKey = new HashMap<>();
         } catch (Throwable t) {
             try {
@@ -83,59 +81,64 @@ class EPollSelectorImpl
         }
     }
 
-    protected int doSelect(long timeout) throws IOException {
+    private void ensureOpen() {
         if (closed)
             throw new ClosedSelectorException();
+    }
+
+    @Override
+    protected int doSelect(long timeout) throws IOException {
+        ensureOpen();
+        int numEntries;
         processDeregisterQueue();
         try {
             begin();
-            pollWrapper.poll(timeout);
+            numEntries = pollWrapper.poll(timeout);
         } finally {
             end();
         }
         processDeregisterQueue();
-        int numKeysUpdated = updateSelectedKeys();
-        if (pollWrapper.interrupted()) {
-            // Clear the wakeup pipe
-            pollWrapper.putEventOps(pollWrapper.interruptedIndex(), 0);
-            synchronized (interruptLock) {
-                pollWrapper.clearInterrupted();
-                IOUtil.drain(fd0);
-                interruptTriggered = false;
-            }
-        }
-        return numKeysUpdated;
+        return updateSelectedKeys(numEntries);
     }
 
     /**
      * Update the keys whose fd's have been selected by the epoll.
      * Add the ready keys to the ready queue.
      */
-    private int updateSelectedKeys() {
-        int entries = pollWrapper.updated;
+    private int updateSelectedKeys(int numEntries) throws IOException {
+        boolean interrupted = false;
         int numKeysUpdated = 0;
-        for (int i=0; i<entries; i++) {
+        for (int i=0; i<numEntries; i++) {
             int nextFD = pollWrapper.getDescriptor(i);
-            SelectionKeyImpl ski = fdToKey.get(Integer.valueOf(nextFD));
-            // ski is null in the case of an interrupt
-            if (ski != null) {
-                int rOps = pollWrapper.getEventOps(i);
-                if (selectedKeys.contains(ski)) {
-                    if (ski.channel.translateAndSetReadyOps(rOps, ski)) {
-                        numKeysUpdated++;
-                    }
-                } else {
-                    ski.channel.translateAndSetReadyOps(rOps, ski);
-                    if ((ski.nioReadyOps() & ski.nioInterestOps()) != 0) {
-                        selectedKeys.add(ski);
-                        numKeysUpdated++;
+            if (nextFD == fd0) {
+                interrupted = true;
+            } else {
+                SelectionKeyImpl ski = fdToKey.get(Integer.valueOf(nextFD));
+                if (ski != null) {
+                    int rOps = pollWrapper.getEventOps(i);
+                    if (selectedKeys.contains(ski)) {
+                        if (ski.channel.translateAndSetReadyOps(rOps, ski)) {
+                            numKeysUpdated++;
+                        }
+                    } else {
+                        ski.channel.translateAndSetReadyOps(rOps, ski);
+                        if ((ski.nioReadyOps() & ski.nioInterestOps()) != 0) {
+                            selectedKeys.add(ski);
+                            numKeysUpdated++;
+                        }
                     }
                 }
             }
         }
+
+        if (interrupted) {
+            clearInterrupt();
+        }
+
         return numKeysUpdated;
     }
 
+    @Override
     protected void implClose() throws IOException {
         if (closed)
             return;
@@ -146,12 +149,9 @@ class EPollSelectorImpl
             interruptTriggered = true;
         }
 
+        pollWrapper.close();
         FileDispatcherImpl.closeIntFD(fd0);
         FileDispatcherImpl.closeIntFD(fd1);
-
-        pollWrapper.closeEPollFD();
-        // it is possible
-        selectedKeys = null;
 
         // Deregister channels
         Iterator<SelectionKey> i = keys.iterator();
@@ -163,14 +163,11 @@ class EPollSelectorImpl
                 ((SelChImpl)selch).kill();
             i.remove();
         }
-
-        fd0 = -1;
-        fd1 = -1;
     }
 
+    @Override
     protected void implRegister(SelectionKeyImpl ski) {
-        if (closed)
-            throw new ClosedSelectorException();
+        ensureOpen();
         SelChImpl ch = ski.channel;
         int fd = Integer.valueOf(ch.getFDVal());
         fdToKey.put(fd, ski);
@@ -178,6 +175,7 @@ class EPollSelectorImpl
         keys.add(ski);
     }
 
+    @Override
     protected void implDereg(SelectionKeyImpl ski) throws IOException {
         assert (ski.getIndex() >= 0);
         SelChImpl ch = ski.channel;
@@ -187,19 +185,20 @@ class EPollSelectorImpl
         ski.setIndex(-1);
         keys.remove(ski);
         selectedKeys.remove(ski);
-        deregister((AbstractSelectionKey)ski);
+        deregister(ski);
         SelectableChannel selch = ski.channel();
         if (!selch.isOpen() && !selch.isRegistered())
             ((SelChImpl)selch).kill();
     }
 
+    @Override
     public void putEventOps(SelectionKeyImpl ski, int ops) {
-        if (closed)
-            throw new ClosedSelectorException();
+        ensureOpen();
         SelChImpl ch = ski.channel;
         pollWrapper.setInterest(ch.getFDVal(), ops);
     }
 
+    @Override
     public Selector wakeup() {
         synchronized (interruptLock) {
             if (!interruptTriggered) {
@@ -208,5 +207,12 @@ class EPollSelectorImpl
             }
         }
         return this;
+    }
+
+    private void clearInterrupt() throws IOException {
+        synchronized (interruptLock) {
+            IOUtil.drain(fd0);
+            interruptTriggered = false;
+        }
     }
 }
