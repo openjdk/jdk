@@ -1812,8 +1812,8 @@ Klass* Dependencies::check_has_no_finalizable_subclasses(Klass* ctxk, KlassDepCh
 }
 
 Klass* Dependencies::check_call_site_target_value(oop call_site, oop method_handle, CallSiteDepChange* changes) {
-  assert(!oopDesc::is_null(call_site), "sanity");
-  assert(!oopDesc::is_null(method_handle), "sanity");
+  assert(call_site != NULL, "sanity");
+  assert(method_handle != NULL, "sanity");
   assert(call_site->is_a(SystemDictionary::CallSite_klass()),     "sanity");
 
   if (changes == NULL) {

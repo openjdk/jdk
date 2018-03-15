@@ -38,6 +38,7 @@
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/virtualspace.hpp"
+#include "oops/access.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/bitMap.hpp"
@@ -1320,7 +1321,7 @@ class PushAndMarkVerifyClosure: public MetadataAwareOopClosure {
  protected:
   void do_oop(oop p);
   template <class T> inline void do_oop_work(T *p) {
-    oop obj = oopDesc::load_decode_heap_oop(p);
+    oop obj = RawAccess<>::oop_load(p);
     do_oop(obj);
   }
  public:

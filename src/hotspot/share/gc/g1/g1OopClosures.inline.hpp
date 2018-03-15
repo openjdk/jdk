@@ -34,6 +34,8 @@
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "runtime/prefetch.inline.hpp"
 
 template <class T>
@@ -49,9 +51,9 @@ inline void G1ScanClosureBase::prefetch_and_push(T* p, const oop obj) {
   // slightly paranoid test; I'm trying to catch potential
   // problems before we go into push_on_queue to know where the
   // problem is coming from
-  assert((obj == oopDesc::load_decode_heap_oop(p)) ||
+  assert((obj == RawAccess<>::oop_load(p)) ||
          (obj->is_forwarded() &&
-         obj->forwardee() == oopDesc::load_decode_heap_oop(p)),
+         obj->forwardee() == RawAccess<>::oop_load(p)),
          "p should still be pointing to obj or to its forwardee");
 
   _par_scan_state->push_on_queue(p);
@@ -66,12 +68,12 @@ inline void G1ScanClosureBase::handle_non_cset_obj_common(InCSetState const stat
 
 template <class T>
 inline void G1ScanEvacuatedObjClosure::do_oop_nv(T* p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
+  T heap_oop = RawAccess<>::oop_load(p);
 
-  if (oopDesc::is_null(heap_oop)) {
+  if (CompressedOops::is_null(heap_oop)) {
     return;
   }
-  oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+  oop obj = CompressedOops::decode_not_null(heap_oop);
   const InCSetState state = _g1->in_cset_state(obj);
   if (state.is_in_cset()) {
     prefetch_and_push(p, obj);
@@ -93,10 +95,10 @@ inline void G1CMOopClosure::do_oop_nv(T* p) {
 template <class T>
 inline void G1RootRegionScanClosure::do_oop_nv(T* p) {
   T heap_oop = RawAccess<MO_VOLATILE>::oop_load(p);
-  if (oopDesc::is_null(heap_oop)) {
+  if (CompressedOops::is_null(heap_oop)) {
     return;
   }
-  oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+  oop obj = CompressedOops::decode_not_null(heap_oop);
   _cm->mark_in_next_bitmap(obj);
 }
 
@@ -124,10 +126,10 @@ inline static void check_obj_during_refinement(T* p, oop const obj) {
 template <class T>
 inline void G1ConcurrentRefineOopClosure::do_oop_nv(T* p) {
   T o = RawAccess<MO_VOLATILE>::oop_load(p);
-  if (oopDesc::is_null(o)) {
+  if (CompressedOops::is_null(o)) {
     return;
   }
-  oop obj = oopDesc::decode_heap_oop_not_null(o);
+  oop obj = CompressedOops::decode_not_null(o);
 
   check_obj_during_refinement(p, obj);
 
@@ -150,11 +152,11 @@ inline void G1ConcurrentRefineOopClosure::do_oop_nv(T* p) {
 
 template <class T>
 inline void G1ScanObjsDuringUpdateRSClosure::do_oop_nv(T* p) {
-  T o = oopDesc::load_heap_oop(p);
-  if (oopDesc::is_null(o)) {
+  T o = RawAccess<>::oop_load(p);
+  if (CompressedOops::is_null(o)) {
     return;
   }
-  oop obj = oopDesc::decode_heap_oop_not_null(o);
+  oop obj = CompressedOops::decode_not_null(o);
 
   check_obj_during_refinement(p, obj);
 
@@ -176,11 +178,11 @@ inline void G1ScanObjsDuringUpdateRSClosure::do_oop_nv(T* p) {
 
 template <class T>
 inline void G1ScanObjsDuringScanRSClosure::do_oop_nv(T* p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (oopDesc::is_null(heap_oop)) {
+  T heap_oop = RawAccess<>::oop_load(p);
+  if (CompressedOops::is_null(heap_oop)) {
     return;
   }
-  oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+  oop obj = CompressedOops::decode_not_null(heap_oop);
 
   const InCSetState state = _g1->in_cset_state(obj);
   if (state.is_in_cset()) {
@@ -219,13 +221,13 @@ void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
 template <G1Barrier barrier, G1Mark do_mark_object>
 template <class T>
 void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
+  T heap_oop = RawAccess<>::oop_load(p);
 
-  if (oopDesc::is_null(heap_oop)) {
+  if (CompressedOops::is_null(heap_oop)) {
     return;
   }
 
-  oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+  oop obj = CompressedOops::decode_not_null(heap_oop);
 
   assert(_worker_id == _par_scan_state->worker_id(), "sanity");
 
@@ -239,7 +241,7 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
       forwardee = _par_scan_state->copy_to_survivor_space(state, obj, m);
     }
     assert(forwardee != NULL, "forwardee should not be NULL");
-    oopDesc::encode_store_heap_oop(p, forwardee);
+    RawAccess<>::oop_store(p, forwardee);
     if (do_mark_object != G1MarkNone && forwardee != obj) {
       // If the object is self-forwarded we don't need to explicitly
       // mark it, the evacuation failure protocol will do so.

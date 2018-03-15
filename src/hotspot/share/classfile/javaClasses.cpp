@@ -3504,7 +3504,7 @@ void java_lang_boxing_object::print(BasicType type, jvalue* value, outputStream*
 // Support for java_lang_ref_Reference
 
 bool java_lang_ref_Reference::is_referent_field(oop obj, ptrdiff_t offset) {
-  assert(!oopDesc::is_null(obj), "sanity");
+  assert(obj != NULL, "sanity");
   if (offset != java_lang_ref_Reference::referent_offset) {
     return false;
   }
@@ -4131,7 +4131,7 @@ int java_lang_System::err_offset_in_bytes() { return static_err_offset; }
 bool java_lang_System::has_security_manager() {
   InstanceKlass* ik = SystemDictionary::System_klass();
   oop base = ik->static_field_base_raw();
-  return !oopDesc::is_null(base->obj_field(static_security_offset));
+  return base->obj_field(static_security_offset) != NULL;
 }
 
 int java_lang_Class::_klass_offset;

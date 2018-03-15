@@ -39,6 +39,8 @@
 #include "logging/logStream.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/access.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.inline.hpp"
@@ -325,9 +327,9 @@ class VerifyStrongCodeRootOopClosure: public OopClosure {
   bool _has_oops_in_region;
 
   template <class T> void do_oop_work(T* p) {
-    T heap_oop = oopDesc::load_heap_oop(p);
-    if (!oopDesc::is_null(heap_oop)) {
-      oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+    T heap_oop = RawAccess<>::oop_load(p);
+    if (!CompressedOops::is_null(heap_oop)) {
+      oop obj = CompressedOops::decode_not_null(heap_oop);
 
       // Note: not all the oops embedded in the nmethod are in the
       // current region. We only look at those which are.
@@ -506,10 +508,10 @@ public:
 
   template <class T>
   void verify_liveness(T* p) {
-    T heap_oop = oopDesc::load_heap_oop(p);
+    T heap_oop = RawAccess<>::oop_load(p);
     Log(gc, verify) log;
-    if (!oopDesc::is_null(heap_oop)) {
-      oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+    if (!CompressedOops::is_null(heap_oop)) {
+      oop obj = CompressedOops::decode_not_null(heap_oop);
       bool failed = false;
       if (!_g1h->is_in_closed_subset(obj) || _g1h->is_obj_dead_cond(obj, _vo)) {
         MutexLockerEx x(ParGCRareEvent_lock,
@@ -562,10 +564,10 @@ public:
 
   template <class T>
   void verify_remembered_set(T* p) {
-    T heap_oop = oopDesc::load_heap_oop(p);
+    T heap_oop = RawAccess<>::oop_load(p);
     Log(gc, verify) log;
-    if (!oopDesc::is_null(heap_oop)) {
-      oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+    if (!CompressedOops::is_null(heap_oop)) {
+      oop obj = CompressedOops::decode_not_null(heap_oop);
       HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
       HeapRegion* to = _g1h->heap_region_containing(obj);
       if (from != NULL && to != NULL &&

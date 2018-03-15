@@ -447,10 +447,6 @@ protected:
     }
   }
 
-  // Is an oop/narrowOop null or subtype of this Klass?
-  template <typename T>
-  bool is_instanceof_or_null(T element);
-
   bool search_secondary_supers(Klass* k) const;
 
   // Find LCA in class hierarchy

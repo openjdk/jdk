@@ -33,6 +33,7 @@
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "logging/log.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 
 inline PSPromotionManager* PSPromotionManager::manager_array(uint index) {
@@ -49,14 +50,14 @@ inline void PSPromotionManager::push_depth(T* p) {
 template <class T>
 inline void PSPromotionManager::claim_or_forward_internal_depth(T* p) {
   if (p != NULL) { // XXX: error if p != NULL here
-    oop o = oopDesc::load_decode_heap_oop_not_null(p);
+    oop o = RawAccess<OOP_NOT_NULL>::oop_load(p);
     if (o->is_forwarded()) {
       o = o->forwardee();
       // Card mark
       if (PSScavenge::is_obj_in_young(o)) {
         PSScavenge::card_table()->inline_write_ref_field_gc(p, o);
       }
-      oopDesc::encode_store_heap_oop_not_null(p, o);
+      RawAccess<OOP_NOT_NULL>::oop_store(p, o);
     } else {
       push_depth(p);
     }
@@ -278,7 +279,7 @@ template <class T, bool promote_immediately>
 inline void PSPromotionManager::copy_and_push_safe_barrier(T* p) {
   assert(should_scavenge(p, true), "revisiting object?");
 
-  oop o = oopDesc::load_decode_heap_oop_not_null(p);
+  oop o = RawAccess<OOP_NOT_NULL>::oop_load(p);
   oop new_obj = o->is_forwarded()
         ? o->forwardee()
         : copy_to_survivor_space<promote_immediately>(o);
@@ -291,7 +292,7 @@ inline void PSPromotionManager::copy_and_push_safe_barrier(T* p) {
                       new_obj->klass()->internal_name(), p2i((void *)o), p2i((void *)new_obj), new_obj->size());
   }
 
-  oopDesc::encode_store_heap_oop_not_null(p, new_obj);
+  RawAccess<OOP_NOT_NULL>::oop_store(p, new_obj);
 
   // We cannot mark without test, as some code passes us pointers
   // that are outside the heap. These pointers are either from roots
