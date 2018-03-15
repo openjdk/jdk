@@ -25,6 +25,7 @@
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "code/scopeDesc.hpp"
+#include "interpreter/linkResolver.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/generateOopMap.hpp"

@@ -65,6 +65,7 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/threadCritical.hpp"
 #include "utilities/align.hpp"
+#include "utilities/copy.hpp"
 #include "utilities/events.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"

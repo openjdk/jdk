@@ -26,8 +26,7 @@
 #define SHARE_VM_OOPS_OOP_INLINE_HPP
 
 #include "gc/shared/ageTable.hpp"
-#include "gc/shared/collectedHeap.inline.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/generation.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/arrayKlass.hpp"

@@ -602,13 +602,13 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Support for PromotionFailureALot.  Return true if it's time to cause a
   // promotion failure.  The no-argument version uses
   // this->_promotion_failure_alot_count as the counter.
-  inline bool promotion_should_fail(volatile size_t* count);
-  inline bool promotion_should_fail();
+  bool promotion_should_fail(volatile size_t* count);
+  bool promotion_should_fail();
 
   // Reset the PromotionFailureALot counters.  Should be called at the end of a
   // GC in which promotion failure occurred.
-  inline void reset_promotion_should_fail(volatile size_t* count);
-  inline void reset_promotion_should_fail();
+  void reset_promotion_should_fail(volatile size_t* count);
+  void reset_promotion_should_fail();
 #endif  // #ifndef PRODUCT
 
 #ifdef ASSERT
