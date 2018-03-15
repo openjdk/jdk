@@ -43,7 +43,7 @@ public class UnixSystem {
      * the native library to access the underlying system information.
      */
     public UnixSystem() {
-        System.loadLibrary("jaas_unix");
+        System.loadLibrary("jaas");
         getUnixInfo();
     }
 
