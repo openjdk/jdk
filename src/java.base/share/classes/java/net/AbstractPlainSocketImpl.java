@@ -45,8 +45,7 @@ import sun.net.ResourceManager;
  *
  * @author  Steven B. Byrne
  */
-abstract class AbstractPlainSocketImpl extends SocketImpl
-{
+abstract class AbstractPlainSocketImpl extends SocketImpl {
     /* instance variable for SO_TIMEOUT */
     int timeout;   // timeout in millisec
     // traffic class
@@ -68,11 +67,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
     protected boolean closePending = false;
 
     /* indicates connection reset state */
-    private int CONNECTION_NOT_RESET = 0;
-    private int CONNECTION_RESET_PENDING = 1;
-    private int CONNECTION_RESET = 2;
-    private int resetState;
-    private final Object resetLock = new Object();
+    private volatile boolean connectionReset;
 
    /* whether this Socket is a stream (TCP) socket or not (UDP)
     */
@@ -541,18 +536,8 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
         int n = 0;
         try {
             n = socketAvailable();
-            if (n == 0 && isConnectionResetPending()) {
-                setConnectionReset();
-            }
         } catch (ConnectionResetException exc1) {
-            setConnectionResetPending();
-            try {
-                n = socketAvailable();
-                if (n == 0) {
-                    setConnectionReset();
-                }
-            } catch (ConnectionResetException exc2) {
-            }
+            setConnectionReset();
         }
         return n;
     }
@@ -680,31 +665,12 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
         }
     }
 
-    public boolean isConnectionReset() {
-        synchronized (resetLock) {
-            return (resetState == CONNECTION_RESET);
-        }
+    boolean isConnectionReset() {
+        return connectionReset;
     }
 
-    public boolean isConnectionResetPending() {
-        synchronized (resetLock) {
-            return (resetState == CONNECTION_RESET_PENDING);
-        }
-    }
-
-    public void setConnectionReset() {
-        synchronized (resetLock) {
-            resetState = CONNECTION_RESET;
-        }
-    }
-
-    public void setConnectionResetPending() {
-        synchronized (resetLock) {
-            if (resetState == CONNECTION_NOT_RESET) {
-                resetState = CONNECTION_RESET_PENDING;
-            }
-        }
-
+    void setConnectionReset() {
+        connectionReset = true;
     }
 
     /*
