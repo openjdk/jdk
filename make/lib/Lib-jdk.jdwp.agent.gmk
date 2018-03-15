@@ -36,9 +36,8 @@ LIBDT_SOCKET_CPPFLAGS := \
     -I$(TOPDIR)/src/jdk.jdwp.agent/share/native/include \
     #
 
-$(eval $(call SetupNativeCompilation, BUILD_LIBDT_SOCKET, \
+$(eval $(call SetupJdkLibrary, BUILD_LIBDT_SOCKET, \
     NAME := dt_socket, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBDT_SOCKET_SRC), \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) -DUSE_MMAP \
@@ -48,14 +47,8 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBDT_SOCKET, \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_windows := -export:jdwpTransport_OnLoad, \
     LIBS_linux := -lpthread, \
-    LIBS_solaris := -lnsl -lsocket -lc, \
+    LIBS_solaris := -lnsl -lsocket, \
     LIBS_windows := $(JDKLIB_LIBS) ws2_32.lib, \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=dt_socket.dll" \
-        -D "JDK_INTERNAL_NAME=dt_socket" \
-        -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libdt_socket, \
 ))
 
 $(BUILD_LIBDT_SOCKET): $(call FindLib, java.base, java)
@@ -73,9 +66,8 @@ LIBJDWP_CPPFLAGS := \
     $(addprefix -I, $(LIBJDWP_SRC))
 
 # JDWP_LOGGING causes log messages to be compiled into the library.
-$(eval $(call SetupNativeCompilation, BUILD_LIBJDWP, \
+$(eval $(call SetupJdkLibrary, BUILD_LIBJDWP, \
     NAME := jdwp, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBJDWP_SRC), \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) -DJDWP_LOGGING \
@@ -89,12 +81,6 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBJDWP, \
     LIBS_solaris := $(LIBDL), \
     LIBS_macosx := -liconv, \
     LIBS_aix := -liconv, \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=jdwp.dll" \
-        -D "JDK_INTERNAL_NAME=jdwp" \
-        -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjdwp, \
 ))
 
 $(BUILD_LIBJDWP): $(call FindLib, java.base, java)

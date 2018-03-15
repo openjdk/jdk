@@ -84,7 +84,7 @@ public interface JavaLangInvokeAccess {
     /**
      * Returns a {@code byte[]} representation of {@code BoundMethodHandle}
      * species class implementing the signature defined by {@code types}. Used
-     * by GenerateBMHClassesPlugin to enable generation of such classes during
+     * by GenerateJLIClassesPlugin to enable generation of such classes during
      * the jlink phase. Should do some added validation since this string may be
      * user provided.
      */
@@ -99,8 +99,11 @@ public interface JavaLangInvokeAccess {
 
     /**
      * Returns a {@code byte[]} representation of a class implementing
-     * the invoker forms for the set of supplied {@code methodTypes}.
+     * the invoker forms for the set of supplied {@code invokerMethodTypes}
+     * and {@code callSiteMethodTypes}.
      */
     byte[] generateInvokersHolderClassBytes(String className,
-            MethodType[] methodTypes);
+            MethodType[] invokerMethodTypes,
+            MethodType[] callSiteMethodTypes);
+
 }

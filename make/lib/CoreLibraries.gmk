@@ -108,9 +108,8 @@ ifneq ($(findstring $(OPENJDK_TARGET_OS), solaris linux), )
   endif
 endif
 
-$(eval $(call SetupNativeCompilation, BUILD_LIBVERIFY, \
+$(eval $(call SetupJdkLibrary, BUILD_LIBVERIFY, \
     NAME := verify, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(TOPDIR)/src/java.base/share/native/libverify, \
     OPTIMIZATION := $(LIBVERIFY_OPTIMIZATION), \
     CFLAGS := $(CFLAGS_JDKLIB), \
@@ -119,15 +118,9 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBVERIFY, \
     MAPFILE := $(TOPDIR)/make/mapfiles/libverify/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LIBS_unix := -ljvm -lc, \
+    LIBS_unix := -ljvm, \
     LIBS_windows := jvm.lib, \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=verify.dll" \
-        -D "JDK_INTERNAL_NAME=verify" \
-        -D "JDK_FTYPE=0x2L", \
     REORDER := $(BUILD_LIBVERIFY_REORDER), \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libverify, \
 ))
 
 TARGETS += $(BUILD_LIBVERIFY)
@@ -156,9 +149,8 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
   endif
 endif
 
-$(eval $(call SetupNativeCompilation, BUILD_LIBJAVA, \
+$(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
     NAME := java, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBJAVA_SRC_DIRS), \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(CFLAGS_JDKLIB) \
@@ -177,7 +169,7 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBJAVA, \
         -export:getErrorString -delayload:shell32.dll, \
     LIBS_unix := -ljvm -lverify, \
     LIBS_linux := $(LIBDL) $(BUILD_LIBFDLIBM), \
-    LIBS_solaris := -lsocket -lnsl -lscf $(LIBDL) $(BUILD_LIBFDLIBM) -lc, \
+    LIBS_solaris := -lsocket -lnsl -lscf $(LIBDL) $(BUILD_LIBFDLIBM), \
     LIBS_aix := $(LIBDL) $(BUILD_LIBFDLIBM) $(LIBM),\
     LIBS_macosx := -lfdlibm \
         -framework CoreFoundation \
@@ -186,13 +178,7 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBJAVA, \
     LIBS_windows := jvm.lib $(BUILD_LIBFDLIBM) $(WIN_VERIFY_LIB) \
         shell32.lib delayimp.lib \
         advapi32.lib version.lib, \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=java.dll" \
-        -D "JDK_INTERNAL_NAME=java" \
-        -D "JDK_FTYPE=0x2L", \
     REORDER := $(LIBJAVA_REORDER), \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjava, \
 ))
 
 TARGETS += $(BUILD_LIBJAVA)
@@ -219,9 +205,8 @@ ifeq ($(LIBZIP_CAN_USE_MMAP), true)
   BUILD_LIBZIP_MMAP := -DUSE_MMAP
 endif
 
-$(eval $(call SetupNativeCompilation, BUILD_LIBZIP, \
+$(eval $(call SetupJdkLibrary, BUILD_LIBZIP, \
     NAME := zip, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     OPTIMIZATION := LOW, \
     SRC := $(TOPDIR)/src/java.base/share/native/libzip, \
     EXCLUDES := $(LIBZIP_EXCLUDES), \
@@ -240,14 +225,7 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBZIP, \
         -export:ZIP_ReadEntry -export:ZIP_GetNextEntry \
         -export:ZIP_InflateFully -export:ZIP_CRC32 -export:ZIP_FreeEntry, \
     LIBS_unix := -ljvm -ljava $(LIBZ_LIBS), \
-    LIBS_solaris := -lc, \
     LIBS_windows := jvm.lib $(WIN_JAVA_LIB), \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=zip.dll" \
-        -D "JDK_INTERNAL_NAME=zip" \
-        -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libzip, \
 ))
 
 $(BUILD_LIBZIP): $(BUILD_LIBJAVA)
@@ -263,10 +241,9 @@ JIMAGELIB_CPPFLAGS := \
     -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
     #
 
-$(eval $(call SetupNativeCompilation, BUILD_LIBJIMAGE, \
+$(eval $(call SetupJdkLibrary, BUILD_LIBJIMAGE, \
     NAME := jimage, \
     TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     OPTIMIZATION := LOW, \
     SRC := $(TOPDIR)/src/java.base/share/native/libjimage \
         $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjimage, \
@@ -283,15 +260,8 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBJIMAGE, \
         -export:JIMAGE_FindResource -export:JIMAGE_GetResource \
         -export:JIMAGE_ResourceIterator -export:JIMAGE_ResourcePath, \
     LIBS_unix := -ljvm -ldl $(LIBCXX), \
-    LIBS_solaris := -lc, \
     LIBS_macosx := -lc++, \
     LIBS_windows := jvm.lib, \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=jimage.dll" \
-        -D "JDK_INTERNAL_NAME=jimage" \
-        -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjimage, \
 ))
 
 $(BUILD_LIBJIMAGE): $(BUILD_LIBJAVA)
@@ -359,7 +329,7 @@ ifneq ($(USE_EXTERNAL_LIBZ), true)
       )
 endif
 
-$(eval $(call SetupNativeCompilation, BUILD_LIBJLI, \
+$(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \
     NAME := jli, \
     OUTPUT_DIR := $(LIBJLI_OUTPUT_DIR), \
     SRC := $(LIBJLI_SRC_DIRS), \
@@ -397,17 +367,11 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBJLI, \
         -export:JLI_AddArgsFromEnvVar \
         -export:JLI_GetAppArgIndex, \
     LIBS_unix := $(LIBZ_LIBS), \
-    LIBS_linux := $(LIBDL) -lc -lpthread, \
-    LIBS_solaris := $(LIBDL) -lc, \
+    LIBS_linux := $(LIBDL) -lpthread, \
+    LIBS_solaris := $(LIBDL), \
     LIBS_aix := $(LIBDL),\
     LIBS_macosx := -framework Cocoa -framework Security -framework ApplicationServices, \
     LIBS_windows := advapi32.lib comctl32.lib user32.lib, \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=jli.dll" \
-        -D "JDK_INTERNAL_NAME=jli" \
-        -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli, \
 ))
 
 TARGETS += $(BUILD_LIBJLI)

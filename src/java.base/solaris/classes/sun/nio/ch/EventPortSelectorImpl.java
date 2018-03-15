@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,14 +42,14 @@ class EventPortSelectorImpl
     private final EventPortWrapper pollWrapper;
 
     // Maps from file descriptors to keys
-    private Map<Integer,SelectionKeyImpl> fdToKey;
+    private final Map<Integer, SelectionKeyImpl> fdToKey;
 
     // True if this Selector has been closed
-    private boolean closed = false;
+    private boolean closed;
 
     // Lock for interrupt triggering and clearing
     private final Object interruptLock = new Object();
-    private boolean interruptTriggered = false;
+    private boolean interruptTriggered;
 
     /**
      * Package private constructor called by factory method in
@@ -61,9 +61,14 @@ class EventPortSelectorImpl
         fdToKey = new HashMap<>();
     }
 
-    protected int doSelect(long timeout) throws IOException {
+    private void ensureOpen() {
         if (closed)
             throw new ClosedSelectorException();
+    }
+
+    @Override
+    protected int doSelect(long timeout) throws IOException {
+        ensureOpen();
         processDeregisterQueue();
         int entries;
         try {
@@ -105,6 +110,7 @@ class EventPortSelectorImpl
         return numKeysUpdated;
     }
 
+    @Override
     protected void implClose() throws IOException {
         if (closed)
             return;
@@ -116,7 +122,6 @@ class EventPortSelectorImpl
         }
 
         pollWrapper.close();
-        selectedKeys = null;
 
         // Deregister channels
         Iterator<SelectionKey> i = keys.iterator();
@@ -130,12 +135,14 @@ class EventPortSelectorImpl
         }
     }
 
+    @Override
     protected void implRegister(SelectionKeyImpl ski) {
         int fd = IOUtil.fdVal(ski.channel.getFD());
         fdToKey.put(Integer.valueOf(fd), ski);
         keys.add(ski);
     }
 
+    @Override
     protected void implDereg(SelectionKeyImpl ski) throws IOException {
         int i = ski.getIndex();
         assert (i >= 0);
@@ -151,13 +158,14 @@ class EventPortSelectorImpl
             ((SelChImpl)selch).kill();
     }
 
+    @Override
     public void putEventOps(SelectionKeyImpl sk, int ops) {
-        if (closed)
-            throw new ClosedSelectorException();
+        ensureOpen();
         int fd = sk.channel.getFDVal();
         pollWrapper.setInterest(fd, ops);
     }
 
+    @Override
     public Selector wakeup() {
         synchronized (interruptLock) {
             if (!interruptTriggered) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ class KQueue {
 
     // flags
     static final int EV_ADD     = 0x0001;
+    static final int EV_DELETE  = 0x0002;
     static final int EV_ONESHOT = 0x0010;
     static final int EV_CLEAR   = 0x0020;
 

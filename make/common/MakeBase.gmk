@@ -1027,6 +1027,12 @@ FindLibDirForModule = \
     $(SUPPORT_OUTPUTDIR)/modules_libs/$(strip $1)
 
 ################################################################################
+# Find executable dir for module
+# Param 1 - module name
+FindExecutableDirForModule = \
+    $(SUPPORT_OUTPUTDIR)/modules_cmds/$(strip $1)
+
+################################################################################
 # Return a string suitable for use after a -classpath or --module-path option. It
 # will be correct and safe to use on all platforms. Arguments are given as space
 # separate classpath entries. Safe for multiple nested calls.

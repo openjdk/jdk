@@ -103,16 +103,15 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   LIB_SETUP_SOLARIS_STLPORT
 
   if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-    ALWAYS_LIBS="-lc"
+    GLOBAL_LIBS="-lc"
   else
-    ALWAYS_LIBS=""
+    GLOBAL_LIBS=""
   fi
 
   BASIC_JDKLIB_LIBS=""
   if test "x$TOOLCHAIN_TYPE" != xmicrosoft; then
     BASIC_JDKLIB_LIBS="-ljava -ljvm"
   fi
-  BASIC_JDKLIB_LIBS="$BASIC_JDKLIB_LIBS $ALWAYS_LIBS"
 
   # Math library
   if test "x$OPENJDK_TARGET_OS" != xsolaris; then
@@ -150,7 +149,6 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
         comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib \
         wsock32.lib winmm.lib version.lib psapi.lib"
   fi
-  BASIC_JVM_LIBS="$BASIC_JVM_LIBS $ALWAYS_LIBS"
 
   JDKLIB_LIBS="$BASIC_JDKLIB_LIBS"
   JDKEXE_LIBS=""
@@ -163,6 +161,7 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   AC_SUBST(JVM_LIBS)
   AC_SUBST(OPENJDK_BUILD_JDKLIB_LIBS)
   AC_SUBST(OPENJDK_BUILD_JVM_LIBS)
+  AC_SUBST(GLOBAL_LIBS)
 ])
 
 ################################################################################

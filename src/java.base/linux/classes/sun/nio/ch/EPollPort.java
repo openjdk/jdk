@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ final class EPollPort
         try {
             socketpair(sv);
             // register one end with epoll
-            epollCtl(epfd, EPOLL_CTL_ADD, sv[0], Net.POLLIN);
+            epollCtl(epfd, EPOLL_CTL_ADD, sv[0], EPOLLIN);
         } catch (IOException x) {
             close0(epfd);
             throw x;

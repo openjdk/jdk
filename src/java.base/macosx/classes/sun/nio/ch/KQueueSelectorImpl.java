@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,39 +26,38 @@
 /*
  * KQueueSelectorImpl.java
  * Implementation of Selector using FreeBSD / Mac OS X kqueues
- * Derived from Sun's DevPollSelectorImpl
  */
 
 package sun.nio.ch;
 
 import java.io.IOException;
-import java.io.FileDescriptor;
-import java.nio.channels.*;
-import java.nio.channels.spi.*;
-import java.util.*;
+import java.nio.channels.ClosedSelectorException;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.spi.SelectorProvider;
+import java.util.HashMap;
+import java.util.Iterator;
 
 class KQueueSelectorImpl
     extends SelectorImpl
 {
     // File descriptors used for interrupt
-    protected int fd0;
-    protected int fd1;
+    private final int fd0;
+    private final int fd1;
 
     // The kqueue manipulator
-    KQueueArrayWrapper kqueueWrapper;
-
-    // Count of registered descriptors (including interrupt)
-    private int totalChannels;
+    private final KQueueArrayWrapper kqueueWrapper;
 
     // Map from a file descriptor to an entry containing the selection key
-    private HashMap<Integer,MapEntry> fdMap;
+    private final HashMap<Integer, MapEntry> fdMap;
 
     // True if this Selector has been closed
-    private boolean closed = false;
+    private boolean closed;
 
     // Lock for interrupt triggering and clearing
-    private Object interruptLock = new Object();
-    private boolean interruptTriggered = false;
+    private final Object interruptLock = new Object();
+    private boolean interruptTriggered;
 
     // used by updateSelectedKeys to handle cases where the same file
     // descriptor is polled by more than one filter
@@ -78,16 +77,14 @@ class KQueueSelectorImpl
      * Package private constructor called by factory method in
      * the abstract superclass Selector.
      */
-    KQueueSelectorImpl(SelectorProvider sp) {
+    KQueueSelectorImpl(SelectorProvider sp) throws IOException {
         super(sp);
         long fds = IOUtil.makePipe(false);
         fd0 = (int)(fds >>> 32);
         fd1 = (int)fds;
         try {
-            kqueueWrapper = new KQueueArrayWrapper();
-            kqueueWrapper.initInterrupt(fd0, fd1);
+            kqueueWrapper = new KQueueArrayWrapper(fd0, fd1);
             fdMap = new HashMap<>();
-            totalChannels = 1;
         } catch (Throwable t) {
             try {
                 FileDispatcherImpl.closeIntFD(fd0);
@@ -103,22 +100,26 @@ class KQueueSelectorImpl
         }
     }
 
+    private void ensureOpen() {
+        if (closed)
+            throw new ClosedSelectorException();
+    }
 
+    @Override
     protected int doSelect(long timeout)
         throws IOException
     {
-        int entries = 0;
-        if (closed)
-            throw new ClosedSelectorException();
+        ensureOpen();
+        int numEntries;
         processDeregisterQueue();
         try {
             begin();
-            entries = kqueueWrapper.poll(timeout);
+            numEntries = kqueueWrapper.poll(timeout);
         } finally {
             end();
         }
         processDeregisterQueue();
-        return updateSelectedKeys(entries);
+        return updateSelectedKeys(numEntries);
     }
 
     /**
@@ -126,7 +127,7 @@ class KQueueSelectorImpl
      * Add the ready keys to the selected key set.
      * If the interrupt fd has been selected, drain it and clear the interrupt.
      */
-    private int updateSelectedKeys(int entries)
+    private int updateSelectedKeys(int numEntries)
         throws IOException
     {
         int numKeysUpdated = 0;
@@ -139,14 +140,12 @@ class KQueueSelectorImpl
         // second or subsequent event.
         updateCount++;
 
-        for (int i = 0; i < entries; i++) {
+        for (int i = 0; i < numEntries; i++) {
             int nextFD = kqueueWrapper.getDescriptor(i);
             if (nextFD == fd0) {
                 interrupted = true;
             } else {
                 MapEntry me = fdMap.get(Integer.valueOf(nextFD));
-
-                // entry is null in the case of an interrupt
                 if (me != null) {
                     int rOps = kqueueWrapper.getReventOps(i);
                     SelectionKeyImpl ski = me.ski;
@@ -175,16 +174,12 @@ class KQueueSelectorImpl
         }
 
         if (interrupted) {
-            // Clear the wakeup pipe
-            synchronized (interruptLock) {
-                IOUtil.drain(fd0);
-                interruptTriggered = false;
-            }
+            clearInterrupt();
         }
         return numKeysUpdated;
     }
 
-
+    @Override
     protected void implClose() throws IOException {
         if (!closed) {
             closed = true;
@@ -194,62 +189,51 @@ class KQueueSelectorImpl
                 interruptTriggered = true;
             }
 
+            kqueueWrapper.close();
             FileDispatcherImpl.closeIntFD(fd0);
             FileDispatcherImpl.closeIntFD(fd1);
-            if (kqueueWrapper != null) {
-                kqueueWrapper.close();
-                kqueueWrapper = null;
-                selectedKeys = null;
 
-                // Deregister channels
-                Iterator<SelectionKey> i = keys.iterator();
-                while (i.hasNext()) {
-                    SelectionKeyImpl ski = (SelectionKeyImpl)i.next();
-                    deregister(ski);
-                    SelectableChannel selch = ski.channel();
-                    if (!selch.isOpen() && !selch.isRegistered())
-                        ((SelChImpl)selch).kill();
-                    i.remove();
-                }
-                totalChannels = 0;
+            // Deregister channels
+            Iterator<SelectionKey> i = keys.iterator();
+            while (i.hasNext()) {
+                SelectionKeyImpl ski = (SelectionKeyImpl)i.next();
+                deregister(ski);
+                SelectableChannel selch = ski.channel();
+                if (!selch.isOpen() && !selch.isRegistered())
+                    ((SelChImpl)selch).kill();
+                i.remove();
             }
-            fd0 = -1;
-            fd1 = -1;
         }
     }
 
-
+    @Override
     protected void implRegister(SelectionKeyImpl ski) {
-        if (closed)
-            throw new ClosedSelectorException();
+        ensureOpen();
         int fd = IOUtil.fdVal(ski.channel.getFD());
         fdMap.put(Integer.valueOf(fd), new MapEntry(ski));
-        totalChannels++;
         keys.add(ski);
     }
 
-
+    @Override
     protected void implDereg(SelectionKeyImpl ski) throws IOException {
         int fd = ski.channel.getFDVal();
         fdMap.remove(Integer.valueOf(fd));
         kqueueWrapper.release(ski.channel);
-        totalChannels--;
         keys.remove(ski);
         selectedKeys.remove(ski);
-        deregister((AbstractSelectionKey)ski);
+        deregister(ski);
         SelectableChannel selch = ski.channel();
         if (!selch.isOpen() && !selch.isRegistered())
             ((SelChImpl)selch).kill();
     }
 
-
+    @Override
     public void putEventOps(SelectionKeyImpl ski, int ops) {
-        if (closed)
-            throw new ClosedSelectorException();
+        ensureOpen();
         kqueueWrapper.setInterest(ski.channel, ops);
     }
 
-
+    @Override
     public Selector wakeup() {
         synchronized (interruptLock) {
             if (!interruptTriggered) {
@@ -258,5 +242,12 @@ class KQueueSelectorImpl
             }
         }
         return this;
+    }
+
+    private void clearInterrupt() throws IOException {
+        synchronized (interruptLock) {
+            IOUtil.drain(fd0);
+            interruptTriggered = false;
+        }
     }
 }
