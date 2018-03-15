@@ -28,7 +28,9 @@
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/shared/accessBarrierSupport.inline.hpp"
-#include "oops/oop.inline.hpp"
+#include "oops/access.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
+#include "oops/oop.hpp"
 
 template <DecoratorSet decorators, typename T>
 inline void G1BarrierSet::write_ref_field_pre(T* field) {
@@ -38,8 +40,8 @@ inline void G1BarrierSet::write_ref_field_pre(T* field) {
   }
 
   T heap_oop = RawAccess<MO_VOLATILE>::oop_load(field);
-  if (!oopDesc::is_null(heap_oop)) {
-    enqueue(oopDesc::decode_heap_oop_not_null(heap_oop));
+  if (!CompressedOops::is_null(heap_oop)) {
+    enqueue(CompressedOops::decode_not_null(heap_oop));
   }
 }
 

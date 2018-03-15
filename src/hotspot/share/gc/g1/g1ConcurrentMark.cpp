@@ -53,6 +53,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
@@ -1368,7 +1369,7 @@ class G1CMKeepAliveAndDrainClosure: public OopClosure {
 
   template <class T> void do_oop_work(T* p) {
     if (!_cm->has_overflown()) {
-      oop obj = oopDesc::load_decode_heap_oop(p);
+      oop obj = RawAccess<>::oop_load(p);
       _task->deal_with_reference(obj);
       _ref_counter--;
 

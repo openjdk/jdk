@@ -29,6 +29,8 @@
 #include "memory/metaspaceShared.hpp"
 #include "memory/universe.hpp"
 #include "oops/markOop.inline.hpp"
+#include "oops/access.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 
 inline int MarkSweep::adjust_pointers(oop obj) {
@@ -36,9 +38,9 @@ inline int MarkSweep::adjust_pointers(oop obj) {
 }
 
 template <class T> inline void MarkSweep::adjust_pointer(T* p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (!oopDesc::is_null(heap_oop)) {
-    oop obj     = oopDesc::decode_heap_oop_not_null(heap_oop);
+  T heap_oop = RawAccess<>::oop_load(p);
+  if (!CompressedOops::is_null(heap_oop)) {
+    oop obj = CompressedOops::decode_not_null(heap_oop);
     assert(Universe::heap()->is_in(obj), "should be in heap");
 
     oop new_obj = oop(obj->mark()->decode_pointer());
@@ -52,7 +54,7 @@ template <class T> inline void MarkSweep::adjust_pointer(T* p) {
     if (new_obj != NULL) {
       assert(Universe::heap()->is_in_reserved(new_obj),
              "should be in object space");
-      oopDesc::encode_store_heap_oop_not_null(p, new_obj);
+      RawAccess<OOP_NOT_NULL>::oop_store(p, new_obj);
     }
   }
 }

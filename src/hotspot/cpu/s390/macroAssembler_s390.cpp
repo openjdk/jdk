@@ -33,6 +33,7 @@
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "opto/compile.hpp"
 #include "opto/intrinsicnode.hpp"
@@ -1286,7 +1287,7 @@ int MacroAssembler::patch_compare_immediate_32(address pos, int64_t np) {
 int MacroAssembler::patch_load_narrow_oop(address pos, oop o) {
   assert(UseCompressedOops, "Can only patch compressed oops");
 
-  narrowOop no = oopDesc::encode_heap_oop(o);
+  narrowOop no = CompressedOops::encode(o);
   return patch_load_const_32to64(pos, no);
 }
 
@@ -1304,7 +1305,7 @@ int MacroAssembler::patch_load_narrow_klass(address pos, Klass* k) {
 int MacroAssembler::patch_compare_immediate_narrow_oop(address pos, oop o) {
   assert(UseCompressedOops, "Can only patch compressed oops");
 
-  narrowOop no = oopDesc::encode_heap_oop(o);
+  narrowOop no = CompressedOops::encode(o);
   return patch_compare_immediate_32(pos, no);
 }
 

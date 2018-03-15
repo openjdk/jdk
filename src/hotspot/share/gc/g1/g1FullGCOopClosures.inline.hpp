@@ -31,6 +31,8 @@
 #include "gc/g1/g1FullGCOopClosures.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "memory/iterator.inline.hpp"
+#include "oops/access.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
 
 template <typename T>
 inline void G1MarkAndPushClosure::do_oop_nv(T* p) {
@@ -50,13 +52,13 @@ inline void G1MarkAndPushClosure::do_cld_nv(ClassLoaderData* cld) {
 }
 
 template <class T> inline oop G1AdjustClosure::adjust_pointer(T* p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (oopDesc::is_null(heap_oop)) {
+  T heap_oop = RawAccess<>::oop_load(p);
+  if (CompressedOops::is_null(heap_oop)) {
     // NULL reference, return NULL.
     return NULL;
   }
 
-  oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+  oop obj = CompressedOops::decode_not_null(heap_oop);
   assert(Universe::heap()->is_in(obj), "should be in heap");
   if (G1ArchiveAllocator::is_archive_object(obj)) {
     // Never forwarding archive objects, return current reference.
@@ -76,7 +78,7 @@ template <class T> inline oop G1AdjustClosure::adjust_pointer(T* p) {
 
   // Forwarded, update and return new reference.
   assert(Universe::heap()->is_in_reserved(forwardee), "should be in object space");
-  oopDesc::encode_store_heap_oop_not_null(p, forwardee);
+  RawAccess<OOP_NOT_NULL>::oop_store(p, forwardee);
   return forwardee;
 }
 

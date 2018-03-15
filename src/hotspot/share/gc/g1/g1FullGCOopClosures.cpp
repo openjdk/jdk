@@ -28,6 +28,8 @@
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
 #include "gc/g1/g1_specialized_oop_closures.hpp"
 #include "logging/logStream.hpp"
+#include "oops/access.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
 
 void G1MarkAndPushClosure::do_oop(oop* p) {
   do_oop_nv(p);
@@ -99,10 +101,10 @@ void G1VerifyOopClosure::print_object(outputStream* out, oop obj) {
 }
 
 template <class T> void G1VerifyOopClosure::do_oop_nv(T* p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (!oopDesc::is_null(heap_oop)) {
+  T heap_oop = RawAccess<>::oop_load(p);
+  if (!CompressedOops::is_null(heap_oop)) {
     _cc++;
-    oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+    oop obj = CompressedOops::decode_not_null(heap_oop);
     bool failed = false;
     if (!_g1h->is_in_closed_subset(obj) || _g1h->is_obj_dead_cond(obj, _verify_option)) {
       MutexLockerEx x(ParGCRareEvent_lock,

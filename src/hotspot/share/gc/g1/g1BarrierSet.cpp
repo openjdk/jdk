@@ -30,6 +30,8 @@
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/satbMarkQueue.hpp"
 #include "logging/log.hpp"
+#include "oops/access.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.inline.hpp"
@@ -77,9 +79,9 @@ G1BarrierSet::write_ref_array_pre_work(T* dst, size_t count) {
   if (!JavaThread::satb_mark_queue_set().is_active()) return;
   T* elem_ptr = dst;
   for (size_t i = 0; i < count; i++, elem_ptr++) {
-    T heap_oop = oopDesc::load_heap_oop(elem_ptr);
-    if (!oopDesc::is_null(heap_oop)) {
-      enqueue(oopDesc::decode_heap_oop_not_null(heap_oop));
+    T heap_oop = RawAccess<>::oop_load(elem_ptr);
+    if (!CompressedOops::is_null(heap_oop)) {
+      enqueue(CompressedOops::decode_not_null(heap_oop));
     }
   }
 }
