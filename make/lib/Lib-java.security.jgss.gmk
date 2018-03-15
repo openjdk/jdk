@@ -32,9 +32,8 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       $(TOPDIR)/src/java.security.jgss/$(OPENJDK_TARGET_OS_TYPE)/native/libj2gss \
       #
 
-  $(eval $(call SetupNativeCompilation, BUILD_LIBJ2GSS, \
+  $(eval $(call SetupJdkLibrary, BUILD_LIBJ2GSS, \
       NAME := j2gss, \
-      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBJ2GSS_SRC), \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) $(addprefix -I, $(LIBJ2GSS_SRC)) \
@@ -44,7 +43,6 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := $(LIBDL), \
-      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libj2gss, \
   ))
 
   TARGETS += $(BUILD_LIBJ2GSS)
@@ -73,9 +71,8 @@ ifneq ($(BUILD_CRYPTO), false)
   ifneq ($(BUILD_LIBKRB5_NAME), )
     # libosxkrb5 needs to call deprecated krb5 APIs so that java
     # can use the native credentials cache.
-    $(eval $(call SetupNativeCompilation, BUILD_LIBKRB5, \
+    $(eval $(call SetupJdkLibrary, BUILD_LIBKRB5, \
         NAME := $(BUILD_LIBKRB5_NAME), \
-        OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
         SRC := $(BUILD_LIBKRB5_SRC), \
         OPTIMIZATION := LOW, \
         CFLAGS := $(CFLAGS_JDKLIB) \
@@ -85,12 +82,6 @@ ifneq ($(BUILD_CRYPTO), false)
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN), \
         LIBS := $(BUILD_LIBKRB5_LIBS), \
-        VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-        RC_FLAGS := $(RC_FLAGS) \
-            -D "JDK_FNAME=$(BUILD_LIBKRB5_NAME).dll" \
-            -D "JDK_INTERNAL_NAME=$(BUILD_LIBKRB5_NAME)" \
-            -D "JDK_FTYPE=0x2L", \
-        OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libkrb5, \
     ))
 
     TARGETS += $(BUILD_LIBKRB5)

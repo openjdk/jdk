@@ -112,7 +112,6 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   if test "x$TOOLCHAIN_TYPE" != xmicrosoft; then
     BASIC_JDKLIB_LIBS="-ljava -ljvm"
   fi
-  BASIC_JDKLIB_LIBS="$BASIC_JDKLIB_LIBS"
 
   # Math library
   if test "x$OPENJDK_TARGET_OS" != xsolaris; then

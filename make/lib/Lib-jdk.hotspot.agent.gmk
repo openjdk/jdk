@@ -23,7 +23,7 @@
 # questions.
 #
 
-include NativeCompilation.gmk
+include LibCommon.gmk
 
 $(eval $(call IncludeCustomExtension, hotspot/lib/Lib-jdk.hotspot.agent.gmk))
 
@@ -87,14 +87,13 @@ endif
 
 ################################################################################
 
-$(eval $(call SetupNativeCompilation, BUILD_LIBSA, \
+$(eval $(call SetupJdkLibrary, BUILD_LIBSA, \
     NAME := $(SA_NAME), \
     TOOLCHAIN := $(SA_TOOLCHAIN), \
     OPTIMIZATION := NONE, \
     DISABLED_WARNINGS_microsoft := 4267, \
     DISABLED_WARNINGS_gcc := sign-compare, \
     DISABLED_WARNINGS_CXX_solstudio := truncwarn unknownpragma, \
-    OUTPUT_DIR := $(call FindLibDirForModule, $(MODULE)), \
     SRC := $(SA_SRC), \
     EXCLUDE_FILES := test.c saproc_audit.cpp $(SA_EXCLUDE_FILES), \
     CFLAGS := $(SA_INCLUDES) $(SA_CFLAGS) $(SA_CUSTOM_CFLAGS), \
@@ -102,7 +101,6 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBSA, \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(SA_LDFLAGS), \
     LIBS := $(SA_LIBS), \
     MAPFILE := $(SA_MAPFILE), \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libsa, \
 ))
 
 TARGETS += $(BUILD_LIBSA)

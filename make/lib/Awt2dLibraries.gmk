@@ -48,9 +48,8 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
   BUILD_LIBMLIB_LDLIBS += $(LIBM) $(LIBDL)
 endif
 
-$(eval $(call SetupNativeCompilation, BUILD_LIBMLIB_IMAGE, \
+$(eval $(call SetupJdkLibrary, BUILD_LIBMLIB_IMAGE, \
     NAME := mlib_image, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(BUILD_LIBMLIB_SRC), \
     EXCLUDE_FILES := mlib_c_ImageBlendTable.c, \
     OPTIMIZATION := HIGHEST, \
@@ -61,12 +60,6 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBMLIB_IMAGE, \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(BUILD_LIBMLIB_LDLIBS) \
         $(JDKLIB_LIBS), \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=mlib_image.dll" \
-        -D "JDK_INTERNAL_NAME=mlib_image" \
-        -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libmlib_image, \
 ))
 
 $(BUILD_LIBMLIB_IMAGE): $(call FindLib, java.base, java)
@@ -106,9 +99,8 @@ ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH), solaris-sparc)
 
   LIBMLIB_IMAGE_V_CFLAGS += $(filter-out -DMLIB_NO_LIBSUNMATH, $(BUILD_LIBMLIB_CFLAGS))
 
-  $(eval $(call SetupNativeCompilation, BUILD_LIBMLIB_IMAGE_V, \
+  $(eval $(call SetupJdkLibrary, BUILD_LIBMLIB_IMAGE_V, \
       NAME := mlib_image_v, \
-      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBMLIB_IMAGE_V_SRC), \
       EXCLUDE_FILES := $(BUILD_LIBMLIB_IMAGE_V_EXFILES), \
       OPTIMIZATION := HIGHEST, \
@@ -119,7 +111,6 @@ ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH), solaris-sparc)
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := -ljava -ljvm $(BUILD_LIBMLIB_LDLIBS), \
-      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libmlib_image_v, \
   ))
 
   $(BUILD_LIBMLIB_IMAGE_V): $(call FindLib, java.base, java)
@@ -225,9 +216,8 @@ ifeq ($(TOOLCHAIN_TYPE), gcc)
   LIBAWT_CFLAGS += -fgcse-after-reload
 endif
 
-$(eval $(call SetupNativeCompilation, BUILD_LIBAWT, \
+$(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     NAME := awt, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBAWT_DIRS), \
     EXCLUDES := $(LIBAWT_EXCLUDES), \
     EXCLUDE_FILES := $(LIBAWT_EXFILES), \
@@ -267,7 +257,6 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBAWT, \
         -D "JDK_FNAME=awt.dll" \
         -D "JDK_INTERNAL_NAME=awt" \
         -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libawt, \
 ))
 
 $(BUILD_LIBAWT): $(call FindLib, java.base, java)
@@ -346,9 +335,8 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
       BUILD_LIBAWT_XAWT_debug_mem.c_CFLAGS := -w
    endif
 
-    $(eval $(call SetupNativeCompilation, BUILD_LIBAWT_XAWT, \
+    $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_XAWT, \
         NAME := awt_xawt, \
-        OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
         SRC := $(LIBAWT_XAWT_DIRS), \
         EXCLUDES := $(LIBAWT_XAWT_EXCLUDES), \
         OPTIMIZATION := LOW, \
@@ -366,12 +354,10 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
             $(call SET_SHARED_LIBRARY_ORIGIN) \
             -L$(INSTALL_LIBRARIES_HERE), \
         LIBS :=  $(X_LIBS) $(LIBAWT_XAWT_LIBS), \
-        VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
         RC_FLAGS := $(RC_FLAGS) \
             -D "JDK_FNAME=xawt.dll" \
             -D "JDK_INTERNAL_NAME=xawt" \
             -D "JDK_FTYPE=0x2L", \
-        OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libawt_xawt, \
     ))
 
     $(BUILD_LIBAWT_XAWT): $(call FindLib, java.base, java)
@@ -405,9 +391,8 @@ else
   LIBLCMS_CPPFLAGS += $(addprefix -I, $(LIBLCMS_SRC))
 endif
 
-$(eval $(call SetupNativeCompilation, BUILD_LIBLCMS, \
+$(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
     NAME := lcms, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBLCMS_SRC), \
     INCLUDE_FILES := $(BUILD_LIBLCMS_INCLUDE_FILES), \
     OPTIMIZATION := HIGHEST, \
@@ -430,12 +415,6 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBLCMS, \
     LIBS_macosx := $(LIBM), \
     LIBS_aix := $(LIBM),\
     LIBS_windows := $(WIN_AWT_LIB) $(WIN_JAVA_LIB), \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=lcms.dll" \
-        -D "JDK_INTERNAL_NAME=lcms" \
-        -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/liblcms, \
 ))
 
 TARGETS += $(BUILD_LIBLCMS)
@@ -481,9 +460,8 @@ else
   BUILD_LIBJAVAJPEG_HEADERS := $(addprefix -I, $(LIBJAVAJPEG_SRC))
 endif
 
-$(eval $(call SetupNativeCompilation, BUILD_LIBJAVAJPEG, \
+$(eval $(call SetupJdkLibrary, BUILD_LIBJAVAJPEG, \
     NAME := javajpeg, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBJAVAJPEG_SRC), \
     INCLUDE_FILES := $(BUILD_LIBJAVAJPEG_INCLUDE_FILES), \
     OPTIMIZATION := HIGHEST, \
@@ -496,13 +474,7 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBJAVAJPEG, \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(LIBJPEG_LIBS) $(JDKLIB_LIBS), \
     LIBS_windows := $(WIN_JAVA_LIB) jvm.lib, \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=javajpeg.dll" \
-        -D "JDK_INTERNAL_NAME=javajpeg" \
-        -D "JDK_FTYPE=0x2L", \
     REORDER := $(BUILD_LIBJAVAJPEG_REORDER), \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjavajpeg, \
 ))
 
 $(BUILD_LIBJAVAJPEG): $(call FindLib, java.base, java)
@@ -545,9 +517,8 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS), windows macosx),)
     endif
   endif
 
-  $(eval $(call SetupNativeCompilation, BUILD_LIBAWT_HEADLESS, \
+  $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_HEADLESS, \
       NAME := awt_headless, \
-      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBAWT_HEADLESS_DIRS), \
       EXCLUDES := $(LIBAWT_HEADLESS_EXCLUDES), \
       OPTIMIZATION := LOW, \
@@ -568,7 +539,6 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS), windows macosx),)
       LIBS_unix := -lawt -ljvm -ljava, \
       LIBS_linux := $(LIBM) $(LIBDL), \
       LIBS_solaris := $(LIBM) $(LIBDL) $(LIBCXX), \
-      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libawt_headless, \
   ))
 
   # AIX warning explanation:
@@ -596,9 +566,8 @@ else
     LIBFREETYPE_LIBS := -lfreetype
   endif
 
-  $(eval $(call SetupNativeCompilation, BUILD_LIBFREETYPE, \
+  $(eval $(call SetupJdkLibrary, BUILD_LIBFREETYPE, \
       NAME := freetype, \
-      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBFREETYPE_SRC)/src, \
       OPTIMIZATION := HIGHEST, \
       CFLAGS := $(CFLAGS_JDKLIB) $(BUILD_LIBFREETYPE_HEADERS) \
@@ -609,12 +578,6 @@ else
       DISABLED_WARNINGS_microsoft := 4267 2220 4244, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
-      VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-      RC_FLAGS := $(RC_FLAGS) \
-          -D "JDK_FNAME=freetype.dll" \
-          -D "JDK_INTERNAL_NAME=freetype" \
-          -D "JDK_FTYPE=0x2L", \
-      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfreetype, \
   ))
 
   TARGETS += $(BUILD_LIBFREETYPE)
@@ -694,9 +657,8 @@ ifeq ($(TOOLCHAIN_TYPE), gcc)
   BUILD_LIBFONTMANAGER_ExtensionSubtables.cpp_CXXFLAGS := -fno-strict-aliasing
 endif
 
-$(eval $(call SetupNativeCompilation, BUILD_LIBFONTMANAGER, \
+$(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
     NAME := fontmanager, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBFONTMANAGER_SRC), \
     EXCLUDE_FILES := $(LIBFONTMANAGER_EXCLUDE_FILES) \
         AccelGlyphCache.c, \
@@ -730,12 +692,6 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBFONTMANAGER, \
     LIBS_aix := -lawt_headless,\
     LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib user32.lib gdi32.lib \
         $(WIN_AWT_LIB), \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=fontmanager.dll" \
-        -D "JDK_INTERNAL_NAME=fontmanager" \
-        -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfontmanager, \
 ))
 
 $(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT)
@@ -768,9 +724,8 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   ifeq ($(OPENJDK_TARGET_CPU), x86)
     KERNEL32_LIB := kernel32.lib
   endif
-  $(eval $(call SetupNativeCompilation, BUILD_LIBJAWT, \
+  $(eval $(call SetupJdkLibrary, BUILD_LIBJAWT, \
       NAME := jawt, \
-      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBJAWT_SRC), \
       INCLUDE_FILES := $(LIBJAWT_INCLUDE_FILES), \
       OPTIMIZATION := LOW, \
@@ -779,12 +734,6 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
           $(LIBJAWT_CFLAGS), \
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK), \
       LIBS := $(JDKLIB_LIBS) $(KERNEL32_LIB) advapi32.lib $(WIN_AWT_LIB), \
-      VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-      RC_FLAGS := $(RC_FLAGS) \
-          -D "JDK_FNAME=jawt.dll" \
-          -D "JDK_INTERNAL_NAME=jawt" \
-          -D "JDK_FTYPE=0x2L", \
-      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjawt, \
   ))
 
   $(BUILD_LIBJAWT): $(BUILD_LIBAWT)
@@ -828,9 +777,8 @@ else # OPENJDK_TARGET_OS not windows
     endif
   endif
 
-  $(eval $(call SetupNativeCompilation, BUILD_LIBJAWT, \
+  $(eval $(call SetupJdkLibrary, BUILD_LIBJAWT, \
       NAME := jawt, \
-      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBJAWT_SRC), \
       INCLUDE_FILES := $(JAWT_FILES), \
       OPTIMIZATION := LOW, \
@@ -846,7 +794,6 @@ else # OPENJDK_TARGET_OS not windows
       LIBS_unix := $(JAWT_LIBS) $(JDKLIB_LIBS), \
       LIBS_solaris := $(X_LIBS) -lXrender, \
       LIBS_macosx := -framework Cocoa, \
-      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjawt, \
   ))
 
   ifeq ($(ENABLE_HEADLESS_ONLY), false)
@@ -957,9 +904,8 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
     LIBSPLASHSCREEN_LIBS += $(X_LIBS) -lX11 -lXext $(LIBM) -lpthread -ldl
   endif
 
-  $(eval $(call SetupNativeCompilation, BUILD_LIBSPLASHSCREEN, \
+  $(eval $(call SetupJdkLibrary, BUILD_LIBSPLASHSCREEN, \
       NAME := splashscreen, \
-      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBSPLASHSCREEN_DIRS), \
       EXCLUDE_FILES := imageioJPEG.c jpegdecoder.c pngtest.c, \
       EXCLUDES := $(LIBSPLASHSCREEN_EXCLUDES), \
@@ -980,12 +926,6 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       LIBS := $(JDKLIB_LIBS) $(LIBSPLASHSCREEN_LIBS) $(LIBZ_LIBS) \
           $(GIFLIB_LIBS) $(LIBJPEG_LIBS) $(PNG_LIBS), \
       LIBS_aix := -liconv, \
-      VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-      RC_FLAGS := $(RC_FLAGS) \
-          -D "JDK_FNAME=splashscreen.dll" \
-          -D "JDK_INTERNAL_NAME=splashscreen" \
-          -D "JDK_FTYPE=0x2L", \
-      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libsplashscreen, \
   ))
 
   TARGETS += $(BUILD_LIBSPLASHSCREEN)
@@ -1032,9 +972,8 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
   LIBAWT_LWAWT_EXFILES := fontpath.c awt_Font.c X11Color.c
   LIBAWT_LWAWT_EXCLUDES := $(TOPDIR)/src/java.desktop/unix/native/common/awt/medialib
 
-  $(eval $(call SetupNativeCompilation, BUILD_LIBAWT_LWAWT, \
+  $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_LWAWT, \
       NAME := awt_lwawt, \
-      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBAWT_LWAWT_DIRS), \
       INCLUDE_FILES := $(LIBAWT_LWAWT_FILES), \
       EXCLUDE_FILES := $(LIBAWT_LWAWT_EXFILES), \
@@ -1062,7 +1001,6 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           -framework JavaRuntimeSupport \
           -framework OpenGL \
           -framework QuartzCore -ljava, \
-      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libawt_lwawt, \
   ))
 
   TARGETS += $(BUILD_LIBAWT_LWAWT)
@@ -1081,9 +1019,8 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
 
-  $(eval $(call SetupNativeCompilation, BUILD_LIBOSXUI, \
+  $(eval $(call SetupJdkLibrary, BUILD_LIBOSXUI, \
       NAME := osxui, \
-      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(TOPDIR)/src/java.desktop/macosx/native/libosxui, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
@@ -1104,7 +1041,6 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           -framework JavaNativeFoundation \
           -framework JavaRuntimeSupport \
           -ljava -ljvm, \
-      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libosxui, \
   ))
 
   TARGETS += $(BUILD_LIBOSXUI)

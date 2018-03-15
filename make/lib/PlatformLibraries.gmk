@@ -29,9 +29,8 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 
   LIBOSXAPP_SRC := $(TOPDIR)/src/java.desktop/macosx/native/libosxapp
 
-  $(eval $(call SetupNativeCompilation, BUILD_LIBOSXAPP, \
+  $(eval $(call SetupJdkLibrary, BUILD_LIBOSXAPP, \
       NAME := osxapp, \
-      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBOSXAPP_SRC), \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
@@ -53,7 +52,6 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           -framework OpenGL \
           -framework IOSurface \
           -framework QuartzCore, \
-      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libosxapp, \
   ))
 
   TARGETS += $(BUILD_LIBOSXAPP)
