@@ -667,7 +667,7 @@ ClassLoaderData::~ClassLoaderData() {
   }
 
   // release the metaspace
-  Metaspace *m = _metaspace;
+  ClassLoaderMetaspace *m = _metaspace;
   if (m != NULL) {
     _metaspace = NULL;
     delete m;
@@ -721,26 +721,26 @@ bool ClassLoaderData::is_permanent_class_loader_data() const {
   return is_builtin_class_loader_data() && !is_anonymous();
 }
 
-Metaspace* ClassLoaderData::metaspace_non_null() {
+ClassLoaderMetaspace* ClassLoaderData::metaspace_non_null() {
   // If the metaspace has not been allocated, create a new one.  Might want
   // to create smaller arena for Reflection class loaders also.
   // The reason for the delayed allocation is because some class loaders are
   // simply for delegating with no metadata of their own.
   // Lock-free access requires load_acquire.
-  Metaspace* metaspace = OrderAccess::load_acquire(&_metaspace);
+  ClassLoaderMetaspace* metaspace = OrderAccess::load_acquire(&_metaspace);
   if (metaspace == NULL) {
     MutexLockerEx ml(_metaspace_lock,  Mutex::_no_safepoint_check_flag);
     // Check if _metaspace got allocated while we were waiting for this lock.
     if ((metaspace = _metaspace) == NULL) {
       if (this == the_null_class_loader_data()) {
         assert (class_loader() == NULL, "Must be");
-        metaspace = new Metaspace(_metaspace_lock, Metaspace::BootMetaspaceType);
+        metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::BootMetaspaceType);
       } else if (is_anonymous()) {
-        metaspace = new Metaspace(_metaspace_lock, Metaspace::AnonymousMetaspaceType);
+        metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::AnonymousMetaspaceType);
       } else if (class_loader()->is_a(SystemDictionary::reflect_DelegatingClassLoader_klass())) {
-        metaspace = new Metaspace(_metaspace_lock, Metaspace::ReflectionMetaspaceType);
+        metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::ReflectionMetaspaceType);
       } else {
-        metaspace = new Metaspace(_metaspace_lock, Metaspace::StandardMetaspaceType);
+        metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::StandardMetaspaceType);
       }
       // Ensure _metaspace is stable, since it is examined without a lock
       OrderAccess::release_store(&_metaspace, metaspace);
@@ -1180,7 +1180,8 @@ GrowableArray<ClassLoaderData*>* ClassLoaderDataGraph::new_clds() {
 bool ClassLoaderDataGraph::unload_list_contains(const void* x) {
   assert(SafepointSynchronize::is_at_safepoint(), "only safe to call at safepoint");
   for (ClassLoaderData* cld = _unloading; cld != NULL; cld = cld->next()) {
-    if (cld->metaspace_or_null() != NULL && cld->metaspace_or_null()->contains(x)) {
+    // Needs fixing, see JDK-8199007.
+    if (cld->metaspace_or_null() != NULL && Metaspace::contains(x)) {
       return true;
     }
   }

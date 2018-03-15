@@ -223,7 +223,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   oop _class_loader;          // oop used to uniquely identify a class loader
                               // class loader or a canonical class path
 
-  Metaspace * volatile _metaspace;  // Meta-space where meta-data defined by the
+  ClassLoaderMetaspace * volatile _metaspace;  // Meta-space where meta-data defined by the
                                     // classes in the class loader are allocated.
   Mutex* _metaspace_lock;  // Locks the metaspace for allocations and setup.
   bool _unloading;         // true if this class loader goes away
@@ -263,11 +263,6 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   // Support for walking class loader data objects
   ClassLoaderData* _next; /// Next loader_datas created
-
-  // ReadOnly and ReadWrite metaspaces (static because only on the null
-  // class loader for now).
-  static Metaspace* _ro_metaspace;
-  static Metaspace* _rw_metaspace;
 
   TRACE_DEFINE_TRACE_ID_FIELD;
 
@@ -316,7 +311,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   bool is_alive(BoolObjectClosure* is_alive_closure) const;
 
   // Accessors
-  Metaspace* metaspace_or_null() const     { return _metaspace; }
+  ClassLoaderMetaspace* metaspace_or_null() const { return _metaspace; }
 
   static ClassLoaderData* the_null_class_loader_data() {
     return _the_null_class_loader_data;
@@ -351,7 +346,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   // The Metaspace is created lazily so may be NULL.  This
   // method will allocate a Metaspace if needed.
-  Metaspace* metaspace_non_null();
+  ClassLoaderMetaspace* metaspace_non_null();
 
   oop class_loader() const      { return _class_loader; }
 
@@ -426,9 +421,9 @@ class ClassLoaderDataGraphMetaspaceIterator : public StackObj {
   ClassLoaderDataGraphMetaspaceIterator();
   ~ClassLoaderDataGraphMetaspaceIterator();
   bool repeat() { return _data != NULL; }
-  Metaspace* get_next() {
+  ClassLoaderMetaspace* get_next() {
     assert(_data != NULL, "Should not be NULL in call to the iterator");
-    Metaspace* result = _data->metaspace_or_null();
+    ClassLoaderMetaspace* result = _data->metaspace_or_null();
     _data = _data->next();
     // This result might be NULL for class loaders without metaspace
     // yet.  It would be nice to return only non-null results but
