@@ -55,9 +55,6 @@
 typedef BinaryTreeDictionary<Metablock, FreeList<Metablock> > BlockTreeDictionary;
 typedef BinaryTreeDictionary<Metachunk, FreeList<Metachunk> > ChunkTreeDictionary;
 
-// Set this constant to enable slow integrity checking of the free chunk lists
-const bool metaspace_slow_verify = false;
-
 // Helper function that does a bunch of checks for a chunk.
 DEBUG_ONLY(static void do_verify_chunk(Metachunk* chunk);)
 
@@ -207,13 +204,13 @@ class ChunkManager : public CHeapObj<mtInternal> {
 
   void locked_verify_free_chunks_total();
   void slow_locked_verify_free_chunks_total() {
-    if (metaspace_slow_verify) {
+    if (VerifyMetaspace) {
       locked_verify_free_chunks_total();
     }
   }
   void locked_verify_free_chunks_count();
   void slow_locked_verify_free_chunks_count() {
-    if (metaspace_slow_verify) {
+    if (VerifyMetaspace) {
       locked_verify_free_chunks_count();
     }
   }
@@ -346,13 +343,13 @@ class ChunkManager : public CHeapObj<mtInternal> {
   // Debug support
   void verify();
   void slow_verify() {
-    if (metaspace_slow_verify) {
+    if (VerifyMetaspace) {
       verify();
     }
   }
   void locked_verify();
   void slow_locked_verify() {
-    if (metaspace_slow_verify) {
+    if (VerifyMetaspace) {
       locked_verify();
     }
   }
@@ -1694,7 +1691,7 @@ Metachunk* VirtualSpaceNode::take_from_committed(size_t chunk_word_size) {
 
   inc_container_count();
 
-  if (metaspace_slow_verify) {
+  if (VerifyMetaspace) {
     DEBUG_ONLY(chunk_manager->locked_verify());
     DEBUG_ONLY(this->verify());
   }
@@ -1949,7 +1946,7 @@ bool ChunkManager::attempt_to_coalesce_around_chunk(Metachunk* chunk, ChunkIndex
   // should not affect that count.
 
   // At the end of a chunk merge, run verification tests.
-  if (metaspace_slow_verify) {
+  if (VerifyMetaspace) {
     DEBUG_ONLY(this->locked_verify());
     DEBUG_ONLY(vsn->verify());
   }
@@ -2971,7 +2968,7 @@ Metachunk* ChunkManager::free_chunks_get(size_t word_size) {
 
   // Run some verifications (some more if we did a chunk split)
 #ifdef ASSERT
-  if (metaspace_slow_verify) {
+  if (VerifyMetaspace) {
     locked_verify();
     VirtualSpaceNode* const vsn = chunk->container();
     vsn->verify();

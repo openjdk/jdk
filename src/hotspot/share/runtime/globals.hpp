@@ -4057,7 +4057,12 @@ public:
                                                                             \
   product(ccstr, AllocateHeapAt, NULL,                                      \
           "Path to the directoy where a temporary file will be created "    \
-          "to use as the backing store for Java Heap.")
+          "to use as the backing store for Java Heap.")                     \
+                                                                            \
+  develop(bool, VerifyMetaspace, false,                                     \
+          "Verify metaspace on chunk movements.")                           \
+                                                                            \
+
 
 
 /*
