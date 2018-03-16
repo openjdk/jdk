@@ -384,7 +384,6 @@ public:
 
   template <typename T>
   static bool oop_arraycopy(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t length);
-  static bool oop_arraycopy(arrayOop src_obj, arrayOop dst_obj, HeapWord* src, HeapWord* dst, size_t length);
 
   static void clone(oop src, oop dst, size_t size);
 
