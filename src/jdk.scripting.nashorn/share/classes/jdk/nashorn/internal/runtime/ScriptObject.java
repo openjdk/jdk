@@ -962,24 +962,19 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     /**
      * Fast initialization functions for ScriptFunctions that are strict, to avoid
      * creating setters that probably aren't used. Inject directly into the spill pool
-     * the defaults for "arguments" and "caller"
+     * the defaults for "arguments" and "caller", asserting the property is already
+     * defined in the map.
      *
-     * @param key           property key
-     * @param propertyFlags flags
-     * @param getter        getter for {@link UserAccessorProperty}, null if not present or N/A
-     * @param setter        setter for {@link UserAccessorProperty}, null if not present or N/A
+     * @param key     property key
+     * @param getter  getter for {@link UserAccessorProperty}
+     * @param setter  setter for {@link UserAccessorProperty}
      */
-    protected final void initUserAccessors(final String key, final int propertyFlags, final ScriptFunction getter, final ScriptFunction setter) {
-        final PropertyMap oldMap = getMap();
-        final int slot = oldMap.getFreeSpillSlot();
-        ensureSpillSize(slot);
-        objectSpill[slot] = new UserAccessorProperty.Accessors(getter, setter);
-        Property    newProperty;
-        PropertyMap newMap;
-        do {
-            newProperty = new UserAccessorProperty(key, propertyFlags, slot);
-            newMap = oldMap.addProperty(newProperty);
-        } while (!compareAndSetMap(oldMap, newMap));
+    protected final void initUserAccessors(final String key, final ScriptFunction getter, final ScriptFunction setter) {
+        final PropertyMap map = getMap();
+        final Property property = map.findProperty(key);
+        assert property instanceof UserAccessorProperty;
+        ensureSpillSize(property.getSlot());
+        objectSpill[property.getSlot()] = new UserAccessorProperty.Accessors(getter, setter);
     }
 
     /**
