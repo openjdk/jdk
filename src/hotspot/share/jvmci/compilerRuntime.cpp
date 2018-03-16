@@ -30,7 +30,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/deoptimization.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/vframe.hpp"
 #include "aot/aotLoader.hpp"
 

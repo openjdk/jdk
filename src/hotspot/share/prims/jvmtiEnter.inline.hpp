@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +22,13 @@
  *
  */
 
-#ifndef SHARE_VM_CI_CIMETHODTYPE_HPP
-#define SHARE_VM_CI_CIMETHODTYPE_HPP
+#ifndef SHARE_VM_PRIMS_JVMTIENTER_INLINE_HPP
+#define SHARE_VM_PRIMS_JVMTIENTER_INLINE_HPP
 
-#include "ci/ciInstance.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "jvmtifiles/jvmtiEnv.hpp"
+#include "memory/resourceArea.hpp"
+#include "prims/jvmtiImpl.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 
-// ciMethodType
-//
-// The class represents a java.lang.invoke.MethodType object.
-class ciMethodType : public ciInstance {
-private:
-  ciType* class_to_citype(oop klass_oop) const;
-
-public:
-  ciMethodType(instanceHandle h_i) : ciInstance(h_i) {}
-
-  // What kind of ciObject is this?
-  bool is_method_type() const { return true; }
-
-  ciType* rtype() const;
-
-  int ptype_count() const;
-  int ptype_slot_count() const ;
-
-  ciType* ptype_at(int index) const;
-};
-
-#endif // SHARE_VM_CI_CIMETHODTYPE_HPP
+#endif // SHARE_VM_PRIMS_JVMTIENTER_INLINE_HPP

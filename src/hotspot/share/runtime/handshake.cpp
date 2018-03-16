@@ -27,7 +27,7 @@
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/handshake.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/semaphore.hpp"
 #include "runtime/task.hpp"

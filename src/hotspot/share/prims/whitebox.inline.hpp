@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,17 @@
  *
  */
 
-#ifndef SHARE_VM_PRIMS_JVMTIENTER_HPP
-#define SHARE_VM_PRIMS_JVMTIENTER_HPP
+#ifndef SHARE_VM_PRIMS_WHITEBOX_INLINE_HPP
+#define SHARE_VM_PRIMS_WHITEBOX_INLINE_HPP
 
-#include "classfile/systemDictionary.hpp"
-#include "jvmtifiles/jvmtiEnv.hpp"
-#include "memory/resourceArea.hpp"
-#include "prims/jvmtiImpl.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "prims/whitebox.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 
-#endif // SHARE_VM_PRIMS_JVMTIENTER_HPP
+// Entry macro to transition from JNI to VM state.
+
+#define WB_ENTRY(result_type, header) JNI_ENTRY(result_type, header) \
+  ClearPendingJniExcCheck _clearCheck(env);
+
+#define WB_END JNI_END
+
+#endif // SHARE_VM_PRIMS_WHITEBOX_INLINE_HPP

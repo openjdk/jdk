@@ -25,7 +25,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/osThread.hpp"
 
 #include <signal.h>

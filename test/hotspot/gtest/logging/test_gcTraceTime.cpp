@@ -26,7 +26,7 @@
 #include "logTestFixture.hpp"
 #include "logTestUtils.inline.hpp"
 #include "logging/log.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "unittest.hpp"
 
 class GCTraceTimeTest : public LogTestFixture {

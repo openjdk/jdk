@@ -47,12 +47,12 @@
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/wbtestmethods/parserTests.hpp"
-#include "prims/whitebox.hpp"
+#include "prims/whitebox.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handshake.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
@@ -87,6 +87,22 @@
 #endif
 
 #define SIZE_T_MAX_VALUE ((size_t) -1)
+
+#define CHECK_JNI_EXCEPTION_(env, value)                               \
+  do {                                                                 \
+    JavaThread* THREAD = JavaThread::thread_from_jni_environment(env); \
+    if (HAS_PENDING_EXCEPTION) {                                       \
+      return(value);                                                   \
+    }                                                                  \
+  } while (0)
+
+#define CHECK_JNI_EXCEPTION(env)                                       \
+  do {                                                                 \
+    JavaThread* THREAD = JavaThread::thread_from_jni_environment(env); \
+    if (HAS_PENDING_EXCEPTION) {                                       \
+      return;                                                          \
+    }                                                                  \
+  } while (0)
 
 bool WhiteBox::_used = false;
 volatile bool WhiteBox::compilation_locked = false;

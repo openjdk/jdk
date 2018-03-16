@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_INTERFACESUPPORT_HPP
-#define SHARE_VM_RUNTIME_INTERFACESUPPORT_HPP
+#ifndef SHARE_VM_RUNTIME_INTERFACESUPPORT_INLINE_HPP
+#define SHARE_VM_RUNTIME_INTERFACESUPPORT_INLINE_HPP
 
 #include "gc/shared/gcLocker.hpp"
 #include "runtime/handles.inline.hpp"
@@ -31,35 +31,13 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
-#include "runtime/thread.inline.hpp"
-#include "runtime/vmThread.hpp"
+#include "runtime/thread.hpp"
+#include "runtime/vm_operations.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 
 // Wrapper for all entry points to the virtual machine.
-// The HandleMarkCleaner is a faster version of HandleMark.
-// It relies on the fact that there is a HandleMark further
-// down the stack (in JavaCalls::call_helper), and just resets
-// to the saved values in that HandleMark.
-
-class HandleMarkCleaner: public StackObj {
- private:
-  Thread* _thread;
- public:
-  HandleMarkCleaner(Thread* thread) {
-    _thread = thread;
-    _thread->last_handle_mark()->push();
-  }
-  ~HandleMarkCleaner() {
-    _thread->last_handle_mark()->pop_and_restore();
-  }
-
- private:
-  inline void* operator new(size_t size, void* ptr) throw() {
-    return ptr;
-  }
-};
 
 // InterfaceSupport provides functionality used by the VM_LEAF_BASE and
 // VM_ENTRY_BASE macros. These macros are used to guard entry points into
@@ -357,38 +335,8 @@ class ThreadInVMfromJavaNoAsyncException : public ThreadStateTransition {
 #ifdef ASSERT
 class VMEntryWrapper {
  public:
-  VMEntryWrapper() {
-    if (VerifyLastFrame) {
-      InterfaceSupport::verify_last_frame();
-    }
-  }
-
-  ~VMEntryWrapper() {
-    InterfaceSupport::check_gc_alot();
-    if (WalkStackALot) {
-      InterfaceSupport::walk_stack();
-    }
-#ifdef COMPILER2
-    // This option is not used by Compiler 1
-    if (StressDerivedPointers) {
-      InterfaceSupport::stress_derived_pointers();
-    }
-#endif
-    if (DeoptimizeALot || DeoptimizeRandom) {
-      InterfaceSupport::deoptimizeAll();
-    }
-    if (ZombieALot) {
-      InterfaceSupport::zombieAll();
-    }
-    if (UnlinkSymbolsALot) {
-      InterfaceSupport::unlinkSymbols();
-    }
-    // do verification AFTER potential deoptimization
-    if (VerifyStack) {
-      InterfaceSupport::verify_stack();
-    }
-
-  }
+  VMEntryWrapper();
+  ~VMEntryWrapper();
 };
 
 
@@ -620,4 +568,4 @@ extern "C" {                                                         \
 
 #define JVM_END } }
 
-#endif // SHARE_VM_RUNTIME_INTERFACESUPPORT_HPP
+#endif // SHARE_VM_RUNTIME_INTERFACESUPPORT_INLINE_HPP

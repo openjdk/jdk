@@ -34,6 +34,19 @@
 // FIXME: fix Synthetic attribute
 // FIXME: per Serguei, add error return handling for ConstantPool::copy_cpool_bytes()
 
+JvmtiConstantPoolReconstituter::JvmtiConstantPoolReconstituter(InstanceKlass* ik) {
+  set_error(JVMTI_ERROR_NONE);
+  _ik = ik;
+  _cpool = constantPoolHandle(Thread::current(), ik->constants());
+  _symmap = new SymbolHashMap();
+  _classmap = new SymbolHashMap();
+  _cpool_size = _cpool->hash_entries_to(_symmap, _classmap);
+  if (_cpool_size == 0) {
+    set_error(JVMTI_ERROR_OUT_OF_MEMORY);
+  } else if (_cpool_size < 0) {
+    set_error(JVMTI_ERROR_INTERNAL);
+  }
+}
 
 // Write the field information portion of ClassFile structure
 // JVMSpec|     u2 fields_count;

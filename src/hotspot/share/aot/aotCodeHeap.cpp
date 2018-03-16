@@ -25,7 +25,7 @@
 
 #include "aot/aotCodeHeap.hpp"
 #include "aot/aotLoader.hpp"
-#include "ci/ciUtilities.hpp"
+#include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableModRefBS.hpp"
@@ -36,6 +36,7 @@
 #include "jvmci/jvmciRuntime.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/method.inline.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vm_operations.hpp"

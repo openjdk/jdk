@@ -36,6 +36,7 @@
 #include "ci/ciUtilities.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
