@@ -133,7 +133,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJSOUND, \
     LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib winmm.lib, \
 ))
 
-$(BUILD_LIBJSOUND): $(BUILD_LIBJAVA)
+$(BUILD_LIBJSOUND): $(call FindLib, java.base, java)
 
 TARGETS += $(BUILD_LIBJSOUND)
 
@@ -166,7 +166,7 @@ ifneq ($(filter jsoundalsa, $(EXTRA_SOUND_JNI_LIBS)), )
       LIBS := $(ALSA_LIBS) -ljava -ljvm, \
   ))
 
-  $(BUILD_LIBJSOUNDALSA): $(BUILD_LIBJAVA)
+  $(BUILD_LIBJSOUNDALSA): $(call FindLib, java.base, java)
 
   TARGETS += $(BUILD_LIBJSOUNDALSA)
 
@@ -191,7 +191,7 @@ ifneq ($(filter jsoundds, $(EXTRA_SOUND_JNI_LIBS)), )
       LIBS := $(JDKLIB_LIBS) dsound.lib winmm.lib user32.lib ole32.lib, \
   ))
 
-  $(BUILD_LIBJSOUNDDS): $(BUILD_LIBJAVA)
+  $(BUILD_LIBJSOUNDDS): $(call FindLib, java.base, java)
 
   TARGETS += $(BUILD_LIBJSOUNDDS)
 

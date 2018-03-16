@@ -42,7 +42,7 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
       LIBS := $(LIBDL), \
   ))
 
-  $(BUILD_LIBJ2UCRYPTO): $(BUILD_LIBJAVA)
+  $(BUILD_LIBJ2UCRYPTO): $(call FindLib, java.base, java)
 
   TARGETS += $(BUILD_LIBJ2UCRYPTO)
 
