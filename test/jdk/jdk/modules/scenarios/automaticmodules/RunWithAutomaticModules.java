@@ -25,6 +25,8 @@
  * @test
  * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
+ *          java.scripting
+ *          jdk.zipfs
  * @build RunWithAutomaticModules jdk.test.lib.compiler.CompilerUtils JarUtils
  *        jdk.testlibrary.ProcessTools
  * @run testng RunWithAutomaticModules
