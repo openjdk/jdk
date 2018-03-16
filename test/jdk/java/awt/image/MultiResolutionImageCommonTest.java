@@ -34,7 +34,8 @@ import java.util.List;
 import java.awt.image.MultiResolutionImage;
 
 /**
- * @test @bug 8011059
+ * @test
+ * @bug 8011059
  * @author Alexander Scherbatiy
  * @summary Test MultiResolution image loading and painting with various scaling
  *          combinations

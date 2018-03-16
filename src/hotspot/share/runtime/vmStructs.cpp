@@ -466,20 +466,19 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   nonstatic_field(CardGeneration,              _capacity_at_prologue,                         size_t)                                \
   nonstatic_field(CardGeneration,              _used_at_prologue,                             size_t)                                \
                                                                                                                                      \
+  nonstatic_field(CardTable,                   _whole_heap,                                   const MemRegion)                       \
+  nonstatic_field(CardTable,                   _guard_index,                                  const size_t)                          \
+  nonstatic_field(CardTable,                   _last_valid_index,                             const size_t)                          \
+  nonstatic_field(CardTable,                   _page_size,                                    const size_t)                          \
+  nonstatic_field(CardTable,                   _byte_map_size,                                const size_t)                          \
+  nonstatic_field(CardTable,                   _byte_map,                                     jbyte*)                                \
+  nonstatic_field(CardTable,                   _cur_covered_regions,                          int)                                   \
+  nonstatic_field(CardTable,                   _covered,                                      MemRegion*)                            \
+  nonstatic_field(CardTable,                   _committed,                                    MemRegion*)                            \
+  nonstatic_field(CardTable,                   _guard_region,                                 MemRegion)                             \
+  nonstatic_field(CardTable,                   _byte_map_base,                                jbyte*)                                \
   nonstatic_field(CardTableModRefBS,           _defer_initial_card_mark,                      bool)                                  \
-  nonstatic_field(CardTableModRefBS,           _whole_heap,                                   const MemRegion)                       \
-  nonstatic_field(CardTableModRefBS,           _guard_index,                                  const size_t)                          \
-  nonstatic_field(CardTableModRefBS,           _last_valid_index,                             const size_t)                          \
-  nonstatic_field(CardTableModRefBS,           _page_size,                                    const size_t)                          \
-  nonstatic_field(CardTableModRefBS,           _byte_map_size,                                const size_t)                          \
-  nonstatic_field(CardTableModRefBS,           _byte_map,                                     jbyte*)                                \
-  nonstatic_field(CardTableModRefBS,           _cur_covered_regions,                          int)                                   \
-  nonstatic_field(CardTableModRefBS,           _covered,                                      MemRegion*)                            \
-  nonstatic_field(CardTableModRefBS,           _committed,                                    MemRegion*)                            \
-  nonstatic_field(CardTableModRefBS,           _guard_region,                                 MemRegion)                             \
-  nonstatic_field(CardTableModRefBS,           byte_map_base,                                 jbyte*)                                \
-                                                                                                                                     \
-  nonstatic_field(CardTableRS,                 _ct_bs,                                        CardTableModRefBSForCTRS*)             \
+  nonstatic_field(CardTableModRefBS,           _card_table,                                   CardTable*)                            \
                                                                                                                                      \
   nonstatic_field(CollectedHeap,               _reserved,                                     MemRegion)                             \
   nonstatic_field(CollectedHeap,               _barrier_set,                                  BarrierSet*)                           \
@@ -514,9 +513,8 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
                                                                                                                                      \
   nonstatic_field(GenCollectedHeap,            _young_gen,                                    Generation*)                           \
   nonstatic_field(GenCollectedHeap,            _old_gen,                                      Generation*)                           \
-                                                                                                                                     \
-  nonstatic_field(GenCollectorPolicy,          _young_gen_spec,                               GenerationSpec*)                       \
-  nonstatic_field(GenCollectorPolicy,          _old_gen_spec,                                 GenerationSpec*)                       \
+  nonstatic_field(GenCollectedHeap,            _young_gen_spec,                               GenerationSpec*)                       \
+  nonstatic_field(GenCollectedHeap,            _old_gen_spec,                                 GenerationSpec*)                       \
                                                                                                                                      \
   nonstatic_field(HeapWord,                    i,                                             char*)                                 \
                                                                                                                                      \
@@ -1470,7 +1468,6 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
            declare_type(DefNewGeneration,             Generation)         \
            declare_type(CardGeneration,               Generation)         \
            declare_type(TenuredGeneration,            CardGeneration)     \
-  declare_toplevel_type(GenCollectorPolicy)                               \
   declare_toplevel_type(Space)                                            \
            declare_type(CompactibleSpace,             Space)              \
            declare_type(ContiguousSpace,              CompactibleSpace)   \
@@ -1479,9 +1476,9 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_toplevel_type(BarrierSet)                                       \
            declare_type(ModRefBarrierSet,             BarrierSet)         \
            declare_type(CardTableModRefBS,            ModRefBarrierSet)   \
-           declare_type(CardTableModRefBSForCTRS,     CardTableModRefBS)  \
+  declare_toplevel_type(CardTable)                                        \
+           declare_type(CardTableRS, CardTable)                           \
   declare_toplevel_type(BarrierSet::Name)                                 \
-  declare_toplevel_type(CardTableRS)                                      \
   declare_toplevel_type(BlockOffsetSharedArray)                           \
   declare_toplevel_type(BlockOffsetTable)                                 \
            declare_type(BlockOffsetArray,             BlockOffsetTable)   \
@@ -1504,11 +1501,11 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
                                                                           \
   declare_toplevel_type(BarrierSet*)                                      \
   declare_toplevel_type(BlockOffsetSharedArray*)                          \
+  declare_toplevel_type(CardTable*)                                       \
+  declare_toplevel_type(CardTable*const)                                  \
   declare_toplevel_type(CardTableRS*)                                     \
   declare_toplevel_type(CardTableModRefBS*)                               \
   declare_toplevel_type(CardTableModRefBS**)                              \
-  declare_toplevel_type(CardTableModRefBSForCTRS*)                        \
-  declare_toplevel_type(CardTableModRefBSForCTRS**)                       \
   declare_toplevel_type(CollectedHeap*)                                   \
   declare_toplevel_type(ContiguousSpace*)                                 \
   declare_toplevel_type(DefNewGeneration*)                                \
@@ -2242,8 +2239,6 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
                                                                           \
   declare_constant(BarrierSet::ModRef)                                    \
   declare_constant(BarrierSet::CardTableModRef)                           \
-  declare_constant(BarrierSet::CardTableForRS)                            \
-  declare_constant(BarrierSet::CardTableExtension)                        \
   declare_constant(BarrierSet::G1SATBCT)                                  \
   declare_constant(BarrierSet::G1SATBCTLogging)                           \
                                                                           \
@@ -2255,18 +2250,18 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_constant(BOTConstants::Base)                                    \
   declare_constant(BOTConstants::N_powers)                                \
                                                                           \
-  declare_constant(CardTableModRefBS::clean_card)                         \
-  declare_constant(CardTableModRefBS::last_card)                          \
-  declare_constant(CardTableModRefBS::dirty_card)                         \
-  declare_constant(CardTableModRefBS::Precise)                            \
-  declare_constant(CardTableModRefBS::ObjHeadPreciseArray)                \
-  declare_constant(CardTableModRefBS::card_shift)                         \
-  declare_constant(CardTableModRefBS::card_size)                          \
-  declare_constant(CardTableModRefBS::card_size_in_words)                 \
+  declare_constant(CardTable::clean_card)                                 \
+  declare_constant(CardTable::last_card)                                  \
+  declare_constant(CardTable::dirty_card)                                 \
+  declare_constant(CardTable::Precise)                                    \
+  declare_constant(CardTable::ObjHeadPreciseArray)                        \
+  declare_constant(CardTable::card_shift)                                 \
+  declare_constant(CardTable::card_size)                                  \
+  declare_constant(CardTable::card_size_in_words)                         \
                                                                           \
   declare_constant(CardTableRS::youngergen_card)                          \
                                                                           \
-  declare_constant(G1SATBCardTableModRefBS::g1_young_gen)                 \
+  declare_constant(G1CardTable::g1_young_gen)                             \
                                                                           \
   declare_constant(CollectedHeap::SerialHeap)                             \
   declare_constant(CollectedHeap::CMSHeap)                                \

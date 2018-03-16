@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,18 +37,18 @@ public class TestMultipleXlogArgs {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:logging=debug",
                                                                   "-Xlog:logging=trace",
                                                                   "-Xlog:defaultmethods=trace",
-                                                                  "-Xlog:defaultmethods=off",
+                                                                  "-Xlog:defaultmethods=warning",
                                                                   "-Xlog:safepoint=info",
                                                                   "-Xlog:safepoint=info",
                                                                   "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         // -Xlog:logging=trace means that the log configuration will be printed.
-        String stdoutConfigLine = "\\[logging *\\] #0: stdout .*";
+        String stdoutConfigLine = "\\[logging *\\]  #0: stdout .*";
         // Ensure logging=trace has overwritten logging=debug
         output.shouldMatch(stdoutConfigLine + "logging=trace").shouldNotMatch(stdoutConfigLine + "logging=debug");
         // Make sure safepoint=info is printed exactly once even though we're setting it twice
         output.shouldMatch(stdoutConfigLine + "safepoint=info").shouldNotMatch(stdoutConfigLine + "safepoint=info.*safepoint=info");
-        // Shouldn't see defaultmethods at all, because disabled tags are not listed
+        // Shouldn't see defaultmethods at all, because it should be covered by the initial 'all=warning' config
         output.shouldNotMatch(stdoutConfigLine + "defaultmethods");
         output.shouldHaveExitValue(0);
     }

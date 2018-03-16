@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -114,9 +114,8 @@ endif # OPENJDK_TARGET_OS solaris
 
 LIBJSOUND_CFLAGS += -DEXTRA_SOUND_JNI_LIBS='"$(EXTRA_SOUND_JNI_LIBS)"'
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBJSOUND, \
-    LIBRARY := jsound, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+$(eval $(call SetupJdkLibrary, BUILD_LIBJSOUND, \
+    NAME := jsound, \
     SRC := $(LIBJSOUND_SRC_DIRS), \
     INCLUDE_FILES := $(LIBJSOUND_SRC_FILES), \
     TOOLCHAIN := $(LIBJSOUND_TOOLCHAIN), \
@@ -128,17 +127,10 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUND, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljava -ljvm, \
-    LIBS_solaris := -lc, \
     LIBS_macosx := -framework CoreAudio -framework CoreFoundation \
         -framework CoreServices -framework AudioUnit $(LIBCXX) \
         -framework CoreMIDI -framework AudioToolbox, \
     LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib winmm.lib, \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=jsound.dll" \
-        -D "JDK_INTERNAL_NAME=jsound" \
-        -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjsound, \
 ))
 
 $(BUILD_LIBJSOUND): $(BUILD_LIBJAVA)
@@ -149,9 +141,8 @@ TARGETS += $(BUILD_LIBJSOUND)
 
 ifneq ($(filter jsoundalsa, $(EXTRA_SOUND_JNI_LIBS)), )
 
-  $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUNDALSA, \
-      LIBRARY := jsoundalsa, \
-      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+  $(eval $(call SetupJdkLibrary, BUILD_LIBJSOUNDALSA, \
+      NAME := jsoundalsa, \
       SRC := $(LIBJSOUND_SRC_DIRS), \
       INCLUDE_FILES := Utilities.c $(LIBJSOUND_MIDIFILES) $(LIBJSOUND_PORTFILES) \
           $(LIBJSOUND_DAUDIOFILES) \
@@ -173,7 +164,6 @@ ifneq ($(filter jsoundalsa, $(EXTRA_SOUND_JNI_LIBS)), )
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := $(ALSA_LIBS) -ljava -ljvm, \
-      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjsoundalsa, \
   ))
 
   $(BUILD_LIBJSOUNDALSA): $(BUILD_LIBJAVA)
@@ -186,9 +176,8 @@ endif
 
 ifneq ($(filter jsoundds, $(EXTRA_SOUND_JNI_LIBS)), )
 
-  $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUNDDS, \
-      LIBRARY := jsoundds, \
-      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+  $(eval $(call SetupJdkLibrary, BUILD_LIBJSOUNDDS, \
+      NAME := jsoundds, \
       SRC := $(LIBJSOUND_SRC_DIRS), \
       INCLUDE_FILES := Utilities.c $(LIBJSOUND_DAUDIOFILES) \
           PLATFORM_API_WinOS_Charset_Util.cpp \
@@ -200,12 +189,6 @@ ifneq ($(filter jsoundds, $(EXTRA_SOUND_JNI_LIBS)), )
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := $(JDKLIB_LIBS) dsound.lib winmm.lib user32.lib ole32.lib, \
-      VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-      RC_FLAGS := $(RC_FLAGS) \
-          -D "JDK_FNAME=jsoundds.dll" \
-          -D "JDK_INTERNAL_NAME=jsoundds" \
-          -D "JDK_FTYPE=0x2L", \
-      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjsoundds, \
   ))
 
   $(BUILD_LIBJSOUNDDS): $(BUILD_LIBJAVA)

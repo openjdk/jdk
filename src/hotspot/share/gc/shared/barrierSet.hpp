@@ -115,22 +115,14 @@ public:
   // is redone until it succeeds. This can e.g. prevent allocations from the slow path
   // to be in old.
   virtual void on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {}
-  virtual void flush_deferred_barriers(JavaThread* thread) {}
+  virtual void on_thread_attach(JavaThread* thread) {}
+  virtual void on_thread_detach(JavaThread* thread) {}
   virtual void make_parsable(JavaThread* thread) {}
 
 protected:
   virtual void write_ref_array_work(MemRegion mr) = 0;
 
 public:
-  // Inform the BarrierSet that the the covered heap region that starts
-  // with "base" has been changed to have the given size (possibly from 0,
-  // for initialization.)
-  virtual void resize_covered_region(MemRegion new_region) = 0;
-
-  // If the barrier set imposes any alignment restrictions on boundaries
-  // within the heap, this function tells whether they are met.
-  virtual bool is_aligned(HeapWord* addr) = 0;
-
   // Print a description of the memory for the barrier set
   virtual void print_on(outputStream* st) const = 0;
 
@@ -271,6 +263,10 @@ public:
     // Clone barrier support
     static void clone_in_heap(oop src, oop dst, size_t size) {
       Raw::clone(src, dst, size);
+    }
+
+    static oop resolve(oop obj) {
+      return Raw::resolve(obj);
     }
   };
 };

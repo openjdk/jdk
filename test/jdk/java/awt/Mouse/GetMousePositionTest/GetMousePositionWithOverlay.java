@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,89 +21,95 @@
  * questions.
  */
 
-import test.java.awt.regtesthelpers.Util;
+import java.awt.Frame;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Rectangle;
 
-import javax.swing.*;
-import java.awt.*;
-import java.util.concurrent.atomic.AtomicReference;
-
-/**
+/*
  * @test
  * @key headful
- * @bug 8012026
+ * @bug 8012026 8196435
  * @summary Component.getMousePosition() does not work in an applet on MacOS
- * @author Petr Pchelko
- * @library ../../regtesthelpers
- * @build Util
- * @compile GetMousePositionWithOverlay.java
- * @run main/othervm GetMousePositionWithOverlay
+ * @run main GetMousePositionWithOverlay
  */
 
 public class GetMousePositionWithOverlay {
 
-    static Frame backFrame;
-    static Frame frontFrame;
+    private static Frame backFrame;
+    private static Frame frontFrame;
+    private static Robot robot;
 
     public static void main(String[] args) throws Throwable {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    constructTestUI();
-                }
-            });
-            Util.waitForIdle(null);
+        robot = new Robot();
 
-            Robot r = new Robot();
-            Util.pointOnComp(frontFrame, r);
-            Util.waitForIdle(null);
-
-            Point pos = getMousePosition(backFrame);
-            if (pos != null) {
-                throw new RuntimeException("Test failed. Mouse position should be null but was" + pos);
-            }
-
-            pos = getMousePosition(frontFrame);
-            if (pos == null) {
-                throw new RuntimeException("Test failed. Mouse position should not be null");
-            }
-
-            r.mouseMove(189, 189);
-            Util.waitForIdle(null);
-
-            pos = getMousePosition(backFrame);
-            if (pos == null) {
-                throw new RuntimeException("Test failed. Mouse position should not be null");
-            }
-        } finally {
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    backFrame.dispose();
-                    frontFrame.dispose();
-                }
-            });
+        try{
+            constructTestUI();
+        } catch (Exception e) {
+            dispose();
+            throw new RuntimeException("Unexpected Exception!");
         }
+
+        robot.waitForIdle();
+
+        doTest();
+        dispose();
     }
 
-    private static Point getMousePosition(final Component component) throws Exception {
-        final AtomicReference<Point> pos = new AtomicReference<Point>();
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                pos.set(component.getMousePosition());
-            }
-        });
-        return pos.get();
+    private static void doTest() {
+
+        frontFrame.toFront();
+        robot.waitForIdle();
+
+        Rectangle bounds = new Rectangle(frontFrame.getLocationOnScreen(), frontFrame.getSize());
+        robot.mouseMove(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+        robot.waitForIdle();
+
+        Point pos = backFrame.getMousePosition();
+        if (pos != null) {
+            dispose();
+            throw new RuntimeException("Test failed. Mouse position should be null but was " + pos);
+        }
+
+        pos = frontFrame.getMousePosition();
+        if (pos == null) {
+            dispose();
+            throw new RuntimeException("Test failed. Mouse position should not be null");
+        }
+
+        robot.mouseMove(189, 189);
+        robot.waitForIdle();
+
+        pos = backFrame.getMousePosition();
+        if (pos == null) {
+            dispose();
+            throw new RuntimeException("Test failed. Mouse position should not be null");
+        }
+
+    }
+
+    private static void dispose() {
+
+        if (backFrame != null) {
+            backFrame.dispose();
+        }
+
+        if (frontFrame != null) {
+            frontFrame.dispose();
+        }
     }
 
     private static void constructTestUI() {
         backFrame = new Frame();
         backFrame.setBounds(100, 100, 100, 100);
+        backFrame.setResizable(false);
         backFrame.setVisible(true);
 
         frontFrame = new Frame();
         frontFrame.setBounds(120, 120, 60, 60);
+        frontFrame.setResizable(false);
         frontFrame.setVisible(true);
+
     }
 }
+

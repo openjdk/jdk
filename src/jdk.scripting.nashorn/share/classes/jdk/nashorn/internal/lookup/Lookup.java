@@ -56,11 +56,8 @@ public final class Lookup {
     /** Method handle to the empty setter */
     public static final MethodHandle EMPTY_SETTER = findOwnMH("emptySetter", void.class, Object.class, Object.class);
 
-    /** Method handle to a getter that only throws type error */
-    public static final MethodHandle TYPE_ERROR_THROWER_GETTER = findOwnMH("typeErrorThrowerGetter", Object.class, Object.class);
-
-    /** Method handle to a setter that only throws type error */
-    public static final MethodHandle TYPE_ERROR_THROWER_SETTER = findOwnMH("typeErrorThrowerSetter", void.class, Object.class, Object.class);
+    /** Method handle to a getter or setter that only throws type error */
+    public static final MethodHandle TYPE_ERROR_THROWER = findOwnMH("typeErrorThrower", Object.class, Object.class);
 
     /** Method handle to the most generic of getters, the one that returns an Object */
     public static final MethodType GET_OBJECT_TYPE = MH.type(Object.class, Object.class);
@@ -114,17 +111,7 @@ public final class Lookup {
      * @param self  self reference
      * @return undefined (but throws error before return point)
      */
-    public static Object typeErrorThrowerGetter(final Object self) {
-        throw typeError("strict.getter.setter.poison", ScriptRuntime.safeToString(self));
-    }
-
-    /**
-     * Getter function that always throws type error
-     *
-     * @param self  self reference
-     * @param value (ignored)
-     */
-    public static void typeErrorThrowerSetter(final Object self, final Object value) {
+    public static Object typeErrorThrower(final Object self) {
         throw typeError("strict.getter.setter.poison", ScriptRuntime.safeToString(self));
     }
 

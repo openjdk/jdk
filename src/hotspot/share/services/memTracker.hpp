@@ -113,6 +113,8 @@ class Tracker : public StackObj {
 };
 
 class MemTracker : AllStatic {
+  friend class VirtualMemoryTrackerTest;
+
  public:
   static inline NMT_TrackingLevel tracking_level() {
     if (_tracking_level == NMT_unknown) {
@@ -215,8 +217,7 @@ class MemTracker : AllStatic {
     if (addr != NULL) {
       ThreadCritical tc;
       if (tracking_level() < NMT_summary) return;
-      VirtualMemoryTracker::add_reserved_region((address)addr, size,
-        stack, flag, true);
+      VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, flag);
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
   }
@@ -245,7 +246,7 @@ class MemTracker : AllStatic {
     if (addr != NULL) {
       // uses thread stack malloc slot for book keeping number of threads
       MallocMemorySummary::record_malloc(0, mtThreadStack);
-      record_virtual_memory_reserve_and_commit(addr, size, CALLER_PC, mtThreadStack);
+      record_virtual_memory_reserve(addr, size, CALLER_PC, mtThreadStack);
     }
   }
 

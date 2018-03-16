@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -395,7 +395,6 @@ class ServerImpl implements TimeSource {
                         } else {
                             try {
                                 if (key.isReadable()) {
-                                    boolean closed;
                                     SocketChannel chan = (SocketChannel)key.channel();
                                     HttpConnection conn = (HttpConnection)key.attachment();
 
@@ -437,7 +436,6 @@ class ServerImpl implements TimeSource {
         }
 
         public void handle (SocketChannel chan, HttpConnection conn)
-        throws IOException
         {
             try {
                 Exchange t = new Exchange (chan, protocol, conn);
@@ -447,6 +445,9 @@ class ServerImpl implements TimeSource {
                 closeConnection(conn);
             } catch (IOException e) {
                 logger.log (Level.TRACE, "Dispatcher (5)", e);
+                closeConnection(conn);
+            } catch (Throwable e) {
+                logger.log (Level.TRACE, "Dispatcher (6)", e);
                 closeConnection(conn);
             }
         }

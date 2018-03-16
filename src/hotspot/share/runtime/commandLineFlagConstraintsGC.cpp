@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -375,8 +375,8 @@ Flag::Error ParGCCardsPerStrideChunkConstraintFunc(intx value, bool verbose) {
   if (UseConcMarkSweepGC) {
     // ParGCCardsPerStrideChunk should be compared with card table size.
     size_t heap_size = Universe::heap()->reserved_region().word_size();
-    CardTableModRefBS* bs = (CardTableModRefBS*)GenCollectedHeap::heap()->rem_set()->bs();
-    size_t card_table_size = bs->cards_required(heap_size) - 1; // Valid card table size
+    CardTableRS* ct = GenCollectedHeap::heap()->rem_set();
+    size_t card_table_size = ct->cards_required(heap_size) - 1; // Valid card table size
 
     if ((size_t)value > card_table_size) {
       CommandLineError::print(verbose,
@@ -387,7 +387,7 @@ Flag::Error ParGCCardsPerStrideChunkConstraintFunc(intx value, bool verbose) {
     }
 
     // ParGCCardsPerStrideChunk is used with n_strides(ParallelGCThreads*ParGCStridesPerThread)
-    // from CardTableModRefBSForCTRS::process_stride(). Note that ParGCStridesPerThread is already checked
+    // from CardTableRS::process_stride(). Note that ParGCStridesPerThread is already checked
     // not to make an overflow with ParallelGCThreads from its constraint function.
     uintx n_strides = ParallelGCThreads * ParGCStridesPerThread;
     uintx ergo_max = max_uintx / n_strides;
@@ -469,9 +469,9 @@ Flag::Error CMSRescanMultipleConstraintFunc(size_t value, bool verbose) {
 #if INCLUDE_ALL_GCS
   if (status == Flag::SUCCESS && UseConcMarkSweepGC) {
     // CMSParRemarkTask::do_dirty_card_rescan_tasks requires CompactibleFreeListSpace::rescan_task_size()
-    // to be aligned to CardTableModRefBS::card_size * BitsPerWord.
+    // to be aligned to CardTable::card_size * BitsPerWord.
     // Note that rescan_task_size() will be aligned if CMSRescanMultiple is a multiple of 'HeapWordSize'
-    // because rescan_task_size() is CardTableModRefBS::card_size / HeapWordSize * BitsPerWord.
+    // because rescan_task_size() is CardTable::card_size / HeapWordSize * BitsPerWord.
     if (value % HeapWordSize != 0) {
       CommandLineError::print(verbose,
                               "CMSRescanMultiple (" SIZE_FORMAT ") must be "

@@ -60,7 +60,7 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 #ifdef ASSERT
-  if (gch->collector_policy()->should_clear_all_soft_refs()) {
+  if (gch->soft_ref_policy()->should_clear_all_soft_refs()) {
     assert(clear_all_softrefs, "Policy should have been checked earlier");
   }
 #endif

@@ -377,7 +377,7 @@ public class ValueConversions {
         MethodType type = MethodType.methodType(wrap.primitiveType());
         switch (wrap) {
             case VOID:
-                mh = EMPTY;
+                mh = Handles.EMPTY;
                 break;
             case OBJECT:
             case INT: case LONG: case FLOAT: case DOUBLE:
@@ -400,26 +400,28 @@ public class ValueConversions {
         throw new IllegalArgumentException("cannot find zero constant for " + wrap);
     }
 
-    private static final MethodHandle CAST_REFERENCE, IGNORE, EMPTY;
-    static {
-        try {
-            MethodType idType = MethodType.genericMethodType(1);
-            MethodType ignoreType = idType.changeReturnType(void.class);
-            CAST_REFERENCE = IMPL_LOOKUP.findVirtual(Class.class, "cast", idType);
-            IGNORE = IMPL_LOOKUP.findStatic(THIS_CLASS, "ignore", ignoreType);
-            EMPTY = IMPL_LOOKUP.findStatic(THIS_CLASS, "empty", ignoreType.dropParameterTypes(0, 1));
-        } catch (NoSuchMethodException | IllegalAccessException ex) {
-            throw newInternalError("uncaught exception", ex);
+    private static class Handles {
+        static final MethodHandle CAST_REFERENCE, IGNORE, EMPTY;
+        static {
+            try {
+                MethodType idType = MethodType.genericMethodType(1);
+                MethodType ignoreType = idType.changeReturnType(void.class);
+                CAST_REFERENCE = IMPL_LOOKUP.findVirtual(Class.class, "cast", idType);
+                IGNORE = IMPL_LOOKUP.findStatic(THIS_CLASS, "ignore", ignoreType);
+                EMPTY = IMPL_LOOKUP.findStatic(THIS_CLASS, "empty", ignoreType.dropParameterTypes(0, 1));
+            } catch (NoSuchMethodException | IllegalAccessException ex) {
+                throw newInternalError("uncaught exception", ex);
+            }
         }
     }
 
     public static MethodHandle ignore() {
-        return IGNORE;
+        return Handles.IGNORE;
     }
 
     /** Return a method that casts its second argument (an Object) to the given type (a Class). */
     public static MethodHandle cast() {
-        return CAST_REFERENCE;
+        return Handles.CAST_REFERENCE;
     }
 
     /// Primitive conversions.

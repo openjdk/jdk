@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/reflection.hpp"
 #include "utilities/stringUtils.hpp"
 #include "utilities/utf8.hpp"

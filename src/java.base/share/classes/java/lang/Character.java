@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -620,7 +620,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
          * Constructs a new {@code Subset} instance.
          *
          * @param  name  The name of this subset
-         * @exception NullPointerException if name is {@code null}
+         * @throws NullPointerException if name is {@code null}
          */
         protected Subset(String name) {
             if (name == null) {
@@ -3583,14 +3583,15 @@ class Character implements java.io.Serializable, Comparable<Character> {
          *          Unicode block of which this character is a member, or
          *          {@code null} if the character is not a member of any
          *          Unicode block
-         * @exception IllegalArgumentException if the specified
+         * @throws  IllegalArgumentException if the specified
          * {@code codePoint} is an invalid Unicode code point.
          * @see Character#isValidCodePoint(int)
          * @since   1.5
          */
         public static UnicodeBlock of(int codePoint) {
             if (!isValidCodePoint(codePoint)) {
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException(
+                    String.format("Not a valid Unicode code point: 0x%X", codePoint));
             }
 
             int top, bottom, current;
@@ -3649,7 +3650,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
         public static final UnicodeBlock forName(String blockName) {
             UnicodeBlock block = map.get(blockName.toUpperCase(Locale.US));
             if (block == null) {
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException("Not a valid block name: "
+                            + blockName);
             }
             return block;
         }
@@ -7387,14 +7389,15 @@ class Character implements java.io.Serializable, Comparable<Character> {
          * @return  The {@code UnicodeScript} constant representing the
          *          Unicode script of which this character is assigned to.
          *
-         * @exception IllegalArgumentException if the specified
+         * @throws  IllegalArgumentException if the specified
          * {@code codePoint} is an invalid Unicode code point.
          * @see Character#isValidCodePoint(int)
          *
          */
         public static UnicodeScript of(int codePoint) {
             if (!isValidCodePoint(codePoint))
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException(
+                    String.format("Not a valid Unicode code point: 0x%X", codePoint));
             int type = getType(codePoint);
             // leave SURROGATE and PRIVATE_USE for table lookup
             if (type == UNASSIGNED)
@@ -7568,12 +7571,33 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * specified {@code char}.  The result is a string of length
      * 1 consisting solely of the specified {@code char}.
      *
+     * @apiNote This method cannot handle <a
+     * href="#supplementary"> supplementary characters</a>. To support
+     * all Unicode characters, including supplementary characters, use
+     * the {@link #toString(int)} method.
+     *
      * @param c the {@code char} to be converted
      * @return the string representation of the specified {@code char}
      * @since 1.4
      */
     public static String toString(char c) {
         return String.valueOf(c);
+    }
+
+    /**
+     * Returns a {@code String} object representing the
+     * specified character (Unicode code point).  The result is a string of
+     * length 1 or 2, consisting solely of the specified {@code codePoint}.
+     *
+     * @param codePoint the {@code codePoint} to be converted
+     * @return the string representation of the specified {@code codePoint}
+     * @throws IllegalArgumentException if the specified
+     *      {@code codePoint} is not a {@linkplain #isValidCodePoint
+     *      valid Unicode code point}.
+     * @since 11
+     */
+    public static String toString(int codePoint) {
+        return String.valueOfCodePoint(codePoint);
     }
 
     /**
@@ -7782,8 +7806,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @param index the index to the {@code char} values (Unicode
      * code units) in {@code seq} to be converted
      * @return the Unicode code point at the given index
-     * @exception NullPointerException if {@code seq} is null.
-     * @exception IndexOutOfBoundsException if the value
+     * @throws NullPointerException if {@code seq} is null.
+     * @throws IndexOutOfBoundsException if the value
      * {@code index} is negative or not less than
      * {@link CharSequence#length() seq.length()}.
      * @since  1.5
@@ -7814,8 +7838,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @param index the index to the {@code char} values (Unicode
      * code units) in the {@code char} array to be converted
      * @return the Unicode code point at the given index
-     * @exception NullPointerException if {@code a} is null.
-     * @exception IndexOutOfBoundsException if the value
+     * @throws NullPointerException if {@code a} is null.
+     * @throws IndexOutOfBoundsException if the value
      * {@code index} is negative or not less than
      * the length of the {@code char} array.
      * @since  1.5
@@ -7842,8 +7866,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @param limit the index after the last array element that
      * can be used in the {@code char} array
      * @return the Unicode code point at the given index
-     * @exception NullPointerException if {@code a} is null.
-     * @exception IndexOutOfBoundsException if the {@code index}
+     * @throws NullPointerException if {@code a} is null.
+     * @throws IndexOutOfBoundsException if the {@code index}
      * argument is negative or not less than the {@code limit}
      * argument, or if the {@code limit} argument is negative or
      * greater than the length of the {@code char} array.
@@ -7883,8 +7907,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @param seq the {@code CharSequence} instance
      * @param index the index following the code point that should be returned
      * @return the Unicode code point value before the given index.
-     * @exception NullPointerException if {@code seq} is null.
-     * @exception IndexOutOfBoundsException if the {@code index}
+     * @throws NullPointerException if {@code seq} is null.
+     * @throws IndexOutOfBoundsException if the {@code index}
      * argument is less than 1 or greater than {@link
      * CharSequence#length() seq.length()}.
      * @since  1.5
@@ -7915,8 +7939,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @param a the {@code char} array
      * @param index the index following the code point that should be returned
      * @return the Unicode code point value before the given index.
-     * @exception NullPointerException if {@code a} is null.
-     * @exception IndexOutOfBoundsException if the {@code index}
+     * @throws NullPointerException if {@code a} is null.
+     * @throws IndexOutOfBoundsException if the {@code index}
      * argument is less than 1 or greater than the length of the
      * {@code char} array
      * @since  1.5
@@ -7944,8 +7968,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @param start the index of the first array element in the
      * {@code char} array
      * @return the Unicode code point value before the given index.
-     * @exception NullPointerException if {@code a} is null.
-     * @exception IndexOutOfBoundsException if the {@code index}
+     * @throws NullPointerException if {@code a} is null.
+     * @throws IndexOutOfBoundsException if the {@code index}
      * argument is not greater than the {@code start} argument or
      * is greater than the length of the {@code char} array, or
      * if the {@code start} argument is negative or not less than
@@ -8045,10 +8069,10 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * array where the converted value is stored.
      * @return 1 if the code point is a BMP code point, 2 if the
      * code point is a supplementary code point.
-     * @exception IllegalArgumentException if the specified
+     * @throws IllegalArgumentException if the specified
      * {@code codePoint} is not a valid Unicode code point.
-     * @exception NullPointerException if the specified {@code dst} is null.
-     * @exception IndexOutOfBoundsException if {@code dstIndex}
+     * @throws NullPointerException if the specified {@code dst} is null.
+     * @throws IndexOutOfBoundsException if {@code dstIndex}
      * is negative or not less than {@code dst.length}, or if
      * {@code dst} at {@code dstIndex} doesn't have enough
      * array element(s) to store the resulting {@code char}
@@ -8067,7 +8091,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
             toSurrogates(codePoint, dst, dstIndex);
             return 2;
         } else {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(
+                String.format("Not a valid Unicode code point: 0x%X", codePoint));
         }
     }
 
@@ -8083,7 +8108,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @param  codePoint a Unicode code point
      * @return a {@code char} array having
      *         {@code codePoint}'s UTF-16 representation.
-     * @exception IllegalArgumentException if the specified
+     * @throws IllegalArgumentException if the specified
      * {@code codePoint} is not a valid Unicode code point.
      * @since  1.5
      */
@@ -8095,7 +8120,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
             toSurrogates(codePoint, result, 0);
             return result;
         } else {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(
+                String.format("Not a valid Unicode code point: 0x%X", codePoint));
         }
     }
 
@@ -8121,8 +8147,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * the text range.
      * @return the number of Unicode code points in the specified text
      * range
-     * @exception NullPointerException if {@code seq} is null.
-     * @exception IndexOutOfBoundsException if the
+     * @throws NullPointerException if {@code seq} is null.
+     * @throws IndexOutOfBoundsException if the
      * {@code beginIndex} is negative, or {@code endIndex}
      * is larger than the length of the given sequence, or
      * {@code beginIndex} is larger than {@code endIndex}.
@@ -8157,8 +8183,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * given {@code char} array
      * @param count the length of the subarray in {@code char}s
      * @return the number of Unicode code points in the specified subarray
-     * @exception NullPointerException if {@code a} is null.
-     * @exception IndexOutOfBoundsException if {@code offset} or
+     * @throws NullPointerException if {@code a} is null.
+     * @throws IndexOutOfBoundsException if {@code offset} or
      * {@code count} is negative, or if {@code offset +
      * count} is larger than the length of the given array.
      * @since  1.5
@@ -8194,8 +8220,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @param index the index to be offset
      * @param codePointOffset the offset in code points
      * @return the index within the char sequence
-     * @exception NullPointerException if {@code seq} is null.
-     * @exception IndexOutOfBoundsException if {@code index}
+     * @throws NullPointerException if {@code seq} is null.
+     * @throws IndexOutOfBoundsException if {@code index}
      *   is negative or larger then the length of the char sequence,
      *   or if {@code codePointOffset} is positive and the
      *   subsequence starting with {@code index} has fewer than
@@ -8255,8 +8281,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @param index the index to be offset
      * @param codePointOffset the offset in code points
      * @return the index within the subarray
-     * @exception NullPointerException if {@code a} is null.
-     * @exception IndexOutOfBoundsException
+     * @throws NullPointerException if {@code a} is null.
+     * @throws IndexOutOfBoundsException
      *   if {@code start} or {@code count} is negative,
      *   or if {@code start + count} is larger than the length of
      *   the given array,
@@ -8853,19 +8879,19 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * provided by {@link Character#getType(int) getType(codePoint)}, is any of
      * the following:
      * <ul>
-     * <li> <code>UPPERCASE_LETTER</code>
-     * <li> <code>LOWERCASE_LETTER</code>
-     * <li> <code>TITLECASE_LETTER</code>
-     * <li> <code>MODIFIER_LETTER</code>
-     * <li> <code>OTHER_LETTER</code>
-     * <li> <code>LETTER_NUMBER</code>
+     * <li> {@code UPPERCASE_LETTER}
+     * <li> {@code LOWERCASE_LETTER}
+     * <li> {@code TITLECASE_LETTER}
+     * <li> {@code MODIFIER_LETTER}
+     * <li> {@code OTHER_LETTER}
+     * <li> {@code LETTER_NUMBER}
      * </ul>
      * or it has contributory property Other_Alphabetic as defined by the
      * Unicode Standard.
      *
      * @param   codePoint the character (Unicode code point) to be tested.
-     * @return  <code>true</code> if the character is a Unicode alphabet
-     *          character, <code>false</code> otherwise.
+     * @return  {@code true} if the character is a Unicode alphabet
+     *          character, {@code false} otherwise.
      * @since   1.7
      */
     public static boolean isAlphabetic(int codePoint) {
@@ -8884,8 +8910,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * the Unicode Standard.
      *
      * @param   codePoint the character (Unicode code point) to be tested.
-     * @return  <code>true</code> if the character is a Unicode ideograph
-     *          character, <code>false</code> otherwise.
+     * @return  {@code true} if the character is a Unicode ideograph
+     *          character, {@code false} otherwise.
      * @since   1.7
      */
     public static boolean isIdeographic(int codePoint) {
@@ -10149,7 +10175,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @return the Unicode name of the specified character, or null if
      *         the code point is unassigned.
      *
-     * @exception IllegalArgumentException if the specified
+     * @throws IllegalArgumentException if the specified
      *            {@code codePoint} is not a valid Unicode
      *            code point.
      *
@@ -10157,7 +10183,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
      */
     public static String getName(int codePoint) {
         if (!isValidCodePoint(codePoint)) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(
+                String.format("Not a valid Unicode code point: 0x%X", codePoint));
         }
         String name = CharacterName.getInstance().getName(codePoint);
         if (name != null)

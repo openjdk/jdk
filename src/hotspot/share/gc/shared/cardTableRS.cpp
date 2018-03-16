@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,41 +74,6 @@ void CLDRemSet::clear_mod_union() {
   ClassLoaderDataGraph::cld_do(&closure);
 }
 
-
-CardTableRS::CardTableRS(MemRegion whole_heap) :
-  _bs(NULL),
-  _cur_youngergen_card_val(youngergenP1_card)
-{
-  _ct_bs = new CardTableModRefBSForCTRS(whole_heap);
-  _ct_bs->initialize();
-  set_bs(_ct_bs);
-  // max_gens is really GenCollectedHeap::heap()->gen_policy()->number_of_generations()
-  // (which is always 2, young & old), but GenCollectedHeap has not been initialized yet.
-  uint max_gens = 2;
-  _last_cur_val_in_gen = NEW_C_HEAP_ARRAY3(jbyte, max_gens + 1,
-                         mtGC, CURRENT_PC, AllocFailStrategy::RETURN_NULL);
-  if (_last_cur_val_in_gen == NULL) {
-    vm_exit_during_initialization("Could not create last_cur_val_in_gen array.");
-  }
-  for (uint i = 0; i < max_gens + 1; i++) {
-    _last_cur_val_in_gen[i] = clean_card_val();
-  }
-  _ct_bs->set_CTRS(this);
-}
-
-CardTableRS::~CardTableRS() {
-  if (_ct_bs) {
-    delete _ct_bs;
-    _ct_bs = NULL;
-  }
-  if (_last_cur_val_in_gen) {
-    FREE_C_HEAP_ARRAY(jbyte, _last_cur_val_in_gen);
-  }
-}
-
-void CardTableRS::resize_covered_region(MemRegion new_region) {
-  _ct_bs->resize_covered_region(new_region);
-}
 
 jbyte CardTableRS::find_unused_youngergenP_card_value() {
   for (jbyte v = youngergenP1_card;
@@ -247,7 +212,7 @@ void ClearNoncleanCardWrapper::do_MemRegion(MemRegion mr) {
       // fast forward through potential continuous whole-word range of clean cards beginning at a word-boundary
       if (is_word_aligned(cur_entry)) {
         jbyte* cur_row = cur_entry - BytesPerWord;
-        while (cur_row >= limit && *((intptr_t*)cur_row) ==  CardTableRS::clean_card_row()) {
+        while (cur_row >= limit && *((intptr_t*)cur_row) ==  CardTableRS::clean_card_row_val()) {
           cur_row -= BytesPerWord;
         }
         cur_entry = cur_row + BytesPerWord;
@@ -283,7 +248,7 @@ void ClearNoncleanCardWrapper::do_MemRegion(MemRegion mr) {
 // cur-younger-gen                ==> cur_younger_gen
 // cur_youngergen_and_prev_nonclean_card ==> no change.
 void CardTableRS::write_ref_field_gc_par(void* field, oop new_val) {
-  volatile jbyte* entry = _ct_bs->byte_for(field);
+  volatile jbyte* entry = byte_for(field);
   do {
     jbyte entry_val = *entry;
     // We put this first because it's probably the most common case.
@@ -341,7 +306,7 @@ void CardTableRS::younger_refs_in_space_iterate(Space* sp,
     ShouldNotReachHere();
   }
 #endif
-  _ct_bs->non_clean_card_iterate_possibly_parallel(sp, urasm, cl, this, n_threads);
+  non_clean_card_iterate_possibly_parallel(sp, urasm, cl, this, n_threads);
 }
 
 void CardTableRS::clear_into_younger(Generation* old_gen) {
@@ -642,5 +607,115 @@ void CardTableRS::verify() {
   // generational heaps.
   VerifyCTGenClosure blk(this);
   GenCollectedHeap::heap()->generation_iterate(&blk, false);
-  _ct_bs->verify();
+  CardTable::verify();
+}
+
+CardTableRS::CardTableRS(MemRegion whole_heap) :
+  CardTable(whole_heap, /* scanned concurrently */ UseConcMarkSweepGC && CMSPrecleaningEnabled),
+  _cur_youngergen_card_val(youngergenP1_card),
+  // LNC functionality
+  _lowest_non_clean(NULL),
+  _lowest_non_clean_chunk_size(NULL),
+  _lowest_non_clean_base_chunk_index(NULL),
+  _last_LNC_resizing_collection(NULL)
+{
+  // max_gens is really GenCollectedHeap::heap()->gen_policy()->number_of_generations()
+  // (which is always 2, young & old), but GenCollectedHeap has not been initialized yet.
+  uint max_gens = 2;
+  _last_cur_val_in_gen = NEW_C_HEAP_ARRAY3(jbyte, max_gens + 1,
+                         mtGC, CURRENT_PC, AllocFailStrategy::RETURN_NULL);
+  if (_last_cur_val_in_gen == NULL) {
+    vm_exit_during_initialization("Could not create last_cur_val_in_gen array.");
+  }
+  for (uint i = 0; i < max_gens + 1; i++) {
+    _last_cur_val_in_gen[i] = clean_card_val();
+  }
+}
+
+CardTableRS::~CardTableRS() {
+  if (_last_cur_val_in_gen) {
+    FREE_C_HEAP_ARRAY(jbyte, _last_cur_val_in_gen);
+    _last_cur_val_in_gen = NULL;
+  }
+  if (_lowest_non_clean) {
+    FREE_C_HEAP_ARRAY(CardArr, _lowest_non_clean);
+    _lowest_non_clean = NULL;
+  }
+  if (_lowest_non_clean_chunk_size) {
+    FREE_C_HEAP_ARRAY(size_t, _lowest_non_clean_chunk_size);
+    _lowest_non_clean_chunk_size = NULL;
+  }
+  if (_lowest_non_clean_base_chunk_index) {
+    FREE_C_HEAP_ARRAY(uintptr_t, _lowest_non_clean_base_chunk_index);
+    _lowest_non_clean_base_chunk_index = NULL;
+  }
+  if (_last_LNC_resizing_collection) {
+    FREE_C_HEAP_ARRAY(int, _last_LNC_resizing_collection);
+    _last_LNC_resizing_collection = NULL;
+  }
+}
+
+void CardTableRS::initialize() {
+  CardTable::initialize();
+  _lowest_non_clean =
+    NEW_C_HEAP_ARRAY(CardArr, _max_covered_regions, mtGC);
+  _lowest_non_clean_chunk_size =
+    NEW_C_HEAP_ARRAY(size_t, _max_covered_regions, mtGC);
+  _lowest_non_clean_base_chunk_index =
+    NEW_C_HEAP_ARRAY(uintptr_t, _max_covered_regions, mtGC);
+  _last_LNC_resizing_collection =
+    NEW_C_HEAP_ARRAY(int, _max_covered_regions, mtGC);
+  if (_lowest_non_clean == NULL
+      || _lowest_non_clean_chunk_size == NULL
+      || _lowest_non_clean_base_chunk_index == NULL
+      || _last_LNC_resizing_collection == NULL)
+    vm_exit_during_initialization("couldn't allocate an LNC array.");
+  for (int i = 0; i < _max_covered_regions; i++) {
+    _lowest_non_clean[i] = NULL;
+    _lowest_non_clean_chunk_size[i] = 0;
+    _last_LNC_resizing_collection[i] = -1;
+  }
+}
+
+bool CardTableRS::card_will_be_scanned(jbyte cv) {
+  return card_is_dirty_wrt_gen_iter(cv) || is_prev_nonclean_card_val(cv);
+}
+
+bool CardTableRS::card_may_have_been_dirty(jbyte cv) {
+  return
+    cv != clean_card &&
+    (card_is_dirty_wrt_gen_iter(cv) ||
+     CardTableRS::youngergen_may_have_been_dirty(cv));
+}
+
+void CardTableRS::non_clean_card_iterate_possibly_parallel(
+  Space* sp,
+  MemRegion mr,
+  OopsInGenClosure* cl,
+  CardTableRS* ct,
+  uint n_threads)
+{
+  if (!mr.is_empty()) {
+    if (n_threads > 0) {
+#if INCLUDE_ALL_GCS
+      non_clean_card_iterate_parallel_work(sp, mr, cl, ct, n_threads);
+#else  // INCLUDE_ALL_GCS
+      fatal("Parallel gc not supported here.");
+#endif // INCLUDE_ALL_GCS
+    } else {
+      // clear_cl finds contiguous dirty ranges of cards to process and clear.
+
+      // This is the single-threaded version used by DefNew.
+      const bool parallel = false;
+
+      DirtyCardToOopClosure* dcto_cl = sp->new_dcto_cl(cl, precision(), cl->gen_boundary(), parallel);
+      ClearNoncleanCardWrapper clear_cl(dcto_cl, ct, parallel);
+
+      clear_cl.do_MemRegion(mr);
+    }
+  }
+}
+
+bool CardTableRS::is_in_young(oop obj) const {
+  return GenCollectedHeap::heap()->is_in_young(obj);
 }

@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableModRefBS.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
@@ -43,6 +44,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -2336,9 +2338,6 @@ void MacroAssembler::tlab_allocate(
   std(new_top, in_bytes(JavaThread::tlab_top_offset()), R16_thread);
   //verify_tlab(); not implemented
 }
-void MacroAssembler::tlab_refill(Label& retry_tlab, Label& try_eden, Label& slow_case) {
-  unimplemented("tlab_refill");
-}
 void MacroAssembler::incr_allocated_bytes(RegisterOrConstant size_in_bytes, Register t1, Register t2) {
   unimplemented("incr_allocated_bytes");
 }
@@ -3039,20 +3038,20 @@ void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg) {
 void MacroAssembler::card_write_barrier_post(Register Rstore_addr, Register Rnew_val, Register Rtmp) {
   CardTableModRefBS* bs =
     barrier_set_cast<CardTableModRefBS>(Universe::heap()->barrier_set());
-  assert(bs->kind() == BarrierSet::CardTableForRS ||
-         bs->kind() == BarrierSet::CardTableExtension, "wrong barrier");
+  assert(bs->kind() == BarrierSet::CardTableModRef, "wrong barrier");
+  CardTable* ct = bs->card_table();
 #ifdef ASSERT
   cmpdi(CCR0, Rnew_val, 0);
   asm_assert_ne("null oop not allowed", 0x321);
 #endif
-  card_table_write(bs->byte_map_base, Rtmp, Rstore_addr);
+  card_table_write(ct->byte_map_base(), Rtmp, Rstore_addr);
 }
 
 // Write the card table byte.
 void MacroAssembler::card_table_write(jbyte* byte_map_base, Register Rtmp, Register Robj) {
   assert_different_registers(Robj, Rtmp, R0);
   load_const_optimized(Rtmp, (address)byte_map_base, R0);
-  srdi(Robj, Robj, CardTableModRefBS::card_shift);
+  srdi(Robj, Robj, CardTable::card_shift);
   li(R0, 0); // dirty
   if (UseConcMarkSweepGC) membar(Assembler::StoreStore);
   stbx(R0, Rtmp, Robj);
@@ -3174,6 +3173,7 @@ void MacroAssembler::g1_write_barrier_post(Register Rstore_addr, Register Rnew_v
 
   G1SATBCardTableLoggingModRefBS* bs =
     barrier_set_cast<G1SATBCardTableLoggingModRefBS>(Universe::heap()->barrier_set());
+  CardTable* ct = bs->card_table();
 
   // Does store cross heap regions?
   if (G1RSBarrierRegionFilter) {
@@ -3190,26 +3190,26 @@ void MacroAssembler::g1_write_barrier_post(Register Rstore_addr, Register Rnew_v
 #endif
 
   // Storing region crossing non-NULL, is card already dirty?
-  assert(sizeof(*bs->byte_map_base) == sizeof(jbyte), "adjust this code");
+  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
   const Register Rcard_addr = Rtmp1;
   Register Rbase = Rtmp2;
-  load_const_optimized(Rbase, (address)bs->byte_map_base, /*temp*/ Rtmp3);
+  load_const_optimized(Rbase, (address)ct->byte_map_base(), /*temp*/ Rtmp3);
 
-  srdi(Rcard_addr, Rstore_addr, CardTableModRefBS::card_shift);
+  srdi(Rcard_addr, Rstore_addr, CardTable::card_shift);
 
   // Get the address of the card.
   lbzx(/*card value*/ Rtmp3, Rbase, Rcard_addr);
-  cmpwi(CCR0, Rtmp3, (int)G1SATBCardTableModRefBS::g1_young_card_val());
+  cmpwi(CCR0, Rtmp3, (int)G1CardTable::g1_young_card_val());
   beq(CCR0, filtered);
 
   membar(Assembler::StoreLoad);
   lbzx(/*card value*/ Rtmp3, Rbase, Rcard_addr);  // Reload after membar.
-  cmpwi(CCR0, Rtmp3 /* card value */, CardTableModRefBS::dirty_card_val());
+  cmpwi(CCR0, Rtmp3 /* card value */, CardTable::dirty_card_val());
   beq(CCR0, filtered);
 
   // Storing a region crossing, non-NULL oop, card is clean.
   // Dirty card and log.
-  li(Rtmp3, CardTableModRefBS::dirty_card_val());
+  li(Rtmp3, CardTable::dirty_card_val());
   //release(); // G1: oops are allowed to get visible after dirty marking.
   stbx(Rtmp3, Rbase, Rcard_addr);
 

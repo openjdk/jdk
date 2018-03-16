@@ -2057,7 +2057,7 @@ public class MethodEmitter {
     }
 
     /**
-     * Retrieve the top <tt>count</tt> types on the stack without modifying it.
+     * Retrieve the top <code>count</code> types on the stack without modifying it.
      *
      * @param count number of types to return
      * @return array of Types

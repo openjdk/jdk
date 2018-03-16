@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,16 @@
 /*
  * @test
  * @key headful
- * @bug 7188093 8000176
+ * @bug 7188093 8000176 8198613
  * @summary Tests each of the 3 possible methods for rendering an upscaled
  * image via rendering hints for default, xrender and opengl pipelines.
  *
  * @author Vadim.Pakhnushev@oracle.com
  * @run main/othervm -Dsun.java2d.xrender=false InterpolationQualityTest
  * @run main/othervm -Dsun.java2d.xrender=True InterpolationQualityTest
- * @run main/othervm -Dsun.java2d.opengl=True InterpolationQualityTest
  * @run main/othervm -Dsun.java2d.d3d=false InterpolationQualityTest
  * @run main/othervm -Dsun.java2d.d3d=True InterpolationQualityTest
+ * @run main/othervm InterpolationQualityTest
  */
 
 import java.awt.*;

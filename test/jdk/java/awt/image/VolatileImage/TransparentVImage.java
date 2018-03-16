@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,12 @@
 
 /*
  * @test
- * @bug 4881082 4916294 5002129 8158524
+ * @bug 4881082 4916294 5002129 8158524 8198613
  * @summary The test verifies whether the rendering operations on transparent
  *          and translucent VolatileImage objects generate identical output
  *          as generated with transparent and translucent BufferedImages.
  * @key headful
  * @run main/othervm -Dsun.java2d.uiScale=1 TransparentVImage
- * @run main/othervm -Dsun.java2d.uiScale=1 -Dsun.java2d.opengl=True -Dsun.java2d.opengl.fbobject=false TransparentVImage
- * @run main/othervm -Dsun.java2d.uiScale=1 -Dsun.java2d.opengl=True -Dsun.java2d.opengl.fbobject=true TransparentVImage
  */
 import java.awt.GraphicsConfiguration;
 import java.awt.Graphics;

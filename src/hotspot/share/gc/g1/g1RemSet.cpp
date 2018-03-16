@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
+#include "gc/g1/g1CardTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1FromCardCache.hpp"
@@ -74,7 +75,7 @@ private:
     static size_t chunk_size() { return M; }
 
     void work(uint worker_id) {
-      G1SATBCardTableModRefBS* ct_bs = _g1h->g1_barrier_set();
+      G1CardTable* ct = _g1h->card_table();
 
       while (_cur_dirty_regions < _num_dirty_regions) {
         size_t next = Atomic::add(_chunk_length, &_cur_dirty_regions) - _chunk_length;
@@ -83,7 +84,7 @@ private:
         for (size_t i = next; i < max; i++) {
           HeapRegion* r = _g1h->region_at(_dirty_region_list[i]);
           if (!r->is_survivor()) {
-            ct_bs->clear(MemRegion(r->bottom(), r->end()));
+            ct->clear(MemRegion(r->bottom(), r->end()));
           }
         }
       }
@@ -280,12 +281,12 @@ public:
 };
 
 G1RemSet::G1RemSet(G1CollectedHeap* g1,
-                   CardTableModRefBS* ct_bs,
+                   G1CardTable* ct,
                    G1HotCardCache* hot_card_cache) :
   _g1(g1),
   _scan_state(new G1RemSetScanState()),
   _num_conc_refined_cards(0),
-  _ct_bs(ct_bs),
+  _ct(ct),
   _g1p(_g1->g1_policy()),
   _hot_card_cache(hot_card_cache),
   _prev_period_summary() {
@@ -328,7 +329,7 @@ G1ScanRSForRegionClosure::G1ScanRSForRegionClosure(G1RemSetScanState* scan_state
   _worker_i(worker_i) {
   _g1h = G1CollectedHeap::heap();
   _bot = _g1h->bot();
-  _ct_bs = _g1h->g1_barrier_set();
+  _ct = _g1h->card_table();
 }
 
 void G1ScanRSForRegionClosure::scan_card(MemRegion mr, uint region_idx_for_card) {
@@ -345,7 +346,7 @@ void G1ScanRSForRegionClosure::scan_strong_code_roots(HeapRegion* r) {
 }
 
 void G1ScanRSForRegionClosure::claim_card(size_t card_index, const uint region_idx_for_card){
-  _ct_bs->set_card_claimed(card_index);
+  _ct->set_card_claimed(card_index);
   _scan_state->add_dirty_region(region_idx_for_card);
 }
 
@@ -381,7 +382,7 @@ bool G1ScanRSForRegionClosure::do_heap_region(HeapRegion* r) {
     _cards_claimed++;
 
     // If the card is dirty, then G1 will scan it during Update RS.
-    if (_ct_bs->is_card_claimed(card_index) || _ct_bs->is_card_dirty(card_index)) {
+    if (_ct->is_card_claimed(card_index) || _ct->is_card_dirty(card_index)) {
       continue;
     }
 
@@ -535,15 +536,15 @@ void G1RemSet::scrub(uint worker_num, HeapRegionClaimer *hrclaimer) {
   _g1->heap_region_par_iterate_from_worker_offset(&scrub_cl, hrclaimer, worker_num);
 }
 
-inline void check_card_ptr(jbyte* card_ptr, CardTableModRefBS* ct_bs) {
+inline void check_card_ptr(jbyte* card_ptr, G1CardTable* ct) {
 #ifdef ASSERT
   G1CollectedHeap* g1 = G1CollectedHeap::heap();
-  assert(g1->is_in_exact(ct_bs->addr_for(card_ptr)),
+  assert(g1->is_in_exact(ct->addr_for(card_ptr)),
          "Card at " PTR_FORMAT " index " SIZE_FORMAT " representing heap at " PTR_FORMAT " (%u) must be in committed heap",
          p2i(card_ptr),
-         ct_bs->index_for(ct_bs->addr_for(card_ptr)),
-         p2i(ct_bs->addr_for(card_ptr)),
-         g1->addr_to_region(ct_bs->addr_for(card_ptr)));
+         ct->index_for(ct->addr_for(card_ptr)),
+         p2i(ct->addr_for(card_ptr)),
+         g1->addr_to_region(ct->addr_for(card_ptr)));
 #endif
 }
 
@@ -551,15 +552,15 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
                                         uint worker_i) {
   assert(!_g1->is_gc_active(), "Only call concurrently");
 
-  check_card_ptr(card_ptr, _ct_bs);
+  check_card_ptr(card_ptr, _ct);
 
   // If the card is no longer dirty, nothing to do.
-  if (*card_ptr != CardTableModRefBS::dirty_card_val()) {
+  if (*card_ptr != G1CardTable::dirty_card_val()) {
     return;
   }
 
   // Construct the region representing the card.
-  HeapWord* start = _ct_bs->addr_for(card_ptr);
+  HeapWord* start = _ct->addr_for(card_ptr);
   // And find the region containing it.
   HeapRegion* r = _g1->heap_region_containing(start);
 
@@ -586,6 +587,20 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
     return;
   }
 
+  // While we are processing RSet buffers during the collection, we
+  // actually don't want to scan any cards on the collection set,
+  // since we don't want to update remembered sets with entries that
+  // point into the collection set, given that live objects from the
+  // collection set are about to move and such entries will be stale
+  // very soon. This change also deals with a reliability issue which
+  // involves scanning a card in the collection set and coming across
+  // an array that was being chunked and looking malformed. Note,
+  // however, that if evacuation fails, we have to scan any objects
+  // that were not moved and create any missing entries.
+  if (r->in_collection_set()) {
+    return;
+  }
+
   // The result from the hot card cache insert call is either:
   //   * pointer to the current card
   //     (implying that the current card is not 'hot'),
@@ -605,12 +620,13 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
       return;
     } else if (card_ptr != orig_card_ptr) {
       // Original card was inserted and an old card was evicted.
-      start = _ct_bs->addr_for(card_ptr);
+      start = _ct->addr_for(card_ptr);
       r = _g1->heap_region_containing(start);
 
       // Check whether the region formerly in the cache should be
       // ignored, as discussed earlier for the original card.  The
-      // region could have been freed while in the cache.
+      // region could have been freed while in the cache.  The cset is
+      // not relevant here, since we're in concurrent phase.
       if (!r->is_old_or_humongous()) {
         return;
       }
@@ -639,7 +655,7 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
   // Okay to clean and process the card now.  There are still some
   // stale card cases that may be detected by iteration and dealt with
   // as iteration failure.
-  *const_cast<volatile jbyte*>(card_ptr) = CardTableModRefBS::clean_card_val();
+  *const_cast<volatile jbyte*>(card_ptr) = G1CardTable::clean_card_val();
 
   // This fence serves two purposes.  First, the card must be cleaned
   // before processing the contents.  Second, we can't proceed with
@@ -651,7 +667,7 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
 
   // Don't use addr_for(card_ptr + 1) which can ask for
   // a card beyond the heap.
-  HeapWord* end = start + CardTableModRefBS::card_size_in_words;
+  HeapWord* end = start + G1CardTable::card_size_in_words;
   MemRegion dirty_region(start, MIN2(scan_limit, end));
   assert(!dirty_region.is_empty(), "sanity");
 
@@ -668,8 +684,8 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
   if (!card_processed) {
     // The card might have gotten re-dirtied and re-enqueued while we
     // worked.  (In fact, it's pretty likely.)
-    if (*card_ptr != CardTableModRefBS::dirty_card_val()) {
-      *card_ptr = CardTableModRefBS::dirty_card_val();
+    if (*card_ptr != G1CardTable::dirty_card_val()) {
+      *card_ptr = G1CardTable::dirty_card_val();
       MutexLockerEx x(Shared_DirtyCardQ_lock,
                       Mutex::_no_safepoint_check_flag);
       DirtyCardQueue* sdcq =
@@ -685,20 +701,20 @@ bool G1RemSet::refine_card_during_gc(jbyte* card_ptr,
                                      G1ScanObjsDuringUpdateRSClosure* update_rs_cl) {
   assert(_g1->is_gc_active(), "Only call during GC");
 
-  check_card_ptr(card_ptr, _ct_bs);
+  check_card_ptr(card_ptr, _ct);
 
   // If the card is no longer dirty, nothing to do. This covers cards that were already
   // scanned as parts of the remembered sets.
-  if (*card_ptr != CardTableModRefBS::dirty_card_val()) {
+  if (*card_ptr != G1CardTable::dirty_card_val()) {
     return false;
   }
 
   // We claim lazily (so races are possible but they're benign), which reduces the
   // number of potential duplicate scans (multiple threads may enqueue the same card twice).
-  *card_ptr = CardTableModRefBS::clean_card_val() | CardTableModRefBS::claimed_card_val();
+  *card_ptr = G1CardTable::clean_card_val() | G1CardTable::claimed_card_val();
 
   // Construct the region representing the card.
-  HeapWord* card_start = _ct_bs->addr_for(card_ptr);
+  HeapWord* card_start = _ct->addr_for(card_ptr);
   // And find the region containing it.
   uint const card_region_idx = _g1->addr_to_region(card_start);
 
@@ -711,7 +727,7 @@ bool G1RemSet::refine_card_during_gc(jbyte* card_ptr,
 
   // Don't use addr_for(card_ptr + 1) which can ask for
   // a card beyond the heap.
-  HeapWord* card_end = card_start + CardTableModRefBS::card_size_in_words;
+  HeapWord* card_end = card_start + G1CardTable::card_size_in_words;
   MemRegion dirty_region(card_start, MIN2(scan_limit, card_end));
   assert(!dirty_region.is_empty(), "sanity");
 

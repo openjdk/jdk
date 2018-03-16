@@ -196,15 +196,7 @@ void AwtScrollPane::SetScrollInfo(int orient, int max, int page,
     // and the page size changes
     posAfter = GetScrollPos(orient);
     if (posBefore != posAfter) {
-        if(max==0 && posAfter==0) {
-            // Caller used nMin==nMax idiom to hide scrollbar.
-            // On the new themes (Windows XP, Vista) this would reset
-            // scroll position to zero ("just inside the range") (6404832).
-            //
-            PostScrollEvent(orient, SB_THUMBPOSITION, posBefore);
-        }else{
-            PostScrollEvent(orient, SB_THUMBPOSITION, posAfter);
-        }
+        PostScrollEvent(orient, SB_THUMBPOSITION, posAfter);
     }
 }
 
@@ -263,8 +255,11 @@ void AwtScrollPane::RecalcSizes(int parentWidth, int parentHeight,
                       (policy == java_awt_ScrollPane_SCROLLBARS_ALWAYS));
         env->DeleteLocalRef(hAdj);
     } else {
-        SetScrollInfo(SB_HORZ, 0, 0,
+        /* Set scroll info to imitate the behaviour and since we don't
+            need to display it, explicitly don't show the bar */
+        SetScrollInfo(SB_HORZ, childWidth - 1, parentWidth,
                       (policy == java_awt_ScrollPane_SCROLLBARS_ALWAYS));
+        ::ShowScrollBar(GetHWnd(), SB_HORZ, false);
     }
 
     if (needsVert) {
@@ -275,8 +270,11 @@ void AwtScrollPane::RecalcSizes(int parentWidth, int parentHeight,
                       (policy == java_awt_ScrollPane_SCROLLBARS_ALWAYS));
         env->DeleteLocalRef(vAdj);
     } else {
-        SetScrollInfo(SB_VERT, 0, 0,
+        /* Set scroll info to imitate the behaviour and since we don't
+            need to display it, explicitly don't show the bar */
+        SetScrollInfo(SB_VERT, childHeight - 1, parentHeight,
                       (policy == java_awt_ScrollPane_SCROLLBARS_ALWAYS));
+        ::ShowScrollBar(GetHWnd(), SB_VERT, false);
     }
 
     env->DeleteLocalRef(target);

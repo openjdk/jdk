@@ -140,6 +140,9 @@ class Shutdown {
         VM.shutdown();
     }
 
+    /* Notify the VM that it's time to halt. */
+    static native void beforeHalt();
+
     /* The halt method is synchronized on the halt lock
      * to avoid corruption of the delete-on-shutdown file list.
      * It invokes the true native halt method.
@@ -167,6 +170,7 @@ class Shutdown {
             /* Synchronize on the class object, causing any other thread
              * that attempts to initiate shutdown to stall indefinitely
              */
+            beforeHalt();
             runHooks();
             halt(status);
         }

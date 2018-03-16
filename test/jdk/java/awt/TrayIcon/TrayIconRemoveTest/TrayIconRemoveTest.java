@@ -26,6 +26,7 @@ import java.awt.image.BufferedImage;
 
 /*
  * @test
+ * @key headful
  * @summary Test the remove method of the TrayIcon
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
  * @run main TrayIconRemoveTest

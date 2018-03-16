@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,7 @@ void LogMessageBuffer::vwrite(LogLevelType level, const char* fmt, va_list args)
 
     va_list copy;
     va_copy(copy, args);
-    written += (size_t)os::log_vsnprintf(current_buffer_position, remaining_buffer_length, fmt, copy) + 1;
+    written += (size_t)os::vsnprintf(current_buffer_position, remaining_buffer_length, fmt, copy) + 1;
     va_end(copy);
     if (written > _message_buffer_capacity - _message_buffer_size) {
       assert(attempts == 0, "Second attempt should always have a sufficiently large buffer (resized to fit).");

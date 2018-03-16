@@ -35,7 +35,6 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.parser.Tokens.*;
 import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
-import com.sun.tools.javac.resources.CompilerProperties;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
@@ -43,9 +42,7 @@ import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Error;
-import com.sun.tools.javac.util.JCDiagnostic.Warning;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 import com.sun.tools.javac.util.List;
 
@@ -58,6 +55,9 @@ import static com.sun.tools.javac.parser.Tokens.TokenKind.GT;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.IMPORT;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.LT;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
+import static com.sun.tools.javac.resources.CompilerProperties.Fragments.ImplicitAndExplicitNotAllowed;
+import static com.sun.tools.javac.resources.CompilerProperties.Fragments.VarAndExplicitNotAllowed;
+import static com.sun.tools.javac.resources.CompilerProperties.Fragments.VarAndImplicitNotAllowed;
 
 /** The parser maps a token sequence into an abstract syntax
  *  tree. It operates by recursive descent, with code derived
@@ -1673,8 +1673,6 @@ public class JavacParser implements Parser {
         CAST,
         EXPLICIT_LAMBDA,
         IMPLICIT_LAMBDA,
-        IMPLICIT_LAMBDA_ALL_VAR,
-        BAD_LAMBDA,
         PARENS
     }
 
@@ -1682,89 +1680,82 @@ public class JavacParser implements Parser {
         List<JCVariableDecl> params = explicitParams ?
                 formalParameters(true) :
                 implicitParameters(hasParens);
-
         if (explicitParams) {
-            LambdaClassfier lambdaClassfier = new LambdaClassfier();
+            LambdaClassifier lambdaClassifier = new LambdaClassifier();
             for (JCVariableDecl param: params) {
                 if (param.vartype != null &&
                         isRestrictedLocalVarTypeName(param.vartype) &&
                         param.vartype.hasTag(TYPEARRAY)) {
                     log.error(DiagnosticFlag.SYNTAX, param.pos, Errors.VarNotAllowedArray);
                 }
-                if (param.vartype != null && param.name != names.empty) {
-                    if (isRestrictedLocalVarTypeName(param.vartype)) {
-                        lambdaClassfier.addImplicitVarParameter();
-                    } else {
-                        lambdaClassfier.addExplicitParameter();
-                    }
-                }
-                if (param.vartype == null && param.name != names.empty ||
-                    param.vartype != null && param.name == names.empty) {
-                    lambdaClassfier.addImplicitParameter();
-                }
-                if (lambdaClassfier.result() == ParensResult.BAD_LAMBDA) {
+                lambdaClassifier.addParameter(param);
+                if (lambdaClassifier.result() == LambdaParameterKind.ERROR) {
                     break;
                 }
             }
-            if (lambdaClassfier.diagFragment != null) {
-                log.error(DiagnosticFlag.SYNTAX, pos, Errors.InvalidLambdaParameterDeclaration(lambdaClassfier.diagFragment));
+            if (lambdaClassifier.diagFragment != null) {
+                log.error(DiagnosticFlag.SYNTAX, pos, Errors.InvalidLambdaParameterDeclaration(lambdaClassifier.diagFragment));
+            }
+            for (JCVariableDecl param: params) {
+                if (param.vartype != null && isRestrictedLocalVarTypeName(param.vartype)) {
+                    param.vartype = null;
+                }
             }
         }
         return lambdaExpressionOrStatementRest(params, pos);
     }
 
-    class LambdaClassfier {
-        ParensResult kind; //ParensResult.EXPLICIT_LAMBDA;
+    enum LambdaParameterKind {
+        EXPLICIT(0),
+        IMPLICIT(1),
+        VAR(2),
+        ERROR(-1);
+
+        private final int index;
+
+        LambdaParameterKind(int index) {
+            this.index = index;
+        }
+    }
+
+    private final static Fragment[][] decisionTable = new Fragment[][]{
+        /*              EXPLICIT                         IMPLICIT                         VAR  */
+        /* EXPLICIT */ {null,                            ImplicitAndExplicitNotAllowed,   VarAndExplicitNotAllowed},
+        /* IMPLICIT */ {ImplicitAndExplicitNotAllowed,   null,                            VarAndImplicitNotAllowed},
+        /* VAR      */ {VarAndExplicitNotAllowed,        VarAndImplicitNotAllowed,        null}
+    };
+
+    class LambdaClassifier {
+
+        LambdaParameterKind kind;
         Fragment diagFragment;
         List<JCVariableDecl> params;
 
-        void addExplicitParameter() {
-            reduce(ParensResult.EXPLICIT_LAMBDA);
-        }
-
-        void addImplicitVarParameter() {
-           reduce(ParensResult.IMPLICIT_LAMBDA_ALL_VAR);
-        }
-
-        void addImplicitParameter() {
-            reduce(ParensResult.IMPLICIT_LAMBDA);
-        }
-
-        private void reduce(ParensResult newKind) {
-            if (kind == null) {
-                kind = newKind;
-            } else if (kind != newKind && kind != ParensResult.BAD_LAMBDA) {
-                ParensResult currentKind = kind;
-                kind = ParensResult.BAD_LAMBDA;
-                switch (currentKind) {
-                    case EXPLICIT_LAMBDA:
-                        if (newKind == ParensResult.IMPLICIT_LAMBDA) {
-                            diagFragment = Fragments.ImplicitAndExplicitNotAllowed;
-                        } else if (newKind == ParensResult.IMPLICIT_LAMBDA_ALL_VAR) {
-                            diagFragment = Fragments.VarAndExplicitNotAllowed;
-                        }
-                        break;
-                    case IMPLICIT_LAMBDA:
-                        if (newKind == ParensResult.EXPLICIT_LAMBDA) {
-                            diagFragment = Fragments.ImplicitAndExplicitNotAllowed;
-                        } else if (newKind == ParensResult.IMPLICIT_LAMBDA_ALL_VAR) {
-                            diagFragment = Fragments.VarAndImplicitNotAllowed;
-                        }
-                        break;
-                    case IMPLICIT_LAMBDA_ALL_VAR:
-                        if (newKind == ParensResult.EXPLICIT_LAMBDA) {
-                            diagFragment = Fragments.VarAndExplicitNotAllowed;
-                        } else if (newKind == ParensResult.IMPLICIT_LAMBDA) {
-                            diagFragment = Fragments.VarAndImplicitNotAllowed;
-                        }
-                        break;
-                    default:
-                        throw new AssertionError("unexpected option for field kind");
+        void addParameter(JCVariableDecl param) {
+            if (param.vartype != null && param.name != names.empty) {
+                if (isRestrictedLocalVarTypeName(param.vartype)) {
+                    reduce(LambdaParameterKind.VAR);
+                } else {
+                    reduce(LambdaParameterKind.EXPLICIT);
                 }
+            }
+            if (param.vartype == null && param.name != names.empty ||
+                param.vartype != null && param.name == names.empty) {
+                reduce(LambdaParameterKind.IMPLICIT);
             }
         }
 
-        ParensResult result() {
+        private void reduce(LambdaParameterKind newKind) {
+            if (kind == null) {
+                kind = newKind;
+            } else if (kind != newKind && kind != LambdaParameterKind.ERROR) {
+                LambdaParameterKind currentKind = kind;
+                kind = LambdaParameterKind.ERROR;
+                diagFragment = decisionTable[currentKind.index][newKind.index];
+            }
+        }
+
+        LambdaParameterKind result() {
             return kind;
         }
     }

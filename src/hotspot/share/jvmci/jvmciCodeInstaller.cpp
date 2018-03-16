@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,12 @@
 #include "jvmci/jvmciJavaClasses.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciRuntime.hpp"
+#include "oops/arrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "utilities/align.hpp"
 
@@ -93,6 +96,32 @@ VMReg getVMRegFromLocation(Handle location, int total_frame_size, TRAPS) {
       JVMCI_ERROR_NULL("unaligned stack offset %d in oop map", offset);
     }
   }
+}
+
+objArrayOop CodeInstaller::sites() {
+  return (objArrayOop) JNIHandles::resolve(_sites_handle);
+}
+
+arrayOop CodeInstaller::code() {
+  return (arrayOop) JNIHandles::resolve(_code_handle);
+}
+
+arrayOop CodeInstaller::data_section() {
+  return (arrayOop) JNIHandles::resolve(_data_section_handle);
+}
+
+objArrayOop CodeInstaller::data_section_patches() {
+  return (objArrayOop) JNIHandles::resolve(_data_section_patches_handle);
+}
+
+#ifndef PRODUCT
+objArrayOop CodeInstaller::comments() {
+  return (objArrayOop) JNIHandles::resolve(_comments_handle);
+}
+#endif
+
+oop CodeInstaller::word_kind() {
+  return JNIHandles::resolve(_word_kind_handle);
 }
 
 // creates a HotSpot oop map out of the byte arrays provided by DebugInfo

@@ -50,6 +50,7 @@ class GCTracer;
 class GCMemoryManager;
 class MemoryPool;
 class MetaspaceSummary;
+class SoftRefPolicy;
 class Thread;
 class ThreadClosure;
 class VirtualSpaceSummary;
@@ -411,6 +412,10 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // the context of the vm thread.
   virtual void collect_as_vm_thread(GCCause::Cause cause);
 
+  virtual MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
+                                                       size_t size,
+                                                       Metaspace::MetadataType mdtype);
+
   // Returns the barrier set for this heap
   BarrierSet* barrier_set() { return _barrier_set; }
   void set_barrier_set(BarrierSet* barrier_set);
@@ -437,6 +442,9 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   // Return the CollectorPolicy for the heap
   virtual CollectorPolicy* collector_policy() const = 0;
+
+  // Return the SoftRefPolicy for the heap;
+  virtual SoftRefPolicy* soft_ref_policy() = 0;
 
   virtual GrowableArray<GCMemoryManager*> memory_managers() = 0;
   virtual GrowableArray<MemoryPool*> memory_pools() = 0;
@@ -492,7 +500,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   void pre_full_gc_dump(GCTimer* timer);
   void post_full_gc_dump(GCTimer* timer);
 
-  VirtualSpaceSummary create_heap_space_summary();
+  virtual VirtualSpaceSummary create_heap_space_summary();
   GCHeapSummary create_heap_summary();
 
   MetaspaceSummary create_metaspace_summary();
@@ -599,20 +607,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
     return (CIFireOOMAt > 1 && _fire_out_of_memory_count >= CIFireOOMAt);
   }
 #endif
-
- public:
-  // Copy the current allocation context statistics for the specified contexts.
-  // For each context in contexts, set the corresponding entries in the totals
-  // and accuracy arrays to the current values held by the statistics.  Each
-  // array should be of length len.
-  // Returns true if there are more stats available.
-  virtual bool copy_allocation_context_stats(const jint* contexts,
-                                             jlong* totals,
-                                             jbyte* accuracy,
-                                             jint len) {
-    return false;
-  }
-
 };
 
 // Class to set and reset the GC cause for a CollectedHeap.
@@ -622,16 +616,12 @@ class GCCauseSetter : StackObj {
   GCCause::Cause _previous_cause;
  public:
   GCCauseSetter(CollectedHeap* heap, GCCause::Cause cause) {
-    assert(SafepointSynchronize::is_at_safepoint(),
-           "This method manipulates heap state without locking");
     _heap = heap;
     _previous_cause = _heap->gc_cause();
     _heap->set_gc_cause(cause);
   }
 
   ~GCCauseSetter() {
-    assert(SafepointSynchronize::is_at_safepoint(),
-          "This method manipulates heap state without locking");
     _heap->set_gc_cause(_previous_cause);
   }
 };

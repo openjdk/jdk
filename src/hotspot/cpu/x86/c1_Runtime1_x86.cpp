@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@
 #include "c1/c1_Defs.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
+#include "ci/ciUtilities.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_x86.hpp"
 #include "oops/compiledICHolder.hpp"
@@ -39,6 +42,7 @@
 #include "utilities/macros.hpp"
 #include "vmreg_x86.inline.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #endif
 
@@ -994,8 +998,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ set_info("fast new_instance init check", dont_gc_arguments);
         }
 
-        if ((id == fast_new_instance_id || id == fast_new_instance_init_check_id) &&
-            UseTLAB && FastTLABRefill) {
+        if ((id == fast_new_instance_id || id == fast_new_instance_init_check_id) && UseTLAB
+            && Universe::heap()->supports_inline_contig_alloc()) {
           Label slow_path;
           Register obj_size = rcx;
           Register t1       = rbx;
@@ -1030,21 +1034,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           // if we got here then the TLAB allocation failed, so try
           // refilling the TLAB or allocating directly from eden.
           Label retry_tlab, try_eden;
-          const Register thread =
-            __ tlab_refill(retry_tlab, try_eden, slow_path); // does not destroy rdx (klass), returns rdi
-
-          __ bind(retry_tlab);
-
-          // get the instance size (size is postive so movl is fine for 64bit)
-          __ movl(obj_size, Address(klass, Klass::layout_helper_offset()));
-
-          __ tlab_allocate(obj, obj_size, 0, t1, t2, slow_path);
-
-          __ initialize_object(obj, klass, obj_size, 0, t1, t2, /* is_tlab_allocated */ true);
-          __ verify_oop(obj);
-          __ pop(rbx);
-          __ pop(rdi);
-          __ ret(0);
+          const Register thread = NOT_LP64(rdi) LP64_ONLY(r15_thread);
+          NOT_LP64(__ get_thread(thread));
 
           __ bind(try_eden);
           // get the instance size (size is postive so movl is fine for 64bit)
@@ -1128,54 +1119,14 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         }
 #endif // ASSERT
 
-        if (UseTLAB && FastTLABRefill) {
+        // If we got here, the TLAB allocation failed, so try allocating from
+        // eden if inline contiguous allocations are supported.
+        if (UseTLAB && Universe::heap()->supports_inline_contig_alloc()) {
           Register arr_size = rsi;
           Register t1       = rcx;  // must be rcx for use as shift count
           Register t2       = rdi;
           Label slow_path;
-          assert_different_registers(length, klass, obj, arr_size, t1, t2);
 
-          // check that array length is small enough for fast path.
-          __ cmpl(length, C1_MacroAssembler::max_array_allocation_length);
-          __ jcc(Assembler::above, slow_path);
-
-          // if we got here then the TLAB allocation failed, so try
-          // refilling the TLAB or allocating directly from eden.
-          Label retry_tlab, try_eden;
-          const Register thread =
-            __ tlab_refill(retry_tlab, try_eden, slow_path); // preserves rbx & rdx, returns rdi
-
-          __ bind(retry_tlab);
-
-          // get the allocation size: round_up(hdr + length << (layout_helper & 0x1F))
-          // since size is positive movl does right thing on 64bit
-          __ movl(t1, Address(klass, Klass::layout_helper_offset()));
-          // since size is postive movl does right thing on 64bit
-          __ movl(arr_size, length);
-          assert(t1 == rcx, "fixed register usage");
-          __ shlptr(arr_size /* by t1=rcx, mod 32 */);
-          __ shrptr(t1, Klass::_lh_header_size_shift);
-          __ andptr(t1, Klass::_lh_header_size_mask);
-          __ addptr(arr_size, t1);
-          __ addptr(arr_size, MinObjAlignmentInBytesMask); // align up
-          __ andptr(arr_size, ~MinObjAlignmentInBytesMask);
-
-          __ tlab_allocate(obj, arr_size, 0, t1, t2, slow_path);  // preserves arr_size
-
-          __ initialize_header(obj, klass, length, t1, t2);
-          __ movb(t1, Address(klass, in_bytes(Klass::layout_helper_offset()) + (Klass::_lh_header_size_shift / BitsPerByte)));
-          assert(Klass::_lh_header_size_shift % BitsPerByte == 0, "bytewise");
-          assert(Klass::_lh_header_size_mask <= 0xFF, "bytewise");
-          __ andptr(t1, Klass::_lh_header_size_mask);
-          __ subptr(arr_size, t1);  // body length
-          __ addptr(t1, obj);       // body start
-          if (!ZeroTLAB) {
-            __ initialize_body(t1, arr_size, 0, t2);
-          }
-          __ verify_oop(obj);
-          __ ret(0);
-
-          __ bind(try_eden);
           // get the allocation size: round_up(hdr + length << (layout_helper & 0x1F))
           // since size is positive movl does right thing on 64bit
           __ movl(t1, Address(klass, Klass::layout_helper_offset()));
@@ -1190,6 +1141,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ andptr(arr_size, ~MinObjAlignmentInBytesMask);
 
           __ eden_allocate(obj, arr_size, 0, t1, slow_path);  // preserves arr_size
+
+          // Using t2 for non 64-bit.
+          const Register thread = NOT_LP64(t2) LP64_ONLY(r15_thread);
+          NOT_LP64(__ get_thread(thread));
           __ incr_allocated_bytes(thread, arr_size, 0);
 
           __ initialize_header(obj, klass, length, t1, t2);
@@ -1681,10 +1636,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         // arg0: store_address
         Address store_addr(rbp, 2*BytesPerWord);
 
-        CardTableModRefBS* ct =
-          barrier_set_cast<CardTableModRefBS>(Universe::heap()->barrier_set());
-        assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
-
         Label done;
         Label enqueued;
         Label runtime;
@@ -1706,25 +1657,25 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         const Register card_addr = rcx;
 
         f.load_argument(0, card_addr);
-        __ shrptr(card_addr, CardTableModRefBS::card_shift);
+        __ shrptr(card_addr, CardTable::card_shift);
         // Do not use ExternalAddress to load 'byte_map_base', since 'byte_map_base' is NOT
         // a valid address and therefore is not properly handled by the relocation code.
-        __ movptr(cardtable, (intptr_t)ct->byte_map_base);
+        __ movptr(cardtable, ci_card_table_address_as<intptr_t>());
         __ addptr(card_addr, cardtable);
 
         NOT_LP64(__ get_thread(thread);)
 
-        __ cmpb(Address(card_addr, 0), (int)G1SATBCardTableModRefBS::g1_young_card_val());
+        __ cmpb(Address(card_addr, 0), (int)G1CardTable::g1_young_card_val());
         __ jcc(Assembler::equal, done);
 
         __ membar(Assembler::Membar_mask_bits(Assembler::StoreLoad));
-        __ cmpb(Address(card_addr, 0), (int)CardTableModRefBS::dirty_card_val());
+        __ cmpb(Address(card_addr, 0), (int)CardTable::dirty_card_val());
         __ jcc(Assembler::equal, done);
 
         // storing region crossing non-NULL, card is clean.
         // dirty card and log.
 
-        __ movb(Address(card_addr, 0), (int)CardTableModRefBS::dirty_card_val());
+        __ movb(Address(card_addr, 0), (int)CardTable::dirty_card_val());
 
         const Register tmp = rdx;
         __ push(rdx);

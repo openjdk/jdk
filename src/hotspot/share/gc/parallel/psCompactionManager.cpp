@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,7 +181,7 @@ void InstanceClassLoaderKlass::oop_pc_follow_contents(oop obj, ParCompactionMana
 
 template <class T>
 static void oop_pc_follow_contents_specialized(InstanceRefKlass* klass, oop obj, ParCompactionManager* cm) {
-  T* referent_addr = (T*)java_lang_ref_Reference::referent_addr(obj);
+  T* referent_addr = (T*)java_lang_ref_Reference::referent_addr_raw(obj);
   T heap_oop = oopDesc::load_heap_oop(referent_addr);
   log_develop_trace(gc, ref)("InstanceRefKlass::oop_pc_follow_contents " PTR_FORMAT, p2i(obj));
   if (!oopDesc::is_null(heap_oop)) {
@@ -198,12 +198,12 @@ static void oop_pc_follow_contents_specialized(InstanceRefKlass* klass, oop obj,
       cm->mark_and_push(referent_addr);
     }
   }
-  T* next_addr = (T*)java_lang_ref_Reference::next_addr(obj);
+  T* next_addr = (T*)java_lang_ref_Reference::next_addr_raw(obj);
   // Treat discovered as normal oop, if ref is not "active",
   // i.e. if next is non-NULL.
   T  next_oop = oopDesc::load_heap_oop(next_addr);
   if (!oopDesc::is_null(next_oop)) { // i.e. ref is not "active"
-    T* discovered_addr = (T*)java_lang_ref_Reference::discovered_addr(obj);
+    T* discovered_addr = (T*)java_lang_ref_Reference::discovered_addr_raw(obj);
     log_develop_trace(gc, ref)("   Process discovered as normal " PTR_FORMAT, p2i(discovered_addr));
     cm->mark_and_push(discovered_addr);
   }

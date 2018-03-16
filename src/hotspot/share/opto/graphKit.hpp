@@ -754,12 +754,7 @@ class GraphKit : public Phase {
   // Returns the object (if any) which was created the moment before.
   Node* just_allocated_object(Node* current_control);
 
-  static bool use_ReduceInitialCardMarks() {
-    BarrierSet *bs = Universe::heap()->barrier_set();
-    return bs->is_a(BarrierSet::CardTableModRef)
-           && barrier_set_cast<CardTableModRefBS>(bs)->can_elide_tlab_store_barriers()
-           && ReduceInitialCardMarks;
-  }
+  static bool use_ReduceInitialCardMarks();
 
   // Sync Ideal and Graph kits.
   void sync_kit(IdealKit& ideal);

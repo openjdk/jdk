@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1148,7 +1148,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     Label slow_path;
 
 #ifndef _LP64
-    __ safepoint_poll(slow_path);
+    __ safepoint_poll(slow_path, thread, noreg);
 #else
     __ safepoint_poll(slow_path, r15_thread, rscratch1);
 #endif

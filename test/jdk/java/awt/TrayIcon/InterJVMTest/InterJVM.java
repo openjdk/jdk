@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @summary Check if TrayIcon added by a JVM is not visible
  *          in another JVM
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)

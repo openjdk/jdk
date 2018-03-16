@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
   @test
   @key headful
-  @bug 6829546
+  @bug 6829546, 8197808
   @summary tests that an always-on-top modal dialog doesn't make any windows always-on-top
   @author artem.ananiev: area=awt.modal
   @library ../../regtesthelpers
@@ -32,9 +32,13 @@
   @run main MakeWindowAlwaysOnTop
 */
 
-import java.awt.*;
-import java.awt.event.*;
-
+import java.awt.Frame;
+import java.awt.Dialog;
+import java.awt.EventQueue;
+import java.awt.Color;
+import java.awt.Robot;
+import java.awt.Point;
+import java.awt.event.InputEvent;
 import test.java.awt.regtesthelpers.Util;
 
 public class MakeWindowAlwaysOnTop
@@ -59,21 +63,9 @@ public class MakeWindowAlwaysOnTop
         d = new Dialog(null, "Modal dialog", Dialog.ModalityType.APPLICATION_MODAL);
         d.setBounds(500, 500, 160, 160);
         d.setAlwaysOnTop(true);
-        EventQueue.invokeLater(new Runnable()
-        {
-            public void run()
-            {
-                d.setVisible(true);
-            }
-        });
+        EventQueue.invokeLater(() ->  d.setVisible(true) );
         // Wait until the dialog is shown
-        EventQueue.invokeAndWait(new Runnable()
-        {
-            public void run()
-            {
-                // Empty
-            }
-        });
+        EventQueue.invokeAndWait(() -> { /* Empty */ });
         r.delay(100);
         Util.waitForIdle(r);
 
@@ -104,29 +96,30 @@ public class MakeWindowAlwaysOnTop
 
         // Bring it above the first frame
         t.toFront();
-        r.delay(100);
+
+        r.delay(200);
         Util.waitForIdle(r);
+
 
         Color c = r.getPixelColor(p.x + f.getWidth() / 2, p.y + f.getHeight() / 2);
         System.out.println("Color = " + c);
-        System.out.flush();
+
+        String exceptionMessage = null;
         // If the color is RED, then the first frame is now always-on-top
-        if (Color.RED.equals(c))
-        {
-            throw new RuntimeException("Test FAILED: the frame is always-on-top");
-        }
-        else if (!Color.BLUE.equals(c))
-        {
-            throw new RuntimeException("Test FAILED: unknown window is on top of the frame");
-        }
-        else
-        {
-            System.out.println("Test PASSED");
-            System.out.flush();
+        if (Color.RED.equals(c)) {
+            exceptionMessage = "Test FAILED: the frame is always-on-top";
+        } else if (!Color.BLUE.equals(c)) {
+            exceptionMessage = "Test FAILED: unknown window is on top of the frame";
         }
 
         // Dispose all the windows
         t.dispose();
         f.dispose();
+
+        if (exceptionMessage != null) {
+            throw new RuntimeException(exceptionMessage);
+        } else {
+            System.out.println("Test PASSED");
+        }
     }
 }

@@ -33,6 +33,8 @@
 
 class DirtyCardQueueSet;
 class G1SATBCardTableLoggingModRefBS;
+class CardTable;
+class G1CardTable;
 
 // This barrier is specialized to use a logging barrier to support
 // snapshot-at-the-beginning marking.
@@ -40,16 +42,10 @@ class G1SATBCardTableLoggingModRefBS;
 class G1SATBCardTableModRefBS: public CardTableModRefBS {
   friend class VMStructs;
 protected:
-  enum G1CardValues {
-    g1_young_gen = CT_MR_BS_last_reserved << 1
-  };
-
-  G1SATBCardTableModRefBS(MemRegion whole_heap, const BarrierSet::FakeRtti& fake_rtti);
+  G1SATBCardTableModRefBS(G1CardTable* table, const BarrierSet::FakeRtti& fake_rtti);
   ~G1SATBCardTableModRefBS() { }
 
 public:
-  static int g1_young_card_val()   { return g1_young_gen; }
-
   // Add "pre_val" to a set of objects that may have been disconnected from the
   // pre-marking object graph.
   static void enqueue(oop pre_val);
@@ -62,38 +58,6 @@ public:
 
   template <DecoratorSet decorators, typename T>
   void write_ref_field_pre(T* field);
-
-/*
-   Claimed and deferred bits are used together in G1 during the evacuation
-   pause. These bits can have the following state transitions:
-   1. The claimed bit can be put over any other card state. Except that
-      the "dirty -> dirty and claimed" transition is checked for in
-      G1 code and is not used.
-   2. Deferred bit can be set only if the previous state of the card
-      was either clean or claimed. mark_card_deferred() is wait-free.
-      We do not care if the operation is be successful because if
-      it does not it will only result in duplicate entry in the update
-      buffer because of the "cache-miss". So it's not worth spinning.
- */
-
-  bool is_card_claimed(size_t card_index) {
-    jbyte val = _byte_map[card_index];
-    return (val & (clean_card_mask_val() | claimed_card_val())) == claimed_card_val();
-  }
-
-  inline void set_card_claimed(size_t card_index);
-
-  void verify_g1_young_region(MemRegion mr) PRODUCT_RETURN;
-  void g1_mark_as_young(const MemRegion& mr);
-
-  bool mark_card_deferred(size_t card_index);
-
-  bool is_card_deferred(size_t card_index) {
-    jbyte val = _byte_map[card_index];
-    return (val & (clean_card_mask_val() | deferred_card_val())) == deferred_card_val();
-  }
-
-  virtual bool is_in_young(oop obj) const;
 };
 
 template<>
@@ -106,42 +70,14 @@ struct BarrierSet::GetType<BarrierSet::G1SATBCT> {
   typedef G1SATBCardTableModRefBS type;
 };
 
-class G1SATBCardTableLoggingModRefBSChangedListener : public G1MappingChangedListener {
- private:
-  G1SATBCardTableLoggingModRefBS* _card_table;
- public:
-  G1SATBCardTableLoggingModRefBSChangedListener() : _card_table(NULL) { }
-
-  void set_card_table(G1SATBCardTableLoggingModRefBS* card_table) { _card_table = card_table; }
-
-  virtual void on_commit(uint start_idx, size_t num_regions, bool zero_filled);
-};
-
 // Adds card-table logging to the post-barrier.
 // Usual invariant: all dirty cards are logged in the DirtyCardQueueSet.
 class G1SATBCardTableLoggingModRefBS: public G1SATBCardTableModRefBS {
-  friend class G1SATBCardTableLoggingModRefBSChangedListener;
  private:
-  G1SATBCardTableLoggingModRefBSChangedListener _listener;
   DirtyCardQueueSet& _dcqs;
 
  public:
-  static size_t compute_size(size_t mem_region_size_in_words) {
-    size_t number_of_slots = (mem_region_size_in_words / card_size_in_words);
-    return ReservedSpace::allocation_align_size_up(number_of_slots);
-  }
-
-  // Returns how many bytes of the heap a single byte of the Card Table corresponds to.
-  static size_t heap_map_factor() {
-    return CardTableModRefBS::card_size;
-  }
-
-  G1SATBCardTableLoggingModRefBS(MemRegion whole_heap);
-
-  virtual void initialize() { }
-  virtual void initialize(G1RegionToSpaceMapper* mapper);
-
-  virtual void resize_covered_region(MemRegion new_region) { ShouldNotReachHere(); }
+  G1SATBCardTableLoggingModRefBS(G1CardTable* card_table);
 
   // NB: if you do a whole-heap invalidation, the "usual invariant" defined
   // above no longer applies.
@@ -154,11 +90,8 @@ class G1SATBCardTableLoggingModRefBS: public G1SATBCardTableModRefBS {
   void write_ref_field_post(T* field, oop new_val);
   void write_ref_field_post_slow(volatile jbyte* byte);
 
-  virtual void flush_deferred_barriers(JavaThread* thread);
-
-  virtual bool card_mark_must_follow_store() const {
-    return true;
-  }
+  virtual void on_thread_attach(JavaThread* thread);
+  virtual void on_thread_detach(JavaThread* thread);
 
   // Callbacks for runtime accesses.
   template <DecoratorSet decorators, typename BarrierSetT = G1SATBCardTableLoggingModRefBS>

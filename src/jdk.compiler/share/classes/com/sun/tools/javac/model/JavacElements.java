@@ -255,7 +255,8 @@ public class JavacElements implements Elements {
                     name.equals(sym.getQualifiedName()))
                 ? clazz.cast(sym)
                 : null;
-        } catch (CompletionFailure e) {
+        } catch (CompletionFailure cf) {
+            cf.dcfh.handleAPICompletionFailure(cf);
             return null;
         }
     }
@@ -442,7 +443,7 @@ public class JavacElements implements Elements {
     @DefinedBy(Api.LANGUAGE_MODEL)
     public boolean isDeprecated(Element e) {
         Symbol sym = cast(Symbol.class, e);
-        sym.complete();
+        sym.apiComplete();
         return sym.isDeprecated();
     }
 

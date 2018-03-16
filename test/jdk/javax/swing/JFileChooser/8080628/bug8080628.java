@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import java.util.Locale;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
+import javax.swing.UnsupportedLookAndFeelException;
 
 import sun.swing.SwingUtilities2;
 
@@ -77,7 +78,11 @@ public class bug8080628 {
         try {
             LookAndFeelInfo[] lafInfo = UIManager.getInstalledLookAndFeels();
             for (LookAndFeelInfo info : lafInfo) {
-                UIManager.setLookAndFeel(info.getClassName());
+                try {
+                    UIManager.setLookAndFeel(info.getClassName());
+                } catch (final UnsupportedLookAndFeelException ignored) {
+                    continue;
+                }
 
                 for (Locale locale : LOCALES) {
                     for (String key : MNEMONIC_KEYS) {

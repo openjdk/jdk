@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @key headful
  * @bug 6489130
  * @summary FileChooserDemo hung by keeping pressing Enter key
  * @author Pavel Porvatov

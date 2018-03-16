@@ -22,7 +22,8 @@
  */
 
 /**
- * @test @summary setLocationRelativeTo stopped working in Ubuntu 13.10 (Unity)
+ * @test
+ * @summary setLocationRelativeTo stopped working in Ubuntu 13.10 (Unity)
  * @key headful
  * @bug 8036915 8161273
  * @run main/othervm -Dsun.java2d.uiScale=1 GetScreenLocationTest

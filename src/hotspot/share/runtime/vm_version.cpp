@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,6 +216,10 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 11.0 (VS2012)"
       #elif _MSC_VER == 1800
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 12.0 (VS2013)"
+      #elif _MSC_VER == 1900
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 14.0 (VS2015)"
+      #elif _MSC_VER == 1912
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 15.5 (VS2017)"
       #else
         #define HOTSPOT_BUILD_COMPILER "unknown MS VC++:" XSTR(_MSC_VER)
       #endif

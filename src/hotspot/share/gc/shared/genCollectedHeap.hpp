@@ -25,11 +25,14 @@
 #ifndef SHARE_VM_GC_SHARED_GENCOLLECTEDHEAP_HPP
 #define SHARE_VM_GC_SHARED_GENCOLLECTEDHEAP_HPP
 
-#include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectorPolicy.hpp"
 #include "gc/shared/generation.hpp"
+#include "gc/shared/softRefGenPolicy.hpp"
 
+class AdaptiveSizePolicy;
+class GCPolicyCounters;
+class GenerationSpec;
 class StrongRootsScope;
 class SubTasksDone;
 class WorkGang;
@@ -64,11 +67,21 @@ private:
   Generation* _young_gen;
   Generation* _old_gen;
 
+  GenerationSpec* _young_gen_spec;
+  GenerationSpec* _old_gen_spec;
+
   // The singleton CardTable Remembered Set.
   CardTableRS* _rem_set;
 
   // The generational collector policy.
   GenCollectorPolicy* _gen_policy;
+
+  SoftRefGenPolicy _soft_ref_gen_policy;
+
+  // The sizing of the heap is controlled by a sizing policy.
+  AdaptiveSizePolicy* _size_policy;
+
+  GCPolicyCounters* _gc_policy_counters;
 
   // Indicates that the most recent previous incremental collection failed.
   // The flag is cleared when an action is taken that might clear the
@@ -143,7 +156,10 @@ protected:
   // we absolutely __must__ clear soft refs?
   bool must_clear_all_soft_refs();
 
-  GenCollectedHeap(GenCollectorPolicy *policy);
+  GenCollectedHeap(GenCollectorPolicy *policy,
+                   Generation::Name young,
+                   Generation::Name old,
+                   const char* policy_counters_name);
 
   virtual void check_gen_kinds() = 0;
 
@@ -151,6 +167,10 @@ public:
 
   // Returns JNI_OK on success
   virtual jint initialize();
+
+  void initialize_size_policy(size_t init_eden_size,
+                              size_t init_promo_size,
+                              size_t init_survivor_size);
 
   // Does operations required after initialization has been done.
   void post_initialize();
@@ -161,15 +181,23 @@ public:
   bool is_young_gen(const Generation* gen) const { return gen == _young_gen; }
   bool is_old_gen(const Generation* gen) const { return gen == _old_gen; }
 
+  GenerationSpec* young_gen_spec() const;
+  GenerationSpec* old_gen_spec() const;
+
   // The generational collector policy.
   GenCollectorPolicy* gen_policy() const { return _gen_policy; }
 
   virtual CollectorPolicy* collector_policy() const { return gen_policy(); }
 
+  virtual SoftRefPolicy* soft_ref_policy() { return &_soft_ref_gen_policy; }
+
   // Adaptive size policy
   virtual AdaptiveSizePolicy* size_policy() {
-    return gen_policy()->size_policy();
+    return _size_policy;
   }
+
+  // Performance Counter support
+  GCPolicyCounters* counters()     { return _gc_policy_counters; }
 
   // Return the (conservative) maximum heap alignment
   static size_t conservative_max_heap_alignment() {
@@ -456,6 +484,17 @@ public:
 
 
 private:
+  // Return true if an allocation should be attempted in the older generation
+  // if it fails in the younger generation.  Return false, otherwise.
+  bool should_try_older_generation_allocation(size_t word_size) const;
+
+  // Try to allocate space by expanding the heap.
+  HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
+
+  HeapWord* mem_allocate_work(size_t size,
+                              bool is_tlab,
+                              bool* gc_overhead_limit_was_exceeded);
+
   // Override
   void check_for_non_bad_heap_word_value(HeapWord* addr,
     size_t size) PRODUCT_RETURN;

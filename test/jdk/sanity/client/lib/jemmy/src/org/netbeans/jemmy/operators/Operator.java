@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -716,6 +716,25 @@ public abstract class Operator
             throw (new JemmyException("Waiting of \"" + state.getDescription()
                     + "\" state has been interrupted!"));
         }
+    }
+
+    /**
+     * Waits a state specified by a ComponentChooser instance on EDT queue.
+     *
+     * @param state a ComponentChooser defining the state criteria.
+     * @throws TimeoutExpiredException if the state has not achieved in a value
+     * defined by {@code "ComponentOperator.WaitStateTimeout"}
+     */
+    public void waitStateOnQueue(final ComponentChooser state) {
+        waitState((comp) -> {
+            return (boolean) (queueTool.invokeSmoothly(
+                    new QueueTool.QueueAction<Object>("checkComponent") {
+                @Override
+                public final Object launch() throws Exception {
+                    return state.checkComponent(comp);
+                }
+            }));
+        });
     }
 
     ////////////////////////////////////////////////////////

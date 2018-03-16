@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,12 +38,12 @@
 class UpdateRSetDeferred : public ExtendedOopClosure {
 private:
   G1CollectedHeap* _g1;
-  DirtyCardQueue *_dcq;
-  G1SATBCardTableModRefBS* _ct_bs;
+  DirtyCardQueue* _dcq;
+  G1CardTable*    _ct;
 
 public:
   UpdateRSetDeferred(DirtyCardQueue* dcq) :
-    _g1(G1CollectedHeap::heap()), _ct_bs(_g1->g1_barrier_set()), _dcq(dcq) {}
+    _g1(G1CollectedHeap::heap()), _ct(_g1->card_table()), _dcq(dcq) {}
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(      oop* p) { do_oop_work(p); }
@@ -59,9 +59,9 @@ public:
     if (HeapRegion::is_in_same_region(p, oopDesc::decode_heap_oop(o))) {
       return;
     }
-    size_t card_index = _ct_bs->index_for(p);
-    if (_ct_bs->mark_card_deferred(card_index)) {
-      _dcq->enqueue((jbyte*)_ct_bs->byte_for_index(card_index));
+    size_t card_index = _ct->index_for(p);
+    if (_ct->mark_card_deferred(card_index)) {
+      _dcq->enqueue((jbyte*)_ct->byte_for_index(card_index));
     }
   }
 };

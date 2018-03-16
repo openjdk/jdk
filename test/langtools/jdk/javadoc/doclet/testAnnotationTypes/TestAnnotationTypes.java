@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4973609 8015249 8025633 8026567 6469561 8071982 8162363
+ * @bug      4973609 8015249 8025633 8026567 6469561 8071982 8162363 8182765
  * @summary  Make sure that annotation types with 0 members does not have
  *           extra HR tags.
  * @author   jamieh
@@ -72,11 +72,11 @@ public class TestAnnotationTypes extends JavadocTester {
         checkOutput("pkg/AnnotationType.html", true,
                     "<!-- ============ ANNOTATION TYPE MEMBER DETAIL =========== -->",
                     "<ul class=\"blockList\">",
-                    "<li class=\"blockList\"><a name=\"annotation.type.element.detail\">",
+                    "<li class=\"blockList\"><a id=\"annotation.type.element.detail\">",
                     "<!--   -->",
                     "</a>",
                     "<h3>Element Detail</h3>",
-                    "<a name=\"value--\">",
+                    "<a id=\"value()\">",
                     "<!--   -->",
                     "</a>",
                     "<ul class=\"blockListLast\">",
@@ -89,7 +89,10 @@ public class TestAnnotationTypes extends JavadocTester {
                 + "<P>\n\n"
                 + "<P>"
                 + "<!-- ========= END OF CLASS DATA ========= -->" + "<HR>");
+    }
 
+    @Test
+    void testLinkSource() {
         javadoc("-d", "out-2",
                 "-linksource",
                 "-sourcepath", testSrc,
@@ -112,4 +115,16 @@ public class TestAnnotationTypes extends JavadocTester {
                 "public @interface <a href=\"../src-html/pkg/AnnotationTypeField.html#line.31"
                 + "\">AnnotationTypeField</a></pre>");
     }
+
+    @Test
+    void test_html4() {
+        javadoc("-d", "out-html4",
+                "-html4",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+        checkOutput("pkg/AnnotationType.html", true,
+                "<li class=\"blockList\"><a name=\"annotation.type.element.detail\">",
+                "<a name=\"value--\">");
+}
 }

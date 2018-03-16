@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * @test
+ * @key headful
  * @bug 8177758
  * @requires os.family == "windows"
  * @summary Regression in java.awt.FileDialog

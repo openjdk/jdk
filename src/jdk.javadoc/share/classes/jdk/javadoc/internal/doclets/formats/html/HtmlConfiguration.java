@@ -307,8 +307,7 @@ public class HtmlConfiguration extends BaseConfiguration {
         }
 
         if (htmlVersion == null) {
-            reporter.print(WARNING, getText("doclet.HTML_version_not_specified", helpfile));
-            htmlVersion = HtmlVersion.HTML4;
+            htmlVersion = HtmlVersion.HTML5;
         }
 
         // check if helpfile exists
@@ -658,6 +657,7 @@ public class HtmlConfiguration extends BaseConfiguration {
             new Option(resources, "-html4") {
                 @Override
                 public boolean process(String opt,  List<String> args) {
+                    reporter.print(WARNING, getText("doclet.HTML_4_specified", helpfile));
                     htmlVersion = HtmlVersion.HTML4;
                     return true;
                 }

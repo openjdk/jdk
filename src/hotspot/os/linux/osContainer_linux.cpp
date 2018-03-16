@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -414,9 +414,9 @@ void OSContainer::init() {
 
 }
 
-char * OSContainer::container_type() {
+const char * OSContainer::container_type() {
   if (is_containerized()) {
-    return (char *)"cgroupv1";
+    return "cgroupv1";
   } else {
     return NULL;
   }
@@ -499,11 +499,11 @@ jlong OSContainer::memory_max_usage_in_bytes() {
 /* active_processor_count
  *
  * Calculate an appropriate number of active processors for the
- * VM to use based on these three cgroup options.
+ * VM to use based on these three inputs.
  *
  * cpu affinity
- * cpu quota & cpu period
- * cpu shares
+ * cgroup cpu quota & cpu period
+ * cgroup cpu shares
  *
  * Algorithm:
  *
@@ -513,42 +513,61 @@ jlong OSContainer::memory_max_usage_in_bytes() {
  * required CPUs by dividing quota by period.
  *
  * If shares are in effect (shares != -1), calculate the number
- * of cpus required for the shares by dividing the share value
+ * of CPUs required for the shares by dividing the share value
  * by PER_CPU_SHARES.
  *
  * All results of division are rounded up to the next whole number.
  *
- * Return the smaller number from the three different settings.
+ * If neither shares or quotas have been specified, return the
+ * number of active processors in the system.
+ *
+ * If both shares and quotas have been specified, the results are
+ * based on the flag PreferContainerQuotaForCPUCount.  If true,
+ * return the quota value.  If false return the smallest value
+ * between shares or quotas.
+ *
+ * If shares and/or quotas have been specified, the resulting number
+ * returned will never exceed the number of active processors.
  *
  * return:
- *    number of cpus
- *    OSCONTAINER_ERROR if failure occured during extract of cpuset info
+ *    number of CPUs
  */
 int OSContainer::active_processor_count() {
-  int cpu_count, share_count, quota_count;
-  int share, quota, period;
+  int quota_count = 0, share_count = 0;
+  int cpu_count, limit_count;
   int result;
 
-  cpu_count = os::Linux::active_processor_count();
+  cpu_count = limit_count = os::Linux::active_processor_count();
+  int quota  = cpu_quota();
+  int period = cpu_period();
+  int share  = cpu_shares();
 
-  share = cpu_shares();
-  if (share > -1) {
-    share_count = ceilf((float)share / (float)PER_CPU_SHARES);
-    log_trace(os, container)("cpu_share count: %d", share_count);
-  } else {
-    share_count = cpu_count;
-  }
-
-  quota = cpu_quota();
-  period = cpu_period();
   if (quota > -1 && period > 0) {
     quota_count = ceilf((float)quota / (float)period);
-    log_trace(os, container)("quota_count: %d", quota_count);
-  } else {
-    quota_count = cpu_count;
+    log_trace(os, container)("CPU Quota count based on quota/period: %d", quota_count);
+  }
+  if (share > -1) {
+    share_count = ceilf((float)share / (float)PER_CPU_SHARES);
+    log_trace(os, container)("CPU Share count based on shares: %d", share_count);
   }
 
-  result = MIN2(cpu_count, MIN2(share_count, quota_count));
+  // If both shares and quotas are setup results depend
+  // on flag PreferContainerQuotaForCPUCount.
+  // If true, limit CPU count to quota
+  // If false, use minimum of shares and quotas
+  if (quota_count !=0 && share_count != 0) {
+    if (PreferContainerQuotaForCPUCount) {
+      limit_count = quota_count;
+    } else {
+      limit_count = MIN2(quota_count, share_count);
+    }
+  } else if (quota_count != 0) {
+    limit_count = quota_count;
+  } else if (share_count != 0) {
+    limit_count = share_count;
+  }
+
+  result = MIN2(cpu_count, limit_count);
   log_trace(os, container)("OSContainer::active_processor_count: %d", result);
   return result;
 }

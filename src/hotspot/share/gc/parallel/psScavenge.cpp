@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
-#include "gc/parallel/cardTableExtension.hpp"
 #include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
@@ -60,7 +59,7 @@
 HeapWord*                  PSScavenge::_to_space_top_before_gc = NULL;
 int                        PSScavenge::_consecutive_skipped_scavenges = 0;
 ReferenceProcessor*        PSScavenge::_ref_processor = NULL;
-CardTableExtension*        PSScavenge::_card_table = NULL;
+PSCardTable*               PSScavenge::_card_table = NULL;
 bool                       PSScavenge::_survivor_overflow = false;
 uint                       PSScavenge::_tenuring_threshold = 0;
 HeapWord*                  PSScavenge::_young_generation_boundary = NULL;
@@ -228,8 +227,8 @@ bool PSScavenge::invoke() {
 
   if (need_full_gc) {
     GCCauseSetter gccs(heap, GCCause::_adaptive_size_policy);
-    CollectorPolicy* cp = heap->collector_policy();
-    const bool clear_all_softrefs = cp->should_clear_all_soft_refs();
+    SoftRefPolicy* srp = heap->soft_ref_policy();
+    const bool clear_all_softrefs = srp->should_clear_all_soft_refs();
 
     if (UseParallelOldGC) {
       full_gc_done = PSParallelCompact::invoke_no_policy(clear_all_softrefs);
@@ -322,7 +321,7 @@ bool PSScavenge::invoke_no_policy() {
 
     // Verify no unmarked old->young roots
     if (VerifyRememberedSets) {
-      CardTableExtension::verify_all_young_refs_imprecise();
+      heap->card_table()->verify_all_young_refs_imprecise();
     }
 
     assert(young_gen->to_space()->is_empty(),
@@ -569,7 +568,7 @@ bool PSScavenge::invoke_no_policy() {
                                                max_eden_size,
                                                false /* not full gc*/,
                                                gc_cause,
-                                               heap->collector_policy());
+                                               heap->soft_ref_policy());
 
           size_policy->decay_supplemental_growth(false /* not full gc*/);
         }
@@ -617,8 +616,8 @@ bool PSScavenge::invoke_no_policy() {
     if (VerifyRememberedSets) {
       // Precise verification will give false positives. Until this is fixed,
       // use imprecise verification.
-      // CardTableExtension::verify_all_young_refs_precise();
-      CardTableExtension::verify_all_young_refs_imprecise();
+      // heap->card_table()->verify_all_young_refs_precise();
+      heap->card_table()->verify_all_young_refs_imprecise();
     }
 
     if (log_is_enabled(Debug, gc, heap, exit)) {
@@ -778,7 +777,7 @@ void PSScavenge::initialize() {
                            NULL);                      // header provides liveness info
 
   // Cache the cardtable
-  _card_table = barrier_set_cast<CardTableExtension>(heap->barrier_set());
+  _card_table = heap->card_table();
 
   _counters = new CollectorCounters("PSScavenge", 0);
 }

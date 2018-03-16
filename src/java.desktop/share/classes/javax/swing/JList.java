@@ -2359,6 +2359,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
 
     /**
      * Selects the specified object from the list.
+     * If the object passed is {@code null}, the selection is cleared.
      *
      * @param anObject      the object to select
      * @param shouldScroll  {@code true} if the list should scroll to display
@@ -2366,7 +2367,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      */
     public void setSelectedValue(Object anObject,boolean shouldScroll) {
         if(anObject == null)
-            setSelectedIndex(-1);
+            clearSelection();
         else if(!anObject.equals(getSelectedValue())) {
             int i,c;
             ListModel<E> dm = getModel();
@@ -2426,7 +2427,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      * <p>
      * If the model isn't empty, the width is the preferred size's width,
      * typically the width of the widest list element. The height is the
-     * {@code fixedCellHeight} multiplied by the {@code visibleRowCount},
+     * height of the cell with index 0 multiplied by the {@code visibleRowCount},
      * plus the list's vertical insets.
      * <p>
      * <b>{@code VERTICAL_WRAP} or {@code HORIZONTAL_WRAP}:</b>

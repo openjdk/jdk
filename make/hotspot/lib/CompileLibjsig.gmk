@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
   ifeq ($(STATIC_BUILD), false)
     ifeq ($(OPENJDK_TARGET_OS), linux)
       LIBJSIG_CFLAGS := -fPIC -D_GNU_SOURCE -D_REENTRANT $(EXTRA_CFLAGS)
-      LIBJSIG_LDFLAGS := $(LDFLAGS_HASH_STYLE) ${LDFLAGS_NO_EXEC_STACK} $(EXTRA_CFLAGS)
+      LIBJSIG_LDFLAGS := $(LIBJSIG_HASHSTYLE_LDFLAGS) ${LIBJSIG_NOEXECSTACK_LDFLAGS} $(EXTRA_CFLAGS)
       LIBJSIG_LIBS := $(LIBDL)
 
       # NOTE: The old build compiled this library without -soname.
@@ -76,7 +76,7 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
 
     else ifeq ($(OPENJDK_TARGET_OS), macosx)
       LIBJSIG_CFLAGS := -m64 -D_GNU_SOURCE -pthread -mno-omit-leaf-frame-pointer -mstack-alignment=16 -fPIC
-      LIBJSIG_LDFLAGS := $(LDFLAGS_HASH_STYLE)
+      LIBJSIG_LDFLAGS := $(LIBJSIG_HASHSTYLE_LDFLAGS)
     else
       $(error Unknown target OS $(OPENJDK_TARGET_OS) in CompileLibjsig.gmk)
     endif
@@ -90,7 +90,7 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
     LIB_OUTPUTDIR := $(call FindLibDirForModule, java.base)
 
     $(eval $(call SetupNativeCompilation, BUILD_LIBJSIG, \
-        LIBRARY := jsig, \
+        NAME := jsig, \
         SRC := $(LIBJSIG_SRC_DIR), \
         OUTPUT_DIR := $(LIB_OUTPUTDIR), \
         LANG := C, \

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8048628 8174715
+ * @bug      8048628 8174715 8182765
  * @summary  Verify html inline tags are removed correctly in the first sentence.
  * @library  ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -43,7 +43,11 @@ public class TestNonInlineHtmlTagRemoval extends JavadocTester {
         javadoc("-d", "out1",
                 "-sourcepath", testSrc,
                 testSrc("C.java"));
-        checkExit(Exit.OK);
+        checkExit(Exit.ERROR);
+
+        checkOutput(Output.OUT, true,
+                "attribute not supported in HTML5: compact",
+                "attribute not supported in HTML5: type");
 
         checkOutput("C.html", true,
                 "<div class=\"block\">case1   end of sentence.</div>",
@@ -57,6 +61,15 @@ public class TestNonInlineHtmlTagRemoval extends JavadocTester {
                 "<div class=\"block\">case9   end of sentence.</div>",
                 "<div class=\"block\">caseA   end of sentence.</div>",
                 "<div class=\"block\">caseB A block quote example:</div>");
+    }
+
+    @Test
+    void testPositive_html4() {
+        javadoc("-d", "out1-html4",
+                "-html4",
+                "-sourcepath", testSrc,
+                testSrc("C.java"));
+        checkExit(Exit.OK);
     }
 
     @Test

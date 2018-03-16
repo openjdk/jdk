@@ -107,6 +107,11 @@ public class BytecodeDescriptor {
     }
 
     public static String unparse(Class<?> type) {
+        if (type == Object.class) {
+            return "Ljava/lang/Object;";
+        } else if (type == int.class) {
+            return "I";
+        }
         StringBuilder sb = new StringBuilder();
         unparseSig(type, sb);
         return sb.toString();
@@ -148,6 +153,8 @@ public class BytecodeDescriptor {
         char c = Wrapper.forBasicType(t).basicTypeChar();
         if (c != 'L') {
             sb.append(c);
+        } else if (t == Object.class) {
+            sb.append("Ljava/lang/Object;");
         } else {
             boolean lsemi = (!t.isArray());
             if (lsemi)  sb.append('L');

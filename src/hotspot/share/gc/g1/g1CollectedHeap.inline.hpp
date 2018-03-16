@@ -57,10 +57,6 @@ size_t G1CollectedHeap::desired_plab_sz(InCSetState dest) {
 
 // Inline functions for G1CollectedHeap
 
-inline AllocationContextStats& G1CollectedHeap::allocation_context_stats() {
-  return _allocation_context_stats;
-}
-
 // Return the region with the given index. It assumes the index is valid.
 inline HeapRegion* G1CollectedHeap::region_at(uint index) const { return _hrm.at(index); }
 
@@ -127,7 +123,7 @@ G1CollectedHeap::dirty_young_block(HeapWord* start, size_t word_size) {
   assert(containing_hr->is_in(end - 1), "it should also contain end - 1");
 
   MemRegion mr(start, end);
-  g1_barrier_set()->g1_mark_as_young(mr);
+  card_table()->g1_mark_as_young(mr);
 }
 
 inline RefToScanQueue* G1CollectedHeap::task_queue(uint i) const {

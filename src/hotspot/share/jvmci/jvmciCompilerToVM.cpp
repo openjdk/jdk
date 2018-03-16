@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "ci/ciUtilities.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "code/codeCache.hpp"
 #include "code/scopeDesc.hpp"
@@ -32,8 +33,10 @@
 #include "oops/fieldStreams.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compileBroker.hpp"
@@ -47,6 +50,7 @@
 #include "jvmci/jvmciCodeInstaller.hpp"
 #include "jvmci/vmStructs_jvmci.hpp"
 #include "gc/g1/heapRegion.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/timerTrace.hpp"
@@ -204,10 +208,10 @@ void CompilerToVM::Data::initialize(TRAPS) {
 
   BarrierSet* bs = Universe::heap()->barrier_set();
   if (bs->is_a(BarrierSet::CardTableModRef)) {
-    jbyte* base = barrier_set_cast<CardTableModRefBS>(bs)->byte_map_base;
-    assert(base != 0, "unexpected byte_map_base");
+    jbyte* base = ci_card_table_address();
+    assert(base != NULL, "unexpected byte_map_base");
     cardtable_start_address = base;
-    cardtable_shift = CardTableModRefBS::card_shift;
+    cardtable_shift = CardTable::card_shift;
   } else {
     // No card mark barriers
     cardtable_start_address = 0;

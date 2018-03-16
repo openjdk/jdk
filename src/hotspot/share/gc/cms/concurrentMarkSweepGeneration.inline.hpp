@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -448,7 +448,7 @@ inline void ModUnionClosure::do_MemRegion(MemRegion mr) {
   // This is superfluous except at the end of the space;
   // we should do better than this XXX
   MemRegion mr2(mr.start(), align_up(mr.end(),
-                 CardTableModRefBS::card_size /* bytes */));
+                CardTable::card_size /* bytes */));
   _t->mark_range(mr2);
 }
 
@@ -457,7 +457,7 @@ inline void ModUnionClosurePar::do_MemRegion(MemRegion mr) {
   // This is superfluous except at the end of the space;
   // we should do better than this XXX
   MemRegion mr2(mr.start(), align_up(mr.end(),
-                 CardTableModRefBS::card_size /* bytes */));
+                CardTable::card_size /* bytes */));
   _t->par_mark_range(mr2);
 }
 

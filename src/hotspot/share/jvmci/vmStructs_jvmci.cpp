@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -426,7 +426,7 @@
   declare_constant(BitData::null_seen_flag)                               \
   declare_constant(BranchData::not_taken_off_set)                         \
                                                                           \
-  declare_constant_with_value("CardTableModRefBS::dirty_card", CardTableModRefBS::dirty_card_val()) \
+  declare_constant_with_value("CardTable::dirty_card", CardTable::dirty_card_val()) \
                                                                           \
   declare_constant(CodeInstaller::VERIFIED_ENTRY)                         \
   declare_constant(CodeInstaller::UNVERIFIED_ENTRY)                       \
@@ -653,7 +653,7 @@
   static_field(HeapRegion, LogOfHRGrainBytes, int)
 
 #define VM_INT_CONSTANTS_G1(declare_constant, declare_constant_with_value, declare_preprocessor_constant) \
-  declare_constant_with_value("G1SATBCardTableModRefBS::g1_young_gen", G1SATBCardTableModRefBS::g1_young_card_val())
+  declare_constant_with_value("G1CardTable::g1_young_gen", G1CardTable::g1_young_card_val())
 
 #endif // INCLUDE_ALL_GCS
 

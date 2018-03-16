@@ -40,7 +40,7 @@ class OSContainer: AllStatic {
  public:
   static void init();
   static inline bool is_containerized();
-  static char * container_type();
+  static const char * container_type();
 
   static jlong memory_limit_in_bytes();
   static jlong memory_and_swap_limit_in_bytes();

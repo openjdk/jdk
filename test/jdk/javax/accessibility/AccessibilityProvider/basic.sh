@@ -21,6 +21,7 @@
 # questions.
 #
 # @test
+# @key headful
 # @bug 8055160
 # @summary Unit test for javax.accessibility.AccessibilitySPI
 #

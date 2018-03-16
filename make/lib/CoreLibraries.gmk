@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,9 @@ LIBFDLIBM_SRC := $(TOPDIR)/src/java.base/share/native/libfdlibm
 LIBFDLIBM_CFLAGS := -I$(LIBFDLIBM_SRC)
 
 ifneq ($(OPENJDK_TARGET_OS), macosx)
-  $(eval $(call SetupNativeCompilation,BUILD_LIBFDLIBM, \
-      STATIC_LIBRARY := fdlibm, \
+  $(eval $(call SetupNativeCompilation, BUILD_LIBFDLIBM, \
+      NAME := fdlibm, \
+      TYPE := STATIC_LIBRARY, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE), \
       SRC := $(LIBFDLIBM_SRC), \
       OPTIMIZATION := $(BUILD_LIBFDLIBM_OPTIMIZATION), \
@@ -77,8 +78,8 @@ else
 
   # On macosx the old build does partial (incremental) linking of fdlibm instead of
   # a plain static library.
-  $(eval $(call SetupNativeCompilation,BUILD_LIBFDLIBM_MAC, \
-      LIBRARY := fdlibm, \
+  $(eval $(call SetupNativeCompilation, BUILD_LIBFDLIBM_MAC, \
+      NAME := fdlibm, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfdlibm, \
       SRC := $(LIBFDLIBM_SRC), \
       CFLAGS := $(CFLAGS_JDKLIB) $(LIBFDLIBM_CFLAGS), \
@@ -107,9 +108,8 @@ ifneq ($(findstring $(OPENJDK_TARGET_OS), solaris linux), )
   endif
 endif
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBVERIFY, \
-    LIBRARY := verify, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+$(eval $(call SetupJdkLibrary, BUILD_LIBVERIFY, \
+    NAME := verify, \
     SRC := $(TOPDIR)/src/java.base/share/native/libverify, \
     OPTIMIZATION := $(LIBVERIFY_OPTIMIZATION), \
     CFLAGS := $(CFLAGS_JDKLIB), \
@@ -118,15 +118,9 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBVERIFY, \
     MAPFILE := $(TOPDIR)/make/mapfiles/libverify/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LIBS_unix := -ljvm -lc, \
+    LIBS_unix := -ljvm, \
     LIBS_windows := jvm.lib, \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=verify.dll" \
-        -D "JDK_INTERNAL_NAME=verify" \
-        -D "JDK_FTYPE=0x2L", \
     REORDER := $(BUILD_LIBVERIFY_REORDER), \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libverify, \
 ))
 
 TARGETS += $(BUILD_LIBVERIFY)
@@ -155,9 +149,8 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
   endif
 endif
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBJAVA, \
-    LIBRARY := java, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+$(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
+    NAME := java, \
     SRC := $(LIBJAVA_SRC_DIRS), \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(CFLAGS_JDKLIB) \
@@ -176,7 +169,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA, \
         -export:getErrorString -delayload:shell32.dll, \
     LIBS_unix := -ljvm -lverify, \
     LIBS_linux := $(LIBDL) $(BUILD_LIBFDLIBM), \
-    LIBS_solaris := -lsocket -lnsl -lscf $(LIBDL) $(BUILD_LIBFDLIBM) -lc, \
+    LIBS_solaris := -lsocket -lnsl -lscf $(LIBDL) $(BUILD_LIBFDLIBM), \
     LIBS_aix := $(LIBDL) $(BUILD_LIBFDLIBM) $(LIBM),\
     LIBS_macosx := -lfdlibm \
         -framework CoreFoundation \
@@ -185,13 +178,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA, \
     LIBS_windows := jvm.lib $(BUILD_LIBFDLIBM) $(WIN_VERIFY_LIB) \
         shell32.lib delayimp.lib \
         advapi32.lib version.lib, \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=java.dll" \
-        -D "JDK_INTERNAL_NAME=java" \
-        -D "JDK_FTYPE=0x2L", \
     REORDER := $(LIBJAVA_REORDER), \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjava, \
 ))
 
 TARGETS += $(BUILD_LIBJAVA)
@@ -218,9 +205,8 @@ ifeq ($(LIBZIP_CAN_USE_MMAP), true)
   BUILD_LIBZIP_MMAP := -DUSE_MMAP
 endif
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBZIP, \
-    LIBRARY := zip, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+$(eval $(call SetupJdkLibrary, BUILD_LIBZIP, \
+    NAME := zip, \
     OPTIMIZATION := LOW, \
     SRC := $(TOPDIR)/src/java.base/share/native/libzip, \
     EXCLUDES := $(LIBZIP_EXCLUDES), \
@@ -239,14 +225,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBZIP, \
         -export:ZIP_ReadEntry -export:ZIP_GetNextEntry \
         -export:ZIP_InflateFully -export:ZIP_CRC32 -export:ZIP_FreeEntry, \
     LIBS_unix := -ljvm -ljava $(LIBZ_LIBS), \
-    LIBS_solaris := -lc, \
     LIBS_windows := jvm.lib $(WIN_JAVA_LIB), \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=zip.dll" \
-        -D "JDK_INTERNAL_NAME=zip" \
-        -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libzip, \
 ))
 
 $(BUILD_LIBZIP): $(BUILD_LIBJAVA)
@@ -262,10 +241,9 @@ JIMAGELIB_CPPFLAGS := \
     -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
     #
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBJIMAGE, \
-    LIBRARY := jimage, \
+$(eval $(call SetupJdkLibrary, BUILD_LIBJIMAGE, \
+    NAME := jimage, \
     TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     OPTIMIZATION := LOW, \
     SRC := $(TOPDIR)/src/java.base/share/native/libjimage \
         $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjimage, \
@@ -282,15 +260,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJIMAGE, \
         -export:JIMAGE_FindResource -export:JIMAGE_GetResource \
         -export:JIMAGE_ResourceIterator -export:JIMAGE_ResourcePath, \
     LIBS_unix := -ljvm -ldl $(LIBCXX), \
-    LIBS_solaris := -lc, \
     LIBS_macosx := -lc++, \
     LIBS_windows := jvm.lib, \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=jimage.dll" \
-        -D "JDK_INTERNAL_NAME=jimage" \
-        -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjimage, \
 ))
 
 $(BUILD_LIBJIMAGE): $(BUILD_LIBJAVA)
@@ -358,8 +329,8 @@ ifneq ($(USE_EXTERNAL_LIBZ), true)
       )
 endif
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBJLI, \
-    LIBRARY := jli, \
+$(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \
+    NAME := jli, \
     OUTPUT_DIR := $(LIBJLI_OUTPUT_DIR), \
     SRC := $(LIBJLI_SRC_DIRS), \
     EXCLUDE_FILES := $(LIBJLI_EXCLUDE_FILES), \
@@ -396,17 +367,11 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJLI, \
         -export:JLI_AddArgsFromEnvVar \
         -export:JLI_GetAppArgIndex, \
     LIBS_unix := $(LIBZ_LIBS), \
-    LIBS_linux := $(LIBDL) -lc -lpthread, \
-    LIBS_solaris := $(LIBDL) -lc, \
+    LIBS_linux := $(LIBDL) -lpthread, \
+    LIBS_solaris := $(LIBDL), \
     LIBS_aix := $(LIBDL),\
     LIBS_macosx := -framework Cocoa -framework Security -framework ApplicationServices, \
     LIBS_windows := advapi32.lib comctl32.lib user32.lib, \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=jli.dll" \
-        -D "JDK_INTERNAL_NAME=jli" \
-        -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli, \
 ))
 
 TARGETS += $(BUILD_LIBJLI)
@@ -415,8 +380,9 @@ TARGETS += $(BUILD_LIBJLI)
 # with the shared library, so the static library is given a different name. No harm
 # in doing it for all platform to reduce complexity.
 ifeq ($(OPENJDK_TARGET_OS), windows)
-  $(eval $(call SetupNativeCompilation,BUILD_LIBJLI_STATIC, \
-      STATIC_LIBRARY := jli_static, \
+  $(eval $(call SetupNativeCompilation, BUILD_LIBJLI_STATIC, \
+      NAME := jli_static, \
+      TYPE := STATIC_LIBRARY, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE), \
       SRC := $(LIBJLI_SRC_DIRS), \
       EXCLUDE_FILES := $(LIBJLI_EXCLUDE_FILES), \
@@ -434,8 +400,8 @@ else ifeq ($(OPENJDK_TARGET_OS), macosx)
   # On macosx they do partial (incremental) linking of libjli_static.a
   # code it here...rather than add support to NativeCompilation
   # as this is first time I see it
-  $(eval $(call SetupNativeCompilation,BUILD_LIBJLI_STATIC, \
-      LIBRARY := jli_static, \
+  $(eval $(call SetupNativeCompilation, BUILD_LIBJLI_STATIC, \
+      NAME := jli_static, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE), \
       SRC := $(LIBJLI_SRC_DIRS), \
       EXCLUDE_FILES := $(LIBJLI_EXCLUDE_FILES), \
@@ -457,8 +423,9 @@ else ifeq ($(OPENJDK_TARGET_OS), macosx)
 
 else ifeq ($(OPENJDK_TARGET_OS), aix)
   # AIX also requires a static libjli because the compiler doesn't support '-rpath'
-  $(eval $(call SetupNativeCompilation,BUILD_LIBJLI_STATIC, \
-      STATIC_LIBRARY := jli_static, \
+  $(eval $(call SetupNativeCompilation, BUILD_LIBJLI_STATIC, \
+      NAME := jli_static, \
+      TYPE := STATIC_LIBRARY, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE), \
       SRC := $(LIBJLI_SRC_DIRS), \
       EXCLUDE_FILES := $(LIBJLI_EXCLUDE_FILES), \

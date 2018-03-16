@@ -25,6 +25,8 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_ppc.hpp"
 #include "oops/instanceOop.hpp"
@@ -667,9 +669,7 @@ class StubGenerator: public StubCodeGenerator {
           __ bind(filtered);
         }
         break;
-      case BarrierSet::CardTableForRS:
-      case BarrierSet::CardTableExtension:
-      case BarrierSet::ModRef:
+      case BarrierSet::CardTableModRef:
         break;
       default:
         ShouldNotReachHere();
@@ -703,8 +703,7 @@ class StubGenerator: public StubCodeGenerator {
           __ restore_LR_CR(R0);
         }
         break;
-      case BarrierSet::CardTableForRS:
-      case BarrierSet::CardTableExtension:
+      case BarrierSet::CardTableModRef:
         {
           Label Lskip_loop, Lstore_loop;
           if (UseConcMarkSweepGC) {
@@ -712,19 +711,20 @@ class StubGenerator: public StubCodeGenerator {
             __ release();
           }
 
-          CardTableModRefBS* const ct = barrier_set_cast<CardTableModRefBS>(bs);
-          assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
+          CardTableModRefBS* const ctbs = barrier_set_cast<CardTableModRefBS>(bs);
+          CardTable* const ct = ctbs->card_table();
+          assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
           assert_different_registers(addr, count, tmp);
 
           __ sldi(count, count, LogBytesPerHeapOop);
           __ addi(count, count, -BytesPerHeapOop);
           __ add(count, addr, count);
           // Use two shifts to clear out those low order two bits! (Cannot opt. into 1.)
-          __ srdi(addr, addr, CardTableModRefBS::card_shift);
-          __ srdi(count, count, CardTableModRefBS::card_shift);
+          __ srdi(addr, addr, CardTable::card_shift);
+          __ srdi(count, count, CardTable::card_shift);
           __ subf(count, addr, count);
           assert_different_registers(R0, addr, count, tmp);
-          __ load_const(tmp, (address)ct->byte_map_base);
+          __ load_const(tmp, (address)ct->byte_map_base());
           __ addic_(count, count, 1);
           __ beq(CCR0, Lskip_loop);
           __ li(R0, 0);

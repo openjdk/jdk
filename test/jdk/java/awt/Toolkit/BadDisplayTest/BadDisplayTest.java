@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,23 @@
 
 /*
  * @test
+ * @key headful
  * @summary Test that Toolkit.getDefaultToolkit throws AWTError exception if bad DISPLAY variable was set
  * @bug 6818083
  *
  * @run shell/timeout=240 BadDisplayTest.sh
  */
 
-import java.awt.*;
+import java.awt.AWTError;
+import java.awt.Toolkit;
 
 public class BadDisplayTest{
    public static void main(String[] args) {
+       if (Boolean.getBoolean("java.awt.headless")) {
+           return;
+       }
 
-        Throwable th = null;
+       Throwable th = null;
         try {
             Toolkit.getDefaultToolkit();
         } catch (Throwable x) {

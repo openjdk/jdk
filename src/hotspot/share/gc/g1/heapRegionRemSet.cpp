@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ protected:
     if (loc_hr->is_in_reserved(from)) {
       size_t hw_offset = pointer_delta((HeapWord*)from, loc_hr->bottom());
       CardIdx_t from_card = (CardIdx_t)
-          hw_offset >> (CardTableModRefBS::card_shift - LogHeapWordSize);
+          hw_offset >> (G1CardTable::card_shift - LogHeapWordSize);
 
       assert((size_t)from_card < HeapRegion::CardsPerRegion,
              "Must be in range.");
@@ -170,7 +170,7 @@ public:
   bool contains_reference(OopOrNarrowOopStar from) const {
     assert(hr()->is_in_reserved(from), "Precondition.");
     size_t card_ind = pointer_delta(from, hr()->bottom(),
-                                    CardTableModRefBS::card_size);
+                                    G1CardTable::card_size);
     return _bm.at(card_ind);
   }
 
@@ -354,7 +354,7 @@ void OtherRegionsTable::unlink_from_all(PerRegionTable* prt) {
 void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
   uint cur_hrm_ind = _hr->hrm_index();
 
-  int from_card = (int)(uintptr_t(from) >> CardTableModRefBS::card_shift);
+  int from_card = (int)(uintptr_t(from) >> G1CardTable::card_shift);
 
   if (G1FromCardCache::contains_or_replace(tid, cur_hrm_ind, from_card)) {
     assert(contains_reference(from), "We just found " PTR_FORMAT " in the FromCardCache", p2i(from));
@@ -382,7 +382,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
 
       uintptr_t from_hr_bot_card_index =
         uintptr_t(from_hr->bottom())
-          >> CardTableModRefBS::card_shift;
+          >> G1CardTable::card_shift;
       CardIdx_t card_index = from_card - from_hr_bot_card_index;
       assert((size_t)card_index < HeapRegion::CardsPerRegion,
              "Must be in range.");
@@ -671,9 +671,9 @@ bool OtherRegionsTable::contains_reference_locked(OopOrNarrowOopStar from) const
 
   } else {
     uintptr_t from_card =
-      (uintptr_t(from) >> CardTableModRefBS::card_shift);
+      (uintptr_t(from) >> G1CardTable::card_shift);
     uintptr_t hr_bot_card_index =
-      uintptr_t(hr->bottom()) >> CardTableModRefBS::card_shift;
+      uintptr_t(hr->bottom()) >> G1CardTable::card_shift;
     assert(from_card >= hr_bot_card_index, "Inv");
     CardIdx_t card_index = from_card - hr_bot_card_index;
     assert((size_t)card_index < HeapRegion::CardsPerRegion,
