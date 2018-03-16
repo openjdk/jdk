@@ -931,7 +931,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
   TARGETS += $(BUILD_LIBSPLASHSCREEN)
 
   ifeq ($(OPENJDK_TARGET_OS), macosx)
-    $(BUILD_LIBSPLASHSCREEN): $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)osxapp$(SHARED_LIBRARY_SUFFIX)
+    $(BUILD_LIBSPLASHSCREEN): $(call FindLib, java.desktop, osxapp)
   endif
 
 endif
@@ -1009,7 +1009,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 
   $(BUILD_LIBAWT_LWAWT): $(BUILD_LIBMLIB_IMAGE)
 
-  $(BUILD_LIBAWT_LWAWT): $(BUILD_LIBOSXAPP)
+  $(BUILD_LIBAWT_LWAWT): $(call FindLib, java.desktop, osxapp)
 
   $(BUILD_LIBAWT_LWAWT): $(call FindLib, java.base, java)
 
@@ -1047,11 +1047,9 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 
   $(BUILD_LIBOSXUI): $(BUILD_LIBAWT)
 
-  $(BUILD_LIBOSXUI): $(BUILD_LIBOSXAPP)
+  $(BUILD_LIBOSXUI): $(call FindLib, java.desktop, osxapp)
 
   $(BUILD_LIBOSXUI): $(BUILD_LIBAWT_LWAWT)
-
-  #$(BUILD_LIBOSXUI): $(call FindLib, java.base, java)
 
 endif
 
