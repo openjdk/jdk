@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "ci/ciEnv.hpp"
 #include "code/nativeInst.hpp"
 #include "compiler/disassembler.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableModRefBS.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
@@ -43,6 +44,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -1316,98 +1318,6 @@ void MacroAssembler::tlab_allocate(Register obj, Register obj_end, Register tmp1
   str(obj_end, Address(Rthread, JavaThread::tlab_top_offset()));
 }
 
-void MacroAssembler::tlab_refill(Register top, Register tmp1, Register tmp2,
-                                 Register tmp3, Register tmp4,
-                               Label& try_eden, Label& slow_case) {
-  if (!Universe::heap()->supports_inline_contig_alloc()) {
-    b(slow_case);
-    return;
-  }
-
-  InlinedAddress intArrayKlass_addr((address)Universe::intArrayKlassObj_addr());
-  Label discard_tlab, do_refill;
-  ldr(top,  Address(Rthread, JavaThread::tlab_top_offset()));
-  ldr(tmp1, Address(Rthread, JavaThread::tlab_end_offset()));
-  ldr(tmp2, Address(Rthread, JavaThread::tlab_refill_waste_limit_offset()));
-
-  // Calculate amount of free space
-  sub(tmp1, tmp1, top);
-  // Retain tlab and allocate in shared space
-  // if the amount of free space in tlab is too large to discard
-  cmp(tmp2, AsmOperand(tmp1, lsr, LogHeapWordSize));
-  b(discard_tlab, ge);
-
-  // Increment waste limit to prevent getting stuck on this slow path
-  mov_slow(tmp3, ThreadLocalAllocBuffer::refill_waste_limit_increment());
-  add(tmp2, tmp2, tmp3);
-  str(tmp2, Address(Rthread, JavaThread::tlab_refill_waste_limit_offset()));
-  if (TLABStats) {
-    ldr_u32(tmp2, Address(Rthread, JavaThread::tlab_slow_allocations_offset()));
-    add_32(tmp2, tmp2, 1);
-    str_32(tmp2, Address(Rthread, JavaThread::tlab_slow_allocations_offset()));
-  }
-  b(try_eden);
-  bind_literal(intArrayKlass_addr);
-
-  bind(discard_tlab);
-  if (TLABStats) {
-    ldr_u32(tmp2, Address(Rthread, JavaThread::tlab_number_of_refills_offset()));
-    ldr_u32(tmp3, Address(Rthread, JavaThread::tlab_fast_refill_waste_offset()));
-    add_32(tmp2, tmp2, 1);
-    add_32(tmp3, tmp3, AsmOperand(tmp1, lsr, LogHeapWordSize));
-    str_32(tmp2, Address(Rthread, JavaThread::tlab_number_of_refills_offset()));
-    str_32(tmp3, Address(Rthread, JavaThread::tlab_fast_refill_waste_offset()));
-  }
-  // If tlab is currently allocated (top or end != null)
-  // then fill [top, end + alignment_reserve) with array object
-  cbz(top, do_refill);
-
-  // Set up the mark word
-  mov_slow(tmp2, (intptr_t)markOopDesc::prototype()->copy_set_hash(0x2));
-  str(tmp2, Address(top, oopDesc::mark_offset_in_bytes()));
-  // Set klass to intArrayKlass and the length to the remaining space
-  ldr_literal(tmp2, intArrayKlass_addr);
-  add(tmp1, tmp1, ThreadLocalAllocBuffer::alignment_reserve_in_bytes() -
-      typeArrayOopDesc::header_size(T_INT) * HeapWordSize);
-  Register klass = tmp2;
-  ldr(klass, Address(tmp2));
-  logical_shift_right(tmp1, tmp1, LogBytesPerInt); // divide by sizeof(jint)
-  str_32(tmp1, Address(top, arrayOopDesc::length_offset_in_bytes()));
-  store_klass(klass, top); // blows klass:
-  klass = noreg;
-
-  ldr(tmp1, Address(Rthread, JavaThread::tlab_start_offset()));
-  sub(tmp1, top, tmp1); // size of tlab's allocated portion
-  incr_allocated_bytes(tmp1, tmp2);
-
-  bind(do_refill);
-  // Refill the tlab with an eden allocation
-  ldr(tmp1, Address(Rthread, JavaThread::tlab_size_offset()));
-  logical_shift_left(tmp4, tmp1, LogHeapWordSize);
-  eden_allocate(top, tmp1, tmp2, tmp3, tmp4, slow_case);
-  str(top, Address(Rthread, JavaThread::tlab_start_offset()));
-  str(top, Address(Rthread, JavaThread::tlab_top_offset()));
-
-#ifdef ASSERT
-  // Verify that tmp1 contains tlab_end
-  ldr(tmp2, Address(Rthread, JavaThread::tlab_size_offset()));
-  add(tmp2, top, AsmOperand(tmp2, lsl, LogHeapWordSize));
-  cmp(tmp1, tmp2);
-  breakpoint(ne);
-#endif
-
-  sub(tmp1, tmp1, ThreadLocalAllocBuffer::alignment_reserve_in_bytes());
-  str(tmp1, Address(Rthread, JavaThread::tlab_end_offset()));
-
-  if (ZeroTLAB) {
-    // clobbers start and tmp
-    // top must be preserved!
-    add(tmp1, tmp1, ThreadLocalAllocBuffer::alignment_reserve_in_bytes());
-    ldr(tmp2, Address(Rthread, JavaThread::tlab_start_offset()));
-    zero_memory(tmp2, tmp1, tmp3);
-  }
-}
-
 // Fills memory regions [start..end] with zeroes. Clobbers `start` and `tmp` registers.
 void MacroAssembler::zero_memory(Register start, Register end, Register tmp) {
   Label loop;
@@ -2357,7 +2267,8 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
                                    DirtyCardQueue::byte_offset_of_buf()));
 
   BarrierSet* bs = Universe::heap()->barrier_set();
-  CardTableModRefBS* ct = (CardTableModRefBS*)bs;
+  CardTableModRefBS* ctbs = barrier_set_cast<CardTableModRefBS>(bs);
+  CardTable* ct = ctbs->card_table();
   Label done;
   Label runtime;
 
@@ -2378,18 +2289,18 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
 
   // storing region crossing non-NULL, is card already dirty?
   const Register card_addr = tmp1;
-  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
+  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
-  mov_address(tmp2, (address)ct->byte_map_base, symbolic_Relocation::card_table_reference);
-  add(card_addr, tmp2, AsmOperand(store_addr, lsr, CardTableModRefBS::card_shift));
+  mov_address(tmp2, (address)ct->byte_map_base(), symbolic_Relocation::card_table_reference);
+  add(card_addr, tmp2, AsmOperand(store_addr, lsr, CardTable::card_shift));
 
   ldrb(tmp2, Address(card_addr));
-  cmp(tmp2, (int)G1SATBCardTableModRefBS::g1_young_card_val());
+  cmp(tmp2, (int)G1CardTable::g1_young_card_val());
   b(done, eq);
 
   membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreLoad), tmp2);
 
-  assert(CardTableModRefBS::dirty_card_val() == 0, "adjust this code");
+  assert(CardTable::dirty_card_val() == 0, "adjust this code");
   ldrb(tmp2, Address(card_addr));
   cbz(tmp2, done);
 
@@ -3115,7 +3026,6 @@ void MacroAssembler::set_narrow_oop(Register dst, jobject obj) {
 }
 
 #endif // COMPILER2
-
 // Must preserve condition codes, or C2 encodeKlass_not_null rule
 // must be changed.
 void MacroAssembler::encode_klass_not_null(Register r) {
@@ -3353,4 +3263,3 @@ void MacroAssembler::fast_unlock(Register Roop, Register Rbox, Register Rscratch
 
 }
 #endif // COMPILER2
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,11 @@ public class bug7082443 {
     public static void main(String[] args) throws Exception {
         for (UIManager.LookAndFeelInfo lookAndFeelInfo : UIManager.getInstalledLookAndFeels()) {
             if (lookAndFeelInfo.getClassName().contains(GTK_LAF_CLASS)) {
-                UIManager.setLookAndFeel(lookAndFeelInfo.getClassName());
-
+                try {
+                    UIManager.setLookAndFeel(lookAndFeelInfo.getClassName());
+                } catch (final UnsupportedLookAndFeelException ignored) {
+                    continue;
+                }
                 SwingUtilities.invokeAndWait(new Runnable() {
                     @Override
                     public void run() {

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6964914
+ * @bug 6964914 8182765
  * @summary javadoc does not output number of warnings using user written doclet
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  */
@@ -47,7 +47,6 @@ public class Test {
         File testSrc = new File(System.getProperty("test.src"));
         String[] args = {
             "-Xdoclint:none",
-            "-html4",
             "-source", "8",
             "-classpath", ".",
             "-package",

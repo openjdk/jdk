@@ -23,6 +23,7 @@
 
 /* @test 1.2 02/05/15
    @bug 4810363 4924441
+   @key printer
    @run main DeviceScale
    @summary check the peek scale is the same as the device scale, and that the
    clips are also the same

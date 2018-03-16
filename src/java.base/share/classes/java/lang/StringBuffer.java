@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,14 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * this one, as it supports all of the same operations but it is faster, as
  * it performs no synchronization.
  *
+ * @apiNote
+ * {@code StringBuffer} implements {@code Comparable} but does not override
+ * {@link Object#equals equals}. Thus, the natural ordering of {@code StringBuffer}
+ * is inconsistent with equals. Care should be exercised if {@code StringBuffer}
+ * objects are used as keys in a {@code SortedMap} or elements in a {@code SortedSet}.
+ * See {@link Comparable}, {@link java.util.SortedMap SortedMap}, or
+ * {@link java.util.SortedSet SortedSet} for more information.
+ *
  * @author      Arthur van Hoff
  * @see     java.lang.StringBuilder
  * @see     java.lang.String
@@ -97,7 +105,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  */
  public final class StringBuffer
     extends AbstractStringBuilder
-    implements java.io.Serializable, CharSequence
+    implements java.io.Serializable, Comparable<StringBuffer>, CharSequence
 {
 
     /**
@@ -123,8 +131,8 @@ import jdk.internal.HotSpotIntrinsicCandidate;
      * the specified initial capacity.
      *
      * @param      capacity  the initial capacity.
-     * @exception  NegativeArraySizeException  if the {@code capacity}
-     *               argument is less than {@code 0}.
+     * @throws     NegativeArraySizeException  if the {@code capacity}
+     *             argument is less than {@code 0}.
      */
     @HotSpotIntrinsicCandidate
     public StringBuffer(int capacity) {
@@ -160,6 +168,35 @@ import jdk.internal.HotSpotIntrinsicCandidate;
     public StringBuffer(CharSequence seq) {
         this(seq.length() + 16);
         append(seq);
+    }
+
+    /**
+     * Compares two {@code StringBuffer} instances lexicographically. This method
+     * follows the same rules for lexicographical comparison as defined in the
+     * {@linkplain java.lang.CharSequence#compare(java.lang.CharSequence,
+     * java.lang.CharSequence)  CharSequence.compare(this, another)} method.
+     *
+     * <p>
+     * For finer-grained, locale-sensitive String comparison, refer to
+     * {@link java.text.Collator}.
+     *
+     * @implNote
+     * This method synchronizes on {@code this}, the current object, but not
+     * {@code StringBuffer another} with which {@code this StringBuffer} is compared.
+     *
+     * @param another the {@code StringBuffer} to be compared with
+     *
+     * @return  the value {@code 0} if this {@code StringBuffer} contains the same
+     * character sequence as that of the argument {@code StringBuffer}; a negative integer
+     * if this {@code StringBuffer} is lexicographically less than the
+     * {@code StringBuffer} argument; or a positive integer if this {@code StringBuffer}
+     * is lexicographically greater than the {@code StringBuffer} argument.
+     *
+     * @since 11
+     */
+    @Override
+    public synchronized int compareTo(StringBuffer another) {
+        return super.compareTo(another);
     }
 
     @Override

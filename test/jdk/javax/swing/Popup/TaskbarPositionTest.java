@@ -27,7 +27,8 @@ import javax.swing.*;
 import javax.swing.event.*;
 
 /**
- * @test @bug 4245587 4474813 4425878 4767478 8015599
+ * @test
+ * @bug 4245587 4474813 4425878 4767478 8015599
  * @key headful
  * @author Mark Davidson
  * @summary Tests the location of the heavy weight popup portion of JComboBox,

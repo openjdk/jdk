@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
 #include "aot/aotLoader.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
-#include "gc/parallel/cardTableExtension.hpp"
 #include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/psMarkSweep.hpp"
+#include "gc/parallel/psCardTable.hpp"
 #include "gc/parallel/psPromotionManager.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"
@@ -176,8 +176,7 @@ void OldToYoungRootsTask::do_it(GCTaskManager* manager, uint which) {
 
   {
     PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(which);
-    CardTableExtension* card_table =
-      barrier_set_cast<CardTableExtension>(ParallelScavengeHeap::heap()->barrier_set());
+    PSCardTable* card_table = ParallelScavengeHeap::heap()->card_table();
 
     card_table->scavenge_contents_parallel(_old_gen->start_array(),
                                            _old_gen->object_space(),

@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @key headful
  * @bug 8041982
  * @summary Use of animated icon in JLayer causes CPU spin
  * @author Alexander Potochkin

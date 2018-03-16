@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/serial/defNewGeneration.inline.hpp"
+#include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/ageTable.inline.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectorCounters.hpp"
@@ -188,7 +189,7 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
                 (HeapWord*)_virtual_space.high());
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
-  gch->barrier_set()->resize_covered_region(cmr);
+  gch->rem_set()->resize_covered_region(cmr);
 
   _eden_space = new ContiguousSpace();
   _from_space = new ContiguousSpace();
@@ -453,7 +454,7 @@ void DefNewGeneration::compute_new_size() {
                              SpaceDecorator::DontMangle);
     MemRegion cmr((HeapWord*)_virtual_space.low(),
                   (HeapWord*)_virtual_space.high());
-    gch->barrier_set()->resize_covered_region(cmr);
+    gch->rem_set()->resize_covered_region(cmr);
 
     log_debug(gc, ergo, heap)(
         "New generation size " SIZE_FORMAT "K->" SIZE_FORMAT "K [eden=" SIZE_FORMAT "K,survivor=" SIZE_FORMAT "K]",
@@ -564,7 +565,7 @@ void DefNewGeneration::adjust_desired_tenuring_threshold() {
   _tenuring_threshold = age_table()->compute_tenuring_threshold(desired_survivor_size);
 
   if (UsePerfData) {
-    GCPolicyCounters* gc_counters = GenCollectedHeap::heap()->gen_policy()->counters();
+    GCPolicyCounters* gc_counters = GenCollectedHeap::heap()->counters();
     gc_counters->tenuring_threshold()->set_value(_tenuring_threshold);
     gc_counters->desired_survivor_size()->set_value(desired_survivor_size * oopSize);
   }
@@ -616,9 +617,6 @@ void DefNewGeneration::collect(bool   full,
   assert(gch->no_allocs_since_save_marks(),
          "save marks have not been newly set.");
 
-  // Not very pretty.
-  CollectorPolicy* cp = gch->collector_policy();
-
   FastScanClosure fsc_with_no_gc_barrier(this, false);
   FastScanClosure fsc_with_gc_barrier(this, true);
 
@@ -636,7 +634,7 @@ void DefNewGeneration::collect(bool   full,
   {
     // DefNew needs to run with n_threads == 0, to make sure the serial
     // version of the card table scanning code is used.
-    // See: CardTableModRefBSForCTRS::non_clean_card_iterate_possibly_parallel.
+    // See: CardTableRS::non_clean_card_iterate_possibly_parallel.
     StrongRootsScope srs(0);
 
     gch->young_process_roots(&srs,
@@ -688,7 +686,7 @@ void DefNewGeneration::collect(bool   full,
 
     // A successful scavenge should restart the GC time limit count which is
     // for full GC's.
-    AdaptiveSizePolicy* size_policy = gch->gen_policy()->size_policy();
+    AdaptiveSizePolicy* size_policy = gch->size_policy();
     size_policy->reset_gc_overhead_limit_count();
     assert(!gch->incremental_collection_failed(), "Should be clear");
   } else {
@@ -953,7 +951,7 @@ void DefNewGeneration::gc_epilogue(bool full) {
 
   // update the generation and space performance counters
   update_counters();
-  gch->gen_policy()->counters()->update_counters();
+  gch->counters()->update_counters();
 }
 
 void DefNewGeneration::record_spaces_top() {

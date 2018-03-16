@@ -27,6 +27,7 @@ import java.awt.image.BufferedImage;
 
 /*
  * @test
+ * @key headful
  * @bug 7153700
  * @summary Check for mouseMoved event for java.awt.TrayIcon
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)

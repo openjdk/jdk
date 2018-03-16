@@ -30,13 +30,6 @@
 
 class STWGCTimer;
 
-bool G1CollectedHeap::copy_allocation_context_stats(const jint* contexts,
-                                                    jlong* totals,
-                                                    jbyte* accuracy,
-                                                    jint len) {
-  return false;
-}
-
 G1Policy* G1CollectedHeap::create_g1_policy(STWGCTimer* gc_timer) {
   return new G1DefaultPolicy(gc_timer);
 }

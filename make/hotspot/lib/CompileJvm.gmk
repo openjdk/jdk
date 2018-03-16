@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -210,17 +210,16 @@ JVM_STRIPFLAGS ?= $(STRIPFLAGS)
 # Now set up the actual compilation of the main hotspot native library
 
 $(eval $(call SetupNativeCompilation, BUILD_LIBJVM, \
+    NAME := jvm, \
     TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
-    LIBRARY := jvm, \
     OUTPUT_DIR := $(JVM_LIB_OUTPUTDIR), \
     SRC := $(JVM_SRC_DIRS), \
+    EXTRA_FILES := $(DTRACE_EXTRA_SOURCE_FILES), \
     EXCLUDES := $(JVM_EXCLUDES), \
     EXCLUDE_FILES := $(JVM_EXCLUDE_FILES), \
     EXCLUDE_PATTERNS := $(JVM_EXCLUDE_PATTERNS), \
     EXTRA_OBJECT_FILES := $(DTRACE_EXTRA_OBJECT_FILES), \
     CFLAGS := $(JVM_CFLAGS), \
-    CFLAGS_DEBUG_SYMBOLS := $(JVM_CFLAGS_SYMBOLS), \
-    CXXFLAGS_DEBUG_SYMBOLS := $(JVM_CFLAGS_SYMBOLS), \
     vm_version.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     arguments.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     DISABLED_WARNINGS_clang := tautological-compare, \

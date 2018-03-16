@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,46 +41,44 @@ $(eval $(call IncludeCustomExtension, test/JtregNativeJdk.gmk))
 # Targets for building the native tests themselves.
 ################################################################################
 
-# Add more directories here when needed.
-BUILD_JDK_JTREG_NATIVE_SRC += \
-    $(TOPDIR)/test/jdk/native_sanity \
-    $(TOPDIR)/test/jdk/java/lang/ClassLoader/nativeLibrary \
-    $(TOPDIR)/test/jdk/java/lang/String/nativeEncoding \
-    #
-
-ifneq ($(OPENJDK_TARGET_OS), windows)
-    BUILD_JDK_JTREG_NATIVE_SRC += $(TOPDIR)/test/jdk/java/nio/channels/FileChannel/directio
-endif
+# This might have been added to by a custom extension.
+BUILD_JDK_JTREG_NATIVE_SRC += $(TOPDIR)/test/jdk
 
 BUILD_JDK_JTREG_OUTPUT_DIR := $(OUTPUTDIR)/support/test/jdk/jtreg/native
 
 BUILD_JDK_JTREG_IMAGE_DIR := $(TEST_IMAGE_DIR)/jdk/jtreg
 
+# Platform specific setup
 ifeq ($(OPENJDK_TARGET_OS), windows)
-    WIN_LIB_JAVA := $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib
-    BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := $(WIN_LIB_JAVA)
-else ifeq ($(OPENJDK_TARGET_OS), solaris)
-    BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := -ljava -lc
-    BUILD_JDK_JTREG_LIBRARIES_LIBS_libDirectIO := -ljava -lc
+  BUILD_JDK_JTREG_EXCLUDE += libDirectIO.c libInheritedChannel.c
+
+  WIN_LIB_JAVA := $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib
+  BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := $(WIN_LIB_JAVA)
 else
-    BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := -ljava
-    BUILD_JDK_JTREG_LIBRARIES_LIBS_libDirectIO := -ljava
+  BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := -ljava
+  BUILD_JDK_JTREG_LIBRARIES_LIBS_libDirectIO := -ljava
+  ifeq ($(OPENJDK_TARGET_OS), linux)
+    BUILD_JDK_JTREG_LIBRARIES_LIBS_libInheritedChannel := -ljava
+  else ifeq ($(OPENJDK_TARGET_OS), solaris)
+    BUILD_JDK_JTREG_LIBRARIES_LIBS_libInheritedChannel := -ljava
+  endif
 endif
 
 $(eval $(call SetupTestFilesCompilation, BUILD_JDK_JTREG_LIBRARIES, \
     TYPE := LIBRARY, \
     SOURCE_DIRS := $(BUILD_JDK_JTREG_NATIVE_SRC), \
     OUTPUT_DIR := $(BUILD_JDK_JTREG_OUTPUT_DIR), \
+    EXCLUDE := $(BUILD_JDK_JTREG_EXCLUDE), \
 ))
 
 $(eval $(call SetupTestFilesCompilation, BUILD_JDK_JTREG_EXECUTABLES, \
     TYPE := PROGRAM, \
     SOURCE_DIRS := $(BUILD_JDK_JTREG_NATIVE_SRC), \
     OUTPUT_DIR := $(BUILD_JDK_JTREG_OUTPUT_DIR), \
+    EXCLUDE := $(BUILD_JDK_JTREG_EXCLUDE), \
 ))
 
 build-test-jdk-jtreg-native: $(BUILD_JDK_JTREG_LIBRARIES) $(BUILD_JDK_JTREG_EXECUTABLES)
-
 
 ################################################################################
 # Targets for building test-image.

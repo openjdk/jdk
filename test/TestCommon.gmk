@@ -34,6 +34,9 @@ JTREG_VM_TYPE ?= -agentvm
 USE_JTREG_ASSERT ?= true
 LIMIT_JTREG_VM_MEMORY ?= true
 
+X:=
+SPACE:=$(X) $(X)
+
 .DEFAULT : all
 
 # Empty these to get rid of some default rules
@@ -87,6 +90,11 @@ else
   endif
 endif
 
+# convert list of directories to dos paths
+define MixedDirs
+$(foreach i,$1,$(shell $(GETMIXEDPATH) "${i}"))
+endef
+
 ifdef ALT_SLASH_JAVA
   SLASH_JAVA = $(ALT_SLASH_JAVA)
 endif
@@ -122,6 +130,19 @@ ifndef PRODUCT_HOME
          $(ECHO) "$(ABS_PLATFORM_BUILD_ROOT)";  \
        fi)
   PRODUCT_HOME := $(PRODUCT_HOME)
+endif
+
+# On Windows, setup the _NT_SYMBOL_PATH if possible.
+ifeq ($(PLATFORM), windows)
+  ifndef _NT_SYMBOL_PATH
+    ifdef PRODUCT_SYMBOLS_HOME
+      _NT_SYMBOL_PATH := \
+          $(subst $(SPACE),;,$(strip $(call MixedDirs, $(sort $(dir $(wildcard \
+          $(addprefix $(PRODUCT_SYMBOLS_HOME)/bin/, *.pdb */*.pdb)))))))
+      export _NT_SYMBOL_PATH
+    endif
+  endif
+  JTREG_BASIC_OPTIONS += -e:_NT_SYMBOL_PATH='$(_NT_SYMBOL_PATH)'
 endif
 
 # Expect JPRT to set JPRT_PRODUCT_ARGS (e.g. -server etc.)
@@ -325,19 +346,15 @@ ifndef JT_HOME
 endif
 
 # Problematic tests to be excluded
-PROBLEM_LISTS=$(call MixedDirs,$(wildcard ProblemList.txt))
+EXTRA_PROBLEM_LISTS :=
+PROBLEM_LISTS := ProblemList.txt $(EXTRA_PROBLEM_LISTS)
 
 # Create exclude list for this platform and arch
 ifdef NO_EXCLUDES
   JTREG_EXCLUSIONS =
 else
-  JTREG_EXCLUSIONS = $(PROBLEM_LISTS:%=-exclude:%)
+  JTREG_EXCLUSIONS = $(addprefix -exclude:, $(wildcard $(PROBLEM_LISTS)))
 endif
-
-# convert list of directories to dos paths
-define MixedDirs
-$(foreach i,$1,$(shell $(GETMIXEDPATH) "${i}"))
-endef
 
 # ------------------------------------------------------------------
 

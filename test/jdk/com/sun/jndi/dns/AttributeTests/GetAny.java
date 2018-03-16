@@ -26,8 +26,7 @@
  * @bug 8195976
  * @summary Tests that we can get the attributes of a DNS entry using special
  *          qualifiers.
- * @modules java.xml.bind
- *          java.base/sun.security.util
+ * @modules java.base/sun.security.util
  * @library ../lib/
  * @build DNSTestUtils DNSServer DNSTracer
  * @run main GetAny

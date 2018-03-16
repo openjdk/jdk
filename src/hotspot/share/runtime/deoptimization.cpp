@@ -40,6 +40,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/fieldStreams.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/biasedLocking.hpp"
@@ -603,7 +604,7 @@ void Deoptimization::unwind_callee_save_values(frame* f, vframeArray* vframe_arr
 // Return BasicType of value being returned
 JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_mode))
 
-  // We are already active int he special DeoptResourceMark any ResourceObj's we
+  // We are already active in the special DeoptResourceMark any ResourceObj's we
   // allocate will be freed at the end of the routine.
 
   // It is actually ok to allocate handles in a leaf method. It causes no safepoints,
@@ -680,55 +681,41 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
       // at an uncommon trap for an invoke (where the compiler
       // generates debug info before the invoke has executed)
       Bytecodes::Code cur_code = str.next();
-      if (cur_code == Bytecodes::_invokevirtual   ||
-          cur_code == Bytecodes::_invokespecial   ||
-          cur_code == Bytecodes::_invokestatic    ||
-          cur_code == Bytecodes::_invokeinterface ||
-          cur_code == Bytecodes::_invokedynamic) {
+      if (Bytecodes::is_invoke(cur_code)) {
         Bytecode_invoke invoke(mh, iframe->interpreter_frame_bci());
-        Symbol* signature = invoke.signature();
-        ArgumentSizeComputer asc(signature);
-        cur_invoke_parameter_size = asc.size();
-        if (invoke.has_receiver()) {
-          // Add in receiver
-          ++cur_invoke_parameter_size;
-        }
+        cur_invoke_parameter_size = invoke.size_of_parameters();
         if (i != 0 && !invoke.is_invokedynamic() && MethodHandles::has_member_arg(invoke.klass(), invoke.name())) {
           callee_size_of_parameters++;
         }
       }
       if (str.bci() < max_bci) {
-        Bytecodes::Code bc = str.next();
-        if (bc >= 0) {
+        Bytecodes::Code next_code = str.next();
+        if (next_code >= 0) {
           // The interpreter oop map generator reports results before
           // the current bytecode has executed except in the case of
           // calls. It seems to be hard to tell whether the compiler
           // has emitted debug information matching the "state before"
           // a given bytecode or the state after, so we try both
-          switch (cur_code) {
-            case Bytecodes::_invokevirtual:
-            case Bytecodes::_invokespecial:
-            case Bytecodes::_invokestatic:
-            case Bytecodes::_invokeinterface:
-            case Bytecodes::_invokedynamic:
-            case Bytecodes::_athrow:
-              break;
-            default: {
+          if (!Bytecodes::is_invoke(cur_code) && cur_code != Bytecodes::_athrow) {
+            // Get expression stack size for the next bytecode
+            if (Bytecodes::is_invoke(next_code)) {
+              Bytecode_invoke invoke(mh, str.bci());
+              next_mask_expression_stack_size = invoke.size_of_parameters();
+            } else {
               InterpreterOopMap next_mask;
               OopMapCache::compute_one_oop_map(mh, str.bci(), &next_mask);
               next_mask_expression_stack_size = next_mask.expression_stack_size();
-              // Need to subtract off the size of the result type of
-              // the bytecode because this is not described in the
-              // debug info but returned to the interpreter in the TOS
-              // caching register
-              BasicType bytecode_result_type = Bytecodes::result_type(cur_code);
-              if (bytecode_result_type != T_ILLEGAL) {
-                top_frame_expression_stack_adjustment = type2size[bytecode_result_type];
-              }
-              assert(top_frame_expression_stack_adjustment >= 0, "");
-              try_next_mask = true;
-              break;
             }
+            // Need to subtract off the size of the result type of
+            // the bytecode because this is not described in the
+            // debug info but returned to the interpreter in the TOS
+            // caching register
+            BasicType bytecode_result_type = Bytecodes::result_type(cur_code);
+            if (bytecode_result_type != T_ILLEGAL) {
+              top_frame_expression_stack_adjustment = type2size[bytecode_result_type];
+            }
+            assert(top_frame_expression_stack_adjustment >= 0, "stack adjustment must be positive");
+            try_next_mask = true;
           }
         }
       }

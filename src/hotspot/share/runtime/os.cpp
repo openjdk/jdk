@@ -93,6 +93,26 @@ void os_init_globals() {
   os::init_globals();
 }
 
+static time_t get_timezone(const struct tm* time_struct) {
+#if defined(_ALLBSD_SOURCE)
+  return time_struct->tm_gmtoff;
+#elif defined(_WINDOWS)
+  long zone;
+  _get_timezone(&zone);
+  return static_cast<time_t>(zone);
+#else
+  return timezone;
+#endif
+}
+
+int os::snprintf(char* buf, size_t len, const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  int result = os::vsnprintf(buf, len, fmt, args);
+  va_end(args);
+  return result;
+}
+
 // Fill in buffer with current local time as an ISO-8601 string.
 // E.g., yyyy-mm-ddThh:mm:ss-zzzz.
 // Returns buffer, or NULL if it failed.
@@ -137,11 +157,7 @@ char* os::iso8601_time(char* buffer, size_t buffer_length, bool utc) {
       return NULL;
     }
   }
-#if defined(_ALLBSD_SOURCE)
-  const time_t zone = (time_t) time_struct.tm_gmtoff;
-#else
-  const time_t zone = timezone;
-#endif
+  const time_t zone = get_timezone(&time_struct);
 
   // If daylight savings time is in effect,
   // we are 1 hour East of our time zone
@@ -228,6 +244,13 @@ OSReturn os::get_priority(const Thread* const thread, ThreadPriority& priority) 
   priority = (ThreadPriority)p;
   return OS_OK;
 }
+
+
+#if !defined(LINUX) && !defined(_WINDOWS)
+size_t os::committed_stack_size(address bottom, size_t size) {
+  return size;
+}
+#endif
 
 bool os::dll_build_name(char* buffer, size_t size, const char* fname) {
   int n = jio_snprintf(buffer, size, "%s%s%s", JNI_LIB_PREFIX, fname, JNI_LIB_SUFFIX);
@@ -1706,7 +1729,7 @@ char* os::attempt_reserve_memory_at(size_t bytes, char* addr, int file_desc) {
   } else {
     result = pd_attempt_reserve_memory_at(bytes, addr);
     if (result != NULL) {
-      MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC);
+      MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
     }
   }
   return result;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,13 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "logging/logConfiguration.hpp"
+#include "logging/logTestFixture.hpp"
 #include "unittest.hpp"
 
-TEST(G1HeapVerifier, parse) {
+class G1HeapVerifierTest : public LogTestFixture {
+};
+
+TEST_F(G1HeapVerifierTest, parse) {
   G1HeapVerifier verifier(NULL);
 
   LogConfiguration::configure_stdout(LogLevel::Off, true, LOG_TAGS(gc, verify));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,11 @@
  */
 module java.sql {
     requires transitive java.logging;
+    requires transitive java.transaction.xa;
     requires transitive java.xml;
 
     exports java.sql;
     exports javax.sql;
-    exports javax.transaction.xa;
 
     uses java.sql.Driver;
 }

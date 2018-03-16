@@ -46,13 +46,14 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
-#include "oops/typeArrayOop.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vframe.hpp"
@@ -3403,7 +3404,7 @@ void java_lang_invoke_MethodHandleNatives_CallSiteContext::compute_offsets() {
 
 DependencyContext java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(oop call_site) {
   assert(java_lang_invoke_MethodHandleNatives_CallSiteContext::is_instance(call_site), "");
-  intptr_t* vmdeps_addr = (intptr_t*)call_site->address_field_addr(_vmdependencies_offset);
+  intptr_t* vmdeps_addr = (intptr_t*)call_site->field_addr(_vmdependencies_offset);
   DependencyContext dep_ctx(vmdeps_addr);
   return dep_ctx;
 }
@@ -3458,13 +3459,14 @@ int  java_lang_ClassLoader::parallelCapable_offset = -1;
 int  java_lang_ClassLoader::name_offset = -1;
 int  java_lang_ClassLoader::unnamedModule_offset = -1;
 
-ClassLoaderData** java_lang_ClassLoader::loader_data_addr(oop loader) {
-    assert(loader != NULL && oopDesc::is_oop(loader), "loader must be oop");
-    return (ClassLoaderData**) loader->address_field_addr(_loader_data_offset);
+ClassLoaderData* java_lang_ClassLoader::loader_data(oop loader) {
+  assert(loader != NULL && oopDesc::is_oop(loader), "loader must be oop");
+  return HeapAccess<>::load_at(loader, _loader_data_offset);
 }
 
-ClassLoaderData* java_lang_ClassLoader::loader_data(oop loader) {
-  return *java_lang_ClassLoader::loader_data_addr(loader);
+ClassLoaderData* java_lang_ClassLoader::cmpxchg_loader_data(ClassLoaderData* new_data, oop loader, ClassLoaderData* expected_data) {
+  assert(loader != NULL && oopDesc::is_oop(loader), "loader must be oop");
+  return HeapAccess<>::atomic_cmpxchg_at(new_data, loader, _loader_data_offset, expected_data);
 }
 
 void java_lang_ClassLoader::compute_offsets() {

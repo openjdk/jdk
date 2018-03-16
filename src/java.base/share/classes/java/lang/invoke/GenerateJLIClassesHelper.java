@@ -133,7 +133,7 @@ class GenerateJLIClassesHelper {
     }
 
     static byte[] generateInvokersHolderClassBytes(String className,
-            MethodType[] methodTypes) {
+            MethodType[] invokerMethodTypes, MethodType[] callSiteMethodTypes) {
 
         HashSet<MethodType> dedupSet = new HashSet<>();
         ArrayList<LambdaForm> forms = new ArrayList<>();
@@ -144,17 +144,33 @@ class GenerateJLIClassesHelper {
             MethodTypeForm.LF_GEN_LINKER,
             MethodTypeForm.LF_GEN_INVOKER
         };
-        for (int i = 0; i < methodTypes.length; i++) {
+
+        for (int i = 0; i < invokerMethodTypes.length; i++) {
             // generate methods representing invokers of the specified type
-            if (dedupSet.add(methodTypes[i])) {
+            if (dedupSet.add(invokerMethodTypes[i])) {
                 for (int type : types) {
-                    LambdaForm invokerForm = Invokers.invokeHandleForm(methodTypes[i],
+                    LambdaForm invokerForm = Invokers.invokeHandleForm(invokerMethodTypes[i],
                             /*customized*/false, type);
                     forms.add(invokerForm);
                     names.add(invokerForm.kind.defaultLambdaName);
                 }
             }
         }
+
+        dedupSet = new HashSet<>();
+        for (int i = 0; i < callSiteMethodTypes.length; i++) {
+            // generate methods representing invokers of the specified type
+            if (dedupSet.add(callSiteMethodTypes[i])) {
+                LambdaForm callSiteForm = Invokers.callSiteForm(callSiteMethodTypes[i], true);
+                forms.add(callSiteForm);
+                names.add(callSiteForm.kind.defaultLambdaName);
+
+                LambdaForm methodHandleForm = Invokers.callSiteForm(callSiteMethodTypes[i], false);
+                forms.add(methodHandleForm);
+                names.add(methodHandleForm.kind.defaultLambdaName);
+            }
+        }
+
         return generateCodeBytesForLFs(className,
                 names.toArray(new String[0]),
                 forms.toArray(new LambdaForm[0]));

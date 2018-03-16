@@ -842,9 +842,6 @@ public:
   product(bool, FailOverToOldVerifier, true,                                \
           "Fail over to old verifier when split verifier fails")            \
                                                                             \
-  develop(bool, ShowSafepointMsgs, false,                                   \
-          "Show message about safepoint synchronization")                   \
-                                                                            \
   product(bool, SafepointTimeout, false,                                    \
           "Time out and warn or fail after SafepointTimeoutDelay "          \
           "milliseconds if failed to reach safepoint")                      \
@@ -1142,11 +1139,6 @@ public:
   diagnostic(bool, DynamicallyResizeSystemDictionaries, true,               \
           "Dynamically resize system dictionaries as needed")               \
                                                                             \
-  diagnostic(bool, UnsyncloadClass, false,                                  \
-          "Unstable: VM calls loadClass unsynchronized. Custom "            \
-          "class loader must call VM synchronized for findClass "           \
-          "and defineClass.")                                               \
-                                                                            \
   product(bool, AlwaysLockClassLoader, false,                               \
           "Require the VM to acquire the class loader lock before calling " \
           "loadClass() even for class loaders registering "                 \
@@ -1155,9 +1147,6 @@ public:
   product(bool, AllowParallelDefineClass, false,                            \
           "Allow parallel defineClass requests for class loaders "          \
           "registering as parallel capable")                                \
-                                                                            \
-  product(bool, MustCallLoadClassInternal, false,                           \
-          "Call loadClassInternal() rather than loadClass()")               \
                                                                             \
   product_pd(bool, DontYieldALot,                                           \
           "Throw away obvious excess yield calls")                          \
@@ -1734,13 +1723,13 @@ public:
           "enough work per iteration")                                      \
           range(0, max_intx)                                                \
                                                                             \
-  /* 4096 = CardTableModRefBS::card_size_in_words * BitsPerWord */          \
+  /* 4096 = CardTable::card_size_in_words * BitsPerWord */                  \
   product(size_t, CMSRescanMultiple, 32,                                    \
           "Size (in cards) of CMS parallel rescan task")                    \
           range(1, SIZE_MAX / 4096)                                         \
           constraint(CMSRescanMultipleConstraintFunc,AfterMemoryInit)       \
                                                                             \
-  /* 4096 = CardTableModRefBS::card_size_in_words * BitsPerWord */          \
+  /* 4096 = CardTable::card_size_in_words * BitsPerWord */                  \
   product(size_t, CMSConcMarkMultiple, 32,                                  \
           "Size (in cards) of CMS concurrent MT marking task")              \
           range(1, SIZE_MAX / 4096)                                         \
@@ -2011,9 +2000,6 @@ public:
                                                                             \
   product(bool, ZeroTLAB, false,                                            \
           "Zero out the newly created TLAB")                                \
-                                                                            \
-  product(bool, FastTLABRefill, false,                                      \
-          "(Deprecated) Use fast TLAB refill code")                         \
                                                                             \
   product(bool, TLABStats, true,                                            \
           "Provide more detailed and expensive TLAB statistics.")           \
@@ -2458,15 +2444,15 @@ public:
           "ImplicitNullChecks don't work (PPC64).")                         \
                                                                             \
   product(bool, PrintSafepointStatistics, false,                            \
-          "Print statistics about safepoint synchronization")               \
+          "(Deprecated) Print statistics about safepoint synchronization")  \
                                                                             \
   product(intx, PrintSafepointStatisticsCount, 300,                         \
-          "Total number of safepoint statistics collected "                 \
+          "(Deprecated) Total number of safepoint statistics collected "    \
           "before printing them out")                                       \
           range(1, max_intx)                                                \
                                                                             \
   product(intx, PrintSafepointStatisticsTimeout,  -1,                       \
-          "Print safepoint statistics only when safepoint takes "           \
+          "(Deprecated) Print safepoint statistics only when safepoint takes "  \
           "more than PrintSafepointSatisticsTimeout in millis")             \
   LP64_ONLY(range(-1, max_intx/MICROUNITS))                                 \
   NOT_LP64(range(-1, max_intx))                                             \
@@ -3269,21 +3255,6 @@ public:
                                                                             \
   develop(uintx, GCWorkerDelayMillis, 0,                                    \
           "Delay in scheduling GC workers (in milliseconds)")               \
-                                                                            \
-  product(intx, DeferThrSuspendLoopCount,     4000,                         \
-          "(Unstable, Deprecated) "                                         \
-          "Number of times to iterate in safepoint loop "                   \
-          "before blocking VM threads ")                                    \
-          range(-1, max_jint-1)                                             \
-                                                                            \
-  product(intx, DeferPollingPageLoopCount,     -1,                          \
-          "(Unsafe,Unstable,Deprecated) "                                   \
-          "Number of iterations in safepoint loop "                         \
-          "before changing safepoint polling page to RO ")                  \
-          range(-1, max_jint-1)                                             \
-                                                                            \
-  product(intx, SafepointSpinBeforeYield, 2000, "(Unstable, Deprecated)")   \
-          range(0, max_intx)                                                \
                                                                             \
   product(bool, PSChunkLargeArrays, true,                                   \
           "Process large arrays in chunks")                                 \

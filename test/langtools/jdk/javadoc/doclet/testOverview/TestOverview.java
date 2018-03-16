@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8173302
+ * @bug 8173302 8182765
  * @summary make sure the overview-summary and module-summary pages don't
  *          don't have the See link, and the overview is copied correctly.
  * @library ../lib
@@ -48,15 +48,20 @@ public class TestOverview extends JavadocTester {
                     "-sourcepath", testSrc("src"),
                     "p1", "p2");
         checkExit(Exit.OK);
-        checkOutput("overview-summary.html", true,
-                "<div class=\"header\">\n"
-                + "<h1 class=\"title\">Document Title</h1>\n"
-                + "</div>\n"
-                + "<div class=\"contentContainer\">\n"
-                + "<div class=\"block\">This is line1. This is line 2.</div>\n"
-                + "</div>\n"
-                + "<div class=\"contentContainer\">"
-        );
+        checkOverview();
+    }
+
+    @Test
+    void test1_html4() {
+        javadoc("-d", "out-1-html4",
+                "-html4",
+                "-doctitle", "Document Title",
+                "-windowtitle", "Window Title",
+                "-overview", testSrc("overview.html"),
+                "-sourcepath", testSrc("src"),
+                "p1", "p2");
+        checkExit(Exit.OK);
+        checkOverview_html4();
     }
 
     @Test
@@ -68,6 +73,35 @@ public class TestOverview extends JavadocTester {
                     "-sourcepath", testSrc("msrc"),
                     "p1", "p2");
         checkExit(Exit.OK);
+        checkOverview();
+    }
+
+    @Test
+    void test2_html4() {
+        javadoc("-d", "out-2-html4",
+                "-html4",
+                "-doctitle", "Document Title",
+                "-windowtitle", "Window Title",
+                "-overview", testSrc("overview.html"),
+                "-sourcepath", testSrc("msrc"),
+                "p1", "p2");
+        checkExit(Exit.OK);
+        checkOverview_html4();
+    }
+
+    void checkOverview() {
+        checkOutput("overview-summary.html", true,
+                "<div class=\"header\">\n"
+                + "<h1 class=\"title\">Document Title</h1>\n"
+                + "</div>\n"
+                + "<main role=\"main\">\n"
+                + "<div class=\"contentContainer\">\n"
+                + "<div class=\"block\">This is line1. This is line 2.</div>\n"
+                + "</div>\n"
+                + "<div class=\"contentContainer\">");
+    }
+
+    void checkOverview_html4() {
         checkOutput("overview-summary.html", true,
                 "<div class=\"header\">\n"
                 + "<h1 class=\"title\">Document Title</h1>\n"
@@ -75,7 +109,6 @@ public class TestOverview extends JavadocTester {
                 + "<div class=\"contentContainer\">\n"
                 + "<div class=\"block\">This is line1. This is line 2.</div>\n"
                 + "</div>\n"
-                + "<div class=\"contentContainer\">"
-        );
+                + "<div class=\"contentContainer\">");
     }
 }

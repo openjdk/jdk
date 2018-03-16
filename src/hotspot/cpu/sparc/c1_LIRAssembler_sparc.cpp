@@ -35,6 +35,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "nativeInst_sparc.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 

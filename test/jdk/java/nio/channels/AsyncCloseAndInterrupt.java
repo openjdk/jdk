@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -708,9 +708,9 @@ public class AsyncCloseAndInterrupt {
 
         test(connectedSocketChannelFactory);
 
-        if (TestUtil.onWindows()) {
+        if (TestUtil.onWindows() || TestUtil.onSolaris()) {
             log.println("WARNING Cannot reliably test connect/finishConnect"
-                + " operations on Windows");
+                + " operations on this platform");
         } else {
             // Only the following tests need refuser's connection backlog
             // to be saturated

@@ -31,6 +31,7 @@ import java.awt.image.BufferedImage;
 /*
  * @test
  * @bug 6384991
+ * @key headful
  * @summary Check if ActionEvent is triggered by a TrayIcon when
  *          it is double clicked with mouse button 1 on windows
  *          or single clicked with button 3 on Mac OS X

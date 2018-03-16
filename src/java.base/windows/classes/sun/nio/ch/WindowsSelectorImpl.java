@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import java.util.Iterator;
  * @author Mark Reinhold
  */
 
-final class WindowsSelectorImpl extends SelectorImpl {
+class WindowsSelectorImpl extends SelectorImpl {
     // Initial capacity of the poll array
     private final int INIT_CAP = 8;
     // Maximum number of sockets for select().
@@ -81,7 +81,7 @@ final class WindowsSelectorImpl extends SelectorImpl {
     private final int wakeupSourceFd, wakeupSinkFd;
 
     // Lock for close cleanup
-    private Object closeLock = new Object();
+    private final Object closeLock = new Object();
 
     // Maps file descriptors to their indices in  pollArray
     private static final class FdMap extends HashMap<Integer, MapEntry> {
@@ -135,6 +135,7 @@ final class WindowsSelectorImpl extends SelectorImpl {
         pollWrapper.addWakeupSocket(wakeupSourceFd, 0);
     }
 
+    @Override
     protected int doSelect(long timeout) throws IOException {
         if (channelArray == null)
             throw new ClosedSelectorException();
@@ -500,6 +501,7 @@ final class WindowsSelectorImpl extends SelectorImpl {
         return numKeysUpdated;
     }
 
+    @Override
     protected void implClose() throws IOException {
         synchronized (closeLock) {
             if (channelArray != null) {
@@ -520,7 +522,6 @@ final class WindowsSelectorImpl extends SelectorImpl {
                     }
                     pollWrapper.free();
                     pollWrapper = null;
-                    selectedKeys = null;
                     channelArray = null;
                     // Make all remaining helper threads exit
                     for (SelectThread t: threads)

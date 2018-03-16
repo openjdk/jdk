@@ -27,6 +27,7 @@ import java.awt.image.BufferedImage;
 
 /*
  * @test
+ * @key headful
  * @summary Test the methods TrayIcon.getSize and SystemTray.getTrayIconSize.
  *          There is no way to check whether the values returned are correct,
  *          so its checked whether the value is greater than a minimum

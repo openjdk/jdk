@@ -27,6 +27,7 @@
 
 #include "ci/ciEnv.hpp"
 #include "runtime/interfaceSupport.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // The following routines and definitions are used internally in the
 // compiler interface.
@@ -113,5 +114,10 @@ inline const char* bool_to_str(bool b) {
 
 const char* basictype_to_str(BasicType t);
 const char  basictype_to_char(BasicType t);
+
+jbyte *ci_card_table_address();
+template <typename T> T ci_card_table_address_as() {
+  return reinterpret_cast<T>(ci_card_table_address());
+}
 
 #endif // SHARE_VM_CI_CIUTILITIES_HPP

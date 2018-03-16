@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,11 @@ import static java.awt.DisplayMode.REFRESH_RATE_UNKNOWN;
 /**
  * @test
  * @key headful
- * @bug 6430607
+ * @bug 6430607 8198613
  * @summary Test that we throw an exception for incorrect display modes
  * @author Dmitri.Trembovetski@Sun.COM area=FullScreen
  * @run main/othervm NonExistentDisplayModeTest
  * @run main/othervm -Dsun.java2d.noddraw=true NonExistentDisplayModeTest
- * @run main/othervm -Dsun.java2d.opengl=true NonExistentDisplayModeTest
  */
 public class NonExistentDisplayModeTest {
 

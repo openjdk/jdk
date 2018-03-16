@@ -150,10 +150,18 @@ class MacroAssembler: public Assembler {
 
   void bind(Label& L) {
     Assembler::bind(L);
-    code()->clear_last_membar();
+    code()->clear_last_insn();
   }
 
   void membar(Membar_mask_bits order_constraint);
+
+  using Assembler::ldr;
+  using Assembler::str;
+
+  void ldr(Register Rx, const Address &adr);
+  void ldrw(Register Rw, const Address &adr);
+  void str(Register Rx, const Address &adr);
+  void strw(Register Rx, const Address &adr);
 
   // Frame creation and destruction shared between JITs.
   void build_frame(int framesize);
@@ -861,7 +869,6 @@ public:
     Register t2,                       // temp register
     Label&   slow_case                 // continuation point if fast allocation fails
   );
-  Register tlab_refill(Label& retry_tlab, Label& try_eden, Label& slow_case); // returns TLS address
   void zero_memory(Register addr, Register len, Register t1);
   void verify_tlab();
 
@@ -1290,6 +1297,17 @@ private:
   // Returns an address on the stack which is reachable with a ldr/str of size
   // Uses rscratch2 if the address is not directly reachable
   Address spill_address(int size, int offset, Register tmp=rscratch2);
+
+  bool merge_alignment_check(Register base, size_t size, long cur_offset, long prev_offset) const;
+
+  // Check whether two loads/stores can be merged into ldp/stp.
+  bool ldst_can_merge(Register rx, const Address &adr, size_t cur_size_in_bytes, bool is_store) const;
+
+  // Merge current load/store with previous load/store into ldp/stp.
+  void merge_ldst(Register rx, const Address &adr, size_t cur_size_in_bytes, bool is_store);
+
+  // Try to merge two loads/stores into ldp/stp. If success, returns true else false.
+  bool try_merge_ldst(Register rt, const Address &adr, size_t cur_size_in_bytes, bool is_store);
 
 public:
   void spill(Register Rx, bool is64, int offset) {

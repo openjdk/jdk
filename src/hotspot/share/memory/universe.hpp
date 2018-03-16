@@ -181,8 +181,6 @@ class Universe: AllStatic {
   // the vm thread.
   static oop          _vm_exception;
 
-  static oop          _allocation_context_notification_obj;
-
   // References waiting to be transferred to the ReferenceHandler
   static oop          _reference_pending_list;
 
@@ -222,7 +220,6 @@ class Universe: AllStatic {
   static size_t _heap_used_at_last_gc;
 
   static CollectedHeap* create_heap();
-  static CollectedHeap* create_heap_ext();
   static jint initialize_heap();
   static void initialize_basic_type_mirrors(TRAPS);
   static void fixup_mirrors(TRAPS);
@@ -333,9 +330,6 @@ class Universe: AllStatic {
   static oop          arithmetic_exception_instance() { return _arithmetic_exception_instance; }
   static oop          virtual_machine_error_instance() { return _virtual_machine_error_instance; }
   static oop          vm_exception()                  { return _vm_exception; }
-
-  static inline oop   allocation_context_notification_obj();
-  static inline void  set_allocation_context_notification_obj(oop obj);
 
   // Reference pending list manipulation.  Access is protected by
   // Heap_lock.  The getter, setter and predicate require the caller

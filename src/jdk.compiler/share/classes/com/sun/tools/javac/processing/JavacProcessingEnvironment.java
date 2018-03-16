@@ -52,6 +52,7 @@ import static javax.tools.StandardLocation.*;
 import com.sun.source.util.TaskEvent;
 import com.sun.tools.javac.api.MultiTaskListener;
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.DeferredCompletionFailureHandler.Handler;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.*;
@@ -177,6 +178,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
     private MultiTaskListener taskListener;
     private final Symtab symtab;
+    private final DeferredCompletionFailureHandler dcfh;
     private final Names names;
     private final Enter enter;
     private final Completer initialCompleter;
@@ -227,6 +229,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         messages = JavacMessages.instance(context);
         taskListener = MultiTaskListener.instance(context);
         symtab = Symtab.instance(context);
+        dcfh = DeferredCompletionFailureHandler.instance(context);
         names = Names.instance(context);
         enter = Enter.instance(context);
         initialCompleter = ClassFinder.instance(context).getCompleter();
@@ -665,10 +668,12 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         private ArrayList<Pattern> supportedAnnotationPatterns;
         private ArrayList<String>  supportedOptionNames;
 
-        ProcessorState(Processor p, Log log, Source source, boolean allowModules, ProcessingEnvironment env) {
+        ProcessorState(Processor p, Log log, Source source, DeferredCompletionFailureHandler dcfh,
+                       boolean allowModules, ProcessingEnvironment env) {
             processor = p;
             contributed = false;
 
+            Handler prevDeferredHandler = dcfh.setHandler(dcfh.userCodeHandler);
             try {
                 processor.init(env);
 
@@ -692,6 +697,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 throw e;
             } catch (Throwable t) {
                 throw new AnnotationProcessingError(t);
+            } finally {
+                dcfh.setHandler(prevDeferredHandler);
             }
         }
 
@@ -767,7 +774,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
                 if (psi.processorIterator.hasNext()) {
                     ProcessorState ps = new ProcessorState(psi.processorIterator.next(),
-                                                           log, source, Feature.MODULES.allowedInSource(source),
+                                                           log, source, dcfh,
+                                                           Feature.MODULES.allowedInSource(source),
                                                            JavacProcessingEnvironment.this);
                     psi.procStateList.add(ps);
                     return ps;
@@ -959,6 +967,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     private boolean callProcessor(Processor proc,
                                          Set<? extends TypeElement> tes,
                                          RoundEnvironment renv) {
+        Handler prevDeferredHandler = dcfh.setHandler(dcfh.userCodeHandler);
         try {
             return proc.process(tes, renv);
         } catch (ClassFinder.BadClassFile ex) {
@@ -973,6 +982,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             throw e;
         } catch (Throwable t) {
             throw new AnnotationProcessingError(t);
+        } finally {
+            dcfh.setHandler(prevDeferredHandler);
         }
     }
 

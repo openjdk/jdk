@@ -26,9 +26,9 @@ package compiler.aot;
 import jdk.test.lib.Platform;
 import jdk.test.lib.artifacts.Artifact;
 import jdk.test.lib.artifacts.ArtifactResolver;
+import jdk.test.lib.artifacts.ArtifactResolverException;
 import jdk.test.lib.process.OutputAnalyzer;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.nio.file.Files;
@@ -298,7 +298,7 @@ public class AotCompiler {
                                    .resolve("ld");
                 }
             }
-        } catch (FileNotFoundException e) {
+        } catch (ArtifactResolverException e) {
             System.err.println("artifact resolution error: " + e);
             // let jaotc try to find linker
             return null;

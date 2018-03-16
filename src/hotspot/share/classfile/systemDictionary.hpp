@@ -467,9 +467,6 @@ public:
   static void load_abstract_ownable_synchronizer_klass(TRAPS);
 
 protected:
-  // Tells whether ClassLoader.loadClassInternal is present
-  static bool has_loadClassInternal()       { return _has_loadClassInternal; }
-
   // Returns the class loader data to be used when looking up/updating the
   // system dictionary.
   static ClassLoaderData *class_loader_data(Handle class_loader) {
@@ -746,7 +743,6 @@ protected:
   static oop  _java_system_loader;
   static oop  _java_platform_loader;
 
-  static bool _has_loadClassInternal;
   static bool _has_checkPackageAccess;
 };
 

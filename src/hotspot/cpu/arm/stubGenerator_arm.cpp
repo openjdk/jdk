@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "assembler_arm.inline.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_arm.hpp"
 #include "oops/instanceOop.hpp"
@@ -2907,8 +2909,7 @@ class StubGenerator: public StubCodeGenerator {
         __ pop(saved_regs | R9ifScratched);
 #endif // AARCH64
       }
-    case BarrierSet::CardTableForRS:
-    case BarrierSet::CardTableExtension:
+    case BarrierSet::CardTableModRef:
       break;
     default:
       ShouldNotReachHere();
@@ -2961,12 +2962,12 @@ class StubGenerator: public StubCodeGenerator {
 #endif // !AARCH64
       }
       break;
-    case BarrierSet::CardTableForRS:
-    case BarrierSet::CardTableExtension:
+    case BarrierSet::CardTableModRef:
       {
         BLOCK_COMMENT("CardTablePostBarrier");
-        CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(bs);
-        assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
+        CardTableModRefBS* ctbs = barrier_set_cast<CardTableModRefBS>(bs);
+        CardTable* ct = ctbs->card_table();
+        assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
         Label L_cardtable_loop, L_done;
 
@@ -2975,12 +2976,12 @@ class StubGenerator: public StubCodeGenerator {
         __ add_ptr_scaled_int32(count, addr, count, LogBytesPerHeapOop);
         __ sub(count, count, BytesPerHeapOop);                            // last addr
 
-        __ logical_shift_right(addr, addr, CardTableModRefBS::card_shift);
-        __ logical_shift_right(count, count, CardTableModRefBS::card_shift);
+        __ logical_shift_right(addr, addr, CardTable::card_shift);
+        __ logical_shift_right(count, count, CardTable::card_shift);
         __ sub(count, count, addr); // nb of cards
 
         // warning: Rthread has not been preserved
-        __ mov_address(tmp, (address) ct->byte_map_base, symbolic_Relocation::card_table_reference);
+        __ mov_address(tmp, (address) ct->byte_map_base(), symbolic_Relocation::card_table_reference);
         __ add(addr,tmp, addr);
 
         Register zero = __ zero_register(tmp);
@@ -2991,8 +2992,6 @@ class StubGenerator: public StubCodeGenerator {
         __ b(L_cardtable_loop, ge);
         __ BIND(L_done);
       }
-      break;
-    case BarrierSet::ModRef:
       break;
     default:
       ShouldNotReachHere();

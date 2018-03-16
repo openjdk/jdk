@@ -1001,9 +1001,8 @@ ClassLoaderData* ClassLoaderDataGraph::add(Handle loader, bool is_anonymous, TRA
 
 
   if (!is_anonymous) {
-    ClassLoaderData** cld_addr = java_lang_ClassLoader::loader_data_addr(loader());
     // First, Atomically set it
-    ClassLoaderData* old = Atomic::cmpxchg(cld, cld_addr, (ClassLoaderData*)NULL);
+    ClassLoaderData* old = java_lang_ClassLoader::cmpxchg_loader_data(cld, loader(), NULL);
     if (old != NULL) {
       delete cld;
       // Returns the data.

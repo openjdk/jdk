@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -939,15 +939,12 @@ class JavaValue;
 class methodHandle;
 class JavaCallArguments;
 
-// Basic support for errors.
-extern void basic_fatal(const char* msg);
-
 //----------------------------------------------------------------------------------------------------
 // Special constants for debugging
 
 const jint     badInt           = -3;                       // generic "bad int" value
-const long     badAddressVal    = -2;                       // generic "bad address" value
-const long     badOopVal        = -1;                       // generic "bad oop" value
+const intptr_t badAddressVal    = -2;                       // generic "bad address" value
+const intptr_t badOopVal        = -1;                       // generic "bad oop" value
 const intptr_t badHeapOopVal    = (intptr_t) CONST64(0x2BAD4B0BBAADBABE); // value used to zap heap after GC
 const int      badStackSegVal   = 0xCA;                     // value used to zap stack segments
 const int      badHandleValue   = 0xBC;                     // value used to zap vm handle area

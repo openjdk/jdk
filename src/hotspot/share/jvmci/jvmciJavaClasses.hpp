@@ -28,6 +28,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/jniHandles.inline.hpp"
 
 class JVMCIJavaClasses : AllStatic {
  public:

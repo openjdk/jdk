@@ -29,7 +29,8 @@
 #include "gc/parallel/psCompactionManager.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
-#include "oops/objArrayOop.hpp"
+#include "oops/arrayOop.inline.hpp"
+#include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -117,7 +118,7 @@ inline void oop_pc_follow_contents_specialized(objArrayOop obj, int index, ParCo
 
   const size_t stride = MIN2(len - beg_index, ObjArrayMarkingStride);
   const size_t end_index = beg_index + stride;
-  T* const base = (T*)obj->base();
+  T* const base = (T*)obj->base_raw();
   T* const beg = base + beg_index;
   T* const end = base + end_index;
 

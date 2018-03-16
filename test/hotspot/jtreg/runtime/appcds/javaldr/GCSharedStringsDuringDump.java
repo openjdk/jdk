@@ -27,10 +27,7 @@
  * @summary Similar to GCDuringDumping.java, this test adds the -XX:SharedArchiveConfigFile
  *          option for testing the interaction with GC and shared strings.
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds /test/hotspot/jtreg/runtime/appcds/test-classes
- * @requires (sun.arch.data.model != "32") & (os.family != "windows")
- * @requires vm.cds
- * @requires vm.flavor != "minimal"
- * @requires vm.gc.G1
+ * @requires vm.cds.archived.java.heap
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar
  *          java.management
@@ -94,8 +91,6 @@ public class GCSharedStringsDuringDump {
             OutputAnalyzer output = TestCommon.dump(
                                 appJar, TestCommon.list("GCSharedStringsDuringDumpWb"),
                                 bootClassPath, extraArg, "-Xmx32m", gcLog,
-                                "-XX:+UseCompressedOops", "-XX:+UseG1GC",
-                                "-XX:SharedReadOnlySize=30m",
                                 "-XX:SharedArchiveConfigFile=" + sharedArchiveCfgFile);
 
             if (output.getStdout().contains("Too many string space regions") ||
@@ -108,8 +103,6 @@ public class GCSharedStringsDuringDump {
                 TestCommon.testDump(
                     appJar, TestCommon.list("GCSharedStringsDuringDumpWb"),
                     bootClassPath, extraArg, "-Xmx8g", "-XX:NewSize=8m", gcLog,
-                    "-XX:+UseCompressedOops", "-XX:+UseG1GC",
-                    "-XX:SharedReadOnlySize=30m",
                     "-XX:SharedArchiveConfigFile=" + sharedArchiveCfgFile);
             }
 
@@ -118,8 +111,6 @@ public class GCSharedStringsDuringDump {
                 bootClassPath,
                 "-Xmx32m",
                 "-XX:+PrintSharedSpaces",
-                "-XX:+UseCompressedOops",
-                "-XX:+UseG1GC",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI",
                 "-XX:SharedReadOnlySize=30m",

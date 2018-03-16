@@ -30,10 +30,12 @@
 #include "gc/parallel/psGCAdaptivePolicyCounters.hpp"
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/parallel/psYoungGen.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectorPolicy.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
 #include "gc/shared/gcWhen.hpp"
+#include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "memory/metaspace.hpp"
 #include "utilities/growableArray.hpp"
@@ -45,6 +47,7 @@ class GCTaskManager;
 class MemoryManager;
 class MemoryPool;
 class PSAdaptiveSizePolicy;
+class PSCardTable;
 class PSHeapSummary;
 
 class ParallelScavengeHeap : public CollectedHeap {
@@ -58,6 +61,8 @@ class ParallelScavengeHeap : public CollectedHeap {
   static PSGCAdaptivePolicyCounters* _gc_policy_counters;
 
   GenerationSizer* _collector_policy;
+
+  SoftRefPolicy _soft_ref_policy;
 
   // Collection of generations that are adjacent in the
   // space reserved for the heap.
@@ -106,6 +111,8 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   virtual CollectorPolicy* collector_policy() const { return _collector_policy; }
 
+  virtual SoftRefPolicy* soft_ref_policy() { return &_soft_ref_policy; }
+
   virtual GrowableArray<GCMemoryManager*> memory_managers();
   virtual GrowableArray<MemoryPool*> memory_pools();
 
@@ -119,6 +126,9 @@ class ParallelScavengeHeap : public CollectedHeap {
   static ParallelScavengeHeap* heap();
 
   static GCTaskManager* const gc_task_manager() { return _gc_task_manager; }
+
+  CardTableModRefBS* barrier_set();
+  PSCardTable* card_table();
 
   AdjoiningGenerations* gens() { return _gens; }
 

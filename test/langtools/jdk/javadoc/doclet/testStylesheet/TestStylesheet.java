@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4494033 7028815 7052425 8007338 8023608 8008164 8016549 8072461 8154261 8162363 8160196 8151743 8177417
- *           8175218 8176452 8181215 8182263 8183511 8169819 8183037 8185369
+ *           8175218 8176452 8181215 8182263 8183511 8169819 8183037 8185369 8182765
  * @summary  Run tests on doclet stylesheet.
  * @author   jamieh
  * @library  ../lib
@@ -45,7 +45,10 @@ public class TestStylesheet extends JavadocTester {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "pkg");
-        checkExit(Exit.OK);
+        checkExit(Exit.ERROR);
+
+        checkOutput(Output.OUT, true,
+                "attribute not supported in HTML5: name");
 
         // TODO: most of this test seems a bit silly, since javadoc is simply
         // copying in the stylesheet from the source directory
@@ -251,4 +254,13 @@ public class TestStylesheet extends JavadocTester {
                 + "    font-weight:bold;\n"
                 + "}");
     }
+
+    @Test
+    void test_html4() {
+        javadoc("-d", "out-html4",
+                "-html4",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+}
 }

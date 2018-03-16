@@ -363,6 +363,25 @@ size_t os::current_stack_size() {
   return sz;
 }
 
+size_t os::committed_stack_size(address bottom, size_t size) {
+  MEMORY_BASIC_INFORMATION minfo;
+  address top = bottom + size;
+  size_t committed_size = 0;
+
+  while (committed_size < size) {
+    // top is exclusive
+    VirtualQuery(top - 1, &minfo, sizeof(minfo));
+    if ((minfo.State & MEM_COMMIT) != 0) {
+      committed_size += minfo.RegionSize;
+      top -= minfo.RegionSize;
+    } else {
+      break;
+    }
+  }
+
+  return MIN2(committed_size, size);
+}
+
 struct tm* os::localtime_pd(const time_t* clock, struct tm* res) {
   const struct tm* time_struct_ptr = localtime(clock);
   if (time_struct_ptr != NULL) {
@@ -979,11 +998,6 @@ void os::shutdown() {
 }
 
 
-static BOOL (WINAPI *_MiniDumpWriteDump)(HANDLE, DWORD, HANDLE, MINIDUMP_TYPE,
-                                         PMINIDUMP_EXCEPTION_INFORMATION,
-                                         PMINIDUMP_USER_STREAM_INFORMATION,
-                                         PMINIDUMP_CALLBACK_INFORMATION);
-
 static HANDLE dumpFile = NULL;
 
 // Check if dump file can be created.
@@ -1499,13 +1513,39 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
   if (nl != NULL) *nl = '\0';
 }
 
-int os::log_vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
-  int ret = vsnprintf(buf, len, fmt, args);
-  // Get the correct buffer size if buf is too small
-  if (ret < 0) {
-    return _vscprintf(fmt, args);
+int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
+#if _MSC_VER >= 1900
+  // Starting with Visual Studio 2015, vsnprint is C99 compliant.
+  int result = ::vsnprintf(buf, len, fmt, args);
+  // If an encoding error occurred (result < 0) then it's not clear
+  // whether the buffer is NUL terminated, so ensure it is.
+  if ((result < 0) && (len > 0)) {
+    buf[len - 1] = '\0';
   }
-  return ret;
+  return result;
+#else
+  // Before Visual Studio 2015, vsnprintf is not C99 compliant, so use
+  // _vsnprintf, whose behavior seems to be *mostly* consistent across
+  // versions.  However, when len == 0, avoid _vsnprintf too, and just
+  // go straight to _vscprintf.  The output is going to be truncated in
+  // that case, except in the unusual case of empty output.  More
+  // importantly, the documentation for various versions of Visual Studio
+  // are inconsistent about the behavior of _vsnprintf when len == 0,
+  // including it possibly being an error.
+  int result = -1;
+  if (len > 0) {
+    result = _vsnprintf(buf, len, fmt, args);
+    // If output (including NUL terminator) is truncated, the buffer
+    // won't be NUL terminated.  Add the trailing NUL specified by C99.
+    if ((result < 0) || (result >= len)) {
+      buf[len - 1] = '\0';
+    }
+  }
+  if (result < 0) {
+    result = _vscprintf(fmt, args);
+  }
+  return result;
+#endif // _MSC_VER dispatch
 }
 
 static inline time_t get_mtime(const char* filename) {

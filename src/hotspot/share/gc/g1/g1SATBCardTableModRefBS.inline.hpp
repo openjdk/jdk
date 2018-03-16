@@ -25,8 +25,9 @@
 #ifndef SHARE_VM_GC_G1_G1SATBCARDTABLEMODREFBS_INLINE_HPP
 #define SHARE_VM_GC_G1_G1SATBCARDTABLEMODREFBS_INLINE_HPP
 
-#include "gc/shared/accessBarrierSupport.inline.hpp"
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc/shared/accessBarrierSupport.inline.hpp"
 
 template <DecoratorSet decorators, typename T>
 inline void G1SATBCardTableModRefBS::write_ref_field_pre(T* field) {
@@ -43,21 +44,11 @@ inline void G1SATBCardTableModRefBS::write_ref_field_pre(T* field) {
 
 template <DecoratorSet decorators, typename T>
 inline void G1SATBCardTableLoggingModRefBS::write_ref_field_post(T* field, oop new_val) {
-  volatile jbyte* byte = byte_for(field);
-  if (*byte != g1_young_gen) {
+  volatile jbyte* byte = _card_table->byte_for(field);
+  if (*byte != G1CardTable::g1_young_card_val()) {
     // Take a slow path for cards in old
     write_ref_field_post_slow(byte);
   }
-}
-
-void G1SATBCardTableModRefBS::set_card_claimed(size_t card_index) {
-  jbyte val = _byte_map[card_index];
-  if (val == clean_card_val()) {
-    val = (jbyte)claimed_card_val();
-  } else {
-    val |= (jbyte)claimed_card_val();
-  }
-  _byte_map[card_index] = val;
 }
 
 inline void G1SATBCardTableModRefBS::enqueue_if_weak_or_archive(DecoratorSet decorators, oop value) {

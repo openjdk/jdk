@@ -60,10 +60,6 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _wb_full_gc:
       return "WhiteBox Initiated Full GC";
 
-    case _update_allocation_context_stats_inc:
-    case _update_allocation_context_stats_full:
-      return "Update Allocation Context Stats";
-
     case _no_gc:
       return "No GC";
 

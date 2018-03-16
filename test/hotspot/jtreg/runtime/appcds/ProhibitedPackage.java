@@ -26,7 +26,6 @@
  * @test
  * @summary AppCDS handling of prohibited package.
  * @requires vm.cds
- * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -35,6 +34,7 @@
  * @run main ProhibitedPackage
  */
 
+import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -86,7 +86,8 @@ public class ProhibitedPackage {
         output = TestCommon.execAuto(
             "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
             "-cp", appJar, "-Xlog:class+load=info", "ProhibitedHelper");
-        TestCommon.checkExec(output, "Prohibited package name: java.lang");
+        CDSOptions opts = (new CDSOptions()).setXShareMode("auto");
+        TestCommon.checkExec(output, opts, "Prohibited package name: java.lang");
 
         // -Xshare:off
         output = TestCommon.execOff(

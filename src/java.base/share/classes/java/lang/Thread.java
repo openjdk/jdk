@@ -50,30 +50,30 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * Every thread has a priority. Threads with higher priority are
  * executed in preference to threads with lower priority. Each thread
  * may or may not also be marked as a daemon. When code running in
- * some thread creates a new <code>Thread</code> object, the new
+ * some thread creates a new {@code Thread} object, the new
  * thread has its priority initially set equal to the priority of the
  * creating thread, and is a daemon thread if and only if the
  * creating thread is a daemon.
  * <p>
  * When a Java Virtual Machine starts up, there is usually a single
  * non-daemon thread (which typically calls the method named
- * <code>main</code> of some designated class). The Java Virtual
+ * {@code main} of some designated class). The Java Virtual
  * Machine continues to execute threads until either of the following
  * occurs:
  * <ul>
- * <li>The <code>exit</code> method of class <code>Runtime</code> has been
+ * <li>The {@code exit} method of class {@code Runtime} has been
  *     called and the security manager has permitted the exit operation
  *     to take place.
  * <li>All threads that are not daemon threads have died, either by
- *     returning from the call to the <code>run</code> method or by
- *     throwing an exception that propagates beyond the <code>run</code>
+ *     returning from the call to the {@code run} method or by
+ *     throwing an exception that propagates beyond the {@code run}
  *     method.
  * </ul>
  * <p>
  * There are two ways to create a new thread of execution. One is to
- * declare a class to be a subclass of <code>Thread</code>. This
- * subclass should override the <code>run</code> method of class
- * <code>Thread</code>. An instance of the subclass can then be
+ * declare a class to be a subclass of {@code Thread}. This
+ * subclass should override the {@code run} method of class
+ * {@code Thread}. An instance of the subclass can then be
  * allocated and started. For example, a thread that computes primes
  * larger than a stated value could be written as follows:
  * <hr><blockquote><pre>
@@ -97,10 +97,10 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * </pre></blockquote>
  * <p>
  * The other way to create a thread is to declare a class that
- * implements the <code>Runnable</code> interface. That class then
- * implements the <code>run</code> method. An instance of the class can
+ * implements the {@code Runnable} interface. That class then
+ * implements the {@code run} method. An instance of the class can
  * then be allocated, passed as an argument when creating
- * <code>Thread</code>, and started. The same example in this other
+ * {@code Thread}, and started. The same example in this other
  * style looks like the following:
  * <hr><blockquote><pre>
  *     class PrimeRun implements Runnable {
@@ -231,9 +231,10 @@ class Thread implements Runnable {
     /* Set the blocker field; invoked via jdk.internal.misc.SharedSecrets
      * from java.nio code
      */
-    void blockedOn(Interruptible b) {
-        synchronized (blockerLock) {
-            blocker = b;
+    static void blockedOn(Interruptible b) {
+        Thread me = Thread.currentThread();
+        synchronized (me.blockerLock) {
+            me.blocker = b;
         }
     }
 
@@ -773,19 +774,18 @@ class Thread implements Runnable {
 
     /**
      * Causes this thread to begin execution; the Java Virtual Machine
-     * calls the <code>run</code> method of this thread.
+     * calls the {@code run} method of this thread.
      * <p>
      * The result is that two threads are running concurrently: the
      * current thread (which returns from the call to the
-     * <code>start</code> method) and the other thread (which executes its
-     * <code>run</code> method).
+     * {@code start} method) and the other thread (which executes its
+     * {@code run} method).
      * <p>
      * It is never legal to start a thread more than once.
      * In particular, a thread may not be restarted once it has completed
      * execution.
      *
-     * @exception  IllegalThreadStateException  if the thread was already
-     *               started.
+     * @throws     IllegalThreadStateException  if the thread was already started.
      * @see        #run()
      * @see        #stop()
      */
@@ -825,11 +825,11 @@ class Thread implements Runnable {
 
     /**
      * If this thread was constructed using a separate
-     * <code>Runnable</code> run object, then that
-     * <code>Runnable</code> object's <code>run</code> method is called;
+     * {@code Runnable} run object, then that
+     * {@code Runnable} object's {@code run} method is called;
      * otherwise, this method does nothing and returns.
      * <p>
-     * Subclasses of <code>Thread</code> should override this method.
+     * Subclasses of {@code Thread} should override this method.
      *
      * @see     #start()
      * @see     #stop()
@@ -864,42 +864,42 @@ class Thread implements Runnable {
     /**
      * Forces the thread to stop executing.
      * <p>
-     * If there is a security manager installed, its <code>checkAccess</code>
-     * method is called with <code>this</code>
+     * If there is a security manager installed, its {@code checkAccess}
+     * method is called with {@code this}
      * as its argument. This may result in a
-     * <code>SecurityException</code> being raised (in the current thread).
+     * {@code SecurityException} being raised (in the current thread).
      * <p>
      * If this thread is different from the current thread (that is, the current
      * thread is trying to stop a thread other than itself), the
-     * security manager's <code>checkPermission</code> method (with a
-     * <code>RuntimePermission("stopThread")</code> argument) is called in
+     * security manager's {@code checkPermission} method (with a
+     * {@code RuntimePermission("stopThread")} argument) is called in
      * addition.
      * Again, this may result in throwing a
-     * <code>SecurityException</code> (in the current thread).
+     * {@code SecurityException} (in the current thread).
      * <p>
      * The thread represented by this thread is forced to stop whatever
      * it is doing abnormally and to throw a newly created
-     * <code>ThreadDeath</code> object as an exception.
+     * {@code ThreadDeath} object as an exception.
      * <p>
      * It is permitted to stop a thread that has not yet been started.
      * If the thread is eventually started, it immediately terminates.
      * <p>
      * An application should not normally try to catch
-     * <code>ThreadDeath</code> unless it must do some extraordinary
+     * {@code ThreadDeath} unless it must do some extraordinary
      * cleanup operation (note that the throwing of
-     * <code>ThreadDeath</code> causes <code>finally</code> clauses of
-     * <code>try</code> statements to be executed before the thread
-     * officially dies).  If a <code>catch</code> clause catches a
-     * <code>ThreadDeath</code> object, it is important to rethrow the
+     * {@code ThreadDeath} causes {@code finally} clauses of
+     * {@code try} statements to be executed before the thread
+     * officially dies).  If a {@code catch} clause catches a
+     * {@code ThreadDeath} object, it is important to rethrow the
      * object so that the thread actually dies.
      * <p>
      * The top-level error handler that reacts to otherwise uncaught
      * exceptions does not print out a message or otherwise notify the
      * application if the uncaught exception is an instance of
-     * <code>ThreadDeath</code>.
+     * {@code ThreadDeath}.
      *
-     * @exception  SecurityException  if the current thread cannot
-     *               modify this thread.
+     * @throws     SecurityException  if the current thread cannot
+     *             modify this thread.
      * @see        #interrupt()
      * @see        #checkAccess()
      * @see        #run()
@@ -911,17 +911,17 @@ class Thread implements Runnable {
      * @deprecated This method is inherently unsafe.  Stopping a thread with
      *       Thread.stop causes it to unlock all of the monitors that it
      *       has locked (as a natural consequence of the unchecked
-     *       <code>ThreadDeath</code> exception propagating up the stack).  If
+     *       {@code ThreadDeath} exception propagating up the stack).  If
      *       any of the objects previously protected by these monitors were in
      *       an inconsistent state, the damaged objects become visible to
      *       other threads, potentially resulting in arbitrary behavior.  Many
-     *       uses of <code>stop</code> should be replaced by code that simply
+     *       uses of {@code stop} should be replaced by code that simply
      *       modifies some variable to indicate that the target thread should
      *       stop running.  The target thread should check this variable
      *       regularly, and return from its run method in an orderly fashion
      *       if the variable indicates that it is to stop running.  If the
      *       target thread waits for long periods (on a condition variable,
-     *       for example), the <code>interrupt</code> method should be used to
+     *       for example), the {@code interrupt} method should be used to
      *       interrupt the wait.
      *       For more information, see
      *       <a href="{@docRoot}/java/lang/doc-files/threadPrimitiveDeprecation.html">Why
@@ -1006,17 +1006,21 @@ class Thread implements Runnable {
      * @spec JSR-51
      */
     public void interrupt() {
-        if (this != Thread.currentThread())
+        if (this != Thread.currentThread()) {
             checkAccess();
 
-        synchronized (blockerLock) {
-            Interruptible b = blocker;
-            if (b != null) {
-                interrupt0();           // Just to set the interrupt flag
-                b.interrupt(this);
-                return;
+            // thread may be blocked in an I/O operation
+            synchronized (blockerLock) {
+                Interruptible b = blocker;
+                if (b != null) {
+                    interrupt0();  // set interrupt status
+                    b.interrupt(this);
+                    return;
+                }
             }
         }
+
+        // set interrupt status
         interrupt0();
     }
 
@@ -1032,8 +1036,8 @@ class Thread implements Runnable {
      * at the time of the interrupt will be reflected by this method
      * returning false.
      *
-     * @return  <code>true</code> if the current thread has been interrupted;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if the current thread has been interrupted;
+     *          {@code false} otherwise.
      * @see #isInterrupted()
      * @revised 6.0
      */
@@ -1049,8 +1053,8 @@ class Thread implements Runnable {
      * at the time of the interrupt will be reflected by this method
      * returning false.
      *
-     * @return  <code>true</code> if this thread has been interrupted;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if this thread has been interrupted;
+     *          {@code false} otherwise.
      * @see     #interrupted()
      * @revised 6.0
      */
@@ -1093,30 +1097,30 @@ class Thread implements Runnable {
      * Tests if this thread is alive. A thread is alive if it has
      * been started and has not yet died.
      *
-     * @return  <code>true</code> if this thread is alive;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if this thread is alive;
+     *          {@code false} otherwise.
      */
     public final native boolean isAlive();
 
     /**
      * Suspends this thread.
      * <p>
-     * First, the <code>checkAccess</code> method of this thread is called
+     * First, the {@code checkAccess} method of this thread is called
      * with no arguments. This may result in throwing a
-     * <code>SecurityException </code>(in the current thread).
+     * {@code SecurityException }(in the current thread).
      * <p>
      * If the thread is alive, it is suspended and makes no further
      * progress unless and until it is resumed.
      *
-     * @exception  SecurityException  if the current thread cannot modify
-     *               this thread.
+     * @throws     SecurityException  if the current thread cannot modify
+     *             this thread.
      * @see #checkAccess
      * @deprecated   This method has been deprecated, as it is
      *   inherently deadlock-prone.  If the target thread holds a lock on the
      *   monitor protecting a critical system resource when it is suspended, no
      *   thread can access this resource until the target thread is resumed. If
      *   the thread that would resume the target thread attempts to lock this
-     *   monitor prior to calling <code>resume</code>, deadlock results.  Such
+     *   monitor prior to calling {@code resume}, deadlock results.  Such
      *   deadlocks typically manifest themselves as "frozen" processes.
      *   For more information, see
      *   <a href="{@docRoot}/java/lang/doc-files/threadPrimitiveDeprecation.html">Why
@@ -1131,15 +1135,15 @@ class Thread implements Runnable {
     /**
      * Resumes a suspended thread.
      * <p>
-     * First, the <code>checkAccess</code> method of this thread is called
+     * First, the {@code checkAccess} method of this thread is called
      * with no arguments. This may result in throwing a
-     * <code>SecurityException</code> (in the current thread).
+     * {@code SecurityException} (in the current thread).
      * <p>
      * If the thread is alive but suspended, it is resumed and is
      * permitted to make progress in its execution.
      *
-     * @exception  SecurityException  if the current thread cannot modify this
-     *               thread.
+     * @throws     SecurityException  if the current thread cannot modify this
+     *             thread.
      * @see        #checkAccess
      * @see        #suspend()
      * @deprecated This method exists solely for use with {@link #suspend},
@@ -1157,19 +1161,18 @@ class Thread implements Runnable {
     /**
      * Changes the priority of this thread.
      * <p>
-     * First the <code>checkAccess</code> method of this thread is called
-     * with no arguments. This may result in throwing a
-     * <code>SecurityException</code>.
+     * First the {@code checkAccess} method of this thread is called
+     * with no arguments. This may result in throwing a {@code SecurityException}.
      * <p>
      * Otherwise, the priority of this thread is set to the smaller of
-     * the specified <code>newPriority</code> and the maximum permitted
+     * the specified {@code newPriority} and the maximum permitted
      * priority of the thread's thread group.
      *
      * @param newPriority priority to set this thread to
-     * @exception  IllegalArgumentException  If the priority is not in the
-     *               range <code>MIN_PRIORITY</code> to
-     *               <code>MAX_PRIORITY</code>.
-     * @exception  SecurityException  if the current thread cannot modify
+     * @throws     IllegalArgumentException  If the priority is not in the
+     *               range {@code MIN_PRIORITY} to
+     *               {@code MAX_PRIORITY}.
+     * @throws     SecurityException  if the current thread cannot modify
      *               this thread.
      * @see        #getPriority
      * @see        #checkAccess()
@@ -1203,16 +1206,15 @@ class Thread implements Runnable {
     }
 
     /**
-     * Changes the name of this thread to be equal to the argument
-     * <code>name</code>.
+     * Changes the name of this thread to be equal to the argument {@code name}.
      * <p>
-     * First the <code>checkAccess</code> method of this thread is called
+     * First the {@code checkAccess} method of this thread is called
      * with no arguments. This may result in throwing a
-     * <code>SecurityException</code>.
+     * {@code SecurityException}.
      *
      * @param      name   the new name for this thread.
-     * @exception  SecurityException  if the current thread cannot modify this
-     *               thread.
+     * @throws     SecurityException  if the current thread cannot modify this
+     *             thread.
      * @see        #getName
      * @see        #checkAccess()
      */
@@ -1304,7 +1306,7 @@ class Thread implements Runnable {
      * be suspended.
      *
      * @return     the number of stack frames in this thread.
-     * @exception  IllegalThreadStateException  if this thread is not
+     * @throws     IllegalThreadStateException  if this thread is not
      *             suspended.
      * @deprecated The definition of this call depends on {@link #suspend},
      *             which is deprecated.  Further, the results of this call
@@ -1460,8 +1462,8 @@ class Thread implements Runnable {
     /**
      * Tests if this thread is a daemon thread.
      *
-     * @return  <code>true</code> if this thread is a daemon thread;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if this thread is a daemon thread;
+     *          {@code false} otherwise.
      * @see     #setDaemon(boolean)
      */
     public final boolean isDaemon() {
@@ -1472,12 +1474,12 @@ class Thread implements Runnable {
      * Determines if the currently running thread has permission to
      * modify this thread.
      * <p>
-     * If there is a security manager, its <code>checkAccess</code> method
+     * If there is a security manager, its {@code checkAccess} method
      * is called with this thread as its argument. This may result in
-     * throwing a <code>SecurityException</code>.
+     * throwing a {@code SecurityException}.
      *
-     * @exception  SecurityException  if the current thread is not allowed to
-     *               access this thread.
+     * @throws  SecurityException  if the current thread is not allowed to
+     *          access this thread.
      * @see        SecurityManager#checkAccess(Thread)
      */
     public final void checkAccess() {

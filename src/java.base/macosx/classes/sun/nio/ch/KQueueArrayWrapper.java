@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,20 +66,18 @@ class KQueueArrayWrapper {
     static final int NUM_KEVENTS = 128;
 
     // Are we in a 64-bit VM?
-    static boolean is64bit = false;
+    static boolean is64bit;
 
     // The kevent array (used for outcoming events only)
-    private AllocatedNativeObject keventArray = null;
-    private long keventArrayAddress;
+    private final AllocatedNativeObject keventArray;
+    private final long keventArrayAddress;
 
     // The kqueue fd
-    private int kq = -1;
+    private final int kq;
 
     // The fd of the interrupt line going out
-    private int outgoingInterruptFD;
+    private final int outgoingInterruptFD;
 
-    // The fd of the interrupt line coming in
-    private int incomingInterruptFD;
 
     static {
         IOUtil.load();
@@ -89,11 +87,13 @@ class KQueueArrayWrapper {
         is64bit = "64".equals(datamodel);
     }
 
-    KQueueArrayWrapper() {
+    KQueueArrayWrapper(int fd0, int fd1) throws IOException {
         int allocationSize = SIZEOF_KEVENT * NUM_KEVENTS;
         keventArray = new AllocatedNativeObject(allocationSize, true);
         keventArrayAddress = keventArray.address();
         kq = init();
+        register0(kq, fd0, 1, 0);
+        outgoingInterruptFD = fd1;
     }
 
     // Used to update file description registrations
@@ -107,12 +107,6 @@ class KQueueArrayWrapper {
     }
 
     private LinkedList<Update> updateList = new LinkedList<Update>();
-
-    void initInterrupt(int fd0, int fd1) {
-        outgoingInterruptFD = fd1;
-        incomingInterruptFD = fd0;
-        register0(kq, fd0, 1, 0);
-    }
 
     int getReventOps(int index) {
         int result = 0;
@@ -137,11 +131,11 @@ class KQueueArrayWrapper {
          * to return an int. Hence read the 8 bytes but return as an int.
          */
         if (is64bit) {
-          long fd = keventArray.getLong(offset);
-          assert fd <= Integer.MAX_VALUE;
-          return (int) fd;
+            long fd = keventArray.getLong(offset);
+            assert fd <= Integer.MAX_VALUE;
+            return (int) fd;
         } else {
-          return keventArray.getInt(offset);
+            return keventArray.getInt(offset);
         }
     }
 
@@ -168,7 +162,7 @@ class KQueueArrayWrapper {
 
     void updateRegistrations() {
         synchronized (updateList) {
-            Update u = null;
+            Update u;
             while ((u = updateList.poll()) != null) {
                 SelChImpl ch = u.channel;
                 if (!ch.isOpen())
@@ -179,22 +173,14 @@ class KQueueArrayWrapper {
         }
     }
 
-
     void close() throws IOException {
-        if (keventArray != null) {
-            keventArray.free();
-            keventArray = null;
-        }
-        if (kq >= 0) {
-            FileDispatcherImpl.closeIntFD(kq);
-            kq = -1;
-        }
+        FileDispatcherImpl.closeIntFD(kq);
+        keventArray.free();
     }
 
     int poll(long timeout) {
         updateRegistrations();
-        int updated = kevent0(kq, keventArrayAddress, NUM_KEVENTS, timeout);
-        return updated;
+        return kevent0(kq, keventArrayAddress, NUM_KEVENTS, timeout);
     }
 
     void interrupt() {

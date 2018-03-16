@@ -27,6 +27,7 @@
 
 #include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
 // Assembly code for platforms that need it.
@@ -88,20 +89,20 @@ class Copy : AllStatic {
 
   // Word-aligned words,    conjoint, not atomic on each word
   static void conjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
-    assert_params_ok(from, to, LogHeapWordSize);
+    assert_params_ok(from, to, HeapWordSize);
     pd_conjoint_words(from, to, count);
   }
 
   // Word-aligned words,    disjoint, not atomic on each word
   static void disjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
-    assert_params_ok(from, to, LogHeapWordSize);
+    assert_params_ok(from, to, HeapWordSize);
     assert_disjoint(from, to, count);
     pd_disjoint_words(from, to, count);
   }
 
   // Word-aligned words,    disjoint, atomic on each word
   static void disjoint_words_atomic(const HeapWord* from, HeapWord* to, size_t count) {
-    assert_params_ok(from, to, LogHeapWordSize);
+    assert_params_ok(from, to, HeapWordSize);
     assert_disjoint(from, to, count);
     pd_disjoint_words_atomic(from, to, count);
   }
@@ -133,32 +134,32 @@ class Copy : AllStatic {
 
   // jshorts,               conjoint, atomic on each jshort
   static void conjoint_jshorts_atomic(const jshort* from, jshort* to, size_t count) {
-    assert_params_ok(from, to, LogBytesPerShort);
+    assert_params_ok(from, to, BytesPerShort);
     pd_conjoint_jshorts_atomic(from, to, count);
   }
 
   // jints,                 conjoint, atomic on each jint
   static void conjoint_jints_atomic(const jint* from, jint* to, size_t count) {
-    assert_params_ok(from, to, LogBytesPerInt);
+    assert_params_ok(from, to, BytesPerInt);
     pd_conjoint_jints_atomic(from, to, count);
   }
 
   // jlongs,                conjoint, atomic on each jlong
   static void conjoint_jlongs_atomic(const jlong* from, jlong* to, size_t count) {
-    assert_params_ok(from, to, LogBytesPerLong);
+    assert_params_ok(from, to, BytesPerLong);
     pd_conjoint_jlongs_atomic(from, to, count);
   }
 
   // oops,                  conjoint, atomic on each oop
   static void conjoint_oops_atomic(const oop* from, oop* to, size_t count) {
-    assert_params_ok(from, to, LogBytesPerHeapOop);
+    assert_params_ok(from, to, BytesPerHeapOop);
     pd_conjoint_oops_atomic(from, to, count);
   }
 
   // overloaded for UseCompressedOops
   static void conjoint_oops_atomic(const narrowOop* from, narrowOop* to, size_t count) {
     assert(sizeof(narrowOop) == sizeof(jint), "this cast is wrong");
-    assert_params_ok(from, to, LogBytesPerInt);
+    assert_params_ok(from, to, BytesPerInt);
     pd_conjoint_jints_atomic((const jint*)from, (jint*)to, count);
   }
 
@@ -175,25 +176,25 @@ class Copy : AllStatic {
 
   // jshorts,               conjoint array, atomic on each jshort
   static void arrayof_conjoint_jshorts(const HeapWord* from, HeapWord* to, size_t count) {
-    assert_params_ok(from, to, LogBytesPerShort);
+    assert_params_ok(from, to, BytesPerShort);
     pd_arrayof_conjoint_jshorts(from, to, count);
   }
 
   // jints,                 conjoint array, atomic on each jint
   static void arrayof_conjoint_jints(const HeapWord* from, HeapWord* to, size_t count) {
-    assert_params_ok(from, to, LogBytesPerInt);
+    assert_params_ok(from, to, BytesPerInt);
     pd_arrayof_conjoint_jints(from, to, count);
   }
 
   // jlongs,                conjoint array, atomic on each jlong
   static void arrayof_conjoint_jlongs(const HeapWord* from, HeapWord* to, size_t count) {
-    assert_params_ok(from, to, LogBytesPerLong);
+    assert_params_ok(from, to, BytesPerLong);
     pd_arrayof_conjoint_jlongs(from, to, count);
   }
 
   // oops,                  conjoint array, atomic on each oop
   static void arrayof_conjoint_oops(const HeapWord* from, HeapWord* to, size_t count) {
-    assert_params_ok(from, to, LogBytesPerHeapOop);
+    assert_params_ok(from, to, BytesPerHeapOop);
     pd_arrayof_conjoint_oops(from, to, count);
   }
 
@@ -202,7 +203,7 @@ class Copy : AllStatic {
   // Copy word-aligned words from higher to lower addresses, not atomic on each word
   inline static void conjoint_words_to_lower(const HeapWord* from, HeapWord* to, size_t byte_count) {
     // byte_count is in bytes to check its alignment
-    assert_params_ok(from, to, LogHeapWordSize);
+    assert_params_ok(from, to, HeapWordSize);
     assert_byte_count_ok(byte_count, HeapWordSize);
 
     size_t count = align_up(byte_count, HeapWordSize) >> LogHeapWordSize;
@@ -216,7 +217,7 @@ class Copy : AllStatic {
   // Copy word-aligned words from lower to higher addresses, not atomic on each word
   inline static void conjoint_words_to_higher(const HeapWord* from, HeapWord* to, size_t byte_count) {
     // byte_count is in bytes to check its alignment
-    assert_params_ok(from, to, LogHeapWordSize);
+    assert_params_ok(from, to, HeapWordSize);
     assert_byte_count_ok(byte_count, HeapWordSize);
 
     size_t count = align_up(byte_count, HeapWordSize) >> LogHeapWordSize;
@@ -271,7 +272,7 @@ class Copy : AllStatic {
   // Fill word-aligned words, not atomic on each word
   // set_words
   static void fill_to_words(HeapWord* to, size_t count, juint value = 0) {
-    assert_params_ok(to, LogHeapWordSize);
+    assert_params_ok(to, HeapWordSize);
     pd_fill_to_words(to, count, value);
   }
 
@@ -295,7 +296,7 @@ class Copy : AllStatic {
 
   // Zero word-aligned words, not atomic on each word
   static void zero_to_words(HeapWord* to, size_t count) {
-    assert_params_ok(to, LogHeapWordSize);
+    assert_params_ok(to, HeapWordSize);
     pd_zero_to_words(to, count);
   }
 
@@ -315,49 +316,29 @@ class Copy : AllStatic {
   // These methods raise a fatal if they detect a problem.
 
   static void assert_disjoint(const HeapWord* from, HeapWord* to, size_t count) {
-#ifdef ASSERT
-    if (!params_disjoint(from, to, count))
-      basic_fatal("source and dest overlap");
-#endif
+    assert(params_disjoint(from, to, count), "source and dest overlap");
   }
 
-  static void assert_params_ok(const void* from, void* to, intptr_t log_align) {
-#ifdef ASSERT
-    if (mask_bits((uintptr_t)from, right_n_bits(log_align)) != 0)
-      basic_fatal("not aligned");
-    if (mask_bits((uintptr_t)to, right_n_bits(log_align)) != 0)
-      basic_fatal("not aligned");
-#endif
+  static void assert_params_ok(const void* from, void* to, intptr_t alignment) {
+    assert(is_aligned(from, alignment), "must be aligned: " INTPTR_FORMAT, p2i(from));
+    assert(is_aligned(to, alignment),   "must be aligned: " INTPTR_FORMAT, p2i(to));
   }
 
-  static void assert_params_ok(HeapWord* to, intptr_t log_align) {
-#ifdef ASSERT
-    if (mask_bits((uintptr_t)to, right_n_bits(log_align)) != 0)
-      basic_fatal("not word aligned");
-#endif
+  static void assert_params_ok(HeapWord* to, intptr_t alignment) {
+    assert(is_aligned(to, alignment), "must be aligned: " INTPTR_FORMAT, p2i(to));
   }
+
   static void assert_params_aligned(const HeapWord* from, HeapWord* to) {
-#ifdef ASSERT
-    if (mask_bits((uintptr_t)from, BytesPerLong-1) != 0)
-      basic_fatal("not long aligned");
-    if (mask_bits((uintptr_t)to, BytesPerLong-1) != 0)
-      basic_fatal("not long aligned");
-#endif
+    assert(is_aligned(from, BytesPerLong), "must be aligned: " INTPTR_FORMAT, p2i(from));
+    assert(is_aligned(to, BytesPerLong),   "must be aligned: " INTPTR_FORMAT, p2i(to));
   }
 
   static void assert_params_aligned(HeapWord* to) {
-#ifdef ASSERT
-    if (mask_bits((uintptr_t)to, BytesPerLong-1) != 0)
-      basic_fatal("not long aligned");
-#endif
+    assert(is_aligned(to, BytesPerLong), "must be aligned: " INTPTR_FORMAT, p2i(to));
   }
 
   static void assert_byte_count_ok(size_t byte_count, size_t unit_size) {
-#ifdef ASSERT
-    if (!is_aligned(byte_count, unit_size)) {
-      basic_fatal("byte count must be aligned");
-    }
-#endif
+    assert(is_aligned(byte_count, unit_size), "byte count must be aligned");
   }
 
   // Platform dependent implementations of the above methods.

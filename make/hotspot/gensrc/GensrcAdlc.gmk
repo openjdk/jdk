@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,8 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   endif
 
   # Set the C++ standard if supported
-  ADLC_CFLAGS += $(CXXSTD_CXXFLAG)
-  
+  ADLC_CFLAGS += $(ADLC_CXXFLAG)
+
   # NOTE: The old build didn't set -DASSERT for windows but it doesn't seem to
   # hurt.
   ADLC_CFLAGS += -DASSERT
@@ -63,6 +63,8 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   ADLC_CFLAGS += -I$(TOPDIR)/src/hotspot/share
 
   $(eval $(call SetupNativeCompilation, BUILD_ADLC, \
+      NAME := adlc, \
+      TYPE := EXECUTABLE, \
       TOOLCHAIN := TOOLCHAIN_BUILD_LINK_CXX, \
       SRC := $(TOPDIR)/src/hotspot/share/adlc, \
       EXTRA_FILES := $(TOPDIR)/src/hotspot/share/opto/opcodes.cpp, \
@@ -71,7 +73,6 @@ ifeq ($(call check-jvm-feature, compiler2), true)
       LIBS := $(ADLC_LIBS), \
       OBJECT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/adlc/objs, \
       OUTPUT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/adlc, \
-      PROGRAM := adlc, \
       DEBUG_SYMBOLS := false, \
       DISABLED_WARNINGS_clang := tautological-compare, \
       DISABLED_WARNINGS_solstudio := notemsource, \

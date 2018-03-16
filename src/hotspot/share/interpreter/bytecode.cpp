@@ -123,6 +123,11 @@ void Bytecode_invoke::verify() const {
   assert(cpcache() != NULL, "do not call this from verifier or rewriter");
 }
 
+int Bytecode_invoke::size_of_parameters() const {
+  ArgumentSizeComputer asc(signature());
+  return asc.size() + (has_receiver() ? 1 : 0);
+}
+
 
 Symbol* Bytecode_member_ref::klass() const {
   return constants()->klass_ref_at_noresolve(index());

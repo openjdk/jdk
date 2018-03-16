@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,18 @@
 #define SHARE_VM_GC_SHARED_CARDTABLEMODREFBS_INLINE_HPP
 
 #include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "runtime/orderAccess.inline.hpp"
 
 template <DecoratorSet decorators, typename T>
 inline void CardTableModRefBS::write_ref_field_post(T* field, oop newVal) {
-  volatile jbyte* byte = byte_for(field);
+  volatile jbyte* byte = _card_table->byte_for(field);
   if (UseConcMarkSweepGC) {
     // Perform a releasing store if using CMS so that it may
     // scan and clear the cards concurrently during pre-cleaning.
-    OrderAccess::release_store(byte, jbyte(dirty_card));
+    OrderAccess::release_store(byte, CardTable::dirty_card_val());
   } else {
-    *byte = dirty_card;
+    *byte = CardTable::dirty_card_val();
   }
 }
 

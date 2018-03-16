@@ -23,22 +23,20 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1CardTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.inline.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/satbMarkQueue.hpp"
-#include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/orderAccess.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
 G1SATBCardTableModRefBS::G1SATBCardTableModRefBS(
-  MemRegion whole_heap,
+  G1CardTable* card_table,
   const BarrierSet::FakeRtti& fake_rtti) :
-  CardTableModRefBS(whole_heap, fake_rtti.add_tag(BarrierSet::G1SATBCT))
+  CardTableModRefBS(card_table, fake_rtti.add_tag(BarrierSet::G1SATBCT))
 { }
 
 void G1SATBCardTableModRefBS::enqueue(oop pre_val) {
@@ -80,88 +78,17 @@ void G1SATBCardTableModRefBS::write_ref_array_pre(narrowOop* dst, int count, boo
   }
 }
 
-bool G1SATBCardTableModRefBS::mark_card_deferred(size_t card_index) {
-  jbyte val = _byte_map[card_index];
-  // It's already processed
-  if ((val & (clean_card_mask_val() | deferred_card_val())) == deferred_card_val()) {
-    return false;
-  }
-
-  // Cached bit can be installed either on a clean card or on a claimed card.
-  jbyte new_val = val;
-  if (val == clean_card_val()) {
-    new_val = (jbyte)deferred_card_val();
-  } else {
-    if (val & claimed_card_val()) {
-      new_val = val | (jbyte)deferred_card_val();
-    }
-  }
-  if (new_val != val) {
-    Atomic::cmpxchg(new_val, &_byte_map[card_index], val);
-  }
-  return true;
-}
-
-void G1SATBCardTableModRefBS::g1_mark_as_young(const MemRegion& mr) {
-  jbyte *const first = byte_for(mr.start());
-  jbyte *const last = byte_after(mr.last());
-
-  memset_with_concurrent_readers(first, g1_young_gen, last - first);
-}
-
-#ifndef PRODUCT
-void G1SATBCardTableModRefBS::verify_g1_young_region(MemRegion mr) {
-  verify_region(mr, g1_young_gen,  true);
-}
-#endif
-
-void G1SATBCardTableLoggingModRefBSChangedListener::on_commit(uint start_idx, size_t num_regions, bool zero_filled) {
-  // Default value for a clean card on the card table is -1. So we cannot take advantage of the zero_filled parameter.
-  MemRegion mr(G1CollectedHeap::heap()->bottom_addr_for_region(start_idx), num_regions * HeapRegion::GrainWords);
-  _card_table->clear(mr);
-}
-
 G1SATBCardTableLoggingModRefBS::
-G1SATBCardTableLoggingModRefBS(MemRegion whole_heap) :
-  G1SATBCardTableModRefBS(whole_heap, BarrierSet::FakeRtti(G1SATBCTLogging)),
-  _dcqs(JavaThread::dirty_card_queue_set()),
-  _listener()
-{
-  _listener.set_card_table(this);
-}
-
-void G1SATBCardTableLoggingModRefBS::initialize(G1RegionToSpaceMapper* mapper) {
-  initialize_deferred_card_mark_barriers();
-  mapper->set_mapping_changed_listener(&_listener);
-
-  _byte_map_size = mapper->reserved().byte_size();
-
-  _guard_index = cards_required(_whole_heap.word_size()) - 1;
-  _last_valid_index = _guard_index - 1;
-
-  HeapWord* low_bound  = _whole_heap.start();
-  HeapWord* high_bound = _whole_heap.end();
-
-  _cur_covered_regions = 1;
-  _covered[0] = _whole_heap;
-
-  _byte_map = (jbyte*) mapper->reserved().start();
-  byte_map_base = _byte_map - (uintptr_t(low_bound) >> card_shift);
-  assert(byte_for(low_bound) == &_byte_map[0], "Checking start of map");
-  assert(byte_for(high_bound-1) <= &_byte_map[_last_valid_index], "Checking end of map");
-
-  log_trace(gc, barrier)("G1SATBCardTableModRefBS::G1SATBCardTableModRefBS: ");
-  log_trace(gc, barrier)("    &_byte_map[0]: " INTPTR_FORMAT "  &_byte_map[_last_valid_index]: " INTPTR_FORMAT,
-                         p2i(&_byte_map[0]), p2i(&_byte_map[_last_valid_index]));
-  log_trace(gc, barrier)("    byte_map_base: " INTPTR_FORMAT,  p2i(byte_map_base));
-}
+G1SATBCardTableLoggingModRefBS(G1CardTable* card_table) :
+  G1SATBCardTableModRefBS(card_table, BarrierSet::FakeRtti(G1SATBCTLogging)),
+  _dcqs(JavaThread::dirty_card_queue_set()) {}
 
 void G1SATBCardTableLoggingModRefBS::write_ref_field_post_slow(volatile jbyte* byte) {
   // In the slow path, we know a card is not young
-  assert(*byte != g1_young_gen, "slow path invoked without filtering");
+  assert(*byte != G1CardTable::g1_young_card_val(), "slow path invoked without filtering");
   OrderAccess::storeload();
-  if (*byte != dirty_card) {
-    *byte = dirty_card;
+  if (*byte != G1CardTable::dirty_card_val()) {
+    *byte = G1CardTable::dirty_card_val();
     Thread* thr = Thread::current();
     if (thr->is_Java_thread()) {
       JavaThread* jt = (JavaThread*)thr;
@@ -174,16 +101,15 @@ void G1SATBCardTableLoggingModRefBS::write_ref_field_post_slow(volatile jbyte* b
   }
 }
 
-void
-G1SATBCardTableLoggingModRefBS::invalidate(MemRegion mr) {
+void G1SATBCardTableLoggingModRefBS::invalidate(MemRegion mr) {
   if (mr.is_empty()) {
     return;
   }
-  volatile jbyte* byte = byte_for(mr.start());
-  jbyte* last_byte = byte_for(mr.last());
+  volatile jbyte* byte = _card_table->byte_for(mr.start());
+  jbyte* last_byte = _card_table->byte_for(mr.last());
   Thread* thr = Thread::current();
     // skip all consecutive young cards
-  for (; byte <= last_byte && *byte == g1_young_gen; byte++);
+  for (; byte <= last_byte && *byte == G1CardTable::g1_young_card_val(); byte++);
 
   if (byte <= last_byte) {
     OrderAccess::storeload();
@@ -191,11 +117,11 @@ G1SATBCardTableLoggingModRefBS::invalidate(MemRegion mr) {
     if (thr->is_Java_thread()) {
       JavaThread* jt = (JavaThread*)thr;
       for (; byte <= last_byte; byte++) {
-        if (*byte == g1_young_gen) {
+        if (*byte == G1CardTable::g1_young_card_val()) {
           continue;
         }
-        if (*byte != dirty_card) {
-          *byte = dirty_card;
+        if (*byte != G1CardTable::dirty_card_val()) {
+          *byte = G1CardTable::dirty_card_val();
           jt->dirty_card_queue().enqueue(byte);
         }
       }
@@ -203,11 +129,11 @@ G1SATBCardTableLoggingModRefBS::invalidate(MemRegion mr) {
       MutexLockerEx x(Shared_DirtyCardQ_lock,
                       Mutex::_no_safepoint_check_flag);
       for (; byte <= last_byte; byte++) {
-        if (*byte == g1_young_gen) {
+        if (*byte == G1CardTable::g1_young_card_val()) {
           continue;
         }
-        if (*byte != dirty_card) {
-          *byte = dirty_card;
+        if (*byte != G1CardTable::dirty_card_val()) {
+          *byte = G1CardTable::dirty_card_val();
           _dcqs.shared_dirty_card_queue()->enqueue(byte);
         }
       }
@@ -215,13 +141,39 @@ G1SATBCardTableLoggingModRefBS::invalidate(MemRegion mr) {
   }
 }
 
-bool G1SATBCardTableModRefBS::is_in_young(oop obj) const {
-  volatile jbyte* p = byte_for((void*)obj);
-  return *p == g1_young_card_val();
+void G1SATBCardTableLoggingModRefBS::on_thread_attach(JavaThread* thread) {
+  // This method initializes the SATB and dirty card queues before a
+  // JavaThread is added to the Java thread list. Right now, we don't
+  // have to do anything to the dirty card queue (it should have been
+  // activated when the thread was created), but we have to activate
+  // the SATB queue if the thread is created while a marking cycle is
+  // in progress. The activation / de-activation of the SATB queues at
+  // the beginning / end of a marking cycle is done during safepoints
+  // so we have to make sure this method is called outside one to be
+  // able to safely read the active field of the SATB queue set. Right
+  // now, it is called just before the thread is added to the Java
+  // thread list in the Threads::add() method. That method is holding
+  // the Threads_lock which ensures we are outside a safepoint. We
+  // cannot do the obvious and set the active field of the SATB queue
+  // when the thread is created given that, in some cases, safepoints
+  // might happen between the JavaThread constructor being called and the
+  // thread being added to the Java thread list (an example of this is
+  // when the structure for the DestroyJavaVM thread is created).
+  assert(!SafepointSynchronize::is_at_safepoint(), "We should not be at a safepoint");
+  assert(!thread->satb_mark_queue().is_active(), "SATB queue should not be active");
+  assert(thread->satb_mark_queue().is_empty(), "SATB queue should be empty");
+  assert(thread->dirty_card_queue().is_active(), "Dirty card queue should be active");
+
+  // If we are creating the thread during a marking cycle, we should
+  // set the active field of the SATB queue to true.
+  if (thread->satb_mark_queue_set().is_active()) {
+    thread->satb_mark_queue().set_active(true);
+  }
 }
 
-void G1SATBCardTableLoggingModRefBS::flush_deferred_barriers(JavaThread* thread) {
-  CardTableModRefBS::flush_deferred_barriers(thread);
+void G1SATBCardTableLoggingModRefBS::on_thread_detach(JavaThread* thread) {
+  // Flush any deferred card marks, SATB buffers and dirty card queue buffers
+  CardTableModRefBS::on_thread_detach(thread);
   thread->satb_mark_queue().flush();
   thread->dirty_card_queue().flush();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,6 +23,8 @@ package com.sun.org.apache.xerces.internal.xinclude;
 import com.sun.org.apache.xerces.internal.impl.XMLEntityManager;
 import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
 import com.sun.org.apache.xerces.internal.impl.io.ASCIIReader;
+import com.sun.org.apache.xerces.internal.impl.io.Latin1Reader;
+import com.sun.org.apache.xerces.internal.impl.io.UTF16Reader;
 import com.sun.org.apache.xerces.internal.impl.io.UTF8Reader;
 import com.sun.org.apache.xerces.internal.impl.msg.XMLMessageFormatter;
 import com.sun.org.apache.xerces.internal.util.EncodingMap;
@@ -67,7 +69,7 @@ import java.util.Map;
 public class XIncludeTextReader {
 
     private Reader fReader;
-    private XIncludeHandler fHandler;
+    private final XIncludeHandler fHandler;
     private XMLInputSource fSource;
     private XMLErrorReporter fErrorReporter;
     private XMLString fTempString = new XMLString();
@@ -149,12 +151,12 @@ public class XIncludeTextReader {
                 stream = new BufferedInputStream(urlCon.getInputStream());
 
                 // content type will be string like "text/xml; charset=UTF-8" or "text/xml"
-                String rawContentType = urlCon.getContentType();
+                final String rawContentType = urlCon.getContentType();
 
                 // text/xml and application/xml offer only one optional parameter
-                int index = (rawContentType != null) ? rawContentType.indexOf(';') : -1;
+                final int index = (rawContentType != null) ? rawContentType.indexOf(';') : -1;
 
-                String contentType = null;
+                final String contentType;
                 String charset = null;
                 if (index != -1) {
                     // this should be something like "text/xml"
@@ -181,14 +183,16 @@ public class XIncludeTextReader {
                     }
                 }
                 else {
-                    contentType = rawContentType.trim();
+                    contentType = (rawContentType != null) ? rawContentType.trim() : "";
                 }
 
                 String detectedEncoding = null;
                 /**  The encoding of such a resource is determined by:
                     1 external encoding information, if available, otherwise
                          -- the most common type of external information is the "charset" parameter of a MIME package
-                    2 if the media type of the resource is text/xml, application/xml, or matches the conventions text/*+xml or application/*+xml as described in XML Media Types [IETF RFC 3023], the encoding is recognized as specified in XML 1.0, otherwise
+                    2 if the media type of the resource is text/xml, application/xml, or matches the conventions
+                         text/*+xml or application/*+xml as described in XML Media Types [IETF RFC 3023], the encoding
+                         is recognized as specified in XML 1.0, otherwise
                     3 the value of the encoding attribute if one exists, otherwise
                     4 UTF-8.
                  **/
@@ -225,15 +229,17 @@ public class XIncludeTextReader {
             // eat the Byte Order Mark
             encoding = consumeBOM(stream, encoding);
 
-            // If the document is UTF-8 or US-ASCII use
-            // the Xerces readers for these encodings. For
-            // US-ASCII consult the encoding map since
-            // this encoding has many aliases.
+            // If the document is UTF-8, UTF-16, US-ASCII or ISO-8859-1 use
+            // the Xerces readers for these encodings. For US-ASCII and ISO-8859-1
+            // consult the encoding map since these encodings have many aliases.
             if (encoding.equals("UTF-8")) {
-                return new UTF8Reader(stream,
-                    fTempString.ch.length,
-                    fErrorReporter.getMessageFormatter(XMLMessageFormatter.XML_DOMAIN),
-                    fErrorReporter.getLocale() );
+                return createUTF8Reader(stream);
+            }
+            else if (encoding.equals("UTF-16BE")) {
+                return createUTF16Reader(stream, true);
+            }
+            else if (encoding.equals("UTF-16LE")) {
+                return createUTF16Reader(stream, false);
             }
 
             // Try to use a Java reader.
@@ -251,14 +257,43 @@ public class XIncludeTextReader {
                     new Object[] {encoding} ) );
             }
             else if (javaEncoding.equals("ASCII")) {
-                return new ASCIIReader(stream,
-                    fTempString.ch.length,
-                    fErrorReporter.getMessageFormatter(XMLMessageFormatter.XML_DOMAIN),
-                    fErrorReporter.getLocale() );
+                return createASCIIReader(stream);
             }
-
+            else if (javaEncoding.equals("ISO8859_1")) {
+                return createLatin1Reader(stream);
+            }
             return new InputStreamReader(stream, javaEncoding);
         }
+    }
+
+    /** Create a new UTF-8 reader from the InputStream. **/
+    private Reader createUTF8Reader(InputStream stream) {
+        return new UTF8Reader(stream,
+                fTempString.ch.length,
+                fErrorReporter.getMessageFormatter(XMLMessageFormatter.XML_DOMAIN),
+                fErrorReporter.getLocale());
+    }
+
+    /** Create a new UTF-16 reader from the InputStream. **/
+    private Reader createUTF16Reader(InputStream stream, boolean isBigEndian) {
+        return new UTF16Reader(stream,
+                (fTempString.ch.length << 1),
+                isBigEndian,
+                fErrorReporter.getMessageFormatter(XMLMessageFormatter.XML_DOMAIN),
+                fErrorReporter.getLocale());
+    }
+
+    /** Create a new ASCII reader from the InputStream. **/
+    private Reader createASCIIReader(InputStream stream) {
+        return new ASCIIReader(stream,
+                fTempString.ch.length,
+                fErrorReporter.getMessageFormatter(XMLMessageFormatter.XML_DOMAIN),
+                fErrorReporter.getLocale());
+    }
+
+    /** Create a new ISO-8859-1 reader from the InputStream. **/
+    private Reader createLatin1Reader(InputStream stream) {
+        return new Latin1Reader(stream, fTempString.ch.length);
     }
 
     /**
@@ -416,6 +451,7 @@ public class XIncludeTextReader {
         fReader = getReader(fSource);
         fSource = null;
         int readSize = fReader.read(fTempString.ch, 0, fTempString.ch.length - 1);
+        fHandler.fHasIncludeReportedContent = true;
         while (readSize != -1) {
             for (int i = 0; i < readSize; ++i) {
                 char ch = fTempString.ch[i];

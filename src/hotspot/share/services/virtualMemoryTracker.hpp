@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,9 +160,7 @@ class VirtualMemorySummary : AllStatic {
     as_snapshot()->by_type(to)->commit_memory(size);
   }
 
-  static inline void snapshot(VirtualMemorySnapshot* s) {
-    as_snapshot()->copy_to(s);
-  }
+  static void snapshot(VirtualMemorySnapshot* s);
 
   static VirtualMemorySnapshot* as_snapshot() {
     return (VirtualMemorySnapshot*)_snapshot;
@@ -210,6 +208,8 @@ class VirtualMemoryRegion VALUE_OBJ_CLASS_SPEC {
 
 
   inline bool overlap_region(address addr, size_t sz) const {
+    assert(sz > 0, "Invalid size");
+    assert(size() > 0, "Invalid size");
     VirtualMemoryRegion rgn(addr, sz);
     return contain_address(addr) ||
            contain_address(addr + sz - 1) ||
@@ -295,18 +295,14 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
   NativeCallStack  _stack;
   MEMFLAGS         _flag;
 
-  bool             _all_committed;
-
  public:
   ReservedMemoryRegion(address base, size_t size, const NativeCallStack& stack,
     MEMFLAGS flag = mtNone) :
-    VirtualMemoryRegion(base, size), _stack(stack), _flag(flag),
-    _all_committed(false) { }
+    VirtualMemoryRegion(base, size), _stack(stack), _flag(flag) { }
 
 
   ReservedMemoryRegion(address base, size_t size) :
-    VirtualMemoryRegion(base, size), _stack(NativeCallStack::EMPTY_STACK), _flag(mtNone),
-    _all_committed(false) { }
+    VirtualMemoryRegion(base, size), _stack(NativeCallStack::EMPTY_STACK), _flag(mtNone) { }
 
   // Copy constructor
   ReservedMemoryRegion(const ReservedMemoryRegion& rr) :
@@ -338,6 +334,9 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
     return compare(rgn) == 0;
   }
 
+  // uncommitted thread stack bottom, above guard pages if there is any.
+  address thread_stack_uncommitted_bottom() const;
+
   bool    add_committed_region(address addr, size_t size, const NativeCallStack& stack);
   bool    remove_uncommitted_region(address addr, size_t size);
 
@@ -346,9 +345,6 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
   // move committed regions that higher than specified address to
   // the new region
   void    move_committed_regions(address addr, ReservedMemoryRegion& rgn);
-
-  inline bool all_committed() const { return _all_committed; }
-  void        set_all_committed(bool b);
 
   CommittedRegionIterator iterate_committed_regions() const {
     return CommittedRegionIterator(_committed_regions.head());
@@ -360,17 +356,14 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
 
     _stack =         *other.call_stack();
     _flag  =         other.flag();
-    _all_committed = other.all_committed();
-    if (other.all_committed()) {
-      set_all_committed(true);
-    } else {
-      CommittedRegionIterator itr = other.iterate_committed_regions();
-      const CommittedMemoryRegion* rgn = itr.next();
-      while (rgn != NULL) {
-        _committed_regions.add(*rgn);
-        rgn = itr.next();
-      }
+
+    CommittedRegionIterator itr = other.iterate_committed_regions();
+    const CommittedMemoryRegion* rgn = itr.next();
+    while (rgn != NULL) {
+      _committed_regions.add(*rgn);
+      rgn = itr.next();
     }
+
     return *this;
   }
 
@@ -396,14 +389,16 @@ class VirtualMemoryWalker : public StackObj {
 
 // Main class called from MemTracker to track virtual memory allocations, commits and releases.
 class VirtualMemoryTracker : AllStatic {
+  friend class VirtualMemoryTrackerTest;
+  friend class ThreadStackTrackingTest;
+
  public:
   static bool initialize(NMT_TrackingLevel level);
 
   // Late phase initialization
   static bool late_initialize(NMT_TrackingLevel level);
 
-  static bool add_reserved_region (address base_addr, size_t size, const NativeCallStack& stack,
-    MEMFLAGS flag = mtNone, bool all_committed = false);
+  static bool add_reserved_region (address base_addr, size_t size, const NativeCallStack& stack, MEMFLAGS flag = mtNone);
 
   static bool add_committed_region      (address base_addr, size_t size, const NativeCallStack& stack);
   static bool remove_uncommitted_region (address base_addr, size_t size);
@@ -414,6 +409,9 @@ class VirtualMemoryTracker : AllStatic {
   static bool walk_virtual_memory(VirtualMemoryWalker* walker);
 
   static bool transition(NMT_TrackingLevel from, NMT_TrackingLevel to);
+
+  // Snapshot current thread stacks
+  static void snapshot_thread_stacks();
 
  private:
   static SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>* _reserved_regions;

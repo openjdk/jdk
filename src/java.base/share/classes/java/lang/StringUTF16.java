@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,6 +235,13 @@ final class StringUTF16 {
         return result;
     }
 
+    static byte[] toBytesSupplementary(int cp) {
+        byte[] result = new byte[4];
+        putChar(result, 0, Character.highSurrogate(cp));
+        putChar(result, 1, Character.lowSurrogate(cp));
+        return result;
+    }
+
     @HotSpotIntrinsicCandidate
     public static void getChars(byte[] value, int srcBegin, int srcEnd, char dst[], int dstBegin) {
         // We need a range check here because 'getChar' has no checks
@@ -273,6 +280,20 @@ final class StringUTF16 {
     public static int compareTo(byte[] value, byte[] other) {
         int len1 = length(value);
         int len2 = length(other);
+        return compareValues(value, other, len1, len2);
+    }
+
+    /*
+     * Checks the boundary and then compares the byte arrays.
+     */
+    public static int compareTo(byte[] value, byte[] other, int len1, int len2) {
+        checkOffset(len1, value);
+        checkOffset(len2, other);
+
+        return compareValues(value, other, len1, len2);
+    }
+
+    private static int compareValues(byte[] value, byte[] other, int len1, int len2) {
         int lim = Math.min(len1, len2);
         for (int k = 0; k < lim; k++) {
             char c1 = getChar(value, k);
@@ -287,6 +308,10 @@ final class StringUTF16 {
     @HotSpotIntrinsicCandidate
     public static int compareToLatin1(byte[] value, byte[] other) {
         return -StringLatin1.compareToUTF16(other, value);
+    }
+
+    public static int compareToLatin1(byte[] value, byte[] other, int len1, int len2) {
+        return -StringLatin1.compareToUTF16(other, value, len2, len1);
     }
 
     public static int compareToCI(byte[] value, byte[] other) {

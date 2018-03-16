@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,13 @@
 /*
  * @test
  * @key headful
- * @bug     6822057 7124400 8059848
+ * @bug     6822057 7124400 8059848 8198613
  *
  * @summary Test verifies that list of supported graphics configurations
  *          can not be changed via modification of elements of an array
  *          returned by getConfiguration() method.
  *
  * @run     main CloneConfigsTest
- * @run     main/othervm -Dsun.java2d.opengl=True CloneConfigsTest
  * @run     main/othervm -Dsun.java2d.d3d=true CloneConfigsTest
  * @run     main/othervm -Dsun.java2d.noddraw=true CloneConfigsTest
  */

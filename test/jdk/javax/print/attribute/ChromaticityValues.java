@@ -23,6 +23,8 @@
 /*
  * @test
  * @bug 4446106
+ * @key printer
+ * @requires (os.family == "windows")
  * @summary Test for chromaticity values.
  * @run main ChromaticityValues
 */
