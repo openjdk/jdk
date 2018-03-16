@@ -23,6 +23,8 @@
 
 /* @test
  * @bug 8198928
+ * @library /test/lib
+ * @build jdk.test.lib.Utils
  * @run main CloseDuringConnect
  * @summary Attempt to cause a deadlock by closing a SocketChannel in one thread
  *     where another thread is closing the channel after a connect fail
@@ -40,6 +42,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.IntStream;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import jdk.test.lib.Utils;
+
 public class CloseDuringConnect {
 
     // number of test iterations, needs to be 5-10 at least
@@ -47,26 +51,6 @@ public class CloseDuringConnect {
 
     // maximum delay before closing SocketChannel, in milliseconds
     static final int MAX_DELAY_BEFORE_CLOSE = 20;
-
-    /**
-     * Returns the socket address of an endpoint that refuses connections. The
-     * endpoint is an InetSocketAddress where the address is the loopback address
-     * and the port is a system port (1-1023 range).
-     */
-    static SocketAddress refusingEndpoint() {
-        InetAddress lb = InetAddress.getLoopbackAddress();
-        int port = 1;
-        while (port < 1024) {
-            SocketAddress sa = new InetSocketAddress(lb, port);
-            try {
-                SocketChannel.open(sa).close();
-            } catch (IOException ioe) {
-                return sa;
-            }
-            port++;
-        }
-        throw new RuntimeException("Unable to find system port that is refusing connections");
-    }
 
     /**
      * Invoked by a task in the thread pool to connect to a remote address.
@@ -123,7 +107,7 @@ public class CloseDuringConnect {
     }
 
     public static void main(String[] args) throws Exception {
-        SocketAddress refusing = refusingEndpoint();
+        SocketAddress refusing = Utils.refusingEndpoint();
         ScheduledExecutorService pool = Executors.newScheduledThreadPool(2);
         try {
             IntStream.range(0, ITERATIONS).forEach(i -> {
