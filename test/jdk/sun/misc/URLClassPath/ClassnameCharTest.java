@@ -26,6 +26,7 @@
  * @summary cannot load class names containing some JSR 202 characters;
  *          plugin does not escape unicode character in http request
  * @modules java.desktop/sun.applet
+ *          jdk.httpserver
  * @compile -XDignore.symbol.file=true ClassnameCharTest.java
  * @run main ClassnameCharTest
  */
