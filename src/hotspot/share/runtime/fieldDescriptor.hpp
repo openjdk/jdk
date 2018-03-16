@@ -26,6 +26,8 @@
 #define SHARE_VM_RUNTIME_FIELDDESCRIPTOR_HPP
 
 #include "oops/constantPool.hpp"
+#include "oops/fieldInfo.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/fieldType.hpp"
 #include "utilities/accessFlags.hpp"

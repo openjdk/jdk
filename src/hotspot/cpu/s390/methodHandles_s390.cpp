@@ -31,6 +31,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/methodHandles.hpp"
+#include "utilities/preserveException.hpp"
 
 #ifdef PRODUCT
 #define __ _masm->

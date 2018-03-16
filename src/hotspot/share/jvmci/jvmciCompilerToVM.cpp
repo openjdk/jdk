@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "code/scopeDesc.hpp"
 #include "memory/oopFactory.hpp"
@@ -35,6 +36,7 @@
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciCodeInstaller.hpp"
 #include "jvmci/jvmciRuntime.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe_hp.hpp"
@@ -98,6 +100,12 @@ oop CompilerToVM::get_jvmci_type(Klass* klass, TRAPS) {
   return NULL;
 }
 
+Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
+  assert(_index < _args->length(), "out of bounds");
+  oop arg=((objArrayOop) (_args))->obj_at(_index++);
+  assert(expectedType == T_OBJECT || java_lang_boxing_object::is_instance(arg, expectedType), "arg type mismatch");
+  return Handle(Thread::current(), arg);
+}
 
 jobjectArray readConfiguration0(JNIEnv *env, TRAPS);
 

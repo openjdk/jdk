@@ -26,6 +26,7 @@
 #include "ci/ciUtilities.hpp"
 #include "gc/shared/cardTableModRefBS.hpp"
 #include "gc/shared/cardTable.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"
 
 // ciUtilities

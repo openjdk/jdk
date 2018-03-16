@@ -31,6 +31,7 @@
 #include "interpreter/bytecode.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.inline.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 
 CompiledMethod::CompiledMethod(Method* method, const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments)
