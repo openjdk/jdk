@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,9 @@
 /* @test
  * @bug 8156002
  * @summary Unit test for socket-channel adaptors
- * @library ..
+ * @library .. /test/lib
+ * @build jdk.test.lib.Utils TestServers
+ * @run main AdaptSocket
  */
 
 import java.io.*;
