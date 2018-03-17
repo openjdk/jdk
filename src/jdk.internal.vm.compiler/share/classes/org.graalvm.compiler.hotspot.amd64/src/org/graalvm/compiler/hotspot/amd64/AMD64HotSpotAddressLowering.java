@@ -204,7 +204,7 @@ public class AMD64HotSpotAddressLowering extends AMD64CompressAddressLowering {
 
                         if (init >= 0 && extremum >= 0) {
                             long shortestTrip = (extremum - init) / stride + 1;
-                            if (shortestTrip == countedLoopInfo.constantMaxTripCount()) {
+                            if (countedLoopInfo.constantMaxTripCount().equals(shortestTrip)) {
                                 return graph.unique(new ZeroExtendNode(input, INT_BITS, ADDRESS_BITS, true));
                             }
                         }

@@ -139,6 +139,15 @@ public abstract class IntegerConvertNode<OP, REV> extends UnaryNode implements A
         return convert(input, stamp, true, view);
     }
 
+    public static ValueNode convertUnsigned(ValueNode input, Stamp stamp, StructuredGraph graph, NodeView view) {
+        ValueNode convert = convert(input, stamp, true, view);
+        if (!convert.isAlive()) {
+            assert !convert.isDeleted();
+            convert = graph.addOrUniqueWithInputs(convert);
+        }
+        return convert;
+    }
+
     public static ValueNode convert(ValueNode input, Stamp stamp, boolean zeroExtend, NodeView view) {
         IntegerStamp fromStamp = (IntegerStamp) input.stamp(view);
         IntegerStamp toStamp = (IntegerStamp) stamp;

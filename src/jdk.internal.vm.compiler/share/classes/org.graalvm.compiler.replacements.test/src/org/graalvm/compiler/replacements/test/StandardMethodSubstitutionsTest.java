@@ -24,8 +24,6 @@ package org.graalvm.compiler.replacements.test;
 
 import java.util.HashMap;
 
-import org.junit.Test;
-
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.nodes.IfNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -35,6 +33,7 @@ import org.graalvm.compiler.replacements.nodes.BitCountNode;
 import org.graalvm.compiler.replacements.nodes.BitScanForwardNode;
 import org.graalvm.compiler.replacements.nodes.BitScanReverseNode;
 import org.graalvm.compiler.replacements.nodes.ReverseBytesNode;
+import org.junit.Test;
 
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -137,7 +136,7 @@ public class StandardMethodSubstitutionsTest extends MethodSubstitutionTest {
         StructuredGraph graph = testGraph(testMethodName);
 
         // Check to see if the resulting graph contains the expected node
-        StructuredGraph replacement = getReplacements().getSubstitution(realJavaMethod, -1);
+        StructuredGraph replacement = getReplacements().getSubstitution(realJavaMethod, -1, false, null);
         if (replacement == null && !optional) {
             assertInGraph(graph, intrinsicClass);
         }

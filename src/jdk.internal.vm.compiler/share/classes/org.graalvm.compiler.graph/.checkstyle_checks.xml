@@ -116,7 +116,7 @@
       <metadata name="net.sf.eclipsecs.core.comment" value="Illegal trailing whitespace(s) at the end of the line."/>
       <property name="format" value="\s$"/>
       <property name="message" value="Illegal trailing whitespace(s) at the end of the line."/>
-      <property name="ignoreComments" value="true"/>
+      <property name="ignoreComments" value="false"/>
       <metadata name="com.atlassw.tools.eclipse.checkstyle.comment" value="Checks for trailing spaces at the end of a line"/>
     </module>
     <module name="RegexpSinglelineJava">

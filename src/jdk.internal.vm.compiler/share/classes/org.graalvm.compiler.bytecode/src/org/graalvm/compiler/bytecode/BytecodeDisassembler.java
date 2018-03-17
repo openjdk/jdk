@@ -321,4 +321,61 @@ public class BytecodeDisassembler {
         }
         // @formatter:on
     }
+
+    public static JavaMethod getInvokedMethodAt(ResolvedJavaMethod method, int invokeBci) {
+        if (method.getCode() == null) {
+            return null;
+        }
+        ConstantPool cp = method.getConstantPool();
+        BytecodeStream stream = new BytecodeStream(method.getCode());
+        int opcode = stream.currentBC();
+        while (opcode != Bytecodes.END) {
+            int bci = stream.currentBCI();
+            if (bci == invokeBci) {
+                if (stream.nextBCI() > bci + 1) {
+                    switch (opcode) {
+                        case INVOKEVIRTUAL:
+                        case INVOKESPECIAL:
+                        case INVOKESTATIC: {
+                            int cpi = stream.readCPI();
+                            JavaMethod callee = cp.lookupMethod(cpi, opcode);
+                            return callee;
+                        }
+                        case INVOKEINTERFACE: {
+                            int cpi = stream.readCPI();
+                            JavaMethod callee = cp.lookupMethod(cpi, opcode);
+                            return callee;
+                        }
+                        case INVOKEDYNAMIC: {
+                            int cpi = stream.readCPI4();
+                            JavaMethod callee = cp.lookupMethod(cpi, opcode);
+                            return callee;
+                        }
+                        default:
+                            throw new InternalError(BytecodeDisassembler.disassembleOne(method, invokeBci));
+                    }
+                }
+            }
+            stream.next();
+            opcode = stream.currentBC();
+        }
+        return null;
+    }
+
+    public static int getBytecodeAt(ResolvedJavaMethod method, int invokeBci) {
+        if (method.getCode() == null) {
+            return -1;
+        }
+        BytecodeStream stream = new BytecodeStream(method.getCode());
+        int opcode = stream.currentBC();
+        while (opcode != Bytecodes.END) {
+            int bci = stream.currentBCI();
+            if (bci == invokeBci) {
+                return opcode;
+            }
+            stream.next();
+            opcode = stream.currentBC();
+        }
+        return -1;
+    }
 }

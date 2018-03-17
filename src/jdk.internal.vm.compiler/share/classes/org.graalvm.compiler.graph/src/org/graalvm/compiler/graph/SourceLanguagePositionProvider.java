@@ -20,20 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.graalvm.compiler.core.common;
+package org.graalvm.compiler.graph;
 
-public enum TraceInliningMode {
-    None(false),
-    Linear(true),
-    Tree(true);
+import jdk.vm.ci.meta.JavaConstant;
 
-    private final boolean tracing;
-
-    TraceInliningMode(boolean tracing) {
-        this.tracing = tracing;
-    }
-
-    public boolean isTracing() {
-        return tracing;
-    }
+/**
+ * Provider of {@link SourceLanguagePosition} for a constant if it represents an AST node.
+ */
+public interface SourceLanguagePositionProvider {
+    SourceLanguagePosition getPosition(JavaConstant node);
 }

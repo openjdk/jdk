@@ -101,8 +101,8 @@ public final class ClassfileBytecodeProvider implements BytecodeProvider {
     private static InputStream getClassfileAsStream(Class<?> c) {
         String classfilePath = c.getName().replace('.', '/') + ".class";
         if (JDK9Method.JAVA_SPECIFICATION_VERSION >= 9) {
-            Object module = getModule.invoke(c);
-            return getResourceAsStream.invoke(module, classfilePath);
+            Object module = getModule(c);
+            return getResourceAsStream(module, classfilePath);
         } else {
             ClassLoader cl = c.getClassLoader();
             if (cl == null) {

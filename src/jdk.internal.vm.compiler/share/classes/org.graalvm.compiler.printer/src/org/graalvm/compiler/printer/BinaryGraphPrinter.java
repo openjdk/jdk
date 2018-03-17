@@ -46,6 +46,7 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeMap;
 import org.graalvm.compiler.graph.NodeSourcePosition;
+import org.graalvm.compiler.graph.SourceLanguagePosition;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractEndNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
@@ -67,9 +68,9 @@ import org.graalvm.graphio.GraphOutput;
 import org.graalvm.graphio.GraphStructure;
 import org.graalvm.graphio.GraphTypes;
 
+import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Signature;
 
 public class BinaryGraphPrinter implements
@@ -265,6 +266,17 @@ public class BinaryGraphPrinter implements
             }
             props.put("category", "floating");
         }
+        if (node.getNodeSourcePosition() != null) {
+            NodeSourcePosition pos = node.getNodeSourcePosition();
+            while (pos != null) {
+                SourceLanguagePosition cur = pos.getSourceLanauage();
+                if (cur != null) {
+                    cur.addSourceInformation(props);
+                    break;
+                }
+                pos = pos.getCaller();
+            }
+        }
         if (getSnippetReflectionProvider() != null) {
             for (Map.Entry<String, Object> prop : props.entrySet()) {
                 if (prop.getValue() instanceof JavaConstantFormattable) {
@@ -380,8 +392,8 @@ public class BinaryGraphPrinter implements
         if (obj instanceof Class<?>) {
             return ((Class<?>) obj).getName();
         }
-        if (obj instanceof ResolvedJavaType) {
-            return ((ResolvedJavaType) obj).toJavaName();
+        if (obj instanceof JavaType) {
+            return ((JavaType) obj).toJavaName();
         }
         return null;
     }

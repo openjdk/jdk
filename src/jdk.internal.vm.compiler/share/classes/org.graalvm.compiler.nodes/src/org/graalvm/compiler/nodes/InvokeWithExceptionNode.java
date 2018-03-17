@@ -74,6 +74,16 @@ public final class InvokeWithExceptionNode extends ControlSplitNode implements I
         this.exceptionProbability = EXCEPTION_PROBA;
     }
 
+    @Override
+    protected void afterClone(Node other) {
+        updateInliningLogAfterClone(other);
+    }
+
+    @Override
+    public FixedNode asFixedNode() {
+        return this;
+    }
+
     public AbstractBeginNode exceptionEdge() {
         return exceptionEdge;
     }
