@@ -156,7 +156,7 @@ public class SnippetCounterNode extends FixedWithNextNode implements Lowerable {
                 args.addConst("counter", counter.getCounter());
                 args.add("increment", counter.getIncrement());
 
-                template(counter.getDebug(), args).instantiate(providers.getMetaAccess(), counter, DEFAULT_REPLACER, args);
+                template(counter, args).instantiate(providers.getMetaAccess(), counter, DEFAULT_REPLACER, args);
             }
         }
     }

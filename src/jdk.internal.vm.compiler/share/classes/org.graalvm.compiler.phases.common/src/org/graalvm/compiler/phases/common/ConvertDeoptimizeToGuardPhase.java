@@ -131,6 +131,7 @@ public class ConvertDeoptimizeToGuardPhase extends BasePhase<PhaseContext> {
         }
     }
 
+    @SuppressWarnings("try")
     private void processFixedGuardAndMerge(FixedGuardNode fixedGuard, PhaseContext context, CompareNode compare, ValueNode x, ValuePhiNode xPhi, ValueNode y, ValuePhiNode yPhi,
                     AbstractMergeNode merge) {
         List<EndNode> mergePredecessors = merge.cfgPredecessors().snapshot();
@@ -152,11 +153,14 @@ public class ConvertDeoptimizeToGuardPhase extends BasePhase<PhaseContext> {
                 ys = yPhi.valueAt(mergePredecessor).asConstant();
             }
             if (xs != null && ys != null && compare.condition().foldCondition(xs, ys, context.getConstantReflection(), compare.unorderedIsTrue()) == fixedGuard.isNegated()) {
-                propagateFixed(mergePredecessor, fixedGuard, context.getLowerer());
+                try (DebugCloseable position = fixedGuard.withNodeSourcePosition()) {
+                    propagateFixed(mergePredecessor, fixedGuard, context.getLowerer());
+                }
             }
         }
     }
 
+    @SuppressWarnings("try")
     private void propagateFixed(FixedNode from, StaticDeoptimizingNode deopt, LoweringProvider loweringProvider) {
         Node current = from;
         while (current != null) {
@@ -179,32 +183,36 @@ public class ConvertDeoptimizeToGuardPhase extends BasePhase<PhaseContext> {
                     return;
                 } else if (current.predecessor() instanceof IfNode) {
                     IfNode ifNode = (IfNode) current.predecessor();
-                    StructuredGraph graph = ifNode.graph();
-                    LogicNode conditionNode = ifNode.condition();
-                    boolean negateGuardCondition = current == ifNode.trueSuccessor();
-                    FixedGuardNode guard = graph.add(new FixedGuardNode(conditionNode, deopt.getReason(), deopt.getAction(), deopt.getSpeculation(), negateGuardCondition));
-                    FixedWithNextNode pred = (FixedWithNextNode) ifNode.predecessor();
-                    AbstractBeginNode survivingSuccessor;
-                    if (negateGuardCondition) {
-                        survivingSuccessor = ifNode.falseSuccessor();
-                    } else {
-                        survivingSuccessor = ifNode.trueSuccessor();
-                    }
-                    graph.removeSplitPropagate(ifNode, survivingSuccessor);
+                    // Prioritize the source position of the IfNode
+                    try (DebugCloseable closable = ifNode.withNodeSourcePosition()) {
+                        StructuredGraph graph = ifNode.graph();
+                        LogicNode conditionNode = ifNode.condition();
+                        boolean negateGuardCondition = current == ifNode.trueSuccessor();
+                        FixedGuardNode guard = graph.add(new FixedGuardNode(conditionNode, deopt.getReason(), deopt.getAction(), deopt.getSpeculation(), negateGuardCondition));
 
-                    Node newGuard = guard;
-                    if (survivingSuccessor instanceof LoopExitNode) {
-                        newGuard = ProxyNode.forGuard(guard, (LoopExitNode) survivingSuccessor, graph);
-                    }
-                    survivingSuccessor.replaceAtUsages(InputType.Guard, newGuard);
+                        FixedWithNextNode pred = (FixedWithNextNode) ifNode.predecessor();
+                        AbstractBeginNode survivingSuccessor;
+                        if (negateGuardCondition) {
+                            survivingSuccessor = ifNode.falseSuccessor();
+                        } else {
+                            survivingSuccessor = ifNode.trueSuccessor();
+                        }
+                        graph.removeSplitPropagate(ifNode, survivingSuccessor);
 
-                    graph.getDebug().log("Converting deopt on %-5s branch of %s to guard for remaining branch %s.", negateGuardCondition, ifNode, survivingSuccessor);
-                    FixedNode next = pred.next();
-                    pred.setNext(guard);
-                    guard.setNext(next);
-                    SimplifierTool simplifierTool = GraphUtil.getDefaultSimplifier(null, null, null, false, graph.getAssumptions(), graph.getOptions(), loweringProvider);
-                    survivingSuccessor.simplify(simplifierTool);
-                    return;
+                        Node newGuard = guard;
+                        if (survivingSuccessor instanceof LoopExitNode) {
+                            newGuard = ProxyNode.forGuard(guard, (LoopExitNode) survivingSuccessor, graph);
+                        }
+                        survivingSuccessor.replaceAtUsages(InputType.Guard, newGuard);
+
+                        graph.getDebug().log("Converting deopt on %-5s branch of %s to guard for remaining branch %s.", negateGuardCondition, ifNode, survivingSuccessor);
+                        FixedNode next = pred.next();
+                        pred.setNext(guard);
+                        guard.setNext(next);
+                        SimplifierTool simplifierTool = GraphUtil.getDefaultSimplifier(null, null, null, false, graph.getAssumptions(), graph.getOptions(), loweringProvider);
+                        survivingSuccessor.simplify(simplifierTool);
+                        return;
+                    }
                 } else if (current.predecessor() == null || current.predecessor() instanceof ControlSplitNode) {
                     assert current.predecessor() != null || (current instanceof StartNode && current == ((AbstractBeginNode) current).graph().start());
                     moveAsDeoptAfter((AbstractBeginNode) current, deopt);

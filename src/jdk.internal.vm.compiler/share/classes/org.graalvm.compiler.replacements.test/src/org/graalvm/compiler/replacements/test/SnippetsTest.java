@@ -43,6 +43,6 @@ public abstract class SnippetsTest extends ReplacementsTest {
 
     @Override
     protected StructuredGraph parse(Builder builder, PhaseSuite<HighTierContext> graphBuilderSuite) {
-        return installer.makeGraph(getDebugContext(), bytecodeProvider, builder.getMethod(), null, null);
+        return installer.makeGraph(getDebugContext(), bytecodeProvider, builder.getMethod(), null, null, false, null);
     }
 }

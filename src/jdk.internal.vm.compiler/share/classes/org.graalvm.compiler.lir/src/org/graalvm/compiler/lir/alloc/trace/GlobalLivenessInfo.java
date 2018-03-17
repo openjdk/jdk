@@ -53,7 +53,11 @@ public final class GlobalLivenessInfo {
         public final int[] emptySet;
 
         public Builder(LIR lir) {
-            info = new GlobalLivenessInfo(lir);
+            this(lir.numVariables(), lir.getControlFlowGraph().getBlocks().length);
+        }
+
+        public Builder(int numVariables, int numBlocks) {
+            info = new GlobalLivenessInfo(numVariables, numBlocks);
             emptySet = new int[0];
         }
 
@@ -97,10 +101,8 @@ public final class GlobalLivenessInfo {
     private final Value[][] blockToLocIn;
     private final Value[][] blockToLocOut;
 
-    private GlobalLivenessInfo(LIR lir) {
-        int numVariables = lir.numVariables();
+    private GlobalLivenessInfo(int numVariables, int numBlocks) {
         variables = new Variable[numVariables];
-        int numBlocks = lir.getControlFlowGraph().getBlocks().length;
         blockToVarIn = new int[numBlocks][];
         blockToVarOut = new int[numBlocks][];
         blockToLocIn = new Value[numBlocks][];

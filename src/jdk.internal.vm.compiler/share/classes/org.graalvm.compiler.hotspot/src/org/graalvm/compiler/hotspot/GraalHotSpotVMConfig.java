@@ -45,8 +45,9 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
      */
     public static final GraalHotSpotVMConfig INJECTED_VMCONFIG = null;
 
+    // this uses `1.9` which will give the correct result with `1.9`, `9`, `10` etc.
     private final boolean isJDK8 = System.getProperty("java.specification.version").compareTo("1.9") < 0;
-    private final int JDKVersion = isJDK8 ? 8 : Integer.parseInt(System.getProperty("java.specification.version"));
+    private final int jdkVersion = isJDK8 ? 8 : Integer.parseInt(System.getProperty("java.specification.version"));
     public final String osName = getHostOSName();
     public final String osArch = getHostArchitectureName();
     public final boolean windowsOs = System.getProperty("os.name", "").startsWith("Windows");
@@ -160,6 +161,7 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
     public final boolean forceUnreachable = getFlag("ForceUnreachable", Boolean.class);
     public final int codeSegmentSize = getFlag("CodeCacheSegmentSize", Integer.class);
     public final boolean foldStableValues = getFlag("FoldStableValues", Boolean.class);
+    public final int maxVectorSize = getFlag("MaxVectorSize", Integer.class);
 
     public final boolean useTLAB = getFlag("UseTLAB", Boolean.class);
     public final boolean useBiasedLocking = getFlag("UseBiasedLocking", Boolean.class);
@@ -555,12 +557,10 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
 
     public final int logOfHRGrainBytes = getFieldValue("HeapRegion::LogOfHRGrainBytes", Integer.class, "int");
 
-    public final byte dirtyCardValue = JDKVersion >= 11 ? getConstant("CardTable::dirty_card", Byte.class) :
-                                         (JDKVersion > 8 ? getConstant("CardTableModRefBS::dirty_card", Byte.class) :
-                                         getFieldValue("CompilerToVM::Data::dirty_card", Byte.class, "int"));
-    public final byte g1YoungCardValue = JDKVersion >= 11 ? getConstant("G1CardTable::g1_young_gen", Byte.class) :
-                                           (JDKVersion > 8 ? getConstant("G1SATBCardTableModRefBS::g1_young_gen", Byte.class) :
-                                           getFieldValue("CompilerToVM::Data::g1_young_card", Byte.class, "int"));
+    public final byte dirtyCardValue = jdkVersion >= 11 ? getConstant("CardTable::dirty_card", Byte.class)
+                    : (jdkVersion > 8 ? getConstant("CardTableModRefBS::dirty_card", Byte.class) : getFieldValue("CompilerToVM::Data::dirty_card", Byte.class, "int"));
+    public final byte g1YoungCardValue = jdkVersion >= 11 ? getConstant("G1CardTable::g1_young_gen", Byte.class)
+                    : (jdkVersion > 8 ? getConstant("G1SATBCardTableModRefBS::g1_young_gen", Byte.class) : getFieldValue("CompilerToVM::Data::g1_young_card", Byte.class, "int"));
 
     public final long cardtableStartAddress = getFieldValue("CompilerToVM::Data::cardtable_start_address", Long.class, "jbyte*");
     public final int cardtableShift = getFieldValue("CompilerToVM::Data::cardtable_shift", Integer.class, "int");

@@ -288,33 +288,37 @@ public class AArch64HotSpotBackend extends HotSpotHostBackend {
     }
 
     private static void emitCodeBody(CompilationResultBuilder crb, LIR lir, AArch64MacroAssembler masm) {
-        /*
-         * Insert a nop at the start of the prolog so we can patch in a branch if we need to
-         * invalidate the method later.
-         */
+        emitInvalidatePlaceholder(crb, masm);
+        crb.emit(lir);
+    }
+
+    /**
+     * Insert a nop at the start of the prolog so we can patch in a branch if we need to invalidate
+     * the method later.
+     *
+     * @see "http://mail.openjdk.java.net/pipermail/aarch64-port-dev/2013-September/000273.html"
+     */
+    public static void emitInvalidatePlaceholder(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
         crb.blockComment("[nop for method invalidation]");
         masm.nop();
-
-        crb.emit(lir);
     }
 
     private void emitCodeSuffix(CompilationResultBuilder crb, AArch64MacroAssembler masm, FrameMap frameMap) {
         HotSpotProviders providers = getProviders();
         HotSpotFrameContext frameContext = (HotSpotFrameContext) crb.frameContext;
         if (!frameContext.isStub) {
+            HotSpotForeignCallsProvider foreignCalls = providers.getForeignCalls();
             try (ScratchRegister sc = masm.getScratchRegister()) {
                 Register scratch = sc.getRegister();
-                HotSpotForeignCallsProvider foreignCalls = providers.getForeignCalls();
                 crb.recordMark(config.MARKID_EXCEPTION_HANDLER_ENTRY);
                 ForeignCallLinkage linkage = foreignCalls.lookupForeignCall(EXCEPTION_HANDLER);
                 Register helper = AArch64Call.isNearCall(linkage) ? null : scratch;
                 AArch64Call.directCall(crb, masm, linkage, helper, null);
-
-                crb.recordMark(config.MARKID_DEOPT_HANDLER_ENTRY);
-                linkage = foreignCalls.lookupForeignCall(DEOPTIMIZATION_HANDLER);
-                helper = AArch64Call.isNearCall(linkage) ? null : scratch;
-                AArch64Call.directCall(crb, masm, linkage, helper, null);
             }
+            crb.recordMark(config.MARKID_DEOPT_HANDLER_ENTRY);
+            ForeignCallLinkage linkage = foreignCalls.lookupForeignCall(DEOPTIMIZATION_HANDLER);
+            masm.adr(lr, 0); // Warning: the argument is an offset from the instruction!
+            AArch64Call.directJmp(crb, masm, linkage);
         } else {
             // No need to emit the stubs for entries back into the method since
             // it has no calls that can cause such "return" entries

@@ -64,7 +64,7 @@ public abstract class AbstractInlineInfo implements InlineInfo {
     @SuppressWarnings("try")
     public final void populateInlinableElements(HighTierContext context, StructuredGraph caller, CanonicalizerPhase canonicalizer, OptionValues options) {
         for (int i = 0; i < numberOfMethods(); i++) {
-            Inlineable elem = Inlineable.getInlineableElement(methodAt(i), invoke, context, canonicalizer);
+            Inlineable elem = Inlineable.getInlineableElement(methodAt(i), invoke, context, canonicalizer, caller.trackNodeSourcePosition());
             setInlinableElement(i, elem);
         }
     }

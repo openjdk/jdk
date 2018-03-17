@@ -120,6 +120,7 @@ ifeq ($(INCLUDE_GRAAL), true)
       SRC := \
           $(SRC_DIR)/org.graalvm.word/src \
           $(SRC_DIR)/org.graalvm.collections/src \
+          $(SRC_DIR)/org.graalvm.compiler.bytecode/src \
           $(SRC_DIR)/org.graalvm.compiler.replacements.verifier/src \
           $(SRC_DIR)/org.graalvm.compiler.api.replacements/src \
           $(SRC_DIR)/org.graalvm.compiler.code/src \

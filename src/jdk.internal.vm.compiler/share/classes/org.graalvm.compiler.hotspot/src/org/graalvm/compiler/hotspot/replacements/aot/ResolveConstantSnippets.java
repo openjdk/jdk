@@ -36,10 +36,10 @@ import org.graalvm.compiler.hotspot.nodes.aot.InitializeKlassNode;
 import org.graalvm.compiler.hotspot.nodes.aot.InitializeKlassStubCall;
 import org.graalvm.compiler.hotspot.nodes.aot.LoadConstantIndirectlyNode;
 import org.graalvm.compiler.hotspot.nodes.aot.LoadMethodCountersIndirectlyNode;
-import org.graalvm.compiler.hotspot.nodes.aot.ResolveDynamicStubCall;
 import org.graalvm.compiler.hotspot.nodes.aot.ResolveConstantNode;
-import org.graalvm.compiler.hotspot.nodes.aot.ResolveDynamicConstantNode;
 import org.graalvm.compiler.hotspot.nodes.aot.ResolveConstantStubCall;
+import org.graalvm.compiler.hotspot.nodes.aot.ResolveDynamicConstantNode;
+import org.graalvm.compiler.hotspot.nodes.aot.ResolveDynamicStubCall;
 import org.graalvm.compiler.hotspot.nodes.aot.ResolveMethodAndLoadCountersNode;
 import org.graalvm.compiler.hotspot.nodes.aot.ResolveMethodAndLoadCountersStubCall;
 import org.graalvm.compiler.hotspot.nodes.type.MethodPointerStamp;
@@ -141,7 +141,7 @@ public class ResolveConstantSnippets implements Snippets {
             Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
             args.add("constant", value);
 
-            SnippetTemplate template = template(graph.getDebug(), args);
+            SnippetTemplate template = template(resolveConstantNode, args);
             template.instantiate(providers.getMetaAccess(), resolveConstantNode, DEFAULT_REPLACER, args);
 
             assert resolveConstantNode.hasNoUsages();
@@ -180,7 +180,7 @@ public class ResolveConstantSnippets implements Snippets {
             Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
             args.add("constant", value);
 
-            SnippetTemplate template = template(graph.getDebug(), args);
+            SnippetTemplate template = template(resolveConstantNode, args);
             template.instantiate(providers.getMetaAccess(), resolveConstantNode, DEFAULT_REPLACER, args);
 
             assert resolveConstantNode.hasNoUsages();
@@ -200,7 +200,7 @@ public class ResolveConstantSnippets implements Snippets {
                 Arguments args = new Arguments(initializeKlass, graph.getGuardsStage(), tool.getLoweringStage());
                 args.add("constant", value);
 
-                SnippetTemplate template = template(graph.getDebug(), args);
+                SnippetTemplate template = template(initializeKlassNode, args);
                 template.instantiate(providers.getMetaAccess(), initializeKlassNode, DEFAULT_REPLACER, args);
                 assert initializeKlassNode.hasNoUsages();
                 if (!initializeKlassNode.isDeleted()) {
@@ -218,7 +218,7 @@ public class ResolveConstantSnippets implements Snippets {
             Arguments args = new Arguments(resolveMethodAndLoadCounters, graph.getGuardsStage(), tool.getLoweringStage());
             args.add("method", method);
             args.add("klassHint", resolveMethodAndLoadCountersNode.getHub());
-            SnippetTemplate template = template(graph.getDebug(), args);
+            SnippetTemplate template = template(resolveMethodAndLoadCountersNode, args);
             template.instantiate(providers.getMetaAccess(), resolveMethodAndLoadCountersNode, DEFAULT_REPLACER, args);
 
             assert resolveMethodAndLoadCountersNode.hasNoUsages();

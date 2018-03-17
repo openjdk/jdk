@@ -77,8 +77,7 @@ public class GraphEncoderTest extends GraalCompilerTest {
         }
 
         for (StructuredGraph originalGraph : originalGraphs) {
-            EncodedGraph encodedGraph = new EncodedGraph(encoder.getEncoding(), startOffsets.get(originalGraph), encoder.getObjects(), encoder.getNodeClasses(), originalGraph.getAssumptions(),
-                            originalGraph.getMethods());
+            EncodedGraph encodedGraph = new EncodedGraph(encoder.getEncoding(), startOffsets.get(originalGraph), encoder.getObjects(), encoder.getNodeClasses(), originalGraph);
             GraphEncoder.verifyEncoding(originalGraph, encodedGraph, getTarget().arch);
         }
     }

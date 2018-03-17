@@ -22,13 +22,14 @@
  */
 package org.graalvm.compiler.jtt.lang;
 
+import org.graalvm.compiler.options.OptionValues;
 import org.junit.Test;
 
-import org.graalvm.compiler.jtt.JTTTest;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /*
  */
-public class Math_cos extends JTTTest {
+public class Math_cos extends UnaryMath {
 
     @SuppressWarnings("serial")
     public static class NaN extends Throwable {
@@ -58,4 +59,10 @@ public class Math_cos extends JTTTest {
         runTest("test", java.lang.Double.POSITIVE_INFINITY);
     }
 
+    @Test
+    public void run3() {
+        OptionValues options = getInitialOptions();
+        ResolvedJavaMethod method = getResolvedJavaMethod("test");
+        testManyValues(options, method);
+    }
 }

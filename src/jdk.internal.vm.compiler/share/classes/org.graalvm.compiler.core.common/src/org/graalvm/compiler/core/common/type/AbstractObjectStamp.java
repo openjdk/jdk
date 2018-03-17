@@ -191,8 +191,6 @@ public abstract class AbstractObjectStamp extends AbstractPointerStamp {
         boolean joinExactType = exactType || other.exactType;
         if (Objects.equals(type, other.type)) {
             joinType = type;
-        } else if (type == null && other.type == null) {
-            joinType = null;
         } else if (type == null) {
             joinType = other.type;
         } else if (other.type == null) {
