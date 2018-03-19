@@ -22,15 +22,15 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_CARDTABLEMODREFBS_INLINE_HPP
-#define SHARE_VM_GC_SHARED_CARDTABLEMODREFBS_INLINE_HPP
+#ifndef SHARE_VM_GC_SHARED_CARDTABLEBARRIERSET_INLINE_HPP
+#define SHARE_VM_GC_SHARED_CARDTABLEBARRIERSET_INLINE_HPP
 
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "runtime/orderAccess.inline.hpp"
 
 template <DecoratorSet decorators, typename T>
-inline void CardTableModRefBS::write_ref_field_post(T* field, oop newVal) {
+inline void CardTableBarrierSet::write_ref_field_post(T* field, oop newVal) {
   volatile jbyte* byte = _card_table->byte_for(field);
   if (UseConcMarkSweepGC) {
     // Perform a releasing store if using CMS so that it may
@@ -41,4 +41,4 @@ inline void CardTableModRefBS::write_ref_field_post(T* field, oop newVal) {
   }
 }
 
-#endif // SHARE_VM_GC_SHARED_CARDTABLEMODREFBS_INLINE_HPP
+#endif // SHARE_VM_GC_SHARED_CARDTABLEBARRIERSET_INLINE_HPP

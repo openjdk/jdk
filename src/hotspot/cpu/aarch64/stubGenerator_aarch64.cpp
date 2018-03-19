@@ -27,7 +27,7 @@
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_aarch64.hpp"
 #include "oops/instanceOop.hpp"
@@ -654,7 +654,7 @@ class StubGenerator: public StubCodeGenerator {
         __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre), 2);
         __ pop(saved_regs, sp);
         break;
-      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableBarrierSet:
         break;
       default:
         ShouldNotReachHere();
@@ -695,9 +695,9 @@ class StubGenerator: public StubCodeGenerator {
           __ pop(saved_regs, sp);
         }
         break;
-      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableBarrierSet:
         {
-          CardTableModRefBS* ctbs = barrier_set_cast<CardTableModRefBS>(bs);
+          CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
           CardTable* ct = ctbs->card_table();
           assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
 

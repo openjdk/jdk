@@ -33,7 +33,7 @@
 #include "ci/ciInstance.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/barrierSet.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "nativeInst_s390.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
@@ -631,7 +631,7 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
   };
 
   // Index register is normally not supported, but for
-  // LIRGenerator::CardTableModRef_post_barrier we make an exception.
+  // LIRGenerator::CardTableBarrierSet_post_barrier we make an exception.
   if (type == T_BYTE && dest->as_address_ptr()->index()->is_valid()) {
     __ load_const_optimized(Z_R0_scratch, (int8_t)(c->as_jint()));
     store_offset = __ offset();

@@ -34,7 +34,7 @@
 #include "runtime/thread.inline.hpp"
 
 G1BarrierSet::G1BarrierSet(G1CardTable* card_table) :
-  CardTableModRefBS(card_table, BarrierSet::FakeRtti(BarrierSet::G1BarrierSet)),
+  CardTableBarrierSet(card_table, BarrierSet::FakeRtti(BarrierSet::G1BarrierSet)),
   _dcqs(JavaThread::dirty_card_queue_set())
 { }
 
@@ -167,7 +167,7 @@ void G1BarrierSet::on_thread_attach(JavaThread* thread) {
 
 void G1BarrierSet::on_thread_detach(JavaThread* thread) {
   // Flush any deferred card marks, SATB buffers and dirty card queue buffers
-  CardTableModRefBS::on_thread_detach(thread);
+  CardTableBarrierSet::on_thread_detach(thread);
   thread->satb_mark_queue().flush();
   thread->dirty_card_queue().flush();
 }

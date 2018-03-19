@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/barrierSet.inline.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableModRefBS.inline.hpp"
+#include "gc/shared/cardTableBarrierSet.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "runtime/frame.inline.hpp"
@@ -42,8 +42,8 @@ void JavaThread::cache_global_variables() {
     _heap_top_addr = NULL;
   }
 
-  if (bs->is_a(BarrierSet::CardTableModRef)) {
-    _card_table_base = (address) (barrier_set_cast<CardTableModRefBS>(bs)->card_table()->byte_map_base());
+  if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
+    _card_table_base = (address) (barrier_set_cast<CardTableBarrierSet>(bs)->card_table()->byte_map_base());
   } else {
     _card_table_base = NULL;
   }

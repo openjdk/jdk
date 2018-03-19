@@ -71,7 +71,7 @@ jint ParallelScavengeHeap::initialize() {
 
   PSCardTable* card_table = new PSCardTable(reserved_region());
   card_table->initialize();
-  CardTableModRefBS* const barrier_set = new CardTableModRefBS(card_table);
+  CardTableBarrierSet* const barrier_set = new CardTableBarrierSet(card_table);
   barrier_set->initialize();
   set_barrier_set(barrier_set);
 
@@ -626,8 +626,8 @@ ParallelScavengeHeap* ParallelScavengeHeap::heap() {
   return (ParallelScavengeHeap*)heap;
 }
 
-CardTableModRefBS* ParallelScavengeHeap::barrier_set() {
-  return barrier_set_cast<CardTableModRefBS>(CollectedHeap::barrier_set());
+CardTableBarrierSet* ParallelScavengeHeap::barrier_set() {
+  return barrier_set_cast<CardTableBarrierSet>(CollectedHeap::barrier_set());
 }
 
 PSCardTable* ParallelScavengeHeap::card_table() {

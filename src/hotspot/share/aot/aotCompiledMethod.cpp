@@ -30,7 +30,7 @@
 #include "code/compiledIC.hpp"
 #include "code/nativeInst.hpp"
 #include "compiler/compilerOracle.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "jvmci/compilerRuntime.hpp"

@@ -27,7 +27,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "ci/ciUtilities.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_x86.hpp"
 #include "oops/instanceOop.hpp"
@@ -1235,7 +1235,7 @@ class StubGenerator: public StubCodeGenerator {
            __ bind(filtered);
         }
          break;
-      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableBarrierSet:
         break;
       default:
         ShouldNotReachHere();
@@ -1273,7 +1273,7 @@ class StubGenerator: public StubCodeGenerator {
           __ popa();
         }
         break;
-      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableBarrierSet:
         {
           Label L_loop, L_done;
           const Register end = count;

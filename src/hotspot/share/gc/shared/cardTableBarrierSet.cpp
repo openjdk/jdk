@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/cardTableModRefBS.inline.hpp"
+#include "gc/shared/cardTableBarrierSet.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/space.inline.hpp"
@@ -39,37 +39,37 @@
 // enumerate ref fields that have been modified (since the last
 // enumeration.)
 
-CardTableModRefBS::CardTableModRefBS(
+CardTableBarrierSet::CardTableBarrierSet(
   CardTable* card_table,
   const BarrierSet::FakeRtti& fake_rtti) :
-  ModRefBarrierSet(fake_rtti.add_tag(BarrierSet::CardTableModRef)),
+  ModRefBarrierSet(fake_rtti.add_tag(BarrierSet::CardTableBarrierSet)),
   _defer_initial_card_mark(false),
   _card_table(card_table)
 {}
 
-CardTableModRefBS::CardTableModRefBS(CardTable* card_table) :
-  ModRefBarrierSet(BarrierSet::FakeRtti(BarrierSet::CardTableModRef)),
+CardTableBarrierSet::CardTableBarrierSet(CardTable* card_table) :
+  ModRefBarrierSet(BarrierSet::FakeRtti(BarrierSet::CardTableBarrierSet)),
   _defer_initial_card_mark(false),
   _card_table(card_table)
 {}
 
-void CardTableModRefBS::initialize() {
+void CardTableBarrierSet::initialize() {
   initialize_deferred_card_mark_barriers();
 }
 
-CardTableModRefBS::~CardTableModRefBS() {
+CardTableBarrierSet::~CardTableBarrierSet() {
   delete _card_table;
 }
 
-void CardTableModRefBS::write_ref_array_work(MemRegion mr) {
+void CardTableBarrierSet::write_ref_array_work(MemRegion mr) {
   _card_table->dirty_MemRegion(mr);
 }
 
-void CardTableModRefBS::invalidate(MemRegion mr) {
+void CardTableBarrierSet::invalidate(MemRegion mr) {
   _card_table->invalidate(mr);
 }
 
-void CardTableModRefBS::print_on(outputStream* st) const {
+void CardTableBarrierSet::print_on(outputStream* st) const {
   _card_table->print_on(st);
 }
 
@@ -115,7 +115,7 @@ void CardTableModRefBS::print_on(outputStream* st) const {
 // For any future collector, this code should be reexamined with
 // that specific collector in mind, and the documentation above suitably
 // extended and updated.
-void CardTableModRefBS::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
+void CardTableBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
 #if defined(COMPILER2) || INCLUDE_JVMCI
   if (!ReduceInitialCardMarks) {
     return;
@@ -141,7 +141,7 @@ void CardTableModRefBS::on_slowpath_allocation_exit(JavaThread* thread, oop new_
 #endif // COMPILER2 || JVMCI
 }
 
-void CardTableModRefBS::initialize_deferred_card_mark_barriers() {
+void CardTableBarrierSet::initialize_deferred_card_mark_barriers() {
   // Used for ReduceInitialCardMarks (when COMPILER2 or JVMCI is used);
   // otherwise remains unused.
 #if defined(COMPILER2) || INCLUDE_JVMCI
@@ -152,7 +152,7 @@ void CardTableModRefBS::initialize_deferred_card_mark_barriers() {
 #endif
 }
 
-void CardTableModRefBS::flush_deferred_card_mark_barrier(JavaThread* thread) {
+void CardTableBarrierSet::flush_deferred_card_mark_barrier(JavaThread* thread) {
 #if defined(COMPILER2) || INCLUDE_JVMCI
   MemRegion deferred = thread->deferred_card_mark();
   if (!deferred.is_empty()) {
@@ -177,13 +177,13 @@ void CardTableModRefBS::flush_deferred_card_mark_barrier(JavaThread* thread) {
 #endif
 }
 
-void CardTableModRefBS::on_thread_detach(JavaThread* thread) {
+void CardTableBarrierSet::on_thread_detach(JavaThread* thread) {
   // The deferred store barriers must all have been flushed to the
   // card-table (or other remembered set structure) before GC starts
   // processing the card-table (or other remembered set).
   flush_deferred_card_mark_barrier(thread);
 }
 
-bool CardTableModRefBS::card_mark_must_follow_store() const {
+bool CardTableBarrierSet::card_mark_must_follow_store() const {
  return _card_table->scanned_concurrently();
 }

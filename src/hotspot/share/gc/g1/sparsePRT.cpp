@@ -27,7 +27,7 @@
 #include "gc/g1/heapRegionBounds.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/sparsePRT.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
