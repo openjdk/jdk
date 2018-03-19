@@ -26,6 +26,7 @@
  * @library /lib/testlibrary /test/lib
  * @modules java.base/jdk.internal.module
  *          jdk.compiler
+ *          jdk.jlink
  * @build ModuleReaderTest jdk.test.lib.compiler.CompilerUtils JarUtils
  * @run testng ModuleReaderTest
  * @summary Basic tests for java.lang.module.ModuleReader
