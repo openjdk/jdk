@@ -739,7 +739,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   $(BUILD_LIBJAWT): $(BUILD_LIBAWT)
 
   $(eval $(call SetupCopyFiles, COPY_JAWT_LIB, \
-      FILES := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjawt/$(LIBRARY_PREFIX)jawt$(STATIC_LIBRARY_SUFFIX), \
+      FILES := $(BUILD_LIBJAWT_IMPORT_LIBRARY), \
       DEST := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
   ))
 
