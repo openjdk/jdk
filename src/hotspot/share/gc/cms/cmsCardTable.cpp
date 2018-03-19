@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/cms/cmsHeap.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/space.inline.hpp"

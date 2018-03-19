@@ -33,7 +33,7 @@
 #include "ci/ciInstance.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/barrierSet.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "nativeInst_ppc.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/safepointMechanism.inline.hpp"

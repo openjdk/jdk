@@ -27,7 +27,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "registerSaver_s390.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "nativeInst_s390.hpp"
@@ -724,7 +724,7 @@ class StubGenerator: public StubCodeGenerator {
           __ bind(filtered);
         }
         break;
-      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableBarrierSet:
       case BarrierSet::ModRef:
         break;
       default:
@@ -762,12 +762,12 @@ class StubGenerator: public StubCodeGenerator {
           }
         }
         break;
-      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableBarrierSet:
         // These cases formerly known as
         //   void array_store_check(Register addr, Register count, bool branchToEnd).
         {
           NearLabel doXC, done;
-          CardTableModRefBS* ctbs = barrier_set_cast<CardTableModRefBS>(bs);
+          CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
           CardTable* ct = ctbs->card_table();
           assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
           assert_different_registers(Z_R0, Z_R1, addr, count);

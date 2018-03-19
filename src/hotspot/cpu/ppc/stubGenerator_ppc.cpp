@@ -26,7 +26,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_ppc.hpp"
 #include "oops/instanceOop.hpp"
@@ -669,7 +669,7 @@ class StubGenerator: public StubCodeGenerator {
           __ bind(filtered);
         }
         break;
-      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableBarrierSet:
         break;
       default:
         ShouldNotReachHere();
@@ -703,7 +703,7 @@ class StubGenerator: public StubCodeGenerator {
           __ restore_LR_CR(R0);
         }
         break;
-      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableBarrierSet:
         {
           Label Lskip_loop, Lstore_loop;
           if (UseConcMarkSweepGC) {
@@ -711,7 +711,7 @@ class StubGenerator: public StubCodeGenerator {
             __ release();
           }
 
-          CardTableModRefBS* const ctbs = barrier_set_cast<CardTableModRefBS>(bs);
+          CardTableBarrierSet* const ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
           CardTable* const ct = ctbs->card_table();
           assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
           assert_different_registers(addr, count, tmp);

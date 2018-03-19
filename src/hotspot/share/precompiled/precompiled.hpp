@@ -95,7 +95,7 @@
 # include "gc/shared/ageTable.hpp"
 # include "gc/shared/barrierSet.hpp"
 # include "gc/shared/blockOffsetTable.hpp"
-# include "gc/shared/cardTableModRefBS.hpp"
+# include "gc/shared/cardTableBarrierSet.hpp"
 # include "gc/shared/collectedHeap.hpp"
 # include "gc/shared/collectorCounters.hpp"
 # include "gc/shared/collectorPolicy.hpp"

@@ -571,7 +571,7 @@ void CardTableRS::verify_space(Space* s, HeapWord* gen_boundary) {
       //   [End Case 3]
       //
       // (Please refer to the code in the helper class
-      // ClearNonCleanCardWrapper and in CardTableModRefBS for details.)
+      // ClearNonCleanCardWrapper and in CardTable for details.)
       //
       // The informal arguments above can be tightened into a formal
       // correctness proof and it behooves us to write up such a proof,

@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_CARDTABLEMODREFBS_HPP
-#define SHARE_VM_GC_SHARED_CARDTABLEMODREFBS_HPP
+#ifndef SHARE_VM_GC_SHARED_CARDTABLEBARRIERSET_HPP
+#define SHARE_VM_GC_SHARED_CARDTABLEBARRIERSET_HPP
 
 #include "gc/shared/modRefBarrierSet.hpp"
 #include "utilities/align.hpp"
@@ -42,7 +42,7 @@ class CardTable;
 // Closures used to scan dirty cards should take these
 // considerations into account.
 
-class CardTableModRefBS: public ModRefBarrierSet {
+class CardTableBarrierSet: public ModRefBarrierSet {
   // Some classes get to look at some private stuff.
   friend class VMStructs;
  protected:
@@ -52,11 +52,11 @@ class CardTableModRefBS: public ModRefBarrierSet {
   bool       _defer_initial_card_mark;
   CardTable* _card_table;
 
-  CardTableModRefBS(CardTable* card_table, const BarrierSet::FakeRtti& fake_rtti);
+  CardTableBarrierSet(CardTable* card_table, const BarrierSet::FakeRtti& fake_rtti);
 
  public:
-  CardTableModRefBS(CardTable* card_table);
-  ~CardTableModRefBS();
+  CardTableBarrierSet(CardTable* card_table);
+  ~CardTableBarrierSet();
 
   CardTable* card_table() const { return _card_table; }
 
@@ -122,18 +122,18 @@ class CardTableModRefBS: public ModRefBarrierSet {
 
   virtual void print_on(outputStream* st) const;
 
-  template <DecoratorSet decorators, typename BarrierSetT = CardTableModRefBS>
+  template <DecoratorSet decorators, typename BarrierSetT = CardTableBarrierSet>
   class AccessBarrier: public ModRefBarrierSet::AccessBarrier<decorators, BarrierSetT> {};
 };
 
 template<>
-struct BarrierSet::GetName<CardTableModRefBS> {
-  static const BarrierSet::Name value = BarrierSet::CardTableModRef;
+struct BarrierSet::GetName<CardTableBarrierSet> {
+  static const BarrierSet::Name value = BarrierSet::CardTableBarrierSet;
 };
 
 template<>
-struct BarrierSet::GetType<BarrierSet::CardTableModRef> {
-  typedef CardTableModRefBS type;
+struct BarrierSet::GetType<BarrierSet::CardTableBarrierSet> {
+  typedef ::CardTableBarrierSet type;
 };
 
-#endif // SHARE_VM_GC_SHARED_CARDTABLEMODREFBS_HPP
+#endif // SHARE_VM_GC_SHARED_CARDTABLEBARRIERSET_HPP

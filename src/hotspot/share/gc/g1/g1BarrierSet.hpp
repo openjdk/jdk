@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_GC_G1_G1BARRIERSET_HPP
 #define SHARE_VM_GC_G1_G1BARRIERSET_HPP
 
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 
 class DirtyCardQueueSet;
 class CardTable;
@@ -34,7 +34,7 @@ class G1CardTable;
 // This barrier is specialized to use a logging barrier to support
 // snapshot-at-the-beginning marking.
 
-class G1BarrierSet: public CardTableModRefBS {
+class G1BarrierSet: public CardTableBarrierSet {
   friend class VMStructs;
  private:
   DirtyCardQueueSet& _dcqs;

@@ -26,7 +26,7 @@
 #include "asm/assembler.hpp"
 #include "assembler_arm.inline.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_arm.hpp"
 #include "oops/instanceOop.hpp"
@@ -2909,7 +2909,7 @@ class StubGenerator: public StubCodeGenerator {
         __ pop(saved_regs | R9ifScratched);
 #endif // AARCH64
       }
-    case BarrierSet::CardTableModRef:
+    case BarrierSet::CardTableBarrierSet:
       break;
     default:
       ShouldNotReachHere();
@@ -2962,10 +2962,10 @@ class StubGenerator: public StubCodeGenerator {
 #endif // !AARCH64
       }
       break;
-    case BarrierSet::CardTableModRef:
+    case BarrierSet::CardTableBarrierSet:
       {
         BLOCK_COMMENT("CardTablePostBarrier");
-        CardTableModRefBS* ctbs = barrier_set_cast<CardTableModRefBS>(bs);
+        CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
         CardTable* ct = ctbs->card_table();
         assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
 

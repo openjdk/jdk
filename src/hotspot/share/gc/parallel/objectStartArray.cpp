@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"

@@ -28,7 +28,7 @@
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "interpreter/abstractInterpreter.hpp"

@@ -26,7 +26,7 @@
 #include "jvm.h"
 #include "gc/shared/barrierSet.inline.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableModRefBS.inline.hpp"
+#include "gc/shared/cardTableBarrierSet.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interp_masm_arm.hpp"
 #include "interpreter/interpreter.hpp"
@@ -411,10 +411,10 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
 void InterpreterMacroAssembler::store_check_part1(Register card_table_base) {
   // Check barrier set type (should be card table) and element size
   BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->kind() == BarrierSet::CardTableModRef,
+  assert(bs->kind() == BarrierSet::CardTableBarrierSet,
          "Wrong barrier set kind");
 
-  CardTableModRefBS* ctbs = barrier_set_cast<CardTableModRefBS>(bs);
+  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
   assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "Adjust store check code");
 
@@ -473,7 +473,7 @@ void InterpreterMacroAssembler::set_card(Register card_table_base, Address card_
 #ifdef AARCH64
   strb(ZR, card_table_addr);
 #else
-  CardTableModRefBS* ctbs = barrier_set_cast<CardTableModRefBS>(Universe::heap()->barrier_set());
+  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(Universe::heap()->barrier_set());
   CardTable* ct = ctbs->card_table();
   if ((((uintptr_t)ct->byte_map_base() & 0xff) == 0)) {
     // Card table is aligned so the lowest byte of the table address base is zero.

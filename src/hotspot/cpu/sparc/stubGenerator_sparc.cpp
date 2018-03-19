@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_sparc.hpp"
 #include "oops/instanceOop.hpp"
@@ -877,7 +877,7 @@ class StubGenerator: public StubCodeGenerator {
           DEBUG_ONLY(__ set(0xDEADC0DE, tmp);) // we have killed tmp
         }
         break;
-      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableBarrierSet:
         break;
       default:
         ShouldNotReachHere();
@@ -908,9 +908,9 @@ class StubGenerator: public StubCodeGenerator {
           __ restore();
         }
         break;
-      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableBarrierSet:
         {
-          CardTableModRefBS* ctbs = barrier_set_cast<CardTableModRefBS>(bs);
+          CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
           CardTable* ct = ctbs->card_table();
           assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
           assert_different_registers(addr, count, tmp);

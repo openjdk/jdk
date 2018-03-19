@@ -30,7 +30,7 @@
 #include "code/nativeInst.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
@@ -2267,7 +2267,7 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
                                    DirtyCardQueue::byte_offset_of_buf()));
 
   BarrierSet* bs = Universe::heap()->barrier_set();
-  CardTableModRefBS* ctbs = barrier_set_cast<CardTableModRefBS>(bs);
+  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
   Label done;
   Label runtime;
