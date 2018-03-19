@@ -289,7 +289,8 @@ struct Flag {
 
   // printRanges will print out flags type, name and range values as expected by -XX:+PrintFlagsRanges
   void print_on(outputStream* st, bool withComments = false, bool printRanges = false);
-  void print_kind_and_origin(outputStream* st);
+  void print_kind(outputStream* st, unsigned int width);
+  void print_origin(outputStream* st, unsigned int width);
   void print_as_flag(outputStream* st);
 
   static const char* flag_error_str(Flag::Error error);
