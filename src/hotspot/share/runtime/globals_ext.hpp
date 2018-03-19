@@ -61,9 +61,10 @@ inline bool Flag::is_external_ext() const {
   return false;
 }
 
-inline void Flag::get_locked_message_ext(char* buf, int buflen) const {
+inline Flag::MsgType Flag::get_locked_message_ext(char* buf, int buflen) const {
   assert(buf != NULL, "Buffer cannot be NULL");
   buf[0] = '\0';
+  return Flag::NONE;
 }
 
 #endif // SHARE_VM_RUNTIME_GLOBALS_EXT_HPP
