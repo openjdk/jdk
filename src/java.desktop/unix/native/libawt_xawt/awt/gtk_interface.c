@@ -45,18 +45,18 @@ typedef struct {
 
 static GtkLib gtk_libs[] = {
     {
-        GTK_2,
-        JNI_LIB_NAME("gtk-x11-2.0"),
-        VERSIONED_JNI_LIB_NAME("gtk-x11-2.0", "0"),
-        &gtk2_load,
-        &gtk2_check
-    },
-    {
         GTK_3,
         JNI_LIB_NAME("gtk-3"),
         VERSIONED_JNI_LIB_NAME("gtk-3", "0"),
         &gtk3_load,
         &gtk3_check
+    },
+    {
+        GTK_2,
+        JNI_LIB_NAME("gtk-x11-2.0"),
+        VERSIONED_JNI_LIB_NAME("gtk-x11-2.0", "0"),
+        &gtk2_load,
+        &gtk2_check
     }
 };
 
