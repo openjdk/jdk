@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package java.io;
 
+
+import java.util.Objects;
 
 /**
  * Abstract class for writing to character streams.  The only methods that a
@@ -57,6 +59,91 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      * Size of writeBuffer, must be >= 1
      */
     private static final int WRITE_BUFFER_SIZE = 1024;
+
+    /**
+     * Returns a new {@code Writer} which discards all characters.  The
+     * returned stream is initially open.  The stream is closed by calling
+     * the {@code close()} method.  Subsequent calls to {@code close()} have
+     * no effect.
+     *
+     * <p> While the stream is open, the {@code append(char)}, {@code
+     * append(CharSequence)}, {@code append(CharSequence, int, int)},
+     * {@code flush()}, {@code write(int)}, {@code write(char[])}, and
+     * {@code write(char[], int, int)} methods do nothing. After the stream
+     * has been closed, these methods all throw {@code IOException}.
+     *
+     * <p> The {@link #lock object} used to synchronize operations on the
+     * returned {@code Writer} is not specified.
+     *
+     * @return a {@code Writer} which discards all characters
+     *
+     * @since 11
+     */
+    public static Writer nullWriter() {
+        return new Writer() {
+            private volatile boolean closed;
+
+            private void ensureOpen() throws IOException {
+                if (closed) {
+                    throw new IOException("Stream closed");
+                }
+            }
+
+            @Override
+            public Writer append(char c) throws IOException {
+                ensureOpen();
+                return this;
+            }
+
+            @Override
+            public Writer append(CharSequence csq) throws IOException {
+                ensureOpen();
+                return this;
+            }
+
+            @Override
+            public Writer append(CharSequence csq, int start, int end) throws IOException {
+                ensureOpen();
+                if (csq != null) {
+                    Objects.checkFromToIndex(start, end, csq.length());
+                }
+                return this;
+            }
+
+            @Override
+            public void write(int c) throws IOException {
+                ensureOpen();
+            }
+
+            @Override
+            public void write(char[] cbuf, int off, int len) throws IOException {
+                Objects.checkFromIndexSize(off, len, cbuf.length);
+                ensureOpen();
+            }
+
+            @Override
+            public void write(String str) throws IOException {
+                Objects.requireNonNull(str);
+                ensureOpen();
+            }
+
+            @Override
+            public void write(String str, int off, int len) throws IOException {
+                Objects.checkFromIndexSize(off, len, str.length());
+                ensureOpen();
+            }
+
+            @Override
+            public void flush() throws IOException {
+                ensureOpen();
+            }
+
+            @Override
+            public void close() throws IOException {
+                closed = true;
+            }
+        };
+    }
 
     /**
      * The object used to synchronize operations on this stream.  For
