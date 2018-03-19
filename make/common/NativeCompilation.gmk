@@ -798,10 +798,6 @@ define SetupNativeCompilationBody
               "-map:$$($1_OUTPUT_DIR)/$$($1_NOSUFFIX).map"
           $1_DEBUGINFO_FILES := $$($1_OUTPUT_DIR)/$$($1_NOSUFFIX).pdb \
               $$($1_OUTPUT_DIR)/$$($1_NOSUFFIX).map
-          # No separate command is needed for debuginfo on windows, instead
-          # touch target to make sure it has a later time stamp than the debug
-          # symbol files to avoid unnecessary relinking on rebuild.
-          $1_CREATE_DEBUGINFO_CMDS := $(TOUCH) $$($1_TARGET)
 
         else ifneq ($(findstring $(OPENJDK_TARGET_OS), linux solaris), )
           $1_DEBUGINFO_FILES := $$($1_OUTPUT_DIR)/$$($1_NOSUFFIX).debuginfo
@@ -816,15 +812,23 @@ define SetupNativeCompilationBody
           $1_DEBUGINFO_FILES := \
               $$($1_OUTPUT_DIR)/$$($1_BASENAME).dSYM/Contents/Info.plist \
               $$($1_OUTPUT_DIR)/$$($1_BASENAME).dSYM/Contents/Resources/DWARF/$$($1_BASENAME)
-          # On Macosx, the debuginfo generation doesn't touch the linked binary, but
-          # to avoid always relinking, touch it anyway to force a later timestamp than
-          # the dSYM files.
           $1_CREATE_DEBUGINFO_CMDS := \
-              $(DSYMUTIL) --out $$($1_OUTPUT_DIR)/$$($1_BASENAME).dSYM $$($1_TARGET) $$(NEWLINE) \
-              $(TOUCH) $$($1_TARGET)
+              $(DSYMUTIL) --out $$($1_OUTPUT_DIR)/$$($1_BASENAME).dSYM $$($1_TARGET)
         endif # OPENJDK_TARGET_OS
 
+        # Since the link rule creates more than one file that we want to track,
+        # we have to use some tricks to get make to cooperate. To properly
+        # trigger downstream dependants of $$($1_DEBUGINFO_FILES), we must have
+        # a recipe in the rule below. To avoid rerunning the recipe every time
+        # have it touch the target. If a debuginfo file is deleted by something
+        # external, explicitly delete the TARGET to trigger a rebuild of both.
+        ifneq ($$(wildcard $$($1_DEBUGINFO_FILES)), $$($1_DEBUGINFO_FILES))
+          $$(call LogDebug, Deleting $$($1_BASENAME) because debuginfo files are missing)
+          $$(shell $(RM) $$($1_TARGET))
+        endif
         $$($1_DEBUGINFO_FILES): $$($1_TARGET)
+		$$(if $$(wildcard $$@), , $$(error $$@ was not created for $$<))
+		$(TOUCH) $$@
 
         $1 += $$($1_DEBUGINFO_FILES)
 
@@ -859,9 +863,20 @@ define SetupNativeCompilationBody
     # Generating a dynamic library.
     $1_EXTRA_LDFLAGS += $$(call SET_SHARED_LIBRARY_NAME,$$($1_BASENAME))
     ifeq ($(OPENJDK_TARGET_OS), windows)
-      $1_EXTRA_LDFLAGS += "-implib:$$($1_OBJECT_DIR)/$$($1_NAME).lib"
-      # Create a rule for the import lib so that other rules may depend on it
-      $$($1_OBJECT_DIR)/$$($1_NAME).lib: $$($1_TARGET)
+      $1_IMPORT_LIBRARY := $$($1_OBJECT_DIR)/$$($1_NAME).lib
+      $1_EXTRA_LDFLAGS += "-implib:$$($1_IMPORT_LIBRARY)"
+      # To properly trigger downstream dependants of the import library, just as
+      # for debug files, we must have a recipe in the rule. To avoid rerunning
+      # the recipe every time have it touch the target. If an import library
+      # file is deleted by something external, explicitly delete the target to
+      # trigger a rebuild of both.
+      ifneq ($$(wildcard $$($1_IMPORT_LIBRARY)), $$($1_IMPORT_LIBRARY))
+        $$(call LogDebug, Deleting $$($1_BASENAME) because import library is missing)
+        $$(shell $(RM) $$($1_TARGET))
+      endif
+      $$($1_IMPORT_LIBRARY): $$($1_TARGET)
+		$$(if $$(wildcard $$@), , $$(error $$@ was not created for $$<))
+		$(TOUCH) $$@
     endif
 
     # Create loadmap on AIX. Helps in diagnosing some problems.

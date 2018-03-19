@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,7 @@ public class TestSocketFactory extends RMISocketFactory
      * @param matchBytes bytes to match after the trigger has been seen
      * @param replaceBytes bytes to replace the matched bytes
      */
-    public void setMatchReplaceBytes(byte[] triggerBytes, byte[] matchBytes,
+    public synchronized void setMatchReplaceBytes(byte[] triggerBytes, byte[] matchBytes,
                                      byte[] replaceBytes) {
         this.triggerBytes = Objects.requireNonNull(triggerBytes, "triggerBytes");
         this.matchBytes = Objects.requireNonNull(matchBytes, "matchBytes");
@@ -147,7 +147,7 @@ public class TestSocketFactory extends RMISocketFactory
     }
 
     @Override
-    public Socket createSocket(String host, int port) throws IOException {
+    public synchronized Socket createSocket(String host, int port) throws IOException {
         Socket socket = RMISocketFactory.getDefaultSocketFactory()
                 .createSocket(host, port);
         InterposeSocket s = new InterposeSocket(socket,
@@ -160,13 +160,13 @@ public class TestSocketFactory extends RMISocketFactory
      * Return the current list of sockets.
      * @return Return a snapshot of the current list of sockets
      */
-    public List<InterposeSocket> getSockets() {
+    public synchronized List<InterposeSocket> getSockets() {
         List<InterposeSocket> snap = new ArrayList<>(sockets);
         return snap;
     }
 
     @Override
-    public ServerSocket createServerSocket(int port) throws IOException {
+    public synchronized ServerSocket createServerSocket(int port) throws IOException {
 
         ServerSocket serverSocket = RMISocketFactory.getDefaultSocketFactory()
                 .createServerSocket(port);
@@ -180,7 +180,7 @@ public class TestSocketFactory extends RMISocketFactory
      * Return the current list of server sockets.
      * @return Return a snapshot of the current list of server sockets
      */
-    public List<InterposeServerSocket> getServerSockets() {
+    public synchronized List<InterposeServerSocket> getServerSockets() {
         List<InterposeServerSocket> snap = new ArrayList<>(serverSockets);
         return snap;
     }
@@ -202,7 +202,7 @@ public class TestSocketFactory extends RMISocketFactory
         private final ByteArrayOutputStream inLogStream;
         private final ByteArrayOutputStream outLogStream;
         private final String name;
-        private static volatile int num = 0;    // index for created InterposeSockets
+        private static volatile int num = 0;    // index for created Interpose509s
 
         /**
          * Construct a socket that interposes on a socket to match and replace.
@@ -457,7 +457,7 @@ public class TestSocketFactory extends RMISocketFactory
          * @param matchBytes bytes to match after the trigger has been seen
          * @param replaceBytes bytes to replace the matched bytes
          */
-        public void setMatchReplaceBytes(byte[] triggerBytes, byte[] matchBytes,
+        public synchronized void setMatchReplaceBytes(byte[] triggerBytes, byte[] matchBytes,
                                          byte[] replaceBytes) {
             this.triggerBytes = triggerBytes;
             this.matchBytes = matchBytes;
@@ -468,7 +468,7 @@ public class TestSocketFactory extends RMISocketFactory
          * Return a snapshot of the current list of sockets created from this server socket.
          * @return Return a snapshot of the current list of sockets
          */
-        public List<InterposeSocket> getSockets() {
+        public synchronized List<InterposeSocket> getSockets() {
             List<InterposeSocket> snap = new ArrayList<>(sockets);
             return snap;
         }
@@ -501,9 +501,12 @@ public class TestSocketFactory extends RMISocketFactory
         @Override
         public Socket accept() throws IOException {
             Socket s = socket.accept();
-            InterposeSocket socket = new InterposeSocket(s, matchBytes, replaceBytes);
-            sockets.add(socket);
-            return socket;
+            synchronized(this) {
+                InterposeSocket aSocket = new InterposeSocket(s, matchBytes,
+                        replaceBytes);
+                sockets.add(aSocket);
+                return aSocket;
+            }
         }
 
         @Override
