@@ -1012,12 +1012,6 @@ inline intptr_t bitfield(intptr_t x, int start_bit_no, int field_length) {
 #undef min
 #endif
 
-// The following defines serve the purpose of preventing use of accidentally
-// included min max macros from compiling, while continuing to allow innocent
-// min and max identifiers in the code to compile as intended.
-#define max max
-#define min min
-
 // It is necessary to use templates here. Having normal overloaded
 // functions does not work because it is necessary to provide both 32-
 // and 64-bit overloaded functions, which does not work, and having
