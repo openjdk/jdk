@@ -447,8 +447,7 @@ Flag::MsgType Flag::get_locked_message(char* buf, int buflen) const {
                  _name);
     return Flag::NOTPRODUCT_FLAG_BUT_PRODUCT_BUILD;
   }
-  get_locked_message_ext(buf, buflen);
-  return Flag::NONE;
+  return get_locked_message_ext(buf, buflen);
 }
 
 bool Flag::is_writeable() const {

@@ -184,7 +184,9 @@ struct Flag {
     DIAGNOSTIC_FLAG_BUT_LOCKED,
     EXPERIMENTAL_FLAG_BUT_LOCKED,
     DEVELOPER_FLAG_BUT_PRODUCT_BUILD,
-    NOTPRODUCT_FLAG_BUT_PRODUCT_BUILD
+    NOTPRODUCT_FLAG_BUT_PRODUCT_BUILD,
+    COMMERCIAL_FLAG_BUT_DISABLED,
+    COMMERCIAL_FLAG_BUT_LOCKED
   };
 
   const char* _type;
@@ -285,7 +287,7 @@ struct Flag {
   void clear_diagnostic();
 
   Flag::MsgType get_locked_message(char*, int) const;
-  void get_locked_message_ext(char*, int) const;
+  Flag::MsgType get_locked_message_ext(char*, int) const;
 
   // printRanges will print out flags type, name and range values as expected by -XX:+PrintFlagsRanges
   void print_on(outputStream* st, bool withComments = false, bool printRanges = false);
