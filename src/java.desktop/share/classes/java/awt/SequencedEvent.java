@@ -135,11 +135,7 @@ class SequencedEvent extends AWTEvent implements ActiveEvent {
                     if (Thread.currentThread() instanceof EventDispatchThread) {
                         EventDispatchThread edt = (EventDispatchThread)
                                 Thread.currentThread();
-                        edt.pumpEvents(SentEvent.ID, new Conditional() {
-                            public boolean evaluate() {
-                                return !SequencedEvent.this.isFirstOrDisposed();
-                            }
-                        });
+                        edt.pumpEvents(ID, () -> !SequencedEvent.this.isFirstOrDisposed());
                     } else {
                         if (fxAppThreadIsDispatchThread) {
                             fxCheckSequenceThread.start();
