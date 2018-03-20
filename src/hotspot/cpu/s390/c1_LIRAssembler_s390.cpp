@@ -1895,6 +1895,15 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
   // If we don't know anything, just go through the generic arraycopy.
   if (default_type == NULL) {
+    address copyfunc_addr = StubRoutines::generic_arraycopy();
+
+    if (copyfunc_addr == NULL) {
+      // Take a slow path for generic arraycopy.
+      __ branch_optimized(Assembler::bcondAlways, *stub->entry());
+      __ bind(*stub->continuation());
+      return;
+    }
+
     Label done;
     // Save outgoing arguments in callee saved registers (C convention) in case
     // a call to System.arraycopy is needed.
@@ -1915,10 +1924,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     __ z_lgfr(dst_pos, dst_pos);
     __ z_lgfr(length, length);
 
-    address C_entry = CAST_FROM_FN_PTR(address, Runtime1::arraycopy);
-
-    address copyfunc_addr = StubRoutines::generic_arraycopy();
-
     // Pass arguments: may push as this is not a safepoint; SP must be fix at each safepoint.
 
     // The arguments are in the corresponding registers.
@@ -1927,25 +1932,19 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     assert(Z_ARG3 == dst,     "assumption");
     assert(Z_ARG4 == dst_pos, "assumption");
     assert(Z_ARG5 == length,  "assumption");
-    if (copyfunc_addr == NULL) { // Use C version if stub was not generated.
-      emit_call_c(C_entry);
-    } else {
 #ifndef PRODUCT
-      if (PrintC1Statistics) {
-        __ load_const_optimized(Z_R1_scratch, (address)&Runtime1::_generic_arraycopystub_cnt);
-        __ add2mem_32(Address(Z_R1_scratch), 1, Z_R0_scratch);
-      }
-#endif
-      emit_call_c(copyfunc_addr);
+    if (PrintC1Statistics) {
+      __ load_const_optimized(Z_R1_scratch, (address)&Runtime1::_generic_arraycopystub_cnt);
+      __ add2mem_32(Address(Z_R1_scratch), 1, Z_R0_scratch);
     }
+#endif
+    emit_call_c(copyfunc_addr);
     CHECK_BAILOUT();
 
     __ compare32_and_branch(Z_RET, (intptr_t)0, Assembler::bcondEqual, *stub->continuation());
 
-    if (copyfunc_addr != NULL) {
-      __ z_lgr(tmp, Z_RET);
-      __ z_xilf(tmp, -1);
-    }
+    __ z_lgr(tmp, Z_RET);
+    __ z_xilf(tmp, -1);
 
     // Restore values from callee saved registers so they are where the stub
     // expects them.
@@ -1955,11 +1954,9 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     __ lgr_if_needed(dst_pos, callee_saved_dst_pos);
     __ lgr_if_needed(length, callee_saved_length);
 
-    if (copyfunc_addr != NULL) {
-      __ z_sr(length, tmp);
-      __ z_ar(src_pos, tmp);
-      __ z_ar(dst_pos, tmp);
-    }
+    __ z_sr(length, tmp);
+    __ z_ar(src_pos, tmp);
+    __ z_ar(dst_pos, tmp);
     __ branch_optimized(Assembler::bcondAlways, *stub->entry());
 
     __ bind(*stub->continuation());
