@@ -585,3 +585,12 @@ void CollectedHeap::initialize_reserved_region(HeapWord *start, HeapWord *end) {
 void CollectedHeap::post_initialize() {
   initialize_serviceability();
 }
+
+oop CollectedHeap::pin_object(JavaThread* thread, oop o) {
+  GCLocker::lock_critical(thread);
+  return o;
+}
+
+void CollectedHeap::unpin_object(JavaThread* thread, oop o) {
+  GCLocker::unlock_critical(thread);
+}
