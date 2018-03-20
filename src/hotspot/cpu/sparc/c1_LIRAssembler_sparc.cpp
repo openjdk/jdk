@@ -1879,29 +1879,21 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     __ mov(dst_pos, O3);
     __ mov(length,  O4);
     address copyfunc_addr = StubRoutines::generic_arraycopy();
+    assert(copyfunc_addr != NULL, "generic arraycopy stub required");
 
-    if (copyfunc_addr == NULL) { // Use C version if stub was not generated
-      __ call_VM_leaf(tmp, CAST_FROM_FN_PTR(address, Runtime1::arraycopy));
-    } else {
 #ifndef PRODUCT
-      if (PrintC1Statistics) {
-        address counter = (address)&Runtime1::_generic_arraycopystub_cnt;
-        __ inc_counter(counter, G1, G3);
-      }
+    if (PrintC1Statistics) {
+      address counter = (address)&Runtime1::_generic_arraycopystub_cnt;
+      __ inc_counter(counter, G1, G3);
+    }
 #endif
-      __ call_VM_leaf(tmp, copyfunc_addr);
-    }
+    __ call_VM_leaf(tmp, copyfunc_addr);
 
-    if (copyfunc_addr != NULL) {
-      __ xor3(O0, -1, tmp);
-      __ sub(length, tmp, length);
-      __ add(src_pos, tmp, src_pos);
-      __ cmp_zero_and_br(Assembler::less, O0, *stub->entry());
-      __ delayed()->add(dst_pos, tmp, dst_pos);
-    } else {
-      __ cmp_zero_and_br(Assembler::less, O0, *stub->entry());
-      __ delayed()->nop();
-    }
+    __ xor3(O0, -1, tmp);
+    __ sub(length, tmp, length);
+    __ add(src_pos, tmp, src_pos);
+    __ cmp_zero_and_br(Assembler::less, O0, *stub->entry());
+    __ delayed()->add(dst_pos, tmp, dst_pos);
     __ bind(*stub->continuation());
     return;
   }
