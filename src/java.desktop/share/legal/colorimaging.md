@@ -1,4 +1,4 @@
-## Eastman Kodak Company: Kodak Color Management System (kcms) and portions of color management and imaging software
+## Eastman Kodak Company: Portions of color management and imaging software
 
 ### Eastman Kodak Notice
 <pre>
