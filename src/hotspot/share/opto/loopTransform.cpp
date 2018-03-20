@@ -70,11 +70,20 @@ void IdealLoopTree::record_for_igvn() {
   // put body of outer strip mined loop on igvn work list as well
   if (_head->is_CountedLoop() && _head->as_Loop()->is_strip_mined()) {
     CountedLoopNode* l = _head->as_CountedLoop();
-    _phase->_igvn._worklist.push(l->outer_loop());
-    _phase->_igvn._worklist.push(l->outer_loop_tail());
-    _phase->_igvn._worklist.push(l->outer_loop_end());
-    _phase->_igvn._worklist.push(l->outer_safepoint());
+    Node* outer_loop = l->outer_loop();
+    assert(outer_loop != NULL, "missing piece of strip mined loop");
+    _phase->_igvn._worklist.push(outer_loop);
+    Node* outer_loop_tail = l->outer_loop_tail();
+    assert(outer_loop_tail != NULL, "missing piece of strip mined loop");
+    _phase->_igvn._worklist.push(outer_loop_tail);
+    Node* outer_loop_end = l->outer_loop_end();
+    assert(outer_loop_end != NULL, "missing piece of strip mined loop");
+    _phase->_igvn._worklist.push(outer_loop_end);
+    Node* outer_safepoint = l->outer_safepoint();
+    assert(outer_safepoint != NULL, "missing piece of strip mined loop");
+    _phase->_igvn._worklist.push(outer_safepoint);
     Node* cle_out = _head->as_CountedLoop()->loopexit()->proj_out(false);
+    assert(cle_out != NULL, "missing piece of strip mined loop");
     _phase->_igvn._worklist.push(cle_out);
   }
 }
