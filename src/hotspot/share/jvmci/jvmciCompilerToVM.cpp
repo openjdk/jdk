@@ -480,6 +480,9 @@ C2V_END
 C2V_VMENTRY(jobject, resolveTypeInPool, (JNIEnv*, jobject, jobject jvmci_constant_pool, jint index))
   constantPoolHandle cp = CompilerToVM::asConstantPool(jvmci_constant_pool);
   Klass* resolved_klass = cp->klass_at(index, CHECK_NULL);
+  if (resolved_klass->is_instance_klass()) {
+    InstanceKlass::cast(resolved_klass)->link_class_or_fail(THREAD);
+  }
   oop klass = CompilerToVM::get_jvmci_type(resolved_klass, CHECK_NULL);
   return JNIHandles::make_local(THREAD, klass);
 C2V_END
