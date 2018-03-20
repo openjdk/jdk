@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "gc/g1/g1ConcurrentMarkObjArrayProcessor.hpp"
 #include "gc/g1/heapRegionSet.hpp"
 #include "gc/shared/taskqueue.hpp"
+#include "memory/allocation.hpp"
 
 class ConcurrentGCTimer;
 class ConcurrentMarkThread;
@@ -47,7 +48,7 @@ class G1SurvivorRegions;
 
 // This is a container class for either an oop or a continuation address for
 // mark stack entries. Both are pushed onto the mark stack.
-class G1TaskQueueEntry VALUE_OBJ_CLASS_SPEC {
+class G1TaskQueueEntry {
 private:
   void* _holder;
 
@@ -127,7 +128,7 @@ class G1CMIsAliveClosure: public BoolObjectClosure {
 // Memory management is done using a mix of tracking a high water-mark indicating
 // that all chunks at a lower address are valid chunks, and a singly linked free
 // list connecting all empty chunks.
-class G1CMMarkStack VALUE_OBJ_CLASS_SPEC {
+class G1CMMarkStack {
 public:
   // Number of TaskQueueEntries that can fit in a single chunk.
   static const size_t EntriesPerChunk = 1024 - 1 /* One reference for the next pointer */;
@@ -227,7 +228,7 @@ private:
 // Currently, we only support root region scanning once (at the start
 // of the marking cycle) and the root regions are all the survivor
 // regions populated during the initial-mark pause.
-class G1CMRootRegions VALUE_OBJ_CLASS_SPEC {
+class G1CMRootRegions {
 private:
   const G1SurvivorRegions* _survivors;
   G1ConcurrentMark*        _cm;

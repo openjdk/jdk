@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_VM_GC_G1_G1CONCURRENTMARKOBJARRAYPROCESSOR_HPP
 
 #include "oops/oopsHierarchy.hpp"
-#include "memory/allocation.hpp"
 
 class G1CMTask;
 
@@ -34,7 +33,7 @@ class G1CMTask;
 // Instead of pushing large object arrays, we push continuations onto the
 // mark stack. These continuations are identified by having their LSB set.
 // This allows incremental processing of large objects.
-class G1CMObjArrayProcessor VALUE_OBJ_CLASS_SPEC {
+class G1CMObjArrayProcessor {
 private:
   // Reference to the task for doing the actual work.
   G1CMTask* _task;

@@ -40,8 +40,7 @@ SATBMarkQueue::SATBMarkQueue(SATBMarkQueueSet* qset, bool permanent) :
   // them with their active field set to false. If a thread is
   // created during a cycle and its SATB queue needs to be activated
   // before the thread starts running, we'll need to set its active
-  // field to true. This is done in G1SATBCardTableLoggingModRefBS::
-  // on_thread_attach().
+  // field to true. This is done in G1SBarrierSet::on_thread_attach().
   PtrQueue(qset, permanent, false /* active */)
 { }
 

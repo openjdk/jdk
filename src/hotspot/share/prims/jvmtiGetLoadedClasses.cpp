@@ -25,13 +25,13 @@
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
 #include "prims/jvmtiGetLoadedClasses.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/stack.inline.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc/g1/g1BarrierSet.hpp"
 #endif
 
 
@@ -51,7 +51,7 @@ static void ensure_klass_alive(oop o) {
   // might not find the object.
 #if INCLUDE_ALL_GCS
   if (UseG1GC && o != NULL) {
-    G1SATBCardTableModRefBS::enqueue(o);
+    G1BarrierSet::enqueue(o);
   }
 #endif
 }

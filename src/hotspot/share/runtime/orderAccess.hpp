@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,7 +296,7 @@ class OrderAccess : private Atomic {
 // generalized variant is used.
 
 template<size_t byte_size, ScopedFenceType type>
-struct OrderAccess::PlatformOrderedStore VALUE_OBJ_CLASS_SPEC {
+struct OrderAccess::PlatformOrderedStore {
   template <typename T>
   void operator()(T v, volatile T* p) const {
     ordered_store<T, type>(p, v);
@@ -304,7 +304,7 @@ struct OrderAccess::PlatformOrderedStore VALUE_OBJ_CLASS_SPEC {
 };
 
 template<size_t byte_size, ScopedFenceType type>
-struct OrderAccess::PlatformOrderedLoad VALUE_OBJ_CLASS_SPEC {
+struct OrderAccess::PlatformOrderedLoad {
   template <typename T>
   T operator()(const volatile T* p) const {
     return ordered_load<T, type>(p);

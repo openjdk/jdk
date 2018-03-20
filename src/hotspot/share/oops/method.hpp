@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,9 +136,9 @@ class Method : public Metadata {
 
 
   static address make_adapters(const methodHandle& mh, TRAPS);
-  address from_compiled_entry() const   { return OrderAccess::load_acquire(&_from_compiled_entry); }
+  address from_compiled_entry() const;
   address from_compiled_entry_no_trampoline() const;
-  address from_interpreted_entry() const{ return OrderAccess::load_acquire(&_from_interpreted_entry); }
+  address from_interpreted_entry() const;
 
   // access flag
   AccessFlags access_flags() const               { return _access_flags;  }
@@ -333,12 +333,7 @@ class Method : public Metadata {
     return _method_data;
   }
 
-  void set_method_data(MethodData* data)       {
-    // The store into method must be released. On platforms without
-    // total store order (TSO) the reference may become visible before
-    // the initialization of data otherwise.
-    OrderAccess::release_store(&_method_data, data);
-  }
+  void set_method_data(MethodData* data);
 
   MethodCounters* method_counters() const {
     return _method_counters;
@@ -449,7 +444,7 @@ class Method : public Metadata {
   // nmethod/verified compiler entry
   address verified_code_entry();
   bool check_code() const;      // Not inline to avoid circular ref
-  CompiledMethod* volatile code() const                 { assert( check_code(), "" ); return OrderAccess::load_acquire(&_code); }
+  CompiledMethod* volatile code() const;
   void clear_code(bool acquire_lock = true);    // Clear out any compiled code
   static void set_code(const methodHandle& mh, CompiledMethod* code);
   void set_adapter_entry(AdapterHandlerEntry* adapter) {
@@ -662,7 +657,7 @@ class Method : public Metadata {
   // compiled code support
   // NOTE: code() is inherently racy as deopt can be clearing code
   // simultaneously. Use with caution.
-  bool has_compiled_code() const                 { return code() != NULL; }
+  bool has_compiled_code() const;
 
 #ifdef TIERED
   bool has_aot_code() const                      { return aot_code() != NULL; }
@@ -814,7 +809,7 @@ class Method : public Metadata {
 
   // Clear methods
   static void clear_jmethod_ids(ClassLoaderData* loader_data);
-  static void print_jmethod_ids(ClassLoaderData* loader_data, outputStream* out) PRODUCT_RETURN;
+  static void print_jmethod_ids(const ClassLoaderData* loader_data, outputStream* out) PRODUCT_RETURN;
 
   // Get this method's jmethodID -- allocate if it doesn't exist
   jmethodID jmethod_id()                            { return method_holder()->get_jmethod_id(this); }

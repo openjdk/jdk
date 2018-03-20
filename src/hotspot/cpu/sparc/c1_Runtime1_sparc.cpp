@@ -41,8 +41,8 @@
 #include "utilities/align.hpp"
 #include "vmreg_sparc.inline.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #endif
 
 // Implementation of StubAssembler
@@ -762,7 +762,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
     case g1_pre_barrier_slow_id:
       { // G4: previous value of memory
         BarrierSet* bs = Universe::heap()->barrier_set();
-        if (bs->kind() != BarrierSet::G1SATBCTLogging) {
+        if (bs->kind() != BarrierSet::G1BarrierSet) {
           __ save_frame(0);
           __ set((int)id, O1);
           __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, unimplemented_entry), I0);
@@ -833,7 +833,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
     case g1_post_barrier_slow_id:
       {
         BarrierSet* bs = Universe::heap()->barrier_set();
-        if (bs->kind() != BarrierSet::G1SATBCTLogging) {
+        if (bs->kind() != BarrierSet::G1BarrierSet) {
           __ save_frame(0);
           __ set((int)id, O1);
           __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, unimplemented_entry), I0);

@@ -58,7 +58,6 @@ struct InCSetState {
     // used to index into arrays.
     // The negative values are used for objects requiring various special cases,
     // for example eager reclamation of humongous objects.
-    Ext          = -2,    // Extension point
     Humongous    = -1,    // The region is humongous
     NotInCSet    =  0,    // The region is not in the collection set.
     Young        =  1,    // The region is in the collection set and a young region.
@@ -80,11 +79,10 @@ struct InCSetState {
   bool is_humongous() const            { return _value == Humongous; }
   bool is_young() const                { return _value == Young; }
   bool is_old() const                  { return _value == Old; }
-  bool is_ext() const                  { return _value == Ext; }
 
 #ifdef ASSERT
   bool is_default() const              { return _value == NotInCSet; }
-  bool is_valid() const                { return (_value >= Ext) && (_value < Num); }
+  bool is_valid() const                { return (_value >= Humongous) && (_value < Num); }
   bool is_valid_gen() const            { return (_value >= Young && _value <= Old); }
 #endif
 };
@@ -108,12 +106,6 @@ class G1InCSetStateFastTestBiasedMappedArray : public G1BiasedMappedArray<InCSet
     assert(get_by_index(index).is_default(),
            "State at index " INTPTR_FORMAT " should be default but is " CSETSTATE_FORMAT, index, get_by_index(index).value());
     set_by_index(index, InCSetState::Humongous);
-  }
-
-  void set_ext(uintptr_t index) {
-    assert(get_by_index(index).is_default(),
-           "State at index " INTPTR_FORMAT " should be default but is " CSETSTATE_FORMAT, index, get_by_index(index).value());
-    set_by_index(index, InCSetState::Ext);
   }
 
   void clear_humongous(uintptr_t index) {

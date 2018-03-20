@@ -230,11 +230,6 @@ void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr bas
 }
 
 
-void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr base, LIR_Opr disp, BasicType type, CodeEmitInfo* info) {
-  __ cmp_reg_mem(condition, reg, new LIR_Address(base, disp, type), info);
-}
-
-
 bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result, LIR_Opr tmp) {
   if (tmp->is_valid() && c > 0 && c < max_jint) {
     if (is_power_of_2(c + 1)) {

@@ -30,7 +30,7 @@
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/templateInterpreter.hpp"
 #include "interpreter/templateTable.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
@@ -64,7 +64,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
 
   switch (barrier) {
 #if INCLUDE_ALL_GCS
-    case BarrierSet::G1SATBCTLogging:
+    case BarrierSet::G1BarrierSet:
       {
         // Load and record the previous value.
         __ g1_write_barrier_pre(Rbase, offset,
@@ -3688,11 +3688,15 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   // Vtable entry was NULL => Throw abstract method error.
   __ bind(Lthrow_ame);
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError));
+  // Pass arguments for generating a verbose error message.
+  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodErrorVerbose),
+          Rrecv_klass, Rmethod);
 
   // Interface was not found => Throw incompatible class change error.
   __ bind(L_no_such_interface);
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_IncompatibleClassChangeError));
+  // Pass arguments for generating a verbose error message.
+  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose),
+          Rrecv_klass, Rinterface_klass);
   DEBUG_ONLY( __ should_not_reach_here(); )
 
   // Special case of invokeinterface called for virtual method of

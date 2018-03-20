@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#include "interpreter/bytecode.hpp"
+#include "interpreter/bytecode.inline.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "oops/constantPool.hpp"
+#include "oops/cpCache.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/fieldType.hpp"
 #include "runtime/handles.inline.hpp"

@@ -69,7 +69,7 @@ public class TestVerifySubSet {
         output.shouldContain("Heap");
         output.shouldContain("Threads");
         output.shouldContain("CodeCache");
-        output.shouldContain("MetaspaceAux");
+        output.shouldContain("MetaspaceUtils");
         output.shouldNotContain("SymbolTable");
         output.shouldNotContain("StringTable");
         output.shouldNotContain("SystemDictionary");
@@ -80,7 +80,7 @@ public class TestVerifySubSet {
         output.shouldContain("memory sub-system is unknown, please correct it");
         output.shouldNotContain("Threads");
         output.shouldNotContain("CodeCache");
-        output.shouldNotContain("MetaspaceAux");
+        output.shouldNotContain("MetaspaceUtils");
         output.shouldHaveExitValue(1);
     }
 }

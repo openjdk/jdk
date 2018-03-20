@@ -26,10 +26,10 @@
 #define SHARE_GC_SHARED_OOPSTORAGE_INLINE_HPP
 
 #include "gc/shared/oopStorage.hpp"
-#include "memory/allocation.hpp"
 #include "metaprogramming/conditional.hpp"
 #include "metaprogramming/isConst.hpp"
 #include "oops/oop.hpp"
+#include "runtime/safepoint.hpp"
 #include "utilities/count_trailing_zeros.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -126,7 +126,7 @@ inline const OopStorage::Block* OopStorage::BlockList::next(const Block& block) 
 }
 
 template<typename Closure>
-class OopStorage::OopFn VALUE_OBJ_CLASS_SPEC {
+class OopStorage::OopFn {
 public:
   explicit OopFn(Closure* cl) : _cl(cl) {}
 
@@ -146,7 +146,7 @@ inline OopStorage::OopFn<Closure> OopStorage::oop_fn(Closure* cl) {
 }
 
 template<typename IsAlive, typename F>
-class OopStorage::IfAliveFn VALUE_OBJ_CLASS_SPEC {
+class OopStorage::IfAliveFn {
 public:
   IfAliveFn(IsAlive* is_alive, F f) : _is_alive(is_alive), _f(f) {}
 
@@ -174,7 +174,7 @@ inline OopStorage::IfAliveFn<IsAlive, F> OopStorage::if_alive_fn(IsAlive* is_ali
 }
 
 template<typename F>
-class OopStorage::SkipNullFn VALUE_OBJ_CLASS_SPEC {
+class OopStorage::SkipNullFn {
 public:
   SkipNullFn(F f) : _f(f) {}
 

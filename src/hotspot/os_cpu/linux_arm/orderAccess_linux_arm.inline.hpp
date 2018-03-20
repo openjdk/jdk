@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,6 @@ inline void OrderAccess::fence()      { dmb_sy(); }
 
 template<>
 struct OrderAccess::PlatformOrderedLoad<1, X_ACQUIRE>
-  VALUE_OBJ_CLASS_SPEC
 {
   template <typename T>
   T operator()(const volatile T* p) const {
@@ -148,7 +147,6 @@ struct OrderAccess::PlatformOrderedLoad<1, X_ACQUIRE>
 
 template<>
 struct OrderAccess::PlatformOrderedLoad<2, X_ACQUIRE>
-  VALUE_OBJ_CLASS_SPEC
 {
   template <typename T>
   T operator()(const volatile T* p) const {
@@ -164,7 +162,6 @@ struct OrderAccess::PlatformOrderedLoad<2, X_ACQUIRE>
 
 template<>
 struct OrderAccess::PlatformOrderedLoad<4, X_ACQUIRE>
-  VALUE_OBJ_CLASS_SPEC
 {
   template <typename T>
   T operator()(const volatile T* p) const {
@@ -180,7 +177,6 @@ struct OrderAccess::PlatformOrderedLoad<4, X_ACQUIRE>
 
 template<>
 struct OrderAccess::PlatformOrderedLoad<8, X_ACQUIRE>
-  VALUE_OBJ_CLASS_SPEC
 {
   template <typename T>
   T operator()(const volatile T* p) const {
@@ -196,7 +192,6 @@ struct OrderAccess::PlatformOrderedLoad<8, X_ACQUIRE>
 
 template<>
 struct OrderAccess::PlatformOrderedStore<1, RELEASE_X_FENCE>
-  VALUE_OBJ_CLASS_SPEC
 {
   template <typename T>
   void operator()(T v, volatile T* p) const {
@@ -210,7 +205,6 @@ struct OrderAccess::PlatformOrderedStore<1, RELEASE_X_FENCE>
 
 template<>
 struct OrderAccess::PlatformOrderedStore<2, RELEASE_X_FENCE>
-  VALUE_OBJ_CLASS_SPEC
 {
   template <typename T>
   void operator()(T v, volatile T* p) const {
@@ -224,7 +218,6 @@ struct OrderAccess::PlatformOrderedStore<2, RELEASE_X_FENCE>
 
 template<>
 struct OrderAccess::PlatformOrderedStore<4, RELEASE_X_FENCE>
-  VALUE_OBJ_CLASS_SPEC
 {
   template <typename T>
   void operator()(T v, volatile T* p) const {
@@ -238,7 +231,6 @@ struct OrderAccess::PlatformOrderedStore<4, RELEASE_X_FENCE>
 
 template<>
 struct OrderAccess::PlatformOrderedStore<8, RELEASE_X_FENCE>
-  VALUE_OBJ_CLASS_SPEC
 {
   template <typename T>
   void operator()(T v, volatile T* p) const {

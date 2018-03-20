@@ -81,7 +81,7 @@ public class DumpSharedDictionary {
             output = CDSTestUtils.executeAndLog(pb, "jcmd-systemdictionary-verbose");
             try {
                 output.shouldContain("Shared Dictionary");
-                output.shouldContain("Dictionary for class loader 0x");
+                output.shouldContain("Dictionary for loader data: 0x");
                 output.shouldContain("^java.lang.String");
             } catch (RuntimeException e) {
                 output.shouldContain("Unknown diagnostic command");

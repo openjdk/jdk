@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ class BiasedLockingCounters;
 // Contains all the definitions needed for x86 assembly code generation.
 
 // Calling convention
-class Argument VALUE_OBJ_CLASS_SPEC {
+class Argument {
  public:
   enum {
 #ifdef _LP64
@@ -155,7 +155,7 @@ REGISTER_DECLARATION(Register, rbp_mh_SP_save, noreg);
 
 class ArrayAddress;
 
-class Address VALUE_OBJ_CLASS_SPEC {
+class Address {
  public:
   enum ScaleFactor {
     no_scale = -1,
@@ -333,7 +333,7 @@ class Address VALUE_OBJ_CLASS_SPEC {
 // on the instruction and the platform. As small step on the way to merging i486/amd64
 // directories.
 //
-class AddressLiteral VALUE_OBJ_CLASS_SPEC {
+class AddressLiteral {
   friend class ArrayAddress;
   RelocationHolder _rspec;
   // Typically we use AddressLiterals we want to use their rval
@@ -423,7 +423,7 @@ class InternalAddress: public AddressLiteral {
 // address amd64 can't. We create a class that expresses the concept but does extra
 // magic on amd64 to get the final result
 
-class ArrayAddress VALUE_OBJ_CLASS_SPEC {
+class ArrayAddress {
   private:
 
   AddressLiteral _base;
@@ -1632,6 +1632,8 @@ private:
 
   void popcntl(Register dst, Address src);
   void popcntl(Register dst, Register src);
+
+  void vpopcntd(XMMRegister dst, XMMRegister src, int vector_len);
 
 #ifdef _LP64
   void popcntq(Register dst, Address src);

@@ -76,7 +76,7 @@ void ClassLoaderStatsClosure::do_cld(ClassLoaderData* cld) {
   }
   _total_classes += csc._num_classes;
 
-  Metaspace* ms = cld->metaspace_or_null();
+  ClassLoaderMetaspace* ms = cld->metaspace_or_null();
   if (ms != NULL) {
     if(cld->is_anonymous()) {
       cls->_anon_chunk_sz += ms->allocated_chunks_bytes();

@@ -26,7 +26,7 @@
 #include "jvm.h"
 #include "jimage.hpp"
 #include "classfile/classFileStream.hpp"
-#include "classfile/classLoader.hpp"
+#include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.hpp"
@@ -48,9 +48,10 @@
 #include "memory/filemap.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
@@ -1456,9 +1457,6 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
     if (has_jrt_entry()) {
       e = _jrt_entry;
       stream = _jrt_entry->open_stream(file_name, CHECK_NULL);
-      if (!context.check(stream, classpath_index)) {
-        return NULL;
-      }
     } else {
       // Exploded build - attempt to locate class in its defining module's location.
       assert(_exploded_entries != NULL, "No exploded build entries present");
@@ -1477,9 +1475,6 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
     e = _first_append_entry;
     while (e != NULL) {
       stream = e->open_stream(file_name, CHECK_NULL);
-      if (!context.check(stream, classpath_index)) {
-        return NULL;
-      }
       if (NULL != stream) {
         break;
       }

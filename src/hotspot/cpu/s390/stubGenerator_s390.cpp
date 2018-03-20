@@ -697,7 +697,7 @@ class StubGenerator: public StubCodeGenerator {
 
     BarrierSet* const bs = Universe::heap()->barrier_set();
     switch (bs->kind()) {
-      case BarrierSet::G1SATBCTLogging:
+      case BarrierSet::G1BarrierSet:
         // With G1, don't generate the call if we statically know that the target is uninitialized.
         if (!dest_uninitialized) {
           // Is marking active?
@@ -742,7 +742,7 @@ class StubGenerator: public StubCodeGenerator {
   void gen_write_ref_array_post_barrier(Register addr, Register count, bool branchToEnd) {
     BarrierSet* const bs = Universe::heap()->barrier_set();
     switch (bs->kind()) {
-      case BarrierSet::G1SATBCTLogging:
+      case BarrierSet::G1BarrierSet:
         {
           if (branchToEnd) {
             assert_different_registers(addr,  Z_R0_scratch);  // would be destroyed by push_frame()

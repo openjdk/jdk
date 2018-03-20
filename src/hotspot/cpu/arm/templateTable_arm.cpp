@@ -28,7 +28,7 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/templateTable.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/cpCache.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -193,7 +193,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
   assert_different_registers(obj.base(), new_val, tmp1, tmp2, tmp3, noreg);
   switch (barrier) {
 #if INCLUDE_ALL_GCS
-    case BarrierSet::G1SATBCTLogging:
+    case BarrierSet::G1BarrierSet:
       {
         // flatten object address if needed
         assert (obj.mode() == basic_offset, "pre- or post-indexing is not supported here");

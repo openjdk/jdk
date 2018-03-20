@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ const int TOTAL_MAX_EVENT_TYPE_VAL = JVMTI_MAX_EVENT_TYPE_VAL;
 // for inlines see jvmtiEventController_inline.hpp
 //
 
-class JvmtiEventEnabled VALUE_OBJ_CLASS_SPEC {
+class JvmtiEventEnabled {
 private:
   friend class JvmtiEventControllerPrivate;
   jlong _enabled_bits;
@@ -104,7 +104,7 @@ public:
 // for inlines see jvmtiEventController_inline.hpp
 //
 
-class JvmtiEnvThreadEventEnable VALUE_OBJ_CLASS_SPEC {
+class JvmtiEnvThreadEventEnable {
 private:
   friend class JvmtiEventControllerPrivate;
   JvmtiEventEnabled _event_user_enabled;
@@ -127,7 +127,7 @@ public:
 // for inlines see jvmtiEventController_inline.hpp
 //
 
-class JvmtiThreadEventEnable VALUE_OBJ_CLASS_SPEC {
+class JvmtiThreadEventEnable {
 private:
   friend class JvmtiEventControllerPrivate;
   JvmtiEventEnabled _event_enabled;
@@ -148,7 +148,7 @@ public:
 // for inlines see jvmtiEventController_inline.hpp
 //
 
-class JvmtiEnvEventEnable VALUE_OBJ_CLASS_SPEC {
+class JvmtiEnvEventEnable {
 private:
   friend class JvmtiEventControllerPrivate;
 

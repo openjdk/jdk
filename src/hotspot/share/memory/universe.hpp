@@ -294,6 +294,16 @@ class Universe: AllStatic {
   static oop short_mirror()                 { return check_mirror(_short_mirror); }
   static oop void_mirror()                  { return check_mirror(_void_mirror); }
 
+  static void set_int_mirror(oop m)         { _int_mirror = m;    }
+  static void set_float_mirror(oop m)       { _float_mirror = m;  }
+  static void set_double_mirror(oop m)      { _double_mirror = m; }
+  static void set_byte_mirror(oop m)        { _byte_mirror = m;   }
+  static void set_bool_mirror(oop m)        { _bool_mirror = m;   }
+  static void set_char_mirror(oop m)        { _char_mirror = m;   }
+  static void set_long_mirror(oop m)        { _long_mirror = m;   }
+  static void set_short_mirror(oop m)       { _short_mirror = m;  }
+  static void set_void_mirror(oop m)        { _void_mirror = m;   }
+
   // table of same
   static oop _mirrors[T_VOID+1];
 
@@ -452,8 +462,6 @@ class Universe: AllStatic {
   static bool is_module_initialized()                 { return _module_initialized; }
   static bool is_fully_initialized()                  { return _fully_initialized; }
 
-  static inline bool element_type_should_be_aligned(BasicType type);
-  static inline bool field_type_should_be_aligned(BasicType type);
   static bool        on_page_boundary(void* addr);
   static bool        should_fill_in_stack_trace(Handle throwable);
   static void check_alignment(uintx size, uintx alignment, const char* name);
@@ -481,7 +489,7 @@ class Universe: AllStatic {
     Verify_CodeCache = 16,
     Verify_SystemDictionary = 32,
     Verify_ClassLoaderDataGraph = 64,
-    Verify_MetaspaceAux = 128,
+    Verify_MetaspaceUtils = 128,
     Verify_JNIHandles = 256,
     Verify_CodeCacheOops = 512,
     Verify_All = -1

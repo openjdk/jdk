@@ -26,7 +26,7 @@
 #define SHARE_VM_GC_G1_G1COLLECTEDHEAP_HPP
 
 #include "gc/g1/evacuationInfo.hpp"
-#include "gc/g1/g1AllocationContext.hpp"
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
@@ -40,7 +40,6 @@
 #include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1InCSetState.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
 #include "gc/g1/g1YCTypes.hpp"
 #include "gc/g1/heapRegionManager.hpp"
@@ -301,9 +300,6 @@ private:
   // this method will be found dead by the marking cycle).
   void allocate_dummy_regions() PRODUCT_RETURN;
 
-  // Clear RSets after a compaction. It also resets the GC time stamps.
-  void clear_rsets_post_compaction();
-
   // If the HR printer is active, dump the state of the regions in the
   // heap after a compaction.
   void print_hrm_post_compaction();
@@ -313,8 +309,6 @@ private:
   static G1RegionToSpaceMapper* create_aux_memory_mapper(const char* description,
                                                          size_t size,
                                                          size_t translation_factor);
-
-  static G1Policy* create_g1_policy(STWGCTimer* gc_timer);
 
   void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 
@@ -365,20 +359,12 @@ private:
                                    "should not be at a safepoint"));          \
   } while (0)
 
-#define assert_at_safepoint(_should_be_vm_thread_)                            \
+#define assert_at_safepoint_on_vm_thread()                                    \
   do {                                                                        \
-    assert(SafepointSynchronize::is_at_safepoint() &&                         \
-              ((_should_be_vm_thread_) == Thread::current()->is_VM_thread()), \
-           heap_locking_asserts_params("should be at a safepoint"));          \
+    assert_at_safepoint();                                                    \
+    assert(Thread::current_or_null() != NULL, "no current thread");           \
+    assert(Thread::current()->is_VM_thread(), "current thread is not VM thread"); \
   } while (0)
-
-#define assert_not_at_safepoint()                                             \
-  do {                                                                        \
-    assert(!SafepointSynchronize::is_at_safepoint(),                          \
-           heap_locking_asserts_params("should not be at a safepoint"));      \
-  } while (0)
-
-protected:
 
   // The young region list.
   G1EdenRegions _eden;
@@ -413,12 +399,11 @@ protected:
   // humongous region.
   HeapWord* humongous_obj_allocate_initialize_regions(uint first,
                                                       uint num_regions,
-                                                      size_t word_size,
-                                                      AllocationContext_t context);
+                                                      size_t word_size);
 
   // Attempt to allocate a humongous object of the given size. Return
   // NULL if unsuccessful.
-  HeapWord* humongous_obj_allocate(size_t word_size, AllocationContext_t context);
+  HeapWord* humongous_obj_allocate(size_t word_size);
 
   // The following two methods, allocate_new_tlab() and
   // mem_allocate(), are the two main entry points from the runtime
@@ -462,8 +447,7 @@ protected:
   // Second-level mutator allocation attempt: take the Heap_lock and
   // retry the allocation attempt, potentially scheduling a GC
   // pause. This should only be used for non-humongous allocations.
-  HeapWord* attempt_allocation_slow(size_t word_size,
-                                    AllocationContext_t context);
+  HeapWord* attempt_allocation_slow(size_t word_size);
 
   // Takes the Heap_lock and attempts a humongous allocation. It can
   // potentially schedule a GC pause.
@@ -474,7 +458,6 @@ protected:
   // specifies whether the mutator alloc region is expected to be NULL
   // or not.
   HeapWord* attempt_allocation_at_safepoint(size_t word_size,
-                                            AllocationContext_t context,
                                             bool expect_null_mutator_alloc_region);
 
   // These methods are the "callbacks" from the G1AllocRegion class.
@@ -509,9 +492,7 @@ protected:
   // This function does everything necessary/possible to satisfy a
   // failed allocation request (including collection, expansion, etc.)
   HeapWord* satisfy_failed_allocation(size_t word_size,
-                                      AllocationContext_t context,
                                       bool* succeeded);
-private:
   // Internal helpers used during full GC to split it up to
   // increase readability.
   void abort_concurrent_cycle();
@@ -524,18 +505,16 @@ private:
 
   // Helper method for satisfy_failed_allocation()
   HeapWord* satisfy_failed_allocation_helper(size_t word_size,
-                                             AllocationContext_t context,
                                              bool do_gc,
                                              bool clear_all_soft_refs,
                                              bool expect_null_mutator_alloc_region,
                                              bool* gc_succeeded);
 
-protected:
   // Attempting to expand the heap sufficiently
   // to support an allocation of the given "word_size".  If
   // successful, perform the allocation and return the address of the
   // allocated block, or else "NULL".
-  HeapWord* expand_and_allocate(size_t word_size, AllocationContext_t context);
+  HeapWord* expand_and_allocate(size_t word_size);
 
   // Preserve any referents discovered by concurrent marking that have not yet been
   // copied by the STW pause.
@@ -606,9 +585,6 @@ public:
   }
   void register_old_region_with_cset(HeapRegion* r) {
     _in_cset_fast_test.set_in_old(r->hrm_index());
-  }
-  inline void register_ext_region_with_cset(HeapRegion* r) {
-    _in_cset_fast_test.set_ext(r->hrm_index());
   }
   void clear_in_cset(const HeapRegion* hr) {
     _in_cset_fast_test.clear(hr);
@@ -728,11 +704,11 @@ public:
   // mapping failed, with the same non-overlapping and sorted MemRegion array.
   void dealloc_archive_regions(MemRegion* range, size_t count);
 
-protected:
+private:
 
   // Shrink the garbage-first heap by at most the given size (in bytes!).
   // (Rounds down to a HeapRegion boundary.)
-  virtual void shrink(size_t expand_bytes);
+  void shrink(size_t expand_bytes);
   void shrink_helper(size_t expand_bytes);
 
   #if TASKQUEUE_STATS
@@ -764,7 +740,7 @@ protected:
   bool do_collection_pause_at_safepoint(double target_pause_time_ms);
 
   // Actually do the work of evacuating the collection set.
-  virtual void evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states);
+  void evacuate_collection_set(G1ParScanThreadStateSet* per_thread_states);
 
   void pre_evacuate_collection_set();
   void post_evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* pss);
@@ -1174,10 +1150,6 @@ public:
 
   virtual bool is_in_closed_subset(const void* p) const;
 
-  G1SATBCardTableLoggingModRefBS* g1_barrier_set() {
-    return barrier_set_cast<G1SATBCardTableLoggingModRefBS>(barrier_set());
-  }
-
   G1HotCardCache* g1_hot_card_cache() const { return _hot_card_cache; }
 
   G1CardTable* card_table() const {
@@ -1472,7 +1444,7 @@ public:
 public:
   size_t pending_card_num();
 
-protected:
+private:
   size_t _max_heap_capacity;
 };
 

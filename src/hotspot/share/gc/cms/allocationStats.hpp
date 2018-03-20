@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,10 @@
 
 #include "gc/shared/gcUtil.hpp"
 #include "logging/log.hpp"
-#include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-class AllocationStats VALUE_OBJ_CLASS_SPEC {
+class AllocationStats {
   // A duration threshold (in ms) used to filter
   // possibly unreliable samples.
   static float _threshold;

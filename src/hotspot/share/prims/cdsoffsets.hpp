@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #ifndef SHARE_PRIMS_CDSOFFSETS_HPP
 #define SHARE_PRIMS_CDSOFFSETS_HPP
+
 class CDSOffsets: public CHeapObj<mtInternal> {
  private:
   char* _name;
@@ -31,12 +32,7 @@ class CDSOffsets: public CHeapObj<mtInternal> {
   CDSOffsets* _next;
   static CDSOffsets* _all;  // sole list for cds
  public:
-  CDSOffsets(const char* name, int offset, CDSOffsets* next) {
-     _name = NEW_C_HEAP_ARRAY(char, strlen(name) + 1, mtInternal);
-     strcpy(_name, name);
-     _offset = offset;
-     _next = next;
-  }
+  CDSOffsets(const char* name, int offset, CDSOffsets* next);
 
   char* get_name() const { return _name; }
   int   get_offset() const { return _offset; }
@@ -45,4 +41,5 @@ class CDSOffsets: public CHeapObj<mtInternal> {
 
   static int find_offset(const char* name);
 };
+
 #endif // SHARE_PRIMS_CDSOFFSETS_HPP

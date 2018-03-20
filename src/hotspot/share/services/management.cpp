@@ -26,6 +26,7 @@
 #include "jmm.h"
 #include "classfile/systemDictionary.hpp"
 #include "compiler/compileBroker.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"

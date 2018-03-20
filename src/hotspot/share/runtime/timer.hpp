@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 
 // Timers for simple measurement.
 
-class elapsedTimer VALUE_OBJ_CLASS_SPEC {
+class elapsedTimer {
   friend class VMStructs;
  private:
   jlong _counter;
@@ -50,7 +50,7 @@ class elapsedTimer VALUE_OBJ_CLASS_SPEC {
 };
 
 // TimeStamp is used for recording when an event took place.
-class TimeStamp VALUE_OBJ_CLASS_SPEC {
+class TimeStamp {
  private:
   jlong _counter;
  public:

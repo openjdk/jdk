@@ -367,7 +367,6 @@ struct Atomic::LoadImpl<
   T,
   PlatformOp,
   typename EnableIf<IsIntegral<T>::value || IsRegisteredEnum<T>::value || IsPointer<T>::value>::type>
-  VALUE_OBJ_CLASS_SPEC
 {
   T operator()(T const volatile* dest) const {
     // Forward to the platform handler for the size of T.
@@ -387,7 +386,6 @@ struct Atomic::LoadImpl<
   T,
   PlatformOp,
   typename EnableIf<PrimitiveConversions::Translate<T>::value>::type>
-  VALUE_OBJ_CLASS_SPEC
 {
   T operator()(T const volatile* dest) const {
     typedef PrimitiveConversions::Translate<T> Translator;
@@ -405,7 +403,7 @@ struct Atomic::LoadImpl<
 // supports wide atomics, then it has to use specialization
 // of Atomic::PlatformLoad for that wider size class.
 template<size_t byte_size>
-struct Atomic::PlatformLoad VALUE_OBJ_CLASS_SPEC {
+struct Atomic::PlatformLoad {
   template<typename T>
   T operator()(T const volatile* dest) const {
     STATIC_ASSERT(sizeof(T) <= sizeof(void*)); // wide atomics need specialization
@@ -421,7 +419,6 @@ struct Atomic::StoreImpl<
   T, T,
   PlatformOp,
   typename EnableIf<IsIntegral<T>::value || IsRegisteredEnum<T>::value>::type>
-  VALUE_OBJ_CLASS_SPEC
 {
   void operator()(T new_value, T volatile* dest) const {
     // Forward to the platform handler for the size of T.
@@ -439,7 +436,6 @@ struct Atomic::StoreImpl<
   T*, D*,
   PlatformOp,
   typename EnableIf<Atomic::IsPointerConvertible<T*, D*>::value>::type>
-  VALUE_OBJ_CLASS_SPEC
 {
   void operator()(T* new_value, D* volatile* dest) const {
     // Allow derived to base conversion, and adding cv-qualifiers.
@@ -459,7 +455,6 @@ struct Atomic::StoreImpl<
   T, T,
   PlatformOp,
   typename EnableIf<PrimitiveConversions::Translate<T>::value>::type>
-  VALUE_OBJ_CLASS_SPEC
 {
   void operator()(T new_value, T volatile* dest) const {
     typedef PrimitiveConversions::Translate<T> Translator;
@@ -477,7 +472,7 @@ struct Atomic::StoreImpl<
 // supports wide atomics, then it has to use specialization
 // of Atomic::PlatformStore for that wider size class.
 template<size_t byte_size>
-struct Atomic::PlatformStore VALUE_OBJ_CLASS_SPEC {
+struct Atomic::PlatformStore {
   template<typename T>
   void operator()(T new_value,
                   T volatile* dest) const {
@@ -491,13 +486,13 @@ struct Atomic::PlatformStore VALUE_OBJ_CLASS_SPEC {
 // be complete.
 
 template<typename Derived>
-struct Atomic::FetchAndAdd VALUE_OBJ_CLASS_SPEC {
+struct Atomic::FetchAndAdd {
   template<typename I, typename D>
   D operator()(I add_value, D volatile* dest) const;
 };
 
 template<typename Derived>
-struct Atomic::AddAndFetch VALUE_OBJ_CLASS_SPEC {
+struct Atomic::AddAndFetch {
   template<typename I, typename D>
   D operator()(I add_value, D volatile* dest) const;
 };
@@ -541,7 +536,7 @@ inline D Atomic::sub(I sub_value, D volatile* dest) {
 // specializations of the class.  The platform file is responsible for
 // providing those.
 template<size_t byte_size>
-struct Atomic::PlatformCmpxchg VALUE_OBJ_CLASS_SPEC {
+struct Atomic::PlatformCmpxchg {
   template<typename T>
   T operator()(T exchange_value,
                T volatile* dest,
@@ -552,7 +547,7 @@ struct Atomic::PlatformCmpxchg VALUE_OBJ_CLASS_SPEC {
 // Define the class before including platform file, which may use this
 // as a base class, requiring it be complete.  The definition is later
 // in this file, near the other definitions related to cmpxchg.
-struct Atomic::CmpxchgByteUsingInt VALUE_OBJ_CLASS_SPEC {
+struct Atomic::CmpxchgByteUsingInt {
   template<typename T>
   T operator()(T exchange_value,
                T volatile* dest,
@@ -566,7 +561,7 @@ struct Atomic::CmpxchgByteUsingInt VALUE_OBJ_CLASS_SPEC {
 // specializations of the class.  The platform file is responsible for
 // providing those.
 template<size_t byte_size>
-struct Atomic::PlatformXchg VALUE_OBJ_CLASS_SPEC {
+struct Atomic::PlatformXchg {
   template<typename T>
   T operator()(T exchange_value,
                T volatile* dest) const;
@@ -605,7 +600,6 @@ struct Atomic::AddImpl<
                     IsIntegral<D>::value &&
                     (sizeof(I) <= sizeof(D)) &&
                     (IsSigned<I>::value == IsSigned<D>::value)>::type>
-  VALUE_OBJ_CLASS_SPEC
 {
   D operator()(I add_value, D volatile* dest) const {
     D addend = add_value;
@@ -617,7 +611,6 @@ template<typename I, typename P>
 struct Atomic::AddImpl<
   I, P*,
   typename EnableIf<IsIntegral<I>::value && (sizeof(I) <= sizeof(P*))>::type>
-  VALUE_OBJ_CLASS_SPEC
 {
   P* operator()(I add_value, P* volatile* dest) const {
     STATIC_ASSERT(sizeof(intptr_t) == sizeof(P*));
@@ -640,7 +633,7 @@ struct Atomic::AddImpl<
 //
 // Use the ATOMIC_SHORT_PAIR macro (see macros.hpp) to get the desired alignment.
 template<>
-struct Atomic::AddImpl<short, short> VALUE_OBJ_CLASS_SPEC {
+struct Atomic::AddImpl<short, short> {
   short operator()(short add_value, short volatile* dest) const {
 #ifdef VM_LITTLE_ENDIAN
     assert((intx(dest) & 0x03) == 0x02, "wrong alignment");
@@ -707,7 +700,6 @@ template<typename T>
 struct Atomic::CmpxchgImpl<
   T, T, T,
   typename EnableIf<IsIntegral<T>::value || IsRegisteredEnum<T>::value>::type>
-  VALUE_OBJ_CLASS_SPEC
 {
   T operator()(T exchange_value, T volatile* dest, T compare_value,
                cmpxchg_memory_order order) const {
@@ -734,7 +726,6 @@ struct Atomic::CmpxchgImpl<
   typename EnableIf<Atomic::IsPointerConvertible<T*, D*>::value &&
                     IsSame<typename RemoveCV<D>::type,
                            typename RemoveCV<U>::type>::value>::type>
-  VALUE_OBJ_CLASS_SPEC
 {
   D* operator()(T* exchange_value, D* volatile* dest, U* compare_value,
                cmpxchg_memory_order order) const {
@@ -758,7 +749,6 @@ template<typename T>
 struct Atomic::CmpxchgImpl<
   T, T, T,
   typename EnableIf<PrimitiveConversions::Translate<T>::value>::type>
-  VALUE_OBJ_CLASS_SPEC
 {
   T operator()(T exchange_value, T volatile* dest, T compare_value,
                cmpxchg_memory_order order) const {
@@ -830,7 +820,6 @@ template<typename T>
 struct Atomic::XchgImpl<
   T, T,
   typename EnableIf<IsIntegral<T>::value || IsRegisteredEnum<T>::value>::type>
-  VALUE_OBJ_CLASS_SPEC
 {
   T operator()(T exchange_value, T volatile* dest) const {
     // Forward to the platform handler for the size of T.
@@ -847,7 +836,6 @@ template<typename T, typename D>
 struct Atomic::XchgImpl<
   T*, D*,
   typename EnableIf<Atomic::IsPointerConvertible<T*, D*>::value>::type>
-  VALUE_OBJ_CLASS_SPEC
 {
   D* operator()(T* exchange_value, D* volatile* dest) const {
     // Allow derived to base conversion, and adding cv-qualifiers.
@@ -867,7 +855,6 @@ template<typename T>
 struct Atomic::XchgImpl<
   T, T,
   typename EnableIf<PrimitiveConversions::Translate<T>::value>::type>
-  VALUE_OBJ_CLASS_SPEC
 {
   T operator()(T exchange_value, T volatile* dest) const {
     typedef PrimitiveConversions::Translate<T> Translator;

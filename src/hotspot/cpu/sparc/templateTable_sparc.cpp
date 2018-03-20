@@ -27,7 +27,7 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/templateTable.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -55,7 +55,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
   assert(index == noreg || offset == 0, "only one offset");
   switch (barrier) {
 #if INCLUDE_ALL_GCS
-    case BarrierSet::G1SATBCTLogging:
+    case BarrierSet::G1BarrierSet:
       {
         // Load and record the previous value.
         __ g1_write_barrier_pre(base, index, offset,
@@ -3137,8 +3137,10 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ sub(Rindex, Method::itable_index_max, Rindex);
   __ neg(Rindex);
 
+  // Preserve O2_Klass for throw_AbstractMethodErrorVerbose
+  __ mov(O2_Klass, O4);
   __ lookup_interface_method(// inputs: rec. class, interface, itable index
-                             O2_Klass, Rinterface, Rindex,
+                             O4, Rinterface, Rindex,
                              // outputs: method, scan temp reg, temp reg
                              G5_method, Rscratch, Rtemp,
                              L_no_such_interface);
@@ -3147,7 +3149,9 @@ void TemplateTable::invokeinterface(int byte_no) {
   {
     Label ok;
     __ br_notnull_short(G5_method, Assembler::pt, ok);
-    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError));
+    // Pass arguments for generating a verbose error message.
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodErrorVerbose),
+            O2_Klass, Rmethod);
     __ should_not_reach_here();
     __ bind(ok);
   }
@@ -3160,7 +3164,9 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ call_from_interpreter(Rcall, Gargs, Rret);
 
   __ bind(L_no_such_interface);
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_IncompatibleClassChangeError));
+  // Pass arguments for generating a verbose error message.
+  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose),
+          O2_Klass, Rinterface);
   __ should_not_reach_here();
 }
 
@@ -3536,7 +3542,7 @@ void TemplateTable::instanceof() {
 void TemplateTable::_breakpoint() {
 
    // Note: We get here even if we are single stepping..
-   // jbug inists on setting breakpoints at every bytecode
+   // jbug insists on setting breakpoints at every bytecode
    // even if we are in single step mode.
 
    transition(vtos, vtos);

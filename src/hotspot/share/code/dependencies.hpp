@@ -204,7 +204,7 @@ class Dependencies: public ResourceObj {
 
 #if INCLUDE_JVMCI
   // A Metadata* or object value recorded in an OopRecorder
-  class DepValue VALUE_OBJ_CLASS_SPEC {
+  class DepValue {
    private:
     // Unique identifier of the value within the associated OopRecorder that
     // encodes both the category of the value (0: invalid, positive: metadata, negative: object)

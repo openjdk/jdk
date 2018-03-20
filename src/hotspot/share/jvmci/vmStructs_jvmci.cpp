@@ -41,7 +41,8 @@
 #include "runtime/vm_version.hpp"
 
 #if INCLUDE_ALL_GCS
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc/g1/g1BarrierSet.hpp"
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/heapRegion.hpp"
 #endif
 

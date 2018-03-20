@@ -46,9 +46,9 @@
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/heapRegion.hpp"
 #endif // INCLUDE_ALL_GCS
 #ifdef COMPILER2
@@ -3665,8 +3665,8 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr, Register new_val
 
   if (new_val == G0) return;
 
-  G1SATBCardTableLoggingModRefBS* bs =
-    barrier_set_cast<G1SATBCardTableLoggingModRefBS>(Universe::heap()->barrier_set());
+  G1BarrierSet* bs =
+    barrier_set_cast<G1BarrierSet>(Universe::heap()->barrier_set());
   CardTable* ct = bs->card_table();
 
   if (G1RSBarrierRegionFilter) {
@@ -3706,8 +3706,8 @@ void g1_barrier_stubs_init() {
   if (heap->kind() == CollectedHeap::G1CollectedHeap) {
     // Only needed for G1
     if (dirty_card_log_enqueue == 0) {
-      G1SATBCardTableLoggingModRefBS* bs =
-        barrier_set_cast<G1SATBCardTableLoggingModRefBS>(heap->barrier_set());
+      G1BarrierSet* bs =
+        barrier_set_cast<G1BarrierSet>(heap->barrier_set());
       CardTable *ct = bs->card_table();
       generate_dirty_card_log_enqueue(ct->byte_map_base());
       assert(dirty_card_log_enqueue != 0, "postcondition.");

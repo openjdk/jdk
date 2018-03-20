@@ -148,6 +148,7 @@
   LOG_TAG(update) \
   LOG_TAG(unload) /* Trace unloading of classes */ \
   LOG_TAG(unshareable) \
+  LOG_TAG(mirror) \
   LOG_TAG(verification) \
   LOG_TAG(verify) \
   LOG_TAG(vmoperation) \

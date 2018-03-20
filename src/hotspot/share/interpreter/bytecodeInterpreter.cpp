@@ -33,10 +33,14 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/constantPool.inline.hpp"
+#include "oops/cpCache.inline.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/atomic.hpp"
@@ -2588,17 +2592,19 @@ run:
           if (ki->interface_klass() == iclass) break;
         }
         // If the interface isn't found, this class doesn't implement this
-        // interface.  The link resolver checks this but only for the first
+        // interface. The link resolver checks this but only for the first
         // time this interface is called.
         if (i == int2->itable_length()) {
-          VM_JAVA_ERROR(vmSymbols::java_lang_IncompatibleClassChangeError(), "", note_no_trap);
+          CALL_VM(InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose(THREAD, rcvr->klass(), iclass),
+                  handle_exception);
         }
         int mindex = interface_method->itable_index();
 
         itableMethodEntry* im = ki->first_method_entry(rcvr->klass());
         callee = im[mindex].method();
         if (callee == NULL) {
-          VM_JAVA_ERROR(vmSymbols::java_lang_AbstractMethodError(), "", note_no_trap);
+          CALL_VM(InterpreterRuntime::throw_AbstractMethodErrorVerbose(THREAD, rcvr->klass(), interface_method),
+                  handle_exception);
         }
 
         // Profile virtual call.
@@ -2821,7 +2827,7 @@ run:
     HandleMark __hm(THREAD);
 
     THREAD->clear_pending_exception();
-    assert(except_oop(), "No exception to process");
+    assert(except_oop() != NULL, "No exception to process");
     intptr_t continuation_bci;
     // expression stack is emptied
     topOfStack = istate->stack_base() - Interpreter::stackElementWords;

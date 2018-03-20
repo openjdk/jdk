@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ class Label;
  * Labels may only be used within a single CodeSection.  If you need
  * to create references between code sections, use explicit relocations.
  */
-class Label VALUE_OBJ_CLASS_SPEC {
+class Label {
  private:
   enum { PatchCacheSize = 4 };
 
@@ -171,7 +171,7 @@ class NearLabel : public Label {
 // A union type for code which has to assemble both constant and
 // non-constant operands, when the distinction cannot be made
 // statically.
-class RegisterOrConstant VALUE_OBJ_CLASS_SPEC {
+class RegisterOrConstant {
  private:
   Register _r;
   intptr_t _c;

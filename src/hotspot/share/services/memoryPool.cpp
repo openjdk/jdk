@@ -194,12 +194,12 @@ MetaspacePool::MetaspacePool() :
   MemoryPool("Metaspace", NonHeap, 0, calculate_max_size(), true, false) { }
 
 MemoryUsage MetaspacePool::get_memory_usage() {
-  size_t committed = MetaspaceAux::committed_bytes();
+  size_t committed = MetaspaceUtils::committed_bytes();
   return MemoryUsage(initial_size(), used_in_bytes(), committed, max_size());
 }
 
 size_t MetaspacePool::used_in_bytes() {
-  return MetaspaceAux::used_bytes();
+  return MetaspaceUtils::used_bytes();
 }
 
 size_t MetaspacePool::calculate_max_size() const {
@@ -211,10 +211,10 @@ CompressedKlassSpacePool::CompressedKlassSpacePool() :
   MemoryPool("Compressed Class Space", NonHeap, 0, CompressedClassSpaceSize, true, false) { }
 
 size_t CompressedKlassSpacePool::used_in_bytes() {
-  return MetaspaceAux::used_bytes(Metaspace::ClassType);
+  return MetaspaceUtils::used_bytes(Metaspace::ClassType);
 }
 
 MemoryUsage CompressedKlassSpacePool::get_memory_usage() {
-  size_t committed = MetaspaceAux::committed_bytes(Metaspace::ClassType);
+  size_t committed = MetaspaceUtils::committed_bytes(Metaspace::ClassType);
   return MemoryUsage(initial_size(), used_in_bytes(), committed, max_size());
 }

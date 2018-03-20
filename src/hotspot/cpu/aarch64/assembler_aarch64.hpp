@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,7 +37,7 @@
 // secondary complication -- not all code employing C call convention
 // executes as x86 code though -- we generate some of it
 
-class Argument VALUE_OBJ_CLASS_SPEC {
+class Argument {
  public:
   enum {
     n_int_register_parameters_c   = 8,  // r0, r1, ... r7 (c_rarg0, c_rarg1, ...)
@@ -338,7 +338,7 @@ static inline unsigned long uabs(long n) { return uabs((unsigned long)n); }
 static inline unsigned long uabs(int n) { return uabs((unsigned int)n); }
 
 // Addressing modes
-class Address VALUE_OBJ_CLASS_SPEC {
+class Address {
  public:
 
   enum mode { no_mode, base_plus_offset, pre, post, pcrel,

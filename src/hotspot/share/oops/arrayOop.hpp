@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_OOPS_ARRAYOOP_HPP
 #define SHARE_VM_OOPS_ARRAYOOP_HPP
 
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/oop.hpp"
 #include "utilities/align.hpp"
 
@@ -60,6 +60,13 @@ class arrayOopDesc : public oopDesc {
     assert(arrayoopdesc_hs == hs, "header size can't change");
 #endif // ASSERT
     return (int)hs;
+  }
+
+  // Check whether an element of a typeArrayOop with the given type must be
+  // aligned 0 mod 8.  The typeArrayOop itself must be aligned at least this
+  // strongly.
+  static bool element_type_should_be_aligned(BasicType type) {
+    return type == T_DOUBLE || type == T_LONG;
   }
 
  public:
@@ -99,7 +106,7 @@ class arrayOopDesc : public oopDesc {
   // array object type.
   static int header_size(BasicType type) {
     size_t typesize_in_bytes = header_size_in_bytes();
-    return (int)(Universe::element_type_should_be_aligned(type)
+    return (int)(element_type_should_be_aligned(type)
       ? align_object_offset(typesize_in_bytes/HeapWordSize)
       : typesize_in_bytes/HeapWordSize);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,7 +31,7 @@
 // Immediate is an abstraction to represent the various immediate
 // operands which exist on z/Architecture. Neither this class nor
 // instances hereof have an own state. It consists of methods only.
-class Immediate VALUE_OBJ_CLASS_SPEC {
+class Immediate {
 
  public:
     static bool is_simm(int64_t x, unsigned int nbits) {
@@ -82,7 +82,7 @@ class Immediate VALUE_OBJ_CLASS_SPEC {
 // displacements which exist with addresses on z/ArchiTecture.
 // Neither this class nor instances hereof have an own state. It
 // consists of methods only.
-class Displacement VALUE_OBJ_CLASS_SPEC {
+class Displacement {
 
  public: // These tests are used outside the (Macro)Assembler world, e.g. in ad-file.
 
@@ -101,7 +101,7 @@ class Displacement VALUE_OBJ_CLASS_SPEC {
 // form they are used on z/Architecture for instructions which access
 // their operand with pc-relative addresses. Neither this class nor
 // instances hereof have an own state. It consists of methods only.
-class RelAddr VALUE_OBJ_CLASS_SPEC {
+class RelAddr {
 
  private: // No public use at all. Solely for (Macro)Assembler.
 
@@ -177,7 +177,7 @@ class RelAddr VALUE_OBJ_CLASS_SPEC {
 //
 // Note: A register location is represented via a Register, not
 // via an address for efficiency & simplicity reasons.
-class Address VALUE_OBJ_CLASS_SPEC {
+class Address {
  private:
   Register _base;    // Base register.
   Register _index;   // Index register
@@ -275,7 +275,7 @@ class Address VALUE_OBJ_CLASS_SPEC {
   friend class Assembler;
 };
 
-class AddressLiteral VALUE_OBJ_CLASS_SPEC {
+class AddressLiteral {
  private:
   address          _address;
   RelocationHolder _rspec;
@@ -398,7 +398,7 @@ class ExternalAddress: public AddressLiteral {
 // memory or in a register, in a manner consistent with the
 // z/Architecture Application Binary Interface, or ABI. This is often
 // referred to as the native or C calling convention.
-class Argument VALUE_OBJ_CLASS_SPEC {
+class Argument {
  private:
   int _number;
   bool _is_in;

@@ -271,10 +271,6 @@ class os: AllStatic {
   static void map_stack_shadow_pages(address sp);
   static bool stack_shadow_pages_available(Thread *thread, const methodHandle& method, address sp);
 
-  // Return size of stack that is actually committed. For Java thread, the bottom should be above
-  // guard pages (stack grows downward)
-  static size_t committed_stack_size(address bottom, size_t size);
-
   // OS interface to Virtual Memory
 
   // Return the default page size.

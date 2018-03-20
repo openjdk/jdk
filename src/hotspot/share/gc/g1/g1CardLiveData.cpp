@@ -94,7 +94,7 @@ size_t G1CardLiveData::live_card_bitmap_size_in_bits() const {
 
 // Helper class that provides functionality to generate the Live Data Count
 // information.
-class G1CardLiveDataHelper VALUE_OBJ_CLASS_SPEC {
+class G1CardLiveDataHelper {
 private:
   BitMapView _region_bm;
   BitMapView _card_bm;

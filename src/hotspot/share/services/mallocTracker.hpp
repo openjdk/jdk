@@ -38,7 +38,7 @@
  * records total memory allocation size and number of allocations.
  * The counters are updated atomically.
  */
-class MemoryCounter VALUE_OBJ_CLASS_SPEC {
+class MemoryCounter {
  private:
   volatile size_t   _count;
   volatile size_t   _size;
@@ -89,7 +89,7 @@ class MemoryCounter VALUE_OBJ_CLASS_SPEC {
  * It includes the memory acquired through os::malloc()
  * call and arena's backing memory.
  */
-class MallocMemory VALUE_OBJ_CLASS_SPEC {
+class MallocMemory {
  private:
   MemoryCounter _malloc;
   MemoryCounter _arena;
@@ -242,7 +242,7 @@ class MallocMemorySummary : AllStatic {
  * which ensures 8-bytes alignment on 32-bit systems and 16-bytes on 64-bit systems (Product build).
  */
 
-class MallocHeader VALUE_OBJ_CLASS_SPEC {
+class MallocHeader {
 #ifdef _LP64
   size_t           _size      : 64;
   size_t           _flags     : 8;
