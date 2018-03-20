@@ -587,8 +587,9 @@ void CollectedHeap::post_initialize() {
 }
 
 oop CollectedHeap::pin_object(JavaThread* thread, oop o) {
+  Handle handle(thread, o);
   GCLocker::lock_critical(thread);
-  return o;
+  return handle();
 }
 
 void CollectedHeap::unpin_object(JavaThread* thread, oop o) {
