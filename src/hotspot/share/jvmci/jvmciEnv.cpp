@@ -368,12 +368,6 @@ methodHandle JVMCIEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
   if (holder_is_accessible) { // Our declared holder is loaded.
     constantTag tag = cpool->tag_ref_at(index);
     methodHandle m = lookup_method(accessor, holder, name_sym, sig_sym, bc, tag);
-    if (!m.is_null() &&
-        (bc == Bytecodes::_invokestatic
-         ?  InstanceKlass::cast(m->method_holder())->is_not_initialized()
-         : !InstanceKlass::cast(m->method_holder())->is_loaded())) {
-      m = NULL;
-    }
     if (!m.is_null()) {
       // We found the method.
       return m;
