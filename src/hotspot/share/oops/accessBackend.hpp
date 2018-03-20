@@ -104,6 +104,11 @@ namespace AccessInternal {
     typedef oop (*resolve_func_t)(oop obj);
   };
 
+  template <DecoratorSet decorators>
+  struct AccessFunctionTypes<decorators, void> {
+    typedef bool (*arraycopy_func_t)(arrayOop src_obj, arrayOop dst_obj, void* src, void* dst, size_t length);
+  };
+
   template <DecoratorSet decorators, typename T, BarrierType barrier> struct AccessFunction {};
 
 #define ACCESS_GENERATE_ACCESS_FUNCTION(bt, func)                   \
@@ -130,7 +135,7 @@ namespace AccessInternal {
   template <DecoratorSet decorators, typename T, BarrierType barrier_type>
   typename AccessFunction<decorators, T, barrier_type>::type resolve_oop_barrier();
 
-  class AccessLocker VALUE_OBJ_CLASS_SPEC {
+  class AccessLocker {
   public:
     AccessLocker();
     ~AccessLocker();
@@ -335,7 +340,7 @@ public:
   }
 
   template <typename T>
-  static bool arraycopy(T* src, T* dst, size_t length);
+  static bool arraycopy(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t length);
 
   template <typename T>
   static void oop_store(void* addr, T value);

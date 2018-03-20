@@ -43,8 +43,8 @@
 #include "vmreg_s390.inline.hpp"
 #include "registerSaver_s390.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #endif
 
 // Implementation of StubAssembler
@@ -768,7 +768,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       { // Z_R1_scratch: previous value of memory
 
         BarrierSet* bs = Universe::heap()->barrier_set();
-        if (bs->kind() != BarrierSet::G1SATBCTLogging) {
+        if (bs->kind() != BarrierSet::G1BarrierSet) {
           __ should_not_reach_here(FILE_AND_LINE);
           break;
         }
@@ -837,7 +837,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
     case g1_post_barrier_slow_id:
       { // Z_R1_scratch: oop address, address of updated memory slot
         BarrierSet* bs = Universe::heap()->barrier_set();
-        if (bs->kind() != BarrierSet::G1SATBCTLogging) {
+        if (bs->kind() != BarrierSet::G1BarrierSet) {
           __ should_not_reach_here(FILE_AND_LINE);
           break;
         }

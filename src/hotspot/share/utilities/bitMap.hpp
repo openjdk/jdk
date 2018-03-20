@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ class BitMapClosure;
 //
 // The allocation of the backing storage for the BitMap are handled by
 // the subclasses. BitMap doesn't allocate or delete backing storage.
-class BitMap VALUE_OBJ_CLASS_SPEC {
+class BitMap {
   friend class BitMap2D;
 
  public:
@@ -381,7 +381,7 @@ class CHeapBitMap : public BitMap {
 };
 
 // Convenience class wrapping BitMap which provides multiple bits per slot.
-class BitMap2D VALUE_OBJ_CLASS_SPEC {
+class BitMap2D {
  public:
   typedef BitMap::idx_t idx_t;          // Type used for bit and word indices.
   typedef BitMap::bm_word_t bm_word_t;  // Element type of array that
@@ -427,7 +427,7 @@ class BitMap2D VALUE_OBJ_CLASS_SPEC {
 
 // Closure for iterating over BitMaps
 
-class BitMapClosure VALUE_OBJ_CLASS_SPEC {
+class BitMapClosure {
  public:
   // Callback when bit in map is set.  Should normally return "true";
   // return of false indicates that the bitmap iteration should terminate.

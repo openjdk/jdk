@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,12 @@ class JvmtiEnv;
 //
 // Wrapper class for FramePop, used in the JvmtiFramePops class.
 //
-// Two problems: 1) this isn't being used as a ValueObj class, in
+// Two problems: 1) this isn't being used as a value class, in
 // several places there are constructors for it. 2) It seems like
-// overkill as a means to get an assert and name the geater than
+// overkill as a means to get an assert and name the greater than
 // operator.  I'm trying to to rewrite everything.
 
-class JvmtiFramePop VALUE_OBJ_CLASS_SPEC {
+class JvmtiFramePop {
  private:
   // Frame number counting from BOTTOM (oldest) frame;
   // bottom frame == #0

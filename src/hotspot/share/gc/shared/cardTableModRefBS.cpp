@@ -116,6 +116,7 @@ void CardTableModRefBS::print_on(outputStream* st) const {
 // that specific collector in mind, and the documentation above suitably
 // extended and updated.
 void CardTableModRefBS::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
+#if defined(COMPILER2) || INCLUDE_JVMCI
   if (!ReduceInitialCardMarks) {
     return;
   }
@@ -137,6 +138,7 @@ void CardTableModRefBS::on_slowpath_allocation_exit(JavaThread* thread, oop new_
       invalidate(mr);
     }
   }
+#endif // COMPILER2 || JVMCI
 }
 
 void CardTableModRefBS::initialize_deferred_card_mark_barriers() {

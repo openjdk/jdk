@@ -38,7 +38,7 @@
 
 class FileMapInfo;
 
-class MetaspaceSharedStats VALUE_OBJ_CLASS_SPEC {
+class MetaspaceSharedStats {
 public:
   MetaspaceSharedStats() {
     memset(this, 0, sizeof(*this));
@@ -113,8 +113,9 @@ class MetaspaceShared : AllStatic {
   static ArchivedObjectCache* archive_object_cache() {
     return _archive_object_cache;
   }
+  static oop find_archived_heap_object(oop obj);
   static oop archive_heap_object(oop obj, Thread* THREAD);
-  static void archive_resolved_constants(Thread* THREAD);
+  static void archive_klass_objects(Thread* THREAD);
 #endif
   static bool is_heap_object_archiving_allowed() {
     CDS_JAVA_HEAP_ONLY(return (UseG1GC && UseCompressedOops && UseCompressedClassPointers);)
@@ -127,6 +128,8 @@ class MetaspaceShared : AllStatic {
     CDS_JAVA_HEAP_ONLY(delete _archive_object_cache; _archive_object_cache = NULL;);
   }
   static void fixup_mapped_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
+
+  static void dump_closed_archive_heap_objects(GrowableArray<MemRegion> * closed_archive) NOT_CDS_JAVA_HEAP_RETURN;
 
   static void dump_open_archive_heap_objects(GrowableArray<MemRegion> * open_archive) NOT_CDS_JAVA_HEAP_RETURN;
   static void set_open_archive_heap_region_mapped() {
@@ -199,7 +202,8 @@ class MetaspaceShared : AllStatic {
   static void zero_cpp_vtable_clones_for_writing();
   static void patch_cpp_vtable_pointers();
   static bool is_valid_shared_method(const Method* m) NOT_CDS_RETURN_(false);
-  static void serialize(SerializeClosure* sc);
+  static void serialize(SerializeClosure* sc) NOT_CDS_RETURN;
+  static void serialize_well_known_classes(SerializeClosure* soc) NOT_CDS_RETURN;
 
   static MetaspaceSharedStats* stats() {
     return &_stats;
@@ -248,5 +252,7 @@ class MetaspaceShared : AllStatic {
     return _cds_i2i_entry_code_buffers_size;
   }
   static void relocate_klass_ptr(oop o);
+
+  static Klass* get_relocated_klass(Klass *k);
 };
 #endif // SHARE_VM_MEMORY_METASPACESHARED_HPP

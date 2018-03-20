@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,9 @@
 class PreservedMarksSet;
 class WorkGang;
 
-class PreservedMarks VALUE_OBJ_CLASS_SPEC {
+class PreservedMarks {
 private:
-  class OopAndMarkOop VALUE_OBJ_CLASS_SPEC {
+  class OopAndMarkOop {
   private:
     oop _o;
     markOop _m;

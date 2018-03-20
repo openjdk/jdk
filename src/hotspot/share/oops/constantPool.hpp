@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_OOPS_CONSTANTPOOLOOP_HPP
 #define SHARE_VM_OOPS_CONSTANTPOOLOOP_HPP
 
-#include "memory/allocation.inline.hpp"
+#include "memory/allocation.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/cpCache.hpp"
 #include "oops/objArrayOop.hpp"
@@ -48,7 +48,7 @@
 
 class SymbolHashMap;
 
-class CPSlot VALUE_OBJ_CLASS_SPEC {
+class CPSlot {
  friend class ConstantPool;
   intptr_t _ptr;
   enum TagBits  {_pseudo_bit = 1};
@@ -67,7 +67,7 @@ class CPSlot VALUE_OBJ_CLASS_SPEC {
 
 // This represents a JVM_CONSTANT_Class, JVM_CONSTANT_UnresolvedClass, or
 // JVM_CONSTANT_UnresolvedClassInError slot in the constant pool.
-class CPKlassSlot VALUE_OBJ_CLASS_SPEC {
+class CPKlassSlot {
   // cp->symbol_at(_name_index) gives the name of the class.
   int _name_index;
 
@@ -131,7 +131,7 @@ class ConstantPool : public Metadata {
 
   void set_tags(Array<u1>* tags)               { _tags = tags; }
   void tag_at_put(int which, jbyte t)          { tags()->at_put(which, t); }
-  void release_tag_at_put(int which, jbyte t)  { tags()->release_at_put(which, t); }
+  void release_tag_at_put(int which, jbyte t);
 
   u1* tag_addr_at(int which) const             { return tags()->adr_at(which); }
 
@@ -143,14 +143,7 @@ class ConstantPool : public Metadata {
  private:
   intptr_t* base() const { return (intptr_t*) (((char*) this) + sizeof(ConstantPool)); }
 
-  CPSlot slot_at(int which) const {
-    assert(is_within_bounds(which), "index out of bounds");
-    assert(!tag_at(which).is_unresolved_klass() && !tag_at(which).is_unresolved_klass_in_error(), "Corrupted constant pool");
-    // Uses volatile because the klass slot changes without a lock.
-    intptr_t adr = OrderAccess::load_acquire(obj_at_addr(which));
-    assert(adr != 0 || which == 0, "cp entry for klass should not be zero");
-    return CPSlot(adr);
-  }
+  CPSlot slot_at(int which) const;
 
   void slot_at_put(int which, CPSlot s) const {
     assert(is_within_bounds(which), "index out of bounds");
@@ -380,7 +373,7 @@ class ConstantPool : public Metadata {
 
   // Tag query
 
-  constantTag tag_at(int which) const { return (constantTag)tags()->at_acquire(which); }
+  constantTag tag_at(int which) const;
 
   // Fetching constants
 
@@ -409,16 +402,7 @@ class ConstantPool : public Metadata {
     return klass_slot_at(which).name_index();
   }
 
-  Klass* resolved_klass_at(int which) const {  // Used by Compiler
-    guarantee(tag_at(which).is_klass(), "Corrupted constant pool");
-    // Must do an acquire here in case another thread resolved the klass
-    // behind our back, lest we later load stale values thru the oop.
-    CPKlassSlot kslot = klass_slot_at(which);
-    assert(tag_at(kslot.name_index()).is_symbol(), "sanity");
-
-    Klass** adr = resolved_klasses()->adr_at(kslot.resolved_klass_index());
-    return OrderAccess::load_acquire(adr);
-  }
+  Klass* resolved_klass_at(int which) const;  // Used by Compiler
 
   // RedefineClasses() API support:
   Symbol* klass_at_noresolve(int which) { return klass_name_at(which); }
@@ -475,23 +459,11 @@ class ConstantPool : public Metadata {
   // Method oops internally created for method handles may also
   // use pseudo-strings to link themselves to related metaobjects.
 
-  bool is_pseudo_string_at(int which) {
-    assert(tag_at(which).is_string(), "Corrupted constant pool");
-    return slot_at(which).is_pseudo_string();
-  }
+  bool is_pseudo_string_at(int which);
 
-  oop pseudo_string_at(int which, int obj_index) {
-    assert(is_pseudo_string_at(which), "must be a pseudo-string");
-    oop s = resolved_references()->obj_at(obj_index);
-    return s;
-  }
+  oop pseudo_string_at(int which, int obj_index);
 
-  oop pseudo_string_at(int which) {
-    assert(is_pseudo_string_at(which), "must be a pseudo-string");
-    int obj_index = cp_to_object_index(which);
-    oop s = resolved_references()->obj_at(obj_index);
-    return s;
-  }
+  oop pseudo_string_at(int which);
 
   void pseudo_string_at_put(int which, int obj_index, oop x) {
     assert(tag_at(which).is_string(), "Corrupted constant pool");
@@ -1051,16 +1023,7 @@ class SymbolHashMap: public CHeapObj<mtSymbol> {
     return (entry == NULL) ? 0 : entry->value();
   }
 
-  ~SymbolHashMap() {
-    SymbolHashMapEntry* next;
-    for (int i = 0; i < _table_size; i++) {
-      for (SymbolHashMapEntry* cur = bucket(i); cur != NULL; cur = next) {
-        next = cur->next();
-        delete(cur);
-      }
-    }
-    FREE_C_HEAP_ARRAY(SymbolHashMapBucket, _buckets);
-  }
+  ~SymbolHashMap();
 }; // End SymbolHashMap class
 
 #endif // SHARE_VM_OOPS_CONSTANTPOOLOOP_HPP

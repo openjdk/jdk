@@ -381,6 +381,14 @@ class NegVDNode : public VectorNode {
   virtual int Opcode() const;
 };
 
+//------------------------------PopCountVINode---------------------------------
+// Vector popcount integer bits
+class PopCountVINode : public VectorNode {
+ public:
+  PopCountVINode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {}
+  virtual int Opcode() const;
+};
+
 //------------------------------SqrtVFNode--------------------------------------
 // Vector Sqrt float
 class SqrtVFNode : public VectorNode {

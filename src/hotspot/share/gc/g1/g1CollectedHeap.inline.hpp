@@ -25,10 +25,10 @@
 #ifndef SHARE_VM_GC_G1_G1COLLECTEDHEAP_INLINE_HPP
 #define SHARE_VM_GC_G1_G1COLLECTEDHEAP_INLINE_HPP
 
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -85,12 +85,12 @@ inline HeapRegion* G1CollectedHeap::heap_region_containing(const T addr) const {
 }
 
 inline void G1CollectedHeap::reset_gc_time_stamp() {
-  assert_at_safepoint(true);
+  assert_at_safepoint_on_vm_thread();
   _gc_time_stamp = 0;
 }
 
 inline void G1CollectedHeap::increment_gc_time_stamp() {
-  assert_at_safepoint(true);
+  assert_at_safepoint_on_vm_thread();
   ++_gc_time_stamp;
 }
 

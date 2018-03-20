@@ -76,7 +76,7 @@ class ElfSymbolTable;
 class ElfFuncDescTable;
 
 // ELF section, may or may not have cached data
-class ElfSection VALUE_OBJ_CLASS_SPEC {
+class ElfSection {
 private:
   Elf_Shdr      _section_hdr;
   void*         _section_data;

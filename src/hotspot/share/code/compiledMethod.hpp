@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,9 @@ class ExceptionCache : public CHeapObj<mtCode> {
   void    set_pc_at(int index, address a)      { assert(index >= 0 && index < cache_size,""); _pc[index] = a; }
   address handler_at(int index)                { assert(index >= 0 && index < count(),""); return _handler[index]; }
   void    set_handler_at(int index, address a) { assert(index >= 0 && index < cache_size,""); _handler[index] = a; }
-  int     count()                              { return OrderAccess::load_acquire(&_count); }
+  int     count();
   // increment_count is only called under lock, but there may be concurrent readers.
-  void    increment_count()                    { OrderAccess::release_store(&_count, _count + 1); }
+  void    increment_count();
 
  public:
 
@@ -75,7 +75,7 @@ class ExceptionCache : public CHeapObj<mtCode> {
 class nmethod;
 
 // cache pc descs found in earlier inquiries
-class PcDescCache VALUE_OBJ_CLASS_SPEC {
+class PcDescCache {
   friend class VMStructs;
  private:
   enum { cache_size = 4 };
@@ -109,7 +109,7 @@ public:
   PcDesc* scopes_pcs_end() const { return _upper; }
 };
 
-class PcDescContainer VALUE_OBJ_CLASS_SPEC {
+class PcDescContainer {
 private:
   PcDescCache _pc_desc_cache;
 public:
@@ -290,7 +290,7 @@ public:
   // Note: _exception_cache may be read concurrently. We rely on memory_order_consume here.
   ExceptionCache* exception_cache() const         { return _exception_cache; }
   void set_exception_cache(ExceptionCache *ec)    { _exception_cache = ec; }
-  void release_set_exception_cache(ExceptionCache *ec) { OrderAccess::release_store(&_exception_cache, ec); }
+  void release_set_exception_cache(ExceptionCache *ec);
   address handler_for_exception_and_pc(Handle exception, address pc);
   void add_handler_for_exception_and_pc(Handle exception, address pc, address handler);
   void clean_exception_cache(BoolObjectClosure* is_alive);

@@ -156,6 +156,18 @@ private:
   // -1.
   jshort _shared_class_path_index;
 
+#if INCLUDE_CDS
+  // Flags of the current shared class.
+  u2     _shared_class_flags;
+  enum {
+    _has_raw_archived_mirror = 1,
+    _has_signer_and_not_archived = 1 << 2
+  };
+#endif
+  // The _archived_mirror is set at CDS dump time pointing to the cached mirror
+  // in the open archive heap region when archiving java object is supported.
+  CDS_JAVA_HEAP_ONLY(narrowOop _archived_mirror);
+
   friend class SharedClassUtil;
 protected:
 
@@ -229,11 +241,17 @@ protected:
   oop java_mirror() const;
   void set_java_mirror(Handle m);
 
+  oop archived_java_mirror_raw() NOT_CDS_JAVA_HEAP_RETURN_(NULL); // no GC barrier
+  oop archived_java_mirror() NOT_CDS_JAVA_HEAP_RETURN_(NULL);     // accessor with GC barrier
+  void set_archived_java_mirror_raw(oop m) NOT_CDS_JAVA_HEAP_RETURN; // no GC barrier
+
   // Temporary mirror switch used by RedefineClasses
   // Both mirrors are on the ClassLoaderData::_handles list already so no
   // barriers are needed.
   void set_java_mirror_handle(OopHandle mirror) { _java_mirror = mirror; }
-  OopHandle java_mirror_handle() const          { return _java_mirror; }
+  OopHandle java_mirror_handle() const          {
+    return _java_mirror;
+  }
 
   // modifier flags
   jint modifier_flags() const          { return _modifier_flags; }
@@ -266,6 +284,26 @@ protected:
   void set_shared_classpath_index(int index) {
     _shared_class_path_index = index;
   };
+
+  void set_has_raw_archived_mirror() {
+    CDS_ONLY(_shared_class_flags |= _has_raw_archived_mirror;)
+  }
+  void clear_has_raw_archived_mirror() {
+    CDS_ONLY(_shared_class_flags &= ~_has_raw_archived_mirror;)
+  }
+  bool has_raw_archived_mirror() const {
+    CDS_ONLY(return (_shared_class_flags & _has_raw_archived_mirror) != 0;)
+    NOT_CDS(return false;)
+  }
+#if INCLUDE_CDS
+  void set_has_signer_and_not_archived() {
+    _shared_class_flags |= _has_signer_and_not_archived;
+  }
+  bool has_signer_and_not_archived() const {
+    assert(DumpSharedSpaces, "dump time only");
+    return (_shared_class_flags & _has_signer_and_not_archived) != 0;
+  }
+#endif // INCLUDE_CDS
 
   // Obtain the module or package for this class
   virtual ModuleEntry* module() const = 0;
@@ -507,6 +545,9 @@ protected:
   virtual const char* signature_name() const;
 
   const char* class_loader_and_module_name() const;
+
+  // Returns "interface", "abstract class" or "class".
+  const char* external_kind() const;
 
   // type testing operations
 #ifdef ASSERT

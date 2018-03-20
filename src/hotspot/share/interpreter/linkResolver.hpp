@@ -347,5 +347,19 @@ class LinkResolver: AllStatic {
   static void resolve_invoke(CallInfo& result, Handle& recv,
                              const methodHandle& attached_method,
                              Bytecodes::Code byte, TRAPS);
+
+ public:
+  // Only resolved method known.
+  static void throw_abstract_method_error(const methodHandle& resolved_method, TRAPS) {
+    throw_abstract_method_error(resolved_method, NULL, NULL, CHECK);
+  }
+  // Resolved method and receiver klass know.
+  static void throw_abstract_method_error(const methodHandle& resolved_method, Klass *recv_klass, TRAPS) {
+    throw_abstract_method_error(resolved_method, NULL, recv_klass, CHECK);
+  }
+  // Selected method is abstract.
+  static void throw_abstract_method_error(const methodHandle& resolved_method,
+                                          const methodHandle& selected_method,
+                                          Klass *recv_klass, TRAPS);
 };
 #endif // SHARE_VM_INTERPRETER_LINKRESOLVER_HPP

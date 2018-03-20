@@ -79,7 +79,7 @@ class SerialOldTracer;
 // we have _shifter == 0. and for the mod union table we have
 // shifter == CardTable::card_shift - LogHeapWordSize.)
 // XXX 64-bit issues in BitMap?
-class CMSBitMap VALUE_OBJ_CLASS_SPEC {
+class CMSBitMap {
   friend class VMStructs;
 
   HeapWord*    _bmStartWord;   // base address of range covered by map
@@ -331,7 +331,7 @@ class ChunkArray: public CHeapObj<mtGC> {
 // Timing, allocation and promotion statistics for gc scheduling and incremental
 // mode pacing.  Most statistics are exponential averages.
 //
-class CMSStats VALUE_OBJ_CLASS_SPEC {
+class CMSStats {
  private:
   ConcurrentMarkSweepGeneration* const _cms_gen;   // The cms (old) gen.
 
@@ -553,6 +553,7 @@ class CMSCollector: public CHeapObj<mtGC> {
 
   // Performance Counters
   CollectorCounters* _gc_counters;
+  CollectorCounters* _cgc_counters;
 
   // Initialization Errors
   bool _completed_initialization;
@@ -927,7 +928,8 @@ class CMSCollector: public CHeapObj<mtGC> {
   NOT_PRODUCT(bool is_cms_reachable(HeapWord* addr);)
 
   // Performance Counter Support
-  CollectorCounters* counters()    { return _gc_counters; }
+  CollectorCounters* counters()     { return _gc_counters; }
+  CollectorCounters* cgc_counters() { return _cgc_counters; }
 
   // Timer stuff
   void    startTimer() { assert(!_timer.is_active(), "Error"); _timer.start();   }

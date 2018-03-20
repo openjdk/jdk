@@ -2105,7 +2105,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // blocking or unlocking.
   // An OOP result (handle) is done specially in the slow-path code.
   //--------------------------------------------------------------------
-  switch (ret_type) {  //GLGLGL
+  switch (ret_type) {
     case T_VOID:    break;         // Nothing to do!
     case T_FLOAT:   break;         // Got it where we want it (unless slow-path)
     case T_DOUBLE:  break;         // Got it where we want it (unless slow-path)

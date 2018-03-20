@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_GC_G1_VM_OPERATIONS_G1_HPP
 #define SHARE_VM_GC_G1_VM_OPERATIONS_G1_HPP
 
-#include "gc/g1/g1AllocationContext.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/vmGCOperations.hpp"
 
@@ -51,7 +50,6 @@ public:
 class VM_G1CollectForAllocation: public VM_CollectForAllocation {
 private:
   bool      _pause_succeeded;
-  AllocationContext_t _allocation_context;
 
   bool         _should_initiate_conc_mark;
   bool         _should_retry_gc;
@@ -62,8 +60,7 @@ public:
                             uint           gc_count_before,
                             GCCause::Cause gc_cause,
                             bool           should_initiate_conc_mark,
-                            double         target_pause_time_ms,
-                            AllocationContext_t allocation_context);
+                            double         target_pause_time_ms);
   virtual VMOp_Type type() const { return VMOp_G1CollectForAllocation; }
   virtual bool doit_prologue();
   virtual void doit();

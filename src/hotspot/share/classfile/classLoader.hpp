@@ -27,7 +27,6 @@
 
 #include "jimage.hpp"
 #include "runtime/handles.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/perfData.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
@@ -49,13 +48,9 @@ class ClassPathEntry : public CHeapObj<mtClass> {
 private:
   ClassPathEntry* volatile _next;
 public:
-  // Next entry in class path
-  ClassPathEntry* next() const { return OrderAccess::load_acquire(&_next); }
+  ClassPathEntry* next() const;
   virtual ~ClassPathEntry() {}
-  void set_next(ClassPathEntry* next) {
-    // may have unlocked readers, so ensure visibility.
-    OrderAccess::release_store(&_next, next);
-  }
+  void set_next(ClassPathEntry* next);
   virtual bool is_modules_image() const = 0;
   virtual bool is_jar_file() const = 0;
   virtual const char* name() const = 0;
@@ -396,25 +391,7 @@ class ClassLoader: AllStatic {
 
   static int compute_Object_vtable();
 
-  static ClassPathEntry* classpath_entry(int n) {
-    assert(n >= 0, "sanity");
-    if (n == 0) {
-      assert(has_jrt_entry(), "No class path entry at 0 for exploded module builds");
-      return ClassLoader::_jrt_entry;
-    } else {
-      // The java runtime image is always the first entry
-      // in the FileMapInfo::_classpath_entry_table. Even though
-      // the _jrt_entry is not included in the _first_append_entry
-      // linked list, it must be accounted for when comparing the
-      // class path vs. the shared archive class path.
-      ClassPathEntry* e = ClassLoader::_first_append_entry;
-      while (--n >= 1) {
-        assert(e != NULL, "Not that many classpath entries.");
-        e = e->next();
-      }
-      return e;
-    }
-  }
+  static ClassPathEntry* classpath_entry(int n);
 
   static bool is_in_patch_mod_entries(Symbol* module_name);
 
@@ -423,38 +400,13 @@ class ClassLoader: AllStatic {
 
   // Helper function used by CDS code to get the number of boot classpath
   // entries during shared classpath setup time.
-  static int num_boot_classpath_entries() {
-    assert(DumpSharedSpaces, "Should only be called at CDS dump time");
-    assert(has_jrt_entry(), "must have a java runtime image");
-    int num_entries = 1; // count the runtime image
-    ClassPathEntry* e = ClassLoader::_first_append_entry;
-    while (e != NULL) {
-      num_entries ++;
-      e = e->next();
-    }
-    return num_entries;
-  }
+  static int num_boot_classpath_entries();
 
-  static ClassPathEntry* get_next_boot_classpath_entry(ClassPathEntry* e) {
-    if (e == ClassLoader::_jrt_entry) {
-      return ClassLoader::_first_append_entry;
-    } else {
-      return e->next();
-    }
-  }
+  static ClassPathEntry* get_next_boot_classpath_entry(ClassPathEntry* e);
 
   // Helper function used by CDS code to get the number of app classpath
   // entries during shared classpath setup time.
-  static int num_app_classpath_entries() {
-    assert(DumpSharedSpaces, "Should only be called at CDS dump time");
-    int num_entries = 0;
-    ClassPathEntry* e= ClassLoader::_app_classpath_entries;
-    while (e != NULL) {
-      num_entries ++;
-      e = e->next();
-    }
-    return num_entries;
-  }
+  static int num_app_classpath_entries();
 
   static void  check_shared_classpath(const char *path);
   static void  finalize_shared_paths_misc_info();

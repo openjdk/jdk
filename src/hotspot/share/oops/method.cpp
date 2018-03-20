@@ -35,6 +35,7 @@
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -42,7 +43,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constMethod.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -2190,8 +2191,8 @@ bool Method::is_valid_method() const {
 }
 
 #ifndef PRODUCT
-void Method::print_jmethod_ids(ClassLoaderData* loader_data, outputStream* out) {
-  out->print_cr("jni_method_id count = %d", loader_data->jmethod_ids()->count_methods());
+void Method::print_jmethod_ids(const ClassLoaderData* loader_data, outputStream* out) {
+  out->print(" jni_method_id count = %d", loader_data->jmethod_ids()->count_methods());
 }
 #endif // PRODUCT
 

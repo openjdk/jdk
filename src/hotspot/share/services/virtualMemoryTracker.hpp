@@ -39,7 +39,7 @@
 /*
  * Virtual memory counter
  */
-class VirtualMemory VALUE_OBJ_CLASS_SPEC {
+class VirtualMemory {
  private:
   size_t     _reserved;
   size_t     _committed;
@@ -160,7 +160,9 @@ class VirtualMemorySummary : AllStatic {
     as_snapshot()->by_type(to)->commit_memory(size);
   }
 
-  static void snapshot(VirtualMemorySnapshot* s);
+  static inline void snapshot(VirtualMemorySnapshot* s) {
+    as_snapshot()->copy_to(s);
+  }
 
   static VirtualMemorySnapshot* as_snapshot() {
     return (VirtualMemorySnapshot*)_snapshot;
@@ -175,7 +177,7 @@ class VirtualMemorySummary : AllStatic {
 /*
  * A virtual memory region
  */
-class VirtualMemoryRegion VALUE_OBJ_CLASS_SPEC {
+class VirtualMemoryRegion {
  private:
   address      _base_address;
   size_t       _size;
@@ -334,9 +336,6 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
     return compare(rgn) == 0;
   }
 
-  // uncommitted thread stack bottom, above guard pages if there is any.
-  address thread_stack_uncommitted_bottom() const;
-
   bool    add_committed_region(address addr, size_t size, const NativeCallStack& stack);
   bool    remove_uncommitted_region(address addr, size_t size);
 
@@ -390,7 +389,6 @@ class VirtualMemoryWalker : public StackObj {
 // Main class called from MemTracker to track virtual memory allocations, commits and releases.
 class VirtualMemoryTracker : AllStatic {
   friend class VirtualMemoryTrackerTest;
-  friend class ThreadStackTrackingTest;
 
  public:
   static bool initialize(NMT_TrackingLevel level);
@@ -409,9 +407,6 @@ class VirtualMemoryTracker : AllStatic {
   static bool walk_virtual_memory(VirtualMemoryWalker* walker);
 
   static bool transition(NMT_TrackingLevel from, NMT_TrackingLevel to);
-
-  // Snapshot current thread stacks
-  static void snapshot_thread_stacks();
 
  private:
   static SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>* _reserved_regions;

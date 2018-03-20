@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,13 @@
 #ifndef SHARE_VM_GC_G1_G1SURVIVORREGIONS_HPP
 #define SHARE_VM_GC_G1_G1SURVIVORREGIONS_HPP
 
-#include "memory/allocation.hpp"
 #include "runtime/globals.hpp"
 
 template <typename T>
 class GrowableArray;
 class HeapRegion;
 
-class G1SurvivorRegions VALUE_OBJ_CLASS_SPEC {
+class G1SurvivorRegions {
 private:
   GrowableArray<HeapRegion*>* _regions;
 

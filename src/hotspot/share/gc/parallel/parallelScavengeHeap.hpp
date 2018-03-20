@@ -267,7 +267,7 @@ public:
       _heap_used(heap->used()),
       _young_gen_used(heap->young_gen()->used_in_bytes()),
       _old_gen_used(heap->old_gen()->used_in_bytes()),
-      _metadata_used(MetaspaceAux::used_bytes()) { };
+      _metadata_used(MetaspaceUtils::used_bytes()) { };
 
   size_t heap_used() const      { return _heap_used; }
   size_t young_gen_used() const { return _young_gen_used; }

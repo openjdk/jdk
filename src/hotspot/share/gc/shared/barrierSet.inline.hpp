@@ -26,7 +26,6 @@
 #define SHARE_VM_GC_SHARED_BARRIERSET_INLINE_HPP
 
 #include "gc/shared/barrierSet.hpp"
-#include "gc/shared/barrierSetConfig.inline.hpp"
 #include "utilities/align.hpp"
 
 // count is number of array elements being written

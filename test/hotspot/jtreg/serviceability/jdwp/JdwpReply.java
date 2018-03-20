@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,17 @@ public abstract class JdwpReply {
         int dataLength = length - HEADER_LEN;
         if (dataLength > 0) {
             data = new byte[dataLength];
-            ds.read(data, 0, dataLength);
+            int bytesRead = ds.read(data, 0, dataLength);
+            // For large data JDWP agent sends two packets: 1011 bytes in
+            // the first packet (1000 + HEADER_LEN) and the rest in the
+            // second packet.
+            if (bytesRead > 0 && bytesRead < dataLength) {
+                System.out.println("[" + getClass().getName() + "] Only " +
+                        bytesRead + " bytes of " + dataLength + " were " +
+                        "read in the first packet. Reading the rest...");
+                ds.read(data, bytesRead, dataLength - bytesRead);
+            }
+
             parseData(new DataInputStream(new ByteArrayInputStream(data)));
         }
     }

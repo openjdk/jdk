@@ -49,7 +49,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceKlass.hpp"
@@ -247,7 +247,7 @@ void Universe::metaspace_pointers_do(MetaspaceClosure* it) {
   _do_stack_walk_cache->metaspace_pointers_do(it);
 }
 
-// Serialize metadata in and out of CDS archive, not oops.
+// Serialize metadata and pointers to primitive type mirrors in and out of CDS archive
 void Universe::serialize(SerializeClosure* f, bool do_all) {
 
   f->do_ptr((void**)&_boolArrayKlassObj);
@@ -270,6 +270,20 @@ void Universe::serialize(SerializeClosure* f, bool do_all) {
       }
     }
   }
+
+#if INCLUDE_CDS_JAVA_HEAP
+  // The mirrors are NULL if MetaspaceShared::is_heap_object_archiving_allowed
+  // is false.
+  f->do_oop(&_int_mirror);
+  f->do_oop(&_float_mirror);
+  f->do_oop(&_double_mirror);
+  f->do_oop(&_byte_mirror);
+  f->do_oop(&_bool_mirror);
+  f->do_oop(&_char_mirror);
+  f->do_oop(&_long_mirror);
+  f->do_oop(&_short_mirror);
+  f->do_oop(&_void_mirror);
+#endif
 
   f->do_ptr((void**)&_the_array_interfaces_array);
   f->do_ptr((void**)&_the_empty_int_array);
@@ -446,32 +460,41 @@ void Universe::genesis(TRAPS) {
     assert(i == _fullgc_alot_dummy_array->length(), "just checking");
   }
   #endif
-
-  // Initialize dependency array for null class loader
-  ClassLoaderData::the_null_class_loader_data()->init_dependencies(CHECK);
-
 }
 
 void Universe::initialize_basic_type_mirrors(TRAPS) {
-    assert(_int_mirror==NULL, "basic type mirrors already initialized");
-    _int_mirror     =
-      java_lang_Class::create_basic_type_mirror("int",    T_INT, CHECK);
-    _float_mirror   =
-      java_lang_Class::create_basic_type_mirror("float",  T_FLOAT,   CHECK);
-    _double_mirror  =
-      java_lang_Class::create_basic_type_mirror("double", T_DOUBLE,  CHECK);
-    _byte_mirror    =
-      java_lang_Class::create_basic_type_mirror("byte",   T_BYTE, CHECK);
-    _bool_mirror    =
-      java_lang_Class::create_basic_type_mirror("boolean",T_BOOLEAN, CHECK);
-    _char_mirror    =
-      java_lang_Class::create_basic_type_mirror("char",   T_CHAR, CHECK);
-    _long_mirror    =
-      java_lang_Class::create_basic_type_mirror("long",   T_LONG, CHECK);
-    _short_mirror   =
-      java_lang_Class::create_basic_type_mirror("short",  T_SHORT,   CHECK);
-    _void_mirror    =
-      java_lang_Class::create_basic_type_mirror("void",   T_VOID, CHECK);
+#if INCLUDE_CDS_JAVA_HEAP
+    if (UseSharedSpaces &&
+        MetaspaceShared::open_archive_heap_region_mapped() &&
+        _int_mirror != NULL) {
+      assert(MetaspaceShared::is_heap_object_archiving_allowed(), "Sanity");
+      assert(_float_mirror != NULL && _double_mirror != NULL &&
+             _byte_mirror  != NULL && _byte_mirror   != NULL &&
+             _bool_mirror  != NULL && _char_mirror   != NULL &&
+             _long_mirror  != NULL && _short_mirror  != NULL &&
+             _void_mirror  != NULL, "Sanity");
+    } else
+#endif
+    {
+      _int_mirror     =
+        java_lang_Class::create_basic_type_mirror("int",    T_INT, CHECK);
+      _float_mirror   =
+        java_lang_Class::create_basic_type_mirror("float",  T_FLOAT,   CHECK);
+      _double_mirror  =
+        java_lang_Class::create_basic_type_mirror("double", T_DOUBLE,  CHECK);
+      _byte_mirror    =
+        java_lang_Class::create_basic_type_mirror("byte",   T_BYTE, CHECK);
+      _bool_mirror    =
+        java_lang_Class::create_basic_type_mirror("boolean",T_BOOLEAN, CHECK);
+      _char_mirror    =
+        java_lang_Class::create_basic_type_mirror("char",   T_CHAR, CHECK);
+      _long_mirror    =
+        java_lang_Class::create_basic_type_mirror("long",   T_LONG, CHECK);
+      _short_mirror   =
+        java_lang_Class::create_basic_type_mirror("short",  T_SHORT,   CHECK);
+      _void_mirror    =
+        java_lang_Class::create_basic_type_mirror("void",   T_VOID, CHECK);
+    }
 
     _mirrors[T_INT]     = _int_mirror;
     _mirrors[T_FLOAT]   = _float_mirror;
@@ -1139,7 +1162,7 @@ void Universe::initialize_verify_flags() {
     } else if (strcmp(token, "classloader_data_graph") == 0) {
       verify_flags |= Verify_ClassLoaderDataGraph;
     } else if (strcmp(token, "metaspace") == 0) {
-      verify_flags |= Verify_MetaspaceAux;
+      verify_flags |= Verify_MetaspaceUtils;
     } else if (strcmp(token, "jni_handles") == 0) {
       verify_flags |= Verify_JNIHandles;
     } else if (strcmp(token, "codecache_oops") == 0) {
@@ -1211,9 +1234,9 @@ void Universe::verify(VerifyOption option, const char* prefix) {
     ClassLoaderDataGraph::verify();
   }
 #endif
-  if (should_verify_subset(Verify_MetaspaceAux)) {
-    log_debug(gc, verify)("MetaspaceAux");
-    MetaspaceAux::verify_free_chunks();
+  if (should_verify_subset(Verify_MetaspaceUtils)) {
+    log_debug(gc, verify)("MetaspaceUtils");
+    MetaspaceUtils::verify_free_chunks();
   }
   if (should_verify_subset(Verify_JNIHandles)) {
     log_debug(gc, verify)("JNIHandles");

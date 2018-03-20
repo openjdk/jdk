@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define CPU_ARM_VM_ASSEMBLER_ARM_32_HPP
 
 // ARM Addressing Mode 1 - Data processing operands
-class AsmOperand VALUE_OBJ_CLASS_SPEC {
+class AsmOperand {
  private:
   int _encoding;
 
@@ -99,7 +99,7 @@ class AsmOperand VALUE_OBJ_CLASS_SPEC {
 
 
 // ARM Addressing Mode 4 - Load and store multiple
-class RegisterSet VALUE_OBJ_CLASS_SPEC {
+class RegisterSet {
  private:
   int _encoding;
 
@@ -155,7 +155,7 @@ class RegisterSet VALUE_OBJ_CLASS_SPEC {
 #endif
 
 // ARM Addressing Mode 5 - Load and store multiple VFP registers
-class FloatRegisterSet VALUE_OBJ_CLASS_SPEC {
+class FloatRegisterSet {
  private:
   int _encoding;
 

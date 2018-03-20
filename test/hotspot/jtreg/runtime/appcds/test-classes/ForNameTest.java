@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import sun.hotspot.WhiteBox;
 public class ForNameTest {
     public static void main(String[] args) throws Throwable {
         // Hello is on the bootclasspath. The defining classloader is
-        // the NULL classloader. See AppCDSClassLoaderTest.
+        // the NULL classloader. See ../ClassLoaderTest.java
         Class c = Class.forName("Hello");
         ClassLoader cl = c.getClassLoader();
         if (cl != null) {
@@ -36,10 +36,10 @@ public class ForNameTest {
         }
 
         WhiteBox wb = WhiteBox.getWhiteBox();
-        if (!wb.isSharedClass(c)) {
-            System.out.println("As expected, Hello.class is not in shared space.");
+        if (wb.isSharedClass(c)) {
+            System.out.println("As expected, Hello.class is in shared space.");
         } else {
-            throw new java.lang.RuntimeException("Hello.class shouldn't be in shared space.");
+            throw new java.lang.RuntimeException("Hello.class must be in shared space.");
         }
     }
 }

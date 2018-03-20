@@ -189,8 +189,8 @@ public:
     }
 
     template <typename T>
-    static bool arraycopy_in_heap(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t length) {
-      return Raw::arraycopy(src_obj, dst_obj, src, dst, length);
+    static void arraycopy_in_heap(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t length) {
+      Raw::arraycopy(src_obj, dst_obj, src, dst, length);
     }
 
     // Heap oop accesses. These accessors get resolved when

@@ -26,7 +26,6 @@
 #define SHARE_VM_GC_G1_G1ALLOCATOR_HPP
 
 #include "gc/g1/g1AllocRegion.hpp"
-#include "gc/g1/g1AllocationContext.hpp"
 #include "gc/g1/g1InCSetState.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/plab.hpp"
@@ -41,37 +40,33 @@ class G1Allocator : public CHeapObj<mtGC> {
 protected:
   G1CollectedHeap* _g1h;
 
-  virtual MutatorAllocRegion* mutator_alloc_region(AllocationContext_t context) = 0;
+  virtual MutatorAllocRegion* mutator_alloc_region() = 0;
 
-  virtual bool survivor_is_full(AllocationContext_t context) const = 0;
-  virtual bool old_is_full(AllocationContext_t context) const = 0;
+  virtual bool survivor_is_full() const = 0;
+  virtual bool old_is_full() const = 0;
 
-  virtual void set_survivor_full(AllocationContext_t context) = 0;
-  virtual void set_old_full(AllocationContext_t context) = 0;
+  virtual void set_survivor_full() = 0;
+  virtual void set_old_full() = 0;
 
   // Accessors to the allocation regions.
-  virtual SurvivorGCAllocRegion* survivor_gc_alloc_region(AllocationContext_t context) = 0;
-  virtual OldGCAllocRegion* old_gc_alloc_region(AllocationContext_t context) = 0;
+  virtual SurvivorGCAllocRegion* survivor_gc_alloc_region() = 0;
+  virtual OldGCAllocRegion* old_gc_alloc_region() = 0;
 
   // Allocation attempt during GC for a survivor object / PLAB.
   inline HeapWord* survivor_attempt_allocation(size_t min_word_size,
                                                size_t desired_word_size,
-                                               size_t* actual_word_size,
-                                               AllocationContext_t context);
+                                               size_t* actual_word_size);
   // Allocation attempt during GC for an old object / PLAB.
   inline HeapWord* old_attempt_allocation(size_t min_word_size,
                                           size_t desired_word_size,
-                                          size_t* actual_word_size,
-                                          AllocationContext_t context);
+                                          size_t* actual_word_size);
 public:
   G1Allocator(G1CollectedHeap* heap) : _g1h(heap) { }
   virtual ~G1Allocator() { }
 
-  static G1Allocator* create_allocator(G1CollectedHeap* g1h);
-
 #ifdef ASSERT
   // Do we currently have an active mutator region to allocate into?
-  bool has_mutator_alloc_region(AllocationContext_t context) { return mutator_alloc_region(context)->get() != NULL; }
+  bool has_mutator_alloc_region() { return mutator_alloc_region()->get() != NULL; }
 #endif
   virtual void init_mutator_alloc_region() = 0;
   virtual void release_mutator_alloc_region() = 0;
@@ -89,25 +84,23 @@ public:
 
   // Allocate blocks of memory during mutator time.
 
-  inline HeapWord* attempt_allocation(size_t word_size, AllocationContext_t context);
-  inline HeapWord* attempt_allocation_locked(size_t word_size, AllocationContext_t context);
-  inline HeapWord* attempt_allocation_force(size_t word_size, AllocationContext_t context);
+  inline HeapWord* attempt_allocation(size_t word_size);
+  inline HeapWord* attempt_allocation_locked(size_t word_size);
+  inline HeapWord* attempt_allocation_force(size_t word_size);
 
-  size_t unsafe_max_tlab_alloc(AllocationContext_t context);
+  size_t unsafe_max_tlab_alloc();
 
   // Allocate blocks of memory during garbage collection. Will ensure an
   // allocation region, either by picking one or expanding the
   // heap, and then allocate a block of the given size. The block
   // may not be a humongous - it must fit into a single heap region.
   HeapWord* par_allocate_during_gc(InCSetState dest,
-                                   size_t word_size,
-                                   AllocationContext_t context);
+                                   size_t word_size);
 
   HeapWord* par_allocate_during_gc(InCSetState dest,
                                    size_t min_word_size,
                                    size_t desired_word_size,
-                                   size_t* actual_word_size,
-                                   AllocationContext_t context);
+                                   size_t* actual_word_size);
 
   virtual size_t used_in_alloc_regions() = 0;
 };
@@ -135,11 +128,11 @@ protected:
 public:
   G1DefaultAllocator(G1CollectedHeap* heap);
 
-  virtual bool survivor_is_full(AllocationContext_t context) const;
-  virtual bool old_is_full(AllocationContext_t context) const ;
+  virtual bool survivor_is_full() const;
+  virtual bool old_is_full() const ;
 
-  virtual void set_survivor_full(AllocationContext_t context);
-  virtual void set_old_full(AllocationContext_t context);
+  virtual void set_survivor_full();
+  virtual void set_old_full();
 
   virtual void init_mutator_alloc_region();
   virtual void release_mutator_alloc_region();
@@ -152,15 +145,15 @@ public:
     return _retained_old_gc_alloc_region == hr;
   }
 
-  virtual MutatorAllocRegion* mutator_alloc_region(AllocationContext_t context) {
+  virtual MutatorAllocRegion* mutator_alloc_region() {
     return &_mutator_alloc_region;
   }
 
-  virtual SurvivorGCAllocRegion* survivor_gc_alloc_region(AllocationContext_t context) {
+  virtual SurvivorGCAllocRegion* survivor_gc_alloc_region() {
     return &_survivor_gc_alloc_region;
   }
 
-  virtual OldGCAllocRegion* old_gc_alloc_region(AllocationContext_t context) {
+  virtual OldGCAllocRegion* old_gc_alloc_region() {
     return &_old_gc_alloc_region;
   }
 
@@ -170,7 +163,7 @@ public:
     size_t result = 0;
 
     // Read only once in case it is set to NULL concurrently
-    HeapRegion* hr = mutator_alloc_region(AllocationContext::current())->get();
+    HeapRegion* hr = mutator_alloc_region()->get();
     if (hr != NULL) {
       result += hr->used();
     }
@@ -198,7 +191,7 @@ protected:
   size_t _direct_allocated[InCSetState::Num];
 
   virtual void flush_and_retire_stats() = 0;
-  virtual PLAB* alloc_buffer(InCSetState dest, AllocationContext_t context) = 0;
+  virtual PLAB* alloc_buffer(InCSetState dest) = 0;
 
   // Calculate the survivor space object alignment in bytes. Returns that or 0 if
   // there are no restrictions on survivor alignment.
@@ -215,15 +208,12 @@ protected:
   }
 
   HeapWord* allocate_new_plab(InCSetState dest,
-                              size_t word_sz,
-                              AllocationContext_t context);
+                              size_t word_sz);
 
   bool may_throw_away_buffer(size_t const allocation_word_sz, size_t const buffer_size) const;
 public:
   G1PLABAllocator(G1Allocator* allocator);
   virtual ~G1PLABAllocator() { }
-
-  static G1PLABAllocator* create_allocator(G1Allocator* allocator);
 
   virtual void waste(size_t& wasted, size_t& undo_wasted) = 0;
 
@@ -233,27 +223,24 @@ public:
   // PLAB failed or not.
   HeapWord* allocate_direct_or_new_plab(InCSetState dest,
                                         size_t word_sz,
-                                        AllocationContext_t context,
                                         bool* plab_refill_failed);
 
   // Allocate word_sz words in the PLAB of dest.  Returns the address of the
   // allocated memory, NULL if not successful.
   inline HeapWord* plab_allocate(InCSetState dest,
-                                 size_t word_sz,
-                                 AllocationContext_t context);
+                                 size_t word_sz);
 
   HeapWord* allocate(InCSetState dest,
                      size_t word_sz,
-                     AllocationContext_t context,
                      bool* refill_failed) {
-    HeapWord* const obj = plab_allocate(dest, word_sz, context);
+    HeapWord* const obj = plab_allocate(dest, word_sz);
     if (obj != NULL) {
       return obj;
     }
-    return allocate_direct_or_new_plab(dest, word_sz, context, refill_failed);
+    return allocate_direct_or_new_plab(dest, word_sz, refill_failed);
   }
 
-  void undo_allocation(InCSetState dest, HeapWord* obj, size_t word_sz, AllocationContext_t context);
+  void undo_allocation(InCSetState dest, HeapWord* obj, size_t word_sz);
 };
 
 // The default PLAB allocator for G1. Keeps the current (single) PLAB for survivor
@@ -266,7 +253,7 @@ class G1DefaultPLABAllocator : public G1PLABAllocator {
 public:
   G1DefaultPLABAllocator(G1Allocator* _allocator);
 
-  virtual PLAB* alloc_buffer(InCSetState dest, AllocationContext_t context) {
+  virtual PLAB* alloc_buffer(InCSetState dest) {
     assert(dest.is_valid(),
            "Allocation buffer index out-of-bounds: " CSETSTATE_FORMAT, dest.value());
     assert(_alloc_buffers[dest.value()] != NULL,

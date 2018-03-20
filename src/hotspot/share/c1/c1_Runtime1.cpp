@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1402,13 +1402,7 @@ JRT_LEAF(int, Runtime1::arraycopy(oopDesc* src, int src_pos, oopDesc* dst, int d
     Klass* klass_oop = src->klass();
     if (klass_oop != dst->klass()) return ac_failed;
     TypeArrayKlass* klass = TypeArrayKlass::cast(klass_oop);
-    const int l2es = klass->log2_element_size();
-    const int ihs = klass->array_header_in_bytes() / wordSize;
-    char* src_addr = (char*) ((oopDesc**)src + ihs) + (src_pos << l2es);
-    char* dst_addr = (char*) ((oopDesc**)dst + ihs) + (dst_pos << l2es);
-    // Potential problem: memmove is not guaranteed to be word atomic
-    // Revisit in Merlin
-    memmove(dst_addr, src_addr, length << l2es);
+    klass->copy_array(arrayOop(src), src_pos, arrayOop(dst), dst_pos, length, Thread::current());
     return ac_ok;
   } else if (src->is_objArray() && dst->is_objArray()) {
     if (UseCompressedOops) {
