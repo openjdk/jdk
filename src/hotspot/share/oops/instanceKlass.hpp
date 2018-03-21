@@ -1070,7 +1070,7 @@ public:
 
   int  itable_offset_in_words() const { return start_of_itable() - (intptr_t*)this; }
 
-  address static_field_addr(int offset);
+  oop static_field_base_raw() { return java_mirror(); }
 
   OopMapBlock* start_of_nonstatic_oop_maps() const {
     return (OopMapBlock*)(start_of_itable() + itable_length());

@@ -1866,12 +1866,8 @@ void java_lang_Throwable::serialize(SerializeClosure* f) {
 
 oop java_lang_Throwable::unassigned_stacktrace() {
   InstanceKlass* ik = SystemDictionary::Throwable_klass();
-  address addr = ik->static_field_addr(static_unassigned_stacktrace_offset);
-  if (UseCompressedOops) {
-    return oopDesc::load_decode_heap_oop((narrowOop *)addr);
-  } else {
-    return oopDesc::load_decode_heap_oop((oop*)addr);
-  }
+  oop base = ik->static_field_base_raw();
+  return base->obj_field(static_unassigned_stacktrace_offset);
 }
 
 oop java_lang_Throwable::backtrace(oop throwable) {
@@ -3547,14 +3543,14 @@ jlong java_lang_ref_SoftReference::timestamp(oop ref) {
 
 jlong java_lang_ref_SoftReference::clock() {
   InstanceKlass* ik = SystemDictionary::SoftReference_klass();
-  jlong* offset = (jlong*)ik->static_field_addr(static_clock_offset);
-  return *offset;
+  oop base = ik->static_field_base_raw();
+  return base->long_field(static_clock_offset);
 }
 
 void java_lang_ref_SoftReference::set_clock(jlong value) {
   InstanceKlass* ik = SystemDictionary::SoftReference_klass();
-  jlong* offset = (jlong*)ik->static_field_addr(static_clock_offset);
-  *offset = value;
+  oop base = ik->static_field_base_raw();
+  base->long_field_put(static_clock_offset, value);
 }
 
 // Support for java_lang_invoke_DirectMethodHandle
@@ -4133,12 +4129,8 @@ int java_lang_System::err_offset_in_bytes() { return static_err_offset; }
 
 bool java_lang_System::has_security_manager() {
   InstanceKlass* ik = SystemDictionary::System_klass();
-  address addr = ik->static_field_addr(static_security_offset);
-  if (UseCompressedOops) {
-    return oopDesc::load_decode_heap_oop((narrowOop *)addr) != NULL;
-  } else {
-    return oopDesc::load_decode_heap_oop((oop*)addr) != NULL;
-  }
+  oop base = ik->static_field_base_raw();
+  return !oopDesc::is_null(base->obj_field(static_security_offset));
 }
 
 int java_lang_Class::_klass_offset;
