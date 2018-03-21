@@ -1344,11 +1344,11 @@ CompileTask* CompileBroker::create_compile_task(CompileQueue*       queue,
 #if INCLUDE_JVMCI
 // The number of milliseconds to wait before checking if
 // JVMCI compilation has made progress.
-static const long JVMCI_COMPILATION_PROGRESS_WAIT_TIMESLICE = 500;
+static const long JVMCI_COMPILATION_PROGRESS_WAIT_TIMESLICE = 1000;
 
 // The number of JVMCI compilation progress checks that must fail
 // before unblocking a thread waiting for a blocking compilation.
-static const int JVMCI_COMPILATION_PROGRESS_WAIT_ATTEMPTS = 5;
+static const int JVMCI_COMPILATION_PROGRESS_WAIT_ATTEMPTS = 10;
 
 /**
  * Waits for a JVMCI compiler to complete a given task. This thread
