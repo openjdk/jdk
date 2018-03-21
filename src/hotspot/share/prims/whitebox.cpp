@@ -865,14 +865,21 @@ WB_END
 
 bool WhiteBox::compile_method(Method* method, int comp_level, int bci, Thread* THREAD) {
   // Screen for unavailable/bad comp level or null method
-  if (method == NULL || comp_level > MIN2((CompLevel) TieredStopAtLevel, CompLevel_highest_tier) ||
-      CompileBroker::compiler(comp_level) == NULL) {
+  AbstractCompiler* comp = CompileBroker::compiler(comp_level);
+  if (method == NULL || comp_level > MIN2((CompLevel) TieredStopAtLevel, CompLevel_highest_tier) || comp == NULL) {
     return false;
   }
+
+  // Check if compilation is blocking
   methodHandle mh(THREAD, method);
+  DirectiveSet* directive = DirectivesStack::getMatchingDirective(mh, comp);
+  bool is_blocking = !directive->BackgroundCompilationOption;
+  DirectivesStack::release(directive);
+
+  // Compile method and check result
   nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh, mh->invocation_count(), CompileTask::Reason_Whitebox, THREAD);
   MutexLockerEx mu(Compile_lock);
-  return (mh->queued_for_compilation() || nm != NULL);
+  return ((!is_blocking && mh->queued_for_compilation()) || nm != NULL);
 }
 
 WB_ENTRY(jboolean, WB_EnqueueMethodForCompilation(JNIEnv* env, jobject o, jobject method, jint comp_level, jint bci))

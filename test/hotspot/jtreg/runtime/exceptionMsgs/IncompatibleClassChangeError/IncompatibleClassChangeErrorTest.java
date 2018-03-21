@@ -62,7 +62,24 @@ public class IncompatibleClassChangeErrorTest {
         "Class ICC_B does not implement the requested interface ICC_iB";
         // old message: "vtable stub"
 
-    public static void setup_test() {
+
+    private static boolean compile(Class<?> clazz, String name) {
+        try {
+            Method method = clazz.getMethod(name);
+            boolean enqueued = WHITE_BOX.enqueueMethodForCompilation(method, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
+            if (!enqueued) {
+                System.out.println("Warning: Blocking compilation failed for " + clazz.getName() + "." + name + " (timeout?)");
+                return false;
+            } else if (!WHITE_BOX.isMethodCompiled(method)) {
+                throw new RuntimeException(clazz.getName() + "." + name + " is not compiled");
+            }
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(clazz.getName() + "." + name + " not found", e);
+        }
+        return true;
+    }
+
+    public static boolean setup_test() {
         // Assure all exceptions are loaded.
         new AbstractMethodError();
         new IncompatibleClassChangeError();
@@ -75,29 +92,15 @@ public class IncompatibleClassChangeErrorTest {
         enableChecks = true;
 
         // Compile
-        try {
-            Method method = IncompatibleClassChangeErrorTest.class.getMethod("test_icc_compiled_itable_stub");
-            WHITE_BOX.enqueueMethodForCompilation(method, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-            if (!WHITE_BOX.isMethodCompiled(method)) {
-                throw new RuntimeException(method.getName() + " is not compiled");
-            }
-            method = ICC_C.class.getMethod("b");
-            WHITE_BOX.enqueueMethodForCompilation(method, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-            if (!WHITE_BOX.isMethodCompiled(method)) {
-                throw new RuntimeException("ICC_C." + method.getName() + " is not compiled");
-            }
-            method = ICC_D.class.getMethod("b");
-            WHITE_BOX.enqueueMethodForCompilation(method, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-            if (!WHITE_BOX.isMethodCompiled(method)) {
-                throw new RuntimeException("ICC_D." + method.getName() + " is not compiled");
-            }
-            method = ICC_E.class.getMethod("b");
-            WHITE_BOX.enqueueMethodForCompilation(method, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-            if (!WHITE_BOX.isMethodCompiled(method)) {
-                throw new RuntimeException("ICC_E." + method.getName() + " is not compiled");
-            }
-        } catch (NoSuchMethodException e) { }
+        if (!compile(IncompatibleClassChangeErrorTest.class, "test_icc_compiled_itable_stub") ||
+            !compile(ICC_C.class, "b") ||
+            !compile(ICC_D.class, "b") ||
+            !compile(ICC_E.class, "b")) {
+          return false;
+        }
+
         System.out.println("warmup done.");
+        return true;
     }
 
     // Should never be compiled.
@@ -204,7 +207,9 @@ public class IncompatibleClassChangeErrorTest {
     }
 
     public static void main(String[] args) throws Exception {
-        setup_test();
+        if (!setup_test()) {
+            return;
+        }
         test_iccInt();
         test_icc_compiled_itable_stub();
     }
