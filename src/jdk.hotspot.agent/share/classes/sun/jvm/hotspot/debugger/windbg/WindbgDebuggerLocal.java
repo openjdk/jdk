@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -510,7 +510,7 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
     static {
 
      /*
-      * sawindbg.dll depends on dbgeng.dll which itself depends on
+      * saproc.dll depends on dbgeng.dll which itself depends on
       * dbghelp.dll. We have to make sure that the dbgeng.dll and
       * dbghelp.dll that we load are compatible with each other. We
       * load both of those libraries from the same directory based
@@ -538,18 +538,18 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
 
     String dbgengPath   = null;
     String dbghelpPath  = null;
-    String sawindbgPath = null;
+    String saprocPath = null;
     List   searchList   = new ArrayList();
 
     boolean loadLibraryDEBUG =
         System.getProperty("sun.jvm.hotspot.loadLibrary.DEBUG") != null;
 
     {
-      // First place to search is co-located with sawindbg.dll in
+      // First place to search is co-located with saproc.dll in
       // $JAVA_HOME/jre/bin (java.home property is set to $JAVA_HOME/jre):
       searchList.add(System.getProperty("java.home") + File.separator + "bin");
-      sawindbgPath = (String) searchList.get(0) + File.separator +
-          "sawindbg.dll";
+      saprocPath = (String) searchList.get(0) + File.separator +
+          "saproc.dll";
 
       // second place to search is specified by an environment variable:
       String DTFWHome = System.getenv("DEBUGGINGTOOLSFORWINDOWS");
@@ -646,11 +646,11 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
     }
     System.load(dbgengPath);
 
-    // Now, load sawindbg.dll
+    // Now, load saproc.dll
     if (loadLibraryDEBUG) {
-      System.err.println("DEBUG: loading '" + sawindbgPath + "'.");
+      System.err.println("DEBUG: loading '" + saprocPath + "'.");
     }
-    System.load(sawindbgPath);
+    System.load(saprocPath);
 
     // where do I find '.exe', '.dll' files?
     imagePath = System.getProperty("sun.jvm.hotspot.debugger.windbg.imagePath");
