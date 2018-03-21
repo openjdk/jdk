@@ -42,6 +42,7 @@
 #include "runtime/sweeper.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vm_operations.hpp"
+#include "runtime/vmThread.hpp"
 #include "trace/tracing.hpp"
 #include "utilities/events.hpp"
 #include "utilities/ticks.inline.hpp"

@@ -27,6 +27,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiGetLoadedClasses.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/stack.inline.hpp"

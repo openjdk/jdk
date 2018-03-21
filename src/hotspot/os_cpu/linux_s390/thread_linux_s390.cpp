@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,8 +24,22 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/frame.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/thread.hpp"
+
+frame JavaThread::pd_last_frame() {
+  assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
+
+  intptr_t* sp = last_Java_sp();
+  address pc = _anchor.last_Java_pc();
+
+  // Last_Java_pc ist not set if we come here from compiled code.
+  if (pc == NULL) {
+    pc = (address) *(sp + 14);
+  }
+
+  return frame(sp, pc);
+}
 
 // Forte Analyzer AsyncGetCallTrace profiling support is not implemented on Linux/S390x.
 bool JavaThread::pd_get_top_frame_for_signal_handler(frame* fr_addr, void* ucontext, bool isInJava) {

@@ -30,7 +30,6 @@
 #include "runtime/init.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/objectMonitor.hpp"
-#include "runtime/objectMonitor.inline.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"

@@ -27,6 +27,7 @@
 
 #include "interpreter/bytecodes.hpp"
 #include "memory/universe.hpp"
+#include "oops/metadata.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.hpp"
 #include "utilities/align.hpp"

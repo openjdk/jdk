@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "memory/allocation.inline.hpp"
@@ -35,6 +36,21 @@
 #include "runtime/signature.hpp"
 
 #define __ _masm->
+
+Interpreter::SignatureHandlerGenerator::SignatureHandlerGenerator(
+    const methodHandle& method, CodeBuffer* buffer) : NativeSignatureIterator(method) {
+  _masm = new MacroAssembler(buffer);
+  _abi_offset = 0;
+  _ireg = is_static() ? 2 : 1;
+#ifdef __ABI_HARD__
+#ifdef AARCH64
+  _freg = 0;
+#else
+  _fp_slot = 0;
+  _single_fpr_slot = 0;
+#endif
+#endif
+}
 
 #ifdef SHARING_FAST_NATIVE_FINGERPRINTS
 // mapping from SignatureIterator param to (common) type of parsing

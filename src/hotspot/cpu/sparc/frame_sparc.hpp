@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,5 +239,7 @@
   BasicObjectLock* interpreter_frame_monitors() const;
   void interpreter_frame_set_monitors(BasicObjectLock* monitors);
  public:
+
+  static jint interpreter_frame_expression_stack_direction() { return -1; }
 
 #endif // CPU_SPARC_VM_FRAME_SPARC_HPP

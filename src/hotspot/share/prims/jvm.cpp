@@ -68,7 +68,7 @@
 #include "runtime/reflection.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
-#include "runtime/vframe.hpp"
+#include "runtime/vframe.inline.hpp"
 #include "runtime/vm_operations.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"

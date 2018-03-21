@@ -43,6 +43,7 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vframe.hpp"
+#include "runtime/vmThread.hpp"
 #include "trace/traceMacros.hpp"
 #include "trace/tracing.hpp"
 #include "utilities/align.hpp"

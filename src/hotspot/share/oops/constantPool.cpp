@@ -51,7 +51,7 @@
 #include "runtime/init.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/vframe.hpp"
+#include "runtime/vframe.inline.hpp"
 #include "utilities/copy.hpp"
 
 constantTag ConstantPool::tag_at(int which) const { return (constantTag)tags()->at_acquire(which); }

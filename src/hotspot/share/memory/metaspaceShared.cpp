@@ -46,6 +46,7 @@
 #include "logging/logMessage.hpp"
 #include "memory/filemap.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
@@ -56,15 +57,15 @@
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
-#include "runtime/timerTrace.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/timerTrace.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
 #include "utilities/align.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/hashtable.inline.hpp"
-#include "memory/metaspaceClosure.hpp"
 
 ReservedSpace MetaspaceShared::_shared_rs;
 VirtualSpace MetaspaceShared::_shared_vs;
@@ -1818,6 +1819,13 @@ void MetaspaceShared::dump_open_archive_heap_objects(
 
   G1CollectedHeap::heap()->end_archive_alloc_range(open_archive,
                                                    os::vm_allocation_granularity());
+}
+
+unsigned MetaspaceShared::obj_hash(oop const& p) {
+  assert(!p->mark()->has_bias_pattern(),
+         "this object should never have been locked");  // so identity_hash won't safepoin
+  unsigned hash = (unsigned)p->identity_hash();
+  return hash;
 }
 
 MetaspaceShared::ArchivedObjectCache* MetaspaceShared::_archive_object_cache = NULL;
