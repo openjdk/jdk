@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6843752
+ * @bug 6843752 8192992
  * @summary missing code for an anti-dependent Phi in GCM
  *
  * @run main/othervm -Xbatch compiler.c2.Test6843752
