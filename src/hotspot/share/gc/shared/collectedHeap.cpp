@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/allocTracer.hpp"
-#include "gc/shared/barrierSet.inline.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcLocker.inline.hpp"

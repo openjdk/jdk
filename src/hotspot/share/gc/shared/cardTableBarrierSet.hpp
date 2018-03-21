@@ -52,7 +52,9 @@ class CardTableBarrierSet: public ModRefBarrierSet {
   bool       _defer_initial_card_mark;
   CardTable* _card_table;
 
-  CardTableBarrierSet(CardTable* card_table, const BarrierSet::FakeRtti& fake_rtti);
+  CardTableBarrierSet(BarrierSetAssembler* barrier_set_assembler,
+                      CardTable* card_table,
+                      const BarrierSet::FakeRtti& fake_rtti);
 
  public:
   CardTableBarrierSet(CardTable* card_table);
@@ -66,7 +68,6 @@ class CardTableBarrierSet: public ModRefBarrierSet {
     invalidate(mr);
   }
 
- protected:
   void write_ref_array_work(MemRegion mr);
 
  public:
