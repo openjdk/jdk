@@ -2422,6 +2422,8 @@ void Compile::Code_Gen() {
     return;
   }
 
+  print_method(PHASE_MATCHING, 2);
+
   // Build a proper-looking CFG
   PhaseCFG cfg(node_arena(), root(), matcher);
   _cfg = &cfg;

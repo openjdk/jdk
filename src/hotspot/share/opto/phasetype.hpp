@@ -49,6 +49,7 @@ enum CompilerPhaseType {
   PHASE_BEFORE_BEAUTIFY_LOOPS,
   PHASE_AFTER_BEAUTIFY_LOOPS,
   PHASE_BEFORE_MATCHING,
+  PHASE_MATCHING,
   PHASE_INCREMENTAL_INLINE,
   PHASE_INCREMENTAL_BOXING_INLINE,
   PHASE_END,
@@ -83,7 +84,8 @@ class CompilerPhaseTypeHelper {
       case PHASE_AFTER_CLOOPS:               return "After CountedLoop";
       case PHASE_BEFORE_BEAUTIFY_LOOPS:      return "Before beautify loops";
       case PHASE_AFTER_BEAUTIFY_LOOPS:       return "After beautify loops";
-      case PHASE_BEFORE_MATCHING:            return "Before Matching";
+      case PHASE_BEFORE_MATCHING:            return "Before matching";
+      case PHASE_MATCHING:                   return "After matching";
       case PHASE_INCREMENTAL_INLINE:         return "Incremental Inline";
       case PHASE_INCREMENTAL_BOXING_INLINE:  return "Incremental Boxing Inline";
       case PHASE_END:                        return "End";
