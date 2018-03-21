@@ -407,7 +407,7 @@ class ServerImpl implements TimeSource {
                                     }
                                     handle (chan, conn);
                                 } else {
-                                    assert false;
+                                    assert false : "Unexpected non-readable key:" + key;
                                 }
                             } catch (CancelledKeyException e) {
                                 handleException(key, null);
