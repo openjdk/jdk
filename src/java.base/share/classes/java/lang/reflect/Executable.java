@@ -226,6 +226,10 @@ public abstract class Executable extends AccessibleObject
     // to the untrusted code...
     abstract Class<?>[] getSharedParameterTypes();
 
+    // returns shared array of exception types - must never give it out
+    // to the untrusted code...
+    abstract Class<?>[] getSharedExceptionTypes();
+
     /**
      * Returns an array of {@code Class} objects that represent the formal
      * parameter types, in declaration order, of the executable
