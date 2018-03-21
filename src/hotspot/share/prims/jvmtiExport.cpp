@@ -57,7 +57,6 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
-#include "services/serviceUtil.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc/parallel/psMarkSweep.hpp"
@@ -2363,10 +2362,6 @@ void JvmtiExport::post_data_dump() {
 
 void JvmtiExport::post_monitor_contended_enter(JavaThread *thread, ObjectMonitor *obj_mntr) {
   oop object = (oop)obj_mntr->object();
-  if (!ServiceUtil::visible_oop(object)) {
-    // Ignore monitor contended enter for vm internal object.
-    return;
-  }
   JvmtiThreadState *state = thread->jvmti_thread_state();
   if (state == NULL) {
     return;
@@ -2398,10 +2393,6 @@ void JvmtiExport::post_monitor_contended_enter(JavaThread *thread, ObjectMonitor
 
 void JvmtiExport::post_monitor_contended_entered(JavaThread *thread, ObjectMonitor *obj_mntr) {
   oop object = (oop)obj_mntr->object();
-  if (!ServiceUtil::visible_oop(object)) {
-    // Ignore monitor contended entered for vm internal object.
-    return;
-  }
   JvmtiThreadState *state = thread->jvmti_thread_state();
   if (state == NULL) {
     return;
@@ -2465,10 +2456,6 @@ void JvmtiExport::post_monitor_wait(JavaThread *thread, oop object,
 
 void JvmtiExport::post_monitor_waited(JavaThread *thread, ObjectMonitor *obj_mntr, jboolean timed_out) {
   oop object = (oop)obj_mntr->object();
-  if (!ServiceUtil::visible_oop(object)) {
-    // Ignore monitor waited for vm internal object.
-    return;
-  }
   JvmtiThreadState *state = thread->jvmti_thread_state();
   if (state == NULL) {
     return;
@@ -2761,9 +2748,7 @@ JvmtiVMObjectAllocEventCollector::~JvmtiVMObjectAllocEventCollector() {
     set_enabled(false);
     for (int i = 0; i < _allocated->length(); i++) {
       oop obj = _allocated->at(i);
-      if (ServiceUtil::visible_oop(obj)) {
-        JvmtiExport::post_vm_object_alloc(JavaThread::current(), obj);
-      }
+      JvmtiExport::post_vm_object_alloc(JavaThread::current(), obj);
     }
     delete _allocated;
   }
