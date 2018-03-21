@@ -39,7 +39,7 @@
 #include "prims/jvmtiRedefineClasses.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
-#include "runtime/handles.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"

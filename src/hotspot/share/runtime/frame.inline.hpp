@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,10 @@ inline oop* frame::oopmapreg_to_location(VMReg reg, const RegisterMap* reg_map) 
     int sp_offset_in_bytes = reg->reg2stack() * VMRegImpl::stack_slot_size;
     return (oop*)(((address)unextended_sp()) + sp_offset_in_bytes);
   }
+}
+
+inline bool StackFrameStream::is_done() {
+  return (_is_done) ? true : (_is_done = _fr.is_first_frame(), false);
 }
 
 #endif // SHARE_VM_RUNTIME_FRAME_INLINE_HPP

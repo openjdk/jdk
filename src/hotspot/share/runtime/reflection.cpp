@@ -47,7 +47,7 @@
 #include "runtime/reflection.hpp"
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/vframe.hpp"
+#include "runtime/vframe.inline.hpp"
 
 static void trace_class_resolution(const Klass* to_class) {
   ResourceMark rm;

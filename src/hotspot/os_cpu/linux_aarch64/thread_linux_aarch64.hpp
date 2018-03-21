@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,10 +41,7 @@
     _anchor.clear();
   }
 
-  frame pd_last_frame() {
-    assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
-    return frame(_anchor.last_Java_sp(), _anchor.last_Java_fp(), _anchor.last_Java_pc());
-  }
+  frame pd_last_frame();
 
  public:
   // Mutators are highly dangerous....
