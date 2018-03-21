@@ -161,7 +161,7 @@ public:
 
   double accum_yg_surv_rate_pred(int age) const;
 
-protected:
+private:
   G1CollectionSet* _collection_set;
   double average_time_ms(G1GCPhaseTimes::GCParPhases phase) const;
   double other_time_ms(double pause_time_ms) const;
@@ -171,7 +171,6 @@ protected:
   double constant_other_time_ms(double pause_time_ms) const;
 
   CollectionSetChooser* cset_chooser() const;
-private:
 
   // The number of bytes copied during the GC.
   size_t _bytes_copied_during_gc;
@@ -399,7 +398,6 @@ private:
 
   AgeTable _survivors_age_table;
 
-protected:
   size_t desired_survivor_size() const;
 public:
   uint tenuring_threshold() const { return _tenuring_threshold; }
