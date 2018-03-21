@@ -55,7 +55,7 @@ compiler/unsafe/UnsafeGetConstantField.java                     8181833   generi
 compiler/unsafe/UnsafeGetStableArrayElement.java                8181833   generic-all
 compiler/unsafe/UnsafeOffHeapBooleanTest.java                   8181833   generic-all
 compiler/unsafe/UnsafeOnHeapBooleanTest.java                    8181833   generic-all
-:1
+
 compiler/whitebox/ClearMethodStateTest.java                     8181831   generic-all
 compiler/whitebox/EnqueueMethodForCompilationTest.java          8181831   generic-all
 compiler/whitebox/MakeMethodNotCompilableTest.java              8181831   generic-all
@@ -76,6 +76,6 @@ runtime/ReservedStack/ReservedStackTestCompiler.java            8181855   generi
 
 serviceability/jvmti/GetModulesInfo/JvmtiGetAllModulesTest.java 8195156   generic-all
 
-runtime/Metaspace/DefineClass.java                              8197442   generic-all
-
 compiler/compilercontrol/directives/LogTest.java                8197446   generic-all
+
+gc/g1/ihop/TestIHOPStatic.java                                  8199486   generic-all
