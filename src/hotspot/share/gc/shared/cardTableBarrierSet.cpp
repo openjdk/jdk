@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/cardTableBarrierSetAssembler.hpp"
 #include "gc/shared/cardTableBarrierSet.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
@@ -39,16 +40,18 @@
 // enumerate ref fields that have been modified (since the last
 // enumeration.)
 
-CardTableBarrierSet::CardTableBarrierSet(
-  CardTable* card_table,
-  const BarrierSet::FakeRtti& fake_rtti) :
-  ModRefBarrierSet(fake_rtti.add_tag(BarrierSet::CardTableBarrierSet)),
+CardTableBarrierSet::CardTableBarrierSet(BarrierSetAssembler* barrier_set_assembler,
+                                         CardTable* card_table,
+                                         const BarrierSet::FakeRtti& fake_rtti) :
+  ModRefBarrierSet(barrier_set_assembler,
+                   fake_rtti.add_tag(BarrierSet::CardTableBarrierSet)),
   _defer_initial_card_mark(false),
   _card_table(card_table)
 {}
 
 CardTableBarrierSet::CardTableBarrierSet(CardTable* card_table) :
-  ModRefBarrierSet(BarrierSet::FakeRtti(BarrierSet::CardTableBarrierSet)),
+  ModRefBarrierSet(make_barrier_set_assembler<CardTableBarrierSetAssembler>(),
+                   BarrierSet::FakeRtti(BarrierSet::CardTableBarrierSet)),
   _defer_initial_card_mark(false),
   _card_table(card_table)
 {}
