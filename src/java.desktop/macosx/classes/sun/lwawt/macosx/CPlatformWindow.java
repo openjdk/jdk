@@ -859,7 +859,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     @Override
     public void updateFocusableWindowState() {
         final boolean isFocusable = isNativelyFocusableWindow();
-        setStyleBits(SHOULD_BECOME_KEY | SHOULD_BECOME_MAIN, isFocusable); // set both bits at once
+        setStyleBits(SHOULD_BECOME_KEY | SHOULD_BECOME_MAIN | RESIZABLE, isFocusable); // set bits at once
     }
 
     @Override
