@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,41 +19,11 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include "libproc.h"
-
-int main(int argc, char** argv) {
-   struct ps_prochandle* ph;
-
-   init_libproc(true);
-   switch (argc) {
-      case 2: {
-         // process
-         ph = Pgrab(atoi(argv[1]));
-         break;
-      }
-
-      case 3: {
-        // core
-        ph = Pgrab_core(argv[1], argv[2]);
-        break;
-      }
-
-      default: {
-        fprintf(stderr, "usage %s <pid> or %s <exec file> <core file>\n", argv[0], argv[0]);
-        return 1;
-      }
-   }
-
-   if (ph) {
-      Prelease(ph);
-      return 0;
-   } else {
-      printf("can't connect to debuggee\n");
-      return 1;
-   }
-}
+/*
+ * @test
+ * @bug 8198552
+ * @summary Check that -Xdoclint/package: option can be specified multiple times
+ * @compile/fail/ref=MultiPackage.out -Xdoclint:html -Xdoclint/package:p1 -Xdoclint/package:p2 -XDrawDiagnostics p1/Test1.java p2/Test2.java
+ */

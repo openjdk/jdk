@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,13 @@ public final class CompilerUtils {
      * {@code <destination>/**}. The destination directory will be created if
      * it doesn't exist.
      *
+     * Equivalent to calling {@code compile(source, destination, true, options);}.
+     *
      * All warnings/errors emitted by the compiler are output to System.out/err.
+     *
+     * @param source Path to the source directory
+     * @param destination Path to the destination directory
+     * @param options Any options to pass to the compiler
      *
      * @return true if the compilation is successful
      *
@@ -60,6 +66,36 @@ public final class CompilerUtils {
     public static boolean compile(Path source, Path destination, String... options)
         throws IOException
     {
+        return compile(source, destination, true, options);
+    }
+
+    /**
+     * Compile all the java sources in {@code <source>} and optionally its
+     * subdirectories, to
+     * {@code <destination>}. The destination directory will be created if
+     * it doesn't exist.
+     *
+     * All warnings/errors emitted by the compiler are output to System.out/err.
+     *
+     * @param source Path to the source directory
+     * @param destination Path to the destination directory
+     * @param recurse If {@code true} recurse into any {@code source} subdirectories
+     *        to compile all java source files; else only compile those directly in
+     *        {@code source}.
+     * @param options Any options to pass to the compiler
+     *
+     * @return true if the compilation is successful
+     *
+     * @throws IOException
+     *         if there is an I/O error scanning the source tree or
+     *         creating the destination directory
+     * @throws UnsupportedOperationException
+     *         if there is no system java compiler
+     */
+
+   public static boolean compile(Path source, Path destination, boolean recurse, String... options)
+        throws IOException
+    {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         if (compiler == null) {
             // no compiler available
@@ -69,7 +105,7 @@ public final class CompilerUtils {
         StandardJavaFileManager jfm = compiler.getStandardFileManager(null, null, null);
 
         List<Path> sources
-            = Files.find(source, Integer.MAX_VALUE,
+            = Files.find(source, (recurse ? Integer.MAX_VALUE : 1),
                 (file, attrs) -> (file.toString().endsWith(".java")))
                 .collect(Collectors.toList());
 

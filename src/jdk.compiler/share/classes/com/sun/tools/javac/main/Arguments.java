@@ -836,9 +836,7 @@ public class Arguments {
 
         String checkPackages = options.get(Option.XDOCLINT_PACKAGE);
         if (checkPackages != null) {
-            for (String s : checkPackages.split("\\s+")) {
-                doclintOpts.add(DocLint.XCHECK_PACKAGE + s);
-            }
+            doclintOpts.add(DocLint.XCHECK_PACKAGE + checkPackages);
         }
 
         String format = options.get(Option.DOCLINT_FORMAT);

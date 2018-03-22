@@ -67,6 +67,7 @@ endef
 # In GNU Make 4.0 and higher, there is a file function for writing to files.
 ifeq (4.0, $(firstword $(sort 4.0 $(MAKE_VERSION))))
   HAS_FILE_FUNCTION := true
+  CORRECT_FUNCTION_IN_RECIPE_EVALUATION := true
 endif
 
 ##############################
