@@ -47,6 +47,7 @@ import java.text.DateFormatSymbols;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
+import java.text.spi.NumberFormatProvider;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Objects;
@@ -62,6 +63,8 @@ import java.time.temporal.UnsupportedTemporalTypeException;
 
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.FormattedFloatingDecimal;
+import sun.util.locale.provider.LocaleProviderAdapter;
+import sun.util.locale.provider.ResourceBundleBasedAdapter;
 
 /**
  * An interpreter for printf-style format strings.  This class provides support
@@ -4476,8 +4479,33 @@ public final class Formatter implements Closeable, Flushable {
                 } else {
                     DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance(l);
                     grpSep = dfs.getGroupingSeparator();
-                    DecimalFormat df = (DecimalFormat) NumberFormat.getIntegerInstance(l);
+                    DecimalFormat df = null;
+                    NumberFormat nf = NumberFormat.getNumberInstance(l);
+                    if (nf instanceof DecimalFormat) {
+                        df = (DecimalFormat) nf;
+                    } else {
+
+                        // Use DecimalFormat constructor to obtain the instance,
+                        // in case NumberFormat.getNumberInstance(l)
+                        // returns instance other than DecimalFormat
+                        LocaleProviderAdapter adapter = LocaleProviderAdapter
+                                .getAdapter(NumberFormatProvider.class, l);
+                        if (!(adapter instanceof ResourceBundleBasedAdapter)) {
+                            adapter = LocaleProviderAdapter.getResourceBundleBased();
+                        }
+                        String[] all = adapter.getLocaleResources(l)
+                                .getNumberPatterns();
+                        df = new DecimalFormat(all[0], dfs);
+                    }
                     grpSize = df.getGroupingSize();
+                    // Some locales do not use grouping (the number
+                    // pattern for these locales does not contain group, e.g.
+                    // ("#0.###")), but specify a grouping separator.
+                    // To avoid unnecessary identification of the position of
+                    // grouping separator, reset its value with null character
+                    if (!df.isGroupingUsed() || grpSize == 0) {
+                        grpSep = '\0';
+                    }
                 }
             }
 
