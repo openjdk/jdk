@@ -2653,7 +2653,7 @@ public:
           "Inline allocations larger than this in doublewords must go slow")\
                                                                             \
   product(bool, AggressiveOpts, false,                                      \
-          "Enable aggressive optimizations - see arguments.cpp")            \
+          "(Deprecated) Enable aggressive optimizations - see arguments.cpp") \
                                                                             \
   product_pd(bool, CompactStrings,                                          \
           "Enable Strings to use single byte chars in backing store")       \

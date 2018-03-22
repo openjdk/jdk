@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
  * @bug 6689060
  * @summary Escape Analysis does not work with Compressed Oops
  *
- * @run main/othervm -Xbatch -XX:+AggressiveOpts
- *      -XX:CompileCommand=exclude,compiler.escapeAnalysis.Test6689060::dummy
- *      compiler.escapeAnalysis.Test6689060
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:+EliminateAutoBox -XX:AutoBoxCacheMax=20000
+ *                   -XX:CompileCommand=exclude,compiler.escapeAnalysis.Test6689060::dummy
+ *                   compiler.escapeAnalysis.Test6689060
  */
 
 package compiler.escapeAnalysis;
