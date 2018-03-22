@@ -29,7 +29,7 @@
  *          java.management
  *          jdk.attach/sun.tools.attach
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm/timeout=900 TestOptionsWithRanges
+ * @run main/othervm/timeout=1800 TestOptionsWithRanges
  */
 
 import java.util.ArrayList;
