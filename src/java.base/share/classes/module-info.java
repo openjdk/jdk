@@ -159,8 +159,6 @@ module java.base {
         jdk.scripting.nashorn;
     exports jdk.internal.org.objectweb.asm.signature to
         jdk.scripting.nashorn;
-    exports jdk.internal.math to
-        java.desktop;
     exports jdk.internal.misc to
         java.desktop,
         java.logging,
