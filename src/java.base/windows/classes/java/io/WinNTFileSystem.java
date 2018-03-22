@@ -50,7 +50,7 @@ class WinNTFileSystem extends FileSystem {
         slash = props.getProperty("file.separator").charAt(0);
         semicolon = props.getProperty("path.separator").charAt(0);
         altSlash = (this.slash == '\\') ? '/' : '\\';
-        userDir = props.getProperty("user.dir");
+        userDir = normalize(props.getProperty("user.dir"));
     }
 
     private boolean isSlash(char c) {
