@@ -1519,26 +1519,22 @@ public class Lower extends TreeTranslator {
      *
      * {
      *   final VariableModifiers_minus_final R #resource = Expression;
-     *   Throwable #primaryException = null;
      *
      *   try ResourceSpecificationtail
      *     Block
-     *   catch (Throwable #t) {
-     *     #primaryException = t;
-     *     throw #t;
-     *   } finally {
-     *     if (#resource != null) {
-     *       if (#primaryException != null) {
-     *         try {
-     *           #resource.close();
-     *         } catch(Throwable #suppressedException) {
-     *           #primaryException.addSuppressed(#suppressedException);
-     *         }
-     *       } else {
+     *   } body-only-finally {
+     *     if (#resource != null) //nullcheck skipped if Expression is provably non-null
      *         #resource.close();
-     *       }
-     *     }
+     *   } catch (Throwable #primaryException) {
+     *       if (#resource != null) //nullcheck skipped if Expression is provably non-null
+     *           try {
+     *               #resource.close();
+     *           } catch (Throwable #suppressedException) {
+     *              #primaryException.addSuppressed(#suppressedException);
+     *           }
+     *       throw #primaryException;
      *   }
+     * }
      *
      * @param tree  The try statement to inspect.
      * @return A a desugared try-with-resources tree, or the original
@@ -1547,8 +1543,7 @@ public class Lower extends TreeTranslator {
     JCTree makeTwrTry(JCTry tree) {
         make_at(tree.pos());
         twrVars = twrVars.dup();
-        JCBlock twrBlock = makeTwrBlock(tree.resources, tree.body,
-                tree.finallyCanCompleteNormally, 0);
+        JCBlock twrBlock = makeTwrBlock(tree.resources, tree.body, 0);
         if (tree.catchers.isEmpty() && tree.finalizer == null)
             result = translate(twrBlock);
         else
@@ -1557,19 +1552,18 @@ public class Lower extends TreeTranslator {
         return result;
     }
 
-    private JCBlock makeTwrBlock(List<JCTree> resources, JCBlock block,
-            boolean finallyCanCompleteNormally, int depth) {
+    private JCBlock makeTwrBlock(List<JCTree> resources, JCBlock block, int depth) {
         if (resources.isEmpty())
             return block;
 
         // Add resource declaration or expression to block statements
         ListBuffer<JCStatement> stats = new ListBuffer<>();
         JCTree resource = resources.head;
-        JCExpression expr = null;
+        JCExpression resourceUse;
         boolean resourceNonNull;
         if (resource instanceof JCVariableDecl) {
             JCVariableDecl var = (JCVariableDecl) resource;
-            expr = make.Ident(var.sym).setType(resource.type);
+            resourceUse = make.Ident(var.sym).setType(resource.type);
             resourceNonNull = var.init != null && TreeInfo.skipParens(var.init).hasTag(NEWCLASS);
             stats.add(var);
         } else {
@@ -1584,164 +1578,82 @@ public class Lower extends TreeTranslator {
             twrVars.enter(syntheticTwrVar);
             JCVariableDecl syntheticTwrVarDecl =
                 make.VarDef(syntheticTwrVar, (JCExpression)resource);
-            expr = (JCExpression)make.Ident(syntheticTwrVar);
-            resourceNonNull = TreeInfo.skipParens(resource).hasTag(NEWCLASS);
+            resourceUse = (JCExpression)make.Ident(syntheticTwrVar);
+            resourceNonNull = false;
             stats.add(syntheticTwrVarDecl);
         }
 
-        // Add primaryException declaration
-        VarSymbol primaryException =
-            new VarSymbol(SYNTHETIC,
-                          makeSyntheticName(names.fromString("primaryException" +
-                          depth), twrVars),
-                          syms.throwableType,
-                          currentMethodSym);
-        twrVars.enter(primaryException);
-        JCVariableDecl primaryExceptionTreeDecl = make.VarDef(primaryException, makeNull());
-        stats.add(primaryExceptionTreeDecl);
+        //create (semi-) finally block that will be copied into the main try body:
+        int oldPos = make.pos;
+        make.at(TreeInfo.endPos(block));
 
-        // Create catch clause that saves exception and then rethrows it
-        VarSymbol param =
+        // if (#resource != null) { #resource.close(); }
+        JCStatement bodyCloseStatement = makeResourceCloseInvocation(resourceUse);
+
+        if (!resourceNonNull) {
+            bodyCloseStatement = make.If(makeNonNullCheck(resourceUse),
+                                         bodyCloseStatement,
+                                         null);
+        }
+
+        JCBlock finallyClause = make.Block(BODY_ONLY_FINALIZE, List.of(bodyCloseStatement));
+        make.at(oldPos);
+
+        // Create catch clause that saves exception, closes the resource and then rethrows the exception:
+        VarSymbol primaryException =
             new VarSymbol(FINAL|SYNTHETIC,
                           names.fromString("t" +
                                            target.syntheticNameChar()),
                           syms.throwableType,
                           currentMethodSym);
-        JCVariableDecl paramTree = make.VarDef(param, null);
-        JCStatement assign = make.Assignment(primaryException, make.Ident(param));
-        JCStatement rethrowStat = make.Throw(make.Ident(param));
-        JCBlock catchBlock = make.Block(0L, List.of(assign, rethrowStat));
-        JCCatch catchClause = make.Catch(paramTree, catchBlock);
+        JCVariableDecl primaryExceptionDecl = make.VarDef(primaryException, null);
 
-        int oldPos = make.pos;
-        make.at(TreeInfo.endPos(block));
-        JCBlock finallyClause = makeTwrFinallyClause(primaryException, expr, resourceNonNull);
-        make.at(oldPos);
-        JCTry outerTry = make.Try(makeTwrBlock(resources.tail, block,
-                                    finallyCanCompleteNormally, depth + 1),
-                                  List.of(catchClause),
-                                  finallyClause);
-        outerTry.finallyCanCompleteNormally = finallyCanCompleteNormally;
-        stats.add(outerTry);
-        JCBlock newBlock = make.Block(0L, stats.toList());
-        return newBlock;
-    }
-
-    /**If the estimated number of copies the close resource code in a single class is above this
-     * threshold, generate and use a method for the close resource code, leading to smaller code.
-     * As generating a method has overhead on its own, generating the method for cases below the
-     * threshold could lead to an increase in code size.
-     */
-    public static final int USE_CLOSE_RESOURCE_METHOD_THRESHOLD = 4;
-
-    private JCBlock makeTwrFinallyClause(Symbol primaryException, JCExpression resource,
-            boolean resourceNonNull) {
-        MethodSymbol closeResource = (MethodSymbol)lookupSynthetic(dollarCloseResource,
-                                                                   currentClass.members());
-
-        if (closeResource == null && shouldUseCloseResourceMethod()) {
-            closeResource = new MethodSymbol(
-                PRIVATE | STATIC | SYNTHETIC,
-                dollarCloseResource,
-                new MethodType(
-                    List.of(syms.throwableType, syms.autoCloseableType),
-                    syms.voidType,
-                    List.nil(),
-                    syms.methodClass),
-                currentClass);
-            enterSynthetic(resource.pos(), closeResource, currentClass.members());
-
-            JCMethodDecl md = make.MethodDef(closeResource, null);
-            List<JCVariableDecl> params = md.getParameters();
-            md.body = make.Block(0, List.of(makeTwrCloseStatement(params.get(0).sym,
-                                                                               make.Ident(params.get(1)))));
-
-            JCClassDecl currentClassDecl = classDef(currentClass);
-            currentClassDecl.defs = currentClassDecl.defs.prepend(md);
-        }
-
-        JCStatement closeStatement;
-
-        if (closeResource != null) {
-            //$closeResource(#primaryException, #resource)
-            closeStatement = make.Exec(make.Apply(List.nil(),
-                                                  make.Ident(closeResource),
-                                                  List.of(make.Ident(primaryException),
-                                                          resource)
-                                                 ).setType(syms.voidType));
-        } else {
-            closeStatement = makeTwrCloseStatement(primaryException, resource);
-        }
-
-        JCStatement finallyStatement;
-
-        if (resourceNonNull) {
-            finallyStatement = closeStatement;
-        } else {
-            // if (#resource != null) { $closeResource(...); }
-            finallyStatement = make.If(makeNonNullCheck(resource),
-                                       closeStatement,
-                                       null);
-        }
-
-        return make.Block(0L,
-                          List.of(finallyStatement));
-    }
-        //where:
-        private boolean shouldUseCloseResourceMethod() {
-            class TryFinder extends TreeScanner {
-                int closeCount;
-                @Override
-                public void visitTry(JCTry tree) {
-                    boolean empty = tree.body.stats.isEmpty();
-
-                    for (JCTree r : tree.resources) {
-                        closeCount += empty ? 1 : 2;
-                        empty = false; //with multiple resources, only the innermost try can be empty.
-                    }
-                    super.visitTry(tree);
-                }
-                @Override
-                public void scan(JCTree tree) {
-                    if (useCloseResourceMethod())
-                        return;
-                    super.scan(tree);
-                }
-                boolean useCloseResourceMethod() {
-                    return closeCount >= USE_CLOSE_RESOURCE_METHOD_THRESHOLD;
-                }
-            }
-            TryFinder tryFinder = new TryFinder();
-            tryFinder.scan(classDef(currentClass));
-            return tryFinder.useCloseResourceMethod();
-        }
-
-    private JCStatement makeTwrCloseStatement(Symbol primaryException, JCExpression resource) {
-        // primaryException.addSuppressed(catchException);
-        VarSymbol catchException =
+        // close resource:
+        // try {
+        //     #resource.close();
+        // } catch (Throwable #suppressedException) {
+        //     #primaryException.addSuppressed(#suppressedException);
+        // }
+        VarSymbol suppressedException =
             new VarSymbol(SYNTHETIC, make.paramName(2),
                           syms.throwableType,
                           currentMethodSym);
-        JCStatement addSuppressionStatement =
+        JCStatement addSuppressedStatement =
             make.Exec(makeCall(make.Ident(primaryException),
                                names.addSuppressed,
-                               List.of(make.Ident(catchException))));
+                               List.of(make.Ident(suppressedException))));
+        JCBlock closeResourceTryBlock =
+            make.Block(0L, List.of(makeResourceCloseInvocation(resourceUse)));
+        JCVariableDecl catchSuppressedDecl = make.VarDef(suppressedException, null);
+        JCBlock catchSuppressedBlock = make.Block(0L, List.of(addSuppressedStatement));
+        List<JCCatch> catchSuppressedClauses =
+                List.of(make.Catch(catchSuppressedDecl, catchSuppressedBlock));
+        JCTry closeResourceTry = make.Try(closeResourceTryBlock, catchSuppressedClauses, null);
+        closeResourceTry.finallyCanCompleteNormally = true;
 
-        // try { resource.close(); } catch (e) { primaryException.addSuppressed(e); }
-        JCBlock tryBlock =
-            make.Block(0L, List.of(makeResourceCloseInvocation(resource)));
-        JCVariableDecl catchExceptionDecl = make.VarDef(catchException, null);
-        JCBlock catchBlock = make.Block(0L, List.of(addSuppressionStatement));
-        List<JCCatch> catchClauses = List.of(make.Catch(catchExceptionDecl, catchBlock));
-        JCTry tryTree = make.Try(tryBlock, catchClauses, null);
-        tryTree.finallyCanCompleteNormally = true;
+        JCStatement exceptionalCloseStatement = closeResourceTry;
 
-        // if (primaryException != null) {try...} else resourceClose;
-        JCIf closeIfStatement = make.If(makeNonNullCheck(make.Ident(primaryException)),
-                                        tryTree,
-                                        makeResourceCloseInvocation(resource));
+        if (!resourceNonNull) {
+            // if (#resource != null) {  }
+            exceptionalCloseStatement = make.If(makeNonNullCheck(resourceUse),
+                                                exceptionalCloseStatement,
+                                                null);
+        }
 
-        return closeIfStatement;
+        JCStatement exceptionalRethrow = make.Throw(make.Ident(primaryException));
+        JCBlock exceptionalCloseBlock = make.Block(0L, List.of(exceptionalCloseStatement, exceptionalRethrow));
+        JCCatch exceptionalCatchClause = make.Catch(primaryExceptionDecl, exceptionalCloseBlock);
+
+        //create the main try statement with the close:
+        JCTry outerTry = make.Try(makeTwrBlock(resources.tail, block, depth + 1),
+                                  List.of(exceptionalCatchClause),
+                                  finallyClause);
+
+        outerTry.finallyCanCompleteNormally = true;
+        stats.add(outerTry);
+
+        JCBlock newBlock = make.Block(0L, stats.toList());
+        return newBlock;
     }
 
     private JCStatement makeResourceCloseInvocation(JCExpression resource) {
