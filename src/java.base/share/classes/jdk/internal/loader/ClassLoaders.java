@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package jdk.internal.loader;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.InvalidPathException;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.security.CodeSource;
 import java.security.PermissionCollection;
 import java.util.jar.Manifest;
@@ -223,7 +223,7 @@ public class ClassLoaders {
             // Use an intermediate File object to construct a URI/URL without
             // authority component as URLClassPath can't handle URLs with a UNC
             // server name in the authority component.
-            return Paths.get(s).toRealPath().toFile().toURI().toURL();
+            return Path.of(s).toRealPath().toFile().toURI().toURL();
         } catch (InvalidPathException | IOException ignore) {
             // malformed path string or class path element does not exist
             return null;
