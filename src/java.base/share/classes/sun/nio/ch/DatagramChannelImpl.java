@@ -508,8 +508,7 @@ class DatagramChannelImpl
                 if (remote != null) {
                     // connected
                     if (!target.equals(remote)) {
-                        throw new IllegalArgumentException(
-                            "Connected address not equal to target address");
+                        throw new AlreadyConnectedException();
                     }
                     do {
                         n = IOUtil.write(fd, src, -1, nd);
