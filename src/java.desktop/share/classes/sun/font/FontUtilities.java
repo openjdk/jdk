@@ -53,6 +53,8 @@ public final class FontUtilities {
     public static boolean useJDKScaler;
 
     public static boolean useT2K;
+    // useLegacy is a short-term debugging transition aid.
+    public static boolean useLegacy;
 
     public static boolean isWindows;
 
@@ -94,9 +96,17 @@ public final class FontUtilities {
                 String scalerStr = System.getProperty("sun.java2d.font.scaler");
                 if (scalerStr != null) {
                     useT2K = "t2k".equals(scalerStr);
+                    if (useT2K) {
+                        System.out.println("WARNING: t2k will be removed in JDK 11.");
+                    }
+                    useLegacy = "legacy".equals(scalerStr);
+                    if (useLegacy) {
+                        System.out.println("WARNING: legacy behavior will be removed in JDK 11.");
+                    }
                     useJDKScaler = useT2K || "jdk".equals(scalerStr);
                 } else {
                     useT2K = false;
+                    useLegacy = false;
                     useJDKScaler = false;
                 }
                 isWindows = osName.startsWith("Windows");
