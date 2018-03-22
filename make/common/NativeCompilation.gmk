@@ -827,7 +827,9 @@ define SetupNativeCompilationBody
           $$(shell $(RM) $$($1_TARGET))
         endif
         $$($1_DEBUGINFO_FILES): $$($1_TARGET)
-		$$(if $$(wildcard $$@), , $$(error $$@ was not created for $$<))
+		$$(if $$(CORRECT_FUNCTION_IN_RECIPE_EVALUATION), \
+		  $$(if $$(wildcard $$@), , $$(error $$@ was not created for $$<)) \
+		)
 		$(TOUCH) $$@
 
         $1 += $$($1_DEBUGINFO_FILES)
@@ -875,7 +877,9 @@ define SetupNativeCompilationBody
         $$(shell $(RM) $$($1_TARGET))
       endif
       $$($1_IMPORT_LIBRARY): $$($1_TARGET)
-		$$(if $$(wildcard $$@), , $$(error $$@ was not created for $$<))
+		$$(if $$(CORRECT_FUNCTION_IN_RECIPE_EVALUATION), \
+		  $$(if $$(wildcard $$@), , $$(error $$@ was not created for $$<)) \
+		)
 		$(TOUCH) $$@
     endif
 

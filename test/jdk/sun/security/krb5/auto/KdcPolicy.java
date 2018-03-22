@@ -100,9 +100,11 @@ public class KdcPolicy {
         System.setProperty("java.security.krb5.conf", "alternative-krb5.conf");
 
         // Check default timeout is 30s. Use real KDC only, otherwise too
-        // slow to wait for timeout.
+        // slow to wait for timeout. Each request (without preauth and with
+        // preauth) might be retried 3 times, and could fail if one fails for
+        // all 3 times.
         writeConf(-1, -1, p3);
-        test("c30000c30000");
+        test("(c30000){2,6}|(c30000){3,6}-");
 
         // 1. Default policy is tryLast
         //Security.setProperty("krb5.kdc.bad.policy", "tryLast");

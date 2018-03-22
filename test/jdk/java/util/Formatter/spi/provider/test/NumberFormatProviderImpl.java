@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,41 +19,43 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package test;
 
-#include <stdio.h>
-#include <stdlib.h>
-#include "libproc.h"
+import java.text.FieldPosition;
+import java.text.NumberFormat;
+import java.text.ParsePosition;
+import java.text.spi.NumberFormatProvider;
+import java.util.Locale;
 
-int main(int argc, char** argv) {
-   struct ps_prochandle* ph;
+public class NumberFormatProviderImpl extends NumberFormatProvider {
 
-   init_libproc(true);
-   switch (argc) {
-      case 2: {
-         // process
-         ph = Pgrab(atoi(argv[1]));
-         break;
-      }
+    private static final Locale[] locales = {Locale.FRENCH, Locale.JAPANESE,
+            new Locale("hi", "IN")};
 
-      case 3: {
-        // core
-        ph = Pgrab_core(argv[1], argv[2]);
-        break;
-      }
+    @Override
+    public NumberFormat getCurrencyInstance(Locale locale) {
+        return null;
+    }
 
-      default: {
-        printf("usage %s <pid> or %s <exec file> <core file>\n");
-        return 1;
-      }
-   }
+    @Override
+    public NumberFormat getIntegerInstance(Locale locale) {
+        return null;
+    }
 
-   if (ph) {
-      Prelease(ph);
-      return 0;
-   } else {
-      printf("can't connect to debuggee\n");
-      return 1;
-   }
+    @Override
+    public NumberFormat getNumberInstance(Locale locale) {
+        return null;
+    }
+
+    @Override
+    public NumberFormat getPercentInstance(Locale locale) {
+        return null;
+    }
+
+    @Override
+    public Locale[] getAvailableLocales() {
+        return locales;
+    }
 }
+
