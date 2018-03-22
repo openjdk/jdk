@@ -133,10 +133,6 @@ public class PerfCounter {
         static final PerfCounter zfot  = newPerfCounter("sun.zip.zipFile.openTime");
     }
 
-    static class WindowsClientCounters {
-        static final PerfCounter d3dAvailable = newConstantPerfCounter("sun.java2d.d3d.available");
-    }
-
     /**
      * Number of findClass calls
      */
@@ -182,10 +178,4 @@ public class PerfCounter {
         return CoreCounters.zfot;
     }
 
-    /**
-     * D3D graphic pipeline available
-     */
-    public static PerfCounter getD3DAvailable() {
-        return WindowsClientCounters.d3dAvailable;
-    }
 }
