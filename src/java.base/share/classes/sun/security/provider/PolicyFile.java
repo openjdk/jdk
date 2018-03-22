@@ -30,7 +30,7 @@ import java.lang.reflect.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URI;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.*;
 import java.security.*;
 import java.security.cert.Certificate;
@@ -278,7 +278,7 @@ public class PolicyFile extends java.security.Policy {
             public URL run() {
                 String sep = File.separator;
                 try {
-                    return Paths.get(System.getProperty("java.home"),
+                    return Path.of(System.getProperty("java.home"),
                                      "lib", "security",
                                      "default.policy").toUri().toURL();
                 } catch (MalformedURLException mue) {

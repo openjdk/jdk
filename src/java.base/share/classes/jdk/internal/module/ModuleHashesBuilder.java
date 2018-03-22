@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.lang.module.Configuration;
 import java.lang.module.ResolvedModule;
 import java.net.URI;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
@@ -129,7 +128,7 @@ public class ModuleHashesBuilder {
             () -> new InternalError("Selected module " + name + " not on module path"));
 
         URI uri = rm.reference().location().get();
-        Path path = Paths.get(uri);
+        Path path = Path.of(uri);
         String fn = path.getFileName().toString();
         if (!fn.endsWith(".jar") && !fn.endsWith(".jmod")) {
             throw new UnsupportedOperationException(path + " is not a modular JAR or jmod file");
