@@ -1298,22 +1298,37 @@ if [ "$SKIP_DEFAULT" != "true" ]; then
     # Find the common images to compare, prioritizing later build stages
     if [ -d "$THIS/install/jdk" ] && [ -d "$OTHER/install/jdk" ]; then
         THIS_JDK="$THIS/install/jdk"
-        THIS_JRE="$THIS/install/jre"
         OTHER_JDK="$OTHER/install/jdk"
-        OTHER_JRE="$OTHER/install/jre"
-        echo "Selecting install images for compare"
+        echo "Selecting install images for JDK compare"
+        if [ -d "$THIS/install/jre" ] && [ -d "$OTHER/install/jre" ]; then
+            THIS_JRE="$THIS/install/jre"
+            OTHER_JRE="$OTHER/install/jre"
+            echo "Also selecting install images for JRE compare"
+        else
+            echo "No install JRE image found"
+        fi
     elif [ -d "$THIS/images/jdk" ] && [ -d "$OTHER/deploy/images/jdk" ]; then
         THIS_JDK="$THIS/images/jdk"
-        THIS_JRE="$THIS/images/jre"
         OTHER_JDK="$OTHER/deploy/images/jdk"
-        OTHER_JRE="$OTHER/deploy/images/jre"
-        echo "Selecting deploy images for compare"
+        echo "Selecting deploy images for JDK compare"
+        if [ -d "$THIS/images/jre" ] && [ -d "$OTHER/deploy/images/jre" ]; then
+            THIS_JRE="$THIS/images/jre"
+            OTHER_JRE="$OTHER/deploy/images/jre"
+            echo "Selecting deploy images for JRE compare"
+        else
+            echo "No deploy JRE image found"
+        fi
     elif [ -d "$THIS/images/jdk" ] && [ -d "$OTHER/images/jdk" ]; then
         THIS_JDK="$THIS/images/jdk"
-        THIS_JRE="$THIS/images/jre"
         OTHER_JDK="$OTHER/images/jdk"
-        OTHER_JRE="$OTHER/images/jre"
-        echo "Selecting jdk images for compare"
+        echo "Selecting normal images for JDK compare"
+        if [ -d "$THIS/images/jre" ] && [ -d "$OTHER/images/jre" ]; then
+            THIS_JRE="$THIS/images/jre"
+            OTHER_JRE="$OTHER/images/jre"
+            echo "Selecting normal images for JRE compare"
+        else
+            echo "No normal JRE image found"
+        fi
     elif [ -d "$(ls -d $THIS/licensee-src/build/*/images/jdk 2> /dev/null)" ] \
         && [ -d "$(ls -d $OTHER/licensee-src/build/*/images/jdk 2> /dev/null)" ]
     then
@@ -1406,9 +1421,11 @@ if [ "$SKIP_DEFAULT" != "true" ]; then
     else
         OTHER_SEC_DIR="$OTHER/tmp"
     fi
-    OTHER_SEC_BIN="$OTHER_SEC_DIR/sec-bin.zip"
-    THIS_SEC_DIR="$THIS/images"
-    THIS_SEC_BIN="$THIS_SEC_DIR/sec-bin.zip"
+    if [ -f "$THIS_SEC_DIR/sec-bin.zip" ]; then
+        OTHER_SEC_BIN="$OTHER_SEC_DIR/sec-bin.zip"
+        THIS_SEC_DIR="$THIS/images"
+        THIS_SEC_BIN="$THIS_SEC_DIR/sec-bin.zip"
+    fi
     if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
         if [ "$OPENJDK_TARGET_CPU" = "x86_64" ]; then
             JGSS_WINDOWS_BIN="jgss-windows-x64-bin.zip"
@@ -1437,11 +1454,12 @@ if [ "$CMP_NAMES" = "true" ]; then
     if [ -n "$THIS_JDK" ] && [ -n "$OTHER_JDK" ]; then
         echo -n "JDK "
         compare_dirs $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
-        echo -n "JRE "
-        compare_dirs $THIS_JRE $OTHER_JRE $COMPARE_ROOT/jre
-
         echo -n "JDK "
         compare_files $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
+    fi
+    if [ -n "$THIS_JRE" ] && [ -n "$OTHER_JRE" ]; then
+        echo -n "JRE "
+        compare_dirs $THIS_JRE $OTHER_JRE $COMPARE_ROOT/jre
         echo -n "JRE "
         compare_files $THIS_JRE $OTHER_JRE $COMPARE_ROOT/jre
     fi
@@ -1480,49 +1498,38 @@ if [ "$CMP_NAMES" = "true" ]; then
     fi
 fi
 
-if [ "$CMP_PERMS" = "true" ]; then
+if [ "$CMP_LIBS" = "true" ]; then
     if [ -n "$THIS_JDK" ] && [ -n "$OTHER_JDK" ]; then
         echo -n "JDK "
-        compare_permissions $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
-        echo -n "JRE "
-        compare_permissions $THIS_JRE $OTHER_JRE $COMPARE_ROOT/jre
+        compare_all_libs $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
     fi
     if [ -n "$THIS_BASE_DIR" ] && [ -n "$OTHER_BASE_DIR" ]; then
-        compare_permissions $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
+        compare_all_libs $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
     fi
     if [ -n "$THIS_DEPLOY_APPLET_PLUGIN_DIR" ] && [ -n "$OTHER_DEPLOY_APPLET_PLUGIN_DIR" ]; then
         echo -n "JavaAppletPlugin "
-        compare_permissions $THIS_DEPLOY_APPLET_PLUGIN_DIR $OTHER_DEPLOY_APPLET_PLUGIN_DIR $COMPARE_ROOT/plugin
+        compare_all_libs $THIS_DEPLOY_APPLET_PLUGIN_DIR $OTHER_DEPLOY_APPLET_PLUGIN_DIR $COMPARE_ROOT/plugin
     fi
     if [ -n "$THIS_SPARKLE_DIR" ] && [ -n "$OTHER_SPARKLE_DIR" ]; then
         echo -n "Sparkle.framework "
-        compare_permissions $THIS_SPARKLE_DIR $OTHER_SPARKLE_DIR $COMPARE_ROOT/sparkle
+        compare_all_libs $THIS_SPARKLE_DIR $OTHER_SPARKLE_DIR $COMPARE_ROOT/sparkle
     fi
 fi
 
-if [ "$CMP_TYPES" = "true" ]; then
+if [ "$CMP_EXECS" = "true" ]; then
     if [ -n "$THIS_JDK" ] && [ -n "$OTHER_JDK" ]; then
-        echo -n "JDK "
-        compare_file_types $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
-        echo -n "JRE "
-        compare_file_types $THIS_JRE $OTHER_JRE $COMPARE_ROOT/jre
-    fi
-    if [ -n "$THIS_JDK_BUNDLE" ] && [ -n "$OTHER_JDK_BUNDLE" ]; then
-        echo -n "JDK Bundle "
-        compare_file_types $THIS_JDK_BUNDLE $OTHER_JDK_BUNDLE $COMPARE_ROOT/jdk-bundle
-        echo -n "JRE Bundle "
-        compare_file_types $THIS_JRE_BUNDLE $OTHER_JRE_BUNDLE $COMPARE_ROOT/jre-bundle
+        compare_all_execs $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
     fi
     if [ -n "$THIS_BASE_DIR" ] && [ -n "$OTHER_BASE_DIR" ]; then
-        compare_file_types $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
+        compare_all_execs $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
     fi
     if [ -n "$THIS_DEPLOY_APPLET_PLUGIN_DIR" ] && [ -n "$OTHER_DEPLOY_APPLET_PLUGIN_DIR" ]; then
         echo -n "JavaAppletPlugin "
-        compare_file_types $THIS_DEPLOY_APPLET_PLUGIN_DIR $OTHER_DEPLOY_APPLET_PLUGIN_DIR $COMPARE_ROOT/plugin
+        compare_all_execs $THIS_DEPLOY_APPLET_PLUGIN_DIR $OTHER_DEPLOY_APPLET_PLUGIN_DIR $COMPARE_ROOT/plugin
     fi
     if [ -n "$THIS_SPARKLE_DIR" ] && [ -n "$OTHER_SPARKLE_DIR" ]; then
         echo -n "Sparkle.framework "
-        compare_file_types $THIS_SPARKLE_DIR $OTHER_SPARKLE_DIR $COMPARE_ROOT/sparkle
+        compare_all_execs $THIS_SPARKLE_DIR $OTHER_SPARKLE_DIR $COMPARE_ROOT/sparkle
     fi
 fi
 
@@ -1530,6 +1537,8 @@ if [ "$CMP_GENERAL" = "true" ]; then
     if [ -n "$THIS_JDK" ] && [ -n "$OTHER_JDK" ]; then
         echo -n "JDK "
         compare_general_files $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
+    fi
+    if [ -n "$THIS_JRE" ] && [ -n "$OTHER_JRE" ]; then
         echo -n "JRE "
         compare_general_files $THIS_JRE $OTHER_JRE $COMPARE_ROOT/jre
     fi
@@ -1601,46 +1610,53 @@ if [ "$CMP_JARS" = "true" ]; then
     fi
 fi
 
-if [ "$CMP_LIBS" = "true" ]; then
+if [ "$CMP_PERMS" = "true" ]; then
     if [ -n "$THIS_JDK" ] && [ -n "$OTHER_JDK" ]; then
         echo -n "JDK "
-        compare_all_libs $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
-        if [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
-            echo -n "JRE "
-            compare_all_libs $THIS_JRE $OTHER_JRE $COMPARE_ROOT/jre
-        fi
+        compare_permissions $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
+    fi
+    if [ -n "$THIS_JRE" ] && [ -n "$OTHER_JRE" ]; then
+        echo -n "JRE "
+        compare_permissions $THIS_JRE $OTHER_JRE $COMPARE_ROOT/jre
     fi
     if [ -n "$THIS_BASE_DIR" ] && [ -n "$OTHER_BASE_DIR" ]; then
-        compare_all_libs $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
+        compare_permissions $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
     fi
     if [ -n "$THIS_DEPLOY_APPLET_PLUGIN_DIR" ] && [ -n "$OTHER_DEPLOY_APPLET_PLUGIN_DIR" ]; then
         echo -n "JavaAppletPlugin "
-        compare_all_libs $THIS_DEPLOY_APPLET_PLUGIN_DIR $OTHER_DEPLOY_APPLET_PLUGIN_DIR $COMPARE_ROOT/plugin
+        compare_permissions $THIS_DEPLOY_APPLET_PLUGIN_DIR $OTHER_DEPLOY_APPLET_PLUGIN_DIR $COMPARE_ROOT/plugin
     fi
     if [ -n "$THIS_SPARKLE_DIR" ] && [ -n "$OTHER_SPARKLE_DIR" ]; then
         echo -n "Sparkle.framework "
-        compare_all_libs $THIS_SPARKLE_DIR $OTHER_SPARKLE_DIR $COMPARE_ROOT/sparkle
+        compare_permissions $THIS_SPARKLE_DIR $OTHER_SPARKLE_DIR $COMPARE_ROOT/sparkle
     fi
 fi
 
-if [ "$CMP_EXECS" = "true" ]; then
+if [ "$CMP_TYPES" = "true" ]; then
     if [ -n "$THIS_JDK" ] && [ -n "$OTHER_JDK" ]; then
-        compare_all_execs $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
-        if [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
-            echo -n "JRE "
-            compare_all_execs $THIS_JRE $OTHER_JRE $COMPARE_ROOT/jre
-        fi
+        echo -n "JDK "
+        compare_file_types $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
+    fi
+    if [ -n "$THIS_JRE" ] && [ -n "$OTHER_JRE" ]; then
+        echo -n "JRE "
+        compare_file_types $THIS_JRE $OTHER_JRE $COMPARE_ROOT/jre
+    fi
+    if [ -n "$THIS_JDK_BUNDLE" ] && [ -n "$OTHER_JDK_BUNDLE" ]; then
+        echo -n "JDK Bundle "
+        compare_file_types $THIS_JDK_BUNDLE $OTHER_JDK_BUNDLE $COMPARE_ROOT/jdk-bundle
+        echo -n "JRE Bundle "
+        compare_file_types $THIS_JRE_BUNDLE $OTHER_JRE_BUNDLE $COMPARE_ROOT/jre-bundle
     fi
     if [ -n "$THIS_BASE_DIR" ] && [ -n "$OTHER_BASE_DIR" ]; then
-        compare_all_execs $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
+        compare_file_types $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
     fi
     if [ -n "$THIS_DEPLOY_APPLET_PLUGIN_DIR" ] && [ -n "$OTHER_DEPLOY_APPLET_PLUGIN_DIR" ]; then
         echo -n "JavaAppletPlugin "
-        compare_all_execs $THIS_DEPLOY_APPLET_PLUGIN_DIR $OTHER_DEPLOY_APPLET_PLUGIN_DIR $COMPARE_ROOT/plugin
+        compare_file_types $THIS_DEPLOY_APPLET_PLUGIN_DIR $OTHER_DEPLOY_APPLET_PLUGIN_DIR $COMPARE_ROOT/plugin
     fi
     if [ -n "$THIS_SPARKLE_DIR" ] && [ -n "$OTHER_SPARKLE_DIR" ]; then
         echo -n "Sparkle.framework "
-        compare_all_execs $THIS_SPARKLE_DIR $OTHER_SPARKLE_DIR $COMPARE_ROOT/sparkle
+        compare_file_types $THIS_SPARKLE_DIR $OTHER_SPARKLE_DIR $COMPARE_ROOT/sparkle
     fi
 fi
 
