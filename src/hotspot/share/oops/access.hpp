@@ -306,19 +306,28 @@ namespace AccessInternal {
 
   // Infer the type that should be returned from a load.
   template <typename P, DecoratorSet decorators>
-  class LoadProxy: public StackObj {
+  class OopLoadProxy: public StackObj {
   private:
     P *const _addr;
   public:
-    LoadProxy(P* addr) : _addr(addr) {}
+    OopLoadProxy(P* addr) : _addr(addr) {}
 
-    template <typename T>
-    inline operator T() {
-      return load<decorators, P, T>(_addr);
+    inline operator oop() {
+      return load<decorators | INTERNAL_VALUE_IS_OOP, P, oop>(_addr);
     }
 
-    inline operator P() {
-      return load<decorators, P, P>(_addr);
+    inline operator narrowOop() {
+      return load<decorators | INTERNAL_VALUE_IS_OOP, P, narrowOop>(_addr);
+    }
+
+    template <typename T>
+    inline bool operator ==(const T& other) const {
+      return load<decorators | INTERNAL_VALUE_IS_OOP, P, T>(_addr) == other;
+    }
+
+    template <typename T>
+    inline bool operator !=(const T& other) const {
+      return load<decorators | INTERNAL_VALUE_IS_OOP, P, T>(_addr) != other;
     }
   };
 
@@ -334,6 +343,39 @@ namespace AccessInternal {
     template <typename T>
     inline operator T() const {
       return load_at<decorators, T>(_base, _offset);
+    }
+
+    template <typename T>
+    inline bool operator ==(const T& other) const { return load_at<decorators, T>(_base, _offset) == other; }
+
+    template <typename T>
+    inline bool operator !=(const T& other) const { return load_at<decorators, T>(_base, _offset) != other; }
+  };
+
+  template <DecoratorSet decorators>
+  class OopLoadAtProxy: public StackObj {
+  private:
+    const oop _base;
+    const ptrdiff_t _offset;
+  public:
+    OopLoadAtProxy(oop base, ptrdiff_t offset) : _base(base), _offset(offset) {}
+
+    inline operator oop() const {
+      return load_at<decorators | INTERNAL_VALUE_IS_OOP, oop>(_base, _offset);
+    }
+
+    inline operator narrowOop() const {
+      return load_at<decorators | INTERNAL_VALUE_IS_OOP, narrowOop>(_base, _offset);
+    }
+
+    template <typename T>
+    inline bool operator ==(const T& other) const {
+      return load_at<decorators | INTERNAL_VALUE_IS_OOP, T>(_base, _offset) == other;
+    }
+
+    template <typename T>
+    inline bool operator !=(const T& other) const {
+      return load_at<decorators | INTERNAL_VALUE_IS_OOP, T>(_base, _offset) != other;
     }
   };
 }
@@ -409,9 +451,9 @@ public:
   }
 
   // Oop heap accesses
-  static inline AccessInternal::LoadAtProxy<decorators | INTERNAL_VALUE_IS_OOP> oop_load_at(oop base, ptrdiff_t offset) {
+  static inline AccessInternal::OopLoadAtProxy<decorators> oop_load_at(oop base, ptrdiff_t offset) {
     verify_heap_oop_decorators<load_mo_decorators>();
-    return AccessInternal::LoadAtProxy<decorators | INTERNAL_VALUE_IS_OOP>(base, offset);
+    return AccessInternal::OopLoadAtProxy<decorators>(base, offset);
   }
 
   template <typename T>
@@ -478,9 +520,9 @@ public:
 
   // Oop accesses
   template <typename P>
-  static inline AccessInternal::LoadProxy<P, decorators | INTERNAL_VALUE_IS_OOP> oop_load(P* addr) {
+  static inline AccessInternal::OopLoadProxy<P, decorators> oop_load(P* addr) {
     verify_oop_decorators<load_mo_decorators>();
-    return AccessInternal::LoadProxy<P, decorators | INTERNAL_VALUE_IS_OOP>(addr);
+    return AccessInternal::OopLoadProxy<P, decorators>(addr);
   }
 
   template <typename P, typename T>
