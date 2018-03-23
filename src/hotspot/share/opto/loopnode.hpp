@@ -138,7 +138,7 @@ public:
 #endif
 
   void verify_strip_mined(int expect_skeleton) const;
-  virtual LoopNode* skip_strip_mined(int expect_opaq = 1) { return this; }
+  virtual LoopNode* skip_strip_mined(int expect_skeleton = 1) { return this; }
   virtual IfTrueNode* outer_loop_tail() const { ShouldNotReachHere(); return NULL; }
   virtual OuterStripMinedLoopEndNode* outer_loop_end() const { ShouldNotReachHere(); return NULL; }
   virtual IfFalseNode* outer_loop_exit() const { ShouldNotReachHere(); return NULL; }
@@ -297,6 +297,11 @@ public:
   virtual OuterStripMinedLoopEndNode* outer_loop_end() const;
   virtual IfFalseNode* outer_loop_exit() const;
   virtual SafePointNode* outer_safepoint() const;
+
+  // If this is a main loop in a pre/main/post loop nest, walk over
+  // the predicates that were inserted by
+  // duplicate_predicates()/add_range_check_predicate()
+  Node* skip_predicates();
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
@@ -724,7 +729,10 @@ class PhaseIdealLoop : public PhaseTransform {
     return ctrl;
   }
 
-  bool cast_incr_before_loop(Node* incr, Node* ctrl, Node* loop);
+  Node* cast_incr_before_loop(Node* incr, Node* ctrl, Node* loop);
+  void duplicate_predicates(CountedLoopNode* pre_head, Node *min_taken, Node* castii,
+                            IdealLoopTree* outer_loop, LoopNode* outer_main_head,
+                            uint dd_main_head);
 
 public:
 
@@ -1067,6 +1075,15 @@ public:
 
   // Implementation of the loop predication to promote checks outside the loop
   bool loop_predication_impl(IdealLoopTree *loop);
+  ProjNode* insert_skeleton_predicate(IfNode* iff, IdealLoopTree *loop,
+                                      ProjNode* proj, ProjNode *predicate_proj,
+                                      ProjNode* upper_bound_proj,
+                                      int scale, Node* offset,
+                                      Node* init, Node* limit, jint stride,
+                                      Node* rng, bool& overflow);
+  Node* add_range_check_predicate(IdealLoopTree* loop, CountedLoopNode* cl,
+                                  Node* predicate_proj, int scale_con, Node* offset,
+                                  Node* limit, jint stride_con);
 
   // Helper function to collect predicate for eliminating the useless ones
   void collect_potentially_useful_predicates(IdealLoopTree *loop, Unique_Node_List &predicate_opaque1);

@@ -1158,9 +1158,9 @@ Node* CountedLoopNode::match_incr_with_optional_truncation(
   return NULL;
 }
 
-LoopNode* CountedLoopNode::skip_strip_mined(int expect_opaq) {
+LoopNode* CountedLoopNode::skip_strip_mined(int expect_skeleton) {
   if (is_strip_mined()) {
-    verify_strip_mined(expect_opaq);
+    verify_strip_mined(expect_skeleton);
     return in(EntryControl)->as_Loop();
   }
   return this;
@@ -1250,6 +1250,20 @@ SafePointNode* CountedLoopNode::outer_safepoint() const {
     return NULL;
   }
   return l->outer_safepoint();
+}
+
+Node* CountedLoopNode::skip_predicates() {
+  if (is_main_loop()) {
+    Node* ctrl = skip_strip_mined()->in(LoopNode::EntryControl);
+    while (ctrl != NULL && ctrl->is_Proj() && ctrl->in(0)->is_If() &&
+           ctrl->in(0)->as_If()->proj_out(1-ctrl->as_Proj()->_con)->outcnt() == 1 &&
+           ctrl->in(0)->as_If()->proj_out(1-ctrl->as_Proj()->_con)->unique_out()->Opcode() == Op_Halt) {
+      ctrl = ctrl->in(0)->in(0);
+    }
+
+    return ctrl;
+  }
+  return in(LoopNode::EntryControl);
 }
 
 void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
@@ -3770,7 +3784,8 @@ bool PhaseIdealLoop::is_canonical_loop_entry(CountedLoopNode* cl) {
   if (!cl->is_main_loop() && !cl->is_post_loop()) {
     return false;
   }
-  Node* ctrl = cl->skip_strip_mined()->in(LoopNode::EntryControl);
+  Node* ctrl = cl->skip_predicates();
+
   if (ctrl == NULL || (!ctrl->is_IfTrue() && !ctrl->is_IfFalse())) {
     return false;
   }
