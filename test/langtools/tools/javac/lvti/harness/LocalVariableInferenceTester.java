@@ -80,12 +80,16 @@ public class LocalVariableInferenceTester {
 
     void compileAndCheck(JavaFileObject input) throws IOException {
         JavaCompiler c = ToolProvider.getSystemJavaCompiler();
-        JavacTask task = (JavacTask) c.getTask(null, fm, null, null, null, Arrays.asList(input));
+        JavacTask task = (JavacTask) c.getTask(null, fm, null, Arrays.asList("-g"), null, Arrays.asList(input));
         JavacTrees trees = JavacTrees.instance(task);
         Types types = Types.instance(((JavacTaskImpl)task).getContext());
         Iterable<? extends CompilationUnitTree> roots = task.parse();
-        task.analyze(); //force attribution
         Log log = Log.instance(((JavacTaskImpl)task).getContext());
+        //force code generation (to shake out non-denotable issues)
+        boolean hasClasses = task.generate().iterator().hasNext();
+        if (!hasClasses) {
+            throw new AssertionError("Errors occurred during compilation!");
+        }
         errors += log.nerrors;
         new LocalVarTypeChecker(trees, types).scan(roots, null);
         System.err.println("Checks executed: " + checks);
