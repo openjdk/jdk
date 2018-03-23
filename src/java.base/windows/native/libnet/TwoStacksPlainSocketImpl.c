@@ -396,40 +396,21 @@ Java_java_net_TwoStacksPlainSocketImpl_socketListen
 {
     /* this FileDescriptor fd field */
     jobject fdObj = (*env)->GetObjectField(env, this, psi_fdID);
-    jobject address;
     /* fdObj's int fd field */
-    int fd = INVALID_SOCKET;
-    SOCKETADDRESS addr;
-    int addrlen;
+    int fd;
 
     if (IS_NULL(fdObj)) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                         "socket closed");
         return;
-    }
-
-    if (!IS_NULL(fdObj)) {
+    } else {
         fd = (*env)->GetIntField(env, fdObj, IO_fd_fdID);
     }
-    address = (*env)->GetObjectField(env, this, psi_addressID);
-    if (IS_NULL(address)) {
-        JNU_ThrowNullPointerException(env, "socket address");
-        return;
-    }
-    if (NET_InetAddressToSockaddr(env, address, 0, &addr, &addrlen,
-                                  JNI_FALSE) != 0) {
-        return;
+
+    if (listen(fd, count) == -1) {
+        NET_ThrowCurrent(env, "listen failed");
     }
 
-    if (addr.sa.sa_family == AF_INET) {
-        /* listen on v4 */
-        if (listen(fd, count) == -1) {
-            NET_ThrowCurrent(env, "listen failed");
-        }
-    } else {
-        NET_SocketClose(fd);
-        (*env)->SetObjectField(env, this, psi_fdID, NULL);
-    }
 }
 
 /*
