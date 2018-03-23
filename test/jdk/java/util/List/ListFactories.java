@@ -26,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -72,7 +73,7 @@ public class ListFactories {
     @DataProvider(name="empty")
     public Iterator<Object[]> empty() {
         return Collections.singletonList(
-            a(List.of(), Collections.emptyList())
+            a(List.of(), asList())
         ).iterator();
     }
 
@@ -104,8 +105,47 @@ public class ListFactories {
         ).iterator();
     }
 
+    @DataProvider(name="sublists")
+    public Iterator<Object[]> sublists() {
+        return asList(
+            a(List.<String>of().subList(0,0),
+               asList()),
+            a(List.of("a").subList(0,0),
+               asList("a").subList(0,0)),
+            a(List.of("a", "b").subList(0,1),
+               asList("a", "b").subList(0,1)),
+            a(List.of("a", "b", "c").subList(1,3),
+               asList("a", "b", "c").subList(1,3)),
+            a(List.of("a", "b", "c", "d").subList(0,4),
+               asList("a", "b", "c", "d").subList(0,4)),
+            a(List.of("a", "b", "c", "d", "e").subList(0,3),
+               asList("a", "b", "c", "d", "e").subList(0,3)),
+            a(List.of("a", "b", "c", "d", "e", "f").subList(3, 5),
+               asList("a", "b", "c", "d", "e", "f").subList(3, 5)),
+            a(List.of("a", "b", "c", "d", "e", "f", "g").subList(0, 7),
+               asList("a", "b", "c", "d", "e", "f", "g").subList(0, 7)),
+            a(List.of("a", "b", "c", "d", "e", "f", "g", "h").subList(0, 0),
+               asList("a", "b", "c", "d", "e", "f", "g", "h").subList(0, 0)),
+            a(List.of("a", "b", "c", "d", "e", "f", "g", "h", "i").subList(4, 5),
+               asList("a", "b", "c", "d", "e", "f", "g", "h", "i").subList(4, 5)),
+            a(List.of("a", "b", "c", "d", "e", "f", "g", "h", "i", "j").subList(1,10),
+               asList("a", "b", "c", "d", "e", "f", "g", "h", "i", "j").subList(1,10)),
+            a(List.of(stringArray).subList(5, NUM_STRINGS),
+               asList(Arrays.copyOfRange(stringArray, 5, NUM_STRINGS)))
+                ).iterator();
+    }
+
     @DataProvider(name="all")
     public Iterator<Object[]> all() {
+        List<Object[]> all = new ArrayList<>();
+        empty().forEachRemaining(all::add);
+        nonempty().forEachRemaining(all::add);
+        sublists().forEachRemaining(all::add);
+        return all.iterator();
+    }
+
+    @DataProvider(name="nonsublists")
+    public Iterator<Object[]> nonsublists() {
         List<Object[]> all = new ArrayList<>();
         empty().forEachRemaining(all::add);
         nonempty().forEachRemaining(all::add);
@@ -212,7 +252,29 @@ public class ListFactories {
         assertEquals(list, Arrays.asList(stringArray));
     }
 
-    @Test(dataProvider="all")
+    @Test(dataProvider="all", expectedExceptions=NullPointerException.class)
+    public void containsNullShouldThrowNPE(List<String> act, List<String> exp) {
+        act.contains(null);
+    }
+
+    @Test(dataProvider="all", expectedExceptions=NullPointerException.class)
+    public void indexOfNullShouldThrowNPE(List<String> act, List<String> exp) {
+        act.indexOf(null);
+    }
+
+    @Test(dataProvider="all", expectedExceptions=NullPointerException.class)
+    public void lastIndexOfNullShouldThrowNPE(List<String> act, List<String> exp) {
+        act.lastIndexOf(null);
+    }
+
+    // List.of().subList views should not be Serializable
+    @Test(dataProvider="sublists")
+    public void isNotSerializable(List<String> act, List<String> exp) {
+        assertFalse(act instanceof Serializable);
+    }
+
+    // ... but List.of() should be
+    @Test(dataProvider="nonsublists")
     public void serialEquality(List<String> act, List<String> exp) {
         // assume that act.equals(exp) tested elsewhere
         List<String> copy = serialClone(act);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ class PollSelectorImpl
      * Package private constructor called by factory method in
      * the abstract superclass Selector.
      */
-    PollSelectorImpl(SelectorProvider sp) {
+    PollSelectorImpl(SelectorProvider sp) throws IOException {
         super(sp, 1, 1);
         long pipeFds = IOUtil.makePipe(false);
         fd0 = (int) (pipeFds >>> 32);

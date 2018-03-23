@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 /* @test
  * @bug 4849277 7183800
  * @summary Test DatagramChannel send while connected
+ * @library ..
+ * @run testng ConnectedSend
  * @author Mike McCloskey
  */
 
@@ -32,20 +34,16 @@ import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.nio.charset.*;
+import org.testng.annotations.Test;
+import static org.testng.Assert.*;
 
 public class ConnectedSend {
-
-    public static void main(String[] args) throws Exception {
-        test1();
-        test2();
-    }
-
     // Check if DatagramChannel.send while connected can include
     // address without throwing
-    private static void test1() throws Exception {
-
+    @Test
+    public static void sendToConnectedAddress() throws Exception {
         DatagramChannel sndChannel = DatagramChannel.open();
-        sndChannel.socket().bind(null);
+        sndChannel.bind(null);
         InetAddress address = InetAddress.getLocalHost();
         if (address.isLoopbackAddress()) {
             address = InetAddress.getLoopbackAddress();
@@ -55,7 +53,7 @@ public class ConnectedSend {
             sndChannel.socket().getLocalPort());
 
         DatagramChannel rcvChannel = DatagramChannel.open();
-        rcvChannel.socket().bind(null);
+        rcvChannel.bind(null);
         InetSocketAddress receiver = new InetSocketAddress(
             address,
             rcvChannel.socket().getLocalPort());
@@ -71,8 +69,7 @@ public class ConnectedSend {
         rcvChannel.receive(bb);
         bb.flip();
         CharBuffer cb = Charset.forName("US-ASCII").newDecoder().decode(bb);
-        if (!cb.toString().startsWith("h"))
-            throw new RuntimeException("Test failed");
+        assertTrue(cb.toString().startsWith("h"), "Unexpected message content");
 
         rcvChannel.close();
         sndChannel.close();
@@ -81,9 +78,10 @@ public class ConnectedSend {
     // Check if the datagramsocket adaptor can send with a packet
     // that has not been initialized with an address; the legacy
     // datagram socket will send in this case
-    private static void test2() throws Exception {
+    @Test
+    public static void sendAddressedPacket() throws Exception {
         DatagramChannel sndChannel = DatagramChannel.open();
-        sndChannel.socket().bind(null);
+        sndChannel.bind(null);
         InetAddress address = InetAddress.getLocalHost();
         if (address.isLoopbackAddress()) {
             address = InetAddress.getLoopbackAddress();
@@ -93,7 +91,7 @@ public class ConnectedSend {
             sndChannel.socket().getLocalPort());
 
         DatagramChannel rcvChannel = DatagramChannel.open();
-        rcvChannel.socket().bind(null);
+        rcvChannel.bind(null);
         InetSocketAddress receiver = new InetSocketAddress(
             address,
             rcvChannel.socket().getLocalPort());
@@ -109,13 +107,12 @@ public class ConnectedSend {
         rcvChannel.receive(bb);
         bb.flip();
         CharBuffer cb = Charset.forName("US-ASCII").newDecoder().decode(bb);
-        if (!cb.toString().startsWith("h"))
-            throw new RuntimeException("Test failed");
+        assertTrue(cb.toString().startsWith("h"), "Unexpected message content");
 
         // Check that the pkt got set with the target address;
         // This is legacy behavior
-        if (!pkt.getSocketAddress().equals(receiver))
-            throw new RuntimeException("Test failed");
+        assertEquals(pkt.getSocketAddress(), receiver,
+            "Unexpected address set on packet");
 
         rcvChannel.close();
         sndChannel.close();

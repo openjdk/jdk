@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -37,23 +37,12 @@ SUNWprivate_1.1 {
                 Java_sun_nio_ch_DatagramDispatcher_readv0;
                 Java_sun_nio_ch_DatagramDispatcher_write0;
                 Java_sun_nio_ch_DatagramDispatcher_writev0;
-                Java_sun_nio_ch_EPollArrayWrapper_epollCreate;
-                Java_sun_nio_ch_EPollArrayWrapper_epollCtl;
-                Java_sun_nio_ch_EPollArrayWrapper_epollWait;
-		Java_sun_nio_ch_EPollArrayWrapper_init;
-		Java_sun_nio_ch_EPollArrayWrapper_interrupt;
-		Java_sun_nio_ch_EPollArrayWrapper_offsetofData;
-		Java_sun_nio_ch_EPollArrayWrapper_sizeofEPollEvent;
 		Java_sun_nio_ch_EPoll_eventSize;
 		Java_sun_nio_ch_EPoll_eventsOffset;
 		Java_sun_nio_ch_EPoll_dataOffset;
-		Java_sun_nio_ch_EPoll_epollCreate;
-		Java_sun_nio_ch_EPoll_epollCtl;
-		Java_sun_nio_ch_EPoll_epollWait;
-		Java_sun_nio_ch_EPollPort_close0;
-		Java_sun_nio_ch_EPollPort_drain1;
-		Java_sun_nio_ch_EPollPort_interrupt;
-		Java_sun_nio_ch_EPollPort_socketpair;
+		Java_sun_nio_ch_EPoll_create;
+		Java_sun_nio_ch_EPoll_ctl;
+		Java_sun_nio_ch_EPoll_wait;
                 Java_sun_nio_ch_FileChannelImpl_initIDs;
                 Java_sun_nio_ch_FileChannelImpl_map0;
                 Java_sun_nio_ch_FileChannelImpl_position0;
@@ -95,6 +84,7 @@ SUNWprivate_1.1 {
                 Java_sun_nio_ch_IOUtil_makePipe;
                 Java_sun_nio_ch_IOUtil_randomBytes;
                 Java_sun_nio_ch_IOUtil_setfdVal;
+                Java_sun_nio_ch_IOUtil_write1;
 		Java_sun_nio_ch_NativeThread_current;
 		Java_sun_nio_ch_NativeThread_init;
 		Java_sun_nio_ch_NativeThread_signal;

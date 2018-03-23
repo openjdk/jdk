@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,22 +61,6 @@ public class CloseWhenKeyIdle {
 
 
     public static void main(String[] args) throws Exception {
-
-        // Skip test on pre-2.6 kernels until the poll SelectorProvider
-        // is updated
-        String osname = System.getProperty("os.name");
-        if (osname.equals("Linux")) {
-            String[] ver = System.getProperty("os.version").split("\\.", 0);
-            if (ver.length >=2 ) {
-                int major = Integer.parseInt(ver[0]);
-                int minor = Integer.parseInt(ver[1]);
-                if (major < 2 || (major == 2 && minor < 6)) {
-                    System.out.println("Test passing on pre-2.6 kernel");
-                    return;
-                }
-            }
-        }
-
 
         // establish loopback connection
 

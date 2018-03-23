@@ -84,17 +84,17 @@ class KQueue {
     }
 
     /**
-     * Returns the file descriptor from a kevent (assuming to be in ident field)
+     * Returns the file descriptor from a kevent (assuming it is in the ident field)
      */
     static int getDescriptor(long address) {
         return unsafe.getInt(address + OFFSET_IDENT);
     }
 
-    static int getFilter(long address) {
+    static short getFilter(long address) {
         return unsafe.getShort(address + OFFSET_FILTER);
     }
 
-    static int getFlags(long address) {
+    static short getFlags(long address) {
         return unsafe.getShort(address + OFFSET_FLAGS);
     }
 
@@ -108,11 +108,11 @@ class KQueue {
 
     private static native int flagsOffset();
 
-    static native int kqueue() throws IOException;
+    static native int create() throws IOException;
 
-    static native int keventRegister(int kqpfd, int fd, int filter, int flags);
+    static native int register(int kqfd, int fd, int filter, int flags);
 
-    static native int keventPoll(int kqpfd, long pollAddress, int nevents)
+    static native int poll(int kqfd, long pollAddress, int nevents, long timeout)
         throws IOException;
 
     static {
