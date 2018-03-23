@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,53 +23,51 @@
  * questions.
  */
 
+ #include <dlfcn.h>
+ #include <unistd.h>
+ #include <sys/types.h>
+ #include <sys/epoll.h>
+
 #include "jni.h"
 #include "jni_util.h"
 #include "jvm.h"
 #include "jlong.h"
+#include "nio.h"
 #include "nio_util.h"
 
 #include "sun_nio_ch_EPoll.h"
 
-#include <dlfcn.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/epoll.h>
-
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_EPoll_eventSize(JNIEnv* env, jclass this)
+Java_sun_nio_ch_EPoll_eventSize(JNIEnv* env, jclass clazz)
 {
     return sizeof(struct epoll_event);
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_EPoll_eventsOffset(JNIEnv* env, jclass this)
+Java_sun_nio_ch_EPoll_eventsOffset(JNIEnv* env, jclass clazz)
 {
     return offsetof(struct epoll_event, events);
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_EPoll_dataOffset(JNIEnv* env, jclass this)
+Java_sun_nio_ch_EPoll_dataOffset(JNIEnv* env, jclass clazz)
 {
     return offsetof(struct epoll_event, data);
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_EPoll_epollCreate(JNIEnv *env, jclass c) {
-    /*
-     * epoll_create expects a size as a hint to the kernel about how to
-     * dimension internal structures. We can't predict the size in advance.
-     */
+Java_sun_nio_ch_EPoll_create(JNIEnv *env, jclass clazz) {
+    /* size hint not used in modern kernels */
     int epfd = epoll_create(256);
     if (epfd < 0) {
-       JNU_ThrowIOExceptionWithLastError(env, "epoll_create failed");
+        JNU_ThrowIOExceptionWithLastError(env, "epoll_create failed");
     }
     return epfd;
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_EPoll_epollCtl(JNIEnv *env, jclass c, jint epfd,
-                                   jint opcode, jint fd, jint events)
+Java_sun_nio_ch_EPoll_ctl(JNIEnv *env, jclass clazz, jint epfd,
+                          jint opcode, jint fd, jint events)
 {
     struct epoll_event event;
     int res;
@@ -77,21 +75,23 @@ Java_sun_nio_ch_EPoll_epollCtl(JNIEnv *env, jclass c, jint epfd,
     event.events = events;
     event.data.fd = fd;
 
-    RESTARTABLE(epoll_ctl(epfd, (int)opcode, (int)fd, &event), res);
-
+    res = epoll_ctl(epfd, (int)opcode, (int)fd, &event);
     return (res == 0) ? 0 : errno;
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_EPoll_epollWait(JNIEnv *env, jclass c,
-                                    jint epfd, jlong address, jint numfds)
+Java_sun_nio_ch_EPoll_wait(JNIEnv *env, jclass clazz, jint epfd,
+                           jlong address, jint numfds, jint timeout)
 {
     struct epoll_event *events = jlong_to_ptr(address);
-    int res;
-
-    RESTARTABLE(epoll_wait(epfd, events, numfds, -1), res);
+    int res = epoll_wait(epfd, events, numfds, timeout);
     if (res < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "epoll_wait failed");
+        if (errno == EINTR) {
+            return IOS_INTERRUPTED;
+        } else {
+            JNU_ThrowIOExceptionWithLastError(env, "epoll_wait failed");
+            return IOS_THROWN;
+        }
     }
     return res;
 }

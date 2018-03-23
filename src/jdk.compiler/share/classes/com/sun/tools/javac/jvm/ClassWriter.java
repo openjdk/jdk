@@ -43,6 +43,7 @@ import com.sun.tools.javac.code.Directive.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Types.UniqueType;
+import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.jvm.Pool.DynamicMethod;
 import com.sun.tools.javac.jvm.Pool.Method;
@@ -100,6 +101,8 @@ public class ClassWriter extends ClassFile {
 
     /** Type utilities. */
     private Types types;
+
+    private Check check;
 
     /**
      * If true, class files will be written in module-specific subdirectories
@@ -178,6 +181,7 @@ public class ClassWriter extends ClassFile {
         target = Target.instance(context);
         source = Source.instance(context);
         types = Types.instance(context);
+        check = Check.instance(context);
         fileManager = context.get(JavaFileManager.class);
         signatureGen = new CWSignatureGenerator(types);
 
@@ -1294,10 +1298,10 @@ public class ClassWriter extends ClassFile {
     //where
     private boolean needsLocalVariableTypeEntry(Type t) {
         //a local variable needs a type-entry if its type T is generic
-        //(i.e. |T| != T) and if it's not an intersection type (not supported
-        //in signature attribute grammar)
-        return (!types.isSameType(t, types.erasure(t)) &&
-                !t.isCompound());
+        //(i.e. |T| != T) and if it's not an non-denotable type (non-denotable
+        // types are not supported in signature attribute grammar!)
+        return !types.isSameType(t, types.erasure(t)) &&
+                check.checkDenotable(t);
     }
 
     void writeStackMap(Code code) {

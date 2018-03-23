@@ -23,17 +23,10 @@
  * questions.
  */
 
-/*
- * KQueueSelectorProvider.java
- * Implementation of Selector using FreeBSD / Mac OS X kqueues
- * Derived from Sun's DevPollSelectorProvider
- */
-
 package sun.nio.ch;
 
 import java.io.IOException;
-import java.nio.channels.*;
-import java.nio.channels.spi.*;
+import java.nio.channels.spi.AbstractSelector;
 
 public class KQueueSelectorProvider
     extends SelectorProviderImpl

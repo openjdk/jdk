@@ -23,101 +23,50 @@
 # questions.
 #
 
-LIBJSOUND_SRC_DIRS := \
+LIBJSOUND_SRC_DIRS := $(wildcard \
     $(TOPDIR)/src/java.desktop/share/native/libjsound \
-    $(TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/libjsound \
-    #
+    $(TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS)/native/libjsound \
+    )
+
 LIBJSOUND_CFLAGS := \
     -I$(SUPPORT_OUTPUTDIR)/headers/java.desktop \
     $(LIBJAVA_HEADER_FLAGS) \
     $(foreach dir, $(LIBJSOUND_SRC_DIRS), -I$(dir)) \
+    -DUSE_PORTS=TRUE \
+    -DUSE_DAUDIO=TRUE \
     #
 
-LIBJSOUND_SRC_FILES := Utilities.c Platform.c
-
-EXTRA_SOUND_JNI_LIBS :=
-
-LIBJSOUND_MIDIFILES := \
-    MidiInDevice.c \
-    MidiInDeviceProvider.c \
-    MidiOutDevice.c \
-    MidiOutDeviceProvider.c \
-    PlatformMidi.c
-
-# files needed for ports
-LIBJSOUND_PORTFILES := \
-    PortMixerProvider.c \
-    PortMixer.c
-
-# files needed for direct audio
-LIBJSOUND_DAUDIOFILES := \
-    DirectAudioDeviceProvider.c \
-    DirectAudioDevice.c
-
-ifeq ($(OPENJDK_TARGET_OS), windows)
-  EXTRA_SOUND_JNI_LIBS += jsoundds
-  LIBJSOUND_CFLAGS += -DX_PLATFORM=X_WINDOWS \
+ifneq ($(OPENJDK_TARGET_OS), solaris)
+  LIBJSOUND_CFLAGS += \
       -DUSE_PLATFORM_MIDI_OUT=TRUE \
       -DUSE_PLATFORM_MIDI_IN=TRUE \
-      -DUSE_PORTS=TRUE
-  LIBJSOUND_SRC_FILES += \
-      PLATFORM_API_WinOS_Charset_Util.cpp \
-      PLATFORM_API_WinOS_MidiIn.cpp \
-      PLATFORM_API_WinOS_MidiOut.c \
-      PLATFORM_API_WinOS_Util.c \
-      PLATFORM_API_WinOS_Ports.c
-  LIBJSOUND_SRC_FILES += $(LIBJSOUND_MIDIFILES)
-  LIBJSOUND_SRC_FILES += $(LIBJSOUND_PORTFILES)
-endif # OPENJDK_TARGET_OS windows
+      #
+endif
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  LIBJSOUND_CFLAGS += -DX_PLATFORM=X_WINDOWS
+endif
 
 ifeq ($(OPENJDK_TARGET_OS), linux)
-  EXTRA_SOUND_JNI_LIBS += jsoundalsa
   LIBJSOUND_CFLAGS += -DX_PLATFORM=X_LINUX
-endif # OPENJDK_TARGET_OS linux
+endif
 
 ifeq ($(OPENJDK_TARGET_OS), aix)
   LIBJSOUND_CFLAGS += -DX_PLATFORM=X_AIX
-endif # OPENJDK_TARGET_OS aix
+endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
   LIBJSOUND_TOOLCHAIN := TOOLCHAIN_LINK_CXX
-  LIBJSOUND_CFLAGS += -DX_PLATFORM=X_MACOSX \
-      -DUSE_PORTS=TRUE \
-      -DUSE_DAUDIO=TRUE \
-      -DUSE_PLATFORM_MIDI_OUT=TRUE \
-      -DUSE_PLATFORM_MIDI_IN=TRUE
-  LIBJSOUND_SRC_DIRS += $(TOPDIR)/src/java.desktop/macosx/native/libjsound
-  LIBJSOUND_SRC_FILES += \
-      PLATFORM_API_MacOSX_Utils.cpp \
-      PLATFORM_API_MacOSX_PCM.cpp \
-      PLATFORM_API_MacOSX_Ports.cpp \
-      PLATFORM_API_MacOSX_MidiIn.c \
-      PLATFORM_API_MacOSX_MidiOut.c \
-      PLATFORM_API_MacOSX_MidiUtils.c
-  LIBJSOUND_SRC_FILES += $(LIBJSOUND_MIDIFILES)
-  LIBJSOUND_SRC_FILES += $(LIBJSOUND_PORTFILES)
-  LIBJSOUND_SRC_FILES += $(LIBJSOUND_DAUDIOFILES)
-endif # OPENJDK_TARGET_OS macosx
+  LIBJSOUND_CFLAGS += -DX_PLATFORM=X_MACOSX
+endif
 
 ifeq ($(OPENJDK_TARGET_OS), solaris)
-  LIBJSOUND_CFLAGS += -DX_PLATFORM=X_SOLARIS \
-      -DUSE_PORTS=TRUE \
-      -DUSE_DAUDIO=TRUE
-  LIBJSOUND_SRC_FILES += \
-      PLATFORM_API_SolarisOS_Utils.c \
-      PLATFORM_API_SolarisOS_Ports.c \
-      PLATFORM_API_SolarisOS_PCM.c
-  LIBJSOUND_SRC_FILES += $(LIBJSOUND_MIDIFILES)
-  LIBJSOUND_SRC_FILES += $(LIBJSOUND_PORTFILES)
-  LIBJSOUND_SRC_FILES += $(LIBJSOUND_DAUDIOFILES)
-endif # OPENJDK_TARGET_OS solaris
-
-LIBJSOUND_CFLAGS += -DEXTRA_SOUND_JNI_LIBS='"$(EXTRA_SOUND_JNI_LIBS)"'
+  LIBJSOUND_CFLAGS += -DX_PLATFORM=X_SOLARIS
+endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBJSOUND, \
     NAME := jsound, \
     SRC := $(LIBJSOUND_SRC_DIRS), \
-    INCLUDE_FILES := $(LIBJSOUND_SRC_FILES), \
     TOOLCHAIN := $(LIBJSOUND_TOOLCHAIN), \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) \
@@ -127,10 +76,11 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJSOUND, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljava -ljvm, \
+    LIBS_linux := $(ALSA_LIBS), \
     LIBS_macosx := -framework CoreAudio -framework CoreFoundation \
-        -framework CoreServices -framework AudioUnit $(LIBCXX) \
-        -framework CoreMIDI -framework AudioToolbox, \
-    LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib winmm.lib, \
+        -framework CoreServices -framework AudioUnit \
+        -framework CoreMIDI -framework AudioToolbox $(LIBCXX), \
+    LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib dsound.lib winmm.lib user32.lib ole32.lib, \
 ))
 
 $(BUILD_LIBJSOUND): $(call FindLib, java.base, java)
@@ -138,61 +88,3 @@ $(BUILD_LIBJSOUND): $(call FindLib, java.base, java)
 TARGETS += $(BUILD_LIBJSOUND)
 
 ##########################################################################################
-
-ifneq ($(filter jsoundalsa, $(EXTRA_SOUND_JNI_LIBS)), )
-
-  $(eval $(call SetupJdkLibrary, BUILD_LIBJSOUNDALSA, \
-      NAME := jsoundalsa, \
-      SRC := $(LIBJSOUND_SRC_DIRS), \
-      INCLUDE_FILES := Utilities.c $(LIBJSOUND_MIDIFILES) $(LIBJSOUND_PORTFILES) \
-          $(LIBJSOUND_DAUDIOFILES) \
-          PLATFORM_API_LinuxOS_ALSA_CommonUtils.c \
-          PLATFORM_API_LinuxOS_ALSA_PCM.c \
-          PLATFORM_API_LinuxOS_ALSA_PCMUtils.c \
-          PLATFORM_API_LinuxOS_ALSA_MidiIn.c \
-          PLATFORM_API_LinuxOS_ALSA_MidiOut.c \
-          PLATFORM_API_LinuxOS_ALSA_MidiUtils.c \
-          PLATFORM_API_LinuxOS_ALSA_Ports.c, \
-      OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB) $(ALSA_CFLAGS) \
-          $(LIBJSOUND_CFLAGS) \
-          -DUSE_DAUDIO=TRUE \
-          -DUSE_PORTS=TRUE \
-          -DUSE_PLATFORM_MIDI_OUT=TRUE \
-          -DUSE_PLATFORM_MIDI_IN=TRUE, \
-      MAPFILE := $(TOPDIR)/make/mapfiles/libjsoundalsa/mapfile-vers, \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LIBS := $(ALSA_LIBS) -ljava -ljvm, \
-  ))
-
-  $(BUILD_LIBJSOUNDALSA): $(call FindLib, java.base, java)
-
-  TARGETS += $(BUILD_LIBJSOUNDALSA)
-
-endif
-
-##########################################################################################
-
-ifneq ($(filter jsoundds, $(EXTRA_SOUND_JNI_LIBS)), )
-
-  $(eval $(call SetupJdkLibrary, BUILD_LIBJSOUNDDS, \
-      NAME := jsoundds, \
-      SRC := $(LIBJSOUND_SRC_DIRS), \
-      INCLUDE_FILES := Utilities.c $(LIBJSOUND_DAUDIOFILES) \
-          PLATFORM_API_WinOS_Charset_Util.cpp \
-          PLATFORM_API_WinOS_DirectSound.cpp, \
-      OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB) \
-          $(LIBJSOUND_CFLAGS) \
-          -DUSE_DAUDIO=TRUE, \
-      LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LIBS := $(JDKLIB_LIBS) dsound.lib winmm.lib user32.lib ole32.lib, \
-  ))
-
-  $(BUILD_LIBJSOUNDDS): $(call FindLib, java.base, java)
-
-  TARGETS += $(BUILD_LIBJSOUNDDS)
-
-endif

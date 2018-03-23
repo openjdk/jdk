@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,17 @@
  * questions.
  */
 
-#include "jni.h"
-#include "jni_util.h"
-#include "jvm.h"
-#include "jlong.h"
-#include "nio_util.h"
-
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <sys/types.h>
 #include <port.h>
+
+#include "jni.h"
+#include "jni_util.h"
+#include "jvm.h"
+#include "jlong.h"
+#include "nio.h"
+#include "nio_util.h"
 
 #include "sun_nio_ch_SolarisEventPort.h"
 
@@ -51,8 +52,10 @@ JNIEXPORT void JNICALL
 Java_sun_nio_ch_SolarisEventPort_port_1close
     (JNIEnv* env, jclass clazz, jint port)
 {
-    int res;
-    RESTARTABLE(close(port), res);
+    int res = close(port);
+    if (res < 0 && res != EINTR) {
+        JNU_ThrowIOExceptionWithLastError(env, "close failed");
+    }
 }
 
 JNIEXPORT jboolean JNICALL
@@ -93,17 +96,23 @@ Java_sun_nio_ch_SolarisEventPort_port_1send(JNIEnv* env, jclass clazz,
     }
 }
 
-JNIEXPORT void JNICALL
+JNIEXPORT jint JNICALL
 Java_sun_nio_ch_SolarisEventPort_port_1get(JNIEnv* env, jclass clazz,
     jint port, jlong eventAddress)
 {
     int res;
     port_event_t* ev = (port_event_t*)jlong_to_ptr(eventAddress);
 
-    RESTARTABLE(port_get((int)port, ev, NULL), res);
+    res = port_get((int)port, ev, NULL);
     if (res == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "port_get");
+        if (errno == EINTR) {
+            return IOS_INTERRUPTED;
+        } else {
+            JNU_ThrowIOExceptionWithLastError(env, "port_get failed");
+            return IOS_THROWN;
+        }
     }
+    return res;
 }
 
 JNIEXPORT jint JNICALL
@@ -125,9 +134,13 @@ Java_sun_nio_ch_SolarisEventPort_port_1getn(JNIEnv* env, jclass clazz,
     }
 
     res = port_getn((int)port, list, (uint_t)max, &n, tsp);
-    if (res == -1) {
-        if (errno != ETIME && errno != EINTR)
-            JNU_ThrowIOExceptionWithLastError(env, "port_getn");
+    if (res == -1 && errno != ETIME) {
+        if (errno == EINTR) {
+            return IOS_INTERRUPTED;
+        } else {
+            JNU_ThrowIOExceptionWithLastError(env, "port_getn failed");
+            return IOS_THROWN;
+        }
     }
 
     return (jint)n;

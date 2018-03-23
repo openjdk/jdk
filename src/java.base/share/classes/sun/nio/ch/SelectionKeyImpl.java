@@ -33,10 +33,10 @@ import java.nio.channels.spi.AbstractSelectionKey;
 
 
 /**
- * An implementation of SelectionKey for Solaris.
+ * An implementation of SelectionKey.
  */
 
-public class SelectionKeyImpl
+public final class SelectionKeyImpl
     extends AbstractSelectionKey
 {
 
@@ -54,12 +54,14 @@ public class SelectionKeyImpl
         selector = sel;
     }
 
+    @Override
     public SelectableChannel channel() {
         return (SelectableChannel)channel;
     }
 
+    @Override
     public Selector selector() {
-        return selector;
+        return (Selector)selector;
     }
 
     int getIndex() {                                    // package-private
@@ -75,16 +77,19 @@ public class SelectionKeyImpl
             throw new CancelledKeyException();
     }
 
+    @Override
     public int interestOps() {
         ensureValid();
         return interestOps;
     }
 
+    @Override
     public SelectionKey interestOps(int ops) {
         ensureValid();
         return nioInterestOps(ops);
     }
 
+    @Override
     public int readyOps() {
         ensureValid();
         return readyOps;
@@ -131,4 +136,6 @@ public class SelectionKeyImpl
         return sb.toString();
     }
 
+    // used by Selector implementations to record when the key was selected
+    int lastPolled;
 }
