@@ -43,7 +43,6 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
-#include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"

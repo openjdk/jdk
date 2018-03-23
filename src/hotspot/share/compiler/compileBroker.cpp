@@ -50,6 +50,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/timerTrace.hpp"

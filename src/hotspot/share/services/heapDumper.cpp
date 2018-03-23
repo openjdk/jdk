@@ -27,7 +27,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/vmGCOperations.hpp"
 #include "memory/allocation.inline.hpp"

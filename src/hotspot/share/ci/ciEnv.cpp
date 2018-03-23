@@ -57,6 +57,7 @@
 #include "runtime/init.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.inline.hpp"
 #include "trace/tracing.hpp"

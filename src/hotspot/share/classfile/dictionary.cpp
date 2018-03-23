@@ -29,7 +29,6 @@
 #include "classfile/protectionDomainCache.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
-#include "gc/shared/gcLocker.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/iterator.hpp"
@@ -38,6 +37,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.inline.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "utilities/hashtable.inline.hpp"
 
 // Optimization: if any dictionary needs resizing, we set this flag,
