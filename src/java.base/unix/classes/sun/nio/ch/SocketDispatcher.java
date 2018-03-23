@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,15 @@
 
 package sun.nio.ch;
 
-import java.io.*;
+import java.io.FileDescriptor;
+import java.io.IOException;
 
 /**
  * Allows different platforms to call different native methods
  * for read and write operations.
  */
 
-class SocketDispatcher extends NativeDispatcher
-{
+class SocketDispatcher extends NativeDispatcher {
 
     int read(FileDescriptor fd, long address, int len) throws IOException {
         return FileDispatcherImpl.read0(fd, address, len);

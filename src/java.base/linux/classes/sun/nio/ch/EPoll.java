@@ -109,11 +109,11 @@ class EPoll {
 
     private static native int dataOffset();
 
-    static native int epollCreate() throws IOException;
+    static native int create() throws IOException;
 
-    static native int epollCtl(int epfd, int opcode, int fd, int events);
+    static native int ctl(int epfd, int opcode, int fd, int events);
 
-    static native int epollWait(int epfd, long pollAddress, int numfds)
+    static native int wait(int epfd, long pollAddress, int numfds, int timeout)
         throws IOException;
 
     static {

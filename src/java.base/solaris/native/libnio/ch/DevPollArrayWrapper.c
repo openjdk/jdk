@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,15 +175,4 @@ Java_sun_nio_ch_DevPollArrayWrapper_poll0(JNIEnv *env, jobject this,
         return -1;
     }
     return result;
-}
-
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_DevPollArrayWrapper_interrupt(JNIEnv *env, jclass this, jint fd)
-{
-    int fakebuf[1];
-    fakebuf[0] = 1;
-    if (write(fd, fakebuf, 1) < 0) {
-        JNU_ThrowIOExceptionWithLastError(env,
-                                          "Write to interrupt fd failed");
-    }
 }
