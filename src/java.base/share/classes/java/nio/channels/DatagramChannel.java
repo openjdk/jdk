@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,6 +279,9 @@ public abstract class DatagramChannel
      *
      * @return  This datagram channel
      *
+     * @throws  AlreadyConnectedException
+     *          If this channel is already connected
+     *
      * @throws  ClosedChannelException
      *          If this channel is closed
      *
@@ -291,6 +294,12 @@ public abstract class DatagramChannel
      *          while the connect operation is in progress, thereby
      *          closing the channel and setting the current thread's
      *          interrupt status
+     *
+     * @throws  UnresolvedAddressException
+     *          If the given remote address is not fully resolved
+     *
+     * @throws  UnsupportedAddressTypeException
+     *          If the type of the given remote address is not supported
      *
      * @throws  SecurityException
      *          If a security manager has been installed
@@ -444,6 +453,10 @@ public abstract class DatagramChannel
      *           zero if there was insufficient room for the datagram in the
      *           underlying output buffer
      *
+     * @throws  AlreadyConnectedException
+     *          If this channel is connected to a different address
+     *          from that specified by {@code target}
+     *
      * @throws  ClosedChannelException
      *          If this channel is closed
      *
@@ -456,6 +469,12 @@ public abstract class DatagramChannel
      *          while the read operation is in progress, thereby
      *          closing the channel and setting the current thread's
      *          interrupt status
+     *
+     * @throws  UnresolvedAddressException
+     *          If the given remote address is not fully resolved
+     *
+     * @throws  UnsupportedAddressTypeException
+     *          If the type of the given remote address is not supported
      *
      * @throws  SecurityException
      *          If a security manager has been installed

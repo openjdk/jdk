@@ -1287,7 +1287,7 @@ public interface Map<K, V> {
      * @since 9
      */
     static <K, V> Map<K, V> of() {
-        return ImmutableCollections.Map0.instance();
+        return ImmutableCollections.emptyMap();
     }
 
     /**
@@ -1604,11 +1604,11 @@ public interface Map<K, V> {
     @SuppressWarnings("varargs")
     static <K, V> Map<K, V> ofEntries(Entry<? extends K, ? extends V>... entries) {
         if (entries.length == 0) { // implicit null check of entries array
-            return ImmutableCollections.Map0.instance();
+            return ImmutableCollections.emptyMap();
         } else if (entries.length == 1) {
             // implicit null check of the array slot
             return new ImmutableCollections.Map1<>(entries[0].getKey(),
-                                                   entries[0].getValue());
+                    entries[0].getValue());
         } else {
             Object[] kva = new Object[entries.length << 1];
             int a = 0;

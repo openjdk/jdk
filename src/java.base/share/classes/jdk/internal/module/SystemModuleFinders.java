@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.net.URLConnection;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayDeque;
@@ -185,7 +184,7 @@ public final class SystemModuleFinders {
 
         // probe to see if this is an images build
         String home = System.getProperty("java.home");
-        Path modules = Paths.get(home, "lib", "modules");
+        Path modules = Path.of(home, "lib", "modules");
         if (Files.isRegularFile(modules)) {
             if (USE_FAST_PATH) {
                 SystemModules systemModules = allSystemModules();
@@ -205,7 +204,7 @@ public final class SystemModuleFinders {
         }
 
         // exploded build (do not cache module finder)
-        Path dir = Paths.get(home, "modules");
+        Path dir = Path.of(home, "modules");
         if (!Files.isDirectory(dir))
             throw new InternalError("Unable to detect the run-time image");
         ModuleFinder f = ModulePath.of(ModuleBootstrap.patcher(), dir);

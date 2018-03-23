@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,10 @@ class SolarisEventPort
                     // A error here is fatal (thread will not be replaced)
                     replaceMe = false;
                     try {
-                        port_get(port, address);
+                        int n;
+                        do {
+                            n = port_get(port, address);
+                        } while (n == IOStatus.INTERRUPTED);
                     } catch (IOException x) {
                         x.printStackTrace();
                         return;
@@ -240,7 +243,7 @@ class SolarisEventPort
     /**
      * Retrieves a single event from a port
      */
-    static native void port_get(int port, long pe) throws IOException;
+    static native int port_get(int port, long address) throws IOException;
 
     /**
      * Retrieves at most {@code max} events from a port.

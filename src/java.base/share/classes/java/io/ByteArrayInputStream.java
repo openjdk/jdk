@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,15 @@
 
 package java.io;
 
+import java.util.Arrays;
+import java.util.Objects;
+
 /**
- * A <code>ByteArrayInputStream</code> contains
+ * A {@code ByteArrayInputStream} contains
  * an internal buffer that contains bytes that
  * may be read from the stream. An internal
  * counter keeps track of the next byte to
- * be supplied by the <code>read</code> method.
+ * be supplied by the {@code read} method.
  * <p>
  * Closing a {@code ByteArrayInputStream} has no effect. The methods in
  * this class can be called after the stream has been closed without
@@ -40,15 +43,14 @@ package java.io;
  * @see     java.io.StringBufferInputStream
  * @since   1.0
  */
-public
-class ByteArrayInputStream extends InputStream {
+public class ByteArrayInputStream extends InputStream {
 
     /**
      * An array of bytes that was provided
-     * by the creator of the stream. Elements <code>buf[0]</code>
-     * through <code>buf[count-1]</code> are the
+     * by the creator of the stream. Elements {@code buf[0]}
+     * through {@code buf[count-1]} are the
      * only bytes that can ever be read from the
-     * stream;  element <code>buf[pos]</code> is
+     * stream;  element {@code buf[pos]} is
      * the next byte to be read.
      */
     protected byte buf[];
@@ -56,9 +58,9 @@ class ByteArrayInputStream extends InputStream {
     /**
      * The index of the next character to read from the input stream buffer.
      * This value should always be nonnegative
-     * and not larger than the value of <code>count</code>.
+     * and not larger than the value of {@code count}.
      * The next byte to be read from the input stream buffer
-     * will be <code>buf[pos]</code>.
+     * will be {@code buf[pos]}.
      */
     protected int pos;
 
@@ -66,9 +68,9 @@ class ByteArrayInputStream extends InputStream {
      * The currently marked position in the stream.
      * ByteArrayInputStream objects are marked at position zero by
      * default when constructed.  They may be marked at another
-     * position within the buffer by the <code>mark()</code> method.
+     * position within the buffer by the {@code mark()} method.
      * The current buffer position is set to this point by the
-     * <code>reset()</code> method.
+     * {@code reset()} method.
      * <p>
      * If no mark has been set, then the value of mark is the offset
      * passed to the constructor (or 0 if the offset was not supplied).
@@ -81,22 +83,22 @@ class ByteArrayInputStream extends InputStream {
      * The index one greater than the last valid character in the input
      * stream buffer.
      * This value should always be nonnegative
-     * and not larger than the length of <code>buf</code>.
+     * and not larger than the length of {@code buf}.
      * It  is one greater than the position of
-     * the last byte within <code>buf</code> that
+     * the last byte within {@code buf} that
      * can ever be read  from the input stream buffer.
      */
     protected int count;
 
     /**
-     * Creates a <code>ByteArrayInputStream</code>
-     * so that it  uses <code>buf</code> as its
+     * Creates a {@code ByteArrayInputStream}
+     * so that it  uses {@code buf} as its
      * buffer array.
      * The buffer array is not copied.
-     * The initial value of <code>pos</code>
-     * is <code>0</code> and the initial value
-     * of  <code>count</code> is the length of
-     * <code>buf</code>.
+     * The initial value of {@code pos}
+     * is {@code 0} and the initial value
+     * of  {@code count} is the length of
+     * {@code buf}.
      *
      * @param   buf   the input buffer.
      */
@@ -107,12 +109,12 @@ class ByteArrayInputStream extends InputStream {
     }
 
     /**
-     * Creates <code>ByteArrayInputStream</code>
-     * that uses <code>buf</code> as its
-     * buffer array. The initial value of <code>pos</code>
-     * is <code>offset</code> and the initial value
-     * of <code>count</code> is the minimum of <code>offset+length</code>
-     * and <code>buf.length</code>.
+     * Creates {@code ByteArrayInputStream}
+     * that uses {@code buf} as its
+     * buffer array. The initial value of {@code pos}
+     * is {@code offset} and the initial value
+     * of {@code count} is the minimum of {@code offset+length}
+     * and {@code buf.length}.
      * The buffer array is not copied. The buffer's mark is
      * set to the specified offset.
      *
@@ -129,15 +131,15 @@ class ByteArrayInputStream extends InputStream {
 
     /**
      * Reads the next byte of data from this input stream. The value
-     * byte is returned as an <code>int</code> in the range
-     * <code>0</code> to <code>255</code>. If no byte is available
+     * byte is returned as an {@code int} in the range
+     * {@code 0} to {@code 255}. If no byte is available
      * because the end of the stream has been reached, the value
-     * <code>-1</code> is returned.
+     * {@code -1} is returned.
      * <p>
-     * This <code>read</code> method
+     * This {@code read} method
      * cannot block.
      *
-     * @return  the next byte of data, or <code>-1</code> if the end of the
+     * @return  the next byte of data, or {@code -1} if the end of the
      *          stream has been reached.
      */
     public synchronized int read() {
@@ -145,40 +147,30 @@ class ByteArrayInputStream extends InputStream {
     }
 
     /**
-     * Reads up to <code>len</code> bytes of data into an array of bytes
-     * from this input stream.
-     * If <code>pos</code> equals <code>count</code>,
-     * then <code>-1</code> is returned to indicate
-     * end of file. Otherwise, the  number <code>k</code>
-     * of bytes read is equal to the smaller of
-     * <code>len</code> and <code>count-pos</code>.
-     * If <code>k</code> is positive, then bytes
-     * <code>buf[pos]</code> through <code>buf[pos+k-1]</code>
-     * are copied into <code>b[off]</code>  through
-     * <code>b[off+k-1]</code> in the manner performed
-     * by <code>System.arraycopy</code>. The
-     * value <code>k</code> is added into <code>pos</code>
-     * and <code>k</code> is returned.
+     * Reads up to {@code len} bytes of data into an array of bytes from this
+     * input stream.  If {@code pos} equals {@code count}, then {@code -1} is
+     * returned to indicate end of file.  Otherwise, the  number {@code k} of
+     * bytes read is equal to the smaller of {@code len} and {@code count-pos}.
+     * If {@code k} is positive, then bytes {@code buf[pos]} through
+     * {@code buf[pos+k-1]} are copied into {@code b[off]} through
+     * {@code b[off+k-1]} in the manner performed by {@code System.arraycopy}.
+     * The value {@code k} is added into {@code pos} and {@code k} is returned.
      * <p>
-     * This <code>read</code> method cannot block.
+     * This {@code read} method cannot block.
      *
      * @param   b     the buffer into which the data is read.
-     * @param   off   the start offset in the destination array <code>b</code>
+     * @param   off   the start offset in the destination array {@code b}
      * @param   len   the maximum number of bytes read.
      * @return  the total number of bytes read into the buffer, or
-     *          <code>-1</code> if there is no more data because the end of
+     *          {@code -1} if there is no more data because the end of
      *          the stream has been reached.
-     * @exception  NullPointerException If <code>b</code> is <code>null</code>.
-     * @exception  IndexOutOfBoundsException If <code>off</code> is negative,
-     * <code>len</code> is negative, or <code>len</code> is greater than
-     * <code>b.length - off</code>
+     * @throws  NullPointerException If {@code b} is {@code null}.
+     * @throws  IndexOutOfBoundsException If {@code off} is negative,
+     * {@code len} is negative, or {@code len} is greater than
+     * {@code b.length - off}
      */
     public synchronized int read(byte b[], int off, int len) {
-        if (b == null) {
-            throw new NullPointerException();
-        } else if (off < 0 || len < 0 || len > b.length - off) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkFromIndexSize(off, len, b.length);
 
         if (pos >= count) {
             return -1;
@@ -196,14 +188,32 @@ class ByteArrayInputStream extends InputStream {
         return len;
     }
 
+    public synchronized byte[] readAllBytes() {
+        byte[] result = Arrays.copyOfRange(buf, pos, count);
+        pos = count;
+        return result;
+    }
+
+    public int readNBytes(byte[] b, int off, int len) {
+        int n = read(b, off, len);
+        return n == -1 ? 0 : n;
+    }
+
+    public synchronized long transferTo(OutputStream out) throws IOException {
+        int len = count - pos;
+        out.write(buf, pos, len);
+        pos = count;
+        return len;
+    }
+
     /**
-     * Skips <code>n</code> bytes of input from this input stream. Fewer
+     * Skips {@code n} bytes of input from this input stream. Fewer
      * bytes might be skipped if the end of the input stream is reached.
-     * The actual number <code>k</code>
+     * The actual number {@code k}
      * of bytes to be skipped is equal to the smaller
-     * of <code>n</code> and  <code>count-pos</code>.
-     * The value <code>k</code> is added into <code>pos</code>
-     * and <code>k</code> is returned.
+     * of {@code n} and  {@code count-pos}.
+     * The value {@code k} is added into {@code pos}
+     * and {@code k} is returned.
      *
      * @param   n   the number of bytes to be skipped.
      * @return  the actual number of bytes skipped.
@@ -222,7 +232,7 @@ class ByteArrayInputStream extends InputStream {
      * Returns the number of remaining bytes that can be read (or skipped over)
      * from this input stream.
      * <p>
-     * The value returned is <code>count&nbsp;- pos</code>,
+     * The value returned is {@code count - pos},
      * which is the number of bytes remaining to be read from the input buffer.
      *
      * @return  the number of remaining bytes that can be read (or skipped
@@ -233,9 +243,9 @@ class ByteArrayInputStream extends InputStream {
     }
 
     /**
-     * Tests if this <code>InputStream</code> supports mark/reset. The
-     * <code>markSupported</code> method of <code>ByteArrayInputStream</code>
-     * always returns <code>true</code>.
+     * Tests if this {@code InputStream} supports mark/reset. The
+     * {@code markSupported} method of {@code ByteArrayInputStream}
+     * always returns {@code true}.
      *
      * @since   1.1
      */
@@ -253,7 +263,7 @@ class ByteArrayInputStream extends InputStream {
      * offset passed to the constructor (or 0 if the offset was not
      * supplied).
      *
-     * <p> Note: The <code>readAheadLimit</code> for this class
+     * <p> Note: The {@code readAheadLimit} for this class
      *  has no meaning.
      *
      * @since   1.1

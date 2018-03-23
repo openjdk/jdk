@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,12 +181,26 @@ class EventPortWrapper {
         }
 
         // poll for events
-        int updated = port_getn(pfd, pollArrayAddress, POLL_MAX, timeout);
+        int numEntries;
+        long to = timeout;
+        boolean timedPoll = (to > 0);
+        do {
+            long startTime = timedPoll ? System.currentTimeMillis() : 0;
+            numEntries = port_getn(pfd, pollArrayAddress, POLL_MAX, timeout);
+            if (numEntries == IOStatus.INTERRUPTED && timedPoll) {
+                // timed poll interrupted so need to adjust timeout
+                to -= System.currentTimeMillis() - startTime;
+                if (to <= 0) {
+                    // timeout also expired so no retry
+                    numEntries = 0;
+                }
+            }
+        } while (numEntries == IOStatus.INTERRUPTED);
 
         // after polling we need to queue all polled file descriptors as they
         // are candidates to register for the next poll.
         synchronized (updateLock) {
-            for (int i=0; i<updated; i++) {
+            for (int i=0; i<numEntries; i++) {
                 if (getSource(i) == PORT_SOURCE_USER) {
                     interrupted = true;
                     setDescriptor(i, -1);
@@ -199,7 +213,7 @@ class EventPortWrapper {
             }
         }
 
-        return updated;
+        return numEntries;
     }
 
     private void setInterest(int fd) {

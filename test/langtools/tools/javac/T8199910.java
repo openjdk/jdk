@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,23 @@
  * questions.
  */
 
-/* @test
- * @bug 4675045
- * @summary Test DatagramChannel send to unresolved address
- * @library ..
+/*
+ * @test
+ * @bug 8199910
+ * @summary Compile variables of intersection type inferred by `var` with -g option
+ * @compile -g T8199910.java
  */
+import java.util.List;
 
-import java.io.*;
-import java.net.*;
-import java.nio.*;
-import java.nio.channels.*;
+class T8199910 {
+    <T> T first(T... ts) {
+        return ts[0];
+    }
 
-public class SendToUnresolved {
-    public static void main(String [] argv) throws Exception {
-        String host = TestUtil.UNRESOLVABLE_HOST;
-        DatagramChannel dc = DatagramChannel.open();
-        ByteBuffer bb = ByteBuffer.allocate(4);
-        InetSocketAddress sa = new InetSocketAddress (host, 37);
-        InetAddress inetaddr = sa.getAddress();
-        try {
-            dc.send(bb, sa);
-            throw new RuntimeException("Expected exception not thrown");
-        } catch (IOException | UnresolvedAddressException e) {
-            // Correct result
-        }
-        dc.close();
+    void m() {
+        var list1 = List.of("", 1);
+        var list2 = List.of(1, 2.0);
+        var a = first("", 1);
+        var b = first(1, 2.0);
     }
 }

@@ -61,7 +61,7 @@ class DevPollSelectorImpl
      * Package private constructor called by factory method in
      * the abstract superclass Selector.
      */
-    DevPollSelectorImpl(SelectorProvider sp) {
+    DevPollSelectorImpl(SelectorProvider sp) throws IOException {
         super(sp);
         long pipeFds = IOUtil.makePipe(false);
         fd0 = (int) (pipeFds >>> 32);

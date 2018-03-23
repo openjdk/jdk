@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,7 +260,7 @@ abstract class UnixFileStore
     private static Properties loadProperties() {
         Properties result = new Properties();
         String fstypes = System.getProperty("java.home") + "/lib/fstypes.properties";
-        Path file = Paths.get(fstypes);
+        Path file = Path.of(fstypes);
         try {
             try (ReadableByteChannel rbc = Files.newByteChannel(file)) {
                 result.load(Channels.newReader(rbc, "UTF-8"));
