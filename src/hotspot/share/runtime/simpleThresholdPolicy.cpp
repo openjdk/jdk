@@ -24,10 +24,10 @@
 
 #include "precompiled.hpp"
 #include "compiler/compileBroker.hpp"
-#include "gc/shared/gcLocker.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/simpleThresholdPolicy.hpp"
 #include "runtime/simpleThresholdPolicy.inline.hpp"
 #include "code/scopeDesc.hpp"

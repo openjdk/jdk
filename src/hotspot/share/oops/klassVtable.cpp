@@ -26,7 +26,6 @@
 #include "jvm.h"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "gc/shared/gcLocker.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -40,6 +39,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "utilities/copy.hpp"
 
 inline InstanceKlass* klassVtable::ik() const {

@@ -32,6 +32,7 @@
 #include "code/compressedStream.hpp"
 #include "code/nmethod.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.hpp"
 

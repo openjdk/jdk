@@ -38,7 +38,7 @@
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/vmPSOperations.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcWhen.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"

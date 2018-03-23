@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
-#include "gc/shared/gcLocker.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
@@ -34,6 +33,7 @@
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
 

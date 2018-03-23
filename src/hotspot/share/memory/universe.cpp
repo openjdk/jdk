@@ -35,7 +35,7 @@
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcArguments.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/space.hpp"
