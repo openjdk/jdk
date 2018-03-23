@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,10 +104,19 @@ Java_sun_nio_ch_IOUtil_makePipe(JNIEnv *env, jobject this, jboolean blocking)
     return ((jlong) fd[0] << 32) | (jlong) fd[1];
 }
 
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_IOUtil_write1(JNIEnv *env, jclass cl, jint fd, jbyte b)
+{
+    char c = (char)b;
+    return convertReturnVal(env, write(fd, &c, 1), JNI_FALSE);
+}
+
+
 JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_IOUtil_drain(JNIEnv *env, jclass cl, jint fd)
 {
-    char buf[128];
+    char buf[16];
     int tn = 0;
 
     for (;;) {
