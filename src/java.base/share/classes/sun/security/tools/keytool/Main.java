@@ -27,7 +27,7 @@ package sun.security.tools.keytool;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.security.CodeSigner;
 import java.security.CryptoPrimitive;
 import java.security.KeyStore;
@@ -2189,7 +2189,7 @@ public final class Main {
                 inplaceBackupName = srcksfname + ".old" + (n == 1 ? "" : n);
                 File bkFile = new File(inplaceBackupName);
                 if (!bkFile.exists()) {
-                    Files.copy(Paths.get(srcksfname), bkFile.toPath());
+                    Files.copy(Path.of(srcksfname), bkFile.toPath());
                     break;
                 }
             }

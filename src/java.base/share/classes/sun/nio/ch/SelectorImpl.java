@@ -78,6 +78,16 @@ public abstract class SelectorImpl
         return publicSelectedKeys;
     }
 
+    /**
+     * Returns the public view of the key sets
+     */
+    protected final Set<SelectionKey> nioKeys() {
+        return publicKeys;
+    }
+    protected final Set<SelectionKey> nioSelectedKeys() {
+        return publicSelectedKeys;
+    }
+
     protected abstract int doSelect(long timeout) throws IOException;
 
     private int lockAndDoSelect(long timeout) throws IOException {
@@ -125,8 +135,6 @@ public abstract class SelectorImpl
 
     protected abstract void implClose() throws IOException;
 
-    public abstract void putEventOps(SelectionKeyImpl sk, int ops);
-
     @Override
     protected final SelectionKey register(AbstractSelectableChannel ch,
                                           int ops,
@@ -166,4 +174,9 @@ public abstract class SelectorImpl
             }
         }
     }
+
+    /**
+     * Invoked to change the key's interest set
+     */
+    public abstract void putEventOps(SelectionKeyImpl ski, int ops);
 }

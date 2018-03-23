@@ -788,7 +788,7 @@ public interface List<E> extends Collection<E> {
      * @since 9
      */
     static <E> List<E> of() {
-        return ImmutableCollections.List0.instance();
+        return ImmutableCollections.emptyList();
     }
 
     /**
@@ -804,7 +804,7 @@ public interface List<E> extends Collection<E> {
      * @since 9
      */
     static <E> List<E> of(E e1) {
-        return new ImmutableCollections.List1<>(e1);
+        return new ImmutableCollections.List12<>(e1);
     }
 
     /**
@@ -821,7 +821,7 @@ public interface List<E> extends Collection<E> {
      * @since 9
      */
     static <E> List<E> of(E e1, E e2) {
-        return new ImmutableCollections.List2<>(e1, e2);
+        return new ImmutableCollections.List12<>(e1, e2);
     }
 
     /**
@@ -1031,11 +1031,11 @@ public interface List<E> extends Collection<E> {
     static <E> List<E> of(E... elements) {
         switch (elements.length) { // implicit null check of elements
             case 0:
-                return ImmutableCollections.List0.instance();
+                return ImmutableCollections.emptyList();
             case 1:
-                return new ImmutableCollections.List1<>(elements[0]);
+                return new ImmutableCollections.List12<>(elements[0]);
             case 2:
-                return new ImmutableCollections.List2<>(elements[0], elements[1]);
+                return new ImmutableCollections.List12<>(elements[0], elements[1]);
             default:
                 return new ImmutableCollections.ListN<>(elements);
         }

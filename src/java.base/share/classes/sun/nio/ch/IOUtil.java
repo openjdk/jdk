@@ -397,7 +397,9 @@ public class IOUtil {
      * The read end of the pipe is returned in the high 32 bits,
      * while the write end is returned in the low 32 bits.
      */
-    static native long makePipe(boolean blocking);
+    static native long makePipe(boolean blocking) throws IOException;
+
+    static native int write1(int fd, byte b) throws IOException;
 
     static native boolean drain(int fd) throws IOException;
 

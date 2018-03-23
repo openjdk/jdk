@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -346,11 +345,11 @@ class ProxyGenerator {
                         int i = name.lastIndexOf('.');
                         Path path;
                         if (i > 0) {
-                            Path dir = Paths.get(name.substring(0, i).replace('.', File.separatorChar));
+                            Path dir = Path.of(name.substring(0, i).replace('.', File.separatorChar));
                             Files.createDirectories(dir);
                             path = dir.resolve(name.substring(i+1, name.length()) + ".class");
                         } else {
-                            path = Paths.get(name + ".class");
+                            path = Path.of(name + ".class");
                         }
                         Files.write(path, classFile);
                         return null;

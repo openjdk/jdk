@@ -30,7 +30,13 @@ import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
-import static sun.nio.ch.EPoll.*;
+
+import static sun.nio.ch.EPoll.EPOLLIN;
+import static sun.nio.ch.EPoll.EPOLLONESHOT;
+import static sun.nio.ch.EPoll.EPOLL_CTL_ADD;
+import static sun.nio.ch.EPoll.EPOLL_CTL_DEL;
+import static sun.nio.ch.EPoll.EPOLL_CTL_MOD;
+
 
 /**
  * AsynchronousChannelGroup implementation based on the Linux epoll facility.
@@ -48,6 +54,9 @@ final class EPollPort
     // epoll file descriptor
     private final int epfd;
 
+    // address of the poll array passed to epoll_wait
+    private final long address;
+
     // true if epoll closed
     private boolean closed;
 
@@ -56,9 +65,6 @@ final class EPollPort
 
     // number of wakeups pending
     private final AtomicInteger wakeupCount = new AtomicInteger();
-
-    // address of the poll array passed to epoll_wait
-    private final long address;
 
     // encapsulates an event for a channel
     static class Event {
@@ -85,23 +91,21 @@ final class EPollPort
     {
         super(provider, pool);
 
-        // open epoll
-        this.epfd = epollCreate();
+        this.epfd = EPoll.create();
+        this.address = EPoll.allocatePollArray(MAX_EPOLL_EVENTS);
 
         // create socket pair for wakeup mechanism
-        int[] sv = new int[2];
         try {
-            socketpair(sv);
-            // register one end with epoll
-            epollCtl(epfd, EPOLL_CTL_ADD, sv[0], EPOLLIN);
-        } catch (IOException x) {
-            close0(epfd);
-            throw x;
+            long fds = IOUtil.makePipe(true);
+            this.sp = new int[]{(int) (fds >>> 32), (int) fds};
+        } catch (IOException ioe) {
+            EPoll.freePollArray(address);
+            FileDispatcherImpl.closeIntFD(epfd);
+            throw ioe;
         }
-        this.sp = sv;
 
-        // allocate the poll array
-        this.address = allocatePollArray(MAX_EPOLL_EVENTS);
+        // register one end with epoll
+        EPoll.ctl(epfd, EPOLL_CTL_ADD, sp[0], EPOLLIN);
 
         // create the queue and offer the special event to ensure that the first
         // threads polls
@@ -123,17 +127,17 @@ final class EPollPort
                 return;
             closed = true;
         }
-        freePollArray(address);
-        close0(sp[0]);
-        close0(sp[1]);
-        close0(epfd);
+        try { FileDispatcherImpl.closeIntFD(epfd); } catch (IOException ioe) { }
+        try { FileDispatcherImpl.closeIntFD(sp[0]); } catch (IOException ioe) { }
+        try { FileDispatcherImpl.closeIntFD(sp[1]); } catch (IOException ioe) { }
+        EPoll.freePollArray(address);
     }
 
     private void wakeup() {
         if (wakeupCount.incrementAndGet() == 1) {
             // write byte to socketpair to force wakeup
             try {
-                interrupt(sp[1]);
+                IOUtil.write1(sp[1], (byte)0);
             } catch (IOException x) {
                 throw new AssertionError(x);
             }
@@ -171,9 +175,9 @@ final class EPollPort
     @Override
     void startPoll(int fd, int events) {
         // update events (or add to epoll on first usage)
-        int err = epollCtl(epfd, EPOLL_CTL_MOD, fd, (events | EPOLLONESHOT));
+        int err = EPoll.ctl(epfd, EPOLL_CTL_MOD, fd, (events | EPOLLONESHOT));
         if (err == ENOENT)
-            err = epollCtl(epfd, EPOLL_CTL_ADD, fd, (events | EPOLLONESHOT));
+            err = EPoll.ctl(epfd, EPOLL_CTL_ADD, fd, (events | EPOLLONESHOT));
         if (err != 0)
             throw new AssertionError();     // should not happen
     }
@@ -191,7 +195,11 @@ final class EPollPort
         private Event poll() throws IOException {
             try {
                 for (;;) {
-                    int n = epollWait(epfd, address, MAX_EPOLL_EVENTS);
+                    int n;
+                    do {
+                        n = EPoll.wait(epfd, address, MAX_EPOLL_EVENTS, -1);
+                    } while (n == IOStatus.INTERRUPTED);
+
                     /*
                      * 'n' events have been read. Here we map them to their
                      * corresponding channel in batch and queue n-1 so that
@@ -201,14 +209,14 @@ final class EPollPort
                     fdToChannelLock.readLock().lock();
                     try {
                         while (n-- > 0) {
-                            long eventAddress = getEvent(address, n);
-                            int fd = getDescriptor(eventAddress);
+                            long eventAddress = EPoll.getEvent(address, n);
+                            int fd = EPoll.getDescriptor(eventAddress);
 
                             // wakeup
                             if (fd == sp[0]) {
                                 if (wakeupCount.decrementAndGet() == 0) {
                                     // no more wakeups so drain pipe
-                                    drain1(sp[0]);
+                                    IOUtil.drain(sp[0]);
                                 }
 
                                 // queue special event if there are more events
@@ -222,7 +230,7 @@ final class EPollPort
 
                             PollableChannel channel = fdToChannel.get(fd);
                             if (channel != null) {
-                                int events = getEvents(eventAddress);
+                                int events = EPoll.getEvents(eventAddress);
                                 Event ev = new Event(channel, events);
 
                                 // n-1 events are queued; This thread handles
@@ -305,19 +313,5 @@ final class EPollPort
                 }
             }
         }
-    }
-
-    // -- Native methods --
-
-    private static native void socketpair(int[] sv) throws IOException;
-
-    private static native void interrupt(int fd) throws IOException;
-
-    private static native void drain1(int fd) throws IOException;
-
-    private static native void close0(int fd);
-
-    static {
-        IOUtil.load();
     }
 }
