@@ -40,7 +40,6 @@
 #include "net_util_md.h"
 #include "nio_util.h"
 #include "nio.h"
-#include "sun_nio_ch_PollArrayWrapper.h"
 
 #ifdef _AIX
 #include <sys/utsname.h>
