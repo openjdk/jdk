@@ -397,17 +397,14 @@ final class Unit {
         if (replaceOldEvent != null) secondaryEvents.add(replaceOldEvent);
 
         // Defined methods can overwrite methods of other (equivalent) snippets
-        if (isNew && si.kind() == Kind.METHOD && status.isDefined()) {
-            MethodSnippet msi = (MethodSnippet)si;
-            String oqpt = msi.qualifiedParameterTypes();
-            String nqpt = computeQualifiedParameterTypes(at, msi);
-            if (!nqpt.equals(oqpt)) {
-                msi.setQualifiedParamaterTypes(nqpt);
-                Status overwrittenStatus = overwriteMatchingMethod(msi);
-                if (overwrittenStatus != null) {
-                    prevStatus = overwrittenStatus;
-                    signatureChanged = true;
-                }
+        if (si.kind() == Kind.METHOD && status.isDefined()) {
+            MethodSnippet msi = (MethodSnippet) si;
+            msi.setQualifiedParameterTypes(
+                    computeQualifiedParameterTypes(at, msi));
+            Status overwrittenStatus = overwriteMatchingMethod(msi);
+            if (overwrittenStatus != null) {
+                prevStatus = overwrittenStatus;
+                signatureChanged = true;
             }
         }
     }

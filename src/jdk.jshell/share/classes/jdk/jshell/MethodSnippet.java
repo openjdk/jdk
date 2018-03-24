@@ -42,7 +42,7 @@ import jdk.jshell.Key.MethodKey;
 public class MethodSnippet extends DeclarationSnippet {
 
     final String signature;
-    private String qualifiedParamaterTypes;
+    private String qualifiedParameterTypes;
 
     MethodSnippet(MethodKey key, String userSource, Wrap guts,
             String name, String signature, Wrap corralled,
@@ -90,10 +90,10 @@ public class MethodSnippet extends DeclarationSnippet {
     }
 
     String qualifiedParameterTypes() {
-        return qualifiedParamaterTypes;
+        return qualifiedParameterTypes;
     }
 
-    void setQualifiedParamaterTypes(String sig) {
-        qualifiedParamaterTypes = sig;
+    void setQualifiedParameterTypes(String sig) {
+        qualifiedParameterTypes = sig;
     }
 }
