@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1337,7 +1337,7 @@ public abstract class $Type$Buffer
                                         that, that.position(),
                                         Math.min(this.remaining(), that.remaining()));
         if (i >= 0) {
-            return compare(this.get(this.position() + i), that.get(this.position() + i));
+            return compare(this.get(this.position() + i), that.get(that.position() + i));
         }
         return this.remaining() - that.remaining();
     }
@@ -1748,11 +1748,6 @@ public abstract class $Type$Buffer
     }
 
     abstract ByteBuffer slice(int pos, int lim);
-
-    // Unchecked accessors, for use by ByteBufferAs-X-Buffer classes
-    //
-    abstract byte _get(int i);                          // package-private
-    abstract void _put(int i, byte b);                  // package-private
 
     // #BIN
     //

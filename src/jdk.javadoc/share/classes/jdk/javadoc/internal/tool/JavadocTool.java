@@ -38,6 +38,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
 import com.sun.tools.javac.code.ClassFinder;
+import com.sun.tools.javac.code.DeferredCompletionFailureHandler;
 import com.sun.tools.javac.code.Symbol.Completer;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.comp.Enter;
@@ -70,6 +71,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
 
     final Messager messager;
     final ClassFinder javadocFinder;
+    final DeferredCompletionFailureHandler dcfh;
     final Enter javadocEnter;
     final Set<JavaFileObject> uniquefiles;
 
@@ -81,6 +83,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
         super(context);
         messager = Messager.instance0(context);
         javadocFinder = JavadocClassFinder.instance(context);
+        dcfh = DeferredCompletionFailureHandler.instance(context);
         javadocEnter = JavadocEnter.instance(context);
         uniquefiles = new HashSet<>();
     }
@@ -208,6 +211,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
 
             etable.setClassDeclList(listClasses(classTrees.toList()));
 
+            dcfh.setHandler(dcfh.userCodeHandler);
             etable.analyze();
         } catch (CompletionFailure cf) {
             throw new ToolException(ABNORMAL, cf.getMessage(), cf);

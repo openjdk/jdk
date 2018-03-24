@@ -33,9 +33,8 @@ else
   LIBPREF_SRC_DIRS := $(TOPDIR)/src/java.prefs/$(OPENJDK_TARGET_OS_TYPE)/native/libprefs
 endif
 
-$(eval $(call SetupNativeCompilation, BUILD_LIBPREFS, \
+$(eval $(call SetupJdkLibrary, BUILD_LIBPREFS, \
     NAME := prefs, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBPREF_SRC_DIRS), \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(CFLAGS_JDKLIB) $(addprefix -I, $(LIBPREF_SRC_DIRS)) \
@@ -45,16 +44,10 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBPREFS, \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljvm, \
     LIBS_linux := -ljava, \
-    LIBS_solaris := -ljava -lc, \
+    LIBS_solaris := -ljava, \
     LIBS_aix := -ljava, \
     LIBS_macosx := -framework CoreFoundation -framework Foundation, \
     LIBS_windows := advapi32.lib jvm.lib $(WIN_JAVA_LIB), \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=prefs.dll" \
-        -D "JDK_INTERNAL_NAME=prefs" \
-        -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libprefs, \
 ))
 
 $(BUILD_LIBPREFS): $(call FindLib, java.base, java)

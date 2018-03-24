@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4368820 8025633 8026567
+ * @bug      4368820 8025633 8026567 8182765
  * @summary  Inherited comment should link directly to member, not just
  *           class
  * @author   jamieh
@@ -47,6 +47,20 @@ public class TestOverriddenMethodDocCopy extends JavadocTester {
     @Test
     void test() {
         javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "pkg1", "pkg2");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg1/SubClass.html", true,
+                "<span class=\"descfrmTypeLabel\">Description copied from class:&nbsp;<code>"
+                + "<a href=\"BaseClass.html#overridenMethodWithDocsToCopy()\">"
+                + "BaseClass</a></code></span>");
+    }
+
+    @Test
+    void test_html4() {
+        javadoc("-d", "out-html4",
+                "-html4",
                 "-sourcepath", testSrc,
                 "pkg1", "pkg2");
         checkExit(Exit.OK);

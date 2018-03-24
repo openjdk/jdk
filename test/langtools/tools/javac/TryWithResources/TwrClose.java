@@ -27,7 +27,6 @@
  * @summary Verify that the close resource code works properly in all cases
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.comp
  *          jdk.compiler/com.sun.tools.javac.main
  * @build toolbox.ToolBox TwrClose
  * @run main TwrClose
@@ -37,15 +36,14 @@ import javax.tools.JavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
-import com.sun.tools.javac.comp.Lower;
-
 import toolbox.JavacTask;
 import toolbox.ToolBox;
 
 public class TwrClose {
 
+    private static final int MAX_RESOURCES = 5;
     public static void main(String... args) throws Exception {
-        for (int i = 1; i < Lower.USE_CLOSE_RESOURCE_METHOD_THRESHOLD * 2; i++) {
+        for (int i = 1; i < MAX_RESOURCES * 2; i++) {
             new TwrClose().compile(i);
         }
     }

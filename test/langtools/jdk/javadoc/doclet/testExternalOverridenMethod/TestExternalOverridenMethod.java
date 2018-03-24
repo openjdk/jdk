@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4857717 8025633 8026567 8164407
+ * @bug 4857717 8025633 8026567 8164407 8182765
  * @summary Test to make sure that externally overriden and implemented methods
  * are documented properly.  The method should still include "implements" or
  * "overrides" documentation even though the method is external.
@@ -33,8 +33,9 @@
  * @build JavadocTester TestExternalOverridenMethod
  * @run main TestExternalOverridenMethod
  */
-
 public class TestExternalOverridenMethod extends JavadocTester {
+
+    static final String uri = "http://java.sun.com/j2se/1.4.1/docs/api";
 
     public static void main(String... args) throws Exception {
         TestExternalOverridenMethod tester = new TestExternalOverridenMethod();
@@ -43,8 +44,30 @@ public class TestExternalOverridenMethod extends JavadocTester {
 
     @Test
     void test() {
-        String uri = "http://java.sun.com/j2se/1.4.1/docs/api";
         javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "-linkoffline", uri, testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/XReader.html", true,
+                "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n"
+                + "<dd><code><a href=\"" + uri + "/java/io/FilterReader.html?is-external=true#read()\" "
+                + "title=\"class or interface in java.io\" class=\"externalLink\">read</a></code>&nbsp;in class&nbsp;<code>"
+                + "<a href=\"" + uri + "/java/io/FilterReader.html?is-external=true\" "
+                + "title=\"class or interface in java.io\" class=\"externalLink\">FilterReader</a></code></dd>",
+                "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n"
+                + "<dd><code><a href=\"" + uri + "/java/io/DataInput.html?is-external=true#readInt()\" "
+                + "title=\"class or interface in java.io\" class=\"externalLink\">readInt</a></code>&nbsp;in interface&nbsp;<code>"
+                + "<a href=\"" + uri + "/java/io/DataInput.html?is-external=true\" "
+                + "title=\"class or interface in java.io\" class=\"externalLink\">DataInput</a></code></dd>"
+        );
+    }
+
+    @Test
+    void test_html4() {
+        javadoc("-d", "out-html4",
+                "-html4",
                 "-sourcepath", testSrc,
                 "-linkoffline", uri, testSrc,
                 "pkg");

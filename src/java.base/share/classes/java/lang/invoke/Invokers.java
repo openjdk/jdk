@@ -523,7 +523,7 @@ class Invokers {
     }
 
     // skipCallSite is true if we are optimizing a ConstantCallSite
-    private static LambdaForm callSiteForm(MethodType mtype, boolean skipCallSite) {
+    static LambdaForm callSiteForm(MethodType mtype, boolean skipCallSite) {
         mtype = mtype.basicType();  // normalize Z to I, String to Object, etc.
         final int which = (skipCallSite ? MethodTypeForm.LF_MH_LINKER : MethodTypeForm.LF_CS_LINKER);
         LambdaForm lform = mtype.form().cachedLambdaForm(which);

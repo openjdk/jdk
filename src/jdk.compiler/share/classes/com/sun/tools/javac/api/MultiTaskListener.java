@@ -30,6 +30,8 @@ import java.util.Collection;
 
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
+import com.sun.tools.javac.code.DeferredCompletionFailureHandler;
+import com.sun.tools.javac.code.DeferredCompletionFailureHandler.Handler;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -50,6 +52,8 @@ public class MultiTaskListener implements TaskListener {
     /** Empty array of task listeners */
     private static final TaskListener[] EMPTY_LISTENERS = new TaskListener[0];
 
+    private final DeferredCompletionFailureHandler dcfh;
+
     /** Get the MultiTaskListener instance for this context. */
     public static MultiTaskListener instance(Context context) {
         MultiTaskListener instance = context.get(taskListenerKey);
@@ -61,6 +65,7 @@ public class MultiTaskListener implements TaskListener {
     protected MultiTaskListener(Context context) {
         context.put(taskListenerKey, this);
         ccw = ClientCodeWrapper.instance(context);
+        dcfh = DeferredCompletionFailureHandler.instance(context);
     }
 
     /**
@@ -106,18 +111,28 @@ public class MultiTaskListener implements TaskListener {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public void started(TaskEvent e) {
-        // guard against listeners being updated by a listener
-        TaskListener[] ll = this.listeners;
-        for (TaskListener l: ll)
-            l.started(e);
+        Handler prevDeferredHandler = dcfh.setHandler(dcfh.userCodeHandler);
+        try {
+            // guard against listeners being updated by a listener
+            TaskListener[] ll = this.listeners;
+            for (TaskListener l: ll)
+                l.started(e);
+        } finally {
+            dcfh.setHandler(prevDeferredHandler);
+        }
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public void finished(TaskEvent e) {
-        // guard against listeners being updated by a listener
-        TaskListener[] ll = this.listeners;
-        for (TaskListener l: ll)
-            l.finished(e);
+        Handler prevDeferredHandler = dcfh.setHandler(dcfh.userCodeHandler);
+        try {
+            // guard against listeners being updated by a listener
+            TaskListener[] ll = this.listeners;
+            for (TaskListener l: ll)
+                l.finished(e);
+        } finally {
+            dcfh.setHandler(prevDeferredHandler);
+        }
     }
 
     @Override

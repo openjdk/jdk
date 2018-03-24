@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import javax.swing.UIManager;
 /**
  * @test
  * @key headful
- * @bug 8020708 8032568
+ * @bug 8020708 8032568 8194943
  * @author Alexander Scherbatiy
  * @summary NLS: mnemonics missing in SwingSet2/JInternalFrame demo
  * @library ../../regtesthelpers
@@ -110,7 +110,7 @@ public class bug8020708 {
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
         robot.waitForIdle();
 
-        Util.hitKeys(robot, KeyEvent.VK_CONTROL, KeyEvent.VK_SPACE);
+        Util.hitKeys(robot, KeyEvent.VK_SHIFT, KeyEvent.VK_ESCAPE);
         robot.waitForIdle();
         int keyCode = KeyEvent.VK_C;
         String mnemonic = UIManager

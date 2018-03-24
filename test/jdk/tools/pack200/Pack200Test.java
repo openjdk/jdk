@@ -27,6 +27,8 @@
   * @requires (sun.arch.data.model == "64" & os.maxMemory >= 4g)
   * @summary test general packer/unpacker functionality
   *          using native and java unpackers
+  * @modules jdk.management
+  *          jdk.zipfs
   * @compile -XDignore.symbol.file Utils.java Pack200Test.java
   * @run main/othervm/timeout=1200 -Xmx1280m -Xshare:off Pack200Test
   */

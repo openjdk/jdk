@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,11 @@ ifeq ($(call check-jvm-feature, dtrace), true)
     # CompileJvm.gmk
     DTRACE_OBJ := $(JVM_OUTPUTDIR)/objs/dtrace.o
     DTRACE_JHELPER_OBJ := $(JVM_OUTPUTDIR)/objs/dtrace_jhelper.o
-    JVM_OFFSETS_OBJ := $(JVM_OUTPUTDIR)/objs/JvmOffsets.o
+    DTRACE_EXTRA_OBJECT_FILES := $(DTRACE_OBJ) $(DTRACE_JHELPER_OBJ)
 
-    DTRACE_EXTRA_OBJECT_FILES := $(DTRACE_OBJ) $(DTRACE_JHELPER_OBJ) $(JVM_OFFSETS_OBJ)
+    # Since we cannot generate JvmOffsets.cpp as part of the gensrc step,
+    # we need this special hook to get it to compile with the rest of libjvm.
+    JVM_OFFSETS_CPP := $(DTRACE_SUPPORT_DIR)/JvmOffsets.cpp
+    DTRACE_EXTRA_SOURCE_FILES := $(JVM_OFFSETS_CPP)
   endif
 endif

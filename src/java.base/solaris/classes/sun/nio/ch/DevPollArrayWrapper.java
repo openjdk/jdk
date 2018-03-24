@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ class DevPollArrayWrapper {
     // descriptor is registered with /dev/poll.
     private final BitSet registered = new BitSet();
 
-    DevPollArrayWrapper() {
+    DevPollArrayWrapper() throws IOException {
         int allocationSize = NUM_POLLFDS * SIZE_POLLFD;
         pollArray = new AllocatedNativeObject(allocationSize, true);
         pollArrayAddress = pollArray.address();
@@ -136,7 +136,7 @@ class DevPollArrayWrapper {
             eventsHigh = new HashMap<>();
     }
 
-    void initInterrupt(int fd0, int fd1) {
+    void initInterrupt(int fd0, int fd1) throws IOException {
         outgoingInterruptFD = fd1;
         incomingInterruptFD = fd0;
         register(wfd, fd0, POLLIN);
@@ -200,7 +200,7 @@ class DevPollArrayWrapper {
         }
     }
 
-    void release(int fd) {
+    void release(int fd) throws IOException {
         synchronized (updateLock) {
             // ignore any pending update for this file descriptor
             setUpdateEvents(fd, IGNORE);
@@ -213,7 +213,7 @@ class DevPollArrayWrapper {
         }
     }
 
-    void closeDevPollFD() throws IOException {
+    void close() throws IOException {
         FileDispatcherImpl.closeIntFD(wfd);
         pollArray.free();
     }
@@ -297,7 +297,11 @@ class DevPollArrayWrapper {
     boolean interrupted = false;
 
     public void interrupt() {
-        interrupt(outgoingInterruptFD);
+        try {
+            IOUtil.write1(outgoingInterruptFD, (byte)0);
+        } catch (IOException ioe) {
+            throw new InternalError(ioe);
+        }
     }
 
     public int interruptedIndex() {
@@ -312,13 +316,12 @@ class DevPollArrayWrapper {
         interrupted = false;
     }
 
-    private native int init();
-    private native void register(int wfd, int fd, int mask);
+    private native int init() throws IOException;
+    private native void register(int wfd, int fd, int mask) throws IOException;
     private native void registerMultiple(int wfd, long address, int len)
         throws IOException;
-    private native int poll0(long pollAddress, int numfds, long timeout,
-                             int wfd);
-    private static native void interrupt(int fd);
+    private native int poll0(long pollAddress, int numfds, long timeout, int wfd)
+        throws IOException;
 
     static {
         IOUtil.load();

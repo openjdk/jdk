@@ -399,10 +399,13 @@ docs-zip:
 update-build-docs:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f UpdateBuildDocs.gmk)
 
+update-x11wrappers:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f UpdateX11Wrappers.gmk)
+
 ALL_TARGETS += docs-jdk-api-javadoc docs-jdk-api-modulegraph \
     docs-javase-api-javadoc docs-javase-api-modulegraph \
     docs-reference-api-javadoc docs-reference-api-modulegraph docs-jdk-specs \
-    docs-jdk-index docs-zip update-build-docs
+    docs-jdk-index docs-zip update-build-docs update-x11wrappers
 
 ################################################################################
 # Cross compilation support
@@ -724,9 +727,9 @@ else
 
   # If not already set, set the JVM target so that the JVM will be built.
   JVM_MAIN_TARGETS ?= hotspot
-   
+
   # Building java.base-jmod requires all of VM (ie hotspot) to be built.
-  java.base-jmod: $(JVM_MAIN_TARGETS) 
+  java.base-jmod: $(JVM_MAIN_TARGETS)
 
   # Declare dependencies from <module>-jmod to all other module targets
   # When creating a BUILDJDK, the java compilation has already been done by the
@@ -830,7 +833,7 @@ else
 
   # If not already set, then set the JVM specific docs targets
   JVM_DOCS_TARGETS ?= hotspot-$(JVM_VARIANT_MAIN)-gensrc
-  
+
   # The gensrc steps for hotspot and jdk.jdi create html spec files.
   docs-jdk-specs: $(JVM_DOCS_TARGETS) jdk.jdi-gensrc \
       docs-jdk-index
@@ -893,6 +896,8 @@ else
   docs-bundles: docs-image
 
   generate-summary: jmods buildtools-modules
+
+  update-x11wrappers: java.base-copy buildtools-jdk
 
 endif
 

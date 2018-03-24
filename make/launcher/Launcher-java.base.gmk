@@ -27,8 +27,8 @@ include LauncherCommon.gmk
 
 $(eval $(call IncludeCustomExtension, launcher/Launcher-java.base.gmk))
 
-JAVA_RC_FLAGS += -I $(TOPDIR)/src/java.base/windows/native/common
-JAVA_RC_FLAGS += -I $(TOPDIR)/src/java.base/windows/native/launcher/icons
+JAVA_RC_FLAGS += -I$(TOPDIR)/src/java.base/windows/native/common
+JAVA_RC_FLAGS += -I$(TOPDIR)/src/java.base/windows/native/launcher/icons
 
 ################################################################################
 
@@ -39,7 +39,7 @@ $(eval $(call SetupBuildLauncher, java, \
     CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS -DENABLE_ARG_FILES, \
     LDFLAGS_solaris := -R$(OPENWIN_HOME)/lib$(OPENJDK_TARGET_CPU_ISADIR), \
     LIBS_windows := user32.lib comctl32.lib, \
-    RC_FLAGS := $(JAVA_RC_FLAGS), \
+    EXTRA_RC_FLAGS := $(JAVA_RC_FLAGS), \
     VERSION_INFO_RESOURCE := $(JAVA_VERSION_INFO_RESOURCE), \
     OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/java_objs, \
     OPTIMIZATION := HIGH, \
@@ -58,7 +58,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   $(eval $(call SetupBuildLauncher, javaw, \
       CFLAGS := -DJAVAW -DEXPAND_CLASSPATH_WILDCARDS -DENABLE_ARG_FILES, \
       LIBS_windows := user32.lib comctl32.lib, \
-      RC_FLAGS := $(JAVA_RC_FLAGS), \
+      EXTRA_RC_FLAGS := $(JAVA_RC_FLAGS), \
       VERSION_INFO_RESOURCE := $(JAVA_VERSION_INFO_RESOURCE), \
       WINDOWS_STATIC_LINK := true, \
       NO_JAVA_MS := true, \
@@ -72,9 +72,8 @@ $(eval $(call SetupBuildLauncher, keytool, \
 ################################################################################
 
 ifeq ($(OPENJDK_TARGET_OS), linux)
-  $(eval $(call SetupNativeCompilation, BUILD_JEXEC, \
+  $(eval $(call SetupJdkExecutable, BUILD_JEXEC, \
       NAME := jexec, \
-      TYPE := EXECUTABLE, \
       SRC := $(TOPDIR)/src/$(MODULE)/unix/native/launcher, \
       INCLUDE_FILES := jexec.c, \
       OPTIMIZATION := LOW, \
@@ -83,7 +82,6 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
       CFLAGS_linux := -fPIC, \
       CFLAGS_solaris := -KPIC, \
       LDFLAGS := $(LDFLAGS_JDKEXE), \
-      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jexec_obj, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
   ))
 
@@ -93,15 +91,13 @@ endif
 ################################################################################
 
 ifneq ($(findstring $(OPENJDK_TARGET_OS), macosx solaris aix), )
-  $(eval $(call SetupNativeCompilation, BUILD_JSPAWNHELPER, \
+  $(eval $(call SetupJdkExecutable, BUILD_JSPAWNHELPER, \
       NAME := jspawnhelper, \
-      TYPE := EXECUTABLE, \
       SRC := $(TOPDIR)/src/$(MODULE)/unix/native/jspawnhelper, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKEXE) -I$(TOPDIR)/src/$(MODULE)/unix/native/libjava, \
       EXTRA_OBJECT_FILES := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjava/childproc.o, \
       LDFLAGS := $(LDFLAGS_JDKEXE), \
-      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jspawnhelper, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE), \
   ))
 

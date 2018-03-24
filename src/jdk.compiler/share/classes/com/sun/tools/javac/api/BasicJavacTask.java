@@ -216,6 +216,7 @@ public class BasicJavacTask extends JavacTask {
                     } catch (RuntimeException ex) {
                         throw new PropagatedException(ex);
                     }
+                    break;
                 }
             }
         }

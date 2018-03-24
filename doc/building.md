@@ -173,8 +173,8 @@ require a community effort to implement.)
 Internally in the build system, all paths are represented as Unix-style paths,
 e.g. `/cygdrive/c/hg/jdk9/Makefile` rather than `C:\hg\jdk9\Makefile`. This
 rule also applies to input to the build system, e.g. in arguments to
-`configure`. So, use `--with-freetype=/cygdrive/c/freetype` rather than
-`--with-freetype=c:\freetype`. For details on this conversion, see the section
+`configure`. So, use `--with-msvcr-dll=/cygdrive/c/msvcr100.dll` rather than
+`--with-msvcr-dll=c:\msvcr100.dll`. For details on this conversion, see the section
 on [Fixpath](#fixpath).
 
 #### Cygwin
@@ -401,43 +401,31 @@ porting OpenJDK to a new platform, chances are that there already exists
 another JDK for that platform that is usable as boot JDK.
 
 The rule of thumb is that the boot JDK for building JDK major version *N*
-should be an JDK of major version *N-1*, so for building JDK 9 a JDK 8 would be
+should be a JDK of major version *N-1*, so for building JDK 9 a JDK 8 would be
 suitable as boot JDK. However, OpenJDK should be able to "build itself", so an
 up-to-date build of the current OpenJDK source is an acceptable alternative. If
-you are following the *N-1* rule, make sure you got the latest update version,
-since JDK 8 GA might not be able to build JDK 9 on all platforms.
+you are following the *N-1* rule, make sure you've got the latest update
+version, since JDK 8 GA might not be able to build JDK 9 on all platforms.
+
+Early in the release cycle, version *N-1* may not yet have been released. In
+that case, the preferred boot JDK will be version *N-2* until version *N-1*
+is available.
 
 If the Boot JDK is not automatically detected, or the wrong JDK is picked, use
 `--with-boot-jdk` to point to the JDK to use.
 
-### JDK 8 on Linux
+### Getting JDK binaries
 
-On apt-based distros (like Debian and Ubuntu), `sudo apt-get install
-openjdk-8-jdk` is typically enough to install OpenJDK 8. On rpm-based distros
-(like Fedora and Red Hat), try `sudo yum install java-1.8.0-openjdk-devel`.
+OpenJDK binaries for Linux, Windows and macOS can be downloaded from
+[jdk.java.net](http://jdk.java.net). An alternative is to download the
+[Oracle JDK](http://www.oracle.com/technetwork/java/javase/downloads). Another
+is the [Adopt OpenJDK Project](https://adoptopenjdk.net/), which publishes
+experimental prebuilt binaries for various platforms.
 
-### JDK 8 on Windows
-
-No pre-compiled binaries of OpenJDK 8 are readily available for Windows at the
-time of writing. An alternative is to download the [Oracle JDK](
-http://www.oracle.com/technetwork/java/javase/downloads). Another is the [Adopt
-OpenJDK Project](https://adoptopenjdk.net/), which publishes experimental
-prebuilt binaries for Windows.
-
-### JDK 8 on macOS
-
-No pre-compiled binaries of OpenJDK 8 are readily available for macOS at the
-time of writing. An alternative is to download the [Oracle JDK](
-http://www.oracle.com/technetwork/java/javase/downloads), or to install it
-using `brew cask install java`. Another option is the [Adopt OpenJDK Project](
-https://adoptopenjdk.net/), which publishes experimental prebuilt binaries for
-macOS.
-
-### JDK 8 on AIX
-
-No pre-compiled binaries of OpenJDK 8 are readily available for AIX at the
-time of writing. A starting point for working with OpenJDK on AIX is
-the [PowerPC/AIX Port Project](http://openjdk.java.net/projects/ppc-aix-port/).
+On Linux you can also get OpenJDK from the Linux distribution. On apt-based
+distros (like Debian and Ubuntu), `sudo apt-get install openjdk-<VERSION>-jdk`
+is typically enough to install OpenJDK \<VERSION\>. On rpm-based distros (like
+Fedora and Red Hat), try `sudo yum install java-<VERSION>-openjdk-devel`.
 
 ## External Library Requirements
 
@@ -456,43 +444,19 @@ and the lib directory separately.
 
 ### FreeType
 
-FreeType2 from [The FreeType Project](http://www.freetype.org/) is required on
-all platforms. At least version 2.3 is required.
+FreeType2 from [The FreeType Project](http://www.freetype.org/) is not required
+on any platform. The exception is on Unix-based platforms when configuring such
+that the build artifacts will reference a system installed library,
+rather than bundling OpenJDK's own copy.
 
   * To install on an apt-based Linux, try running `sudo apt-get install
-    libcups2-dev`.
+    libfreetype6-dev`.
   * To install on an rpm-based Linux, try running `sudo yum install
-    cups-devel`.
+    freetype-devel`.
   * To install on Solaris, try running `pkg install system/library/freetype-2`.
-  * To install on macOS, try running `brew install freetype`.
-  * To install on Windows, see [below](#building-freetype-on-windows).
 
-Use `--with-freetype=<path>` if `configure` does not properly locate your
-FreeType files.
-
-#### Building FreeType on Windows
-
-On Windows, there is no readily available compiled version of FreeType. OpenJDK
-can help you compile FreeType from source. Download the FreeType sources and
-unpack them into an arbitrary directory:
-
-```
-wget http://download.savannah.gnu.org/releases/freetype/freetype-2.5.3.tar.gz
-tar -xzf freetype-2.5.3.tar.gz
-```
-
-Then run `configure` with `--with-freetype-src=<freetype_src>`. This will
-automatically build the freetype library into `<freetype_src>/lib64` for 64-bit
-builds or into `<freetype_src>/lib32` for 32-bit builds. Afterwards you can
-always use `--with-freetype-include=<freetype_src>/include` and
-`--with-freetype-lib=<freetype_src>/lib[32|64]` for other builds.
-
-Alternatively you can unpack the sources like this to use the default
-directory:
-
-```
-tar --one-top-level=$HOME/freetype --strip-components=1 -xzf freetype-2.5.3.tar.gz
-```
+Use `--with-freetype-include=<path>` and `--with-freetype-lib=<path>`
+if `configure` does not automatically locate the platform FreeType files.
 
 ### CUPS
 

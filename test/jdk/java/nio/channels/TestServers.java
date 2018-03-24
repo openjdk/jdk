@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.net.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+import jdk.test.lib.Utils;
 
 
 public class TestServers {
@@ -81,11 +83,8 @@ public class TestServers {
         }
 
         public static RefusingServer newRefusingServer() throws IOException {
-            // The port 1 is reserved for TCPMUX(RFC 1078), which is seldom used,
-            // and it's not used on all the test platform through JPRT.
-            // So we choose to use it as a refusing "server"'s "listen" port,
-            // it's much more stable than "open->close a server socket".
-            return new RefusingServer(InetAddress.getLocalHost(), 1);
+            return new RefusingServer(InetAddress.getLocalHost(),
+                       Utils.refusingEndpoint().getPort());
         }
     }
 

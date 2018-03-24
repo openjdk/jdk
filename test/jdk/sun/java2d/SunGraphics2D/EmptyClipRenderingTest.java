@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,14 +48,13 @@ import sun.awt.ConstrainableGraphics;
 /**
  * @test
  * @key headful
- * @bug 6335200 6419610
+ * @bug 6335200 6419610 8198613
  * @summary Tests that we don't render anything if specific empty clip is set
  * @author Dmitri.Trembovetski@Sun.COM: area=Graphics
  * @modules java.desktop/sun.awt
  * @run main EmptyClipRenderingTest
  * @run main/othervm -Dsun.java2d.noddraw=true EmptyClipRenderingTest
  * @run main/othervm -Dsun.java2d.pmoffscreen=true EmptyClipRenderingTest
- * @run main/othervm -Dsun.java2d.opengl=true EmptyClipRenderingTest
  */
 public class EmptyClipRenderingTest {
     static final int IMG_W = 400;

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ ifeq ($(call check-jvm-feature, dtrace), true)
 	$(call LogInfo, Generating dtrace header file $(@F))
 	$(call MakeDir, $(@D) $(DTRACE_SUPPORT_DIR))
 	$(call ExecuteWithLog, $(DTRACE_SUPPORT_DIR)/$(@F).d, \
-	    ( $(CC) -E $(DTRACE_CPP_FLAGS) $< > $(DTRACE_SUPPORT_DIR)/$(@F).d ) )
+	    ($(CPP) $(DTRACE_CPP_FLAGS) $< > $(DTRACE_SUPPORT_DIR)/$(@F).d))
 	$(call ExecuteWithLog, $@, $(DTRACE) $(DTRACE_FLAGS) -h -o $@ -s $(DTRACE_SUPPORT_DIR)/$(@F).d)
 
   # Process all .d files in DTRACE_SOURCE_DIR. They are:

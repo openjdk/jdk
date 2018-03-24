@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ public interface BMPConstants {
     static final String VERSION_2 = "BMP v. 2.x";
     static final String VERSION_3 = "BMP v. 3.x";
     static final String VERSION_3_NT = "BMP v. 3.x NT";
+    static final String VERSION_3_EXT = "BMP V2/V3 INFO";
     static final String VERSION_4 = "BMP v. 4.x";
     static final String VERSION_5 = "BMP v. 5.x";
 
@@ -48,3 +49,4 @@ public interface BMPConstants {
     static final int BI_JPEG = 4;
     static final int BI_PNG = 5;
 }
+

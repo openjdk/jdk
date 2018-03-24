@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4638588 4635809 6256068 6270645 8025633 8026567 8162363 8175200
- *      8192850
+ *      8192850 8182765
  * @summary Test to make sure that members are inherited properly in the Javadoc.
  *          Verify that inheritance labels are correct.
  * @author jamieh
@@ -52,13 +52,13 @@ public class TestMemberInheritance extends JavadocTester {
                 // Public field should be inherited
                 "<a href=\"BaseClass.html#pubField\">",
                 // Public method should be inherited
-                "<a href=\"BaseClass.html#pubMethod--\">",
+                "<a href=\"BaseClass.html#pubMethod()\">",
                 // Public inner class should be inherited.
                 "<a href=\"BaseClass.pubInnerClass.html\" title=\"class in pkg\">",
                 // Protected field should be inherited
                 "<a href=\"BaseClass.html#proField\">",
                 // Protected method should be inherited
-                "<a href=\"BaseClass.html#proMethod--\">",
+                "<a href=\"BaseClass.html#proMethod()\">",
                 // Protected inner class should be inherited.
                 "<a href=\"BaseClass.proInnerClass.html\" title=\"class in pkg\">",
                 // New labels as of 1.5.0
@@ -66,6 +66,57 @@ public class TestMemberInheritance extends JavadocTester {
                 + "<a href=\"BaseClass.html\" title=\"class in pkg\">BaseClass</a>",
                 "Nested classes/interfaces inherited from interface&nbsp;pkg."
                 + "<a href=\"BaseInterface.html\" title=\"interface in pkg\">BaseInterface</a>");
+
+        checkOutput("pkg/BaseClass.html", true,
+                // Test overriding/implementing methods with generic parameters.
+                "<dl>\n"
+                + "<dt><span class=\"overrideSpecifyLabel\">Specified by:</span></dt>\n"
+                + "<dd><code><a href=\"BaseInterface.html#getAnnotation(java.lang.Class)\">"
+                + "getAnnotation</a></code>&nbsp;in interface&nbsp;<code>"
+                + "<a href=\"BaseInterface.html\" title=\"interface in pkg\">"
+                + "BaseInterface</a></code></dd>\n"
+                + "</dl>");
+
+        checkOutput("diamond/Z.html", true,
+                // Test diamond inheritance member summary (6256068)
+                "<code><a href=\"A.html#aMethod()\">aMethod</a></code>");
+
+        checkOutput("inheritDist/C.html", true,
+                // Test that doc is inherited from closed parent (6270645)
+                "<div class=\"block\">m1-B</div>");
+
+        checkOutput("pkg/SubClass.html", false,
+                "<a href=\"BaseClass.html#staticMethod()\">staticMethod</a></code>");
+
+        checkOutput("pkg1/Implementer.html", true,
+                // ensure the method makes it
+                "<td class=\"colFirst\"><code>static java.time.Period</code></td>\n"
+                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
+                + "<a href=\"#between(java.time.LocalDate,java.time.LocalDate)\">"
+                + "between</a></span>&#8203;(java.time.LocalDate&nbsp;startDateInclusive,\n"
+                + "       java.time.LocalDate&nbsp;endDateExclusive)</code></th>");
+
+        checkOutput("pkg1/Implementer.html", false,
+                "<h3>Methods inherited from interface&nbsp;pkg1.<a href=\"Interface.html\""
+                + " title=\"interface in pkg1\">Interface</a></h3>\n"
+                + "<code><a href=\"Interface.html#between(java.time.chrono.ChronoLocalDate"
+                + ",java.time.chrono.ChronoLocalDate)\">between</a></code>"
+        );
+    }
+
+    @Test
+    void test_html4() {
+        javadoc("-d", "out-html4",
+                "-html4",
+                "-sourcepath", testSrc,
+                "pkg", "diamond", "inheritDist", "pkg1");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/SubClass.html", true,
+                // Public method should be inherited
+                "<a href=\"BaseClass.html#pubMethod--\">",
+                // Protected method should be inherited
+                "<a href=\"BaseClass.html#proMethod--\">");
 
         checkOutput("pkg/BaseClass.html", true,
                 // Test overriding/implementing methods with generic parameters.
@@ -80,10 +131,6 @@ public class TestMemberInheritance extends JavadocTester {
         checkOutput("diamond/Z.html", true,
                 // Test diamond inheritance member summary (6256068)
                 "<code><a href=\"A.html#aMethod--\">aMethod</a></code>");
-
-        checkOutput("inheritDist/C.html", true,
-                // Test that doc is inherited from closed parent (6270645)
-                "<div class=\"block\">m1-B</div>");
 
         checkOutput("pkg/SubClass.html", false,
                 "<a href=\"BaseClass.html#staticMethod--\">staticMethod</a></code>");

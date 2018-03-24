@@ -134,9 +134,9 @@ public enum Option {
         }
 
         @Override
-        public void process(OptionHelper helper, String option) {
+        public void process(OptionHelper helper, String option, String arg) {
             String prev = helper.get(XDOCLINT_CUSTOM);
-            String next = (prev == null) ? option : (prev + " " + option);
+            String next = (prev == null) ? arg : (prev + " " + arg);
             helper.put(XDOCLINT_CUSTOM.primaryName, next);
         }
     },
@@ -149,9 +149,9 @@ public enum Option {
         }
 
         @Override
-        public void process(OptionHelper helper, String option) {
+        public void process(OptionHelper helper, String option, String arg) {
             String prev = helper.get(XDOCLINT_PACKAGE);
-            String next = (prev == null) ? option : (prev + " " + option);
+            String next = (prev == null) ? arg : (prev + "," + arg);
             helper.put(XDOCLINT_PACKAGE.primaryName, next);
         }
     },
@@ -512,8 +512,7 @@ public enum Option {
 
     PLUGIN("-Xplugin:", "opt.arg.plugin", "opt.plugin", EXTENDED, BASIC) {
         @Override
-        public void process(OptionHelper helper, String option) {
-            String p = option.substring(option.indexOf(':') + 1).trim();
+        public void process(OptionHelper helper, String option, String p) {
             String prev = helper.get(PLUGIN);
             helper.put(PLUGIN.primaryName, (prev == null) ? p : prev + '\0' + p);
         }

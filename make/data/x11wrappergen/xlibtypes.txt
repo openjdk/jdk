@@ -1,9 +1,9 @@
 //
-//
 // This file is used for automated generation of java classes to wrap native structures.
-// The detail on format of this file see WrapperGenerator.java
+// For details on format of this file, see WrapperGenerator.java
 //
-// WARNING: if you modified this file, you need to regenerate sizes.64-solaris-i386
+// WARNING: If you modify this file, you need to regenerate sizes-32.txt and sizes-64.txt.
+// Run "make update-x11wrappers" to do this.
 //
 
 XExtData

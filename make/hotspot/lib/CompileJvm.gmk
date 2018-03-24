@@ -214,13 +214,12 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBJVM, \
     TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
     OUTPUT_DIR := $(JVM_LIB_OUTPUTDIR), \
     SRC := $(JVM_SRC_DIRS), \
+    EXTRA_FILES := $(DTRACE_EXTRA_SOURCE_FILES), \
     EXCLUDES := $(JVM_EXCLUDES), \
     EXCLUDE_FILES := $(JVM_EXCLUDE_FILES), \
     EXCLUDE_PATTERNS := $(JVM_EXCLUDE_PATTERNS), \
     EXTRA_OBJECT_FILES := $(DTRACE_EXTRA_OBJECT_FILES), \
     CFLAGS := $(JVM_CFLAGS), \
-    CFLAGS_DEBUG_SYMBOLS := $(JVM_CFLAGS_SYMBOLS), \
-    CXXFLAGS_DEBUG_SYMBOLS := $(JVM_CFLAGS_SYMBOLS), \
     vm_version.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     arguments.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     DISABLED_WARNINGS_clang := tautological-compare, \
@@ -244,10 +243,10 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBJVM, \
 ifeq ($(OPENJDK_TARGET_OS), windows)
   # It doesn't matter which jvm.lib file gets exported, but we need
   # to pick just one.
-  ifeq ($(JVM_VARIANT), $(firstword $(JVM_VARIANTS)))
+  ifeq ($(JVM_VARIANT), $(JVM_VARIANT_MAIN))
     $(eval $(call SetupCopyFiles, COPY_JVM_LIB, \
         DEST := $(LIB_OUTPUTDIR), \
-        FILES :=$(JVM_VARIANT_OUTPUTDIR)/libjvm/objs/jvm.lib, \
+        FILES :=$(BUILD_LIBJVM_IMPORT_LIBRARY), \
     ))
     TARGETS += $(COPY_JVM_LIB)
   endif

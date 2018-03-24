@@ -18,7 +18,7 @@ Some example command-lines:
     $ make run-test-jdk_lang JTREG="JOBS=8"
     $ make run-test TEST=jdk_lang
     $ make run-test-only TEST="gtest:LogTagSet gtest:LogTagSetDescriptions" GTEST="REPEAT=-1"
-    $ make run-test TEST="hotspot/test:hotspot_gc" JTREG="JOBS=1;TIMEOUT=8;VM_OTIONS=-XshowSettings -Xlog:gc+ref=debug"
+    $ make run-test TEST="hotspot/test:hotspot_gc" JTREG="JOBS=1;TIMEOUT=8;VM_OPTIONS=-XshowSettings -Xlog:gc+ref=debug"
     $ make run-test TEST="jtreg:hotspot/test:hotspot_gc hotspot/test/native_sanity/JniVersion.java"
     $ make exploded-run-test TEST=hotspot_tier1
 
@@ -140,11 +140,11 @@ pass unnoticed.
 To separate multiple keyword=value pairs, use `;` (semicolon). Since the shell
 normally eats `;`, the recommended usage is to write the assignment inside
 qoutes, e.g. `JTREG="...;..."`. This will also make sure spaces are preserved,
-as in `JTREG="VM_OTIONS=-XshowSettings -Xlog:gc+ref=debug"`.
+as in `JTREG="VM_OPTIONS=-XshowSettings -Xlog:gc+ref=debug"`.
 
 (Other ways are possible, e.g. using backslash: `JTREG=JOBS=1\;TIMEOUT=8`.
 Also, as a special technique, the string `%20` will be replaced with space for
-certain options, e.g. `JTREG=VM_OTIONS=-XshowSettings%20-Xlog:gc+ref=debug`.
+certain options, e.g. `JTREG=VM_OPTIONS=-XshowSettings%20-Xlog:gc+ref=debug`.
 This can be useful if you have layers of scripts and have trouble getting
 proper quoting of command line arguments through.)
 

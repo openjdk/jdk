@@ -235,6 +235,13 @@ final class StringUTF16 {
         return result;
     }
 
+    static byte[] toBytesSupplementary(int cp) {
+        byte[] result = new byte[4];
+        putChar(result, 0, Character.highSurrogate(cp));
+        putChar(result, 1, Character.lowSurrogate(cp));
+        return result;
+    }
+
     @HotSpotIntrinsicCandidate
     public static void getChars(byte[] value, int srcBegin, int srcEnd, char dst[], int dstBegin) {
         // We need a range check here because 'getChar' has no checks

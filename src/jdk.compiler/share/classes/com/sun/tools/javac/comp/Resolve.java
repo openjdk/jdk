@@ -4178,9 +4178,6 @@ public class Resolve {
                 Name name,
                 List<Type> argtypes,
                 List<Type> typeargtypes) {
-            if (sym.owner.type.hasTag(ERROR))
-                return null;
-
             if (sym.name == names.init && sym.owner != site.tsym) {
                 return new SymbolNotFoundError(ABSENT_MTH).getDiagnostic(dkind,
                         pos, location, site, name, argtypes, typeargtypes);

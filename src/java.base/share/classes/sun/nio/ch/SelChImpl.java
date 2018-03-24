@@ -63,8 +63,6 @@ public interface SelChImpl extends Channel {
 
     void translateAndSetInterestOps(int ops, SelectionKeyImpl sk);
 
-    int validOps();
-
     void kill() throws IOException;
 
 }

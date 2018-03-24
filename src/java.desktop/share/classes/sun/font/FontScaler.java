@@ -96,12 +96,23 @@ public abstract class FontScaler implements DisposerRecord {
         try {
             @SuppressWarnings("unchecked")
             Class<? extends FontScaler> tmp = (Class<? extends FontScaler>)
-                (FontUtilities.isOpenJDK ?
+                ((!FontUtilities.useT2K && !FontUtilities.useLegacy) ?
                  Class.forName("sun.font.FreetypeFontScaler") :
                  Class.forName("sun.font.T2KFontScaler"));
             scalerClass = tmp;
         } catch (ClassNotFoundException e) {
+            try {
+                @SuppressWarnings("unchecked")
+                Class<? extends FontScaler> tmp = (Class<? extends FontScaler>)
+                    Class.forName("sun.font.FreetypeFontScaler");
+                scalerClass = tmp;
+            } catch (ClassNotFoundException e1) {
                 scalerClass = NullFontScaler.class;
+            }
+        } finally {
+            if (FontUtilities.debugFonts()) {
+                System.out.println("Scaler class="+scalerClass);
+            }
         }
 
         //NB: rewrite using factory? constructor is ugly way

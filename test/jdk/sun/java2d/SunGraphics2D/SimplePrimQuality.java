@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @key headful
- * @bug 4832224 6322584 6328478 6328481 6322580 6588884 6587863
+ * @bug 4832224 6322584 6328478 6328481 6322580 6588884 6587863 8198613
  * @summary Verifies that the pixelization of simple primitives (drawLine,
  * fillRect, drawRect, fill, draw) with the OGL pipeline enabled
  * matches that produced by our software loops.  (The primitives tested here
@@ -34,7 +34,6 @@
  * more appropriate for quick OGL testing.  This test is also useful for
  * comparing quality between our X11/GDI and software pipelines.
  * @run main/othervm SimplePrimQuality
- * @run main/othervm -Dsun.java2d.opengl=True SimplePrimQuality
  * @author campbelc
  */
 

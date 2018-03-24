@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4533872 4985214 4985217 5017268 5017280
+ * @bug 4533872 4985214 4985217 4993841 5017268 5017280
  * @summary Unit tests for supplementary character support (JSR-204)
  * @compile Supplementary.java
  * @run main/timeout=600 Supplementary
@@ -58,6 +58,9 @@ public class Supplementary {
         test03(str.toCharArray());
         test04(str);
         test05(str);
+
+        // Test for toString(int)
+        test06();
 
         // Test unpaired surrogates
         testUnpaired();
@@ -454,6 +457,23 @@ public class Supplementary {
         checkNewIndex(a, 0, index, length);
     }
 
+    /**
+     * Test toString(int)
+     *
+     * This test case assumes that Character.toChars()/String(char[]) work
+     * correctly.
+     */
+    static void test06() {
+        for (int cp = Character.MIN_CODE_POINT; cp <= Character.MAX_CODE_POINT; cp++) {
+            String result = Character.toString(cp);
+            String expected = new String(Character.toChars(cp));
+            if (!result.equals(expected)) {
+                throw new RuntimeException("Wrong string is created. code point: " +
+                    cp + ", result: " + result + ", expected: " + expected);
+            }
+        }
+    }
+
     private static void checkNewIndex(Object data, int offset, int result, int expected) {
         String type = getType(data);
         String offsetType = (offset > 0) ? "positive" : (offset < 0) ? "negative" : "0";
@@ -580,6 +600,7 @@ public class Supplementary {
 
     // Test toChar(int)
     //      toChar(int, char[], int)
+    //      toString(int)
     // for exceptions
     static void testExceptions00() {
         callToChars1(-1, IllegalArgumentException.class);
@@ -595,6 +616,9 @@ public class Supplementary {
         callToChars3(MIN_SUPPLEMENTARY, new char[1],  0, IndexOutOfBoundsException.class);
         callToChars3(MIN_SUPPLEMENTARY, new char[2], -1, IndexOutOfBoundsException.class);
         callToChars3(MIN_SUPPLEMENTARY, new char[2],  1, IndexOutOfBoundsException.class);
+
+        callToString(Character.MIN_CODE_POINT - 1, IllegalArgumentException.class);
+        callToString(Character.MAX_CODE_POINT + 1, IllegalArgumentException.class);
     }
 
     static final boolean At = true, Before = false;
@@ -831,6 +855,19 @@ public class Supplementary {
             throw new RuntimeException("Unspecified exception", e);
         }
         throw new RuntimeException("offsetCodePointCounts(char[]...) didn't throw "
+                                   + expectedException.getName());
+    }
+
+    private static void callToString(int codePoint, Class expectedException) {
+        try {
+            String s = Character.toString(codePoint);
+        } catch (Exception e) {
+            if (expectedException.isInstance(e)) {
+                return;
+            }
+            throw new RuntimeException("Unspecified exception", e);
+        }
+        throw new RuntimeException("toString(int) didn't throw "
                                    + expectedException.getName());
     }
 

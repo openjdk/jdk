@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,18 @@
 
 package sun.nio.ch;
 
-import java.io.IOException;
-import java.nio.channels.*;
-import java.nio.channels.spi.*;
+import java.nio.channels.CancelledKeyException;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.spi.AbstractSelectionKey;
 
 
 /**
- * An implementation of SelectionKey for Solaris.
+ * An implementation of SelectionKey.
  */
 
-public class SelectionKeyImpl
+public final class SelectionKeyImpl
     extends AbstractSelectionKey
 {
 
@@ -45,19 +47,21 @@ public class SelectionKeyImpl
     private int index;
 
     private volatile int interestOps;
-    private int readyOps;
+    private volatile int readyOps;
 
     SelectionKeyImpl(SelChImpl ch, SelectorImpl sel) {
         channel = ch;
         selector = sel;
     }
 
+    @Override
     public SelectableChannel channel() {
         return (SelectableChannel)channel;
     }
 
+    @Override
     public Selector selector() {
-        return selector;
+        return (Selector)selector;
     }
 
     int getIndex() {                                    // package-private
@@ -73,16 +77,19 @@ public class SelectionKeyImpl
             throw new CancelledKeyException();
     }
 
+    @Override
     public int interestOps() {
         ensureValid();
         return interestOps;
     }
 
+    @Override
     public SelectionKey interestOps(int ops) {
         ensureValid();
         return nioInterestOps(ops);
     }
 
+    @Override
     public int readyOps() {
         ensureValid();
         return readyOps;
@@ -111,4 +118,24 @@ public class SelectionKeyImpl
         return interestOps;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("channel=")
+          .append(channel)
+          .append(", selector=")
+          .append(selector);
+        if (isValid()) {
+            sb.append(", interestOps=")
+              .append(interestOps)
+              .append(", readyOps=")
+              .append(readyOps);
+        } else {
+            sb.append(", invalid");
+        }
+        return sb.toString();
+    }
+
+    // used by Selector implementations to record when the key was selected
+    int lastPolled;
 }

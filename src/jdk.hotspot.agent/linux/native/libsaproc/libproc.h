@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,6 @@
 #include <unistd.h>
 #include <stdint.h>
 #include "proc_service.h"
-
-#ifdef ALT_SASRCDIR
-#include "libproc_md.h"
-#endif
 
 #include <sys/ptrace.h>
 

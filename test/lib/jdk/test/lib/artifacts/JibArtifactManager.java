@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class JibArtifactManager implements ArtifactManager {
+    private static final String JIB_SERVICE_FACTORY = "com.oracle.jib.api.JibServiceFactory";
     private static String jibVersion = "1.0";
     private Object installerObject;
 
@@ -39,11 +40,11 @@ public class JibArtifactManager implements ArtifactManager {
 
     public static JibArtifactManager newInstance() throws ClassNotFoundException {
         try {
-            Class jibServiceFactory = Class.forName("com.oracle.jib.api.JibServiceFactory");
+            Class jibServiceFactory = Class.forName(JIB_SERVICE_FACTORY);
             Object jibArtifactInstaller = jibServiceFactory.getMethod("createJibArtifactInstaller").invoke(null);
             return new JibArtifactManager(jibArtifactInstaller);
         } catch (Exception e) {
-            throw new ClassNotFoundException();
+            throw new ClassNotFoundException(JIB_SERVICE_FACTORY, e);
         }
     }
 
@@ -61,13 +62,13 @@ public class JibArtifactManager implements ArtifactManager {
     }
 
     @Override
-    public Path resolve(Artifact artifact) throws FileNotFoundException {
+    public Path resolve(Artifact artifact) throws ArtifactResolverException {
         Path path;
         // Use the DefaultArtifactManager to enable users to override locations
         try {
             ArtifactManager manager = new DefaultArtifactManager();
             path = manager.resolve(artifact);
-        } catch (FileNotFoundException e) {
+        } catch (ArtifactResolverException e) {
             // Location hasn't been overridden, continue to automatically try to resolve the dependency
             try {
                 HashMap<String, Object> artifactDescription = new HashMap<>();
@@ -83,8 +84,8 @@ public class JibArtifactManager implements ArtifactManager {
                 if (artifact.unpack()) {
                     path = install(jibVersion, artifactDescription);
                 }
-            } catch (Exception exception) {
-                throw new FileNotFoundException("Failed to resolve the artifact " + artifact);
+            } catch (Exception e2) {
+                throw new ArtifactResolverException("Failed to resolve the artifact " + artifact, e2);
             }
         }
         return path;

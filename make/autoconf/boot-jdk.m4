@@ -77,10 +77,11 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
           BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | $HEAD -n 1`
 
           # Extra M4 quote needed to protect [] in grep expression.
-          [FOUND_CORRECT_VERSION=`$ECHO $BOOT_JDK_VERSION | $EGREP '\"10([\.+-].*)?\"|\"9([\.+-].*)?\"'`]
+          [FOUND_CORRECT_VERSION=`$ECHO $BOOT_JDK_VERSION \
+              | $EGREP "\"(${DEFAULT_ACCEPTABLE_BOOT_VERSIONS// /|})([\.+-].*)?\""`]
           if test "x$FOUND_CORRECT_VERSION" = x; then
             AC_MSG_NOTICE([Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring])
-            AC_MSG_NOTICE([(Your Boot JDK must be version 9 or 10)])
+            AC_MSG_NOTICE([(Your Boot JDK version must be one of: $DEFAULT_ACCEPTABLE_BOOT_VERSIONS)])
             BOOT_JDK_FOUND=no
           else
             # We're done! :-)
@@ -510,10 +511,10 @@ AC_DEFUN([BOOTJDK_CHECK_BUILD_JDK],
         BUILD_JDK_VERSION=`"$BUILD_JDK/bin/java" -version 2>&1 | $HEAD -n 1`
 
         # Extra M4 quote needed to protect [] in grep expression.
-        [FOUND_CORRECT_VERSION=`echo $BUILD_JDK_VERSION | $EGREP '\"10([\.+-].*)?\"'`]
+        [FOUND_CORRECT_VERSION=`echo $BUILD_JDK_VERSION | $EGREP "\"$VERSION_FEATURE([\.+-].*)?\""`]
         if test "x$FOUND_CORRECT_VERSION" = x; then
           AC_MSG_NOTICE([Potential Build JDK found at $BUILD_JDK is incorrect JDK version ($BUILD_JDK_VERSION); ignoring])
-          AC_MSG_NOTICE([(Your Build JDK must be version 10)])
+          AC_MSG_NOTICE([(Your Build JDK must be version $VERSION_FEATURE)])
           BUILD_JDK_FOUND=no
         else
           # We're done!

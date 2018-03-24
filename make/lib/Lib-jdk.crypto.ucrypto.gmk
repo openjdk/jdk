@@ -31,9 +31,8 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
 
   LIBJ2UCRYPTO_SRC := $(TOPDIR)/src/jdk.crypto.ucrypto/solaris/native/libj2ucrypto
 
-  $(eval $(call SetupNativeCompilation, BUILD_LIBJ2UCRYPTO, \
+  $(eval $(call SetupJdkLibrary, BUILD_LIBJ2UCRYPTO, \
       NAME := j2ucrypto, \
-      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
       SRC := $(LIBJ2UCRYPTO_SRC), \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
@@ -41,11 +40,9 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
       MAPFILE := $(TOPDIR)/make/mapfiles/libj2ucrypto/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB), \
       LIBS := $(LIBDL), \
-      LIBS_solaris := -lc, \
-      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libj2ucrypto, \
   ))
 
-  $(BUILD_LIBJ2UCRYPTO): $(BUILD_LIBJAVA)
+  $(BUILD_LIBJ2UCRYPTO): $(call FindLib, java.base, java)
 
   TARGETS += $(BUILD_LIBJ2UCRYPTO)
 

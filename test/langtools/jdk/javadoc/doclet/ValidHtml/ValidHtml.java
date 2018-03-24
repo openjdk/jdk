@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4275630 4749453 4625400 4753048 4415270 8074521
+ * @bug 4275630 4749453 4625400 4753048 4415270 8074521 8182765
  * @summary  Generated HTML is invalid with frames.
  *           Displays unnecessary horizontal scroll bars.
  *           Missing whitespace in DOCTYPE declaration
@@ -53,26 +53,42 @@ public class ValidHtml extends JavadocTester {
                     "-sourcepath", testSrc,
                     "p1", "p2");
         checkExit(Exit.OK);
-
-        // Test the proper DOCTYPE element are present:
-        checkOutput("index.html",              true, LOOSE);
-        checkOutput("overview-summary.html",   true, LOOSE);
-        checkOutput("p1/package-summary.html", true, LOOSE);
-        checkOutput("p1/C.html",               true, LOOSE);
-        checkOutput("overview-frame.html",     true, LOOSE);
-        checkOutput("allclasses-frame.html",   true, LOOSE);
-        checkOutput("p1/package-frame.html",   true, LOOSE);
-
         // Test for IFRAME element:
         checkOutput("index.html", true,
                 "<iframe");
-
         // Test the table elements are in the correct order:
         checkOutput("p1/package-use.html", true,
                 "</td>\n"
                 + "</tr>");
+        String HTML5 = "<!DOCTYPE HTML>";
+        checkValidHTML(HTML5);
     }
 
-    private static final String LOOSE =
-            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">";
+    @Test
+    void test_html4() {
+        // Test for all cases except the split index page
+        javadoc("-d", "out-html4",
+                "-html4",
+                "-doctitle", "Document Title",
+                "-windowtitle", "Window Title",
+                "-use",
+                "-overview", testSrc("overview.html"),
+                "-sourcepath", testSrc,
+                "p1", "p2");
+        checkExit(Exit.OK);
+        String HTML4 = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">";
+
+        checkValidHTML(HTML4);
+}
+
+    void checkValidHTML(String doctype) {
+        // Test the proper DOCTYPE element are present:
+        checkOutput("index.html", true, doctype);
+        checkOutput("overview-summary.html", true, doctype);
+        checkOutput("p1/package-summary.html", true, doctype);
+        checkOutput("p1/C.html", true, doctype);
+        checkOutput("overview-frame.html", true, doctype);
+        checkOutput("allclasses-frame.html", true, doctype);
+        checkOutput("p1/package-frame.html", true, doctype);
+    }
 }

@@ -49,9 +49,8 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   LIBINSTRUMENT_CFLAGS += -Dstrcasecmp=stricmp
 endif
 
-$(eval $(call SetupNativeCompilation, BUILD_LIBINSTRUMENT, \
+$(eval $(call SetupJdkLibrary, BUILD_LIBINSTRUMENT, \
     NAME := instrument, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBINSTRUMENT_SRC), \
     OPTIMIZATION := LOW, \
     CFLAGS := $(LIBINSTRUMENT_CFLAGS), \
@@ -74,23 +73,17 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBINSTRUMENT, \
     LIBS_aix := -liconv -ljli_static $(LIBDL), \
     LIBS_macosx := -liconv -framework Cocoa -framework Security \
         -framework ApplicationServices \
-        $(SUPPORT_OUTPUTDIR)/native/java.base/libjli_static.a, \
+        $(call FindStaticLib, java.base, jli_static), \
     LIBS_windows := jvm.lib $(WIN_JAVA_LIB) advapi32.lib \
-        $(SUPPORT_OUTPUTDIR)/native/java.base/jli_static.lib, \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=instrument.dll" \
-        -D "JDK_INTERNAL_NAME=instrument" \
-        -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libinstrument, \
+        $(call FindStaticLib, java.base, jli_static), \
 ))
 
-ifneq (, $(findstring $(OPENJDK_TARGET_OS), macosx windows aix))
-  $(BUILD_LIBINSTRUMENT): $(SUPPORT_OUTPUTDIR)/native/java.base/$(LIBRARY_PREFIX)jli_static$(STATIC_LIBRARY_SUFFIX)
+ifneq ($(filter $(OPENJDK_TARGET_OS), macosx windows aix), )
+  $(BUILD_LIBINSTRUMENT): $(call FindStaticLib, java.base, jli_static)
 else
   $(BUILD_LIBINSTRUMENT): $(call FindLib, java.base, jli, /jli)
 endif
-$(BUILD_LIBINSTRUMENT): $(BUILD_LIBJAVA)
+$(BUILD_LIBINSTRUMENT): $(call FindLib, java.base, java)
 
 TARGETS += $(BUILD_LIBINSTRUMENT)
 

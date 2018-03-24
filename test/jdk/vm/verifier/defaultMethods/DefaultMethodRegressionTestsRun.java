@@ -26,6 +26,7 @@
  * @bug 8003639
  * @summary defaultMethod resolution and verification using an URLClassLoader
  * @modules jdk.compiler
+ *          jdk.zipfs
  * @compile -XDignore.symbol.file=true DefaultMethodRegressionTestsRun.java
  * @run main DefaultMethodRegressionTestsRun
  */

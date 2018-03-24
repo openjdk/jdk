@@ -59,23 +59,29 @@ Java_sun_nio_ch_SocketChannelImpl_checkConnect(JNIEnv *env, jobject this,
     poller.events = POLLOUT;
     poller.revents = 0;
     result = poll(&poller, 1, block ? -1 : 0);
+
     if (result < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "Poll failed");
-        return IOS_THROWN;
+        if (errno == EINTR) {
+            return IOS_INTERRUPTED;
+        } else {
+            JNU_ThrowIOExceptionWithLastError(env, "poll failed");
+            return IOS_THROWN;
+        }
     }
     if (!block && (result == 0))
-       return IOS_UNAVAILABLE;
+        return IOS_UNAVAILABLE;
 
-    if (poller.revents) {
+    if (result > 0) {
         errno = 0;
         result = getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &n);
         if (result < 0) {
-            handleSocketError(env, errno);
-            return JNI_FALSE;
+            return handleSocketError(env, errno);
         } else if (error) {
-            handleSocketError(env, error);
-            return JNI_FALSE;
+            return handleSocketError(env, error);
+        } else if ((poller.revents & POLLHUP) != 0) {
+            return handleSocketError(env, ENOTCONN);
         }
+        // connected
         return 1;
     }
     return 0;
