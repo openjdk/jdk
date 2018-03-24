@@ -28,6 +28,7 @@
  * @modules jdk.jartool/sun.tools.jar
  *          jdk.httpserver
  *          jdk.compiler
+ *          jdk.zipfs
  * @run main/othervm Basic
  */
 

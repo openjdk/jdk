@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3556,8 +3556,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Returns the number of bits in the minimal two's-complement
      * representation of this BigInteger, <em>excluding</em> a sign bit.
      * For positive BigIntegers, this is equivalent to the number of bits in
-     * the ordinary binary representation.  (Computes
-     * {@code (ceil(log2(this < 0 ? -this : this+1)))}.)
+     * the ordinary binary representation.  For zero this method returns
+     * {@code 0}.  (Computes {@code (ceil(log2(this < 0 ? -this : this+1)))}.)
      *
      * @return number of bits in the minimal two's-complement
      *         representation of this BigInteger, <em>excluding</em> a sign bit.

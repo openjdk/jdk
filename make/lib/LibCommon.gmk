@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 # questions.
 #
 
-include NativeCompilation.gmk
+include JdkNativeCompilation.gmk
 
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, lib/LibCommon.gmk))
@@ -32,7 +32,7 @@ $(eval $(call IncludeCustomExtension, lib/LibCommon.gmk))
 
 GLOBAL_VERSION_INFO_RESOURCE := $(TOPDIR)/src/java.base/windows/native/common/version.rc
 
-# Absolute paths to lib files on windows for use in LDFLAGS. Should figure out a more
+# Absolute paths to lib files on windows for use in LIBS. Should figure out a more
 # elegant solution to this.
 WIN_JAVA_LIB := $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib
 
@@ -54,11 +54,19 @@ FindSrcDirsForLib += \
 # Find a library
 # Param 1 - module name
 # Param 2 - library name
-# Param 3 - subdir for library
+# Param 3 - optional subdir for library
 FindLib = \
     $(call FindLibDirForModule, \
         $(strip $1))$(strip $3)/$(LIBRARY_PREFIX)$(strip $2)$(SHARED_LIBRARY_SUFFIX)
 
+################################################################################
+# Find a static library
+# Param 1 - module name
+# Param 2 - library name
+# Param 3 - optional subdir for library
+FindStaticLib = \
+    $(addprefix $(SUPPORT_OUTPUTDIR)/native/, \
+        $(strip $1)$(strip $3)/$(LIBRARY_PREFIX)$(strip $2)$(STATIC_LIBRARY_SUFFIX))
 
 ################################################################################
 # Define the header include flags needed to compile against it.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,17 @@
 
 package java.io;
 
+import java.nio.charset.Charset;
 
 /**
- * Convenience class for reading character files.  The constructors of this
- * class assume that the default character encoding and the default byte-buffer
- * size are appropriate.  To specify these values yourself, construct an
- * InputStreamReader on a FileInputStream.
+ * Reads text from character files using a default buffer size. Decoding from bytes
+ * to characters uses either a specified {@linkplain java.nio.charset.Charset charset}
+ * or the platform's
+ * {@linkplain java.nio.charset.Charset#defaultCharset() default charset}.
  *
- * <p>{@code FileReader} is meant for reading streams of characters.
- * For reading streams of raw bytes, consider using a
- * {@code FileInputStream}.
+ * <p>
+ * The {@code FileReader} is meant for reading streams of characters. For reading
+ * streams of raw bytes, consider using a {@code FileInputStream}.
  *
  * @see InputStreamReader
  * @see FileInputStream
@@ -45,10 +46,11 @@ package java.io;
 public class FileReader extends InputStreamReader {
 
    /**
-    * Creates a new {@code FileReader}, given the name of the
-    * file to read from.
+    * Creates a new {@code FileReader}, given the name of the file to read,
+    * using the platform's
+    * {@linkplain java.nio.charset.Charset#defaultCharset() default charset}.
     *
-    * @param fileName the name of the file to read from
+    * @param fileName the name of the file to read
     * @exception  FileNotFoundException  if the named file does not exist,
     *                   is a directory rather than a regular file,
     *                   or for some other reason cannot be opened for
@@ -59,10 +61,11 @@ public class FileReader extends InputStreamReader {
     }
 
    /**
-    * Creates a new {@code FileReader}, given the {@code File}
-    * to read from.
+    * Creates a new {@code FileReader}, given the {@code File} to read,
+    * using the platform's
+    * {@linkplain java.nio.charset.Charset#defaultCharset() default charset}.
     *
-    * @param file the {@code File} to read from
+    * @param file the {@code File} to read
     * @exception  FileNotFoundException  if the file does not exist,
     *                   is a directory rather than a regular file,
     *                   or for some other reason cannot be opened for
@@ -73,13 +76,47 @@ public class FileReader extends InputStreamReader {
     }
 
    /**
-    * Creates a new {@code FileReader}, given the
-    * {@code FileDescriptor} to read from.
+    * Creates a new {@code FileReader}, given the {@code FileDescriptor} to read,
+    * using the platform's
+    * {@linkplain java.nio.charset.Charset#defaultCharset() default charset}.
     *
-    * @param fd the FileDescriptor to read from
+    * @param fd the {@code FileDescriptor} to read
     */
     public FileReader(FileDescriptor fd) {
         super(new FileInputStream(fd));
     }
 
+   /**
+    * Creates a new {@code FileReader}, given the name of the file to read
+    * and the {@linkplain java.nio.charset.Charset charset}.
+    *
+    * @param fileName the name of the file to read
+    * @param charset the {@linkplain java.nio.charset.Charset charset}
+    * @exception  IOException  if the named file does not exist,
+    *                   is a directory rather than a regular file,
+    *                   or for some other reason cannot be opened for
+    *                   reading.
+    *
+    * @since 11
+    */
+    public FileReader(String fileName, Charset charset) throws IOException {
+        super(new FileInputStream(fileName), charset);
+    }
+
+   /**
+    * Creates a new {@code FileReader}, given the {@code File} to read and
+    * the {@linkplain java.nio.charset.Charset charset}.
+    *
+    * @param file the {@code File} to read
+    * @param charset the {@linkplain java.nio.charset.Charset charset}
+    * @exception  IOException  if the file does not exist,
+    *                   is a directory rather than a regular file,
+    *                   or for some other reason cannot be opened for
+    *                   reading.
+    *
+    * @since 11
+    */
+    public FileReader(File file, Charset charset) throws IOException {
+        super(new FileInputStream(file), charset);
+    }
 }

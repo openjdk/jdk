@@ -504,8 +504,7 @@ void AwtToolkit::InitTouchKeyboardExeFilePath() {
 HWND AwtToolkit::GetTouchKeyboardWindow() {
     const TCHAR wndClassName[] = _T("IPTip_Main_Window");
     HWND hwnd = ::FindWindow(wndClassName, NULL);
-    if ((hwnd != NULL) && ::IsWindow(hwnd) && ::IsWindowEnabled(hwnd) &&
-        ::IsWindowVisible(hwnd)) {
+    if ((hwnd != NULL) && ::IsWindow(hwnd) && ::IsWindowEnabled(hwnd)) {
         return hwnd;
     }
     return NULL;
@@ -1107,7 +1106,7 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
           if (comp != NULL)
           {
               comp->SetInputMethod(self, useNativeCompWindow);
-              comp->ImmAssociateContext((HIMC)context);
+              comp->ImmAssociateContext((HIMC)((intptr_t)context));
           }
 
           if (peer != NULL) {
@@ -3140,7 +3139,7 @@ void AwtToolkit::ShowTouchKeyboard() {
         (m_touchKbrdExeFilePath != NULL)) {
         HINSTANCE retVal = ::ShellExecute(NULL, _T("open"),
             m_touchKbrdExeFilePath, NULL, NULL, SW_SHOW);
-        if ((int)retVal <= 32) {
+        if ((int)((intptr_t)retVal) <= 32) {
             DTRACE_PRINTLN1("AwtToolkit::ShowTouchKeyboard: Failed"
                 ", retVal='%d'", (int)retVal);
         }

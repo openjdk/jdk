@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ class PipeImpl
     private final SourceChannel source;
     private final SinkChannel sink;
 
-    PipeImpl(SelectorProvider sp) {
+    PipeImpl(SelectorProvider sp) throws IOException {
         long pipeFds = IOUtil.makePipe(true);
         int readFd = (int) (pipeFds >>> 32);
         int writeFd = (int) pipeFds;

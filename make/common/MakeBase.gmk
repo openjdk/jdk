@@ -67,6 +67,7 @@ endef
 # In GNU Make 4.0 and higher, there is a file function for writing to files.
 ifeq (4.0, $(firstword $(sort 4.0 $(MAKE_VERSION))))
   HAS_FILE_FUNCTION := true
+  CORRECT_FUNCTION_IN_RECIPE_EVALUATION := true
 endif
 
 ##############################
@@ -518,12 +519,14 @@ ifeq ($(OPENJDK_TARGET_OS),solaris)
   define install-file
 	$(call MakeTargetDir)
 	$(RM) '$(call DecodeSpace, $@)'
-	if [ '$(call DecodeSpace, $(dir $@))' != \
+	if [ '$(call DecodeSpace, $(dir $(call EncodeSpace, $@)))' != \
 	    '$(call DecodeSpace, $(dir $(call EncodeSpace, $<)))' ]; then \
-	  $(CP) -f -r -P '$(call DecodeSpace, $<)' '$(call DecodeSpace, $(@D))'; \
-	  if [ '$(call DecodeSpace, $(@F))' != \
+	  $(CP) -f -r -P '$(call DecodeSpace, $<)' \
+	      '$(call DecodeSpace, $(dir $(call EncodeSpace, $@)))'; \
+	  if [ '$(call DecodeSpace, $(notdir $(call EncodeSpace, $@)))' != \
 	      '$(call DecodeSpace, $(notdir $(call EncodeSpace, $(<))))' ]; then \
-	    $(MV) '$(call DecodeSpace, $(@D)/$(<F))' '$(call DecodeSpace, $@)'; \
+	    $(MV) '$(call DecodeSpace, $(dir $(call EncodeSpace, $@))/$(notdir $(call EncodeSpace, $<)))' \
+	        '$(call DecodeSpace, $@)'; \
 	  fi; \
 	else \
 	  if [ -L '$(call DecodeSpace, $<)' ]; then \
@@ -1023,6 +1026,12 @@ ExecuteWithLog = \
 # Param 1 - module name
 FindLibDirForModule = \
     $(SUPPORT_OUTPUTDIR)/modules_libs/$(strip $1)
+
+################################################################################
+# Find executable dir for module
+# Param 1 - module name
+FindExecutableDirForModule = \
+    $(SUPPORT_OUTPUTDIR)/modules_cmds/$(strip $1)
 
 ################################################################################
 # Return a string suitable for use after a -classpath or --module-path option. It

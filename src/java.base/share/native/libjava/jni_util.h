@@ -388,7 +388,7 @@ enum {
 
 int getFastEncoding();
 
-void initializeEncoding();
+void InitializeEncoding(JNIEnv *env, const char *name);
 
 void* getProcessHandle();
 

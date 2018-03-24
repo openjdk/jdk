@@ -145,7 +145,7 @@ public abstract class AccessibleBundle {
      */
     private void loadResourceBundle(String resourceBundleName,
                                     Locale locale) {
-        if (! table.contains(locale)) {
+        if (! table.containsKey(locale)) {
 
             try {
                 Hashtable<String, Object> resourceTable = new Hashtable<>();

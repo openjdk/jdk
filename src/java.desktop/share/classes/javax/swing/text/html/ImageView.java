@@ -928,11 +928,11 @@ public class ImageView extends View {
                 }
 
                 synchronized(ImageView.this) {
-                    if ((changed & 1) == 1 && (state & WIDTH_FLAG) == 0) {
-                        width = newWidth;
-                    }
-                    if ((changed & 2) == 2 && (state & HEIGHT_FLAG) == 0) {
+                    if ((changed & 1) == 1 && (state & HEIGHT_FLAG) == 0) {
                         height = newHeight;
+                    }
+                    if ((changed & 2) == 2 && (state & WIDTH_FLAG) == 0) {
+                        width = newWidth;
                     }
                     if ((state & LOADING_FLAG) == LOADING_FLAG) {
                         // No need to resize or repaint, still in the process of

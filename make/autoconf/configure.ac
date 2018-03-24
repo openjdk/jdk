@@ -163,10 +163,9 @@ JDKOPT_SETUP_STATIC_BUILD
 # First determine the toolchain type (compiler family)
 TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE
 
-# User supplied flags should be used when configure detects compilers
-FLAGS_SETUP_USER_SUPPLIED_FLAGS
-# The sysroot cflags are needed for configure to be able to run the compilers
-FLAGS_SETUP_SYSROOT_FLAGS
+# The global flags are needed for configure to be able to run the compilers
+# correctly.
+FLAGS_PRE_TOOLCHAIN
 
 # Then detect the actual binaries needed
 TOOLCHAIN_PRE_DETECTION
@@ -184,17 +183,15 @@ TOOLCHAIN_SETUP_JTREG
 # Setup Jib dependency tool
 TOOLCHAIN_SETUP_JIB
 
-FLAGS_SETUP_INIT_FLAGS
+# After toolchain setup, we need to process some flags to be able to continue.
+FLAGS_POST_TOOLCHAIN
 
 # Now we can test some aspects on the target using configure macros.
 PLATFORM_SETUP_OPENJDK_TARGET_BITS
 PLATFORM_SETUP_OPENJDK_TARGET_ENDIANNESS
 
 # Configure flags for the tools
-FLAGS_SETUP_COMPILER_FLAGS_FOR_LIBS
-FLAGS_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION
-FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK
-FLAGS_SETUP_COMPILER_FLAGS_MISC
+FLAGS_SETUP_FLAGS
 
 # Setup debug symbols (need objcopy from the toolchain for that)
 JDKOPT_SETUP_DEBUG_SYMBOLS

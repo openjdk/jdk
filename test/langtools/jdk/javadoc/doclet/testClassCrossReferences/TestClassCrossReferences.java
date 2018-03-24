@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4652655 4857717 8025633 8026567 8071982 8164407
+ * @bug 4652655 4857717 8025633 8026567 8071982 8164407 8182765
  * @summary This test verifies that class cross references work properly.
  * @author jamieh
  * @library ../lib
@@ -35,6 +35,8 @@
 
 public class TestClassCrossReferences extends JavadocTester {
 
+    static final String uri = "http://docs.oracle.com/javase/8/docs/api/";
+
     public static void main(String... args) throws Exception {
         TestClassCrossReferences tester = new TestClassCrossReferences();
         tester.runTests();
@@ -42,8 +44,6 @@ public class TestClassCrossReferences extends JavadocTester {
 
     @Test
     void test() {
-        final String uri = "http://docs.oracle.com/javase/8/docs/api/";
-
         javadoc("-d", "out",
                 "-Xdoclint:none",
                 "-sourcepath", testSrc,
@@ -58,7 +58,7 @@ public class TestClassCrossReferences extends JavadocTester {
                 + "title=\"class or interface in javax.swing.text\" class=\"externalLink\"><code>Link to AttributeContext innerclass</code></a>",
                 "<a href=\"" + uri + "java/math/BigDecimal.html?is-external=true\" "
                 + "title=\"class or interface in java.math\" class=\"externalLink\"><code>Link to external class BigDecimal</code></a>",
-                "<a href=\"" + uri + "java/math/BigInteger.html?is-external=true#gcd-java.math.BigInteger-\" "
+                "<a href=\"" + uri + "java/math/BigInteger.html?is-external=true#gcd(java.math.BigInteger)\" "
                 + "title=\"class or interface in java.math\" class=\"externalLink\"><code>Link to external member gcd</code></a>",
                 "<a href=\"" + uri + "javax/tools/SimpleJavaFileObject.html?is-external=true#URI\" "
                 + "title=\"class or interface in javax.tools\" class=\"externalLink\"><code>Link to external member URI</code></a>",
@@ -68,4 +68,18 @@ public class TestClassCrossReferences extends JavadocTester {
                 + "</dl>");
     }
 
+    @Test
+    void test_html4() {
+        javadoc("-d", "out-html4",
+                "-html4",
+                "-Xdoclint:none",
+                "-sourcepath", testSrc,
+                "-linkoffline", uri, testSrc,
+                testSrc("C.java"));
+        checkExit(Exit.OK);
+
+        checkOutput("C.html", true,
+                "<a href=\"" + uri + "java/math/BigInteger.html?is-external=true#gcd-java.math.BigInteger-\" "
+                + "title=\"class or interface in java.math\" class=\"externalLink\"><code>Link to external member gcd</code></a>");
+}
 }

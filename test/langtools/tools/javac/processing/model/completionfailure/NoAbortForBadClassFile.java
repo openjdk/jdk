@@ -50,6 +50,7 @@ import java.util.stream.Stream;
 
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.api.JavacTool;
+import com.sun.tools.javac.code.DeferredCompletionFailureHandler;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
@@ -189,6 +190,10 @@ public class NoAbortForBadClassFile extends TestRunner {
         JavacTaskImpl task = (JavacTaskImpl) tool.getTask(null, null, null, List.of("-classpath", test.toString(), "-XDblockClass=" + flatName(missing)), null, null, context);
         Symtab syms = Symtab.instance(context);
         Names names = Names.instance(context);
+
+        DeferredCompletionFailureHandler dcfh = DeferredCompletionFailureHandler.instance(context);
+
+        dcfh.setHandler(dcfh.javacCodeHandler);
 
         task.getElements().getTypeElement("java.lang.Object");
 

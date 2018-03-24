@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8163800 8175200 8186332
+ * @bug 8163800 8175200 8186332 8182765
  * @summary The fix for JDK-8072052 shows up other minor incorrect use of styles
  * @library ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -51,11 +51,11 @@ public class TestClassLinks extends JavadocTester {
 
         checkOutput("p/C1.html", true,
                 "<code><a href=\"C2.html\" title=\"class in p\">C2</a></code>",
-                "<code><span class=\"memberNameLink\"><a href=\"#C1--\">C1</a></span>()</code>");
+                "<code><span class=\"memberNameLink\"><a href=\"#%3Cinit%3E()\">C1</a></span>()</code>");
 
         checkOutput("p/C2.html", true,
                 "<code><a href=\"C3.html\" title=\"class in p\">C3</a></code>",
-                "<code><span class=\"memberNameLink\"><a href=\"#C2--\">C2</a></span>()</code>");
+                "<code><span class=\"memberNameLink\"><a href=\"#%3Cinit%3E()\">C2</a></span>()</code>");
 
         checkOutput("p/C3.html", true,
                 "<code><a href=\"I1.html\" title=\"interface in p\">I1</a></code>, "
@@ -63,7 +63,7 @@ public class TestClassLinks extends JavadocTester {
                 + "<code><a href=\"I2.html\" title=\"interface in p\">I2</a></code>, "
                 + "<code><a href=\"IT1.html\" title=\"interface in p\">IT1</a>&lt;T&gt;</code>, "
                 + "<code><a href=\"IT2.html\" title=\"interface in p\">IT2</a>&lt;java.lang.String&gt;</code>",
-                "<code><span class=\"memberNameLink\"><a href=\"#C3--\">C3</a></span>()</code>");
+                "<code><span class=\"memberNameLink\"><a href=\"#%3Cinit%3E()\">C3</a></span>()</code>");
 
         checkOutput("p/I1.html", true,
                 "<code><a href=\"C3.html\" title=\"class in p\">C3</a></code>",
@@ -82,7 +82,26 @@ public class TestClassLinks extends JavadocTester {
 
         checkOutput("p/IT2.html", true,
                 "code><a href=\"C3.html\" title=\"class in p\">C3</a></code>");
-
     }
 
+    @Test
+    void test_html4() {
+
+        javadoc("-d", "out-html4",
+                "-html4",
+                "-Xdoclint:none",
+                "-sourcepath", testSrc,
+                "-package",
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("p/C1.html", true,
+                "<code><span class=\"memberNameLink\"><a href=\"#C1--\">C1</a></span>()</code>");
+
+        checkOutput("p/C2.html", true,
+                "<code><span class=\"memberNameLink\"><a href=\"#C2--\">C2</a></span>()</code>");
+
+        checkOutput("p/C3.html", true,
+                "<code><span class=\"memberNameLink\"><a href=\"#C3--\">C3</a></span>()</code>");
+}
 }

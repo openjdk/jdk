@@ -30,10 +30,10 @@ $(eval $(call IncludeCustomExtension, gensrc/Gensrc-java.desktop.gmk))
 
 ifneq ($(OPENJDK_TARGET_OS), windows)
   include GensrcIcons.gmk
+endif
 
-  ifneq ($(OPENJDK_TARGET_OS), macosx)
-    include GensrcX11Wrappers.gmk
-  endif
+ifneq ($(filter $(OPENJDK_TARGET_OS), linux solaris aix), )
+  include GensrcX11Wrappers.gmk
 endif
 
 include GensrcSwing.gmk

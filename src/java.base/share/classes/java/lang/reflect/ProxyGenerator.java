@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -346,11 +345,11 @@ class ProxyGenerator {
                         int i = name.lastIndexOf('.');
                         Path path;
                         if (i > 0) {
-                            Path dir = Paths.get(name.substring(0, i).replace('.', File.separatorChar));
+                            Path dir = Path.of(name.substring(0, i).replace('.', File.separatorChar));
                             Files.createDirectories(dir);
                             path = dir.resolve(name.substring(i+1, name.length()) + ".class");
                         } else {
-                            path = Paths.get(name + ".class");
+                            path = Path.of(name + ".class");
                         }
                         Files.write(path, classFile);
                         return null;
@@ -449,7 +448,9 @@ class ProxyGenerator {
          */
         for (Class<?> intf : interfaces) {
             for (Method m : intf.getMethods()) {
-                addProxyMethod(m, intf);
+                if (!Modifier.isStatic(m.getModifiers())) {
+                    addProxyMethod(m, intf);
+                }
             }
         }
 
@@ -1724,7 +1725,7 @@ class ProxyGenerator {
          * This map is used to look up the index of an existing entry for
          * values of all types.
          */
-        private Map<Object,Short> map = new HashMap<>(16);
+        private Map<Object,Integer> map = new HashMap<>(16);
 
         /** true if no new constant pool entries may be added */
         private boolean readOnly = false;
@@ -1876,7 +1877,7 @@ class ProxyGenerator {
          *      java.lang.Double        CONSTANT_DOUBLE
          */
         private short getValue(Object key) {
-            Short index = map.get(key);
+            Integer index = map.get(key);
             if (index != null) {
                 return index.shortValue();
             } else {
@@ -1885,7 +1886,7 @@ class ProxyGenerator {
                         "late constant pool addition: " + key);
                 }
                 short i = addEntry(new ValueEntry(key));
-                map.put(key, i);
+                map.put(key, (int)i);
                 return i;
             }
         }
@@ -1895,7 +1896,7 @@ class ProxyGenerator {
          * references to other constant pool entries.
          */
         private short getIndirect(IndirectEntry e) {
-            Short index = map.get(e);
+            Integer index = map.get(e);
             if (index != null) {
                 return index.shortValue();
             } else {
@@ -1903,7 +1904,7 @@ class ProxyGenerator {
                     throw new InternalError("late constant pool addition");
                 }
                 short i = addEntry(e);
-                map.put(e, i);
+                map.put(e, (int)i);
                 return i;
             }
         }

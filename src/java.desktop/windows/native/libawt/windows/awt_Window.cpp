@@ -3915,8 +3915,8 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_windows_WWindowPeer_requestWindowFocus
     rfs->component = selfGlobalRef;
     rfs->isMouseEventCause = isMouseEventCause;
 
-    return (jboolean)AwtToolkit::GetInstance().SyncCall(
-        (void*(*)(void*))AwtWindow::_RequestWindowFocus, rfs);
+    return (jboolean)((intptr_t)AwtToolkit::GetInstance().SyncCall(
+        (void*(*)(void*))AwtWindow::_RequestWindowFocus, rfs));
     // global refs and rfs are deleted in _RequestWindowFocus
 
     CATCH_BAD_ALLOC_RET(JNI_FALSE);

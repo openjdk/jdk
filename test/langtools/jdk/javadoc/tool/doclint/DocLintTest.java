@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8004834 8007610 8129909
+ * @bug 8004834 8007610 8129909 8182765
  * @summary Add doclint support into javadoc
  * @modules jdk.compiler/com.sun.tools.javac.main
  */
@@ -92,7 +92,7 @@ public class DocLintTest {
         /* 05 */    "}\n";
 
     private final String rawDiags = "-XDrawDiagnostics";
-    private final String htmlVersion = "-html4";
+    private final String htmlVersion = "-html5";
 
     private enum Message {
         // doclint messages

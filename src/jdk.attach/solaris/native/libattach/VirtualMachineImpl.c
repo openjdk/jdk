@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,7 +231,7 @@ static const char* translate_error(jint err) {
     int table_size = sizeof(error_messages) / sizeof(error_messages[0]);
     int i;
 
-    for (i=0; i<table_size; i++) {
+    for (i = 0; i < table_size; i++) {
         if (err == error_messages[i].err) {
             return error_messages[i].msg;
         }
@@ -293,7 +293,7 @@ JNIEXPORT jint JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
      */
     arg_count = (*env)->GetArrayLength(env, args);
 
-    for (i=0; i<arg_count; i++) {
+    for (i = 0; i < arg_count; i++) {
         jobject obj = (*env)->GetObjectArrayElement(env, args, i);
         if (obj != NULL) {
             cstr = JNU_GetStringPlatformChars(env, obj, &isCopy);
@@ -314,6 +314,15 @@ JNIEXPORT jint JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
                     return -1;
                 }
             }
+        } else {
+            char* newbuf = (char*)realloc(buf, size + 1);
+            if (newbuf == NULL) {
+                free(buf);
+                JNU_ThrowOutOfMemoryError(env, "realloc failed");
+                return -1;
+            }
+            buf = newbuf;
+            buf[size++] = 0;
         }
         if ((*env)->ExceptionOccurred(env)) {
             free(buf);

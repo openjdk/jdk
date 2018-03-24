@@ -38,6 +38,7 @@ import javax.tools.*;
 
 import com.sun.source.tree.*;
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.DeferredCompletionFailureHandler.Handler;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.comp.*;
 import com.sun.tools.javac.file.BaseFileManager;
@@ -72,6 +73,7 @@ public class JavacTaskImpl extends BasicJavacTask {
     private final Arguments args;
     private JavaCompiler compiler;
     private JavaFileManager fileManager;
+    private DeferredCompletionFailureHandler dcfh;
     private Locale locale;
     private Map<JavaFileObject, JCCompilationUnit> notYetEntered;
     private ListBuffer<Env<AttrContext>> genList;
@@ -83,6 +85,8 @@ public class JavacTaskImpl extends BasicJavacTask {
         super(context, true);
         args = Arguments.instance(context);
         fileManager = context.get(JavaFileManager.class);
+        dcfh = DeferredCompletionFailureHandler.instance(context);
+        dcfh.setHandler(dcfh.userCodeHandler);
     }
 
     @Override @DefinedBy(Api.COMPILER)
@@ -138,6 +142,7 @@ public class JavacTaskImpl extends BasicJavacTask {
     }
 
     private <T> T handleExceptions(Callable<T> c, T sysErrorResult, T abnormalErrorResult) {
+        Handler prevDeferredHandler = dcfh.setHandler(dcfh.javacCodeHandler);
         try {
             return c.call();
         } catch (FatalError ex) {
@@ -171,6 +176,8 @@ public class JavacTaskImpl extends BasicJavacTask {
                 ex.printStackTrace(log.getWriter(WriterKind.NOTICE));
             }
             return abnormalErrorResult;
+        } finally {
+            dcfh.setHandler(prevDeferredHandler);
         }
     }
 

@@ -150,11 +150,6 @@ public class Resources extends java.util.ListResourceBundle {
         // sun.security.pkcs11.SunPKCS11
         {"PKCS11.Token.providerName.Password.",
                 "PKCS11 Token [{0}] Password: "},
-
-        /* --- DEPRECATED --- */
-        // javax.security.auth.Policy
-        {"unable.to.instantiate.Subject.based.policy",
-                "unable to instantiate Subject-based policy"}
     };
 
 

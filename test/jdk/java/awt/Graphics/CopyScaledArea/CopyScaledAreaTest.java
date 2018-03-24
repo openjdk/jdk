@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,10 @@ import static sun.awt.OSInfo.*;
 /**
  * @test
  * @key headful
- * @bug 8069348
+ * @bug 8069348 8198613
  * @summary SunGraphics2D.copyArea() does not properly work for scaled graphics
  * @modules java.desktop/sun.awt
  * @run main/othervm -Dsun.java2d.uiScale=2 CopyScaledAreaTest
- * @run main/othervm -Dsun.java2d.opengl=true -Dsun.java2d.uiScale=2 CopyScaledAreaTest
  * @run main/othervm -Dsun.java2d.d3d=true    -Dsun.java2d.uiScale=2 CopyScaledAreaTest
  * @run main/othervm -Dsun.java2d.d3d=false   -Dsun.java2d.opengl=false
  *                   -Dsun.java2d.uiScale=2 CopyScaledAreaTest

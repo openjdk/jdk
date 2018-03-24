@@ -24,7 +24,7 @@
 /**
  * @test
  * @library modules
- * @modules java.scripting
+ * @modules jdk.scripting.nashorn
  * @run testng/othervm ReloadTest
  * @summary Basic test of ServiceLoader.reload
  */

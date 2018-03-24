@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8178339
+ * @bug 8178339 8182765
  * @summary Tests indirect exports and opens in the module summary page
  * @modules jdk.javadoc/jdk.javadoc.internal.api
  *          jdk.javadoc/jdk.javadoc.internal.tool
@@ -72,6 +72,16 @@ public class TestIndirectExportsOpens extends JavadocTester {
         checkExit(Exit.OK);
         verifyIndirectExports(false);
         verifyIndirectOpens(false);
+
+        javadoc("-d", base.resolve("out-api-html4").toString(),
+                "-html4",
+                "-quiet",
+                "--module-source-path", base.toString(),
+                "--expand-requires", "transitive",
+                "--module", "a");
+        checkExit(Exit.OK);
+        verifyIndirectExports_html4(false);
+        verifyIndirectOpens_html4(false);
     }
 
     @Test
@@ -98,6 +108,16 @@ public class TestIndirectExportsOpens extends JavadocTester {
         checkExit(Exit.OK);
         verifyIndirectExports(true);
         verifyIndirectOpens(true);
+
+        javadoc("-d", base.resolve("out-api-html4").toString(),
+                "-html4",
+                "-quiet",
+                "--module-source-path", base.toString(),
+                "--expand-requires", "transitive",
+                "--module", "a");
+        checkExit(Exit.OK);
+        verifyIndirectExports_html4(true);
+        verifyIndirectOpens_html4(true);
     }
 
     @Test
@@ -125,6 +145,17 @@ public class TestIndirectExportsOpens extends JavadocTester {
         checkExit(Exit.OK);
         verifyIndirectExports(false);
         verifyIndirectOpens(false);
+
+        javadoc("-d", base.resolve("out-api-html4").toString(),
+                "-html4",
+                "-quiet",
+                "--module-source-path", base.toString(),
+                "--expand-requires", "transitive",
+                "--module", "a");
+
+        checkExit(Exit.OK);
+        verifyIndirectExports_html4(false);
+        verifyIndirectOpens_html4(false);
     }
 
     @Test
@@ -157,13 +188,13 @@ public class TestIndirectExportsOpens extends JavadocTester {
         // could be listed in the indirects section, so just
         // check for minimal expected strings.
         checkOutput("a/module-summary.html", true,
-                "Indirect Exports table",
+                "Indirect Exports",
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"../m/module-summary.html\">m</a></th>\n"
                 + "<td class=\"colLast\"><a href=\"../m/exportsto/package-summary.html\">exportsto</a></td>\n"
                 + "</tr>\n");
 
         checkOutput("a/module-summary.html", true,
-                "Indirect Opens table",
+                "Indirect Opens",
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"../m/module-summary.html\">m</a></th>\n"
                 + "<td class=\"colLast\">opensto</td>\n"
                 + "</tr>\n");
@@ -188,7 +219,7 @@ public class TestIndirectExportsOpens extends JavadocTester {
         }
 
         checkOutput("a/module-summary.html", present,
-                "<table class=\"packagesSummary\" summary=\"" + typeString + " table, listing modules, and packages\">\n"
+                "<table class=\"packagesSummary\">\n"
                 + "<caption><span>" + typeString + "</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
                 + "<tr>\n"
                 + "<th class=\"colFirst\" scope=\"col\">From</th>\n"
@@ -203,5 +234,37 @@ public class TestIndirectExportsOpens extends JavadocTester {
                 + "</table>\n");
     }
 
-}
+    void verifyIndirectExports_html4(boolean present) {
+        verifyIndirects_html4(present, false);
+    }
 
+    void verifyIndirectOpens_html4(boolean present) {
+        verifyIndirects_html4(present, true);
+    }
+
+    void verifyIndirects_html4(boolean present, boolean opens) {
+
+        String typeString = opens ? "Indirect Opens" : "Indirect Exports";
+
+        // Avoid false positives, just check for primary string absence.
+        if (!present) {
+            checkOutput("a/module-summary.html", false, typeString);
+            return;
+        }
+
+        checkOutput("a/module-summary.html", present,
+                "<table class=\"packagesSummary\" summary=\"" + typeString + " table, listing modules, and packages\">\n"
+                + "<caption><span>" + typeString + "</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<tr>\n"
+                + "<th class=\"colFirst\" scope=\"col\">From</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Packages</th>\n"
+                + "</tr>\n"
+                + "<tbody>\n"
+                + "<tr class=\"altColor\">\n"
+                + "<th class=\"colFirst\" scope=\"row\"><a href=\"../m/module-summary.html\">m</a></th>\n"
+                + "<td class=\"colLast\"><a href=\"../m/pm/package-summary.html\">pm</a></td>\n"
+                + "</tr>\n"
+                + "</tbody>\n"
+                + "</table>\n");
+    }
+}

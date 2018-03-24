@@ -25,7 +25,8 @@
  * @test
  * @bug 6575373 6969063
  * @summary verify default properties of the packer/unpacker and segment limit
- * @modules jdk.compiler
+ * @modules java.logging
+ *          jdk.compiler
  *          jdk.zipfs
  * @compile -XDignore.symbol.file Utils.java Pack200Props.java
  * @run main Pack200Props

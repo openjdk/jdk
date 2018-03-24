@@ -252,6 +252,10 @@ java.prefs_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,
 
 ################################################################################
 
+java.transaction.xa_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:javax.*'
+
+################################################################################
+
 java.sql_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
 java.sql_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
 

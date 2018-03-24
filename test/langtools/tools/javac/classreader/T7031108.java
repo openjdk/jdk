@@ -63,6 +63,8 @@ public class T7031108 extends JavacTestingAbstractProcessor {
                 + "    }\n"
                 + "}");
 
+    private static final String PACKAGE_CONTENT_ERROR = "package does not contain C";
+
     /* Dummy source file to compile while running anno processor. */
     static final JavaSource dummy =
             new JavaSource("Dummy.java",
@@ -96,10 +98,15 @@ public class T7031108 extends JavacTestingAbstractProcessor {
                     throw new Exception("no diagnostics received");
                 case 1:
                     String code = diags.get(0).getCode();
-                    String expect = "compiler.err.proc.cant.access.1";
+                    String expect = "compiler.err.proc.messager";
                     if (!expect.equals(code))
                         throw new Exception("unexpected diag code: " + code
                                 + ", expected: " + expect);
+                    String message = diags.get(0).getMessage(null);
+                    if (!PACKAGE_CONTENT_ERROR.equals(message)) {
+                        throw new Exception("unexpected diag message: " + code
+                                + ", expected: " + PACKAGE_CONTENT_ERROR);
+                    }
                     break;
                 default:
                     throw new Exception("unexpected diags received");
@@ -143,7 +150,7 @@ public class T7031108 extends JavacTestingAbstractProcessor {
             List<? extends Element> elems = p.getEnclosedElements();
             System.err.println("contents of package p: " + elems);
             if (elems.size() != 1 || !elems.get(0).getSimpleName().contentEquals("C")) {
-                messager.printMessage(Diagnostic.Kind.ERROR, "unexpected package contents");
+                messager.printMessage(Diagnostic.Kind.ERROR, PACKAGE_CONTENT_ERROR);
             }
         }
         return true;

@@ -1,0 +1,27 @@
+Tips and tasks when updating freetype sources to a newer version.
+-----------------------------------------------------------------
+
+The freetype sources here are just the subset needed by JDK. This is deliberate.
+When updating be sure to import only the same files.
+If a file is no longer present in freetype, or renamed this will be noticed
+during the copy.
+Occasionally there may be a new missing dependency if freetype introduces
+a new file or imports a file into these files that was not previously used.
+Import just what is needed.
+
+Before attempting compilation be sure to diff the JDK copy and the freetype copy
+of src/java.desktop/share/native/libfreetype/include/freetype/config/ftoption.h
+and re-apply the same edits made for the JDK option file.
+Notably JDK is not using GZIP or LZW or BDF support which are on by default
+for the freetype distribution.
+If you don't make the edits the build will fail due to not copying the relevant
+sources.
+
+Use "expand" and "sed" to remove tabs and trailing white space from the imported
+sources. The current version of freetype is quite clean in this respect.
+./src/base/md5.h and ./src/base/md5.c are the only files with tabs,
+and ./include/freetype/ftdriver.h has the only trailing white space.
+If you forget this step, or aren't thorough, jcheck will remind you.
+
+Remember to update the freetype version identified in
+src/java.desktop/share/legal/freetype.md

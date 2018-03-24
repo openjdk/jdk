@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8073100
+ * @bug 8073100 8182765
  * @summary ensure the hidden tag works as intended
  * @library ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -38,7 +38,6 @@ public class TestHiddenTag extends JavadocTester {
         tester.runTests();
     }
 
-
     /**
      * Perform tests on &#64;hidden tags
      */
@@ -51,20 +50,20 @@ public class TestHiddenTag extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg1/A.html", true,
-                "<a name=\"visibleField\">",
-                "<a name=\"visibleMethod--\">",
+                "<a id=\"visibleField\">",
+                "<a id=\"visibleMethod()\">",
                 "<dt>Direct Known Subclasses:</dt>\n" +
                 "<dd><code><a href=\"A.VisibleInner.html\" title=\"class in pkg1\">" +
                 "A.VisibleInner</a></code>, <code><a href=\"A.VisibleInnerExtendsInvisibleInner.html\" " +
                 "title=\"class in pkg1\">A.VisibleInnerExtendsInvisibleInner</a></code></dd>");
 
         checkOutput("pkg1/A.html", false,
-                "<a name=\"inVisibleField\">",
-                "<a name=\"inVisibleMethod--\">");
+                "<a id=\"inVisibleField\">",
+                "<a id=\"inVisibleMethod()\">");
 
         checkOutput("pkg1/A.VisibleInner.html", true,
                 "<code><a href=\"A.html#visibleField\">visibleField</a></code>",
-                "<code><a href=\"A.html#visibleMethod--\">visibleMethod</a></code>",
+                "<code><a href=\"A.html#visibleMethod()\">visibleMethod</a></code>",
                 "<h3>Nested classes/interfaces inherited from class&nbsp;pkg1." +
                 "<a href=\"A.html\" title=\"class in pkg1\">A</a></h3>\n" +
                 "<code><a href=\"A.VisibleInner.html\" title=\"class in pkg1\">" +
@@ -73,16 +72,16 @@ public class TestHiddenTag extends JavadocTester {
                 "</ul>");
 
         checkOutput("pkg1/A.VisibleInner.html", false,
-                "../pkg1/A.VisibleInner.html#VisibleInner--",
-                "<a name=\"inVisibleField\">",
-                "<a name=\"inVisibleMethod--\">");
+                "../pkg1/A.VisibleInner.html#VisibleInner()",
+                "<a id=\"inVisibleField\">",
+                "<a id=\"inVisibleMethod()\">");
 
         checkOutput("pkg1/A.VisibleInnerExtendsInvisibleInner.html", true,
                 "<pre>public static class <span class=\"typeNameLabel\">" +
                 "A.VisibleInnerExtendsInvisibleInner</span>\n" +
                 "extends <a href=\"A.html\" title=\"class in pkg1\">A</a></pre>",
                 "<code><a href=\"A.html#visibleField\">visibleField</a></code></li>",
-                "<code><a href=\"A.html#visibleMethod--\">visibleMethod</a></code>");
+                "<code><a href=\"A.html#visibleMethod()\">visibleMethod</a></code>");
 
         checkOutput("pkg1/A.VisibleInnerExtendsInvisibleInner.html", false,
                 "invisibleField",
@@ -98,6 +97,33 @@ public class TestHiddenTag extends JavadocTester {
         checkFiles(false,
                 "pkg1/A.InvisibleInner.html",
                 "pkg1/A.InvisibleInnerExtendsVisibleInner.html");
+    }
 
+    @Test
+    public void test1_html4() {
+        javadoc("-d", "out1-html4",
+                "-html4",
+                "-sourcepath", testSrc,
+                "-package",
+                "pkg1");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg1/A.html", true,
+                "<a name=\"visibleField\">",
+                "<a name=\"visibleMethod--\">");
+
+        checkOutput("pkg1/A.VisibleInner.html", true,
+                "<code><a href=\"A.html#visibleMethod--\">visibleMethod</a></code>");
+
+        checkOutput("pkg1/A.VisibleInnerExtendsInvisibleInner.html", true,
+                "<code><a href=\"A.html#visibleMethod--\">visibleMethod</a></code>");
+
+        checkOutput("pkg1/A.html", false,
+                "<a name=\"inVisibleMethod--\">");
+
+        checkOutput("pkg1/A.VisibleInner.html", false,
+                "../pkg1/A.VisibleInner.html#VisibleInner--",
+                "<a name=\"inVisibleField\">",
+                "<a name=\"inVisibleMethod--\">");
     }
 }

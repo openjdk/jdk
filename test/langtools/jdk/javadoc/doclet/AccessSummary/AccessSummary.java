@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4637604 4775148 8183037
+ * @bug      4637604 4775148 8183037 8182765
  * @summary  Test the tables for summary attribute
  * @author   dkramer
  * @library ../lib
@@ -47,15 +47,29 @@ public class AccessSummary extends JavadocTester {
     void testAccessSummary() {
         javadoc("-d", "out", "-sourcepath", testSrc, "p1", "p2");
         checkExit(Exit.OK);
-        checkOutput("overview-summary.html", true,
+        checkSummary(false);
+    }
+
+    @Test
+    void testAccessSummary_html4() {
+        javadoc("-d", "out-html4",
+                "-html4",
+                "-sourcepath", testSrc,
+                "p1", "p2");
+        checkExit(Exit.OK);
+        checkSummary(true);
+    }
+
+    void checkSummary(boolean found) {
+        checkOutput("overview-summary.html", found,
                  "summary=\"Package Summary table, listing packages, and an explanation\"");
 
-        // Test that the summary attribute appears
-        checkOutput("p1/C1.html", true,
+        // Test that the summary attribute appears or not
+        checkOutput("p1/C1.html", found,
                  "summary=\"Constructor Summary table, listing constructors, and an explanation\"");
 
-        // Test that the summary attribute appears
-        checkOutput("constant-values.html", true,
+        // Test that the summary attribute appears or not
+        checkOutput("constant-values.html", found,
                  "summary=\"Constant Field Values table, listing constant fields, and values\"");
     }
 }

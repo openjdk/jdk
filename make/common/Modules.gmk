@@ -94,6 +94,7 @@ PLATFORM_MODULES += \
     java.smartcardio \
     java.sql \
     java.sql.rowset \
+    java.transaction.xa \
     java.xml.crypto \
     jdk.accessibility \
     jdk.charsets \

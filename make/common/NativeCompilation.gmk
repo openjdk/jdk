@@ -150,7 +150,7 @@ NATIVE_SOURCE_EXTENSIONS := %.s %.S %.c %.cpp %.cc %.m %.mm
 define replace_with_obj_extension
 $(strip \
   $(foreach extension, $(NATIVE_SOURCE_EXTENSIONS), \
-      $(patsubst $(extension),%$(OBJ_SUFFIX),$(filter $(extension),$1))) \
+      $(patsubst $(extension),%$(OBJ_SUFFIX), $(filter $(extension), $1))) \
 )
 endef
 
@@ -183,150 +183,160 @@ DEPENDENCY_TARGET_SED_PATTERN := \
     -e 's/$$$$/ :/' \
     #
 
-define add_native_source
-  # param 1 = BUILD_MYPACKAGE
-  # parma 2 = the source file name (..../alfa.c or .../beta.cpp)
-  # param 3 = the bin dir that stores all .o (.obj) and .d files.
-  # param 4 = the c flags to the compiler
-  # param 5 = the c compiler
-  # param 6 = the c++ flags to the compiler
-  # param 7 = the c++ compiler
-  # param 8 = the flags to the assembler
-  # param 9 = set to disable THIS_FILE
+################################################################################
+# Create the recipe needed to compile a single native source file.
+#
+# Parameter 1 is the name of the rule, based on the name of the library/
+# program being build and the name of the source code file, e.g.
+# BUILD_LIBFOO_fooMain.cpp.
+#
+# Remaining parameters are named arguments:
+#   FILE - The full path of the source file to compiler
+#   BASE - The name of the rule for the entire binary to build ($1)
+#   DISABLE_THIS_FILE_DEFINE - Set to true to disable the THIS_FILE define.
+#
+SetupCompileNativeFile = $(NamedParamsMacroTemplate)
+define SetupCompileNativeFileBody
+  $1_FILENAME := $$(notdir $$($1_FILE))
 
-  ifeq ($9, )
-    $1_$2_THIS_FILE = -DTHIS_FILE='"$$(<F)"'
-  endif
+  # The target file to be generated.
+  $1_OBJ := $$($$($1_BASE)_OBJECT_DIR)/$$(call replace_with_obj_extension, \
+      $$($1_FILENAME))
 
-  ifeq ($$($1_$(notdir $2)_OPTIMIZATION), )
-    $1_$(notdir $2)_OPT_CFLAGS := $$($1_OPT_CFLAGS)
-    $1_$(notdir $2)_OPT_CXXFLAGS := $$($1_OPT_CXXFLAGS)
-  else
-    ifeq (NONE, $$($1_$(notdir $2)_OPTIMIZATION))
-      $1_$(notdir $2)_OPT_CFLAGS := $(C_O_FLAG_NONE)
-      $1_$(notdir $2)_OPT_CXXFLAGS := $(CXX_O_FLAG_NONE)
-    else ifeq (LOW, $$($1_$(notdir $2)_OPTIMIZATION))
-      $1_$(notdir $2)_OPT_CFLAGS := $(C_O_FLAG_NORM)
-      $1_$(notdir $2)_OPT_CXXFLAGS := $(CXX_O_FLAG_NORM)
-    else ifeq (HIGH, $$($1_$(notdir $2)_OPTIMIZATION))
-      $1_$(notdir $2)_OPT_CFLAGS := $(C_O_FLAG_HI)
-      $1_$(notdir $2)_OPT_CXXFLAGS := $(CXX_O_FLAG_HI)
-    else ifeq (HIGHEST, $$($1_$(notdir $2)_OPTIMIZATION))
-      $1_$(notdir $2)_OPT_CFLAGS := $(C_O_FLAG_HIGHEST)
-      $1_$(notdir $2)_OPT_CXXFLAGS := $(CXX_O_FLAG_HIGHEST)
-    else ifeq (HIGHEST_JVM, $$($1_$(notdir $2)_OPTIMIZATION))
-      $1_$(notdir $2)_OPT_CFLAGS := $(C_O_FLAG_HIGHEST_JVM)
-      $1_$(notdir $2)_OPT_CXXFLAGS := $(CXX_O_FLAG_HIGHEST_JVM)
-    else ifeq (SIZE, $$($1_$(notdir $2)_OPTIMIZATION))
-      $1_$(notdir $2)_OPT_CFLAGS := $(C_O_FLAG_SIZE)
-      $1_$(notdir $2)_OPT_CXXFLAGS := $(CXX_O_FLAG_SIZE)
+  # Only continue if this object file hasn't been processed already. This lets
+  # the first found source file override any other with the same name.
+  ifeq ($$(findstring $$($1_OBJ), $$($$($1_BASE)_OBJS_SO_FAR)), )
+    $$($1_BASE)_OBJS_SO_FAR += $$($1_OBJ)
+    # This is the definite source file to use for $1_FILENAME.
+    $1_SRC_FILE := $$($1_FILE)
+
+    ifneq ($$($1_DISABLE_THIS_FILE_DEFINE), true)
+      $1_THIS_FILE = -DTHIS_FILE='"$$(<F)"'
+    endif
+
+    ifeq ($$($1_OPTIMIZATION), )
+      $1_OPT_CFLAGS := $$($$($1_BASE)_OPT_CFLAGS)
+      $1_OPT_CXXFLAGS := $$($$($1_BASE)_OPT_CXXFLAGS)
     else
-      $$(error Unknown value for OPTIMIZATION: $$($1_$(notdir $2)_OPTIMIZATION))
-    endif
-  endif
-
-  ifneq ($$($1_PRECOMPILED_HEADER), )
-    ifeq ($$(filter $$(notdir $2), $$($1_PRECOMPILED_HEADER_EXCLUDE)), )
-      $1_$2_USE_PCH_FLAGS := $$($1_USE_PCH_FLAGS)
-    endif
-  endif
-
-  ifneq ($$(filter %.c, $2), )
-    # Compile as a C file
-    $1_$2_FLAGS := $(CFLAGS_CCACHE) $$($1_$2_USE_PCH_FLAGS) $4 \
-        $$($1_$(notdir $2)_OPT_CFLAGS) \
-        $$($1_$(notdir $2)_CFLAGS) $$($1_$2_THIS_FILE) -c
-    $1_$2_COMP := $5
-    $1_$2_DEP_FLAG := $(C_FLAG_DEPS)
-  else ifneq ($$(filter %.m, $2), )
-    # Compile as an Objective-C file
-    $1_$2_FLAGS := -x objective-c $(CFLAGS_CCACHE) $$($1_$2_USE_PCH_FLAGS) $4 \
-        $$($1_$(notdir $2)_OPT_CFLAGS) \
-        $$($1_$(notdir $2)_CFLAGS) $$($1_$2_THIS_FILE) -c
-    $1_$2_COMP := $5
-    $1_$2_DEP_FLAG := $(C_FLAG_DEPS)
-  else ifneq ($$(filter %.s %.S, $2), )
-    # Compile as assembler file
-    $1_$2_FLAGS := $8
-    $1_$2_COMP := $(AS)
-    $1_$2_DEP_FLAG :=
-  else ifneq ($$(filter %.cpp, $2)$$(filter %.cc, $2)$$(filter %.mm, $2), )
-    # Compile as a C++ or Objective-C++ file
-    $1_$2_FLAGS := $(CFLAGS_CCACHE) $$($1_$2_USE_PCH_FLAGS) $6 \
-        $$($1_$(notdir $2)_OPT_CXXFLAGS) \
-        $$($1_$(notdir $2)_CXXFLAGS) $$($1_$2_THIS_FILE) -c
-    $1_$2_COMP := $7
-    $1_$2_DEP_FLAG := $(CXX_FLAG_DEPS)
-  else
-    $$(error Internal error in NativeCompilation.gmk: no compiler for file $2)
-  endif
-  # Generate the .o (.obj) file name and place it in the bin dir.
-  $1_$2_OBJ := $3/$$(call replace_with_obj_extension, $$(notdir $2))
-  # Only continue if this object file hasn't been processed already. This lets the first found
-  # source file override any other with the same name.
-  ifeq ($$(findstring $$($1_$2_OBJ), $$($1_OBJS_SO_FAR)), )
-    $1_OBJS_SO_FAR += $$($1_$2_OBJ)
-    ifeq ($$(filter %.s %.S, $2), )
-      # And this is the dependency file for this obj file.
-      $1_$2_DEP := $$(patsubst %$(OBJ_SUFFIX),%.d,$$($1_$2_OBJ))
-      # The dependency target file lists all dependencies as empty targets
-      # to avoid make error "No rule to make target" for removed files
-      $1_$2_DEP_TARGETS := $$(patsubst %$(OBJ_SUFFIX),%.d.targets,$$($1_$2_OBJ))
-
-      # Include previously generated dependency information. (if it exists)
-      -include $$($1_$2_DEP)
-      -include $$($1_$2_DEP_TARGETS)
-
-      ifeq ($(TOOLCHAIN_TYPE), microsoft)
-        # To avoid name clashes between pdbs for objects and libs/execs, put
-        # object pdbs in a separate subdir.
-        $1_$2_DEBUG_OUT_FLAGS := -Fd$$(strip $$(patsubst $$($1_OBJECT_DIR)/%, \
-            $$($1_OBJECT_DIR)/pdb/%, $$(patsubst %$(OBJ_SUFFIX),%.pdb,$$($1_$2_OBJ))))
+      ifeq ($$($1_OPTIMIZATION), NONE)
+        $1_OPT_CFLAGS := $(C_O_FLAG_NONE)
+        $1_OPT_CXXFLAGS := $(CXX_O_FLAG_NONE)
+      else ifeq ($$($1_OPTIMIZATION), LOW)
+        $1_OPT_CFLAGS := $(C_O_FLAG_NORM)
+        $1_OPT_CXXFLAGS := $(CXX_O_FLAG_NORM)
+      else ifeq ($$($1_OPTIMIZATION), HIGH)
+        $1_OPT_CFLAGS := $(C_O_FLAG_HI)
+        $1_OPT_CXXFLAGS := $(CXX_O_FLAG_HI)
+      else ifeq ($$($1_OPTIMIZATION), HIGHEST)
+        $1_OPT_CFLAGS := $(C_O_FLAG_HIGHEST)
+        $1_OPT_CXXFLAGS := $(CXX_O_FLAG_HIGHEST)
+      else ifeq ($$($1_OPTIMIZATION), HIGHEST_JVM)
+        $1_OPT_CFLAGS := $(C_O_FLAG_HIGHEST_JVM)
+        $1_OPT_CXXFLAGS := $(CXX_O_FLAG_HIGHEST_JVM)
+      else ifeq ($$($1_OPTIMIZATION), SIZE)
+        $1_OPT_CFLAGS := $(C_O_FLAG_SIZE)
+        $1_OPT_CXXFLAGS := $(CXX_O_FLAG_SIZE)
+      else
+        $$(error Unknown value for file OPTIMIZATION: $$($1_OPTIMIZATION))
       endif
     endif
 
-    ifneq ($$(strip $$($1_$(notdir $2)_CFLAGS) $$($1_$(notdir $2)_CXXFLAGS) \
-        $$($1_$(notdir $2)_OPTIMIZATION)), )
-      $1_$2_VARDEPS := $$($1_$(notdir $2)_CFLAGS) $$($1_$(notdir $2)_CXXFLAGS) \
-          $$($1_$(notdir $2)_OPT_CFLAGS) $$($1_$(notdir $2)_OPT_CXXFLAGS)
-      $1_$2_VARDEPS_FILE := $$(call DependOnVariable, $1_$2_VARDEPS, $$($1_$2_OBJ).vardeps)
+    ifneq ($$($$($1_BASE)_PRECOMPILED_HEADER), )
+      ifeq ($$(filter $$($1_FILENAME), $$($$($1_BASE)_PRECOMPILED_HEADER_EXCLUDE)), )
+        $1_USE_PCH_FLAGS := $$($$($1_BASE)_USE_PCH_FLAGS)
+      endif
     endif
 
-    $$($1_$2_OBJ) : $2 $$($1_COMPILE_VARDEPS_FILE) $$($1_$2_VARDEPS_FILE) | $$($1_BUILD_INFO)
-	$$(call LogInfo, Compiling $$(notdir $2) (for $$($1_BASENAME)))
-	$$(call MakeDir, $$(@D) $$(@D)/pdb)
+    $1_BASE_CFLAGS :=  $$($$($1_BASE)_CFLAGS) $$($$($1_BASE)_EXTRA_CFLAGS) \
+        $$($$($1_BASE)_SYSROOT_CFLAGS)
+    $1_BASE_CXXFLAGS := $$($$($1_BASE)_CXXFLAGS) $$($$($1_BASE)_EXTRA_CXXFLAGS) \
+        $$($$($1_BASE)_SYSROOT_CFLAGS) $$($1_EXTRA_CXXFLAGS)
+
+    ifneq ($$(filter %.c, $$($1_FILENAME)), )
+      # Compile as a C file
+      $1_FLAGS := $(CFLAGS_CCACHE) $$($1_USE_PCH_FLAGS) $$($1_BASE_CFLAGS) \
+          $$($1_OPT_CFLAGS) $$($1_CFLAGS) $$($1_THIS_FILE) -c
+      $1_COMPILER := $$($$($1_BASE)_CC)
+      $1_DEP_FLAG := $(C_FLAG_DEPS)
+    else ifneq ($$(filter %.m, $$($1_FILENAME)), )
+      # Compile as an Objective-C file
+      $1_FLAGS := -x objective-c $(CFLAGS_CCACHE) $$($1_USE_PCH_FLAGS) \
+          $$($1_BASE_CFLAGS) $$($1_OPT_CFLAGS) $$($1_CFLAGS) $$($1_THIS_FILE) -c
+      $1_COMPILER := $$($$($1_BASE)_CC)
+      $1_DEP_FLAG := $(C_FLAG_DEPS)
+    else ifneq ($$(filter %.s %.S, $$($1_FILENAME)), )
+      # Compile as assembler file
+      $1_FLAGS := $$($$($1_BASE)_ASFLAGS)
+      $1_COMPILER := $(AS)
+      $1_DEP_FLAG :=
+    else ifneq ($$(filter %.cpp %.cc %.mm, $$($1_FILENAME)), )
+      # Compile as a C++ or Objective-C++ file
+      $1_FLAGS := $(CFLAGS_CCACHE) $$($1_USE_PCH_FLAGS) $$($1_BASE_CXXFLAGS) \
+          $$($1_OPT_CXXFLAGS) $$($1_CXXFLAGS) $$($1_THIS_FILE) -c
+      $1_COMPILER := $$($$($1_BASE)_CXX)
+      $1_DEP_FLAG := $(CXX_FLAG_DEPS)
+    else
+      $$(error Internal error in NativeCompilation.gmk: no compiler for file $$($1_FILENAME))
+    endif
+
+    ifeq ($$(filter %.s %.S, $$($1_FILENAME)), )
+      # And this is the dependency file for this obj file.
+      $1_DEP := $$(patsubst %$(OBJ_SUFFIX),%.d,$$($1_OBJ))
+      # The dependency target file lists all dependencies as empty targets to
+      # avoid make error "No rule to make target" for removed files
+      $1_DEP_TARGETS := $$(patsubst %$(OBJ_SUFFIX),%.d.targets,$$($1_OBJ))
+
+      # Include previously generated dependency information. (if it exists)
+      -include $$($1_DEP)
+      -include $$($1_DEP_TARGETS)
+    endif
+
+    ifneq ($$(strip $$($1_CFLAGS) $$($1_CXXFLAGS) $$($1_OPTIMIZATION)), )
+      $1_VARDEPS := $$($1_CFLAGS) $$($1_CXXFLAGS) $$($1_OPT_CFLAGS) \
+          $$($1_OPT_CXXFLAGS)
+      $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, $$($1_OBJ).vardeps)
+    endif
+
+    $$($1_OBJ): $$($1_SRC_FILE) $$($$($1_BASE)_COMPILE_VARDEPS_FILE) \
+        $$($1_VARDEPS_FILE) | $$($$($1_BASE)_BUILD_INFO)
+	$$(call LogInfo, Compiling $$($1_FILENAME) (for $$($$($1_BASE)_BASENAME)))
+	$$(call MakeDir, $$(@D))
         ifneq ($(TOOLCHAIN_TYPE), microsoft)
-          ifeq ($(TOOLCHAIN_TYPE)$$(filter %.s, $2), solstudio)
-            # The Solaris studio compiler doesn't output the full path to the object file in the
-            # generated deps files. Fixing it with sed. If compiling assembly, don't try this.
+          ifeq ($(TOOLCHAIN_TYPE)$$(filter %.s, $$($1_FILENAME)), solstudio)
+            # The Solaris studio compiler doesn't output the full path to the
+            # object file in the generated deps files. Fixing it with sed. If
+            # compiling assembly, don't try this.
 	    $$(call ExecuteWithLog, $$@, \
-	        $$($1_$2_COMP) $$($1_$2_FLAGS) $$($1_$2_DEP_FLAG) $$($1_$2_DEP).tmp $(CC_OUT_OPTION)$$($1_$2_OBJ) $2)
-	    $(SED) 's|^$$(@F):|$$@:|' $$($1_$2_DEP).tmp > $$($1_$2_DEP)
+	        $$($1_COMPILER) $$($1_FLAGS) $$($1_DEP_FLAG) $$($1_DEP).tmp \
+	            $(CC_OUT_OPTION)$$($1_OBJ) $$($1_SRC_FILE))
+	    $(SED) 's|^$$(@F):|$$@:|' $$($1_DEP).tmp > $$($1_DEP)
           else
 	    $$(call ExecuteWithLog, $$@, \
-	        $$($1_$2_COMP) $$($1_$2_FLAGS) $$($1_$2_DEP_FLAG) $$($1_$2_DEP) $(CC_OUT_OPTION)$$($1_$2_OBJ) $2)
+	        $$($1_COMPILER) $$($1_FLAGS) $$($1_DEP_FLAG) $$($1_DEP) \
+	            $(CC_OUT_OPTION)$$($1_OBJ) $$($1_SRC_FILE))
           endif
           # Create a dependency target file from the dependency file.
           # Solution suggested by http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
-          ifneq ($$($1_$2_DEP), )
-	    $(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_$2_DEP) > $$($1_$2_DEP_TARGETS)
+          ifneq ($$($1_DEP), )
+	    $(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_DEP) > $$($1_DEP_TARGETS)
           endif
         else
-          # The Visual Studio compiler lacks a feature for generating make dependencies, but by
-          # setting -showIncludes, all included files are printed. These are filtered out and
-          # parsed into make dependences.
-          # Keep as much as possible on one execution line for best performance on Windows.
-          # No need to save exit code from compilation since pipefail is always active on
-          # Windows.
+          # The Visual Studio compiler lacks a feature for generating make
+          # dependencies, but by setting -showIncludes, all included files are
+          # printed. These are filtered out and parsed into make dependences.
+          #
+          # Keep as much as possible on one execution line for best performance
+          # on Windows. No need to save exit code from compilation since
+          # pipefail is always active on Windows.
 	  $$(call ExecuteWithLog, $$@, \
-	      $$($1_$2_COMP) $$($1_$2_FLAGS) -showIncludes $$($1_$2_DEBUG_OUT_FLAGS) \
-	          $(CC_OUT_OPTION)$$($1_$2_OBJ) $2) \
-	      | $(GREP) -v -e "^Note: including file:" \
-	          -e "^$(notdir $2)$$$$" || test "$$$$?" = "1" ; \
-	  $(ECHO) $$@: \\ > $$($1_$2_DEP) ; \
-	  $(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_$2_OBJ).log \
-	      | $(SORT) -u >> $$($1_$2_DEP) ; \
-	  $(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_$2_DEP) > $$($1_$2_DEP_TARGETS)
+	      $$($1_COMPILER) $$($1_FLAGS) -showIncludes \
+	          $(CC_OUT_OPTION)$$($1_OBJ) $$($1_SRC_FILE)) \
+	      | $(TR) -d '\r' | $(GREP) -v -e "^Note: including file:" \
+	          -e "^$$($1_FILENAME)$$$$" || test "$$$$?" = "1" ; \
+	  $(ECHO) $$@: \\ > $$($1_DEP) ; \
+	  $(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_OBJ).log \
+	      | $(SORT) -u >> $$($1_DEP) ; \
+	  $(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_DEP) > $$($1_DEP_TARGETS)
         endif
   endif
 endef
@@ -378,8 +388,6 @@ endef
 #   COPY_DEBUG_SYMBOLS Set to false to override global setting of debug symbol copying
 #   ZIP_EXTERNAL_DEBUG_SYMBOLS Set to false to override global setting of debug symbol
 #       zipping
-#   CFLAGS_DEBUG_SYMBOLS Overrides the default cflags for enabling debug symbols
-#   CXXFLAGS_DEBUG_SYMBOLS Overrides the default cxxflags for enabling debug symbols
 #   STRIPFLAGS Optionally change the flags given to the strip command
 #   PRECOMPILED_HEADER Header file to use as precompiled header
 #   PRECOMPILED_HEADER_EXCLUDE List of source files that should not use PCH
@@ -559,15 +567,13 @@ define SetupNativeCompilationBody
   endif
 
   ifeq ($(COMPILE_WITH_DEBUG_SYMBOLS), true)
-    $$(call SetIfEmpty, $1_CFLAGS_DEBUG_SYMBOLS, $(CFLAGS_DEBUG_SYMBOLS))
-    $$(call SetIfEmpty, $1_CXXFLAGS_DEBUG_SYMBOLS, $(CXXFLAGS_DEBUG_SYMBOLS))
-    $1_EXTRA_CFLAGS += $$($1_CFLAGS_DEBUG_SYMBOLS)
-    $1_EXTRA_CXXFLAGS += $$($1_CXXFLAGS_DEBUG_SYMBOLS)
+    $1_EXTRA_CFLAGS += $$(CFLAGS_DEBUG_SYMBOLS)
+    $1_EXTRA_CXXFLAGS += $$(CFLAGS_DEBUG_SYMBOLS)
   endif
 
   ifneq ($$($1_REORDER), )
     $1_EXTRA_CFLAGS += $$(C_FLAG_REORDER)
-    $1_EXTRA_CXXFLAGS += $$(CXX_FLAG_REORDER)
+    $1_EXTRA_CXXFLAGS += $$(C_FLAG_REORDER)
   endif
 
   # Pass the library name for static JNI library naming
@@ -641,11 +647,12 @@ define SetupNativeCompilationBody
         $1_GENERATED_PCH_SRC := $$($1_OBJECT_DIR)/$1_pch.cpp
         $1_GENERATED_PCH_OBJ := $$($1_OBJECT_DIR)/$1_pch.obj
 
-        $$(eval $$(call add_native_source,$1,$$($1_GENERATED_PCH_SRC), \
-            $$($1_OBJECT_DIR),,, \
-            $$($1_CXXFLAGS) $$($1_EXTRA_CXXFLAGS) $$($1_SYSROOT_CFLAGS) \
-                -Fp$$($1_PCH_FILE) -Yc$$(notdir $$($1_PRECOMPILED_HEADER)), \
-            $$($1_CXX),,no_this_file))
+        $$(eval $$(call SetupCompileNativeFile, $1_$$(notdir $$($1_GENERATED_PCH_SRC)), \
+            FILE := $$($1_GENERATED_PCH_SRC), \
+            BASE := $1, \
+            EXTRA_CXXFLAGS := -Fp$$($1_PCH_FILE) -Yc$$(notdir $$($1_PRECOMPILED_HEADER)), \
+            DISABLE_THIS_FILE_DEFINE := true, \
+        ))
 
         $1_USE_PCH_FLAGS := \
             -Fp$$($1_PCH_FILE) -Yu$$(notdir $$($1_PRECOMPILED_HEADER))
@@ -688,13 +695,13 @@ define SetupNativeCompilationBody
     endif
   endif
 
-  # Now call add_native_source for each source file we are going to compile.
-  $$(foreach p, $$($1_SRCS), \
-      $$(eval $$(call add_native_source,$1,$$p,$$($1_OBJECT_DIR), \
-          $$($1_CFLAGS) $$($1_EXTRA_CFLAGS) $$($1_SYSROOT_CFLAGS), \
-          $$($1_CC), \
-          $$($1_CXXFLAGS) $$($1_EXTRA_CXXFLAGS) $$($1_SYSROOT_CFLAGS), \
-          $$($1_CXX), $$($1_ASFLAGS))))
+  # Now call SetupCompileNativeFile for each source file we are going to compile.
+  $$(foreach file, $$($1_SRCS), \
+      $$(eval $$(call SetupCompileNativeFile, $1_$$(notdir $$(file)),\
+          FILE := $$(file), \
+          BASE := $1, \
+      )) \
+  )
 
   # Setup rule for printing progress info when compiling source files.
   # This is a rough heuristic and may not always print accurate information.
@@ -728,7 +735,7 @@ define SetupNativeCompilationBody
 		$$(call MakeDir, $$(@D) $$($1_OBJECT_DIR))
 		$$(call ExecuteWithLog, $$@, \
 		    $$($1_RC) $$($1_RC_FLAGS) $$($1_SYSROOT_CFLAGS) $(CC_OUT_OPTION)$$@ \
-		    $$($1_VERSIONINFO_RESOURCE))
+		    $$($1_VERSIONINFO_RESOURCE) 2>&1 )
                 # Windows RC compiler does not support -showIncludes, so we mis-use CL
                 # for this. Filter out RC specific arguments that are unknown to CL.
                 # For some unknown reason, in this case CL actually outputs the show
@@ -739,7 +746,7 @@ define SetupNativeCompilationBody
 		        $$($1_SYSROOT_CFLAGS) -showIncludes -nologo -TC \
 		        $(CC_OUT_OPTION)$$($1_RES_DEP).obj -P -Fi$$($1_RES_DEP).pp \
 		        $$($1_VERSIONINFO_RESOURCE)) 2>&1 \
-		    | $(GREP) -v -e "^Note: including file:" \
+		    | $(TR) -d '\r' | $(GREP) -v -e "^Note: including file:" \
 		        -e "^$$(notdir $$($1_VERSIONINFO_RESOURCE))$$$$" || test "$$$$?" = "1" ; \
 		$(ECHO) $$($1_RES): \\ > $$($1_RES_DEP) ; \
 		$(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_RES_DEP).obj.log >> $$($1_RES_DEP) ; \
@@ -791,10 +798,6 @@ define SetupNativeCompilationBody
               "-map:$$($1_OUTPUT_DIR)/$$($1_NOSUFFIX).map"
           $1_DEBUGINFO_FILES := $$($1_OUTPUT_DIR)/$$($1_NOSUFFIX).pdb \
               $$($1_OUTPUT_DIR)/$$($1_NOSUFFIX).map
-          # No separate command is needed for debuginfo on windows, instead
-          # touch target to make sure it has a later time stamp than the debug
-          # symbol files to avoid unnecessary relinking on rebuild.
-          $1_CREATE_DEBUGINFO_CMDS := $(TOUCH) $$($1_TARGET)
 
         else ifneq ($(findstring $(OPENJDK_TARGET_OS), linux solaris), )
           $1_DEBUGINFO_FILES := $$($1_OUTPUT_DIR)/$$($1_NOSUFFIX).debuginfo
@@ -809,15 +812,25 @@ define SetupNativeCompilationBody
           $1_DEBUGINFO_FILES := \
               $$($1_OUTPUT_DIR)/$$($1_BASENAME).dSYM/Contents/Info.plist \
               $$($1_OUTPUT_DIR)/$$($1_BASENAME).dSYM/Contents/Resources/DWARF/$$($1_BASENAME)
-          # On Macosx, the debuginfo generation doesn't touch the linked binary, but
-          # to avoid always relinking, touch it anyway to force a later timestamp than
-          # the dSYM files.
           $1_CREATE_DEBUGINFO_CMDS := \
-              $(DSYMUTIL) --out $$($1_OUTPUT_DIR)/$$($1_BASENAME).dSYM $$($1_TARGET) $$(NEWLINE) \
-              $(TOUCH) $$($1_TARGET)
+              $(DSYMUTIL) --out $$($1_OUTPUT_DIR)/$$($1_BASENAME).dSYM $$($1_TARGET)
         endif # OPENJDK_TARGET_OS
 
+        # Since the link rule creates more than one file that we want to track,
+        # we have to use some tricks to get make to cooperate. To properly
+        # trigger downstream dependants of $$($1_DEBUGINFO_FILES), we must have
+        # a recipe in the rule below. To avoid rerunning the recipe every time
+        # have it touch the target. If a debuginfo file is deleted by something
+        # external, explicitly delete the TARGET to trigger a rebuild of both.
+        ifneq ($$(wildcard $$($1_DEBUGINFO_FILES)), $$($1_DEBUGINFO_FILES))
+          $$(call LogDebug, Deleting $$($1_BASENAME) because debuginfo files are missing)
+          $$(shell $(RM) $$($1_TARGET))
+        endif
         $$($1_DEBUGINFO_FILES): $$($1_TARGET)
+		$$(if $$(CORRECT_FUNCTION_IN_RECIPE_EVALUATION), \
+		  $$(if $$(wildcard $$@), , $$(error $$@ was not created for $$<)) \
+		)
+		$(TOUCH) $$@
 
         $1 += $$($1_DEBUGINFO_FILES)
 
@@ -852,9 +865,22 @@ define SetupNativeCompilationBody
     # Generating a dynamic library.
     $1_EXTRA_LDFLAGS += $$(call SET_SHARED_LIBRARY_NAME,$$($1_BASENAME))
     ifeq ($(OPENJDK_TARGET_OS), windows)
-      $1_EXTRA_LDFLAGS += "-implib:$$($1_OBJECT_DIR)/$$($1_NAME).lib"
-      # Create a rule for the import lib so that other rules may depend on it
-      $$($1_OBJECT_DIR)/$$($1_NAME).lib: $$($1_TARGET)
+      $1_IMPORT_LIBRARY := $$($1_OBJECT_DIR)/$$($1_NAME).lib
+      $1_EXTRA_LDFLAGS += "-implib:$$($1_IMPORT_LIBRARY)"
+      # To properly trigger downstream dependants of the import library, just as
+      # for debug files, we must have a recipe in the rule. To avoid rerunning
+      # the recipe every time have it touch the target. If an import library
+      # file is deleted by something external, explicitly delete the target to
+      # trigger a rebuild of both.
+      ifneq ($$(wildcard $$($1_IMPORT_LIBRARY)), $$($1_IMPORT_LIBRARY))
+        $$(call LogDebug, Deleting $$($1_BASENAME) because import library is missing)
+        $$(shell $(RM) $$($1_TARGET))
+      endif
+      $$($1_IMPORT_LIBRARY): $$($1_TARGET)
+		$$(if $$(CORRECT_FUNCTION_IN_RECIPE_EVALUATION), \
+		  $$(if $$(wildcard $$@), , $$(error $$@ was not created for $$<)) \
+		)
+		$(TOUCH) $$@
     endif
 
     # Create loadmap on AIX. Helps in diagnosing some problems.
@@ -863,7 +889,7 @@ define SetupNativeCompilationBody
     endif
 
     $1_VARDEPS := $$($1_LD) $$($1_SYSROOT_LDFLAGS) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) \
-        $$($1_LIBS) $$($1_EXTRA_LIBS) $$($1_CREATE_DEBUGINFO_CMDS) \
+        $$(GLOBAL_LIBS) $$($1_LIBS) $$($1_EXTRA_LIBS) $$($1_CREATE_DEBUGINFO_CMDS) \
         $$($1_STRIP_CMD)
     $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
         $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
@@ -917,8 +943,8 @@ define SetupNativeCompilationBody
                 ifeq ($(OPENJDK_TARGET_OS), windows)
 		  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
 		      $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
-		      $(LD_OUT_OPTION)$$@ $$($1_LD_OBJ_ARG) $$($1_RES) $$($1_LIBS) \
-		      $$($1_EXTRA_LIBS)) \
+		      $(LD_OUT_OPTION)$$@ $$($1_LD_OBJ_ARG) $$($1_RES) $$(GLOBAL_LIBS) \
+		      $$($1_LIBS) $$($1_EXTRA_LIBS)) \
 		      | $(GREP) -v "^   Creating library .*\.lib and object .*\.exp" || \
 		      test "$$$$?" = "1" ; \
 		  $$($1_CREATE_DEBUGINFO_CMDS)
@@ -927,8 +953,8 @@ define SetupNativeCompilationBody
 		  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
 		      $$(if $$($1_LINK_OBJS_RELATIVE), $$(CD) $$(OUTPUTDIR) ; ) \
 		      $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
-		      $(LD_OUT_OPTION)$$@ $$($1_LD_OBJ_ARG) $$($1_RES) $$($1_LIBS) \
-		      $$($1_EXTRA_LIBS)) ; \
+		      $(LD_OUT_OPTION)$$@ $$($1_LD_OBJ_ARG) $$($1_RES) $$(GLOBAL_LIBS) \
+		      $$($1_LIBS) $$($1_EXTRA_LIBS)) ; \
 		  $$($1_CREATE_DEBUGINFO_CMDS)
 		  $$($1_STRIP_CMD)
                 endif
@@ -965,7 +991,7 @@ define SetupNativeCompilationBody
   ifeq ($$($1_TYPE), EXECUTABLE)
     # A executable binary has been specified, setup the target for it.
     $1_VARDEPS := $$($1_LD) $$($1_SYSROOT_LDFLAGS) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) \
-        $$($1_LIBS) $$($1_EXTRA_LIBS) $$($1_MT) \
+        $$(GLOBAL_LIBS) $$($1_LIBS) $$($1_EXTRA_LIBS) $$($1_MT) \
         $$($1_CODESIGN) $$($1_CREATE_DEBUGINFO_CMDS) $$($1_MANIFEST_VERSION) \
         $$($1_STRIP_CMD)
     $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
@@ -984,7 +1010,7 @@ define SetupNativeCompilationBody
 		    $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
 		        $(EXE_OUT_OPTION)$$($1_TARGET) \
 		        $$($1_ALL_OBJS) $$($1_RES) \
-		        $$($1_LIBS) $$($1_EXTRA_LIBS))
+		        $$(GLOBAL_LIBS) $$($1_LIBS) $$($1_EXTRA_LIBS))
                 ifeq ($(OPENJDK_TARGET_OS), windows)
                   ifneq ($$($1_MANIFEST), )
 		    $$($1_MT) -nologo -manifest $$($1_MANIFEST) -identity:"$$($1_NAME).exe, version=$$($1_MANIFEST_VERSION)" -outputresource:$$@;#1

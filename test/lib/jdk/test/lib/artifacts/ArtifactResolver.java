@@ -29,7 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ArtifactResolver {
-    public static Map<String, Path> resolve(Class<?> klass) throws FileNotFoundException {
+    public static Map<String, Path> resolve(Class<?> klass) throws ArtifactResolverException {
         ArtifactManager manager = new DefaultArtifactManager();
         try {
             String managerName = System.getProperty("jdk.test.lib.artifacts.artifactmanager");
