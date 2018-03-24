@@ -22,7 +22,7 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "unittest.hpp"
 

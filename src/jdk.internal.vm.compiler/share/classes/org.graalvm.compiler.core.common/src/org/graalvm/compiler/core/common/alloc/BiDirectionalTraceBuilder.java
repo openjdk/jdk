@@ -84,7 +84,7 @@ public final class BiDirectionalTraceBuilder {
             AbstractBlockBase<?> block = worklist.pollFirst();
             assert block != null;
             if (!processed(block)) {
-                Trace trace = new Trace(startTrace(debug, block));
+                Trace trace = new Trace(findTrace(debug, block));
                 for (AbstractBlockBase<?> traceBlock : trace.getBlocks()) {
                     blockToTrace[traceBlock.getId()] = trace;
                 }
@@ -101,13 +101,13 @@ public final class BiDirectionalTraceBuilder {
      * @param debug
      */
     @SuppressWarnings("try")
-    private Collection<AbstractBlockBase<?>> startTrace(DebugContext debug, AbstractBlockBase<?> block) {
+    private Collection<AbstractBlockBase<?>> findTrace(DebugContext debug, AbstractBlockBase<?> initBlock) {
         ArrayDeque<AbstractBlockBase<?>> trace = new ArrayDeque<>();
-        try (Indent i = debug.logAndIndent("StartTrace: %s", block)) {
+        try (Indent i = debug.logAndIndent("StartTrace: %s", initBlock)) {
             try (Indent indentFront = debug.logAndIndent("Head:")) {
-                for (AbstractBlockBase<?> currentBlock = block; currentBlock != null; currentBlock = selectPredecessor(currentBlock)) {
-                    addBlockToTrace(debug, currentBlock);
-                    trace.addFirst(currentBlock);
+                for (AbstractBlockBase<?> block = initBlock; block != null; block = selectPredecessor(block)) {
+                    addBlockToTrace(debug, block);
+                    trace.addFirst(block);
                 }
             }
             /* Number head blocks. Can not do this in the loop as we go backwards. */
@@ -117,11 +117,11 @@ public final class BiDirectionalTraceBuilder {
             }
 
             try (Indent indentBack = debug.logAndIndent("Tail:")) {
-                for (AbstractBlockBase<?> currentBlock = selectSuccessor(block); currentBlock != null; currentBlock = selectSuccessor(currentBlock)) {
-                    addBlockToTrace(debug, currentBlock);
-                    trace.addLast(currentBlock);
+                for (AbstractBlockBase<?> block = selectSuccessor(initBlock); block != null; block = selectSuccessor(block)) {
+                    addBlockToTrace(debug, block);
+                    trace.addLast(block);
                     /* This time we can number the blocks immediately as we go forwards. */
-                    currentBlock.setLinearScanNumber(blockNr++);
+                    block.setLinearScanNumber(blockNr++);
                 }
             }
         }
@@ -129,18 +129,18 @@ public final class BiDirectionalTraceBuilder {
         return trace;
     }
 
-    private void addBlockToTrace(DebugContext debug, AbstractBlockBase<?> currentBlock) {
-        debug.log("add %s (prob: %f)", currentBlock, currentBlock.probability());
-        processed.set(currentBlock.getId());
+    private void addBlockToTrace(DebugContext debug, AbstractBlockBase<?> block) {
+        debug.log("add %s (prob: %f)", block, block.probability());
+        processed.set(block.getId());
     }
 
     /**
      * @return The unprocessed predecessor with the highest probability, or {@code null}.
      */
-    private AbstractBlockBase<?> selectPredecessor(AbstractBlockBase<?> currentBlock) {
+    private AbstractBlockBase<?> selectPredecessor(AbstractBlockBase<?> block) {
         AbstractBlockBase<?> next = null;
-        for (AbstractBlockBase<?> pred : currentBlock.getPredecessors()) {
-            if (!processed(pred) && !isBackEdge(pred, currentBlock) && (next == null || pred.probability() > next.probability())) {
+        for (AbstractBlockBase<?> pred : block.getPredecessors()) {
+            if (!processed(pred) && !isBackEdge(pred, block) && (next == null || pred.probability() > next.probability())) {
                 next = pred;
             }
         }
@@ -155,9 +155,9 @@ public final class BiDirectionalTraceBuilder {
     /**
      * @return The unprocessed successor with the highest probability, or {@code null}.
      */
-    private AbstractBlockBase<?> selectSuccessor(AbstractBlockBase<?> currentBlock) {
+    private AbstractBlockBase<?> selectSuccessor(AbstractBlockBase<?> block) {
         AbstractBlockBase<?> next = null;
-        for (AbstractBlockBase<?> succ : currentBlock.getSuccessors()) {
+        for (AbstractBlockBase<?> succ : block.getSuccessors()) {
             if (!processed(succ) && (next == null || succ.probability() > next.probability())) {
                 next = succ;
             }

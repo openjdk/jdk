@@ -30,8 +30,9 @@
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
 #include "opto/castnode.hpp"
@@ -1565,7 +1566,7 @@ void GraphKit::pre_barrier(bool do_load,
       g1_write_barrier_pre(do_load, obj, adr, adr_idx, val, val_type, pre_val, bt);
       break;
 
-    case BarrierSet::CardTableModRef:
+    case BarrierSet::CardTableBarrierSet:
       break;
 
     default      :
@@ -1580,7 +1581,7 @@ bool GraphKit::can_move_pre_barrier() const {
     case BarrierSet::G1BarrierSet:
       return true; // Can move it if no safepoint
 
-    case BarrierSet::CardTableModRef:
+    case BarrierSet::CardTableBarrierSet:
       return true; // There is no pre-barrier
 
     default      :
@@ -1604,7 +1605,7 @@ void GraphKit::post_barrier(Node* ctl,
       g1_write_barrier_post(store, obj, adr, adr_idx, val, bt, use_precise);
       break;
 
-    case BarrierSet::CardTableModRef:
+    case BarrierSet::CardTableBarrierSet:
       write_barrier_post(store, obj, adr, adr_idx, val, use_precise);
       break;
 
@@ -3811,8 +3812,8 @@ void GraphKit::add_predicate(int nargs) {
 
 bool GraphKit::use_ReduceInitialCardMarks() {
   BarrierSet *bs = Universe::heap()->barrier_set();
-  return bs->is_a(BarrierSet::CardTableModRef)
-         && barrier_set_cast<CardTableModRefBS>(bs)->can_elide_tlab_store_barriers()
+  return bs->is_a(BarrierSet::CardTableBarrierSet)
+         && barrier_set_cast<CardTableBarrierSet>(bs)->can_elide_tlab_store_barriers()
          && ReduceInitialCardMarks;
 }
 
@@ -3881,7 +3882,7 @@ void GraphKit::write_barrier_post(Node* oop_store,
   Node* cast = __ CastPX(__ ctrl(), adr);
 
   // Divide by card size
-  assert(Universe::heap()->barrier_set()->is_a(BarrierSet::CardTableModRef),
+  assert(Universe::heap()->barrier_set()->is_a(BarrierSet::CardTableBarrierSet),
          "Only one we handle so far.");
   Node* card_offset = __ URShiftX( cast, __ ConI(CardTable::card_shift) );
 
@@ -4159,7 +4160,7 @@ void GraphKit::g1_write_barrier_pre(bool do_load,
  * as part of the allocation in the case the allocated object is not located
  * in the nursery, this would happen for humongous objects. This is similar to
  * how CMS is required to handle this case, see the comments for the method
- * CardTableModRefBS::on_allocation_slowpath_exit and OptoRuntime::new_deferred_store_barrier.
+ * CardTableBarrierSet::on_allocation_slowpath_exit and OptoRuntime::new_deferred_store_barrier.
  * A deferred card mark is required for these objects and handled in the above
  * mentioned methods.
  *

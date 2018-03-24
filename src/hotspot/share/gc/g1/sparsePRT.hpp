@@ -27,7 +27,7 @@
 
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/heapRegion.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/align.hpp"

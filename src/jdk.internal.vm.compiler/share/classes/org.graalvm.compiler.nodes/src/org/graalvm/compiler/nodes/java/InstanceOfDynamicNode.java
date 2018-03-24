@@ -55,18 +55,24 @@ public class InstanceOfDynamicNode extends BinaryOpLogicNode implements Canonica
     public static final NodeClass<InstanceOfDynamicNode> TYPE = NodeClass.create(InstanceOfDynamicNode.class);
 
     private final boolean allowNull;
+    private final boolean exact;
 
-    public static LogicNode create(Assumptions assumptions, ConstantReflectionProvider constantReflection, ValueNode mirror, ValueNode object, boolean allowNull) {
-        LogicNode synonym = findSynonym(assumptions, constantReflection, mirror, object, allowNull);
+    public static LogicNode create(Assumptions assumptions, ConstantReflectionProvider constantReflection, ValueNode mirror, ValueNode object, boolean allowNull, boolean exact) {
+        LogicNode synonym = findSynonym(assumptions, constantReflection, mirror, object, allowNull, exact);
         if (synonym != null) {
             return synonym;
         }
-        return new InstanceOfDynamicNode(mirror, object, allowNull);
+        return new InstanceOfDynamicNode(mirror, object, allowNull, exact);
     }
 
-    protected InstanceOfDynamicNode(ValueNode mirror, ValueNode object, boolean allowNull) {
+    public static LogicNode create(Assumptions assumptions, ConstantReflectionProvider constantReflection, ValueNode mirror, ValueNode object, boolean allowNull) {
+        return create(assumptions, constantReflection, mirror, object, allowNull, false);
+    }
+
+    protected InstanceOfDynamicNode(ValueNode mirror, ValueNode object, boolean allowNull, boolean exact) {
         super(TYPE, mirror, object);
         this.allowNull = allowNull;
+        this.exact = exact;
         assert mirror.getStackKind() == JavaKind.Object || mirror.getStackKind() == JavaKind.Illegal : mirror.getStackKind();
     }
 
@@ -83,8 +89,7 @@ public class InstanceOfDynamicNode extends BinaryOpLogicNode implements Canonica
         tool.getLowerer().lower(this, tool);
     }
 
-    private static LogicNode findSynonym(Assumptions assumptions, ConstantReflectionProvider constantReflection, ValueNode forMirror, ValueNode forObject,
-                    boolean allowNull) {
+    private static LogicNode findSynonym(Assumptions assumptions, ConstantReflectionProvider constantReflection, ValueNode forMirror, ValueNode forObject, boolean allowNull, boolean exact) {
         if (forMirror.isConstant()) {
             ResolvedJavaType t = constantReflection.asJavaType(forMirror.asConstant());
             if (t != null) {
@@ -95,7 +100,7 @@ public class InstanceOfDynamicNode extends BinaryOpLogicNode implements Canonica
                         return LogicConstantNode.contradiction();
                     }
                 } else {
-                    TypeReference type = TypeReference.createTrusted(assumptions, t);
+                    TypeReference type = exact ? TypeReference.createExactTrusted(t) : TypeReference.createTrusted(assumptions, t);
                     if (allowNull) {
                         return InstanceOfNode.createAllowNull(type, forObject, null, null);
                     } else {
@@ -117,7 +122,7 @@ public class InstanceOfDynamicNode extends BinaryOpLogicNode implements Canonica
 
     @Override
     public LogicNode canonical(CanonicalizerTool tool, ValueNode forMirror, ValueNode forObject) {
-        LogicNode result = findSynonym(tool.getAssumptions(), tool.getConstantReflection(), forMirror, forObject, allowNull);
+        LogicNode result = findSynonym(tool.getAssumptions(), tool.getConstantReflection(), forMirror, forObject, allowNull, exact);
         if (result != null) {
             return result;
         }
@@ -131,6 +136,10 @@ public class InstanceOfDynamicNode extends BinaryOpLogicNode implements Canonica
 
     public boolean allowsNull() {
         return allowNull;
+    }
+
+    public boolean isExact() {
+        return exact;
     }
 
     @Override

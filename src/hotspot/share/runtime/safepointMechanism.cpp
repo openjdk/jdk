@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
+#include "services/memTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 SafepointMechanism::PollingType SafepointMechanism::_polling_type = SafepointMechanism::_global_page_poll;
@@ -50,6 +51,7 @@ void SafepointMechanism::default_initialize() {
       const size_t allocation_size = 2 * page_size;
       char* polling_page = os::reserve_memory(allocation_size, NULL, page_size);
       os::commit_memory_or_exit(polling_page, allocation_size, false, "Unable to commit Safepoint polling page");
+      MemTracker::record_virtual_memory_type((address)polling_page, mtInternal);
 
       char* bad_page  = polling_page;
       char* good_page = polling_page + page_size;

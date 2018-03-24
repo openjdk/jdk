@@ -26,8 +26,11 @@ import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
+import org.graalvm.compiler.core.common.SuppressFBWarnings;
 import org.graalvm.compiler.core.common.spi.ArrayOffsetProvider;
 import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
+import org.graalvm.compiler.replacements.StringSubstitutions;
+import org.graalvm.compiler.replacements.nodes.ArrayCompareToNode;
 import org.graalvm.compiler.word.Word;
 import org.graalvm.word.Pointer;
 
@@ -86,4 +89,16 @@ public class AMD64StringSubstitutions {
         }
         return result;
     }
+
+    @MethodSubstitution(isStatic = false)
+    @SuppressFBWarnings(value = "ES_COMPARING_PARAMETER_STRING_WITH_EQ", justification = "reference equality on the receiver is what we want")
+    public static int compareTo(String receiver, String anotherString) {
+        if (receiver == anotherString) {
+            return 0;
+        }
+        char[] value = StringSubstitutions.getValue(receiver);
+        char[] other = StringSubstitutions.getValue(anotherString);
+        return ArrayCompareToNode.compareTo(value, other, value.length << 1, other.length << 1, JavaKind.Char, JavaKind.Char);
+    }
+
 }

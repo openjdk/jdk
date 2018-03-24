@@ -275,15 +275,15 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   // specific implementations
   // pre barriers
 
-  void G1SATBCardTableModRef_pre_barrier(LIR_Opr addr_opr, LIR_Opr pre_val,
-                                         bool do_load, bool patch, CodeEmitInfo* info);
+  void G1BarrierSet_pre_barrier(LIR_Opr addr_opr, LIR_Opr pre_val,
+                                bool do_load, bool patch, CodeEmitInfo* info);
 
   // post barriers
 
-  void G1SATBCardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val);
-  void CardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val);
-#ifdef CARDTABLEMODREF_POST_BARRIER_HELPER
-  void CardTableModRef_post_barrier_helper(LIR_OprDesc* addr, LIR_Const* card_table_base);
+  void G1BarrierSet_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val);
+  void CardTableBarrierSet_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val);
+#ifdef CARDTABLEBARRIERSET_POST_BARRIER_HELPER
+  void CardTableBarrierSet_post_barrier_helper(LIR_OprDesc* addr, LIR_Const* card_table_base);
 #endif
 
 

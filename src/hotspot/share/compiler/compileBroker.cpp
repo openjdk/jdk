@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,12 +47,13 @@
 #include "runtime/atomic.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/init.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/timerTrace.hpp"
+#include "runtime/vframe.inline.hpp"
 #include "trace/tracing.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/dtrace.hpp"
@@ -1344,11 +1345,11 @@ CompileTask* CompileBroker::create_compile_task(CompileQueue*       queue,
 #if INCLUDE_JVMCI
 // The number of milliseconds to wait before checking if
 // JVMCI compilation has made progress.
-static const long JVMCI_COMPILATION_PROGRESS_WAIT_TIMESLICE = 500;
+static const long JVMCI_COMPILATION_PROGRESS_WAIT_TIMESLICE = 1000;
 
 // The number of JVMCI compilation progress checks that must fail
 // before unblocking a thread waiting for a blocking compilation.
-static const int JVMCI_COMPILATION_PROGRESS_WAIT_ATTEMPTS = 5;
+static const int JVMCI_COMPILATION_PROGRESS_WAIT_ATTEMPTS = 10;
 
 /**
  * Waits for a JVMCI compiler to complete a given task. This thread

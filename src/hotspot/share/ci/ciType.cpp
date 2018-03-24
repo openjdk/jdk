@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciType.hpp"
-#include "ci/ciUtilities.hpp"
+#include "ci/ciUtilities.inline.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"

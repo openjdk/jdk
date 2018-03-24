@@ -28,6 +28,7 @@
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/vmStructs_jvmci.hpp"
+#include "runtime/handles.inline.hpp"
 #include "utilities/resourceHash.hpp"
 
 
@@ -119,7 +120,7 @@ void CompilerToVM::Data::initialize(TRAPS) {
   symbol_clinit = (address) vmSymbols::class_initializer_name();
 
   BarrierSet* bs = Universe::heap()->barrier_set();
-  if (bs->is_a(BarrierSet::CardTableModRef)) {
+  if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
     jbyte* base = ci_card_table_address();
     assert(base != NULL, "unexpected byte_map_base");
     cardtable_start_address = base;
@@ -420,4 +421,3 @@ jobjectArray readConfiguration0(JNIEnv *env, TRAPS) {
 #undef ADD_UINTX_FLAG
 #undef CHECK_FLAG
 }
-

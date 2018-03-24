@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "code/vtableStubs.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "unittest.hpp"
 
 TEST_VM(code, vtableStubs) {

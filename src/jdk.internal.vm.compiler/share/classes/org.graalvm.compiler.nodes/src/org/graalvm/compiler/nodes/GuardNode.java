@@ -59,9 +59,9 @@ public class GuardNode extends FloatingAnchoredNode implements Canonicalizable, 
 
     public static final NodeClass<GuardNode> TYPE = NodeClass.create(GuardNode.class);
     @Input(Condition) protected LogicNode condition;
-    protected final DeoptimizationReason reason;
-    protected JavaConstant speculation;
+    protected DeoptimizationReason reason;
     protected DeoptimizationAction action;
+    protected JavaConstant speculation;
     protected boolean negated;
 
     public GuardNode(LogicNode condition, AnchoringNode anchor, DeoptimizationReason reason, DeoptimizationAction action, boolean negated, JavaConstant speculation) {
@@ -149,7 +149,13 @@ public class GuardNode extends FloatingAnchoredNode implements Canonicalizable, 
         negated = !negated;
     }
 
+    @Override
     public void setAction(DeoptimizationAction invalidaterecompile) {
         this.action = invalidaterecompile;
+    }
+
+    @Override
+    public void setReason(DeoptimizationReason reason) {
+        this.reason = reason;
     }
 }

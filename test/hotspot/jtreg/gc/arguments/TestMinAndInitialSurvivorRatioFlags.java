@@ -30,7 +30,7 @@
  *          java.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run driver TestMinAndInitialSurvivorRatioFlags
+ * @run driver/timeout=240 TestMinAndInitialSurvivorRatioFlags
  */
 
 import java.lang.management.MemoryUsage;

@@ -184,7 +184,9 @@ struct Flag {
     DIAGNOSTIC_FLAG_BUT_LOCKED,
     EXPERIMENTAL_FLAG_BUT_LOCKED,
     DEVELOPER_FLAG_BUT_PRODUCT_BUILD,
-    NOTPRODUCT_FLAG_BUT_PRODUCT_BUILD
+    NOTPRODUCT_FLAG_BUT_PRODUCT_BUILD,
+    COMMERCIAL_FLAG_BUT_DISABLED,
+    COMMERCIAL_FLAG_BUT_LOCKED
   };
 
   const char* _type;
@@ -285,11 +287,12 @@ struct Flag {
   void clear_diagnostic();
 
   Flag::MsgType get_locked_message(char*, int) const;
-  void get_locked_message_ext(char*, int) const;
+  Flag::MsgType get_locked_message_ext(char*, int) const;
 
   // printRanges will print out flags type, name and range values as expected by -XX:+PrintFlagsRanges
   void print_on(outputStream* st, bool withComments = false, bool printRanges = false);
-  void print_kind_and_origin(outputStream* st);
+  void print_kind(outputStream* st, unsigned int width);
+  void print_origin(outputStream* st, unsigned int width);
   void print_as_flag(outputStream* st);
 
   static const char* flag_error_str(Flag::Error error);
@@ -2650,7 +2653,7 @@ public:
           "Inline allocations larger than this in doublewords must go slow")\
                                                                             \
   product(bool, AggressiveOpts, false,                                      \
-          "Enable aggressive optimizations - see arguments.cpp")            \
+          "(Deprecated) Enable aggressive optimizations - see arguments.cpp") \
                                                                             \
   product_pd(bool, CompactStrings,                                          \
           "Enable Strings to use single byte chars in backing store")       \

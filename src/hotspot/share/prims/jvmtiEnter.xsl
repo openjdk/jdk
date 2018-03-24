@@ -42,7 +42,7 @@
 #if INCLUDE_JVMTI
 # include "logging/log.hpp"
 # include "oops/oop.inline.hpp"
-# include "prims/jvmtiEnter.hpp"
+# include "prims/jvmtiEnter.inline.hpp"
 # include "prims/jvmtiRawMonitor.hpp"
 # include "prims/jvmtiUtil.hpp"
 # include "runtime/threadSMR.hpp"

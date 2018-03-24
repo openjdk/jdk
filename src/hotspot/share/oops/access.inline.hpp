@@ -675,7 +675,6 @@ namespace AccessInternal {
     inline static typename EnableIf<
       !HasDecorator<decorators, AS_RAW>::value, T>::type
     atomic_cmpxchg(T new_value, void* addr, T compare_value) {
-      typedef RawAccessBarrier<decorators & RAW_DECORATOR_MASK> Raw;
       if (is_hardwired_primitive<decorators>()) {
         const DecoratorSet expanded_decorators = decorators | AS_RAW;
         return PreRuntimeDispatch::atomic_cmpxchg<expanded_decorators>(new_value, addr, compare_value);
@@ -761,17 +760,33 @@ namespace AccessInternal {
 
     template <DecoratorSet decorators, typename T>
     inline static typename EnableIf<
-      HasDecorator<decorators, AS_RAW>::value, bool>::type
-    arraycopy(arrayOop src_obj, arrayOop dst_obj, T *src, T* dst, size_t length) {
+      HasDecorator<decorators, AS_RAW>::value && CanHardwireRaw<decorators>::value, bool>::type
+    arraycopy(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t length) {
       typedef RawAccessBarrier<decorators & RAW_DECORATOR_MASK> Raw;
-      return Raw::arraycopy(src_obj, dst_obj, src, dst, length);
+      if (HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value) {
+        return Raw::oop_arraycopy(src_obj, dst_obj, src, dst, length);
+      } else {
+        return Raw::arraycopy(src_obj, dst_obj, src, dst, length);
+      }
+    }
+
+    template <DecoratorSet decorators, typename T>
+    inline static typename EnableIf<
+      HasDecorator<decorators, AS_RAW>::value && !CanHardwireRaw<decorators>::value, bool>::type
+    arraycopy(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t length) {
+      if (UseCompressedOops) {
+        const DecoratorSet expanded_decorators = decorators | convert_compressed_oops;
+        return PreRuntimeDispatch::arraycopy<expanded_decorators>(src_obj, dst_obj, src, dst, length);
+      } else {
+        const DecoratorSet expanded_decorators = decorators & ~convert_compressed_oops;
+        return PreRuntimeDispatch::arraycopy<expanded_decorators>(src_obj, dst_obj, src, dst, length);
+      }
     }
 
     template <DecoratorSet decorators, typename T>
     inline static typename EnableIf<
       !HasDecorator<decorators, AS_RAW>::value, bool>::type
-    arraycopy(arrayOop src_obj, arrayOop dst_obj, T *src, T* dst, size_t length) {
-      typedef RawAccessBarrier<decorators & RAW_DECORATOR_MASK> Raw;
+    arraycopy(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t length) {
       if (is_hardwired_primitive<decorators>()) {
         const DecoratorSet expanded_decorators = decorators | AS_RAW;
         return PreRuntimeDispatch::arraycopy<expanded_decorators>(src_obj, dst_obj, src, dst, length);
@@ -947,6 +962,24 @@ namespace AccessInternal {
     return PreRuntimeDispatch::load<expanded_decorators, oop>(addr);
   }
 
+  template <DecoratorSet decorators, typename T>
+  inline bool arraycopy_reduce_types(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t length) {
+    return PreRuntimeDispatch::arraycopy<decorators>(src_obj, dst_obj, src, dst, length);
+  }
+
+  template <DecoratorSet decorators>
+  inline bool arraycopy_reduce_types(arrayOop src_obj, arrayOop dst_obj, HeapWord* src, HeapWord* dst, size_t length) {
+    const DecoratorSet expanded_decorators = decorators | INTERNAL_CONVERT_COMPRESSED_OOP;
+    return PreRuntimeDispatch::arraycopy<expanded_decorators>(src_obj, dst_obj, src, dst, length);
+  }
+
+  template <DecoratorSet decorators>
+  inline bool arraycopy_reduce_types(arrayOop src_obj, arrayOop dst_obj, narrowOop* src, narrowOop* dst, size_t length) {
+    const DecoratorSet expanded_decorators = decorators | INTERNAL_CONVERT_COMPRESSED_OOP |
+                                             INTERNAL_RT_USE_COMPRESSED_OOPS;
+    return PreRuntimeDispatch::arraycopy<expanded_decorators>(src_obj, dst_obj, src, dst, length);
+  }
+
   // Step 1: Set default decorators. This step remembers if a type was volatile
   // and then sets the MO_VOLATILE decorator by default. Otherwise, a default
   // memory ordering is set for the access, and the implied decorator rules
@@ -1077,18 +1110,16 @@ namespace AccessInternal {
   }
 
   template <DecoratorSet decorators, typename T>
-  inline bool arraycopy(arrayOop src_obj, arrayOop dst_obj, T *src, T *dst, size_t length) {
+  inline bool arraycopy(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t length) {
     STATIC_ASSERT((HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value ||
                    (IsSame<T, void>::value || IsIntegral<T>::value) ||
                     IsFloatingPoint<T>::value)); // arraycopy allows type erased void elements
     typedef typename Decay<T>::type DecayedT;
-    const DecoratorSet expanded_decorators = DecoratorFixup<decorators | IN_HEAP_ARRAY | IN_HEAP |
-                                             (HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value ?
-                                              INTERNAL_CONVERT_COMPRESSED_OOP : INTERNAL_EMPTY)>::value;
-    return PreRuntimeDispatch::arraycopy<expanded_decorators>(src_obj, dst_obj,
-                                                              const_cast<DecayedT*>(src),
-                                                              const_cast<DecayedT*>(dst),
-                                                              length);
+    const DecoratorSet expanded_decorators = DecoratorFixup<decorators | IN_HEAP_ARRAY | IN_HEAP>::value;
+    return arraycopy_reduce_types<expanded_decorators>(src_obj, dst_obj,
+                                                       const_cast<DecayedT*>(src),
+                                                       const_cast<DecayedT*>(dst),
+                                                       length);
   }
 
   template <DecoratorSet decorators>

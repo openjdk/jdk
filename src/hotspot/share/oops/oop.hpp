@@ -284,8 +284,6 @@ class oopDesc {
   // garbage collection
   inline bool is_gc_marked() const;
 
-  inline bool is_scavengable() const;
-
   // Forward pointer operations for scavenge
   inline bool is_forwarded() const;
 

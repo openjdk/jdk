@@ -49,6 +49,9 @@
 	.globl _Copy_arrayof_conjoint_jlongs
 	.type _Copy_arrayof_conjoint_jlongs, %function
 
+from	.req	r0
+to	.req	r1
+
 	.text
         .globl  SpinPause
         .type SpinPause, %function
@@ -77,7 +80,7 @@ _Copy_disjoint_words:
         cmp     r2, #0
         beq     disjoint_words_finish
 
-        pld     [r1, #0]
+        pld     [from, #0]
         cmp     r2, #12
         ble disjoint_words_small
 
@@ -85,28 +88,28 @@ _Copy_disjoint_words:
 dw_f2b_loop_32:
         subs    r2, #32
 	blt	dw_f2b_loop_32_finish
-        ldmia r1!, {r3 - r9, ip}
+        ldmia from!, {r3 - r9, ip}
         nop
-	pld     [r1]
-        stmia r0!, {r3 - r9, ip}
+	pld     [from]
+        stmia to!, {r3 - r9, ip}
         bgt     dw_f2b_loop_32
 dw_f2b_loop_32_finish:
         addlts  r2, #32
         beq     disjoint_words_finish
         cmp     r2, #16
 	blt	disjoint_words_small
-        ldmia r1!, {r3 - r6}
+        ldmia from!, {r3 - r6}
         subge   r2, r2, #16
-        stmia r0!, {r3 - r6}
+        stmia to!, {r3 - r6}
         beq     disjoint_words_finish
 disjoint_words_small:
         cmp     r2, #8
-        ldr     r7, [r1], #4
-        ldrge   r8, [r1], #4
-        ldrgt   r9, [r1], #4
-        str     r7, [r0], #4
-        strge   r8, [r0], #4
-        strgt   r9, [r0], #4
+        ldr     r7, [from], #4
+        ldrge   r8, [from], #4
+        ldrgt   r9, [from], #4
+        str     r7, [to], #4
+        strge   r8, [to], #4
+        strgt   r9, [to], #4
 
 disjoint_words_finish:
         ldmia   sp!, {r3 - r9, ip}
@@ -122,72 +125,72 @@ _Copy_conjoint_words:
 	cmp	r2, #0
 	beq	conjoint_words_finish
 
-        pld     [r1, #0]
+        pld     [from, #0]
         cmp     r2, #12
         ble conjoint_words_small
 
-        subs    r3, r0, r1
+        subs    r3, to, from
         cmphi   r2, r3
         bhi     cw_b2f_copy
         .align 3
 cw_f2b_loop_32:
         subs    r2, #32
 	blt	cw_f2b_loop_32_finish
-        ldmia r1!, {r3 - r9, ip}
+        ldmia from!, {r3 - r9, ip}
         nop
-	pld     [r1]
-        stmia r0!, {r3 - r9, ip}
+	pld     [from]
+        stmia to!, {r3 - r9, ip}
         bgt     cw_f2b_loop_32
 cw_f2b_loop_32_finish:
         addlts  r2, #32
         beq     conjoint_words_finish
         cmp     r2, #16
 	blt	conjoint_words_small
-        ldmia r1!, {r3 - r6}
+        ldmia from!, {r3 - r6}
         subge   r2, r2, #16
-        stmia r0!, {r3 - r6}
+        stmia to!, {r3 - r6}
         beq     conjoint_words_finish
 conjoint_words_small:
         cmp     r2, #8
-        ldr     r7, [r1], #4
-        ldrge   r8, [r1], #4
-        ldrgt   r9, [r1], #4
-        str     r7, [r0], #4
-        strge   r8, [r0], #4
-        strgt   r9, [r0], #4
+        ldr     r7, [from], #4
+        ldrge   r8, [from], #4
+        ldrgt   r9, [from], #4
+        str     r7, [to], #4
+        strge   r8, [to], #4
+        strgt   r9, [to], #4
         b       conjoint_words_finish
 
 	# Src and dest overlap, copy in a descending order
 cw_b2f_copy:
-        add     r1, r2
-        pld     [r1, #-32]
-        add     r0, r2
+        add     from, r2
+        pld     [from, #-32]
+        add     to, r2
         .align 3
 cw_b2f_loop_32:
         subs    r2, #32
 	blt	cw_b2f_loop_32_finish
-        ldmdb r1!, {r3-r9,ip}
+        ldmdb from!, {r3-r9,ip}
         nop
-	pld     [r1, #-32]
-        stmdb r0!, {r3-r9,ip}
+	pld     [from, #-32]
+        stmdb to!, {r3-r9,ip}
         bgt     cw_b2f_loop_32
 cw_b2f_loop_32_finish:
         addlts  r2, #32
         beq     conjoint_words_finish
         cmp     r2, #16
 	blt	cw_b2f_copy_small
-        ldmdb r1!, {r3 - r6}
+        ldmdb from!, {r3 - r6}
         subge   r2, r2, #16
-        stmdb r0!, {r3 - r6}
+        stmdb to!, {r3 - r6}
         beq     conjoint_words_finish
 cw_b2f_copy_small:
         cmp     r2, #8
-        ldr     r7, [r1, #-4]!
-        ldrge   r8, [r1, #-4]!
-        ldrgt   r9, [r1, #-4]!
-        str     r7, [r0, #-4]!
-        strge   r8, [r0, #-4]!
-        strgt   r9, [r0, #-4]!
+        ldr     r7, [from, #-4]!
+        ldrge   r8, [from, #-4]!
+        ldrgt   r9, [from, #-4]!
+        str     r7, [to, #-4]!
+        strge   r8, [to, #-4]!
+        strgt   r9, [to, #-4]!
 
 conjoint_words_finish:
         ldmia   sp!, {r3 - r9, ip}
@@ -202,15 +205,15 @@ _Copy_conjoint_jshorts_atomic:
 	cmp	r2, #0
 	beq	conjoint_shorts_finish	
 
-        subs    r3, r0, r1
+        subs    r3, to, from
         cmphi   r2, r3
         bhi     cs_b2f_copy
 
-        pld     [r1]
+        pld     [from]
 
-        ands    r3, r0, #3
+        ands    r3, to, #3
         bne     cs_f2b_dest_u
-        ands    r3, r1, #3
+        ands    r3, from, #3
         bne     cs_f2b_src_u
 
 	# Aligned source address
@@ -218,10 +221,10 @@ _Copy_conjoint_jshorts_atomic:
 cs_f2b_loop_32:
         subs    r2, #32
 	blt	cs_f2b_loop_32_finish
-        ldmia r1!, {r3 - r9, ip}
+        ldmia from!, {r3 - r9, ip}
         nop
-        pld     [r1]
-        stmia r0!, {r3 - r9, ip}
+        pld     [from]
+        stmia to!, {r3 - r9, ip}
         bgt     cs_f2b_loop_32
 cs_f2b_loop_32_finish:
         addlts  r2, #32
@@ -230,32 +233,32 @@ cs_f2b_loop_32_finish:
         .align 3
 cs_f2b_8_loop:
         beq     cs_f2b_4
-        ldmia   r1!, {r4-r5}
+        ldmia   from!, {r4-r5}
         subs    r6, #1
-        stmia   r0!, {r4-r5}
+        stmia   to!, {r4-r5}
         bgt     cs_f2b_8_loop
 
 cs_f2b_4:
         ands    r2, #7
         beq     conjoint_shorts_finish
         cmp     r2, #4
-        ldrh    r3, [r1], #2
-        ldrgeh  r4, [r1], #2
-        ldrgth  r5, [r1], #2
-        strh    r3, [r0], #2
-        strgeh  r4, [r0], #2
-        strgth  r5, [r0], #2
+        ldrh    r3, [from], #2
+        ldrgeh  r4, [from], #2
+        ldrgth  r5, [from], #2
+        strh    r3, [to], #2
+        strgeh  r4, [to], #2
+        strgth  r5, [to], #2
         b       conjoint_shorts_finish
 
 	# Destination not aligned
 cs_f2b_dest_u:
-        ldrh    r3, [r1], #2
+        ldrh    r3, [from], #2
         subs    r2, #2
-        strh    r3, [r0], #2
+        strh    r3, [to], #2
         beq     conjoint_shorts_finish
 
 	# Check to see if source is not aligned ether
-        ands    r3, r1, #3
+        ands    r3, from, #3
         beq     cs_f2b_loop_32
 
 cs_f2b_src_u:
@@ -263,153 +266,153 @@ cs_f2b_src_u:
         blt     cs_f2b_8_u
 
 	# Load 2 first bytes to r7 and make src ptr word aligned
-        bic     r1, #3
-        ldr     r7, [r1], #4
+        bic     from, #3
+        ldr     r7, [from], #4
 
 	# Destination aligned, source not
         mov     r8, r2, lsr #4
         .align 3
 cs_f2b_16_u_loop:
         mov     r3, r7, lsr #16
-        ldmia   r1!, {r4 - r7}
+        ldmia   from!, {r4 - r7}
         orr     r3, r3, r4, lsl #16
         mov     r4, r4, lsr #16
-        pld     [r1]
+        pld     [from]
         orr     r4, r4, r5, lsl #16
         mov     r5, r5, lsr #16
         orr     r5, r5, r6, lsl #16
         mov     r6, r6, lsr #16
         orr     r6, r6, r7, lsl #16
-        stmia   r0!, {r3 - r6}
+        stmia   to!, {r3 - r6}
         subs    r8, #1
         bgt     cs_f2b_16_u_loop
         ands    r2, #0xf
         beq     conjoint_shorts_finish
-        sub     r1, #2
+        sub     from, #2
 
 cs_f2b_8_u:
         cmp     r2, #8
         blt     cs_f2b_4_u
-        ldrh    r4, [r1], #2
-        ldr     r5, [r1], #4
-        ldrh    r6, [r1], #2
+        ldrh    r4, [from], #2
+        ldr     r5, [from], #4
+        ldrh    r6, [from], #2
         orr     r4, r4, r5, lsl #16
         mov     r5, r5, lsr #16
         orr     r5, r5, r6, lsl #16
         subs    r2, #8
-        stmia	r0!, {r4 - r5}
+        stmia	to!, {r4 - r5}
 cs_f2b_4_u:
         beq     conjoint_shorts_finish
         cmp     r2, #4
-        ldrh    r3, [r1], #2
-        ldrgeh  r4, [r1], #2
-        ldrgth  r5, [r1], #2
-        strh    r3, [r0], #2
-        strgeh  r4, [r0], #2
-        strgth  r5, [r0], #2
+        ldrh    r3, [from], #2
+        ldrgeh  r4, [from], #2
+        ldrgth  r5, [from], #2
+        strh    r3, [to], #2
+        strgeh  r4, [to], #2
+        strgth  r5, [to], #2
         b       conjoint_shorts_finish
 
 	# Src and dest overlap, copy in a descending order
 cs_b2f_copy:
-        add     r1, r2
-        pld     [r1, #-32]
-        add     r0, r2
+        add     from, r2
+        pld     [from, #-32]
+        add     to, r2
 
-        ands    r3, r0, #3
+        ands    r3, to, #3
         bne     cs_b2f_dest_u
-        ands    r3, r1, #3
+        ands    r3, from, #3
         bne     cs_b2f_src_u
         .align 3
 cs_b2f_loop_32:
         subs    r2, #32
 	blt	cs_b2f_loop_32_finish
-        ldmdb r1!, {r3-r9,ip}
+        ldmdb from!, {r3-r9,ip}
         nop
-        pld     [r1, #-32]
-        stmdb r0!, {r3-r9,ip}
+        pld     [from, #-32]
+        stmdb to!, {r3-r9,ip}
         bgt     cs_b2f_loop_32
 cs_b2f_loop_32_finish:
         addlts  r2, #32
         beq     conjoint_shorts_finish
         cmp     r2, #24
         blt     cs_b2f_16
-        ldmdb   r1!, {r3-r8}
+        ldmdb   from!, {r3-r8}
         sub     r2, #24
-        stmdb   r0!, {r3-r8}
+        stmdb   to!, {r3-r8}
         beq     conjoint_shorts_finish
 cs_b2f_16:
         cmp     r2, #16
         blt     cs_b2f_8
-        ldmdb   r1!, {r3-r6}
+        ldmdb   from!, {r3-r6}
         sub     r2, #16
-        stmdb   r0!, {r3-r6}
+        stmdb   to!, {r3-r6}
         beq     conjoint_shorts_finish
 cs_b2f_8:
         cmp     r2, #8
         blt     cs_b2f_all_copy
-        ldmdb   r1!, {r3-r4}
+        ldmdb   from!, {r3-r4}
         sub     r2, #8
-        stmdb   r0!, {r3-r4}
+        stmdb   to!, {r3-r4}
         beq     conjoint_shorts_finish
 
 cs_b2f_all_copy:
         cmp     r2, #4
-        ldrh    r3, [r1, #-2]!
-        ldrgeh  r4, [r1, #-2]!
-        ldrgth  r5, [r1, #-2]!
-        strh    r3, [r0, #-2]!
-        strgeh  r4, [r0, #-2]!
-        strgth  r5, [r0, #-2]!
+        ldrh    r3, [from, #-2]!
+        ldrgeh  r4, [from, #-2]!
+        ldrgth  r5, [from, #-2]!
+        strh    r3, [to, #-2]!
+        strgeh  r4, [to, #-2]!
+        strgth  r5, [to, #-2]!
         b       conjoint_shorts_finish
 
 	# Destination not aligned
 cs_b2f_dest_u:
-        ldrh    r3, [r1, #-2]!
-        strh    r3, [r0, #-2]!
+        ldrh    r3, [from, #-2]!
+        strh    r3, [to, #-2]!
         sub     r2, #2
 	# Check source alignment as well
-        ands    r3, r1, #3
+        ands    r3, from, #3
         beq     cs_b2f_loop_32
 
 	# Source not aligned
 cs_b2f_src_u:
-        bic     r1, #3
+        bic     from, #3
         .align 3
 cs_b2f_16_loop_u:
         subs    r2, #16
         blt     cs_b2f_16_loop_u_finished
-        ldr     r7, [r1]
+        ldr     r7, [from]
         mov     r3, r7
-        ldmdb   r1!, {r4 - r7}
+        ldmdb   from!, {r4 - r7}
         mov     r4, r4, lsr #16
         orr     r4, r4, r5, lsl #16
-        pld     [r1, #-32]
+        pld     [from, #-32]
         mov     r5, r5, lsr #16
         orr     r5, r5, r6, lsl #16
         mov     r6, r6, lsr #16
         orr     r6, r6, r7, lsl #16
         mov     r7, r7, lsr #16
         orr     r7, r7, r3, lsl #16
-        stmdb   r0!, {r4 - r7}
+        stmdb   to!, {r4 - r7}
         bgt     cs_b2f_16_loop_u
         beq     conjoint_shorts_finish
 cs_b2f_16_loop_u_finished:
         addlts  r2, #16
-        ldr     r3, [r1]
+        ldr     r3, [from]
 	cmp     r2, #10
         blt     cs_b2f_2_u_loop
-        ldmdb   r1!, {r4 - r5}
+        ldmdb   from!, {r4 - r5}
         mov     r6, r4, lsr #16
         orr     r6, r6, r5, lsl #16
         mov     r7, r5, lsr #16
         orr     r7, r7, r3, lsl #16
-        stmdb   r0!, {r6-r7}
+        stmdb   to!, {r6-r7}
         sub     r2, #8
 	.align 3
 cs_b2f_2_u_loop:
         subs    r2, #2
-        ldrh    r3, [r1], #-2
-        strh    r3, [r0, #-2]!
+        ldrh    r3, [from], #-2
+        strh    r3, [to, #-2]!
         bgt     cs_b2f_2_u_loop
 
 conjoint_shorts_finish:
@@ -440,21 +443,21 @@ _Copy_arrayof_conjoint_jlongs:
 	cmp	r2, #0
 	beq	conjoint_longs_finish
 
-        pld     [r1, #0]
+        pld     [from, #0]
         cmp     r2, #24
         ble conjoint_longs_small
 
-        subs    r3, r0, r1
+        subs    r3, to, from
         cmphi   r2, r3
         bhi     cl_b2f_copy
         .align 3
 cl_f2b_loop_32:
         subs    r2, #32
 	blt	cl_f2b_loop_32_finish
-        ldmia r1!, {r3 - r9, ip}
+        ldmia from!, {r3 - r9, ip}
         nop
-	pld     [r1]
-        stmia r0!, {r3 - r9, ip}
+	pld     [from]
+        stmia to!, {r3 - r9, ip}
         bgt     cl_f2b_loop_32
 cl_f2b_loop_32_finish:
         addlts  r2, #32
@@ -463,31 +466,31 @@ conjoint_longs_small:
         cmp     r2, #16
 	blt	cl_f2b_copy_8
 	bgt	cl_f2b_copy_24
-        ldmia 	r1!, {r3 - r6}
-        stmia 	r0!, {r3 - r6}
+        ldmia 	from!, {r3 - r6}
+        stmia 	to!, {r3 - r6}
 	b	conjoint_longs_finish
 cl_f2b_copy_8:
-        ldmia   r1!, {r3 - r4}
-        stmia   r0!, {r3 - r4}
+        ldmia   from!, {r3 - r4}
+        stmia   to!, {r3 - r4}
         b       conjoint_longs_finish
 cl_f2b_copy_24:
-	ldmia   r1!, {r3 - r8}
-        stmia   r0!, {r3 - r8}
+	ldmia   from!, {r3 - r8}
+        stmia   to!, {r3 - r8}
         b       conjoint_longs_finish
 
 	# Src and dest overlap, copy in a descending order
 cl_b2f_copy:
-        add     r1, r2
-        pld     [r1, #-32]
-        add     r0, r2
+        add     from, r2
+        pld     [from, #-32]
+        add     to, r2
         .align 3
 cl_b2f_loop_32:
         subs    r2, #32
 	blt	cl_b2f_loop_32_finish
-        ldmdb 	r1!, {r3 - r9, ip}
+        ldmdb 	from!, {r3 - r9, ip}
         nop
-	pld     [r1]
-        stmdb 	r0!, {r3 - r9, ip}
+	pld     [from]
+        stmdb 	to!, {r3 - r9, ip}
         bgt     cl_b2f_loop_32
 cl_b2f_loop_32_finish:
         addlts  r2, #32
@@ -495,16 +498,16 @@ cl_b2f_loop_32_finish:
         cmp     r2, #16
 	blt	cl_b2f_copy_8
 	bgt	cl_b2f_copy_24
-        ldmdb   r1!, {r3 - r6}
-        stmdb   r0!, {r3 - r6}
+        ldmdb   from!, {r3 - r6}
+        stmdb   to!, {r3 - r6}
         b       conjoint_longs_finish
 cl_b2f_copy_8:
-	ldmdb   r1!, {r3 - r4}
-        stmdb   r0!, {r3 - r4}
+	ldmdb   from!, {r3 - r4}
+        stmdb   to!, {r3 - r4}
         b       conjoint_longs_finish
 cl_b2f_copy_24:
-	ldmdb   r1!, {r3 - r8}
-        stmdb   r0!, {r3 - r8}
+	ldmdb   from!, {r3 - r8}
+        stmdb   to!, {r3 - r8}
 
 conjoint_longs_finish:
         ldmia   sp!, {r3 - r9, ip}

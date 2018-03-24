@@ -128,7 +128,7 @@ class ObjectValue: public ScopeValue {
   Handle                      value() const             { return _value; }
   bool                        is_visited() const        { return _visited; }
 
-  void                        set_value(oop value)      { _value = Handle(Thread::current(), value); }
+  void                        set_value(oop value);
   void                        set_visited(bool visited) { _visited = false; }
 
   // Serialization of debugging information

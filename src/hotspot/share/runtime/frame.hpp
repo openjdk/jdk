@@ -269,7 +269,6 @@ class frame {
   // expression stack (may go up or down, direction == 1 or -1)
  public:
   intptr_t* interpreter_frame_expression_stack() const;
-  static  jint  interpreter_frame_expression_stack_direction();
 
   // The _at version returns a pointer because the address is used for GC.
   intptr_t* interpreter_frame_expression_stack_at(jint offset) const;
@@ -462,7 +461,7 @@ class StackFrameStream : public StackObj {
    StackFrameStream(JavaThread *thread, bool update = true);
 
   // Iteration
-  bool is_done()                  { return (_is_done) ? true : (_is_done = _fr.is_first_frame(), false); }
+  inline bool is_done();
   void next()                     { if (!_is_done) _fr = _fr.sender(&_reg_map); }
 
   // Query

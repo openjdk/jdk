@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,7 @@ private:
     _base_of_stack_pointer        = NULL;
   }
 
-  frame pd_last_frame() {
-    assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
-    assert(_anchor.walkable(), "thread has not dumped its register windows yet");
-
-    assert(_anchor.last_Java_pc() != NULL, "Ack no pc!");
-    return frame(last_Java_sp(), frame::unpatchable, _anchor.last_Java_pc());
-  }
+  frame pd_last_frame();
 
   // Sometimes the trap handler needs to record both PC and NPC.
   // This is a SPARC-specific companion to Thread::set_saved_exception_pc.

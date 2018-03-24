@@ -397,11 +397,18 @@ void Compile::remove_useless_nodes(Unique_Node_List &useful) {
       remove_range_check_cast(cast);
     }
   }
-  // Remove useless expensive node
+  // Remove useless expensive nodes
   for (int i = C->expensive_count()-1; i >= 0; i--) {
     Node* n = C->expensive_node(i);
     if (!useful.member(n)) {
       remove_expensive_node(n);
+    }
+  }
+  // Remove useless Opaque4 nodes
+  for (int i = opaque4_count() - 1; i >= 0; i--) {
+    Node* opaq = opaque4_node(i);
+    if (!useful.member(opaq)) {
+      remove_opaque4_node(opaq);
     }
   }
   // clean up the late inline lists
@@ -1179,6 +1186,7 @@ void Compile::Init(int aliaslevel) {
   _predicate_opaqs = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
   _expensive_nodes = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
   _range_check_casts = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
+  _opaque4_nodes = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
   register_library_intrinsics();
 }
 
@@ -1957,6 +1965,22 @@ void Compile::remove_range_check_casts(PhaseIterGVN &igvn) {
   assert(range_check_cast_count() == 0, "should be empty");
 }
 
+void Compile::add_opaque4_node(Node* n) {
+  assert(n->Opcode() == Op_Opaque4, "Opaque4 only");
+  assert(!_opaque4_nodes->contains(n), "duplicate entry in Opaque4 list");
+  _opaque4_nodes->append(n);
+}
+
+// Remove all Opaque4 nodes.
+void Compile::remove_opaque4_nodes(PhaseIterGVN &igvn) {
+  for (int i = opaque4_count(); i > 0; i--) {
+    Node* opaq = opaque4_node(i-1);
+    assert(opaq->Opcode() == Op_Opaque4, "Opaque4 only");
+    igvn.replace_node(opaq, opaq->in(2));
+  }
+  assert(opaque4_count() == 0, "should be empty");
+}
+
 // StringOpts and late inlining of string methods
 void Compile::inline_string_calls(bool parse_time) {
   {
@@ -2330,6 +2354,11 @@ void Compile::Optimize() {
       assert(failing(), "must bail out w/ explicit message");
       return;
     }
+  }
+
+  if (opaque4_count() > 0) {
+    C->remove_opaque4_nodes(igvn);
+    igvn.optimize();
   }
 
   DEBUG_ONLY( _modified_nodes = NULL; )
@@ -3329,6 +3358,20 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
           k->subsume_by(m, this);
         }
       }
+    }
+    break;
+  }
+  case Op_CmpUL: {
+    if (!Matcher::has_match_rule(Op_CmpUL)) {
+      // We don't support unsigned long comparisons. Set 'max_idx_expr'
+      // to max_julong if < 0 to make the signed comparison fail.
+      ConINode* sign_pos = new ConINode(TypeInt::make(BitsPerLong - 1));
+      Node* sign_bit_mask = new RShiftLNode(n->in(1), sign_pos);
+      Node* orl = new OrLNode(n->in(1), sign_bit_mask);
+      ConLNode* remove_sign_mask = new ConLNode(TypeLong::make(max_jlong));
+      Node* andl = new AndLNode(orl, remove_sign_mask);
+      Node* cmp = new CmpLNode(andl, n->in(2));
+      n->subsume_by(cmp, this);
     }
     break;
   }

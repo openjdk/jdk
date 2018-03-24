@@ -187,21 +187,26 @@ public class SPARCHotSpotMove {
         public void emitCode(CompilationResultBuilder crb, SPARCMacroAssembler masm) {
             Register inputRegister = asRegister(input);
             Register resReg = asRegister(result);
+            Register baseReg = encoding.hasBase() ? asRegister(baseRegister) : null;
+            emitUncompressCode(masm, inputRegister, resReg, baseReg, encoding.getShift(), nonNull);
+        }
+
+        public static void emitUncompressCode(SPARCMacroAssembler masm, Register inputRegister, Register resReg, Register baseReg, int shift, boolean nonNull) {
             Register secondaryInput;
-            if (encoding.getShift() != 0) {
-                masm.sll(inputRegister, encoding.getShift(), resReg);
+            if (shift != 0) {
+                masm.sll(inputRegister, shift, resReg);
                 secondaryInput = resReg;
             } else {
                 secondaryInput = inputRegister;
             }
 
-            if (encoding.hasBase()) {
+            if (baseReg != null) {
                 if (nonNull) {
-                    masm.add(secondaryInput, asRegister(baseRegister), resReg);
+                    masm.add(secondaryInput, baseReg, resReg);
                 } else {
                     Label done = new Label();
                     BPR.emit(masm, Rc_z, ANNUL, PREDICT_TAKEN, secondaryInput, done);
-                    masm.add(asRegister(baseRegister), secondaryInput, resReg);
+                    masm.add(baseReg, secondaryInput, resReg);
                     masm.bind(done);
                 }
             }

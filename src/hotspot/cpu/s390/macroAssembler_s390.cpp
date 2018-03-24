@@ -30,7 +30,7 @@
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/klass.inline.hpp"
@@ -41,7 +41,7 @@
 #include "registerSaver_s390.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/icache.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
@@ -3505,9 +3505,9 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
 // Write to card table for modification at store_addr - register is destroyed afterwards.
 void MacroAssembler::card_write_barrier_post(Register store_addr, Register tmp) {
   BarrierSet* bs = Universe::heap()->barrier_set();
-  CardTableModRefBS* ctbs = barrier_set_cast<CardTableModRefBS>(bs);
+  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
-  assert(bs->kind() == BarrierSet::CardTableModRef, "wrong barrier");
+  assert(bs->kind() == BarrierSet::CardTableBarrierSet, "wrong barrier");
   assert_different_registers(store_addr, tmp);
   z_srlg(store_addr, store_addr, CardTable::card_shift);
   load_absolute_address(tmp, (address)ct->byte_map_base());

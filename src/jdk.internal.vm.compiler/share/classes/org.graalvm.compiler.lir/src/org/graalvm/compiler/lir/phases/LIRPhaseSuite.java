@@ -40,6 +40,13 @@ public class LIRPhaseSuite<C> extends LIRPhase<C> {
     }
 
     /**
+     * Gets an unmodifiable view on the phases in this suite.
+     */
+    public List<LIRPhase<C>> getPhases() {
+        return Collections.unmodifiableList(phases);
+    }
+
+    /**
      * Add a new phase at the beginning of this suite.
      */
     public final void prependPhase(LIRPhase<C> phase) {

@@ -36,19 +36,6 @@ import jdk.vm.ci.meta.Value;
 
 public class TraceUtil {
 
-    public static AbstractBlockBase<?> getBestTraceInterPredecessor(TraceBuilderResult traceResult, AbstractBlockBase<?> block) {
-        AbstractBlockBase<?> bestPred = null;
-        int bestTraceId = traceResult.getTraceForBlock(block).getId();
-        for (AbstractBlockBase<?> pred : block.getPredecessors()) {
-            int predTraceId = traceResult.getTraceForBlock(pred).getId();
-            if (predTraceId < bestTraceId) {
-                bestPred = pred;
-                bestTraceId = predTraceId;
-            }
-        }
-        return bestPred;
-    }
-
     public static boolean isShadowedRegisterValue(Value value) {
         assert value != null;
         return value instanceof ShadowedRegisterValue;
