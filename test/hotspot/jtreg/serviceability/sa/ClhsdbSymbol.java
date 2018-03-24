@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public class ClhsdbSymbol {
                     "Ljava/io/InputStream", "LambdaMetafactory", "PerfCounter",
                     "isAnonymousClass", "JVMTI_THREAD_STATE_TERMINATED", "jdi",
                     "checkGetClassLoaderPermission", "lockCreationTime",
-                    "storedAppOutput", "storedAppOutput", "getProcess",
+                    "stderrBuffer", "stdoutBuffer", "getProcess",
                     "LingeredApp"));
 
             test.run(theApp.getPid(), cmds, expStrMap, null);
