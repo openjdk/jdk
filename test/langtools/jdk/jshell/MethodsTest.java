@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8080357 8167643 8187359
+ * @bug 8080357 8167643 8187359 8199762
  * @summary Tests for EvaluationState.methods
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng MethodsTest
@@ -196,6 +196,23 @@ public class MethodsTest extends KullaTesting {
         assertEval("int foo(int a) { return a * a; }",
                 ste(MAIN_SNIPPET, VALID, VALID, false, null),
                 ste(a, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
+        assertActiveKeys();
+    }
+
+    // 8199762
+    public void methodsRedeclaration5() {
+        Snippet m1 = methodKey(assertEval("int m(Object o) { return 10; }"));
+        assertMethods(method("(Object)int", "m"));
+
+        Snippet m2 = methodKey(assertEval("int m(Object o) { return 30; }",
+                ste(MAIN_SNIPPET, VALID, VALID, false, null),
+                ste(m1, VALID, OVERWRITTEN, false, MAIN_SNIPPET)));
+
+        assertEval("<T> int m(T o) { return 30; }",
+                ste(MAIN_SNIPPET, VALID, VALID, true, null),
+                ste(m2, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
+        assertMethods(method("(T)int", "m"));
+        assertEval("m(null)", "30");
         assertActiveKeys();
     }
 
