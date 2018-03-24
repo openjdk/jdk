@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,13 @@ import static org.graalvm.compiler.core.common.GraalOptions.VerifyPhases;
 import static org.graalvm.compiler.core.phases.HighTier.Options.Inline;
 
 import java.util.ListIterator;
+import org.graalvm.compiler.debug.Assertions;
 
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotBackend;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 import org.graalvm.compiler.hotspot.HotSpotInstructionProfiling;
+import org.graalvm.compiler.hotspot.lir.VerifyMaxRegisterSizePhase;
 import org.graalvm.compiler.hotspot.phases.AheadOfTimeVerificationPhase;
 import org.graalvm.compiler.hotspot.phases.LoadJavaMirrorWithKlassPhase;
 import org.graalvm.compiler.hotspot.phases.WriteBarrierAdditionPhase;
@@ -139,6 +141,10 @@ public class HotSpotSuitesProvider extends SuitesProviderBase {
                 StructuredGraph targetGraph = new StructuredGraph.Builder(graph.getOptions(), graph.getDebug(), AllowAssumptions.YES).method(graph.method()).build();
                 SimplifyingGraphDecoder graphDecoder = new SimplifyingGraphDecoder(runtime.getTarget().arch, targetGraph, context.getMetaAccess(), context.getConstantReflection(),
                                 context.getConstantFieldProvider(), context.getStampProvider(), !ImmutableCode.getValue(graph.getOptions()));
+
+                if (graph.trackNodeSourcePosition()) {
+                    targetGraph.setTrackNodeSourcePosition();
+                }
                 graphDecoder.decode(encodedGraph);
             }
 
@@ -170,6 +176,9 @@ public class HotSpotSuitesProvider extends SuitesProviderBase {
         String profileInstructions = HotSpotBackend.Options.ASMInstructionProfiling.getValue(options);
         if (profileInstructions != null) {
             suites.getPostAllocationOptimizationStage().appendPhase(new HotSpotInstructionProfiling(profileInstructions));
+        }
+        if (Assertions.detailedAssertionsEnabled(options)) {
+            suites.getPostAllocationOptimizationStage().appendPhase(new VerifyMaxRegisterSizePhase(config.maxVectorSize));
         }
         return suites;
     }

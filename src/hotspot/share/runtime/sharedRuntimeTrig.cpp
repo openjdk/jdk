@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jni.h"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sharedRuntimeMath.hpp"
 

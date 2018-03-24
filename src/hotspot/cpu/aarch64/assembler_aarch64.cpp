@@ -36,7 +36,7 @@ const unsigned long Assembler::asm_bp = 0x00007fffee09ac88;
 
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 
 // for the moment we reuse the logical/floating point immediate encode

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
-#include "runtime/vframe.hpp"
+#include "runtime/vframe.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // setup and cleanup actions
@@ -63,6 +63,8 @@ JavaFrameStream::JavaFrameStream(JavaThread* thread, int mode)
   : BaseFrameStream(thread), _vfst(thread) {
   _need_method_info = StackWalk::need_method_info(mode);
 }
+
+void JavaFrameStream::next() { _vfst.next();}
 
 // Returns the BaseFrameStream for the current stack being traversed.
 //

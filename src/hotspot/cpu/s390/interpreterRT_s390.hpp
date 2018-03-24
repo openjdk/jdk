@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,8 @@
 #ifndef CPU_S390_VM_INTERPRETERRT_S390_HPP
 #define CPU_S390_VM_INTERPRETERRT_S390_HPP
 
-#include "memory/allocation.hpp"
+// This is included in the middle of class Interpreter.
+// Do not include files here.
 
 static int binary_search(int key, LookupswitchPair* array, int n);
 
@@ -51,10 +52,7 @@ class SignatureHandlerGenerator: public NativeSignatureIterator {
 
  public:
   // creation
-  SignatureHandlerGenerator(const methodHandle& method, CodeBuffer* buffer) : NativeSignatureIterator(method) {
-    _masm = new MacroAssembler(buffer);
-    _fp_arg_nr = 0;
-  }
+  SignatureHandlerGenerator(const methodHandle& method, CodeBuffer* buffer);
 
   // code generation
   void generate(uint64_t fingerprint);

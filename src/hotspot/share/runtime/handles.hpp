@@ -296,4 +296,17 @@ class ResetNoHandleMark: public StackObj {
 #endif
 };
 
+// The HandleMarkCleaner is a faster version of HandleMark.
+// It relies on the fact that there is a HandleMark further
+// down the stack (in JavaCalls::call_helper), and just resets
+// to the saved values in that HandleMark.
+
+class HandleMarkCleaner: public StackObj {
+ private:
+  Thread* _thread;
+ public:
+  inline HandleMarkCleaner(Thread* thread);
+  inline ~HandleMarkCleaner();
+};
+
 #endif // SHARE_VM_RUNTIME_HANDLES_HPP

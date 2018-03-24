@@ -475,8 +475,8 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   nonstatic_field(CardTable,                   _committed,                                    MemRegion*)                            \
   nonstatic_field(CardTable,                   _guard_region,                                 MemRegion)                             \
   nonstatic_field(CardTable,                   _byte_map_base,                                jbyte*)                                \
-  nonstatic_field(CardTableModRefBS,           _defer_initial_card_mark,                      bool)                                  \
-  nonstatic_field(CardTableModRefBS,           _card_table,                                   CardTable*)                            \
+  nonstatic_field(CardTableBarrierSet,         _defer_initial_card_mark,                      bool)                                  \
+  nonstatic_field(CardTableBarrierSet,         _card_table,                                   CardTable*)                            \
                                                                                                                                      \
   nonstatic_field(CollectedHeap,               _reserved,                                     MemRegion)                             \
   nonstatic_field(CollectedHeap,               _barrier_set,                                  BarrierSet*)                           \
@@ -1473,7 +1473,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
            declare_type(TenuredSpace,                 OffsetTableContigSpace) \
   declare_toplevel_type(BarrierSet)                                       \
            declare_type(ModRefBarrierSet,             BarrierSet)         \
-           declare_type(CardTableModRefBS,            ModRefBarrierSet)   \
+           declare_type(CardTableBarrierSet,          ModRefBarrierSet)   \
   declare_toplevel_type(CardTable)                                        \
            declare_type(CardTableRS, CardTable)                           \
   declare_toplevel_type(BarrierSet::Name)                                 \
@@ -1502,8 +1502,8 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_toplevel_type(CardTable*)                                       \
   declare_toplevel_type(CardTable*const)                                  \
   declare_toplevel_type(CardTableRS*)                                     \
-  declare_toplevel_type(CardTableModRefBS*)                               \
-  declare_toplevel_type(CardTableModRefBS**)                              \
+  declare_toplevel_type(CardTableBarrierSet*)                             \
+  declare_toplevel_type(CardTableBarrierSet**)                            \
   declare_toplevel_type(CollectedHeap*)                                   \
   declare_toplevel_type(ContiguousSpace*)                                 \
   declare_toplevel_type(DefNewGeneration*)                                \
@@ -2237,7 +2237,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_constant(AgeTable::table_size)                                  \
                                                                           \
   declare_constant(BarrierSet::ModRef)                                    \
-  declare_constant(BarrierSet::CardTableModRef)                           \
+  declare_constant(BarrierSet::CardTableBarrierSet)                           \
   declare_constant(BarrierSet::G1BarrierSet)                              \
                                                                           \
   declare_constant(BOTConstants::LogN)                                    \

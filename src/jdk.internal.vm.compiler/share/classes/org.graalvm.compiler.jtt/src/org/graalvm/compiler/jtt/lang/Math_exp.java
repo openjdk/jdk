@@ -22,14 +22,12 @@
  */
 package org.graalvm.compiler.jtt.lang;
 
-import org.junit.Ignore;
+import org.graalvm.compiler.options.OptionValues;
 import org.junit.Test;
-
-import org.graalvm.compiler.jtt.JTTTest;
 
 /*
  */
-public class Math_exp extends JTTTest {
+public class Math_exp extends UnaryMath {
 
     public static double test(double arg) {
         return Math.exp(arg);
@@ -65,9 +63,19 @@ public class Math_exp extends JTTTest {
         runTest("test", 0.0D);
     }
 
-    @Ignore("java.lang.AssertionError: expected:<2.718281828459045> but was:<2.7182818284590455>")
     @Test
     public void run6() {
         runTest("test", 1.0D);
+    }
+
+    @Test
+    public void run7() {
+        runTest("test", -1024D);
+    }
+
+    @Test
+    public void run8() {
+        OptionValues options = getInitialOptions();
+        testManyValues(options, getResolvedJavaMethod("test"));
     }
 }

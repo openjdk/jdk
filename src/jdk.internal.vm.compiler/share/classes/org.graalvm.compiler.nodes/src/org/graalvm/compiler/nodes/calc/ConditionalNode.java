@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,9 +170,9 @@ public final class ConditionalNode extends FloatingNode implements Canonicalizab
                         return trueValue;
                     }
                 } else if (lessThan.getX() == falseValue && lessThan.getY() == trueValue) {
-                    // return "x" for "x < y ? y : x" in case that we know "x <= y"
+                    // return "y" for "x < y ? y : x" in case that we know "x <= y"
                     if (falseValueStamp.upperBound() <= trueValueStamp.lowerBound()) {
-                        return falseValue;
+                        return trueValue;
                     }
                 }
             }

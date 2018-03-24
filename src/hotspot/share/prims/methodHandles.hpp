@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,13 @@
 
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "runtime/frame.inline.hpp"
+#include "runtime/frame.hpp"
 #include "runtime/globals.hpp"
-#include "runtime/interfaceSupport.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef ZERO
 # include "entry_zero.hpp"
+# include "interpreter/interpreter.hpp"
 #endif
 
 

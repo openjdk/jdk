@@ -26,8 +26,8 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
-#include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_aarch64.hpp"
 #include "oops/instanceOop.hpp"
@@ -619,111 +619,6 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void array_overlap_test(Label& L_no_overlap, Address::sxtw sf) { __ b(L_no_overlap); }
-
-  // Generate code for an array write pre barrier
-  //
-  //     addr       - starting address
-  //     count      - element count
-  //     tmp        - scratch register
-  //     saved_regs - registers to be saved before calling static_write_ref_array_pre
-  //
-  //     Callers must specify which registers to preserve in saved_regs.
-  //     Clobbers: r0-r18, v0-v7, v16-v31, except saved_regs.
-  //
-  void gen_write_ref_array_pre_barrier(Register addr, Register count, bool dest_uninitialized, RegSet saved_regs) {
-    BarrierSet* bs = Universe::heap()->barrier_set();
-    switch (bs->kind()) {
-    case BarrierSet::G1BarrierSet:
-      // With G1, don't generate the call if we statically know that the target in uninitialized
-      if (!dest_uninitialized) {
-        __ push(saved_regs, sp);
-        if (count == c_rarg0) {
-          if (addr == c_rarg1) {
-            // exactly backwards!!
-            __ mov(rscratch1, c_rarg0);
-            __ mov(c_rarg0, c_rarg1);
-            __ mov(c_rarg1, rscratch1);
-          } else {
-            __ mov(c_rarg1, count);
-            __ mov(c_rarg0, addr);
-          }
-        } else {
-          __ mov(c_rarg0, addr);
-          __ mov(c_rarg1, count);
-        }
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre), 2);
-        __ pop(saved_regs, sp);
-        break;
-      case BarrierSet::CardTableModRef:
-        break;
-      default:
-        ShouldNotReachHere();
-
-      }
-    }
-  }
-
-  //
-  // Generate code for an array write post barrier
-  //
-  //  Input:
-  //     start      - register containing starting address of destination array
-  //     end        - register containing ending address of destination array
-  //     scratch    - scratch register
-  //     saved_regs - registers to be saved before calling static_write_ref_array_post
-  //
-  //  The input registers are overwritten.
-  //  The ending address is inclusive.
-  //  Callers must specify which registers to preserve in saved_regs.
-  //  Clobbers: r0-r18, v0-v7, v16-v31, except saved_regs.
-  void gen_write_ref_array_post_barrier(Register start, Register end, Register scratch, RegSet saved_regs) {
-    assert_different_registers(start, end, scratch);
-    BarrierSet* bs = Universe::heap()->barrier_set();
-    switch (bs->kind()) {
-      case BarrierSet::G1BarrierSet:
-
-        {
-          __ push(saved_regs, sp);
-          // must compute element count unless barrier set interface is changed (other platforms supply count)
-          assert_different_registers(start, end, scratch);
-          __ lea(scratch, Address(end, BytesPerHeapOop));
-          __ sub(scratch, scratch, start);               // subtract start to get #bytes
-          __ lsr(scratch, scratch, LogBytesPerHeapOop);  // convert to element count
-          __ mov(c_rarg0, start);
-          __ mov(c_rarg1, scratch);
-          __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post), 2);
-          __ pop(saved_regs, sp);
-        }
-        break;
-      case BarrierSet::CardTableModRef:
-        {
-          CardTableModRefBS* ctbs = barrier_set_cast<CardTableModRefBS>(bs);
-          CardTable* ct = ctbs->card_table();
-          assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
-
-          Label L_loop;
-
-           __ lsr(start, start, CardTable::card_shift);
-           __ lsr(end, end, CardTable::card_shift);
-           __ sub(end, end, start); // number of bytes to copy
-
-          const Register count = end; // 'end' register contains bytes count now
-          __ load_byte_map_base(scratch);
-          __ add(start, start, scratch);
-          if (UseConcMarkSweepGC) {
-            __ membar(__ StoreStore);
-          }
-          __ BIND(L_loop);
-          __ strb(zr, Address(start, count));
-          __ subs(count, count, 1);
-          __ br(Assembler::GE, L_loop);
-        }
-        break;
-      default:
-        ShouldNotReachHere();
-
-    }
-  }
 
   // The inner part of zero_words().  This is the bulk operation,
   // zeroing words in blocks, possibly using DC ZVA to do it.  The
@@ -1456,20 +1351,33 @@ class StubGenerator: public StubCodeGenerator {
       BLOCK_COMMENT("Entry:");
     }
 
+    DecoratorSet decorators = ARRAYCOPY_DISJOINT;
+    if (dest_uninitialized) {
+      decorators |= AS_DEST_NOT_INITIALIZED;
+    }
+    if (aligned) {
+      decorators |= ARRAYCOPY_ALIGNED;
+    }
+
+    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    bs->arraycopy_prologue(_masm, decorators, is_oop, d, count, saved_reg);
+
     if (is_oop) {
-      gen_write_ref_array_pre_barrier(d, count, dest_uninitialized, saved_reg);
       // save regs before copy_memory
       __ push(RegSet::of(d, count), sp);
     }
     copy_memory(aligned, s, d, count, rscratch1, size);
+
     if (is_oop) {
       __ pop(RegSet::of(d, count), sp);
       if (VerifyOops)
         verify_oop_array(size, d, count, r16);
       __ sub(count, count, 1); // make an inclusive end pointer
       __ lea(count, Address(d, count, Address::lsl(exact_log2(size))));
-      gen_write_ref_array_post_barrier(d, count, rscratch1, RegSet());
     }
+
+    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, rscratch1, RegSet());
+
     __ leave();
     __ mov(r0, zr); // return 0
     __ ret(lr);
@@ -1517,8 +1425,18 @@ class StubGenerator: public StubCodeGenerator {
     __ cmp(rscratch1, count, Assembler::LSL, exact_log2(size));
     __ br(Assembler::HS, nooverlap_target);
 
+    DecoratorSet decorators = 0;
+    if (dest_uninitialized) {
+      decorators |= AS_DEST_NOT_INITIALIZED;
+    }
+    if (aligned) {
+      decorators |= ARRAYCOPY_ALIGNED;
+    }
+
+    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    bs->arraycopy_prologue(_masm, decorators, is_oop, d, count, saved_regs);
+
     if (is_oop) {
-      gen_write_ref_array_pre_barrier(d, count, dest_uninitialized, saved_regs);
       // save regs before copy_memory
       __ push(RegSet::of(d, count), sp);
     }
@@ -1529,8 +1447,8 @@ class StubGenerator: public StubCodeGenerator {
         verify_oop_array(size, d, count, r16);
       __ sub(count, count, 1); // make an inclusive end pointer
       __ lea(count, Address(d, count, Address::lsl(exact_log2(size))));
-      gen_write_ref_array_post_barrier(d, count, rscratch1, RegSet());
     }
+    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, rscratch1, RegSet());
     __ leave();
     __ mov(r0, zr); // return 0
     __ ret(lr);
@@ -1871,7 +1789,14 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif //ASSERT
 
-    gen_write_ref_array_pre_barrier(to, count, dest_uninitialized, wb_pre_saved_regs);
+    DecoratorSet decorators = ARRAYCOPY_CHECKCAST;
+    bool is_oop = true;
+    if (dest_uninitialized) {
+      decorators |= AS_DEST_NOT_INITIALIZED;
+    }
+
+    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    bs->arraycopy_prologue(_masm, decorators, is_oop, to, count, wb_pre_saved_regs);
 
     // save the original count
     __ mov(count_save, count);
@@ -1915,7 +1840,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ BIND(L_do_card_marks);
     __ add(to, to, -heapOopSize);         // make an inclusive end pointer
-    gen_write_ref_array_post_barrier(start_to, to, rscratch1, wb_post_saved_regs);
+    bs->arraycopy_epilogue(_masm, decorators, is_oop, start_to, to, rscratch1, wb_post_saved_regs);
 
     __ bind(L_done_pop);
     __ pop(RegSet::of(r18, r19, r20, r21), sp);

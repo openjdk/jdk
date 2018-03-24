@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -128,10 +128,6 @@ inline int frame::interpreter_frame_monitor_size() {
 inline intptr_t* frame::interpreter_frame_expression_stack() const {
   intptr_t* monitor_end = (intptr_t*) interpreter_frame_monitor_end();
   return monitor_end - 1;
-}
-
-inline jint frame::interpreter_frame_expression_stack_direction() {
-  return -1;
 }
 
 // Return a unique id for this frame. The id must have a value where

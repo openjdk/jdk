@@ -35,7 +35,7 @@
 #include "ci/ciTypeArrayKlass.hpp"
 #include "ci/ciUtilities.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "vmreg_arm.inline.hpp"
@@ -497,7 +497,7 @@ void LIRGenerator::set_card(LIR_Opr value, LIR_Address* card_addr) {
 #endif // AARCH64
 }
 
-void LIRGenerator::CardTableModRef_post_barrier_helper(LIR_OprDesc* addr, LIR_Const* card_table_base) {
+void LIRGenerator::CardTableBarrierSet_post_barrier_helper(LIR_OprDesc* addr, LIR_Const* card_table_base) {
   assert(addr->is_register(), "must be a register at this point");
 
   LIR_Opr tmp = FrameMap::LR_ptr_opr;

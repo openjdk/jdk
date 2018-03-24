@@ -84,11 +84,11 @@ public class CheckCICompilerCount {
 
     private static final String[] NON_TIERED_EXPECTED_OUTPUTS = {
             "CICompilerCount (0) must be at least 1",
-            "intx CICompilerCount                          = 1                                        {product} {command line}",
-            "intx CICompilerCount                          = 1                                        {product} {command line}",
+            "intx CICompilerCount                          = 1                                         {product} {command line}",
+            "intx CICompilerCount                          = 1                                         {product} {command line}",
             "CICompilerCount (0) must be at least 1",
-            "intx CICompilerCount                          = 1                                        {product} {command line}",
-            "intx CICompilerCount                          = 1                                        {product} {command line}"
+            "intx CICompilerCount                          = 1                                         {product} {command line}",
+            "intx CICompilerCount                          = 1                                         {product} {command line}"
     };
 
     private static final int[] NON_TIERED_EXIT = {
@@ -165,13 +165,13 @@ public class CheckCICompilerCount {
 
     private static final String[] TIERED_EXPECTED_OUTPUTS = {
             "CICompilerCount (1) must be at least 2",
-            "intx CICompilerCount                          = 1                                        {product} {command line}",
-            "intx CICompilerCount                          = 1                                        {product} {command line}",
-            "intx CICompilerCount                          = 2                                        {product} {command line}",
+            "intx CICompilerCount                          = 1                                         {product} {command line}",
+            "intx CICompilerCount                          = 1                                         {product} {command line}",
+            "intx CICompilerCount                          = 2                                         {product} {command line}",
             "CICompilerCount (1) must be at least 2",
-            "intx CICompilerCount                          = 1                                        {product} {command line}",
-            "intx CICompilerCount                          = 1                                        {product} {command line}",
-            "intx CICompilerCount                          = 2                                        {product} {command line}",
+            "intx CICompilerCount                          = 1                                         {product} {command line}",
+            "intx CICompilerCount                          = 1                                         {product} {command line}",
+            "intx CICompilerCount                          = 2                                         {product} {command line}",
     };
 
     private static final int[] TIERED_EXIT = {

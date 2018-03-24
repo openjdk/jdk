@@ -27,6 +27,7 @@
 
 #include "ci/ciClassList.hpp"
 #include "ci/ciSymbol.hpp"
+#include "interpreter/bytecodes.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 

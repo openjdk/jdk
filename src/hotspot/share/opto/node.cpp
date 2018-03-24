@@ -504,6 +504,9 @@ Node *Node::clone() const {
   if (cast != NULL && cast->has_range_check()) {
     C->add_range_check_cast(cast);
   }
+  if (n->Opcode() == Op_Opaque4) {
+    C->add_opaque4_node(n);
+  }
 
   n->set_idx(C->next_unique()); // Get new unique index as well
   debug_only( n->verify_construction() );
@@ -611,6 +614,9 @@ void Node::destruct() {
   CastIINode* cast = isa_CastII();
   if (cast != NULL && cast->has_range_check()) {
     compile->remove_range_check_cast(cast);
+  }
+  if (Opcode() == Op_Opaque4) {
+    compile->remove_opaque4_node(this);
   }
 
   if (is_SafePoint()) {
@@ -1351,6 +1357,9 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
       CastIINode* cast = dead->isa_CastII();
       if (cast != NULL && cast->has_range_check()) {
         igvn->C->remove_range_check_cast(cast);
+      }
+      if (dead->Opcode() == Op_Opaque4) {
+        igvn->C->remove_range_check_cast(dead);
       }
       igvn->C->record_dead_node(dead->_idx);
       // Kill all inputs to the dead guy

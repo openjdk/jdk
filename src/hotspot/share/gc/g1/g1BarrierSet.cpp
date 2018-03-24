@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1BarrierSet.inline.hpp"
+#include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1CardTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -32,9 +33,12 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.inline.hpp"
+#include "utilities/macros.hpp"
 
 G1BarrierSet::G1BarrierSet(G1CardTable* card_table) :
-  CardTableModRefBS(card_table, BarrierSet::FakeRtti(BarrierSet::G1BarrierSet)),
+  CardTableBarrierSet(make_barrier_set_assembler<G1BarrierSetAssembler>(),
+                      card_table,
+                      BarrierSet::FakeRtti(BarrierSet::G1BarrierSet)),
   _dcqs(JavaThread::dirty_card_queue_set())
 { }
 
@@ -53,11 +57,26 @@ void G1BarrierSet::enqueue(oop pre_val) {
   }
 }
 
+void G1BarrierSet::write_ref_array_pre_oop_entry(oop* dst, size_t length) {
+  G1BarrierSet *bs = barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
+  bs->write_ref_array_pre(dst, length, false);
+}
+
+void G1BarrierSet::write_ref_array_pre_narrow_oop_entry(narrowOop* dst, size_t length) {
+  G1BarrierSet *bs = barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
+  bs->write_ref_array_pre(dst, length, false);
+}
+
+void G1BarrierSet::write_ref_array_post_entry(HeapWord* dst, size_t length) {
+  G1BarrierSet *bs = barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
+  bs->G1BarrierSet::write_ref_array(dst, length);
+}
+
 template <class T> void
-G1BarrierSet::write_ref_array_pre_work(T* dst, int count) {
+G1BarrierSet::write_ref_array_pre_work(T* dst, size_t count) {
   if (!JavaThread::satb_mark_queue_set().is_active()) return;
   T* elem_ptr = dst;
-  for (int i = 0; i < count; i++, elem_ptr++) {
+  for (size_t i = 0; i < count; i++, elem_ptr++) {
     T heap_oop = oopDesc::load_heap_oop(elem_ptr);
     if (!oopDesc::is_null(heap_oop)) {
       enqueue(oopDesc::decode_heap_oop_not_null(heap_oop));
@@ -65,13 +84,13 @@ G1BarrierSet::write_ref_array_pre_work(T* dst, int count) {
   }
 }
 
-void G1BarrierSet::write_ref_array_pre(oop* dst, int count, bool dest_uninitialized) {
+void G1BarrierSet::write_ref_array_pre(oop* dst, size_t count, bool dest_uninitialized) {
   if (!dest_uninitialized) {
     write_ref_array_pre_work(dst, count);
   }
 }
 
-void G1BarrierSet::write_ref_array_pre(narrowOop* dst, int count, bool dest_uninitialized) {
+void G1BarrierSet::write_ref_array_pre(narrowOop* dst, size_t count, bool dest_uninitialized) {
   if (!dest_uninitialized) {
     write_ref_array_pre_work(dst, count);
   }
@@ -167,7 +186,7 @@ void G1BarrierSet::on_thread_attach(JavaThread* thread) {
 
 void G1BarrierSet::on_thread_detach(JavaThread* thread) {
   // Flush any deferred card marks, SATB buffers and dirty card queue buffers
-  CardTableModRefBS::on_thread_detach(thread);
+  CardTableBarrierSet::on_thread_detach(thread);
   thread->satb_mark_queue().flush();
   thread->dirty_card_queue().flush();
 }

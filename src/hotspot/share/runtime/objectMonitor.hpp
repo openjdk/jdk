@@ -31,6 +31,8 @@
 #include "runtime/park.hpp"
 #include "runtime/perfData.hpp"
 
+class ObjectMonitor;
+
 // ObjectWaiter serves as a "proxy" or surrogate thread.
 // TODO-FIXME: Eliminate ObjectWaiter and use the thread-specific
 // ParkEvent instead.  Beware, however, that the JVMTI code

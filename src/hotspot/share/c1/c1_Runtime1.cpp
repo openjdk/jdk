@@ -53,11 +53,12 @@
 #include "runtime/atomic.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/compilationPolicy.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/threadCritical.hpp"
-#include "runtime/vframe.hpp"
+#include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/copy.hpp"
@@ -1355,67 +1356,6 @@ JRT_END
 JRT_LEAF(void, Runtime1::trace_block_entry(jint block_id))
   // for now we just print out the block id
   tty->print("%d ", block_id);
-JRT_END
-
-
-// Array copy return codes.
-enum {
-  ac_failed = -1, // arraycopy failed
-  ac_ok = 0       // arraycopy succeeded
-};
-
-
-// Below length is the # elements copied.
-template <class T> int obj_arraycopy_work(oopDesc* src, T* src_addr,
-                                          oopDesc* dst, T* dst_addr,
-                                          int length) {
-  if (src == dst) {
-    // same object, no check
-    HeapAccess<>::oop_arraycopy(arrayOop(src), arrayOop(dst), src_addr, dst_addr, length);
-    return ac_ok;
-  } else {
-    Klass* bound = ObjArrayKlass::cast(dst->klass())->element_klass();
-    Klass* stype = ObjArrayKlass::cast(src->klass())->element_klass();
-    if (stype == bound || stype->is_subtype_of(bound)) {
-      // Elements are guaranteed to be subtypes, so no check necessary
-      HeapAccess<ARRAYCOPY_DISJOINT>::oop_arraycopy(arrayOop(src), arrayOop(dst), src_addr, dst_addr, length);
-      return ac_ok;
-    }
-  }
-  return ac_failed;
-}
-
-// fast and direct copy of arrays; returning -1, means that an exception may be thrown
-// and we did not copy anything
-JRT_LEAF(int, Runtime1::arraycopy(oopDesc* src, int src_pos, oopDesc* dst, int dst_pos, int length))
-#ifndef PRODUCT
-  _generic_arraycopy_cnt++;        // Slow-path oop array copy
-#endif
-
-  if (src == NULL || dst == NULL || src_pos < 0 || dst_pos < 0 || length < 0) return ac_failed;
-  if (!dst->is_array() || !src->is_array()) return ac_failed;
-  if ((unsigned int) arrayOop(src)->length() < (unsigned int)src_pos + (unsigned int)length) return ac_failed;
-  if ((unsigned int) arrayOop(dst)->length() < (unsigned int)dst_pos + (unsigned int)length) return ac_failed;
-
-  if (length == 0) return ac_ok;
-  if (src->is_typeArray()) {
-    Klass* klass_oop = src->klass();
-    if (klass_oop != dst->klass()) return ac_failed;
-    TypeArrayKlass* klass = TypeArrayKlass::cast(klass_oop);
-    klass->copy_array(arrayOop(src), src_pos, arrayOop(dst), dst_pos, length, Thread::current());
-    return ac_ok;
-  } else if (src->is_objArray() && dst->is_objArray()) {
-    if (UseCompressedOops) {
-      narrowOop *src_addr  = objArrayOop(src)->obj_at_addr<narrowOop>(src_pos);
-      narrowOop *dst_addr  = objArrayOop(dst)->obj_at_addr<narrowOop>(dst_pos);
-      return obj_arraycopy_work(src, src_addr, dst, dst_addr, length);
-    } else {
-      oop *src_addr  = objArrayOop(src)->obj_at_addr<oop>(src_pos);
-      oop *dst_addr  = objArrayOop(dst)->obj_at_addr<oop>(dst_pos);
-      return obj_arraycopy_work(src, src_addr, dst, dst_addr, length);
-    }
-  }
-  return ac_failed;
 JRT_END
 
 

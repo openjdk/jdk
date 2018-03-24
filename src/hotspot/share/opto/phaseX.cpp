@@ -1421,6 +1421,9 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
       if (cast != NULL && cast->has_range_check()) {
         C->remove_range_check_cast(cast);
       }
+      if (dead->Opcode() == Op_Opaque4) {
+        C->remove_opaque4_node(dead);
+      }
     }
   } // while (_stack.is_nonempty())
 }

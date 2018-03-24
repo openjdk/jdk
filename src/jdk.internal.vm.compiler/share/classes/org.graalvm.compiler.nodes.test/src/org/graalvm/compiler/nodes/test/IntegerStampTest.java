@@ -570,4 +570,16 @@ public class IntegerStampTest extends GraphTest {
         assertEquals(IntegerStamp.create(bits, 0, 1000), div.foldStamp(IntegerStamp.create(bits, 100, 1000), IntegerStamp.create(bits, 1, max)));
         assertEquals(IntegerStamp.create(bits, -1000, 0), div.foldStamp(IntegerStamp.create(bits, -1000, -100), IntegerStamp.create(bits, 1, max)));
     }
+
+    @Test
+    public void testEmpty() {
+        IntegerStamp intStamp = StampFactory.forInteger(32);
+        IntegerStamp longStamp = StampFactory.forInteger(64);
+        Stamp intEmpty = StampFactory.empty(JavaKind.Int);
+        Stamp longEmpty = StampFactory.empty(JavaKind.Long);
+        assertEquals(intStamp.join(intEmpty), intEmpty);
+        assertEquals(intStamp.meet(intEmpty), intStamp);
+        assertEquals(longStamp.join(longEmpty), longEmpty);
+        assertEquals(longStamp.meet(longEmpty), longStamp);
+    }
 }

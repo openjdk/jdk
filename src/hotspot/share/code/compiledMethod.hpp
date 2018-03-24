@@ -50,13 +50,15 @@ class ExceptionCache : public CHeapObj<mtCode> {
   volatile int _count;
   ExceptionCache* _next;
 
-  address pc_at(int index)                     { assert(index >= 0 && index < count(),""); return _pc[index]; }
-  void    set_pc_at(int index, address a)      { assert(index >= 0 && index < cache_size,""); _pc[index] = a; }
-  address handler_at(int index)                { assert(index >= 0 && index < count(),""); return _handler[index]; }
-  void    set_handler_at(int index, address a) { assert(index >= 0 && index < cache_size,""); _handler[index] = a; }
-  int     count();
+  inline address pc_at(int index);
+  void set_pc_at(int index, address a)      { assert(index >= 0 && index < cache_size,""); _pc[index] = a; }
+
+  inline address handler_at(int index);
+  void set_handler_at(int index, address a) { assert(index >= 0 && index < cache_size,""); _handler[index] = a; }
+
+  inline int count();
   // increment_count is only called under lock, but there may be concurrent readers.
-  void    increment_count();
+  void increment_count();
 
  public:
 
@@ -306,9 +308,9 @@ public:
   virtual address get_original_pc(const frame* fr) = 0;
   // Deopt
   // Return true is the PC is one would expect if the frame is being deopted.
-  bool is_deopt_pc      (address pc) { return is_deopt_entry(pc) || is_deopt_mh_entry(pc); }
+  inline bool is_deopt_pc(address pc);
   bool is_deopt_mh_entry(address pc) { return pc == deopt_mh_handler_begin(); }
-  bool is_deopt_entry(address pc);
+  inline bool is_deopt_entry(address pc);
 
   virtual bool can_convert_to_zombie() = 0;
   virtual const char* compile_kind() const = 0;

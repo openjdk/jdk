@@ -146,6 +146,15 @@ public class GraphDecoder {
         public boolean isInlinedMethod() {
             return false;
         }
+
+        public NodeSourcePosition getCallerBytecodePosition() {
+            return getCallerBytecodePosition(null);
+        }
+
+        public NodeSourcePosition getCallerBytecodePosition(NodeSourcePosition position) {
+            return position;
+        }
+
     }
 
     /** Decoding state maintained for each loop in the encoded graph. */
@@ -1001,7 +1010,7 @@ public class GraphDecoder {
     }
 
     protected void readProperties(MethodScope methodScope, Node node) {
-        node.setNodeSourcePosition((NodeSourcePosition) readObject(methodScope));
+        NodeSourcePosition position = (NodeSourcePosition) readObject(methodScope);
         Fields fields = node.getNodeClass().getData();
         for (int pos = 0; pos < fields.getCount(); pos++) {
             if (fields.getType(pos).isPrimitive()) {
@@ -1011,6 +1020,9 @@ public class GraphDecoder {
                 Object value = readObject(methodScope);
                 fields.putObject(node, pos, value);
             }
+        }
+        if (graph.trackNodeSourcePosition() && position != null) {
+            node.setNodeSourcePosition(methodScope.getCallerBytecodePosition(position));
         }
     }
 
@@ -1252,7 +1264,11 @@ public class GraphDecoder {
         long readerByteIndex = methodScope.reader.getByteIndex();
         methodScope.reader.setByteIndex(methodScope.encodedGraph.nodeStartOffsets[nodeOrderId]);
         NodeClass<?> nodeClass = methodScope.encodedGraph.getNodeClasses()[methodScope.reader.getUVInt()];
-        node = (FixedNode) graph.add(nodeClass.allocateInstance());
+        Node stubNode = nodeClass.allocateInstance();
+        if (graph.trackNodeSourcePosition()) {
+            stubNode.setNodeSourcePosition(NodeSourcePosition.placeholder(graph.method()));
+        }
+        node = (FixedNode) graph.add(stubNode);
         /* Properties and edges are not filled yet, the node remains uninitialized. */
         methodScope.reader.setByteIndex(readerByteIndex);
 

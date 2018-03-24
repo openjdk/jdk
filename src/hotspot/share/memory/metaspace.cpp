@@ -113,6 +113,7 @@ ChunkIndex get_chunk_type_by_size(size_t size, bool is_class) {
     } else if (size == ClassMediumChunk) {
       return MediumIndex;
     } else if (size > ClassMediumChunk) {
+      // A valid humongous chunk size is a multiple of the smallest chunk size.
       assert(is_aligned(size, ClassSpecializedChunk), "Invalid chunk size");
       return HumongousIndex;
     }
@@ -124,6 +125,7 @@ ChunkIndex get_chunk_type_by_size(size_t size, bool is_class) {
     } else if (size == MediumChunk) {
       return MediumIndex;
     } else if (size > MediumChunk) {
+      // A valid humongous chunk size is a multiple of the smallest chunk size.
       assert(is_aligned(size, SpecializedChunk), "Invalid chunk size");
       return HumongousIndex;
     }
@@ -299,10 +301,7 @@ class ChunkManager : public CHeapObj<mtInternal> {
   Metachunk* free_chunks_get(size_t chunk_word_size);
 
 #define index_bounds_check(index)                                         \
-  assert(index == SpecializedIndex ||                                     \
-         index == SmallIndex ||                                           \
-         index == MediumIndex ||                                          \
-         index == HumongousIndex, "Bad index: %d", (int) index)
+  assert(is_valid_chunktype(index), "Bad index: %d", (int) index)
 
   size_t num_free_chunks(ChunkIndex index) const {
     index_bounds_check(index);
@@ -2648,25 +2647,13 @@ size_t ChunkManager::free_chunks_count() {
 }
 
 ChunkIndex ChunkManager::list_index(size_t size) {
-  if (size_by_index(SpecializedIndex) == size) {
-    return SpecializedIndex;
-  }
-  if (size_by_index(SmallIndex) == size) {
-    return SmallIndex;
-  }
-  const size_t med_size = size_by_index(MediumIndex);
-  if (med_size == size) {
-    return MediumIndex;
-  }
-
-  assert(size > med_size, "Not a humongous chunk");
-  return HumongousIndex;
+  return get_chunk_type_by_size(size, is_class());
 }
 
 size_t ChunkManager::size_by_index(ChunkIndex index) const {
   index_bounds_check(index);
   assert(index != HumongousIndex, "Do not call for humongous chunks.");
-  return _free_chunks[index].size();
+  return get_size_for_nonhumongous_chunktype(index, is_class());
 }
 
 void ChunkManager::locked_verify_free_chunks_total() {
@@ -5244,37 +5231,39 @@ class TestVirtualSpaceNodeTest {
 // The following test is placed here instead of a gtest / unittest file
 // because the ChunkManager class is only available in this file.
 void ChunkManager_test_list_index() {
-  ChunkManager manager(true);
+  {
+    // Test previous bug where a query for a humongous class metachunk,
+    // incorrectly matched the non-class medium metachunk size.
+    {
+      ChunkManager manager(true);
 
-  // Test previous bug where a query for a humongous class metachunk,
-  // incorrectly matched the non-class medium metachunk size.
-  {
-    assert(MediumChunk > ClassMediumChunk, "Precondition for test");
+      assert(MediumChunk > ClassMediumChunk, "Precondition for test");
 
-    ChunkIndex index = manager.list_index(MediumChunk);
+      ChunkIndex index = manager.list_index(MediumChunk);
 
-    assert(index == HumongousIndex,
-           "Requested size is larger than ClassMediumChunk,"
-           " so should return HumongousIndex. Got index: %d", (int)index);
+      assert(index == HumongousIndex,
+          "Requested size is larger than ClassMediumChunk,"
+          " so should return HumongousIndex. Got index: %d", (int)index);
+    }
+
+    // Check the specified sizes as well.
+    {
+      ChunkManager manager(true);
+      assert(manager.list_index(ClassSpecializedChunk) == SpecializedIndex, "sanity");
+      assert(manager.list_index(ClassSmallChunk) == SmallIndex, "sanity");
+      assert(manager.list_index(ClassMediumChunk) == MediumIndex, "sanity");
+      assert(manager.list_index(ClassMediumChunk + ClassSpecializedChunk) == HumongousIndex, "sanity");
+    }
+    {
+      ChunkManager manager(false);
+      assert(manager.list_index(SpecializedChunk) == SpecializedIndex, "sanity");
+      assert(manager.list_index(SmallChunk) == SmallIndex, "sanity");
+      assert(manager.list_index(MediumChunk) == MediumIndex, "sanity");
+      assert(manager.list_index(MediumChunk + SpecializedChunk) == HumongousIndex, "sanity");
+    }
+
   }
 
-  // Check the specified sizes as well.
-  {
-    ChunkIndex index = manager.list_index(ClassSpecializedChunk);
-    assert(index == SpecializedIndex, "Wrong index returned. Got index: %d", (int)index);
-  }
-  {
-    ChunkIndex index = manager.list_index(ClassSmallChunk);
-    assert(index == SmallIndex, "Wrong index returned. Got index: %d", (int)index);
-  }
-  {
-    ChunkIndex index = manager.list_index(ClassMediumChunk);
-    assert(index == MediumIndex, "Wrong index returned. Got index: %d", (int)index);
-  }
-  {
-    ChunkIndex index = manager.list_index(ClassMediumChunk + 1);
-    assert(index == HumongousIndex, "Wrong index returned. Got index: %d", (int)index);
-  }
 }
 
 #endif // !PRODUCT

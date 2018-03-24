@@ -107,6 +107,11 @@ void G1FullGCMarker::follow_array_chunk(objArrayOop array, int index) {
   const int stride = MIN2(len - beg_index, (int) ObjArrayMarkingStride);
   const int end_index = beg_index + stride;
 
+  // Push the continuation first to allow more efficient work stealing.
+  if (end_index < len) {
+    push_objarray(array, end_index);
+  }
+
   array->oop_iterate_range(mark_closure(), beg_index, end_index);
 
   if (VerifyDuringGC) {
@@ -116,10 +121,6 @@ void G1FullGCMarker::follow_array_chunk(objArrayOop array, int index) {
     if (_verify_closure.failures()) {
       assert(false, "Failed");
     }
-  }
-
-  if (end_index < len) {
-    push_objarray(array, end_index); // Push the continuation.
   }
 }
 

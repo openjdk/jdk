@@ -23,6 +23,7 @@
 package org.graalvm.compiler.nodes;
 
 import org.graalvm.compiler.core.common.type.StampFactory;
+import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Simplifiable;
 import org.graalvm.compiler.graph.spi.SimplifierTool;
@@ -41,8 +42,8 @@ public abstract class AbstractFixedGuardNode extends DeoptimizingFixedWithNextNo
 
     public static final NodeClass<AbstractFixedGuardNode> TYPE = NodeClass.create(AbstractFixedGuardNode.class);
     @Input(InputType.Condition) protected LogicNode condition;
-    protected final DeoptimizationReason reason;
-    protected final DeoptimizationAction action;
+    protected DeoptimizationReason reason;
+    protected DeoptimizationAction action;
     protected JavaConstant speculation;
     protected boolean negated;
 
@@ -109,29 +110,42 @@ public abstract class AbstractFixedGuardNode extends DeoptimizingFixedWithNextNo
         }
     }
 
+    @SuppressWarnings("try")
     public DeoptimizeNode lowerToIf() {
-        FixedNode currentNext = next();
-        setNext(null);
-        DeoptimizeNode deopt = graph().add(new DeoptimizeNode(action, reason, speculation));
-        deopt.setStateBefore(stateBefore());
-        IfNode ifNode;
-        AbstractBeginNode noDeoptSuccessor;
-        if (negated) {
-            ifNode = graph().add(new IfNode(condition, deopt, currentNext, 0));
-            noDeoptSuccessor = ifNode.falseSuccessor();
-        } else {
-            ifNode = graph().add(new IfNode(condition, currentNext, deopt, 1));
-            noDeoptSuccessor = ifNode.trueSuccessor();
-        }
-        ((FixedWithNextNode) predecessor()).setNext(ifNode);
-        this.replaceAtUsages(noDeoptSuccessor);
-        GraphUtil.killWithUnusedFloatingInputs(this);
+        try (DebugCloseable position = this.withNodeSourcePosition()) {
+            FixedNode currentNext = next();
+            setNext(null);
+            DeoptimizeNode deopt = graph().add(new DeoptimizeNode(action, reason, speculation));
+            deopt.setStateBefore(stateBefore());
+            IfNode ifNode;
+            AbstractBeginNode noDeoptSuccessor;
+            if (negated) {
+                ifNode = graph().add(new IfNode(condition, deopt, currentNext, 0));
+                noDeoptSuccessor = ifNode.falseSuccessor();
+            } else {
+                ifNode = graph().add(new IfNode(condition, currentNext, deopt, 1));
+                noDeoptSuccessor = ifNode.trueSuccessor();
+            }
+            ((FixedWithNextNode) predecessor()).setNext(ifNode);
+            this.replaceAtUsages(noDeoptSuccessor);
+            GraphUtil.killWithUnusedFloatingInputs(this);
 
-        return deopt;
+            return deopt;
+        }
     }
 
     @Override
     public boolean canDeoptimize() {
         return true;
+    }
+
+    @Override
+    public void setAction(DeoptimizationAction action) {
+        this.action = action;
+    }
+
+    @Override
+    public void setReason(DeoptimizationReason reason) {
+        this.reason = reason;
     }
 }

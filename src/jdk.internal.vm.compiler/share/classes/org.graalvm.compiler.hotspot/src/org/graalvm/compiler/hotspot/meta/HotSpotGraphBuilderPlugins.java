@@ -234,7 +234,7 @@ public class HotSpotGraphBuilderPlugins {
                     b.addPush(JavaKind.Object, object);
                 } else {
                     FixedGuardNode fixedGuard = b.add(new FixedGuardNode(condition, DeoptimizationReason.ClassCastException, DeoptimizationAction.InvalidateReprofile, false));
-                    b.addPush(JavaKind.Object, new DynamicPiNode(object, fixedGuard, javaClass));
+                    b.addPush(JavaKind.Object, DynamicPiNode.create(b.getAssumptions(), b.getConstantReflection(), object, fixedGuard, javaClass));
                 }
                 return true;
             }

@@ -29,7 +29,7 @@
 #include "gc/parallel/psCardTable.hpp"
 #include "gc/parallel/psMarkSweepDecorator.hpp"
 #include "gc/parallel/psOldGen.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "logging/log.hpp"

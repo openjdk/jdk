@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.hpp"
 #include "services/attachListener.hpp"
 #include "services/dtraceAttacher.hpp"

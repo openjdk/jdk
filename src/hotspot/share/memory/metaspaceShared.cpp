@@ -46,6 +46,7 @@
 #include "logging/logMessage.hpp"
 #include "memory/filemap.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
@@ -56,15 +57,15 @@
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
-#include "runtime/timerTrace.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/timerTrace.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
 #include "utilities/align.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/hashtable.inline.hpp"
-#include "memory/metaspaceClosure.hpp"
 
 ReservedSpace MetaspaceShared::_shared_rs;
 VirtualSpace MetaspaceShared::_shared_vs;
@@ -233,6 +234,7 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
       // with the archived ones, so it must be done after all encodings are determined.
       mapinfo->map_heap_regions();
     }
+    Universe::set_narrow_klass_range(CompressedClassSpaceSize);
 #endif // _LP64
   } else {
     assert(!mapinfo->is_open() && !UseSharedSpaces,
@@ -298,6 +300,8 @@ void MetaspaceShared::initialize_dumptime_shared_and_meta_spaces() {
   // Set narrow_klass_shift to be LogKlassAlignmentInBytes. This is consistent
   // with AOT.
   Universe::set_narrow_klass_shift(LogKlassAlignmentInBytes);
+  // Set the range of klass addresses to 4GB.
+  Universe::set_narrow_klass_range(cds_total);
 
   Metaspace::initialize_class_space(tmp_class_space);
   tty->print_cr("narrow_klass_base = " PTR_FORMAT ", narrow_klass_shift = %d",
@@ -1818,6 +1822,13 @@ void MetaspaceShared::dump_open_archive_heap_objects(
 
   G1CollectedHeap::heap()->end_archive_alloc_range(open_archive,
                                                    os::vm_allocation_granularity());
+}
+
+unsigned MetaspaceShared::obj_hash(oop const& p) {
+  assert(!p->mark()->has_bias_pattern(),
+         "this object should never have been locked");  // so identity_hash won't safepoin
+  unsigned hash = (unsigned)p->identity_hash();
+  return hash;
 }
 
 MetaspaceShared::ArchivedObjectCache* MetaspaceShared::_archive_object_cache = NULL;

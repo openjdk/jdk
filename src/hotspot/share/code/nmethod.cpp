@@ -26,6 +26,7 @@
 #include "jvm.h"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
+#include "code/compiledMethod.inline.hpp"
 #include "code/dependencies.hpp"
 #include "code/nativeInst.hpp"
 #include "code/nmethod.hpp"
@@ -36,20 +37,25 @@
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/directivesParser.hpp"
 #include "compiler/disassembler.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "interpreter/bytecode.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sweeper.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
@@ -378,6 +384,10 @@ int nmethod::total_size() const {
     scopes_pcs_size()    +
     handler_table_size() +
     nul_chk_table_size();
+}
+
+address* nmethod::orig_pc_addr(const frame* fr) {
+  return (address*) ((address)fr->unextended_sp() + _orig_pc_offset);
 }
 
 const char* nmethod::compile_kind() const {
@@ -1682,7 +1692,7 @@ public:
   { NOT_PRODUCT(_print_nm = NULL); }
   bool detected_scavenge_root() { return _detected_scavenge_root; }
   virtual void do_oop(oop* p) {
-    if ((*p) != NULL && (*p)->is_scavengable()) {
+    if ((*p) != NULL && Universe::heap()->is_scavengable(*p)) {
       NOT_PRODUCT(maybe_print(p));
       _detected_scavenge_root = true;
     }
@@ -2177,7 +2187,7 @@ public:
   DebugScavengeRoot(nmethod* nm) : _nm(nm), _ok(true) { }
   bool ok() { return _ok; }
   virtual void do_oop(oop* p) {
-    if ((*p) == NULL || !(*p)->is_scavengable())  return;
+    if ((*p) == NULL || !Universe::heap()->is_scavengable(*p))  return;
     if (_ok) {
       _nm->print_nmethod(true);
       _ok = false;

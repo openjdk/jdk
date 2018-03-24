@@ -28,7 +28,7 @@
 #include "code/codeCache.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
@@ -319,7 +319,7 @@ void decode_env::print_address(address adr) {
     }
 
     BarrierSet* bs = Universe::heap()->barrier_set();
-    if (bs->is_a(BarrierSet::CardTableModRef) &&
+    if (bs->is_a(BarrierSet::CardTableBarrierSet) &&
         adr == ci_card_table_address_as<address>()) {
       st->print("word_map_base");
       if (WizardMode) st->print(" " INTPTR_FORMAT, p2i(adr));

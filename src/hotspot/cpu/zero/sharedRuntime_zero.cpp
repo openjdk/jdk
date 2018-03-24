@@ -31,6 +31,7 @@
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/compiledICHolder.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframeArray.hpp"
 #include "vmreg_zero.inline.hpp"

@@ -30,12 +30,13 @@
 #include "code/compiledIC.hpp"
 #include "code/nativeInst.hpp"
 #include "compiler/compilerOracle.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "jvmci/compilerRuntime.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "oops/method.inline.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
@@ -69,6 +70,10 @@ static void metadata_oops_do(Metadata** metadata_begin, Metadata **metadata_end,
   }
 }
 #endif
+
+address* AOTCompiledMethod::orig_pc_addr(const frame* fr) {
+  return (address*) ((address)fr->unextended_sp() + _meta->orig_pc_offset());
+}
 
 bool AOTCompiledMethod::do_unloading_oops(address low_boundary, BoolObjectClosure* is_alive, bool unloading_occurred) {
   return false;

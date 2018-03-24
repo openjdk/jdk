@@ -39,7 +39,7 @@ public final class InlineMethodSubstitutionsPolicy extends InlineEverythingPolic
         CallTargetNode callTarget = invocation.callee().invoke().callTarget();
         if (callTarget instanceof MethodCallTargetNode) {
             ResolvedJavaMethod calleeMethod = ((MethodCallTargetNode) callTarget).targetMethod();
-            if (replacements.getSubstitution(calleeMethod, invocation.callee().invoke().bci()) != null) {
+            if (replacements.hasSubstitution(calleeMethod, invocation.callee().invoke().bci())) {
                 return true;
             }
         }

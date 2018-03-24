@@ -29,9 +29,10 @@
 #include "oops/cpCache.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/compilationPolicy.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/deoptimization.hpp"
-#include "runtime/interfaceSupport.hpp"
-#include "runtime/vframe.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/vframe.inline.hpp"
 #include "aot/aotLoader.hpp"
 
 // Resolve and allocate String
