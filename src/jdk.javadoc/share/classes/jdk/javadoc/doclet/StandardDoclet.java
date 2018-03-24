@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import jdk.javadoc.internal.doclets.formats.html.HtmlDoclet;
  * This doclet generates HTML-formatted documentation for the specified modules,
  * packages and types.
  *
- * @see <a href="{@docRoot}/../specs/doc-comment-spec.html">
+ * @see <a href="{@docRootParent}/specs/doc-comment-spec.html">
  *      Documentation Comment Specification for the Standard Doclet</a>
  */
 public class StandardDoclet implements Doclet {
