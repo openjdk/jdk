@@ -290,6 +290,9 @@ class G1CreateCardLiveDataTask: public AbstractGangTask {
       size_t marked_bytes = _helper.mark_marked_during_marking(_mark_bitmap, hr);
       if (marked_bytes > 0) {
         hr->add_to_marked_bytes(marked_bytes);
+        assert(!hr->is_old() || marked_bytes == (_cm->liveness(hr->hrm_index()) * HeapWordSize),
+               "Marked bytes " SIZE_FORMAT " for region %u do not match liveness during mark " SIZE_FORMAT,
+               marked_bytes, hr->hrm_index(), _cm->liveness(hr->hrm_index()) * HeapWordSize);
       }
 
       return (_cm->do_yield_check() && _cm->has_aborted());
