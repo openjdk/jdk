@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,32 +50,6 @@ void G1MarkAndPushClosure::do_klass(Klass* k) {
 void G1MarkAndPushClosure::do_cld(ClassLoaderData* cld) {
   do_cld_nv(cld);
 }
-
-G1AdjustAndRebuildClosure::G1AdjustAndRebuildClosure(uint worker_id) :
-  _worker_id(worker_id),
-  _compaction_delta(0),
-  _g1h(G1CollectedHeap::heap()) { }
-
-void G1AdjustAndRebuildClosure::update_compaction_delta(oop obj) {
-  if (G1ArchiveAllocator::is_open_archive_object(obj)) {
-    _compaction_delta = 0;
-    return;
-  }
-  oop forwardee = obj->forwardee();
-  if (forwardee == NULL) {
-    // Object not moved.
-    _compaction_delta = 0;
-  } else {
-    // Object moved to forwardee, calculate delta.
-    _compaction_delta = calculate_compaction_delta(obj, forwardee);
-  }
-}
-
-void G1AdjustClosure::do_oop(oop* p)       { adjust_pointer(p); }
-void G1AdjustClosure::do_oop(narrowOop* p) { adjust_pointer(p); }
-
-void G1AdjustAndRebuildClosure::do_oop(oop* p)       { do_oop_nv(p); }
-void G1AdjustAndRebuildClosure::do_oop(narrowOop* p) { do_oop_nv(p); }
 
 void G1FollowStackClosure::do_void() { _marker->drain_stack(); }
 

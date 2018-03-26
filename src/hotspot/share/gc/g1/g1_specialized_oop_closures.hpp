@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,9 @@ class G1CMOopClosure;
 class G1RootRegionScanClosure;
 
 class G1MarkAndPushClosure;
-class G1AdjustAndRebuildClosure;
+class G1AdjustClosure;
+
+class G1RebuildRemSetClosure;
 
 #define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1(f) \
       f(G1ScanEvacuatedObjClosure,_nv)             \
@@ -50,10 +52,11 @@ class G1AdjustAndRebuildClosure;
       f(G1ScanObjsDuringScanRSClosure,_nv)         \
       f(G1ConcurrentRefineOopClosure,_nv)          \
       f(G1CMOopClosure,_nv)                        \
-      f(G1RootRegionScanClosure,_nv)
+      f(G1RootRegionScanClosure,_nv)               \
+      f(G1RebuildRemSetClosure,_nv)
 
 #define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1FULL(f) \
       f(G1MarkAndPushClosure,_nv)                      \
-      f(G1AdjustAndRebuildClosure,_nv)
+      f(G1AdjustClosure,_nv)
 
 #endif // SHARE_VM_GC_G1_G1_SPECIALIZED_OOP_CLOSURES_HPP

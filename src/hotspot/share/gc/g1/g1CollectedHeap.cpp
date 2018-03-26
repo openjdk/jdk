@@ -303,12 +303,14 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(uint first,
   // that there is a single object that starts at the bottom of the
   // first region.
   first_hr->set_starts_humongous(obj_top, word_fill_size);
+  _g1_policy->remset_tracker()->update_at_allocate(first_hr);
   // Then, if there are any, we will set up the "continues
   // humongous" regions.
   HeapRegion* hr = NULL;
   for (uint i = first + 1; i <= last; ++i) {
     hr = region_at(i);
     hr->set_continues_humongous(first_hr);
+    _g1_policy->remset_tracker()->update_at_allocate(hr);
   }
 
   // Up to this point no concurrent thread would have been able to
@@ -2611,6 +2613,11 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
       return false;
     }
 
+    // If we do not have a complete remembered set for the region, then we can
+    // not be sure that we have all references to it.
+    if (!region->rem_set()->is_complete()) {
+      return false;
+    }
     // Candidate selection must satisfy the following constraints
     // while concurrent marking is in progress:
     //
@@ -2696,7 +2703,15 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
         assert(hrrs.n_yielded() == r->rem_set()->occupied(),
                "Remembered set hash maps out of sync, cur: " SIZE_FORMAT " entries, next: " SIZE_FORMAT " entries",
                hrrs.n_yielded(), r->rem_set()->occupied());
-        r->rem_set()->clear_locked();
+        // We should only clear the card based remembered set here as we will not
+        // implicitly rebuild anything else during eager reclaim. Note that at the moment
+        // (and probably never) we do not enter this path if there are other kind of
+        // remembered sets for this region.
+        r->rem_set()->clear_locked(true /* only_cardset */);
+        // Clear_locked() above sets the state to Empty. However we want to continue
+        // collecting remembered set entries for humongous regions that were not
+        // reclaimed.
+        r->rem_set()->set_state_complete();
       }
       assert(r->rem_set()->is_empty(), "At this point any humongous candidate remembered set must be empty.");
     }
@@ -4404,6 +4419,7 @@ void G1CollectedHeap::free_region(HeapRegion* hr,
     _hot_card_cache->reset_card_counts(hr);
   }
   hr->hr_clear(skip_remset, true /* clear_space */, locked /* locked */);
+  _g1_policy->remset_tracker()->update_at_free(hr);
   free_list->add_ordered(hr);
 }
 
@@ -4436,29 +4452,6 @@ void G1CollectedHeap::prepend_to_freelist(FreeRegionList* list) {
 
 void G1CollectedHeap::decrement_summary_bytes(size_t bytes) {
   decrease_used(bytes);
-}
-
-class G1ParScrubRemSetTask: public AbstractGangTask {
-protected:
-  G1RemSet* _g1rs;
-  HeapRegionClaimer _hrclaimer;
-
-public:
-  G1ParScrubRemSetTask(G1RemSet* g1_rs, uint num_workers) :
-    AbstractGangTask("G1 ScrubRS"),
-    _g1rs(g1_rs),
-    _hrclaimer(num_workers) {
-  }
-
-  void work(uint worker_id) {
-    _g1rs->scrub(worker_id, &_hrclaimer);
-  }
-};
-
-void G1CollectedHeap::scrub_rem_set() {
-  uint num_workers = workers()->active_workers();
-  G1ParScrubRemSetTask g1_par_scrub_rs_task(g1_rem_set(), num_workers);
-  workers()->run_task(&g1_par_scrub_rs_task);
 }
 
 class G1FreeCollectionSetTask : public AbstractGangTask {
@@ -5053,6 +5046,8 @@ public:
   }
 
   bool do_heap_region(HeapRegion* r) {
+    // After full GC, no region should have a remembered set.
+    r->rem_set()->clear(true);
     if (r->is_empty()) {
       // Add free regions to the free list
       r->set_free();
@@ -5120,6 +5115,7 @@ HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
       set_region_short_lived_locked(new_alloc_region);
       _hr_printer.alloc(new_alloc_region, !should_allocate);
       _verifier->check_bitmaps("Mutator Region Allocation", new_alloc_region);
+      _g1_policy->remset_tracker()->update_at_allocate(new_alloc_region);
       return new_alloc_region;
     }
   }
@@ -5175,6 +5171,7 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, InCSetState d
       new_alloc_region->set_old();
       _verifier->check_bitmaps("Old Region Allocation", new_alloc_region);
     }
+    _g1_policy->remset_tracker()->update_at_allocate(new_alloc_region);
     _hr_printer.alloc(new_alloc_region);
     bool during_im = collector_state()->during_initial_mark_pause();
     new_alloc_region->note_start_of_copying(during_im);

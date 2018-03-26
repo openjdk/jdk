@@ -29,7 +29,10 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkObjArrayProcessor.inline.hpp"
+#include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
+#include "gc/g1/g1RemSetTrackingPolicy.hpp"
+#include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
@@ -161,6 +164,27 @@ inline void G1CMTask::process_grey_task_entry(G1TaskQueueEntry task_entry) {
 inline size_t G1CMTask::scan_objArray(objArrayOop obj, MemRegion mr) {
   obj->oop_iterate(_cm_oop_closure, mr);
   return mr.word_size();
+}
+
+inline HeapWord* G1ConcurrentMark::top_at_rebuild_start(uint region) const {
+  assert(region < _g1h->max_regions(), "Tried to access TARS for region %u out of bounds", region);
+  return _top_at_rebuild_starts[region];
+}
+
+inline void G1ConcurrentMark::update_top_at_rebuild_start(HeapRegion* r) {
+  uint const region = r->hrm_index();
+  assert(region < _g1h->max_regions(), "Tried to access TARS for region %u out of bounds", region);
+  assert(_top_at_rebuild_starts[region] == NULL,
+         "TARS for region %u has already been set to " PTR_FORMAT " should be NULL",
+         region, p2i(_top_at_rebuild_starts[region]));
+  G1RemSetTrackingPolicy* tracker = _g1h->g1_policy()->remset_tracker();
+  if (tracker->needs_scan_for_rebuild(r)) {
+    _top_at_rebuild_starts[region] = r->top();
+  } else {
+    // We could leave the TARS for this region at NULL, but we would not catch
+    // accidental double assignment then.
+    _top_at_rebuild_starts[region] = r->bottom();
+  }
 }
 
 inline void G1CMTask::update_liveness(oop const obj, const size_t obj_size) {

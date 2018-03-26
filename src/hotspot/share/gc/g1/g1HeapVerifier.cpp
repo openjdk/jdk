@@ -312,6 +312,9 @@ public:
   }
 
   bool do_heap_region(HeapRegion* r) {
+    guarantee(!r->is_young() || r->rem_set()->is_complete(), "Remembered set for Young region %u must be complete, is %s", r->hrm_index(), r->rem_set()->get_state_str());
+    // Humongous and old regions regions might be of any state, so can't check here.
+    guarantee(!r->is_free() || !r->rem_set()->is_tracked(), "Remembered set for free region %u must be untracked, is %s", r->hrm_index(), r->rem_set()->get_state_str());
     // For archive regions, verify there are no heap pointers to
     // non-pinned regions. For all others, verify liveness info.
     if (r->is_closed_archive()) {
@@ -453,7 +456,7 @@ void G1HeapVerifier::verify(VerifyOption vo) {
   }
 
   if (failures) {
-    log_error(gc, verify)("Heap after failed verification:");
+    log_error(gc, verify)("Heap after failed verification (kind %d):", vo);
     // It helps to have the per-region information in the output to
     // help us track down what went wrong. This is why we call
     // print_extended_on() instead of print_on().

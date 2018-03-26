@@ -240,6 +240,7 @@ public:
         size_t live_bytes = remove_self_forward_ptr_by_walking_hr(hr, during_initial_mark);
 
         hr->rem_set()->clean_strong_code_roots(hr);
+        hr->rem_set()->clear_locked(true);
 
         hr->note_self_forwarding_removal_end(live_bytes);
       }

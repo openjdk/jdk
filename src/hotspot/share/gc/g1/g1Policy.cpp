@@ -49,6 +49,7 @@
 G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _predictor(G1ConfidencePercent / 100.0),
   _analytics(new G1Analytics(&_predictor)),
+  _remset_tracker(),
   _mmu_tracker(new G1MMUTrackerQueue(GCPauseIntervalMillis / 1000.0, MaxGCPauseMillis / 1000.0)),
   _ihop_control(create_ihop_control(&_predictor)),
   _policy_counters(new GCPolicyCounters("GarbageFirst", 1, 2)),
@@ -66,7 +67,8 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _tenuring_threshold(MaxTenuringThreshold),
   _max_survivor_regions(0),
   _survivors_age_table(true),
-  _collection_pause_end_millis(os::javaTimeNanos() / NANOSECS_PER_MILLISEC) { }
+  _collection_pause_end_millis(os::javaTimeNanos() / NANOSECS_PER_MILLISEC) {
+}
 
 G1Policy::~G1Policy() {
   delete _ihop_control;
@@ -413,6 +415,7 @@ void G1Policy::record_full_collection_start() {
   _full_collection_start_sec = os::elapsedTime();
   // Release the future to-space so that it is available for compaction into.
   collector_state()->set_full_collection(true);
+  cset_chooser()->clear();
 }
 
 void G1Policy::record_full_collection_end() {
@@ -443,7 +446,6 @@ void G1Policy::record_full_collection_end() {
   _survivor_surv_rate_group->reset();
   update_young_list_max_and_target_length();
   update_rs_lengths_prediction();
-  cset_chooser()->clear();
 
   _bytes_allocated_in_old_since_last_gc = 0;
 
@@ -500,13 +502,7 @@ void G1Policy::record_concurrent_mark_cleanup_start() {
 }
 
 void G1Policy::record_concurrent_mark_cleanup_completed() {
-  bool should_continue_with_reclaim = next_gc_should_be_mixed("request last young-only gc",
-                                                              "skip last young-only gc");
-  collector_state()->set_last_young_gc(should_continue_with_reclaim);
-  // We skip the marking phase.
-  if (!should_continue_with_reclaim) {
-    abort_time_to_mixed_tracking();
-  }
+  collector_state()->set_last_young_gc(collector_state()->mixed_gc_pending());
   collector_state()->set_in_marking_window(false);
 }
 
@@ -537,6 +533,7 @@ CollectionSetChooser* G1Policy::cset_chooser() const {
 }
 
 bool G1Policy::about_to_start_mixed_phase() const {
+  guarantee(_g1->concurrent_mark()->cm_thread()->during_cycle() || !collector_state()->mixed_gc_pending(), "Pending mixed phase when CM is idle!");
   return _g1->concurrent_mark()->cm_thread()->during_cycle() || collector_state()->last_young_gc();
 }
 
@@ -619,28 +616,22 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t cards_sc
   }
 
   if (collector_state()->last_young_gc()) {
-    // This is supposed to to be the "last young GC" before we start
-    // doing mixed GCs. Here we decide whether to start mixed GCs or not.
     assert(!last_pause_included_initial_mark, "The last young GC is not allowed to be an initial mark GC");
-
-    if (next_gc_should_be_mixed("start mixed GCs",
-                                "do not start mixed GCs")) {
-      collector_state()->set_gcs_are_young(false);
-    } else {
-      // We aborted the mixed GC phase early.
-      abort_time_to_mixed_tracking();
-    }
-
+    // This has been the "last young GC" before we start doing mixed GCs. We already
+    // decided to start mixed GCs much earlier, so there is nothing to do except
+    // advancing the state.
+    collector_state()->set_gcs_are_young(false);
     collector_state()->set_last_young_gc(false);
   }
 
   if (!collector_state()->last_gc_was_young()) {
-    // This is a mixed GC. Here we decide whether to continue doing
+    // This is a mixed GC. Here we decide whether to continue doing more
     // mixed GCs or not.
     if (!next_gc_should_be_mixed("continue mixed GCs",
                                  "do not continue mixed GCs")) {
       collector_state()->set_gcs_are_young(true);
 
+      clear_collection_set_candidates();
       maybe_start_marking();
     }
   }
@@ -971,6 +962,11 @@ void G1Policy::decide_on_conc_mark_initiation() {
       collector_state()->set_gcs_are_young(true);
       collector_state()->set_last_young_gc(false);
 
+      // We might have ended up coming here about to start a mixed phase with a collection set
+      // active. The following remark might change the change the "evacuation efficiency" of
+      // the regions in this set, leading to failing asserts later.
+      // Since the concurrent cycle will recreate the collection set anyway, simply drop it here.
+      clear_collection_set_candidates();
       abort_time_to_mixed_tracking();
       initiate_conc_mark();
       log_debug(gc, ergo)("Initiate concurrent cycle (user requested concurrent cycle)");
@@ -995,6 +991,13 @@ void G1Policy::decide_on_conc_mark_initiation() {
 void G1Policy::record_concurrent_mark_cleanup_end() {
   cset_chooser()->rebuild(_g1->workers(), _g1->num_regions());
 
+  bool mixed_gc_pending = next_gc_should_be_mixed("request mixed gcs", "request young-only gcs");
+  if (!mixed_gc_pending) {
+    clear_collection_set_candidates();
+    abort_time_to_mixed_tracking();
+  }
+  collector_state()->set_mixed_gc_pending(mixed_gc_pending);
+
   double end_sec = os::elapsedTime();
   double elapsed_time_ms = (end_sec - _mark_cleanup_start_sec) * 1000.0;
   _analytics->report_concurrent_mark_cleanup_times_ms(elapsed_time_ms);
@@ -1005,6 +1008,21 @@ void G1Policy::record_concurrent_mark_cleanup_end() {
 
 double G1Policy::reclaimable_bytes_percent(size_t reclaimable_bytes) const {
   return percent_of(reclaimable_bytes, _g1->capacity());
+}
+
+class G1ClearCollectionSetCandidateRemSets : public HeapRegionClosure {
+  virtual bool do_heap_region(HeapRegion* r) {
+    r->rem_set()->clear_locked(true /* only_cardset */);
+    return false;
+  }
+};
+
+void G1Policy::clear_collection_set_candidates() {
+  // Clear remembered sets of remaining candidate regions and the actual candidate
+  // list.
+  G1ClearCollectionSetCandidateRemSets cl;
+  cset_chooser()->iterate(&cl);
+  cset_chooser()->clear();
 }
 
 void G1Policy::maybe_start_marking() {

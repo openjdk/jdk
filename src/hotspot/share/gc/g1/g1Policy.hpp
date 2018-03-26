@@ -30,6 +30,7 @@
 #include "gc/g1/g1InCSetState.hpp"
 #include "gc/g1/g1InitialMarkToMixedTimeTracker.hpp"
 #include "gc/g1/g1MMUTracker.hpp"
+#include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "gc/g1/g1Predictions.hpp"
 #include "gc/g1/g1YoungGenSizer.hpp"
 #include "gc/shared/gcCause.hpp"
@@ -62,6 +63,7 @@ class G1Policy: public CHeapObj<mtGC> {
 
   G1Predictions _predictor;
   G1Analytics* _analytics;
+  G1RemSetTrackingPolicy _remset_tracker;
   G1MMUTracker* _mmu_tracker;
   G1IHOPControl* _ihop_control;
 
@@ -106,6 +108,8 @@ class G1Policy: public CHeapObj<mtGC> {
 public:
   const G1Predictions& predictor() const { return _predictor; }
   const G1Analytics* analytics()   const { return const_cast<const G1Analytics*>(_analytics); }
+
+  G1RemSetTrackingPolicy* remset_tracker() { return &_remset_tracker; }
 
   // Add the given number of bytes to the total number of allocated bytes in the old gen.
   void add_bytes_allocated_in_old_since_last_gc(size_t bytes) { _bytes_allocated_in_old_since_last_gc += bytes; }
@@ -254,6 +258,7 @@ public:
   jlong collection_pause_end_millis() { return _collection_pause_end_millis; }
 
 private:
+  void clear_collection_set_candidates();
   // Sets up marking if proper conditions are met.
   void maybe_start_marking();
 
