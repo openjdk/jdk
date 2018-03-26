@@ -447,6 +447,8 @@ class G1ConcurrentMark: public CHeapObj<mtGC> {
   // true, periodically insert checks to see if this method should exit prematurely.
   void clear_bitmap(G1CMBitMap* bitmap, WorkGang* workers, bool may_yield);
 public:
+  // Notification for eagerly reclaimed regions to clean up.
+  void humongous_object_eagerly_reclaimed(HeapRegion* r);
   // Manipulation of the global mark stack.
   // The push and pop operations are used by tasks for transfers
   // between task-local queues and the global mark stack.
