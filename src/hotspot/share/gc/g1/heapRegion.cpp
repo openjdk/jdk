@@ -645,9 +645,7 @@ void HeapRegion::verify(VerifyOption vo,
     if (!g1->is_obj_dead_cond(obj, this, vo)) {
       if (oopDesc::is_oop(obj)) {
         Klass* klass = obj->klass();
-        bool is_metaspace_object = Metaspace::contains(klass) ||
-                                   (vo == VerifyOption_G1UsePrevMarking &&
-                                   ClassLoaderDataGraph::unload_list_contains(klass));
+        bool is_metaspace_object = Metaspace::contains(klass);
         if (!is_metaspace_object) {
           log_error(gc, verify)("klass " PTR_FORMAT " of object " PTR_FORMAT " "
                                 "not metadata", p2i(klass), p2i(obj));
