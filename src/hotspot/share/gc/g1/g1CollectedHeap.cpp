@@ -2583,6 +2583,16 @@ size_t G1CollectedHeap::pending_card_num() {
   return buffer_size * buffer_num + extra_cards;
 }
 
+bool G1CollectedHeap::is_potential_eager_reclaim_candidate(HeapRegion* r) const {
+  // We don't nominate objects with many remembered set entries, on
+  // the assumption that such objects are likely still live.
+  HeapRegionRemSet* rem_set = r->rem_set();
+
+  return G1EagerReclaimHumongousObjectsWithStaleRefs ?
+         rem_set->occupancy_less_or_equal_than(G1RSetSparseRegionEntries) :
+         G1EagerReclaimHumongousObjects && rem_set->is_empty();
+}
+
 class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
  private:
   size_t _total_humongous;
@@ -2590,23 +2600,14 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
 
   DirtyCardQueue _dcq;
 
-  // We don't nominate objects with many remembered set entries, on
-  // the assumption that such objects are likely still live.
-  bool is_remset_small(HeapRegion* region) const {
-    HeapRegionRemSet* const rset = region->rem_set();
-    return G1EagerReclaimHumongousObjectsWithStaleRefs
-      ? rset->occupancy_less_or_equal_than(G1RSetSparseRegionEntries)
-      : rset->is_empty();
-  }
-
-  bool humongous_region_is_candidate(G1CollectedHeap* heap, HeapRegion* region) const {
+  bool humongous_region_is_candidate(G1CollectedHeap* g1h, HeapRegion* region) const {
     assert(region->is_starts_humongous(), "Must start a humongous object");
 
     oop obj = oop(region->bottom());
 
     // Dead objects cannot be eager reclaim candidates. Due to class
     // unloading it is unsafe to query their classes so we return early.
-    if (heap->is_obj_dead(obj, region)) {
+    if (g1h->is_obj_dead(obj, region)) {
       return false;
     }
 
@@ -2646,7 +2647,8 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
     // important use case for eager reclaim, and this special handling
     // may reduce needed headroom.
 
-    return obj->is_typeArray() && is_remset_small(region);
+    return obj->is_typeArray() &&
+           g1h->is_potential_eager_reclaim_candidate(region);
   }
 
  public:
@@ -4818,10 +4820,7 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
                              obj->is_typeArray()
                             );
 
-    // Need to clear mark bit of the humongous object if already set.
-    if (next_bitmap->is_marked(r->bottom())) {
-      next_bitmap->clear(r->bottom());
-    }
+    g1h->concurrent_mark()->humongous_object_eagerly_reclaimed(r);
     _humongous_objects_reclaimed++;
     do {
       HeapRegion* next = g1h->next_region_in_humongous(r);

@@ -515,6 +515,14 @@ void G1ConcurrentMark::reset() {
   set_concurrent_marking_in_progress();
 }
 
+void G1ConcurrentMark::humongous_object_eagerly_reclaimed(HeapRegion* r) {
+  assert(SafepointSynchronize::is_at_safepoint(), "May only be called at a safepoint.");
+
+  // Need to clear mark bit of the humongous object if already set and during a marking cycle.
+  if (_next_mark_bitmap->is_marked(r->bottom())) {
+    _next_mark_bitmap->clear(r->bottom());
+  }
+}
 
 void G1ConcurrentMark::reset_marking_state() {
   _global_mark_stack.set_empty();
