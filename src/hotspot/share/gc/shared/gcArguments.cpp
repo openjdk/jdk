@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -85,12 +86,6 @@ void GCArguments::select_gc_ergonomically() {
 #endif // INCLUDE_ALL_GCS
 }
 
-bool GCArguments::parse_verification_type(const char* type) {
-  log_warning(gc, verify)("VerifyGCType is not supported by this collector.");
-  // Return false to avoid multiple warnings.
-  return false;
-}
-
 void GCArguments::initialize_flags() {
 #if INCLUDE_ALL_GCS
   if (MinHeapFreeRatio == 100) {
@@ -104,24 +99,6 @@ void GCArguments::initialize_flags() {
     FLAG_SET_CMDLINE(bool, ClassUnloadingWithConcurrentMark, false);
   }
 #endif // INCLUDE_ALL_GCS
-}
-
-void GCArguments::post_heap_initialize() {
-  if (strlen(VerifyGCType) > 0) {
-    const char delimiter[] = " ,\n";
-    size_t length = strlen(VerifyGCType);
-    char* type_list = NEW_C_HEAP_ARRAY(char, length + 1, mtInternal);
-    strncpy(type_list, VerifyGCType, length + 1);
-    char* token = strtok(type_list, delimiter);
-    while (token != NULL) {
-      bool success = parse_verification_type(token);
-      if (!success) {
-        break;
-      }
-      token = strtok(NULL, delimiter);
-    }
-    FREE_C_HEAP_ARRAY(char, type_list);
-  }
 }
 
 jint GCArguments::initialize() {
