@@ -37,7 +37,7 @@ class G1FromCardCache : public AllStatic {
   // This order minimizes the time to clear all entries for a given region during region
   // freeing. I.e. a single clear of a single memory area instead of multiple separate
   // accesses with a large stride per region.
-  static int** _cache;
+  static uintptr_t** _cache;
   static uint _max_regions;
   static size_t _static_mem_size;
 #ifdef ASSERT
@@ -50,16 +50,14 @@ class G1FromCardCache : public AllStatic {
 #endif
 
  public:
-  enum {
-    InvalidCard = -1 // Card value of an invalid card, i.e. a card index not otherwise used.
-  };
+  static const uintptr_t InvalidCard = UINTPTR_MAX;
 
   static void clear(uint region_idx);
 
   // Returns true if the given card is in the cache at the given location, or
   // replaces the card at that location and returns false.
-  static bool contains_or_replace(uint worker_id, uint region_idx, int card) {
-    int card_in_cache = at(worker_id, region_idx);
+  static bool contains_or_replace(uint worker_id, uint region_idx, uintptr_t card) {
+    uintptr_t card_in_cache = at(worker_id, region_idx);
     if (card_in_cache == card) {
       return true;
     } else {
@@ -68,12 +66,12 @@ class G1FromCardCache : public AllStatic {
     }
   }
 
-  static int at(uint worker_id, uint region_idx) {
+  static uintptr_t at(uint worker_id, uint region_idx) {
     DEBUG_ONLY(check_bounds(worker_id, region_idx);)
     return _cache[region_idx][worker_id];
   }
 
-  static void set(uint worker_id, uint region_idx, int val) {
+  static void set(uint worker_id, uint region_idx, uintptr_t val) {
     DEBUG_ONLY(check_bounds(worker_id, region_idx);)
     _cache[region_idx][worker_id] = val;
   }

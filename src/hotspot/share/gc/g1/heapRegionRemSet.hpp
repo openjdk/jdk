@@ -130,6 +130,9 @@ public:
   // be used to ensure consistency.
   OtherRegionsTable(HeapRegion* hr, Mutex* m);
 
+  // Returns the card index of the given within_region pointer relative to the bottom
+  // of the given heap region.
+  static CardIdx_t card_within_region(OopOrNarrowOopStar within_region, HeapRegion* hr);
   // Adds the reference from "from to this remembered set.
   void add_reference(OopOrNarrowOopStar from, uint tid);
 
