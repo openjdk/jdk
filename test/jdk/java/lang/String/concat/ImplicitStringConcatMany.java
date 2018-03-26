@@ -31,7 +31,7 @@
  * @compile -XDstringConcat=inline ImplicitStringConcatMany.java
  * @run main/othervm -Xverify:all ImplicitStringConcatMany
  *
- * @compile -XDstringConcat=indy -source 1.9 -target 1.9 ImplicitStringConcatMany.java
+ * @compile -XDstringConcat=indy ImplicitStringConcatMany.java
  *
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB                                                              ImplicitStringConcatMany
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED                                                        ImplicitStringConcatMany
@@ -61,7 +61,7 @@
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT      -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatMany
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT  -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatMany
  *
- * @compile -XDstringConcat=indyWithConstants -source 1.9 -target 1.9 ImplicitStringConcatMany.java
+ * @compile -XDstringConcat=indyWithConstants ImplicitStringConcatMany.java
  *
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB                                                              ImplicitStringConcatMany
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED                                                        ImplicitStringConcatMany
