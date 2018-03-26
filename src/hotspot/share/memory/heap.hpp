@@ -129,8 +129,6 @@ class CodeHeap : public CHeapObj<mtCode> {
 
   // Iteration helpers
   void*      next_used(HeapBlock* b) const;
-  HeapBlock* first_block() const;
-  HeapBlock* next_block(HeapBlock* b) const;
   HeapBlock* block_start(void* p) const;
 
   // to perform additional actions on creation of executable code
@@ -178,6 +176,12 @@ class CodeHeap : public CHeapObj<mtCode> {
   size_t alignment_unit()       const;           // alignment of any block
   size_t alignment_offset()     const;           // offset of first byte of any block, within the enclosing alignment unit
   static size_t header_size();                   // returns the header size for each heap block
+
+  size_t segment_size()         const { return _segment_size; }  // for CodeHeapState
+  HeapBlock* first_block() const;                                // for CodeHeapState
+  HeapBlock* next_block(HeapBlock* b) const;                     // for CodeHeapState
+
+  FreeBlock* freelist()         const { return _freelist; }      // for CodeHeapState
 
   size_t allocated_in_freelist() const           { return _freelist_segments * CodeCacheSegmentSize; }
   int    freelist_length()       const           { return _freelist_length; } // number of elements in the freelist
