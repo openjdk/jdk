@@ -713,6 +713,7 @@ class HeapRegion: public G1ContiguousSpace {
 class HeapRegionClosure : public StackObj {
   friend class HeapRegionManager;
   friend class G1CollectionSet;
+  friend class CollectionSetChooser;
 
   bool _is_complete;
   void set_incomplete() { _is_complete = false; }
