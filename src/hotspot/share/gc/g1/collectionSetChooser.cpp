@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/collectionSetChooser.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "runtime/atomic.hpp"
 
@@ -147,6 +148,8 @@ void CollectionSetChooser::add_region(HeapRegion* hr) {
   assert(!hr->is_pinned(),
          "Pinned region shouldn't be added to the collection set (index %u)", hr->hrm_index());
   assert(!hr->is_young(), "should not be young!");
+  assert(hr->rem_set()->is_complete(),
+         "Trying to add region %u to the collection set with incomplete remembered set", hr->hrm_index());
   _regions.append(hr);
   _end++;
   _remaining_reclaimable_bytes += hr->reclaimable_bytes();
@@ -237,6 +240,10 @@ public:
       // before we fill them up).
       if (_cset_updater.should_add(r) && !_g1h->is_old_gc_alloc_region(r)) {
         _cset_updater.add_region(r);
+      } else if (r->is_old()) {
+        // Can clean out the remembered sets of all regions that we did not choose but
+        // we created the remembered set for.
+        r->rem_set()->clear(true);
       }
     }
     return false;
@@ -276,7 +283,8 @@ bool CollectionSetChooser::should_add(HeapRegion* hr) const {
   assert(hr->is_marked(), "pre-condition");
   assert(!hr->is_young(), "should never consider young regions");
   return !hr->is_pinned() &&
-         region_occupancy_low_enough_for_evac(hr->live_bytes());
+          region_occupancy_low_enough_for_evac(hr->live_bytes()) &&
+          hr->rem_set()->is_complete();
 }
 
 void CollectionSetChooser::rebuild(WorkGang* workers, uint n_regions) {

@@ -26,7 +26,6 @@
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
-#include "gc/g1/g1CardLiveData.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/space.inline.hpp"
@@ -39,6 +38,8 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
+
+const char* HeapRegionRemSet::_state_strings[] =  {"Untracked", "Updating", "Complete"};
 
 class PerRegionTable: public CHeapObj<mtGC> {
   friend class OtherRegionsTable;
@@ -63,10 +64,6 @@ class PerRegionTable: public CHeapObj<mtGC> {
 protected:
   // We need access in order to union things into the base table.
   BitMap* bm() { return &_bm; }
-
-  void recount_occupied() {
-    _occupied = (jint) bm()->count_one_bits();
-  }
 
   PerRegionTable(HeapRegion* hr) :
     _hr(hr),
@@ -140,11 +137,6 @@ public:
 
   void seq_add_reference(OopOrNarrowOopStar from) {
     add_reference_work(from, /*parallel*/ false);
-  }
-
-  void scrub(G1CardLiveData* live_data) {
-    live_data->remove_nonlive_cards(hr()->hrm_index(), &_bm);
-    recount_occupied();
   }
 
   void add_card(CardIdx_t from_card_index) {
@@ -436,7 +428,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
   assert(prt != NULL, "Inv");
 
   prt->add_reference(from);
-  assert(contains_reference(from), "We just added " PTR_FORMAT " to the PRT", p2i(from));
+  assert(contains_reference(from), "We just added " PTR_FORMAT " to the PRT (%d)", p2i(from), prt->contains_reference(from));
 }
 
 PerRegionTable*
@@ -507,56 +499,6 @@ PerRegionTable* OtherRegionsTable::delete_region_table() {
   Atomic::inc(&_n_coarsenings);
   _n_fine_entries--;
   return max;
-}
-
-void OtherRegionsTable::scrub(G1CardLiveData* live_data) {
-  // First eliminated garbage regions from the coarse map.
-  log_develop_trace(gc, remset, scrub)("Scrubbing region %u:", _hr->hrm_index());
-
-  log_develop_trace(gc, remset, scrub)("   Coarse map: before = " SIZE_FORMAT "...", _n_coarse_entries);
-  if (_n_coarse_entries > 0) {
-    live_data->remove_nonlive_regions(&_coarse_map);
-    _n_coarse_entries = _coarse_map.count_one_bits();
-  }
-  log_develop_trace(gc, remset, scrub)("   after = " SIZE_FORMAT ".", _n_coarse_entries);
-
-  // Now do the fine-grained maps.
-  for (size_t i = 0; i < _max_fine_entries; i++) {
-    PerRegionTable* cur = _fine_grain_regions[i];
-    PerRegionTable** prev = &_fine_grain_regions[i];
-    while (cur != NULL) {
-      PerRegionTable* nxt = cur->collision_list_next();
-      // If the entire region is dead, eliminate.
-      log_develop_trace(gc, remset, scrub)("     For other region %u:", cur->hr()->hrm_index());
-      if (!live_data->is_region_live(cur->hr()->hrm_index())) {
-        *prev = nxt;
-        cur->set_collision_list_next(NULL);
-        _n_fine_entries--;
-        log_develop_trace(gc, remset, scrub)("          deleted via region map.");
-        unlink_from_all(cur);
-        PerRegionTable::free(cur);
-      } else {
-        // Do fine-grain elimination.
-        log_develop_trace(gc, remset, scrub)("          occ: before = %4d.", cur->occupied());
-        cur->scrub(live_data);
-        log_develop_trace(gc, remset, scrub)("          after = %4d.", cur->occupied());
-        // Did that empty the table completely?
-        if (cur->occupied() == 0) {
-          *prev = nxt;
-          cur->set_collision_list_next(NULL);
-          _n_fine_entries--;
-          unlink_from_all(cur);
-          PerRegionTable::free(cur);
-        } else {
-          prev = cur->collision_list_next_addr();
-        }
-      }
-      cur = nxt;
-    }
-  }
-  // Since we may have deleted a from_card_cache entry from the RS, clear
-  // the FCC.
-  clear_fcc();
 }
 
 bool OtherRegionsTable::occupancy_less_or_equal_than(size_t limit) const {
@@ -692,6 +634,7 @@ HeapRegionRemSet::HeapRegionRemSet(G1BlockOffsetTable* bot,
   : _bot(bot),
     _m(Mutex::leaf, FormatBuffer<128>("HeapRegionRemSet lock #%u", hr->hrm_index()), true, Monitor::_safepoint_check_never),
     _code_roots(),
+    _state(Untracked),
     _other_regions(hr, &_m) {
 }
 
@@ -713,19 +656,18 @@ void HeapRegionRemSet::cleanup() {
   SparsePRT::cleanup_all();
 }
 
-void HeapRegionRemSet::clear() {
+void HeapRegionRemSet::clear(bool only_cardset) {
   MutexLockerEx x(&_m, Mutex::_no_safepoint_check_flag);
-  clear_locked();
+  clear_locked(only_cardset);
 }
 
-void HeapRegionRemSet::clear_locked() {
-  _code_roots.clear();
+void HeapRegionRemSet::clear_locked(bool only_cardset) {
+  if (!only_cardset) {
+    _code_roots.clear();
+  }
   _other_regions.clear();
+  set_state_empty();
   assert(occupied_locked() == 0, "Should be clear.");
-}
-
-void HeapRegionRemSet::scrub(G1CardLiveData* live_data) {
-  _other_regions.scrub(live_data);
 }
 
 // Code roots support

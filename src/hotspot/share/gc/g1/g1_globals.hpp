@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,9 +183,6 @@
           "The maximum number of verification failures to print.  "         \
           "-1 means print all.")                                            \
           range(-1, max_jint)                                               \
-                                                                            \
-  develop(bool, G1ScrubRemSets, true,                                       \
-          "When true, do RS scrubbing after cleanup.")                      \
                                                                             \
   product(uintx, G1ReservePercent, 10,                                      \
           "It determines the minimum reserve we should have in the heap "   \

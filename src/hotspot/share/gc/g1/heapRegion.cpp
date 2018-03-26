@@ -453,8 +453,8 @@ void HeapRegion::print_on(outputStream* st) const {
     st->print("|  ");
   }
   st->print("|TS%3u", _gc_time_stamp);
-  st->print_cr("|TAMS " PTR_FORMAT ", " PTR_FORMAT "|",
-               p2i(prev_top_at_mark_start()), p2i(next_top_at_mark_start()));
+  st->print_cr("|TAMS " PTR_FORMAT ", " PTR_FORMAT "| %s ",
+               p2i(prev_top_at_mark_start()), p2i(next_top_at_mark_start()), rem_set()->get_state_str());
 }
 
 class G1VerificationClosure : public OopClosure {
@@ -527,7 +527,8 @@ public:
             p2i(p), p2i(_containing_obj), p2i(from->bottom()), p2i(from->end()));
           LogStream ls(log.error());
           print_object(&ls, _containing_obj);
-          log.error("points to obj " PTR_FORMAT " not in the heap", p2i(obj));
+          HeapRegion* const to = _g1h->heap_region_containing(obj);
+          log.error("points to obj " PTR_FORMAT " in region " HR_FORMAT " remset %s", p2i(obj), HR_FORMAT_PARAMS(to), to->rem_set()->get_state_str());
         } else {
           HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
           HeapRegion* to = _g1h->heap_region_containing((HeapWord*)obj);
@@ -572,7 +573,8 @@ public:
       HeapRegion* to = _g1h->heap_region_containing(obj);
       if (from != NULL && to != NULL &&
         from != to &&
-        !to->is_pinned()) {
+        !to->is_pinned() &&
+        to->rem_set()->is_complete()) {
         jbyte cv_obj = *_ct->byte_for_const(_containing_obj);
         jbyte cv_field = *_ct->byte_for_const(p);
         const jbyte dirty = G1CardTable::dirty_card_val();
@@ -595,7 +597,7 @@ public:
           ResourceMark rm;
           LogStream ls(log.error());
           _containing_obj->print_on(&ls);
-          log.error("points to obj " PTR_FORMAT " in region " HR_FORMAT, p2i(obj), HR_FORMAT_PARAMS(to));
+          log.error("points to obj " PTR_FORMAT " in region " HR_FORMAT " remset %s", p2i(obj), HR_FORMAT_PARAMS(to), to->rem_set()->get_state_str());
           if (oopDesc::is_oop(obj)) {
             obj->print_on(&ls);
           }

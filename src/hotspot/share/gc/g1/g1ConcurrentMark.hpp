@@ -312,6 +312,7 @@ class G1ConcurrentMark: public CHeapObj<mtGC> {
                                              // always pointing to the end of the
                                              // last claimed region
 
+  uint                   _worker_id_offset;
   uint                   _max_num_tasks;    // Maximum number of marking tasks
   uint                   _num_active_tasks; // Number of tasks currently active
   G1CMTask**             _tasks;            // Task queue array (max_worker_id length)
@@ -360,7 +361,6 @@ class G1ConcurrentMark: public CHeapObj<mtGC> {
   NumberSeq _remark_weak_ref_times;
   NumberSeq _cleanup_times;
   double    _total_counting_time;
-  double    _total_rs_scrub_time;
 
   double*   _accum_task_vtime;   // Accumulated task vtime
 
@@ -455,11 +455,21 @@ class G1ConcurrentMark: public CHeapObj<mtGC> {
   void clear_statistics_in_region(uint region_idx);
   // Region statistics gathered during marking.
   G1RegionMarkStats* _region_mark_stats;
+  // Top pointer for each region at the start of the rebuild remembered set process
+  // for regions which remembered sets need to be rebuilt. A NULL for a given region
+  // means that this region does not be scanned during the rebuilding remembered
+  // set phase at all.
+  HeapWord** _top_at_rebuild_starts;
 public:
   void add_to_liveness(uint worker_id, oop const obj, size_t size);
   // Liveness of the given region as determined by concurrent marking, i.e. the amount of
   // live words between bottom and nTAMS.
   size_t liveness(uint region)  { return _region_mark_stats[region]._live_words; }
+
+  // Sets the internal top_at_region_start for the given region to current top of the region.
+  inline void update_top_at_rebuild_start(HeapRegion* r);
+  // TARS for the given region during remembered set rebuilding.
+  inline HeapWord* top_at_rebuild_start(uint region) const;
 
   // Notification for eagerly reclaimed regions to clean up.
   void humongous_object_eagerly_reclaimed(HeapRegion* r);
@@ -606,21 +616,8 @@ public:
   G1OldTracer* gc_tracer_cm() const { return _gc_tracer_cm; }
 
 private:
-  // Clear (Reset) all liveness count data.
-  void clear_live_data(WorkGang* workers);
-
-#ifdef ASSERT
-  // Verify all of the above data structures that they are in initial state.
-  void verify_live_data_clear();
-#endif
-
-  // Aggregates the per-card liveness data based on the current marking. Also sets
-  // the amount of marked bytes for each region.
-  void create_live_data();
-
-  void finalize_live_data();
-
-  void verify_live_data();
+  // Rebuilds the remembered sets for chosen regions in parallel and concurrently to the application.
+  void rebuild_rem_set_concurrently();
 };
 
 // A class representing a marking task.

@@ -27,8 +27,10 @@
 #include "gc/g1/g1AllocRegion.inline.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1Policy.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
+#include "gc/g1/heapRegionType.hpp"
 #include "utilities/align.hpp"
 
 G1DefaultAllocator::G1DefaultAllocator(G1CollectedHeap* heap) :
@@ -342,6 +344,7 @@ bool G1ArchiveAllocator::alloc_new_region() {
   } else {
     hr->set_closed_archive();
   }
+  _g1h->g1_policy()->remset_tracker()->update_at_allocate(hr);
   _g1h->old_set_add(hr);
   _g1h->hr_printer()->alloc(hr);
   _allocated_regions.append(hr);

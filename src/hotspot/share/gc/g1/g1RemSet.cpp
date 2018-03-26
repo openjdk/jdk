@@ -40,6 +40,7 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -298,20 +299,12 @@ G1RemSet::~G1RemSet() {
 }
 
 uint G1RemSet::num_par_rem_sets() {
-  return MAX2(DirtyCardQueueSet::num_par_ids() + G1ConcurrentRefine::max_num_threads(), ParallelGCThreads);
+  return DirtyCardQueueSet::num_par_ids() + G1ConcurrentRefine::max_num_threads() + MAX2(ConcGCThreads, ParallelGCThreads);
 }
 
 void G1RemSet::initialize(size_t capacity, uint max_regions) {
   G1FromCardCache::initialize(num_par_rem_sets(), max_regions);
   _scan_state->initialize(max_regions);
-  {
-    GCTraceTime(Debug, gc, marking)("Initialize Card Live Data");
-    _card_live_data.initialize(capacity, max_regions);
-  }
-  if (G1PretouchAuxiliaryMemory) {
-    GCTraceTime(Debug, gc, marking)("Pre-Touch Card Live Data");
-    _card_live_data.pretouch();
-  }
 }
 
 G1ScanRSForRegionClosure::G1ScanRSForRegionClosure(G1RemSetScanState* scan_state,
@@ -512,27 +505,6 @@ void G1RemSet::cleanup_after_oops_into_collection_set_do() {
   double start = os::elapsedTime();
   _scan_state->clear_card_table(_g1->workers());
   phase_times->record_clear_ct_time((os::elapsedTime() - start) * 1000.0);
-}
-
-class G1ScrubRSClosure: public HeapRegionClosure {
-  G1CollectedHeap* _g1h;
-  G1CardLiveData* _live_data;
-public:
-  G1ScrubRSClosure(G1CardLiveData* live_data) :
-    _g1h(G1CollectedHeap::heap()),
-    _live_data(live_data) { }
-
-  bool do_heap_region(HeapRegion* r) {
-    if (!r->is_continues_humongous()) {
-      r->rem_set()->scrub(_live_data);
-    }
-    return false;
-  }
-};
-
-void G1RemSet::scrub(uint worker_num, HeapRegionClaimer *hrclaimer) {
-  G1ScrubRSClosure scrub_cl(&_card_live_data);
-  _g1->heap_region_par_iterate_from_worker_offset(&scrub_cl, hrclaimer, worker_num);
 }
 
 inline void check_card_ptr(jbyte* card_ptr, G1CardTable* ct) {
@@ -750,24 +722,173 @@ void G1RemSet::print_summary_info() {
   }
 }
 
-void G1RemSet::create_card_live_data(WorkGang* workers, G1CMBitMap* mark_bitmap) {
-  _card_live_data.create(workers, mark_bitmap);
-}
+class G1RebuildRemSetTask: public AbstractGangTask {
+  // Aggregate the counting data that was constructed concurrently
+  // with marking.
+  class G1RebuildRemSetHeapRegionClosure : public HeapRegionClosure {
+    G1ConcurrentMark* _cm;
+    G1RebuildRemSetClosure _update_cl;
 
-void G1RemSet::finalize_card_live_data(WorkGang* workers, G1CMBitMap* mark_bitmap) {
-  _card_live_data.finalize(workers, mark_bitmap);
-}
+    void scan_for_references(oop const obj, MemRegion mr) {
+      obj->oop_iterate(&_update_cl, mr);
+    }
 
-void G1RemSet::verify_card_live_data(WorkGang* workers, G1CMBitMap* bitmap) {
-  _card_live_data.verify(workers, bitmap);
-}
+    void scan_for_references(oop const obj) {
+      obj->oop_iterate(&_update_cl);
+    }
 
-void G1RemSet::clear_card_live_data(WorkGang* workers) {
-  _card_live_data.clear(workers);
-}
+    // A humongous object is live (with respect to the scanning) either
+    // a) it is marked on the bitmap as such
+    // b) its TARS is larger than nTAMS, i.e. has been allocated during marking.
+    bool is_humongous_live(oop const humongous_obj, HeapWord* ntams, HeapWord* tars) const {
+      return _cm->next_mark_bitmap()->is_marked(humongous_obj) || (tars > ntams);
+    }
 
-#ifdef ASSERT
-void G1RemSet::verify_card_live_data_is_clear() {
-  _card_live_data.verify_is_clear();
+    // Rebuilds the remembered sets by scanning the objects that were allocated before
+    // rebuild start in the given region, applying the given closure to each of these objects.
+    // Uses the bitmap to get live objects in the area from [bottom, nTAMS), and all
+    // objects from [nTAMS, TARS).
+    // Returns the number of bytes marked in that region between bottom and nTAMS.
+    size_t rebuild_rem_set_in_region(G1CMBitMap* const mark_bitmap, HeapRegion* hr, HeapWord* const top_at_rebuild_start) {
+      size_t marked_bytes = 0;
+
+      HeapWord* start = hr->bottom();
+      HeapWord* const ntams = hr->next_top_at_mark_start();
+
+      if (top_at_rebuild_start <= start) {
+        return 0;
+      }
+
+      if (hr->is_humongous()) {
+        oop const humongous_obj = oop(hr->humongous_start_region()->bottom());
+        log_debug(gc,remset)("Humongous obj region %u marked %d start " PTR_FORMAT " region start " PTR_FORMAT " TAMS " PTR_FORMAT " TARS " PTR_FORMAT,
+                             hr->hrm_index(), _cm->next_mark_bitmap()->is_marked(humongous_obj),
+                             p2i(humongous_obj), p2i(hr->bottom()), p2i(hr->next_top_at_mark_start()), p2i(top_at_rebuild_start));
+        if (is_humongous_live(humongous_obj, ntams, top_at_rebuild_start)) {
+          // We need to scan both [bottom, nTAMS) and [nTAMS, top_at_rebuild_start);
+          // however in case of humongous objects it is sufficient to scan the encompassing
+          // area (top_at_rebuild_start is always larger or equal to nTAMS) as one of the
+          // two areas will be zero sized. I.e. nTAMS is either
+          // the same as bottom or top(_at_rebuild_start). There is no way ntams has a different
+          // value: this would mean that nTAMS points somewhere into the object.
+          assert(hr->top() == hr->next_top_at_mark_start() || hr->top() == top_at_rebuild_start,
+                 "More than one object in the humongous region?");
+          scan_for_references(humongous_obj, MemRegion(start, top_at_rebuild_start));
+          return ntams != start ? pointer_delta(hr->next_top_at_mark_start(), start, 1) : 0;
+        } else {
+          return 0;
+        }
+      }
+
+      assert(start <= hr->end() && start <= ntams &&
+             ntams <= top_at_rebuild_start && top_at_rebuild_start <= hr->end(),
+             "Inconsistency between bottom, nTAMS, TARS, end - "
+             "start: " PTR_FORMAT ", nTAMS: " PTR_FORMAT ", TARS: " PTR_FORMAT ", end: " PTR_FORMAT,
+             p2i(start), p2i(ntams), p2i(top_at_rebuild_start), p2i(hr->end()));
+
+      // Iterate live objects between bottom and nTAMS.
+      start = mark_bitmap->get_next_marked_addr(start, ntams);
+      while (start < ntams) {
+        oop obj = oop(start);
+        assert(oopDesc::is_oop(obj), "Address " PTR_FORMAT " below nTAMS is not an oop", p2i(start));
+        size_t obj_size = obj->size();
+        HeapWord* obj_end = start + obj_size;
+
+        assert(obj_end <= hr->end(), "Humongous objects must have been handled elsewhere.");
+
+        scan_for_references(obj);
+
+        // Add the size of this object to the number of marked bytes.
+        marked_bytes += obj_size;
+
+        // Find the next marked object after this one.
+        start = mark_bitmap->get_next_marked_addr(obj_end, ntams);
+      }
+
+      // Finally process live objects (all of them) between nTAMS and top_at_rebuild_start.
+      // Objects between top_at_rebuild_start and top are implicitly managed by concurrent refinement.
+      while (start < top_at_rebuild_start) {
+        oop obj = oop(start);
+        assert(oopDesc::is_oop(obj),
+               "Address " PTR_FORMAT " above nTAMS is not an oop (TARS " PTR_FORMAT " region %u)",
+               p2i(start), p2i(top_at_rebuild_start), hr->hrm_index());
+        size_t obj_size = obj->size();
+        HeapWord* obj_end = start + obj_size;
+
+        assert(obj_end <= hr->end(), "Humongous objects must have been handled elsewhere.");
+
+        scan_for_references(obj);
+        start = obj_end;
+      }
+      return marked_bytes * HeapWordSize;
+    }
+  public:
+    G1RebuildRemSetHeapRegionClosure(G1CollectedHeap* g1h,
+                                     G1ConcurrentMark* cm,
+                                     uint worker_id) :
+      HeapRegionClosure(),
+      _cm(cm),
+      _update_cl(g1h, worker_id) { }
+
+    bool do_heap_region(HeapRegion* hr) {
+      if (_cm->has_aborted()) {
+        return true;
+      }
+      uint const region_idx = hr->hrm_index();
+      HeapWord* const top_at_rebuild_start = _cm->top_at_rebuild_start(region_idx);
+      // TODO: smaller increments to do yield checks with
+      size_t marked_bytes = rebuild_rem_set_in_region(_cm->next_mark_bitmap(), hr, top_at_rebuild_start);
+      log_trace(gc, remset, tracking)("Rebuilt region %u " SIZE_FORMAT " marked bytes " SIZE_FORMAT " "
+                                      "bot " PTR_FORMAT " nTAMS " PTR_FORMAT " TARS " PTR_FORMAT,
+                                      region_idx,
+                                      _cm->liveness(region_idx) * HeapWordSize,
+                                      marked_bytes,
+                                      p2i(hr->bottom()),
+                                      p2i(hr->next_top_at_mark_start()),
+                                      p2i(top_at_rebuild_start));
+      if (marked_bytes > 0) {
+        hr->add_to_marked_bytes(marked_bytes);
+        assert(!hr->is_old() || marked_bytes == (_cm->liveness(hr->hrm_index()) * HeapWordSize),
+               "Marked bytes " SIZE_FORMAT " for region %u do not match liveness during mark " SIZE_FORMAT,
+               marked_bytes, hr->hrm_index(), _cm->liveness(hr->hrm_index()) * HeapWordSize);
+      }
+      _cm->do_yield_check();
+      // Abort state may have changed after the yield check.
+      return _cm->has_aborted();
+    }
+  };
+
+  HeapRegionClaimer _hr_claimer;
+  G1ConcurrentMark* _cm;
+
+  uint _worker_id_offset;
+public:
+  G1RebuildRemSetTask(G1ConcurrentMark* cm,
+                      uint n_workers,
+                      uint worker_id_offset) :
+      AbstractGangTask("G1 Rebuild Remembered Set"),
+      _cm(cm),
+      _hr_claimer(n_workers),
+      _worker_id_offset(worker_id_offset) {
+  }
+
+  void work(uint worker_id) {
+    SuspendibleThreadSetJoiner sts_join;
+
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+
+    G1RebuildRemSetHeapRegionClosure cl(g1h, _cm, _worker_id_offset + worker_id);
+    g1h->heap_region_par_iterate_from_worker_offset(&cl, &_hr_claimer, worker_id);
+  }
+};
+
+void G1RemSet::rebuild_rem_set(G1ConcurrentMark* cm,
+                               WorkGang* workers,
+                               uint worker_id_offset) {
+  uint num_workers = workers->active_workers();
+
+  G1RebuildRemSetTask cl(cm,
+                         num_workers,
+                         worker_id_offset);
+  workers->run_task(&cl, num_workers);
 }
-#endif

@@ -112,6 +112,7 @@ public:
   // Determine whether to add the given region to the CSet chooser or
   // not. Currently, we skip pinned regions and regions whose live
   // bytes are over the threshold. Humongous regions may be reclaimed during cleanup.
+  // Regions also need a complete remembered set to be a candidate.
   bool should_add(HeapRegion* hr) const;
 
   // Returns the number candidate old regions added

@@ -143,10 +143,12 @@ inline void G1ConcurrentRefineOopClosure::do_oop_nv(T* p) {
     return;
   }
 
-  HeapRegion* to = _g1->heap_region_containing(obj);
+  HeapRegionRemSet* to_rem_set = _g1->heap_region_containing(obj)->rem_set();
 
-  assert(to->rem_set() != NULL, "Need per-region 'into' remsets.");
-  to->rem_set()->add_reference(p, _worker_i);
+  assert(to_rem_set != NULL, "Need per-region 'into' remsets.");
+  if (to_rem_set->is_tracked()) {
+    to_rem_set->add_reference(p, _worker_i);
+  }
 }
 
 template <class T>
@@ -267,4 +269,20 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
     }
   }
 }
+
+template <class T> void G1RebuildRemSetClosure::do_oop_nv(T* p) {
+  oop const obj = RawAccess<MO_VOLATILE>::oop_load(p);
+  if (obj == NULL) {
+    return;
+  }
+
+  if (HeapRegion::is_in_same_region(p, obj)) {
+    return;
+  }
+
+  HeapRegion* to = _g1->heap_region_containing(obj);
+  HeapRegionRemSet* rem_set = to->rem_set();
+  rem_set->add_reference(p, _worker_id);
+}
+
 #endif // SHARE_VM_GC_G1_G1OOPCLOSURES_INLINE_HPP

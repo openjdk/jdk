@@ -30,6 +30,7 @@
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1MMUTracker.hpp"
 #include "gc/g1/g1Policy.hpp"
+#include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/vm_operations_g1.hpp"
 #include "gc/shared/concurrentGCPhaseManager.hpp"
 #include "gc/shared/gcId.hpp"
@@ -48,19 +49,19 @@
 STATIC_ASSERT(ConcurrentGCPhaseManager::UNCONSTRAINED_PHASE <
               ConcurrentGCPhaseManager::IDLE_PHASE);
 
-#define EXPAND_CONCURRENT_PHASES(expander)                              \
-  expander(ANY, = ConcurrentGCPhaseManager::UNCONSTRAINED_PHASE, NULL)  \
-  expander(IDLE, = ConcurrentGCPhaseManager::IDLE_PHASE, NULL)          \
-  expander(CONCURRENT_CYCLE,, "Concurrent Cycle")                       \
-  expander(CLEAR_CLAIMED_MARKS,, "Concurrent Clear Claimed Marks")      \
-  expander(SCAN_ROOT_REGIONS,, "Concurrent Scan Root Regions")          \
-  expander(CONCURRENT_MARK,, "Concurrent Mark")                         \
-  expander(MARK_FROM_ROOTS,, "Concurrent Mark From Roots")              \
-  expander(BEFORE_REMARK,, NULL)                                        \
-  expander(REMARK,, NULL)                                               \
-  expander(CREATE_LIVE_DATA,, "Concurrent Create Live Data")            \
-  expander(COMPLETE_CLEANUP,, "Concurrent Complete Cleanup")            \
-  expander(CLEANUP_FOR_NEXT_MARK,, "Concurrent Cleanup for Next Mark")  \
+#define EXPAND_CONCURRENT_PHASES(expander)                               \
+  expander(ANY, = ConcurrentGCPhaseManager::UNCONSTRAINED_PHASE, NULL)   \
+  expander(IDLE, = ConcurrentGCPhaseManager::IDLE_PHASE, NULL)           \
+  expander(CONCURRENT_CYCLE,, "Concurrent Cycle")                        \
+  expander(CLEAR_CLAIMED_MARKS,, "Concurrent Clear Claimed Marks")       \
+  expander(SCAN_ROOT_REGIONS,, "Concurrent Scan Root Regions")           \
+  expander(CONCURRENT_MARK,, "Concurrent Mark")                          \
+  expander(MARK_FROM_ROOTS,, "Concurrent Mark From Roots")               \
+  expander(BEFORE_REMARK,, NULL)                                         \
+  expander(REMARK,, NULL)                                                \
+  expander(REBUILD_REMEMBERED_SETS,, "Concurrent Rebuild Remembered Sets") \
+  expander(COMPLETE_CLEANUP,, "Concurrent Complete Cleanup")             \
+  expander(CLEANUP_FOR_NEXT_MARK,, "Concurrent Cleanup for Next Mark")   \
   /* */
 
 class G1ConcurrentPhase : public AllStatic {
@@ -108,8 +109,8 @@ public:
     _cm(cm) {}
 
   void do_void(){
-    _cm->cleanup();
-  }
+      _cm->cleanup();
+    }
 };
 
 double ConcurrentMarkThread::mmu_sleep_time(G1Policy* g1_policy, bool remark) {
@@ -350,8 +351,8 @@ void ConcurrentMarkThread::run_service() {
       }
 
       if (!cm()->has_aborted()) {
-        G1ConcPhase p(G1ConcurrentPhase::CREATE_LIVE_DATA, this);
-        cm()->create_live_data();
+        G1ConcPhase p(G1ConcurrentPhase::REBUILD_REMEMBERED_SETS, this);
+        cm()->rebuild_rem_set_concurrently();
       }
 
       double end_time = os::elapsedVTime();

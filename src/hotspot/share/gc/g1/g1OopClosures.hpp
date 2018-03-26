@@ -208,4 +208,18 @@ public:
   virtual void do_oop(oop* p)       { do_oop_nv(p); }
 };
 
+class G1RebuildRemSetClosure : public ExtendedOopClosure {
+  G1CollectedHeap* _g1;
+  uint _worker_id;
+public:
+  G1RebuildRemSetClosure(G1CollectedHeap* g1, uint worker_id) : _g1(g1), _worker_id(worker_id) {
+  }
+
+  template <class T> void do_oop_nv(T* p);
+  virtual void do_oop(oop* p)       { do_oop_nv(p); }
+  virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
+  // This closure needs special handling for InstanceRefKlass.
+  virtual ReferenceIterationMode reference_iteration_mode() { return DO_DISCOVERED_AND_DISCOVERY; }
+};
+
 #endif // SHARE_VM_GC_G1_G1OOPCLOSURES_HPP
