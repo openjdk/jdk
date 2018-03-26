@@ -43,6 +43,8 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 
+int G1HeapVerifier::_enabled_verification_types = G1HeapVerifier::G1VerifyAll;
+
 class VerifyRootsClosure: public OopClosure {
 private:
   G1CollectedHeap* _g1h;
@@ -378,25 +380,6 @@ public:
     }
   }
 };
-
-void G1HeapVerifier::parse_verification_type(const char* type) {
-  if (strcmp(type, "young-only") == 0) {
-    enable_verification_type(G1VerifyYoungOnly);
-  } else if (strcmp(type, "initial-mark") == 0) {
-    enable_verification_type(G1VerifyInitialMark);
-  } else if (strcmp(type, "mixed") == 0) {
-    enable_verification_type(G1VerifyMixed);
-  } else if (strcmp(type, "remark") == 0) {
-    enable_verification_type(G1VerifyRemark);
-  } else if (strcmp(type, "cleanup") == 0) {
-    enable_verification_type(G1VerifyCleanup);
-  } else if (strcmp(type, "full") == 0) {
-    enable_verification_type(G1VerifyFull);
-  } else {
-    log_warning(gc, verify)("VerifyGCType: '%s' is unknown. Available types are: "
-                            "young-only, initial-mark, mixed, remark, cleanup and full", type);
-  }
-}
 
 void G1HeapVerifier::enable_verification_type(G1VerifyType type) {
   // First enable will clear _enabled_verification_types.

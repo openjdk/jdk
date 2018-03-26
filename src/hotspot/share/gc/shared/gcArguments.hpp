@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -46,15 +47,7 @@ public:
   static bool is_initialized();
   static GCArguments* arguments();
 
-  void post_heap_initialize();
-
   virtual void initialize_flags();
-
-  // Collector specific function to allow finer grained verification
-  // through VerifyGCType. If not overridden the default version will
-  // warn that the flag is not supported for the given collector.
-  // Returns true if parsing should continue, false otherwise.
-  virtual bool parse_verification_type(const char* type);
 
   virtual size_t conservative_max_heap_alignment() = 0;
 
