@@ -155,8 +155,6 @@ class ClassLoaderDataGraph : public AllStatic {
   static void print() { print_on(tty); }
   static void verify();
 
-  static bool unload_list_contains(const void* x);
-
   // instance and array class counters
   static inline size_t num_instance_classes();
   static inline size_t num_array_classes();

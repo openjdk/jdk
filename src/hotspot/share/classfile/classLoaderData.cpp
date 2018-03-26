@@ -1223,17 +1223,6 @@ GrowableArray<ClassLoaderData*>* ClassLoaderDataGraph::new_clds() {
   return array;
 }
 
-bool ClassLoaderDataGraph::unload_list_contains(const void* x) {
-  assert(SafepointSynchronize::is_at_safepoint(), "only safe to call at safepoint");
-  for (ClassLoaderData* cld = _unloading; cld != NULL; cld = cld->next()) {
-    // Needs fixing, see JDK-8199007.
-    if (cld->metaspace_or_null() != NULL && Metaspace::contains(x)) {
-      return true;
-    }
-  }
-  return false;
-}
-
 #ifndef PRODUCT
 bool ClassLoaderDataGraph::contains_loader_data(ClassLoaderData* loader_data) {
   for (ClassLoaderData* data = _head; data != NULL; data = data->next()) {
