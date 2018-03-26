@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,9 +181,10 @@ class G1RootRegionScanClosure : public MetadataAwareOopClosure {
 private:
   G1CollectedHeap* _g1h;
   G1ConcurrentMark* _cm;
+  uint _worker_id;
 public:
-  G1RootRegionScanClosure(G1CollectedHeap* g1h, G1ConcurrentMark* cm) :
-    _g1h(g1h), _cm(cm) { }
+  G1RootRegionScanClosure(G1CollectedHeap* g1h, G1ConcurrentMark* cm, uint worker_id) :
+    _g1h(g1h), _cm(cm), _worker_id(worker_id) { }
   template <class T> void do_oop_nv(T* p);
   virtual void do_oop(      oop* p) { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }

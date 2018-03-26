@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,8 +88,7 @@ inline void G1ScanEvacuatedObjClosure::do_oop_nv(T* p) {
 
 template <class T>
 inline void G1CMOopClosure::do_oop_nv(T* p) {
-  oop obj = RawAccess<MO_VOLATILE>::oop_load(p);
-  _task->deal_with_reference(obj);
+  _task->deal_with_reference(p);
 }
 
 template <class T>
@@ -99,7 +98,7 @@ inline void G1RootRegionScanClosure::do_oop_nv(T* p) {
     return;
   }
   oop obj = CompressedOops::decode_not_null(heap_oop);
-  _cm->mark_in_next_bitmap(obj);
+  _cm->mark_in_next_bitmap(_worker_id, obj);
 }
 
 template <class T>
@@ -204,7 +203,8 @@ void G1ParCopyHelper::do_cld_barrier(oop new_obj) {
 void G1ParCopyHelper::mark_object(oop obj) {
   assert(!_g1->heap_region_containing(obj)->in_collection_set(), "should not mark objects in the CSet");
 
-  _cm->mark_in_next_bitmap(obj);
+  // We know that the object is not moving so it's safe to read its size.
+  _cm->mark_in_next_bitmap(_worker_id, obj);
 }
 
 void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
@@ -215,7 +215,11 @@ void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
   assert(_g1->heap_region_containing(from_obj)->in_collection_set(), "from obj should be in the CSet");
   assert(!_g1->heap_region_containing(to_obj)->in_collection_set(), "should not mark objects in the CSet");
 
-  _cm->mark_in_next_bitmap(to_obj);
+  // The object might be in the process of being copied by another
+  // worker so we cannot trust that its to-space image is
+  // well-formed. So we have to read its size from its from-space
+  // image which we know should not be changing.
+  _cm->mark_in_next_bitmap(_worker_id, to_obj, from_obj->size());
 }
 
 template <G1Barrier barrier, G1Mark do_mark_object>

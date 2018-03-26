@@ -4214,7 +4214,8 @@ void G1CollectedHeap::enqueue_discovered_references(G1ParScanThreadStateSet* per
   if (collector_state()->during_initial_mark_pause()) {
     oop pll_head = Universe::reference_pending_list();
     if (pll_head != NULL) {
-      _cm->mark_in_next_bitmap(pll_head);
+      // Any valid worker id is fine here as we are in the VM thread and single-threaded.
+      _cm->mark_in_next_bitmap(0 /* worker_id */, pll_head);
     }
   }
 
