@@ -93,17 +93,8 @@ protected:
     // If the test below fails, then this table was reused concurrently
     // with this operation.  This is OK, since the old table was coarsened,
     // and adding a bit to the new table is never incorrect.
-    // If the table used to belong to a continues humongous region and is
-    // now reused for the corresponding start humongous region, we need to
-    // make sure that we detect this. Thus, we call is_in_reserved_raw()
-    // instead of just is_in_reserved() here.
     if (loc_hr->is_in_reserved(from)) {
-      size_t hw_offset = pointer_delta((HeapWord*)from, loc_hr->bottom());
-      CardIdx_t from_card = (CardIdx_t)
-          hw_offset >> (G1CardTable::card_shift - LogHeapWordSize);
-
-      assert((size_t)from_card < HeapRegion::CardsPerRegion,
-             "Must be in range.");
+      CardIdx_t from_card = OtherRegionsTable::card_within_region(from, loc_hr);
       add_card_work(from_card, par);
     }
   }
@@ -343,10 +334,18 @@ void OtherRegionsTable::unlink_from_all(PerRegionTable* prt) {
          "just checking");
 }
 
+CardIdx_t OtherRegionsTable::card_within_region(OopOrNarrowOopStar within_region, HeapRegion* hr) {
+  assert(hr->is_in_reserved(within_region),
+         "HeapWord " PTR_FORMAT " is outside of region %u [" PTR_FORMAT ", " PTR_FORMAT ")",
+         p2i(within_region), hr->hrm_index(), p2i(hr->bottom()), p2i(hr->end()));
+  CardIdx_t result = (CardIdx_t)(pointer_delta((HeapWord*)within_region, hr->bottom()) >> (CardTable::card_shift - LogHeapWordSize));
+  return result;
+}
+
 void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
   uint cur_hrm_ind = _hr->hrm_index();
 
-  int from_card = (int)(uintptr_t(from) >> G1CardTable::card_shift);
+  uintptr_t from_card = uintptr_t(from) >> CardTable::card_shift;
 
   if (G1FromCardCache::contains_or_replace(tid, cur_hrm_ind, from_card)) {
     assert(contains_reference(from), "We just found " PTR_FORMAT " in the FromCardCache", p2i(from));
@@ -372,12 +371,8 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
     prt = find_region_table(ind, from_hr);
     if (prt == NULL) {
 
-      uintptr_t from_hr_bot_card_index =
-        uintptr_t(from_hr->bottom())
-          >> G1CardTable::card_shift;
-      CardIdx_t card_index = from_card - from_hr_bot_card_index;
-      assert((size_t)card_index < HeapRegion::CardsPerRegion,
-             "Must be in range.");
+      CardIdx_t card_index = card_within_region(from, from_hr);
+
       if (G1HRRSUseSparseTable &&
           _sparse_table.add_card(from_hrm_ind, card_index)) {
         assert(contains_reference_locked(from), "We just added " PTR_FORMAT " to the Sparse table", p2i(from));
@@ -607,19 +602,12 @@ bool OtherRegionsTable::contains_reference_locked(OopOrNarrowOopStar from) const
   if (_coarse_map.at(hr_ind)) return true;
 
   PerRegionTable* prt = find_region_table(hr_ind & _mod_max_fine_entries_mask,
-                                     hr);
+                                          hr);
   if (prt != NULL) {
     return prt->contains_reference(from);
 
   } else {
-    uintptr_t from_card =
-      (uintptr_t(from) >> G1CardTable::card_shift);
-    uintptr_t hr_bot_card_index =
-      uintptr_t(hr->bottom()) >> G1CardTable::card_shift;
-    assert(from_card >= hr_bot_card_index, "Inv");
-    CardIdx_t card_index = from_card - hr_bot_card_index;
-    assert((size_t)card_index < HeapRegion::CardsPerRegion,
-           "Must be in range.");
+    CardIdx_t card_index = card_within_region(from, hr);
     return _sparse_table.contains_card(hr_ind, card_index);
   }
 }
