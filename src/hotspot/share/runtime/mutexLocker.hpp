@@ -137,6 +137,9 @@ extern Mutex*   JfrStream_lock;                  // protects JFR stream access
 extern Mutex*   UnsafeJlong_lock;                // provides Unsafe atomic updates to jlongs on platforms that don't support cx8
 #endif
 
+extern Mutex*   MetaspaceExpand_lock;            // protects Metaspace virtualspace and chunk expansions
+
+
 // A MutexLocker provides mutual exclusion with respect to a given mutex
 // for the scope which contains the locker.  The lock is an OS lock, not
 // an object lock, and the two do not interoperate.  Do not use Mutex-based
