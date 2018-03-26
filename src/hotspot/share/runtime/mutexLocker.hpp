@@ -140,6 +140,9 @@ extern Mutex*   UnsafeJlong_lock;                // provides Unsafe atomic updat
 extern Mutex*   MetaspaceExpand_lock;            // protects Metaspace virtualspace and chunk expansions
 
 
+extern Monitor* CodeHeapStateAnalytics_lock;     // lock print functions against concurrent analyze functions.
+                                                 // Only used locally in PrintCodeCacheLayout processing.
+
 // A MutexLocker provides mutual exclusion with respect to a given mutex
 // for the scope which contains the locker.  The lock is an OS lock, not
 // an object lock, and the two do not interoperate.  Do not use Mutex-based

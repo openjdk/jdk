@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -381,6 +381,10 @@ public:
 
   // Log that compilation profiling is skipped because metaspace is full.
   static void log_metaspace_failure();
+
+  // CodeHeap State Analytics.
+  static void print_info(outputStream *out);
+  static void print_heapinfo(outputStream *out, const char* function, const char* granularity );
 };
 
 #endif // SHARE_VM_COMPILER_COMPILEBROKER_HPP
