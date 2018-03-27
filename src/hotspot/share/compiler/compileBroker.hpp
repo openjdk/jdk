@@ -282,7 +282,8 @@ public:
     CompileQueue *q = compile_queue(comp_level);
     return q != NULL ? q->size() : 0;
   }
-  static void compilation_init(TRAPS);
+  static void compilation_init_phase1(TRAPS);
+  static void compilation_init_phase2();
   static void init_compiler_thread_log();
   static nmethod* compile_method(const methodHandle& method,
                                  int osr_bci,
