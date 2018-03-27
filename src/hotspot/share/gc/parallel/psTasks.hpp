@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_GC_PARALLEL_PSTASKS_HPP
 #define SHARE_VM_GC_PARALLEL_PSTASKS_HPP
 
-#include "memory/allocation.hpp"
 #include "utilities/growableArray.hpp"
 
 //

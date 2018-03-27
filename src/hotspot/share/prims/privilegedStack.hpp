@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_PRIMS_PRIVILEGEDSTACK_HPP
 #define SHARE_VM_PRIMS_PRIVILEGEDSTACK_HPP
 
-#include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/vframe.hpp"
 #include "utilities/growableArray.hpp"

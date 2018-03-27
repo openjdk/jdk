@@ -26,11 +26,12 @@
 #define SHARE_VM_UTILITIES_ACCESSFLAGS_HPP
 
 #include "jvm.h"
-#include "memory/allocation.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
 // AccessFlags is an abstraction over Java access flags.
 
+class outputStream;
 
 enum {
   // See jvm.h for shared JVM_ACC_XXX access flags

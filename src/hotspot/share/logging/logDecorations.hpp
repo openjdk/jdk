@@ -26,7 +26,6 @@
 
 #include "logging/logDecorators.hpp"
 #include "logging/logTagSet.hpp"
-#include "memory/allocation.hpp"
 
 // Temporary object containing the necessary data for a log call's decorations (timestamps, etc).
 class LogDecorations {

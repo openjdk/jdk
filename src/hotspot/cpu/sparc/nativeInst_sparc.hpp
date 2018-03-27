@@ -26,7 +26,6 @@
 #define CPU_SPARC_VM_NATIVEINST_SPARC_HPP
 
 #include "asm/macroAssembler.hpp"
-#include "memory/allocation.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
 
