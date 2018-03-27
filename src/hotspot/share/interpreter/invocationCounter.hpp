@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_INTERPRETER_INVOCATIONCOUNTER_HPP
 #define SHARE_VM_INTERPRETER_INVOCATIONCOUNTER_HPP
 
-#include "memory/allocation.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/exceptions.hpp"
 

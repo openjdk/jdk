@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_RUNTIME_VIRTUALSPACE_HPP
 #define SHARE_VM_RUNTIME_VIRTUALSPACE_HPP
 
-#include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // ReservedSpace is a data structure for reserving a contiguous address range.
 
