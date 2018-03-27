@@ -1663,6 +1663,9 @@ private:
   void pshuflw(XMMRegister dst, XMMRegister src, int mode);
   void pshuflw(XMMRegister dst, Address src,     int mode);
 
+  // Shuffle packed values at 128 bit granularity
+  void evshufi64x2(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8, int vector_len);
+
   // Shift Right by bytes Logical DoubleQuadword Immediate
   void psrldq(XMMRegister dst, int shift);
   // Shift Left by bytes Logical DoubleQuadword Immediate
@@ -2046,6 +2049,9 @@ private:
   void pxor(XMMRegister dst, XMMRegister src);
   void vpxor(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpxor(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evpxorq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpxorq(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+
 
   // vinserti forms
   void vinserti128(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
@@ -2108,7 +2114,7 @@ private:
   // Carry-Less Multiplication Quadword
   void pclmulqdq(XMMRegister dst, XMMRegister src, int mask);
   void vpclmulqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int mask);
-
+  void evpclmulqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int mask, int vector_len);
   // AVX instruction which is used to clear upper 128 bits of YMM registers and
   // to avoid transaction penalty between AVX and SSE states. There is no
   // penalty if legacy SSE instructions are encoded using VEX prefix because

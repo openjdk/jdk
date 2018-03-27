@@ -4080,6 +4080,16 @@ void Assembler::pshuflw(XMMRegister dst, Address src, int mode) {
   emit_operand(dst, src);
   emit_int8(mode & 0xFF);
 }
+void Assembler::evshufi64x2(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8, int vector_len) {
+  assert(VM_Version::supports_evex(), "requires EVEX support");
+  assert(vector_len == Assembler::AVX_256bit || vector_len == Assembler::AVX_512bit, "");
+  InstructionAttr attributes(vector_len, /* vex_w */ VM_Version::supports_evex(), /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_is_evex_instruction();
+  int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
+  emit_int8(0x43);
+  emit_int8((unsigned char)(0xC0 | encode));
+  emit_int8(imm8 & 0xFF);
+}
 
 void Assembler::psrldq(XMMRegister dst, int shift) {
   // Shift left 128 bit value in dst XMMRegister by shift number of bytes.
@@ -6201,6 +6211,27 @@ void Assembler::vpxor(XMMRegister dst, XMMRegister nds, Address src, int vector_
   emit_operand(dst, src);
 }
 
+void Assembler::evpxorq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+  assert(VM_Version::supports_evex(), "requires EVEX support");
+  InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_is_evex_instruction();
+  int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
+  emit_int8((unsigned char)0xEF);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::evpxorq(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
+  assert(VM_Version::supports_evex(), "requires EVEX support");
+  assert(dst != xnoreg, "sanity");
+  InstructionMark im(this);
+  InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_is_evex_instruction();
+  attributes.set_address_attributes(/* tuple_type */ EVEX_FV, /* input_size_in_bits */ EVEX_64bit);
+  vex_prefix(src, nds->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
+  emit_int8((unsigned char)0xEF);
+  emit_operand(dst, src);
+}
+
 
 // vinserti forms
 
@@ -6780,6 +6811,16 @@ void Assembler::pclmulqdq(XMMRegister dst, XMMRegister src, int mask) {
 void Assembler::vpclmulqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int mask) {
   assert(VM_Version::supports_avx() && VM_Version::supports_clmul(), "");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ false);
+  int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
+  emit_int8(0x44);
+  emit_int8((unsigned char)(0xC0 | encode));
+  emit_int8((unsigned char)mask);
+}
+
+void Assembler::evpclmulqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int mask, int vector_len) {
+  assert(VM_Version::supports_vpclmulqdq(), "Requires vector carryless multiplication support");
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_is_evex_instruction();
   int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
   emit_int8(0x44);
   emit_int8((unsigned char)(0xC0 | encode));
