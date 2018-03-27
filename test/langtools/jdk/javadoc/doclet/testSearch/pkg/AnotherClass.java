@@ -75,4 +75,14 @@ public class AnotherClass {
     public pkg1.RegClass method(pkg1.RegClass param) {
         return param;
     }
+
+    /**
+     * Method to test member search index URL.
+     *
+     * @param testArray some test array.
+     * @param testInt some test int.
+     * @param testString some test string.
+     */
+    public void method(byte[] testArray, int testInt, String testString) {
+    }
 }
