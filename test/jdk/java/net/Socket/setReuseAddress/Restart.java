@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
  *          after a crash.
  * @run main Restart
  * @run main/othervm -Dsun.net.useExclusiveBind Restart
+ * @run main/othervm -Djava.net.preferIPv4Stack=true Restart
+ * @run main/othervm -Dsun.net.useExclusiveBind -Djava.net.preferIPv4Stack=true Restart
  */
 import java.net.*;
 

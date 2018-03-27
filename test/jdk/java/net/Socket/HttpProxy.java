@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 6370908
  * @summary Add support for HTTP_CONNECT proxy in Socket class
  * @modules java.base/sun.net.www
+ * @run main HttpProxy
+ * @run main/othervm -Djava.net.preferIPv4Stack=true HttpProxy
  */
 
 import java.io.IOException;

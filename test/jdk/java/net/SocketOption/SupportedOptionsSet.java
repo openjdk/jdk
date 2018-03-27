@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import static java.lang.System.out;
  * @summary java.net socket supportedOptions set depends on call order
  * @run main/othervm SupportedOptionsSet first
  * @run main/othervm SupportedOptionsSet second
+ * @run main/othervm -Djava.net.preferIPv4Stack=true SupportedOptionsSet first
+ * @run main/othervm -Djava.net.preferIPv4Stack=true SupportedOptionsSet second
  */
 
 // Run with othervm as the implementation of the supported options sets, once

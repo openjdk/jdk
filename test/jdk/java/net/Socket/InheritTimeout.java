@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 4508149
  * @summary Setting ServerSocket.setSoTimeout shouldn't cause
  *          the timeout to be inherited by accepted connections
+ * @run main InheritTimeout
+ * @run main/othervm -Djava.net.preferIPv4Stack=true InheritTimeout
  */
 
 import java.net.*;
