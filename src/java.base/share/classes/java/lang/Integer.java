@@ -1574,13 +1574,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      * @since 1.5
      */
     public static int highestOneBit(int i) {
-        // HD, Figure 3-1
-        i |= (i >>  1);
-        i |= (i >>  2);
-        i |= (i >>  4);
-        i |= (i >>  8);
-        i |= (i >> 16);
-        return i - (i >>> 1);
+        return i & (MIN_VALUE >>> numberOfLeadingZeros(i));
     }
 
     /**
