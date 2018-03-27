@@ -2372,9 +2372,9 @@ void Method::log_touched(TRAPS) {
     ptr = ptr->_next;
   }
   TouchedMethodRecord* nptr = NEW_C_HEAP_OBJ(TouchedMethodRecord, mtTracing);
-  my_class->set_permanent();  // prevent reclaimed by GC
-  my_name->set_permanent();
-  my_sig->set_permanent();
+  my_class->increment_refcount();
+  my_name->increment_refcount();
+  my_sig->increment_refcount();
   nptr->_class_name         = my_class;
   nptr->_method_name        = my_name;
   nptr->_method_signature   = my_sig;
