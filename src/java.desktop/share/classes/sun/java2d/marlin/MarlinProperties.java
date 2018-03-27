@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,29 +54,41 @@ public final class MarlinProperties {
     }
 
     /**
-     * Return the initial pixel size used to define initial arrays
-     * (tile AA chunk, alpha line, buckets)
+     * Return the initial pixel width used to define initial arrays
+     * (tile AA chunk, alpha line)
      *
-     * @return 64 < initial pixel size < 32768 (2048 by default)
+     * @return 64 < initial pixel size < 32768 (4096 by default)
      */
-    public static int getInitialImageSize() {
+    public static int getInitialPixelWidth() {
         return align(
-            getInteger("sun.java2d.renderer.pixelsize", 2048, 64, 32 * 1024),
+            getInteger("sun.java2d.renderer.pixelWidth", 4096, 64, 32 * 1024),
             64);
     }
 
     /**
-     * Return the log(2) corresponding to subpixel on x-axis (
+     * Return the initial pixel height used to define initial arrays
+     * (buckets)
      *
-     * @return 0 (1 subpixels) < initial pixel size < 8 (256 subpixels)
-     * (3 by default ie 8 subpixels)
+     * @return 64 < initial pixel size < 32768 (2176 by default)
      */
-    public static int getSubPixel_Log2_X() {
-        return getInteger("sun.java2d.renderer.subPixel_log2_X", 3, 0, 8);
+    public static int getInitialPixelHeight() {
+        return align(
+            getInteger("sun.java2d.renderer.pixelHeight", 2176, 64, 32 * 1024),
+            64);
     }
 
     /**
-     * Return the log(2) corresponding to subpixel on y-axis (
+     * Return the log(2) corresponding to subpixel on x-axis
+     *
+     * @return 0 (1 subpixels) < initial pixel size < 8 (256 subpixels)
+     * (8 by default ie 256 subpixels)
+     */
+    public static int getSubPixel_Log2_X() {
+        return getInteger("sun.java2d.renderer.subPixel_log2_X", 8, 0, 8);
+    }
+
+    /**
+     * Return the log(2) corresponding to subpixel on y-axis
      *
      * @return 0 (1 subpixels) < initial pixel size < 8 (256 subpixels)
      * (3 by default ie 8 subpixels)
@@ -88,7 +100,7 @@ public final class MarlinProperties {
     /**
      * Return the log(2) corresponding to the square tile size in pixels
      *
-     * @return 3 (8x8 pixels) < tile size < 8 (256x256 pixels)
+     * @return 3 (8x8 pixels) < tile size < 10 (1024x1024 pixels)
      * (5 by default ie 32x32 pixels)
      */
     public static int getTileSize_Log2() {
@@ -98,12 +110,11 @@ public final class MarlinProperties {
     /**
      * Return the log(2) corresponding to the tile width in pixels
      *
-     * @return 3 (8 pixels) < tile with < 8 (256 pixels)
-     * (by default is given by the square tile size)
+     * @return 3 (8 pixels) < tile width < 10 (1024 pixels)
+     * (5 by default ie 32x32 pixels)
      */
     public static int getTileWidth_Log2() {
-        final int tileSize = getTileSize_Log2();
-        return getInteger("sun.java2d.renderer.tileWidth_log2", tileSize, 3, 10);
+        return getInteger("sun.java2d.renderer.tileWidth_log2", 5, 3, 10);
     }
 
     /**
@@ -145,6 +156,18 @@ public final class MarlinProperties {
         return getBoolean("sun.java2d.renderer.useSimplifier", "false");
     }
 
+    public static boolean isUsePathSimplifier() {
+        return getBoolean("sun.java2d.renderer.usePathSimplifier", "false");
+    }
+
+    public static float getPathSimplifierPixelTolerance() {
+        // default: MIN_PEN_SIZE or less ?
+        return getFloat("sun.java2d.renderer.pathSimplifier.pixTol",
+                (1.0f / MarlinConst.MIN_SUBPIXELS),
+                1e-3f,
+                10.0f);
+    }
+
     public static boolean isDoClip() {
         return getBoolean("sun.java2d.renderer.clip", "true");
     }
@@ -155,6 +178,14 @@ public final class MarlinProperties {
 
     public static boolean isDoClipAtRuntime() {
         return getBoolean("sun.java2d.renderer.clip.runtime", "true");
+    }
+
+    public static boolean isDoClipSubdivider() {
+        return getBoolean("sun.java2d.renderer.clip.subdivider", "true");
+    }
+
+    public static float getSubdividerMinLength() {
+        return getFloat("sun.java2d.renderer.clip.subdivider.minLength", 100.0f, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY);
     }
 
     // debugging parameters
@@ -191,16 +222,20 @@ public final class MarlinProperties {
 
     // quality settings
 
+    public static float getCurveLengthError() {
+        return getFloat("sun.java2d.renderer.curve_len_err", 0.01f, 1e-6f, 1.0f);
+    }
+
     public static float getCubicDecD2() {
-        return getFloat("sun.java2d.renderer.cubic_dec_d2", 1.0f, 0.01f, 4.0f);
+        return getFloat("sun.java2d.renderer.cubic_dec_d2", 1.0f, 1e-5f, 4.0f);
     }
 
     public static float getCubicIncD1() {
-        return getFloat("sun.java2d.renderer.cubic_inc_d1", 0.4f, 0.01f, 2.0f);
+        return getFloat("sun.java2d.renderer.cubic_inc_d1", 0.2f, 1e-6f, 1.0f);
     }
 
     public static float getQuadDecD2() {
-        return getFloat("sun.java2d.renderer.quad_dec_d2", 0.5f, 0.01f, 4.0f);
+        return getFloat("sun.java2d.renderer.quad_dec_d2", 0.5f, 1e-5f, 4.0f);
     }
 
     // system property utilities

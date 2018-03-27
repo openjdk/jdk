@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,23 +74,34 @@ interface MarlinConst {
     // do clean dirty array
     static final boolean DO_CLEAN_DIRTY = false;
 
-    // flag to use line simplifier
+    // flag to use collinear simplifier
     static final boolean USE_SIMPLIFIER = MarlinProperties.isUseSimplifier();
+
+    // flag to use path simplifier
+    static final boolean USE_PATH_SIMPLIFIER = MarlinProperties.isUsePathSimplifier();
+
+    static final boolean DO_CLIP_SUBDIVIDER = MarlinProperties.isDoClipSubdivider();
 
     // flag to enable logs related bounds checks
     static final boolean DO_LOG_BOUNDS = ENABLE_LOGS && false;
 
+    // flag to enable float precision correction
+    static final boolean DO_FIX_FLOAT_PREC = true;
+
     // Initial Array sizing (initial context capacity) ~ 450K
 
-    // 2048 pixel (width x height) for initial capacity
-    static final int INITIAL_PIXEL_DIM
-        = MarlinProperties.getInitialImageSize();
+    // 4096 pixels (width) for initial capacity
+    static final int INITIAL_PIXEL_WIDTH
+        = MarlinProperties.getInitialPixelWidth();
+    // 2176 pixels (height) for initial capacity
+    static final int INITIAL_PIXEL_HEIGHT
+        = MarlinProperties.getInitialPixelHeight();
 
     // typical array sizes: only odd numbers allowed below
     static final int INITIAL_ARRAY        = 256;
 
     // alpha row dimension
-    static final int INITIAL_AA_ARRAY     = INITIAL_PIXEL_DIM;
+    static final int INITIAL_AA_ARRAY     = INITIAL_PIXEL_WIDTH;
 
     // 4096 edges for initial capacity
     static final int INITIAL_EDGES_COUNT = MarlinProperties.getInitialEdges();
@@ -109,16 +120,17 @@ interface MarlinConst {
     public static final int SUBPIXEL_LG_POSITIONS_Y
         = MarlinProperties.getSubPixel_Log2_Y();
 
+    public static final int MIN_SUBPIXEL_LG_POSITIONS
+        = Math.min(SUBPIXEL_LG_POSITIONS_X, SUBPIXEL_LG_POSITIONS_Y);
+
     // number of subpixels
     public static final int SUBPIXEL_POSITIONS_X = 1 << (SUBPIXEL_LG_POSITIONS_X);
     public static final int SUBPIXEL_POSITIONS_Y = 1 << (SUBPIXEL_LG_POSITIONS_Y);
 
-    public static final float NORM_SUBPIXELS
-        = (float) Math.sqrt(( SUBPIXEL_POSITIONS_X * SUBPIXEL_POSITIONS_X
-                            + SUBPIXEL_POSITIONS_Y * SUBPIXEL_POSITIONS_Y) / 2.0d);
+    public static final float MIN_SUBPIXELS = 1 << MIN_SUBPIXEL_LG_POSITIONS;
 
     public static final int MAX_AA_ALPHA
-        = SUBPIXEL_POSITIONS_X * SUBPIXEL_POSITIONS_Y;
+        = (SUBPIXEL_POSITIONS_X * SUBPIXEL_POSITIONS_Y);
 
     public static final int TILE_H_LG = MarlinProperties.getTileSize_Log2();
     public static final int TILE_H = 1 << TILE_H_LG; // 32 by default
