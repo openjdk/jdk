@@ -136,6 +136,8 @@ public class TestVerifyGCType {
                                        "-Xlog:gc,gc+start,gc+verify=info",
                                        "-Xms16m",
                                        "-Xmx16m",
+                                       "-XX:ParallelGCThreads=1",
+                                       "-XX:G1HeapWastePercent=1",
                                        "-XX:+VerifyBeforeGC",
                                        "-XX:+VerifyAfterGC",
                                        "-XX:+VerifyDuringGC"});
