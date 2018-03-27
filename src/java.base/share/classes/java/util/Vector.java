@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ import java.util.function.UnaryOperator;
  *
  * <p>As of the Java 2 platform v1.2, this class was retrofitted to
  * implement the {@link List} interface, making it a member of the
- * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
+ * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.  Unlike the new collection
  * implementations, {@code Vector} is synchronized.  If a thread-safe
  * implementation is not needed, it is recommended to use {@link

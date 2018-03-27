@@ -60,7 +60,7 @@ import java.util.function.Function;
  * the {@code ConcurrentMap} in another thread.
  *
  * <p>This interface is a member of the
- * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
+ * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @since 1.5
@@ -180,10 +180,10 @@ public interface ConcurrentMap<K,V> extends Map<K,V> {
      *         is not supported by this map
      * @throws ClassCastException if the key or value is of an inappropriate
      *         type for this map
-     * (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
+     * (<a href="{@docRoot}/java.base/java/util/Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified key or value is null,
      *         and this map does not permit null keys or values
-     * (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
+     * (<a href="{@docRoot}/java.base/java/util/Collection.html#optional-restrictions">optional</a>)
      */
     boolean remove(Object key, Object value);
 
