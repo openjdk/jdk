@@ -384,7 +384,7 @@
 
   // Constructors
   inline frame(intptr_t* sp);
-  frame(intptr_t* sp, address pc);
+  inline frame(intptr_t* sp, address pc);
   inline frame(intptr_t* sp, address pc, intptr_t* unextended_sp);
 
  private:
