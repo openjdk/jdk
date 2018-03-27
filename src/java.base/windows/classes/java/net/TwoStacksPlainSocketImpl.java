@@ -27,6 +27,8 @@ package java.net;
 import java.io.IOException;
 import java.io.FileDescriptor;
 import sun.net.ResourceManager;
+import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.JavaIOFileDescriptorAccess;
 
 /*
  * This class defines the plain SocketImpl that is used when
@@ -37,15 +39,14 @@ import sun.net.ResourceManager;
 
 class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl {
 
+    private static final JavaIOFileDescriptorAccess fdAccess =
+        SharedSecrets.getJavaIOFileDescriptorAccess();
+
     // true if this socket is exclusively bound
     private final boolean exclusiveBind;
 
     // emulates SO_REUSEADDR when exclusiveBind is true
     private boolean isReuseAddress;
-
-    static {
-        initProto();
-    }
 
     public TwoStacksPlainSocketImpl(boolean exclBind) {
         exclusiveBind = exclBind;
@@ -56,105 +57,268 @@ class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl {
         exclusiveBind = exclBind;
     }
 
-    public Object getOption(int opt) throws SocketException {
-        if (isClosedOrPending()) {
-            throw new SocketException("Socket Closed");
+    void socketCreate(boolean stream) throws IOException {
+        if (fd == null)
+            throw new SocketException("Socket closed");
+
+        int newfd = socket0(stream, false /*v6 Only*/);
+
+        fdAccess.set(fd, newfd);
+    }
+
+    @Override
+    void socketConnect(InetAddress address, int port, int timeout)
+        throws IOException {
+        int nativefd = checkAndReturnNativeFD();
+
+        if (address == null)
+            throw new NullPointerException("inet address argument is null.");
+
+        int connectResult;
+        if (timeout <= 0) {
+            connectResult = connect0(nativefd, address, port);
+        } else {
+            configureBlocking(nativefd, false);
+            try {
+                connectResult = connect0(nativefd, address, port);
+                if (connectResult == WOULDBLOCK) {
+                    waitForConnect(nativefd, timeout);
+                }
+            } finally {
+                configureBlocking(nativefd, true);
+            }
         }
-        if (opt == SO_BINDADDR) {
-            InetAddressContainer in = new InetAddressContainer();
-            socketGetOption(opt, in);
-            return in.addr;
-        } else if (opt == SO_REUSEADDR && exclusiveBind) {
-            // SO_REUSEADDR emulated when using exclusive bind
-            return isReuseAddress;
-        } else if (opt == SO_REUSEPORT) {
-            // SO_REUSEPORT is not supported on Windows.
-            throw new UnsupportedOperationException("unsupported option");
-        } else
-            return super.getOption(opt);
+        /*
+         * We need to set the local port field. If bind was called
+         * previous to the connect (by the client) then localport field
+         * will already be set.
+         */
+        if (localport == 0)
+            localport = localPort0(nativefd);
     }
 
     @Override
     void socketBind(InetAddress address, int port) throws IOException {
-        socketBind(address, port, exclusiveBind);
-    }
+        int nativefd = checkAndReturnNativeFD();
 
-    @Override
-    void socketSetOption(int opt, boolean on, Object value)
-        throws SocketException
-    {
-        // SO_REUSEADDR emulated when using exclusive bind
-        if (opt == SO_REUSEADDR && exclusiveBind)
-            isReuseAddress = on;
-        else if (opt == SO_REUSEPORT) {
-            // SO_REUSEPORT is not supported on Windows.
-            throw new UnsupportedOperationException("unsupported option");
+        if (address == null)
+            throw new NullPointerException("inet address argument is null.");
+
+        bind0(nativefd, address, port, exclusiveBind);
+        if (port == 0) {
+            localport = localPort0(nativefd);
+        } else {
+            localport = port;
         }
-        else
-            socketNativeSetOption(opt, on, value);
+
+        this.address = address;
     }
 
-    /**
-     * Closes the socket.
-     */
     @Override
-    protected void close() throws IOException {
-        synchronized(fdLock) {
-            if (fd != null) {
-                if (!stream) {
-                    ResourceManager.afterUdpClose();
+    void socketListen(int backlog) throws IOException {
+        int nativefd = checkAndReturnNativeFD();
+
+        listen0(nativefd, backlog);
+    }
+
+    @Override
+    void socketAccept(SocketImpl s) throws IOException {
+        int nativefd = checkAndReturnNativeFD();
+
+        if (s == null)
+            throw new NullPointerException("socket is null");
+
+        int newfd = -1;
+        InetSocketAddress[] isaa = new InetSocketAddress[1];
+        if (timeout <= 0) {
+            newfd = accept0(nativefd, isaa);
+        } else {
+            configureBlocking(nativefd, false);
+            try {
+                waitForNewConnection(nativefd, timeout);
+                newfd = accept0(nativefd, isaa);
+                if (newfd != -1) {
+                    configureBlocking(newfd, true);
                 }
-                if (fdUseCount == 0) {
-                    if (closePending) {
-                        return;
-                    }
-                    closePending = true;
-                    socketClose();
-                    fd = null;
-                    return;
-                } else {
-                    /*
-                     * If a thread has acquired the fd and a close
-                     * isn't pending then use a deferred close.
-                     * Also decrement fdUseCount to signal the last
-                     * thread that releases the fd to close it.
-                     */
-                    if (!closePending) {
-                        closePending = true;
-                        fdUseCount--;
-                        socketClose();
-                    }
-                }
+            } finally {
+                configureBlocking(nativefd, true);
             }
         }
+        /* Update (SocketImpl)s' fd */
+        fdAccess.set(s.fd, newfd);
+        /* Update socketImpls remote port, address and localport */
+        InetSocketAddress isa = isaa[0];
+        s.port = isa.getPort();
+        s.address = isa.getAddress();
+        s.localport = localport;
+    }
+
+    @Override
+    int socketAvailable() throws IOException {
+        int nativefd = checkAndReturnNativeFD();
+        return available0(nativefd);
+    }
+
+    @Override
+    void socketClose0(boolean useDeferredClose/*unused*/) throws IOException {
+        if (fd == null)
+            throw new SocketException("Socket closed");
+
+        if (!fd.valid())
+            return;
+
+        final int nativefd = fdAccess.get(fd);
+        fdAccess.set(fd, -1);
+        close0(nativefd);
+    }
+
+    @Override
+    void socketShutdown(int howto) throws IOException {
+        int nativefd = checkAndReturnNativeFD();
+        shutdown0(nativefd, howto);
+    }
+
+    // Intentional fallthrough after SO_REUSEADDR
+    @SuppressWarnings("fallthrough")
+    @Override
+    void socketSetOption(int opt, boolean on, Object value)
+        throws SocketException {
+        int nativefd = checkAndReturnNativeFD();
+
+        if (opt == SO_TIMEOUT) {
+            // Don't enable the socket option on ServerSocket as it's
+            // meaningless (we don't receive on a ServerSocket).
+            if (serverSocket == null) {
+                setSoTimeout0(nativefd, ((Integer)value).intValue());
+            }
+            return;
+        }
+        // SO_REUSEPORT is not supported on Windows.
+        if (opt == SO_REUSEPORT) {
+            throw new UnsupportedOperationException("unsupported option");
+        }
+
+        int optionValue = 0;
+
+        switch(opt) {
+            case SO_REUSEADDR :
+                if (exclusiveBind) {
+                    // SO_REUSEADDR emulated when using exclusive bind
+                    isReuseAddress = on;
+                    return;
+                }
+                // intentional fallthrough
+            case TCP_NODELAY :
+            case SO_OOBINLINE :
+            case SO_KEEPALIVE :
+                optionValue = on ? 1 : 0;
+                break;
+            case SO_SNDBUF :
+            case SO_RCVBUF :
+            case IP_TOS :
+                optionValue = ((Integer)value).intValue();
+                break;
+            case SO_LINGER :
+                if (on) {
+                    optionValue =  ((Integer)value).intValue();
+                } else {
+                    optionValue = -1;
+                }
+                break;
+            default :/* shouldn't get here */
+                throw new SocketException("Option not supported");
+        }
+
+        setIntOption(nativefd, opt, optionValue);
+    }
+
+    @Override
+    int socketGetOption(int opt, Object iaContainerObj) throws SocketException {
+        int nativefd = checkAndReturnNativeFD();
+
+        // SO_BINDADDR is not a socket option.
+        if (opt == SO_BINDADDR) {
+            localAddress(nativefd, (InetAddressContainer)iaContainerObj);
+            return 0;  // return value doesn't matter.
+        }
+        // SO_REUSEPORT is not supported on Windows.
+        if (opt == SO_REUSEPORT) {
+            throw new UnsupportedOperationException("unsupported option");
+        }
+
+        // SO_REUSEADDR emulated when using exclusive bind
+        if (opt == SO_REUSEADDR && exclusiveBind)
+            return isReuseAddress? 1 : -1;
+
+        int value = getIntOption(nativefd, opt);
+
+        switch (opt) {
+            case TCP_NODELAY :
+            case SO_OOBINLINE :
+            case SO_KEEPALIVE :
+            case SO_REUSEADDR :
+                return (value == 0) ? -1 : 1;
+        }
+        return value;
+    }
+
+    @Override
+    void socketSendUrgentData(int data) throws IOException {
+        int nativefd = checkAndReturnNativeFD();
+        sendOOB(nativefd, data);
+    }
+
+    private int checkAndReturnNativeFD() throws SocketException {
+        if (fd == null || !fd.valid())
+            throw new SocketException("Socket closed");
+
+        return fdAccess.get(fd);
+    }
+
+    static final int WOULDBLOCK = -2;       // Nothing available (non-blocking)
+
+    static {
+        initIDs();
     }
 
     /* Native methods */
 
-    static native void initProto();
+    static native void initIDs();
 
-    native void socketCreate(boolean stream) throws IOException;
+    static native int socket0(boolean stream, boolean v6Only) throws IOException;
 
-    native void socketConnect(InetAddress address, int port, int timeout)
+    static native void bind0(int fd, InetAddress localAddress, int localport,
+                             boolean exclBind)
         throws IOException;
 
-    native void socketBind(InetAddress address, int port, boolean exclBind)
+    static native int connect0(int fd, InetAddress remote, int remotePort)
         throws IOException;
 
-    native void socketListen(int count) throws IOException;
+    static native void waitForConnect(int fd, int timeout) throws IOException;
 
-    native void socketAccept(SocketImpl s) throws IOException;
+    static native int localPort0(int fd) throws IOException;
 
-    native int socketAvailable() throws IOException;
+    static native void localAddress(int fd, InetAddressContainer in) throws SocketException;
 
-    native void socketClose0(boolean useDeferredClose) throws IOException;
+    static native void listen0(int fd, int backlog) throws IOException;
 
-    native void socketShutdown(int howto) throws IOException;
+    static native int accept0(int fd, InetSocketAddress[] isaa) throws IOException;
 
-    native void socketNativeSetOption(int cmd, boolean on, Object value)
-        throws SocketException;
+    static native void waitForNewConnection(int fd, int timeout) throws IOException;
 
-    native int socketGetOption(int opt, Object iaContainerObj) throws SocketException;
+    static native int available0(int fd) throws IOException;
 
-    native void socketSendUrgentData(int data) throws IOException;
+    static native void close0(int fd) throws IOException;
+
+    static native void shutdown0(int fd, int howto) throws IOException;
+
+    static native void setIntOption(int fd, int cmd, int optionValue) throws SocketException;
+
+    static native void setSoTimeout0(int fd, int timeout) throws SocketException;
+
+    static native int getIntOption(int fd, int cmd) throws SocketException;
+
+    static native void sendOOB(int fd, int data) throws IOException;
+
+    static native void configureBlocking(int fd, boolean blocking) throws IOException;
 }

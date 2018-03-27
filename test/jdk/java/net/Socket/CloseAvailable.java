@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
  * @test
  * @bug 4091859
  * @summary Test Socket.available()
- *
+ * @run main CloseAvailable
+ * @run main/othervm -Djava.net.preferIPv4Stack=true CloseAvailable
  */
 
 import java.net.*;

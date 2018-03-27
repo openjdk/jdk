@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -920,7 +920,7 @@ Java_java_net_PlainSocketImpl_socketSetOption0
 /*
  * Class:     java_net_PlainSocketImpl
  * Method:    socketGetOption
- * Signature: (I)I
+ * Signature: (ILjava/lang/Object;)I
  */
 JNIEXPORT jint JNICALL
 Java_java_net_PlainSocketImpl_socketGetOption
