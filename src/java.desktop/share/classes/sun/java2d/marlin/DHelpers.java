@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.java2d.marlin;
 
-import static java.lang.Math.PI;
 import java.util.Arrays;
 import sun.java2d.marlin.stats.Histogram;
 import sun.java2d.marlin.stats.StatLong;
@@ -41,13 +40,25 @@ final class DHelpers implements MarlinConst {
         return (d <= err && d >= -err);
     }
 
-    static int quadraticRoots(final double a, final double b,
-                              final double c, double[] zeroes, final int off)
+    static double evalCubic(final double a, final double b,
+                            final double c, final double d,
+                            final double t)
+    {
+        return t * (t * (t * a + b) + c) + d;
+    }
+
+    static double evalQuad(final double a, final double b,
+                           final double c, final double t)
+    {
+        return t * (t * a + b) + c;
+    }
+
+    static int quadraticRoots(final double a, final double b, final double c,
+                              final double[] zeroes, final int off)
     {
         int ret = off;
-        double t;
         if (a != 0.0d) {
-            final double dis = b*b - 4*a*c;
+            final double dis = b*b - 4.0d * a * c;
             if (dis > 0.0d) {
                 final double sqrtDis = Math.sqrt(dis);
                 // depending on the sign of b we use a slightly different
@@ -62,34 +73,34 @@ final class DHelpers implements MarlinConst {
                     zeroes[ret++] = (2.0d * c) / (-b + sqrtDis);
                 }
             } else if (dis == 0.0d) {
-                t = (-b) / (2.0d * a);
-                zeroes[ret++] = t;
+                zeroes[ret++] = -b / (2.0d * a);
             }
-        } else {
-            if (b != 0.0d) {
-                t = (-c) / b;
-                zeroes[ret++] = t;
-            }
+        } else if (b != 0.0d) {
+            zeroes[ret++] = -c / b;
         }
         return ret - off;
     }
 
     // find the roots of g(t) = d*t^3 + a*t^2 + b*t + c in [A,B)
-    static int cubicRootsInAB(double d, double a, double b, double c,
-                              double[] pts, final int off,
+    static int cubicRootsInAB(final double d, double a, double b, double c,
+                              final double[] pts, final int off,
                               final double A, final double B)
     {
         if (d == 0.0d) {
-            int num = quadraticRoots(a, b, c, pts, off);
+            final int num = quadraticRoots(a, b, c, pts, off);
             return filterOutNotInAB(pts, off, num, A, B) - off;
         }
         // From Graphics Gems:
-        // http://tog.acm.org/resources/GraphicsGems/gems/Roots3And4.c
+        // https://github.com/erich666/GraphicsGems/blob/master/gems/Roots3And4.c
         // (also from awt.geom.CubicCurve2D. But here we don't need as
         // much accuracy and we don't want to create arrays so we use
         // our own customized version).
 
         // normal form: x^3 + ax^2 + bx + c = 0
+
+        /*
+         * TODO: cleanup all that code after reading Roots3And4.c
+         */
         a /= d;
         b /= d;
         c /= d;
@@ -102,63 +113,45 @@ final class DHelpers implements MarlinConst {
         // p = P/3
         // q = Q/2
         // instead and use those values for simplicity of the code.
-        double sq_A = a * a;
-        double p = (1.0d/3.0d) * ((-1.0d/3.0d) * sq_A + b);
-        double q = (1.0d/2.0d) * ((2.0d/27.0d) * a * sq_A - (1.0d/3.0d) * a * b + c);
+        final double sub = (1.0d / 3.0d) * a;
+        final double sq_A = a * a;
+        final double p = (1.0d / 3.0d) * ((-1.0d / 3.0d) * sq_A + b);
+        final double q = (1.0d / 2.0d) * ((2.0d / 27.0d) * a * sq_A - sub * b + c);
 
         // use Cardano's formula
 
-        double cb_p = p * p * p;
-        double D = q * q + cb_p;
+        final double cb_p = p * p * p;
+        final double D = q * q + cb_p;
 
         int num;
         if (D < 0.0d) {
             // see: http://en.wikipedia.org/wiki/Cubic_function#Trigonometric_.28and_hyperbolic.29_method
-            final double phi = (1.0d/3.0d) * Math.acos(-q / Math.sqrt(-cb_p));
+            final double phi = (1.0d / 3.0d) * Math.acos(-q / Math.sqrt(-cb_p));
             final double t = 2.0d * Math.sqrt(-p);
 
-            pts[ off+0 ] = ( t * Math.cos(phi));
-            pts[ off+1 ] = (-t * Math.cos(phi + (PI / 3.0d)));
-            pts[ off+2 ] = (-t * Math.cos(phi - (PI / 3.0d)));
+            pts[off    ] = ( t * Math.cos(phi) - sub);
+            pts[off + 1] = (-t * Math.cos(phi + (Math.PI / 3.0d)) - sub);
+            pts[off + 2] = (-t * Math.cos(phi - (Math.PI / 3.0d)) - sub);
             num = 3;
         } else {
             final double sqrt_D = Math.sqrt(D);
             final double u =   Math.cbrt(sqrt_D - q);
             final double v = - Math.cbrt(sqrt_D + q);
 
-            pts[ off ] = (u + v);
+            pts[off    ] = (u + v - sub);
             num = 1;
 
             if (within(D, 0.0d, 1e-8d)) {
-                pts[off+1] = -(pts[off] / 2.0d);
+                pts[off + 1] = ((-1.0d / 2.0d) * (u + v) - sub);
                 num = 2;
             }
-        }
-
-        final double sub = (1.0d/3.0d) * a;
-
-        for (int i = 0; i < num; ++i) {
-            pts[ off+i ] -= sub;
         }
 
         return filterOutNotInAB(pts, off, num, A, B) - off;
     }
 
-    static double evalCubic(final double a, final double b,
-                           final double c, final double d,
-                           final double t)
-    {
-        return t * (t * (t * a + b) + c) + d;
-    }
-
-    static double evalQuad(final double a, final double b,
-                          final double c, final double t)
-    {
-        return t * (t * a + b) + c;
-    }
-
     // returns the index 1 past the last valid element remaining after filtering
-    static int filterOutNotInAB(double[] nums, final int off, final int len,
+    static int filterOutNotInAB(final double[] nums, final int off, final int len,
                                 final double a, final double b)
     {
         int ret = off;
@@ -170,35 +163,189 @@ final class DHelpers implements MarlinConst {
         return ret;
     }
 
-    static double linelen(double x1, double y1, double x2, double y2) {
-        final double dx = x2 - x1;
-        final double dy = y2 - y1;
-        return Math.sqrt(dx*dx + dy*dy);
+    static double fastLineLen(final double x0, final double y0,
+                              final double x1, final double y1)
+    {
+        final double dx = x1 - x0;
+        final double dy = y1 - y0;
+
+        // use manhattan norm:
+        return Math.abs(dx) + Math.abs(dy);
     }
 
-    static void subdivide(double[] src, int srcoff, double[] left, int leftoff,
-                          double[] right, int rightoff, int type)
+    static double linelen(final double x0, final double y0,
+                          final double x1, final double y1)
+    {
+        final double dx = x1 - x0;
+        final double dy = y1 - y0;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    static double fastQuadLen(final double x0, final double y0,
+                              final double x1, final double y1,
+                              final double x2, final double y2)
+    {
+        final double dx1 = x1 - x0;
+        final double dx2 = x2 - x1;
+        final double dy1 = y1 - y0;
+        final double dy2 = y2 - y1;
+
+        // use manhattan norm:
+        return Math.abs(dx1) + Math.abs(dx2)
+             + Math.abs(dy1) + Math.abs(dy2);
+    }
+
+    static double quadlen(final double x0, final double y0,
+                          final double x1, final double y1,
+                          final double x2, final double y2)
+    {
+        return (linelen(x0, y0, x1, y1)
+                + linelen(x1, y1, x2, y2)
+                + linelen(x0, y0, x2, y2)) / 2.0d;
+    }
+
+    static double fastCurvelen(final double x0, final double y0,
+                               final double x1, final double y1,
+                               final double x2, final double y2,
+                               final double x3, final double y3)
+    {
+        final double dx1 = x1 - x0;
+        final double dx2 = x2 - x1;
+        final double dx3 = x3 - x2;
+        final double dy1 = y1 - y0;
+        final double dy2 = y2 - y1;
+        final double dy3 = y3 - y2;
+
+        // use manhattan norm:
+        return Math.abs(dx1) + Math.abs(dx2) + Math.abs(dx3)
+             + Math.abs(dy1) + Math.abs(dy2) + Math.abs(dy3);
+    }
+
+    static double curvelen(final double x0, final double y0,
+                           final double x1, final double y1,
+                           final double x2, final double y2,
+                           final double x3, final double y3)
+    {
+        return (linelen(x0, y0, x1, y1)
+              + linelen(x1, y1, x2, y2)
+              + linelen(x2, y2, x3, y3)
+              + linelen(x0, y0, x3, y3)) / 2.0d;
+    }
+
+    // finds values of t where the curve in pts should be subdivided in order
+    // to get good offset curves a distance of w away from the middle curve.
+    // Stores the points in ts, and returns how many of them there were.
+    static int findSubdivPoints(final DCurve c, final double[] pts,
+                                final double[] ts, final int type,
+                                final double w2)
+    {
+        final double x12 = pts[2] - pts[0];
+        final double y12 = pts[3] - pts[1];
+        // if the curve is already parallel to either axis we gain nothing
+        // from rotating it.
+        if ((y12 != 0.0d && x12 != 0.0d)) {
+            // we rotate it so that the first vector in the control polygon is
+            // parallel to the x-axis. This will ensure that rotated quarter
+            // circles won't be subdivided.
+            final double hypot = Math.sqrt(x12 * x12 + y12 * y12);
+            final double cos = x12 / hypot;
+            final double sin = y12 / hypot;
+            final double x1 = cos * pts[0] + sin * pts[1];
+            final double y1 = cos * pts[1] - sin * pts[0];
+            final double x2 = cos * pts[2] + sin * pts[3];
+            final double y2 = cos * pts[3] - sin * pts[2];
+            final double x3 = cos * pts[4] + sin * pts[5];
+            final double y3 = cos * pts[5] - sin * pts[4];
+
+            switch(type) {
+            case 8:
+                final double x4 = cos * pts[6] + sin * pts[7];
+                final double y4 = cos * pts[7] - sin * pts[6];
+                c.set(x1, y1, x2, y2, x3, y3, x4, y4);
+                break;
+            case 6:
+                c.set(x1, y1, x2, y2, x3, y3);
+                break;
+            default:
+            }
+        } else {
+            c.set(pts, type);
+        }
+
+        int ret = 0;
+        // we subdivide at values of t such that the remaining rotated
+        // curves are monotonic in x and y.
+        ret += c.dxRoots(ts, ret);
+        ret += c.dyRoots(ts, ret);
+
+        // subdivide at inflection points.
+        if (type == 8) {
+            // quadratic curves can't have inflection points
+            ret += c.infPoints(ts, ret);
+        }
+
+        // now we must subdivide at points where one of the offset curves will have
+        // a cusp. This happens at ts where the radius of curvature is equal to w.
+        ret += c.rootsOfROCMinusW(ts, ret, w2, 0.0001d);
+
+        ret = filterOutNotInAB(ts, 0, ret, 0.0001d, 0.9999d);
+        isort(ts, ret);
+        return ret;
+    }
+
+    // finds values of t where the curve in pts should be subdivided in order
+    // to get intersections with the given clip rectangle.
+    // Stores the points in ts, and returns how many of them there were.
+    static int findClipPoints(final DCurve curve, final double[] pts,
+                              final double[] ts, final int type,
+                              final int outCodeOR,
+                              final double[] clipRect)
+    {
+        curve.set(pts, type);
+
+        // clip rectangle (ymin, ymax, xmin, xmax)
+        int ret = 0;
+
+        if ((outCodeOR & OUTCODE_LEFT) != 0) {
+            ret += curve.xPoints(ts, ret, clipRect[2]);
+        }
+        if ((outCodeOR & OUTCODE_RIGHT) != 0) {
+            ret += curve.xPoints(ts, ret, clipRect[3]);
+        }
+        if ((outCodeOR & OUTCODE_TOP) != 0) {
+            ret += curve.yPoints(ts, ret, clipRect[0]);
+        }
+        if ((outCodeOR & OUTCODE_BOTTOM) != 0) {
+            ret += curve.yPoints(ts, ret, clipRect[1]);
+        }
+        isort(ts, ret);
+        return ret;
+    }
+
+    static void subdivide(final double[] src,
+                          final double[] left, final double[] right,
+                          final int type)
     {
         switch(type) {
-        case 6:
-            DHelpers.subdivideQuad(src, srcoff, left, leftoff, right, rightoff);
-            return;
         case 8:
-            DHelpers.subdivideCubic(src, srcoff, left, leftoff, right, rightoff);
+            subdivideCubic(src, left, right);
+            return;
+        case 6:
+            subdivideQuad(src, left, right);
             return;
         default:
             throw new InternalError("Unsupported curve type");
         }
     }
 
-    static void isort(double[] a, int off, int len) {
-        for (int i = off + 1, end = off + len; i < end; i++) {
-            double ai = a[i];
-            int j = i - 1;
-            for (; j >= off && a[j] > ai; j--) {
-                a[j+1] = a[j];
+    static void isort(final double[] a, final int len) {
+        for (int i = 1, j; i < len; i++) {
+            final double ai = a[i];
+            j = i - 1;
+            for (; j >= 0 && a[j] > ai; j--) {
+                a[j + 1] = a[j];
             }
-            a[j+1] = ai;
+            a[j + 1] = ai;
         }
     }
 
@@ -221,206 +368,216 @@ final class DHelpers implements MarlinConst {
      * equals (<code>leftoff</code> + 6), in order
      * to avoid allocating extra storage for this common point.
      * @param src the array holding the coordinates for the source curve
-     * @param srcoff the offset into the array of the beginning of the
-     * the 6 source coordinates
      * @param left the array for storing the coordinates for the first
      * half of the subdivided curve
-     * @param leftoff the offset into the array of the beginning of the
-     * the 6 left coordinates
      * @param right the array for storing the coordinates for the second
      * half of the subdivided curve
-     * @param rightoff the offset into the array of the beginning of the
-     * the 6 right coordinates
      * @since 1.7
      */
-    static void subdivideCubic(double[] src, int srcoff,
-                               double[] left, int leftoff,
-                               double[] right, int rightoff)
+    static void subdivideCubic(final double[] src,
+                               final double[] left,
+                               final double[] right)
     {
-        double x1 = src[srcoff + 0];
-        double y1 = src[srcoff + 1];
-        double ctrlx1 = src[srcoff + 2];
-        double ctrly1 = src[srcoff + 3];
-        double ctrlx2 = src[srcoff + 4];
-        double ctrly2 = src[srcoff + 5];
-        double x2 = src[srcoff + 6];
-        double y2 = src[srcoff + 7];
-        if (left != null) {
-            left[leftoff + 0] = x1;
-            left[leftoff + 1] = y1;
-        }
-        if (right != null) {
-            right[rightoff + 6] = x2;
-            right[rightoff + 7] = y2;
-        }
-        x1 = (x1 + ctrlx1) / 2.0d;
-        y1 = (y1 + ctrly1) / 2.0d;
-        x2 = (x2 + ctrlx2) / 2.0d;
-        y2 = (y2 + ctrly2) / 2.0d;
-        double centerx = (ctrlx1 + ctrlx2) / 2.0d;
-        double centery = (ctrly1 + ctrly2) / 2.0d;
-        ctrlx1 = (x1 + centerx) / 2.0d;
-        ctrly1 = (y1 + centery) / 2.0d;
-        ctrlx2 = (x2 + centerx) / 2.0d;
-        ctrly2 = (y2 + centery) / 2.0d;
-        centerx = (ctrlx1 + ctrlx2) / 2.0d;
-        centery = (ctrly1 + ctrly2) / 2.0d;
-        if (left != null) {
-            left[leftoff + 2] = x1;
-            left[leftoff + 3] = y1;
-            left[leftoff + 4] = ctrlx1;
-            left[leftoff + 5] = ctrly1;
-            left[leftoff + 6] = centerx;
-            left[leftoff + 7] = centery;
-        }
-        if (right != null) {
-            right[rightoff + 0] = centerx;
-            right[rightoff + 1] = centery;
-            right[rightoff + 2] = ctrlx2;
-            right[rightoff + 3] = ctrly2;
-            right[rightoff + 4] = x2;
-            right[rightoff + 5] = y2;
-        }
+        double  x1 = src[0];
+        double  y1 = src[1];
+        double cx1 = src[2];
+        double cy1 = src[3];
+        double cx2 = src[4];
+        double cy2 = src[5];
+        double  x2 = src[6];
+        double  y2 = src[7];
+
+        left[0]  = x1;
+        left[1]  = y1;
+
+        right[6] = x2;
+        right[7] = y2;
+
+        x1 = (x1 + cx1) / 2.0d;
+        y1 = (y1 + cy1) / 2.0d;
+        x2 = (x2 + cx2) / 2.0d;
+        y2 = (y2 + cy2) / 2.0d;
+
+        double cx = (cx1 + cx2) / 2.0d;
+        double cy = (cy1 + cy2) / 2.0d;
+
+        cx1 = (x1 + cx) / 2.0d;
+        cy1 = (y1 + cy) / 2.0d;
+        cx2 = (x2 + cx) / 2.0d;
+        cy2 = (y2 + cy) / 2.0d;
+        cx  = (cx1 + cx2) / 2.0d;
+        cy  = (cy1 + cy2) / 2.0d;
+
+        left[2] = x1;
+        left[3] = y1;
+        left[4] = cx1;
+        left[5] = cy1;
+        left[6] = cx;
+        left[7] = cy;
+
+        right[0] = cx;
+        right[1] = cy;
+        right[2] = cx2;
+        right[3] = cy2;
+        right[4] = x2;
+        right[5] = y2;
     }
 
-
-    static void subdivideCubicAt(double t, double[] src, int srcoff,
-                                 double[] left, int leftoff,
-                                 double[] right, int rightoff)
+    static void subdivideCubicAt(final double t,
+                                 final double[] src, final int offS,
+                                 final double[] pts, final int offL, final int offR)
     {
-        double x1 = src[srcoff + 0];
-        double y1 = src[srcoff + 1];
-        double ctrlx1 = src[srcoff + 2];
-        double ctrly1 = src[srcoff + 3];
-        double ctrlx2 = src[srcoff + 4];
-        double ctrly2 = src[srcoff + 5];
-        double x2 = src[srcoff + 6];
-        double y2 = src[srcoff + 7];
-        if (left != null) {
-            left[leftoff + 0] = x1;
-            left[leftoff + 1] = y1;
-        }
-        if (right != null) {
-            right[rightoff + 6] = x2;
-            right[rightoff + 7] = y2;
-        }
-        x1 = x1 + t * (ctrlx1 - x1);
-        y1 = y1 + t * (ctrly1 - y1);
-        x2 = ctrlx2 + t * (x2 - ctrlx2);
-        y2 = ctrly2 + t * (y2 - ctrly2);
-        double centerx = ctrlx1 + t * (ctrlx2 - ctrlx1);
-        double centery = ctrly1 + t * (ctrly2 - ctrly1);
-        ctrlx1 = x1 + t * (centerx - x1);
-        ctrly1 = y1 + t * (centery - y1);
-        ctrlx2 = centerx + t * (x2 - centerx);
-        ctrly2 = centery + t * (y2 - centery);
-        centerx = ctrlx1 + t * (ctrlx2 - ctrlx1);
-        centery = ctrly1 + t * (ctrly2 - ctrly1);
-        if (left != null) {
-            left[leftoff + 2] = x1;
-            left[leftoff + 3] = y1;
-            left[leftoff + 4] = ctrlx1;
-            left[leftoff + 5] = ctrly1;
-            left[leftoff + 6] = centerx;
-            left[leftoff + 7] = centery;
-        }
-        if (right != null) {
-            right[rightoff + 0] = centerx;
-            right[rightoff + 1] = centery;
-            right[rightoff + 2] = ctrlx2;
-            right[rightoff + 3] = ctrly2;
-            right[rightoff + 4] = x2;
-            right[rightoff + 5] = y2;
-        }
+        double  x1 = src[offS    ];
+        double  y1 = src[offS + 1];
+        double cx1 = src[offS + 2];
+        double cy1 = src[offS + 3];
+        double cx2 = src[offS + 4];
+        double cy2 = src[offS + 5];
+        double  x2 = src[offS + 6];
+        double  y2 = src[offS + 7];
+
+        pts[offL    ] = x1;
+        pts[offL + 1] = y1;
+
+        pts[offR + 6] = x2;
+        pts[offR + 7] = y2;
+
+        x1 =  x1 + t * (cx1 - x1);
+        y1 =  y1 + t * (cy1 - y1);
+        x2 = cx2 + t * (x2 - cx2);
+        y2 = cy2 + t * (y2 - cy2);
+
+        double cx = cx1 + t * (cx2 - cx1);
+        double cy = cy1 + t * (cy2 - cy1);
+
+        cx1 =  x1 + t * (cx - x1);
+        cy1 =  y1 + t * (cy - y1);
+        cx2 =  cx + t * (x2 - cx);
+        cy2 =  cy + t * (y2 - cy);
+        cx  = cx1 + t * (cx2 - cx1);
+        cy  = cy1 + t * (cy2 - cy1);
+
+        pts[offL + 2] = x1;
+        pts[offL + 3] = y1;
+        pts[offL + 4] = cx1;
+        pts[offL + 5] = cy1;
+        pts[offL + 6] = cx;
+        pts[offL + 7] = cy;
+
+        pts[offR    ] = cx;
+        pts[offR + 1] = cy;
+        pts[offR + 2] = cx2;
+        pts[offR + 3] = cy2;
+        pts[offR + 4] = x2;
+        pts[offR + 5] = y2;
     }
 
-    static void subdivideQuad(double[] src, int srcoff,
-                              double[] left, int leftoff,
-                              double[] right, int rightoff)
+    static void subdivideQuad(final double[] src,
+                              final double[] left,
+                              final double[] right)
     {
-        double x1 = src[srcoff + 0];
-        double y1 = src[srcoff + 1];
-        double ctrlx = src[srcoff + 2];
-        double ctrly = src[srcoff + 3];
-        double x2 = src[srcoff + 4];
-        double y2 = src[srcoff + 5];
-        if (left != null) {
-            left[leftoff + 0] = x1;
-            left[leftoff + 1] = y1;
-        }
-        if (right != null) {
-            right[rightoff + 4] = x2;
-            right[rightoff + 5] = y2;
-        }
-        x1 = (x1 + ctrlx) / 2.0d;
-        y1 = (y1 + ctrly) / 2.0d;
-        x2 = (x2 + ctrlx) / 2.0d;
-        y2 = (y2 + ctrly) / 2.0d;
-        ctrlx = (x1 + x2) / 2.0d;
-        ctrly = (y1 + y2) / 2.0d;
-        if (left != null) {
-            left[leftoff + 2] = x1;
-            left[leftoff + 3] = y1;
-            left[leftoff + 4] = ctrlx;
-            left[leftoff + 5] = ctrly;
-        }
-        if (right != null) {
-            right[rightoff + 0] = ctrlx;
-            right[rightoff + 1] = ctrly;
-            right[rightoff + 2] = x2;
-            right[rightoff + 3] = y2;
-        }
+        double x1 = src[0];
+        double y1 = src[1];
+        double cx = src[2];
+        double cy = src[3];
+        double x2 = src[4];
+        double y2 = src[5];
+
+        left[0]  = x1;
+        left[1]  = y1;
+
+        right[4] = x2;
+        right[5] = y2;
+
+        x1 = (x1 + cx) / 2.0d;
+        y1 = (y1 + cy) / 2.0d;
+        x2 = (x2 + cx) / 2.0d;
+        y2 = (y2 + cy) / 2.0d;
+        cx = (x1 + x2) / 2.0d;
+        cy = (y1 + y2) / 2.0d;
+
+        left[2] = x1;
+        left[3] = y1;
+        left[4] = cx;
+        left[5] = cy;
+
+        right[0] = cx;
+        right[1] = cy;
+        right[2] = x2;
+        right[3] = y2;
     }
 
-    static void subdivideQuadAt(double t, double[] src, int srcoff,
-                                double[] left, int leftoff,
-                                double[] right, int rightoff)
+    static void subdivideQuadAt(final double t,
+                                final double[] src, final int offS,
+                                final double[] pts, final int offL, final int offR)
     {
-        double x1 = src[srcoff + 0];
-        double y1 = src[srcoff + 1];
-        double ctrlx = src[srcoff + 2];
-        double ctrly = src[srcoff + 3];
-        double x2 = src[srcoff + 4];
-        double y2 = src[srcoff + 5];
-        if (left != null) {
-            left[leftoff + 0] = x1;
-            left[leftoff + 1] = y1;
-        }
-        if (right != null) {
-            right[rightoff + 4] = x2;
-            right[rightoff + 5] = y2;
-        }
-        x1 = x1 + t * (ctrlx - x1);
-        y1 = y1 + t * (ctrly - y1);
-        x2 = ctrlx + t * (x2 - ctrlx);
-        y2 = ctrly + t * (y2 - ctrly);
-        ctrlx = x1 + t * (x2 - x1);
-        ctrly = y1 + t * (y2 - y1);
-        if (left != null) {
-            left[leftoff + 2] = x1;
-            left[leftoff + 3] = y1;
-            left[leftoff + 4] = ctrlx;
-            left[leftoff + 5] = ctrly;
-        }
-        if (right != null) {
-            right[rightoff + 0] = ctrlx;
-            right[rightoff + 1] = ctrly;
-            right[rightoff + 2] = x2;
-            right[rightoff + 3] = y2;
-        }
+        double x1 = src[offS    ];
+        double y1 = src[offS + 1];
+        double cx = src[offS + 2];
+        double cy = src[offS + 3];
+        double x2 = src[offS + 4];
+        double y2 = src[offS + 5];
+
+        pts[offL    ] = x1;
+        pts[offL + 1] = y1;
+
+        pts[offR + 4] = x2;
+        pts[offR + 5] = y2;
+
+        x1 = x1 + t * (cx - x1);
+        y1 = y1 + t * (cy - y1);
+        x2 = cx + t * (x2 - cx);
+        y2 = cy + t * (y2 - cy);
+        cx = x1 + t * (x2 - x1);
+        cy = y1 + t * (y2 - y1);
+
+        pts[offL + 2] = x1;
+        pts[offL + 3] = y1;
+        pts[offL + 4] = cx;
+        pts[offL + 5] = cy;
+
+        pts[offR    ] = cx;
+        pts[offR + 1] = cy;
+        pts[offR + 2] = x2;
+        pts[offR + 3] = y2;
     }
 
-    static void subdivideAt(double t, double[] src, int srcoff,
-                            double[] left, int leftoff,
-                            double[] right, int rightoff, int size)
+    static void subdivideLineAt(final double t,
+                                final double[] src, final int offS,
+                                final double[] pts, final int offL, final int offR)
     {
-        switch(size) {
-        case 8:
-            subdivideCubicAt(t, src, srcoff, left, leftoff, right, rightoff);
-            return;
-        case 6:
-            subdivideQuadAt(t, src, srcoff, left, leftoff, right, rightoff);
-            return;
+        double x1 = src[offS    ];
+        double y1 = src[offS + 1];
+        double x2 = src[offS + 2];
+        double y2 = src[offS + 3];
+
+        pts[offL    ] = x1;
+        pts[offL + 1] = y1;
+
+        pts[offR + 2] = x2;
+        pts[offR + 3] = y2;
+
+        x1 = x1 + t * (x2 - x1);
+        y1 = y1 + t * (y2 - y1);
+
+        pts[offL + 2] = x1;
+        pts[offL + 3] = y1;
+
+        pts[offR    ] = x1;
+        pts[offR + 1] = y1;
+    }
+
+    static void subdivideAt(final double t,
+                            final double[] src, final int offS,
+                            final double[] pts, final int offL, final int type)
+    {
+        // if instead of switch (perf + most probable cases first)
+        if (type == 8) {
+            subdivideCubicAt(t, src, offS, pts, offL, offL + type);
+        } else if (type == 4) {
+            subdivideLineAt(t, src, offS, pts, offL, offL + type);
+        } else {
+            subdivideQuadAt(t, src, offS, pts, offL, offL + type);
         }
     }
 
@@ -608,12 +765,12 @@ final class DHelpers implements MarlinConst {
                     e += 2;
                     continue;
                 case TYPE_QUADTO:
-                    io.quadTo(_curves[e+0], _curves[e+1],
+                    io.quadTo(_curves[e],   _curves[e+1],
                               _curves[e+2], _curves[e+3]);
                     e += 4;
                     continue;
                 case TYPE_CUBICTO:
-                    io.curveTo(_curves[e+0], _curves[e+1],
+                    io.curveTo(_curves[e],   _curves[e+1],
                                _curves[e+2], _curves[e+3],
                                _curves[e+4], _curves[e+5]);
                     e += 6;
@@ -651,12 +808,12 @@ final class DHelpers implements MarlinConst {
                     continue;
                 case TYPE_QUADTO:
                     e -= 4;
-                    io.quadTo(_curves[e+0], _curves[e+1],
+                    io.quadTo(_curves[e],   _curves[e+1],
                               _curves[e+2], _curves[e+3]);
                     continue;
                 case TYPE_CUBICTO:
                     e -= 6;
-                    io.curveTo(_curves[e+0], _curves[e+1],
+                    io.curveTo(_curves[e],   _curves[e+1],
                                _curves[e+2], _curves[e+3],
                                _curves[e+4], _curves[e+5]);
                     continue;

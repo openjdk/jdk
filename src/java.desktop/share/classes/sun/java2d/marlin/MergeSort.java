@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,6 @@ final class MergeSort {
         // Merge sorted parts (auxX/auxY) into x/y arrays
         if ((insertionSortIndex == 0)
             || (auxX[insertionSortIndex - 1] <= auxX[insertionSortIndex])) {
-//            System.out.println("mergeSortNoCopy: ordered");
             // 34 occurences
             // no initial left part or both sublists (auxX, auxY) are sorted:
             // copy back data into (x, y):
@@ -135,7 +134,6 @@ final class MergeSort {
 
         // If arrays are inverted ie all(A) > all(B) do swap A and B to dst
         if (srcX[high - 1] <= srcX[low]) {
-//            System.out.println("mergeSort: inverse ordered");
             // 1561 occurences
             final int left = mid - low;
             final int right = high - mid;
@@ -151,7 +149,6 @@ final class MergeSort {
         // If arrays are already sorted, just copy from src to dest.  This is an
         // optimization that results in faster sorts for nearly ordered lists.
         if (srcX[mid - 1] <= srcX[mid]) {
-//            System.out.println("mergeSort: ordered");
             // 14 occurences
             System.arraycopy(srcX, low, dstX, low, length);
             System.arraycopy(srcY, low, dstY, low, length);

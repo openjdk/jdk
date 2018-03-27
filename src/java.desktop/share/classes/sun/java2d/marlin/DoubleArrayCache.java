@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ final class DoubleArrayCache implements MarlinConst {
         Reference(final DoubleArrayCache cache, final int initialSize) {
             this.cache = cache;
             this.clean = cache.clean;
-            this.initial = createArray(initialSize, clean);
+            this.initial = createArray(initialSize);
             if (DO_STATS) {
                 cache.stats.totalInitial += initialSize;
             }
@@ -116,7 +116,7 @@ final class DoubleArrayCache implements MarlinConst {
                 logInfo(getLogPrefix(clean) + "DoubleArrayCache: "
                         + "getArray[oversize]: length=\t" + length);
             }
-            return createArray(length, clean);
+            return createArray(length);
         }
 
         double[] widenArray(final double[] array, final int usedSize,
@@ -202,7 +202,7 @@ final class DoubleArrayCache implements MarlinConst {
             if (DO_STATS) {
                 stats.createOp++;
             }
-            return createArray(arraySize, clean);
+            return createArray(arraySize);
         }
 
         void putArray(final double[] array)
@@ -229,12 +229,8 @@ final class DoubleArrayCache implements MarlinConst {
         }
     }
 
-    static double[] createArray(final int length, final boolean clean) {
-        if (clean) {
-            return new double[length];
-        }
-        // use JDK9 Unsafe.allocateUninitializedArray(class, length):
-        return (double[]) OffHeapArray.UNSAFE.allocateUninitializedArray(double.class, length);
+    static double[] createArray(final int length) {
+        return new double[length];
     }
 
     static void fill(final double[] array, final int fromIndex,
