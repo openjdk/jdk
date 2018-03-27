@@ -524,7 +524,7 @@ CompilerCounters::CompilerCounters() {
 // CompileBroker::compilation_init
 //
 // Initialize the Compilation object
-void CompileBroker::compilation_init(TRAPS) {
+void CompileBroker::compilation_init_phase1(TRAPS) {
   _last_method_compiled[0] = '\0';
 
   // No need to initialize compilation system if we do not use it.
@@ -671,10 +671,13 @@ void CompileBroker::compilation_init(TRAPS) {
                                           (jlong)CompileBroker::no_compile,
                                           CHECK);
   }
-
-  _initialized = true;
 }
 
+// Completes compiler initialization. Compilation requests submitted
+// prior to this will be silently ignored.
+void CompileBroker::compilation_init_phase2() {
+  _initialized = true;
+}
 
 JavaThread* CompileBroker::make_thread(const char* name, CompileQueue* queue, CompilerCounters* counters,
                                        AbstractCompiler* comp, bool compiler_thread, TRAPS) {
