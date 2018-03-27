@@ -74,7 +74,7 @@ public interface CharSequence {
      * indexing.
      *
      * <p>If the {@code char} value specified by the index is a
-     * <a href="{@docRoot}/java/lang/Character.html#unicode">surrogate</a>, the surrogate
+     * <a href="{@docRoot}/java.base/java/lang/Character.html#unicode">surrogate</a>, the surrogate
      * value is returned.
      *
      * @param   index   the index of the {@code char} value to be returned
@@ -119,7 +119,7 @@ public interface CharSequence {
     /**
      * Returns a stream of {@code int} zero-extending the {@code char} values
      * from this sequence.  Any char which maps to a <a
-     * href="{@docRoot}/java/lang/Character.html#unicode">surrogate code
+     * href="{@docRoot}/java.base/java/lang/Character.html#unicode">surrogate code
      * point</a> is passed through uninterpreted.
      *
      * <p>The stream binds to this sequence when the terminal stream operation
