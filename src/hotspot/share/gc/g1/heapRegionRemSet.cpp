@@ -833,8 +833,7 @@ void HeapRegionRemSet::do_cleanup_work(HRRSCleanupTask* hrrs_cleanup_task) {
   _other_regions.do_cleanup_work(hrrs_cleanup_task);
 }
 
-void
-HeapRegionRemSet::finish_cleanup_task(HRRSCleanupTask* hrrs_cleanup_task) {
+void HeapRegionRemSet::finish_cleanup_task(HRRSCleanupTask* hrrs_cleanup_task) {
   SparsePRT::finish_cleanup_task(hrrs_cleanup_task);
 }
 

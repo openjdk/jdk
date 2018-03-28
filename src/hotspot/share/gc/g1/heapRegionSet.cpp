@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,14 +319,6 @@ void MasterFreeRegionListMtSafeChecker::check() {
   } else {
     guarantee(Heap_lock->owned_by_self(), "master free list MT safety protocol outside a safepoint");
   }
-}
-
-void SecondaryFreeRegionListMtSafeChecker::check() {
-  // Secondary Free List MT safety protocol:
-  // Operations on the secondary free list should always be invoked
-  // while holding the SecondaryFreeList_lock.
-
-  guarantee(SecondaryFreeList_lock->owned_by_self(), "secondary free list MT safety protocol");
 }
 
 void OldRegionSetMtSafeChecker::check() {

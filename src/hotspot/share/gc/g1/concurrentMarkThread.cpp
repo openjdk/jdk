@@ -49,19 +49,18 @@
 STATIC_ASSERT(ConcurrentGCPhaseManager::UNCONSTRAINED_PHASE <
               ConcurrentGCPhaseManager::IDLE_PHASE);
 
-#define EXPAND_CONCURRENT_PHASES(expander)                               \
-  expander(ANY, = ConcurrentGCPhaseManager::UNCONSTRAINED_PHASE, NULL)   \
-  expander(IDLE, = ConcurrentGCPhaseManager::IDLE_PHASE, NULL)           \
-  expander(CONCURRENT_CYCLE,, "Concurrent Cycle")                        \
-  expander(CLEAR_CLAIMED_MARKS,, "Concurrent Clear Claimed Marks")       \
-  expander(SCAN_ROOT_REGIONS,, "Concurrent Scan Root Regions")           \
-  expander(CONCURRENT_MARK,, "Concurrent Mark")                          \
-  expander(MARK_FROM_ROOTS,, "Concurrent Mark From Roots")               \
-  expander(BEFORE_REMARK,, NULL)                                         \
-  expander(REMARK,, NULL)                                                \
+#define EXPAND_CONCURRENT_PHASES(expander)                                 \
+  expander(ANY, = ConcurrentGCPhaseManager::UNCONSTRAINED_PHASE, NULL)     \
+  expander(IDLE, = ConcurrentGCPhaseManager::IDLE_PHASE, NULL)             \
+  expander(CONCURRENT_CYCLE,, "Concurrent Cycle")                          \
+  expander(CLEAR_CLAIMED_MARKS,, "Concurrent Clear Claimed Marks")         \
+  expander(SCAN_ROOT_REGIONS,, "Concurrent Scan Root Regions")             \
+  expander(CONCURRENT_MARK,, "Concurrent Mark")                            \
+  expander(MARK_FROM_ROOTS,, "Concurrent Mark From Roots")                 \
+  expander(BEFORE_REMARK,, NULL)                                           \
+  expander(REMARK,, NULL)                                                  \
   expander(REBUILD_REMEMBERED_SETS,, "Concurrent Rebuild Remembered Sets") \
-  expander(COMPLETE_CLEANUP,, "Concurrent Complete Cleanup")             \
-  expander(CLEANUP_FOR_NEXT_MARK,, "Concurrent Cleanup for Next Mark")   \
+  expander(CLEANUP_FOR_NEXT_MARK,, "Concurrent Cleanup for Next Mark")     \
   /* */
 
 class G1ConcurrentPhase : public AllStatic {
@@ -357,85 +356,17 @@ void ConcurrentMarkThread::run_service() {
 
       double end_time = os::elapsedVTime();
       // Update the total virtual time before doing this, since it will try
-      // to measure it to get the vtime for this marking.  We purposely
-      // neglect the presumably-short "completeCleanup" phase here.
+      // to measure it to get the vtime for this marking.
       _vtime_accum = (end_time - _vtime_start);
 
       if (!cm()->has_aborted()) {
         delay_to_keep_mmu(g1_policy, false /* cleanup */);
-
-        if (!cm()->has_aborted()) {
-          CMCleanUp cl_cl(_cm);
-          VM_CGC_Operation op(&cl_cl, "Pause Cleanup");
-          VMThread::execute(&op);
-        }
-      } else {
-        // We don't want to update the marking status if a GC pause
-        // is already underway.
-        SuspendibleThreadSetJoiner sts_join;
-        g1h->collector_state()->set_mark_in_progress(false);
       }
 
-      // Check if cleanup set the free_regions_coming flag. If it
-      // hasn't, we can just skip the next step.
-      if (g1h->free_regions_coming()) {
-        // The following will finish freeing up any regions that we
-        // found to be empty during cleanup. We'll do this part
-        // without joining the suspendible set. If an evacuation pause
-        // takes place, then we would carry on freeing regions in
-        // case they are needed by the pause. If a Full GC takes
-        // place, it would wait for us to process the regions
-        // reclaimed by cleanup.
-
-        // Now do the concurrent cleanup operation.
-        G1ConcPhase p(G1ConcurrentPhase::COMPLETE_CLEANUP, this);
-        _cm->complete_cleanup();
-
-        // Notify anyone who's waiting that there are no more free
-        // regions coming. We have to do this before we join the STS
-        // (in fact, we should not attempt to join the STS in the
-        // interval between finishing the cleanup pause and clearing
-        // the free_regions_coming flag) otherwise we might deadlock:
-        // a GC worker could be blocked waiting for the notification
-        // whereas this thread will be blocked for the pause to finish
-        // while it's trying to join the STS, which is conditional on
-        // the GC workers finishing.
-        g1h->reset_free_regions_coming();
-      }
-      guarantee(cm()->cleanup_list_is_empty(),
-                "at this point there should be no regions on the cleanup list");
-
-      // There is a tricky race before recording that the concurrent
-      // cleanup has completed and a potential Full GC starting around
-      // the same time. We want to make sure that the Full GC calls
-      // abort() on concurrent mark after
-      // record_concurrent_mark_cleanup_completed(), since abort() is
-      // the method that will reset the concurrent mark state. If we
-      // end up calling record_concurrent_mark_cleanup_completed()
-      // after abort() then we might incorrectly undo some of the work
-      // abort() did. Checking the has_aborted() flag after joining
-      // the STS allows the correct ordering of the two methods. There
-      // are two scenarios:
-      //
-      // a) If we reach here before the Full GC, the fact that we have
-      // joined the STS means that the Full GC cannot start until we
-      // leave the STS, so record_concurrent_mark_cleanup_completed()
-      // will complete before abort() is called.
-      //
-      // b) If we reach here during the Full GC, we'll be held up from
-      // joining the STS until the Full GC is done, which means that
-      // abort() will have completed and has_aborted() will return
-      // true to prevent us from calling
-      // record_concurrent_mark_cleanup_completed() (and, in fact, it's
-      // not needed any more as the concurrent mark state has been
-      // already reset).
-      {
-        SuspendibleThreadSetJoiner sts_join;
-        if (!cm()->has_aborted()) {
-          g1_policy->record_concurrent_mark_cleanup_completed();
-        } else {
-          log_info(gc, marking)("Concurrent Mark Abort");
-        }
+      if (!cm()->has_aborted()) {
+        CMCleanUp cl_cl(_cm);
+        VM_CGC_Operation op(&cl_cl, "Pause Cleanup");
+        VMThread::execute(&op);
       }
 
       // We now want to allow clearing of the marking bitmap to be

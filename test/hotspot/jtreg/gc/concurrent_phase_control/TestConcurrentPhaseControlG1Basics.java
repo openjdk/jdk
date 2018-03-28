@@ -54,7 +54,6 @@ public class TestConcurrentPhaseControlG1Basics {
         "BEFORE_REMARK",
         "REMARK",
         "REBUILD_REMEMBERED_SETS",
-        "COMPLETE_CLEANUP",
         "CLEANUP_FOR_NEXT_MARK",
     };
 

@@ -342,7 +342,6 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _g1h(g1h),
   _completed_initialization(false),
 
-  _cleanup_list("Concurrent Mark Cleanup List"),
   _mark_bitmap_1(),
   _mark_bitmap_2(),
   _prev_mark_bitmap(&_mark_bitmap_1),
@@ -978,6 +977,7 @@ void G1ConcurrentMark::concurrent_cycle_end() {
   _g1h->trace_heap_after_gc(_gc_tracer_cm);
 
   if (has_aborted()) {
+    log_info(gc, marking)("Concurrent Mark Abort");
     _gc_tracer_cm->report_concurrent_mode_failure();
   }
 
@@ -1137,94 +1137,82 @@ void G1ConcurrentMark::checkpoint_roots_final(bool clear_all_soft_refs) {
   _gc_tracer_cm->report_object_count_after_gc(&is_alive);
 }
 
-class G1NoteEndOfConcMarkClosure : public HeapRegionClosure {
-  G1CollectedHeap* _g1;
-  size_t _freed_bytes;
-  FreeRegionList* _local_cleanup_list;
-  uint _old_regions_removed;
-  uint _humongous_regions_removed;
-  HRRSCleanupTask* _hrrs_cleanup_task;
+class G1CleanupTask: public AbstractGangTask {
+  // Per-region work during the Cleanup pause.
+  class G1CleanupRegionsClosure : public HeapRegionClosure {
+    G1CollectedHeap* _g1;
+    size_t _freed_bytes;
+    FreeRegionList* _local_cleanup_list;
+    uint _old_regions_removed;
+    uint _humongous_regions_removed;
+    HRRSCleanupTask* _hrrs_cleanup_task;
 
-public:
-  G1NoteEndOfConcMarkClosure(G1CollectedHeap* g1,
-                             FreeRegionList* local_cleanup_list,
-                             HRRSCleanupTask* hrrs_cleanup_task) :
-    _g1(g1),
-    _freed_bytes(0),
-    _local_cleanup_list(local_cleanup_list),
-    _old_regions_removed(0),
-    _humongous_regions_removed(0),
-    _hrrs_cleanup_task(hrrs_cleanup_task) { }
+  public:
+    G1CleanupRegionsClosure(G1CollectedHeap* g1,
+                            FreeRegionList* local_cleanup_list,
+                            HRRSCleanupTask* hrrs_cleanup_task) :
+      _g1(g1),
+      _freed_bytes(0),
+      _local_cleanup_list(local_cleanup_list),
+      _old_regions_removed(0),
+      _humongous_regions_removed(0),
+      _hrrs_cleanup_task(hrrs_cleanup_task) { }
 
-  size_t freed_bytes() { return _freed_bytes; }
-  const uint old_regions_removed() { return _old_regions_removed; }
-  const uint humongous_regions_removed() { return _humongous_regions_removed; }
+    size_t freed_bytes() { return _freed_bytes; }
+    const uint old_regions_removed() { return _old_regions_removed; }
+    const uint humongous_regions_removed() { return _humongous_regions_removed; }
 
-  bool do_heap_region(HeapRegion *hr) {
-    _g1->reset_gc_time_stamps(hr);
-    hr->note_end_of_marking();
+    bool do_heap_region(HeapRegion *hr) {
+      _g1->reset_gc_time_stamps(hr);
+      hr->note_end_of_marking();
 
-    if (hr->used() > 0 && hr->max_live_bytes() == 0 && !hr->is_young() && !hr->is_archive()) {
-      _freed_bytes += hr->used();
-      hr->set_containing_set(NULL);
-      if (hr->is_humongous()) {
-        _humongous_regions_removed++;
-        _g1->free_humongous_region(hr, _local_cleanup_list, true /* skip_remset */);
+      if (hr->used() > 0 && hr->max_live_bytes() == 0 && !hr->is_young() && !hr->is_archive()) {
+        _freed_bytes += hr->used();
+        hr->set_containing_set(NULL);
+        if (hr->is_humongous()) {
+          _humongous_regions_removed++;
+          _g1->free_humongous_region(hr, _local_cleanup_list);
+        } else {
+          _old_regions_removed++;
+          _g1->free_region(hr, _local_cleanup_list, false /* skip_remset */, false /* skip_hcc */, true /* locked */);
+        }
+        hr->clear_cardtable();
       } else {
-        _old_regions_removed++;
-        _g1->free_region(hr, _local_cleanup_list, true /* skip_remset */);
+        hr->rem_set()->do_cleanup_work(_hrrs_cleanup_task);
       }
-    } else {
-      hr->rem_set()->do_cleanup_work(_hrrs_cleanup_task);
+
+      return false;
     }
+  };
 
-    return false;
-  }
-};
-
-class G1ParNoteEndTask: public AbstractGangTask {
-  friend class G1NoteEndOfConcMarkClosure;
-
-protected:
   G1CollectedHeap* _g1h;
   FreeRegionList* _cleanup_list;
   HeapRegionClaimer _hrclaimer;
 
 public:
-  G1ParNoteEndTask(G1CollectedHeap* g1h, FreeRegionList* cleanup_list, uint n_workers) :
-      AbstractGangTask("G1 note end"), _g1h(g1h), _cleanup_list(cleanup_list), _hrclaimer(n_workers) {
+  G1CleanupTask(G1CollectedHeap* g1h, FreeRegionList* cleanup_list, uint n_workers) :
+    AbstractGangTask("G1 Cleanup"),
+    _g1h(g1h),
+    _cleanup_list(cleanup_list),
+    _hrclaimer(n_workers) {
+
+    HeapRegionRemSet::reset_for_cleanup_tasks();
   }
 
   void work(uint worker_id) {
     FreeRegionList local_cleanup_list("Local Cleanup List");
     HRRSCleanupTask hrrs_cleanup_task;
-    G1NoteEndOfConcMarkClosure g1_note_end(_g1h, &local_cleanup_list,
-                                             &hrrs_cleanup_task);
-    _g1h->heap_region_par_iterate_from_worker_offset(&g1_note_end, &_hrclaimer, worker_id);
-    assert(g1_note_end.is_complete(), "Shouldn't have yielded!");
+    G1CleanupRegionsClosure cl(_g1h,
+                               &local_cleanup_list,
+                               &hrrs_cleanup_task);
+    _g1h->heap_region_par_iterate_from_worker_offset(&cl, &_hrclaimer, worker_id);
+    assert(cl.is_complete(), "Shouldn't have aborted!");
 
-    // Now update the lists
-    _g1h->remove_from_old_sets(g1_note_end.old_regions_removed(), g1_note_end.humongous_regions_removed());
+    // Now update the old/humongous region sets
+    _g1h->remove_from_old_sets(cl.old_regions_removed(), cl.humongous_regions_removed());
     {
       MutexLockerEx x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
-      _g1h->decrement_summary_bytes(g1_note_end.freed_bytes());
-
-      // If we iterate over the global cleanup list at the end of
-      // cleanup to do this printing we will not guarantee to only
-      // generate output for the newly-reclaimed regions (the list
-      // might not be empty at the beginning of cleanup; we might
-      // still be working on its previous contents). So we do the
-      // printing here, before we append the new regions to the global
-      // cleanup list.
-
-      G1HRPrinter* hr_printer = _g1h->hr_printer();
-      if (hr_printer->is_active()) {
-        FreeRegionListIterator iter(&local_cleanup_list);
-        while (iter.more_available()) {
-          HeapRegion* hr = iter.get_next();
-          hr_printer->cleanup(hr);
-        }
-      }
+      _g1h->decrement_summary_bytes(cl.freed_bytes());
 
       _cleanup_list->add_ordered(&local_cleanup_list);
       assert(local_cleanup_list.is_empty(), "post-condition");
@@ -1233,6 +1221,28 @@ public:
     }
   }
 };
+
+void G1ConcurrentMark::reclaim_empty_regions() {
+  WorkGang* workers = _g1h->workers();
+  FreeRegionList empty_regions_list("Empty Regions After Mark List");
+
+  G1CleanupTask cl(_g1h, &empty_regions_list, workers->active_workers());
+  workers->run_task(&cl);
+
+  if (!empty_regions_list.is_empty()) {
+    // Now print the empty regions list.
+    G1HRPrinter* hrp = _g1h->hr_printer();
+    if (hrp->is_active()) {
+      FreeRegionListIterator iter(&empty_regions_list);
+      while (iter.more_available()) {
+        HeapRegion* hr = iter.get_next();
+        hrp->cleanup(hr);
+      }
+    }
+    // And actually make them available.
+    _g1h->prepend_to_freelist(&empty_regions_list);
+  }
+}
 
 void G1ConcurrentMark::cleanup() {
   // world is stopped at this checkpoint
@@ -1258,8 +1268,6 @@ void G1ConcurrentMark::cleanup() {
 
   double start = os::elapsedTime();
 
-  HeapRegionRemSet::reset_for_cleanup_tasks();
-
   {
     GCTraceTime(Debug, gc, phases)("Update Remembered Set Tracking After Rebuild");
     G1UpdateRemSetTrackingAfterRebuild cl(_g1h);
@@ -1277,29 +1285,19 @@ void G1ConcurrentMark::cleanup() {
     _g1h->heap_region_iterate(&cl);
   }
 
-  // Install newly created mark bitMap as "prev".
-  swap_mark_bitmaps();
-
   g1h->reset_gc_time_stamp();
 
-  uint n_workers = _g1h->workers()->active_workers();
-
-  // Note end of marking in all heap regions.
-  G1ParNoteEndTask g1_par_note_end_task(g1h, &_cleanup_list, n_workers);
-  g1h->workers()->run_task(&g1_par_note_end_task);
-  g1h->check_gc_time_stamps();
-
-  if (!cleanup_list_is_empty()) {
-    // The cleanup list is not empty, so we'll have to process it
-    // concurrently. Notify anyone else that might be wanting free
-    // regions that there will be more free regions coming soon.
-    g1h->set_free_regions_coming();
+  // Install newly created mark bitmap as "prev".
+  swap_mark_bitmaps();
+  {
+    GCTraceTime(Debug, gc, phases)("Reclaim Empty Regions");
+    reclaim_empty_regions();
   }
+
+  g1h->check_gc_time_stamps();
 
   {
     GCTraceTime(Debug, gc, phases)("Finalize Concurrent Mark Cleanup");
-    // This will also free any regions totally full of garbage objects,
-    // and sort the regions.
     g1h->g1_policy()->record_concurrent_mark_cleanup_end();
   }
 
@@ -1307,7 +1305,7 @@ void G1ConcurrentMark::cleanup() {
   double end = os::elapsedTime();
   _cleanup_times.add((end - start) * 1000.0);
 
-  // Clean up will have freed any regions completely full of garbage.
+  // Cleanup will have freed any regions completely full of garbage.
   // Update the soft reference policy with the new heap occupancy.
   Universe::update_heap_info_at_gc();
 
@@ -1332,57 +1330,6 @@ void G1ConcurrentMark::cleanup() {
   // We reclaimed old regions so we should calculate the sizes to make
   // sure we update the old gen/space data.
   g1h->g1mm()->update_sizes();
-}
-
-void G1ConcurrentMark::complete_cleanup() {
-  if (has_aborted()) return;
-
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-
-  _cleanup_list.verify_optional();
-  FreeRegionList tmp_free_list("Tmp Free List");
-
-  log_develop_trace(gc, freelist)("G1ConcRegionFreeing [complete cleanup] : "
-                                  "cleanup list has %u entries",
-                                  _cleanup_list.length());
-
-  // No one else should be accessing the _cleanup_list at this point,
-  // so it is not necessary to take any locks
-  while (!_cleanup_list.is_empty()) {
-    HeapRegion* hr = _cleanup_list.remove_region(true /* from_head */);
-    assert(hr != NULL, "Got NULL from a non-empty list");
-    hr->par_clear();
-    tmp_free_list.add_ordered(hr);
-
-    // Instead of adding one region at a time to the secondary_free_list,
-    // we accumulate them in the local list and move them a few at a
-    // time. This also cuts down on the number of notify_all() calls
-    // we do during this process. We'll also append the local list when
-    // _cleanup_list is empty (which means we just removed the last
-    // region from the _cleanup_list).
-    if ((tmp_free_list.length() % G1SecondaryFreeListAppendLength == 0) ||
-        _cleanup_list.is_empty()) {
-      log_develop_trace(gc, freelist)("G1ConcRegionFreeing [complete cleanup] : "
-                                      "appending %u entries to the secondary_free_list, "
-                                      "cleanup list still has %u entries",
-                                      tmp_free_list.length(),
-                                      _cleanup_list.length());
-
-      {
-        MutexLockerEx x(SecondaryFreeList_lock, Mutex::_no_safepoint_check_flag);
-        g1h->secondary_free_list_add(&tmp_free_list);
-        SecondaryFreeList_lock->notify_all();
-      }
-#ifndef PRODUCT
-      if (G1StressConcRegionFreeing) {
-        for (uintx i = 0; i < G1StressConcRegionFreeingDelayMillis; ++i) {
-          os::sleep(Thread::current(), (jlong) 1, false);
-        }
-      }
-#endif
-    }
-  }
-  assert(tmp_free_list.is_empty(), "post-condition");
 }
 
 // Supporting Object and Oop closures for reference discovery

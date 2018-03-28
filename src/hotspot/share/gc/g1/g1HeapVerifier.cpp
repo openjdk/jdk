@@ -520,32 +520,6 @@ void G1HeapVerifier::verify_region_sets() {
 
   // First, check the explicit lists.
   _g1h->_hrm.verify();
-  {
-    // Given that a concurrent operation might be adding regions to
-    // the secondary free list we have to take the lock before
-    // verifying it.
-    MutexLockerEx x(SecondaryFreeList_lock, Mutex::_no_safepoint_check_flag);
-    _g1h->_secondary_free_list.verify_list();
-  }
-
-  // If a concurrent region freeing operation is in progress it will
-  // be difficult to correctly attributed any free regions we come
-  // across to the correct free list given that they might belong to
-  // one of several (free_list, secondary_free_list, any local lists,
-  // etc.). So, if that's the case we will skip the rest of the
-  // verification operation. Alternatively, waiting for the concurrent
-  // operation to complete will have a non-trivial effect on the GC's
-  // operation (no concurrent operation will last longer than the
-  // interval between two calls to verification) and it might hide
-  // any issues that we would like to catch during testing.
-  if (_g1h->free_regions_coming()) {
-    return;
-  }
-
-  // Make sure we append the secondary_free_list on the free_list so
-  // that all free regions we will come across can be safely
-  // attributed to the free_list.
-  _g1h->append_secondary_free_list_if_not_empty_with_lock();
 
   // Finally, make sure that the region accounting in the lists is
   // consistent with what we see in the heap.

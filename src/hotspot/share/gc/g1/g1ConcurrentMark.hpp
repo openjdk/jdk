@@ -291,8 +291,6 @@ class G1ConcurrentMark: public CHeapObj<mtGC> {
   G1CollectedHeap*       _g1h;           // The heap
   bool                   _completed_initialization; // Set to true when initialization is complete
 
-  FreeRegionList         _cleanup_list;
-
   // Concurrent marking support structures
   G1CMBitMap             _mark_bitmap_1;
   G1CMBitMap             _mark_bitmap_2;
@@ -373,6 +371,8 @@ class G1ConcurrentMark: public CHeapObj<mtGC> {
 
   void swap_mark_bitmaps();
 
+  void reclaim_empty_regions();
+
   // Resets the global marking data structures, as well as the
   // task local ones; should be called during initial mark.
   void reset();
@@ -394,10 +394,6 @@ class G1ConcurrentMark: public CHeapObj<mtGC> {
 
   // Prints all gathered CM-related statistics
   void print_stats();
-
-  bool cleanup_list_is_empty() {
-    return _cleanup_list.is_empty();
-  }
 
   HeapWord*               finger()          { return _finger;   }
   bool                    concurrent()      { return _concurrent; }
@@ -569,8 +565,6 @@ public:
   void checkpoint_roots_final_work();
 
   void cleanup();
-  void complete_cleanup();
-
   // Mark in the previous bitmap. Caution: the prev bitmap is usually read-only, so use
   // this carefully.
   inline void mark_in_prev_bitmap(oop p);

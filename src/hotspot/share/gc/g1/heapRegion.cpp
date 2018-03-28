@@ -135,11 +135,7 @@ void HeapRegion::hr_clear(bool keep_remset, bool clear_space, bool locked) {
   if (clear_space) clear(SpaceDecorator::Mangle);
 }
 
-void HeapRegion::par_clear() {
-  assert(used() == 0, "the region should have been already cleared");
-  assert(capacity() == HeapRegion::GrainBytes, "should be back to normal");
-  HeapRegionRemSet* hrrs = rem_set();
-  hrrs->clear();
+void HeapRegion::clear_cardtable() {
   G1CardTable* ct = G1CollectedHeap::heap()->card_table();
   ct->clear(MemRegion(bottom(), end()));
 }
