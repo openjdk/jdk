@@ -34,10 +34,12 @@ bool G1RemSetTrackingPolicy::is_interesting_humongous_region(HeapRegion* r) cons
 }
 
 bool G1RemSetTrackingPolicy::needs_scan_for_rebuild(HeapRegion* r) const {
-  // All non-young and non-closed archive regions need to be scanned for references;
+  // All non-free, non-young, non-closed archive regions need to be scanned for references;
   // At every gc we gather references to other regions in young, and closed archive
   // regions by definition do not have references going outside the closed archive.
-  return !(r->is_young() || r->is_closed_archive());
+  // Free regions trivially do not need scanning because they do not contain live
+  // objects.
+  return !(r->is_young() || r->is_closed_archive() || r->is_free());
 }
 
 void G1RemSetTrackingPolicy::update_at_allocate(HeapRegion* r) {

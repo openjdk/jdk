@@ -46,6 +46,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/intHisto.hpp"
 #include "utilities/stack.inline.hpp"
+#include "utilities/ticks.inline.hpp"
 
 // Collects information about the overall remembered set scan progress during an evacuation.
 class G1RemSetScanState : public CHeapObj<mtGC> {
@@ -724,131 +725,225 @@ class G1RebuildRemSetTask: public AbstractGangTask {
     G1ConcurrentMark* _cm;
     G1RebuildRemSetClosure _update_cl;
 
-    void scan_for_references(oop const obj, MemRegion mr) {
+    // Applies _update_cl to the references of the given object, limiting objArrays
+    // to the given MemRegion. Returns the amount of words actually scanned.
+    size_t scan_for_references(oop const obj, MemRegion mr) {
+      size_t const obj_size = obj->size();
+      // All non-objArrays and objArrays completely within the mr
+      // can be scanned without passing the mr.
+      if (!obj->is_objArray() || mr.contains(MemRegion((HeapWord*)obj, obj_size))) {
+        obj->oop_iterate(&_update_cl);
+        return obj_size;
+      }
+      // This path is for objArrays crossing the given MemRegion. Only scan the
+      // area within the MemRegion.
       obj->oop_iterate(&_update_cl, mr);
-    }
-
-    void scan_for_references(oop const obj) {
-      obj->oop_iterate(&_update_cl);
+      return mr.intersection(MemRegion((HeapWord*)obj, obj_size)).word_size();
     }
 
     // A humongous object is live (with respect to the scanning) either
     // a) it is marked on the bitmap as such
-    // b) its TARS is larger than nTAMS, i.e. has been allocated during marking.
-    bool is_humongous_live(oop const humongous_obj, HeapWord* ntams, HeapWord* tars) const {
-      return _cm->next_mark_bitmap()->is_marked(humongous_obj) || (tars > ntams);
+    // b) its TARS is larger than TAMS, i.e. has been allocated during marking.
+    bool is_humongous_live(oop const humongous_obj, const G1CMBitMap* const bitmap, HeapWord* tams, HeapWord* tars) const {
+      return bitmap->is_marked(humongous_obj) || (tars > tams);
     }
 
-    // Rebuilds the remembered sets by scanning the objects that were allocated before
-    // rebuild start in the given region, applying the given closure to each of these objects.
-    // Uses the bitmap to get live objects in the area from [bottom, nTAMS), and all
-    // objects from [nTAMS, TARS).
-    // Returns the number of bytes marked in that region between bottom and nTAMS.
-    size_t rebuild_rem_set_in_region(G1CMBitMap* const mark_bitmap, HeapRegion* hr, HeapWord* const top_at_rebuild_start) {
-      size_t marked_bytes = 0;
+    // Iterator over the live objects within the given MemRegion.
+    class LiveObjIterator : public StackObj {
+      const G1CMBitMap* const _bitmap;
+      const HeapWord* _tams;
+      const MemRegion _mr;
+      HeapWord* _current;
 
-      HeapWord* start = hr->bottom();
-      HeapWord* const ntams = hr->next_top_at_mark_start();
-
-      if (top_at_rebuild_start <= start) {
-        return 0;
+      bool is_below_tams() const {
+        return _current < _tams;
       }
+
+      bool is_live(HeapWord* obj) const {
+        return !is_below_tams() || _bitmap->is_marked(obj);
+      }
+
+      HeapWord* bitmap_limit() const {
+        return MIN2(const_cast<HeapWord*>(_tams), _mr.end());
+      }
+
+      void move_if_below_tams() {
+        if (is_below_tams() && has_next()) {
+          _current = _bitmap->get_next_marked_addr(_current, bitmap_limit());
+        }
+      }
+    public:
+      LiveObjIterator(const G1CMBitMap* const bitmap, const HeapWord* tams, const MemRegion mr, HeapWord* first_oop_into_mr) :
+          _bitmap(bitmap),
+          _tams(tams),
+          _mr(mr),
+          _current(first_oop_into_mr) {
+
+        assert(_current <= _mr.start(),
+               "First oop " PTR_FORMAT " should extend into mr [" PTR_FORMAT ", " PTR_FORMAT ")",
+               p2i(first_oop_into_mr), p2i(mr.start()), p2i(mr.end()));
+
+        // Step to the next live object within the MemRegion if needed.
+        if (is_live(_current)) {
+          // Non-objArrays were scanned by the previous part of that region.
+          if (_current < mr.start() && !oop(_current)->is_objArray()) {
+            _current += oop(_current)->size();
+            // We might have positioned _current on a non-live object. Reposition to the next
+            // live one if needed.
+            move_if_below_tams();
+          }
+        } else {
+          // The object at _current can only be dead if below TAMS, so we can use the bitmap.
+          // immediately.
+          _current = _bitmap->get_next_marked_addr(_current, bitmap_limit());
+          assert(_current == _mr.end() || is_live(_current),
+                 "Current " PTR_FORMAT " should be live (%s) or beyond the end of the MemRegion (" PTR_FORMAT ")",
+                 p2i(_current), BOOL_TO_STR(is_live(_current)), p2i(_mr.end()));
+        }
+      }
+
+      void move_to_next() {
+        _current += next()->size();
+        move_if_below_tams();
+      }
+
+      oop next() const {
+        oop result = oop(_current);
+        assert(is_live(_current),
+               "Object " PTR_FORMAT " must be live TAMS " PTR_FORMAT " below %d mr " PTR_FORMAT " " PTR_FORMAT " outside %d",
+               p2i(_current), p2i(_tams), _tams > _current, p2i(_mr.start()), p2i(_mr.end()), _mr.contains(result));
+        return result;
+      }
+
+      bool has_next() const {
+        return _current < _mr.end();
+      }
+    };
+
+    // Rebuild remembered sets in the part of the region specified by mr and hr.
+    // Objects between the bottom of the region and the TAMS are checked for liveness
+    // using the given bitmap. Objects between TAMS and TARS are assumed to be live.
+    // Returns the number of live words between bottom and TAMS.
+    size_t rebuild_rem_set_in_region(const G1CMBitMap* const bitmap,
+                                     HeapWord* const top_at_mark_start,
+                                     HeapWord* const top_at_rebuild_start,
+                                     HeapRegion* hr,
+                                     MemRegion mr) {
+      size_t marked_words = 0;
 
       if (hr->is_humongous()) {
         oop const humongous_obj = oop(hr->humongous_start_region()->bottom());
-        log_debug(gc,remset)("Humongous obj region %u marked %d start " PTR_FORMAT " region start " PTR_FORMAT " TAMS " PTR_FORMAT " TARS " PTR_FORMAT,
-                             hr->hrm_index(), _cm->next_mark_bitmap()->is_marked(humongous_obj),
-                             p2i(humongous_obj), p2i(hr->bottom()), p2i(hr->next_top_at_mark_start()), p2i(top_at_rebuild_start));
-        if (is_humongous_live(humongous_obj, ntams, top_at_rebuild_start)) {
-          // We need to scan both [bottom, nTAMS) and [nTAMS, top_at_rebuild_start);
+        if (is_humongous_live(humongous_obj, bitmap, top_at_mark_start, top_at_rebuild_start)) {
+          // We need to scan both [bottom, TAMS) and [TAMS, top_at_rebuild_start);
           // however in case of humongous objects it is sufficient to scan the encompassing
-          // area (top_at_rebuild_start is always larger or equal to nTAMS) as one of the
-          // two areas will be zero sized. I.e. nTAMS is either
-          // the same as bottom or top(_at_rebuild_start). There is no way ntams has a different
-          // value: this would mean that nTAMS points somewhere into the object.
-          assert(hr->top() == hr->next_top_at_mark_start() || hr->top() == top_at_rebuild_start,
+          // area (top_at_rebuild_start is always larger or equal to TAMS) as one of the
+          // two areas will be zero sized. I.e. TAMS is either
+          // the same as bottom or top(_at_rebuild_start). There is no way TAMS has a different
+          // value: this would mean that TAMS points somewhere into the object.
+          assert(hr->top() == top_at_mark_start || hr->top() == top_at_rebuild_start,
                  "More than one object in the humongous region?");
-          scan_for_references(humongous_obj, MemRegion(start, top_at_rebuild_start));
-          return ntams != start ? pointer_delta(hr->next_top_at_mark_start(), start, 1) : 0;
+          humongous_obj->oop_iterate(&_update_cl, mr);
+          return top_at_mark_start != hr->bottom() ? mr.byte_size() : 0;
         } else {
           return 0;
         }
       }
 
-      assert(start <= hr->end() && start <= ntams &&
-             ntams <= top_at_rebuild_start && top_at_rebuild_start <= hr->end(),
-             "Inconsistency between bottom, nTAMS, TARS, end - "
-             "start: " PTR_FORMAT ", nTAMS: " PTR_FORMAT ", TARS: " PTR_FORMAT ", end: " PTR_FORMAT,
-             p2i(start), p2i(ntams), p2i(top_at_rebuild_start), p2i(hr->end()));
-
-      // Iterate live objects between bottom and nTAMS.
-      start = mark_bitmap->get_next_marked_addr(start, ntams);
-      while (start < ntams) {
-        oop obj = oop(start);
-        assert(oopDesc::is_oop(obj), "Address " PTR_FORMAT " below nTAMS is not an oop", p2i(start));
-        size_t obj_size = obj->size();
-        HeapWord* obj_end = start + obj_size;
-
-        assert(obj_end <= hr->end(), "Humongous objects must have been handled elsewhere.");
-
-        scan_for_references(obj);
-
-        // Add the size of this object to the number of marked bytes.
-        marked_bytes += obj_size;
-
-        // Find the next marked object after this one.
-        start = mark_bitmap->get_next_marked_addr(obj_end, ntams);
+      for (LiveObjIterator it(bitmap, top_at_mark_start, mr, hr->block_start(mr.start())); it.has_next(); it.move_to_next()) {
+        oop obj = it.next();
+        size_t scanned_size = scan_for_references(obj, mr);
+        if ((HeapWord*)obj < top_at_mark_start) {
+          marked_words += scanned_size;
+        }
       }
 
-      // Finally process live objects (all of them) between nTAMS and top_at_rebuild_start.
-      // Objects between top_at_rebuild_start and top are implicitly managed by concurrent refinement.
-      while (start < top_at_rebuild_start) {
-        oop obj = oop(start);
-        assert(oopDesc::is_oop(obj),
-               "Address " PTR_FORMAT " above nTAMS is not an oop (TARS " PTR_FORMAT " region %u)",
-               p2i(start), p2i(top_at_rebuild_start), hr->hrm_index());
-        size_t obj_size = obj->size();
-        HeapWord* obj_end = start + obj_size;
-
-        assert(obj_end <= hr->end(), "Humongous objects must have been handled elsewhere.");
-
-        scan_for_references(obj);
-        start = obj_end;
-      }
-      return marked_bytes * HeapWordSize;
+      return marked_words * HeapWordSize;
     }
-  public:
-    G1RebuildRemSetHeapRegionClosure(G1CollectedHeap* g1h,
-                                     G1ConcurrentMark* cm,
-                                     uint worker_id) :
-      HeapRegionClosure(),
-      _cm(cm),
-      _update_cl(g1h, worker_id) { }
+public:
+  G1RebuildRemSetHeapRegionClosure(G1CollectedHeap* g1h,
+                                   G1ConcurrentMark* cm,
+                                   uint worker_id) :
+    HeapRegionClosure(),
+    _cm(cm),
+    _update_cl(g1h, worker_id) { }
 
     bool do_heap_region(HeapRegion* hr) {
       if (_cm->has_aborted()) {
         return true;
       }
+
       uint const region_idx = hr->hrm_index();
-      HeapWord* const top_at_rebuild_start = _cm->top_at_rebuild_start(region_idx);
-      // TODO: smaller increments to do yield checks with
-      size_t marked_bytes = rebuild_rem_set_in_region(_cm->next_mark_bitmap(), hr, top_at_rebuild_start);
-      log_trace(gc, remset, tracking)("Rebuilt region %u " SIZE_FORMAT " marked bytes " SIZE_FORMAT " "
-                                      "bot " PTR_FORMAT " nTAMS " PTR_FORMAT " TARS " PTR_FORMAT,
-                                      region_idx,
-                                      _cm->liveness(region_idx) * HeapWordSize,
-                                      marked_bytes,
-                                      p2i(hr->bottom()),
-                                      p2i(hr->next_top_at_mark_start()),
-                                      p2i(top_at_rebuild_start));
-      if (marked_bytes > 0) {
-        hr->add_to_marked_bytes(marked_bytes);
-        assert(!hr->is_old() || marked_bytes == (_cm->liveness(hr->hrm_index()) * HeapWordSize),
-               "Marked bytes " SIZE_FORMAT " for region %u do not match liveness during mark " SIZE_FORMAT,
-               marked_bytes, hr->hrm_index(), _cm->liveness(hr->hrm_index()) * HeapWordSize);
+      DEBUG_ONLY(HeapWord* const top_at_rebuild_start_check = _cm->top_at_rebuild_start(region_idx);)
+      assert(top_at_rebuild_start_check == NULL ||
+             top_at_rebuild_start_check > hr->bottom(),
+             "A TARS (" PTR_FORMAT ") == bottom() (" PTR_FORMAT ") indicates the old region %u is empty (%s)",
+             p2i(top_at_rebuild_start_check), p2i(hr->bottom()),  region_idx, hr->get_type_str());
+
+      size_t total_marked_bytes = 0;
+      size_t const chunk_size_in_words = G1RebuildRemSetChunkSize / HeapWordSize;
+
+      HeapWord* const top_at_mark_start = hr->next_top_at_mark_start();
+
+      HeapWord* cur = hr->bottom();
+      while (cur < hr->end()) {
+        // After every iteration (yield point) we need to check whether the region's
+        // TARS changed due to e.g. eager reclaim.
+        HeapWord* const top_at_rebuild_start = _cm->top_at_rebuild_start(region_idx);
+        if (top_at_rebuild_start == NULL) {
+          return false;
+        }
+
+        MemRegion next_chunk = MemRegion(hr->bottom(), top_at_rebuild_start).intersection(MemRegion(cur, chunk_size_in_words));
+        if (next_chunk.is_empty()) {
+          break;
+        }
+
+        const Ticks start = Ticks::now();
+        size_t marked_bytes = rebuild_rem_set_in_region(_cm->next_mark_bitmap(),
+                                                        top_at_mark_start,
+                                                        top_at_rebuild_start,
+                                                        hr,
+                                                        next_chunk);
+        Tickspan time = Ticks::now() - start;
+
+        log_trace(gc, remset, tracking)("Rebuilt region %u "
+                                        "live " SIZE_FORMAT " "
+                                        "time %.3fms "
+                                        "marked bytes " SIZE_FORMAT " "
+                                        "bot " PTR_FORMAT " "
+                                        "TAMS " PTR_FORMAT " "
+                                        "TARS " PTR_FORMAT,
+                                        region_idx,
+                                        _cm->liveness(region_idx) * HeapWordSize,
+                                        TicksToTimeHelper::seconds(time) * 1000.0,
+                                        marked_bytes,
+                                        p2i(hr->bottom()),
+                                        p2i(top_at_mark_start),
+                                        p2i(top_at_rebuild_start));
+
+        if (marked_bytes > 0) {
+          hr->add_to_marked_bytes(marked_bytes);
+          total_marked_bytes += marked_bytes;
+        }
+        cur += chunk_size_in_words;
+
+        _cm->do_yield_check();
+        if (_cm->has_aborted()) {
+          return true;
+        }
       }
-      _cm->do_yield_check();
-      // Abort state may have changed after the yield check.
+      // In the final iteration of the loop the region might have been eagerly reclaimed.
+      // Simply filter out those regions. We can not just use region type because there
+      // might have already been new allocations into these regions.
+      DEBUG_ONLY(HeapWord* const top_at_rebuild_start = _cm->top_at_rebuild_start(region_idx);)
+      assert(!hr->is_old() ||
+             top_at_rebuild_start == NULL ||
+             total_marked_bytes == _cm->liveness(region_idx) * HeapWordSize,
+             "Marked bytes " SIZE_FORMAT " for region %u (%s) in [bottom, TAMS) do not match liveness during mark " SIZE_FORMAT " "
+             "(" PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT ")",
+             total_marked_bytes, hr->hrm_index(), hr->get_type_str(), _cm->liveness(region_idx) * HeapWordSize,
+             p2i(hr->bottom()), p2i(top_at_mark_start), p2i(top_at_rebuild_start));
+       // Abort state may have changed after the yield check.
       return _cm->has_aborted();
     }
   };

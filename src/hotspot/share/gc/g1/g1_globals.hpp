@@ -256,6 +256,10 @@
           "Try to reclaim dead large objects that have a few stale "        \
           "references at every young GC.")                                  \
                                                                             \
+  experimental(size_t, G1RebuildRemSetChunkSize, 256 * K,                   \
+          "Chunk size used for rebuilding the remembered set.")             \
+          range(4 * K, 32 * M)                                              \
+                                                                            \
   experimental(uintx, G1OldCSetRegionThresholdPercent, 10,                  \
           "An upper bound for the number of old CSet regions expressed "    \
           "as a percentage of the heap size.")                              \

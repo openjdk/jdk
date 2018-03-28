@@ -455,7 +455,7 @@ class G1ConcurrentMark: public CHeapObj<mtGC> {
   // for regions which remembered sets need to be rebuilt. A NULL for a given region
   // means that this region does not be scanned during the rebuilding remembered
   // set phase at all.
-  HeapWord** _top_at_rebuild_starts;
+  HeapWord* volatile* _top_at_rebuild_starts;
 public:
   void add_to_liveness(uint worker_id, oop const obj, size_t size);
   // Liveness of the given region as determined by concurrent marking, i.e. the amount of
