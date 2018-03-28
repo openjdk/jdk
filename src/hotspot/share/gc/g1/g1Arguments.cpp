@@ -72,8 +72,8 @@ void G1Arguments::parse_verification_type(const char* type) {
   }
 }
 
-void G1Arguments::initialize_flags() {
-  GCArguments::initialize_flags();
+void G1Arguments::initialize() {
+  GCArguments::initialize();
   assert(UseG1GC, "Error");
   FLAG_SET_DEFAULT(ParallelGCThreads, Abstract_VM_Version::parallel_worker_threads());
   if (ParallelGCThreads == 0) {

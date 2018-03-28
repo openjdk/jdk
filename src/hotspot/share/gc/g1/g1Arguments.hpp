@@ -38,7 +38,7 @@ private:
   static void parse_verification_type(const char* type);
 
 public:
-  virtual void initialize_flags();
+  virtual void initialize();
   virtual size_t conservative_max_heap_alignment();
   virtual CollectedHeap* create_heap();
 };

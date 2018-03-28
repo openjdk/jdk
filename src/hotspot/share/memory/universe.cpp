@@ -35,6 +35,7 @@
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcArguments.hpp"
+#include "gc/shared/gcConfig.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
@@ -745,8 +746,7 @@ jint universe_init() {
 
 CollectedHeap* Universe::create_heap() {
   assert(_collectedHeap == NULL, "Heap already created");
-  assert(GCArguments::is_initialized(), "GC must be initialized here");
-  return GCArguments::arguments()->create_heap();
+  return GCConfig::arguments()->create_heap();
 }
 
 // Choose the heap base address and oop encoding mode
