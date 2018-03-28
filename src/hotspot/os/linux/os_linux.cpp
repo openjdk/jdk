@@ -1644,10 +1644,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
         //
         // Dynamic loader will make all stacks executable after
         // this function returns, and will not do that again.
-#ifdef ASSERT
-        ThreadsListHandle tlh;
-        assert(tlh.length() == 0, "no Java threads should exist yet.");
-#endif
+        assert(Threads::number_of_threads() == 0, "no Java threads should exist yet.");
       } else {
         warning("You have loaded library %s which might have disabled stack guard. "
                 "The VM will try to fix the stack guard now.\n"

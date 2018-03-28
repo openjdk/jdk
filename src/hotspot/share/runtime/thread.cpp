@@ -2392,11 +2392,13 @@ int JavaThread::java_suspend_self() {
 }
 
 #ifdef ASSERT
-// verify the JavaThread has not yet been published in the Threads::list, and
-// hence doesn't need protection from concurrent access at this stage
+// Verify the JavaThread has not yet been published in the Threads::list, and
+// hence doesn't need protection from concurrent access at this stage.
 void JavaThread::verify_not_published() {
-  ThreadsListHandle tlh;
-  assert(!tlh.includes(this), "JavaThread shouldn't have been published yet!");
+  // Cannot create a ThreadsListHandle here and check !tlh.includes(this)
+  // since an unpublished JavaThread doesn't participate in the
+  // Thread-SMR protocol for keeping a ThreadsList alive.
+  assert(!on_thread_list(), "JavaThread shouldn't have been published yet!");
 }
 #endif
 
@@ -4262,11 +4264,6 @@ bool Threads::destroy_vm() {
     VMThread::destroy();
   }
 
-  // clean up ideal graph printers
-#if defined(COMPILER2) && !defined(PRODUCT)
-  IdealGraphPrinter::clean_up();
-#endif
-
   // Now, all Java threads are gone except daemon threads. Daemon threads
   // running Java code or in VM are stopped by the Safepoint. However,
   // daemon threads executing native code are still running.  But they
@@ -4274,6 +4271,16 @@ bool Threads::destroy_vm() {
   // simply kill or suspend them, as it is inherently deadlock-prone.
 
   VM_Exit::set_vm_exited();
+
+  // Clean up ideal graph printers after the VMThread has started
+  // the final safepoint which will block all the Compiler threads.
+  // Note that this Thread has already logically exited so the
+  // clean_up() function's use of a JavaThreadIteratorWithHandle
+  // would be a problem except set_vm_exited() has remembered the
+  // shutdown thread which is granted a policy exception.
+#if defined(COMPILER2) && !defined(PRODUCT)
+  IdealGraphPrinter::clean_up();
+#endif
 
   notify_vm_shutdown();
 
