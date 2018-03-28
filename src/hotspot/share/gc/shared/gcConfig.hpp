@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,33 @@
  *
  */
 
-#ifndef SHARE_GC_CMS_CMSARGUMENTS_HPP
-#define SHARE_GC_CMS_CMSARGUMENTS_HPP
+#ifndef SHARE_GC_SHARED_GCCONFIG_HPP
+#define SHARE_GC_SHARED_GCCONFIG_HPP
 
-#include "gc/shared/gcArguments.hpp"
+#include "gc/shared/collectedHeap.hpp"
+#include "memory/allocation.hpp"
 
-class CollectedHeap;
+class GCArguments;
 
-class CMSArguments : public GCArguments {
+class GCConfig : public AllStatic {
 private:
-  void disable_adaptive_size_policy(const char* collector_name);
-  void set_parnew_gc_flags();
+  static GCArguments* _arguments;
+  static bool         _gc_selected_ergonomically;
+
+  static bool is_no_gc_selected();
+  static bool is_exactly_one_gc_selected();
+
+  static void select_gc_ergonomically();
+  static GCArguments* select_gc();
+
 public:
-  virtual void initialize();
-  virtual size_t conservative_max_heap_alignment();
-  virtual CollectedHeap* create_heap();
+  static void initialize();
+
+  static bool is_gc_supported(CollectedHeap::Name name);
+  static bool is_gc_selected(CollectedHeap::Name name);
+  static bool is_gc_selected_ergonomically();
+
+  static GCArguments* arguments();
 };
 
-#endif // SHARE_GC_CMS_CMSARGUMENTS_HPP
+#endif // SHARE_GC_SHARED_GCCONFIG_HPP

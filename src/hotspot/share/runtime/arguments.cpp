@@ -30,6 +30,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "gc/shared/gcArguments.hpp"
+#include "gc/shared/gcConfig.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -1749,7 +1750,7 @@ void Arguments::set_conservative_max_heap_alignment() {
   // the alignments imposed by several sources: any requirements from the heap
   // itself, the collector policy and the maximum page size we may run the VM
   // with.
-  size_t heap_alignment = GCArguments::arguments()->conservative_max_heap_alignment();
+  size_t heap_alignment = GCConfig::arguments()->conservative_max_heap_alignment();
   _conservative_max_heap_alignment = MAX4(heap_alignment,
                                           (size_t)os::vm_allocation_granularity(),
                                           os::max_page_size(),
@@ -1815,10 +1816,7 @@ jint Arguments::set_ergonomics_flags() {
   }
 #endif
 
-  jint gc_result = GCArguments::initialize();
-  if (gc_result != JNI_OK) {
-    return gc_result;
-  }
+  GCConfig::initialize();
 
 #if COMPILER2_OR_JVMCI
   // Shared spaces work fine with other GCs but causes bytecode rewriting
@@ -2176,26 +2174,6 @@ bool Arguments::check_jvmci_args_consistency() {
 }
 #endif //INCLUDE_JVMCI
 
-// Check consistency of GC selection
-bool Arguments::check_gc_consistency() {
-  // Ensure that the user has not selected conflicting sets
-  // of collectors.
-  uint i = 0;
-  if (UseSerialGC)                       i++;
-  if (UseConcMarkSweepGC)                i++;
-  if (UseParallelGC || UseParallelOldGC) i++;
-  if (UseG1GC)                           i++;
-  if (i > 1) {
-    jio_fprintf(defaultStream::error_stream(),
-                "Conflicting collector combinations in option list; "
-                "please refer to the release notes for the combinations "
-                "allowed\n");
-    return false;
-  }
-
-  return true;
-}
-
 // Check the consistency of vm_init_args
 bool Arguments::check_vm_args_consistency() {
   // Method for adding checks for flag consistency.
@@ -2224,8 +2202,6 @@ bool Arguments::check_vm_args_consistency() {
     // Turn off gc-overhead-limit-exceeded checks
     FLAG_SET_DEFAULT(UseGCOverheadLimit, false);
   }
-
-  status = status && check_gc_consistency();
 
   // CMS space iteration, which FLSVerifyAllHeapreferences entails,
   // insists that we hold the requisite locks so that the iteration is
@@ -4241,11 +4217,6 @@ jint Arguments::apply_ergo() {
 
   set_shared_spaces_flags();
 
-  // Check the GC selections again.
-  if (!check_gc_consistency()) {
-    return JNI_EINVAL;
-  }
-
   if (TieredCompilation) {
     set_tiered_flags();
   } else {
@@ -4278,7 +4249,7 @@ jint Arguments::apply_ergo() {
   // Set heap size based on available physical memory
   set_heap_size();
 
-  GCArguments::arguments()->initialize_flags();
+  GCConfig::arguments()->initialize();
 
   // Initialize Metaspace flags and alignments
   Metaspace::ergo_initialize();

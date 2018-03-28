@@ -30,27 +30,14 @@
 
 class CollectedHeap;
 
-class GCArguments : public CHeapObj<mtGC> {
-private:
-  static GCArguments* _instance;
-
-  static void select_gc();
-  static void select_gc_ergonomically();
-  static bool gc_selected();
-
+class GCArguments {
 protected:
   template <class Heap, class Policy>
   CollectedHeap* create_heap_with_policy();
 
 public:
-  static jint initialize();
-  static bool is_initialized();
-  static GCArguments* arguments();
-
-  virtual void initialize_flags();
-
+  virtual void initialize();
   virtual size_t conservative_max_heap_alignment() = 0;
-
   virtual CollectedHeap* create_heap() = 0;
 };
 

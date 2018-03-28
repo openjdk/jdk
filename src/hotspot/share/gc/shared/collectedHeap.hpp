@@ -187,6 +187,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
  public:
   enum Name {
+    None,
     Serial,
     Parallel,
     CMS,
