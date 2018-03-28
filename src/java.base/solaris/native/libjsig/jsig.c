@@ -37,6 +37,7 @@
 #include <dlfcn.h>
 #include <thread.h>
 #include <synch.h>
+#include "jni.h"
 #include "jvm_md.h"
 
 #define bool int
@@ -176,11 +177,13 @@ static sa_handler_t set_signal(int sig, sa_handler_t disp, bool is_sigset) {
   }
 }
 
-sa_handler_t signal(int sig, sa_handler_t disp) {
+JNIEXPORT sa_handler_t JNICALL
+signal(int sig, sa_handler_t disp) {
   return set_signal(sig, disp, false);
 }
 
-sa_handler_t sigset(int sig, sa_handler_t disp) {
+JNIEXPORT sa_handler_t JNICALL
+sigset(int sig, sa_handler_t disp) {
   return set_signal(sig, disp, true);
 }
 
@@ -196,7 +199,8 @@ static int call_os_sigaction(int sig, const struct sigaction  *act,
   return (*os_sigaction)(sig, act, oact);
 }
 
-int sigaction(int sig, const struct sigaction *act, struct sigaction *oact) {
+JNIEXPORT int JNICALL
+sigaction(int sig, const struct sigaction *act, struct sigaction *oact) {
   int res;
   struct sigaction oldAct;
 
@@ -242,14 +246,16 @@ int sigaction(int sig, const struct sigaction *act, struct sigaction *oact) {
 }
 
 /* The four functions for the jvm to call into */
-void JVM_begin_signal_setting() {
+JNIEXPORT void JNICALL
+JVM_begin_signal_setting() {
   signal_lock();
   jvm_signal_installing = true;
   tid = thr_self();
   signal_unlock();
 }
 
-void JVM_end_signal_setting() {
+JNIEXPORT void JNICALL
+JVM_end_signal_setting() {
   signal_lock();
   jvm_signal_installed = true;
   jvm_signal_installing = false;
@@ -257,7 +263,8 @@ void JVM_end_signal_setting() {
   signal_unlock();
 }
 
-struct sigaction *JVM_get_signal_action(int sig) {
+JNIEXPORT struct sigaction * JNICALL
+JVM_get_signal_action(int sig) {
   if (sact == NULL) {
     allocate_sact();
   }
@@ -268,6 +275,7 @@ struct sigaction *JVM_get_signal_action(int sig) {
   return NULL;
 }
 
-int JVM_get_libjsig_version() {
+JNIEXPORT int JNICALL
+JVM_get_libjsig_version() {
   return JSIG_VERSION_1_4_1;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
 
 #ifndef _ZIP_H_
 #define _ZIP_H_
+
+#include "jni.h"
 
 /*
  * Header signatures
@@ -239,16 +241,16 @@ typedef struct jzfile {   /* Zip file */
  */
 #define ZIP_ENDCHAIN ((jint)-1)
 
-jzentry * JNICALL
+JNIEXPORT jzentry * JNICALL
 ZIP_FindEntry(jzfile *zip, char *name, jint *sizeP, jint *nameLenP);
 
-jboolean JNICALL
+JNIEXPORT jboolean JNICALL
 ZIP_ReadEntry(jzfile *zip, jzentry *entry, unsigned char *buf, char *entrynm);
 
-jzentry * JNICALL
+JNIEXPORT jzentry * JNICALL
 ZIP_GetNextEntry(jzfile *zip, jint n);
 
-jzfile * JNICALL
+JNIEXPORT jzfile * JNICALL
 ZIP_Open(const char *name, char **pmsg);
 
 jzfile *
@@ -263,19 +265,23 @@ ZIP_Put_In_Cache(const char *name, ZFILE zfd, char **pmsg, jlong lastModified);
 jzfile *
 ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified, jboolean usemmap);
 
-void JNICALL
+JNIEXPORT void JNICALL
 ZIP_Close(jzfile *zip);
 
-jzentry * ZIP_GetEntry(jzfile *zip, char *name, jint ulen);
-void ZIP_Lock(jzfile *zip);
-void ZIP_Unlock(jzfile *zip);
-jint ZIP_Read(jzfile *zip, jzentry *entry, jlong pos, void *buf, jint len);
-void JNICALL
+JNIEXPORT jzentry * JNICALL
+ZIP_GetEntry(jzfile *zip, char *name, jint ulen);
+JNIEXPORT void JNICALL
+ZIP_Lock(jzfile *zip);
+JNIEXPORT void JNICALL
+ZIP_Unlock(jzfile *zip);
+JNIEXPORT jint JNICALL
+ZIP_Read(jzfile *zip, jzentry *entry, jlong pos, void *buf, jint len);
+JNIEXPORT void JNICALL
 ZIP_FreeEntry(jzfile *zip, jzentry *ze);
 jlong ZIP_GetEntryDataOffset(jzfile *zip, jzentry *entry);
 jzentry * ZIP_GetEntry2(jzfile *zip, char *name, jint ulen, jboolean addSlash);
 
-jboolean JNICALL
+JNIEXPORT jboolean JNICALL
 ZIP_InflateFully(void *inBuf, jlong inLen, void *outBuf, jlong outLen, char **pmsg);
 
 #endif /* !_ZIP_H_ */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -309,7 +309,8 @@ CipherFinal(crypto_ctx_t *context, int encrypt, unsigned char *bufOut, int outOf
 ////////////////////////////////////////////////////////
 // SPECIAL ENTRIES FOR JVM JNI-BYPASSING OPTIMIZATION
 ////////////////////////////////////////////////////////
-jlong JavaCritical_com_oracle_security_ucrypto_NativeDigest_nativeInit(jint mech) {
+JNIEXPORT jlong JNICALL
+JavaCritical_com_oracle_security_ucrypto_NativeDigest_nativeInit(jint mech) {
   crypto_ctx_t *context = NULL;
   int rv;
 
@@ -325,7 +326,8 @@ jlong JavaCritical_com_oracle_security_ucrypto_NativeDigest_nativeInit(jint mech
   return (jlong) context;
 }
 
-jint JavaCritical_com_oracle_security_ucrypto_NativeDigest_nativeUpdate
+JNIEXPORT jint JNICALL
+JavaCritical_com_oracle_security_ucrypto_NativeDigest_nativeUpdate
   (jint mech, jlong pContext, int notUsed, unsigned char* in, jint ofs, jint len) {
   crypto_ctx_t *context;
   jint rv = 0;
@@ -342,7 +344,8 @@ jint JavaCritical_com_oracle_security_ucrypto_NativeDigest_nativeUpdate
   return -rv; // use negative value to indicate error
 }
 
-jint JavaCritical_com_oracle_security_ucrypto_NativeDigest_nativeDigest
+JNIEXPORT jint JNICALL
+JavaCritical_com_oracle_security_ucrypto_NativeDigest_nativeDigest
   (jint mech, jlong pContext, int notUsed, unsigned char* out, jint ofs, jint digestLen) {
   crypto_ctx_t *context;
   jint rv = 0;
@@ -359,7 +362,8 @@ jint JavaCritical_com_oracle_security_ucrypto_NativeDigest_nativeDigest
   return -rv; // use negative value to indicate error
 }
 
-void JavaCritical_com_oracle_security_ucrypto_NativeDigest_nativeFree
+JNIEXPORT void JNICALL
+JavaCritical_com_oracle_security_ucrypto_NativeDigest_nativeFree
   (jint mech, jlong pContext) {
   crypto_ctx_t *context;
 
@@ -368,7 +372,8 @@ void JavaCritical_com_oracle_security_ucrypto_NativeDigest_nativeFree
 }
 
 // AES
-jlong JavaCritical_com_oracle_security_ucrypto_NativeCipher_nativeInit
+JNIEXPORT jlong JNICALL
+JavaCritical_com_oracle_security_ucrypto_NativeCipher_nativeInit
   (jint mech, jboolean encrypt, int keyLen, unsigned char* bufKey,
    int ivLen, unsigned char* bufIv, jint tagLen, int aadLen, unsigned char* bufAad) {
   crypto_ctx_t *context = NULL;
@@ -391,7 +396,8 @@ jlong JavaCritical_com_oracle_security_ucrypto_NativeCipher_nativeInit
  * Method:    nativeUpdate
  * Signature: (JZ[BII[BI)I
  */
-jint JavaCritical_com_oracle_security_ucrypto_NativeCipher_nativeUpdate
+JNIEXPORT jint JNICALL
+JavaCritical_com_oracle_security_ucrypto_NativeCipher_nativeUpdate
   (jlong pContext, jboolean encrypt, int notUsed, jbyte* bufIn, jint inOfs, jint inLen,
    int outCapacity, jbyte* bufOut, jint outOfs) {
   crypto_ctx_t *context;
@@ -413,7 +419,8 @@ jint JavaCritical_com_oracle_security_ucrypto_NativeCipher_nativeUpdate
  * Method:    nativeFinal
  * Signature: (JZ[BI)I
  */
-jint JavaCritical_com_oracle_security_ucrypto_NativeCipher_nativeFinal
+JNIEXPORT jint JNICALL
+JavaCritical_com_oracle_security_ucrypto_NativeCipher_nativeFinal
   (jlong pContext, jboolean encrypt, int outLen, jbyte* out, jint outOfs) {
   crypto_ctx_t *context;
   int rv = 0;
@@ -664,7 +671,8 @@ JNIEXPORT jint JNICALL Java_com_oracle_security_ucrypto_NativeCipher_nativeFinal
  * Method:    nativeFree
  * Signature: (JI)V
  */
-void JavaCritical_com_oracle_security_ucrypto_NativeKey_nativeFree
+JNIEXPORT void JNICALL
+JavaCritical_com_oracle_security_ucrypto_NativeKey_nativeFree
   (jlong id, jint numOfComponents) {
   crypto_object_attribute_t* pKey;
   int i;
@@ -686,7 +694,8 @@ JNIEXPORT void JNICALL Java_com_oracle_security_ucrypto_NativeKey_nativeFree
  * Method:    nativeInit
  * Signature: ([B[B)J
  */
-jlong JavaCritical_com_oracle_security_ucrypto_NativeKey_00024RSAPrivate_nativeInit
+JNIEXPORT jlong JNICALL
+JavaCritical_com_oracle_security_ucrypto_NativeKey_00024RSAPrivate_nativeInit
 (int modLen, jbyte* jMod, int privLen, jbyte* jPriv) {
 
   unsigned char *mod, *priv;
@@ -766,7 +775,8 @@ cleanup:
  * Method:    nativeInit
  * Signature: ([B[B[B[B[B[B[B[B)J
  */
-jlong JavaCritical_com_oracle_security_ucrypto_NativeKey_00024RSAPrivateCrt_nativeInit
+JNIEXPORT jlong JNICALL
+JavaCritical_com_oracle_security_ucrypto_NativeKey_00024RSAPrivateCrt_nativeInit
 (int modLen, jbyte* jMod, int pubLen, jbyte* jPub, int privLen, jbyte* jPriv,
  int pLen, jbyte* jP, int qLen, jbyte* jQ, int expPLen, jbyte* jExpP,
  int expQLen, jbyte* jExpQ, int crtCoeffLen, jbyte* jCrtCoeff) {
@@ -937,7 +947,8 @@ cleanup:
  * Signature: ([B[B)J
  */
 
-jlong JavaCritical_com_oracle_security_ucrypto_NativeKey_00024RSAPublic_nativeInit
+JNIEXPORT jlong JNICALL
+JavaCritical_com_oracle_security_ucrypto_NativeKey_00024RSAPublic_nativeInit
 (int modLen, jbyte* jMod, int pubLen, jbyte* jPub) {
   unsigned char *mod, *pub;
   crypto_object_attribute_t* pKey = NULL;
@@ -1048,7 +1059,8 @@ SignatureInit(crypto_ctx_t *context, jint mechVal, jboolean sign,
  * Method:    nativeInit
  * Signature: (IZJI[B)J
  */
-jlong JavaCritical_com_oracle_security_ucrypto_NativeRSASignature_nativeInit
+JNIEXPORT jlong JNICALL
+JavaCritical_com_oracle_security_ucrypto_NativeRSASignature_nativeInit
 (jint mech, jboolean sign, jlong jKey, jint keyLength) {
   crypto_ctx_t *context;
   int rv;
@@ -1094,7 +1106,8 @@ JNIEXPORT jlong JNICALL Java_com_oracle_security_ucrypto_NativeRSASignature_nati
  * Method:    nativeUpdate
  * Signature: (JZ[BII)I
  */
-jint JavaCritical_com_oracle_security_ucrypto_NativeRSASignature_nativeUpdate__JZ_3BII
+JNIEXPORT jint JNICALL
+JavaCritical_com_oracle_security_ucrypto_NativeRSASignature_nativeUpdate__JZ_3BII
 (jlong pCtxt, jboolean sign, int notUsed, jbyte* jIn, jint jInOfs, jint jInLen) {
   crypto_ctx_t *context;
   int rv = 0;
@@ -1142,7 +1155,8 @@ JNIEXPORT jint JNICALL Java_com_oracle_security_ucrypto_NativeRSASignature_nativ
  * Method:    nativeUpdate
  * Signature: (JZJI)I
  */
-jint JavaCritical_com_oracle_security_ucrypto_NativeRSASignature_nativeUpdate__JZJI
+JNIEXPORT jint JNICALL
+JavaCritical_com_oracle_security_ucrypto_NativeRSASignature_nativeUpdate__JZJI
 (jlong pCtxt, jboolean sign, jlong inAddr, jint inLen) {
 
   return JavaCritical_com_oracle_security_ucrypto_NativeRSASignature_nativeUpdate__JZ_3BII
@@ -1161,7 +1175,8 @@ JNIEXPORT jint JNICALL Java_com_oracle_security_ucrypto_NativeRSASignature_nativ
  * Method:    nativeFinal
  * Signature: (JZ[BII)I
  */
-jint JavaCritical_com_oracle_security_ucrypto_NativeRSASignature_nativeFinal
+JNIEXPORT jint JNICALL
+JavaCritical_com_oracle_security_ucrypto_NativeRSASignature_nativeFinal
 (jlong pCtxt, jboolean sign, int notUsed, jbyte* bufSig, jint sigOfs, jint jSigLen) {
 
   crypto_ctx_t *context;
@@ -1236,7 +1251,8 @@ JNIEXPORT jint JNICALL Java_com_oracle_security_ucrypto_NativeRSASignature_nativ
  * Method:    nativeAtomic
  * Signature: (IZJI[BI[BII)I
  */
-jint JavaCritical_com_oracle_security_ucrypto_NativeRSACipher_nativeAtomic
+JNIEXPORT jint JNICALL
+JavaCritical_com_oracle_security_ucrypto_NativeRSACipher_nativeAtomic
   (jint mech, jboolean encrypt, jlong keyValue, jint keyLength,
    int notUsed1, jbyte* bufIn, jint jInLen,
    int notUsed2, jbyte* bufOut, jint jOutOfs, jint jOutLen) {

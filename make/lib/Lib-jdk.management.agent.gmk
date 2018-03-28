@@ -38,7 +38,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT_AGENT, \
     SRC := $(LIBMANAGEMENT_AGENT_SRC), \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBMANAGEMENT_AGENT_CFLAGS), \
-    MAPFILE := $(TOPDIR)/make/mapfiles/libmanagement_agent/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(JDKLIB_LIBS), \

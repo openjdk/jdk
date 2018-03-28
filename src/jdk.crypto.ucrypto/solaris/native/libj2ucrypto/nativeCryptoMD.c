@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,8 @@ extern jbyte* getBytes(JNIEnv *env, jbyteArray bytes, int offset, int len);
 ///////////////////////////////////////////////////////
 // SPECIAL ENTRIES FOR JVM JNI-BYPASSING OPTIMIZATION
 ////////////////////////////////////////////////////////
-jlong JavaCritical_com_oracle_security_ucrypto_NativeDigestMD_nativeInit(jint mech) {
+JNIEXPORT jlong JNICALL
+JavaCritical_com_oracle_security_ucrypto_NativeDigestMD_nativeInit(jint mech) {
   void *pContext = NULL;
 
   switch (mech) {
@@ -78,7 +79,8 @@ jlong JavaCritical_com_oracle_security_ucrypto_NativeDigestMD_nativeInit(jint me
   return (jlong) pContext;
 }
 
-jint JavaCritical_com_oracle_security_ucrypto_NativeDigestMD_nativeUpdate
+JNIEXPORT jint JNICALL
+JavaCritical_com_oracle_security_ucrypto_NativeDigestMD_nativeUpdate
   (jint mech, jlong pContext, int notUsed, unsigned char* in, jint ofs, jint len) {
   if (mech == com_oracle_security_ucrypto_NativeDigestMD_MECH_SHA1) {
     (*ftab->sha1Update)((SHA1_CTX*)pContext, (unsigned char*)(in+ofs), len);
@@ -91,7 +93,8 @@ jint JavaCritical_com_oracle_security_ucrypto_NativeDigestMD_nativeUpdate
 }
 
 // Do digest and free the context immediately
-jint JavaCritical_com_oracle_security_ucrypto_NativeDigestMD_nativeDigest
+JNIEXPORT jint JNICALL
+JavaCritical_com_oracle_security_ucrypto_NativeDigestMD_nativeDigest
   (jint mech, jlong pContext, int notUsed, unsigned char* out, jint ofs, jint digestLen) {
 
   if (mech == com_oracle_security_ucrypto_NativeDigestMD_MECH_SHA1) {
@@ -107,7 +110,8 @@ jint JavaCritical_com_oracle_security_ucrypto_NativeDigestMD_nativeDigest
   return 0;
 }
 
-jlong JavaCritical_com_oracle_security_ucrypto_NativeDigestMD_nativeClone
+JNIEXPORT jlong JNICALL
+JavaCritical_com_oracle_security_ucrypto_NativeDigestMD_nativeClone
   (jint mech, jlong pContext) {
   void *copy = NULL;
   size_t len = 0;
@@ -126,7 +130,8 @@ jlong JavaCritical_com_oracle_security_ucrypto_NativeDigestMD_nativeClone
   return (jlong) copy;
 }
 
-void JavaCritical_com_oracle_security_ucrypto_NativeDigestMD_nativeFree
+JNIEXPORT void JNICALL
+JavaCritical_com_oracle_security_ucrypto_NativeDigestMD_nativeFree
   (jint mech, jlong pContext) {
   if (mech == com_oracle_security_ucrypto_NativeDigestMD_MECH_SHA1) {
     free((SHA1_CTX*) pContext);

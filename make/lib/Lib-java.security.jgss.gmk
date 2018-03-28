@@ -39,7 +39,6 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       CFLAGS := $(CFLAGS_JDKLIB) $(addprefix -I, $(LIBJ2GSS_SRC)) \
           $(LIBJAVA_HEADER_FLAGS) \
           -I$(SUPPORT_OUTPUTDIR)/headers/java.security.jgss, \
-      MAPFILE := $(TOPDIR)/make/mapfiles/libj2gss/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := $(LIBDL), \
