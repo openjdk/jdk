@@ -501,11 +501,6 @@ void G1Policy::record_concurrent_mark_cleanup_start() {
   _mark_cleanup_start_sec = os::elapsedTime();
 }
 
-void G1Policy::record_concurrent_mark_cleanup_completed() {
-  collector_state()->set_last_young_gc(collector_state()->mixed_gc_pending());
-  collector_state()->set_in_marking_window(false);
-}
-
 double G1Policy::average_time_ms(G1GCPhaseTimes::GCParPhases phase) const {
   return phase_times()->average_time_ms(phase);
 }
@@ -533,7 +528,6 @@ CollectionSetChooser* G1Policy::cset_chooser() const {
 }
 
 bool G1Policy::about_to_start_mixed_phase() const {
-  guarantee(_g1->concurrent_mark()->cm_thread()->during_cycle() || !collector_state()->mixed_gc_pending(), "Pending mixed phase when CM is idle!");
   return _g1->concurrent_mark()->cm_thread()->during_cycle() || collector_state()->last_young_gc();
 }
 
@@ -996,7 +990,8 @@ void G1Policy::record_concurrent_mark_cleanup_end() {
     clear_collection_set_candidates();
     abort_time_to_mixed_tracking();
   }
-  collector_state()->set_mixed_gc_pending(mixed_gc_pending);
+  collector_state()->set_last_young_gc(mixed_gc_pending);
+  collector_state()->set_in_marking_window(false);
 
   double end_sec = os::elapsedTime();
   double elapsed_time_ms = (end_sec - _mark_cleanup_start_sec) * 1000.0;

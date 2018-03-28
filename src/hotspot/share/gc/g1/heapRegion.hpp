@@ -506,10 +506,11 @@ class HeapRegion: public G1ContiguousSpace {
 
   // Reset the HeapRegion to default values.
   // If skip_remset is true, do not clear the remembered set.
+  // If clear_space is true, clear the HeapRegion's memory.
+  // If locked is true, assume we are the only thread doing this operation.
   void hr_clear(bool skip_remset, bool clear_space, bool locked = false);
-  // Clear the parts skipped by skip_remset in hr_clear() in the HeapRegion during
-  // a concurrent phase.
-  void par_clear();
+  // Clear the card table corresponding to this region.
+  void clear_cardtable();
 
   // Get the start of the unmarked area in this region.
   HeapWord* prev_top_at_mark_start() const { return _prev_top_at_mark_start; }

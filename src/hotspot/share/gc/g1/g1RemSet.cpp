@@ -75,8 +75,6 @@ private:
     static size_t chunk_size() { return M; }
 
     void work(uint worker_id) {
-      G1CardTable* ct = _g1h->card_table();
-
       while (_cur_dirty_regions < _num_dirty_regions) {
         size_t next = Atomic::add(_chunk_length, &_cur_dirty_regions) - _chunk_length;
         size_t max = MIN2(next + _chunk_length, _num_dirty_regions);
@@ -84,7 +82,7 @@ private:
         for (size_t i = next; i < max; i++) {
           HeapRegion* r = _g1h->region_at(_dirty_region_list[i]);
           if (!r->is_survivor()) {
-            ct->clear(MemRegion(r->bottom(), r->end()));
+            r->clear_cardtable();
           }
         }
       }
@@ -272,9 +270,6 @@ public:
     workers->run_task(&cl, num_workers);
 
 #ifndef PRODUCT
-    // Need to synchronize with concurrent cleanup since it needs to
-    // finish its card table clearing before we can verify.
-    G1CollectedHeap::heap()->wait_while_free_regions_coming();
     G1CollectedHeap::heap()->verifier()->verify_card_table_cleanup();
 #endif
   }

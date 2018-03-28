@@ -59,7 +59,7 @@ void G1RemSetTrackingPolicy::update_at_allocate(HeapRegion* r) {
 }
 
 void G1RemSetTrackingPolicy::update_at_free(HeapRegion* r) {
-  r->rem_set()->set_state_empty();
+  /* nothing to do */
 }
 
 bool G1RemSetTrackingPolicy::update_before_rebuild(HeapRegion* r, size_t live_bytes) {

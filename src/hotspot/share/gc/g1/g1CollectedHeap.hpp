@@ -163,11 +163,6 @@ private:
 
   static size_t _humongous_object_threshold_in_words;
 
-  // The secondary free list which contains regions that have been
-  // freed up during the cleanup process. This will be appended to
-  // the master free list when appropriate.
-  FreeRegionList _secondary_free_list;
-
   // It keeps track of the old regions.
   HeapRegionSet _old_set;
 
@@ -379,13 +374,6 @@ private:
   G1HeapSizingPolicy* _heap_sizing_policy;
 
   G1CollectionSet _collection_set;
-
-  // This is the second level of trying to allocate a new region. If
-  // new_region() didn't find a region on the free_list, this call will
-  // check whether there's anything available on the
-  // secondary_free_list and/or wait for more regions to appear on
-  // that list, if _free_regions_coming is set.
-  HeapRegion* new_region_try_secondary_free_list(bool is_old);
 
   // Try to allocate a single non-humongous HeapRegion sufficient for
   // an allocation of the given word_size. If do_expand is true,
@@ -657,12 +645,11 @@ public:
   // and calling free_region() for each of them. The freed regions
   // will be added to the free list that's passed as a parameter (this
   // is usually a local list which will be appended to the master free
-  // list later). The used bytes of freed regions are accumulated in
-  // pre_used. If skip_remset is true, the region's RSet will not be freed
-  // up. The assumption is that this will be done later.
+  // list later).
+  // The method assumes that only a single thread is ever calling
+  // this for a particular region at once.
   void free_humongous_region(HeapRegion* hr,
-                             FreeRegionList* free_list,
-                             bool skip_remset);
+                             FreeRegionList* free_list);
 
   // Facility for allocating in 'archive' regions in high heap memory and
   // recording the allocated ranges. These should all be called from the
@@ -919,8 +906,6 @@ private:
   // discovery.
   G1CMIsAliveClosure _is_alive_closure_cm;
 
-  volatile bool _free_regions_coming;
-
 public:
 
   RefToScanQueue *task_queue(uint i) const;
@@ -1066,37 +1051,12 @@ public:
   }
 #endif // ASSERT
 
-  // Wrapper for the region list operations that can be called from
-  // methods outside this class.
-
-  void secondary_free_list_add(FreeRegionList* list) {
-    _secondary_free_list.add_ordered(list);
-  }
-
-  void append_secondary_free_list() {
-    _hrm.insert_list_into_free_list(&_secondary_free_list);
-  }
-
-  void append_secondary_free_list_if_not_empty_with_lock() {
-    // If the secondary free list looks empty there's no reason to
-    // take the lock and then try to append it.
-    if (!_secondary_free_list.is_empty()) {
-      MutexLockerEx x(SecondaryFreeList_lock, Mutex::_no_safepoint_check_flag);
-      append_secondary_free_list();
-    }
-  }
-
   inline void old_set_add(HeapRegion* hr);
   inline void old_set_remove(HeapRegion* hr);
 
   size_t non_young_capacity_bytes() {
     return (_old_set.length() + _humongous_set.length()) * HeapRegion::GrainBytes;
   }
-
-  void set_free_regions_coming();
-  void reset_free_regions_coming();
-  bool free_regions_coming() { return _free_regions_coming; }
-  void wait_while_free_regions_coming();
 
   // Determine whether the given region is one that we are using as an
   // old GC alloc region.

@@ -71,9 +71,6 @@ class G1CollectorState {
   bool _in_marking_window;
   bool _in_marking_window_im;
 
-  // Are we going into a mixed gc phase.
-  bool _mixed_gc_pending;
-
   bool _full_collection;
 
   public:
@@ -81,7 +78,6 @@ class G1CollectorState {
       _gcs_are_young(true),
       _last_gc_was_young(false),
       _last_young_gc(false),
-      _mixed_gc_pending(false),
 
       _during_initial_mark_pause(false),
       _initiate_conc_mark_if_possible(false),
@@ -95,14 +91,13 @@ class G1CollectorState {
   // Setters
   void set_gcs_are_young(bool v) { _gcs_are_young = v; }
   void set_last_gc_was_young(bool v) { _last_gc_was_young = v; }
-  void set_last_young_gc(bool v) { _last_young_gc = v; _mixed_gc_pending = false;}
+  void set_last_young_gc(bool v) { _last_young_gc = v; }
   void set_during_initial_mark_pause(bool v) { _during_initial_mark_pause = v; }
   void set_initiate_conc_mark_if_possible(bool v) { _initiate_conc_mark_if_possible = v; }
   void set_during_marking(bool v) { _during_marking = v; }
   void set_mark_in_progress(bool v) { _mark_in_progress = v; }
   void set_in_marking_window(bool v) { _in_marking_window = v; }
   void set_in_marking_window_im(bool v) { _in_marking_window_im = v; }
-  void set_mixed_gc_pending(bool v) { _mixed_gc_pending = v; }
   void set_full_collection(bool v) { _full_collection = v; }
 
   // Getters
@@ -115,7 +110,6 @@ class G1CollectorState {
   bool mark_in_progress() const { return _mark_in_progress; }
   bool in_marking_window() const { return _in_marking_window; }
   bool in_marking_window_im() const { return _in_marking_window_im; }
-  bool mixed_gc_pending() const { return _mixed_gc_pending; }
   bool full_collection() const { return _full_collection; }
 
   // Composite booleans (clients worry about flickering)

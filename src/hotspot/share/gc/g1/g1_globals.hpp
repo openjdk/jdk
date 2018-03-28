@@ -210,16 +210,6 @@
           "during RSet scanning.")                                          \
           range(1, max_uintx)                                               \
                                                                             \
-  develop(uintx, G1SecondaryFreeListAppendLength, 5,                        \
-          "The number of regions we will add to the secondary free list "   \
-          "at every append operation")                                      \
-                                                                            \
-  develop(bool, G1StressConcRegionFreeing, false,                           \
-          "It stresses the concurrent region freeing operation")            \
-                                                                            \
-  develop(uintx, G1StressConcRegionFreeingDelayMillis, 0,                   \
-          "Artificial delay during concurrent region freeing")              \
-                                                                            \
   develop(uintx, G1DummyRegionsPerGC, 0,                                    \
           "The number of dummy regions G1 will allocate at the end of "     \
           "each evacuation pause in order to artificially fill up the "     \

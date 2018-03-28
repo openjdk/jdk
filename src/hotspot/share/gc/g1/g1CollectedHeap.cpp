@@ -156,63 +156,13 @@ HeapRegion* G1CollectedHeap::new_heap_region(uint hrs_index,
 
 // Private methods.
 
-HeapRegion*
-G1CollectedHeap::new_region_try_secondary_free_list(bool is_old) {
-  MutexLockerEx x(SecondaryFreeList_lock, Mutex::_no_safepoint_check_flag);
-  while (!_secondary_free_list.is_empty() || free_regions_coming()) {
-    if (!_secondary_free_list.is_empty()) {
-      log_develop_trace(gc, freelist)("G1ConcRegionFreeing [region alloc] : "
-                                      "secondary_free_list has %u entries",
-                                      _secondary_free_list.length());
-      // It looks as if there are free regions available on the
-      // secondary_free_list. Let's move them to the free_list and try
-      // again to allocate from it.
-      append_secondary_free_list();
-
-      assert(_hrm.num_free_regions() > 0, "if the secondary_free_list was not "
-             "empty we should have moved at least one entry to the free_list");
-      HeapRegion* res = _hrm.allocate_free_region(is_old);
-      log_develop_trace(gc, freelist)("G1ConcRegionFreeing [region alloc] : "
-                                      "allocated " HR_FORMAT " from secondary_free_list",
-                                      HR_FORMAT_PARAMS(res));
-      return res;
-    }
-
-    // Wait here until we get notified either when (a) there are no
-    // more free regions coming or (b) some regions have been moved on
-    // the secondary_free_list.
-    SecondaryFreeList_lock->wait(Mutex::_no_safepoint_check_flag);
-  }
-
-  log_develop_trace(gc, freelist)("G1ConcRegionFreeing [region alloc] : "
-                                  "could not allocate from secondary_free_list");
-  return NULL;
-}
-
 HeapRegion* G1CollectedHeap::new_region(size_t word_size, bool is_old, bool do_expand) {
   assert(!is_humongous(word_size) || word_size <= HeapRegion::GrainWords,
          "the only time we use this to allocate a humongous region is "
          "when we are allocating a single humongous region");
 
-  HeapRegion* res;
-  if (G1StressConcRegionFreeing) {
-    if (!_secondary_free_list.is_empty()) {
-      log_develop_trace(gc, freelist)("G1ConcRegionFreeing [region alloc] : "
-                                      "forced to look at the secondary_free_list");
-      res = new_region_try_secondary_free_list(is_old);
-      if (res != NULL) {
-        return res;
-      }
-    }
-  }
+  HeapRegion* res = _hrm.allocate_free_region(is_old);
 
-  res = _hrm.allocate_free_region(is_old);
-
-  if (res == NULL) {
-    log_develop_trace(gc, freelist)("G1ConcRegionFreeing [region alloc] : "
-                                    "res == NULL, trying the secondary_free_list");
-    res = new_region_try_secondary_free_list(is_old);
-  }
   if (res == NULL && do_expand && _expand_heap_after_alloc_failure) {
     // Currently, only attempts to allocate GC alloc regions set
     // do_expand to true. So, we should only reach here during a
@@ -380,17 +330,6 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
       first = hr->hrm_index();
     }
   } else {
-    // We can't allocate humongous regions spanning more than one region while
-    // cleanupComplete() is running, since some of the regions we find to be
-    // empty might not yet be added to the free list. It is not straightforward
-    // to know in which list they are on so that we can remove them. We only
-    // need to do this if we need to allocate more than one region to satisfy the
-    // current humongous allocation request. If we are only allocating one region
-    // we use the one-region region allocation code (see above), that already
-    // potentially waits for regions from the secondary free list.
-    wait_while_free_regions_coming();
-    append_secondary_free_list_if_not_empty_with_lock();
-
     // Policy: Try only empty regions (i.e. already committed first). Maybe we
     // are lucky enough to find some.
     first = _hrm.find_contiguous_only_empty(obj_regions);
@@ -1026,11 +965,6 @@ void G1CollectedHeap::print_hrm_post_compaction() {
 }
 
 void G1CollectedHeap::abort_concurrent_cycle() {
-  // Note: When we have a more flexible GC logging framework that
-  // allows us to add optional attributes to a GC log record we
-  // could consider timing and reporting how long we wait in the
-  // following two methods.
-  wait_while_free_regions_coming();
   // If we start the compaction before the CM threads finish
   // scanning the root regions we might trip them over as we'll
   // be moving objects / updating references. So let's wait until
@@ -1038,7 +972,6 @@ void G1CollectedHeap::abort_concurrent_cycle() {
   // early.
   _cm->root_regions()->abort();
   _cm->root_regions()->wait_until_scan_finished();
-  append_secondary_free_list_if_not_empty_with_lock();
 
   // Disable discovery and empty the discovered lists
   // for the CM ref processor.
@@ -1476,13 +1409,11 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   _cr(NULL),
   _g1mm(NULL),
   _preserved_marks_set(true /* in_c_heap */),
-  _secondary_free_list("Secondary Free List", new SecondaryFreeRegionListMtSafeChecker()),
   _old_set("Old Set", false /* humongous */, new OldRegionSetMtSafeChecker()),
   _humongous_set("Master Humongous Set", true /* humongous */, new HumongousRegionSetMtSafeChecker()),
   _humongous_reclaim_candidates(),
   _has_humongous_reclaim_candidates(false),
   _archive_allocator(NULL),
-  _free_regions_coming(false),
   _gc_time_stamp(0),
   _summary_bytes_used(0),
   _survivor_evac_stats("Young", YoungPLABSize, PLABWeight),
@@ -2919,16 +2850,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
     TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
     TraceMemoryManagerStats tms(&_memory_manager, gc_cause());
-
-    // If the secondary_free_list is not empty, append it to the
-    // free_list. No need to wait for the cleanup operation to finish;
-    // the region allocation code will check the secondary_free_list
-    // and wait if necessary. If the G1StressConcRegionFreeing flag is
-    // set, skip this step so that the region allocation code has to
-    // get entries from the secondary_free_list.
-    if (!G1StressConcRegionFreeing) {
-      append_secondary_free_list_if_not_empty_with_lock();
-    }
 
     G1HeapTransition heap_transition(this);
     size_t heap_used_bytes_before_gc = used();
@@ -4424,12 +4345,11 @@ void G1CollectedHeap::free_region(HeapRegion* hr,
 }
 
 void G1CollectedHeap::free_humongous_region(HeapRegion* hr,
-                                            FreeRegionList* free_list,
-                                            bool skip_remset) {
+                                            FreeRegionList* free_list) {
   assert(hr->is_humongous(), "this is only for humongous regions");
   assert(free_list != NULL, "pre-condition");
   hr->clear_humongous();
-  free_region(hr, free_list, skip_remset);
+  free_region(hr, free_list, false /* skip_remset */, false /* skip_hcc */, true /* locked */);
 }
 
 void G1CollectedHeap::remove_from_old_sets(const uint old_regions_removed,
@@ -4821,7 +4741,7 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
       _freed_bytes += r->used();
       r->set_containing_set(NULL);
       _humongous_regions_reclaimed++;
-      g1h->free_humongous_region(r, _free_region_list, false /* skip_remset */ );
+      g1h->free_humongous_region(r, _free_region_list);
       r = next;
     } while (r != NULL);
 
@@ -4891,44 +4811,6 @@ void G1CollectedHeap::abandon_collection_set(G1CollectionSet* collection_set) {
 
   collection_set->clear();
   collection_set->stop_incremental_building();
-}
-
-void G1CollectedHeap::set_free_regions_coming() {
-  log_develop_trace(gc, freelist)("G1ConcRegionFreeing [cm thread] : setting free regions coming");
-
-  assert(!free_regions_coming(), "pre-condition");
-  _free_regions_coming = true;
-}
-
-void G1CollectedHeap::reset_free_regions_coming() {
-  assert(free_regions_coming(), "pre-condition");
-
-  {
-    MutexLockerEx x(SecondaryFreeList_lock, Mutex::_no_safepoint_check_flag);
-    _free_regions_coming = false;
-    SecondaryFreeList_lock->notify_all();
-  }
-
-  log_develop_trace(gc, freelist)("G1ConcRegionFreeing [cm thread] : reset free regions coming");
-}
-
-void G1CollectedHeap::wait_while_free_regions_coming() {
-  // Most of the time we won't have to wait, so let's do a quick test
-  // first before we take the lock.
-  if (!free_regions_coming()) {
-    return;
-  }
-
-  log_develop_trace(gc, freelist)("G1ConcRegionFreeing [other] : waiting for free regions");
-
-  {
-    MutexLockerEx x(SecondaryFreeList_lock, Mutex::_no_safepoint_check_flag);
-    while (free_regions_coming()) {
-      SecondaryFreeList_lock->wait(Mutex::_no_safepoint_check_flag);
-    }
-  }
-
-  log_develop_trace(gc, freelist)("G1ConcRegionFreeing [other] : done waiting for free regions");
 }
 
 bool G1CollectedHeap::is_old_gc_alloc_region(HeapRegion* hr) {

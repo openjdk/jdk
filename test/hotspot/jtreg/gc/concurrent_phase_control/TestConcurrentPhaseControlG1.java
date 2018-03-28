@@ -54,8 +54,6 @@ public class TestConcurrentPhaseControlG1 {
         {"BEFORE_REMARK", null},
         {"REMARK", "Pause Remark"},
         {"REBUILD_REMEMBERED_SETS", "Concurrent Rebuild Remembered Sets"},
-        // "COMPLETE_CLEANUP",  -- optional phase, not reached by this test
-        {"CLEANUP_FOR_NEXT_MARK", "Concurrent Cleanup for Next Mark"},
         // Clear request
         {"IDLE", null},
         {"ANY", null},
