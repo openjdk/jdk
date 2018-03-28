@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,13 +50,15 @@ jint handleWrite(FD fd, const void *buf, jint len);
 jint handleAppend(FD fd, const void *buf, jint len);
 void handleClose(JNIEnv *env, jobject this, jfieldID fid);
 void fileDescriptorClose(JNIEnv *env, jobject this);
-jlong handleLseek(FD fd, jlong offset, jint whence);
+JNIEXPORT jlong JNICALL
+handleLseek(FD fd, jlong offset, jint whence);
 
 /*
  * Returns an opaque handle to file named by "path".  If an error occurs,
  * returns -1 and an exception is pending.
  */
-FD winFileHandleOpen(JNIEnv *env, jstring path, int flags);
+JNIEXPORT FD JNICALL
+winFileHandleOpen(JNIEnv *env, jstring path, int flags);
 
 /*
  * Macros to set/get fd from the java.io.FileDescriptor.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "jni.h"
 #include "j2d_md.h"
 #include "java_awt_geom_PathIterator.h"
 
@@ -2177,7 +2178,8 @@ static void endSubPath(ProcessHandler* hnd) {
 static void stubEndSubPath(ProcessHandler* hnd) {
 }
 
-jboolean doFillPath(DrawHandler* dhnd,
+JNIEXPORT jboolean JNICALL
+doFillPath(DrawHandler* dhnd,
                     jint transX, jint transY,
                     jfloat* coords, jint maxCoords,
                     jbyte* types, jint numTypes,
@@ -2217,7 +2219,8 @@ jboolean doFillPath(DrawHandler* dhnd,
     return JNI_TRUE;
 }
 
-jboolean doDrawPath(DrawHandler* dhnd,
+JNIEXPORT jboolean JNICALL
+doDrawPath(DrawHandler* dhnd,
                     void (*pProcessEndSubPath)(ProcessHandler*),
                     jint transX, jint transY,
                     jfloat* coords, jint maxCoords,

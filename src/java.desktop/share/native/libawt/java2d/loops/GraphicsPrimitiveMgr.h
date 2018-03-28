@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ extern "C" {
 #endif
 
 #include <stddef.h>
+#include "jni.h"
 
 #include "java_awt_AlphaComposite.h"
 
@@ -551,12 +552,12 @@ Transform_transform(TransformInfo *pTxInfo, jdouble *pX, jdouble *pY);
 void GrPrim_RefineBounds(SurfaceDataBounds *bounds, jint transX, jint transY,
                          jfloat *coords,  jint maxCoords);
 
-extern jfieldID path2DTypesID;
-extern jfieldID path2DNumTypesID;
-extern jfieldID path2DWindingRuleID;
-extern jfieldID path2DFloatCoordsID;
-extern jfieldID sg2dStrokeHintID;
-extern jint sunHints_INTVAL_STROKE_PURE;
+JNIEXPORT extern jfieldID path2DTypesID;
+JNIEXPORT extern jfieldID path2DNumTypesID;
+JNIEXPORT extern jfieldID path2DWindingRuleID;
+JNIEXPORT extern jfieldID path2DFloatCoordsID;
+JNIEXPORT extern jfieldID sg2dStrokeHintID;
+JNIEXPORT extern jint sunHints_INTVAL_STROKE_PURE;
 
 /*
  * Macros for using jlong variables as 32bits.32bits fractional values

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #define _MANIFEST_INFO_H
 
 #include <sys/types.h>
+#include "jni.h"
 
 /*
  * Zip file header signatures
@@ -186,7 +187,9 @@ int     JLI_ParseManifest(char *jarfile, manifest_info *info);
 void    *JLI_JarUnpackFile(const char *jarfile, const char *filename,
                 int *size);
 void    JLI_FreeManifest(void);
-int     JLI_ManifestIterate(const char *jarfile, attribute_closure ac,
+
+JNIEXPORT int JNICALL
+JLI_ManifestIterate(const char *jarfile, attribute_closure ac,
                 void *user_data);
 
 #endif  /* _MANIFEST_INFO_H */

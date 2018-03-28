@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ SplashGetInstance()
     return &splash;
 }
 
-SPLASHEXPORT void
+JNIEXPORT void JNICALL
 SplashSetFileJarName(const char* fileName, const char* jarName) {
     Splash *splash = SplashGetInstance();
 
@@ -57,7 +57,7 @@ SplashSetFileJarName(const char* fileName, const char* jarName) {
     splash->jarName = SplashConvertStringAlloc(jarName, &splash->jarNameLen);
 }
 
-SPLASHEXPORT void
+JNIEXPORT void JNICALL
 SplashInit()
 {
     Splash *splash = SplashGetInstance();
@@ -70,7 +70,7 @@ SplashInit()
     SplashInitPlatform(splash);
 }
 
-SPLASHEXPORT void
+JNIEXPORT void JNICALL
 SplashClose()
 {
     Splash *splash = SplashGetInstance();
@@ -107,7 +107,7 @@ SplashCleanup(Splash * splash)
     SplashSetFileJarName(NULL, NULL);
 }
 
-SPLASHEXPORT void
+JNIEXPORT void JNICALL
 SplashSetScaleFactor(float scaleFactor)
 {
     Splash *splash = SplashGetInstance();
@@ -302,7 +302,7 @@ SplashLoadStream(SplashStream * stream)
     return success;
 }
 
-SPLASHEXPORT int
+JNIEXPORT int JNICALL
 SplashLoadFile(const char *filename)
 {
     SplashStream stream;
@@ -310,7 +310,7 @@ SplashLoadFile(const char *filename)
                 SplashLoadStream(&stream);
 }
 
-SPLASHEXPORT int
+JNIEXPORT int JNICALL
 SplashLoadMemory(void *data, int size)
 {
     SplashStream stream;
@@ -395,7 +395,7 @@ int SplashStreamInitMemory(SplashStream * pStream, void* pData, int size) {
     return 1;
 }
 
-SPLASHEXPORT int
+JNIEXPORT int JNICALL
 SplashGetScaledImgNameMaxPstfixLen(const char *fileName){
     return strlen(fileName) + strlen("@100pct") + 1;
 }

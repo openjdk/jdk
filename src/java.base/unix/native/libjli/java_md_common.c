@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,7 +178,8 @@ FindExecName(char *program)
     return result;
 }
 
-void JLI_ReportErrorMessage(const char* fmt, ...) {
+JNIEXPORT void JNICALL
+JLI_ReportErrorMessage(const char* fmt, ...) {
     va_list vl;
     va_start(vl, fmt);
     vfprintf(stderr, fmt, vl);
@@ -186,7 +187,8 @@ void JLI_ReportErrorMessage(const char* fmt, ...) {
     va_end(vl);
 }
 
-void JLI_ReportErrorMessageSys(const char* fmt, ...) {
+JNIEXPORT void JNICALL
+JLI_ReportErrorMessageSys(const char* fmt, ...) {
     va_list vl;
     char *emsg;
 
@@ -205,7 +207,8 @@ void JLI_ReportErrorMessageSys(const char* fmt, ...) {
     va_end(vl);
 }
 
-void  JLI_ReportExceptionDescription(JNIEnv * env) {
+JNIEXPORT void JNICALL
+JLI_ReportExceptionDescription(JNIEnv * env) {
   (*env)->ExceptionDescribe(env);
 }
 
@@ -345,13 +348,13 @@ FindBootStrapClass(JNIEnv *env, const char* classname)
    return findBootClass(env, classname);
 }
 
-StdArg
+JNIEXPORT StdArg JNICALL
 *JLI_GetStdArgs()
 {
     return NULL;
 }
 
-int
+JNIEXPORT int JNICALL
 JLI_GetStdArgc() {
     return 0;
 }
