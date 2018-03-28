@@ -863,6 +863,14 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     # bails if argument is missing.
     BASIC_FIXUP_EXECUTABLE(OBJDUMP)
   fi
+
+  case $TOOLCHAIN_TYPE in
+    gcc|clang|solstudio)
+      BASIC_CHECK_TOOLS(CXXFILT, [c++filt])
+      BASIC_CHECK_NONEMPTY(CXXFILT)
+      BASIC_FIXUP_EXECUTABLE(CXXFILT)
+      ;;
+  esac
 ])
 
 # Setup the build tools (i.e, the compiler and linker used to build programs

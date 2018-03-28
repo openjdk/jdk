@@ -26,6 +26,10 @@
 #ifndef CPU_ZERO_VM_GLOBALDEFINITIONS_ZERO_HPP
 #define CPU_ZERO_VM_GLOBALDEFINITIONS_ZERO_HPP
 
+#ifdef _LP64
+#define SUPPORTS_NATIVE_CX8
+#endif
+
 #include <ffi.h>
 
 // Indicates whether the C calling conventions require that

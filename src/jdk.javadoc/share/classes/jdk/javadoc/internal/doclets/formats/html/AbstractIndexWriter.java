@@ -30,6 +30,7 @@ import java.util.*;
 import java.util.zip.*;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
@@ -316,10 +317,10 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
             ExecutableElement ee = (ExecutableElement)member;
             name = name + utils.flatSignature(ee);
             si.setLabel(name);
-            if (!((utils.signature(ee)).equals(utils.flatSignature(ee)))) {
-                si.setUrl(links.getName(getAnchor(ee)));
+            String url = HtmlTree.encodeURL(links.getName(getAnchor(ee)));
+            if (!name.equals(url)) {
+                si.setUrl(url);
             }
-
         }  else {
             si.setLabel(name);
         }

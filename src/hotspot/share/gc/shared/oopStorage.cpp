@@ -283,12 +283,6 @@ OopStorage::Block::block_for_ptr(const OopStorage* owner, const oop* ptr) {
   return NULL;
 }
 
-#ifdef ASSERT
-void OopStorage::assert_at_safepoint() {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
-}
-#endif // ASSERT
-
 //////////////////////////////////////////////////////////////////////////////
 // Allocation
 //
@@ -728,7 +722,9 @@ void OopStorage::BasicParState::update_iteration_state(bool value) {
 }
 
 void OopStorage::BasicParState::ensure_iteration_started() {
-  if (!_concurrent) assert_at_safepoint();
+  if (!_concurrent) {
+    assert_at_safepoint();
+  }
   assert(!_concurrent || _storage->_concurrent_iteration_active, "invariant");
   // Ensure _next_block is not the not_started_marker, setting it to
   // the _active_head to start the iteration if necessary.

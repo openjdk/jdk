@@ -111,11 +111,7 @@ public:
 };
 
 G1EvacuationRootClosures* G1EvacuationRootClosures::create_root_closures(G1ParScanThreadState* pss, G1CollectedHeap* g1h) {
-  G1EvacuationRootClosures* res = create_root_closures_ext(pss, g1h);
-  if (res != NULL) {
-    return res;
-  }
-
+  G1EvacuationRootClosures* res = NULL;
   if (g1h->collector_state()->during_initial_mark_pause()) {
     if (ClassUnloadingWithConcurrentMark) {
       res = new G1InitialMarkClosures<G1MarkPromotedFromRoot>(g1h, pss);

@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef SHARE_VM_CLASSFILE_CLASSLOADERDATA_INLINE_HPP
+#define SHARE_VM_CLASSFILE_CLASSLOADERDATA_INLINE_HPP
+
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
 #include "oops/oop.inline.hpp"
@@ -40,7 +43,7 @@ inline ClassLoaderData* ClassLoaderData::class_loader_data(oop loader) {
 }
 
 
-inline ClassLoaderData *ClassLoaderDataGraph::find_or_create(Handle loader, TRAPS) {
+inline ClassLoaderData *ClassLoaderDataGraph::find_or_create(Handle loader) {
   guarantee(loader() != NULL && oopDesc::is_oop(loader()), "Loader must be oop");
   // Gets the class loader data out of the java/lang/ClassLoader object, if non-null
   // it's already in the loader_data, so no need to add
@@ -48,7 +51,7 @@ inline ClassLoaderData *ClassLoaderDataGraph::find_or_create(Handle loader, TRAP
   if (loader_data) {
      return loader_data;
   }
-  return ClassLoaderDataGraph::add(loader, false, THREAD);
+  return ClassLoaderDataGraph::add(loader, false);
 }
 
 size_t ClassLoaderDataGraph::num_instance_classes() {
@@ -76,3 +79,5 @@ void ClassLoaderDataGraph::dec_array_classes(size_t count) {
   assert(count <= _num_array_classes, "Sanity");
   Atomic::sub(count, &_num_array_classes);
 }
+
+#endif // SHARE_VM_CLASSFILE_CLASSLOADERDATA_INLINE_HPP

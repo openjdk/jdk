@@ -104,14 +104,12 @@ Java_sun_nio_ch_IOUtil_makePipe(JNIEnv *env, jobject this, jboolean blocking)
     return ((jlong) fd[0] << 32) | (jlong) fd[1];
 }
 
-
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_IOUtil_write1(JNIEnv *env, jclass cl, jint fd, jbyte b)
 {
     char c = (char)b;
     return convertReturnVal(env, write(fd, &c, 1), JNI_FALSE);
 }
-
 
 JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_IOUtil_drain(JNIEnv *env, jclass cl, jint fd)
@@ -128,6 +126,26 @@ Java_sun_nio_ch_IOUtil_drain(JNIEnv *env, jclass cl, jint fd)
             continue;
         return (tn > 0) ? JNI_TRUE : JNI_FALSE;
     }
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_IOUtil_drain1(JNIEnv *env, jclass cl, jint fd)
+{
+    int res;
+    char buf[1];
+
+    res = read(fd, buf, 1);
+    if (res < 0) {
+        if (errno == EAGAIN) {
+            res = 0;
+        } else if (errno == EINTR) {
+            return IOS_INTERRUPTED;
+        } else {
+            JNU_ThrowIOExceptionWithLastError(env, "read");
+            return IOS_THROWN;
+        }
+    }
+    return res;
 }
 
 JNIEXPORT jint JNICALL

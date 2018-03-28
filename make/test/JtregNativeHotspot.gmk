@@ -57,11 +57,12 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
     BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rw := -z noexecstack
     BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rwx := -z execstack
     BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeinvoke := -ljvm -lpthread
+    BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exestack-gap := -ljvm -lpthread
     BUILD_TEST_exeinvoke_exeinvoke.c_OPTIMIZATION := NONE
     BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeFPRegs := -ldl
 else
   BUILD_HOTSPOT_JTREG_EXCLUDE += libtest-rw.c libtest-rwx.c libTestJNI.c \
-      exeinvoke.c
+      exeinvoke.c exestack-gap.c
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), windows)

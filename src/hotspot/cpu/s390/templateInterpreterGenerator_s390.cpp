@@ -458,7 +458,8 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
   __ save_return_pc();       // Save Z_R14.
   __ push_frame_abi160(0);   // Without new frame the RT call could overwrite the saved Z_R14.
 
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError), Z_thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodErrorWithMethod),
+                  Z_thread, Z_method);
 
   __ pop_frame();
   __ restore_return_pc();    // Restore Z_R14.
@@ -686,7 +687,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for (TosState state,
   return entry;
 }
 
-address TemplateInterpreterGenerator::generate_deopt_entry_for (TosState state,
+address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
                                                                int step,
                                                                address continuation) {
   address entry = __ pc();

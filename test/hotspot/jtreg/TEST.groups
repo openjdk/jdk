@@ -111,6 +111,7 @@ tier1_compiler_3 = \
   compiler/types/ \
   compiler/uncommontrap/ \
   compiler/unsafe/ \
+  compiler/vectorization/ \
   -compiler/intrinsics/bmi \
   -compiler/intrinsics/mathexact \
   -compiler/intrinsics/sha \
@@ -124,6 +125,14 @@ hotspot_not_fast_compiler = \
   -:tier1_compiler_1 \
   -:tier1_compiler_2 \
   -:tier1_compiler_3 \
+
+ctw_1 = \
+  applications/ctw/modules/ \
+  -:ctw_2
+
+ctw_2 = \
+  applications/ctw/modules/java_base.java \
+  applications/ctw/modules/java_desktop.java
 
 tier1_gc = \
   :tier1_gc_1 \

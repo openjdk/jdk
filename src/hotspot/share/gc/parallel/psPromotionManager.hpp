@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/taskqueue.hpp"
-#include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -50,7 +49,7 @@ class MutableSpace;
 class PSOldGen;
 class ParCompactionManager;
 
-class PSPromotionManager VALUE_OBJ_CLASS_SPEC {
+class PSPromotionManager {
   friend class PSScavenge;
   friend class PSRefProcTaskExecutor;
  private:

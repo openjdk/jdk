@@ -56,6 +56,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -149,9 +150,9 @@ void SystemDictionary::compute_java_loaders(TRAPS) {
   CDS_ONLY(SystemDictionaryShared::initialize(CHECK);)
 }
 
-ClassLoaderData* SystemDictionary::register_loader(Handle class_loader, TRAPS) {
+ClassLoaderData* SystemDictionary::register_loader(Handle class_loader) {
   if (class_loader() == NULL) return ClassLoaderData::the_null_class_loader_data();
-  return ClassLoaderDataGraph::find_or_create(class_loader, THREAD);
+  return ClassLoaderDataGraph::find_or_create(class_loader);
 }
 
 // ----------------------------------------------------------------------------
@@ -663,7 +664,7 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
 
   // Fix for 4474172; see evaluation for more details
   class_loader = Handle(THREAD, java_lang_ClassLoader::non_reflection_class_loader(class_loader()));
-  ClassLoaderData *loader_data = register_loader(class_loader, CHECK_NULL);
+  ClassLoaderData* loader_data = register_loader(class_loader);
   Dictionary* dictionary = loader_data->dictionary();
   unsigned int d_hash = dictionary->compute_hash(name);
 
@@ -988,7 +989,7 @@ InstanceKlass* SystemDictionary::parse_stream(Symbol* class_name,
     // Create a new CLD for anonymous class, that uses the same class loader
     // as the host_klass
     guarantee(host_klass->class_loader() == class_loader(), "should be the same");
-    loader_data = ClassLoaderData::anonymous_class_loader_data(class_loader(), CHECK_NULL);
+    loader_data = ClassLoaderData::anonymous_class_loader_data(class_loader);
   } else {
     loader_data = ClassLoaderData::class_loader_data(class_loader());
   }
@@ -1056,15 +1057,6 @@ InstanceKlass* SystemDictionary::resolve_from_stream(Symbol* class_name,
                                                      Handle protection_domain,
                                                      ClassFileStream* st,
                                                      TRAPS) {
-#if INCLUDE_CDS
-  ResourceMark rm(THREAD);
-  if (DumpSharedSpaces && !class_loader.is_null() &&
-      !UseAppCDS && strcmp(class_name->as_C_string(), "Unnamed") != 0) {
-    // If AppCDS is not enabled, don't define the class at dump time (except for the "Unnamed"
-    // class, which is used by MethodHandles).
-    THROW_MSG_NULL(vmSymbols::java_lang_ClassNotFoundException(), class_name->as_C_string());
-  }
-#endif
 
   HandleMark hm(THREAD);
 
@@ -1075,7 +1067,7 @@ InstanceKlass* SystemDictionary::resolve_from_stream(Symbol* class_name,
     DoObjectLock = false;
   }
 
-  ClassLoaderData* loader_data = register_loader(class_loader, CHECK_NULL);
+  ClassLoaderData* loader_data = register_loader(class_loader);
 
   // Make sure we are synchronized on the class loader before we proceed
   Handle lockObject = compute_loader_lock_object(class_loader, THREAD);
@@ -2513,11 +2505,10 @@ static methodHandle unpack_method_and_appendix(Handle mname,
       }
       (*appendix_result) = Handle(THREAD, appendix);
       // the target is stored in the cpCache and if a reference to this
-      // MethodName is dropped we need a way to make sure the
+      // MemberName is dropped we need a way to make sure the
       // class_loader containing this method is kept alive.
-      // FIXME: the appendix might also preserve this dependency.
       ClassLoaderData* this_key = accessing_klass->class_loader_data();
-      this_key->record_dependency(m->method_holder(), CHECK_NULL); // Can throw OOM
+      this_key->record_dependency(m->method_holder());
       return methodHandle(THREAD, m);
     }
   }
@@ -3052,6 +3043,9 @@ class CombineDictionariesClosure : public CLDClosure {
       _master_dictionary(master_dictionary) {}
     void do_cld(ClassLoaderData* cld) {
       ResourceMark rm;
+      if (cld->is_anonymous()) {
+        return;
+      }
       if (cld->is_system_class_loader_data() || cld->is_platform_class_loader_data()) {
         for (int i = 0; i < cld->dictionary()->table_size(); ++i) {
           Dictionary* curr_dictionary = cld->dictionary();
@@ -3079,13 +3073,17 @@ class CombineDictionariesClosure : public CLDClosure {
     }
 };
 
-// Combining platform and system loader dictionaries into boot loader dictionaries.
+// Combining platform and system loader dictionaries into boot loader dictionary.
 // During run time, we only have one shared dictionary.
 void SystemDictionary::combine_shared_dictionaries() {
   assert(DumpSharedSpaces, "dump time only");
-  Dictionary* master_dictionary = ClassLoaderData::the_null_class_loader_data()->dictionary();
-  CombineDictionariesClosure cdc(master_dictionary);
-  ClassLoaderDataGraph::cld_do(&cdc);
+  // If AppCDS isn't enabled, we only dump the classes in the boot loader dictionary
+  // into the shared archive.
+  if (UseAppCDS) {
+    Dictionary* master_dictionary = ClassLoaderData::the_null_class_loader_data()->dictionary();
+    CombineDictionariesClosure cdc(master_dictionary);
+    ClassLoaderDataGraph::cld_do(&cdc);
+  }
 
   // These tables are no longer valid or necessary. Keeping them around will
   // cause SystemDictionary::verify() to fail. Let's empty them.

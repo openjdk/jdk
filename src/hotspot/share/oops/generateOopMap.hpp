@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "interpreter/bytecodeStream.hpp"
 #include "memory/allocation.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/method.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/signature.hpp"
@@ -71,7 +71,7 @@ class RetTableEntry : public ResourceObj {
 };
 
 
-class RetTable VALUE_OBJ_CLASS_SPEC {
+class RetTable {
  private:
   RetTableEntry *_first;
   static int _init_nof_entries;
@@ -87,7 +87,7 @@ class RetTable VALUE_OBJ_CLASS_SPEC {
 //
 // CellTypeState
 //
-class CellTypeState VALUE_OBJ_CLASS_SPEC {
+class CellTypeState {
  private:
   unsigned int _state;
 
@@ -288,7 +288,7 @@ class BasicBlock: ResourceObj {
 //
 // Main class used to compute the pointer-maps in a Method
 //
-class GenerateOopMap VALUE_OBJ_CLASS_SPEC {
+class GenerateOopMap {
  protected:
 
   // _monitor_top is set to this constant to indicate that a monitor matching

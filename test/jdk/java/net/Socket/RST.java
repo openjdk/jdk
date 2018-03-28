@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 /*
  * @bug 4468997
  * @summary SO_LINGER is ignored on Windows with Winsock 2
+ * @run main RST
+ * @run main/othervm -Djava.net.preferIPv4Stack=true RST
  */
 import java.net.*;
 import java.io.*;

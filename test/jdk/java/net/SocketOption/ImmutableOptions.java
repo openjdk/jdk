@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,9 @@
  /*
  * @test
  * @bug 8148609
- * @run testng/othervm ImmutableOptions
  * @summary Assert that the set of socket options are immutable
+ * @run testng/othervm ImmutableOptions
+ * @run testng/othervm -Djava.net.preferIPv4Stack=true ImmutableOptions
  */
 import java.io.IOException;
 import java.io.InputStream;

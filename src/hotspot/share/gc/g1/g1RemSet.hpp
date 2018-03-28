@@ -45,7 +45,6 @@ class G1HotCardCache;
 class G1RemSetScanState;
 class G1ParScanThreadState;
 class G1Policy;
-class G1SATBCardTableModRefBS;
 class G1ScanObjsDuringScanRSClosure;
 class G1ScanObjsDuringUpdateRSClosure;
 class HeapRegionClaimer;

@@ -77,6 +77,7 @@ SUNWprivate_1.1 {
 		Java_sun_nio_ch_InheritedChannel_soType0;
                 Java_sun_nio_ch_IOUtil_configureBlocking;
                 Java_sun_nio_ch_IOUtil_drain;
+                Java_sun_nio_ch_IOUtil_drain1;
                 Java_sun_nio_ch_IOUtil_fdVal;
 		Java_sun_nio_ch_IOUtil_fdLimit;
                 Java_sun_nio_ch_IOUtil_initIDs;
@@ -118,8 +119,7 @@ SUNWprivate_1.1 {
 		Java_sun_nio_ch_Net_pollnvalValue;
 		Java_sun_nio_ch_Net_pollconnValue;
                 Java_sun_nio_ch_Net_isExclusiveBindAvailable;
-                Java_sun_nio_ch_PollArrayWrapper_interrupt;
-                Java_sun_nio_ch_PollArrayWrapper_poll0;
+                Java_sun_nio_ch_PollSelectorImpl_poll;
                 Java_sun_nio_ch_ServerSocketChannelImpl_accept0;
                 Java_sun_nio_ch_ServerSocketChannelImpl_initIDs;
                 Java_sun_nio_ch_SocketChannelImpl_checkConnect;

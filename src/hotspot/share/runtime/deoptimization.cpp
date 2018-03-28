@@ -56,6 +56,7 @@
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
 #include "utilities/events.hpp"
+#include "utilities/preserveException.hpp"
 #include "utilities/xmlstream.hpp"
 
 #if INCLUDE_JVMCI
@@ -648,6 +649,8 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
 #ifndef PRODUCT
   if (VerifyStack) {
     ResourceMark res_mark;
+    // Clear pending exception to not break verification code (restored afterwards)
+    PRESERVE_EXCEPTION_MARK;
 
     thread->validate_frame_layout();
 

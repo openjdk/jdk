@@ -139,7 +139,7 @@ enum G1Mark {
   G1MarkPromotedFromRoot
 };
 
-template <G1Barrier barrier, G1Mark do_mark_object, bool use_ext>
+template <G1Barrier barrier, G1Mark do_mark_object>
 class G1ParCopyClosure : public G1ParCopyHelper {
 public:
   G1ParCopyClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :

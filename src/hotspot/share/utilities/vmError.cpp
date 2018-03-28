@@ -29,6 +29,7 @@
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/logConfiguration.hpp"
+#include "memory/resourceArea.hpp"
 #include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -773,7 +774,10 @@ void VMError::report(outputStream* st, bool _verbose) {
            if (desc != NULL) {
              desc->print_on(st);
              Disassembler::decode(desc->begin(), desc->end(), st);
-           } else {
+           } else if (_thread != NULL) {
+             // Disassembling nmethod will incur resource memory allocation,
+             // only do so when thread is valid.
+             ResourceMark rm(_thread);
              Disassembler::decode(cb, st);
              st->cr();
            }

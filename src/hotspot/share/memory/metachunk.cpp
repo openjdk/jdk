@@ -48,9 +48,14 @@ size_t Metachunk::overhead() {
 
 // Metachunk methods
 
-Metachunk::Metachunk(size_t word_size,
+Metachunk::Metachunk(ChunkIndex chunktype, bool is_class, size_t word_size,
                      VirtualSpaceNode* container)
     : Metabase<Metachunk>(word_size),
+    _chunk_type(chunktype),
+    _is_class(is_class),
+    _sentinel(CHUNK_SENTINEL),
+    _origin(origin_normal),
+    _use_count(0),
     _top(NULL),
     _container(container)
 {
@@ -58,6 +63,7 @@ Metachunk::Metachunk(size_t word_size,
   set_is_tagged_free(false);
 #ifdef ASSERT
   mangle(uninitMetaWordVal);
+  verify();
 #endif
 }
 
@@ -83,15 +89,16 @@ size_t Metachunk::free_word_size() const {
 void Metachunk::print_on(outputStream* st) const {
   st->print_cr("Metachunk:"
                " bottom " PTR_FORMAT " top " PTR_FORMAT
-               " end " PTR_FORMAT " size " SIZE_FORMAT,
-               p2i(bottom()), p2i(_top), p2i(end()), word_size());
+               " end " PTR_FORMAT " size " SIZE_FORMAT " (%s)",
+               p2i(bottom()), p2i(_top), p2i(end()), word_size(),
+               chunk_size_name(get_chunk_type()));
   if (Verbose) {
     st->print_cr("    used " SIZE_FORMAT " free " SIZE_FORMAT,
                  used_word_size(), free_word_size());
   }
 }
 
-#ifndef PRODUCT
+#ifdef ASSERT
 void Metachunk::mangle(juint word_value) {
   // Overwrite the payload of the chunk and not the links that
   // maintain list of chunks.
@@ -99,16 +106,44 @@ void Metachunk::mangle(juint word_value) {
   size_t size = word_size() - overhead();
   Copy::fill_to_words(start, size, word_value);
 }
-#endif // PRODUCT
 
 void Metachunk::verify() {
-#ifdef ASSERT
-  // Cannot walk through the blocks unless the blocks have
-  // headers with sizes.
-  assert(bottom() <= _top &&
-         _top <= (MetaWord*)end(),
-         "Chunk has been smashed");
-#endif
-  return;
+  assert(is_valid_sentinel(), "Chunk " PTR_FORMAT ": sentinel invalid", p2i(this));
+  const ChunkIndex chunk_type = get_chunk_type();
+  assert(is_valid_chunktype(chunk_type), "Chunk " PTR_FORMAT ": Invalid chunk type.", p2i(this));
+  if (chunk_type != HumongousIndex) {
+    assert(word_size() == get_size_for_nonhumongous_chunktype(chunk_type, is_class()),
+           "Chunk " PTR_FORMAT ": wordsize " SIZE_FORMAT " does not fit chunk type %s.",
+           p2i(this), word_size(), chunk_size_name(chunk_type));
+  }
+  assert(is_valid_chunkorigin(get_origin()), "Chunk " PTR_FORMAT ": Invalid chunk origin.", p2i(this));
+  assert(bottom() <= _top && _top <= (MetaWord*)end(),
+         "Chunk " PTR_FORMAT ": Chunk top out of chunk bounds.", p2i(this));
+
+  // For non-humongous chunks, starting address shall be aligned
+  // to its chunk size. Humongous chunks start address is
+  // aligned to specialized chunk size.
+  const size_t required_alignment =
+    (chunk_type != HumongousIndex ? word_size() : get_size_for_nonhumongous_chunktype(SpecializedIndex, is_class())) * sizeof(MetaWord);
+  assert(is_aligned((address)this, required_alignment),
+         "Chunk " PTR_FORMAT ": (size " SIZE_FORMAT ") not aligned to " SIZE_FORMAT ".",
+         p2i(this), word_size() * sizeof(MetaWord), required_alignment);
 }
 
+#endif // ASSERT
+
+// Helper, returns a descriptive name for the given index.
+const char* chunk_size_name(ChunkIndex index) {
+  switch (index) {
+    case SpecializedIndex:
+      return "specialized";
+    case SmallIndex:
+      return "small";
+    case MediumIndex:
+      return "medium";
+    case HumongousIndex:
+      return "humongous";
+    default:
+      return "Invalid index";
+  }
+}

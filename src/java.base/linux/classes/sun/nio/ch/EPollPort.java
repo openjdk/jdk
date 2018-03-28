@@ -164,7 +164,7 @@ final class EPollPort
         if (nThreads == 0) {
             implClose();
         } else {
-            // send interrupt to each thread
+            // send wakeup to each thread
             while (nThreads-- > 0) {
                 wakeup();
             }
@@ -182,11 +182,11 @@ final class EPollPort
             throw new AssertionError();     // should not happen
     }
 
-    /*
+    /**
      * Task to process events from epoll and dispatch to the channel's
      * onEvent handler.
      *
-     * Events are retreived from epoll in batch and offered to a BlockingQueue
+     * Events are retrieved from epoll in batch and offered to a BlockingQueue
      * where they are consumed by handler threads. A special "NEED_TO_POLL"
      * event is used to signal one consumer to re-poll when all events have
      * been consumed.
@@ -200,7 +200,7 @@ final class EPollPort
                         n = EPoll.wait(epfd, address, MAX_EPOLL_EVENTS, -1);
                     } while (n == IOStatus.INTERRUPTED);
 
-                    /*
+                    /**
                      * 'n' events have been read. Here we map them to their
                      * corresponding channel in batch and queue n-1 so that
                      * they can be handled by other handler threads. The last
@@ -215,8 +215,13 @@ final class EPollPort
                             // wakeup
                             if (fd == sp[0]) {
                                 if (wakeupCount.decrementAndGet() == 0) {
-                                    // no more wakeups so drain pipe
-                                    IOUtil.drain(sp[0]);
+                                    // consume one wakeup byte, never more as this
+                                    // would interfere with shutdown when there is
+                                    // a wakeup byte queued to wake each thread
+                                    int nread;
+                                    do {
+                                        nread = IOUtil.drain1(sp[0]);
+                                    } while (nread == IOStatus.INTERRUPTED);
                                 }
 
                                 // queue special event if there are more events

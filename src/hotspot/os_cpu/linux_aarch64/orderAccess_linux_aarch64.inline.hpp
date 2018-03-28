@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -52,7 +52,6 @@ inline void OrderAccess::fence() {
 
 template<size_t byte_size>
 struct OrderAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
-  VALUE_OBJ_CLASS_SPEC
 {
   template <typename T>
   T operator()(const volatile T* p) const { T data; __atomic_load(p, &data, __ATOMIC_ACQUIRE); return data; }
@@ -60,7 +59,6 @@ struct OrderAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
 
 template<size_t byte_size>
 struct OrderAccess::PlatformOrderedStore<byte_size, RELEASE_X>
-  VALUE_OBJ_CLASS_SPEC
 {
   template <typename T>
   void operator()(T v, volatile T* p) const { __atomic_store(p, &v, __ATOMIC_RELEASE); }
@@ -68,7 +66,6 @@ struct OrderAccess::PlatformOrderedStore<byte_size, RELEASE_X>
 
 template<size_t byte_size>
 struct OrderAccess::PlatformOrderedStore<byte_size, RELEASE_X_FENCE>
-  VALUE_OBJ_CLASS_SPEC
 {
   template <typename T>
   void operator()(T v, volatile T* p) const { release_store(p, v); fence(); }

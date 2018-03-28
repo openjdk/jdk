@@ -151,7 +151,6 @@ inline int g_isfinite(jdouble f)                 { return _finite(f); }
 #define PRAGMA_INTERFACE
 #define PRAGMA_IMPLEMENTATION
 #define PRAGMA_IMPLEMENTATION_(arg)
-#define VALUE_OBJ_CLASS_SPEC    : public _ValueObj
 
 // Formatting.
 #define FORMAT64_MODIFIER "I64"

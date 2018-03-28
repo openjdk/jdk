@@ -113,7 +113,6 @@ void HeapRegion::hr_clear(bool keep_remset, bool clear_space, bool locked) {
   assert(!in_collection_set(),
          "Should not clear heap region %u in the collection set", hrm_index());
 
-  set_allocation_context(AllocationContext::system());
   set_young_index_in_cset(-1);
   uninstall_surv_rate_group();
   set_free();
@@ -235,7 +234,6 @@ HeapRegion::HeapRegion(uint hrm_index,
                        MemRegion mr) :
     G1ContiguousSpace(bot),
     _hrm_index(hrm_index),
-    _allocation_context(AllocationContext::system()),
     _humongous_start_region(NULL),
     _evacuation_failed(false),
     _prev_marked_bytes(0), _next_marked_bytes(0), _gc_efficiency(0.0),
@@ -266,8 +264,7 @@ void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
                                             get_trace_type(),
                                             to,
                                             (uintptr_t)bottom(),
-                                            used(),
-                                            (uint)allocation_context());
+                                            used());
 }
 
 void HeapRegion::note_self_forwarding_removal_start(bool during_initial_mark,
@@ -454,7 +451,6 @@ void HeapRegion::print_on(outputStream* st) const {
     st->print("|  ");
   }
   st->print("|TS%3u", _gc_time_stamp);
-  st->print("|AC%3u", allocation_context());
   st->print_cr("|TAMS " PTR_FORMAT ", " PTR_FORMAT "|",
                p2i(prev_top_at_mark_start()), p2i(next_top_at_mark_start()));
 }

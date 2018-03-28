@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,8 @@ abstract class AsynchronousChannelGroupImpl
     // associated Executor for timeouts
     private ScheduledThreadPoolExecutor timeoutExecutor;
 
-    // task queue for when using a fixed thread pool. In that case, thread
-    // waiting on I/O events must be awokon to poll tasks from this queue.
+    // task queue for when using a fixed thread pool. In that case, a thread
+    // waiting on I/O events must be awoken to poll tasks from this queue.
     private final Queue<Runnable> taskQueue;
 
     // group shutdown

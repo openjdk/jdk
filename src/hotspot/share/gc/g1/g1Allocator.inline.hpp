@@ -29,25 +29,24 @@
 #include "gc/g1/g1AllocRegion.inline.hpp"
 #include "gc/shared/plab.inline.hpp"
 
-HeapWord* G1Allocator::attempt_allocation(size_t word_size, AllocationContext_t context) {
-  return mutator_alloc_region(context)->attempt_allocation(word_size);
+HeapWord* G1Allocator::attempt_allocation(size_t word_size) {
+  return mutator_alloc_region()->attempt_allocation(word_size);
 }
 
-HeapWord* G1Allocator::attempt_allocation_locked(size_t word_size, AllocationContext_t context) {
-  HeapWord* result = mutator_alloc_region(context)->attempt_allocation_locked(word_size);
-  assert(result != NULL || mutator_alloc_region(context)->get() == NULL,
-         "Must not have a mutator alloc region if there is no memory, but is " PTR_FORMAT, p2i(mutator_alloc_region(context)->get()));
+HeapWord* G1Allocator::attempt_allocation_locked(size_t word_size) {
+  HeapWord* result = mutator_alloc_region()->attempt_allocation_locked(word_size);
+  assert(result != NULL || mutator_alloc_region()->get() == NULL,
+         "Must not have a mutator alloc region if there is no memory, but is " PTR_FORMAT, p2i(mutator_alloc_region()->get()));
   return result;
 }
 
-HeapWord* G1Allocator::attempt_allocation_force(size_t word_size, AllocationContext_t context) {
-  return mutator_alloc_region(context)->attempt_allocation_force(word_size);
+HeapWord* G1Allocator::attempt_allocation_force(size_t word_size) {
+  return mutator_alloc_region()->attempt_allocation_force(word_size);
 }
 
 inline HeapWord* G1PLABAllocator::plab_allocate(InCSetState dest,
-                                                size_t word_sz,
-                                                AllocationContext_t context) {
-  PLAB* buffer = alloc_buffer(dest, context);
+                                                size_t word_sz) {
+  PLAB* buffer = alloc_buffer(dest);
   if (_survivor_alignment_bytes == 0 || !dest.is_young()) {
     return buffer->allocate(word_sz);
   } else {

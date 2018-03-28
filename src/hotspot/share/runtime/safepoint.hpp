@@ -209,6 +209,20 @@ public:
   }
 };
 
+// Some helper assert macros for safepoint checks.
+
+#define assert_at_safepoint()                                           \
+  assert(SafepointSynchronize::is_at_safepoint(), "should be at a safepoint")
+
+#define assert_at_safepoint_msg(...)                                    \
+  assert(SafepointSynchronize::is_at_safepoint(), __VA_ARGS__)
+
+#define assert_not_at_safepoint()                                       \
+  assert(!SafepointSynchronize::is_at_safepoint(), "should not be at a safepoint")
+
+#define assert_not_at_safepoint_msg(...)                                \
+  assert(!SafepointSynchronize::is_at_safepoint(), __VA_ARGS__)
+
 // State class for a thread suspended at a safepoint
 class ThreadSafepointState: public CHeapObj<mtInternal> {
  public:

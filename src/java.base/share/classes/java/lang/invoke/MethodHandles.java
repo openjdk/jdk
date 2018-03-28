@@ -2035,11 +2035,26 @@ return mh1;
                                             ReflectiveOperationException.class);
         }
 
+        MemberName resolveOrNull(byte refKind, MemberName member) {
+            // do this before attempting to resolve
+            if (!isClassAccessible(member.getDeclaringClass())) {
+                return null;
+            }
+            Objects.requireNonNull(member.getName());
+            Objects.requireNonNull(member.getType());
+            return IMPL_NAMES.resolveOrNull(refKind, member, lookupClassOrNull());
+        }
+
         void checkSymbolicClass(Class<?> refc) throws IllegalAccessException {
+            if (!isClassAccessible(refc)) {
+                throw new MemberName(refc).makeAccessException("symbolic reference class is not accessible", this);
+            }
+        }
+
+        boolean isClassAccessible(Class<?> refc) {
             Objects.requireNonNull(refc);
             Class<?> caller = lookupClassOrNull();
-            if (caller != null && !VerifyAccess.isClassAccessible(refc, caller, allowedModes))
-                throw new MemberName(refc).makeAccessException("symbolic reference class is not accessible", this);
+            return caller == null || VerifyAccess.isClassAccessible(refc, caller, allowedModes);
         }
 
         /** Check name for an illegal leading "&lt;" character. */
@@ -2482,10 +2497,13 @@ return mh1;
                 }
             }
             try {
-                MemberName resolved2 = publicLookup().resolveOrFail(refKind,
+                MemberName resolved2 = publicLookup().resolveOrNull(refKind,
                     new MemberName(refKind, defc, member.getName(), member.getType()));
+                if (resolved2 == null) {
+                    return false;
+                }
                 checkSecurityManager(defc, resolved2);
-            } catch (ReflectiveOperationException | SecurityException ex) {
+            } catch (SecurityException ex) {
                 return false;
             }
             return true;

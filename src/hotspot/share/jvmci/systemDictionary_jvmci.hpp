@@ -80,6 +80,7 @@
   do_klass(site_Infopoint_klass,                         jdk_vm_ci_code_site_Infopoint,                         Jvmci) \
   do_klass(site_Site_klass,                              jdk_vm_ci_code_site_Site,                              Jvmci) \
   do_klass(site_InfopointReason_klass,                   jdk_vm_ci_code_site_InfopointReason,                   Jvmci) \
+  do_klass(InspectedFrameVisitor_klass,                  jdk_vm_ci_code_stack_InspectedFrameVisitor,            Jvmci) \
   do_klass(JavaConstant_klass,                           jdk_vm_ci_meta_JavaConstant,                           Jvmci) \
   do_klass(PrimitiveConstant_klass,                      jdk_vm_ci_meta_PrimitiveConstant,                      Jvmci) \
   do_klass(RawConstant_klass,                            jdk_vm_ci_meta_RawConstant,                            Jvmci) \

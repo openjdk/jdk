@@ -30,12 +30,13 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "runtime/handles.inline.hpp"
 
 
 typeArrayOop oopFactory::new_charArray(const char* utf8_str, TRAPS) {

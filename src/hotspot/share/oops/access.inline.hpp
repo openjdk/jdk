@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_RUNTIME_ACCESS_INLINE_HPP
 #define SHARE_VM_RUNTIME_ACCESS_INLINE_HPP
 
-#include "gc/shared/barrierSet.inline.hpp"
+#include "gc/shared/barrierSetConfig.inline.hpp"
 #include "metaprogramming/conditional.hpp"
 #include "metaprogramming/isFloatingPoint.hpp"
 #include "metaprogramming/isIntegral.hpp"
@@ -139,7 +139,8 @@ namespace AccessInternal {
   struct PostRuntimeDispatch<GCBarrierType, BARRIER_ARRAYCOPY, decorators>: public AllStatic {
     template <typename T>
     static bool access_barrier(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t length) {
-      return GCBarrierType::arraycopy_in_heap(src_obj, dst_obj, src, dst, length);
+      GCBarrierType::arraycopy_in_heap(src_obj, dst_obj, src, dst, length);
+      return true;
     }
 
     template <typename T>
@@ -763,7 +764,7 @@ namespace AccessInternal {
       HasDecorator<decorators, AS_RAW>::value, bool>::type
     arraycopy(arrayOop src_obj, arrayOop dst_obj, T *src, T* dst, size_t length) {
       typedef RawAccessBarrier<decorators & RAW_DECORATOR_MASK> Raw;
-      return Raw::arraycopy(src, dst, length);
+      return Raw::arraycopy(src_obj, dst_obj, src, dst, length);
     }
 
     template <DecoratorSet decorators, typename T>
@@ -1077,7 +1078,9 @@ namespace AccessInternal {
 
   template <DecoratorSet decorators, typename T>
   inline bool arraycopy(arrayOop src_obj, arrayOop dst_obj, T *src, T *dst, size_t length) {
-    verify_types<decorators, T>();
+    STATIC_ASSERT((HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value ||
+                   (IsSame<T, void>::value || IsIntegral<T>::value) ||
+                    IsFloatingPoint<T>::value)); // arraycopy allows type erased void elements
     typedef typename Decay<T>::type DecayedT;
     const DecoratorSet expanded_decorators = DecoratorFixup<decorators | IN_HEAP_ARRAY | IN_HEAP |
                                              (HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value ?

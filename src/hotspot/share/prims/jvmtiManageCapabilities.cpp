@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -312,7 +312,10 @@ void JvmtiManageCapabilities::update() {
   }
 #endif // ZERO
 
-  if (avail.can_generate_breakpoint_events) {
+  if (avail.can_generate_breakpoint_events
+       || avail.can_generate_field_access_events
+       || avail.can_generate_field_modification_events)
+  {
     RewriteFrequentPairs = false;
   }
 

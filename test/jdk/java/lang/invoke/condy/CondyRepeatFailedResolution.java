@@ -39,8 +39,6 @@ import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationTargetException;
@@ -216,9 +214,6 @@ public class CondyRepeatFailedResolution {
                                                 .areturn()
                                 ))
                 .build();
-
-        // For debugging purposes
-        new FileOutputStream(new File(genClassName + ".class")).write(byteArray);
 
         gc = MethodHandles.lookup().defineClass(byteArray);
     }
