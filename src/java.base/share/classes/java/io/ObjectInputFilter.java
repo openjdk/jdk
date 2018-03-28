@@ -38,6 +38,15 @@ import jdk.internal.misc.SharedSecrets;
 
 /**
  * Filter classes, array lengths, and graph metrics during deserialization.
+ *
+ * <p><strong>Warning: Deserialization of untrusted data is inherently dangerous
+ * and should be avoided. Untrusted data should be carefully validated according to the
+ * "Serialization and Deserialization" section of the
+ * {@extLink secure_coding_guidelines_javase Secure Coding Guidelines for Java SE}.
+ * {@extLink serialization_filter_guide Serialization Filtering} describes best
+ * practices for defensive use of serial filters.
+ * </strong></p>
+ *
  * If set on an {@link ObjectInputStream}, the {@link #checkInput checkInput(FilterInfo)}
  * method is called to validate classes, the length of each array,
  * the number of objects being read from the stream, the depth of the graph,
