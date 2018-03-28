@@ -74,7 +74,6 @@ void G1Allocator::reuse_retained_old_region(EvacuationInfo& evacuation_info,
       !(retained_region->top() == retained_region->end()) &&
       !retained_region->is_empty() &&
       !retained_region->is_humongous()) {
-    retained_region->record_timestamp();
     // The retained region was added to the old region set when it was
     // retired. We have to remove it now, since we don't allow regions
     // we allocate to in the region sets. We'll re-add it later, when

@@ -262,8 +262,6 @@ private:
   // If not, we can skip a few steps.
   bool _has_humongous_reclaim_candidates;
 
-  volatile uint _gc_time_stamp;
-
   G1HRPrinter _hr_printer;
 
   // It decides whether an explicit GC should start a concurrent cycle
@@ -971,21 +969,6 @@ public:
 
   // Try to minimize the remembered set.
   void scrub_rem_set();
-
-  uint get_gc_time_stamp() {
-    return _gc_time_stamp;
-  }
-
-  inline void reset_gc_time_stamp();
-
-  void check_gc_time_stamps() PRODUCT_RETURN;
-
-  inline void increment_gc_time_stamp();
-
-  // Reset the given region's GC timestamp. If it's starts humongous,
-  // also reset the GC timestamp of its corresponding
-  // continues humongous regions too.
-  void reset_gc_time_stamps(HeapRegion* hr);
 
   // Apply the given closure on all cards in the Hot Card Cache, emptying it.
   void iterate_hcc_closure(CardTableEntryClosure* cl, uint worker_i);

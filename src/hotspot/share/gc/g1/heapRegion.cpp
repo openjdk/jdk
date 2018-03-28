@@ -131,7 +131,6 @@ void HeapRegion::hr_clear(bool keep_remset, bool clear_space, bool locked) {
   zero_marked_bytes();
 
   init_top_at_mark_start();
-  _gc_time_stamp = G1CollectedHeap::heap()->get_gc_time_stamp();
   if (clear_space) clear(SpaceDecorator::Mangle);
 }
 
@@ -254,7 +253,6 @@ void HeapRegion::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
 
   hr_clear(false /*par*/, false /*clear_space*/);
   set_top(bottom());
-  record_timestamp();
 }
 
 void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
@@ -448,7 +446,6 @@ void HeapRegion::print_on(outputStream* st) const {
   } else {
     st->print("|  ");
   }
-  st->print("|TS%3u", _gc_time_stamp);
   st->print_cr("|TAMS " PTR_FORMAT ", " PTR_FORMAT "| %s ",
                p2i(prev_top_at_mark_start()), p2i(next_top_at_mark_start()), rem_set()->get_state_str());
 }
@@ -854,15 +851,6 @@ HeapWord* G1ContiguousSpace::cross_threshold(HeapWord* start,
   return _bot_part.threshold();
 }
 
-void G1ContiguousSpace::record_timestamp() {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  uint curr_gc_time_stamp = g1h->get_gc_time_stamp();
-
-  if (_gc_time_stamp < curr_gc_time_stamp) {
-    _gc_time_stamp = curr_gc_time_stamp;
-  }
-}
-
 void G1ContiguousSpace::safe_object_iterate(ObjectClosure* blk) {
   object_iterate(blk);
 }
@@ -879,8 +867,7 @@ void G1ContiguousSpace::object_iterate(ObjectClosure* blk) {
 
 G1ContiguousSpace::G1ContiguousSpace(G1BlockOffsetTable* bot) :
   _bot_part(bot, this),
-  _par_alloc_lock(Mutex::leaf, "OffsetTableContigSpace par alloc lock", true),
-  _gc_time_stamp(0)
+  _par_alloc_lock(Mutex::leaf, "OffsetTableContigSpace par alloc lock", true)
 {
 }
 

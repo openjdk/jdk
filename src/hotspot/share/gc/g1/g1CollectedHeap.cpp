@@ -1042,7 +1042,6 @@ void G1CollectedHeap::abort_refinement() {
 }
 
 void G1CollectedHeap::verify_after_full_collection() {
-  check_gc_time_stamps();
   _hrm.verify_optional();
   _verifier->verify_region_sets_optional();
   _verifier->verify_after_gc(G1HeapVerifier::G1VerifyFull);
@@ -1414,7 +1413,6 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   _humongous_reclaim_candidates(),
   _has_humongous_reclaim_candidates(false),
   _archive_allocator(NULL),
-  _gc_time_stamp(0),
   _summary_bytes_used(0),
   _survivor_evac_stats("Young", YoungPLABSize, PLABWeight),
   _old_evac_stats("Old", OldPLABSize, PLABWeight),
@@ -1830,41 +1828,6 @@ size_t G1CollectedHeap::capacity() const {
 size_t G1CollectedHeap::unused_committed_regions_in_bytes() const {
   return _hrm.total_free_bytes();
 }
-
-void G1CollectedHeap::reset_gc_time_stamps(HeapRegion* hr) {
-  hr->reset_gc_time_stamp();
-}
-
-#ifndef PRODUCT
-
-class CheckGCTimeStampsHRClosure : public HeapRegionClosure {
-private:
-  unsigned _gc_time_stamp;
-  bool _failures;
-
-public:
-  CheckGCTimeStampsHRClosure(unsigned gc_time_stamp) :
-    _gc_time_stamp(gc_time_stamp), _failures(false) { }
-
-  virtual bool do_heap_region(HeapRegion* hr) {
-    unsigned region_gc_time_stamp = hr->get_gc_time_stamp();
-    if (_gc_time_stamp != region_gc_time_stamp) {
-      log_error(gc, verify)("Region " HR_FORMAT " has GC time stamp = %d, expected %d", HR_FORMAT_PARAMS(hr),
-                            region_gc_time_stamp, _gc_time_stamp);
-      _failures = true;
-    }
-    return false;
-  }
-
-  bool failures() { return _failures; }
-};
-
-void G1CollectedHeap::check_gc_time_stamps() {
-  CheckGCTimeStampsHRClosure cl(_gc_time_stamp);
-  heap_region_iterate(&cl);
-  guarantee(!cl.failures(), "all GC time stamps should have been reset");
-}
-#endif // PRODUCT
 
 void G1CollectedHeap::iterate_hcc_closure(CardTableEntryClosure* cl, uint worker_i) {
   _hot_card_cache->drain(cl, worker_i);
@@ -2286,7 +2249,7 @@ void G1CollectedHeap::print_on(outputStream* st) const {
 void G1CollectedHeap::print_regions_on(outputStream* st) const {
   st->print_cr("Heap Regions: E=young(eden), S=young(survivor), O=old, "
                "HS=humongous(starts), HC=humongous(continues), "
-               "CS=collection set, F=free, A=archive, TS=gc time stamp, "
+               "CS=collection set, F=free, A=archive, "
                "TAMS=top-at-mark-start (previous, next)");
   PrintRegionClosure blk(st);
   heap_region_iterate(&blk);
@@ -2432,9 +2395,6 @@ void G1CollectedHeap::gc_prologue(bool full) {
   increment_total_collections(full /* full gc */);
   if (full) {
     increment_old_marking_cycles_started();
-    reset_gc_time_stamp();
-  } else {
-    increment_gc_time_stamp();
   }
 
   // Fill TLAB's and such
@@ -5041,10 +5001,6 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, InCSetState d
                                             !is_survivor,
                                             true /* do_expand */);
   if (new_alloc_region != NULL) {
-    // We really only need to do this for old regions given that we
-    // should never scan survivors. But it doesn't hurt to do it
-    // for survivors too.
-    new_alloc_region->record_timestamp();
     if (is_survivor) {
       new_alloc_region->set_survivor();
       _survivor.add(new_alloc_region);

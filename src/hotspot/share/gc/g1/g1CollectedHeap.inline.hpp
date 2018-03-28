@@ -84,16 +84,6 @@ inline HeapRegion* G1CollectedHeap::heap_region_containing(const T addr) const {
   return _hrm.addr_to_region((HeapWord*) addr);
 }
 
-inline void G1CollectedHeap::reset_gc_time_stamp() {
-  assert_at_safepoint_on_vm_thread();
-  _gc_time_stamp = 0;
-}
-
-inline void G1CollectedHeap::increment_gc_time_stamp() {
-  assert_at_safepoint_on_vm_thread();
-  ++_gc_time_stamp;
-}
-
 inline void G1CollectedHeap::old_set_add(HeapRegion* hr) {
   _old_set.add(hr);
 }

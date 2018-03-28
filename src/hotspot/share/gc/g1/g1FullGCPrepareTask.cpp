@@ -109,7 +109,6 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::free_humongous_region(Heap
 }
 
 void G1FullGCPrepareTask::G1CalculatePointersClosure::reset_region_metadata(HeapRegion* hr) {
-  hr->reset_gc_time_stamp();
   hr->rem_set()->clear();
   hr->clear_cardtable();
 
