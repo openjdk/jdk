@@ -187,10 +187,10 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
  public:
   enum Name {
-    SerialHeap,
-    ParallelScavengeHeap,
-    G1CollectedHeap,
-    CMSHeap
+    Serial,
+    Parallel,
+    CMS,
+    G1
   };
 
   static inline size_t filler_array_max_size() {

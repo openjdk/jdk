@@ -125,7 +125,7 @@ public class G1CollectedHeap extends CollectedHeap {
     }
 
     public CollectedHeapName kind() {
-        return CollectedHeapName.G1_COLLECTED_HEAP;
+        return CollectedHeapName.G1;
     }
 
     @Override

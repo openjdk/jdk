@@ -958,7 +958,7 @@ public:
   void ref_processing_init();
 
   virtual Name kind() const {
-    return CollectedHeap::G1CollectedHeap;
+    return CollectedHeap::G1;
   }
 
   virtual const char* name() const {

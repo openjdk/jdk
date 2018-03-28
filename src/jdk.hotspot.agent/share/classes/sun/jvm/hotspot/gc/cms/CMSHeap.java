@@ -35,6 +35,6 @@ public class CMSHeap extends GenCollectedHeap {
   }
 
   public CollectedHeapName kind() {
-    return CollectedHeapName.CMS_HEAP;
+    return CollectedHeapName.CMS;
   }
 }
