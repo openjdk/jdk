@@ -22,9 +22,6 @@
  *
  */
 
-// make sure the defines don't screw up the declarations later on in this file
-#define DONT_USE_REGISTER_DEFINES
-
 // Note: precompiled headers can not be used in this file because of the above
 //       definition
 
