@@ -181,9 +181,7 @@ inline void G1ConcurrentMark::update_top_at_rebuild_start(HeapRegion* r) {
   if (tracker->needs_scan_for_rebuild(r)) {
     _top_at_rebuild_starts[region] = r->top();
   } else {
-    // We could leave the TARS for this region at NULL, but we would not catch
-    // accidental double assignment then.
-    _top_at_rebuild_starts[region] = r->bottom();
+    // Leave TARS at NULL.
   }
 }
 
