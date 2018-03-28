@@ -2261,10 +2261,10 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
                                                                           \
   declare_constant(G1CardTable::g1_young_gen)                             \
                                                                           \
-  declare_constant(CollectedHeap::SerialHeap)                             \
-  declare_constant(CollectedHeap::CMSHeap)                                \
-  declare_constant(CollectedHeap::ParallelScavengeHeap)                   \
-  declare_constant(CollectedHeap::G1CollectedHeap)                        \
+  declare_constant(CollectedHeap::Serial)                                 \
+  declare_constant(CollectedHeap::Parallel)                               \
+  declare_constant(CollectedHeap::CMS)                                    \
+  declare_constant(CollectedHeap::G1)                                     \
                                                                           \
   /* constants from Generation::Name enum */                              \
                                                                           \

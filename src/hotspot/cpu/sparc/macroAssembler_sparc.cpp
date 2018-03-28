@@ -3708,7 +3708,7 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr, Register new_val
 // Called from init_globals() after universe_init() and before interpreter_init()
 void g1_barrier_stubs_init() {
   CollectedHeap* heap = Universe::heap();
-  if (heap->kind() == CollectedHeap::G1CollectedHeap) {
+  if (heap->kind() == CollectedHeap::G1) {
     // Only needed for G1
     if (dirty_card_log_enqueue == 0) {
       G1BarrierSet* bs =
