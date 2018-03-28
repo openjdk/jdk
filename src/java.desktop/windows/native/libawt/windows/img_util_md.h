@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ extern "C" {
 #else
 #include "colordata.h"
 #endif
+#include "jni.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -94,7 +95,10 @@ extern const char *cubemapArray;
     ((dstLockInfo.inv_cmap)[(((r)>>3)<<10) | (((g)>>3)<<5) | ((b)>>3)])
 
 extern void freeICMColorData(ColorData *pData);
-extern void initInverseGrayLut(int* prgb, int rgbsize, ColorData* cData);
+
+JNIEXPORT void JNICALL
+initInverseGrayLut(int* prgb, int rgbsize, ColorData* cData);
+
 extern unsigned char* initCubemap(int* cmap, int cmap_len, int cube_dim);
 extern void initDitherTables(ColorData* cData);
 

@@ -39,7 +39,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJ2PCSC, \
     CFLAGS_unix := -D__sun_jdk, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBJ2PCSC_CPPFLAGS), \
-    MAPFILE := $(TOPDIR)/make/mapfiles/libj2pcsc/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := $(LIBDL), \

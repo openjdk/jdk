@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ typedef struct {
     GetCreatedJavaVMs_t GetCreatedJavaVMs;
 } InvocationFunctions;
 
-int
+JNIEXPORT int JNICALL
 JLI_Launch(int argc, char ** argv,              /* main argc, argc */
         int jargc, const char** jargv,          /* java args */
         int appclassc, const char** appclassv,  /* app classpath */
@@ -133,13 +133,16 @@ void CreateExecutionEnvironment(int *argc, char ***argv,
                                 char *jvmcfg,  jint so_jvmcfg);
 
 /* Reports an error message to stderr or a window as appropriate. */
-void JLI_ReportErrorMessage(const char * message, ...);
+JNIEXPORT void JNICALL
+JLI_ReportErrorMessage(const char * message, ...);
 
 /* Reports a system error message to stderr or a window */
-void JLI_ReportErrorMessageSys(const char * message, ...);
+JNIEXPORT void JNICALL
+JLI_ReportErrorMessageSys(const char * message, ...);
 
 /* Reports an error message only to stderr. */
-void JLI_ReportMessage(const char * message, ...);
+JNIEXPORT void JNICALL
+JLI_ReportMessage(const char * message, ...);
 
 /* Reports a message only to stdout. */
 void JLI_ShowMessage(const char * message, ...);
@@ -148,7 +151,8 @@ void JLI_ShowMessage(const char * message, ...);
  * Reports an exception which terminates the vm to stderr or a window
  * as appropriate.
  */
-void JLI_ReportExceptionDescription(JNIEnv * env);
+JNIEXPORT void JNICALL
+JLI_ReportExceptionDescription(JNIEnv * env);
 void PrintMachineDependentOptions();
 
 /*

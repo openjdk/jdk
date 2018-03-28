@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -495,7 +495,7 @@ JLI_Snprintf(char* buffer, size_t size, const char* format, ...) {
     return rc;
 }
 
-void
+JNIEXPORT void JNICALL
 JLI_ReportErrorMessage(const char* fmt, ...) {
     va_list vl;
     va_start(vl,fmt);
@@ -524,7 +524,7 @@ JLI_ReportErrorMessage(const char* fmt, ...) {
  * error message if any, its upto the calling routine to correctly
  * format the separation of the messages.
  */
-void
+JNIEXPORT void JNICALL
 JLI_ReportErrorMessageSys(const char *fmt, ...)
 {
     va_list vl;
@@ -588,7 +588,8 @@ JLI_ReportErrorMessageSys(const char *fmt, ...)
     va_end(vl);
 }
 
-void  JLI_ReportExceptionDescription(JNIEnv * env) {
+JNIEXPORT void JNICALL
+JLI_ReportExceptionDescription(JNIEnv * env) {
     if (IsJavaw()) {
        /*
         * This code should be replaced by code which opens a window with

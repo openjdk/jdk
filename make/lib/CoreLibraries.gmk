@@ -95,12 +95,6 @@ endif
 
 ##########################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), solaris)
-  ifneq ($(OPENJDK_TARGET_CPU), x86_64)
-    BUILD_LIBVERIFY_REORDER := $(TOPDIR)/make/mapfiles/libverify/reorder-$(OPENJDK_TARGET_CPU)
-  endif
-endif
-
 LIBVERIFY_OPTIMIZATION := HIGH
 ifneq ($(findstring $(OPENJDK_TARGET_OS), solaris linux), )
   ifeq ($(COMPILE_WITH_DEBUG_SYMBOLS), true)
@@ -115,12 +109,10 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBVERIFY, \
     CFLAGS := $(CFLAGS_JDKLIB), \
     DISABLED_WARNINGS_gcc := implicit-fallthrough, \
     DISABLED_WARNINGS_microsoft := 4244 4267, \
-    MAPFILE := $(TOPDIR)/make/mapfiles/libverify/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljvm, \
     LIBS_windows := jvm.lib, \
-    REORDER := $(BUILD_LIBVERIFY_REORDER), \
 ))
 
 TARGETS += $(BUILD_LIBVERIFY)
@@ -135,18 +127,9 @@ LIBJAVA_CFLAGS := $(addprefix -I, $(LIBJAVA_SRC_DIRS)) \
     -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
     -DARCHPROPNAME='"$(OPENJDK_TARGET_CPU_OSARCH)"'
 
-# Make it possible to override this variable
-LIBJAVA_MAPFILE ?= $(TOPDIR)/make/mapfiles/libjava/mapfile-vers
-
 ifeq ($(OPENJDK_TARGET_OS), macosx)
   BUILD_LIBJAVA_java_props_md.c_CFLAGS := -x objective-c
   BUILD_LIBJAVA_java_props_macosx.c_CFLAGS := -x objective-c
-endif
-
-ifeq ($(OPENJDK_TARGET_OS), solaris)
-  ifneq ($(OPENJDK_TARGET_CPU), x86_64)
-    LIBJAVA_REORDER := $(TOPDIR)/make/mapfiles/libjava/reorder-$(OPENJDK_TARGET_CPU)
-  endif
 endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
@@ -160,13 +143,10 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
     WARNINGS_AS_ERRORS_xlc := false, \
     DISABLED_WARNINGS_gcc := unused-result, \
     DISABLED_WARNINGS_solstudio := E_STATEMENT_NOT_REACHED, \
-    MAPFILE := $(LIBJAVA_MAPFILE), \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_macosx := -L$(SUPPORT_OUTPUTDIR)/native/$(MODULE)/, \
-    LDFLAGS_windows := -export:winFileHandleOpen -export:handleLseek \
-        -export:getLastErrorString \
-        -export:getErrorString -delayload:shell32.dll, \
+    LDFLAGS_windows := -delayload:shell32.dll, \
     LIBS_unix := -ljvm -lverify, \
     LIBS_linux := $(LIBDL) $(BUILD_LIBFDLIBM), \
     LIBS_solaris := -lsocket -lnsl -lscf $(LIBDL) $(BUILD_LIBFDLIBM), \
@@ -178,7 +158,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
     LIBS_windows := jvm.lib $(BUILD_LIBFDLIBM) $(WIN_VERIFY_LIB) \
         shell32.lib delayimp.lib \
         advapi32.lib version.lib, \
-    REORDER := $(LIBJAVA_REORDER), \
 ))
 
 TARGETS += $(BUILD_LIBJAVA)
@@ -192,13 +171,6 @@ $(BUILD_LIBJAVA): $(BUILD_LIBFDLIBM)
 BUILD_LIBZIP_EXCLUDES :=
 ifeq ($(USE_EXTERNAL_LIBZ), true)
   LIBZIP_EXCLUDES += zlib
-endif
-
-BUILD_LIBZIP_REORDER :=
-ifeq ($(OPENJDK_TARGET_OS), solaris)
-  ifneq ($(OPENJDK_TARGET_CPU), x86_64)
-    BUILD_LIBZIP_REORDER := $(TOPDIR)/make/mapfiles/libzip/reorder-$(OPENJDK_TARGET_CPU)
-  endif
 endif
 
 ifeq ($(LIBZIP_CAN_USE_MMAP), true)
@@ -217,13 +189,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBZIP, \
         -I$(SUPPORT_OUTPUTDIR)/headers/java.base, \
     CFLAGS_unix := $(BUILD_LIBZIP_MMAP) -UDEBUG, \
     DISABLED_WARNINGS_gcc := implicit-fallthrough, \
-    MAPFILE := $(TOPDIR)/make/mapfiles/libzip/mapfile-vers, \
-    REORDER := $(BUILD_LIBZIP_REORDER), \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_windows := -export:ZIP_Open -export:ZIP_Close -export:ZIP_FindEntry \
-        -export:ZIP_ReadEntry -export:ZIP_GetNextEntry \
-        -export:ZIP_InflateFully -export:ZIP_CRC32 -export:ZIP_FreeEntry, \
     LIBS_unix := -ljvm -ljava $(LIBZ_LIBS), \
     LIBS_windows := jvm.lib $(WIN_JAVA_LIB), \
 ))
@@ -252,13 +219,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJIMAGE, \
     CXXFLAGS := $(CXXFLAGS_JDKLIB) $(JIMAGELIB_CPPFLAGS), \
     DISABLED_WARNINGS_gcc := implicit-fallthrough, \
     CFLAGS_unix := -UDEBUG, \
-    MAPFILE := $(TOPDIR)/make/mapfiles/libjimage/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_windows := -export:JIMAGE_Open -export:JIMAGE_Close \
-        -export:JIMAGE_PackageToModule \
-        -export:JIMAGE_FindResource -export:JIMAGE_GetResource \
-        -export:JIMAGE_ResourceIterator -export:JIMAGE_ResourcePath, \
     LIBS_unix := -ljvm -ldl $(LIBCXX), \
     LIBS_macosx := -lc++, \
     LIBS_windows := jvm.lib, \
@@ -341,31 +303,10 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \
     DISABLED_WARNINGS_solstudio := \
         E_ASM_DISABLES_OPTIMIZATION \
         E_STATEMENT_NOT_REACHED, \
-    MAPFILE := $(TOPDIR)/make/mapfiles/libjli/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_linux := $(call SET_SHARED_LIBRARY_ORIGIN,/..), \
     LDFLAGS_solaris := $(call SET_SHARED_LIBRARY_ORIGIN,/..), \
-    LDFLAGS_windows := \
-        -export:JLI_Launch \
-        -export:JLI_ManifestIterate \
-        -export:JLI_SetTraceLauncher \
-        -export:JLI_ReportErrorMessage \
-        -export:JLI_ReportErrorMessageSys \
-        -export:JLI_ReportMessage \
-        -export:JLI_ReportExceptionDescription \
-        -export:JLI_MemAlloc \
-        -export:JLI_CmdToArgs \
-        -export:JLI_GetStdArgc \
-        -export:JLI_GetStdArgs \
-        -export:JLI_List_new \
-        -export:JLI_List_add \
-        -export:JLI_StringDup \
-        -export:JLI_MemFree \
-        -export:JLI_InitArgProcessing \
-        -export:JLI_PreprocessArg \
-        -export:JLI_AddArgsFromEnvVar \
-        -export:JLI_GetAppArgIndex, \
     LIBS_unix := $(LIBZ_LIBS), \
     LIBS_linux := $(LIBDL) -lpthread, \
     LIBS_solaris := $(LIBDL), \

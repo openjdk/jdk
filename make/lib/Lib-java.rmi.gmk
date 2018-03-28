@@ -32,7 +32,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBRMI, \
     SRC := $(TOPDIR)/src/java.rmi/share/native/librmi, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) -I$(SUPPORT_OUTPUTDIR)/headers/java.rmi, \
-    MAPFILE := $(TOPDIR)/make/mapfiles/librmi/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljvm, \

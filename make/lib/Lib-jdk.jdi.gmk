@@ -46,7 +46,6 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       CFLAGS := $(CFLAGS_JDKLIB) -DUSE_MMAP \
           $(LIBDT_SHMEM_CPPFLAGS), \
       LDFLAGS := $(LDFLAGS_JDKLIB), \
-      LDFLAGS_windows := -export:jdwpTransport_OnLoad, \
       LIBS := $(JDKLIB_LIBS), \
   ))
 

@@ -89,19 +89,23 @@ typedef int bool;
 struct ps_prochandle;
 
 // attach to a process
-struct ps_prochandle* Pgrab(pid_t pid, char* err_buf, size_t err_buf_len);
+JNIEXPORT struct ps_prochandle* JNICALL
+Pgrab(pid_t pid, char* err_buf, size_t err_buf_len);
 
 // attach to a core dump
-struct ps_prochandle* Pgrab_core(const char* execfile, const char* corefile);
+JNIEXPORT struct ps_prochandle* JNICALL
+Pgrab_core(const char* execfile, const char* corefile);
 
 // release a process or core
-void Prelease(struct ps_prochandle* ph);
+JNIEXPORT void JNICALL
+Prelease(struct ps_prochandle* ph);
 
 // functions not directly available in Solaris libproc
 
 // initialize libproc (call this only once per app)
 // pass true to make library verbose
-bool init_libproc(bool verbose);
+JNIEXPORT bool JNICALL
+init_libproc(bool verbose);
 
 // get number of threads
 int get_num_threads(struct ps_prochandle* ph);
