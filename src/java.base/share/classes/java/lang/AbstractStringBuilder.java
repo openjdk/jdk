@@ -69,10 +69,13 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      */
     int count;
 
+    private static final byte[] EMPTYVALUE = new byte[0];
+
     /**
      * This no-arg constructor is necessary for serialization of subclasses.
      */
     AbstractStringBuilder() {
+        value = EMPTYVALUE;
     }
 
     /**
