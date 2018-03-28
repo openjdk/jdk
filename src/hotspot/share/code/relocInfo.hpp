@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_CODE_RELOCINFO_HPP
 #define SHARE_VM_CODE_RELOCINFO_HPP
 
-#include "memory/allocation.hpp"
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
 
@@ -48,7 +47,7 @@ class NativeMovConstReg;
 //      oops in the code stream (strings, class loaders)
 //      Also, the source of relocation specs (oop_Relocation::spec, ...).
 //    RelocationHolder
-//      A ValueObj type which acts as a union holding a Relocation object.
+//      A value type which acts as a union holding a Relocation object.
 //      Represents a relocation spec passed into a CodeBuffer during assembly.
 //    RelocIterator
 //      A StackObj which iterates over the relocations associated with
@@ -252,7 +251,7 @@ class CodeBuffer;
 class CodeSection;
 class RelocIterator;
 
-class relocInfo VALUE_OBJ_CLASS_SPEC {
+class relocInfo {
   friend class RelocIterator;
  public:
   enum relocType {
@@ -469,7 +468,7 @@ inline relocInfo prefix_relocInfo(int datalen = 0) {
 // Holder for flyweight relocation objects.
 // Although the flyweight subclasses are of varying sizes,
 // the holder is "one size fits all".
-class RelocationHolder VALUE_OBJ_CLASS_SPEC {
+class RelocationHolder {
   friend class Relocation;
   friend class CodeSection;
 
@@ -640,7 +639,7 @@ class RelocIterator : public StackObj {
 // It represents the relocation data of relocation record.
 // So, the RelocIterator unpacks relocInfos into Relocations.
 
-class Relocation VALUE_OBJ_CLASS_SPEC {
+class Relocation {
   friend class RelocationHolder;
   friend class RelocIterator;
 

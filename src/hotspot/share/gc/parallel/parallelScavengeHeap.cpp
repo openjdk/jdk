@@ -572,7 +572,7 @@ PSHeapSummary ParallelScavengeHeap::create_ps_heap_summary() {
 void ParallelScavengeHeap::print_on(outputStream* st) const {
   young_gen()->print_on(st);
   old_gen()->print_on(st);
-  MetaspaceAux::print_on(st);
+  MetaspaceUtils::print_on(st);
 }
 
 void ParallelScavengeHeap::print_on_error(outputStream* st) const {

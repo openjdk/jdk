@@ -38,7 +38,7 @@
 #include "logging/logStream.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
@@ -1854,11 +1854,6 @@ jint Arguments::set_ergonomics_flags() {
 #endif // !ZERO
 
   return JNI_OK;
-}
-
-void Arguments::set_gc_specific_flags() {
-  // Set GC flags
-  GCArguments::arguments()->initialize_flags();
 }
 
 julong Arguments::limit_by_allocatable_memory(julong limit) {
@@ -4286,7 +4281,7 @@ jint Arguments::apply_ergo() {
   // Set heap size based on available physical memory
   set_heap_size();
 
-  ArgumentsExt::set_gc_specific_flags();
+  GCArguments::arguments()->initialize_flags();
 
   // Initialize Metaspace flags and alignments
   Metaspace::ergo_initialize();

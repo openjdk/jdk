@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -129,7 +129,6 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 // Portability macros
 #define PRAGMA_INTERFACE             #pragma interface
 #define PRAGMA_IMPLEMENTATION        #pragma implementation
-#define VALUE_OBJ_CLASS_SPEC
 
 // Formatting.
 #ifdef _LP64

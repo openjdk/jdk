@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import jdk.test.lib.cli.predicate.CPUSpecificPredicate;
 import jdk.test.lib.cli.predicate.OrPredicate;
 import sun.hotspot.WhiteBox;
 
+import java.lang.reflect.Method;
 import java.util.function.BooleanSupplier;
 
 /**
@@ -100,27 +101,23 @@ public class IntrinsicPredicates {
                             IntrinsicPredicates.SHA512_INSTRUCTION_AVAILABLE));
 
     public static final BooleanSupplier SHA1_INTRINSICS_AVAILABLE
-            = new AndPredicate(new AndPredicate(
-                    IntrinsicPredicates.SHA1_INSTRUCTION_AVAILABLE,
-                    IntrinsicPredicates.COMPILABLE_BY_C2),
-                IntrinsicPredicates.booleanOptionValue("UseSHA1Intrinsics"));
+            = new AndPredicate(IntrinsicPredicates.COMPILABLE_BY_C2,
+                               IntrinsicPredicates.isIntrinsicAvailable("sun.security.provider.SHA", "implCompress0"));
 
     public static final BooleanSupplier SHA256_INTRINSICS_AVAILABLE
-            = new AndPredicate(new AndPredicate(
-                    IntrinsicPredicates.SHA256_INSTRUCTION_AVAILABLE,
-                    IntrinsicPredicates.COMPILABLE_BY_C2),
-                IntrinsicPredicates.booleanOptionValue("UseSHA256Intrinsics"));
+            = new AndPredicate(IntrinsicPredicates.COMPILABLE_BY_C2,
+                               IntrinsicPredicates.isIntrinsicAvailable("sun.security.provider.SHA2", "implCompress0"));
 
     public static final BooleanSupplier SHA512_INTRINSICS_AVAILABLE
-            = new AndPredicate(new AndPredicate(
-                    IntrinsicPredicates.SHA512_INSTRUCTION_AVAILABLE,
-                    IntrinsicPredicates.COMPILABLE_BY_C2),
-                IntrinsicPredicates.booleanOptionValue("UseSHA512Intrinsics"));
+            = new AndPredicate(IntrinsicPredicates.COMPILABLE_BY_C2,
+                               IntrinsicPredicates.isIntrinsicAvailable("sun.security.provider.SHA5", "implCompress0"));
 
-    private static BooleanSupplier booleanOptionValue(String option) {
-        return () -> IntrinsicPredicates.WHITE_BOX.getBooleanVMFlag(option);
-    }
-
-    private IntrinsicPredicates() {
-    }
+    private static BooleanSupplier isIntrinsicAvailable(String klass, String method) {
+        try {
+            Method m = Class.forName(klass).getDeclaredMethod(method, byte[].class, int.class);
+            return () -> WHITE_BOX.isIntrinsicAvailable(m, (int)IntrinsicPredicates.TIERED_MAX_LEVEL);
+        } catch (Exception e) {
+            throw new RuntimeException("Intrinsified method " +  klass + "::" + method + " not found!");
+        }
+    };
 }

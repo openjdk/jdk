@@ -54,7 +54,7 @@ class WorkGang;
 
 // An abstract task to be worked on by a gang.
 // You subclass this to supply your own work() method
-class AbstractGangTask VALUE_OBJ_CLASS_SPEC {
+class AbstractGangTask {
   const char* _name;
   const uint _gc_id;
 

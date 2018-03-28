@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcName.hpp"
 #include "gc/shared/gcWhen.hpp"
-#include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/referenceType.hpp"
 #include "utilities/macros.hpp"
@@ -50,7 +49,7 @@ class ReferenceProcessorStats;
 class TimePartitions;
 class BoolObjectClosure;
 
-class SharedGCInfo VALUE_OBJ_CLASS_SPEC {
+class SharedGCInfo {
  private:
   GCName _name;
   GCCause::Cause _cause;
@@ -88,7 +87,7 @@ class SharedGCInfo VALUE_OBJ_CLASS_SPEC {
   const Tickspan longest_pause() const { return _longest_pause; }
 };
 
-class ParallelOldGCInfo VALUE_OBJ_CLASS_SPEC {
+class ParallelOldGCInfo {
   void* _dense_prefix;
  public:
   ParallelOldGCInfo() : _dense_prefix(NULL) {}
@@ -100,7 +99,7 @@ class ParallelOldGCInfo VALUE_OBJ_CLASS_SPEC {
 
 #if INCLUDE_ALL_GCS
 
-class G1YoungGCInfo VALUE_OBJ_CLASS_SPEC {
+class G1YoungGCInfo {
   G1YCType _type;
  public:
   G1YoungGCInfo() : _type(G1YCTypeEndSentinel) {}

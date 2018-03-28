@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ void G1Allocator::reuse_retained_old_region(EvacuationInfo& evacuation_info,
 }
 
 void G1DefaultAllocator::init_gc_alloc_regions(EvacuationInfo& evacuation_info) {
-  assert_at_safepoint(true /* should_be_vm_thread */);
+  assert_at_safepoint_on_vm_thread();
 
   _survivor_is_full = false;
   _old_is_full = false;
@@ -100,41 +100,40 @@ void G1DefaultAllocator::init_gc_alloc_regions(EvacuationInfo& evacuation_info) 
 }
 
 void G1DefaultAllocator::release_gc_alloc_regions(EvacuationInfo& evacuation_info) {
-  AllocationContext_t context = AllocationContext::current();
-  evacuation_info.set_allocation_regions(survivor_gc_alloc_region(context)->count() +
-                                         old_gc_alloc_region(context)->count());
-  survivor_gc_alloc_region(context)->release();
+  evacuation_info.set_allocation_regions(survivor_gc_alloc_region()->count() +
+                                         old_gc_alloc_region()->count());
+  survivor_gc_alloc_region()->release();
   // If we have an old GC alloc region to release, we'll save it in
   // _retained_old_gc_alloc_region. If we don't
   // _retained_old_gc_alloc_region will become NULL. This is what we
   // want either way so no reason to check explicitly for either
   // condition.
-  _retained_old_gc_alloc_region = old_gc_alloc_region(context)->release();
+  _retained_old_gc_alloc_region = old_gc_alloc_region()->release();
 }
 
 void G1DefaultAllocator::abandon_gc_alloc_regions() {
-  assert(survivor_gc_alloc_region(AllocationContext::current())->get() == NULL, "pre-condition");
-  assert(old_gc_alloc_region(AllocationContext::current())->get() == NULL, "pre-condition");
+  assert(survivor_gc_alloc_region()->get() == NULL, "pre-condition");
+  assert(old_gc_alloc_region()->get() == NULL, "pre-condition");
   _retained_old_gc_alloc_region = NULL;
 }
 
-bool G1DefaultAllocator::survivor_is_full(AllocationContext_t context) const {
+bool G1DefaultAllocator::survivor_is_full() const {
   return _survivor_is_full;
 }
 
-bool G1DefaultAllocator::old_is_full(AllocationContext_t context) const {
+bool G1DefaultAllocator::old_is_full() const {
   return _old_is_full;
 }
 
-void G1DefaultAllocator::set_survivor_full(AllocationContext_t context) {
+void G1DefaultAllocator::set_survivor_full() {
   _survivor_is_full = true;
 }
 
-void G1DefaultAllocator::set_old_full(AllocationContext_t context) {
+void G1DefaultAllocator::set_old_full() {
   _old_is_full = true;
 }
 
-size_t G1Allocator::unsafe_max_tlab_alloc(AllocationContext_t context) {
+size_t G1Allocator::unsafe_max_tlab_alloc() {
   // Return the remaining space in the cur alloc region, but not less than
   // the min TLAB size.
 
@@ -142,7 +141,7 @@ size_t G1Allocator::unsafe_max_tlab_alloc(AllocationContext_t context) {
   // since we can't allow tlabs to grow big enough to accommodate
   // humongous objects.
 
-  HeapRegion* hr = mutator_alloc_region(context)->get();
+  HeapRegion* hr = mutator_alloc_region()->get();
   size_t max_tlab = _g1h->max_tlab_size() * wordSize;
   if (hr == NULL) {
     return max_tlab;
@@ -152,10 +151,9 @@ size_t G1Allocator::unsafe_max_tlab_alloc(AllocationContext_t context) {
 }
 
 HeapWord* G1Allocator::par_allocate_during_gc(InCSetState dest,
-                                              size_t word_size,
-                                              AllocationContext_t context) {
+                                              size_t word_size) {
   size_t temp = 0;
-  HeapWord* result = par_allocate_during_gc(dest, word_size, word_size, &temp, context);
+  HeapWord* result = par_allocate_during_gc(dest, word_size, word_size, &temp);
   assert(result == NULL || temp == word_size,
          "Requested " SIZE_FORMAT " words, but got " SIZE_FORMAT " at " PTR_FORMAT,
          word_size, temp, p2i(result));
@@ -165,13 +163,12 @@ HeapWord* G1Allocator::par_allocate_during_gc(InCSetState dest,
 HeapWord* G1Allocator::par_allocate_during_gc(InCSetState dest,
                                               size_t min_word_size,
                                               size_t desired_word_size,
-                                              size_t* actual_word_size,
-                                              AllocationContext_t context) {
+                                              size_t* actual_word_size) {
   switch (dest.value()) {
     case InCSetState::Young:
-      return survivor_attempt_allocation(min_word_size, desired_word_size, actual_word_size, context);
+      return survivor_attempt_allocation(min_word_size, desired_word_size, actual_word_size);
     case InCSetState::Old:
-      return old_attempt_allocation(min_word_size, desired_word_size, actual_word_size, context);
+      return old_attempt_allocation(min_word_size, desired_word_size, actual_word_size);
     default:
       ShouldNotReachHere();
       return NULL; // Keep some compilers happy
@@ -180,21 +177,20 @@ HeapWord* G1Allocator::par_allocate_during_gc(InCSetState dest,
 
 HeapWord* G1Allocator::survivor_attempt_allocation(size_t min_word_size,
                                                    size_t desired_word_size,
-                                                   size_t* actual_word_size,
-                                                   AllocationContext_t context) {
+                                                   size_t* actual_word_size) {
   assert(!_g1h->is_humongous(desired_word_size),
          "we should not be seeing humongous-size allocations in this path");
 
-  HeapWord* result = survivor_gc_alloc_region(context)->attempt_allocation(min_word_size,
-                                                                           desired_word_size,
-                                                                           actual_word_size);
-  if (result == NULL && !survivor_is_full(context)) {
+  HeapWord* result = survivor_gc_alloc_region()->attempt_allocation(min_word_size,
+                                                                    desired_word_size,
+                                                                    actual_word_size);
+  if (result == NULL && !survivor_is_full()) {
     MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
-    result = survivor_gc_alloc_region(context)->attempt_allocation_locked(min_word_size,
-                                                                          desired_word_size,
-                                                                          actual_word_size);
+    result = survivor_gc_alloc_region()->attempt_allocation_locked(min_word_size,
+                                                                   desired_word_size,
+                                                                   actual_word_size);
     if (result == NULL) {
-      set_survivor_full(context);
+      set_survivor_full();
     }
   }
   if (result != NULL) {
@@ -205,21 +201,20 @@ HeapWord* G1Allocator::survivor_attempt_allocation(size_t min_word_size,
 
 HeapWord* G1Allocator::old_attempt_allocation(size_t min_word_size,
                                               size_t desired_word_size,
-                                              size_t* actual_word_size,
-                                              AllocationContext_t context) {
+                                              size_t* actual_word_size) {
   assert(!_g1h->is_humongous(desired_word_size),
          "we should not be seeing humongous-size allocations in this path");
 
-  HeapWord* result = old_gc_alloc_region(context)->attempt_allocation(min_word_size,
-                                                                      desired_word_size,
-                                                                      actual_word_size);
-  if (result == NULL && !old_is_full(context)) {
+  HeapWord* result = old_gc_alloc_region()->attempt_allocation(min_word_size,
+                                                               desired_word_size,
+                                                               actual_word_size);
+  if (result == NULL && !old_is_full()) {
     MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
-    result = old_gc_alloc_region(context)->attempt_allocation_locked(min_word_size,
-                                                                     desired_word_size,
-                                                                     actual_word_size);
+    result = old_gc_alloc_region()->attempt_allocation_locked(min_word_size,
+                                                              desired_word_size,
+                                                              actual_word_size);
     if (result == NULL) {
-      set_old_full(context);
+      set_old_full();
     }
   }
   return result;
@@ -240,7 +235,6 @@ bool G1PLABAllocator::may_throw_away_buffer(size_t const allocation_word_sz, siz
 
 HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(InCSetState dest,
                                                        size_t word_sz,
-                                                       AllocationContext_t context,
                                                        bool* plab_refill_failed) {
   size_t plab_word_size = G1CollectedHeap::heap()->desired_plab_sz(dest);
   size_t required_in_plab = PLAB::size_required_for_allocation(word_sz);
@@ -250,15 +244,14 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(InCSetState dest,
   if ((required_in_plab <= plab_word_size) &&
     may_throw_away_buffer(required_in_plab, plab_word_size)) {
 
-    PLAB* alloc_buf = alloc_buffer(dest, context);
+    PLAB* alloc_buf = alloc_buffer(dest);
     alloc_buf->retire();
 
     size_t actual_plab_size = 0;
     HeapWord* buf = _allocator->par_allocate_during_gc(dest,
                                                        required_in_plab,
                                                        plab_word_size,
-                                                       &actual_plab_size,
-                                                       context);
+                                                       &actual_plab_size);
 
     assert(buf == NULL || ((actual_plab_size >= required_in_plab) && (actual_plab_size <= plab_word_size)),
            "Requested at minimum " SIZE_FORMAT ", desired " SIZE_FORMAT " words, but got " SIZE_FORMAT " at " PTR_FORMAT,
@@ -277,15 +270,15 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(InCSetState dest,
     *plab_refill_failed = true;
   }
   // Try direct allocation.
-  HeapWord* result = _allocator->par_allocate_during_gc(dest, word_sz, context);
+  HeapWord* result = _allocator->par_allocate_during_gc(dest, word_sz);
   if (result != NULL) {
     _direct_allocated[dest.value()] += word_sz;
   }
   return result;
 }
 
-void G1PLABAllocator::undo_allocation(InCSetState dest, HeapWord* obj, size_t word_sz, AllocationContext_t context) {
-  alloc_buffer(dest, context)->undo_allocation(obj, word_sz);
+void G1PLABAllocator::undo_allocation(InCSetState dest, HeapWord* obj, size_t word_sz) {
+  alloc_buffer(dest)->undo_allocation(obj, word_sz);
 }
 
 G1DefaultPLABAllocator::G1DefaultPLABAllocator(G1Allocator* allocator) :

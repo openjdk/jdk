@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,7 +281,7 @@ public:
 // The LiveRangeMap class is responsible for storing node to live range id mapping.
 // Each node is mapped to a live range id (a virtual register). Nodes that are
 // not considered for register allocation are given live range id 0.
-class LiveRangeMap VALUE_OBJ_CLASS_SPEC {
+class LiveRangeMap {
 
 private:
 

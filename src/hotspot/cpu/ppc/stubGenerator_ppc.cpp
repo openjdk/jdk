@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2017, SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2018, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -627,7 +627,7 @@ class StubGenerator: public StubCodeGenerator {
                                        Register preserve1 = noreg, Register preserve2 = noreg) {
     BarrierSet* const bs = Universe::heap()->barrier_set();
     switch (bs->kind()) {
-      case BarrierSet::G1SATBCTLogging:
+      case BarrierSet::G1BarrierSet:
         // With G1, don't generate the call if we statically know that the target in uninitialized
         if (!dest_uninitialized) {
           int spill_slots = 3;
@@ -689,7 +689,7 @@ class StubGenerator: public StubCodeGenerator {
     BarrierSet* const bs = Universe::heap()->barrier_set();
 
     switch (bs->kind()) {
-      case BarrierSet::G1SATBCTLogging:
+      case BarrierSet::G1BarrierSet:
         {
           int spill_slots = (preserve != noreg) ? 1 : 0;
           const int frame_size = align_up(frame::abi_reg_args_size + spill_slots * BytesPerWord, frame::alignment_in_bytes);
@@ -3627,7 +3627,6 @@ class StubGenerator: public StubCodeGenerator {
 
     const Register table   = R6;       // crc table address
 
-#ifdef VM_LITTLE_ENDIAN
     // arguments to kernel_crc32:
     const Register crc     = R3_ARG1;  // Current checksum, preset by caller or result from previous call.
     const Register data    = R4_ARG2;  // source byte array
@@ -3650,16 +3649,14 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::ppc64::generate_load_crc_constants_addr(_masm, constants);
       StubRoutines::ppc64::generate_load_crc_barret_constants_addr(_masm, bconstants);
 
-      __ kernel_crc32_1word_vpmsumd(crc, data, dataLen, table, constants, bconstants, t0, t1, t2, t3, t4, true);
+      __ kernel_crc32_1word_vpmsum(crc, data, dataLen, table, constants, bconstants, t0, t1, t2, t3, t4, true);
 
       BLOCK_COMMENT("return");
       __ mr_if_needed(R3_RET, crc);      // Updated crc is function result. No copying required (R3_ARG1 == R3_RET).
       __ blr();
 
       BLOCK_COMMENT("} Stub body");
-    } else
-#endif
-    {
+    } else {
       StubRoutines::ppc64::generate_load_crc_table_addr(_masm, table);
       generate_CRC_updateBytes(name, table, true);
     }
@@ -3690,8 +3687,6 @@ class StubGenerator: public StubCodeGenerator {
 
     const Register table   = R6;       // crc table address
 
-#if 0   // no vector support yet for CRC32C
-#ifdef VM_LITTLE_ENDIAN
     // arguments to kernel_crc32:
     const Register crc     = R3_ARG1;  // Current checksum, preset by caller or result from previous call.
     const Register data    = R4_ARG2;  // source byte array
@@ -3714,17 +3709,14 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::ppc64::generate_load_crc32c_constants_addr(_masm, constants);
       StubRoutines::ppc64::generate_load_crc32c_barret_constants_addr(_masm, bconstants);
 
-      __ kernel_crc32_1word_vpmsumd(crc, data, dataLen, table, constants, bconstants, t0, t1, t2, t3, t4, false);
+      __ kernel_crc32_1word_vpmsum(crc, data, dataLen, table, constants, bconstants, t0, t1, t2, t3, t4, false);
 
       BLOCK_COMMENT("return");
       __ mr_if_needed(R3_RET, crc);      // Updated crc is function result. No copying required (R3_ARG1 == R3_RET).
       __ blr();
 
       BLOCK_COMMENT("} Stub body");
-    } else
-#endif
-#endif
-    {
+    } else {
       StubRoutines::ppc64::generate_load_crc32c_table_addr(_masm, table);
       generate_CRC_updateBytes(name, table, false);
     }

@@ -45,11 +45,6 @@ void  StackObj::operator delete(void* p)              { ShouldNotCallThis(); }
 void* StackObj::operator new [](size_t size)  throw() { ShouldNotCallThis(); return 0; }
 void  StackObj::operator delete [](void* p)           { ShouldNotCallThis(); }
 
-void* _ValueObj::operator new(size_t size)    throw() { ShouldNotCallThis(); return 0; }
-void  _ValueObj::operator delete(void* p)             { ShouldNotCallThis(); }
-void* _ValueObj::operator new [](size_t size) throw() { ShouldNotCallThis(); return 0; }
-void  _ValueObj::operator delete [](void* p)          { ShouldNotCallThis(); }
-
 void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
                                  size_t word_size,
                                  MetaspaceObj::Type type, TRAPS) throw() {

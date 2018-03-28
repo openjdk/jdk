@@ -41,7 +41,6 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/threadLocalStorage.hpp"
-#include "runtime/thread_ext.hpp"
 #include "runtime/unhandledOops.hpp"
 #include "trace/traceBackend.hpp"
 #include "trace/traceMacros.hpp"
@@ -326,8 +325,6 @@ class Thread: public ThreadShadow {
 
   mutable TRACE_DATA _trace_data;               // Thread-local data for tracing
 
-  ThreadExt _ext;
-
   int   _vm_operation_started_count;            // VM_Operation support
   int   _vm_operation_completed_count;          // VM_Operation support
 
@@ -507,9 +504,6 @@ class Thread: public ThreadShadow {
   TRACE_DEFINE_THREAD_TRACE_DATA_OFFSET;
   TRACE_DATA* trace_data() const        { return &_trace_data; }
   bool is_trace_suspend()               { return (_suspend_flags & _trace_flag) != 0; }
-
-  const ThreadExt& ext() const          { return _ext; }
-  ThreadExt& ext()                      { return _ext; }
 
   // VM operation support
   int vm_operation_ticket()                      { return ++_vm_operation_started_count; }
@@ -1137,7 +1131,6 @@ class JavaThread: public Thread {
   // not specified, use the priority of the thread object. Threads_lock
   // must be held while this function is called.
   void prepare(jobject jni_thread, ThreadPriority prio=NoPriority);
-  void prepare_ext();
 
   void set_saved_exception_pc(address pc)        { _saved_exception_pc = pc; }
   address saved_exception_pc()                   { return _saved_exception_pc; }

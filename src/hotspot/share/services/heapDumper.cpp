@@ -30,6 +30,7 @@
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/vmGCOperations.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -650,7 +651,7 @@ class DumperSupport : AllStatic {
   // dump a jdouble
   static void dump_double(DumpWriter* writer, jdouble d);
   // dumps the raw value of the given field
-  static void dump_field_value(DumpWriter* writer, char type, address addr);
+  static void dump_field_value(DumpWriter* writer, char type, oop obj, int offset);
   // dumps static fields of the given class
   static void dump_static_fields(DumpWriter* writer, Klass* k);
   // dump the raw values of the instance fields of the given object
@@ -754,64 +755,59 @@ void DumperSupport::dump_double(DumpWriter* writer, jdouble d) {
 }
 
 // dumps the raw value of the given field
-void DumperSupport::dump_field_value(DumpWriter* writer, char type, address addr) {
+void DumperSupport::dump_field_value(DumpWriter* writer, char type, oop obj, int offset) {
   switch (type) {
     case JVM_SIGNATURE_CLASS :
     case JVM_SIGNATURE_ARRAY : {
-      oop o;
-      if (UseCompressedOops) {
-        o = oopDesc::load_decode_heap_oop((narrowOop*)addr);
-      } else {
-        o = oopDesc::load_decode_heap_oop((oop*)addr);
-      }
-
-      // reflection and Unsafe classes may have a reference to a
-      // Klass* so filter it out.
+      oop o = obj->obj_field_access<ON_UNKNOWN_OOP_REF>(offset);
       assert(oopDesc::is_oop_or_null(o), "Expected an oop or NULL at " PTR_FORMAT, p2i(o));
       writer->write_objectID(o);
       break;
     }
-    case JVM_SIGNATURE_BYTE     : {
-      jbyte* b = (jbyte*)addr;
-      writer->write_u1((u1)*b);
+    case JVM_SIGNATURE_BYTE : {
+      jbyte b = obj->byte_field(offset);
+      writer->write_u1((u1)b);
       break;
     }
-    case JVM_SIGNATURE_CHAR     : {
-      jchar* c = (jchar*)addr;
-      writer->write_u2((u2)*c);
+    case JVM_SIGNATURE_CHAR : {
+      jchar c = obj->char_field(offset);
+      writer->write_u2((u2)c);
       break;
     }
     case JVM_SIGNATURE_SHORT : {
-      jshort* s = (jshort*)addr;
-      writer->write_u2((u2)*s);
+      jshort s = obj->short_field(offset);
+      writer->write_u2((u2)s);
       break;
     }
     case JVM_SIGNATURE_FLOAT : {
-      jfloat* f = (jfloat*)addr;
-      dump_float(writer, *f);
+      jfloat f = obj->float_field(offset);
+      dump_float(writer, f);
       break;
     }
     case JVM_SIGNATURE_DOUBLE : {
-      jdouble* f = (jdouble*)addr;
-      dump_double(writer, *f);
+      jdouble d = obj->double_field(offset);
+      dump_double(writer, d);
       break;
     }
     case JVM_SIGNATURE_INT : {
-      jint* i = (jint*)addr;
-      writer->write_u4((u4)*i);
+      jint i = obj->int_field(offset);
+      writer->write_u4((u4)i);
       break;
     }
-    case JVM_SIGNATURE_LONG     : {
-      jlong* l = (jlong*)addr;
-      writer->write_u8((u8)*l);
+    case JVM_SIGNATURE_LONG : {
+      jlong l = obj->long_field(offset);
+      writer->write_u8((u8)l);
       break;
     }
     case JVM_SIGNATURE_BOOLEAN : {
-      jboolean* b = (jboolean*)addr;
-      writer->write_u1((u1)*b);
+      jboolean b = obj->bool_field(offset);
+      writer->write_u1((u1)b);
       break;
     }
-    default : ShouldNotReachHere();
+    default : {
+      ShouldNotReachHere();
+      break;
+    }
   }
 }
 
@@ -893,10 +889,7 @@ void DumperSupport::dump_static_fields(DumpWriter* writer, Klass* k) {
       writer->write_u1(sig2tag(sig));       // type
 
       // value
-      int offset = fld.offset();
-      address addr = (address)ik->java_mirror() + offset;
-
-      dump_field_value(writer, sig->byte_at(0), addr);
+      dump_field_value(writer, sig->byte_at(0), ik->java_mirror(), fld.offset());
     }
   }
 
@@ -932,9 +925,7 @@ void DumperSupport::dump_instance_fields(DumpWriter* writer, oop o) {
   for (FieldStream fld(ik, false, false); !fld.eos(); fld.next()) {
     if (!fld.access_flags().is_static()) {
       Symbol* sig = fld.signature();
-      address addr = (address)o + fld.offset();
-
-      dump_field_value(writer, sig->byte_at(0), addr);
+      dump_field_value(writer, sig->byte_at(0), o, fld.offset());
     }
   }
 }

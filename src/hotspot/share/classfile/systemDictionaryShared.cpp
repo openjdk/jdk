@@ -49,6 +49,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -497,7 +498,7 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
     // Fix for 4474172; see evaluation for more details
     class_loader = Handle(
       THREAD, java_lang_ClassLoader::non_reflection_class_loader(class_loader()));
-    ClassLoaderData *loader_data = register_loader(class_loader, CHECK_NULL);
+    ClassLoaderData *loader_data = register_loader(class_loader);
     Dictionary* dictionary = loader_data->dictionary();
 
     unsigned int d_hash = dictionary->compute_hash(name);

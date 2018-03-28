@@ -39,6 +39,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "utilities/hashtable.inline.hpp"
@@ -703,7 +704,6 @@ bool StringTable::copy_shared_string(GrowableArray<MemRegion> *string_space,
   assert(MetaspaceShared::is_heap_object_archiving_allowed(), "must be");
 
   Thread* THREAD = Thread::current();
-  G1CollectedHeap::heap()->begin_archive_alloc_range();
   for (int i = 0; i < the_table()->table_size(); ++i) {
     HashtableEntry<oop, mtSymbol>* bucket = the_table()->bucket(i);
     for ( ; bucket != NULL; bucket = bucket->next()) {
@@ -727,7 +727,6 @@ bool StringTable::copy_shared_string(GrowableArray<MemRegion> *string_space,
     }
   }
 
-  G1CollectedHeap::heap()->end_archive_alloc_range(string_space, os::vm_allocation_granularity());
   return true;
 }
 

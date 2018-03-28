@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_GC_G1_G1PAGEBASEDVIRTUALSPACE_HPP
 #define SHARE_VM_GC_G1_G1PAGEBASEDVIRTUALSPACE_HPP
 
-#include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
 #include "utilities/align.hpp"
@@ -45,7 +44,7 @@ class WorkGang;
 // be committed using OS small pages.
 // The implementation gives an error when trying to commit or uncommit pages that
 // have already been committed or uncommitted.
-class G1PageBasedVirtualSpace VALUE_OBJ_CLASS_SPEC {
+class G1PageBasedVirtualSpace {
   friend class VMStructs;
  private:
   // Reserved area addresses.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -341,7 +341,9 @@ void print_statistics() {
   }
 
   if (PrintSystemDictionaryAtExit) {
+    ResourceMark rm;
     SystemDictionary::print();
+    ClassLoaderDataGraph::print();
   }
 
   if (LogTouchedMethods && PrintTouchedMethodsAtExit) {
@@ -483,7 +485,7 @@ void before_exit(JavaThread* thread) {
     Universe::print_on(&ls_info);
     if (log.is_trace()) {
       LogStream ls_trace(log.trace());
-      ClassLoaderDataGraph::dump_on(&ls_trace);
+      ClassLoaderDataGraph::print_on(&ls_trace);
     }
   }
 

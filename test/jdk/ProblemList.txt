@@ -493,9 +493,6 @@ java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-
 
 java/lang/String/nativeEncoding/StringPlatformChars.java        8182569 windows-all,solaris-all
 
-java/lang/invoke/condy/CondyRepeatFailedResolution.java         8197944 windows-all
-java/lang/invoke/condy/CondyReturnPrimitiveTest.java            8197944 windows-all
-
 ############################################################################
 
 # jdk_instrument

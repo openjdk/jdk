@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ import java.util.stream.Stream;
  *
  * <p>
  * The {@code ProcessHandle} static factory methods return instances that are
- * <a href="{@docRoot}/java/lang/doc-files/ValueBased.html">value-based</a>,
+ * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>,
  * immutable and thread-safe.
  * Use of identity-sensitive operations (including reference equality
  * ({@code ==}), identity hash code, or synchronization) on these instances of

@@ -83,10 +83,10 @@ class ClassLoaderDataGraph : public AllStatic {
   static volatile size_t  _num_instance_classes;
   static volatile size_t  _num_array_classes;
 
-  static ClassLoaderData* add(Handle class_loader, bool anonymous, TRAPS);
+  static ClassLoaderData* add(Handle class_loader, bool anonymous);
   static void post_class_unload_events();
  public:
-  static ClassLoaderData* find_or_create(Handle class_loader, TRAPS);
+  static ClassLoaderData* find_or_create(Handle class_loader);
   static void purge();
   static void clear_claimed_marks();
   // oops do
@@ -151,10 +151,9 @@ class ClassLoaderDataGraph : public AllStatic {
   static bool has_metaspace_oom()           { return _metaspace_oom; }
   static void set_metaspace_oom(bool value) { _metaspace_oom = value; }
 
-  static void dump_on(outputStream * const out) PRODUCT_RETURN;
-  static void dump() { dump_on(tty); }
+  static void print_on(outputStream * const out) PRODUCT_RETURN;
+  static void print() { print_on(tty); }
   static void verify();
-  static void print_creation(outputStream* out, Handle loader, ClassLoaderData* cld, TRAPS);
 
   static bool unload_list_contains(const void* x);
 
@@ -181,23 +180,9 @@ class ClassLoaderDataGraph : public AllStatic {
 
 class ClassLoaderData : public CHeapObj<mtClass> {
   friend class VMStructs;
- private:
-  class Dependencies VALUE_OBJ_CLASS_SPEC {
-    objArrayOop _list_head;
-    void locked_add(objArrayHandle last,
-                    objArrayHandle new_dependency,
-                    Thread* THREAD);
-   public:
-    Dependencies() : _list_head(NULL) {}
-    Dependencies(TRAPS) : _list_head(NULL) {
-      init(CHECK);
-    }
-    void add(Handle dependency, TRAPS);
-    void init(TRAPS);
-    void oops_do(OopClosure* f);
-  };
 
-  class ChunkedHandleList VALUE_OBJ_CLASS_SPEC {
+ private:
+  class ChunkedHandleList {
     struct Chunk : public CHeapObj<mtClass> {
       static const size_t CAPACITY = 32;
 
@@ -219,10 +204,11 @@ class ClassLoaderData : public CHeapObj<mtClass> {
     // Only one thread at a time can add, guarded by ClassLoaderData::metaspace_lock().
     // However, multiple threads can execute oops_do concurrently with add.
     oop* add(oop o);
-#ifdef ASSERT
-    bool contains(oop* p);
-#endif
+    bool contains(oop p);
+    NOT_PRODUCT(bool owner_of(oop* p);)
     void oops_do(OopClosure* f);
+
+    int count() const;
   };
 
   friend class ClassLoaderDataGraph;
@@ -237,10 +223,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   oop _class_loader;          // oop used to uniquely identify a class loader
                               // class loader or a canonical class path
-  Dependencies _dependencies; // holds dependencies from this class loader
-                              // data to others.
 
-  Metaspace * volatile _metaspace;  // Meta-space where meta-data defined by the
+  ClassLoaderMetaspace * volatile _metaspace;  // Meta-space where meta-data defined by the
                                     // classes in the class loader are allocated.
   Mutex* _metaspace_lock;  // Locks the metaspace for allocations and setup.
   bool _unloading;         // true if this class loader goes away
@@ -261,6 +245,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   ChunkedHandleList _handles; // Handles to constant pool arrays, Modules, etc, which
                               // have the same life cycle of the corresponding ClassLoader.
 
+  NOT_PRODUCT(volatile int _dependency_count;)  // number of class loader dependencies
+
   Klass* volatile _klasses;              // The classes defined by the class loader.
   PackageEntryTable* volatile _packages; // The packages defined by the class loader.
   ModuleEntryTable*  volatile _modules;  // The modules defined by the class loader.
@@ -279,17 +265,12 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // Support for walking class loader data objects
   ClassLoaderData* _next; /// Next loader_datas created
 
-  // ReadOnly and ReadWrite metaspaces (static because only on the null
-  // class loader for now).
-  static Metaspace* _ro_metaspace;
-  static Metaspace* _rw_metaspace;
-
   TRACE_DEFINE_TRACE_ID_FIELD;
 
   void set_next(ClassLoaderData* next) { _next = next; }
   ClassLoaderData* next() const        { return _next; }
 
-  ClassLoaderData(Handle h_class_loader, bool is_anonymous, Dependencies dependencies);
+  ClassLoaderData(Handle h_class_loader, bool is_anonymous);
   ~ClassLoaderData();
 
   // The CLD are not placed in the Heap, so the Card Table or
@@ -331,7 +312,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   bool is_alive(BoolObjectClosure* is_alive_closure) const;
 
   // Accessors
-  Metaspace* metaspace_or_null() const     { return _metaspace; }
+  ClassLoaderMetaspace* metaspace_or_null() const { return _metaspace; }
 
   static ClassLoaderData* the_null_class_loader_data() {
     return _the_null_class_loader_data;
@@ -341,20 +322,18 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   bool is_anonymous() const { return _is_anonymous; }
 
-  static void init_null_class_loader_data() {
-    assert(_the_null_class_loader_data == NULL, "cannot initialize twice");
-    assert(ClassLoaderDataGraph::_head == NULL, "cannot initialize twice");
-
-    // We explicitly initialize the Dependencies object at a later phase in the initialization
-    _the_null_class_loader_data = new ClassLoaderData(Handle(), false, Dependencies());
-    ClassLoaderDataGraph::_head = _the_null_class_loader_data;
-    assert(_the_null_class_loader_data->is_the_null_class_loader_data(), "Must be");
-  }
+  static void init_null_class_loader_data();
 
   bool is_the_null_class_loader_data() const {
     return this == _the_null_class_loader_data;
   }
+
+  // Returns true if this class loader data is for the system class loader.
+  // (Note that the class loader data may be anonymous.)
   bool is_system_class_loader_data() const;
+
+  // Returns true if this class loader data is for the platform class loader.
+  // (Note that the class loader data may be anonymous.)
   bool is_platform_class_loader_data() const;
 
   // Returns true if this class loader data is for the boot class loader.
@@ -368,7 +347,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   // The Metaspace is created lazily so may be NULL.  This
   // method will allocate a Metaspace if needed.
-  Metaspace* metaspace_non_null();
+  ClassLoaderMetaspace* metaspace_non_null();
 
   oop class_loader() const      { return _class_loader; }
 
@@ -397,12 +376,11 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   void set_jmethod_ids(JNIMethodBlock* new_block)  { _jmethod_ids = new_block; }
 
   void print()                                     { print_on(tty); }
-  void print_on(outputStream* out) const;
+  void print_on(outputStream* out) const PRODUCT_RETURN;
   void print_value()                               { print_value_on(tty); }
   void print_value_on(outputStream* out) const;
-  void dump(outputStream * const out) PRODUCT_RETURN;
   void verify();
-  const char* loader_name();
+  const char* loader_name() const;
 
   OopHandle add_handle(Handle h);
   void remove_handle(OopHandle h);
@@ -410,8 +388,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   void add_class(Klass* k, bool publicize = true);
   void remove_class(Klass* k);
   bool contains_klass(Klass* k);
-  void record_dependency(const Klass* to, TRAPS);
-  void init_dependencies(TRAPS);
+  void record_dependency(const Klass* to);
   PackageEntryTable* packages() { return _packages; }
   ModuleEntry* unnamed_module() { return _unnamed_module; }
   ModuleEntryTable* modules();
@@ -424,8 +401,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   static ClassLoaderData* class_loader_data(oop loader);
   static ClassLoaderData* class_loader_data_or_null(oop loader);
-  static ClassLoaderData* anonymous_class_loader_data(oop loader, TRAPS);
-  static void print_loader(ClassLoaderData *loader_data, outputStream *out);
+  static ClassLoaderData* anonymous_class_loader_data(Handle loader);
 
   TRACE_DEFINE_TRACE_ID_METHODS;
 };
@@ -446,9 +422,9 @@ class ClassLoaderDataGraphMetaspaceIterator : public StackObj {
   ClassLoaderDataGraphMetaspaceIterator();
   ~ClassLoaderDataGraphMetaspaceIterator();
   bool repeat() { return _data != NULL; }
-  Metaspace* get_next() {
+  ClassLoaderMetaspace* get_next() {
     assert(_data != NULL, "Should not be NULL in call to the iterator");
-    Metaspace* result = _data->metaspace_or_null();
+    ClassLoaderMetaspace* result = _data->metaspace_or_null();
     _data = _data->next();
     // This result might be NULL for class loaders without metaspace
     // yet.  It would be nice to return only non-null results but

@@ -37,20 +37,23 @@ public:
 };
 typedef AllocFailStrategy::AllocFailEnum AllocFailType;
 
-// All classes in the virtual machine must be subclassed
-// by one of the following allocation classes:
+// The virtual machine must never call one of the implicitly declared
+// global allocation or deletion functions.  (Such calls may result in
+// link-time or run-time errors.)  For convenience and documentation of
+// intended use, classes in the virtual machine may be derived from one
+// of the following allocation classes, some of which define allocation
+// and deletion functions.
+// Note: std::malloc and std::free should never called directly.
+
 //
 // For objects allocated in the resource area (see resourceArea.hpp).
 // - ResourceObj
 //
-// For objects allocated in the C-heap (managed by: free & malloc).
+// For objects allocated in the C-heap (managed by: free & malloc and tracked with NMT)
 // - CHeapObj
 //
 // For objects allocated on the stack.
 // - StackObj
-//
-// For embedded objects.
-// - ValueObj
 //
 // For classes used as name spaces.
 // - AllStatic
@@ -84,15 +87,10 @@ typedef AllocFailStrategy::AllocFailEnum AllocFailType;
 //   char* AllocateHeap(size_t size, const char* name);
 //   void  FreeHeap(void* p);
 //
-// C-heap allocation can be traced using +PrintHeapAllocation.
-// malloc and free should therefore never called directly.
-
-// Base class for objects allocated in the C-heap.
 
 // In non product mode we introduce a super class for all allocation classes
 // that supports printing.
-// We avoid the superclass in product mode since some C++ compilers add
-// a word overhead for empty super classes.
+// We avoid the superclass in product mode to save space.
 
 #ifdef PRODUCT
 #define ALLOCATION_SUPER_CLASS_SPEC
@@ -187,33 +185,6 @@ class StackObj ALLOCATION_SUPER_CLASS_SPEC {
   void  operator delete(void* p);
   void  operator delete [](void* p);
 };
-
-// Base class for objects used as value objects.
-// Calling new or delete will result in fatal error.
-//
-// Portability note: Certain compilers (e.g. gcc) will
-// always make classes bigger if it has a superclass, even
-// if the superclass does not have any virtual methods or
-// instance fields. The HotSpot implementation relies on this
-// not to happen. So never make a ValueObj class a direct subclass
-// of this object, but use the VALUE_OBJ_CLASS_SPEC class instead, e.g.,
-// like this:
-//
-//   class A VALUE_OBJ_CLASS_SPEC {
-//     ...
-//   }
-//
-// With gcc and possible other compilers the VALUE_OBJ_CLASS_SPEC can
-// be defined as a an empty string "".
-//
-class _ValueObj {
- private:
-  void* operator new(size_t size) throw();
-  void  operator delete(void* p);
-  void* operator new [](size_t size) throw();
-  void  operator delete [](void* p);
-};
-
 
 // Base class for objects stored in Metaspace.
 // Calling delete will result in fatal error.

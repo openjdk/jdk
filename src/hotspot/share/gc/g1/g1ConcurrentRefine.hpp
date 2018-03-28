@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ class ThreadClosure;
 
 // Helper class for refinement thread management. Used to start, stop and
 // iterate over them.
-class G1ConcurrentRefineThreadControl VALUE_OBJ_CLASS_SPEC {
+class G1ConcurrentRefineThreadControl {
   G1ConcurrentRefine* _cr;
 
   G1ConcurrentRefineThread** _threads;

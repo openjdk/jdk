@@ -29,9 +29,11 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/arrayOop.inline.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -1760,7 +1762,7 @@ static jvmtiHeapRootKind toJvmtiHeapRootKind(jvmtiHeapReferenceKind kind) {
 
 // Base class for all heap walk contexts. The base class maintains a flag
 // to indicate if the context is valid or not.
-class HeapWalkContext VALUE_OBJ_CLASS_SPEC {
+class HeapWalkContext {
  private:
   bool _valid;
  public:

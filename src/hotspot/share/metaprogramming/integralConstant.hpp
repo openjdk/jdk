@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@
 // T is an integral type, and is the value_type.
 // v is an integral constant, and is the value.
 template<typename T, T v>
-struct IntegralConstant VALUE_OBJ_CLASS_SPEC {
+struct IntegralConstant {
   typedef T value_type;
   static const value_type value = v;
   typedef IntegralConstant<T, v> type;

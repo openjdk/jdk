@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,10 @@
 
 #include "gc/g1/heapRegion.hpp"
 #include "logging/log.hpp"
-#include "memory/allocation.hpp"
 
 #define SKIP_RETIRED_FULL_REGIONS 1
 
-class G1HRPrinter VALUE_OBJ_CLASS_SPEC {
+class G1HRPrinter {
 
 private:
 

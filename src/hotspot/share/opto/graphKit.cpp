@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 #include "ci/ciUtilities.hpp"
 #include "compiler/compileLog.hpp"
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
@@ -1561,7 +1561,7 @@ void GraphKit::pre_barrier(bool do_load,
   BarrierSet* bs = Universe::heap()->barrier_set();
   set_control(ctl);
   switch (bs->kind()) {
-    case BarrierSet::G1SATBCTLogging:
+    case BarrierSet::G1BarrierSet:
       g1_write_barrier_pre(do_load, obj, adr, adr_idx, val, val_type, pre_val, bt);
       break;
 
@@ -1577,7 +1577,7 @@ void GraphKit::pre_barrier(bool do_load,
 bool GraphKit::can_move_pre_barrier() const {
   BarrierSet* bs = Universe::heap()->barrier_set();
   switch (bs->kind()) {
-    case BarrierSet::G1SATBCTLogging:
+    case BarrierSet::G1BarrierSet:
       return true; // Can move it if no safepoint
 
     case BarrierSet::CardTableModRef:
@@ -1600,7 +1600,7 @@ void GraphKit::post_barrier(Node* ctl,
   BarrierSet* bs = Universe::heap()->barrier_set();
   set_control(ctl);
   switch (bs->kind()) {
-    case BarrierSet::G1SATBCTLogging:
+    case BarrierSet::G1BarrierSet:
       g1_write_barrier_post(store, obj, adr, adr_idx, val, bt, use_precise);
       break;
 
@@ -4349,7 +4349,7 @@ void GraphKit::g1_write_barrier_post(Node* oop_store,
     // The Object.clone() intrinsic uses this path if !ReduceInitialCardMarks.
     // We don't need a barrier here if the destination is a newly allocated object
     // in Eden. Otherwise, GC verification breaks because we assume that cards in Eden
-    // are set to 'g1_young_gen' (see G1SATBCardTableModRefBS::verify_g1_young_region()).
+    // are set to 'g1_young_gen' (see G1CardTable::verify_g1_young_region()).
     assert(!use_ReduceInitialCardMarks(), "can only happen with card marking");
     Node* card_val = __ load(__ ctrl(), card_adr, TypeInt::INT, T_BYTE, Compile::AliasIdxRaw);
     __ if_then(card_val, BoolTest::ne, young_card); {

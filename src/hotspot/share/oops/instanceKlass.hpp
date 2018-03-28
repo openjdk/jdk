@@ -87,9 +87,8 @@ class FieldPrinter: public FieldClosure {
 };
 #endif  // !PRODUCT
 
-// ValueObjs embedded in klass. Describes where oops are located in instances of
-// this klass.
-class OopMapBlock VALUE_OBJ_CLASS_SPEC {
+// Describes where oops are located in instances of this klass.
+class OopMapBlock {
  public:
   // Byte offset of the first oop mapped by this block.
   int offset() const          { return _offset; }
@@ -912,7 +911,7 @@ public:
   instanceOop allocate_instance(TRAPS);
 
   // additional member function to return a handle
-  instanceHandle allocate_instance_handle(TRAPS)      { return instanceHandle(THREAD, allocate_instance(THREAD)); }
+  instanceHandle allocate_instance_handle(TRAPS);
 
   objArrayOop allocate_objArray(int n, int length, TRAPS);
   // Helper function

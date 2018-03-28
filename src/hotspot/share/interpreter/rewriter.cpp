@@ -111,12 +111,12 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
   if (HAS_PENDING_EXCEPTION) {
     MetadataFactory::free_metadata(loader_data, cache);
     _pool->set_cache(NULL);  // so the verifier isn't confused
+  } else {
+    DEBUG_ONLY(
+    if (DumpSharedSpaces) {
+      cache->verify_just_initialized();
+    })
   }
-
-  DEBUG_ONLY(
-  if (DumpSharedSpaces) {
-    cache->verify_just_initialized();
-  })
 }
 
 

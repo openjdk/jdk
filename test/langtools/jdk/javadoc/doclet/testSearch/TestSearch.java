@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881
- *      8181622 8182263 8074407 8187521 8198522 8182765
+ *      8181622 8182263 8074407 8187521 8198522 8182765 8199278
  * @summary Test the search feature of javadoc.
  * @author bpatel
  * @library ../lib
@@ -307,12 +307,42 @@ public class TestSearch extends JavadocTester {
 
     @Test
     void testNoModuleDirectories() {
-        javadoc("-d", "out-noMdlDir", "--no-module-directories", "-Xdoclint:none",
+        javadoc("-d", "out-noMdlDir",
+                "--no-module-directories",
+                "-Xdoclint:none",
                 "-sourcepath", testSrc,
-                "-use", "pkg", "pkg1", "pkg2", "pkg3");
+                "-use",
+                "pkg", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
         checkSearchOutput(true, false);
         checkSearchJS();
+    }
+
+    @Test
+    void testURLEncoding() {
+        javadoc("-d", "out-encode-html5",
+                "--no-module-directories",
+                "-Xdoclint:none",
+                "-sourcepath", testSrc,
+                "-use",
+                "pkg", "pkg1", "pkg2", "pkg3");
+        checkExit(Exit.OK);
+        checkSearchJS();
+        checkSearchIndex(true);
+    }
+
+    @Test
+    void testURLEncoding_html4() {
+        javadoc("-d", "out-encode-html4",
+                "-html4",
+                "--no-module-directories",
+                "-Xdoclint:none",
+                "-sourcepath", testSrc,
+                "-use",
+                "pkg", "pkg1", "pkg2", "pkg3");
+        checkExit(Exit.OK);
+        checkSearchJS();
+        checkSearchIndex(false);
     }
 
     void checkDocLintErrors() {
@@ -325,6 +355,19 @@ public class TestSearch extends JavadocTester {
 
     void checkSearchOutput(boolean expectedOutput) {
         checkSearchOutput("overview-summary.html", expectedOutput, true);
+    }
+
+    void checkSearchIndex(boolean expectedOutput) {
+        checkOutput("member-search-index.js", expectedOutput,
+                "{\"p\":\"pkg\",\"c\":\"AnotherClass\",\"l\":\"AnotherClass()\",\"url\":\"%3Cinit%3E()\"}",
+                "{\"p\":\"pkg1\",\"c\":\"RegClass\",\"l\":\"RegClass()\",\"url\":\"%3Cinit%3E()\"}",
+                "{\"p\":\"pkg2\",\"c\":\"TestError\",\"l\":\"TestError()\",\"url\":\"%3Cinit%3E()\"}",
+                "{\"p\":\"pkg\",\"c\":\"AnotherClass\",\"l\":\"method(byte[], int, String)\",\"url\":\"method(byte[],int,java.lang.String)\"}");
+        checkOutput("member-search-index.js", !expectedOutput,
+                "{\"p\":\"pkg\",\"c\":\"AnotherClass\",\"l\":\"method(RegClass)\",\"url\":\"method-pkg1.RegClass-\"}",
+                "{\"p\":\"pkg2\",\"c\":\"TestClass\",\"l\":\"TestClass()\",\"url\":\"TestClass--\"}",
+                "{\"p\":\"pkg\",\"c\":\"TestError\",\"l\":\"TestError()\",\"url\":\"TestError--\"}",
+                "{\"p\":\"pkg\",\"c\":\"AnotherClass\",\"l\":\"method(byte[], int, String)\",\"url\":\"method-byte:A-int-java.lang.String-\"}");
     }
 
     void checkSearchOutput(boolean expectedOutput, boolean moduleDirectoriesVar) {
@@ -594,7 +637,8 @@ public class TestSearch extends JavadocTester {
                 + "        }\n"
                 + "    }\n"
                 + "    return urlPrefix;\n"
-                + "}");
+                + "}",
+                "url += ui.item.l;");
     }
 
     void checkSingleIndexSearchTagDuplication() {

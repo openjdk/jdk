@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,12 @@
  */
 /*
  * @test
- *
  * @bug 4408755
- *
- * @summary This tests wether it's possible to get some informations
- * out of a closed socket. This is for backward compatibility purposes.
+ * @summary This tests whether it's possible to get some informations
+ *          out of a closed socket. This is for backward compatibility
+ *          purposes.
+ * @run main TestClose
+ * @run main/othervm -Djava.net.preferIPv4Stack=true TestClose
  */
 
 import java.net.*;

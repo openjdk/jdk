@@ -41,7 +41,7 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
 
-class BlockListBuilder VALUE_OBJ_CLASS_SPEC {
+class BlockListBuilder {
  private:
   Compilation* _compilation;
   IRScope*     _scope;

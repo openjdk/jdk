@@ -38,7 +38,6 @@
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #endif
 #include "gc/shared/gcLocker.hpp"
 #include "interpreter/bytecodeStream.hpp"
@@ -375,7 +374,43 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   StringTable::serialize(soc);
   soc->do_tag(--tag);
 
+  serialize_well_known_classes(soc);
+  soc->do_tag(--tag);
+
   soc->do_tag(666);
+}
+
+void MetaspaceShared::serialize_well_known_classes(SerializeClosure* soc) {
+  java_lang_Class::serialize(soc);
+  java_lang_String::serialize(soc);
+  java_lang_System::serialize(soc);
+  java_lang_ClassLoader::serialize(soc);
+  java_lang_Throwable::serialize(soc);
+  java_lang_Thread::serialize(soc);
+  java_lang_ThreadGroup::serialize(soc);
+  java_lang_AssertionStatusDirectives::serialize(soc);
+  java_lang_ref_SoftReference::serialize(soc);
+  java_lang_invoke_MethodHandle::serialize(soc);
+  java_lang_invoke_DirectMethodHandle::serialize(soc);
+  java_lang_invoke_MemberName::serialize(soc);
+  java_lang_invoke_ResolvedMethodName::serialize(soc);
+  java_lang_invoke_LambdaForm::serialize(soc);
+  java_lang_invoke_MethodType::serialize(soc);
+  java_lang_invoke_CallSite::serialize(soc);
+  java_lang_invoke_MethodHandleNatives_CallSiteContext::serialize(soc);
+  java_security_AccessControlContext::serialize(soc);
+  java_lang_reflect_AccessibleObject::serialize(soc);
+  java_lang_reflect_Method::serialize(soc);
+  java_lang_reflect_Constructor::serialize(soc);
+  java_lang_reflect_Field::serialize(soc);
+  java_nio_Buffer::serialize(soc);
+  reflect_ConstantPool::serialize(soc);
+  reflect_UnsafeStaticFieldAccessorImpl::serialize(soc);
+  java_lang_reflect_Parameter::serialize(soc);
+  java_lang_Module::serialize(soc);
+  java_lang_StackTraceElement::serialize(soc);
+  java_lang_StackFrameInfo::serialize(soc);
+  java_lang_LiveStackFrameInfo::serialize(soc);
 }
 
 address MetaspaceShared::cds_i2i_entry_code_buffers(size_t total_size) {
@@ -414,8 +449,18 @@ static void collect_array_classes(Klass* k) {
 
 class CollectClassesClosure : public KlassClosure {
   void do_klass(Klass* k) {
+    if (!UseAppCDS && !k->class_loader_data()->is_the_null_class_loader_data()) {
+      // AppCDS is not enabled. Let's omit non-boot classes.
+      return;
+    }
+
     if (!(k->is_instance_klass() && InstanceKlass::cast(k)->is_in_error_state())) {
-      _global_klass_objects->append_if_missing(k);
+      if (k->is_instance_klass() && InstanceKlass::cast(k)->signers() != NULL) {
+        // Mark any class with signers and don't add to the _global_klass_objects
+        k->set_has_signer_and_not_archived();
+      } else {
+        _global_klass_objects->append_if_missing(k);
+      }
     }
     if (k->is_array_klass()) {
       // Add in the array classes too
@@ -450,6 +495,19 @@ static void remove_java_mirror_in_classes() {
       k->remove_java_mirror();
     }
   }
+}
+
+static void clear_basic_type_mirrors() {
+  assert(!MetaspaceShared::is_heap_object_archiving_allowed(), "Sanity");
+  Universe::set_int_mirror(NULL);
+  Universe::set_float_mirror(NULL);
+  Universe::set_double_mirror(NULL);
+  Universe::set_byte_mirror(NULL);
+  Universe::set_bool_mirror(NULL);
+  Universe::set_char_mirror(NULL);
+  Universe::set_long_mirror(NULL);
+  Universe::set_short_mirror(NULL);
+  Universe::set_void_mirror(NULL);
 }
 
 static void rewrite_nofast_bytecode(Method* method) {
@@ -775,6 +833,17 @@ public:
     _dump_region->append_intptr_t((intptr_t)tag);
   }
 
+  void do_oop(oop* o) {
+    if (*o == NULL) {
+      _dump_region->append_intptr_t(0);
+    } else {
+      assert(MetaspaceShared::is_heap_object_archiving_allowed(),
+             "Archiving heap object is not allowed");
+      _dump_region->append_intptr_t(
+        (intptr_t)oopDesc::encode_heap_oop_not_null(*o));
+    }
+  }
+
   void do_region(u_char* start, size_t size) {
     assert((intptr_t)start % sizeof(intptr_t) == 0, "bad alignment");
     assert(size % sizeof(intptr_t) == 0, "bad size");
@@ -935,7 +1004,7 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all, int mc_all, int md_all)
 
 class VM_PopulateDumpSharedSpace: public VM_Operation {
 private:
-  GrowableArray<MemRegion> *_string_regions;
+  GrowableArray<MemRegion> *_closed_archive_heap_regions;
   GrowableArray<MemRegion> *_open_archive_heap_regions;
 
   void dump_java_heap_objects() NOT_CDS_JAVA_HEAP_RETURN;
@@ -949,6 +1018,7 @@ public:
   VMOp_Type type() const { return VMOp_PopulateDumpSharedSpace; }
   void doit();   // outline because gdb sucks
   static void write_region(FileMapInfo* mapinfo, int region, DumpRegion* space, bool read_only,  bool allow_exec);
+  bool allow_nested_vm_operations() const { return true; }
 }; // class VM_PopulateDumpSharedSpace
 
 class SortedSymbolClosure: public SymbolClosure {
@@ -1193,6 +1263,7 @@ public:
   }
 
   static Klass* get_relocated_klass(Klass* orig_klass) {
+    assert(DumpSharedSpaces, "dump time only");
     address* pp = _new_loc_table->get((address)orig_klass);
     assert(pp != NULL, "must be");
     Klass* klass = (Klass*)(*pp);
@@ -1222,7 +1293,11 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   // Reorder the system dictionary. Moving the symbols affects
   // how the hash table indices are calculated.
   SystemDictionary::reorder_dictionary_for_sharing();
+
   tty->print("Removing java_mirror ... ");
+  if (!MetaspaceShared::is_heap_object_archiving_allowed()) {
+    clear_basic_type_mirrors();
+  }
   remove_java_mirror_in_classes();
   tty->print_cr("done. ");
   NOT_PRODUCT(SystemDictionary::verify();)
@@ -1312,7 +1387,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   dump_symbols();
 
   // Dump supported java heap objects
-  _string_regions = NULL;
+  _closed_archive_heap_regions = NULL;
   _open_archive_heap_regions = NULL;
   dump_java_heap_objects();
 
@@ -1375,7 +1450,7 @@ void VM_PopulateDumpSharedSpace::doit() {
     write_region(mapinfo, MetaspaceShared::od, &_od_region, /*read_only=*/true, /*allow_exec=*/false);
 
     _total_string_region_size = mapinfo->write_archive_heap_regions(
-                                        _string_regions,
+                                        _closed_archive_heap_regions,
                                         MetaspaceShared::first_string,
                                         MetaspaceShared::max_strings);
     _total_open_archive_region_size = mapinfo->write_archive_heap_regions(
@@ -1424,7 +1499,7 @@ void VM_PopulateDumpSharedSpace::print_region_stats() {
   _ro_region.print(total_reserved);
   _md_region.print(total_reserved);
   _od_region.print(total_reserved);
-  print_heap_region_stats(_string_regions, "st", total_reserved);
+  print_heap_region_stats(_closed_archive_heap_regions, "st", total_reserved);
   print_heap_region_stats(_open_archive_heap_regions, "oa", total_reserved);
 
   tty->print_cr("total    : " SIZE_FORMAT_W(9) " [100.0%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used]",
@@ -1450,6 +1525,11 @@ void MetaspaceShared::relocate_klass_ptr(oop o) {
   assert(DumpSharedSpaces, "sanity");
   Klass* k = ArchiveCompactor::get_relocated_klass(o->klass());
   o->set_klass(k);
+}
+
+Klass* MetaspaceShared::get_relocated_klass(Klass *k) {
+  assert(DumpSharedSpaces, "sanity");
+  return ArchiveCompactor::get_relocated_klass(k);
 }
 
 class LinkSharedClassesClosure : public KlassClosure {
@@ -1693,11 +1773,11 @@ void VM_PopulateDumpSharedSpace::dump_java_heap_objects() {
     // Cache for recording where the archived objects are copied to
     MetaspaceShared::create_archive_object_cache();
 
-    tty->print_cr("Dumping String objects to closed archive heap region ...");
+    tty->print_cr("Dumping objects to closed archive heap region ...");
     NOT_PRODUCT(StringTable::verify());
-    // The string space has maximum two regions. See FileMapInfo::write_archive_heap_regions() for details.
-    _string_regions = new GrowableArray<MemRegion>(2);
-    StringTable::write_to_archive(_string_regions);
+    // The closed space has maximum two regions. See FileMapInfo::write_archive_heap_regions() for details.
+    _closed_archive_heap_regions = new GrowableArray<MemRegion>(2);
+    MetaspaceShared::dump_closed_archive_heap_objects(_closed_archive_heap_regions);
 
     tty->print_cr("Dumping objects to open archive heap region ...");
     _open_archive_heap_regions = new GrowableArray<MemRegion>(2);
@@ -1709,6 +1789,20 @@ void VM_PopulateDumpSharedSpace::dump_java_heap_objects() {
   G1HeapVerifier::verify_archive_regions();
 }
 
+void MetaspaceShared::dump_closed_archive_heap_objects(
+                                    GrowableArray<MemRegion> * closed_archive) {
+  assert(is_heap_object_archiving_allowed(), "Cannot dump java heap objects");
+
+  Thread* THREAD = Thread::current();
+  G1CollectedHeap::heap()->begin_archive_alloc_range();
+
+  // Archive interned string objects
+  StringTable::write_to_archive(closed_archive);
+
+  G1CollectedHeap::heap()->end_archive_alloc_range(closed_archive,
+                                                   os::vm_allocation_granularity());
+}
+
 void MetaspaceShared::dump_open_archive_heap_objects(
                                     GrowableArray<MemRegion> * open_archive) {
   assert(UseG1GC, "Only support G1 GC");
@@ -1718,21 +1812,33 @@ void MetaspaceShared::dump_open_archive_heap_objects(
   Thread* THREAD = Thread::current();
   G1CollectedHeap::heap()->begin_archive_alloc_range(true /* open */);
 
-  MetaspaceShared::archive_resolved_constants(THREAD);
+  java_lang_Class::archive_basic_type_mirrors(THREAD);
+
+  MetaspaceShared::archive_klass_objects(THREAD);
 
   G1CollectedHeap::heap()->end_archive_alloc_range(open_archive,
                                                    os::vm_allocation_granularity());
 }
 
 MetaspaceShared::ArchivedObjectCache* MetaspaceShared::_archive_object_cache = NULL;
-oop MetaspaceShared::archive_heap_object(oop obj, Thread* THREAD) {
+oop MetaspaceShared::find_archived_heap_object(oop obj) {
   assert(DumpSharedSpaces, "dump-time only");
-
   ArchivedObjectCache* cache = MetaspaceShared::archive_object_cache();
   oop* p = cache->get(obj);
   if (p != NULL) {
-    // already archived
     return *p;
+  } else {
+    return NULL;
+  }
+}
+
+oop MetaspaceShared::archive_heap_object(oop obj, Thread* THREAD) {
+  assert(DumpSharedSpaces, "dump-time only");
+
+  oop ao = find_archived_heap_object(obj);
+  if (ao != NULL) {
+    // already archived
+    return ao;
   }
 
   int len = obj->size();
@@ -1745,15 +1851,23 @@ oop MetaspaceShared::archive_heap_object(oop obj, Thread* THREAD) {
   if (archived_oop != NULL) {
     Copy::aligned_disjoint_words((HeapWord*)obj, (HeapWord*)archived_oop, len);
     relocate_klass_ptr(archived_oop);
+    ArchivedObjectCache* cache = MetaspaceShared::archive_object_cache();
     cache->put(obj, archived_oop);
   }
+  log_debug(cds)("Archived heap object " PTR_FORMAT " ==> " PTR_FORMAT,
+                 p2i(obj), p2i(archived_oop));
   return archived_oop;
 }
 
-void MetaspaceShared::archive_resolved_constants(Thread* THREAD) {
+void MetaspaceShared::archive_klass_objects(Thread* THREAD) {
   int i;
   for (i = 0; i < _global_klass_objects->length(); i++) {
     Klass* k = _global_klass_objects->at(i);
+
+    // archive mirror object
+    java_lang_Class::archive_mirror(k, CHECK);
+
+    // archive the resolved_referenes array
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
       ik->constants()->archive_resolved_references(THREAD);
@@ -1800,6 +1914,19 @@ public:
     // do_int(&old_tag);
     assert(tag == old_tag, "old tag doesn't match");
     FileMapInfo::assert_mark(tag == old_tag);
+  }
+
+  void do_oop(oop *p) {
+    narrowOop o = (narrowOop)nextPtr();
+    if (o == 0 || !MetaspaceShared::open_archive_heap_region_mapped()) {
+      p = NULL;
+    } else {
+      assert(MetaspaceShared::is_heap_object_archiving_allowed(),
+             "Archived heap object is not allowed");
+      assert(MetaspaceShared::open_archive_heap_region_mapped(),
+             "Open archive heap region is not mapped");
+      RootAccess<IN_ARCHIVE_ROOT>::oop_store(p, oopDesc::decode_heap_oop_not_null(o));
+    }
   }
 
   void do_region(u_char* start, size_t size) {

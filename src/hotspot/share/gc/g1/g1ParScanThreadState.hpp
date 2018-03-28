@@ -26,11 +26,11 @@
 #define SHARE_VM_GC_G1_G1PARSCANTHREADSTATE_HPP
 
 #include "gc/g1/dirtyCardQueue.hpp"
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
@@ -175,14 +175,13 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   HeapWord* allocate_in_next_plab(InCSetState const state,
                                   InCSetState* dest,
                                   size_t word_sz,
-                                  AllocationContext_t const context,
                                   bool previous_plab_refill_failed);
 
   inline InCSetState next_state(InCSetState const state, markOop const m, uint& age);
 
   void report_promotion_event(InCSetState const dest_state,
                               oop const old, size_t word_sz, uint age,
-                              HeapWord * const obj_ptr, const AllocationContext_t context) const;
+                              HeapWord * const obj_ptr) const;
  public:
 
   oop copy_to_survivor_space(InCSetState const state, oop const obj, markOop const old_mark);

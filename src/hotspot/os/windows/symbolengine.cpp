@@ -375,10 +375,10 @@ static bool recalc_search_path_locked(bool* p_search_path_was_updated) {
     const int len_returned = (int)::GetModuleFileName(hMod, filebuffer, (DWORD)file_buffer_capacity);
     DEBUG_ONLY(g_buffers.dir_name.check();)
     if (len_returned == 0) {
-      // Error. This is suspicious - this may happen if a module has just been
-      // unloaded concurrently after our call to EnumProcessModules and
-      // GetModuleFileName, but probably just indicates a coding error.
-      assert(false, "GetModuleFileName failed (%u)", ::GetLastError());
+      // This may happen when a module gets unloaded after our call to EnumProcessModules.
+      // It should be rare but may sporadically happen. Just ignore and continue with the
+      // next module.
+      continue;
     } else if (len_returned == file_buffer_capacity) {
       // Truncation. Just skip this module and continue with the next module.
       continue;

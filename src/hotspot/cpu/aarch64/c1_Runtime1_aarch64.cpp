@@ -44,8 +44,8 @@
 #include "runtime/vframeArray.hpp"
 #include "vmreg_aarch64.inline.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #endif
 
 
@@ -1107,7 +1107,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         // arg0 : previous value of memory
 
         BarrierSet* bs = Universe::heap()->barrier_set();
-        if (bs->kind() != BarrierSet::G1SATBCTLogging) {
+        if (bs->kind() != BarrierSet::G1BarrierSet) {
           __ mov(r0, (int)id);
           __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, unimplemented_entry), r0);
           __ should_not_reach_here();
@@ -1161,6 +1161,14 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
     case g1_post_barrier_slow_id:
       {
         StubFrame f(sasm, "g1_post_barrier", dont_gc_arguments);
+
+        BarrierSet* bs = Universe::heap()->barrier_set();
+        if (bs->kind() != BarrierSet::G1BarrierSet) {
+          __ mov(r0, (int)id);
+          __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, unimplemented_entry), r0);
+          __ should_not_reach_here();
+          break;
+        }
 
         // arg0: store_address
         Address store_addr(rfp, 2*BytesPerWord);

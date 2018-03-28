@@ -31,7 +31,7 @@
  * @compile -XDstringConcat=inline ImplicitStringConcatShapes.java
  * @run main/othervm -Xverify:all ImplicitStringConcatShapes
  *
- * @compile -XDstringConcat=indy -source 1.9 -target 1.9 ImplicitStringConcatShapes.java
+ * @compile -XDstringConcat=indy ImplicitStringConcatShapes.java
  *
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB                                                              ImplicitStringConcatShapes
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED                                                        ImplicitStringConcatShapes
@@ -61,7 +61,7 @@
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT      -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatShapes
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT  -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatShapes
  *
- * @compile -XDstringConcat=indyWithConstants -source 1.9 -target 1.9 ImplicitStringConcatShapes.java
+ * @compile -XDstringConcat=indyWithConstants ImplicitStringConcatShapes.java
  *
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB                                                              ImplicitStringConcatShapes
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED                                                        ImplicitStringConcatShapes

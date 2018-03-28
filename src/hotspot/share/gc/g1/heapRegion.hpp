@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_GC_G1_HEAPREGION_HPP
 #define SHARE_VM_GC_G1_HEAPREGION_HPP
 
-#include "gc/g1/g1AllocationContext.hpp"
 #include "gc/g1/g1BlockOffsetTable.hpp"
 #include "gc/g1/g1HeapRegionTraceType.hpp"
 #include "gc/g1/heapRegionTracer.hpp"
@@ -232,8 +231,6 @@ class HeapRegion: public G1ContiguousSpace {
  protected:
   // The index of this region in the heap region sequence.
   uint  _hrm_index;
-
-  AllocationContext_t _allocation_context;
 
   HeapRegionType _type;
 
@@ -472,14 +469,6 @@ class HeapRegion: public G1ContiguousSpace {
   }
 
   inline bool in_collection_set() const;
-
-  void set_allocation_context(AllocationContext_t context) {
-    _allocation_context = context;
-  }
-
-  AllocationContext_t  allocation_context() const {
-    return _allocation_context;
-  }
 
   // Methods used by the HeapRegionSetBase class and subclasses.
 

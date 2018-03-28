@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -661,7 +661,7 @@ public:
 
 //----------------------------BlockProbPair---------------------------
 // Ordered pair of Node*.
-class BlockProbPair VALUE_OBJ_CLASS_SPEC {
+class BlockProbPair {
 protected:
   Block* _target;      // block target
   double  _prob;        // probability of edge to block

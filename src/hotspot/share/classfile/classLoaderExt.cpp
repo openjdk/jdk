@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classListParser.hpp"
-#include "classfile/classLoader.hpp"
+#include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/klassFactory.hpp"
@@ -196,28 +196,6 @@ void ClassLoaderExt::setup_search_paths() {
 }
 
 Thread* ClassLoaderExt::Context::_dump_thread = NULL;
-
-bool ClassLoaderExt::check(ClassLoaderExt::Context *context,
-                           const ClassFileStream* stream,
-                           const int classpath_index) {
-  if (stream != NULL) {
-    // Ignore any App classes from signed JAR file during CDS archiving
-    // dumping
-    if (DumpSharedSpaces &&
-        SharedClassUtil::is_classpath_entry_signed(classpath_index) &&
-        classpath_index >= _app_paths_start_index) {
-      tty->print_cr("Preload Warning: Skipping %s from signed JAR",
-                    context->class_name());
-      return false;
-    }
-    if (classpath_index >= _app_paths_start_index) {
-      _has_app_classes = true;
-      _has_platform_classes = true;
-    }
-  }
-
-  return true;
-}
 
 void ClassLoaderExt::record_result(ClassLoaderExt::Context *context,
                                    Symbol* class_name,

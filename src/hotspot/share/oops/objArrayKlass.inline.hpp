@@ -37,7 +37,7 @@
 
 template <bool nv, typename T, class OopClosureType>
 void ObjArrayKlass::oop_oop_iterate_elements_specialized(objArrayOop a, OopClosureType* closure) {
-  T* p         = (T*)a->base();
+  T* p         = (T*)a->base_raw();
   T* const end = p + a->length();
 
   for (;p < end; p++) {
@@ -52,7 +52,7 @@ void ObjArrayKlass::oop_oop_iterate_elements_specialized_bounded(
   T* const l = (T*)low;
   T* const h = (T*)high;
 
-  T* p   = (T*)a->base();
+  T* p   = (T*)a->base_raw();
   T* end = p + a->length();
 
   if (p < l) {
@@ -112,7 +112,7 @@ void ObjArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, Me
 template <bool nv, typename T, class OopClosureType>
 void ObjArrayKlass::oop_oop_iterate_range_specialized(objArrayOop a, OopClosureType* closure, int start, int end) {
   T* low = start == 0 ? cast_from_oop<T*>(a) : a->obj_at_addr_raw<T>(start);
-  T* high = (T*)a->base() + end;
+  T* high = (T*)a->base_raw() + end;
 
   oop_oop_iterate_elements_specialized_bounded<nv, T>(a, closure, low, high);
 }

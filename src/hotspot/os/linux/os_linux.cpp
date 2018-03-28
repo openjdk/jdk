@@ -629,6 +629,10 @@ static void NOINLINE _expand_stack_to(address bottom) {
   }
 }
 
+void os::Linux::expand_stack_to(address bottom) {
+  _expand_stack_to(bottom);
+}
+
 bool os::Linux::manually_expand_stack(JavaThread * t, address addr) {
   assert(t!=NULL, "just checking");
   assert(t->osthread()->expanding_stack(), "expand should be set");
@@ -3053,12 +3057,10 @@ bool os::pd_uncommit_memory(char* addr, size_t size) {
   return res  != (uintptr_t) MAP_FAILED;
 }
 
-// If there is no page mapped/committed, top (bottom + size) is returned
-static address get_stack_mapped_bottom(address bottom,
-                                       size_t size,
-                                       bool committed_only /* must have backing pages */) {
-  // address used to test if the page is mapped/committed
-  address test_addr = bottom + size;
+static address get_stack_commited_bottom(address bottom, size_t size) {
+  address nbot = bottom;
+  address ntop = bottom + size;
+
   size_t page_sz = os::vm_page_size();
   unsigned pages = size / page_sz;
 
@@ -3070,39 +3072,38 @@ static address get_stack_mapped_bottom(address bottom,
 
   while (imin < imax) {
     imid = (imax + imin) / 2;
-    test_addr = bottom + (imid * page_sz);
+    nbot = ntop - (imid * page_sz);
 
     // Use a trick with mincore to check whether the page is mapped or not.
     // mincore sets vec to 1 if page resides in memory and to 0 if page
     // is swapped output but if page we are asking for is unmapped
     // it returns -1,ENOMEM
-    mincore_return_value = mincore(test_addr, page_sz, vec);
+    mincore_return_value = mincore(nbot, page_sz, vec);
 
-    if (mincore_return_value == -1 || (committed_only && (vec[0] & 0x01) == 0)) {
-      // Page is not mapped/committed go up
-      // to find first mapped/committed page
-      if ((mincore_return_value == -1 && errno != EAGAIN)
-        || (committed_only && (vec[0] & 0x01) == 0)) {
-        assert(mincore_return_value != -1 || errno == ENOMEM, "Unexpected mincore errno");
-
-        imin = imid + 1;
+    if (mincore_return_value == -1) {
+      // Page is not mapped go up
+      // to find first mapped page
+      if (errno != EAGAIN) {
+        assert(errno == ENOMEM, "Unexpected mincore errno");
+        imax = imid;
       }
     } else {
-      // mapped/committed, go down
-      imax= imid;
+      // Page is mapped go down
+      // to find first not mapped page
+      imin = imid + 1;
     }
   }
 
-  // Adjust stack bottom one page up if last checked page is not mapped/committed
-  if (mincore_return_value == -1 || (committed_only && (vec[0] & 0x01) == 0)) {
-    assert(mincore_return_value != -1 || (errno != EAGAIN && errno != ENOMEM),
-      "Should not get to here");
+  nbot = nbot + page_sz;
 
-    test_addr = test_addr + page_sz;
+  // Adjust stack bottom one page up if last checked page is not mapped
+  if (mincore_return_value == -1) {
+    nbot = nbot + page_sz;
   }
 
-  return test_addr;
+  return nbot;
 }
+
 
 // Linux uses a growable mapping for the stack, and if the mapping for
 // the stack guard pages is not removed when we detach a thread the
@@ -3140,9 +3141,9 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
 
     if (mincore((address)stack_extent, os::vm_page_size(), vec) == -1) {
       // Fallback to slow path on all errors, including EAGAIN
-      stack_extent = (uintptr_t) get_stack_mapped_bottom(os::Linux::initial_thread_stack_bottom(),
-                                                         (size_t)addr - stack_extent,
-                                                         false /* committed_only */);
+      stack_extent = (uintptr_t) get_stack_commited_bottom(
+                                                           os::Linux::initial_thread_stack_bottom(),
+                                                           (size_t)addr - stack_extent);
     }
 
     if (stack_extent < (uintptr_t)addr) {
@@ -3167,11 +3168,6 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
   }
 
   return os::uncommit_memory(addr, size);
-}
-
-size_t os::committed_stack_size(address bottom, size_t size) {
-  address bot = get_stack_mapped_bottom(bottom, size, true /* committed_only */);
-  return size_t(bottom + size - bot);
 }
 
 // If 'fixed' is true, anon_mmap() will attempt to reserve anonymous memory

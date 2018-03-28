@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_VM_GC_G1_G1COLLECTIONSET_HPP
 
 #include "gc/g1/collectionSetChooser.hpp"
-#include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -37,7 +36,7 @@ class G1Policy;
 class G1SurvivorRegions;
 class HeapRegion;
 
-class G1CollectionSet VALUE_OBJ_CLASS_SPEC {
+class G1CollectionSet {
   G1CollectedHeap* _g1;
   G1Policy* _policy;
 

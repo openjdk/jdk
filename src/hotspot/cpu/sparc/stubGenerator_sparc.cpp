@@ -836,7 +836,7 @@ class StubGenerator: public StubCodeGenerator {
   void gen_write_ref_array_pre_barrier(Register addr, Register count, bool dest_uninitialized) {
     BarrierSet* bs = Universe::heap()->barrier_set();
     switch (bs->kind()) {
-      case BarrierSet::G1SATBCTLogging:
+      case BarrierSet::G1BarrierSet:
         // With G1, don't generate the call if we statically know that the target in uninitialized
         if (!dest_uninitialized) {
           Register tmp = O5;
@@ -898,7 +898,7 @@ class StubGenerator: public StubCodeGenerator {
     BarrierSet* bs = Universe::heap()->barrier_set();
 
     switch (bs->kind()) {
-      case BarrierSet::G1SATBCTLogging:
+      case BarrierSet::G1BarrierSet:
         {
           // Get some new fresh output registers.
           __ save_frame(0);

@@ -43,11 +43,9 @@ VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t         word_size,
                                                      uint           gc_count_before,
                                                      GCCause::Cause gc_cause,
                                                      bool           should_initiate_conc_mark,
-                                                     double         target_pause_time_ms,
-                                                     AllocationContext_t allocation_context)
+                                                     double         target_pause_time_ms)
   : VM_CollectForAllocation(word_size, gc_count_before, gc_cause),
     _pause_succeeded(false),
-    _allocation_context(allocation_context),
     _should_initiate_conc_mark(should_initiate_conc_mark),
     _target_pause_time_ms(target_pause_time_ms),
     _should_retry_gc(false),
@@ -82,7 +80,6 @@ void VM_G1CollectForAllocation::doit() {
   if (_word_size > 0) {
     // An allocation has been requested. So, try to do that first.
     _result = g1h->attempt_allocation_at_safepoint(_word_size,
-                                                   _allocation_context,
                                                    false /* expect_null_cur_alloc_region */);
     if (_result != NULL) {
       // If we can successfully allocate before we actually do the
@@ -138,7 +135,7 @@ void VM_G1CollectForAllocation::doit() {
     if (_word_size > 0) {
       // An allocation had been requested. Do it, eventually trying a stronger
       // kind of GC.
-      _result = g1h->satisfy_failed_allocation(_word_size, _allocation_context, &_pause_succeeded);
+      _result = g1h->satisfy_failed_allocation(_word_size, &_pause_succeeded);
     } else {
       bool should_upgrade_to_full = !g1h->should_do_concurrent_full_gc(_gc_cause) &&
                                     !g1h->has_regions_left_for_allocation();
@@ -207,6 +204,8 @@ void VM_CGC_Operation::doit() {
   GCTraceCPUTime tcpu;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   GCTraceTime(Info, gc) t(_printGCMessage, g1h->concurrent_mark()->gc_timer_cm(), GCCause::_no_gc, true);
+  TraceCollectorStats tcs(g1h->g1mm()->conc_collection_counters());
+  SvcGCMarker sgcm(SvcGCMarker::CONCURRENT);
   IsGCActiveMark x;
   _cl->do_void();
 }

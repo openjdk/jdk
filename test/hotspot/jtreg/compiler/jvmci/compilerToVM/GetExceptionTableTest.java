@@ -55,7 +55,7 @@ public class GetExceptionTableTest {
 
     public static final int TRY_CATCH_COUNT = 3;
     public static final int TRY_CATCH_FINALLY_COUNT = 8;
-    public static final int TRY_WITH_RESOURCES_COUNT = 6;
+    public static final int TRY_WITH_RESOURCES_COUNT = 5;
     public static final int EMPTY_COUNT = 0;
 
     public static void main(String[] args) {

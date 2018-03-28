@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ int find_hihghest_bit( uint32_t mask );
 // However, it means the ADLC can redefine the unroll macro and all loops
 // over register masks will be unrolled by the correct amount.
 
-class RegMask VALUE_OBJ_CLASS_SPEC {
+class RegMask {
   union {
     double _dummy_force_double_alignment[RM_SIZE>>1];
     // Array of Register Mask bits.  This array is large enough to cover

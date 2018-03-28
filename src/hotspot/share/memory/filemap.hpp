@@ -42,7 +42,7 @@
 
 static const int JVM_IDENT_MAX = 256;
 
-class SharedClassPathEntry VALUE_OBJ_CLASS_SPEC {
+class SharedClassPathEntry {
 protected:
   bool   _is_dir;
   time_t _timestamp;          // jar/jimage timestamp,  0 if is directory or other
@@ -125,14 +125,13 @@ public:
     size_t  _cds_i2i_entry_code_buffers_size;
     size_t  _core_spaces_size;        // number of bytes allocated by the core spaces
                                       // (mc, md, ro, rw and od).
-
     struct space_info {
       int    _crc;           // crc checksum of the current space
       size_t _file_offset;   // sizeof(this) rounded to vm page size
       union {
         char*  _base;        // copy-on-write base address
         intx   _offset;      // offset from the compressed oop encoding base, only used
-                             // by string space
+                             // by archive heap space
       } _addr;
       size_t _used;          // for setting space top on read
       bool   _read_only;     // read only space?

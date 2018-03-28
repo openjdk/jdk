@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ class WorkGang;
 // Can be used for various purposes, like as remembered set for completely
 // coarsened remembered sets, scrubbing remembered sets or estimating liveness.
 // This information is created as part of the concurrent marking cycle.
-class G1CardLiveData VALUE_OBJ_CLASS_SPEC {
+class G1CardLiveData {
   friend class G1CardLiveDataHelper;
   friend class G1VerifyCardLiveDataTask;
 private:
