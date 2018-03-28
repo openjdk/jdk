@@ -1239,7 +1239,7 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
           //---<  nMethod size in hex  >---
           unsigned int total_size = nm->total_size();
           ast->print(PTR32_FORMAT, total_size);
-          ast->print("(%4ldK)", total_size/K);
+          ast->print("(" SIZE_FORMAT_W(4) "K)", total_size/K);
           ast->fill_to(51);
           ast->print("  %c", blobTypeChar[TopSizeArray[i].type]);
           //---<  compiler information  >---
@@ -1257,7 +1257,7 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
         } else {
           //---<  block size in hex  >---
           ast->print(PTR32_FORMAT, (unsigned int)(TopSizeArray[i].len<<log2_seg_size));
-          ast->print("(%4ldK)", (TopSizeArray[i].len<<log2_seg_size)/K);
+          ast->print("(" SIZE_FORMAT_W(4) "K)", (TopSizeArray[i].len<<log2_seg_size)/K);
           //---<  no compiler information  >---
           ast->fill_to(56);
           //---<  name and signature  >---
@@ -1304,17 +1304,17 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
       ast->print_cr("[Size Range)------avg.-size-+----count-+");
       for (unsigned int i = 0; i < nSizeDistElements; i++) {
         if (SizeDistributionArray[i].rangeStart<<log2_seg_size < K) {
-          ast->print("[%5d ..%5d ): "
-                    ,(SizeDistributionArray[i].rangeStart<<log2_seg_size)
-                    ,(SizeDistributionArray[i].rangeEnd<<log2_seg_size)
+          ast->print("[" SIZE_FORMAT_W(5) " .." SIZE_FORMAT_W(5) " ): "
+                    ,(size_t)(SizeDistributionArray[i].rangeStart<<log2_seg_size)
+                    ,(size_t)(SizeDistributionArray[i].rangeEnd<<log2_seg_size)
                     );
         } else if (SizeDistributionArray[i].rangeStart<<log2_seg_size < M) {
-          ast->print("[%5ldK..%5ldK): "
+          ast->print("[" SIZE_FORMAT_W(5) "K.." SIZE_FORMAT_W(5) "K): "
                     ,(SizeDistributionArray[i].rangeStart<<log2_seg_size)/K
                     ,(SizeDistributionArray[i].rangeEnd<<log2_seg_size)/K
                     );
         } else {
-          ast->print("[%5ldM..%5ldM): "
+          ast->print("[" SIZE_FORMAT_W(5) "M.." SIZE_FORMAT_W(5) "M): "
                     ,(SizeDistributionArray[i].rangeStart<<log2_seg_size)/M
                     ,(SizeDistributionArray[i].rangeEnd<<log2_seg_size)/M
                     );
@@ -1343,17 +1343,17 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
       ast->print_cr("[Size Range)------avg.-size-+----count-+");
       for (unsigned int i = 0; i < nSizeDistElements; i++) {
         if (SizeDistributionArray[i].rangeStart<<log2_seg_size < K) {
-          ast->print("[%5d ..%5d ): "
-                    ,(SizeDistributionArray[i].rangeStart<<log2_seg_size)
-                    ,(SizeDistributionArray[i].rangeEnd<<log2_seg_size)
+          ast->print("[" SIZE_FORMAT_W(5) " .." SIZE_FORMAT_W(5) " ): "
+                    ,(size_t)(SizeDistributionArray[i].rangeStart<<log2_seg_size)
+                    ,(size_t)(SizeDistributionArray[i].rangeEnd<<log2_seg_size)
                     );
         } else if (SizeDistributionArray[i].rangeStart<<log2_seg_size < M) {
-          ast->print("[%5ldK..%5ldK): "
+          ast->print("[" SIZE_FORMAT_W(5) "K.." SIZE_FORMAT_W(5) "K): "
                     ,(SizeDistributionArray[i].rangeStart<<log2_seg_size)/K
                     ,(SizeDistributionArray[i].rangeEnd<<log2_seg_size)/K
                     );
         } else {
-          ast->print("[%5ldM..%5ldM): "
+          ast->print("[" SIZE_FORMAT_W(5) "M.." SIZE_FORMAT_W(5) "M): "
                     ,(SizeDistributionArray[i].rangeStart<<log2_seg_size)/M
                     ,(SizeDistributionArray[i].rangeEnd<<log2_seg_size)/M
                     );
@@ -2116,7 +2116,7 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
           //---<  nMethod size in hex  >---
           unsigned int total_size = nm->total_size();
           ast->print(PTR32_FORMAT, total_size);
-          ast->print("(%4ldK)", total_size/K);
+          ast->print("(" SIZE_FORMAT_W(4) "K)", total_size/K);
           //---<  compiler information  >---
           ast->fill_to(51);
           ast->print("%5s %3d", compTypeName[StatArray[ix].compiler], StatArray[ix].level);
