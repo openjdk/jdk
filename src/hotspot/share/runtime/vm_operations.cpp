@@ -417,7 +417,7 @@ ThreadSnapshot* VM_ThreadDump::snapshot_thread(JavaThread* java_thread, ThreadCo
 }
 
 volatile bool VM_Exit::_vm_exited = false;
-Thread * VM_Exit::_shutdown_thread = NULL;
+Thread * volatile VM_Exit::_shutdown_thread = NULL;
 
 int VM_Exit::set_vm_exited() {
 
