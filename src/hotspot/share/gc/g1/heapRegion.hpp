@@ -100,7 +100,6 @@ class G1ContiguousSpace: public CompactibleSpace {
  protected:
   G1BlockOffsetTablePart _bot_part;
   Mutex _par_alloc_lock;
-  volatile uint _gc_time_stamp;
   // When we need to retire an allocation region, while other threads
   // are also concurrently trying to allocate into it, we typically
   // allocate a dummy object at the end of the region to ensure that
@@ -146,10 +145,6 @@ class G1ContiguousSpace: public CompactibleSpace {
 
   void mangle_unused_area() PRODUCT_RETURN;
   void mangle_unused_area_complete() PRODUCT_RETURN;
-
-  void record_timestamp();
-  void reset_gc_time_stamp() { _gc_time_stamp = 0; }
-  uint get_gc_time_stamp() { return _gc_time_stamp; }
 
   // See the comment above in the declaration of _pre_dummy_top for an
   // explanation of what it is.

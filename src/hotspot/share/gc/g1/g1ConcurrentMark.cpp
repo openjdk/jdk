@@ -1163,7 +1163,6 @@ class G1CleanupTask: public AbstractGangTask {
     const uint humongous_regions_removed() { return _humongous_regions_removed; }
 
     bool do_heap_region(HeapRegion *hr) {
-      _g1->reset_gc_time_stamps(hr);
       hr->note_end_of_marking();
 
       if (hr->used() > 0 && hr->max_live_bytes() == 0 && !hr->is_young() && !hr->is_archive()) {
@@ -1285,16 +1284,12 @@ void G1ConcurrentMark::cleanup() {
     _g1h->heap_region_iterate(&cl);
   }
 
-  g1h->reset_gc_time_stamp();
-
   // Install newly created mark bitmap as "prev".
   swap_mark_bitmaps();
   {
     GCTraceTime(Debug, gc, phases)("Reclaim Empty Regions");
     reclaim_empty_regions();
   }
-
-  g1h->check_gc_time_stamps();
 
   {
     GCTraceTime(Debug, gc, phases)("Finalize Concurrent Mark Cleanup");
