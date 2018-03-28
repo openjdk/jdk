@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <sizecalc.h>
+#include "jni.h"
 
 static Bool shapeSupported;
 static int shapeEventBase, shapeErrorBase;
@@ -800,7 +801,7 @@ SplashReconfigure(Splash * splash) {
     sendctl(splash, SPLASHCTL_RECONFIGURE);
 }
 
-SPLASHEXPORT jboolean
+JNIEXPORT jboolean JNICALL
 SplashGetScaledImageName(const char* jarName, const char* fileName,
                            float *scaleFactor, char *scaledImgName,
                            const size_t scaledImageNameLength)

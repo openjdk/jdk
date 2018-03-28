@@ -76,7 +76,6 @@ ifneq ($(OPENJDK_TARGET_OS), aix)
       CFLAGS := $(CFLAGS_JDKLIB) \
           $(LIBJSOUND_CFLAGS), \
       CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBJSOUND_CFLAGS), \
-      MAPFILE := $(TOPDIR)/make/mapfiles/libjsound/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS_unix := -ljava -ljvm, \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,20 +30,29 @@
 #include "splashscreen_gfx.h"
 #include "jni.h"
 
-SPLASHEXPORT int SplashLoadMemory(void *pdata, int size); /* requires preloading the file */
-SPLASHEXPORT int SplashLoadFile(const char *filename);  // FIXME: range checking for SplashLoadMemory
+JNIEXPORT int JNICALL
+SplashLoadMemory(void *pdata, int size); /* requires preloading the file */
 
-SPLASHEXPORT void SplashInit(void);
-SPLASHEXPORT void SplashClose(void);
+JNIEXPORT int JNICALL
+SplashLoadFile(const char *filename);  // FIXME: range checking for SplashLoadMemory
 
-SPLASHEXPORT void SplashSetScaleFactor(float);
-SPLASHEXPORT jboolean SplashGetScaledImageName(const char*, const char*,
+JNIEXPORT void JNICALL
+SplashInit(void);
+
+JNIEXPORT void JNICALL
+SplashClose(void);
+
+JNIEXPORT void JNICALL
+SplashSetScaleFactor(float);
+
+JNIEXPORT jboolean JNICALL
+SplashGetScaledImageName(const char*, const char*,
                               float*, char*, const size_t scaledImageNameLength);
 
-SPLASHEXPORT void
+JNIEXPORT void JNICALL
 SplashSetFileJarName(const char* fileName, const char* jarName);
 
-SPLASHEXPORT int
+JNIEXPORT int JNICALL
 SplashGetScaledImgNameMaxPstfixLen(const char*);
 typedef struct SplashImage
 {

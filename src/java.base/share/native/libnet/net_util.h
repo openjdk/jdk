@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,6 +202,7 @@ NET_EnableFastTcpLoopback(int fd);
 
 unsigned short in_cksum(unsigned short *addr, int len);
 
-jint NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);
+JNIEXPORT jint JNICALL
+NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);
 
 #endif /* NET_UTILS_H */

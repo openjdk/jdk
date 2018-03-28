@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@
   int IsWhiteSpaceOption(const char* name) { return 1; }
 #else
   #include "java.h"
+  #include "jni.h"
 #endif
 
 #include "jli_util.h"
@@ -78,7 +79,8 @@ static size_t argsCount = 1;
 static jboolean stopExpansion = JNI_FALSE;
 static jboolean relaunch = JNI_FALSE;
 
-void JLI_InitArgProcessing(jboolean hasJavaArgs, jboolean disableArgFile) {
+JNIEXPORT void JNICALL
+JLI_InitArgProcessing(jboolean hasJavaArgs, jboolean disableArgFile) {
     // No expansion for relaunch
     if (argsCount != 1) {
         relaunch = JNI_TRUE;
@@ -94,7 +96,8 @@ void JLI_InitArgProcessing(jboolean hasJavaArgs, jboolean disableArgFile) {
     firstAppArgIndex = hasJavaArgs ? 0: NOT_FOUND;
 }
 
-int JLI_GetAppArgIndex() {
+JNIEXPORT int JNICALL
+JLI_GetAppArgIndex() {
     // Will be 0 for tools
     return firstAppArgIndex;
 }
@@ -373,7 +376,8 @@ static JLI_List expandArgFile(const char *arg) {
     return rv;
 }
 
-JLI_List JLI_PreprocessArg(const char *arg)
+JNIEXPORT JLI_List JNICALL
+JLI_PreprocessArg(const char *arg)
 {
     JLI_List rv;
 
@@ -428,7 +432,8 @@ int isTerminalOpt(char *arg) {
            JLI_StrCmp(arg, "--full-version") == 0;
 }
 
-jboolean JLI_AddArgsFromEnvVar(JLI_List args, const char *var_name) {
+JNIEXPORT jboolean JNICALL
+JLI_AddArgsFromEnvVar(JLI_List args, const char *var_name) {
     char *env = getenv(var_name);
     char *p, *arg;
     char quote;

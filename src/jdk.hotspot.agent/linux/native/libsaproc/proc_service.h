@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include <stdio.h>
 #include <thread_db.h>
+#include "jni.h"
 
 // Linux does not have the proc service library, though it does provide the
 // thread_db library which can be used to manipulate threads without having
@@ -44,33 +45,42 @@ typedef enum {
 } ps_err_e;
 
 // ps_getpid() is only defined on Linux to return a thread's process ID
-pid_t ps_getpid(struct ps_prochandle *ph);
+JNIEXPORT pid_t JNICALL
+ps_getpid(struct ps_prochandle *ph);
 
 // ps_pglobal_lookup() looks up the symbol sym_name in the symbol table
 // of the load object object_name in the target process identified by ph.
 // It returns the symbol's value as an address in the target process in
 // *sym_addr.
 
-ps_err_e ps_pglobal_lookup(struct ps_prochandle *ph, const char *object_name,
+JNIEXPORT ps_err_e JNICALL
+ps_pglobal_lookup(struct ps_prochandle *ph, const char *object_name,
                     const char *sym_name, psaddr_t *sym_addr);
 
 // read "size" bytes of data from debuggee at address "addr"
-ps_err_e ps_pdread(struct ps_prochandle *ph, psaddr_t  addr,
+JNIEXPORT ps_err_e JNICALL
+ps_pdread(struct ps_prochandle *ph, psaddr_t  addr,
                    void *buf, size_t size);
 
 // write "size" bytes of data to debuggee at address "addr"
-ps_err_e ps_pdwrite(struct ps_prochandle *ph, psaddr_t addr,
+JNIEXPORT ps_err_e JNICALL
+ps_pdwrite(struct ps_prochandle *ph, psaddr_t addr,
                     const void *buf, size_t size);
 
-ps_err_e ps_lsetfpregs(struct ps_prochandle *ph, lwpid_t lid, const prfpregset_t *fpregs);
+JNIEXPORT ps_err_e JNICALL
+ps_lsetfpregs(struct ps_prochandle *ph, lwpid_t lid, const prfpregset_t *fpregs);
 
-ps_err_e ps_lsetregs(struct ps_prochandle *ph, lwpid_t lid, const prgregset_t gregset);
+JNIEXPORT ps_err_e JNICALL
+ps_lsetregs(struct ps_prochandle *ph, lwpid_t lid, const prgregset_t gregset);
 
-ps_err_e  ps_lgetfpregs(struct  ps_prochandle  *ph,  lwpid_t lid, prfpregset_t *fpregs);
+JNIEXPORT ps_err_e JNICALL
+ps_lgetfpregs(struct ps_prochandle *ph, lwpid_t lid, prfpregset_t *fpregs);
 
-ps_err_e ps_lgetregs(struct ps_prochandle *ph, lwpid_t lid, prgregset_t gregset);
+JNIEXPORT ps_err_e JNICALL
+ps_lgetregs(struct ps_prochandle *ph, lwpid_t lid, prgregset_t gregset);
 
 // new libthread_db of NPTL seem to require this symbol
-ps_err_e ps_get_thread_area();
+JNIEXPORT ps_err_e JNICALL
+ps_get_thread_area();
 
 #endif /* _PROC_SERVICE_H_ */

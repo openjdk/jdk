@@ -55,7 +55,6 @@ ifeq ($(ENABLE_INTREE_EC), true)
           $(BUILD_LIBSUNEC_FLAGS), \
       DISABLED_WARNINGS_gcc := sign-compare implicit-fallthrough, \
       DISABLED_WARNINGS_microsoft := 4101 4244 4146 4018, \
-      MAPFILE := $(TOPDIR)/make/mapfiles/libsunec/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK), \
       LDFLAGS_macosx := $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := $(LIBCXX), \

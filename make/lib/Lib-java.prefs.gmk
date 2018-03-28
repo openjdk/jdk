@@ -39,7 +39,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBPREFS, \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(CFLAGS_JDKLIB) $(addprefix -I, $(LIBPREF_SRC_DIRS)) \
         $(LIBJAVA_HEADER_FLAGS), \
-    MAPFILE := $(TOPDIR)/make/mapfiles/libprefs/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljvm, \

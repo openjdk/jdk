@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,8 @@ void writeSingle(JNIEnv *env, jobject this, jint byte, jboolean append, jfieldID
 void writeBytes(JNIEnv *env, jobject this, jbyteArray bytes, jint off,
                 jint len, jboolean append, jfieldID fid);
 void fileOpen(JNIEnv *env, jobject this, jstring path, jfieldID fid, int flags);
-void throwFileNotFoundException(JNIEnv *env, jstring path);
+JNIEXPORT void JNICALL
+throwFileNotFoundException(JNIEnv *env, jstring path);
 
 /*
  * Macros for managing platform strings.  The typical usage pattern is:
