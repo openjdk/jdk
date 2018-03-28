@@ -228,13 +228,9 @@ public class VMProps implements Callable<Map<String, String>> {
      *    User either set G1 explicitely (-XX:+UseG1GC) or did not set any GC
      * @param map - property-value pairs
      */
-    protected void vmGC(Map<String, String> map){
-        GC currentGC = GC.current();
-        boolean isByErgo = GC.currentSetByErgo();
-        List<GC> supportedGC = GC.allSupported();
+    protected void vmGC(Map<String, String> map) {
         for (GC gc: GC.values()) {
-            boolean isSupported = supportedGC.contains(gc);
-            boolean isAcceptable = isSupported && (gc == currentGC || isByErgo);
+            boolean isAcceptable = gc.isSupported() && (gc.isSelected() || GC.isSelectedErgonomically());
             map.put("vm.gc." + gc.name(), "" + isAcceptable);
         }
     }
