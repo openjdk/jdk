@@ -50,8 +50,8 @@ public class ReadAllReadNTransferTo {
 
         ByteArrayInputStream bais =
             new ByteArrayInputStream(buf, position, size);
-        int off = random.nextInt(size / 2);
-        int len = random.nextInt(size - off);
+        int off = size < 2 ? 0 : random.nextInt(size / 2);
+        int len = size - off < 1 ? 0 : random.nextInt(size - off);
 
         byte[] bN = new byte[off + len];
         if (bais.readNBytes(bN, off, len) != len) {
