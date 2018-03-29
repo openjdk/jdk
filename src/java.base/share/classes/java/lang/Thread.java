@@ -146,15 +146,14 @@ class Thread implements Runnable {
     }
 
     private volatile String name;
-    private int            priority;
-    private Thread         threadQ;
-    private long           eetop;
+    private int priority;
 
     /* Whether or not the thread is a daemon thread. */
-    private boolean     daemon = false;
+    private boolean daemon = false;
 
-    /* JVM state */
-    private boolean     stillborn = false;
+    /* Fields reserved for exclusive use by the JVM */
+    private boolean stillborn = false;
+    private long eetop;
 
     /* What will be run. */
     private Runnable target;
