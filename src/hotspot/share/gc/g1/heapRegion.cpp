@@ -450,7 +450,7 @@ void HeapRegion::print_on(outputStream* st) const {
                p2i(prev_top_at_mark_start()), p2i(next_top_at_mark_start()), rem_set()->get_state_str());
 }
 
-class G1VerificationClosure : public OopClosure {
+class G1VerificationClosure : public ExtendedOopClosure {
 protected:
   G1CollectedHeap* _g1h;
   G1CardTable *_ct;
@@ -483,6 +483,9 @@ public:
     obj->print_on(out);
 #endif // PRODUCT
   }
+
+  // This closure provides its own oop verification code.
+  debug_only(virtual bool should_verify_oops() { return false; })
 };
 
 class VerifyLiveClosure : public G1VerificationClosure {
@@ -605,7 +608,7 @@ public:
 };
 
 // Closure that applies the given two closures in sequence.
-class G1Mux2Closure : public OopClosure {
+class G1Mux2Closure : public ExtendedOopClosure {
   OopClosure* _c1;
   OopClosure* _c2;
 public:
@@ -617,6 +620,9 @@ public:
   }
   virtual inline void do_oop(oop* p) { do_oop_work(p); }
   virtual inline void do_oop(narrowOop* p) { do_oop_work(p); }
+
+  // This closure provides its own oop verification code.
+  debug_only(virtual bool should_verify_oops() { return false; })
 };
 
 // This really ought to be commoned up into OffsetTableContigSpace somehow.
@@ -657,7 +663,7 @@ void HeapRegion::verify(VerifyOption vo,
             // verify liveness and rem_set
             vr_cl.set_containing_obj(obj);
             G1Mux2Closure mux(&vl_cl, &vr_cl);
-            obj->oop_iterate_no_header(&mux);
+            obj->oop_iterate(&mux);
 
             if (vr_cl.failures()) {
               *failures = true;
@@ -668,7 +674,7 @@ void HeapRegion::verify(VerifyOption vo,
             }
           } else {
             // verify only liveness
-            obj->oop_iterate_no_header(&vl_cl);
+            obj->oop_iterate(&vl_cl);
           }
           if (vl_cl.failures()) {
             *failures = true;
@@ -784,7 +790,7 @@ void HeapRegion::verify_rem_set(VerifyOption vo, bool* failures) const {
     if (!g1->is_obj_dead_cond(obj, this, vo)) {
       if (oopDesc::is_oop(obj)) {
         vr_cl.set_containing_obj(obj);
-        obj->oop_iterate_no_header(&vr_cl);
+        obj->oop_iterate(&vr_cl);
 
         if (vr_cl.failures()) {
           *failures = true;
