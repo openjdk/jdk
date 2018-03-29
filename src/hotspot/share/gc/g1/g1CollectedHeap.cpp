@@ -981,7 +981,7 @@ void G1CollectedHeap::abort_concurrent_cycle() {
 
   // Abandon current iterations of concurrent marking and concurrent
   // refinement, if any are in progress.
-  concurrent_mark()->abort();
+  concurrent_mark()->concurrent_cycle_abort();
 }
 
 void G1CollectedHeap::prepare_heap_for_full_collection() {
@@ -2453,8 +2453,7 @@ HeapWord* G1CollectedHeap::do_collection_pause(size_t word_size,
   return result;
 }
 
-void
-G1CollectedHeap::doConcurrentMark() {
+void G1CollectedHeap::do_concurrent_mark() {
   MutexLockerEx x(CGC_lock, Mutex::_no_safepoint_check_flag);
   if (!_cmThread->in_progress()) {
     _cmThread->set_started();
@@ -2871,7 +2870,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         g1_policy()->record_collection_pause_start(sample_start_time_sec);
 
         if (collector_state()->in_initial_mark_gc()) {
-          concurrent_mark()->checkpoint_roots_initial_pre();
+          concurrent_mark()->pre_initial_mark();
         }
 
         g1_policy()->finalize_collection_set(target_pause_time_ms, &_survivor);
@@ -2942,7 +2941,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
           // We have to do this before we notify the CM threads that
           // they can start working to make sure that all the
           // appropriate initialization is done on the CM object.
-          concurrent_mark()->checkpoint_roots_initial_post();
+          concurrent_mark()->post_initial_mark();
           // Note that we don't actually trigger the CM thread at
           // this point. We do that later when we're sure that
           // the current thread has completed its logging output.
@@ -3049,7 +3048,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     // running. Note: of course, the actual marking work will
     // not start until the safepoint itself is released in
     // SuspendibleThreadSet::desynchronize().
-    doConcurrentMark();
+    do_concurrent_mark();
   }
 
   return true;

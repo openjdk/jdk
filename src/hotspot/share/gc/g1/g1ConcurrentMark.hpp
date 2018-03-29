@@ -104,10 +104,10 @@ typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
 // to determine if referents of discovered reference objects
 // are alive. An instance is also embedded into the
 // reference processor as the _is_alive_non_header field
-class G1CMIsAliveClosure: public BoolObjectClosure {
-  G1CollectedHeap* _g1;
+class G1CMIsAliveClosure : public BoolObjectClosure {
+  G1CollectedHeap* _g1h;
  public:
-  G1CMIsAliveClosure(G1CollectedHeap* g1) : _g1(g1) { }
+  G1CMIsAliveClosure(G1CollectedHeap* g1) : _g1h(g1) { }
 
   bool do_object_b(oop obj);
 };
@@ -276,7 +276,7 @@ public:
 
 // This class manages data structures and methods for doing liveness analysis in
 // G1's concurrent cycle.
-class G1ConcurrentMark: public CHeapObj<mtGC> {
+class G1ConcurrentMark : public CHeapObj<mtGC> {
   friend class ConcurrentMarkThread;
   friend class G1CMRefProcTaskProxy;
   friend class G1CMRefProcTaskExecutor;
@@ -298,8 +298,7 @@ class G1ConcurrentMark: public CHeapObj<mtGC> {
   G1CMBitMap*            _next_mark_bitmap; // Under-construction mark bitmap
 
   // Heap bounds
-  HeapWord*              _heap_start;
-  HeapWord*              _heap_end;
+  MemRegion const        _heap;
 
   // Root region tracking and claiming
   G1CMRootRegions        _root_regions;
@@ -358,13 +357,15 @@ class G1ConcurrentMark: public CHeapObj<mtGC> {
   NumberSeq _remark_mark_times;
   NumberSeq _remark_weak_ref_times;
   NumberSeq _cleanup_times;
-  double    _total_counting_time;
+  double    _total_cleanup_time;
 
   double*   _accum_task_vtime;   // Accumulated task vtime
 
   WorkGang* _concurrent_workers;
   uint      _num_concurrent_workers; // The number of marking worker threads we're using
   uint      _max_concurrent_workers; // Maximum number of marking worker threads
+
+  void finalize_marking();
 
   void weak_refs_work_parallel_part(BoolObjectClosure* is_alive, bool purged_classes);
   void weak_refs_work(bool clear_all_soft_refs);
@@ -379,11 +380,11 @@ class G1ConcurrentMark: public CHeapObj<mtGC> {
 
   // Resets all the marking data structures. Called when we have to restart
   // marking or when marking completes (via set_non_marking_state below).
-  void reset_marking_state();
+  void reset_marking_for_restart();
 
   // We do this after we're done with marking so that the marking data
   // structures are initialized to a sensible and predictable state.
-  void set_non_marking_state();
+  void reset_at_marking_complete();
 
   // Called to indicate how many threads are currently active.
   void set_concurrency(uint active_tasks);
@@ -421,7 +422,7 @@ class G1ConcurrentMark: public CHeapObj<mtGC> {
   // to satisfy an allocation without doing a GC. This is fine, because all
   // objects in those regions will be considered live anyway because of
   // SATB guarantees (i.e. their TAMS will be equal to bottom).
-  bool out_of_regions() { return _finger >= _heap_end; }
+  bool out_of_regions() { return _finger >= _heap.end(); }
 
   // Returns the task with the given id
   G1CMTask* task(uint id) {
@@ -499,6 +500,8 @@ public:
   }
 
   void concurrent_cycle_start();
+  // Abandon current marking iteration due to a Full GC.
+  void concurrent_cycle_abort();
   void concurrent_cycle_end();
 
   void update_accum_task_vtime(int i, double vtime) {
@@ -542,14 +545,10 @@ public:
   // only. Will not yield to pause requests.
   bool next_mark_bitmap_is_clear();
 
-  // These two do the work that needs to be done before and after the
-  // initial root checkpoint. Since this checkpoint can be done at two
-  // different points (i.e. an explicit pause or piggy-backed on a
-  // young collection), then it's nice to be able to easily share the
-  // pre/post code. It might be the case that we can put everything in
-  // the post method.
-  void checkpoint_roots_initial_pre();
-  void checkpoint_roots_initial_post();
+  // These two methods do the work that needs to be done at the start and end of the
+  // initial mark pause.
+  void pre_initial_mark();
+  void post_initial_mark();
 
   // Scan all the root regions and mark everything reachable from
   // them.
@@ -561,8 +560,7 @@ public:
   // Do concurrent phase of marking, to a tentative transitive closure.
   void mark_from_roots();
 
-  void checkpoint_roots_final(bool clear_all_soft_refs);
-  void checkpoint_roots_final_work();
+  void remark();
 
   void cleanup();
   // Mark in the previous bitmap. Caution: the prev bitmap is usually read-only, so use
@@ -576,15 +574,12 @@ public:
 
   inline bool is_marked_in_prev_bitmap(oop p) const;
 
-  // Verify that there are no CSet oops on the stacks (taskqueues /
+  // Verify that there are no collection set oops on the stacks (taskqueues /
   // global mark stack) and fingers (global / per-task).
   // If marking is not in progress, it's a no-op.
   void verify_no_cset_oops() PRODUCT_RETURN;
 
   inline bool do_yield_check();
-
-  // Abandon current marking iteration due to a Full GC.
-  void abort();
 
   bool has_aborted()      { return _has_aborted; }
 
@@ -853,7 +848,7 @@ public:
 // Class that's used to to print out per-region liveness
 // information. It's currently used at the end of marking and also
 // after we sort the old regions at the end of the cleanup operation.
-class G1PrintRegionLivenessInfoClosure: public HeapRegionClosure {
+class G1PrintRegionLivenessInfoClosure : public HeapRegionClosure {
 private:
   // Accumulators for these values.
   size_t _total_used_bytes;

@@ -1251,7 +1251,7 @@ public:
   // functions.
   // This performs a concurrent marking of the live objects in a
   // bitmap off to the side.
-  void doConcurrentMark();
+  void do_concurrent_mark();
 
   bool isMarkedNext(oop obj) const;
 

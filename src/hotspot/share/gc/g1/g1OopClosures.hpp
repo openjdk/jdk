@@ -151,11 +151,11 @@ public:
 };
 
 class G1CLDScanClosure : public CLDClosure {
- G1ParCopyHelper* _closure;
- bool             _process_only_dirty;
- bool             _must_claim;
- int              _count;
- public:
+  G1ParCopyHelper* _closure;
+  bool             _process_only_dirty;
+  bool             _must_claim;
+  int              _count;
+public:
   G1CLDScanClosure(G1ParCopyHelper* closure,
                    bool process_only_dirty, bool must_claim)
       : _process_only_dirty(process_only_dirty), _must_claim(must_claim), _closure(closure), _count(0) {}
@@ -164,13 +164,10 @@ class G1CLDScanClosure : public CLDClosure {
 
 // Closure for iterating over object fields during concurrent marking
 class G1CMOopClosure : public MetadataAwareOopClosure {
-protected:
-  G1ConcurrentMark*  _cm;
-private:
   G1CollectedHeap*   _g1h;
   G1CMTask*          _task;
 public:
-  G1CMOopClosure(G1CollectedHeap* g1h, G1ConcurrentMark* cm, G1CMTask* task);
+  G1CMOopClosure(G1CollectedHeap* g1h,G1CMTask* task);
   template <class T> void do_oop_nv(T* p);
   virtual void do_oop(      oop* p) { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
