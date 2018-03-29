@@ -38,6 +38,7 @@
  *        -XX:+WhiteBoxAPI
  *        -Xbatch
  *        -XX:-TieredCompilation
+ *        -XX:TieredStopAtLevel=4
  *        -XX:CICompilerCount=1
  *        -XX:+PrintCompilation
  *        -XX:+PrintInlining
@@ -51,6 +52,7 @@
  *        -XX:+WhiteBoxAPI
  *        -Xbatch
  *        -XX:-TieredCompilation
+ *        -XX:TieredStopAtLevel=4
  *        -XX:CICompilerCount=1
  *        -XX:+PrintCompilation
  *        -XX:+PrintInlining
@@ -63,6 +65,8 @@
  *        -XX:+UnlockDiagnosticVMOptions
  *        -XX:+WhiteBoxAPI
  *        -Xbatch
+ *        -XX:+TieredCompilation
+ *        -XX:TieredStopAtLevel=4
  *        -XX:CICompilerCount=2
  *        -XX:+PrintCompilation
  *        -XX:+PrintInlining
@@ -379,7 +383,8 @@ public class TestMeetIncompatibleInterfaceArrays extends ClassLoader {
                                        r.getName() + "() was compiled at tier " + r_comp_level + "]");
 
                     if (r_comp_level != level[pass][j]) {
-                      throw new Exception("Method " + r + " must be compiled at tier " + r_comp_level + " !");
+                      throw new Exception("Method " + r + " must be compiled at tier " + level[pass][j] +
+                                          " but was compiled at " + r_comp_level + " instead!");
                     }
 
                     WB.deoptimizeMethod(r);
