@@ -171,6 +171,8 @@ public class AArch64 extends Architecture {
         SHA1,
         SHA2,
         CRC32,
+        LSE,
+        STXR_PREFETCH,
         A53MAC,
         DMB_ATOMICS
     }
@@ -183,7 +185,11 @@ public class AArch64 extends Architecture {
     public enum Flag {
         UseBarriersForVolatile,
         UseCRC32,
-        UseNeon
+        UseNeon,
+        UseSIMDForMemoryOps,
+        AvoidUnalignedAccesses,
+        UseLSE,
+        UseBlockZeroing
     }
 
     private final EnumSet<Flag> flags;
