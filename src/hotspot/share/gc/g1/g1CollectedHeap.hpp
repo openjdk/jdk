@@ -812,9 +812,9 @@ private:
   // Set whether G1EvacuationFailureALot should be in effect
   // for the current GC (based upon the type of GC and which
   // command line flags are set);
-  inline bool evacuation_failure_alot_for_gc_type(bool gcs_are_young,
+  inline bool evacuation_failure_alot_for_gc_type(bool for_young_gc,
                                                   bool during_initial_mark,
-                                                  bool during_marking);
+                                                  bool mark_or_rebuild_in_progress);
 
   inline void set_evacuation_failure_alot_for_current_gc();
 

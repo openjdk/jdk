@@ -653,7 +653,7 @@ void HeapRegion::verify(VerifyOption vo,
           return;
         } else {
           vl_cl.set_containing_obj(obj);
-          if (!g1->collector_state()->full_collection() || G1VerifyRSetsDuringFullGC) {
+          if (!g1->collector_state()->in_full_gc() || G1VerifyRSetsDuringFullGC) {
             // verify liveness and rem_set
             vr_cl.set_containing_obj(obj);
             G1Mux2Closure mux(&vl_cl, &vr_cl);

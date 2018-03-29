@@ -228,8 +228,8 @@ public:
 
     if (_hrclaimer->claim_region(hr->hrm_index())) {
       if (hr->evacuation_failed()) {
-        bool during_initial_mark = _g1h->collector_state()->during_initial_mark_pause();
-        bool during_conc_mark = _g1h->collector_state()->mark_in_progress();
+        bool during_initial_mark = _g1h->collector_state()->in_initial_mark_gc();
+        bool during_conc_mark = _g1h->collector_state()->mark_or_rebuild_in_progress();
 
         hr->note_self_forwarding_removal_start(during_initial_mark,
                                                during_conc_mark);
