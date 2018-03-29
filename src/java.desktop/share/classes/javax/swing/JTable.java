@@ -2268,23 +2268,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      */
     @BeanProperty(bound = false)
     public int[] getSelectedRows() {
-        int iMin = selectionModel.getMinSelectionIndex();
-        int iMax = selectionModel.getMaxSelectionIndex();
-
-        if ((iMin == -1) || (iMax == -1)) {
-            return new int[0];
-        }
-
-        int[] rvTmp = new int[1+ (iMax - iMin)];
-        int n = 0;
-        for(int i = iMin; i <= iMax; i++) {
-            if (selectionModel.isSelectedIndex(i)) {
-                rvTmp[n++] = i;
-            }
-        }
-        int[] rv = new int[n];
-        System.arraycopy(rvTmp, 0, rv, 0, n);
-        return rv;
+        return selectionModel.getSelectedIndices();
     }
 
     /**
@@ -2306,16 +2290,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      */
     @BeanProperty(bound = false)
     public int getSelectedRowCount() {
-        int iMin = selectionModel.getMinSelectionIndex();
-        int iMax = selectionModel.getMaxSelectionIndex();
-        int count = 0;
-
-        for(int i = iMin; i <= iMax; i++) {
-            if (selectionModel.isSelectedIndex(i)) {
-                count++;
-            }
-        }
-        return count;
+        return selectionModel.getSelectedItemsCount();
     }
 
     /**
