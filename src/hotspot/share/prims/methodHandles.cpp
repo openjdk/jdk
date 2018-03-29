@@ -1226,7 +1226,7 @@ JVM_ENTRY(jobject, MHN_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh,
 
   Klass* caller = caller_jh == NULL ? NULL :
                      java_lang_Class::as_Klass(JNIHandles::resolve_non_null(caller_jh));
-  Handle resolved = MethodHandles::resolve_MemberName(mname, caller, speculative_resolve,
+  Handle resolved = MethodHandles::resolve_MemberName(mname, caller, speculative_resolve == JNI_TRUE,
                                                       CHECK_NULL);
 
   if (resolved.is_null()) {
