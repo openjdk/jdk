@@ -177,13 +177,11 @@ static sa_handler_t set_signal(int sig, sa_handler_t disp, bool is_sigset) {
   }
 }
 
-JNIEXPORT sa_handler_t JNICALL
-signal(int sig, sa_handler_t disp) {
+sa_handler_t signal(int sig, sa_handler_t disp) {
   return set_signal(sig, disp, false);
 }
 
-JNIEXPORT sa_handler_t JNICALL
-sigset(int sig, sa_handler_t disp) {
+sa_handler_t sigset(int sig, sa_handler_t disp) {
   return set_signal(sig, disp, true);
 }
 
@@ -199,8 +197,7 @@ static int call_os_sigaction(int sig, const struct sigaction  *act,
   return (*os_sigaction)(sig, act, oact);
 }
 
-JNIEXPORT int JNICALL
-sigaction(int sig, const struct sigaction *act, struct sigaction *oact) {
+int sigaction(int sig, const struct sigaction *act, struct sigaction *oact) {
   int res;
   struct sigaction oldAct;
 
