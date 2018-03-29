@@ -2084,9 +2084,17 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
       ast->print_cr("--------------------------------------------------------------------");
       STRINGSTREAM_FLUSH_LOCKED("")
     }
+    // Only check granule if it contains at least one blob.
+    unsigned int nBlobs  = StatArray[ix].t1_count   + StatArray[ix].t2_count + StatArray[ix].tx_count +
+                           StatArray[ix].stub_count + StatArray[ix].dead_count;
+    if (nBlobs > 0 ) {
     for (unsigned int is = 0; is < granule_size; is+=(unsigned int)seg_size) {
+      // heap->find_start() is safe. Only working with _segmap. Returns NULL or void*. Returned CodeBlob may be uninitialized.
       CodeBlob* this_blob = (CodeBlob *)(heap->find_start(low_bound+ix*granule_size+is));
-      if ((this_blob != NULL) && (this_blob != last_blob)) {
+      bool blob_initialized = (this_blob != NULL) &&
+                              ((char*)this_blob + this_blob->header_size() == (char*)(this_blob->relocation_begin())) &&
+                              ((char*)this_blob + CodeBlob::align_code_offset(this_blob->header_size() + this_blob->relocation_size()) == (char*)(this_blob->content_begin()));
+      if (blob_initialized && (this_blob != last_blob)) {
         if (!name_in_addr_range) {
           name_in_addr_range = true;
           ast->fill_to(51);
@@ -2103,7 +2111,12 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
         ast->fill_to(33);
 
         //---<  print size, name, and signature (for nMethods)  >---
-        const char *blob_name = this_blob->name();
+        // this_blob->name() could return NULL if no name is given to CTOR. Inlined, maybe not visible on stack
+        const char* blob_name = this_blob->name();
+        if (blob_name == 0) {
+          blob_name = "<unavailable>";
+        }
+        // this_blob->as_nmethod_or_null() is safe. Inlined, maybe not visible on stack.
         nmethod*           nm = this_blob->as_nmethod_or_null();
         blobType       cbType = noType;
         if (segment_granules) {
@@ -2145,7 +2158,10 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
         }
         STRINGSTREAM_FLUSH_LOCKED("\n")
         last_blob          = this_blob;
+      } else if (!blob_initialized && (this_blob != NULL)) {
+        last_blob          = this_blob;
       }
+    }
     }
   }
   STRINGSTREAM_FLUSH_LOCKED("\n\n")
