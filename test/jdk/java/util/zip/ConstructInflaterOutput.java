@@ -33,17 +33,15 @@ import java.util.zip.*;
 public class ConstructInflaterOutput {
 
     static class MyInflater extends Inflater {
-        private boolean ended = false;
-        boolean getEnded() { return ended; }
+        volatile boolean ended = false;
         public void end() {
-            fail("MyInflater had end() called");
+            ended = true;
             super.end();
         }
     }
 
-    private static MyInflater inf = new MyInflater();
-
     public static void realMain(String[] args) throws Throwable {
+        final MyInflater inf = new MyInflater();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         InflaterOutputStream ios = null;
         byte[] b = new byte[512];
@@ -104,13 +102,13 @@ public class ConstructInflaterOutput {
         }
 
         ios.flush();
-        check(!inf.getEnded());
+        check(!inf.ended);
         ios.flush();
-        check(!inf.getEnded());
+        check(!inf.ended);
         ios.finish();
-        check(!inf.getEnded());
+        check(!inf.ended);
         ios.close();
-        check(!inf.getEnded());
+        check(!inf.ended);
         try {
             ios.finish();
             fail();
@@ -133,6 +131,7 @@ public class ConstructInflaterOutput {
         } catch (IOException ex) {
             pass();
         }
+        java.lang.ref.Reference.reachabilityFence(inf);
     }
 
     //--------------------- Infrastructure ---------------------------
