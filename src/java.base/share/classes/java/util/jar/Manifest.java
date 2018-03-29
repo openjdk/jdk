@@ -148,7 +148,7 @@ public class Manifest implements Cloneable {
         DataOutputStream dos = new DataOutputStream(out);
         // Write out the main attributes for the manifest
         attr.writeMain(dos);
-        // Now write out the pre-entry attributes
+        // Now write out the per-entry attributes
         for (Map.Entry<String, Attributes> e : entries.entrySet()) {
             StringBuffer buffer = new StringBuffer("Name: ");
             String value = e.getKey();
