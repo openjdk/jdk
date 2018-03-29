@@ -424,7 +424,7 @@ void G1HeapVerifier::verify(VerifyOption vo) {
 
   bool failures = rootsCl.failures() || codeRootsCl.failures();
 
-  if (!_g1h->g1_policy()->collector_state()->full_collection()) {
+  if (!_g1h->g1_policy()->collector_state()->in_full_gc()) {
     // If we're verifying during a full GC then the region sets
     // will have been torn down at the start of the GC. Therefore
     // verifying the region sets will fail. So we only verify
@@ -651,10 +651,10 @@ bool G1HeapVerifier::verify_bitmaps(const char* caller, HeapRegion* hr) {
   bool res_p = verify_no_bits_over_tams("prev", prev_bitmap, ptams, end);
 
   bool res_n = true;
-  // We reset mark_in_progress() before we reset _cmThread->in_progress() and in this window
+  // We reset mark_or_rebuild_in_progress() before we reset _cmThread->in_progress() and in this window
   // we do the clearing of the next bitmap concurrently. Thus, we can not verify the bitmap
   // if we happen to be in that state.
-  if (_g1h->collector_state()->mark_in_progress() || !_g1h->_cmThread->in_progress()) {
+  if (_g1h->collector_state()->mark_or_rebuild_in_progress() || !_g1h->_cmThread->in_progress()) {
     res_n = verify_no_bits_over_tams("next", next_bitmap, ntams, end);
   }
   if (!res_p || !res_n) {

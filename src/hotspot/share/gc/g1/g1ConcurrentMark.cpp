@@ -656,7 +656,7 @@ private:
         // will have them as guarantees at the beginning / end of the bitmap
         // clearing to get some checking in the product.
         assert(_cm == NULL || _cm->cm_thread()->during_cycle(), "invariant");
-        assert(_cm == NULL || !G1CollectedHeap::heap()->collector_state()->mark_in_progress(), "invariant");
+        assert(_cm == NULL || !G1CollectedHeap::heap()->collector_state()->mark_or_rebuild_in_progress(), "invariant");
       }
       assert(cur == end, "Must have completed iteration over the bitmap for region %u.", r->hrm_index());
 
@@ -710,13 +710,13 @@ void G1ConcurrentMark::cleanup_for_next_mark() {
   // marking bitmap and getting it ready for the next cycle. During
   // this time no other cycle can start. So, let's make sure that this
   // is the case.
-  guarantee(!_g1h->collector_state()->mark_in_progress(), "invariant");
+  guarantee(!_g1h->collector_state()->mark_or_rebuild_in_progress(), "invariant");
 
   clear_bitmap(_next_mark_bitmap, _concurrent_workers, true);
 
   // Repeat the asserts from above.
   guarantee(cm_thread()->during_cycle(), "invariant");
-  guarantee(!_g1h->collector_state()->mark_in_progress(), "invariant");
+  guarantee(!_g1h->collector_state()->mark_or_rebuild_in_progress(), "invariant");
 }
 
 void G1ConcurrentMark::clear_prev_bitmap(WorkGang* workers) {
@@ -1063,7 +1063,6 @@ void G1ConcurrentMark::checkpoint_roots_final(bool clear_all_soft_refs) {
 
   // If a full collection has happened, we shouldn't do this.
   if (has_aborted()) {
-    g1h->collector_state()->set_mark_in_progress(false); // So bitmap clearing isn't confused
     return;
   }
 
@@ -1251,7 +1250,6 @@ void G1ConcurrentMark::cleanup() {
 
   // If a full collection has happened, we shouldn't do this.
   if (has_aborted()) {
-    g1h->collector_state()->set_mark_in_progress(false); // So bitmap clearing isn't confused
     return;
   }
 
@@ -1272,8 +1270,6 @@ void G1ConcurrentMark::cleanup() {
     G1UpdateRemSetTrackingAfterRebuild cl(_g1h);
     g1h->heap_region_iterate(&cl);
   }
-
-  g1h->collector_state()->set_mark_in_progress(false);
 
   double count_end = os::elapsedTime();
   double this_final_counting_time = (count_end - start);
@@ -1900,7 +1896,7 @@ public:
 
 void G1ConcurrentMark::verify_no_cset_oops() {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at a safepoint");
-  if (!G1CollectedHeap::heap()->collector_state()->mark_in_progress()) {
+  if (!G1CollectedHeap::heap()->collector_state()->mark_or_rebuild_in_progress()) {
     return;
   }
 

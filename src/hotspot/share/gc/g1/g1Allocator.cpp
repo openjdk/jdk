@@ -79,7 +79,7 @@ void G1Allocator::reuse_retained_old_region(EvacuationInfo& evacuation_info,
     // we allocate to in the region sets. We'll re-add it later, when
     // it's retired again.
     _g1h->old_set_remove(retained_region);
-    bool during_im = _g1h->collector_state()->during_initial_mark_pause();
+    bool during_im = _g1h->collector_state()->in_initial_mark_gc();
     retained_region->note_start_of_copying(during_im);
     old->set(retained_region);
     _g1h->hr_printer()->reuse(retained_region);

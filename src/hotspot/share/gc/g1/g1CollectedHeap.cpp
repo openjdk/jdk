@@ -997,7 +997,6 @@ void G1CollectedHeap::prepare_heap_for_full_collection() {
   abandon_collection_set(collection_set());
 
   tear_down_region_sets(false /* free_list_only */);
-  collector_state()->set_gcs_are_young(true);
 }
 
 void G1CollectedHeap::verify_before_full_collection(bool explicit_gc) {
@@ -2756,28 +2755,28 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   // We should not be doing initial mark unless the conc mark thread is running
   if (!_cmThread->should_terminate()) {
     // This call will decide whether this pause is an initial-mark
-    // pause. If it is, during_initial_mark_pause() will return true
+    // pause. If it is, in_initial_mark_gc() will return true
     // for the duration of this pause.
     g1_policy()->decide_on_conc_mark_initiation();
   }
 
   // We do not allow initial-mark to be piggy-backed on a mixed GC.
-  assert(!collector_state()->during_initial_mark_pause() ||
-          collector_state()->gcs_are_young(), "sanity");
+  assert(!collector_state()->in_initial_mark_gc() ||
+          collector_state()->in_young_only_phase(), "sanity");
 
   // We also do not allow mixed GCs during marking.
-  assert(!collector_state()->mark_in_progress() || collector_state()->gcs_are_young(), "sanity");
+  assert(!collector_state()->mark_or_rebuild_in_progress() || collector_state()->in_young_only_phase(), "sanity");
 
   // Record whether this pause is an initial mark. When the current
   // thread has completed its logging output and it's safe to signal
   // the CM thread, the flag's value in the policy has been reset.
-  bool should_start_conc_mark = collector_state()->during_initial_mark_pause();
+  bool should_start_conc_mark = collector_state()->in_initial_mark_gc();
 
   // Inner scope for scope based logging, timers, and stats collection
   {
     EvacuationInfo evacuation_info;
 
-    if (collector_state()->during_initial_mark_pause()) {
+    if (collector_state()->in_initial_mark_gc()) {
       // We are about to start a marking cycle, so we increment the
       // full collection counter.
       increment_old_marking_cycles_started();
@@ -2790,10 +2789,10 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
     G1HeapVerifier::G1VerifyType verify_type;
     FormatBuffer<> gc_string("Pause ");
-    if (collector_state()->during_initial_mark_pause()) {
+    if (collector_state()->in_initial_mark_gc()) {
       gc_string.append("Initial Mark");
       verify_type = G1HeapVerifier::G1VerifyInitialMark;
-    } else if (collector_state()->gcs_are_young()) {
+    } else if (collector_state()->in_young_only_phase()) {
       gc_string.append("Young");
       verify_type = G1HeapVerifier::G1VerifyYoungOnly;
     } else {
@@ -2871,7 +2870,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
         g1_policy()->record_collection_pause_start(sample_start_time_sec);
 
-        if (collector_state()->during_initial_mark_pause()) {
+        if (collector_state()->in_initial_mark_gc()) {
           concurrent_mark()->checkpoint_roots_initial_pre();
         }
 
@@ -2939,12 +2938,11 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
           increase_used(g1_policy()->bytes_copied_during_gc());
         }
 
-        if (collector_state()->during_initial_mark_pause()) {
+        if (collector_state()->in_initial_mark_gc()) {
           // We have to do this before we notify the CM threads that
           // they can start working to make sure that all the
           // appropriate initialization is done on the CM object.
           concurrent_mark()->checkpoint_roots_initial_post();
-          collector_state()->set_mark_in_progress(true);
           // Note that we don't actually trigger the CM thread at
           // this point. We do that later when we're sure that
           // the current thread has completed its logging output.
@@ -4107,7 +4105,7 @@ void G1CollectedHeap::enqueue_discovered_references(G1ParScanThreadStateSet* per
 
   // If during an initial mark pause we install a pending list head which is not otherwise reachable
   // ensure that it is marked in the bitmap for concurrent marking to discover.
-  if (collector_state()->during_initial_mark_pause()) {
+  if (collector_state()->in_initial_mark_gc()) {
     oop pll_head = Universe::reference_pending_list();
     if (pll_head != NULL) {
       // Any valid worker id is fine here as we are in the VM thread and single-threaded.
@@ -4144,7 +4142,7 @@ void G1CollectedHeap::pre_evacuate_collection_set() {
   G1GCPhaseTimes* phase_times = g1_policy()->phase_times();
 
   // InitialMark needs claim bits to keep track of the marked-through CLDs.
-  if (collector_state()->during_initial_mark_pause()) {
+  if (collector_state()->in_initial_mark_gc()) {
     double start_clear_claimed_marks = os::elapsedTime();
 
     ClassLoaderDataGraph::clear_claimed_marks();
@@ -5011,7 +5009,7 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, InCSetState d
     }
     _g1_policy->remset_tracker()->update_at_allocate(new_alloc_region);
     _hr_printer.alloc(new_alloc_region);
-    bool during_im = collector_state()->during_initial_mark_pause();
+    bool during_im = collector_state()->in_initial_mark_gc();
     new_alloc_region->note_start_of_copying(during_im);
     return new_alloc_region;
   }
@@ -5021,7 +5019,7 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, InCSetState d
 void G1CollectedHeap::retire_gc_alloc_region(HeapRegion* alloc_region,
                                              size_t allocated_bytes,
                                              InCSetState dest) {
-  bool during_im = collector_state()->during_initial_mark_pause();
+  bool during_im = collector_state()->in_initial_mark_gc();
   alloc_region->note_end_of_copying(during_im);
   g1_policy()->record_bytes_copied_during_gc(allocated_bytes);
   if (dest.is_old()) {

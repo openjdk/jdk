@@ -58,7 +58,8 @@ class G1Policy: public CHeapObj<mtGC> {
   // Update the IHOP control with necessary statistics.
   void update_ihop_prediction(double mutator_time_s,
                               size_t mutator_alloc_bytes,
-                              size_t young_gen_size);
+                              size_t young_gen_size,
+                              bool this_gc_was_young_only);
   void report_ihop_statistics();
 
   G1Predictions _predictor;
@@ -105,6 +106,10 @@ class G1Policy: public CHeapObj<mtGC> {
   size_t _bytes_allocated_in_old_since_last_gc;
 
   G1InitialMarkToMixedTimeTracker _initial_mark_to_mixed;
+
+  bool should_update_surv_rate_group_predictors() {
+    return collector_state()->in_young_only_phase() && !collector_state()->mark_or_rebuild_in_progress();
+  }
 public:
   const G1Predictions& predictor() const { return _predictor; }
   const G1Analytics* analytics()   const { return const_cast<const G1Analytics*>(_analytics); }
@@ -135,10 +140,6 @@ public:
   double predict_region_elapsed_time_ms(HeapRegion* hr, bool for_young_gc) const;
 
   double predict_survivor_regions_evac_time() const;
-
-  bool should_update_surv_rate_group_predictors() {
-    return collector_state()->last_gc_was_young() && !collector_state()->in_marking_window();
-  }
 
   void cset_regions_freed() {
     bool update = should_update_surv_rate_group_predictors();
@@ -358,7 +359,7 @@ public:
   // has to be the first thing that the pause does). If
   // initiate_conc_mark_if_possible() is true, and the concurrent
   // marking thread has completed its work during the previous cycle,
-  // it will set during_initial_mark_pause() to so that the pause does
+  // it will set in_initial_mark_gc() to so that the pause does
   // the initial-mark work and start a marking cycle.
   void decide_on_conc_mark_initiation();
 

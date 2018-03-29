@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,10 +101,10 @@ public:
   void report_alloc_rate_ms(double alloc_rate);
   void report_cost_per_card_ms(double cost_per_card_ms);
   void report_cost_scan_hcc(double cost_scan_hcc);
-  void report_cost_per_entry_ms(double cost_per_entry_ms, bool last_gc_was_young);
-  void report_cards_per_entry_ratio(double cards_per_entry_ratio, bool last_gc_was_young);
+  void report_cost_per_entry_ms(double cost_per_entry_ms, bool for_young_gc);
+  void report_cards_per_entry_ratio(double cards_per_entry_ratio, bool for_young_gc);
   void report_rs_length_diff(double rs_length_diff);
-  void report_cost_per_byte_ms(double cost_per_byte_ms, bool in_marking_window);
+  void report_cost_per_byte_ms(double cost_per_byte_ms, bool mark_or_rebuild_in_progress);
   void report_young_other_cost_per_region_ms(double other_cost_per_region_ms);
   void report_non_young_other_cost_per_region_ms(double other_cost_per_region_ms);
   void report_constant_other_time_ms(double constant_other_time_ms);
@@ -126,9 +126,9 @@ public:
 
   double predict_mixed_cards_per_entry_ratio() const;
 
-  size_t predict_card_num(size_t rs_length, bool gcs_are_young) const;
+  size_t predict_card_num(size_t rs_length, bool for_young_gc) const;
 
-  double predict_rs_scan_time_ms(size_t card_num, bool gcs_are_young) const;
+  double predict_rs_scan_time_ms(size_t card_num, bool for_young_gc) const;
 
   double predict_mixed_rs_scan_time_ms(size_t card_num) const;
 

@@ -47,7 +47,7 @@ CollectionSetChooser* G1CollectionSet::cset_chooser() {
 }
 
 double G1CollectionSet::predict_region_elapsed_time_ms(HeapRegion* hr) {
-  return _policy->predict_region_elapsed_time_ms(hr, collector_state()->gcs_are_young());
+  return _policy->predict_region_elapsed_time_ms(hr, collector_state()->in_young_only_phase());
 }
 
 G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
@@ -255,21 +255,23 @@ void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
   // are calculated, aggregated with the policy collection set info,
   // and cached in the heap region here (initially) and (subsequently)
   // by the Young List sampling code.
+  // Ignore calls to this due to retirement during full gc.
 
-  size_t rs_length = hr->rem_set()->occupied();
-  double region_elapsed_time_ms = predict_region_elapsed_time_ms(hr);
+  if (!G1CollectedHeap::heap()->collector_state()->in_full_gc()) {
+    size_t rs_length = hr->rem_set()->occupied();
+    double region_elapsed_time_ms = predict_region_elapsed_time_ms(hr);
 
-  // Cache the values we have added to the aggregated information
-  // in the heap region in case we have to remove this region from
-  // the incremental collection set, or it is updated by the
-  // rset sampling code
-  hr->set_recorded_rs_length(rs_length);
-  hr->set_predicted_elapsed_time_ms(region_elapsed_time_ms);
+    // Cache the values we have added to the aggregated information
+    // in the heap region in case we have to remove this region from
+    // the incremental collection set, or it is updated by the
+    // rset sampling code
+    hr->set_recorded_rs_length(rs_length);
+    hr->set_predicted_elapsed_time_ms(region_elapsed_time_ms);
 
-  size_t used_bytes = hr->used();
-  _inc_recorded_rs_lengths += rs_length;
-  _inc_predicted_elapsed_time_ms += region_elapsed_time_ms;
-  _inc_bytes_used_before += used_bytes;
+    _inc_recorded_rs_lengths += rs_length;
+    _inc_predicted_elapsed_time_ms += region_elapsed_time_ms;
+    _inc_bytes_used_before += hr->used();
+  }
 
   assert(!hr->in_collection_set(), "invariant");
   _g1->register_young_region_with_cset(hr);
@@ -366,8 +368,6 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   log_trace(gc, ergo, cset)("Start choosing CSet. pending cards: " SIZE_FORMAT " predicted base time: %1.2fms remaining time: %1.2fms target pause time: %1.2fms",
                             pending_cards, base_time_ms, time_remaining_ms, target_pause_time_ms);
 
-  collector_state()->set_last_gc_was_young(collector_state()->gcs_are_young());
-
   // The young list is laid with the survivor regions from the previous
   // pause are appended to the RHS of the young list, i.e.
   //   [Newly Young Regions ++ Survivors from last pause].
@@ -411,7 +411,7 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
   double non_young_start_time_sec = os::elapsedTime();
   double predicted_old_time_ms = 0.0;
 
-  if (!collector_state()->gcs_are_young()) {
+  if (collector_state()->in_mixed_phase()) {
     cset_chooser()->verify();
     const uint min_old_cset_length = _policy->calc_min_old_cset_length();
     const uint max_old_cset_length = _policy->calc_max_old_cset_length();
