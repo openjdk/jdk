@@ -4663,17 +4663,13 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   MetaWord* result = loader_data->metaspace_non_null()->allocate(word_size, mdtype);
 
   if (result == NULL) {
-    if (DumpSharedSpaces && THREAD->is_VM_thread()) {
-      tty->print_cr("Failed allocating metaspace object type %s of size " SIZE_FORMAT ". CDS dump aborted.",
-          MetaspaceObj::type_name(type), word_size * BytesPerWord);
-      vm_exit(1);
-    }
-
     tracer()->report_metaspace_allocation_failure(loader_data, word_size, type, mdtype);
 
     // Allocation failed.
-    if (is_init_completed()) {
+    if (is_init_completed() && !(DumpSharedSpaces && THREAD->is_VM_thread())) {
       // Only start a GC if the bootstrapping has completed.
+      // Also, we cannot GC if we are at the end of the CDS dumping stage which runs inside
+      // the VM thread.
 
       // Try to clean out some memory and retry.
       result = Universe::heap()->satisfy_failed_metadata_allocation(loader_data, word_size, mdtype);
@@ -4681,6 +4677,14 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   }
 
   if (result == NULL) {
+    if (DumpSharedSpaces) {
+      // CDS dumping keeps loading classes, so if we hit an OOM we probably will keep hitting OOM.
+      // We should abort to avoid generating a potentially bad archive.
+      tty->print_cr("Failed allocating metaspace object type %s of size " SIZE_FORMAT ". CDS dump aborted.",
+          MetaspaceObj::type_name(type), word_size * BytesPerWord);
+      tty->print_cr("Please increase MaxMetaspaceSize (currently " SIZE_FORMAT " bytes).", MaxMetaspaceSize);
+      vm_exit(1);
+    }
     report_metadata_oome(loader_data, word_size, type, mdtype, CHECK_NULL);
   }
 
