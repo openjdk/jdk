@@ -27,13 +27,10 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiGetLoadedClasses.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/stack.inline.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1BarrierSet.hpp"
-#endif
-
 
 // The closure for GetLoadedClasses
 class LoadedClassesClosure : public KlassClosure {
@@ -41,20 +38,6 @@ private:
   Stack<jclass, mtInternal> _classStack;
   JvmtiEnv* _env;
   Thread*   _cur_thread;
-
-// Tell the GC to keep this klass alive
-static void ensure_klass_alive(oop o) {
-  // A klass that was previously considered dead can be looked up in the
-  // CLD/SD, and its _java_mirror or _class_loader can be stored in a root
-  // or a reachable object making it alive again. The SATB part of G1 needs
-  // to get notified about this potential resurrection, otherwise the marking
-  // might not find the object.
-#if INCLUDE_ALL_GCS
-  if (UseG1GC && o != NULL) {
-    G1BarrierSet::enqueue(o);
-  }
-#endif
-}
 
 public:
   LoadedClassesClosure(Thread* thread, JvmtiEnv* env) : _cur_thread(thread), _env(env) {
@@ -64,7 +47,6 @@ public:
   void do_klass(Klass* k) {
     // Collect all jclasses
     _classStack.push((jclass) _env->jni_reference(Handle(_cur_thread, k->java_mirror())));
-    ensure_klass_alive(k->java_mirror());
   }
 
   int extract(jclass* result_list) {

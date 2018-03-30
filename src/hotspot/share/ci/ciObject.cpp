@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "ci/ciObject.hpp"
-#include "ci/ciUtilities.hpp"
+#include "ci/ciUtilities.inline.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -207,7 +207,7 @@ void ciObject::init_flags_from(oop x) {
   int flags = 0;
   if (x != NULL) {
     assert(Universe::heap()->is_in_reserved(x), "must be");
-    if (x->is_scavengable())
+    if (Universe::heap()->is_scavengable(x))
       flags |= SCAVENGABLE_FLAG;
   }
   _ident |= flags;

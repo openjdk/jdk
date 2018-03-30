@@ -214,4 +214,4 @@ ResetNoHandleMark::~ResetNoHandleMark() {
   area->_no_handle_mark_nesting = _no_handle_mark_nesting;
 }
 
-#endif
+#endif // ASSERT

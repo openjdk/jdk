@@ -759,7 +759,7 @@ public class MonitorSnippets implements Snippets {
                 args.addConst("counters", counters);
             }
 
-            template(graph.getDebug(), args).instantiate(providers.getMetaAccess(), monitorenterNode, DEFAULT_REPLACER, args);
+            template(monitorenterNode, args).instantiate(providers.getMetaAccess(), monitorenterNode, DEFAULT_REPLACER, args);
         }
 
         public void lower(MonitorExitNode monitorexitNode, HotSpotRegistersProvider registers, LoweringTool tool) {
@@ -778,7 +778,7 @@ public class MonitorSnippets implements Snippets {
             args.addConst("options", graph.getOptions());
             args.addConst("counters", counters);
 
-            template(graph.getDebug(), args).instantiate(providers.getMetaAccess(), monitorexitNode, DEFAULT_REPLACER, args);
+            template(monitorexitNode, args).instantiate(providers.getMetaAccess(), monitorexitNode, DEFAULT_REPLACER, args);
         }
 
         public static boolean isTracingEnabledForType(ValueNode object) {
@@ -828,7 +828,7 @@ public class MonitorSnippets implements Snippets {
                     invoke.setStateAfter(graph.start().stateAfter());
                     graph.addAfterFixed(graph.start(), invoke);
 
-                    StructuredGraph inlineeGraph = providers.getReplacements().getSnippet(initCounter.getMethod(), null);
+                    StructuredGraph inlineeGraph = providers.getReplacements().getSnippet(initCounter.getMethod(), null, invoke.graph().trackNodeSourcePosition(), invoke.getNodeSourcePosition());
                     InliningUtil.inline(invoke, inlineeGraph, false, null);
 
                     List<ReturnNode> rets = graph.getNodes(ReturnNode.TYPE).snapshot();
@@ -846,7 +846,7 @@ public class MonitorSnippets implements Snippets {
 
                         Arguments args = new Arguments(checkCounter, graph.getGuardsStage(), tool.getLoweringStage());
                         args.addConst("errMsg", msg);
-                        inlineeGraph = template(graph.getDebug(), args).copySpecializedGraph(graph.getDebug());
+                        inlineeGraph = template(invoke, args).copySpecializedGraph(graph.getDebug());
                         InliningUtil.inline(invoke, inlineeGraph, false, null);
                     }
                 }

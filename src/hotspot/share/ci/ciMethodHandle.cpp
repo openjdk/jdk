@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "ci/ciClassList.hpp"
 #include "ci/ciMethodHandle.hpp"
-#include "ci/ciUtilities.hpp"
+#include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.hpp"
 
 // ------------------------------------------------------------------

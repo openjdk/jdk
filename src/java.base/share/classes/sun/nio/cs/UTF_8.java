@@ -55,9 +55,6 @@ import java.nio.charset.CodingErrorAction;
  */
 
 public final class UTF_8 extends Unicode {
-
-    public static final UTF_8 INSTANCE = new UTF_8();
-
     public UTF_8() {
         super("UTF-8", StandardCharsets.aliases_UTF_8());
     }

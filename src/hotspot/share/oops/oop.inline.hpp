@@ -363,10 +363,6 @@ bool oopDesc::is_gc_marked() const {
   return mark()->is_marked();
 }
 
-bool oopDesc::is_scavengable() const {
-  return Universe::heap()->is_scavengable(oop(const_cast<oopDesc*>(this)));
-}
-
 // Used by scavengers
 bool oopDesc::is_forwarded() const {
   // The extra heap check is needed since the obj might be locked, in which case the

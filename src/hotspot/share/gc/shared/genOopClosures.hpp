@@ -31,7 +31,7 @@
 class Generation;
 class HeapWord;
 class CardTableRS;
-class CardTableModRefBS;
+class CardTableBarrierSet;
 class DefNewGeneration;
 class KlassRemSet;
 

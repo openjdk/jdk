@@ -28,6 +28,7 @@ import static org.graalvm.compiler.core.common.GraalOptions.MinimumPeelProbabili
 
 import java.util.List;
 
+import org.graalvm.compiler.core.common.util.UnsignedLong;
 import org.graalvm.compiler.debug.CounterKey;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;
@@ -89,11 +90,22 @@ public class DefaultLoopPolicies implements LoopPolicies {
         }
         OptionValues options = loop.entryPoint().getOptions();
         CountedLoopInfo counted = loop.counted();
-        long maxTrips = counted.constantMaxTripCount();
+        UnsignedLong maxTrips = counted.constantMaxTripCount();
+        if (maxTrips.equals(0)) {
+            return loop.canDuplicateLoop();
+        }
         int maxNodes = (counted.isExactTripCount() && counted.isConstantExactTripCount()) ? Options.ExactFullUnrollMaxNodes.getValue(options) : Options.FullUnrollMaxNodes.getValue(options);
         maxNodes = Math.min(maxNodes, Math.max(0, MaximumDesiredSize.getValue(options) - loop.loopBegin().graph().getNodeCount()));
         int size = Math.max(1, loop.size() - 1 - loop.loopBegin().phis().count());
-        if (maxTrips <= Options.FullUnrollMaxIterations.getValue(options) && size * (maxTrips - 1) <= maxNodes) {
+        /* @formatter:off
+         * The check below should not throw ArithmeticException because:
+         * maxTrips is guaranteed to be >= 1 by the check above
+         * - maxTrips * size can not overfow because:
+         *   - maxTrips <= FullUnrollMaxIterations <= Integer.MAX_VALUE
+         *   - 1 <= size <= Integer.MAX_VALUE
+         * @formatter:on
+         */
+        if (maxTrips.isLessOrEqualTo(Options.FullUnrollMaxIterations.getValue(options)) && maxTrips.minus(1).times(size).isLessOrEqualTo(maxNodes)) {
             // check whether we're allowed to unroll this loop
             return loop.canDuplicateLoop();
         } else {

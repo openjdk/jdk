@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,51 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/vframe.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/preserveException.hpp"
 
 // Implementation of InterfaceSupport
 
 #ifdef ASSERT
+VMEntryWrapper::VMEntryWrapper() {
+  if (VerifyLastFrame) {
+    InterfaceSupport::verify_last_frame();
+  }
+}
+
+VMEntryWrapper::~VMEntryWrapper() {
+  InterfaceSupport::check_gc_alot();
+  if (WalkStackALot) {
+    InterfaceSupport::walk_stack();
+  }
+#ifdef COMPILER2
+  // This option is not used by Compiler 1
+  if (StressDerivedPointers) {
+    InterfaceSupport::stress_derived_pointers();
+  }
+#endif
+  if (DeoptimizeALot || DeoptimizeRandom) {
+    InterfaceSupport::deoptimizeAll();
+  }
+  if (ZombieALot) {
+    InterfaceSupport::zombieAll();
+  }
+  if (UnlinkSymbolsALot) {
+    InterfaceSupport::unlinkSymbols();
+  }
+  // do verification AFTER potential deoptimization
+  if (VerifyStack) {
+    InterfaceSupport::verify_stack();
+  }
+}
 
 long InterfaceSupport::_number_of_calls       = 0;
 long InterfaceSupport::_scavenge_alot_counter = 1;

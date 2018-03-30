@@ -26,8 +26,8 @@ import static jdk.vm.ci.common.InitTimer.timer;
 import static org.graalvm.compiler.hotspot.HotSpotGraalOptionValues.GRAAL_OPTION_PROPERTY_PREFIX;
 
 import java.io.PrintStream;
-import java.util.Map;
 import java.util.Collections;
+import java.util.Map;
 
 import org.graalvm.compiler.debug.MethodFilter;
 import org.graalvm.compiler.options.Option;
@@ -36,6 +36,7 @@ import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.options.OptionsParser;
 import org.graalvm.compiler.phases.tiers.CompilerConfiguration;
+import org.graalvm.compiler.serviceprovider.JDK9Method;
 
 import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.hotspot.HotSpotJVMCICompilerFactory;
@@ -47,6 +48,22 @@ public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFacto
 
     private static MethodFilter[] graalCompileOnlyFilter;
     private static boolean compileGraalWithC1Only;
+
+    /**
+     * Module containing {@link HotSpotJVMCICompilerFactory}.
+     */
+    private Object jvmciModule;
+
+    /**
+     * Module containing {@link HotSpotGraalCompilerFactory}.
+     */
+    private Object graalModule;
+
+    /**
+     * Module containing the {@linkplain CompilerConfigurationFactory#selectFactory selected}
+     * configuration.
+     */
+    private Object compilerConfigurationModule;
 
     private final HotSpotGraalJVMCIServiceLocator locator;
 
@@ -70,6 +87,10 @@ public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFacto
         assert options == null : "cannot select " + getClass() + " service more than once";
         options = HotSpotGraalOptionValues.HOTSPOT_OPTIONS;
         initializeGraalCompilePolicyFields(options);
+        if (!JDK9Method.Java8OrEarlier) {
+            jvmciModule = JDK9Method.getModule(HotSpotJVMCICompilerFactory.class);
+            graalModule = JDK9Method.getModule(HotSpotGraalCompilerFactory.class);
+        }
         /*
          * Exercise this code path early to encourage loading now. This doesn't solve problem of
          * deadlock during class loading but seems to eliminate it in practice.
@@ -102,7 +123,9 @@ public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFacto
         @Option(help = "In tiered mode compile Graal and JVMCI using optimized first tier code.", type = OptionType.Expert)
         public static final OptionKey<Boolean> CompileGraalWithC1Only = new OptionKey<>(true);
 
-        @Option(help = "A method filter selecting what should be compiled by Graal.  All other requests will be reduced to CompilationLevel.Simple.", type = OptionType.Expert)
+        @Option(help = "A filter applied to a method the VM has selected for compilation by Graal. " +
+                       "A method not matching the filter is redirected to a lower tier compiler. " +
+                       "The filter format is the same as for the MethodFilter option.", type = OptionType.Expert)
         public static final OptionKey<String> GraalCompileOnly = new OptionKey<>(null);
         // @formatter:on
 
@@ -110,7 +133,11 @@ public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFacto
 
     @Override
     public HotSpotGraalCompiler createCompiler(JVMCIRuntime runtime) {
-        HotSpotGraalCompiler compiler = createCompiler(runtime, options, CompilerConfigurationFactory.selectFactory(null, options));
+        CompilerConfigurationFactory factory = CompilerConfigurationFactory.selectFactory(null, options);
+        if (!JDK9Method.Java8OrEarlier) {
+            compilerConfigurationModule = JDK9Method.getModule(factory.getClass());
+        }
+        HotSpotGraalCompiler compiler = createCompiler(runtime, options, factory);
         // Only the HotSpotGraalRuntime associated with the compiler created via
         // jdk.vm.ci.runtime.JVMCIRuntime.getCompiler() is registered for receiving
         // VM events.
@@ -160,15 +187,54 @@ public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFacto
         assert HotSpotGraalCompilerFactory.class.getName().equals("org.graalvm.compiler.hotspot.HotSpotGraalCompilerFactory");
     }
 
+    static final ClassLoader JVMCI_LOADER = HotSpotGraalCompilerFactory.class.getClassLoader();
+
     /*
      * This method is static so it can be exercised during initialization.
      */
-    private static CompilationLevel adjustCompilationLevelInternal(Class<?> declaringClass, String name, String signature, CompilationLevel level) {
+    private CompilationLevel adjustCompilationLevelInternal(Class<?> declaringClass, String name, String signature, CompilationLevel level) {
         if (compileGraalWithC1Only) {
             if (level.ordinal() > CompilationLevel.Simple.ordinal()) {
-                String declaringClassName = declaringClass.getName();
-                if (declaringClassName.startsWith("jdk.vm.ci") || declaringClassName.startsWith("org.graalvm") || declaringClassName.startsWith("com.oracle.graal")) {
-                    return CompilationLevel.Simple;
+                if (JDK9Method.Java8OrEarlier) {
+                    if (JVMCI_LOADER != null) {
+                        // When running with +UseJVMCIClassLoader all classes in
+                        // the JVMCI loader should be compiled with C1.
+                        try {
+                            if (declaringClass.getClassLoader() == JVMCI_LOADER) {
+                                return CompilationLevel.Simple;
+                            }
+                        } catch (SecurityException e) {
+                            // This is definitely not a JVMCI or Graal class
+                        }
+                    } else {
+                        // JVMCI and Graal are on the bootclasspath so match based on the package.
+                        String declaringClassName = declaringClass.getName();
+                        if (declaringClassName.startsWith("jdk.vm.ci")) {
+                            return CompilationLevel.Simple;
+                        }
+                        if (declaringClassName.startsWith("org.graalvm.") &&
+                                        (declaringClassName.startsWith("org.graalvm.compiler.") ||
+                                                        declaringClassName.startsWith("org.graalvm.collections.") ||
+                                                        declaringClassName.startsWith("org.graalvm.compiler.word.") ||
+                                                        declaringClassName.startsWith("org.graalvm.graphio."))) {
+                            return CompilationLevel.Simple;
+                        }
+                        if (declaringClassName.startsWith("com.oracle.graal") &&
+                                        (declaringClassName.startsWith("com.oracle.graal.enterprise") ||
+                                                        declaringClassName.startsWith("com.oracle.graal.vector") ||
+                                                        declaringClassName.startsWith("com.oracle.graal.asm"))) {
+                            return CompilationLevel.Simple;
+                        }
+                    }
+                } else {
+                    try {
+                        Object module = JDK9Method.getModule(declaringClass);
+                        if (jvmciModule == module || graalModule == module || compilerConfigurationModule == module) {
+                            return CompilationLevel.Simple;
+                        }
+                    } catch (Throwable e) {
+                        throw new InternalError(e);
+                    }
                 }
             }
         }

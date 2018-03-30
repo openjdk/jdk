@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "memory/allocation.inline.hpp"
@@ -33,7 +34,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/icache.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/signature.hpp"
 
 #define __ _masm->
@@ -45,6 +46,12 @@
 #define sp_c_arg_at(index)        ((index)*wordSize + _abi(carg_1)), R1_SP
 
 // Implementation of SignatureHandlerGenerator
+
+InterpreterRuntime::SignatureHandlerGenerator::SignatureHandlerGenerator(
+    const methodHandle& method, CodeBuffer* buffer) : NativeSignatureIterator(method) {
+  _masm = new MacroAssembler(buffer);
+  _num_used_fp_arg_regs = 0;
+}
 
 void InterpreterRuntime::SignatureHandlerGenerator::pass_int() {
   Argument jni_arg(jni_offset());

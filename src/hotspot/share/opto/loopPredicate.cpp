@@ -632,7 +632,7 @@ BoolNode* PhaseIdealLoop::rc_predicate(IdealLoopTree *loop, Node* ctrl,
                                        int scale, Node* offset,
                                        Node* init, Node* limit, jint stride,
                                        Node* range, bool upper, bool &overflow) {
-  jint con_limit  = limit->is_Con()  ? limit->get_int()  : 0;
+  jint con_limit  = (limit != NULL && limit->is_Con())  ? limit->get_int()  : 0;
   jint con_init   = init->is_Con()   ? init->get_int()   : 0;
   jint con_offset = offset->is_Con() ? offset->get_int() : 0;
 
@@ -751,26 +751,7 @@ BoolNode* PhaseIdealLoop::rc_predicate(IdealLoopTree *loop, Node* ctrl,
     // Integer expressions may overflow, do long comparison
     range = new ConvI2LNode(range);
     register_new_node(range, ctrl);
-    if (!Matcher::has_match_rule(Op_CmpUL)) {
-      // We don't support unsigned long comparisons. Set 'max_idx_expr'
-      // to max_julong if < 0 to make the signed comparison fail.
-      ConINode* sign_pos = _igvn.intcon(BitsPerLong - 1);
-      set_ctrl(sign_pos, C->root());
-      Node* sign_bit_mask = new RShiftLNode(max_idx_expr, sign_pos);
-      register_new_node(sign_bit_mask, ctrl);
-      // OR with sign bit to set all bits to 1 if negative (otherwise no change)
-      max_idx_expr = new OrLNode(max_idx_expr, sign_bit_mask);
-      register_new_node(max_idx_expr, ctrl);
-      // AND with 0x7ff... to unset the sign bit
-      ConLNode* remove_sign_mask = _igvn.longcon(max_jlong);
-      set_ctrl(remove_sign_mask, C->root());
-      max_idx_expr = new AndLNode(max_idx_expr, remove_sign_mask);
-      register_new_node(max_idx_expr, ctrl);
-
-      cmp = new CmpLNode(max_idx_expr, range);
-    } else {
-      cmp = new CmpULNode(max_idx_expr, range);
-    }
+    cmp = new CmpULNode(max_idx_expr, range);
   } else {
     cmp = new CmpUNode(max_idx_expr, range);
   }
@@ -783,6 +764,29 @@ BoolNode* PhaseIdealLoop::rc_predicate(IdealLoopTree *loop, Node* ctrl,
     tty->print("%s", predString->as_string());
   }
   return bol;
+}
+
+// After pre/main/post loops are created, we'll put a copy of some
+// range checks between the pre and main loop to validate the initial
+// value of the induction variable for the main loop. Make a copy of
+// the predicates here with an opaque node as a place holder for the
+// initial value.
+ProjNode* PhaseIdealLoop::insert_skeleton_predicate(IfNode* iff, IdealLoopTree *loop,
+                                                    ProjNode* proj, ProjNode *predicate_proj,
+                                                    ProjNode* upper_bound_proj,
+                                                    int scale, Node* offset,
+                                                    Node* init, Node* limit, jint stride,
+                                                    Node* rng, bool &overflow) {
+  assert(proj->_con && predicate_proj->_con, "not a range check?");
+  Node* opaque_init = new Opaque1Node(C, init);
+  register_new_node(opaque_init, upper_bound_proj);
+  BoolNode* bol = rc_predicate(loop, upper_bound_proj, scale, offset, opaque_init, limit, stride, rng, (stride > 0) != (scale > 0), overflow);
+  Node* opaque_bol = new Opaque4Node(C, bol, _igvn.intcon(1)); // This will go away once loop opts are over
+  register_new_node(opaque_bol, upper_bound_proj);
+  ProjNode* new_proj = create_new_if_for_predicate(predicate_proj, NULL, Deoptimization::Reason_predicate, overflow ? Op_If : iff->Opcode());
+  _igvn.replace_input_of(new_proj->in(0), 1, opaque_bol);
+  assert(opaque_init->outcnt() > 0, "should be used");
+  return new_proj;
 }
 
 //------------------------------ loop_predication_impl--------------------------
@@ -979,6 +983,10 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
       // Fall through into rest of the clean up code which will move
       // any dependent nodes onto the upper bound test.
       new_predicate_proj = upper_bound_proj;
+
+      if (iff->is_RangeCheck()) {
+        new_predicate_proj = insert_skeleton_predicate(iff, loop, proj, predicate_proj, upper_bound_proj, scale, offset, init, limit, stride, rng, overflow);
+      }
 
 #ifndef PRODUCT
       if (TraceLoopOpts && !TraceLoopPredicate) {

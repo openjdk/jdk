@@ -26,6 +26,7 @@
 #include "compiler/compileLog.hpp"
 #include "ci/bcEscapeAnalyzer.hpp"
 #include "compiler/oopMap.hpp"
+#include "interpreter/interpreter.hpp"
 #include "opto/callGenerator.hpp"
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"

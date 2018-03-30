@@ -524,7 +524,7 @@ public class ArrayCopySnippets implements Snippets {
          */
         private void instantiate(Arguments args, BasicArrayCopyNode arraycopy) {
             StructuredGraph graph = arraycopy.graph();
-            SnippetTemplate template = template(graph.getDebug(), args);
+            SnippetTemplate template = template(arraycopy, args);
             UnmodifiableEconomicMap<Node, Node> replacements = template.instantiate(providers.getMetaAccess(), arraycopy, SnippetTemplate.DEFAULT_REPLACER, args, false);
             for (Node originalNode : replacements.getKeys()) {
                 if (originalNode instanceof Invoke) {

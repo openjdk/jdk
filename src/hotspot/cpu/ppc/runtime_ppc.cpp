@@ -33,7 +33,7 @@
 #include "memory/resourceArea.hpp"
 #include "nativeInst_ppc.hpp"
 #include "opto/runtime.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vframeArray.hpp"

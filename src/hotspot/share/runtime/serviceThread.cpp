@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/mutexLocker.hpp"

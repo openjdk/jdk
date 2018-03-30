@@ -30,10 +30,10 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 public interface Inlineable {
 
-    static Inlineable getInlineableElement(final ResolvedJavaMethod method, Invoke invoke, HighTierContext context, CanonicalizerPhase canonicalizer) {
+    static Inlineable getInlineableElement(final ResolvedJavaMethod method, Invoke invoke, HighTierContext context, CanonicalizerPhase canonicalizer, boolean trackNodeSourcePosition) {
         assert method != null;
         assert invoke != null;
-        return new InlineableGraph(method, invoke, context, canonicalizer);
+        return new InlineableGraph(method, invoke, context, canonicalizer, trackNodeSourcePosition);
     }
 
     int getNodeCount();

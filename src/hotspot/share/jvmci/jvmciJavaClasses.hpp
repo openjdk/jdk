@@ -353,30 +353,30 @@ class name : AllStatic {                                                        
     static type name() {                                                                                       \
       assert(klassName::klass() != NULL && klassName::klass()->is_linked(), "Class not yet linked: " #klassName); \
       InstanceKlass* ik = klassName::klass();                                                                  \
-      address addr = ik->static_field_addr(_##name##_offset);                                                  \
-      oop result = HeapAccess<>::oop_load((HeapWord*)addr);                                                    \
+      oop base = ik->static_field_base_raw();                                                                  \
+      oop result = HeapAccess<>::oop_load_at(base, _##name##_offset);                                          \
       return type(result);                                                                                     \
     }                                                                                                          \
     static void set_##name(type x) {                                                                           \
       assert(klassName::klass() != NULL && klassName::klass()->is_linked(), "Class not yet linked: " #klassName); \
       assert(klassName::klass() != NULL, "Class not yet loaded: " #klassName);                                 \
       InstanceKlass* ik = klassName::klass();                                                                  \
-      address addr = ik->static_field_addr(_##name##_offset);                                                  \
-      HeapAccess<>::oop_store((HeapWord*)addr, x);                                                             \
+      oop base = ik->static_field_base_raw();                                                                  \
+      HeapAccess<>::oop_store_at(base, _##name##_offset, x);                                                   \
     }
 #define STATIC_PRIMITIVE_FIELD(klassName, name, jtypename)                                                     \
     static int _##name##_offset;                                                                               \
     static jtypename name() {                                                                                  \
       assert(klassName::klass() != NULL && klassName::klass()->is_linked(), "Class not yet linked: " #klassName); \
       InstanceKlass* ik = klassName::klass();                                                                  \
-      address addr = ik->static_field_addr(_##name##_offset);                                                  \
-      return HeapAccess<>::load((jtypename*)addr);                                                             \
+      oop base = ik->static_field_base_raw();                                                                  \
+      return HeapAccess<>::load_at(base, _##name##_offset);                                                    \
     }                                                                                                          \
     static void set_##name(jtypename x) {                                                                      \
       assert(klassName::klass() != NULL && klassName::klass()->is_linked(), "Class not yet linked: " #klassName); \
       InstanceKlass* ik = klassName::klass();                                                                  \
-      address addr = ik->static_field_addr(_##name##_offset);                                                  \
-      HeapAccess<>::store((jtypename*)addr, x);                                                                \
+      oop base = ik->static_field_base_raw();                                                                  \
+      HeapAccess<>::store_at(base, _##name##_offset, x);                                                       \
     }
 
 #define STATIC_INT_FIELD(klassName, name) STATIC_PRIMITIVE_FIELD(klassName, name, jint)

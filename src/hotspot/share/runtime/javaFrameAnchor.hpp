@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_RUNTIME_JAVAFRAMEANCHOR_HPP
 #define SHARE_VM_RUNTIME_JAVAFRAMEANCHOR_HPP
 
-#include "runtime/orderAccess.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
@@ -33,6 +32,7 @@
 // An object for encapsulating the machine/os dependent part of a JavaThread frame state
 //
 class JavaThread;
+class MacroAssembler;
 
 class JavaFrameAnchor {
 // Too many friends...

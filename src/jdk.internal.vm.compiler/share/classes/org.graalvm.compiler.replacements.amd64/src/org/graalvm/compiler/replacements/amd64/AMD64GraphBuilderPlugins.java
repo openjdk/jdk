@@ -29,6 +29,7 @@ import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.Una
 import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOperation.LOG10;
 import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOperation.SIN;
 import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOperation.TAN;
+import static org.graalvm.compiler.serviceprovider.JDK9Method.JAVA_SPECIFICATION_VERSION;
 import static org.graalvm.compiler.serviceprovider.JDK9Method.Java8OrEarlier;
 
 import java.util.Arrays;
@@ -75,6 +76,8 @@ public class AMD64GraphBuilderPlugins {
                 registerIntegerLongPlugins(invocationPlugins, LongSubstitutions.class, JavaKind.Long, arch, replacementsBytecodeProvider);
                 registerUnsafePlugins(invocationPlugins, replacementsBytecodeProvider);
                 registerStringPlugins(invocationPlugins, arch, replacementsBytecodeProvider);
+                registerStringLatin1Plugins(invocationPlugins, replacementsBytecodeProvider);
+                registerStringUTF16Plugins(invocationPlugins, replacementsBytecodeProvider);
                 registerMathPlugins(invocationPlugins, arch, arithmeticStubs, replacementsBytecodeProvider);
                 registerArraysEqualsPlugins(invocationPlugins, replacementsBytecodeProvider);
             }
@@ -183,12 +186,34 @@ public class AMD64GraphBuilderPlugins {
     }
 
     private static void registerStringPlugins(InvocationPlugins plugins, AMD64 arch, BytecodeProvider replacementsBytecodeProvider) {
-        if (Java8OrEarlier && arch.getFeatures().contains(CPUFeature.SSE4_2)) {
+        if (Java8OrEarlier) {
             Registration r;
             r = new Registration(plugins, String.class, replacementsBytecodeProvider);
             r.setAllowOverwrite(true);
-            r.registerMethodSubstitution(AMD64StringSubstitutions.class, "indexOf", char[].class, int.class,
-                            int.class, char[].class, int.class, int.class, int.class);
+            if (arch.getFeatures().contains(CPUFeature.SSE4_2)) {
+                r.registerMethodSubstitution(AMD64StringSubstitutions.class, "indexOf", char[].class, int.class,
+                                int.class, char[].class, int.class, int.class, int.class);
+            }
+            // r.registerMethodSubstitution(AMD64StringSubstitutions.class, "compareTo",
+            // Receiver.class, String.class);
+        }
+    }
+
+    private static void registerStringLatin1Plugins(InvocationPlugins plugins, BytecodeProvider replacementsBytecodeProvider) {
+        if (JAVA_SPECIFICATION_VERSION >= 9) {
+            Registration r = new Registration(plugins, "java.lang.StringLatin1", replacementsBytecodeProvider);
+            r.setAllowOverwrite(true);
+            r.registerMethodSubstitution(AMD64StringLatin1Substitutions.class, "compareTo", byte[].class, byte[].class);
+            r.registerMethodSubstitution(AMD64StringLatin1Substitutions.class, "compareToUTF16", byte[].class, byte[].class);
+        }
+    }
+
+    private static void registerStringUTF16Plugins(InvocationPlugins plugins, BytecodeProvider replacementsBytecodeProvider) {
+        if (JAVA_SPECIFICATION_VERSION >= 9) {
+            Registration r = new Registration(plugins, "java.lang.StringUTF16", replacementsBytecodeProvider);
+            r.setAllowOverwrite(true);
+            r.registerMethodSubstitution(AMD64StringUTF16Substitutions.class, "compareTo", byte[].class, byte[].class);
+            r.registerMethodSubstitution(AMD64StringUTF16Substitutions.class, "compareToLatin1", byte[].class, byte[].class);
         }
     }
 

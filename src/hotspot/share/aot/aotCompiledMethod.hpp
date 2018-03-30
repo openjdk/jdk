@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ private:
   const int _method_index;
   oop _oop;  // method()->method_holder()->klass_holder()
 
-  address* orig_pc_addr(const frame* fr) { return (address*) ((address)fr->unextended_sp() + _meta->orig_pc_offset()); }
+  address* orig_pc_addr(const frame* fr);
   bool make_not_entrant_helper(int new_state);
 
  public:

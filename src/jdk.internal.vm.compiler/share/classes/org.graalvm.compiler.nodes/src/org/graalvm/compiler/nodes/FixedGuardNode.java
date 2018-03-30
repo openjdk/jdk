@@ -22,6 +22,7 @@
  */
 package org.graalvm.compiler.nodes;
 
+import org.graalvm.compiler.debug.DebugCloseable;
 import static org.graalvm.compiler.nodeinfo.InputType.Guard;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
@@ -80,16 +81,19 @@ public final class FixedGuardNode extends AbstractFixedGuardNode implements Lowe
         }
     }
 
+    @SuppressWarnings("try")
     @Override
     public void lower(LoweringTool tool) {
-        if (graph().getGuardsStage().allowsFloatingGuards()) {
-            if (getAction() != DeoptimizationAction.None) {
-                ValueNode guard = tool.createGuard(this, getCondition(), getReason(), getAction(), getSpeculation(), isNegated()).asNode();
-                this.replaceAtUsages(guard);
-                graph().removeFixed(this);
+        try (DebugCloseable position = this.withNodeSourcePosition()) {
+            if (graph().getGuardsStage().allowsFloatingGuards()) {
+                if (getAction() != DeoptimizationAction.None) {
+                    ValueNode guard = tool.createGuard(this, getCondition(), getReason(), getAction(), getSpeculation(), isNegated()).asNode();
+                    this.replaceAtUsages(guard);
+                    graph().removeFixed(this);
+                }
+            } else {
+                lowerToIf().lower(tool);
             }
-        } else {
-            lowerToIf().lower(tool);
         }
     }
 

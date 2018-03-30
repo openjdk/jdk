@@ -24,8 +24,9 @@
 
 #include "precompiled.hpp"
 #include "ci/ciUtilities.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"
 
 // ciUtilities
@@ -51,7 +52,7 @@ const char basictype_to_char(BasicType t) {
 // card_table_base
 jbyte *ci_card_table_address() {
   BarrierSet* bs = Universe::heap()->barrier_set();
-  CardTableModRefBS* ctbs = barrier_set_cast<CardTableModRefBS>(bs);
+  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
   assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust users of this code");
   return ct->byte_map_base();

@@ -3328,7 +3328,7 @@ CountedLoopEndNode* SuperWord::get_pre_loop_end(CountedLoopNode* cl) {
     return NULL;
   }
 
-  Node* p_f = cl->skip_strip_mined()->in(LoopNode::EntryControl)->in(0)->in(0);
+  Node* p_f = cl->skip_predicates()->in(0)->in(0);
   if (!p_f->is_IfFalse()) return NULL;
   if (!p_f->in(0)->is_CountedLoopEnd()) return NULL;
   CountedLoopEndNode* pre_end = p_f->in(0)->as_CountedLoopEnd();

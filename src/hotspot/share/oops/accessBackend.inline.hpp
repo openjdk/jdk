@@ -122,17 +122,6 @@ inline bool RawAccessBarrier<decorators>::oop_arraycopy(arrayOop src_obj, arrayO
 }
 
 template <DecoratorSet decorators>
-inline bool RawAccessBarrier<decorators>::oop_arraycopy(arrayOop src_obj, arrayOop dst_obj, HeapWord* src, HeapWord* dst, size_t length) {
-  bool needs_oop_compress = HasDecorator<decorators, INTERNAL_CONVERT_COMPRESSED_OOP>::value &&
-                            HasDecorator<decorators, INTERNAL_RT_USE_COMPRESSED_OOPS>::value;
-  if (needs_oop_compress) {
-    return arraycopy(reinterpret_cast<narrowOop*>(src), reinterpret_cast<narrowOop*>(dst), length);
-  } else {
-    return arraycopy(reinterpret_cast<oop*>(src), reinterpret_cast<oop*>(dst), length);
-  }
-}
-
-template <DecoratorSet decorators>
 template <DecoratorSet ds, typename T>
 inline typename EnableIf<
   HasDecorator<ds, MO_SEQ_CST>::value, T>::type
