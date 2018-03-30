@@ -4062,6 +4062,9 @@ public:
   develop(bool, VerifyMetaspace, false,                                     \
           "Verify metaspace on chunk movements.")                           \
                                                                             \
+  diagnostic(bool, ShowRegistersOnAssert, false,                            \
+          "On internal errors, include registers in error report.")         \
+                                                                            \
 
 
 

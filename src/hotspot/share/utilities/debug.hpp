@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,17 @@
 
 #include <stddef.h>
 
+// ShowRegistersOnAssert support (for now Linux only)
+#if defined(LINUX) && !defined(ZERO)
+#define CAN_SHOW_REGISTERS_ON_ASSERT
+extern char* g_assert_poison;
+#define TOUCH_ASSERT_POISON (*g_assert_poison) = 'X';
+void initialize_assert_poison();
+bool handle_assert_poison_fault(const void* ucVoid, const void* faulting_address);
+#else
+#define TOUCH_ASSERT_POISON
+#endif // CAN_SHOW_REGISTERS_ON_ASSERT
+
 // assertions
 #ifndef ASSERT
 #define vmassert(p, ...)
@@ -42,6 +53,7 @@
 #define vmassert(p, ...)                                                       \
 do {                                                                           \
   if (!(p)) {                                                                  \
+    TOUCH_ASSERT_POISON;                                                       \
     if (is_executing_unit_tests()) {                                           \
       report_assert_msg(__VA_ARGS__);                                          \
     }                                                                          \
@@ -67,6 +79,7 @@ do {                                                                           \
 #define vmassert_status(p, status, msg) \
 do {                                                                           \
   if (!(p)) {                                                                  \
+    TOUCH_ASSERT_POISON;                                                       \
     report_vm_status_error(__FILE__, __LINE__, "assert(" #p ") failed",        \
                            status, msg);                                       \
     BREAKPOINT;                                                                \
@@ -83,6 +96,7 @@ do {                                                                           \
 #define guarantee(p, ...)                                                         \
 do {                                                                              \
   if (!(p)) {                                                                     \
+    TOUCH_ASSERT_POISON;                                                          \
     report_vm_error(__FILE__, __LINE__, "guarantee(" #p ") failed", __VA_ARGS__); \
     BREAKPOINT;                                                                   \
   }                                                                               \
@@ -90,6 +104,7 @@ do {                                                                            
 
 #define fatal(...)                                                                \
 do {                                                                              \
+  TOUCH_ASSERT_POISON;                                                            \
   report_fatal(__FILE__, __LINE__, __VA_ARGS__);                                  \
   BREAKPOINT;                                                                     \
 } while (0)
@@ -103,18 +118,21 @@ do {                                                                            
 
 #define ShouldNotCallThis()                                                       \
 do {                                                                              \
+  TOUCH_ASSERT_POISON;                                                            \
   report_should_not_call(__FILE__, __LINE__);                                     \
   BREAKPOINT;                                                                     \
 } while (0)
 
 #define ShouldNotReachHere()                                                      \
 do {                                                                              \
+  TOUCH_ASSERT_POISON;                                                            \
   report_should_not_reach_here(__FILE__, __LINE__);                               \
   BREAKPOINT;                                                                     \
 } while (0)
 
 #define Unimplemented()                                                           \
 do {                                                                              \
+  TOUCH_ASSERT_POISON;                                                            \
   report_unimplemented(__FILE__, __LINE__);                                       \
   BREAKPOINT;                                                                     \
 } while (0)
