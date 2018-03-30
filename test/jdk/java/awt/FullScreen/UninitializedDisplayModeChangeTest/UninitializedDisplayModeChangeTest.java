@@ -23,12 +23,13 @@
 
 /**
  * @test
- * @bug 6358034 6568560 8198613
+ * @bug 6358034 6568560 8198613 8198335
  * @key headful
  * @summary Tests that no exception is thrown when display mode is changed
  *          externally
  * @compile UninitializedDisplayModeChangeTest.java DisplayModeChanger.java
  * @run main/othervm UninitializedDisplayModeChangeTest
+ * @run main/othervm -Djava.awt.headless=true UninitializedDisplayModeChangeTest
  */
 
 import java.awt.EventQueue;
