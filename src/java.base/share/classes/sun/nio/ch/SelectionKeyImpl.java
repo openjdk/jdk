@@ -39,19 +39,26 @@ import java.nio.channels.spi.AbstractSelectionKey;
 public final class SelectionKeyImpl
     extends AbstractSelectionKey
 {
-
     final SelChImpl channel;                            // package-private
-    public final SelectorImpl selector;
-
-    // Index for a pollfd array in Selector that this key is registered with
-    private int index;
+    private final SelectorImpl selector;
 
     private volatile int interestOps;
     private volatile int readyOps;
 
+    // registered events in kernel, used by some Selector implementations
+    private int registeredEvents;
+
+    // index of key in pollfd array, used by some Selector implementations
+    private int index;
+
     SelectionKeyImpl(SelChImpl ch, SelectorImpl sel) {
         channel = ch;
         selector = sel;
+    }
+
+    private void ensureValid() {
+        if (!isValid())
+            throw new CancelledKeyException();
     }
 
     @Override
@@ -61,20 +68,7 @@ public final class SelectionKeyImpl
 
     @Override
     public Selector selector() {
-        return (Selector)selector;
-    }
-
-    int getIndex() {                                    // package-private
-        return index;
-    }
-
-    void setIndex(int i) {                              // package-private
-        index = i;
-    }
-
-    private void ensureValid() {
-        if (!isValid())
-            throw new CancelledKeyException();
+        return selector;
     }
 
     @Override
@@ -109,13 +103,31 @@ public final class SelectionKeyImpl
     public SelectionKey nioInterestOps(int ops) {
         if ((ops & ~channel().validOps()) != 0)
             throw new IllegalArgumentException();
-        channel.translateAndSetInterestOps(ops, this);
+        selector.putEventOps(this, channel.translateInterestOps(ops));
         interestOps = ops;
         return this;
     }
 
     public int nioInterestOps() {
         return interestOps;
+    }
+
+    void registeredEvents(int events) {
+        // assert Thread.holdsLock(selector);
+        this.registeredEvents = events;
+    }
+
+    int registeredEvents() {
+        // assert Thread.holdsLock(selector);
+        return registeredEvents;
+    }
+
+    int getIndex() {
+        return index;
+    }
+
+    void setIndex(int i) {
+        index = i;
     }
 
     @Override
