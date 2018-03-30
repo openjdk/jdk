@@ -593,10 +593,9 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
      * Set the source position to {@code sourcePosition}.
      */
     public void setNodeSourcePosition(NodeSourcePosition sourcePosition) {
+        assert sourcePosition != null || this.sourcePosition == null || this.sourcePosition.isPlaceholder() : "Invalid source position at node with id " + id;
         this.sourcePosition = sourcePosition;
-        if (sourcePosition != null && graph != null && !graph.seenNodeSourcePosition) {
-            graph.seenNodeSourcePosition = true;
-        }
+        // assert sourcePosition == null || graph == null || graph.trackNodeSourcePosition;
     }
 
     /**
@@ -920,6 +919,9 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
         }
         newNode.graph = into;
         newNode.id = INITIAL_ID;
+        if (sourcePosition != null && (into == null || into.updateNodeSourcePosition())) {
+            newNode.setNodeSourcePosition(sourcePosition);
+        }
         if (into != null) {
             into.register(newNode);
         }
@@ -927,9 +929,6 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
 
         if (into != null && useIntoLeafNodeCache) {
             into.putNodeIntoCache(newNode);
-        }
-        if (graph != null && into != null && sourcePosition != null) {
-            newNode.setNodeSourcePosition(sourcePosition);
         }
         newNode.afterClone(this);
         return newNode;
@@ -1193,6 +1192,15 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
      */
     public boolean valueEquals(Node other) {
         return getNodeClass().dataEquals(this, other);
+    }
+
+    /**
+     * Determines if this node is equal to the other node while ignoring differences in
+     * {@linkplain Successor control-flow} edges.
+     *
+     */
+    public boolean dataFlowEquals(Node other) {
+        return this == other || nodeClass == other.getNodeClass() && this.valueEquals(other) && nodeClass.equalInputs(this, other);
     }
 
     public final void pushInputs(NodeStack stack) {

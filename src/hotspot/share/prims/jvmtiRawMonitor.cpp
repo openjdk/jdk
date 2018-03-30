@@ -26,7 +26,7 @@
 #include "memory/allocation.inline.hpp"
 #include "prims/jvmtiRawMonitor.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/thread.inline.hpp"
 

@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1CardCounts.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/copy.hpp"
 

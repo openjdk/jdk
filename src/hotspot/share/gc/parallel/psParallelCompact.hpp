@@ -950,19 +950,7 @@ class PSParallelCompact : AllStatic {
     ParCompactionManager* _cm;
   };
 
-  class AdjustKlassClosure : public KlassClosure {
-   public:
-    AdjustKlassClosure(ParCompactionManager* cm) {
-      assert(cm != NULL, "associate ParCompactionManage should not be NULL");
-      _cm = cm;
-    }
-    void do_klass(Klass* klass);
-   private:
-    ParCompactionManager* _cm;
-  };
-
   friend class AdjustPointerClosure;
-  friend class AdjustKlassClosure;
   friend class RefProcTaskProxy;
   friend class PSParallelCompactTest;
 

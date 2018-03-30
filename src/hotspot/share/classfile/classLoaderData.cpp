@@ -610,6 +610,21 @@ Dictionary* ClassLoaderData::create_dictionary() {
   return new Dictionary(this, size, resizable);
 }
 
+// Tell the GC to keep this klass alive while iterating ClassLoaderDataGraph
+oop ClassLoaderData::holder_phantom() {
+  // A klass that was previously considered dead can be looked up in the
+  // CLD/SD, and its _java_mirror or _class_loader can be stored in a root
+  // or a reachable object making it alive again. The SATB part of G1 needs
+  // to get notified about this potential resurrection, otherwise the marking
+  // might not find the object.
+  if (!keep_alive()) {
+    oop* o = is_anonymous() ? _klasses->java_mirror_handle().ptr_raw() : &_class_loader;
+    return RootAccess<ON_PHANTOM_OOP_REF>::oop_load(o);
+  } else {
+    return NULL;
+  }
+}
+
 // Unloading support
 oop ClassLoaderData::keep_alive_object() const {
   assert_locked_or_safepoint(_metaspace_lock);
@@ -1048,26 +1063,34 @@ void ClassLoaderDataGraph::always_strong_cld_do(CLDClosure* cl) {
 }
 
 void ClassLoaderDataGraph::classes_do(KlassClosure* klass_closure) {
+  Thread* thread = Thread::current();
   for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
+    Handle holder(thread, cld->holder_phantom());
     cld->classes_do(klass_closure);
   }
 }
 
 void ClassLoaderDataGraph::classes_do(void f(Klass* const)) {
+  Thread* thread = Thread::current();
   for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
+    Handle holder(thread, cld->holder_phantom());
     cld->classes_do(f);
   }
 }
 
 void ClassLoaderDataGraph::methods_do(void f(Method*)) {
+  Thread* thread = Thread::current();
   for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
+    Handle holder(thread, cld->holder_phantom());
     cld->methods_do(f);
   }
 }
 
 void ClassLoaderDataGraph::modules_do(void f(ModuleEntry*)) {
   assert_locked_or_safepoint(Module_lock);
+  Thread* thread = Thread::current();
   for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
+    Handle holder(thread, cld->holder_phantom());
     cld->modules_do(f);
   }
 }
@@ -1084,7 +1107,9 @@ void ClassLoaderDataGraph::modules_unloading_do(void f(ModuleEntry*)) {
 
 void ClassLoaderDataGraph::packages_do(void f(PackageEntry*)) {
   assert_locked_or_safepoint(Module_lock);
+  Thread* thread = Thread::current();
   for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
+    Handle holder(thread, cld->holder_phantom());
     cld->packages_do(f);
   }
 }
@@ -1100,7 +1125,9 @@ void ClassLoaderDataGraph::packages_unloading_do(void f(PackageEntry*)) {
 }
 
 void ClassLoaderDataGraph::loaded_classes_do(KlassClosure* klass_closure) {
+  Thread* thread = Thread::current();
   for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
+    Handle holder(thread, cld->holder_phantom());
     cld->loaded_classes_do(klass_closure);
   }
 }
@@ -1121,21 +1148,27 @@ void ClassLoaderDataGraph::classes_unloading_do(void f(Klass* const)) {
 // Walk classes in the loaded class dictionaries in various forms.
 // Only walks the classes defined in this class loader.
 void ClassLoaderDataGraph::dictionary_classes_do(void f(InstanceKlass*)) {
+  Thread* thread = Thread::current();
   FOR_ALL_DICTIONARY(cld) {
+    Handle holder(thread, cld->holder_phantom());
     cld->dictionary()->classes_do(f);
   }
 }
 
 // Only walks the classes defined in this class loader.
 void ClassLoaderDataGraph::dictionary_classes_do(void f(InstanceKlass*, TRAPS), TRAPS) {
+  Thread* thread = Thread::current();
   FOR_ALL_DICTIONARY(cld) {
+    Handle holder(thread, cld->holder_phantom());
     cld->dictionary()->classes_do(f, CHECK);
   }
 }
 
 // Walks all entries in the dictionary including entries initiated by this class loader.
 void ClassLoaderDataGraph::dictionary_all_entries_do(void f(InstanceKlass*, ClassLoaderData*)) {
+  Thread* thread = Thread::current();
   FOR_ALL_DICTIONARY(cld) {
+    Handle holder(thread, cld->holder_phantom());
     cld->dictionary()->all_entries_do(f);
   }
 }

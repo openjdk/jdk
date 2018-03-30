@@ -27,7 +27,6 @@
 
 #include "ci/ciMetadata.hpp"
 #include "ci/ciMethod.hpp"
-#include "ci/ciUtilities.hpp"
 #include "compiler/methodMatcher.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "utilities/exceptions.hpp"

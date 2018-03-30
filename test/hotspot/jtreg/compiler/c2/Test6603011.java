@@ -28,7 +28,7 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  *
- * @run main/othervm -Xcomp -Xbatch -XX:-Inline compiler.c2.Test6603011
+ * @run main/othervm/timeout=480 -Xcomp -Xbatch -XX:-Inline compiler.c2.Test6603011
  */
 
 //

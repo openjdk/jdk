@@ -170,12 +170,7 @@ class JavaArgumentUnboxer : public SignatureIterator {
   arrayOop _args;
   int _index;
 
-  Handle next_arg(BasicType expectedType) {
-    assert(_index < _args->length(), "out of bounds");
-    oop arg=((objArrayOop) (_args))->obj_at(_index++);
-    assert(expectedType == T_OBJECT || java_lang_boxing_object::is_instance(arg, expectedType), "arg type mismatch");
-    return Handle(Thread::current(), arg);
-  }
+  Handle next_arg(BasicType expectedType);
 
  public:
   JavaArgumentUnboxer(Symbol* signature, JavaCallArguments*  jca, arrayOop args, bool is_static) : SignatureIterator(signature) {

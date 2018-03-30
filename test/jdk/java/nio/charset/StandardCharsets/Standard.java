@@ -58,6 +58,13 @@ public class Standard {
         check("UTF-16LE".equals(StandardCharsets.UTF_16LE.name()));
         check("UTF-16".equals(StandardCharsets.UTF_16.name()));
 
+        check(Charset.forName("US-ASCII") == StandardCharsets.US_ASCII);
+        check(Charset.forName("ISO-8859-1") == StandardCharsets.ISO_8859_1);
+        check(Charset.forName("UTF-8") == StandardCharsets.UTF_8);
+        check(Charset.forName("UTF-16BE") == StandardCharsets.UTF_16BE);
+        check(Charset.forName("UTF-16LE") == StandardCharsets.UTF_16LE);
+        check(Charset.forName("UTF-16") == StandardCharsets.UTF_16);
+
         Set<String> charsets = new HashSet<>();
         Field standardCharsetFields[] = StandardCharsets.class.getFields();
 

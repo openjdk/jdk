@@ -22,6 +22,8 @@
  */
 package org.graalvm.compiler.nodes.calc;
 
+import static jdk.vm.ci.code.CodeUtil.mask;
+
 import org.graalvm.compiler.core.common.calc.CanonicalCondition;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
@@ -70,8 +72,8 @@ public abstract class IntegerLowerThanNode extends CompareNode {
 
     private Stamp getSucceedingStampForX(boolean mirror, boolean strict, Stamp xStampGeneric, Stamp yStampGeneric, ValueNode forX, ValueNode forY) {
         Stamp s = getSucceedingStampForX(mirror, strict, xStampGeneric, yStampGeneric);
-        if (s != null) {
-            return s;
+        if (s != null && s.isUnrestricted()) {
+            s = null;
         }
         if (forY instanceof AddNode && xStampGeneric instanceof IntegerStamp) {
             IntegerStamp xStamp = (IntegerStamp) xStampGeneric;
@@ -88,11 +90,15 @@ public abstract class IntegerLowerThanNode extends CompareNode {
                 IntegerStamp result = getOp().getSucceedingStampForXLowerXPlusA(mirror, strict, aStamp);
                 result = (IntegerStamp) xStamp.tryImproveWith(result);
                 if (result != null) {
-                    return result;
+                    if (s != null) {
+                        s = s.improveWith(result);
+                    } else {
+                        s = result;
+                    }
                 }
             }
         }
-        return null;
+        return s;
     }
 
     private Stamp getSucceedingStampForX(boolean mirror, boolean strict, Stamp xStampGeneric, Stamp yStampGeneric) {
@@ -278,7 +284,7 @@ public abstract class IntegerLowerThanNode extends CompareNode {
                     }
                     low += 1;
                 }
-                if (compare(low, lowerBound(xStamp)) > 0) {
+                if (compare(low, lowerBound(xStamp)) > 0 || upperBound(xStamp) != (xStamp.upperBound() & mask(xStamp.getBits()))) {
                     return forInteger(bits, low, upperBound(xStamp));
                 }
             } else {
@@ -290,7 +296,7 @@ public abstract class IntegerLowerThanNode extends CompareNode {
                     }
                     low -= 1;
                 }
-                if (compare(low, upperBound(xStamp)) < 0) {
+                if (compare(low, upperBound(xStamp)) < 0 || lowerBound(xStamp) != (xStamp.lowerBound() & mask(xStamp.getBits()))) {
                     return forInteger(bits, lowerBound(xStamp), low);
                 }
             }

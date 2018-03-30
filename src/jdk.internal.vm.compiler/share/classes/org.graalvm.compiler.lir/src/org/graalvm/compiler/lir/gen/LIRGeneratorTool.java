@@ -252,11 +252,16 @@ public interface LIRGeneratorTool extends DiagnosticLIRGeneratorTool, ValueKindF
 
     Variable emitByteSwap(Value operand);
 
+    @SuppressWarnings("unused")
+    default Variable emitArrayCompareTo(JavaKind kind1, JavaKind kind2, Value array1, Value array2, Value length1, Value length2) {
+        throw GraalError.unimplemented("String.compareTo substitution is not implemented on this architecture");
+    }
+
     Variable emitArrayEquals(JavaKind kind, Value array1, Value array2, Value length);
 
     @SuppressWarnings("unused")
     default Variable emitStringIndexOf(Value sourcePointer, Value sourceCount, Value targetPointer, Value targetCount, int constantTargetCount) {
-        throw GraalError.unimplemented();
+        throw GraalError.unimplemented("String.indexOf substitution is not implemented on this architecture");
     }
 
     void emitBlackhole(Value operand);

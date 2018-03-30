@@ -22,13 +22,14 @@
  */
 package org.graalvm.compiler.jtt.lang;
 
+import org.graalvm.compiler.options.OptionValues;
 import org.junit.Test;
 
-import org.graalvm.compiler.jtt.JTTTest;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /*
  */
-public class Math_tan extends JTTTest {
+public class Math_tan extends UnaryMath {
 
     @SuppressWarnings("serial")
     public static class NaN extends Throwable {
@@ -68,4 +69,10 @@ public class Math_tan extends JTTTest {
         runTest("test", 0.0d);
     }
 
+    @Test
+    public void run5() {
+        OptionValues options = getInitialOptions();
+        ResolvedJavaMethod method = getResolvedJavaMethod("test");
+        testManyValues(options, method);
+    }
 }

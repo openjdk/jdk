@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "interpreter/bytecodeStream.hpp"
 #include "oops/fieldStreams.hpp"
 #include "prims/jvmtiClassFileReconstituter.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
 #include "utilities/bytes.hpp"
 
@@ -34,6 +35,19 @@
 // FIXME: fix Synthetic attribute
 // FIXME: per Serguei, add error return handling for ConstantPool::copy_cpool_bytes()
 
+JvmtiConstantPoolReconstituter::JvmtiConstantPoolReconstituter(InstanceKlass* ik) {
+  set_error(JVMTI_ERROR_NONE);
+  _ik = ik;
+  _cpool = constantPoolHandle(Thread::current(), ik->constants());
+  _symmap = new SymbolHashMap();
+  _classmap = new SymbolHashMap();
+  _cpool_size = _cpool->hash_entries_to(_symmap, _classmap);
+  if (_cpool_size == 0) {
+    set_error(JVMTI_ERROR_OUT_OF_MEMORY);
+  } else if (_cpool_size < 0) {
+    set_error(JVMTI_ERROR_INTERNAL);
+  }
+}
 
 // Write the field information portion of ClassFile structure
 // JVMSpec|     u2 fields_count;

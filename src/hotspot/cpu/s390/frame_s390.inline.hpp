@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -173,10 +173,6 @@ inline intptr_t* frame::interpreter_frame_mdp_addr() const {
 // Bottom(base) of the expression stack (highest address).
 inline intptr_t* frame::interpreter_frame_expression_stack() const {
   return (intptr_t*)interpreter_frame_monitor_end() - 1;
-}
-
-inline jint frame::interpreter_frame_expression_stack_direction() {
-  return -1;
 }
 
 inline intptr_t* frame::interpreter_frame_tos_at(jint offset) const {

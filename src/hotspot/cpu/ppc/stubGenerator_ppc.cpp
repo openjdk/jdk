@@ -25,8 +25,8 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
-#include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_ppc.hpp"
 #include "oops/instanceOop.hpp"
@@ -612,137 +612,6 @@ class StubGenerator: public StubCodeGenerator {
 #undef __
 #define __ _masm->
 
-  //  Generate G1 pre-write barrier for array.
-  //
-  //  Input:
-  //     from     - register containing src address (only needed for spilling)
-  //     to       - register containing starting address
-  //     count    - register containing element count
-  //     tmp      - scratch register
-  //
-  //  Kills:
-  //     nothing
-  //
-  void gen_write_ref_array_pre_barrier(Register from, Register to, Register count, bool dest_uninitialized, Register Rtmp1,
-                                       Register preserve1 = noreg, Register preserve2 = noreg) {
-    BarrierSet* const bs = Universe::heap()->barrier_set();
-    switch (bs->kind()) {
-      case BarrierSet::G1BarrierSet:
-        // With G1, don't generate the call if we statically know that the target in uninitialized
-        if (!dest_uninitialized) {
-          int spill_slots = 3;
-          if (preserve1 != noreg) { spill_slots++; }
-          if (preserve2 != noreg) { spill_slots++; }
-          const int frame_size = align_up(frame::abi_reg_args_size + spill_slots * BytesPerWord, frame::alignment_in_bytes);
-          Label filtered;
-
-          // Is marking active?
-          if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-            __ lwz(Rtmp1, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active()), R16_thread);
-          } else {
-            guarantee(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-            __ lbz(Rtmp1, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active()), R16_thread);
-          }
-          __ cmpdi(CCR0, Rtmp1, 0);
-          __ beq(CCR0, filtered);
-
-          __ save_LR_CR(R0);
-          __ push_frame(frame_size, R0);
-          int slot_nr = 0;
-          __ std(from,  frame_size - (++slot_nr) * wordSize, R1_SP);
-          __ std(to,    frame_size - (++slot_nr) * wordSize, R1_SP);
-          __ std(count, frame_size - (++slot_nr) * wordSize, R1_SP);
-          if (preserve1 != noreg) { __ std(preserve1, frame_size - (++slot_nr) * wordSize, R1_SP); }
-          if (preserve2 != noreg) { __ std(preserve2, frame_size - (++slot_nr) * wordSize, R1_SP); }
-
-          __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre), to, count);
-
-          slot_nr = 0;
-          __ ld(from,  frame_size - (++slot_nr) * wordSize, R1_SP);
-          __ ld(to,    frame_size - (++slot_nr) * wordSize, R1_SP);
-          __ ld(count, frame_size - (++slot_nr) * wordSize, R1_SP);
-          if (preserve1 != noreg) { __ ld(preserve1, frame_size - (++slot_nr) * wordSize, R1_SP); }
-          if (preserve2 != noreg) { __ ld(preserve2, frame_size - (++slot_nr) * wordSize, R1_SP); }
-          __ addi(R1_SP, R1_SP, frame_size); // pop_frame()
-          __ restore_LR_CR(R0);
-
-          __ bind(filtered);
-        }
-        break;
-      case BarrierSet::CardTableModRef:
-        break;
-      default:
-        ShouldNotReachHere();
-    }
-  }
-
-  //  Generate CMS/G1 post-write barrier for array.
-  //
-  //  Input:
-  //     addr     - register containing starting address
-  //     count    - register containing element count
-  //     tmp      - scratch register
-  //
-  //  The input registers and R0 are overwritten.
-  //
-  void gen_write_ref_array_post_barrier(Register addr, Register count, Register tmp, Register preserve = noreg) {
-    BarrierSet* const bs = Universe::heap()->barrier_set();
-
-    switch (bs->kind()) {
-      case BarrierSet::G1BarrierSet:
-        {
-          int spill_slots = (preserve != noreg) ? 1 : 0;
-          const int frame_size = align_up(frame::abi_reg_args_size + spill_slots * BytesPerWord, frame::alignment_in_bytes);
-
-          __ save_LR_CR(R0);
-          __ push_frame(frame_size, R0);
-          if (preserve != noreg) { __ std(preserve, frame_size - 1 * wordSize, R1_SP); }
-          __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post), addr, count);
-          if (preserve != noreg) { __ ld(preserve, frame_size - 1 * wordSize, R1_SP); }
-          __ addi(R1_SP, R1_SP, frame_size); // pop_frame();
-          __ restore_LR_CR(R0);
-        }
-        break;
-      case BarrierSet::CardTableModRef:
-        {
-          Label Lskip_loop, Lstore_loop;
-          if (UseConcMarkSweepGC) {
-            // TODO PPC port: contribute optimization / requires shared changes
-            __ release();
-          }
-
-          CardTableModRefBS* const ctbs = barrier_set_cast<CardTableModRefBS>(bs);
-          CardTable* const ct = ctbs->card_table();
-          assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
-          assert_different_registers(addr, count, tmp);
-
-          __ sldi(count, count, LogBytesPerHeapOop);
-          __ addi(count, count, -BytesPerHeapOop);
-          __ add(count, addr, count);
-          // Use two shifts to clear out those low order two bits! (Cannot opt. into 1.)
-          __ srdi(addr, addr, CardTable::card_shift);
-          __ srdi(count, count, CardTable::card_shift);
-          __ subf(count, addr, count);
-          assert_different_registers(R0, addr, count, tmp);
-          __ load_const(tmp, (address)ct->byte_map_base());
-          __ addic_(count, count, 1);
-          __ beq(CCR0, Lskip_loop);
-          __ li(R0, 0);
-          __ mtctr(count);
-          // Byte store loop
-          __ bind(Lstore_loop);
-          __ stbx(R0, tmp, addr);
-          __ addi(addr, addr, 1);
-          __ bdnz(Lstore_loop);
-          __ bind(Lskip_loop);
-        }
-      break;
-      case BarrierSet::ModRef:
-        break;
-      default:
-        ShouldNotReachHere();
-    }
-  }
 
   // Support for void zero_words_aligned8(HeapWord* to, size_t count)
   //
@@ -2155,11 +2024,16 @@ class StubGenerator: public StubCodeGenerator {
       STUB_ENTRY(arrayof_oop_disjoint_arraycopy) :
       STUB_ENTRY(oop_disjoint_arraycopy);
 
-    gen_write_ref_array_pre_barrier(R3_ARG1, R4_ARG2, R5_ARG3, dest_uninitialized, R9_ARG7);
+    DecoratorSet decorators = 0;
+    if (dest_uninitialized) {
+      decorators |= AS_DEST_NOT_INITIALIZED;
+    }
+    if (aligned) {
+      decorators |= ARRAYCOPY_ALIGNED;
+    }
 
-    // Save arguments.
-    __ mr(R9_ARG7, R4_ARG2);
-    __ mr(R10_ARG8, R5_ARG3);
+    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    bs->arraycopy_prologue(_masm, decorators, T_OBJECT, R3_ARG1, R4_ARG2, R5_ARG3, noreg, noreg);
 
     if (UseCompressedOops) {
       array_overlap_test(nooverlap_target, 2);
@@ -2169,7 +2043,7 @@ class StubGenerator: public StubCodeGenerator {
       generate_conjoint_long_copy_core(aligned);
     }
 
-    gen_write_ref_array_post_barrier(R9_ARG7, R10_ARG8, R11_scratch1);
+    bs->arraycopy_epilogue(_masm, decorators, T_OBJECT, R4_ARG2, R5_ARG3, noreg);
     __ li(R3_RET, 0); // return 0
     __ blr();
     return start;
@@ -2188,12 +2062,17 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ function_entry();
     assert_positive_int(R5_ARG3);
-    gen_write_ref_array_pre_barrier(R3_ARG1, R4_ARG2, R5_ARG3, dest_uninitialized, R9_ARG7);
 
-    // save some arguments, disjoint_long_copy_core destroys them.
-    // needed for post barrier
-    __ mr(R9_ARG7, R4_ARG2);
-    __ mr(R10_ARG8, R5_ARG3);
+    DecoratorSet decorators = ARRAYCOPY_DISJOINT;
+    if (dest_uninitialized) {
+      decorators |= AS_DEST_NOT_INITIALIZED;
+    }
+    if (aligned) {
+      decorators |= ARRAYCOPY_ALIGNED;
+    }
+
+    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    bs->arraycopy_prologue(_masm, decorators, T_OBJECT, R3_ARG1, R4_ARG2, R5_ARG3, noreg, noreg);
 
     if (UseCompressedOops) {
       generate_disjoint_int_copy_core(aligned);
@@ -2201,7 +2080,7 @@ class StubGenerator: public StubCodeGenerator {
       generate_disjoint_long_copy_core(aligned);
     }
 
-    gen_write_ref_array_post_barrier(R9_ARG7, R10_ARG8, R11_scratch1);
+    bs->arraycopy_epilogue(_masm, decorators, T_OBJECT, R4_ARG2, R5_ARG3, noreg);
     __ li(R3_RET, 0); // return 0
     __ blr();
 
@@ -2280,11 +2159,17 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif
 
-    gen_write_ref_array_pre_barrier(R3_from, R4_to, R5_count, dest_uninitialized, R12_tmp, /* preserve: */ R6_ckoff, R7_ckval);
+    DecoratorSet decorators = ARRAYCOPY_CHECKCAST;
+    if (dest_uninitialized) {
+      decorators |= AS_DEST_NOT_INITIALIZED;
+    }
+
+    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    bs->arraycopy_prologue(_masm, decorators, T_OBJECT, R3_from, R4_to, R5_count, /* preserve: */ R6_ckoff, R7_ckval);
 
     //inc_counter_np(SharedRuntime::_checkcast_array_copy_ctr, R12_tmp, R3_RET);
 
-    Label load_element, store_element, store_null, success, do_card_marks;
+    Label load_element, store_element, store_null, success, do_epilogue;
     __ or_(R9_remain, R5_count, R5_count); // Initialize loop index, and test it.
     __ li(R8_offset, 0);                   // Offset from start of arrays.
     __ li(R2_minus1, -1);
@@ -2328,15 +2213,15 @@ class StubGenerator: public StubCodeGenerator {
     // and report their number to the caller.
     __ subf_(R5_count, R9_remain, R5_count);
     __ nand(R3_RET, R5_count, R5_count);   // report (-1^K) to caller
-    __ bne(CCR0, do_card_marks);
+    __ bne(CCR0, do_epilogue);
     __ blr();
 
     __ bind(success);
     __ li(R3_RET, 0);
 
-    __ bind(do_card_marks);
-    // Store check on R4_to[0..R5_count-1].
-    gen_write_ref_array_post_barrier(R4_to, R5_count, R12_tmp, /* preserve: */ R3_RET);
+    __ bind(do_epilogue);
+    bs->arraycopy_epilogue(_masm, decorators, T_OBJECT, R4_to, R5_count, /* preserve */ R3_RET);
+
     __ blr();
     return start;
   }

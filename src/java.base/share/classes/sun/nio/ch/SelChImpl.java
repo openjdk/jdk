@@ -61,7 +61,10 @@ public interface SelChImpl extends Channel {
      */
     boolean translateAndSetReadyOps(int ops, SelectionKeyImpl sk);
 
-    void translateAndSetInterestOps(int ops, SelectionKeyImpl sk);
+    /**
+     * Translates an interest operation set into a native event set
+     */
+    int translateInterestOps(int ops);
 
     void kill() throws IOException;
 

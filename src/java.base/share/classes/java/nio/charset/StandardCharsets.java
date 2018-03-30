@@ -41,26 +41,26 @@ public final class StandardCharsets {
      * Seven-bit ASCII, a.k.a. ISO646-US, a.k.a. the Basic Latin block of the
      * Unicode character set
      */
-    public static final Charset US_ASCII = sun.nio.cs.US_ASCII.INSTANCE;
+    public static final Charset US_ASCII = new sun.nio.cs.US_ASCII();
     /**
      * ISO Latin Alphabet No. 1, a.k.a. ISO-LATIN-1
      */
-    public static final Charset ISO_8859_1 = sun.nio.cs.ISO_8859_1.INSTANCE;
+    public static final Charset ISO_8859_1 = new sun.nio.cs.ISO_8859_1();
     /**
      * Eight-bit UCS Transformation Format
      */
-    public static final Charset UTF_8 = sun.nio.cs.UTF_8.INSTANCE;
+    public static final Charset UTF_8 = new sun.nio.cs.UTF_8();
     /**
      * Sixteen-bit UCS Transformation Format, big-endian byte order
      */
-    public static final Charset UTF_16BE = Charset.forName("UTF-16BE");
+    public static final Charset UTF_16BE = new sun.nio.cs.UTF_16BE();
     /**
      * Sixteen-bit UCS Transformation Format, little-endian byte order
      */
-    public static final Charset UTF_16LE = Charset.forName("UTF-16LE");
+    public static final Charset UTF_16LE = new sun.nio.cs.UTF_16LE();
     /**
      * Sixteen-bit UCS Transformation Format, byte order identified by an
      * optional byte-order mark
      */
-    public static final Charset UTF_16 = Charset.forName("UTF-16");
+    public static final Charset UTF_16 = new sun.nio.cs.UTF_16();
 }

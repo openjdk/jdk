@@ -43,8 +43,8 @@ public final class DeoptimizeNode extends AbstractDeoptimizeNode implements Lowe
     public static final int DEFAULT_DEBUG_ID = 0;
 
     public static final NodeClass<DeoptimizeNode> TYPE = NodeClass.create(DeoptimizeNode.class);
-    protected final DeoptimizationAction action;
-    protected final DeoptimizationReason reason;
+    protected DeoptimizationAction action;
+    protected DeoptimizationReason reason;
     protected int debugId;
     protected final JavaConstant speculation;
 
@@ -73,8 +73,18 @@ public final class DeoptimizeNode extends AbstractDeoptimizeNode implements Lowe
     }
 
     @Override
+    public void setAction(DeoptimizationAction action) {
+        this.action = action;
+    }
+
+    @Override
     public DeoptimizationReason getReason() {
         return reason;
+    }
+
+    @Override
+    public void setReason(DeoptimizationReason reason) {
+        this.reason = reason;
     }
 
     @Override

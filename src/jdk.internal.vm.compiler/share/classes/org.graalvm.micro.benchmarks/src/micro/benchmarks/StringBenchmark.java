@@ -45,6 +45,7 @@ public class StringBenchmark extends BenchmarkBase {
 
         // Checkstyle: stop
         String lorem = "Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquid ex ea commodi consequat. Quis aute iure reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint obcaecat cupiditat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+        String loremLastChar = "Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquid ex ea commodi consequat. Quis aute iure reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint obcaecat cupiditat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum?";
         // Checkstyle: resume
     }
 
@@ -70,5 +71,11 @@ public class StringBenchmark extends BenchmarkBase {
     @Warmup(iterations = 5)
     public int indexOfStringNotFound(BenchState state) {
         return state.lorem.indexOf(state.s2);
+    }
+
+    @Benchmark
+    @Warmup(iterations = 5)
+    public int compareTo(BenchState state) {
+        return state.lorem.compareTo(state.loremLastChar);
     }
 }

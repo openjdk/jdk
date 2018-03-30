@@ -27,7 +27,8 @@
 #include "ci/ciConstant.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciStreams.hpp"
-#include "ci/ciUtilities.hpp"
+#include "ci/ciUtilities.inline.hpp"
+#include "runtime/handles.inline.hpp"
 
 // ciExceptionHandlerStream
 //

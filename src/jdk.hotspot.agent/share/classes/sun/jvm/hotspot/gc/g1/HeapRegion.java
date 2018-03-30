@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 package sun.jvm.hotspot.gc.g1;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Observable;
@@ -123,5 +124,10 @@ public class HeapRegion extends CompactibleSpace {
 
     public static long getPointerSize() {
         return pointerSize;
+    }
+
+    public void printOn(PrintStream tty) {
+        tty.print("Region: " + bottom() + "," + top() + "," + end());
+        tty.println(":" + type.typeAnnotation());
     }
 }

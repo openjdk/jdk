@@ -30,9 +30,10 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/forte.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/thread.inline.hpp"
-#include "runtime/vframe.hpp"
+#include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
 
 // call frame copied from old .h file and renamed

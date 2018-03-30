@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/allocTracer.hpp"
-#include "gc/shared/barrierSet.inline.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
@@ -584,4 +584,14 @@ void CollectedHeap::initialize_reserved_region(HeapWord *start, HeapWord *end) {
 
 void CollectedHeap::post_initialize() {
   initialize_serviceability();
+}
+
+oop CollectedHeap::pin_object(JavaThread* thread, oop o) {
+  Handle handle(thread, o);
+  GCLocker::lock_critical(thread);
+  return handle();
+}
+
+void CollectedHeap::unpin_object(JavaThread* thread, oop o) {
+  GCLocker::unlock_critical(thread);
 }
