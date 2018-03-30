@@ -512,7 +512,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "UseMembar",                    JDK_Version::jdk(10), JDK_Version::undefined(), JDK_Version::undefined() },
   { "IgnoreUnverifiableClassesDuringDump", JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
-  { "CheckEndorsedAndExtDirs",      JDK_Version::jdk(10), JDK_Version::undefined(), JDK_Version::undefined() },
   { "CompilerThreadHintNoPreempt",  JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
   { "VMThreadHintNoPreempt",        JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
   { "PrintSafepointStatistics",     JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
@@ -536,6 +535,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "ShowSafepointMsgs",             JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "FastTLABRefill",                JDK_Version::jdk(10),     JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "SafepointSpinBeforeYield",      JDK_Version::jdk(10),     JDK_Version::jdk(11), JDK_Version::jdk(12) },
+  { "CheckEndorsedAndExtDirs",       JDK_Version::jdk(10),     JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "DeferThrSuspendLoopCount",      JDK_Version::jdk(10),     JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "DeferPollingPageLoopCount",     JDK_Version::jdk(10),     JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "PermSize",                      JDK_Version::undefined(), JDK_Version::jdk(8),  JDK_Version::undefined() },
@@ -3302,68 +3302,11 @@ void Arguments::fix_appclasspath() {
   }
 }
 
-static bool has_jar_files(const char* directory) {
-  DIR* dir = os::opendir(directory);
-  if (dir == NULL) return false;
-
-  struct dirent *entry;
-  char *dbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(directory), mtArguments);
-  bool hasJarFile = false;
-  while (!hasJarFile && (entry = os::readdir(dir, (dirent *) dbuf)) != NULL) {
-    const char* name = entry->d_name;
-    const char* ext = name + strlen(name) - 4;
-    hasJarFile = ext > name && (os::file_name_strcmp(ext, ".jar") == 0);
-  }
-  FREE_C_HEAP_ARRAY(char, dbuf);
-  os::closedir(dir);
-  return hasJarFile ;
-}
-
-static int check_non_empty_dirs(const char* path) {
-  const char separator = *os::path_separator();
-  const char* const end = path + strlen(path);
-  int nonEmptyDirs = 0;
-  while (path < end) {
-    const char* tmp_end = strchr(path, separator);
-    if (tmp_end == NULL) {
-      if (has_jar_files(path)) {
-        nonEmptyDirs++;
-        jio_fprintf(defaultStream::output_stream(),
-          "Non-empty directory: %s\n", path);
-      }
-      path = end;
-    } else {
-      char* dirpath = NEW_C_HEAP_ARRAY(char, tmp_end - path + 1, mtArguments);
-      memcpy(dirpath, path, tmp_end - path);
-      dirpath[tmp_end - path] = '\0';
-      if (has_jar_files(dirpath)) {
-        nonEmptyDirs++;
-        jio_fprintf(defaultStream::output_stream(),
-          "Non-empty directory: %s\n", dirpath);
-      }
-      FREE_C_HEAP_ARRAY(char, dirpath);
-      path = tmp_end + 1;
-    }
-  }
-  return nonEmptyDirs;
-}
-
 jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   // check if the default lib/endorsed directory exists; if so, error
   char path[JVM_MAXPATHLEN];
   const char* fileSep = os::file_separator();
   jio_snprintf(path, JVM_MAXPATHLEN, "%s%slib%sendorsed", Arguments::get_java_home(), fileSep, fileSep);
-
-  if (CheckEndorsedAndExtDirs) {
-    int nonEmptyDirs = 0;
-    // check endorsed directory
-    nonEmptyDirs += check_non_empty_dirs(path);
-    // check the extension directories
-    nonEmptyDirs += check_non_empty_dirs(Arguments::get_ext_dirs());
-    if (nonEmptyDirs > 0) {
-      return JNI_ERR;
-    }
-  }
 
   DIR* dir = os::opendir(path);
   if (dir != NULL) {
