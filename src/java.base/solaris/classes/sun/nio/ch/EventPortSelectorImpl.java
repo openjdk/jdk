@@ -27,17 +27,14 @@ package sun.nio.ch;
 
 import java.io.IOException;
 import java.nio.channels.ClosedSelectorException;
-import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import jdk.internal.misc.Unsafe;
 
 import static sun.nio.ch.SolarisEventPort.PORT_SOURCE_FD;
 import static sun.nio.ch.SolarisEventPort.PORT_SOURCE_USER;
@@ -69,18 +66,8 @@ class EventPortSelectorImpl
     private final long pollArrayAddress;
     private final AllocatedNativeObject pollArray;
 
-    // a registration of a file descriptor with a selector
-    private static class RegEntry {
-        final SelectionKeyImpl ski;
-        int registeredOps;
-        int lastUpdate;
-        RegEntry(SelectionKeyImpl ski) {
-            this.ski = ski;
-        }
-    }
-
-    // maps a file descriptor to registration entry, synchronize on selector
-    private final Map<Integer, RegEntry> fdToRegEntry = new HashMap<>();
+    // maps file descriptor to selection key, synchronize on selector
+    private final Map<Integer, SelectionKeyImpl> fdToKey = new HashMap<>();
 
     // the last update operation, incremented by processUpdateQueue
     private int lastUpdate;
@@ -90,7 +77,7 @@ class EventPortSelectorImpl
     private final Object updateLock = new Object();
     private final Deque<SelectionKeyImpl> newKeys = new ArrayDeque<>();
     private final Deque<SelectionKeyImpl> updateKeys = new ArrayDeque<>();
-    private final Deque<Integer> updateOps = new ArrayDeque<>();
+    private final Deque<Integer> updateEvents = new ArrayDeque<>();
 
     // interrupt triggering and clearing
     private final Object interruptLock = new Object();
@@ -115,14 +102,16 @@ class EventPortSelectorImpl
     protected int doSelect(long timeout) throws IOException {
         assert Thread.holdsLock(this);
 
+        long to = timeout;
+        boolean blocking = (to != 0);
+        boolean timedPoll = (to > 0);
+
         int numEvents;
         processUpdateQueue();
         processDeregisterQueue();
         try {
-            begin();
+            begin(blocking);
 
-            long to = timeout;
-            boolean timedPoll = (to > 0);
             do {
                 long startTime = timedPoll ? System.nanoTime() : 0;
                 numEvents = port_getn(pfd, pollArrayAddress, MAX_EVENTS, to);
@@ -139,7 +128,7 @@ class EventPortSelectorImpl
             assert IOStatus.check(numEvents);
 
         } finally {
-            end();
+            end(blocking);
         }
         processDeregisterQueue();
         return processPortEvents(numEvents);
@@ -161,30 +150,27 @@ class EventPortSelectorImpl
             // new registrations
             while ((ski = newKeys.pollFirst()) != null) {
                 if (ski.isValid()) {
-                    SelChImpl ch = ski.channel;
-                    int fd = ch.getFDVal();
-                    RegEntry previous = fdToRegEntry.put(fd, new RegEntry(ski));
+                    int fd = ski.channel.getFDVal();
+                    SelectionKeyImpl previous = fdToKey.put(fd, ski);
                     assert previous == null;
+                    assert ski.registeredEvents() == 0;
                 }
             }
 
             // changes to interest ops
-            assert updateKeys.size() == updateOps.size();
+            assert updateKeys.size() == updateEvents.size();
             while ((ski = updateKeys.pollFirst()) != null) {
-                int ops = updateOps.pollFirst();
+                int newEvents = updateEvents.pollFirst();
                 int fd = ski.channel.getFDVal();
-                RegEntry e = fdToRegEntry.get(fd);
-                if (ski.isValid() && (e != null) && (e.lastUpdate != lastUpdate)) {
-                    assert e.ski == ski;
-                    if ((ops != e.registeredOps)) {
-                        if (ops == 0) {
+                if (ski.isValid() && fdToKey.containsKey(fd)) {
+                    if (newEvents != ski.registeredEvents()) {
+                        if (newEvents == 0) {
                             port_dissociate(pfd, PORT_SOURCE_FD, fd);
                         } else {
-                            port_associate(pfd, PORT_SOURCE_FD, fd, ops);
+                            port_associate(pfd, PORT_SOURCE_FD, fd, newEvents);
                         }
-                        e.registeredOps = ops;
+                        ski.registeredEvents(newEvents);
                     }
-                    e.lastUpdate = lastUpdate;
                 }
             }
         }
@@ -209,9 +195,8 @@ class EventPortSelectorImpl
                 short source = getSource(i);
                 if (source == PORT_SOURCE_FD) {
                     int fd = getDescriptor(i);
-                    RegEntry e = fdToRegEntry.get(fd);
-                    if (e != null) {
-                        SelectionKeyImpl ski = e.ski;
+                    SelectionKeyImpl ski = fdToKey.get(fd);
+                    if (ski != null) {
                         int rOps = getEventOps(i);
                         if (selectedKeys.contains(ski)) {
                             if (ski.channel.translateAndSetReadyOps(rOps, ski)) {
@@ -225,12 +210,11 @@ class EventPortSelectorImpl
                             }
                         }
 
-                        // queue selection key so that it is re-associated at
-                        // next select. Push to end of deque so that changes to
-                        // the interest ops are processed first
-                        updateKeys.addLast(ski);
-                        updateOps.addLast(e.registeredOps);
-                        e.registeredOps = 0;
+                        // re-queue key to head so that it is re-associated at
+                        // next select (and before other changes)
+                        updateEvents.addFirst(ski.registeredEvents());
+                        updateKeys.addFirst(ski);
+                        ski.registeredEvents(0);
                     }
                 } else if (source == PORT_SOURCE_USER) {
                     interrupted = true;
@@ -250,7 +234,6 @@ class EventPortSelectorImpl
     protected void implClose() throws IOException {
         assert !isOpen();
         assert Thread.holdsLock(this);
-        assert Thread.holdsLock(nioKeys());
 
         // prevent further wakeup
         synchronized (interruptLock) {
@@ -259,61 +242,38 @@ class EventPortSelectorImpl
 
         port_close(pfd);
         pollArray.free();
-
-        // Deregister channels
-        Iterator<SelectionKey> i = keys.iterator();
-        while (i.hasNext()) {
-            SelectionKeyImpl ski = (SelectionKeyImpl)i.next();
-            deregister(ski);
-            SelectableChannel selch = ski.channel();
-            if (!selch.isOpen() && !selch.isRegistered())
-                ((SelChImpl)selch).kill();
-            i.remove();
-        }
     }
 
     @Override
     protected void implRegister(SelectionKeyImpl ski) {
-        assert Thread.holdsLock(nioKeys());
         ensureOpen();
         synchronized (updateLock) {
             newKeys.addLast(ski);
         }
-        keys.add(ski);
     }
 
     @Override
     protected void implDereg(SelectionKeyImpl ski) throws IOException {
         assert !ski.isValid();
         assert Thread.holdsLock(this);
-        assert Thread.holdsLock(nioKeys());
-        assert Thread.holdsLock(nioSelectedKeys());
 
         int fd = ski.channel.getFDVal();
-        RegEntry e = fdToRegEntry.remove(fd);
-        if (e != null && e.registeredOps != 0) {
-            port_dissociate(pfd, PORT_SOURCE_FD, fd);
+        if (fdToKey.remove(fd) != null) {
+            if (ski.registeredEvents() != 0) {
+                port_dissociate(pfd, PORT_SOURCE_FD, fd);
+                ski.registeredEvents(0);
+            }
+        } else {
+            assert ski.registeredEvents() == 0;
         }
-
-        selectedKeys.remove(ski);
-        keys.remove(ski);
-
-        // remove from channel's key set
-        deregister(ski);
-
-        SelectableChannel selch = ski.channel();
-        if (!selch.isOpen() && !selch.isRegistered())
-            ((SelChImpl) selch).kill();
     }
 
     @Override
-    public void putEventOps(SelectionKeyImpl ski, int ops) {
+    public void putEventOps(SelectionKeyImpl ski, int events) {
         ensureOpen();
         synchronized (updateLock) {
-            // push to front of deque so that it processed before other
-            // updates for the same key.
-            updateOps.addFirst(ops);
-            updateKeys.addFirst(ski);
+            updateEvents.addLast(events);  // events first in case adding key fails
+            updateKeys.addLast(ski);
         }
     }
 

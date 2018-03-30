@@ -99,8 +99,6 @@ inline intptr_t* frame::interpreter_frame_mdp_addr() const {
   return (intptr_t*) sp_addr_at( ImethodDataPtr->sp_offset_in_saved_window());
 }
 
-inline jint frame::interpreter_frame_expression_stack_direction() { return -1; }
-
 // bottom(base) of the expression stack (highest address)
 inline intptr_t* frame::interpreter_frame_expression_stack() const {
   return (intptr_t*)interpreter_frame_monitors() - 1;

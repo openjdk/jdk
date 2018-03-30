@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
+import org.graalvm.compiler.phases.common.NodeCounterPhase;
 import org.graalvm.compiler.phases.common.ConvertDeoptimizeToGuardPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.IncrementalCanonicalizerPhase;
@@ -73,6 +74,10 @@ public class HighTier extends PhaseSuite<HighTierContext> {
         }
 
         appendPhase(canonicalizer);
+
+        if (NodeCounterPhase.Options.NodeCounters.getValue(options)) {
+            appendPhase(new NodeCounterPhase());
+        }
 
         if (Options.Inline.getValue(options)) {
             appendPhase(new InliningPhase(canonicalizer));

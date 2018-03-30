@@ -33,10 +33,12 @@
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciInstance.hpp"
 #include "gc/shared/barrierSet.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "nativeInst_x86.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "vmreg_x86.inline.hpp"
 
@@ -3057,9 +3059,8 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     store_parameter(src, 4);
     NOT_LP64(assert(src == rcx && src_pos == rdx, "mismatch in calling convention");)
 
-    address C_entry = CAST_FROM_FN_PTR(address, Runtime1::arraycopy);
-
     address copyfunc_addr = StubRoutines::generic_arraycopy();
+    assert(copyfunc_addr != NULL, "generic arraycopy stub required");
 
     // pass arguments: may push as this is not a safepoint; SP must be fix at each safepoint
 #ifdef _LP64
@@ -3077,29 +3078,21 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // Allocate abi space for args but be sure to keep stack aligned
     __ subptr(rsp, 6*wordSize);
     store_parameter(j_rarg4, 4);
-    if (copyfunc_addr == NULL) { // Use C version if stub was not generated
-      __ call(RuntimeAddress(C_entry));
-    } else {
 #ifndef PRODUCT
-      if (PrintC1Statistics) {
-        __ incrementl(ExternalAddress((address)&Runtime1::_generic_arraycopystub_cnt));
-      }
-#endif
-      __ call(RuntimeAddress(copyfunc_addr));
+    if (PrintC1Statistics) {
+      __ incrementl(ExternalAddress((address)&Runtime1::_generic_arraycopystub_cnt));
     }
+#endif
+    __ call(RuntimeAddress(copyfunc_addr));
     __ addptr(rsp, 6*wordSize);
 #else
     __ mov(c_rarg4, j_rarg4);
-    if (copyfunc_addr == NULL) { // Use C version if stub was not generated
-      __ call(RuntimeAddress(C_entry));
-    } else {
 #ifndef PRODUCT
-      if (PrintC1Statistics) {
-        __ incrementl(ExternalAddress((address)&Runtime1::_generic_arraycopystub_cnt));
-      }
-#endif
-      __ call(RuntimeAddress(copyfunc_addr));
+    if (PrintC1Statistics) {
+      __ incrementl(ExternalAddress((address)&Runtime1::_generic_arraycopystub_cnt));
     }
+#endif
+    __ call(RuntimeAddress(copyfunc_addr));
 #endif // _WIN64
 #else
     __ push(length);
@@ -3108,26 +3101,20 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     __ push(src_pos);
     __ push(src);
 
-    if (copyfunc_addr == NULL) { // Use C version if stub was not generated
-      __ call_VM_leaf(C_entry, 5); // removes pushed parameter from the stack
-    } else {
 #ifndef PRODUCT
-      if (PrintC1Statistics) {
-        __ incrementl(ExternalAddress((address)&Runtime1::_generic_arraycopystub_cnt));
-      }
-#endif
-      __ call_VM_leaf(copyfunc_addr, 5); // removes pushed parameter from the stack
+    if (PrintC1Statistics) {
+      __ incrementl(ExternalAddress((address)&Runtime1::_generic_arraycopystub_cnt));
     }
+#endif
+    __ call_VM_leaf(copyfunc_addr, 5); // removes pushed parameter from the stack
 
 #endif // _LP64
 
     __ cmpl(rax, 0);
     __ jcc(Assembler::equal, *stub->continuation());
 
-    if (copyfunc_addr != NULL) {
-      __ mov(tmp, rax);
-      __ xorl(tmp, -1);
-    }
+    __ mov(tmp, rax);
+    __ xorl(tmp, -1);
 
     // Reload values from the stack so they are where the stub
     // expects them.
@@ -3137,11 +3124,9 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     __ movptr   (src_pos, Address(rsp, 3*BytesPerWord));
     __ movptr   (src,     Address(rsp, 4*BytesPerWord));
 
-    if (copyfunc_addr != NULL) {
-      __ subl(length, tmp);
-      __ addl(src_pos, tmp);
-      __ addl(dst_pos, tmp);
-    }
+    __ subl(length, tmp);
+    __ addl(src_pos, tmp);
+    __ addl(dst_pos, tmp);
     __ jmp(*stub->entry());
 
     __ bind(*stub->continuation());

@@ -23,12 +23,27 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/barrierSet.inline.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableModRefBS.inline.hpp"
+#include "gc/shared/cardTableBarrierSet.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "runtime/frame.inline.hpp"
+
+frame JavaThread::pd_last_frame() {
+  assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
+#ifdef AARCH64
+  assert (_anchor.last_Java_pc() != NULL, "pc should be stored");
+  return frame(_anchor.last_Java_sp(), _anchor.last_Java_fp(), _anchor.last_Java_pc());
+#else
+  if (_anchor.last_Java_pc() != NULL) {
+    return frame(_anchor.last_Java_sp(), _anchor.last_Java_fp(), _anchor.last_Java_pc());
+  } else {
+    // This will pick up pc from sp
+    return frame(_anchor.last_Java_sp(), _anchor.last_Java_fp());
+  }
+#endif // AARCH64
+}
 
 void JavaThread::cache_global_variables() {
   BarrierSet* bs = Universe::heap()->barrier_set();
@@ -42,8 +57,8 @@ void JavaThread::cache_global_variables() {
     _heap_top_addr = NULL;
   }
 
-  if (bs->is_a(BarrierSet::CardTableModRef)) {
-    _card_table_base = (address) (barrier_set_cast<CardTableModRefBS>(bs)->card_table()->byte_map_base());
+  if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
+    _card_table_base = (address) (barrier_set_cast<CardTableBarrierSet>(bs)->card_table()->byte_map_base());
   } else {
     _card_table_base = NULL;
   }

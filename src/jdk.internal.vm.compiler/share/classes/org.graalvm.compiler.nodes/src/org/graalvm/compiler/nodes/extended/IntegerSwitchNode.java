@@ -24,6 +24,7 @@ package org.graalvm.compiler.nodes.extended;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +41,6 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.FixedGuardNode;
-import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.NodeView;
@@ -316,7 +316,7 @@ public final class IntegerSwitchNode extends SwitchNode implements LIRLowerable,
 
     private void doReplace(ValueNode newValue, List<KeyData> newKeyDatas, ArrayList<AbstractBeginNode> newSuccessors, int newDefaultSuccessor, double newDefaultProbability) {
         /* Sort the new keys (invariant of the IntegerSwitchNode). */
-        newKeyDatas.sort((k1, k2) -> k1.key - k2.key);
+        newKeyDatas.sort(Comparator.comparingInt(k -> k.key));
 
         /* Create the final data arrays. */
         int newKeyCount = newKeyDatas.size();
@@ -349,20 +349,27 @@ public final class IntegerSwitchNode extends SwitchNode implements LIRLowerable,
             }
         }
 
-        /* Remove dead successors. */
-        for (int i = 0; i < blockSuccessorCount(); i++) {
-            AbstractBeginNode successor = blockSuccessor(i);
-            if (!newSuccessors.contains(successor)) {
-                FixedNode fixedBranch = successor;
-                fixedBranch.predecessor().replaceFirstSuccessor(fixedBranch, null);
-                GraphUtil.killCFG(fixedBranch);
-            }
-            setBlockSuccessor(i, null);
-        }
+        /*
+         * Collect dead successors. Successors have to be cleaned before adding the new node to the
+         * graph.
+         */
+        List<AbstractBeginNode> deadSuccessors = successors.filter(s -> !newSuccessors.contains(s)).snapshot();
+        successors.clear();
 
-        /* Create the new switch node and replace ourself with it. */
+        /*
+         * Create the new switch node. This is done before removing dead successors as `killCFG`
+         * could edit some of the inputs (e.g., if `newValue` is a loop-phi of the loop that dies
+         * while removing successors).
+         */
         AbstractBeginNode[] successorsArray = newSuccessors.toArray(new AbstractBeginNode[newSuccessors.size()]);
         SwitchNode newSwitch = graph().add(new IntegerSwitchNode(newValue, successorsArray, newKeys, newKeyProbabilities, newKeySuccessors));
+
+        /* Remove dead successors. */
+        for (AbstractBeginNode successor : deadSuccessors) {
+            GraphUtil.killCFG(successor);
+        }
+
+        /* Replace ourselves with the new switch */
         ((FixedWithNextNode) predecessor()).setNext(newSwitch);
         GraphUtil.killWithUnusedFloatingInputs(this);
     }

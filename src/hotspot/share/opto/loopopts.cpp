@@ -1029,11 +1029,18 @@ static bool merge_point_safe(Node* region) {
 //------------------------------place_near_use---------------------------------
 // Place some computation next to use but not inside inner loops.
 // For inner loop uses move it to the preheader area.
-Node *PhaseIdealLoop::place_near_use( Node *useblock ) const {
+Node *PhaseIdealLoop::place_near_use(Node *useblock) const {
   IdealLoopTree *u_loop = get_loop( useblock );
-  return (u_loop->_irreducible || u_loop->_child)
-    ? useblock
-    : u_loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
+  if (u_loop->_irreducible) {
+    return useblock;
+  }
+  if (u_loop->_child) {
+    if (useblock == u_loop->_head && u_loop->_head->is_OuterStripMinedLoop()) {
+      return u_loop->_head->in(LoopNode::EntryControl);
+    }
+    return useblock;
+  }
+  return u_loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
 }
 
 

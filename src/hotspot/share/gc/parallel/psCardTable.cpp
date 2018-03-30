@@ -392,10 +392,10 @@ bool PSCardTable::addr_is_marked_precise(void *addr) {
 
 // Assumes that only the base or the end changes.  This allows indentification
 // of the region that is being resized.  The
-// CardTableModRefBS::resize_covered_region() is used for the normal case
+// CardTable::resize_covered_region() is used for the normal case
 // where the covered regions are growing or shrinking at the high end.
 // The method resize_covered_region_by_end() is analogous to
-// CardTableModRefBS::resize_covered_region() but
+// CardTable::resize_covered_region() but
 // for regions that grow or shrink at the low end.
 void PSCardTable::resize_covered_region(MemRegion new_region) {
   for (int i = 0; i < _cur_covered_regions; i++) {
@@ -463,7 +463,7 @@ void PSCardTable::resize_covered_region_by_end(int changed_region,
   resize_update_covered_table(changed_region, new_region);
 
   int ind = changed_region;
-  log_trace(gc, barrier)("CardTableModRefBS::resize_covered_region: ");
+  log_trace(gc, barrier)("CardTable::resize_covered_region: ");
   log_trace(gc, barrier)("    _covered[%d].start(): " INTPTR_FORMAT "  _covered[%d].last(): " INTPTR_FORMAT,
                 ind, p2i(_covered[ind].start()), ind, p2i(_covered[ind].last()));
   log_trace(gc, barrier)("    _committed[%d].start(): " INTPTR_FORMAT "  _committed[%d].last(): " INTPTR_FORMAT,

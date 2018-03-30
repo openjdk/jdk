@@ -66,6 +66,7 @@ class outputStream;
 class PrintCLDMetaspaceInfoClosure;
 class SpaceManager;
 class VirtualSpaceList;
+class CollectedHeap;
 
 // Metaspaces each have a  SpaceManager and allocations
 // are done by the SpaceManager.  Allocations are done

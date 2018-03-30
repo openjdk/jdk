@@ -96,6 +96,13 @@ public class PhaseSuite<C> extends BasePhase<C> {
     }
 
     /**
+     * Gets an unmodifiable view on the phases in this suite.
+     */
+    public List<BasePhase<? super C>> getPhases() {
+        return Collections.unmodifiableList(phases);
+    }
+
+    /**
      * Returns a {@link ListIterator} at the position of the first phase which is an instance of
      * {@code phaseClass} or null if no such phase can be found.
      *

@@ -345,15 +345,11 @@ public class SctpServerChannelImpl extends SctpServerChannel
     }
 
     @Override
-    public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
+    public int translateInterestOps(int ops) {
         int newOps = 0;
-
-        /* Translate ops */
         if ((ops & SelectionKey.OP_ACCEPT) != 0)
             newOps |= Net.POLLIN;
-        /* Place ops into pollfd array */
-        sk.selector.putEventOps(sk, newOps);
-
+        return newOps;
     }
 
     @Override

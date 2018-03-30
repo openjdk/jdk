@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
 
 #ifndef CPU_ARM_VM_INTERPRETERRT_ARM_HPP
 #define CPU_ARM_VM_INTERPRETERRT_ARM_HPP
-
-#include "memory/allocation.hpp"
 
 // native method calls
 
@@ -56,23 +54,10 @@ class SignatureHandlerGenerator: public NativeSignatureIterator {
 #endif
  public:
   // Creation
-  SignatureHandlerGenerator(const methodHandle& method, CodeBuffer* buffer) : NativeSignatureIterator(method) {
-    _masm = new MacroAssembler(buffer);
-    _abi_offset = 0;
-    _ireg = is_static() ? 2 : 1;
-#ifdef __ABI_HARD__
-#ifdef AARCH64
-    _freg = 0;
-#else
-    _fp_slot = 0;
-    _single_fpr_slot = 0;
-#endif
-#endif
-  }
+  SignatureHandlerGenerator(const methodHandle& method, CodeBuffer* buffer);
 
   // Code generation
   void generate(uint64_t fingerprint);
-
 };
 
 #ifndef AARCH64

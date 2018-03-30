@@ -26,9 +26,9 @@
 package sun.nio.ch;
 
 import java.io.IOException;
-import java.net.SocketException;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.IllegalSelectorException;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.AbstractSelector;
@@ -47,7 +47,7 @@ public abstract class SelectorImpl
     extends AbstractSelector
 {
     // The set of keys registered with this Selector
-    protected final HashSet<SelectionKey> keys;
+    protected final Set<SelectionKey> keys;
 
     // The set of keys with data ready for an operation
     protected final Set<SelectionKey> selectedKeys;
@@ -88,6 +88,26 @@ public abstract class SelectorImpl
         return publicSelectedKeys;
     }
 
+    /**
+     * Marks the beginning of a select operation that might block
+     */
+    protected final void begin(boolean blocking) {
+        if (blocking) begin();
+    }
+
+    /**
+     * Marks the end of a select operation that may have blocked
+     */
+    protected final void end(boolean blocking) {
+        if (blocking) end();
+    }
+
+    /**
+     * Selects the keys for channels that are ready for I/O operations.
+     *
+     * @param timeout timeout in milliseconds to wait, 0 to not wait, -1 to
+     *                wait indefinitely
+     */
     protected abstract int doSelect(long timeout) throws IOException;
 
     private int lockAndDoSelect(long timeout) throws IOException {
@@ -125,9 +145,21 @@ public abstract class SelectorImpl
     public final void implCloseSelector() throws IOException {
         wakeup();
         synchronized (this) {
+            implClose();
             synchronized (publicKeys) {
                 synchronized (publicSelectedKeys) {
-                    implClose();
+                    // Deregister channels
+                    Iterator<SelectionKey> i = keys.iterator();
+                    while (i.hasNext()) {
+                        SelectionKeyImpl ski = (SelectionKeyImpl)i.next();
+                        deregister(ski);
+                        SelectableChannel selch = ski.channel();
+                        if (!selch.isOpen() && !selch.isRegistered())
+                            ((SelChImpl)selch).kill();
+                        selectedKeys.remove(ski);
+                        i.remove();
+                    }
+                    assert selectedKeys.isEmpty() && keys.isEmpty();
                 }
             }
         }
@@ -144,8 +176,10 @@ public abstract class SelectorImpl
             throw new IllegalSelectorException();
         SelectionKeyImpl k = new SelectionKeyImpl((SelChImpl)ch, this);
         k.attach(attachment);
+        // register before adding to key set
+        implRegister(k);
         synchronized (publicKeys) {
-            implRegister(k);
+            keys.add(k);
         }
         k.interestOps(ops);
         return k;
@@ -156,27 +190,37 @@ public abstract class SelectorImpl
     protected abstract void implDereg(SelectionKeyImpl ski) throws IOException;
 
     protected final void processDeregisterQueue() throws IOException {
-        // Precondition: Synchronized on this, keys, and selectedKeys
+        assert Thread.holdsLock(this);
+        assert Thread.holdsLock(publicKeys);
+        assert Thread.holdsLock(publicSelectedKeys);
+
         Set<SelectionKey> cks = cancelledKeys();
         synchronized (cks) {
             if (!cks.isEmpty()) {
                 Iterator<SelectionKey> i = cks.iterator();
                 while (i.hasNext()) {
                     SelectionKeyImpl ski = (SelectionKeyImpl)i.next();
-                    try {
-                        implDereg(ski);
-                    } catch (SocketException se) {
-                        throw new IOException("Error deregistering key", se);
-                    } finally {
-                        i.remove();
-                    }
+                    i.remove();
+
+                    // remove the key from the selector
+                    implDereg(ski);
+
+                    selectedKeys.remove(ski);
+                    keys.remove(ski);
+
+                    // remove from channel's key set
+                    deregister(ski);
+
+                    SelectableChannel ch = ski.channel();
+                    if (!ch.isOpen() && !ch.isRegistered())
+                        ((SelChImpl)ch).kill();
                 }
             }
         }
     }
 
     /**
-     * Invoked to change the key's interest set
+     * Change the event set in the selector
      */
-    public abstract void putEventOps(SelectionKeyImpl ski, int ops);
+    protected abstract void putEventOps(SelectionKeyImpl ski, int events);
 }

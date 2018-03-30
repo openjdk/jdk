@@ -227,13 +227,15 @@ public class AArch64Call {
         masm.ensureUniquePC();
     }
 
-    public static void directJmp(CompilationResultBuilder crb, AArch64MacroAssembler masm, InvokeTarget target) {
-        int before = masm.position();
-        // Address is fixed up later by c++ code.
-        masm.jmp();
-        int after = masm.position();
-        crb.recordDirectCall(before, after, target, null);
-        masm.ensureUniquePC();
+    public static void directJmp(CompilationResultBuilder crb, AArch64MacroAssembler masm, InvokeTarget callTarget) {
+        try (AArch64MacroAssembler.ScratchRegister scratch = masm.getScratchRegister()) {
+            int before = masm.position();
+            masm.movNativeAddress(scratch.getRegister(), 0L);
+            masm.jmp(scratch.getRegister());
+            int after = masm.position();
+            crb.recordDirectCall(before, after, callTarget, null);
+            masm.ensureUniquePC();
+        }
     }
 
     public static void indirectJmp(CompilationResultBuilder crb, AArch64MacroAssembler masm, Register dst, InvokeTarget target) {

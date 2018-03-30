@@ -112,10 +112,6 @@ public final class TraceLinearScanLifetimeAnalysisPhase extends TraceLinearScanA
             buildIntervals();
         }
 
-        private boolean isAllocated(AbstractBlockBase<?> currentBlock, AbstractBlockBase<?> other) {
-            return traceBuilderResult.getTraceForBlock(other).getId() < traceBuilderResult.getTraceForBlock(currentBlock).getId();
-        }
-
         /**
          * Count instructions in all blocks. The numbering follows the
          * {@linkplain TraceLinearScan#sortedBlocks() register allocation order}.
@@ -621,26 +617,29 @@ public final class TraceLinearScanLifetimeAnalysisPhase extends TraceLinearScanA
             assert allocator.instructionForId(opId) == op : "must match";
         }
 
+        /**
+         * Add register hints for incoming values, i.e., values that are not defined in the trace.
+         *
+         * Due to the dominance property of SSA form, all values live at some point in the trace
+         * that are not defined in the trace are live at the beginning of it.
+         */
         @SuppressWarnings("try")
         private void addInterTraceHints() {
             try (DebugContext.Scope s = debug.scope("InterTraceHints", allocator)) {
-                GlobalLivenessInfo livenessInfo = allocator.getGlobalLivenessInfo();
-                // set hints for phi/incoming intervals
-                for (AbstractBlockBase<?> block : sortedBlocks()) {
-                    LabelOp label = (LabelOp) getLIR().getLIRforBlock(block).get(0);
-                    for (AbstractBlockBase<?> pred : block.getPredecessors()) {
-                        addInterTraceHints(livenessInfo, pred, block, label);
-                    }
+                AbstractBlockBase<?> traceHeadBlock = sortedBlocks()[0];
+                if (traceHeadBlock.getPredecessorCount() == 0) {
+                    return;
                 }
-            } catch (Throwable e) {
-                throw debug.handle(e);
-            }
-        }
+                assert traceHeadBlock.getPredecessorCount() == 1 : "Trace head with more than one predecessor?!" + traceHeadBlock;
 
-        private void addInterTraceHints(GlobalLivenessInfo livenessInfo, AbstractBlockBase<?> from, AbstractBlockBase<?> to, LabelOp label) {
-            if (isAllocated(to, from)) {
-                int[] liveVars = livenessInfo.getBlockIn(to);
-                Value[] outLocation = livenessInfo.getOutLocation(from);
+                AbstractBlockBase<?> pred = traceHeadBlock.getPredecessors()[0];
+                assert traceBuilderResult.getTraceForBlock(pred).getId() < traceBuilderResult.getTraceForBlock(traceHeadBlock).getId() : "Not yet allocated? " + pred;
+
+                GlobalLivenessInfo livenessInfo = allocator.getGlobalLivenessInfo();
+                LabelOp label = (LabelOp) getLIR().getLIRforBlock(traceHeadBlock).get(0);
+
+                int[] liveVars = livenessInfo.getBlockIn(traceHeadBlock);
+                Value[] outLocation = livenessInfo.getOutLocation(pred);
 
                 for (int i = 0; i < liveVars.length; i++) {
                     int varNum = liveVars[i];
@@ -652,18 +651,20 @@ public final class TraceLinearScanLifetimeAnalysisPhase extends TraceLinearScanA
                         }
                     }
                 }
+            } catch (Throwable e) {
+                throw debug.handle(e);
             }
         }
 
         private void addInterTraceHint(LabelOp label, int varNum, Value fromValue) {
-            assert isRegister(fromValue) || isVariable(fromValue) || isStackSlotValue(fromValue) || isShadowedRegisterValue(fromValue) : "Wrong fromValue: " + fromValue;
+            assert isRegister(fromValue) || isStackSlotValue(fromValue) || isShadowedRegisterValue(fromValue) : "Wrong fromValue: " + fromValue;
             TraceInterval to = allocator.intervalFor(varNum);
             if (to == null) {
                 // variable not live -> do nothing
                 return;
             }
-            if (isVariableOrRegister(fromValue)) {
-                IntervalHint from = getIntervalHint((AllocatableValue) fromValue);
+            if (isRegister(fromValue)) {
+                IntervalHint from = allocator.getOrCreateFixedInterval(asRegisterValue(fromValue));
                 setHint(label, to, from, debug);
             } else if (isStackSlotValue(fromValue)) {
                 setSpillSlot(label, to, (AllocatableValue) fromValue, debug);
@@ -672,8 +673,6 @@ public final class TraceLinearScanLifetimeAnalysisPhase extends TraceLinearScanA
                 IntervalHint from = getIntervalHint(shadowedRegisterValue.getRegister());
                 setHint(label, to, from, debug);
                 setSpillSlot(label, to, shadowedRegisterValue.getStackSlot(), debug);
-            } else {
-                throw GraalError.shouldNotReachHere();
             }
         }
 

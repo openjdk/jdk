@@ -31,7 +31,7 @@
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
@@ -112,7 +112,7 @@ jint GenCollectedHeap::initialize() {
 
   _rem_set = new CardTableRS(reserved_region());
   _rem_set->initialize();
-  CardTableModRefBS *bs = new CardTableModRefBS(_rem_set);
+  CardTableBarrierSet *bs = new CardTableBarrierSet(_rem_set);
   bs->initialize();
   set_barrier_set(bs);
 

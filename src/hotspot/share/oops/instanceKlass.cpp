@@ -2255,12 +2255,6 @@ void InstanceKlass::set_source_debug_extension(const char* array, int length) {
   }
 }
 
-address InstanceKlass::static_field_addr(int offset) {
-  assert(offset >= InstanceMirrorKlass::offset_of_static_fields(), "has already been adjusted");
-  return (address)(offset + cast_from_oop<intptr_t>(java_mirror()));
-}
-
-
 const char* InstanceKlass::signature_name() const {
   int hash_len = 0;
   char hash_buf[40];

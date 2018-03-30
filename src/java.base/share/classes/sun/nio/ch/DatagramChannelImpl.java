@@ -1229,10 +1229,9 @@ class DatagramChannelImpl
     /**
      * Translates native poll revent set into a ready operation set
      */
-    public boolean translateReadyOps(int ops, int initialOps,
-                                     SelectionKeyImpl sk) {
-        int intOps = sk.nioInterestOps(); // Do this just once, it synchronizes
-        int oldOps = sk.nioReadyOps();
+    public boolean translateReadyOps(int ops, int initialOps, SelectionKeyImpl ski) {
+        int intOps = ski.nioInterestOps();
+        int oldOps = ski.nioReadyOps();
         int newOps = initialOps;
 
         if ((ops & Net.POLLNVAL) != 0) {
@@ -1244,7 +1243,7 @@ class DatagramChannelImpl
 
         if ((ops & (Net.POLLERR | Net.POLLHUP)) != 0) {
             newOps = intOps;
-            sk.nioReadyOps(newOps);
+            ski.nioReadyOps(newOps);
             return (newOps & ~oldOps) != 0;
         }
 
@@ -1256,16 +1255,16 @@ class DatagramChannelImpl
             ((intOps & SelectionKey.OP_WRITE) != 0))
             newOps |= SelectionKey.OP_WRITE;
 
-        sk.nioReadyOps(newOps);
+        ski.nioReadyOps(newOps);
         return (newOps & ~oldOps) != 0;
     }
 
-    public boolean translateAndUpdateReadyOps(int ops, SelectionKeyImpl sk) {
-        return translateReadyOps(ops, sk.nioReadyOps(), sk);
+    public boolean translateAndUpdateReadyOps(int ops, SelectionKeyImpl ski) {
+        return translateReadyOps(ops, ski.nioReadyOps(), ski);
     }
 
-    public boolean translateAndSetReadyOps(int ops, SelectionKeyImpl sk) {
-        return translateReadyOps(ops, 0, sk);
+    public boolean translateAndSetReadyOps(int ops, SelectionKeyImpl ski) {
+        return translateReadyOps(ops, 0, ski);
     }
 
     /**
@@ -1295,16 +1294,15 @@ class DatagramChannelImpl
     /**
      * Translates an interest operation set into a native poll event set
      */
-    public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
+    public int translateInterestOps(int ops) {
         int newOps = 0;
-
         if ((ops & SelectionKey.OP_READ) != 0)
             newOps |= Net.POLLIN;
         if ((ops & SelectionKey.OP_WRITE) != 0)
             newOps |= Net.POLLOUT;
         if ((ops & SelectionKey.OP_CONNECT) != 0)
             newOps |= Net.POLLIN;
-        sk.selector.putEventOps(sk, newOps);
+        return newOps;
     }
 
     public FileDescriptor getFD() {

@@ -37,7 +37,7 @@
 // collection set.
 
 class BitMap;
-class CardTableModRefBS;
+class CardTableBarrierSet;
 class G1BlockOffsetTable;
 class CodeBlobClosure;
 class G1CollectedHeap;

@@ -63,5 +63,5 @@ public class StringSubstitutions {
     /**
      * Will be intrinsified with an {@link InvocationPlugin} to a {@link LoadFieldNode}.
      */
-    private static native char[] getValue(String s);
+    public static native char[] getValue(String s);
 }

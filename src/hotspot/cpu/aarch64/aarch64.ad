@@ -996,7 +996,7 @@ definitions %{
 source_hpp %{
 
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "opto/addnode.hpp"
 
 class CallStubImpl {
@@ -5845,8 +5845,8 @@ operand immPollPage()
 operand immByteMapBase()
 %{
   // Get base of card map
-  predicate(Universe::heap()->barrier_set()->is_a(BarrierSet::CardTableModRef) &&
-            (jbyte*)n->get_ptr() == ((CardTableModRefBS*)(Universe::heap()->barrier_set()))->card_table()->byte_map_base());
+  predicate(Universe::heap()->barrier_set()->is_a(BarrierSet::CardTableBarrierSet) &&
+            (jbyte*)n->get_ptr() == ((CardTableBarrierSet*)(Universe::heap()->barrier_set()))->card_table()->byte_map_base());
   match(ConP);
 
   op_cost(0);

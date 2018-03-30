@@ -31,7 +31,7 @@
 #include "memory/virtualspace.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class CardTableModRefBS;
+class CardTableBarrierSet;
 class G1CardCounts;
 class G1CollectedHeap;
 class G1RegionToSpaceMapper;

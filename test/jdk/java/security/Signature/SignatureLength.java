@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8161571
+ * @bug 8161571 8178370
  * @summary Reject signatures presented for verification that contain extra
  *          bytes.
  * @modules jdk.crypto.ec
@@ -32,42 +32,71 @@
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
 
 public class SignatureLength {
 
     public static void main(String[] args) throws Exception {
-        main0("EC", 256, "SHA256withECDSA", "SunEC");
-        main0("RSA", 2048, "SHA256withRSA", "SunRsaSign");
-        main0("DSA", 2048, "SHA256withDSA", "SUN");
+        for (Provider p0 : Security.getProviders()) {
+            for (Provider p1 : Security.getProviders()) {
+                for (Provider p2 : Security.getProviders()) {
+                    // SunMSCAPI signer can only be initialized with
+                    // a key generated with SunMSCAPI
+                    if (!p0.getName().equals("SunMSCAPI")
+                            && p1.getName().equals("SunMSCAPI")) continue;
 
-        if (System.getProperty("os.name").equals("SunOS")) {
-            main0("EC", 256, "SHA256withECDSA", null);
-            main0("RSA", 2048, "SHA256withRSA", null);
+                    // SunMSCAPI generated key can only be signed
+                    // with SunMSCAPI signer
+                    if (p0.getName().equals("SunMSCAPI")
+                            && !p1.getName().equals("SunMSCAPI")) continue;
+
+                    // SunMSCAPI and SunPKCS11 verifiers may return false
+                    // instead of throwing SignatureException
+                    boolean mayNotThrow = p2.getName().equals("SunMSCAPI")
+                            || p2.getName().startsWith("SunPKCS11");
+
+                    main0("EC", 256, "SHA256withECDSA", p0, p1, p2, mayNotThrow);
+                    main0("RSA", 2048, "SHA256withRSA", p0, p1, p2, mayNotThrow);
+                    main0("DSA", 2048, "SHA256withDSA", p0, p1, p2, mayNotThrow);
+                }
+            }
         }
     }
 
     private static void main0(String keyAlgorithm, int keysize,
-            String signatureAlgorithm, String provider) throws Exception {
+            String signatureAlgorithm, Provider generatorProvider,
+            Provider signerProvider, Provider verifierProvider,
+            boolean mayNotThrow) throws Exception {
+
+        KeyPairGenerator generator;
+        Signature signer;
+        Signature verifier;
+
+        try {
+            generator = KeyPairGenerator.getInstance(keyAlgorithm,
+                    generatorProvider);
+            signer = Signature.getInstance(signatureAlgorithm,
+                    signerProvider);
+            verifier = Signature.getInstance(signatureAlgorithm,
+                    verifierProvider);
+        } catch (NoSuchAlgorithmException nsae) {
+            // ignore this set of providers
+            return;
+        }
+
         byte[] plaintext = "aaa".getBytes("UTF-8");
 
         // Generate
-        KeyPairGenerator generator =
-            provider == null ?
-                (KeyPairGenerator) KeyPairGenerator.getInstance(keyAlgorithm) :
-                (KeyPairGenerator) KeyPairGenerator.getInstance(
-                                       keyAlgorithm, provider);
         generator.initialize(keysize);
         System.out.println("Generating " + keyAlgorithm + " keypair using " +
             generator.getProvider().getName() + " JCE provider");
         KeyPair keypair = generator.generateKeyPair();
 
         // Sign
-        Signature signer =
-            provider == null ?
-                Signature.getInstance(signatureAlgorithm) :
-                Signature.getInstance(signatureAlgorithm, provider);
         signer.initSign(keypair.getPrivate());
         signer.update(plaintext);
         System.out.println("Signing using " + signer.getProvider().getName() +
@@ -85,19 +114,26 @@ public class SignatureLength {
         badSignature[signature.length + 4] = 0x01;
 
         // Verify
-        Signature verifier =
-            provider == null ?
-                Signature.getInstance(signatureAlgorithm) :
-                Signature.getInstance(signatureAlgorithm, provider);
         verifier.initVerify(keypair.getPublic());
         verifier.update(plaintext);
         System.out.println("Verifying using " +
             verifier.getProvider().getName() + " JCE provider");
 
         try {
-            System.out.println("Valid? " + verifier.verify(badSignature));
-            throw new Exception(
-                "ERROR: expected a SignatureException but none was thrown");
+            boolean valid = verifier.verify(badSignature);
+            System.out.println("Valid? " + valid);
+            if (mayNotThrow) {
+                if (valid) {
+                    throw new Exception(
+                        "ERROR: expected a SignatureException but none was thrown"
+                        + " and invalid signature was verified");
+                } else {
+                    System.out.println("OK: verification failed as expected");
+                }
+            } else {
+                throw new Exception(
+                    "ERROR: expected a SignatureException but none was thrown");
+            }
         } catch (SignatureException e) {
             System.out.println("OK: caught expected exception: " + e);
         }

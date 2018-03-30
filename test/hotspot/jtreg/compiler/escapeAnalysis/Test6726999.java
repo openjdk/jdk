@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
  * @bug 6726999
  * @summary nsk/stress/jck12a/jck12a010 assert(n != NULL,"Bad immediate dominator info.");
  *
- * @run main/othervm -Xbatch -XX:+AggressiveOpts
- *      -XX:CompileCommand=exclude,compiler.escapeAnalysis.Test6726999::dummy
- *      compiler.escapeAnalysis.Test6726999
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:+EliminateAutoBox -XX:AutoBoxCacheMax=20000
+ *                   -XX:CompileCommand=exclude,compiler.escapeAnalysis.Test6726999::dummy
+ *                   compiler.escapeAnalysis.Test6726999
  */
 
 package compiler.escapeAnalysis;

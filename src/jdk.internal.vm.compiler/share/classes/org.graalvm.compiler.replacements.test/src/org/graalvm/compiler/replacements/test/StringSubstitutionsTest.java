@@ -22,11 +22,10 @@
  */
 package org.graalvm.compiler.replacements.test;
 
-import org.junit.Test;
-
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.replacements.StringSubstitutions;
 import org.graalvm.compiler.replacements.nodes.ArrayEqualsNode;
+import org.junit.Test;
 
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -42,7 +41,7 @@ public class StringSubstitutionsTest extends MethodSubstitutionTest {
         StructuredGraph graph = testGraph(testMethodName);
 
         // Check to see if the resulting graph contains the expected node
-        StructuredGraph replacement = getReplacements().getSubstitution(realMethod, -1);
+        StructuredGraph replacement = getReplacements().getSubstitution(realMethod, -1, false, null);
         if (replacement == null && !optional) {
             assertInGraph(graph, intrinsicClass);
         }

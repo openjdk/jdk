@@ -33,7 +33,7 @@ import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.Indent;
 
 /**
- * Computes traces by starting at a trace head and keep adding predecessors as long as possible.
+ * Computes traces by starting at a trace head and keep adding successors as long as possible.
  */
 public final class UniDirectionalTraceBuilder {
 
@@ -87,7 +87,7 @@ public final class UniDirectionalTraceBuilder {
             AbstractBlockBase<?> block = worklist.poll();
             assert block != null;
             if (!processed(block)) {
-                Trace trace = new Trace(startTrace(debug, block));
+                Trace trace = new Trace(findTrace(debug, block));
                 for (AbstractBlockBase<?> traceBlock : trace.getBlocks()) {
                     blockToTrace[traceBlock.getId()] = trace;
                 }
@@ -102,17 +102,17 @@ public final class UniDirectionalTraceBuilder {
      * Build a new trace starting at {@code block}.
      */
     @SuppressWarnings("try")
-    private List<AbstractBlockBase<?>> startTrace(DebugContext debug, AbstractBlockBase<?> block) {
-        assert checkPredecessorsProcessed(block);
+    private List<AbstractBlockBase<?>> findTrace(DebugContext debug, AbstractBlockBase<?> traceStart) {
+        assert checkPredecessorsProcessed(traceStart);
         ArrayList<AbstractBlockBase<?>> trace = new ArrayList<>();
         int blockNumber = 0;
-        try (Indent i = debug.logAndIndent("StartTrace: %s", block)) {
-            for (AbstractBlockBase<?> currentBlock = block; currentBlock != null; currentBlock = selectNext(currentBlock)) {
-                debug.log("add %s (prob: %f)", currentBlock, currentBlock.probability());
-                processed.set(currentBlock.getId());
-                trace.add(currentBlock);
-                unblock(currentBlock);
-                currentBlock.setLinearScanNumber(blockNumber++);
+        try (Indent i = debug.logAndIndent("StartTrace: %s", traceStart)) {
+            for (AbstractBlockBase<?> block = traceStart; block != null; block = selectNext(block)) {
+                debug.log("add %s (prob: %f)", block, block.probability());
+                processed.set(block.getId());
+                trace.add(block);
+                unblock(block);
+                block.setLinearScanNumber(blockNumber++);
             }
         }
         return trace;
@@ -120,11 +120,7 @@ public final class UniDirectionalTraceBuilder {
 
     private boolean checkPredecessorsProcessed(AbstractBlockBase<?> block) {
         for (AbstractBlockBase<?> pred : block.getPredecessors()) {
-            if (!processed(pred)) {
-                assert false : "Predecessor unscheduled: " + pred;
-                return false;
-            }
-
+            assert processed(pred) : "Predecessor unscheduled: " + pred;
         }
         return true;
     }
@@ -133,8 +129,8 @@ public final class UniDirectionalTraceBuilder {
      * Decrease the {@link #blocked} count for all predecessors and add them to the worklist once
      * the count reaches 0.
      */
-    private void unblock(AbstractBlockBase<?> currentBlock) {
-        for (AbstractBlockBase<?> successor : currentBlock.getSuccessors()) {
+    private void unblock(AbstractBlockBase<?> block) {
+        for (AbstractBlockBase<?> successor : block.getSuccessors()) {
             if (!processed(successor)) {
                 int blockCount = --blocked[successor.getId()];
                 assert blockCount >= 0;
@@ -148,11 +144,11 @@ public final class UniDirectionalTraceBuilder {
     /**
      * @return The unprocessed predecessor with the highest probability, or {@code null}.
      */
-    private AbstractBlockBase<?> selectNext(AbstractBlockBase<?> currentBlock) {
+    private AbstractBlockBase<?> selectNext(AbstractBlockBase<?> block) {
         AbstractBlockBase<?> next = null;
-        for (AbstractBlockBase<?> succ : currentBlock.getSuccessors()) {
-            if (!processed(succ) && (next == null || succ.probability() > next.probability())) {
-                next = succ;
+        for (AbstractBlockBase<?> successor : block.getSuccessors()) {
+            if (!processed(successor) && (next == null || successor.probability() > next.probability())) {
+                next = successor;
             }
         }
         return next;

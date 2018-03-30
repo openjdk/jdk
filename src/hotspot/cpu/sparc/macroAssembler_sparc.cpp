@@ -27,7 +27,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
@@ -35,7 +35,7 @@
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/biasedLocking.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.inline.hpp"
@@ -3729,11 +3729,11 @@ void g1_barrier_stubs_init() {
 void MacroAssembler::card_write_barrier_post(Register store_addr, Register new_val, Register tmp) {
   // If we're writing constant NULL, we can skip the write barrier.
   if (new_val == G0) return;
-  CardTableModRefBS* bs =
-    barrier_set_cast<CardTableModRefBS>(Universe::heap()->barrier_set());
+  CardTableBarrierSet* bs =
+    barrier_set_cast<CardTableBarrierSet>(Universe::heap()->barrier_set());
   CardTable* ct = bs->card_table();
 
-  assert(bs->kind() == BarrierSet::CardTableModRef, "wrong barrier");
+  assert(bs->kind() == BarrierSet::CardTableBarrierSet, "wrong barrier");
   card_table_write(ct->byte_map_base(), tmp, store_addr);
 }
 

@@ -517,6 +517,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "PrintSafepointStatistics",     JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
   { "PrintSafepointStatisticsTimeout", JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
   { "PrintSafepointStatisticsCount",JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
+  { "AggressiveOpts",               JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -2341,10 +2342,6 @@ bool Arguments::check_vm_args_consistency() {
       warning("Disabling counted safepoints implies no loop strip mining: setting LoopStripMiningIter to 0");
     }
     LoopStripMiningIter = 0;
-  }
-  if (FLAG_IS_DEFAULT(LoopStripMiningIterShortLoop)) {
-    // blind guess
-    LoopStripMiningIterShortLoop = LoopStripMiningIter / 10;
   }
 #endif
   if (!FLAG_IS_DEFAULT(AllocateHeapAt)) {
@@ -4338,6 +4335,10 @@ jint Arguments::apply_ergo() {
   if (!UseTypeSpeculation && FLAG_IS_DEFAULT(TypeProfileLevel)) {
     // nothing to use the profiling, turn if off
     FLAG_SET_DEFAULT(TypeProfileLevel, 0);
+  }
+  if (FLAG_IS_DEFAULT(LoopStripMiningIterShortLoop)) {
+    // blind guess
+    LoopStripMiningIterShortLoop = LoopStripMiningIter / 10;
   }
 #endif
 

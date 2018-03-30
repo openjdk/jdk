@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
-#include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_x86.hpp"
 #include "oops/instanceOop.hpp"
@@ -668,107 +668,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  //
-  //  Generate pre-barrier for array stores
-  //
-  //  Input:
-  //     start   -  starting address
-  //     count   -  element count
-  void  gen_write_ref_array_pre_barrier(Register start, Register count, bool uninitialized_target) {
-    assert_different_registers(start, count);
-    BarrierSet* bs = Universe::heap()->barrier_set();
-    switch (bs->kind()) {
-#if INCLUDE_ALL_GCS
-      case BarrierSet::G1BarrierSet:
-        // With G1, don't generate the call if we statically know that the target in uninitialized
-        if (!uninitialized_target) {
-          Register thread = rax;
-          Label filtered;
-          __ push(thread);
-          __ get_thread(thread);
-          Address in_progress(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                               SATBMarkQueue::byte_offset_of_active()));
-          // Is marking active?
-          if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-            __ cmpl(in_progress, 0);
-          } else {
-            assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-            __ cmpb(in_progress, 0);
-          }
-          __ pop(thread);
-          __ jcc(Assembler::equal, filtered);
-
-           __ pusha();                      // push registers
-           __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre),
-                           start, count);
-           __ popa();
-
-           __ bind(filtered);
-         }
-        break;
-#endif // INCLUDE_ALL_GCS
-      case BarrierSet::CardTableModRef:
-        break;
-      default      :
-        ShouldNotReachHere();
-
-    }
-  }
-
-
-  //
-  // Generate a post-barrier for an array store
-  //
-  //     start    -  starting address
-  //     count    -  element count
-  //
-  //  The two input registers are overwritten.
-  //
-  void  gen_write_ref_array_post_barrier(Register start, Register count) {
-    BarrierSet* bs = Universe::heap()->barrier_set();
-    assert_different_registers(start, count);
-    switch (bs->kind()) {
-#if INCLUDE_ALL_GCS
-      case BarrierSet::G1BarrierSet:
-        {
-          __ pusha();                      // push registers
-          __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post),
-                          start, count);
-          __ popa();
-        }
-        break;
-#endif // INCLUDE_ALL_GCS
-
-      case BarrierSet::CardTableModRef:
-        {
-          CardTableModRefBS* ctbs = barrier_set_cast<CardTableModRefBS>(bs);
-          CardTable* ct = ctbs->card_table();
-          assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
-
-          Label L_loop;
-          const Register end = count;  // elements count; end == start+count-1
-          assert_different_registers(start, end);
-
-          __ lea(end,  Address(start, count, Address::times_ptr, -wordSize));
-          __ shrptr(start, CardTable::card_shift);
-          __ shrptr(end,   CardTable::card_shift);
-          __ subptr(end, start); // end --> count
-        __ BIND(L_loop);
-        intptr_t disp = (intptr_t) ct->byte_map_base();
-          Address cardtable(start, count, Address::times_1, disp);
-          __ movb(cardtable, 0);
-          __ decrement(count);
-          __ jcc(Assembler::greaterEqual, L_loop);
-        }
-        break;
-      case BarrierSet::ModRef:
-        break;
-      default      :
-        ShouldNotReachHere();
-
-    }
-  }
-
 
   // Copy 64 bytes chunks
   //
@@ -936,9 +835,18 @@ class StubGenerator: public StubCodeGenerator {
     if (t == T_OBJECT) {
       __ testl(count, count);
       __ jcc(Assembler::zero, L_0_count);
-      gen_write_ref_array_pre_barrier(to, count, dest_uninitialized);
-      __ mov(saved_to, to);          // save 'to'
     }
+
+    DecoratorSet decorators = ARRAYCOPY_DISJOINT;
+    if (dest_uninitialized) {
+      decorators |= AS_DEST_NOT_INITIALIZED;
+    }
+    if (aligned) {
+      decorators |= ARRAYCOPY_ALIGNED;
+    }
+
+    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    bs->arraycopy_prologue(_masm, decorators, t, from, to, count);
 
     __ subptr(to, from); // to --> to_from
     __ cmpl(count, 2<<shift); // Short arrays (< 8 bytes) copy by element
@@ -1024,10 +932,10 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(L_copy_2_bytes);
     }
 
+    __ movl(count, Address(rsp, 12+12)); // reread 'count'
+    bs->arraycopy_epilogue(_masm, decorators, t, from, to, count);
+
     if (t == T_OBJECT) {
-      __ movl(count, Address(rsp, 12+12)); // reread 'count'
-      __ mov(to, saved_to); // restore 'to'
-      gen_write_ref_array_post_barrier(to, count);
     __ BIND(L_0_count);
     }
     inc_copy_counter_np(t);
@@ -1116,8 +1024,18 @@ class StubGenerator: public StubCodeGenerator {
     if (t == T_OBJECT) {
       __ testl(count, count);
       __ jcc(Assembler::zero, L_0_count);
-      gen_write_ref_array_pre_barrier(dst, count, dest_uninitialized);
     }
+
+    DecoratorSet decorators = 0;
+    if (dest_uninitialized) {
+      decorators |= AS_DEST_NOT_INITIALIZED;
+    }
+    if (aligned) {
+      decorators |= ARRAYCOPY_ALIGNED;
+    }
+
+    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    bs->arraycopy_prologue(_masm, decorators, t, from, to, count);
 
     // copy from high to low
     __ cmpl(count, 2<<shift); // Short arrays (< 8 bytes) copy by element
@@ -1216,9 +1134,11 @@ class StubGenerator: public StubCodeGenerator {
     } else {
     __ BIND(L_copy_2_bytes);
     }
+
+    __ movl2ptr(count, Address(rsp, 12+12)); // reread count
+    bs->arraycopy_epilogue(_masm, decorators, t, from, to, count);
+
     if (t == T_OBJECT) {
-      __ movl2ptr(count, Address(rsp, 12+12)); // reread count
-      gen_write_ref_array_post_barrier(to, count);
     __ BIND(L_0_count);
     }
     inc_copy_counter_np(t);
@@ -1463,8 +1383,16 @@ class StubGenerator: public StubCodeGenerator {
     Address   to_element_addr(end_to,   count, Address::times_ptr, 0);
     Address elem_klass_addr(elem, oopDesc::klass_offset_in_bytes());
 
+    DecoratorSet decorators = ARRAYCOPY_CHECKCAST;
+    if (dest_uninitialized) {
+      decorators |= AS_DEST_NOT_INITIALIZED;
+    }
+
+    BasicType type = T_OBJECT;
+    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    bs->arraycopy_prologue(_masm, decorators, type, from, to, count);
+
     // Copy from low to high addresses, indexed from the end of each array.
-    gen_write_ref_array_pre_barrier(to, count, dest_uninitialized);
     __ lea(end_from, end_from_addr);
     __ lea(end_to,   end_to_addr);
     assert(length == count, "");        // else fix next line:
@@ -1521,7 +1449,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ BIND(L_post_barrier);
     __ movptr(to, to_arg);              // reload
-    gen_write_ref_array_post_barrier(to, count);
+    bs->arraycopy_epilogue(_masm, decorators, type, from, to, count);
 
     // Common exit point (success or failure).
     __ BIND(L_done);

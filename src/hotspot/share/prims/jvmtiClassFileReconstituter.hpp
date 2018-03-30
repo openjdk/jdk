@@ -52,19 +52,7 @@ class JvmtiConstantPoolReconstituter : public StackObj {
  public:
   // Calls to this constructor must be proceeded by a ResourceMark
   // and a HandleMark
-  JvmtiConstantPoolReconstituter(InstanceKlass* ik){
-    set_error(JVMTI_ERROR_NONE);
-    _ik = ik;
-    _cpool = constantPoolHandle(Thread::current(), ik->constants());
-    _symmap = new SymbolHashMap();
-    _classmap = new SymbolHashMap();
-    _cpool_size = _cpool->hash_entries_to(_symmap, _classmap);
-    if (_cpool_size == 0) {
-      set_error(JVMTI_ERROR_OUT_OF_MEMORY);
-    } else if (_cpool_size < 0) {
-      set_error(JVMTI_ERROR_INTERNAL);
-    }
-  }
+  JvmtiConstantPoolReconstituter(InstanceKlass* ik);
 
   ~JvmtiConstantPoolReconstituter() {
     if (_symmap != NULL) {

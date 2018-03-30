@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "ci/ciMethodType.hpp"
 #include "ci/ciSignature.hpp"
-#include "ci/ciUtilities.hpp"
+#include "ci/ciUtilities.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"

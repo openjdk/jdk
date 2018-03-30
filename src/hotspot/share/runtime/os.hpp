@@ -30,7 +30,8 @@
 #include "metaprogramming/isRegisteredEnum.hpp"
 #include "metaprogramming/integralConstant.hpp"
 #include "runtime/extendedPC.hpp"
-#include "runtime/handles.hpp"
+#include "utilities/exceptions.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/macros.hpp"
 #ifndef _WINDOWS
 # include <setjmp.h>
@@ -54,6 +55,7 @@ class Event;
 class DLL;
 class FileHandle;
 class NativeCallStack;
+class methodHandle;
 
 template<class E> class GrowableArray;
 

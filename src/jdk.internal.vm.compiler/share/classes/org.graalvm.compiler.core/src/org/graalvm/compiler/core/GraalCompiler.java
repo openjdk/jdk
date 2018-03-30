@@ -240,6 +240,7 @@ public class GraalCompiler {
             debug.dump(DebugContext.BASIC_LEVEL, graph, "After low tier");
 
             debug.dump(DebugContext.BASIC_LEVEL, graph.getLastSchedule(), "Final HIR schedule");
+            graph.logInliningTree();
         } catch (Throwable e) {
             throw debug.handle(e);
         } finally {

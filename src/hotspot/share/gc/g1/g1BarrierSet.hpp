@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_GC_G1_G1BARRIERSET_HPP
 #define SHARE_VM_GC_G1_G1BARRIERSET_HPP
 
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 
 class DirtyCardQueueSet;
 class CardTable;
@@ -34,7 +34,7 @@ class G1CardTable;
 // This barrier is specialized to use a logging barrier to support
 // snapshot-at-the-beginning marking.
 
-class G1BarrierSet: public CardTableModRefBS {
+class G1BarrierSet: public CardTableBarrierSet {
   friend class VMStructs;
  private:
   DirtyCardQueueSet& _dcqs;
@@ -49,9 +49,13 @@ class G1BarrierSet: public CardTableModRefBS {
 
   static void enqueue_if_weak_or_archive(DecoratorSet decorators, oop value);
 
-  template <class T> void write_ref_array_pre_work(T* dst, int count);
-  virtual void write_ref_array_pre(oop* dst, int count, bool dest_uninitialized);
-  virtual void write_ref_array_pre(narrowOop* dst, int count, bool dest_uninitialized);
+  template <class T> void write_ref_array_pre_work(T* dst, size_t count);
+  virtual void write_ref_array_pre(oop* dst, size_t count, bool dest_uninitialized);
+  virtual void write_ref_array_pre(narrowOop* dst, size_t count, bool dest_uninitialized);
+
+  static void write_ref_array_pre_oop_entry(oop* dst, size_t length);
+  static void write_ref_array_pre_narrow_oop_entry(narrowOop* dst, size_t length);
+  static void write_ref_array_post_entry(HeapWord* dst, size_t length);
 
   template <DecoratorSet decorators, typename T>
   void write_ref_field_pre(T* field);

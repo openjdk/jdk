@@ -31,8 +31,10 @@
 #include "oops/accessBackend.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/fakeRttiSupport.hpp"
+#include "utilities/macros.hpp"
 
 class JavaThread;
+class BarrierSetAssembler;
 
 // This class provides the interface between a barrier implementation and
 // the rest of the system.
@@ -67,6 +69,7 @@ protected:
 
 private:
   FakeRtti _fake_rtti;
+  BarrierSetAssembler* _barrier_set_assembler;
 
 public:
   // Metafunction mapping a class derived from BarrierSet to the
@@ -87,28 +90,17 @@ public:
   // End of fake RTTI support.
 
 protected:
-  BarrierSet(const FakeRtti& fake_rtti) : _fake_rtti(fake_rtti) { }
+  BarrierSet(BarrierSetAssembler* barrier_set_assembler, const FakeRtti& fake_rtti) :
+    _fake_rtti(fake_rtti),
+    _barrier_set_assembler(barrier_set_assembler) { }
   ~BarrierSet() { }
 
+  template <class BarrierSetAssemblerT>
+  BarrierSetAssembler* make_barrier_set_assembler() {
+    return NOT_ZERO(new BarrierSetAssemblerT()) ZERO_ONLY(NULL);
+  }
+
 public:
-  // Operations on arrays, or general regions (e.g., for "clone") may be
-  // optimized by some barriers.
-
-  // Below length is the # array elements being written
-  virtual void write_ref_array_pre(oop* dst, int length,
-                                   bool dest_uninitialized = false) {}
-  virtual void write_ref_array_pre(narrowOop* dst, int length,
-                                   bool dest_uninitialized = false) {}
-  // Below count is the # array elements being written, starting
-  // at the address "start", which may not necessarily be HeapWord-aligned
-  inline void write_ref_array(HeapWord* start, size_t count);
-
-  // Static versions, suitable for calling from generated code;
-  // count is # array elements being written, starting with "start",
-  // which may not necessarily be HeapWord-aligned.
-  static void static_write_ref_array_pre(HeapWord* start, size_t count);
-  static void static_write_ref_array_post(HeapWord* start, size_t count);
-
   // Support for optimizing compilers to call the barrier set on slow path allocations
   // that did not enter a TLAB. Used for e.g. ReduceInitialCardMarks.
   // The allocation is safe to use iff it returns true. If not, the slow-path allocation
@@ -119,14 +111,16 @@ public:
   virtual void on_thread_detach(JavaThread* thread) {}
   virtual void make_parsable(JavaThread* thread) {}
 
-protected:
-  virtual void write_ref_array_work(MemRegion mr) = 0;
-
 public:
   // Print a description of the memory for the barrier set
   virtual void print_on(outputStream* st) const = 0;
 
   static void set_bs(BarrierSet* bs) { _bs = bs; }
+
+  BarrierSetAssembler* barrier_set_assembler() {
+    assert(_barrier_set_assembler != NULL, "should be set");
+    return _barrier_set_assembler;
+  }
 
   // The AccessBarrier of a BarrierSet subclass is called by the Access API
   // (cf. oops/access.hpp) to perform decorated accesses. GC implementations

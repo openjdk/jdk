@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,13 @@ public class HeapRegionType extends VMObject {
 
     private static int freeTag;
     private static int youngMask;
+    private static int edenTag;
+    private static int survTag;
     private static int humongousMask;
+    private static int startsHumongousTag;
+    private static int continuesHumongousTag;
     private static int pinnedMask;
+    private static int archiveMask;
     private static int oldMask;
     private static CIntegerField tagField;
     private int tag;
@@ -61,6 +66,11 @@ public class HeapRegionType extends VMObject {
 
         freeTag = db.lookupIntConstant("HeapRegionType::FreeTag");
         youngMask = db.lookupIntConstant("HeapRegionType::YoungMask");
+        edenTag = db.lookupIntConstant("HeapRegionType::EdenTag");
+        survTag = db.lookupIntConstant("HeapRegionType::SurvTag");
+        startsHumongousTag = db.lookupIntConstant("HeapRegionType::StartsHumongousTag");
+        continuesHumongousTag = db.lookupIntConstant("HeapRegionType::ContinuesHumongousTag");
+        archiveMask = db.lookupIntConstant("HeapRegionType::ArchiveMask");
         humongousMask = db.lookupIntConstant("HeapRegionType::HumongousMask");
         pinnedMask = db.lookupIntConstant("HeapRegionType::PinnedMask");
         oldMask = db.lookupIntConstant("HeapRegionType::OldMask");
@@ -70,12 +80,32 @@ public class HeapRegionType extends VMObject {
         return tagField.getValue(addr) == freeTag;
     }
 
+    public boolean isEden() {
+        return tagField.getValue(addr) == edenTag;
+    }
+
+    public boolean isSurvivor() {
+        return tagField.getValue(addr) == survTag;
+    }
+
     public boolean isYoung() {
         return (tagField.getValue(addr) & youngMask) != 0;
     }
 
     public boolean isHumongous() {
         return (tagField.getValue(addr) & humongousMask) != 0;
+    }
+
+    public boolean isStartsHumongous() {
+        return tagField.getValue(addr) == startsHumongousTag;
+    }
+
+    public boolean isContinuesHumongous() {
+        return tagField.getValue(addr) == continuesHumongousTag;
+    }
+
+    public boolean isArchive() {
+        return (tagField.getValue(addr) & archiveMask) != 0;
     }
 
     public boolean isPinned() {
@@ -88,5 +118,33 @@ public class HeapRegionType extends VMObject {
 
     public HeapRegionType(Address addr) {
         super(addr);
+    }
+
+    public String typeAnnotation() {
+        if (isFree()) {
+            return "Free";
+        }
+        if (isEden()) {
+            return "Eden";
+        }
+        if (isSurvivor()) {
+            return "Survivor";
+        }
+        if (isStartsHumongous()) {
+            return "StartsHumongous";
+        }
+        if (isContinuesHumongous()) {
+            return "ContinuesHumongous";
+        }
+        if (isArchive()) {
+            return "Archive";
+        }
+        if (isPinned()) {
+            return "Pinned";
+        }
+        if (isOld()) {
+            return "Old";
+        }
+        return "Unknown Region Type";
     }
 }

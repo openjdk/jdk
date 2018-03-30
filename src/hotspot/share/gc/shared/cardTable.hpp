@@ -87,7 +87,7 @@ protected:
   MemRegion committed_unique_to_self(int self, MemRegion mr) const;
 
   // Some barrier sets create tables whose elements correspond to parts of
-  // the heap; the CardTableModRefBS is an example.  Such barrier sets will
+  // the heap; the CardTableBarrierSet is an example.  Such barrier sets will
   // normally reserve space for such tables, and commit parts of the table
   // "covering" parts of the heap that are committed. At most one covered
   // region per generation is needed.
@@ -114,7 +114,7 @@ public:
   virtual ~CardTable();
   virtual void initialize();
 
-  // The kinds of precision a CardTableModRefBS may offer.
+  // The kinds of precision a CardTable may offer.
   enum PrecisionStyle {
     Precise,
     ObjHeadPreciseArray

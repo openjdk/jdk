@@ -28,7 +28,7 @@
 #include "memory/allocation.hpp"
 #include "oops/arrayOop.hpp"
 #include "runtime/deoptimization.hpp"
-#include "runtime/frame.inline.hpp"
+#include "runtime/frame.hpp"
 #include "runtime/monitorChunk.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -189,7 +189,7 @@ class vframeArray: public CHeapObj<mtCompiler> {
   // Accessors for sp
   intptr_t* sp() const                       { return _original.sp(); }
 
-  intptr_t* unextended_sp() const            { return _original.unextended_sp(); }
+  intptr_t* unextended_sp() const;
 
   address original_pc() const                { return _original.pc(); }
 

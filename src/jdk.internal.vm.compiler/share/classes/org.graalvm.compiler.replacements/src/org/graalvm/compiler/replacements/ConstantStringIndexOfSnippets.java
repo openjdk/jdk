@@ -65,7 +65,7 @@ public class ConstantStringIndexOfSnippets implements Snippets {
             char[] targetCharArray = snippetReflection.asObject(char[].class, stringIndexOf.getArgument(3).asJavaConstant());
             args.addConst("md2", md2(targetCharArray));
             args.addConst("cache", computeCache(targetCharArray));
-            template(graph.getDebug(), args).instantiate(providers.getMetaAccess(), stringIndexOf, DEFAULT_REPLACER, args);
+            template(stringIndexOf, args).instantiate(providers.getMetaAccess(), stringIndexOf, DEFAULT_REPLACER, args);
         }
     }
 
