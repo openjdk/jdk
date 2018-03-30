@@ -46,11 +46,72 @@ public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
     protected EnumSet<AArch64.CPUFeature> computeFeatures(@SuppressWarnings("unused") AArch64HotSpotVMConfig config) {
         // Configure the feature set using the HotSpot flag settings.
         EnumSet<AArch64.CPUFeature> features = EnumSet.noneOf(AArch64.CPUFeature.class);
+
+        if ((config.vmVersionFeatures & config.aarch64FP) != 0) {
+            features.add(AArch64.CPUFeature.FP);
+        }
+        if ((config.vmVersionFeatures & config.aarch64ASIMD) != 0) {
+            features.add(AArch64.CPUFeature.ASIMD);
+        }
+        if ((config.vmVersionFeatures & config.aarch64EVTSTRM) != 0) {
+            features.add(AArch64.CPUFeature.EVTSTRM);
+        }
+        if ((config.vmVersionFeatures & config.aarch64AES) != 0) {
+            features.add(AArch64.CPUFeature.AES);
+        }
+        if ((config.vmVersionFeatures & config.aarch64PMULL) != 0) {
+            features.add(AArch64.CPUFeature.PMULL);
+        }
+        if ((config.vmVersionFeatures & config.aarch64SHA1) != 0) {
+            features.add(AArch64.CPUFeature.SHA1);
+        }
+        if ((config.vmVersionFeatures & config.aarch64SHA2) != 0) {
+            features.add(AArch64.CPUFeature.SHA2);
+        }
+        if ((config.vmVersionFeatures & config.aarch64CRC32) != 0) {
+            features.add(AArch64.CPUFeature.CRC32);
+        }
+        if ((config.vmVersionFeatures & config.aarch64LSE) != 0) {
+            features.add(AArch64.CPUFeature.LSE);
+        }
+        if ((config.vmVersionFeatures & config.aarch64STXR_PREFETCH) != 0) {
+            features.add(AArch64.CPUFeature.STXR_PREFETCH);
+        }
+        if ((config.vmVersionFeatures & config.aarch64A53MAC) != 0) {
+            features.add(AArch64.CPUFeature.A53MAC);
+        }
+        if ((config.vmVersionFeatures & config.aarch64DMB_ATOMICS) != 0) {
+            features.add(AArch64.CPUFeature.DMB_ATOMICS);
+        }
+
         return features;
     }
 
     protected EnumSet<AArch64.Flag> computeFlags(@SuppressWarnings("unused") AArch64HotSpotVMConfig config) {
         EnumSet<AArch64.Flag> flags = EnumSet.noneOf(AArch64.Flag.class);
+
+        if (config.useBarriersForVolatile) {
+            flags.add(AArch64.Flag.UseBarriersForVolatile);
+        }
+        if (config.useCRC32) {
+            flags.add(AArch64.Flag.UseCRC32);
+        }
+        if (config.useNeon) {
+            flags.add(AArch64.Flag.UseNeon);
+        }
+        if (config.useSIMDForMemoryOps) {
+            flags.add(AArch64.Flag.UseSIMDForMemoryOps);
+        }
+        if (config.avoidUnalignedAccesses) {
+            flags.add(AArch64.Flag.AvoidUnalignedAccesses);
+        }
+        if (config.useLSE) {
+            flags.add(AArch64.Flag.UseLSE);
+        }
+        if (config.useBlockZeroing) {
+            flags.add(AArch64.Flag.UseBlockZeroing);
+        }
+
         return flags;
     }
 
