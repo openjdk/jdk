@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -294,6 +294,28 @@ AdapterBlob* AdapterBlob::create(CodeBuffer* cb) {
   return blob;
 }
 
+VtableBlob::VtableBlob(const char* name, int size) :
+  BufferBlob(name, size) {
+}
+
+VtableBlob* VtableBlob::create(const char* name, int buffer_size) {
+  ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
+
+  VtableBlob* blob = NULL;
+  unsigned int size = sizeof(VtableBlob);
+  // align the size to CodeEntryAlignment
+  size = align_code_offset(size);
+  size += align_up(buffer_size, oopSize);
+  assert(name != NULL, "must provide a name");
+  {
+    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    blob = new (size) VtableBlob(name, size);
+  }
+  // Track memory usage statistic after releasing CodeCache_lock
+  MemoryService::track_code_cache_memory_usage();
+
+  return blob;
+}
 
 //----------------------------------------------------------------------------------------------------
 // Implementation of MethodHandlesAdapterBlob
