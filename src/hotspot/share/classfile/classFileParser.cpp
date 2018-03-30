@@ -58,6 +58,7 @@
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/reflection.hpp"
@@ -768,6 +769,13 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
       }
     }  // switch(tag)
   }  // end of for
+}
+
+Handle ClassFileParser::clear_cp_patch_at(int index) {
+  Handle patch = cp_patch_at(index);
+  _cp_patches->at_put(index, Handle());
+  assert(!has_cp_patch_at(index), "");
+  return patch;
 }
 
 void ClassFileParser::patch_class(ConstantPool* cp, int class_index, Klass* k, Symbol* name) {

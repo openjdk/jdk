@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,8 @@
  * @bug 6711117
  * @summary Assertion in 64bit server vm (flat != TypePtr::BOTTOM,"cannot alias-analyze an untyped ptr")
  *
- * @run main/othervm -Xcomp -XX:+IgnoreUnrecognizedVMOptions -XX:+AggressiveOpts
- *      -XX:+UseCompressedOops
- *       compiler.c2.cr6711117.Test
+ * @run main/othervm -Xcomp -XX:+IgnoreUnrecognizedVMOptions -XX:+EliminateAutoBox -XX:AutoBoxCacheMax=20000
+ *                   -XX:+UseCompressedOops compiler.c2.cr6711117.Test
  */
 
 package compiler.c2.cr6711117;

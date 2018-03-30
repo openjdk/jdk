@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,8 +73,13 @@
 #define VM_INT_CONSTANTS_G1(declare_constant, declare_constant_with_value)    \
   declare_constant(HeapRegionType::FreeTag)                                   \
   declare_constant(HeapRegionType::YoungMask)                                 \
+  declare_constant(HeapRegionType::EdenTag)                                   \
+  declare_constant(HeapRegionType::SurvTag)                                   \
   declare_constant(HeapRegionType::HumongousMask)                             \
   declare_constant(HeapRegionType::PinnedMask)                                \
+  declare_constant(HeapRegionType::ArchiveMask)                               \
+  declare_constant(HeapRegionType::StartsHumongousTag)                        \
+  declare_constant(HeapRegionType::ContinuesHumongousTag)                     \
   declare_constant(HeapRegionType::OldMask)
 
 

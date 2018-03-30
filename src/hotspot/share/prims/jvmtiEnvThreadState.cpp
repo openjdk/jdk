@@ -32,7 +32,7 @@
 #include "prims/jvmtiImpl.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/thread.inline.hpp"

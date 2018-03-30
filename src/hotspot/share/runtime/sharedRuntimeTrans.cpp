@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jni.h"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 
 // This file contains copies of the fdlibm routines used by

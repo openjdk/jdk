@@ -83,7 +83,7 @@ public class StringToBytesSnippets implements Snippets {
         public void lower(StringToBytesNode stringToBytesNode, LoweringTool tool) {
             Arguments args = new Arguments(create, stringToBytesNode.graph().getGuardsStage(), tool.getLoweringStage());
             args.addConst("compilationTimeString", stringToBytesNode.getValue());
-            SnippetTemplate template = template(stringToBytesNode.getDebug(), args);
+            SnippetTemplate template = template(stringToBytesNode, args);
             template.instantiate(providers.getMetaAccess(), stringToBytesNode, DEFAULT_REPLACER, args);
         }
 

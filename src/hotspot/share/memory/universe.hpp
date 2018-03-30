@@ -194,7 +194,8 @@ class Universe: AllStatic {
   // For UseCompressedClassPointers.
   static struct NarrowPtrStruct _narrow_klass;
   static address _narrow_ptrs_base;
-
+  // CompressedClassSpaceSize set to 1GB, but appear 3GB away from _narrow_ptrs_base during CDS dump.
+  static uint64_t _narrow_klass_range;
   // array of dummy objects used with +FullGCAlot
   debug_only(static objArrayOop _fullgc_alot_dummy_array;)
   // index of next entry to clear
@@ -243,6 +244,10 @@ class Universe: AllStatic {
   static void     set_narrow_klass_base(address base) {
     assert(UseCompressedClassPointers, "no compressed klass ptrs?");
     _narrow_klass._base   = base;
+  }
+  static void     set_narrow_klass_range(uint64_t range) {
+     assert(UseCompressedClassPointers, "no compressed klass ptrs?");
+     _narrow_klass_range = range;
   }
   static void     set_narrow_oop_use_implicit_null_checks(bool use) {
     assert(UseCompressedOops, "no compressed ptrs?");
@@ -429,6 +434,7 @@ class Universe: AllStatic {
   // For UseCompressedClassPointers
   static address  narrow_klass_base()                     { return  _narrow_klass._base; }
   static bool  is_narrow_klass_base(void* addr)           { return (narrow_klass_base() == (address)addr); }
+  static uint64_t narrow_klass_range()                    { return  _narrow_klass_range; }
   static int      narrow_klass_shift()                    { return  _narrow_klass._shift; }
   static bool     narrow_klass_use_implicit_null_checks() { return  _narrow_klass._use_implicit_null_checks; }
 

@@ -104,4 +104,13 @@ inline void HandleMark::pop_and_restore() {
   debug_only(area->_handle_mark_nesting--);
 }
 
+inline HandleMarkCleaner::HandleMarkCleaner(Thread* thread) {
+  _thread = thread;
+  _thread->last_handle_mark()->push();
+}
+
+inline HandleMarkCleaner::~HandleMarkCleaner() {
+  _thread->last_handle_mark()->pop_and_restore();
+}
+
 #endif // SHARE_VM_RUNTIME_HANDLES_INLINE_HPP

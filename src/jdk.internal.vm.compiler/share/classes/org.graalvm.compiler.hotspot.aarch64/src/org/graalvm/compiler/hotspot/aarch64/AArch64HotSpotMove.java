@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,22 +155,24 @@ public class AArch64HotSpotMove {
 
         @Override
         public void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
-            Register ptr = asRegister(input);
+            Register inputRegister = asRegister(input);
             Register resultRegister = asRegister(result);
-            Register base = (isRegister(baseRegister) ? asRegister(baseRegister) : zr);
+            Register base = encoding.hasBase() ? asRegister(baseRegister) : null;
+            emitUncompressCode(masm, inputRegister, resultRegister, base, encoding.getShift(), nonNull);
+        }
+
+        public static void emitUncompressCode(AArch64MacroAssembler masm, Register inputRegister, Register resReg, Register baseReg, int shift, boolean nonNull) {
             // result = base + (ptr << shift)
-            if (nonNull) {
-                masm.add(64, resultRegister, base, ptr, AArch64Assembler.ShiftType.LSL, encoding.getShift());
-            } else if (!encoding.hasBase()) {
-                masm.add(64, resultRegister, zr, ptr, AArch64Assembler.ShiftType.LSL, encoding.getShift());
+            if (nonNull || baseReg == null) {
+                masm.add(64, resReg, baseReg == null ? zr : baseReg, inputRegister, AArch64Assembler.ShiftType.LSL, shift);
             } else {
                 // if ptr is null it has to be null after decompression
                 Label done = new Label();
-                if (!resultRegister.equals(ptr)) {
-                    masm.mov(32, resultRegister, ptr);
+                if (!resReg.equals(inputRegister)) {
+                    masm.mov(32, resReg, inputRegister);
                 }
-                masm.cbz(32, resultRegister, done);
-                masm.add(64, resultRegister, base, resultRegister, AArch64Assembler.ShiftType.LSL, encoding.getShift());
+                masm.cbz(32, resReg, done);
+                masm.add(64, resReg, baseReg, resReg, AArch64Assembler.ShiftType.LSL, shift);
                 masm.bind(done);
             }
         }

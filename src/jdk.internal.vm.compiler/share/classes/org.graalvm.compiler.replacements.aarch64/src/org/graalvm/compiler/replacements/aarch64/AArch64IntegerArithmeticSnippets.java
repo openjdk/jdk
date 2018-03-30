@@ -106,7 +106,7 @@ public class AArch64IntegerArithmeticSnippets extends AbstractTemplates implemen
         Arguments args = new Arguments(snippet, graph.getGuardsStage(), tool.getLoweringStage());
         args.add("x", node.getX());
         args.add("y", node.getY());
-        template(graph.getDebug(), args).instantiate(providers.getMetaAccess(), node, SnippetTemplate.DEFAULT_REPLACER, args);
+        template(node, args).instantiate(providers.getMetaAccess(), node, SnippetTemplate.DEFAULT_REPLACER, args);
     }
 
     @Snippet

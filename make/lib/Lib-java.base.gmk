@@ -159,6 +159,7 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
   ifeq ($(STATIC_BUILD), false)
 
     LIBJSIG_SRC_DIR := $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjsig
+    LIBJSIG_MAPFILE := $(wildcard $(TOPDIR)/make/mapfiles/libjsig/mapfile-vers-$(OPENJDK_TARGET_OS))
 
     ifeq ($(OPENJDK_TARGET_OS), linux)
       # FIXME: This is probably not what we want to do, but keep it now for compatibility.
@@ -174,6 +175,7 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
         LIBS_linux := $(LIBDL), \
         LIBS_solaris := $(LIBDL), \
         LIBS_aix := $(LIBDL), \
+        MAPFILE := $(LIBJSIG_MAPFILE), \
     ))
 
     TARGETS += $(BUILD_LIBJSIG)

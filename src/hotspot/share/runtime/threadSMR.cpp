@@ -29,8 +29,10 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "services/threadService.hpp"
+#include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/resourceHash.hpp"
+#include "utilities/vmError.hpp"
 
 Monitor*              ThreadsSMRSupport::_delete_lock =
                           new Monitor(Monitor::special, "Thread_SMR_delete_lock",

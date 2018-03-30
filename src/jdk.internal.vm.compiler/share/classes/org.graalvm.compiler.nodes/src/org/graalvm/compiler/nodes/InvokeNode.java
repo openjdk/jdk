@@ -93,6 +93,16 @@ public final class InvokeNode extends AbstractMemoryCheckpoint implements Invoke
     }
 
     @Override
+    protected void afterClone(Node other) {
+        updateInliningLogAfterClone(other);
+    }
+
+    @Override
+    public FixedNode asFixedNode() {
+        return this;
+    }
+
+    @Override
     public CallTargetNode callTarget() {
         return callTarget;
     }

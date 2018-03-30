@@ -109,7 +109,7 @@ public abstract class MethodSubstitutionTest extends GraalCompilerTest {
         StructuredGraph graph = testGraph(testMethodName);
 
         // Check to see if the resulting graph contains the expected node
-        StructuredGraph replacement = getReplacements().getSubstitution(realMethod, -1);
+        StructuredGraph replacement = getReplacements().getSubstitution(realMethod, -1, false, null);
         if (replacement == null && !optional) {
             assertInGraph(graph, intrinsicClass);
         }

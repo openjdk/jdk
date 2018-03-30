@@ -77,8 +77,7 @@ class ZipCoder {
 
     String toString(byte[] ba, int off, int length) {
         try {
-              return decoder().decode(ByteBuffer.wrap(ba, off, length)).toString();
-
+            return decoder().decode(ByteBuffer.wrap(ba, off, length)).toString();
         } catch (CharacterCodingException x) {
             throw new IllegalArgumentException(x);
         }

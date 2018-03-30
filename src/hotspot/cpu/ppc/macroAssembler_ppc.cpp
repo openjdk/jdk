@@ -27,7 +27,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
@@ -35,7 +35,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/icache.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
@@ -3036,9 +3036,9 @@ void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg) {
 
 // Write the card table byte if needed.
 void MacroAssembler::card_write_barrier_post(Register Rstore_addr, Register Rnew_val, Register Rtmp) {
-  CardTableModRefBS* bs =
-    barrier_set_cast<CardTableModRefBS>(Universe::heap()->barrier_set());
-  assert(bs->kind() == BarrierSet::CardTableModRef, "wrong barrier");
+  CardTableBarrierSet* bs =
+    barrier_set_cast<CardTableBarrierSet>(Universe::heap()->barrier_set());
+  assert(bs->kind() == BarrierSet::CardTableBarrierSet, "wrong barrier");
   CardTable* ct = bs->card_table();
 #ifdef ASSERT
   cmpdi(CCR0, Rnew_val, 0);

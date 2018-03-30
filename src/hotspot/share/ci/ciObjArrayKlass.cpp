@@ -26,7 +26,7 @@
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciSymbol.hpp"
-#include "ci/ciUtilities.hpp"
+#include "ci/ciUtilities.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 
 // ciObjArrayKlass

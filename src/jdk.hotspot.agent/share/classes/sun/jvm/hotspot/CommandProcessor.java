@@ -52,6 +52,8 @@ import sun.jvm.hotspot.classfile.ClassLoaderDataGraph;
 import sun.jvm.hotspot.memory.SymbolTable;
 import sun.jvm.hotspot.memory.SystemDictionary;
 import sun.jvm.hotspot.memory.Universe;
+import sun.jvm.hotspot.gc.shared.CollectedHeap;
+import sun.jvm.hotspot.gc.g1.G1CollectedHeap;
 import sun.jvm.hotspot.oops.DefaultHeapVisitor;
 import sun.jvm.hotspot.oops.HeapVisitor;
 import sun.jvm.hotspot.oops.InstanceKlass;
@@ -1653,6 +1655,21 @@ public class CommandProcessor {
                             e.printStackTrace();
                         }
                     }
+                }
+            }
+        },
+        new Command("g1regiondetails", false) {
+            public void doit(Tokens t) {
+                if (t.countTokens() != 0) {
+                    usage();
+                } else {
+                    CollectedHeap heap = VM.getVM().getUniverse().heap();
+                    if (!(heap instanceof G1CollectedHeap)) {
+                        out.println("This command is valid only for G1GC.");
+                        return;
+                    }
+                    out.println("Region Details:");
+                    ((G1CollectedHeap)heap).printRegionDetails(out);
                 }
             }
         },

@@ -24,10 +24,8 @@
 
 package org.graalvm.compiler.jtt.hotpath;
 
-import org.junit.Ignore;
-import org.junit.Test;
-
 import org.graalvm.compiler.jtt.JTTTest;
+import org.junit.Test;
 
 /*
  */
@@ -101,17 +99,16 @@ public class HP_series extends JTTTest {
         return (0.0);
     }
 
-    /*
-     * This test is sensible to the implementation of Math.pow, cos and sin. Since for these
-     * functions, the specs says "The computed result must be within 1 ulp of the exact result",
-     * different implementation may return different results. The 11 ulp delta allowed for test(100)
-     * tries to account for that but is not guaranteed to work forever.
+    /**
+     * This test is sensitive to the implementation of {@link Math#pow}, {@link Math#cos} and
+     * {@link Math#sin(double)}. Since for these functions, the specs says "The computed result must
+     * be within 1 ulp of the exact result", different implementation may return different results.
+     * The 11 ulp delta allowed for test(100) tries to account for that but is not guaranteed to
+     * work forever.
      */
-    @Ignore("failure-prone because of the variabiliy of pow/cos/sin")
     @Test
     public void run0() throws Throwable {
-        double expected = 0.6248571921291398d;
-        runTestWithDelta(11 * Math.ulp(expected), "test", 100);
+        ulpDelta = 11.0D;
+        runTest("test", 100);
     }
-
 }

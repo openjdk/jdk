@@ -29,7 +29,7 @@
 #include "c1/c1_Runtime1.hpp"
 #include "ci/ciUtilities.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_s390.hpp"
 #include "oops/compiledICHolder.hpp"

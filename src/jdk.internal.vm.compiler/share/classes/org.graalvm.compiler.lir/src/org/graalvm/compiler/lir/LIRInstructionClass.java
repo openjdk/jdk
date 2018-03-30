@@ -96,7 +96,11 @@ public class LIRInstructionClass<T> extends LIRIntrospection<T> {
         try {
             Field field = clazz.getDeclaredField("TYPE");
             field.setAccessible(true);
-            return (LIRInstructionClass<T>) field.get(null);
+            LIRInstructionClass<T> result = (LIRInstructionClass<T>) field.get(null);
+            if (result == null) {
+                throw GraalError.shouldNotReachHere("TYPE field not initialized for class " + clazz.getTypeName());
+            }
+            return result;
         } catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e) {
             throw new RuntimeException(e);
         }

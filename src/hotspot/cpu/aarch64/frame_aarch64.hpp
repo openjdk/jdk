@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -157,5 +157,7 @@
 
   // deoptimization support
   void interpreter_frame_set_last_sp(intptr_t* sp);
+
+  static jint interpreter_frame_expression_stack_direction() { return -1; }
 
 #endif // CPU_AARCH64_VM_FRAME_AARCH64_HPP

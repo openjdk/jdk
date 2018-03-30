@@ -54,7 +54,23 @@ public class AbstractMethodErrorTest {
 
     private static boolean enableChecks = true;
 
-    public static void setup_test() {
+    private static boolean compile(Class<?> clazz, String name) {
+        try {
+            Method method = clazz.getMethod(name);
+            boolean enqueued = WHITE_BOX.enqueueMethodForCompilation(method, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
+            if (!enqueued) {
+                System.out.println("Warning: Blocking compilation failed for " + clazz.getName() + "." + name + " (timeout?)");
+                return false;
+            } else if (!WHITE_BOX.isMethodCompiled(method)) {
+                throw new RuntimeException(clazz.getName() + "." + name + " is not compiled");
+            }
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(clazz.getName() + "." + name + " not found", e);
+        }
+        return true;
+    }
+
+    public static boolean setup_test() {
         // Assure all exceptions are loaded.
         new AbstractMethodError();
         new IncompatibleClassChangeError();
@@ -67,48 +83,19 @@ public class AbstractMethodErrorTest {
         enableChecks = true;
 
         // Compile
-        try {
-            Method method = AbstractMethodErrorTest.class.getMethod("test_ame5_compiled_vtable_stub");
-            WHITE_BOX.enqueueMethodForCompilation(method, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-            if (!WHITE_BOX.isMethodCompiled(method)) {
-                throw new RuntimeException(method.getName() + " is not compiled");
-            }
-            method = AbstractMethodErrorTest.class.getMethod("test_ame6_compiled_itable_stub");
-            WHITE_BOX.enqueueMethodForCompilation(method, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-            if (!WHITE_BOX.isMethodCompiled(method)) {
-                throw new RuntimeException(method.getName() + " is not compiled");
-            }
-            method = AME5_C.class.getMethod("c");
-            WHITE_BOX.enqueueMethodForCompilation(method, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-            if (!WHITE_BOX.isMethodCompiled(method)) {
-                throw new RuntimeException("AME5_C." + method.getName() + " is not compiled");
-            }
-            method = AME5_D.class.getMethod("c");
-            WHITE_BOX.enqueueMethodForCompilation(method, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-            if (!WHITE_BOX.isMethodCompiled(method)) {
-                throw new RuntimeException("AME5_D." + method.getName() + " is not compiled");
-            }
-            method = AME5_E.class.getMethod("c");
-            WHITE_BOX.enqueueMethodForCompilation(method, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-            if (!WHITE_BOX.isMethodCompiled(method)) {
-                throw new RuntimeException("AME5_E." + method.getName() + " is not compiled");
-            }
-            method = AME6_C.class.getMethod("c");
-            WHITE_BOX.enqueueMethodForCompilation(method, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-            if (!WHITE_BOX.isMethodCompiled(method)) {
-                throw new RuntimeException("AME6_C." + method.getName() + " is not compiled");
-            }
-            method = AME6_D.class.getMethod("c");
-            WHITE_BOX.enqueueMethodForCompilation(method, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-            if (!WHITE_BOX.isMethodCompiled(method)) {
-                throw new RuntimeException("AME6_D." + method.getName() + " is not compiled");
-            }
-            method = AME6_E.class.getMethod("c");
-            WHITE_BOX.enqueueMethodForCompilation(method, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-            if (!WHITE_BOX.isMethodCompiled(method)) {
-                throw new RuntimeException("AME6_E." + method.getName() + " is not compiled");
-            }
-        } catch (NoSuchMethodException e) { }
+        if (!compile(AbstractMethodErrorTest.class, "test_ame5_compiled_vtable_stub") ||
+            !compile(AbstractMethodErrorTest.class, "test_ame6_compiled_itable_stub") ||
+            !compile(AME5_C.class, "mc") ||
+            !compile(AME5_D.class, "mc") ||
+            !compile(AME5_E.class, "mc") ||
+            !compile(AME6_C.class, "mc") ||
+            !compile(AME6_D.class, "mc") ||
+            !compile(AME6_E.class, "mc")) {
+            return false;
+        }
+
+        System.out.println("warmup done.");
+        return true;
     }
 
     private static String expectedErrorMessageAME1_1 =
@@ -493,7 +480,9 @@ public class AbstractMethodErrorTest {
 
 
     public static void main(String[] args) throws Exception {
-        setup_test();
+        if (!setup_test()) {
+          return;
+        }
         test_ame1();
         test_ame2();
         test_ame3_1();
@@ -756,66 +745,66 @@ class AME4_E extends AME4_B {
 // - Call errorneous B.mc() in the end to raise the AbstraceMethodError
 
 abstract class AME5_A {
-    abstract void ma();
-    abstract void mb();
-    abstract void mc();
+    public abstract void ma();
+    public abstract void mb();
+    public abstract void mc();
 }
 
 class AME5_B extends AME5_A {
-    void ma() {
+    public void ma() {
         System.out.print("B.ma() ");
     }
 
-    void mb() {
+    public void mb() {
         System.out.print("B.mb() ");
     }
 
     // This method is missing in the .jasm implementation.
-    void mc() {
+    public void mc() {
         System.out.print("B.mc() ");
     }
 }
 
 class AME5_C extends AME5_A {
-    void ma() {
+    public void ma() {
         System.out.print("C.ma() ");
     }
 
-    void mb() {
+    public void mb() {
         System.out.print("C.mb() ");
     }
 
-    void mc() {
+    public void mc() {
         System.out.print("C.mc() ");
     }
 }
 
 class AME5_D extends AME5_A {
-    void ma() {
+    public void ma() {
         System.out.print("D.ma() ");
     }
 
-    void mb() {
+    public void mb() {
         System.out.print("D.mb() ");
     }
 
-    void mc() {
+    public void mc() {
         System.out.print("D.mc() ");
     }
 }
 
 class AME5_E extends AME5_A {
-    void ma() {
-       System.out.print("E.ma() ");
-   }
+    public  void ma() {
+        System.out.print("E.ma() ");
+    }
 
-   void mb() {
-       System.out.print("E.mb() ");
-   }
+    public void mb() {
+        System.out.print("E.mb() ");
+    }
 
-   void mc() {
-       System.out.print("E.mc() ");
-   }
+    public void mc() {
+        System.out.print("E.mc() ");
+    }
 }
 
 //-------------------------------------------------------------------------

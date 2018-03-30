@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,18 +32,7 @@
   }
 
   // The `last' frame is the youngest Java frame on the thread's stack.
-  frame pd_last_frame() {
-    assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
-
-    intptr_t* sp = last_Java_sp();
-    address pc = _anchor.last_Java_pc();
-
-    // Last_Java_pc ist not set, if we come here from compiled code.
-    if (pc == NULL)
-      pc =  (address) *(sp + 2);
-
-    return frame(sp, pc);
-  }
+  frame pd_last_frame();
 
  public:
   void set_base_of_stack_pointer(intptr_t* base_sp) {}

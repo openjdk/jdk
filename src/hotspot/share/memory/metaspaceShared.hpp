@@ -29,7 +29,7 @@
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
-#include "oops/oop.inline.hpp"
+#include "oops/oop.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/resourceHash.hpp"
@@ -96,12 +96,8 @@ class MetaspaceShared : AllStatic {
   static bool obj_equals(oop const& p1, oop const& p2) {
     return p1 == p2;
   }
-  static unsigned obj_hash(oop const& p) {
-    assert(!p->mark()->has_bias_pattern(),
-           "this object should never have been locked");  // so identity_hash won't safepoin
-    unsigned hash = (unsigned)p->identity_hash();
-    return hash;
-  }
+  static unsigned obj_hash(oop const& p);
+
   typedef ResourceHashtable<oop, oop,
       MetaspaceShared::obj_hash,
       MetaspaceShared::obj_equals,

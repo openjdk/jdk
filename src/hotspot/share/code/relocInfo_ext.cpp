@@ -27,7 +27,7 @@
 #include "code/relocInfo.hpp"
 #include "code/relocInfo_ext.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"
 #include "runtime/os.hpp"
@@ -60,7 +60,7 @@ address symbolic_Relocation::symbolic_value(symbolic_Relocation::symbolic_refere
   }
   case symbolic_Relocation::card_table_reference: {
     BarrierSet* bs = Universe::heap()->barrier_set();
-    CardTableModRefBS* ctbs = barrier_set_cast<CardTableModRefBS>(bs);
+    CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
     CardTable* ct = ctbs->card_table();
     return (address)ct->byte_map_base();
   }

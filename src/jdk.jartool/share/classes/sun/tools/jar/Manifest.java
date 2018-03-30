@@ -52,7 +52,6 @@ public class Manifest {
     private Hashtable<String, MessageHeader> tableEntries = new Hashtable<>();
 
     static final String[] hashes = {"SHA"};
-    static final byte[] EOL = {(byte)'\r', (byte)'\n'};
 
     static final boolean debug = false;
     static final String VERSION = "1.0";

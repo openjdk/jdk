@@ -26,14 +26,11 @@ package sun.nio.ch;
 
 import java.io.IOException;
 import java.nio.channels.ClosedSelectorException;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -63,7 +60,7 @@ class PollSelectorImpl extends SelectorImpl {
     // pending updates, queued by putEventOps
     private final Object updateLock = new Object();
     private final Deque<SelectionKeyImpl> updateKeys = new ArrayDeque<>();
-    private final Deque<Integer> updateOps = new ArrayDeque<>();
+    private final Deque<Integer> updateEvents = new ArrayDeque<>();
 
     // interrupt triggering and clearing
     private final Object interruptLock = new Object();
@@ -99,13 +96,15 @@ class PollSelectorImpl extends SelectorImpl {
     protected int doSelect(long timeout) throws IOException {
         assert Thread.holdsLock(this);
 
+        int to = (int) Math.min(timeout, Integer.MAX_VALUE); // max poll timeout
+        boolean blocking = (to != 0);
+        boolean timedPoll = (to > 0);
+
         processUpdateQueue();
         processDeregisterQueue();
         try {
-            begin();
+            begin(blocking);
 
-            int to = (int) Math.min(timeout, Integer.MAX_VALUE); // max poll timeout
-            boolean timedPoll = (to > 0);
             int numPolled;
             do {
                 long startTime = timedPoll ? System.nanoTime() : 0;
@@ -123,7 +122,7 @@ class PollSelectorImpl extends SelectorImpl {
             assert numPolled <= pollArraySize;
 
         } finally {
-            end();
+            end(blocking);
         }
 
         processDeregisterQueue();
@@ -137,23 +136,22 @@ class PollSelectorImpl extends SelectorImpl {
         assert Thread.holdsLock(this);
 
         synchronized (updateLock) {
-            assert updateKeys.size() == updateOps.size();
-
+            assert updateKeys.size() == updateEvents.size();
             SelectionKeyImpl ski;
             while ((ski = updateKeys.pollFirst()) != null) {
-                int ops = updateOps.pollFirst();
+                int newEvents = updateEvents.pollFirst();
                 if (ski.isValid()) {
                     int index = ski.getIndex();
                     assert index >= 0 && index < pollArraySize;
                     if (index > 0) {
                         assert pollKeys.get(index) == ski;
-                        if (ops == 0) {
+                        if (newEvents == 0) {
                             remove(ski);
                         } else {
-                            update(ski, ops);
+                            update(ski, newEvents);
                         }
-                    } else if (ops != 0) {
-                        add(ski, ops);
+                    } else if (newEvents != 0) {
+                        add(ski, newEvents);
                     }
                 }
             }
@@ -161,8 +159,8 @@ class PollSelectorImpl extends SelectorImpl {
     }
 
     /**
-     * Update the keys whose fd's have been selected by kqueue.
-     * Add the ready keys to the selected key set.
+     * Update the keys of file descriptors that were polled and add them to
+     * the selected-key set.
      * If the interrupt fd has been selected, drain it and clear the interrupt.
      */
     private int updateSelectedKeys() throws IOException {
@@ -205,7 +203,6 @@ class PollSelectorImpl extends SelectorImpl {
     protected void implClose() throws IOException {
         assert !isOpen();
         assert Thread.holdsLock(this);
-        assert Thread.holdsLock(nioKeys());
 
         // prevent further wakeup
         synchronized (interruptLock) {
@@ -215,59 +212,31 @@ class PollSelectorImpl extends SelectorImpl {
         pollArray.free();
         FileDispatcherImpl.closeIntFD(fd0);
         FileDispatcherImpl.closeIntFD(fd1);
-
-        // Deregister channels
-        Iterator<SelectionKey> i = keys.iterator();
-        while (i.hasNext()) {
-            SelectionKeyImpl ski = (SelectionKeyImpl)i.next();
-            ski.setIndex(-1);
-            deregister(ski);
-            SelectableChannel selch = ski.channel();
-            if (!selch.isOpen() && !selch.isRegistered())
-                ((SelChImpl)selch).kill();
-            i.remove();
-        }
     }
 
     @Override
     protected void implRegister(SelectionKeyImpl ski) {
         assert ski.getIndex() == 0;
-        assert Thread.holdsLock(nioKeys());
-
         ensureOpen();
-        keys.add(ski);
     }
 
     @Override
     protected void implDereg(SelectionKeyImpl ski) throws IOException {
         assert !ski.isValid();
         assert Thread.holdsLock(this);
-        assert Thread.holdsLock(nioKeys());
-        assert Thread.holdsLock(nioSelectedKeys());
 
         // remove from poll array
         int index = ski.getIndex();
         if (index > 0) {
             remove(ski);
         }
-
-        // remove from selected-key and key set
-        selectedKeys.remove(ski);
-        keys.remove(ski);
-
-        // remove from channel's key set
-        deregister(ski);
-
-        SelectableChannel selch = ski.channel();
-        if (!selch.isOpen() && !selch.isRegistered())
-            ((SelChImpl) selch).kill();
     }
 
     @Override
-    public void putEventOps(SelectionKeyImpl ski, int ops) {
+    public void putEventOps(SelectionKeyImpl ski, int events) {
         ensureOpen();
         synchronized (updateLock) {
-            updateOps.addLast(ops);   // ops first in case adding the key fails
+            updateEvents.addLast(events);  // events first in case adding key fails
             updateKeys.addLast(ski);
         }
     }
