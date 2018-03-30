@@ -25,6 +25,7 @@
  * @test
  * @bug 8141551
  * @summary C2 can not handle returns with inccompatible interface arrays
+ * @requires vm.compMode == "Xmixed" & vm.flavor == "server"
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
  * @library /test/lib /
