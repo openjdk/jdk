@@ -25,7 +25,8 @@
  * @test
  * @bug 8152974
  * @key headful
- * @summary AWT hang occurrs when sequenced events arrive out of sequence
+ * @modules java.desktop/sun.awt
+ * @summary AWT hang occurs when sequenced events arrive out of sequence
  * @run main SequencedEventTest
  */
 import sun.awt.AppContext;
@@ -84,7 +85,8 @@ public class SequencedEventTest extends JFrame implements ActionListener {
                     peekEvent(java.awt.event.FocusEvent.FOCUS_LAST + 1);
 
             if (ev != null)
-                throw new RuntimeException("Test case failed!");
+                throw new RuntimeException("Test case failed, since all the sequenced events" +
+                "are not flushed!" + ev);
         } catch (InterruptedException e) {
             throw new RuntimeException("Test case failed." + e.getMessage());
         }
@@ -163,7 +165,7 @@ public class SequencedEventTest extends JFrame implements ActionListener {
              */
             Class<? extends AWTEvent> seqClass = (Class<? extends AWTEvent>) Class.forName("java.awt.SequencedEvent");
             Constructor<? extends AWTEvent> seqConst = seqClass.getConstructor(AWTEvent.class);
-            seqConst.setAccessible(true);;
+            seqConst.setAccessible(true);
             return seqConst.newInstance(wrapMe);
         } catch (Throwable err) {
             throw new RuntimeException("Unable to instantiate SequencedEvent",err);
