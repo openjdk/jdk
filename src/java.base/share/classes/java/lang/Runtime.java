@@ -1140,7 +1140,7 @@ public class Runtime {
          * number is not the major-release number but the feature-release
          * counter, incremented for every time-based release.  Use the {@link
          * #feature()} method in preference to this method.  For compatibility,
-         * this method returns the value of the <a href="FEATURE">feature</a>
+         * this method returns the value of the <a href="#FEATURE">feature</a>
          * element.
          *
          * @return The value of the feature element
@@ -1158,7 +1158,7 @@ public class Runtime {
          * number is not the minor-release number but the interim-release
          * counter, incremented for every interim release.  Use the {@link
          * #interim()} method in preference to this method.  For compatibility,
-         * this method returns the value of the <a href="INTERIM">interim</a>
+         * this method returns the value of the <a href="#INTERIM">interim</a>
          * element, or zero if it is absent.
          *
          * @return The value of the interim element, or zero
@@ -1176,7 +1176,7 @@ public class Runtime {
          * number is not the security level but the update-release counter,
          * incremented for every update release.  Use the {@link #update()}
          * method in preference to this method.  For compatibility, this method
-         * returns the value of the <a href="UPDATE">update</a> element, or
+         * returns the value of the <a href="#UPDATE">update</a> element, or
          * zero if it is absent.
          *
          * @return  The value of the update element, or zero
@@ -1188,9 +1188,9 @@ public class Runtime {
 
         /**
          * Returns an unmodifiable {@link java.util.List List} of the integers
-         * represented in the <a href="#verNum">version number</a>.  The {@code
-         * List} always contains at least one element corresponding to the <a
-         * href="#feature">feature version number</a>.
+         * represented in the <a href="#verNum">version number</a>.
+         * The {@code List} always contains at least one element corresponding to
+         * the <a href="#FEATURE">feature version number</a>.
          *
          * @return  An unmodifiable list of the integers
          *          represented in the version number
