@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@
  * <li>Different definitions of weeks</li>
  * </ul>
  *
- * <h3>Fields and Units</h3>
+ * <h2>Fields and Units</h2>
  * <p>
  * Dates and times are expressed in terms of fields and units.
  * A unit is used to measure an amount of time, such as years, days or minutes.
@@ -106,7 +106,7 @@
  * The fields also provide access to the range of valid values.
  * </p>
  *
- * <h3>Adjustment and Query</h3>
+ * <h2>Adjustment and Query</h2>
  * <p>
  * A key part of the date-time problem space is adjusting a date to a new, related value,
  * such as the "last day of the month", or "next Wednesday".
@@ -131,7 +131,7 @@
  * Applications can also define queries by implementing {@link java.time.temporal.TemporalQuery}.
  * </p>
  *
- * <h3>Weeks</h3>
+ * <h2>Weeks</h2>
  * <p>
  * Different locales have different definitions of the week.
  * For example, in Europe the week typically starts on a Monday, while in the US it starts on a Sunday.
@@ -143,7 +143,7 @@
  * This is modeled in {@link java.time.temporal.IsoFields}.
  * </p>
  *
- * <h3>Package specification</h3>
+ * <h2>Package specification</h2>
  * <p>
  * Unless otherwise noted, passing a null argument to a constructor or method in any class or interface
  * in this package will cause a {@link java.lang.NullPointerException NullPointerException} to be thrown.

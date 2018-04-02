@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@
  * </ul>
  * <p>
  * <a id="XPath.Overview"></a>
- * <h3>1. XPath Overview</h3>
+ * <h2>1. XPath Overview</h2>
  *
  * <p>
  * The XPath language provides a simple, concise syntax for selecting
@@ -69,7 +69,7 @@
  *
  *
  * <a id="XPath.Expressions"></a>
- * <h3>2. XPath Expressions</h3>
+ * <h2>2. XPath Expressions</h2>
  *
  * <p>
  * An XPath <em>expression</em> is composed of a <em>location
@@ -211,7 +211,7 @@
  * </blockquote>
  *
  * <a id="XPath.Datatypes"></a>
- * <h3>3. XPath Data Types</h3>
+ * <h2>3. XPath Data Types</h2>
  *
  * <p>
  * While XPath expressions select nodes in the XML document, the XPath
@@ -225,7 +225,7 @@
  * </ul>
  *
  * <a id="XPath.Datatypes.QName"></a>
- * <h3>3.1 QName types</h3>
+ * <h2>3.1 QName types</h2>
  * The XPath API defines the following {@link javax.xml.namespace.QName} types to
  * represent return types of an XPath evaluation:
  * <ul>
@@ -258,7 +258,7 @@
  * of a node to a <code>double</code> data type.
  *
  * <a id="XPath.Datatypes.Class"></a>
- * <h3>3.2 Class types</h3>
+ * <h2>3.2 Class types</h2>
  * In addition to the QName types, the XPath API supports the use of Class types
  * through the <code>XPathExpression.evaluteExpression(...)</code> or
  * <code>XPath.evaluateExpression(...)</code> methods.
@@ -276,14 +276,14 @@
  * Of the subtypes of Number, only Double, Integer and Long are supported.
  *
  * <a id="XPath.Datatypes.Enum"></a>
- * <h3>3.3 Enum types</h3>
+ * <h2>3.3 Enum types</h2>
  * Enum types are defined in {@link javax.xml.xpath.XPathEvaluationResult.XPathResultType}
  * that provide mappings between the QName and Class types above. The result of
  * evaluating an expression using the <code>XPathExpression.evaluteExpression(...)</code>
  * or <code>XPath.evaluateExpression(...)</code> methods will be of one of these types.
  *
  * <a id="XPath.Context"></a>
- * <h3>4. XPath Context</h3>
+ * <h2>4. XPath Context</h2>
  *
  * <p>
  * XPath location paths may be relative to a particular node in the
@@ -301,7 +301,7 @@
  * {@link org.w3c.dom.Node} for example, in the JDK implementation.
  *
  * <a id="XPath.Use"></a>
- * <h3>5. Using the XPath API</h3>
+ * <h2>5. Using the XPath API</h2>
  *
  * Consider the following XML document:
  * <blockquote>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@
  * <li>{@link java.time.chrono.ThaiBuddhistChronology Thai Buddhist calendar}</li>
  * </ul>
  *
- * <h3>Example</h3>
+ * <h2>Example</h2>
  * <p>
  * This example lists todays date for all of the available calendars.
  * </p>
@@ -155,7 +155,7 @@
  *                 first, last);
  *  </pre>
  *
- * <h3>Package specification</h3>
+ * <h2>Package specification</h2>
  * <p>
  * Unless otherwise noted, passing a null argument to a constructor or method in any class or interface
  * in this package will cause a {@link java.lang.NullPointerException NullPointerException} to be thrown.
