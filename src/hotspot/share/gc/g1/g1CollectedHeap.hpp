@@ -79,7 +79,7 @@ class G1RemSet;
 class G1YoungRemSetSamplingThread;
 class HeapRegionRemSetIterator;
 class G1ConcurrentMark;
-class ConcurrentMarkThread;
+class G1ConcurrentMarkThread;
 class G1ConcurrentRefine;
 class GenerationCounters;
 class STWGCTimer;
@@ -766,7 +766,7 @@ private:
 
   // The concurrent marker (and the thread it runs in.)
   G1ConcurrentMark* _cm;
-  ConcurrentMarkThread* _cmThread;
+  G1ConcurrentMarkThread* _cmThread;
 
   // The concurrent refiner.
   G1ConcurrentRefine* _cr;
