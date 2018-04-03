@@ -161,13 +161,13 @@ bool Dictionary::resize_if_needed() {
 
 bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
 #ifdef ASSERT
-  if (protection_domain == instance_klass()->protection_domain()) {
+  if (oopDesc::equals(protection_domain, instance_klass()->protection_domain())) {
     // Ensure this doesn't show up in the pd_set (invariant)
     bool in_pd_set = false;
     for (ProtectionDomainEntry* current = pd_set_acquire();
                                 current != NULL;
                                 current = current->next()) {
-      if (current->object_no_keepalive() == protection_domain) {
+      if (oopDesc::equals(current->object_no_keepalive(), protection_domain)) {
         in_pd_set = true;
         break;
       }
@@ -179,7 +179,7 @@ bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
   }
 #endif /* ASSERT */
 
-  if (protection_domain == instance_klass()->protection_domain()) {
+  if (oopDesc::equals(protection_domain, instance_klass()->protection_domain())) {
     // Succeeds trivially
     return true;
   }
@@ -187,7 +187,7 @@ bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
   for (ProtectionDomainEntry* current = pd_set_acquire();
                               current != NULL;
                               current = current->next()) {
-    if (current->object_no_keepalive() == protection_domain) return true;
+    if (oopDesc::equals(current->object_no_keepalive(), protection_domain)) return true;
   }
   return false;
 }

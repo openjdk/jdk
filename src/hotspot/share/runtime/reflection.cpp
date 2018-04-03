@@ -418,7 +418,7 @@ oop Reflection::array_component_type(oop mirror, TRAPS) {
     assert(lower_dim->is_array_klass(), "just checking");
     result2 = lower_dim->java_mirror();
   }
-  assert(result == result2, "results must be consistent");
+  assert(oopDesc::equals(result, result2), "results must be consistent");
 #endif //ASSERT
   return result;
 }

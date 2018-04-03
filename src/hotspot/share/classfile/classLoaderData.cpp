@@ -201,7 +201,7 @@ class VerifyContainsOopClosure : public OopClosure {
   VerifyContainsOopClosure(oop target) : _target(target), _found(false) {}
 
   void do_oop(oop* p) {
-    if (p != NULL && *p == _target) {
+    if (p != NULL && oopDesc::equals(RawAccess<>::oop_load(p), _target)) {
       _found = true;
     }
   }
@@ -380,7 +380,7 @@ void ClassLoaderData::record_dependency(const Klass* k) {
 
     // Just return if this dependency is to a class with the same or a parent
     // class_loader.
-    if (from == to || java_lang_ClassLoader::isAncestor(from, to)) {
+    if (oopDesc::equals(from, to) || java_lang_ClassLoader::isAncestor(from, to)) {
       return; // this class loader is in the parent list, no need to add it.
     }
   }
