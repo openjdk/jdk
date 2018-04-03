@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,11 +288,20 @@ public class DirectExecutionControl implements ExecutionControl {
      * @throws ExecutionControl.InternalException for internal problems
      */
     protected String throwConvertedInvocationException(Throwable cause) throws RunException, InternalException {
-        if (cause instanceof SPIResolutionException) {
-            SPIResolutionException spire = (SPIResolutionException) cause;
-            throw new ResolutionException(spire.id(), spire.getStackTrace());
+        throw asRunException(cause);
+    }
+
+    private RunException asRunException(Throwable ex) {
+        if (ex instanceof SPIResolutionException) {
+            SPIResolutionException spire = (SPIResolutionException) ex;
+            return new ResolutionException(spire.id(), spire.getStackTrace());
         } else {
-            throw new UserException(cause.getMessage(), cause.getClass().getName(), cause.getStackTrace());
+            UserException ue = new UserException(ex.getMessage(),
+                    ex.getClass().getName(),
+                    ex.getStackTrace());
+            Throwable cause = ex.getCause();
+            ue.initCause(cause == null ? null : asRunException(cause));
+            return ue;
         }
     }
 

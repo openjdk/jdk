@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ class RemoteCodes {
      */
     static final int RESULT_INTERNAL_PROBLEM        = 103;
     /**
-     * User exception encountered.
+     * User exception encountered. Legacy and used within RESULT_USER_EXCEPTION_CHAINED
      */
     static final int RESULT_USER_EXCEPTION          = 104;
     /**
@@ -104,5 +104,9 @@ class RemoteCodes {
      * The invoke has been stopped.
      */
     static final int RESULT_STOPPED                 = 107;
-
+    /**
+     * User exception encountered.
+     * @since 11
+     */
+    static final int RESULT_USER_EXCEPTION_CHAINED  = 108;
 }
