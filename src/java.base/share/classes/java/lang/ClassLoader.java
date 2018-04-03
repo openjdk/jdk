@@ -73,7 +73,7 @@ import sun.security.util.SecurityConstants;
 /**
  * A class loader is an object that is responsible for loading classes. The
  * class {@code ClassLoader} is an abstract class.  Given the <a
- * href="#name">binary name</a> of a class, a class loader should attempt to
+ * href="#binary-name">binary name</a> of a class, a class loader should attempt to
  * locate or generate data that constitutes a definition for the class.  A
  * typical strategy is to transform the name into a file name and then read a
  * "class file" of that name from a file system.
@@ -202,7 +202,7 @@ import sun.security.util.SecurityConstants;
  *     }
  * </pre></blockquote>
  *
- * <h3> <a id="name">Binary names</a> </h3>
+ * <h3> <a id="binary-name">Binary names</a> </h3>
  *
  * <p> Any class name provided as a {@code String} parameter to methods in
  * {@code ClassLoader} must be a binary name as defined by
@@ -480,7 +480,7 @@ public abstract class ClassLoader {
     // -- Class --
 
     /**
-     * Loads the class with the specified <a href="#name">binary name</a>.
+     * Loads the class with the specified <a href="#binary-name">binary name</a>.
      * This method searches for classes in the same manner as the {@link
      * #loadClass(String, boolean)} method.  It is invoked by the Java virtual
      * machine to resolve class references.  Invoking this method is equivalent
@@ -488,7 +488,7 @@ public abstract class ClassLoader {
      * false)}.
      *
      * @param  name
-     *         The <a href="#name">binary name</a> of the class
+     *         The <a href="#binary-name">binary name</a> of the class
      *
      * @return  The resulting {@code Class} object
      *
@@ -500,7 +500,7 @@ public abstract class ClassLoader {
     }
 
     /**
-     * Loads the class with the specified <a href="#name">binary name</a>.  The
+     * Loads the class with the specified <a href="#binary-name">binary name</a>.  The
      * default implementation of this method searches for classes in the
      * following order:
      *
@@ -530,7 +530,7 @@ public abstract class ClassLoader {
      * during the entire class loading process.
      *
      * @param  name
-     *         The <a href="#name">binary name</a> of the class
+     *         The <a href="#binary-name">binary name</a> of the class
      *
      * @param  resolve
      *         If {@code true} then resolve the class
@@ -579,7 +579,7 @@ public abstract class ClassLoader {
     }
 
     /**
-     * Loads the class with the specified <a href="#name">binary name</a>
+     * Loads the class with the specified <a href="#binary-name">binary name</a>
      * in a module defined to this class loader.  This method returns {@code null}
      * if the class could not be found.
      *
@@ -598,7 +598,7 @@ public abstract class ClassLoader {
      * @param  module
      *         The module
      * @param  name
-     *         The <a href="#name">binary name</a> of the class
+     *         The <a href="#binary-name">binary name</a> of the class
      *
      * @return The resulting {@code Class} object in a module defined by
      *         this class loader, or {@code null} if the class could not be found.
@@ -674,7 +674,7 @@ public abstract class ClassLoader {
     }
 
     /**
-     * Finds the class with the specified <a href="#name">binary name</a>.
+     * Finds the class with the specified <a href="#binary-name">binary name</a>.
      * This method should be overridden by class loader implementations that
      * follow the delegation model for loading classes, and will be invoked by
      * the {@link #loadClass loadClass} method after checking the
@@ -683,7 +683,7 @@ public abstract class ClassLoader {
      * @implSpec The default implementation throws {@code ClassNotFoundException}.
      *
      * @param  name
-     *         The <a href="#name">binary name</a> of the class
+     *         The <a href="#binary-name">binary name</a> of the class
      *
      * @return  The resulting {@code Class} object
      *
@@ -697,7 +697,7 @@ public abstract class ClassLoader {
     }
 
     /**
-     * Finds the class with the given <a href="#name">binary name</a>
+     * Finds the class with the given <a href="#binary-name">binary name</a>
      * in a module defined to this class loader.
      * Class loader implementations that support the loading from modules
      * should override this method.
@@ -715,7 +715,7 @@ public abstract class ClassLoader {
      *         class loader
 
      * @param  name
-     *         The <a href="#name">binary name</a> of the class
+     *         The <a href="#binary-name">binary name</a> of the class
      *
      * @return The resulting {@code Class} object, or {@code null}
      *         if the class could not be found.
@@ -737,7 +737,7 @@ public abstract class ClassLoader {
      * Converts an array of bytes into an instance of class {@code Class}.
      * Before the {@code Class} can be used it must be resolved.  This method
      * is deprecated in favor of the version that takes a <a
-     * href="#name">binary name</a> as its first argument, and is more secure.
+     * href="#binary-name">binary name</a> as its first argument, and is more secure.
      *
      * @param  b
      *         The bytes that make up the class data.  The bytes in positions
@@ -804,12 +804,12 @@ public abstract class ClassLoader {
      * This method defines a package in this class loader corresponding to the
      * package of the {@code Class} (if such a package has not already been defined
      * in this class loader). The name of the defined package is derived from
-     * the <a href="#name">binary name</a> of the class specified by
+     * the <a href="#binary-name">binary name</a> of the class specified by
      * the byte array {@code b}.
      * Other properties of the defined package are as specified by {@link Package}.
      *
      * @param  name
-     *         The expected <a href="#name">binary name</a> of the class, or
+     *         The expected <a href="#binary-name">binary name</a> of the class, or
      *         {@code null} if not known
      *
      * @param  b
@@ -923,7 +923,7 @@ public abstract class ClassLoader {
      * package must contain the same set of certificates or a
      * {@code SecurityException} will be thrown.  Note that if
      * {@code name} is {@code null}, this check is not performed.
-     * You should always pass in the <a href="#name">binary name</a> of the
+     * You should always pass in the <a href="#binary-name">binary name</a> of the
      * class you are defining as well as the bytes.  This ensures that the
      * class you are defining is indeed the class you think it is.
      *
@@ -931,19 +931,19 @@ public abstract class ClassLoader {
      * only be defined by the {@linkplain #getPlatformClassLoader()
      * platform class loader} or its ancestors; otherwise {@code SecurityException}
      * will be thrown.  If {@code name} is not {@code null}, it must be equal to
-     * the <a href="#name">binary name</a> of the class
+     * the <a href="#binary-name">binary name</a> of the class
      * specified by the byte array {@code b}, otherwise a {@link
      * NoClassDefFoundError NoClassDefFoundError} will be thrown.
      *
      * <p> This method defines a package in this class loader corresponding to the
      * package of the {@code Class} (if such a package has not already been defined
      * in this class loader). The name of the defined package is derived from
-     * the <a href="#name">binary name</a> of the class specified by
+     * the <a href="#binary-name">binary name</a> of the class specified by
      * the byte array {@code b}.
      * Other properties of the defined package are as specified by {@link Package}.
      *
      * @param  name
-     *         The expected <a href="#name">binary name</a> of the class, or
+     *         The expected <a href="#binary-name">binary name</a> of the class, or
      *         {@code null} if not known
      *
      * @param  b
@@ -969,7 +969,7 @@ public abstract class ClassLoader {
      *
      * @throws  NoClassDefFoundError
      *          If {@code name} is not {@code null} and not equal to the
-     *          <a href="#name">binary name</a> of the class specified by {@code b}
+     *          <a href="#binary-name">binary name</a> of the class specified by {@code b}
      *
      * @throws  IndexOutOfBoundsException
      *          If either {@code off} or {@code len} is negative, or if
@@ -1027,7 +1027,7 @@ public abstract class ClassLoader {
      * </code></p>
      *
      * @param  name
-     *         The expected <a href="#name">binary name</a>. of the class, or
+     *         The expected <a href="#binary-name">binary name</a>. of the class, or
      *         {@code null} if not known
      *
      * @param  b
@@ -1047,7 +1047,7 @@ public abstract class ClassLoader {
      *
      * @throws  NoClassDefFoundError
      *          If {@code name} is not {@code null} and not equal to the
-     *          <a href="#name">binary name</a> of the class specified by {@code b}
+     *          <a href="#binary-name">binary name</a> of the class specified by {@code b}
      *
      * @throws  SecurityException
      *          If an attempt is made to add this class to a package that
@@ -1198,7 +1198,7 @@ public abstract class ClassLoader {
     }
 
     /**
-     * Finds a class with the specified <a href="#name">binary name</a>,
+     * Finds a class with the specified <a href="#binary-name">binary name</a>,
      * loading it if necessary.
      *
      * <p> This method loads the class through the system class loader (see
@@ -1209,7 +1209,7 @@ public abstract class ClassLoader {
      * #findClass(String)}.  </p>
      *
      * @param  name
-     *         The <a href="#name">binary name</a> of the class
+     *         The <a href="#binary-name">binary name</a> of the class
      *
      * @return  The {@code Class} object for the specified {@code name}
      *
@@ -1239,13 +1239,13 @@ public abstract class ClassLoader {
     private native Class<?> findBootstrapClass(String name);
 
     /**
-     * Returns the class with the given <a href="#name">binary name</a> if this
+     * Returns the class with the given <a href="#binary-name">binary name</a> if this
      * loader has been recorded by the Java virtual machine as an initiating
-     * loader of a class with that <a href="#name">binary name</a>.  Otherwise
+     * loader of a class with that <a href="#binary-name">binary name</a>.  Otherwise
      * {@code null} is returned.
      *
      * @param  name
-     *         The <a href="#name">binary name</a> of the class
+     *         The <a href="#binary-name">binary name</a> of the class
      *
      * @return  The {@code Class} object, or {@code null} if the class has
      *          not been loaded
@@ -2087,9 +2087,9 @@ public abstract class ClassLoader {
     }
 
     /**
-     * Defines a package by <a href="#name">name</a> in this {@code ClassLoader}.
+     * Defines a package by <a href="#binary-name">name</a> in this {@code ClassLoader}.
      * <p>
-     * <a href="#name">Package names</a> must be unique within a class loader and
+     * <a href="#binary-name">Package names</a> must be unique within a class loader and
      * cannot be redefined or changed once created.
      * <p>
      * If a class loader wishes to define a package with specific properties,
@@ -2123,7 +2123,7 @@ public abstract class ClassLoader {
      * in a named module may be for example sealed with different seal base.
      *
      * @param  name
-     *         The <a href="#name">package name</a>
+     *         The <a href="#binary-name">package name</a>
      *
      * @param  specTitle
      *         The specification title
@@ -2185,10 +2185,10 @@ public abstract class ClassLoader {
     }
 
     /**
-     * Returns a {@code Package} of the given <a href="#name">name</a> that
+     * Returns a {@code Package} of the given <a href="#binary-name">name</a> that
      * has been defined by this class loader.
      *
-     * @param  name The <a href="#name">package name</a>
+     * @param  name The <a href="#binary-name">package name</a>
      *
      * @return The {@code Package} of the given name that has been defined
      *         by this class loader, or {@code null} if not found
@@ -2233,7 +2233,7 @@ public abstract class ClassLoader {
     }
 
     /**
-     * Finds a package by <a href="#name">name</a> in this class loader and its ancestors.
+     * Finds a package by <a href="#binary-name">name</a> in this class loader and its ancestors.
      * <p>
      * If this class loader defines a {@code Package} of the given name,
      * the {@code Package} is returned. Otherwise, the ancestors of
@@ -2247,7 +2247,7 @@ public abstract class ClassLoader {
      * class loader.
      *
      * @param  name
-     *         The <a href="#name">package name</a>
+     *         The <a href="#binary-name">package name</a>
      *
      * @return The {@code Package} of the given name that has been defined by
      *         this class loader or its ancestors, or {@code null} if not found.
