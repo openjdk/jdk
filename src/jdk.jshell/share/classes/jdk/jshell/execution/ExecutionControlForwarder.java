@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,8 +195,7 @@ class ExecutionControlForwarder {
             flush();
             return true;
         } catch (InternalException ex) {
-            writeStatus(RESULT_INTERNAL_PROBLEM);
-            writeUTF(ex.getMessage());
+            writeInternalException(ex);
             flush();
             return true;
         } catch (ClassInstallException ex) {
@@ -206,16 +205,24 @@ class ExecutionControlForwarder {
             flush();
             return true;
         } catch (UserException ex) {
-            writeStatus(RESULT_USER_EXCEPTION);
-            writeNullOrUTF(ex.getMessage());
-            writeUTF(ex.causeExceptionClass());
-            writeObject(ex.getStackTrace());
+            writeStatus(RESULT_USER_EXCEPTION_CHAINED);
+            for (Throwable e = ex; e != null; ) {
+                if (e instanceof UserException) {
+                    writeUserException((UserException) e);
+                    e = e.getCause();
+                } else if (e instanceof ResolutionException) {
+                    writeResolutionException((ResolutionException) e);
+                    e = null;
+                } else {
+                    writeInternalException(e);
+                    e = null;
+                }
+            }
+            writeStatus(RESULT_SUCCESS);
             flush();
             return true;
         } catch (ResolutionException ex) {
-            writeStatus(RESULT_CORRALLED);
-            writeInt(ex.id());
-            writeObject(ex.getStackTrace());
+            writeResolutionException(ex);
             flush();
             return true;
         } catch (StoppedException ex) {
@@ -230,6 +237,24 @@ class ExecutionControlForwarder {
             flush();
             return false;
         }
+    }
+
+    void writeInternalException(Throwable ex) throws IOException {
+        writeStatus(RESULT_INTERNAL_PROBLEM);
+        writeUTF(ex.getMessage());
+    }
+
+    void writeUserException(UserException ex) throws IOException {
+        writeStatus(RESULT_USER_EXCEPTION);
+        writeNullOrUTF(ex.getMessage());
+        writeUTF(ex.causeExceptionClass());
+        writeObject(ex.getStackTrace());
+    }
+
+    void writeResolutionException(ResolutionException ex) throws IOException {
+        writeStatus(RESULT_CORRALLED);
+        writeInt(ex.id());
+        writeObject(ex.getStackTrace());
     }
 
     void commandLoop() {

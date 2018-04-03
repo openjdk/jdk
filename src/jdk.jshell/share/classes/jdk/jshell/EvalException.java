@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,10 @@
 package jdk.jshell;
 
 /**
- * Wraps an exception thrown in the remotely executing client.
+ * Wraps an throwable thrown in the executing client.
  * An instance of <code>EvalException</code> can be returned in the
  * {@link jdk.jshell.SnippetEvent#exception()} query.
- * The name of the exception thrown is available from
+ * The name of the throwable thrown is available from
  * {@link jdk.jshell.EvalException#getExceptionClassName()}.
  * Message and stack can be queried by methods on <code>Exception</code>.
  * <p>
@@ -45,8 +45,9 @@ package jdk.jshell;
 public class EvalException extends JShellException {
     private final String exceptionClass;
 
-    EvalException(String message, String exceptionClass, StackTraceElement[] stackElements) {
-        super(message);
+    EvalException(String message, String exceptionClass,
+            StackTraceElement[] stackElements, JShellException cause) {
+        super(message, cause);
         this.exceptionClass = exceptionClass;
         this.setStackTrace(stackElements);
     }
@@ -63,4 +64,18 @@ public class EvalException extends JShellException {
         return exceptionClass;
     }
 
+    /**
+     * Returns the wrapped cause of the throwable in the executing client
+     * represented by this {@code EvalException} or {@code null} if the cause is
+     * nonexistent or unknown.
+     *
+     * @return the cause wrapped in a {@code EvalException} or
+     * {@link UnresolvedReferenceException} or return {@code null} if the cause
+     * is nonexistent or unknown.
+     * @since 11
+     */
+    @Override
+    public JShellException getCause() {
+        return (JShellException) super.getCause();
+    }
 }
