@@ -26,10 +26,10 @@
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/symbolTable.hpp"
 #include "code/codeCache.hpp"
-#include "gc/g1/concurrentMarkThread.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
+#include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
@@ -398,7 +398,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _mark_bitmap_2.initialize(g1h->reserved_region(), next_bitmap_storage);
 
   // Create & start ConcurrentMark thread.
-  _cm_thread = new ConcurrentMarkThread(this);
+  _cm_thread = new G1ConcurrentMarkThread(this);
   if (_cm_thread->osthread() == NULL) {
     vm_shutdown_during_initialization("Could not create ConcurrentMarkThread");
   }
@@ -824,6 +824,7 @@ void G1ConcurrentMark::enter_second_sync_barrier(uint worker_id) {
 
 class G1CMConcurrentMarkingTask : public AbstractGangTask {
   G1ConcurrentMark*     _cm;
+
 public:
   void work(uint worker_id) {
     assert(Thread::current()->is_ConcurrentGC_thread(), "Not a concurrent GC thread");

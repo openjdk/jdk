@@ -24,10 +24,10 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "gc/g1/concurrentMarkThread.inline.hpp"
 #include "gc/g1/g1Analytics.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
+#include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1MMUTracker.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
@@ -75,7 +75,7 @@ public:
 
 // The CM thread is created when the G1 garbage collector is used
 
-ConcurrentMarkThread::ConcurrentMarkThread(G1ConcurrentMark* cm) :
+G1ConcurrentMarkThread::G1ConcurrentMarkThread(G1ConcurrentMark* cm) :
   ConcurrentGCThread(),
   _cm(cm),
   _state(Idle),
@@ -107,7 +107,7 @@ public:
   }
 };
 
-double ConcurrentMarkThread::mmu_sleep_time(G1Policy* g1_policy, bool remark) {
+double G1ConcurrentMarkThread::mmu_sleep_time(G1Policy* g1_policy, bool remark) {
   // There are 3 reasons to use SuspendibleThreadSetJoiner.
   // 1. To avoid concurrency problem.
   //    - G1MMUTracker::add_pause(), when_sec() and its variation(when_ms() etc..) can be called
@@ -126,7 +126,7 @@ double ConcurrentMarkThread::mmu_sleep_time(G1Policy* g1_policy, bool remark) {
   return mmu_tracker->when_ms(now, prediction_ms);
 }
 
-void ConcurrentMarkThread::delay_to_keep_mmu(G1Policy* g1_policy, bool remark) {
+void G1ConcurrentMarkThread::delay_to_keep_mmu(G1Policy* g1_policy, bool remark) {
   if (g1_policy->adaptive_young_list_length()) {
     jlong sleep_time_ms = mmu_sleep_time(g1_policy, remark);
     if (!_cm->has_aborted() && sleep_time_ms > 0) {
@@ -194,7 +194,7 @@ class G1ConcPhaseManager : public StackObj {
   ConcurrentGCPhaseManager _manager;
 
 public:
-  G1ConcPhaseManager(int phase, ConcurrentMarkThread* thread) :
+  G1ConcPhaseManager(int phase, G1ConcurrentMarkThread* thread) :
     _cm(thread->cm()),
     _manager(phase, thread->phase_manager_stack())
   { }
@@ -218,17 +218,17 @@ class G1ConcPhase : public StackObj {
   G1ConcPhaseManager _manager;
 
 public:
-  G1ConcPhase(int phase, ConcurrentMarkThread* thread) :
+  G1ConcPhase(int phase, G1ConcurrentMarkThread* thread) :
     _timer(thread->cm(), lookup_concurrent_phase_title(phase)),
     _manager(phase, thread)
   { }
 };
 
-const char* const* ConcurrentMarkThread::concurrent_phases() const {
+const char* const* G1ConcurrentMarkThread::concurrent_phases() const {
   return concurrent_phase_names;
 }
 
-bool ConcurrentMarkThread::request_concurrent_phase(const char* phase_name) {
+bool G1ConcurrentMarkThread::request_concurrent_phase(const char* phase_name) {
   int phase = lookup_concurrent_phase(phase_name);
   if (phase < 0) return false;
 
@@ -243,7 +243,7 @@ bool ConcurrentMarkThread::request_concurrent_phase(const char* phase_name) {
   return true;
 }
 
-void ConcurrentMarkThread::run_service() {
+void G1ConcurrentMarkThread::run_service() {
   _vtime_start = os::elapsedVTime();
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
@@ -397,12 +397,13 @@ void ConcurrentMarkThread::run_service() {
   _cm->root_regions()->cancel_scan();
 }
 
-void ConcurrentMarkThread::stop_service() {
+void G1ConcurrentMarkThread::stop_service() {
   MutexLockerEx ml(CGC_lock, Mutex::_no_safepoint_check_flag);
   CGC_lock->notify_all();
 }
 
-void ConcurrentMarkThread::sleep_before_next_cycle() {
+
+void G1ConcurrentMarkThread::sleep_before_next_cycle() {
   // We join here because we don't want to do the "shouldConcurrentMark()"
   // below while the world is otherwise stopped.
   assert(!in_progress(), "should have been cleared");
