@@ -597,8 +597,9 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_LD_VERSION],
 
     # solstudio cc requires us to have an existing file to pass as argument,
     # but it need not be a syntactically correct C file, so just use
-    # ourself. :)
-    LINKER_VERSION_STRING=`$LD -Wl,-V $TOPDIR/configure 2>&1 | $HEAD -n 1 | $SED -e 's/ld: //'`
+    # ourself. :) The intermediate 'cat' is needed to stop ld from leaving
+    # a lingering a.out (!).
+    LINKER_VERSION_STRING=`$LD -Wl,-V $TOPDIR/configure 2>&1 | $CAT | $HEAD -n 1 | $SED -e 's/ld: //'`
     # Extract version number
     [ LINKER_VERSION_NUMBER=`$ECHO $LINKER_VERSION_STRING | \
         $SED -e 's/.* \([0-9][0-9]*\.[0-9][0-9]*\)-\([0-9][0-9]*\.[0-9][0-9]*\)/\1.\2/'` ]
