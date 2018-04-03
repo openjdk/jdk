@@ -872,7 +872,7 @@ void java_lang_Class::set_mirror_module_field(Klass* k, Handle mirror, Handle mo
   } else {
     assert(Universe::is_module_initialized() ||
            (ModuleEntryTable::javabase_defined() &&
-            (module() == ModuleEntryTable::javabase_moduleEntry()->module())),
+            (oopDesc::equals(module(), ModuleEntryTable::javabase_moduleEntry()->module()))),
            "Incorrect java.lang.Module specification while creating mirror");
     set_module(mirror(), module());
   }
@@ -949,7 +949,7 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
     }
 
     // set the classLoader field in the java_lang_Class instance
-    assert(class_loader() == k->class_loader(), "should be same");
+    assert(oopDesc::equals(class_loader(), k->class_loader()), "should be same");
     set_class_loader(mirror(), class_loader());
 
     // Setup indirection from klass->mirror
@@ -1463,9 +1463,9 @@ BasicType java_lang_Class::primitive_type(oop java_class) {
     // Note: create_basic_type_mirror above initializes ak to a non-null value.
     type = ArrayKlass::cast(ak)->element_type();
   } else {
-    assert(java_class == Universe::void_mirror(), "only valid non-array primitive");
+    assert(oopDesc::equals(java_class, Universe::void_mirror()), "only valid non-array primitive");
   }
-  assert(Universe::java_mirror(type) == java_class, "must be consistent");
+  assert(oopDesc::equals(Universe::java_mirror(type), java_class), "must be consistent");
   return type;
 }
 
@@ -3838,14 +3838,14 @@ Symbol* java_lang_invoke_MethodType::as_signature(oop mt, bool intern_if_not_fou
 }
 
 bool java_lang_invoke_MethodType::equals(oop mt1, oop mt2) {
-  if (mt1 == mt2)
+  if (oopDesc::equals(mt1, mt2))
     return true;
-  if (rtype(mt1) != rtype(mt2))
+  if (!oopDesc::equals(rtype(mt1), rtype(mt2)))
     return false;
   if (ptype_count(mt1) != ptype_count(mt2))
     return false;
   for (int i = ptype_count(mt1) - 1; i >= 0; i--) {
-    if (ptype(mt1, i) != ptype(mt2, i))
+    if (!oopDesc::equals(ptype(mt1, i), ptype(mt2, i)))
       return false;
   }
   return true;
@@ -4043,7 +4043,7 @@ bool java_lang_ClassLoader::isAncestor(oop loader, oop cl) {
   // This loop taken verbatim from ClassLoader.java:
   do {
     acl = parent(acl);
-    if (cl == acl) {
+    if (oopDesc::equals(cl, acl)) {
       return true;
     }
     assert(++loop_count > 0, "loop_count overflow");
@@ -4073,7 +4073,7 @@ bool java_lang_ClassLoader::is_trusted_loader(oop loader) {
 
   oop cl = SystemDictionary::java_system_loader();
   while(cl != NULL) {
-    if (cl == loader) return true;
+    if (oopDesc::equals(cl, loader)) return true;
     cl = parent(cl);
   }
   return false;

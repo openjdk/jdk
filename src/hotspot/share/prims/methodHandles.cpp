@@ -972,7 +972,7 @@ int MethodHandles::find_MemberNames(Klass* k,
         if (!java_lang_invoke_MemberName::is_instance(result()))
           return -99;  // caller bug!
         oop saved = MethodHandles::init_field_MemberName(result, st.field_descriptor());
-        if (saved != result())
+        if (!oopDesc::equals(saved, result()))
           results->obj_at_put(rfill-1, saved);  // show saved instance to user
       } else if (++overflow >= overflow_limit) {
         match_flags = 0; break; // got tired of looking at overflow
@@ -1024,7 +1024,7 @@ int MethodHandles::find_MemberNames(Klass* k,
           return -99;  // caller bug!
         CallInfo info(m, NULL, CHECK_0);
         oop saved = MethodHandles::init_method_MemberName(result, info);
-        if (saved != result())
+        if (!oopDesc::equals(saved, result()))
           results->obj_at_put(rfill-1, saved);  // show saved instance to user
       } else if (++overflow >= overflow_limit) {
         match_flags = 0; break; // got tired of looking at overflow

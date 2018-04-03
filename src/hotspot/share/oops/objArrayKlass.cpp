@@ -220,7 +220,7 @@ oop ObjArrayKlass::multi_allocate(int rank, jint* sizes, TRAPS) {
 // Either oop or narrowOop depending on UseCompressedOops.
 template <class T> void ObjArrayKlass::do_copy(arrayOop s, T* src,
                                arrayOop d, T* dst, int length, TRAPS) {
-  if (s == d) {
+  if (oopDesc::equals(s, d)) {
     // since source and destination are equal we do not need conversion checks.
     assert(length > 0, "sanity check");
     HeapAccess<>::oop_arraycopy(s, d, src, dst, length);
