@@ -41,6 +41,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/align.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "vm_version_x86.hpp"
 #include "vmreg_x86.inline.hpp"
 #ifdef COMPILER1
