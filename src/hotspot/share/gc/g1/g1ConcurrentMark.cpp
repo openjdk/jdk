@@ -2826,6 +2826,8 @@ G1CMTask::G1CMTask(uint worker_id,
 // For per-region info
 #define G1PPRL_TYPE_FORMAT            "   %-4s"
 #define G1PPRL_TYPE_H_FORMAT          "   %4s"
+#define G1PPRL_STATE_FORMAT           "   %-5s"
+#define G1PPRL_STATE_H_FORMAT         "   %5s"
 #define G1PPRL_BYTE_FORMAT            "  " SIZE_FORMAT_W(9)
 #define G1PPRL_BYTE_H_FORMAT          "  %9s"
 #define G1PPRL_DOUBLE_FORMAT          "  %14.1f"
@@ -2862,10 +2864,11 @@ G1PrintRegionLivenessInfoClosure::G1PrintRegionLivenessInfoClosure(const char* p
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_DOUBLE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
+                          G1PPRL_STATE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT,
                           "type", "address-range",
                           "used", "prev-live", "next-live", "gc-eff",
-                          "remset", "code-roots");
+                          "remset", "state", "code-roots");
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
                           G1PPRL_TYPE_H_FORMAT
                           G1PPRL_ADDR_BASE_H_FORMAT
@@ -2874,10 +2877,11 @@ G1PrintRegionLivenessInfoClosure::G1PrintRegionLivenessInfoClosure(const char* p
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_DOUBLE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
+                          G1PPRL_STATE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT,
                           "", "",
                           "(bytes)", "(bytes)", "(bytes)", "(bytes/ms)",
-                          "(bytes)", "(bytes)");
+                          "(bytes)", "", "(bytes)");
 }
 
 bool G1PrintRegionLivenessInfoClosure::do_heap_region(HeapRegion* r) {
@@ -2891,6 +2895,7 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(HeapRegion* r) {
   double gc_eff          = r->gc_efficiency();
   size_t remset_bytes    = r->rem_set()->mem_size();
   size_t strong_code_roots_bytes = r->rem_set()->strong_code_roots_mem_size();
+  const char* remset_type = r->rem_set()->get_short_state_str();
 
   _total_used_bytes      += used_bytes;
   _total_capacity_bytes  += capacity_bytes;
@@ -2908,10 +2913,11 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(HeapRegion* r) {
                           G1PPRL_BYTE_FORMAT
                           G1PPRL_DOUBLE_FORMAT
                           G1PPRL_BYTE_FORMAT
+                          G1PPRL_STATE_FORMAT
                           G1PPRL_BYTE_FORMAT,
                           type, p2i(bottom), p2i(end),
                           used_bytes, prev_live_bytes, next_live_bytes, gc_eff,
-                          remset_bytes, strong_code_roots_bytes);
+                          remset_bytes, remset_type, strong_code_roots_bytes);
 
   return false;
 }

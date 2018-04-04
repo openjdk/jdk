@@ -40,6 +40,7 @@
 #include "utilities/growableArray.hpp"
 
 const char* HeapRegionRemSet::_state_strings[] =  {"Untracked", "Updating", "Complete"};
+const char* HeapRegionRemSet::_short_state_strings[] =  {"UNTRA", "UPDAT", "CMPLT"};
 
 class PerRegionTable: public CHeapObj<mtGC> {
   friend class OtherRegionsTable;
