@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -369,30 +369,6 @@ class AppletSecurity extends AWTSecurityManager {
             }
         }
     }
-
-    /**
-     * Tests if a client can get access to the AWT event queue.
-     * <p>
-     * This method calls {@code checkPermission} with the
-     * {@code AWTPermission("accessEventQueue")} permission.
-     *
-     * @since   1.1
-     * @exception  SecurityException  if the caller does not have
-     *             permission to access the AWT event queue.
-     */
-    @SuppressWarnings({"deprecation",
-                       "removal"}) //  SecurityManager.checkAwtEventQueueAccess
-    public void checkAwtEventQueueAccess() {
-        AppContext appContext = AppContext.getAppContext();
-        AppletClassLoader appletClassLoader = currentAppletClassLoader();
-
-        if (AppContext.isMainContext(appContext) && (appletClassLoader != null)) {
-            // If we're about to allow access to the main EventQueue,
-            // and anything untrusted is on the class context stack,
-            // disallow access.
-            super.checkPermission(AWTPermissions.CHECK_AWT_EVENTQUEUE_PERMISSION);
-        }
-    } // checkAwtEventQueueAccess()
 
     /**
      * Returns the thread group of the applet. We consult the classloader
