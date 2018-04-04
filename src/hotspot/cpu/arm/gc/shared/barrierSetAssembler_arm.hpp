@@ -32,7 +32,7 @@
 class BarrierSetAssembler: public CHeapObj<mtGC> {
 public:
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
-                                  Register addr, Register count, , int callee_saved_regs) {}
+                                  Register addr, Register count, int callee_saved_regs) {}
   virtual void arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
                                   Register addr, Register count, Register tmp) {}
 };

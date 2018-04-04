@@ -44,6 +44,7 @@
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                                     Register addr, Register count, Register tmp) {
   BLOCK_COMMENT("CardTablePostBarrier");
+  BarrierSet* bs = Universe::heap()->barrier_set();
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
   assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
