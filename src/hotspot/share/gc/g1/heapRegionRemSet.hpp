@@ -224,9 +224,11 @@ private:
   RemSetState _state;
 
   static const char* _state_strings[];
+  static const char* _short_state_strings[];
 public:
 
   const char* get_state_str() const { return _state_strings[_state]; }
+  const char* get_short_state_str() const { return _short_state_strings[_state]; }
 
   bool is_tracked() { return _state != Untracked; }
   bool is_updating() { return _state == Updating; }
