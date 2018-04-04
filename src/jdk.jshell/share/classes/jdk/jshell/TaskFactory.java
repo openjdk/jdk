@@ -167,7 +167,7 @@ class TaskFactory {
         WrapSourceHandler sh = new WrapSourceHandler();
         List<String> allOptions = new ArrayList<>();
 
-        allOptions.add("--should-stop:at=FLOW");
+        allOptions.add("--should-stop=at=FLOW");
         allOptions.add("-Xlint:unchecked");
         allOptions.add("-proc:none");
         allOptions.addAll(extraArgs);

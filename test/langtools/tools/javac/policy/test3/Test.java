@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 import java.io.*;
 import java.util.*;
 
-// Simple test of --should-stop:at.
+// Simple test of --should-stop=at.
 // For each of the permissable values, we compile a file with an error in it,
 // then using -XDverboseCompilePolicy we check that the compilation gets as
 // far as expected, but no further.
@@ -83,7 +83,7 @@ public class Test {
         args.add("-d");
         args.add(".");
         if (ssp.needOption)
-            args.add("--should-stop:at=" + ssp);
+            args.add("--should-stop=at=" + ssp);
         args.add(new File(System.getProperty("test.src", "."), "A.java").getPath());
 
         StringWriter sw = new StringWriter();
