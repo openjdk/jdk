@@ -114,7 +114,7 @@
 #include "utilities/vmError.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc/cms/concurrentMarkSweepThread.hpp"
-#include "gc/g1/concurrentMarkThread.inline.hpp"
+#include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/parallel/pcTasks.hpp"
 #endif // INCLUDE_ALL_GCS
 #if INCLUDE_JVMCI
