@@ -993,6 +993,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           -I$(TOPDIR)/src/java.base/share/native/libjava \
           -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjava \
           -I$(SUPPORT_OUTPUTDIR)/headers/java.desktop,  \
+      DISABLED_WARNINGS_clang := deprecated-declarations, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN) \
           -Wl$(COMMA)-rpath$(COMMA)@loader_path \
