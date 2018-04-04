@@ -1011,29 +1011,13 @@ class JarFile extends ZipFile {
                     int i = match(MULTIRELEASE_CHARS, b, MULTIRELEASE_LASTOCC,
                             MULTIRELEASE_OPTOSFT);
                     if (i != -1) {
-                        i += MULTIRELEASE_CHARS.length;
-                        if (i < b.length) {
-                            byte c = b[i++];
-                            // Check that the value is followed by a newline
-                            // and does not have a continuation
-                            if (c == '\n' &&
-                                    (i == b.length || b[i] != ' ')) {
-                                isMultiRelease = true;
-                            } else if (c == '\r') {
-                                if (i == b.length) {
-                                    isMultiRelease = true;
-                                } else {
-                                    c = b[i++];
-                                    if (c == '\n') {
-                                        if (i == b.length || b[i] != ' ') {
-                                            isMultiRelease = true;
-                                        }
-                                    } else if (c != ' ') {
-                                        isMultiRelease = true;
-                                    }
-                                }
-                            }
-                        }
+                        // Read the main attributes of the manifest
+                        byte[] lbuf = new byte[512];
+                        Attributes attr = new Attributes();
+                        attr.read(new Manifest.FastInputStream(
+                            new ByteArrayInputStream(b)), lbuf);
+                        isMultiRelease = Boolean.parseBoolean(
+                            attr.getValue(Attributes.Name.MULTI_RELEASE));
                     }
                 }
             }
