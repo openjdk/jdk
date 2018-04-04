@@ -589,14 +589,12 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // perform cleanup tasks serially in the VMThread.
   virtual WorkGang* get_safepoint_workers() { return NULL; }
 
-  // Support for object pinning. This is used by JNI's Get*Critical() and
-  // Release*Critical() family of functions. A GC may either use the GCLocker
-  // protocol to ensure no critical arrays are in-use when entering
-  // a GC pause, or it can implement pinning, which must guarantee that
-  // the object does not move while pinned.
-  virtual oop pin_object(JavaThread* thread, oop o);
-
-  virtual void unpin_object(JavaThread* thread, oop o);
+  // Support for object pinning. This is used by JNI Get*Critical()
+  // and Release*Critical() family of functions. If supported, the GC
+  // must guarantee that pinned objects never move.
+  virtual bool supports_object_pinning() const;
+  virtual oop pin_object(JavaThread* thread, oop obj);
+  virtual void unpin_object(JavaThread* thread, oop obj);
 
   // Non product verification and debugging.
 #ifndef PRODUCT
