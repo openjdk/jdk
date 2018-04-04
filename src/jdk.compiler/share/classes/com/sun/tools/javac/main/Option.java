@@ -520,24 +520,24 @@ public enum Option {
 
     XDIAGS("-Xdiags:", "opt.diags", EXTENDED, BASIC, ONEOF, "compact", "verbose"),
 
-    DEBUG("--debug:", null, HIDDEN, BASIC) {
+    DEBUG("--debug", null, HIDDEN, BASIC, ArgKind.REQUIRED) {
         @Override
-        public void process(OptionHelper helper, String option) throws InvalidValueException {
-            HiddenGroup.DEBUG.process(helper, option);
+        public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
+            HiddenGroup.DEBUG.process(helper, option, arg);
         }
     },
 
-    SHOULDSTOP("--should-stop:", null, HIDDEN, BASIC) {
+    SHOULDSTOP("--should-stop", null, HIDDEN, BASIC, ArgKind.REQUIRED) {
         @Override
-        public void process(OptionHelper helper, String option) throws InvalidValueException {
-            HiddenGroup.SHOULDSTOP.process(helper, option);
+        public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
+            HiddenGroup.SHOULDSTOP.process(helper, option, arg);
         }
     },
 
-    DIAGS("--diags:", null, HIDDEN, BASIC) {
+    DIAGS("--diags", null, HIDDEN, BASIC, ArgKind.REQUIRED) {
         @Override
-        public void process(OptionHelper helper, String option) throws InvalidValueException {
-            HiddenGroup.DIAGS.process(helper, option);
+        public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
+            HiddenGroup.DIAGS.process(helper, option, arg);
         }
     },
 
@@ -846,26 +846,18 @@ public enum Option {
         DEBUG("debug"),
         SHOULDSTOP("should-stop");
 
-        static final Set<String> skipSet = new java.util.HashSet<>(
-                Arrays.asList("--diags:", "--debug:", "--should-stop:"));
-
         final String text;
 
         HiddenGroup(String text) {
             this.text = text;
         }
 
-        public void process(OptionHelper helper, String option) throws InvalidValueException {
-            String p = option.substring(option.indexOf(':') + 1).trim();
-            String[] subOptions = p.split(";");
+        public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
+            String[] subOptions = arg.split(";");
             for (String subOption : subOptions) {
                 subOption = text + "." + subOption.trim();
                 XD.process(helper, subOption, subOption);
             }
-        }
-
-        static boolean skip(String name) {
-            return skipSet.contains(name);
         }
     }
 
@@ -957,6 +949,11 @@ public enum Option {
         this(text, null, descrKey, kind, group, null, null, ArgKind.NONE);
     }
 
+    Option(String text, String descrKey,
+            OptionKind kind, OptionGroup group, ArgKind argKind) {
+        this(text, null, descrKey, kind, group, null, null, argKind);
+    }
+
     Option(String text, String argsNameKey, String descrKey,
             OptionKind kind, OptionGroup group) {
         this(text, argsNameKey, descrKey, kind, group, null, null, ArgKind.REQUIRED);
@@ -1025,7 +1022,7 @@ public enum Option {
     }
 
     private boolean matches(String option, String name) {
-        if (name.startsWith("--") && !HiddenGroup.skip(name)) {
+        if (name.startsWith("--")) {
             return option.equals(name)
                     || hasArg() && option.startsWith(name + "=");
         }

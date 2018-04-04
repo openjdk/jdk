@@ -81,6 +81,7 @@ import jdk.jshell.ExpressionSnippet;
 import jdk.jshell.ImportSnippet;
 import jdk.jshell.JShell;
 import jdk.jshell.JShell.Subscription;
+import jdk.jshell.JShellException;
 import jdk.jshell.MethodSnippet;
 import jdk.jshell.Snippet;
 import jdk.jshell.Snippet.Kind;
@@ -3357,20 +3358,60 @@ public class JShellTool implements MessageHandler {
     /**
      * Print out a snippet exception.
      *
-     * @param exception the exception to print
+     * @param exception the throwable to print
      * @return true on fatal exception
      */
-    private boolean displayException(Exception exception) {
-        if (exception instanceof EvalException) {
-            printEvalException((EvalException) exception);
-            return true;
-        } else if (exception instanceof UnresolvedReferenceException) {
-            printUnresolvedException((UnresolvedReferenceException) exception);
-            return false;
+    private boolean displayException(Throwable exception) {
+        Throwable rootCause = exception;
+        while (rootCause instanceof EvalException) {
+            rootCause = rootCause.getCause();
+        }
+        if (rootCause != exception && rootCause instanceof UnresolvedReferenceException) {
+            // An unresolved reference caused a chained exception, just show the unresolved
+            return displayException(rootCause, null);
         } else {
+            return displayException(exception, null);
+        }
+    }
+    //where
+    private boolean displayException(Throwable exception, StackTraceElement[] caused) {
+        if (exception instanceof EvalException) {
+            // User exception
+            return displayEvalException((EvalException) exception, caused);
+        } else if (exception instanceof UnresolvedReferenceException) {
+            // Reference to an undefined snippet
+            return displayUnresolvedException((UnresolvedReferenceException) exception);
+        } else {
+            // Should never occur
             error("Unexpected execution exception: %s", exception);
             return true;
         }
+    }
+    //where
+    private boolean displayUnresolvedException(UnresolvedReferenceException ex) {
+        // Display the resolution issue
+        printSnippetStatus(ex.getSnippet(), false);
+        return false;
+    }
+
+    //where
+    private boolean displayEvalException(EvalException ex, StackTraceElement[] caused) {
+        // The message for the user exception is configured based on the
+        // existance of an exception message and if this is a recursive
+        // invocation for a chained exception.
+        String msg = ex.getMessage();
+        String key = "jshell.err.exception" +
+                (caused == null? ".thrown" : ".cause") +
+                (msg == null? "" : ".message");
+        errormsg(key, ex.getExceptionClassName(), msg);
+        // The caused trace is sent to truncate duplicate elements in the cause trace
+        printStackTrace(ex.getStackTrace(), caused);
+        JShellException cause = ex.getCause();
+        if (cause != null) {
+            // Display the cause (recursively)
+            displayException(cause, ex.getStackTrace());
+        }
+        return true;
     }
 
     /**
@@ -3518,9 +3559,19 @@ public class JShellTool implements MessageHandler {
         }
         return false;
     }
-    //where
-    void printStackTrace(StackTraceElement[] stes) {
-        for (StackTraceElement ste : stes) {
+
+    // Print a stack trace, elide frames displayed for the caused exception
+    void printStackTrace(StackTraceElement[] stes, StackTraceElement[] caused) {
+        int overlap = 0;
+        if (caused != null) {
+            int maxOverlap = Math.min(stes.length, caused.length);
+            while (overlap < maxOverlap
+                    && stes[stes.length - (overlap + 1)].equals(caused[caused.length - (overlap + 1)])) {
+                ++overlap;
+            }
+        }
+        for (int i = 0; i < stes.length - overlap; ++i) {
+            StackTraceElement ste = stes[i];
             StringBuilder sb = new StringBuilder();
             String cn = ste.getClassName();
             if (!cn.isEmpty()) {
@@ -3548,19 +3599,9 @@ public class JShellTool implements MessageHandler {
             error("      at %s(%s)", sb, loc);
 
         }
-    }
-    //where
-    void printUnresolvedException(UnresolvedReferenceException ex) {
-        printSnippetStatus(ex.getSnippet(), false);
-    }
-    //where
-    void printEvalException(EvalException ex) {
-        if (ex.getMessage() == null) {
-            error("%s thrown", ex.getExceptionClassName());
-        } else {
-            error("%s thrown: %s", ex.getExceptionClassName(), ex.getMessage());
+        if (overlap != 0) {
+            error("      ...");
         }
-        printStackTrace(ex.getStackTrace());
     }
 
     private FormatAction toAction(Status status, Status previousStatus, boolean isSignatureChange) {

@@ -3,8 +3,8 @@
  * @bug     6722234 8078024
  * @summary javac diagnostics need better integration with the type-system
  * @author  mcimadamore
- * @compile/fail/ref=T6722234d_1.out -XDrawDiagnostics --diags:formatterOptions=where T6722234d.java
- * @compile/fail/ref=T6722234d_2.out -XDrawDiagnostics --diags:formatterOptions=where,simpleNames T6722234d.java
+ * @compile/fail/ref=T6722234d_1.out -XDrawDiagnostics --diags=formatterOptions=where T6722234d.java
+ * @compile/fail/ref=T6722234d_2.out -XDrawDiagnostics --diags=formatterOptions=where,simpleNames T6722234d.java
  */
 
 class T6722234d {

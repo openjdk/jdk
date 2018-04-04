@@ -292,8 +292,7 @@ define SetupCompileNativeFileBody
     endif
 
     ifneq ($$(strip $$($1_CFLAGS) $$($1_CXXFLAGS) $$($1_OPTIMIZATION)), )
-      $1_VARDEPS := $$($1_CFLAGS) $$($1_CXXFLAGS) $$($1_OPT_CFLAGS) \
-          $$($1_OPT_CXXFLAGS)
+      $1_VARDEPS := $$($1_CFLAGS) $$($1_CXXFLAGS) $$($1_OPTIMIZATION)
       $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, $$($1_OBJ).vardeps)
     endif
 

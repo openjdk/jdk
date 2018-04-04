@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ public class JavacOptionPrep {
 
             // Ignore this option for now. When the file=... requirement goes
             // away, this will be easier to handle.
-            if (option.startsWith("--debug:completionDeps"))
+            if (option.startsWith("--debug=completionDeps"))
                 continue;
 
             switch (option) {
