@@ -2877,7 +2877,7 @@ class StubGenerator: public StubCodeGenerator {
     // 'to' is the beginning of the region
 
     BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->arraycopy_epilogue(this, decorators, true, to, count, tmp);
+    bs->arraycopy_epilogue(_masm, decorators, true, to, count, tmp);
 
     if (status) {
       __ mov(R0, 0); // OK
@@ -2954,7 +2954,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->arraycopy_prologue(this, decorators, true, to, count, callee_saved_regs);
+    bs->arraycopy_prologue(_masm, decorators, true, to, count, callee_saved_regs);
 
     // save arguments for barrier generation (after the pre barrier)
     __ mov(saved_count, count);
@@ -3220,7 +3220,7 @@ class StubGenerator: public StubCodeGenerator {
     DecoratorSet decorators = ARRAYCOPY_CHECKCAST;
 
     BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->arraycopy_prologue(this, decorators, true, to, count, callee_saved_regs);
+    bs->arraycopy_prologue(_masm, decorators, true, to, count, callee_saved_regs);
 
 #ifndef AARCH64
     const RegisterSet caller_saved_regs = RegisterSet(R4,R6) | RegisterSet(R8,R9) | altFP_7_11;
@@ -3298,7 +3298,7 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(to, to, AsmOperand(copied, lsl, LogBytesPerHeapOop)); // initial to value
     __ mov(R12, copied); // count arg scratched by post barrier
 
-    bs->arraycopy_epilogue(this, decorators, true, to, R12, R3);
+    bs->arraycopy_epilogue(_masm, decorators, true, to, R12, R3);
 
     assert_different_registers(R3,R12,LR,copied,saved_count);
     inc_counter_np(SharedRuntime::_checkcast_array_copy_ctr, R3, R12);
