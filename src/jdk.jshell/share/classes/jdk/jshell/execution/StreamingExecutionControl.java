@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,18 +283,46 @@ public class StreamingExecutionControl implements ExecutionControl {
                     throw new NotImplementedException(message);
                 }
                 case RESULT_USER_EXCEPTION: {
-                    // A user exception was encountered.
-                    String message = readNullOrUTF();
-                    String exceptionClassName = in.readUTF();
-                    StackTraceElement[] elems = (StackTraceElement[]) in.readObject();
-                    throw new UserException(message, exceptionClassName, elems);
+                    // A user exception was encountered.  Handle pre JDK 11 back-ends
+                    throw readUserException();
                 }
                 case RESULT_CORRALLED: {
                     // An unresolved reference was encountered.
-                    int id = in.readInt();
-                    StackTraceElement[] elems = (StackTraceElement[]) in.readObject();
-                    ResolutionException re = new ResolutionException(id, elems);
-                    throw re;
+                    throw readResolutionException();
+                }
+                case RESULT_USER_EXCEPTION_CHAINED: {
+                    // A user exception was encountered -- transmit chained.
+                    in.readInt(); // always RESULT_USER_EXCEPTION
+                    UserException result = readUserException();
+                    RunException caused = result;
+                    // Loop through the chained causes (if any) building a chained exception
+                    loop: while (true) {
+                        RunException ex;
+                        int cstatus = in.readInt();
+                        switch (cstatus) {
+                            case RESULT_USER_EXCEPTION: {
+                                // A user exception was the proximal cause.
+                                ex = readUserException();
+                                break;
+                            }
+                            case RESULT_CORRALLED: {
+                                // An unresolved reference was the underlying cause.
+                                ex = readResolutionException();
+                                break;
+                            }
+                            case RESULT_SUCCESS: {
+                                // End of chained exceptions
+                                break loop;
+                            }
+                            default: {
+                                throw new EngineTerminationException("Bad chained remote result code: " + cstatus);
+                            }
+                        }
+                        caused.initCause(ex);
+                        caused = ex;
+                    }
+                    caused.initCause(null); // root cause has no cause
+                    throw result;
                 }
                 case RESULT_STOPPED: {
                     // Execution was aborted by the stop()
@@ -314,8 +342,21 @@ public class StreamingExecutionControl implements ExecutionControl {
                 }
             }
         } catch (IOException | ClassNotFoundException ex) {
+            ex.printStackTrace();
             throw new EngineTerminationException(ex.toString());
         }
     }
 
+    private UserException readUserException() throws IOException, ClassNotFoundException {
+        String message = readNullOrUTF();
+        String exceptionClassName = in.readUTF();
+        StackTraceElement[] elems = (StackTraceElement[]) in.readObject();
+        return new UserException(message, exceptionClassName, elems);
+    }
+
+    private ResolutionException readResolutionException() throws IOException, ClassNotFoundException {
+        int id = in.readInt();
+        StackTraceElement[] elems = (StackTraceElement[]) in.readObject();
+        return new ResolutionException(id, elems);
+    }
 }

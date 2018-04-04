@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@
  * {@link javax.xml.transform.stax}, and {@link javax.xml.transform.stream}.
  *
  *
- * <h3>Creating Objects</h3>
+ * <h2>Creating Objects</h2>
  *
  * <p>
  * The API allows a concrete {@link javax.xml.transform.TransformerFactory}
@@ -46,7 +46,7 @@
  * {@link javax.xml.transform.TransformerFactory#newInstance}.
  *
  *
- * <h3>Specification of Inputs and Outputs</h3>
+ * <h2>Specification of Inputs and Outputs</h2>
  *
  * <p>
  * This API defines two interface objects called {@link javax.xml.transform.Source}
@@ -77,9 +77,7 @@
  * </pre>
  *
  *
- * <h3>
- * <a id="qname-delimiter">Qualified Name Representation</a>
- * </h3>
+ * <h2><a id="qname-delimiter">Qualified Name Representation</a></h2>
  *
  * <p>
  * <a href="http://www.w3.org/TR/REC-xml-names">Namespaces</a> present something
@@ -112,7 +110,7 @@
  * prefix is lost.
  *
  *
- * <h3>Result Tree Serialization</h3>
+ * <h2>Result Tree Serialization</h2>
  *
  * <p>
  * Serialization of the result tree to a stream can be controlled with the
@@ -141,7 +139,7 @@
  * the source to the result. This method may be used to create a DOM from SAX
  * events or to create an XML or HTML stream from a DOM or SAX events.
  *
- * <h3>Exceptions and Error Reporting</h3>
+ * <h2>Exceptions and Error Reporting</h2>
  *
  * <p>
  * The transformation API throw three types of specialized exceptions. A
@@ -192,7 +190,7 @@
  * errors.
  *
  *
- * <h3>Resolution of URIs within a transformation</h3>
+ * <h2>Resolution of URIs within a transformation</h2>
  *
  * <p>
  * The API provides a way for URIs referenced from within the stylesheet
