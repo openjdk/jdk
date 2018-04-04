@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public class IsSupportedOptionTest {
         check(tool, "-Xdoclint", 0);
         check(tool, "-Xdoclint:stats", 0);
         check(tool, "-Xdoclint/package:foo", 0);
-        check(tool, "--debug:any", 0);
+        check(tool, "--debug=any", 1);
         check(tool, "-g", 0);
         check(tool, "-g:vars", 0);
         check(tool, "-g:none", 0);

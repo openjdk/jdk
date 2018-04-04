@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,9 @@ public class Test {
         try {
             test(Arrays.<String>asList(),
                     "myfo://test:1: error: cannot find symbol");
-            test(Arrays.asList("--diags:layout=OLD"),
+            test(Arrays.asList("--diags=layout=OLD"),
                     "myfo://test:1: cannot find symbol");
-            test(Arrays.asList("--diags:legacy"),
+            test(Arrays.asList("--diags=legacy"),
                     "myfo://test:1: cannot find symbol");
         } finally {
             Locale.setDefault(prev);
