@@ -731,7 +731,7 @@ bool handle_assert_poison_fault(const void* ucVoid, const void* faulting_address
     os::protect_memory((char*)g_assert_poison, os::vm_page_size(), os::MEM_PROT_RWX);
     // Store Context away.
     if (ucVoid) {
-      const jlong my_tid = os::current_thread_id();
+      const intx my_tid = os::current_thread_id();
       if (Atomic::cmpxchg(my_tid, &g_asserting_thread, (intx)0) == 0) {
         if (store_context(ucVoid)) {
           g_assertion_context = &g_stored_assertion_context;
