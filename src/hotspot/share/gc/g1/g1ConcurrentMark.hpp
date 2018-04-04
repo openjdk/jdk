@@ -342,12 +342,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // another concurrent marking phase should start
   volatile bool           _restart_for_overflow;
 
-  // This is true from the very start of concurrent marking until the
-  // point when all the tasks complete their work. It is really used
-  // to determine the points between the end of concurrent marking and
-  // time of remark.
-  volatile bool           _concurrent_marking_in_progress;
-
   ConcurrentGCTimer*      _gc_timer_cm;
 
   G1OldTracer*            _gc_tracer_cm;
@@ -497,16 +491,6 @@ public:
   bool mark_stack_empty() const                 { return _global_mark_stack.is_empty(); }
 
   G1CMRootRegions* root_regions() { return &_root_regions; }
-
-  bool concurrent_marking_in_progress() const {
-    return _concurrent_marking_in_progress;
-  }
-  void set_concurrent_marking_in_progress() {
-    _concurrent_marking_in_progress = true;
-  }
-  void clear_concurrent_marking_in_progress() {
-    _concurrent_marking_in_progress = false;
-  }
 
   void concurrent_cycle_start();
   // Abandon current marking iteration due to a Full GC.
