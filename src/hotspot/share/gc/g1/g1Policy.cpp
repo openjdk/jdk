@@ -437,6 +437,7 @@ void G1Policy::record_full_collection_end() {
   collector_state()->set_initiate_conc_mark_if_possible(need_to_start_conc_mark("end of Full GC", 0));
   collector_state()->set_in_initial_mark_gc(false);
   collector_state()->set_mark_or_rebuild_in_progress(false);
+  collector_state()->set_clearing_next_bitmap(false);
 
   _short_lived_surv_rate_group->start_adding_regions();
   // also call this on any additional surv rate groups

@@ -123,6 +123,10 @@ static inline void* index_oop_from_field_offset_long(oop p, jlong field_offset) 
   assert_field_offset_sane(p, field_offset);
   jlong byte_offset = field_offset_to_byte_offset(field_offset);
 
+  if (p != NULL) {
+    p = Access<>::resolve(p);
+  }
+
   if (sizeof(char*) == sizeof(jint)) {   // (this constant folds!)
     return (address)p + (jint) byte_offset;
   } else {

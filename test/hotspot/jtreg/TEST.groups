@@ -220,7 +220,8 @@ tier1_runtime = \
  -runtime/containers/ \
   sanity/ \
   testlibrary_tests/TestMutuallyExclusivePlatformPredicates.java \
- -:tier1_runtime_appcds_exclude
+ -:tier1_runtime_appcds_exclude \
+ -runtime/signal
 
 hotspot_cds = \
   runtime/SharedArchiveFile/ \
@@ -263,7 +264,8 @@ hotspot_tier2_runtime = \
  -runtime/containers/ \
  -:tier1_runtime \
  -:tier1_serviceability \
- -:hotspot_tier2_runtime_platform_agnostic
+ -:hotspot_tier2_runtime_platform_agnostic \
+ -runtime/signal
 
 hotspot_tier2_runtime_platform_agnostic = \
   runtime/SelectionResolution \
