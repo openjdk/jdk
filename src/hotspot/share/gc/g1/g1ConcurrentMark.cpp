@@ -373,7 +373,6 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _concurrent(false),
   _has_aborted(false),
   _restart_for_overflow(false),
-  _concurrent_marking_in_progress(false),
   _gc_timer_cm(new (ResourceObj::C_HEAP, mtGC) ConcurrentGCTimer()),
   _gc_tracer_cm(new (ResourceObj::C_HEAP, mtGC) G1OldTracer()),
 
@@ -508,10 +507,6 @@ void G1ConcurrentMark::reset() {
     _top_at_rebuild_starts[i] = NULL;
     _region_mark_stats[i].clear();
   }
-
-  // we need this to make sure that the flag is on during the evac
-  // pause with initial mark piggy-backed
-  set_concurrent_marking_in_progress();
 }
 
 void G1ConcurrentMark::clear_statistics_in_region(uint region_idx) {
@@ -589,14 +584,9 @@ void G1ConcurrentMark::set_concurrency_and_phase(uint active_tasks, bool concurr
 
   _concurrent = concurrent;
 
-  if (concurrent) {
-    set_concurrent_marking_in_progress();
-  } else {
-    // We currently assume that the concurrent flag has been set to
-    // false before we start remark. At this point we should also be
-    // in a STW phase.
+  if (!concurrent) {
+    // At this point we should be in a STW phase, and completed marking.
     assert_at_safepoint_on_vm_thread();
-    assert(!concurrent_marking_in_progress(), "invariant");
     assert(out_of_regions(),
            "only way to get here: _finger: " PTR_FORMAT ", _heap_end: " PTR_FORMAT,
            p2i(_finger), p2i(_heap.end()));
@@ -608,7 +598,6 @@ void G1ConcurrentMark::reset_at_marking_complete() {
   // not doing marking.
   reset_marking_for_restart();
   _num_active_tasks = 0;
-  clear_concurrent_marking_in_progress();
 }
 
 G1ConcurrentMark::~G1ConcurrentMark() {
@@ -2693,17 +2682,6 @@ void G1CMTask::do_marking_step(double time_target_ms,
 
     if (finished) {
       // We're all done.
-
-      if (_worker_id == 0) {
-        // Let's allow task 0 to do this
-        if (_cm->concurrent()) {
-          assert(_cm->concurrent_marking_in_progress(), "invariant");
-          // We need to set this to false before the next
-          // safepoint. This way we ensure that the marking phase
-          // doesn't observe any more heap expansions.
-          _cm->clear_concurrent_marking_in_progress();
-        }
-      }
 
       // We can now guarantee that the global stack is empty, since
       // all other tasks have finished. We separated the guarantees so
