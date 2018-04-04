@@ -621,12 +621,15 @@ void CollectedHeap::reset_promotion_should_fail() {
 
 #endif  // #ifndef PRODUCT
 
-oop CollectedHeap::pin_object(JavaThread* thread, oop o) {
-  Handle handle(thread, o);
-  GCLocker::lock_critical(thread);
-  return handle();
+bool CollectedHeap::supports_object_pinning() const {
+  return false;
 }
 
-void CollectedHeap::unpin_object(JavaThread* thread, oop o) {
-  GCLocker::unlock_critical(thread);
+oop CollectedHeap::pin_object(JavaThread* thread, oop obj) {
+  ShouldNotReachHere();
+  return NULL;
+}
+
+void CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
+  ShouldNotReachHere();
 }
