@@ -651,10 +651,8 @@ bool G1HeapVerifier::verify_bitmaps(const char* caller, HeapRegion* hr) {
   bool res_p = verify_no_bits_over_tams("prev", prev_bitmap, ptams, end);
 
   bool res_n = true;
-  // We reset mark_or_rebuild_in_progress() before we reset _cmThread->in_progress() and in this window
-  // we do the clearing of the next bitmap concurrently. Thus, we can not verify the bitmap
-  // if we happen to be in that state.
-  if (_g1h->collector_state()->mark_or_rebuild_in_progress() || !_g1h->_cmThread->in_progress()) {
+  // We cannot verify the next bitmap while we are about to clear it.
+  if (!_g1h->collector_state()->clearing_next_bitmap()) {
     res_n = verify_no_bits_over_tams("next", next_bitmap, ntams, end);
   }
   if (!res_p || !res_n) {
@@ -666,7 +664,9 @@ bool G1HeapVerifier::verify_bitmaps(const char* caller, HeapRegion* hr) {
 }
 
 void G1HeapVerifier::check_bitmaps(const char* caller, HeapRegion* hr) {
-  if (!G1VerifyBitmaps) return;
+  if (!G1VerifyBitmaps) {
+    return;
+  }
 
   guarantee(verify_bitmaps(caller, hr), "bitmap verification");
 }
@@ -693,7 +693,9 @@ public:
 };
 
 void G1HeapVerifier::check_bitmaps(const char* caller) {
-  if (!G1VerifyBitmaps) return;
+  if (!G1VerifyBitmaps) {
+    return;
+  }
 
   G1VerifyBitmapClosure cl(caller, this);
   _g1h->heap_region_iterate(&cl);

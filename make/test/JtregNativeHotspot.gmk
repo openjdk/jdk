@@ -65,8 +65,11 @@ else
       exeinvoke.c exestack-gap.c
 endif
 
+BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exesigtest := -ljvm
+
 ifeq ($(OPENJDK_TARGET_OS), windows)
     BUILD_HOTSPOT_JTREG_EXECUTABLES_CFLAGS_exeFPRegs := -MT
+    BUILD_HOTSPOT_JTREG_EXCLUDE += exesigtest.c
 endif
 
 $(eval $(call SetupTestFilesCompilation, BUILD_HOTSPOT_JTREG_LIBRARIES, \
