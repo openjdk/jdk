@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_UTILITIES_BITMAP_HPP
 #define SHARE_VM_UTILITIES_BITMAP_HPP
 
+#include "memory/allocation.hpp"
 #include "utilities/align.hpp"
 
 // Forward decl;
