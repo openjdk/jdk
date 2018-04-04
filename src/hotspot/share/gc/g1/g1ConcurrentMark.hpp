@@ -706,12 +706,6 @@ private:
   // When this task got into the termination protocol
   double                      _termination_start_time_ms;
 
-  // True when the task is during a concurrent phase, false when it is
-  // in the remark phase (so, in the latter case, we do not have to
-  // check all the things that we have to check during the concurrent
-  // phase, i.e. SATB buffer availability...)
-  bool                        _concurrent;
-
   TruncatedSeq                _marking_step_diffs_ms;
 
   // Updates the local fields after this task has claimed
@@ -754,8 +748,6 @@ public:
   void reset(G1CMBitMap* next_mark_bitmap);
   // Clears all the fields that correspond to a claimed region.
   void clear_region_fields();
-
-  void set_concurrent(bool concurrent) { _concurrent = concurrent; }
 
   // The main method of this class which performs a marking step
   // trying not to exceed the given duration. However, it might exit

@@ -588,10 +588,6 @@ void G1ConcurrentMark::set_concurrency_and_phase(uint active_tasks, bool concurr
   set_concurrency(active_tasks);
 
   _concurrent = concurrent;
-  // We propagate this to all tasks, not just the active ones.
-  for (uint i = 0; i < _max_num_tasks; ++i) {
-    _tasks[i]->set_concurrent(concurrent);
-  }
 
   if (concurrent) {
     set_concurrent_marking_in_progress();
@@ -2126,7 +2122,7 @@ void G1CMTask::regular_clock_call() {
   // If we are not concurrent (i.e. we're doing remark) we don't need
   // to check anything else. The other steps are only needed during
   // the concurrent marking phase.
-  if (!_concurrent) {
+  if (!_cm->concurrent()) {
     return;
   }
 
@@ -2324,7 +2320,7 @@ void G1CMTask::drain_satb_buffers() {
   _draining_satb_buffers = false;
 
   assert(has_aborted() ||
-         _concurrent ||
+         _cm->concurrent() ||
          satb_mq_set.completed_buffers_num() == 0, "invariant");
 
   // again, this was a potentially expensive operation, decrease the
@@ -2479,7 +2475,6 @@ void G1CMTask::do_marking_step(double time_target_ms,
                                bool do_termination,
                                bool is_serial) {
   assert(time_target_ms >= 1.0, "minimum granularity is 1ms");
-  assert(_concurrent == _cm->concurrent(), "they should be the same");
 
   _start_time_ms = os::elapsedVTime() * 1000.0;
 
@@ -2701,7 +2696,7 @@ void G1CMTask::do_marking_step(double time_target_ms,
 
       if (_worker_id == 0) {
         // Let's allow task 0 to do this
-        if (_concurrent) {
+        if (_cm->concurrent()) {
           assert(_cm->concurrent_marking_in_progress(), "invariant");
           // We need to set this to false before the next
           // safepoint. This way we ensure that the marking phase
@@ -2825,7 +2820,6 @@ G1CMTask::G1CMTask(uint worker_id,
   _elapsed_time_ms(0.0),
   _termination_time_ms(0.0),
   _termination_start_time_ms(0.0),
-  _concurrent(false),
   _marking_step_diffs_ms()
 {
   guarantee(task_queue != NULL, "invariant");
