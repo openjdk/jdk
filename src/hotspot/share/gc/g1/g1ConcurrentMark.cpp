@@ -50,6 +50,7 @@
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/vmGCOperations.hpp"
 #include "gc/shared/weakProcessor.hpp"
+#include "include/jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
@@ -492,6 +493,8 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
 }
 
 void G1ConcurrentMark::reset() {
+  _has_aborted = false;
+
   reset_marking_for_restart();
 
   // Reset all tasks, since different phases will use different number of active
@@ -519,15 +522,7 @@ void G1ConcurrentMark::clear_statistics_in_region(uint region_idx) {
   _region_mark_stats[region_idx].clear();
 }
 
-void G1ConcurrentMark::humongous_object_eagerly_reclaimed(HeapRegion* r) {
-  assert_at_safepoint_on_vm_thread();
-
-  // Need to clear mark bit of the humongous object if already set and during a marking cycle.
-  if (_next_mark_bitmap->is_marked(r->bottom())) {
-    _next_mark_bitmap->clear(r->bottom());
-  }
-
-  // Clear any statistics about the region gathered so far.
+void G1ConcurrentMark::clear_statistics(HeapRegion* r) {
   uint const region_idx = r->hrm_index();
   if (r->is_humongous()) {
     assert(r->is_starts_humongous(), "Got humongous continues region here");
@@ -538,6 +533,22 @@ void G1ConcurrentMark::humongous_object_eagerly_reclaimed(HeapRegion* r) {
   } else {
     clear_statistics_in_region(region_idx);
   }
+}
+
+void G1ConcurrentMark::humongous_object_eagerly_reclaimed(HeapRegion* r) {
+  assert_at_safepoint_on_vm_thread();
+
+  // Need to clear mark bit of the humongous object.
+  if (_next_mark_bitmap->is_marked(r->bottom())) {
+    _next_mark_bitmap->clear(r->bottom());
+  }
+
+  if (!_g1h->collector_state()->mark_or_rebuild_in_progress()) {
+    return;
+  }
+
+  // Clear any statistics about the region gathered so far.
+  clear_statistics(r);
 }
 
 void G1ConcurrentMark::reset_marking_for_restart() {
@@ -745,8 +756,6 @@ public:
 };
 
 void G1ConcurrentMark::pre_initial_mark() {
-  _has_aborted = false;
-
   // Initialize marking structures. This has to be done in a STW phase.
   reset();
 
@@ -954,6 +963,8 @@ void G1ConcurrentMark::concurrent_cycle_start() {
 }
 
 void G1ConcurrentMark::concurrent_cycle_end() {
+  _g1h->collector_state()->set_clearing_next_bitmap(false);
+
   _g1h->trace_heap_after_gc(_gc_tracer_cm);
 
   if (has_aborted()) {
@@ -985,6 +996,24 @@ void G1ConcurrentMark::mark_from_roots() {
   G1CMConcurrentMarkingTask marking_task(this);
   _concurrent_workers->run_task(&marking_task);
   print_stats();
+}
+
+void G1ConcurrentMark::verify_during_pause(G1HeapVerifier::G1VerifyType type, VerifyOption vo, const char* caller) {
+  G1HeapVerifier* verifier = _g1h->verifier();
+
+  verifier->verify_region_sets_optional();
+
+  if (VerifyDuringGC) {
+    GCTraceTime(Debug, gc, phases) trace(caller, _gc_timer_cm);
+
+    size_t const BufLen = 512;
+    char buffer[BufLen];
+
+    jio_snprintf(buffer, BufLen, "During GC (%s)", caller);
+    verifier->verify(type, vo, buffer);
+  }
+
+  verifier->check_bitmaps(caller);
 }
 
 class G1UpdateRemSetTrackingBeforeRebuild : public HeapRegionClosure {
@@ -1036,35 +1065,24 @@ void G1ConcurrentMark::remark() {
     return;
   }
 
-  if (VerifyDuringGC) {
-    _g1h->verifier()->verify(G1HeapVerifier::G1VerifyRemark, VerifyOption_G1UsePrevMarking, "During GC (Remark before)");
-  }
-  _g1h->verifier()->check_bitmaps("Remark Start");
-
   G1Policy* g1p = _g1h->g1_policy();
   g1p->record_concurrent_mark_remark_start();
 
   double start = os::elapsedTime();
 
-  finalize_marking();
+  verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption_G1UsePrevMarking, "Remark before");
+
+  {
+    GCTraceTime(Debug, gc, phases) trace("Finalize Marking", _gc_timer_cm);
+    finalize_marking();
+  }
 
   double mark_work_end = os::elapsedTime();
 
-  weak_refs_work(false /* clear_all_soft_refs */);
+  bool const mark_finished = !has_overflown();
+  if (mark_finished) {
+    weak_refs_work(false /* clear_all_soft_refs */);
 
-  if (has_overflown()) {
-    // We overflowed.  Restart concurrent marking.
-    _restart_for_overflow = true;
-
-    // Verify the heap w.r.t. the previous marking bitmap.
-    if (VerifyDuringGC) {
-      _g1h->verifier()->verify(G1HeapVerifier::G1VerifyRemark, VerifyOption_G1UsePrevMarking, "During GC (Remark overflow)");
-    }
-
-    // Clear the marking state because we will be restarting
-    // marking due to overflowing the global mark stack.
-    reset_marking_for_restart();
-  } else {
     SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
     // We're done with marking.
     // This is the end of the marking cycle, we're expected all
@@ -1085,13 +1103,25 @@ void G1ConcurrentMark::remark() {
                                       _g1h->num_regions(), cl.num_selected_for_rebuild());
     }
 
-    if (VerifyDuringGC) {
-      _g1h->verifier()->verify(G1HeapVerifier::G1VerifyRemark, VerifyOption_G1UseNextMarking, "During GC (Remark after)");
-    }
-    _g1h->verifier()->check_bitmaps("Remark End");
+    verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption_G1UseNextMarking, "Remark after");
+
     assert(!restart_for_overflow(), "sanity");
     // Completely reset the marking state since marking completed
     reset_at_marking_complete();
+  } else {
+    // We overflowed.  Restart concurrent marking.
+    _restart_for_overflow = true;
+
+    verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption_G1UsePrevMarking, "Remark overflow");
+
+    // Clear the marking state because we will be restarting
+    // marking due to overflowing the global mark stack.
+    reset_marking_for_restart();
+  }
+
+  {
+    GCTraceTime(Debug, gc, phases)("Report Object Count");
+    report_object_count();
   }
 
   // Statistics
@@ -1101,9 +1131,6 @@ void G1ConcurrentMark::remark() {
   _remark_times.add((now - start) * 1000.0);
 
   g1p->record_concurrent_mark_remark_end();
-
-  G1CMIsAliveClosure is_alive(_g1h);
-  _gc_tracer_cm->report_object_count_after_gc(&is_alive);
 }
 
 class G1CleanupTask : public AbstractGangTask {
@@ -1145,6 +1172,8 @@ class G1CleanupTask : public AbstractGangTask {
           _g1h->free_region(hr, _local_cleanup_list, false /* skip_remset */, false /* skip_hcc */, true /* locked */);
         }
         hr->clear_cardtable();
+        _g1h->concurrent_mark()->clear_statistics_in_region(hr->hrm_index());
+        log_trace(gc)("Reclaimed empty region %u (%s) bot " PTR_FORMAT, hr->hrm_index(), hr->get_short_type_str(), p2i(hr->bottom()));
       } else {
         hr->rem_set()->do_cleanup_work(_hrrs_cleanup_task);
       }
@@ -1198,6 +1227,7 @@ void G1ConcurrentMark::reclaim_empty_regions() {
   workers->run_task(&cl);
 
   if (!empty_regions_list.is_empty()) {
+    log_debug(gc)("Reclaimed %u empty regions", empty_regions_list.length());
     // Now print the empty regions list.
     G1HRPrinter* hrp = _g1h->hr_printer();
     if (hrp->is_active()) {
@@ -1220,27 +1250,18 @@ void G1ConcurrentMark::cleanup() {
     return;
   }
 
-  _g1h->verifier()->verify_region_sets_optional();
-
-  if (VerifyDuringGC) { // While rebuilding the remembered set we used the next marking...
-    _g1h->verifier()->verify(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UseNextMarking, "During GC (Cleanup before)");
-  }
-  _g1h->verifier()->check_bitmaps("Cleanup Start");
-
   G1Policy* g1p = _g1h->g1_policy();
   g1p->record_concurrent_mark_cleanup_start();
 
   double start = os::elapsedTime();
+
+  verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UseNextMarking, "Cleanup before");
 
   {
     GCTraceTime(Debug, gc, phases)("Update Remembered Set Tracking After Rebuild");
     G1UpdateRemSetTrackingAfterRebuild cl(_g1h);
     _g1h->heap_region_iterate(&cl);
   }
-
-  double count_end = os::elapsedTime();
-  double this_final_counting_time = (count_end - start);
-  _total_cleanup_time += this_final_counting_time;
 
   if (log_is_enabled(Trace, gc, liveness)) {
     G1PrintRegionLivenessInfoClosure cl("Post-Cleanup");
@@ -1254,33 +1275,13 @@ void G1ConcurrentMark::cleanup() {
     reclaim_empty_regions();
   }
 
-  {
-    GCTraceTime(Debug, gc, phases)("Finalize Concurrent Mark Cleanup");
-    _g1h->g1_policy()->record_concurrent_mark_cleanup_end();
-  }
-
-  // Statistics.
-  double end = os::elapsedTime();
-  _cleanup_times.add((end - start) * 1000.0);
-
   // Cleanup will have freed any regions completely full of garbage.
   // Update the soft reference policy with the new heap occupancy.
   Universe::update_heap_info_at_gc();
 
-  if (VerifyDuringGC) {
-    _g1h->verifier()->verify(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UsePrevMarking, "During GC (Cleanup after)");
-  }
-
-  _g1h->verifier()->check_bitmaps("Cleanup End");
-
-  _g1h->verifier()->verify_region_sets_optional();
-
-  // We need to make this be a "collection" so any collection pause that
-  // races with it goes around and waits for completeCleanup to finish.
-  _g1h->increment_total_collections();
-
   // Clean out dead classes and update Metaspace sizes.
   if (ClassUnloadingWithConcurrentMark) {
+    GCTraceTime(Debug, gc, phases)("Purge Metaspace");
     ClassLoaderDataGraph::purge();
   }
   MetaspaceGC::compute_new_size();
@@ -1288,6 +1289,22 @@ void G1ConcurrentMark::cleanup() {
   // We reclaimed old regions so we should calculate the sizes to make
   // sure we update the old gen/space data.
   _g1h->g1mm()->update_sizes();
+
+  verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UsePrevMarking, "Cleanup after");
+
+  // We need to make this be a "collection" so any collection pause that
+  // races with it goes around and waits for Cleanup to finish.
+  _g1h->increment_total_collections();
+
+  // Local statistics
+  double recent_cleanup_time = (os::elapsedTime() - start);
+  _total_cleanup_time += recent_cleanup_time;
+  _cleanup_times.add(recent_cleanup_time);
+
+  {
+    GCTraceTime(Debug, gc, phases)("Finalize Concurrent Mark Cleanup");
+    _g1h->g1_policy()->record_concurrent_mark_cleanup_end();
+  }
 }
 
 // Supporting Object and Oop closures for reference discovery
@@ -1502,16 +1519,6 @@ void G1CMRefProcTaskExecutor::execute(EnqueueTask& enq_task) {
 }
 
 void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
-  if (has_overflown()) {
-    // Skip processing the discovered references if we have
-    // overflown the global marking stack. Reference objects
-    // only get discovered once so it is OK to not
-    // de-populate the discovered reference lists. We could have,
-    // but the only benefit would be that, when marking restarts,
-    // less reference objects are discovered.
-    return;
-  }
-
   ResourceMark rm;
   HandleMark   hm;
 
@@ -1630,10 +1637,16 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
   }
 }
 
+void G1ConcurrentMark::report_object_count() {
+  G1CMIsAliveClosure is_alive(_g1h);
+  _gc_tracer_cm->report_object_count_after_gc(&is_alive);
+}
+
 void G1ConcurrentMark::swap_mark_bitmaps() {
   G1CMBitMap* temp = _prev_mark_bitmap;
   _prev_mark_bitmap = _next_mark_bitmap;
   _next_mark_bitmap = temp;
+  _g1h->collector_state()->set_clearing_next_bitmap(true);
 }
 
 // Closure for marking entries in SATB buffers.
@@ -1731,8 +1744,6 @@ public:
 void G1ConcurrentMark::finalize_marking() {
   ResourceMark rm;
   HandleMark   hm;
-
-  GCTraceTime(Debug, gc, phases) trace("Finalize Marking", _gc_timer_cm);
 
   _g1h->ensure_parsability(false);
 

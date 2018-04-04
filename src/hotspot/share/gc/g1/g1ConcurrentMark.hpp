@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1ConcurrentMarkBitMap.hpp"
 #include "gc/g1/g1ConcurrentMarkObjArrayProcessor.hpp"
+#include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/g1/heapRegionSet.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -365,14 +366,22 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   uint      _num_concurrent_workers; // The number of marking worker threads we're using
   uint      _max_concurrent_workers; // Maximum number of marking worker threads
 
+  void verify_during_pause(G1HeapVerifier::G1VerifyType type, VerifyOption vo, const char* caller);
+
   void finalize_marking();
 
   void weak_refs_work_parallel_part(BoolObjectClosure* is_alive, bool purged_classes);
   void weak_refs_work(bool clear_all_soft_refs);
 
+  void report_object_count();
+
   void swap_mark_bitmaps();
 
   void reclaim_empty_regions();
+
+  // Clear statistics gathered during the concurrent cycle for the given region after
+  // it has been reclaimed.
+  void clear_statistics(HeapRegion* r);
 
   // Resets the global marking data structures, as well as the
   // task local ones; should be called during initial mark.
@@ -447,9 +456,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // true, periodically insert checks to see if this method should exit prematurely.
   void clear_bitmap(G1CMBitMap* bitmap, WorkGang* workers, bool may_yield);
 
-  // Clear statistics gathered during the concurrent cycle for the given region after
-  // it has been reclaimed.
-  void clear_statistics_in_region(uint region_idx);
   // Region statistics gathered during marking.
   G1RegionMarkStats* _region_mark_stats;
   // Top pointer for each region at the start of the rebuild remembered set process
@@ -468,6 +474,9 @@ public:
   // TARS for the given region during remembered set rebuilding.
   inline HeapWord* top_at_rebuild_start(uint region) const;
 
+  // Clear statistics gathered during the concurrent cycle for the given region after
+  // it has been reclaimed.
+  void clear_statistics_in_region(uint region_idx);
   // Notification for eagerly reclaimed regions to clean up.
   void humongous_object_eagerly_reclaimed(HeapRegion* r);
   // Manipulation of the global mark stack.
