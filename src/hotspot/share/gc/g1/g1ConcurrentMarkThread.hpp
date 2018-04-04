@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_CONCURRENTMARKTHREAD_HPP
-#define SHARE_VM_GC_G1_CONCURRENTMARKTHREAD_HPP
+#ifndef SHARE_VM_GC_G1_G1CONCURRENTMARKTHREAD_HPP
+#define SHARE_VM_GC_G1_G1CONCURRENTMARKTHREAD_HPP
 
 #include "gc/shared/concurrentGCPhaseManager.hpp"
 #include "gc/shared/concurrentGCThread.hpp"
@@ -33,7 +33,7 @@ class G1Policy;
 
 // The concurrent mark thread triggers the various steps of the concurrent marking
 // cycle, including various marking cleanup.
-class ConcurrentMarkThread: public ConcurrentGCThread {
+class G1ConcurrentMarkThread: public ConcurrentGCThread {
   friend class VMStructs;
 
   double _vtime_start;  // Initial virtual time.
@@ -63,7 +63,7 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
 
  public:
   // Constructor
-  ConcurrentMarkThread(G1ConcurrentMark* cm);
+  G1ConcurrentMarkThread(G1ConcurrentMark* cm);
 
   // Total virtual time so far for this thread and concurrent marking tasks.
   double vtime_accum();
@@ -98,4 +98,4 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
   }
 };
 
-#endif // SHARE_VM_GC_G1_CONCURRENTMARKTHREAD_HPP
+#endif // SHARE_VM_GC_G1_G1CONCURRENTMARKTHREAD_HPP

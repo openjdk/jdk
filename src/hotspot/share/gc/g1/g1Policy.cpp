@@ -23,11 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/concurrentMarkThread.inline.hpp"
 #include "gc/g1/g1Analytics.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
+#include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1IHOPControl.hpp"

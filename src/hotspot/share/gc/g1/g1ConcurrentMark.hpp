@@ -33,7 +33,7 @@
 #include "memory/allocation.hpp"
 
 class ConcurrentGCTimer;
-class ConcurrentMarkThread;
+class G1ConcurrentMarkThread;
 class G1CollectedHeap;
 class G1CMTask;
 class G1ConcurrentMark;
@@ -277,7 +277,7 @@ public:
 // This class manages data structures and methods for doing liveness analysis in
 // G1's concurrent cycle.
 class G1ConcurrentMark : public CHeapObj<mtGC> {
-  friend class ConcurrentMarkThread;
+  friend class G1ConcurrentMarkThread;
   friend class G1CMRefProcTaskProxy;
   friend class G1CMRefProcTaskExecutor;
   friend class G1CMKeepAliveAndDrainClosure;
@@ -287,35 +287,35 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   friend class G1CMRemarkTask;
   friend class G1CMTask;
 
-  ConcurrentMarkThread*  _cm_thread;     // The thread doing the work
-  G1CollectedHeap*       _g1h;           // The heap
-  bool                   _completed_initialization; // Set to true when initialization is complete
+  G1ConcurrentMarkThread* _cm_thread;     // The thread doing the work
+  G1CollectedHeap*        _g1h;           // The heap
+  bool                    _completed_initialization; // Set to true when initialization is complete
 
   // Concurrent marking support structures
-  G1CMBitMap             _mark_bitmap_1;
-  G1CMBitMap             _mark_bitmap_2;
-  G1CMBitMap*            _prev_mark_bitmap; // Completed mark bitmap
-  G1CMBitMap*            _next_mark_bitmap; // Under-construction mark bitmap
+  G1CMBitMap              _mark_bitmap_1;
+  G1CMBitMap              _mark_bitmap_2;
+  G1CMBitMap*             _prev_mark_bitmap; // Completed mark bitmap
+  G1CMBitMap*             _next_mark_bitmap; // Under-construction mark bitmap
 
   // Heap bounds
-  MemRegion const        _heap;
+  MemRegion const         _heap;
 
   // Root region tracking and claiming
-  G1CMRootRegions        _root_regions;
+  G1CMRootRegions         _root_regions;
 
   // For grey objects
-  G1CMMarkStack          _global_mark_stack; // Grey objects behind global finger
-  HeapWord* volatile     _finger;            // The global finger, region aligned,
-                                             // always pointing to the end of the
-                                             // last claimed region
+  G1CMMarkStack           _global_mark_stack; // Grey objects behind global finger
+  HeapWord* volatile      _finger;            // The global finger, region aligned,
+                                              // always pointing to the end of the
+                                              // last claimed region
 
-  uint                   _worker_id_offset;
-  uint                   _max_num_tasks;    // Maximum number of marking tasks
-  uint                   _num_active_tasks; // Number of tasks currently active
-  G1CMTask**             _tasks;            // Task queue array (max_worker_id length)
+  uint                    _worker_id_offset;
+  uint                    _max_num_tasks;    // Maximum number of marking tasks
+  uint                    _num_active_tasks; // Number of tasks currently active
+  G1CMTask**              _tasks;            // Task queue array (max_worker_id length)
 
-  G1CMTaskQueueSet*      _task_queues;      // Task queue set
-  ParallelTaskTerminator _terminator;       // For termination
+  G1CMTaskQueueSet*       _task_queues;      // Task queue set
+  ParallelTaskTerminator  _terminator;       // For termination
 
   // Two sync barriers that are used to synchronize tasks when an
   // overflow occurs. The algorithm is the following. All tasks enter
@@ -326,30 +326,30 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // ensure, that no task starts doing work before all data
   // structures (local and global) have been re-initialized. When they
   // exit it, they are free to start working again.
-  WorkGangBarrierSync    _first_overflow_barrier_sync;
-  WorkGangBarrierSync    _second_overflow_barrier_sync;
+  WorkGangBarrierSync     _first_overflow_barrier_sync;
+  WorkGangBarrierSync     _second_overflow_barrier_sync;
 
   // This is set by any task, when an overflow on the global data
   // structures is detected
-  volatile bool          _has_overflown;
+  volatile bool           _has_overflown;
   // True: marking is concurrent, false: we're in remark
-  volatile bool          _concurrent;
+  volatile bool           _concurrent;
   // Set at the end of a Full GC so that marking aborts
-  volatile bool          _has_aborted;
+  volatile bool           _has_aborted;
 
   // Used when remark aborts due to an overflow to indicate that
   // another concurrent marking phase should start
-  volatile bool          _restart_for_overflow;
+  volatile bool           _restart_for_overflow;
 
   // This is true from the very start of concurrent marking until the
   // point when all the tasks complete their work. It is really used
   // to determine the points between the end of concurrent marking and
   // time of remark.
-  volatile bool          _concurrent_marking_in_progress;
+  volatile bool           _concurrent_marking_in_progress;
 
-  ConcurrentGCTimer*     _gc_timer_cm;
+  ConcurrentGCTimer*      _gc_timer_cm;
 
-  G1OldTracer*           _gc_tracer_cm;
+  G1OldTracer*            _gc_tracer_cm;
 
   // Timing statistics. All of them are in ms
   NumberSeq _init_times;
@@ -523,7 +523,7 @@ public:
                    G1RegionToSpaceMapper* next_bitmap_storage);
   ~G1ConcurrentMark();
 
-  ConcurrentMarkThread* cm_thread() { return _cm_thread; }
+  G1ConcurrentMarkThread* cm_thread() { return _cm_thread; }
 
   const G1CMBitMap* const prev_mark_bitmap() const { return _prev_mark_bitmap; }
   G1CMBitMap* next_mark_bitmap() const { return _next_mark_bitmap; }
