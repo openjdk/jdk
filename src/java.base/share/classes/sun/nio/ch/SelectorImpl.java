@@ -64,17 +64,20 @@ public abstract class SelectorImpl
         publicSelectedKeys = Util.ungrowableSet(selectedKeys);
     }
 
-    @Override
-    public final Set<SelectionKey> keys() {
+    private void ensureOpen() {
         if (!isOpen())
             throw new ClosedSelectorException();
+    }
+
+    @Override
+    public final Set<SelectionKey> keys() {
+        ensureOpen();
         return publicKeys;
     }
 
     @Override
     public final Set<SelectionKey> selectedKeys() {
-        if (!isOpen())
-            throw new ClosedSelectorException();
+        ensureOpen();
         return publicSelectedKeys;
     }
 
@@ -112,8 +115,7 @@ public abstract class SelectorImpl
 
     private int lockAndDoSelect(long timeout) throws IOException {
         synchronized (this) {
-            if (!isOpen())
-                throw new ClosedSelectorException();
+            ensureOpen();
             synchronized (publicKeys) {
                 synchronized (publicSelectedKeys) {
                     return doSelect(timeout);
@@ -176,7 +178,8 @@ public abstract class SelectorImpl
             throw new IllegalSelectorException();
         SelectionKeyImpl k = new SelectionKeyImpl((SelChImpl)ch, this);
         k.attach(attachment);
-        // register before adding to key set
+
+        // register with selector (if needed) before adding to key set
         implRegister(k);
         synchronized (publicKeys) {
             keys.add(k);
@@ -185,7 +188,15 @@ public abstract class SelectorImpl
         return k;
     }
 
-    protected abstract void implRegister(SelectionKeyImpl ski);
+    /**
+     * Register the key in the selector.
+     *
+     * The default implementation checks if the selector is open. It should
+     * be overridden by selector implementations as needed.
+     */
+    protected void implRegister(SelectionKeyImpl ski) {
+        ensureOpen();
+    }
 
     protected abstract void implDereg(SelectionKeyImpl ski) throws IOException;
 
@@ -222,5 +233,5 @@ public abstract class SelectorImpl
     /**
      * Change the event set in the selector
      */
-    protected abstract void putEventOps(SelectionKeyImpl ski, int events);
+    protected abstract void setEventOps(SelectionKeyImpl ski);
 }

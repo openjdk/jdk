@@ -39,7 +39,7 @@ import java.nio.channels.spi.AbstractSelectionKey;
 public final class SelectionKeyImpl
     extends AbstractSelectionKey
 {
-    final SelChImpl channel;                            // package-private
+    private final SelChImpl channel;
     private final SelectorImpl selector;
 
     private volatile int interestOps;
@@ -59,6 +59,10 @@ public final class SelectionKeyImpl
     private void ensureValid() {
         if (!isValid())
             throw new CancelledKeyException();
+    }
+
+    int getFDVal() {
+        return channel.getFDVal();
     }
 
     @Override
@@ -103,13 +107,25 @@ public final class SelectionKeyImpl
     public SelectionKey nioInterestOps(int ops) {
         if ((ops & ~channel().validOps()) != 0)
             throw new IllegalArgumentException();
-        selector.putEventOps(this, channel.translateInterestOps(ops));
         interestOps = ops;
+        selector.setEventOps(this);
         return this;
     }
 
     public int nioInterestOps() {
         return interestOps;
+    }
+
+    int translateInterestOps() {
+        return channel.translateInterestOps(interestOps);
+    }
+
+    boolean translateAndSetReadyOps(int ops) {
+        return channel.translateAndSetReadyOps(ops, this);
+    }
+
+    boolean translateAndUpdateReadyOps(int ops) {
+        return channel.translateAndUpdateReadyOps(ops, this);
     }
 
     void registeredEvents(int events) {
