@@ -188,7 +188,7 @@ class EventPortSelectorImpl
                     if (ski != null) {
                         int rOps = getEventOps(i);
                         if (selectedKeys.contains(ski)) {
-                            if (ski.translateAndSetReadyOps(rOps)) {
+                            if (ski.translateAndUpdateReadyOps(rOps)) {
                                 numKeysUpdated++;
                             }
                         } else {

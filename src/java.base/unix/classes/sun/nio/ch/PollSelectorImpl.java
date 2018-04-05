@@ -174,7 +174,7 @@ class PollSelectorImpl extends SelectorImpl {
                 assert ski.getFDVal() == getDescriptor(i);
                 if (ski.isValid()) {
                     if (selectedKeys.contains(ski)) {
-                        if (ski.translateAndSetReadyOps(rOps)) {
+                        if (ski.translateAndUpdateReadyOps(rOps)) {
                             numKeysUpdated++;
                         }
                     } else {

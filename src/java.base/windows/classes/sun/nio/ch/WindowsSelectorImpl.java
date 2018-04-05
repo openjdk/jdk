@@ -98,7 +98,6 @@ class WindowsSelectorImpl extends SelectorImpl {
     private static final class MapEntry {
         final SelectionKeyImpl ski;
         long updateCount = 0;
-        long clearedCount = 0;
         MapEntry(SelectionKeyImpl ski) {
             this.ski = ski;
         }
@@ -368,12 +367,10 @@ class WindowsSelectorImpl extends SelectorImpl {
         }
 
         /**
-         * Note, clearedCount is used to determine if the readyOps have
-         * been reset in this select operation. updateCount is used to
-         * tell if a key has been counted as updated in this select
-         * operation.
+         * updateCount is used to tell if a key has been counted as updated
+         * in this select operation.
          *
-         * me.updateCount <= me.clearedCount <= updateCount
+         * me.updateCount <= updateCount
          */
         private int processFDSet(long updateCount, int[] fds, int rOps,
                                  boolean isExceptFds)
@@ -405,37 +402,19 @@ class WindowsSelectorImpl extends SelectorImpl {
                 }
 
                 if (selectedKeys.contains(sk)) { // Key in selected set
-                    if (me.clearedCount != updateCount) {
-                        if (sk.translateAndSetReadyOps(rOps) &&
-                            (me.updateCount != updateCount)) {
-                            me.updateCount = updateCount;
-                            numKeysUpdated++;
-                        }
-                    } else { // The readyOps have been set; now add
-                        if (sk.translateAndUpdateReadyOps(rOps) &&
-                            (me.updateCount != updateCount)) {
+                    if (sk.translateAndUpdateReadyOps(rOps)) {
+                        if (me.updateCount != updateCount) {
                             me.updateCount = updateCount;
                             numKeysUpdated++;
                         }
                     }
-                    me.clearedCount = updateCount;
                 } else { // Key is not in selected set yet
-                    if (me.clearedCount != updateCount) {
-                        sk.translateAndSetReadyOps(rOps);
-                        if ((sk.nioReadyOps() & sk.nioInterestOps()) != 0) {
-                            selectedKeys.add(sk);
-                            me.updateCount = updateCount;
-                            numKeysUpdated++;
-                        }
-                    } else { // The readyOps have been set; now add
-                        sk.translateAndUpdateReadyOps(rOps);
-                        if ((sk.nioReadyOps() & sk.nioInterestOps()) != 0) {
-                            selectedKeys.add(sk);
-                            me.updateCount = updateCount;
-                            numKeysUpdated++;
-                        }
+                    sk.translateAndSetReadyOps(rOps);
+                    if ((sk.nioReadyOps() & sk.nioInterestOps()) != 0) {
+                        selectedKeys.add(sk);
+                        me.updateCount = updateCount;
+                        numKeysUpdated++;
                     }
-                    me.clearedCount = updateCount;
                 }
             }
             return numKeysUpdated;
