@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,10 +85,10 @@ void PromotionInfo::promoted_oops_iterate##nv_suffix(OopClosureType* cl) {  \
     }                                                                       \
     if (curObj->hasDisplacedMark()) {                                       \
       /* restore displaced header */                                        \
-      oop(curObj)->set_mark(nextDisplacedHeader());                         \
+      oop(curObj)->set_mark_raw(nextDisplacedHeader());                     \
     } else {                                                                \
       /* restore prototypical header */                                     \
-      oop(curObj)->init_mark();                                             \
+      oop(curObj)->init_mark_raw();                                         \
     }                                                                       \
     /* The "promoted_mark" should now not be set */                         \
     assert(!curObj->hasPromotedMark(),                                      \
@@ -147,7 +147,7 @@ void PromotionInfo::track(PromotedObject* trackOop) {
 
 void PromotionInfo::track(PromotedObject* trackOop, Klass* klassOfOop) {
   // make a copy of header as it may need to be spooled
-  markOop mark = oop(trackOop)->mark();
+  markOop mark = oop(trackOop)->mark_raw();
   trackOop->clear_next();
   if (mark->must_be_preserved_for_cms_scavenge(klassOfOop)) {
     // save non-prototypical header, and mark oop
@@ -287,7 +287,7 @@ void PromotionInfo::verify() const {
   // 2. each promoted object lies in this space
   debug_only(
     PromotedObject* junk = NULL;
-    assert(junk->next_addr() == (void*)(oop(junk)->mark_addr()),
+    assert(junk->next_addr() == (void*)(oop(junk)->mark_addr_raw()),
            "Offset of PromotedObject::_next is expected to align with "
            "  the OopDesc::_mark within OopDesc");
   )

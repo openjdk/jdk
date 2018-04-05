@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ template <class T> void G1ParScanThreadState::do_oop_evac(T* p, HeapRegion* from
   // processed multiple times. So redo this check.
   const InCSetState in_cset_state = _g1h->in_cset_state(obj);
   if (in_cset_state.is_in_cset()) {
-    markOop m = obj->mark();
+    markOop m = obj->mark_raw();
     if (m->is_marked()) {
       obj = (oop) m->decode_pointer();
     } else {
