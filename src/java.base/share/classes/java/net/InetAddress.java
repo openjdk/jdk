@@ -290,7 +290,10 @@ class InetAddress implements java.io.Serializable {
     /* Used to store the name service provider */
     private static transient NameService nameService = null;
 
-    /* Used to store the best available hostname */
+    /**
+     * Used to store the best available hostname.
+     * Lazily initialized via a data race; safe because Strings are immutable.
+     */
     private transient String canonicalHostName = null;
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
@@ -622,11 +625,11 @@ class InetAddress implements java.io.Serializable {
      * @since 1.4
      */
     public String getCanonicalHostName() {
-        if (canonicalHostName == null) {
-            canonicalHostName =
+        String value = canonicalHostName;
+        if (value == null)
+            canonicalHostName = value =
                 InetAddress.getHostFromNameService(this, true);
-        }
-        return canonicalHostName;
+        return value;
     }
 
     /**
