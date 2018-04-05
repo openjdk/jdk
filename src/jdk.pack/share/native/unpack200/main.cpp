@@ -45,6 +45,7 @@
 #define THREAD_SELF ((THRTYPE)pthread_self())
 #endif
 
+#include "jni.h"
 #include "defines.h"
 #include "bytes.h"
 #include "utils.h"
@@ -58,7 +59,8 @@
 #include "unpack.h"
 
 
-int main(int argc, char **argv) {
+JNIEXPORT int JNICALL
+main(int argc, char **argv) {
     return unpacker::run(argc, argv);
 }
 

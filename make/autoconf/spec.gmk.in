@@ -395,7 +395,6 @@ COMPILER_COMMAND_FILE_FLAG:=@COMPILER_COMMAND_FILE_FLAG@
 COMPILER_BINDCMD_FILE_FLAG:=@COMPILER_BINDCMD_FILE_FLAG@
 
 CC_OUT_OPTION:=@CC_OUT_OPTION@
-EXE_OUT_OPTION:=@EXE_OUT_OPTION@
 LD_OUT_OPTION:=@LD_OUT_OPTION@
 AR_OUT_OPTION:=@AR_OUT_OPTION@
 
@@ -459,11 +458,6 @@ LD:=@FIXPATH@ @LD@
 
 # Xcode SDK path
 SDKROOT:=@SDKROOT@
-
-# The linker on older SuSE distros (e.g. on SLES 10) complains with:
-# "Invalid version tag `SUNWprivate_1.1'. Only anonymous version tag is allowed in executable."
-# if feeded with a version script which contains named tags.
-USING_BROKEN_SUSE_LD:=@USING_BROKEN_SUSE_LD@
 
 # LDFLAGS used to link the jdk native libraries (C-code)
 LDFLAGS_JDKLIB:=@LDFLAGS_JDKLIB@
