@@ -1625,7 +1625,7 @@ jint G1CollectedHeap::initialize() {
     vm_shutdown_during_initialization("Could not create/initialize G1ConcurrentMark");
     return JNI_ENOMEM;
   }
-  _cmThread = _cm->cm_thread();
+  _cm_thread = _cm->cm_thread();
 
   // Now expand into the initial heap size.
   if (!expand(init_byte_size, _workers)) {
@@ -1714,7 +1714,7 @@ void G1CollectedHeap::stop() {
   // that are destroyed during shutdown.
   _cr->stop();
   _young_gen_sampling_thread->stop();
-  _cmThread->stop();
+  _cm_thread->stop();
   if (G1StringDedup::is_enabled()) {
     G1StringDedup::stop();
   }
@@ -1967,7 +1967,7 @@ void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent) {
   // is set) so that if a waiter requests another System.gc() it doesn't
   // incorrectly see that a marking cycle is still in progress.
   if (concurrent) {
-    _cmThread->set_idle();
+    _cm_thread->set_idle();
   }
 
   // This notify_all() will ensure that a thread that called
@@ -2178,11 +2178,11 @@ bool G1CollectedHeap::supports_concurrent_phase_control() const {
 }
 
 const char* const* G1CollectedHeap::concurrent_phases() const {
-  return _cmThread->concurrent_phases();
+  return _cm_thread->concurrent_phases();
 }
 
 bool G1CollectedHeap::request_concurrent_phase(const char* phase) {
-  return _cmThread->request_concurrent_phase(phase);
+  return _cm_thread->request_concurrent_phase(phase);
 }
 
 class PrintRegionClosure: public HeapRegionClosure {
@@ -2272,7 +2272,7 @@ void G1CollectedHeap::print_on_error(outputStream* st) const {
 
 void G1CollectedHeap::print_gc_threads_on(outputStream* st) const {
   workers()->print_worker_threads_on(st);
-  _cmThread->print_on(st);
+  _cm_thread->print_on(st);
   st->cr();
   _cm->print_worker_threads_on(st);
   _cr->print_threads_on(st);
@@ -2284,7 +2284,7 @@ void G1CollectedHeap::print_gc_threads_on(outputStream* st) const {
 
 void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   workers()->threads_do(tc);
-  tc->do_thread(_cmThread);
+  tc->do_thread(_cm_thread);
   _cm->threads_do(tc);
   _cr->threads_do(tc);
   tc->do_thread(_young_gen_sampling_thread);
@@ -2455,8 +2455,8 @@ HeapWord* G1CollectedHeap::do_collection_pause(size_t word_size,
 
 void G1CollectedHeap::do_concurrent_mark() {
   MutexLockerEx x(CGC_lock, Mutex::_no_safepoint_check_flag);
-  if (!_cmThread->in_progress()) {
-    _cmThread->set_started();
+  if (!_cm_thread->in_progress()) {
+    _cm_thread->set_started();
     CGC_lock->notify();
   }
 }
@@ -2752,7 +2752,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   _verifier->verify_dirty_young_regions();
 
   // We should not be doing initial mark unless the conc mark thread is running
-  if (!_cmThread->should_terminate()) {
+  if (!_cm_thread->should_terminate()) {
     // This call will decide whether this pause is an initial-mark
     // pause. If it is, in_initial_mark_gc() will return true
     // for the duration of this pause.

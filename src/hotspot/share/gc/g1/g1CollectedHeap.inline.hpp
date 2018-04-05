@@ -120,7 +120,7 @@ inline RefToScanQueue* G1CollectedHeap::task_queue(uint i) const {
   return _task_queues->queue(i);
 }
 
-inline bool G1CollectedHeap::isMarkedNext(oop obj) const {
+inline bool G1CollectedHeap::is_marked_next(oop obj) const {
   return _cm->next_mark_bitmap()->is_marked((HeapWord*)obj);
 }
 
@@ -242,7 +242,7 @@ inline bool G1CollectedHeap::is_obj_ill(const oop obj) const {
 }
 
 inline bool G1CollectedHeap::is_obj_dead_full(const oop obj, const HeapRegion* hr) const {
-   return !isMarkedNext(obj) && !hr->is_archive();
+   return !is_marked_next(obj) && !hr->is_archive();
 }
 
 inline bool G1CollectedHeap::is_obj_dead_full(const oop obj) const {

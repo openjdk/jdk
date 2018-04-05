@@ -103,7 +103,7 @@ inline bool requires_marking(const void* entry, G1CollectedHeap* heap) {
 }
 
 inline bool retain_entry(const void* entry, G1CollectedHeap* heap) {
-  return requires_marking(entry, heap) && !heap->isMarkedNext((oop)entry);
+  return requires_marking(entry, heap) && !heap->is_marked_next((oop)entry);
 }
 
 // This method removes entries from a SATB buffer that will not be
