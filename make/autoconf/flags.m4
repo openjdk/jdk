@@ -241,7 +241,7 @@ AC_DEFUN_ONCE([FLAGS_PRE_TOOLCHAIN],
        test "x$OPENJDK_TARGET_CPU" != xmips &&
        test "x$OPENJDK_TARGET_CPU" != xmipsel &&
        test "x$OPENJDK_TARGET_CPU" != xmips64 &&
-       test "x$OPENJDK_TARGET_CPU" != xmips64el; then 
+       test "x$OPENJDK_TARGET_CPU" != xmips64el; then
       MACHINE_FLAG="-m${OPENJDK_TARGET_CPU_BITS}"
     fi
   fi
@@ -325,22 +325,18 @@ AC_DEFUN([FLAGS_SETUP_TOOLCHAIN_CONTROL],
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     CC_OUT_OPTION=-Fo
-    EXE_OUT_OPTION=-out:
     LD_OUT_OPTION=-out:
     AR_OUT_OPTION=-out:
   else
     # The option used to specify the target .o,.a or .so file.
     # When compiling, how to specify the to be created object file.
     CC_OUT_OPTION='-o$(SPACE)'
-    # When linking, how to specify the to be created executable.
-    EXE_OUT_OPTION='-o$(SPACE)'
-    # When linking, how to specify the to be created dynamically linkable library.
+    # When linking, how to specify the output
     LD_OUT_OPTION='-o$(SPACE)'
     # When archiving, how to specify the to be create static archive for object files.
     AR_OUT_OPTION='rcs$(SPACE)'
   fi
   AC_SUBST(CC_OUT_OPTION)
-  AC_SUBST(EXE_OUT_OPTION)
   AC_SUBST(LD_OUT_OPTION)
   AC_SUBST(AR_OUT_OPTION)
 
