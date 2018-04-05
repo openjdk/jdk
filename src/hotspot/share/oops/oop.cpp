@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,7 @@ bool oopDesc::is_oop(oop obj, bool ignore_mark_word) {
   if (ignore_mark_word) {
     return true;
   }
-  if (obj->mark() != NULL) {
+  if (obj->mark_raw() != NULL) {
     return true;
   }
   return !SafepointSynchronize::is_at_safepoint();

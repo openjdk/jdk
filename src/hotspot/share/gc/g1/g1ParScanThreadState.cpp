@@ -282,15 +282,15 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
         // In this case, we have to install the mark word first,
         // otherwise obj looks to be forwarded (the old mark word,
         // which contains the forward pointer, was copied)
-        obj->set_mark(old_mark);
+        obj->set_mark_raw(old_mark);
         markOop new_mark = old_mark->displaced_mark_helper()->set_age(age);
         old_mark->set_displaced_mark_helper(new_mark);
       } else {
-        obj->set_mark(old_mark->set_age(age));
+        obj->set_mark_raw(old_mark->set_age(age));
       }
       _age_table.add(age, word_sz);
     } else {
-      obj->set_mark(old_mark);
+      obj->set_mark_raw(old_mark);
     }
 
     if (G1StringDedup::is_enabled()) {
