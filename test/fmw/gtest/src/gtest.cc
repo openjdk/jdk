@@ -49,6 +49,9 @@
 #include <ostream>  // NOLINT
 #include <sstream>
 #include <vector>
+#if defined(__SUNPRO_CC) && __SUNPRO_CC >= 0x5140
+#pragma error_messages(off, SEC_NULL_PTR_DEREF)
+#endif
 
 #if GTEST_OS_LINUX
 
