@@ -173,7 +173,7 @@ public class ModuleHashesBuilder {
         }
 
         /**
-         * Traverse this graph and performs the given action in topological order
+         * Traverses this graph and performs the given action in topological order.
          */
         public void ordered(Consumer<T> action) {
             TopoSorter<T> sorter = new TopoSorter<>(this);
@@ -181,7 +181,7 @@ public class ModuleHashesBuilder {
         }
 
         /**
-         * Traverses this graph and performs the given action in reverse topological order
+         * Traverses this graph and performs the given action in reverse topological order.
          */
         public void reverse(Consumer<T> action) {
             TopoSorter<T> sorter = new TopoSorter<>(this);
@@ -189,7 +189,7 @@ public class ModuleHashesBuilder {
         }
 
         /**
-         * Returns a transposed graph from this graph
+         * Returns a transposed graph from this graph.
          */
         public Graph<T> transpose() {
             Builder<T> builder = new Builder<>();

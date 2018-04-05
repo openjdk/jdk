@@ -100,8 +100,8 @@ public class BootLoader {
     }
 
     /**
-     * Register a module with this class loader so that its classes (and
-     * resources) become visible via this class loader.
+     * Registers a module with this class loader so that its classes
+     * (and resources) become visible via this class loader.
      */
     public static void loadModule(ModuleReference mref) {
         ClassLoaders.bootLoader().loadModule(mref);
