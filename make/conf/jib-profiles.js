@@ -472,7 +472,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             build_cpu: "x64",
             dependencies: ["devkit", "autoconf", "build_devkit", "cups"],
             configure_args: [
-                "--openjdk-target=aarch64-linux-gnu"
+                "--openjdk-target=aarch64-linux-gnu", "--with-freetype=bundled",
             ],
         },
 
