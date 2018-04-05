@@ -223,7 +223,7 @@ public class MethodParameters {
             genericLocation = { 0, 0 }, paramIndex = 1)
     @TADescription(annotation = "RTCs", type = METHOD_FORMAL_PARAMETER,
             genericLocation = { 0, 0, 0, 0 }, paramIndex = 1)
-    public String methodParamAsVarargRepeatableAnnoattion() {
+    public String methodParamAsVarargRepeatableAnnotation() {
         return "void test(Object b, @RTC @RTC String @RTA @RTA [] @RTB @RTB ... a) { }";
     }
 
