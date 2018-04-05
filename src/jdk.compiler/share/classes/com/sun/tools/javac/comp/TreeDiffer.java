@@ -89,24 +89,34 @@ import com.sun.tools.javac.tree.JCTree.TypeBoundKind;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.List;
-
-import javax.lang.model.element.ElementKind;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Objects;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
 
 /** A visitor that compares two lambda bodies for structural equality. */
 public class TreeDiffer extends TreeScanner {
 
-    private BiFunction<Symbol, Symbol, Boolean> symbolDiffer;
+    public TreeDiffer(
+            Collection<? extends Symbol> symbols, Collection<? extends Symbol> otherSymbols) {
+        this.equiv = equiv(symbols, otherSymbols);
+    }
 
-    public TreeDiffer(BiFunction<Symbol, Symbol, Boolean> symbolDiffer) {
-        this.symbolDiffer = Objects.requireNonNull(symbolDiffer);
+    private static Map<Symbol, Symbol> equiv(
+            Collection<? extends Symbol> symbols, Collection<? extends Symbol> otherSymbols) {
+        Map<Symbol, Symbol> result = new HashMap<>();
+        Iterator<? extends Symbol> it = otherSymbols.iterator();
+        for (Symbol symbol : symbols) {
+            if (!it.hasNext()) break;
+            result.put(symbol, it.next());
+        }
+        return result;
     }
 
     private JCTree parameter;
     private boolean result;
+    private Map<Symbol, Symbol> equiv = new HashMap<>();
 
     public boolean scan(JCTree tree, JCTree parameter) {
         if (tree == null || parameter == null) {
@@ -172,9 +182,8 @@ public class TreeDiffer extends TreeScanner {
         Symbol symbol = tree.sym;
         Symbol otherSymbol = that.sym;
         if (symbol != null && otherSymbol != null) {
-            Boolean tmp = symbolDiffer.apply(symbol, otherSymbol);
-            if (tmp != null) {
-                result = tmp;
+            if (Objects.equals(equiv.get(symbol), otherSymbol)) {
+                result = true;
                 return;
             }
         }
@@ -598,6 +607,10 @@ public class TreeDiffer extends TreeScanner {
                         && scan(tree.nameexpr, that.nameexpr)
                         && scan(tree.vartype, that.vartype)
                         && scan(tree.init, that.init);
+        if (!result) {
+            return;
+        }
+        equiv.put(tree.sym, that.sym);
     }
 
     @Override
