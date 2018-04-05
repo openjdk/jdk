@@ -22,7 +22,7 @@
  */
 
 /**
- * @test 8200301
+ * @test 8200301 8201194
  * @summary deduplicate lambda methods with the same body, target type, and captured state
  * @modules jdk.jdeps/com.sun.tools.classfile jdk.compiler/com.sun.tools.javac.api
  *     jdk.compiler/com.sun.tools.javac.code jdk.compiler/com.sun.tools.javac.comp
@@ -32,6 +32,7 @@
  */
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
@@ -57,7 +58,6 @@ import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.tree.JCTree.JCLambda;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.tree.JCTree.JCTypeCast;
-import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.Tag;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Context;
@@ -70,10 +70,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.BiFunction;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
@@ -160,36 +158,9 @@ public class DeduplicationTest {
         }
     }
 
-    /**
-     * Returns a symbol comparator that treats symbols that correspond to the same parameter of each
-     * of the given lambdas as equal.
-     */
-    private static BiFunction<Symbol, Symbol, Boolean> paramsEqual(JCLambda lhs, JCLambda rhs) {
-        return (x, y) -> {
-            Integer idx = paramIndex(lhs, x);
-            if (idx != null && idx != -1) {
-                if (Objects.equals(idx, paramIndex(rhs, y))) {
-                    return true;
-                }
-            }
-            return null;
-        };
-    }
-
-    /**
-     * Returns the index of the given symbol as a parameter of the given lambda, or else {@code -1}
-     * if is not a parameter.
-     */
-    private static Integer paramIndex(JCLambda lambda, Symbol sym) {
-        if (sym != null) {
-            int idx = 0;
-            for (JCVariableDecl param : lambda.params) {
-                if (sym == param.sym) {
-                    return idx;
-                }
-            }
-        }
-        return null;
+    /** Returns the parameter symbols of the given lambda. */
+    private static List<Symbol> paramSymbols(JCLambda lambda) {
+        return lambda.params.stream().map(x -> x.sym).collect(toList());
     }
 
     /** A diagnostic listener that records debug messages related to lambda desugaring. */
@@ -310,13 +281,14 @@ public class DeduplicationTest {
                         dedupedLambdas.put(lhs, first);
                     }
                     for (JCLambda rhs : curr) {
-                        if (!new TreeDiffer(paramsEqual(lhs, rhs)).scan(lhs.body, rhs.body)) {
+                        if (!new TreeDiffer(paramSymbols(lhs), paramSymbols(rhs))
+                                .scan(lhs.body, rhs.body)) {
                             throw new AssertionError(
                                     String.format(
                                             "expected lambdas to be equal\n%s\n%s", lhs, rhs));
                         }
-                        if (TreeHasher.hash(lhs, sym -> paramIndex(lhs, sym))
-                                != TreeHasher.hash(rhs, sym -> paramIndex(rhs, sym))) {
+                        if (TreeHasher.hash(lhs, paramSymbols(lhs))
+                                != TreeHasher.hash(rhs, paramSymbols(rhs))) {
                             throw new AssertionError(
                                     String.format(
                                             "expected lambdas to hash to the same value\n%s\n%s",
@@ -334,14 +306,15 @@ public class DeduplicationTest {
                     }
                     for (JCLambda lhs : curr) {
                         for (JCLambda rhs : lambdaGroups.get(j)) {
-                            if (new TreeDiffer(paramsEqual(lhs, rhs)).scan(lhs.body, rhs.body)) {
+                            if (new TreeDiffer(paramSymbols(lhs), paramSymbols(rhs))
+                                    .scan(lhs.body, rhs.body)) {
                                 throw new AssertionError(
                                         String.format(
                                                 "expected lambdas to not be equal\n%s\n%s",
                                                 lhs, rhs));
                             }
-                            if (TreeHasher.hash(lhs, sym -> paramIndex(lhs, sym))
-                                    == TreeHasher.hash(rhs, sym -> paramIndex(rhs, sym))) {
+                            if (TreeHasher.hash(lhs, paramSymbols(lhs))
+                                    == TreeHasher.hash(rhs, paramSymbols(rhs))) {
                                 throw new AssertionError(
                                         String.format(
                                                 "expected lambdas to hash to different values\n%s\n%s",
