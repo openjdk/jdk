@@ -193,11 +193,10 @@ public class ModuleHashesBuilder {
          */
         public Graph<T> transpose() {
             Builder<T> builder = new Builder<>();
-            nodes.stream().forEach(builder::addNode);
+            nodes.forEach(builder::addNode);
             // reverse edges
             edges.keySet().forEach(u -> {
-                edges.get(u).stream()
-                    .forEach(v -> builder.addEdge(v, u));
+                edges.get(u).forEach(v -> builder.addEdge(v, u));
             });
             return builder.build();
         }
@@ -231,8 +230,8 @@ public class ModuleHashesBuilder {
 
         public void printGraph(PrintStream out) {
             out.println("graph for " + nodes);
-            nodes.stream()
-                .forEach(u -> adjacentNodes(u).stream()
+            nodes
+                .forEach(u -> adjacentNodes(u)
                     .forEach(v -> out.format("  %s -> %s%n", u, v)));
         }
 
@@ -302,7 +301,7 @@ public class ModuleHashesBuilder {
                 return;
             }
             visited.add(node);
-            graph.edges().get(node).stream()
+            graph.edges().get(node)
                 .forEach(x -> visit(x, visited, done));
             done.add(node);
             result.addLast(node);
