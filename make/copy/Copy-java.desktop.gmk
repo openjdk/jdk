@@ -24,6 +24,7 @@
 #
 
 include CopyCommon.gmk
+include Modules.gmk
 
 $(eval $(call IncludeCustomExtension, copy/Copy-java.desktop.gmk))
 
@@ -46,5 +47,36 @@ $(LIB_DST_DIR)/%: $(PSFONTPROPFILE_SRC_DIR)/%
 	$(call install-file)
 
 TARGETS += $(PSFONTPROPFILE_TARGET_FILES)
+
+################################################################################
+#
+# Copy and filter the legal files depending on what 3rd party components are
+# bundled or linked from the OS.
+#
+ifeq ($(USE_EXTERNAL_LIBJPEG), true)
+  LEGAL_EXCLUDES += jpeg.md
+endif
+
+ifeq ($(USE_EXTERNAL_LIBGIF), true)
+  LEGAL_EXCLUDES += giflib.md
+endif
+
+ifeq ($(USE_EXTERNAL_LIBPNG), true)
+  LEGAL_EXCLUDES += libpng.md
+endif
+
+ifeq ($(USE_EXTERNAL_LCMS), true)
+  LEGAL_EXCLUDES += lcms.md
+endif
+
+ifeq ($(FREETYPE_TO_USE), system)
+  LEGAL_EXCLUDES += freetype.md
+endif
+
+$(eval $(call SetupCopyLegalFiles, COPY_LEGAL, \
+    EXCLUDES := $(LEGAL_EXCLUDES), \
+))
+
+TARGETS += $(COPY_LEGAL)
 
 ################################################################################
