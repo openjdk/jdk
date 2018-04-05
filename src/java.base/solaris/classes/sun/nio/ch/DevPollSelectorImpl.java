@@ -184,7 +184,7 @@ class DevPollSelectorImpl
                 if (ski != null) {
                     int rOps = pollWrapper.getReventOps(i);
                     if (selectedKeys.contains(ski)) {
-                        if (ski.translateAndSetReadyOps(rOps)) {
+                        if (ski.translateAndUpdateReadyOps(rOps)) {
                             numKeysUpdated++;
                         }
                     } else {

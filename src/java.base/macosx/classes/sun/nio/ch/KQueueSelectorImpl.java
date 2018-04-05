@@ -216,15 +216,12 @@ class KQueueSelectorImpl extends SelectorImpl {
                     }
 
                     if (selectedKeys.contains(ski)) {
-                        // file descriptor may be polled more than once per poll
-                        if (ski.lastPolled != pollCount) {
-                            if (ski.translateAndSetReadyOps(rOps)) {
+                        if (ski.translateAndUpdateReadyOps(rOps)) {
+                            // file descriptor may be polled more than once per poll
+                            if (ski.lastPolled != pollCount) {
                                 numKeysUpdated++;
                                 ski.lastPolled = pollCount;
                             }
-                        } else {
-                            // ready ops have already been set on this update
-                            ski.translateAndUpdateReadyOps(rOps);
                         }
                     } else {
                         ski.translateAndSetReadyOps(rOps);

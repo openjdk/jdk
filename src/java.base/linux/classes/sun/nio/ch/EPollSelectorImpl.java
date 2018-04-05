@@ -191,7 +191,7 @@ class EPollSelectorImpl extends SelectorImpl {
                 if (ski != null) {
                     int rOps = EPoll.getEvents(event);
                     if (selectedKeys.contains(ski)) {
-                        if (ski.translateAndSetReadyOps(rOps)) {
+                        if (ski.translateAndUpdateReadyOps(rOps)) {
                             numKeysUpdated++;
                         }
                     } else {
