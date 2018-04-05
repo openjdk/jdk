@@ -5424,6 +5424,8 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   // has to be changed accordingly.
   ik->set_initial_method_idnum(ik->methods()->length());
 
+  ik->set_this_class_index(_this_class_index);
+
   if (is_anonymous()) {
     // _this_class_index is a CONSTANT_Class entry that refers to this
     // anonymous class itself. If this class needs to refer to its own methods or
