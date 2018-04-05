@@ -90,7 +90,7 @@ public final class Loader extends SecureClassLoader {
         ClassLoader.registerAsParallelCapable();
     }
 
-    // the loader pool is in a pool, can be null
+    // the pool this loader is a member of; can be null
     private final LoaderPool pool;
 
     // parent ClassLoader, can be null
@@ -487,7 +487,7 @@ public final class Loader extends SecureClassLoader {
     }
 
     /**
-     * Finds the class with the specified binary name in a given module.
+     * Finds the class with the specified binary name in the given module.
      * This method returns {@code null} if the class cannot be found.
      */
     @Override
