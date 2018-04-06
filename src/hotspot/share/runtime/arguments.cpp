@@ -96,6 +96,8 @@ bool   Arguments::_ClipInlining                 = ClipInlining;
 intx   Arguments::_Tier3InvokeNotifyFreqLog     = Tier3InvokeNotifyFreqLog;
 intx   Arguments::_Tier4InvocationThreshold     = Tier4InvocationThreshold;
 
+bool   Arguments::_enable_preview               = false;
+
 char*  Arguments::SharedArchivePath             = NULL;
 
 AgentLibraryList Arguments::_libraryList;
@@ -2739,6 +2741,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         }
       }
 #endif // !INCLUDE_JVMTI
+    // --enable_preview
+    } else if (match_option(option, "--enable-preview")) {
+      set_enable_preview();
     // -Xnoclassgc
     } else if (match_option(option, "-Xnoclassgc")) {
       if (FLAG_SET_CMDLINE(bool, ClassUnloading, false) != Flag::SUCCESS) {
