@@ -124,7 +124,6 @@
   LOG_TAG(resolve) \
   LOG_TAG(safepoint) \
   LOG_TAG(scavenge) \
-  LOG_TAG(scrub) \
   LOG_TAG(smr) \
   LOG_TAG(stacktrace) \
   LOG_TAG(stackwalk) \
@@ -145,6 +144,7 @@
   LOG_TAG(tlab) \
   LOG_TAG(time) \
   LOG_TAG(timer) \
+  LOG_TAG(tracking) \
   LOG_TAG(update) \
   LOG_TAG(unload) /* Trace unloading of classes */ \
   LOG_TAG(unshareable) \

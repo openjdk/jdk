@@ -27,8 +27,9 @@
 #include "asm/assembler.inline.hpp"
 #include "code/relocInfo.hpp"
 #include "nativeInst_ppc.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
-#include "oops/oop.inline.hpp"
+#include "oops/oop.hpp"
 #include "runtime/safepoint.hpp"
 
 void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
@@ -57,7 +58,7 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
       assert(type() == relocInfo::oop_type || type() == relocInfo::metadata_type,
              "how to encode else?");
       narrowOop no = (type() == relocInfo::oop_type) ?
-        oopDesc::encode_heap_oop((oop)x) : Klass::encode_klass((Klass*)x);
+          CompressedOops::encode((oop)x) : Klass::encode_klass((Klass*)x);
       nativeMovConstReg_at(addr())->set_narrow_oop(no, code());
     }
   } else {

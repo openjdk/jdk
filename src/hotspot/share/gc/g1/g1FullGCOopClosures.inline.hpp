@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@
 #include "gc/g1/g1FullGCOopClosures.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "memory/iterator.inline.hpp"
+#include "oops/access.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
 
 template <typename T>
 inline void G1MarkAndPushClosure::do_oop_nv(T* p) {
@@ -49,18 +51,17 @@ inline void G1MarkAndPushClosure::do_cld_nv(ClassLoaderData* cld) {
   _marker->follow_cld(cld);
 }
 
-template <class T> inline oop G1AdjustClosure::adjust_pointer(T* p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (oopDesc::is_null(heap_oop)) {
-    // NULL reference, return NULL.
-    return NULL;
+template <class T> inline void G1AdjustClosure::adjust_pointer(T* p) {
+  T heap_oop = RawAccess<>::oop_load(p);
+  if (CompressedOops::is_null(heap_oop)) {
+    return;
   }
 
-  oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+  oop obj = CompressedOops::decode_not_null(heap_oop);
   assert(Universe::heap()->is_in(obj), "should be in heap");
   if (G1ArchiveAllocator::is_archive_object(obj)) {
-    // Never forwarding archive objects, return current reference.
-    return obj;
+    // We never forward archive objects.
+    return;
   }
 
   oop forwardee = obj->forwardee();
@@ -71,50 +72,16 @@ template <class T> inline oop G1AdjustClosure::adjust_pointer(T* p) {
            (UseBiasedLocking && obj->has_bias_pattern()), // Will be restored by BiasedLocking
            "Must have correct prototype or be preserved, obj: " PTR_FORMAT ", mark: " PTR_FORMAT ", prototype: " PTR_FORMAT,
            p2i(obj), p2i(obj->mark()), p2i(markOopDesc::prototype_for_object(obj)));
-    return obj;
+    return;
   }
 
-  // Forwarded, update and return new reference.
+  // Forwarded, just update.
   assert(Universe::heap()->is_in_reserved(forwardee), "should be in object space");
-  oopDesc::encode_store_heap_oop_not_null(p, forwardee);
-  return forwardee;
+  RawAccess<OOP_NOT_NULL>::oop_store(p, forwardee);
 }
 
-template <class T>
-inline void G1AdjustAndRebuildClosure::add_reference(T* from_field, oop reference, uint worker_id) {
-  if (HeapRegion::is_in_same_region(from_field, reference)) {
-    return;
-  }
-  _g1h->heap_region_containing(reference)->rem_set()->add_reference(from_field, worker_id);
-}
-
-inline size_t G1AdjustAndRebuildClosure::calculate_compaction_delta(oop current, oop forwardee) {
-  return pointer_delta((HeapWord*)forwardee, (HeapWord*)current);
-}
-
-template <class T>
-inline T* G1AdjustAndRebuildClosure::add_compaction_delta(T* p) {
-  return (T*)((HeapWord*)p + _compaction_delta);
-}
-
-template<typename T>
-void G1AdjustAndRebuildClosure::do_oop_nv(T* p) {
-  oop new_reference = G1AdjustClosure::adjust_pointer(p);
-  if (new_reference == NULL) {
-    return;
-  }
-
-  // Update p using the calculated compaction delta to
-  // get the new field address.
-  T* new_field = add_compaction_delta(p);
-  // Update the remembered set.
-  add_reference(new_field, new_reference, _worker_id);
-}
-
-inline int G1AdjustObjectClosure::adjust_object(oop obj) {
-  _closure->update_compaction_delta(obj);
-  return obj->oop_iterate_size(_closure);
-}
+inline void G1AdjustClosure::do_oop(oop* p)       { do_oop_nv(p); }
+inline void G1AdjustClosure::do_oop(narrowOop* p) { do_oop_nv(p); }
 
 inline bool G1IsAliveClosure::do_object_b(oop p) {
   return _bitmap->is_marked(p) || G1ArchiveAllocator::is_closed_archive_object(p);

@@ -26,7 +26,6 @@
 #define SHARE_VM_CLASSFILE_VERIFIER_HPP
 
 #include "classfile/verificationType.hpp"
-#include "gc/shared/gcLocker.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.hpp"
 #include "runtime/handles.hpp"

@@ -27,6 +27,8 @@
 
 #include "classfile/classLoaderData.hpp"
 #include "memory/iterator.hpp"
+#include "oops/access.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/klass.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.inline.hpp"
@@ -52,9 +54,9 @@ inline void MetadataAwareOopClosure::do_klass_nv(Klass* k) {
 template <typename T>
 void ExtendedOopClosure::verify(T* p) {
   if (should_verify_oops()) {
-    T heap_oop = oopDesc::load_heap_oop(p);
-    if (!oopDesc::is_null(heap_oop)) {
-      oop o = oopDesc::decode_heap_oop_not_null(heap_oop);
+    T heap_oop = RawAccess<>::oop_load(p);
+    if (!CompressedOops::is_null(heap_oop)) {
+      oop o = CompressedOops::decode_not_null(heap_oop);
       assert(Universe::heap()->is_in_closed_subset(o),
              "should be in closed *p " PTR_FORMAT " " PTR_FORMAT, p2i(p), p2i(o));
     }

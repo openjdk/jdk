@@ -27,7 +27,6 @@
 
 #include "jvm.h"
 #include "ci/ciClassList.hpp"
-#include "memory/allocation.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/ostream.hpp"
 

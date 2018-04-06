@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_JNIHANDLES_INLINE_HPP
 #define SHARE_RUNTIME_JNIHANDLES_INLINE_HPP
 
+#include "oops/access.inline.hpp"
 #include "oops/oop.hpp"
 #include "runtime/jniHandles.hpp"
 #include "utilities/debug.hpp"
@@ -36,15 +37,15 @@ inline bool JNIHandles::is_jweak(jobject handle) {
   return (reinterpret_cast<uintptr_t>(handle) & weak_tag_mask) != 0;
 }
 
-inline oop& JNIHandles::jobject_ref(jobject handle) {
+inline oop* JNIHandles::jobject_ptr(jobject handle) {
   assert(!is_jweak(handle), "precondition");
-  return *reinterpret_cast<oop*>(handle);
+  return reinterpret_cast<oop*>(handle);
 }
 
-inline oop& JNIHandles::jweak_ref(jobject handle) {
+inline oop* JNIHandles::jweak_ptr(jobject handle) {
   assert(is_jweak(handle), "precondition");
   char* ptr = reinterpret_cast<char*>(handle) - weak_tag_value;
-  return *reinterpret_cast<oop*>(ptr);
+  return reinterpret_cast<oop*>(ptr);
 }
 
 // external_guard is true if called from resolve_external_guard.
@@ -56,7 +57,7 @@ inline oop JNIHandles::resolve_impl(jobject handle) {
   if (is_jweak(handle)) {       // Unlikely
     result = resolve_jweak(handle);
   } else {
-    result = jobject_ref(handle);
+    result = RootAccess<IN_CONCURRENT_ROOT>::oop_load(jobject_ptr(handle));
     // Construction of jobjects canonicalize a null value into a null
     // jobject, so for non-jweak the pointee should never be null.
     assert(external_guard || result != NULL, "Invalid JNI handle");
@@ -82,7 +83,7 @@ inline oop JNIHandles::resolve_non_null(jobject handle) {
 inline void JNIHandles::destroy_local(jobject handle) {
   if (handle != NULL) {
     assert(!is_jweak(handle), "Invalid JNI local handle");
-    jobject_ref(handle) = NULL;
+    RootAccess<>::oop_store(jobject_ptr(handle), (oop)NULL);
   }
 }
 

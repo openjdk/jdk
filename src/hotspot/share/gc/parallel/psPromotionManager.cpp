@@ -38,7 +38,9 @@
 #include "memory/memRegion.hpp"
 #include "memory/padded.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/arrayOop.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.inline.hpp"
 #include "oops/objArrayKlass.inline.hpp"
@@ -451,8 +453,8 @@ static void oop_ps_push_contents_specialized(oop obj, InstanceRefKlass *klass, P
   // Treat discovered as normal oop, if ref is not "active",
   // i.e. if next is non-NULL.
   T* next_addr = (T*)java_lang_ref_Reference::next_addr_raw(obj);
-  T  next_oop = oopDesc::load_heap_oop(next_addr);
-  if (!oopDesc::is_null(next_oop)) { // i.e. ref is not "active"
+  T  next_oop = RawAccess<>::oop_load(next_addr);
+  if (!CompressedOops::is_null(next_oop)) { // i.e. ref is not "active"
     T* discovered_addr = (T*)java_lang_ref_Reference::discovered_addr_raw(obj);
     log_develop_trace(gc, ref)("   Process discovered as normal " PTR_FORMAT, p2i(discovered_addr));
     if (PSScavenge::should_scavenge(discovered_addr)) {

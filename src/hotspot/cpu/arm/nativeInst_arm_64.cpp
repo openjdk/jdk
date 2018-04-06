@@ -27,8 +27,9 @@
 #include "code/codeCache.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_arm.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
-#include "oops/oop.inline.hpp"
+#include "oops/oop.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -105,7 +106,7 @@ static void raw_set_data(RawNativeInstruction* si, intptr_t x, oop* oop_addr, Me
     uintptr_t nx = 0;
     int val_size = 32;
     if (oop_addr != NULL) {
-      narrowOop encoded_oop = oopDesc::encode_heap_oop(*oop_addr);
+      narrowOop encoded_oop = CompressedOops::encode(*oop_addr);
       nx = encoded_oop;
     } else if (metadata_addr != NULL) {
       assert((*metadata_addr)->is_klass(), "expected Klass");
@@ -240,4 +241,3 @@ NativeCall* nativeCall_before(address return_address) {
   assert(NativeCall::is_call_before(return_address), "must be");
   return nativeCall_at(call_for(return_address));
 }
-

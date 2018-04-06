@@ -27,7 +27,6 @@
 #define CPU_ZERO_VM_NATIVEINST_ZERO_HPP
 
 #include "asm/assembler.hpp"
-#include "memory/allocation.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
 

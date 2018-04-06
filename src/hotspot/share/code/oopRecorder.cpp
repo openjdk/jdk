@@ -30,6 +30,7 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "utilities/copy.hpp"
 
 #ifdef ASSERT
 template <class T> int ValueRecorder<T>::_find_index_calls = 0;
@@ -201,4 +202,3 @@ int ObjectLookup::find_index(jobject handle, OopRecorder* oop_recorder) {
   }
   return _values.at(location).index();
 }
-

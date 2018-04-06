@@ -27,7 +27,7 @@
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
 #include "gc/shared/gcId.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/vmGCOperations.hpp"
 #include "interpreter/oopMapCache.hpp"

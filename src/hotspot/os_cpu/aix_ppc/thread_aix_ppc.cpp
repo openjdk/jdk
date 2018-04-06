@@ -24,7 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/frame.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/thread.hpp"
 
 frame JavaThread::pd_last_frame() {

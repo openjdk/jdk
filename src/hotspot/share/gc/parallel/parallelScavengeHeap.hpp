@@ -102,7 +102,7 @@ class ParallelScavengeHeap : public CollectedHeap {
   };
 
   virtual Name kind() const {
-    return CollectedHeap::ParallelScavengeHeap;
+    return CollectedHeap::Parallel;
   }
 
   virtual const char* name() const {

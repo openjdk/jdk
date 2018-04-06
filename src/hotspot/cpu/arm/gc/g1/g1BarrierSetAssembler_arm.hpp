@@ -31,7 +31,7 @@
 class G1BarrierSetAssembler: public ModRefBarrierSetAssembler {
 protected:
   void gen_write_ref_array_pre_barrier(MacroAssembler* masm, DecoratorSet decorators,
-                                       Register addr, Register count, , int callee_saved_regs);
+                                       Register addr, Register count, int callee_saved_regs);
   void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                         Register addr, Register count, Register tmp);
 };

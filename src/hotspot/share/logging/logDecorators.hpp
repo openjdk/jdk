@@ -24,7 +24,6 @@
 #ifndef SHARE_VM_LOGGING_LOGDECORATORS_HPP
 #define SHARE_VM_LOGGING_LOGDECORATORS_HPP
 
-#include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // The list of available decorators:

@@ -30,6 +30,8 @@
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/specialized_oop_closures.hpp"
 #include "memory/iterator.inline.hpp"
+#include "oops/access.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/instanceClassLoaderKlass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.inline.hpp"
@@ -73,9 +75,9 @@ inline void MarkSweep::mark_object(oop obj) {
 }
 
 template <class T> inline void MarkSweep::mark_and_push(T* p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (!oopDesc::is_null(heap_oop)) {
-    oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+  T heap_oop = RawAccess<>::oop_load(p);
+  if (!CompressedOops::is_null(heap_oop)) {
+    oop obj = CompressedOops::decode_not_null(heap_oop);
     if (!obj->mark()->is_marked()) {
       mark_object(obj);
       _marking_stack.push(obj);
@@ -169,9 +171,9 @@ void MarkSweep::FollowStackClosure::do_void() { follow_stack(); }
 template <class T> inline void MarkSweep::follow_root(T* p) {
   assert(!Universe::heap()->is_in_reserved(p),
          "roots shouldn't be things within the heap");
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (!oopDesc::is_null(heap_oop)) {
-    oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+  T heap_oop = RawAccess<>::oop_load(p);
+  if (!CompressedOops::is_null(heap_oop)) {
+    oop obj = CompressedOops::decode_not_null(heap_oop);
     if (!obj->mark()->is_marked()) {
       mark_object(obj);
       follow_object(obj);

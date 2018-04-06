@@ -28,6 +28,8 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "logging/log.hpp"
+#include "oops/access.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -63,9 +65,9 @@ template <typename T, class OopClosureType>
 bool InstanceRefKlass::try_discover(oop obj, ReferenceType type, OopClosureType* closure) {
   ReferenceProcessor* rp = closure->ref_processor();
   if (rp != NULL) {
-    T referent_oop = oopDesc::load_heap_oop((T*)java_lang_ref_Reference::referent_addr_raw(obj));
-    if (!oopDesc::is_null(referent_oop)) {
-      oop referent = oopDesc::decode_heap_oop_not_null(referent_oop);
+    T referent_oop = RawAccess<>::oop_load((T*)java_lang_ref_Reference::referent_addr_raw(obj));
+    if (!CompressedOops::is_null(referent_oop)) {
+      oop referent = CompressedOops::decode_not_null(referent_oop);
       if (!referent->is_gc_marked()) {
         // Only try to discover if not yet marked.
         return rp->discover_reference(obj, type);
@@ -86,8 +88,8 @@ void InstanceRefKlass::oop_oop_iterate_discovery(oop obj, ReferenceType type, Oo
   do_referent<nv, T>(obj, closure, contains);
 
   // Treat discovered as normal oop, if ref is not "active" (next non-NULL).
-  T next_oop  = oopDesc::load_heap_oop((T*)java_lang_ref_Reference::next_addr_raw(obj));
-  if (!oopDesc::is_null(next_oop)) {
+  T next_oop  = RawAccess<>::oop_load((T*)java_lang_ref_Reference::next_addr_raw(obj));
+  if (!CompressedOops::is_null(next_oop)) {
     do_discovered<nv, T>(obj, closure, contains);
   }
 
@@ -195,11 +197,11 @@ void InstanceRefKlass::trace_reference_gc(const char *s, oop obj) {
 
   log_develop_trace(gc, ref)("InstanceRefKlass %s for obj " PTR_FORMAT, s, p2i(obj));
   log_develop_trace(gc, ref)("     referent_addr/* " PTR_FORMAT " / " PTR_FORMAT,
-      p2i(referent_addr), p2i(referent_addr ? (address)oopDesc::load_decode_heap_oop(referent_addr) : NULL));
+      p2i(referent_addr), p2i(referent_addr ? RawAccess<>::oop_load(referent_addr) : (oop)NULL));
   log_develop_trace(gc, ref)("     next_addr/* " PTR_FORMAT " / " PTR_FORMAT,
-      p2i(next_addr), p2i(next_addr ? (address)oopDesc::load_decode_heap_oop(next_addr) : NULL));
+      p2i(next_addr), p2i(next_addr ? RawAccess<>::oop_load(next_addr) : (oop)NULL));
   log_develop_trace(gc, ref)("     discovered_addr/* " PTR_FORMAT " / " PTR_FORMAT,
-      p2i(discovered_addr), p2i(discovered_addr ? (address)oopDesc::load_decode_heap_oop(discovered_addr) : NULL));
+      p2i(discovered_addr), p2i(discovered_addr ? RawAccess<>::oop_load(discovered_addr) : (oop)NULL));
 }
 #endif
 

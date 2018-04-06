@@ -27,7 +27,6 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
-#include "gc/shared/gcLocker.hpp"
 #include "jvmtifiles/jvmti.h"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"

@@ -36,7 +36,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/gcId.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
@@ -1232,8 +1232,8 @@ void GenCollectedHeap::save_marks() {
 GenCollectedHeap* GenCollectedHeap::heap() {
   CollectedHeap* heap = Universe::heap();
   assert(heap != NULL, "Uninitialized access to GenCollectedHeap::heap()");
-  assert(heap->kind() == CollectedHeap::SerialHeap ||
-         heap->kind() == CollectedHeap::CMSHeap, "Not a GenCollectedHeap");
+  assert(heap->kind() == CollectedHeap::Serial ||
+         heap->kind() == CollectedHeap::CMS, "Invalid name");
   return (GenCollectedHeap*) heap;
 }
 

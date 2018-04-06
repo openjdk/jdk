@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,9 +53,7 @@ public class TestConcurrentPhaseControlG1 {
         {"MARK_FROM_ROOTS", "Concurrent Mark From Roots"},
         {"BEFORE_REMARK", null},
         {"REMARK", "Pause Remark"},
-        {"CREATE_LIVE_DATA", "Concurrent Create Live Data"},
-        // "COMPLETE_CLEANUP",  -- optional phase, not reached by this test
-        {"CLEANUP_FOR_NEXT_MARK", "Concurrent Cleanup for Next Mark"},
+        {"REBUILD_REMEMBERED_SETS", "Concurrent Rebuild Remembered Sets"},
         // Clear request
         {"IDLE", null},
         {"ANY", null},

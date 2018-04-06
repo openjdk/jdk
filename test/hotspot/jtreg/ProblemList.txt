@@ -62,7 +62,6 @@ gc/g1/humongousObjects/objectGraphTest/TestObjectGraphAfterGC.java 8156755 gener
 gc/survivorAlignment/TestPromotionToSurvivor.java 8129886 generic-all
 gc/g1/logging/TestG1LoggingFailure.java 8169634 generic-all
 gc/g1/humongousObjects/TestHeapCounters.java 8178918 generic-all
-gc/g1/TestVerifyGCType.java 8193067 generic-all
 gc/stress/gclocker/TestGCLockerWithParallel.java 8180622 generic-all
 gc/stress/gclocker/TestGCLockerWithG1.java 8180622 generic-all
 gc/survivorAlignment/TestPromotionFromSurvivorToTenuredAfterMinorGC.java 8177765 generic-all

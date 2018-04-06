@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,25 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_CONCURRENTMARKTHREAD_HPP
-#define SHARE_VM_GC_G1_CONCURRENTMARKTHREAD_HPP
+#ifndef SHARE_VM_GC_G1_G1CONCURRENTMARKTHREAD_HPP
+#define SHARE_VM_GC_G1_G1CONCURRENTMARKTHREAD_HPP
 
 #include "gc/shared/concurrentGCPhaseManager.hpp"
 #include "gc/shared/concurrentGCThread.hpp"
 
-// The Concurrent Mark GC Thread triggers the parallel G1CMConcurrentMarkingTasks
-// as well as handling various marking cleanup.
-
 class G1ConcurrentMark;
 class G1Policy;
 
-class ConcurrentMarkThread: public ConcurrentGCThread {
+// The concurrent mark thread triggers the various steps of the concurrent marking
+// cycle, including various marking cleanup.
+class G1ConcurrentMarkThread: public ConcurrentGCThread {
   friend class VMStructs;
 
   double _vtime_start;  // Initial virtual time.
   double _vtime_accum;  // Accumulated virtual time.
   double _vtime_mark_accum;
 
-  G1ConcurrentMark*                _cm;
+  G1ConcurrentMark* _cm;
 
   enum State {
     Idle,
@@ -54,7 +53,7 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
   // WhiteBox testing support.
   ConcurrentGCPhaseManager::Stack _phase_manager_stack;
 
-  void sleepBeforeNextCycle();
+  void sleep_before_next_cycle();
   // Delay marking to meet MMU.
   void delay_to_keep_mmu(G1Policy* g1_policy, bool remark);
   double mmu_sleep_time(G1Policy* g1_policy, bool remark);
@@ -64,7 +63,7 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
 
  public:
   // Constructor
-  ConcurrentMarkThread(G1ConcurrentMark* cm);
+  G1ConcurrentMarkThread(G1ConcurrentMark* cm);
 
   // Total virtual time so far for this thread and concurrent marking tasks.
   double vtime_accum();
@@ -99,4 +98,4 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
   }
 };
 
-#endif // SHARE_VM_GC_G1_CONCURRENTMARKTHREAD_HPP
+#endif // SHARE_VM_GC_G1_G1CONCURRENTMARKTHREAD_HPP

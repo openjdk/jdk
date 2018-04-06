@@ -132,7 +132,7 @@ void CMSHeap::check_gen_kinds() {
 CMSHeap* CMSHeap::heap() {
   CollectedHeap* heap = Universe::heap();
   assert(heap != NULL, "Uninitialized access to CMSHeap::heap()");
-  assert(heap->kind() == CollectedHeap::CMSHeap, "Not a CMSHeap");
+  assert(heap->kind() == CollectedHeap::CMS, "Invalid name");
   return (CMSHeap*) heap;
 }
 
