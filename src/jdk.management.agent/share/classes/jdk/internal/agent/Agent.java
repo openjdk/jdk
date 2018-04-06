@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,9 +58,11 @@ import sun.management.jdp.JdpException;
 import sun.management.jmxremote.ConnectorBootstrap;
 
 /**
- * This Agent is started by the VM when -Dcom.sun.management.snmp or
- * -Dcom.sun.management.jmxremote is set. This class will be loaded by the
- * system class loader. Also jmx framework could be started by jcmd
+ * This class provides the methods to start the management agent.
+ * 1. {@link #startAgent} method is invoked by the VM if {@code -Dcom.sun.management.*} is set
+ * 2. {@link #startLocalManagementAgent} or {@link #startRemoteManagementAgent}
+ *    is invoked to start the management agent after the VM starts
+ *    via jcmd ManagementAgent.start and start_local command.
  */
 public class Agent {
     /**
@@ -239,8 +241,6 @@ public class Agent {
     private static ResourceBundle messageRB;
     private static final String CONFIG_FILE =
             "com.sun.management.config.file";
-    private static final String SNMP_PORT =
-            "com.sun.management.snmp.port";
     private static final String JMXREMOTE =
             "com.sun.management.jmxremote";
     private static final String JMXREMOTE_PORT =
@@ -251,8 +251,6 @@ public class Agent {
             "com.sun.management.enableThreadContentionMonitoring";
     private static final String LOCAL_CONNECTOR_ADDRESS_PROP =
             "com.sun.management.jmxremote.localConnectorAddress";
-    private static final String SNMP_AGENT_NAME =
-            "SnmpAgent";
 
     private static final String JDP_DEFAULT_ADDRESS = "224.0.23.178";
     private static final int JDP_DEFAULT_PORT = 7095;
@@ -307,8 +305,11 @@ public class Agent {
         startAgent(config_props);
     }
 
-    // jcmd ManagementAgent.start_local entry point
-    // Also called due to command-line via startAgent()
+    /*
+     * Starts the local management agent.
+     * This method is invoked by either startAgent method or
+     * by the VM directly via jcmd ManagementAgent.start_local command.
+     */
     private static synchronized void startLocalManagementAgent() {
         Properties agentProps = VMSupport.getAgentProperties();
 
@@ -330,10 +331,10 @@ public class Agent {
         }
     }
 
-    // jcmd ManagementAgent.start entry point
-    // This method starts the remote JMX agent and starts neither
-    // the local JMX agent nor the SNMP agent
-    // @see #startLocalManagementAgent and also @see #startAgent.
+    /*
+     * This method is invoked by the VM to start the remote management agent
+     * via jcmd ManagementAgent.start command.
+     */
     private static synchronized void startRemoteManagementAgent(String args) throws Exception {
         if (jmxServer != null) {
             throw new RuntimeException(getText(INVALID_STATE, "Agent already started"));
@@ -418,7 +419,6 @@ public class Agent {
     }
 
     private static void startAgent(Properties props) throws Exception {
-        String snmpPort = props.getProperty(SNMP_PORT);
         String jmxremote = props.getProperty(JMXREMOTE);
         String jmxremotePort = props.getProperty(JMXREMOTE_PORT);
 
@@ -431,9 +431,6 @@ public class Agent {
         }
 
         try {
-            if (snmpPort != null) {
-                loadSnmpAgent(props);
-            }
 
             /*
              * If the jmxremote.port property is set then we start the
@@ -533,39 +530,16 @@ public class Agent {
     public static synchronized Properties getManagementProperties() {
         if (mgmtProps == null) {
             String configFile = System.getProperty(CONFIG_FILE);
-            String snmpPort = System.getProperty(SNMP_PORT);
             String jmxremote = System.getProperty(JMXREMOTE);
             String jmxremotePort = System.getProperty(JMXREMOTE_PORT);
 
-            if (configFile == null && snmpPort == null
-                    && jmxremote == null && jmxremotePort == null) {
+            if (configFile == null && jmxremote == null && jmxremotePort == null) {
                 // return if out-of-the-management option is not specified
                 return null;
             }
             mgmtProps = loadManagementProperties();
         }
         return mgmtProps;
-    }
-
-    private static void loadSnmpAgent(Properties props) {
-        /*
-         * Load the jdk.snmp service
-         */
-        AgentProvider provider = AccessController.doPrivileged(
-            (PrivilegedAction<AgentProvider>) () -> {
-                for (AgentProvider aProvider : ServiceLoader.loadInstalled(AgentProvider.class)) {
-                    if (aProvider.getName().equals(SNMP_AGENT_NAME))
-                        return aProvider;
-                }
-                return null;
-            },  null
-        );
-
-        if (provider != null) {
-            provider.startAgent(props);
-         } else { // snmp runtime doesn't exist - initialization fails
-            throw new UnsupportedOperationException("Unsupported management property: " + SNMP_PORT);
-        }
     }
 
     // read config file and initialize the properties
@@ -609,6 +583,10 @@ public class Agent {
         }
     }
 
+    /**
+     * This method is invoked by the VM to start the management agent
+     * when -Dcom.sun.management.* is set during startup.
+     */
     public static void startAgent() throws Exception {
         String prop = System.getProperty("com.sun.management.agent.class");
 
