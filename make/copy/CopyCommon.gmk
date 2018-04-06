@@ -73,11 +73,12 @@ endif
 #   EXCLUDES : List of filenames to exclude from copy
 SetupCopyLegalFiles = $(NamedParamsMacroTemplate)
 define SetupCopyLegalFilesBody
-  $$(eval $$(call SetupCopyFiles, $1, \
-      SRC := $$(CUSTOM_ROOT), \
-      DEST := $$(LEGAL_DST_DIR), \
-      FILES := $$(filter-out $$(addprefix %/, $$($1_EXCLUDES)), \
-          $$(wildcard $$(addsuffix /*, $$(call FindModuleLegalSrcDirs, $$(MODULE))))), \
-      FLATTEN := true, \
-  ))
+  $$(foreach f, $$(filter-out $$(addprefix %/, $$($1_EXCLUDES)), \
+      $$(wildcard $$(addsuffix /*, $$(call FindModuleLegalSrcDirs, $$(MODULE))))), \
+    $$(eval $$(call SetupCopyFiles, $1_$$(notdir $$f), \
+        DEST := $$(LEGAL_DST_DIR), \
+        FILES := $$f, \
+    )) \
+    $$(eval $1 += $$($1_$$(notdir $$f))) \
+  )
 endef
