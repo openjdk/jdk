@@ -2579,7 +2579,6 @@ void MacroAssembler::rtm_retry_lock_on_abort(Register retry_count_Reg, Register 
   if (checkRetry) { bind(*checkRetry); }
   addic_(retry_count_Reg, retry_count_Reg, -1);
   blt(CCR0, doneRetry);
-  smt_yield(); // Can't use wait(). No permission (SIGILL).
   b(retryLabel);
   bind(doneRetry);
 }
@@ -2590,7 +2589,7 @@ void MacroAssembler::rtm_retry_lock_on_abort(Register retry_count_Reg, Register 
 // output: retry_count_Reg decremented by 1
 // CTR is killed
 void MacroAssembler::rtm_retry_lock_on_busy(Register retry_count_Reg, Register owner_addr_Reg, Label& retryLabel) {
-  Label SpinLoop, doneRetry;
+  Label SpinLoop, doneRetry, doRetry;
   addic_(retry_count_Reg, retry_count_Reg, -1);
   blt(CCR0, doneRetry);
 
@@ -2599,15 +2598,25 @@ void MacroAssembler::rtm_retry_lock_on_busy(Register retry_count_Reg, Register o
     mtctr(R0);
   }
 
+  // low thread priority
+  smt_prio_low();
   bind(SpinLoop);
-  smt_yield(); // Can't use waitrsv(). No permission (SIGILL).
 
   if (RTMSpinLoopCount > 1) {
-    bdz(retryLabel);
+    bdz(doRetry);
     ld(R0, 0, owner_addr_Reg);
     cmpdi(CCR0, R0, 0);
     bne(CCR0, SpinLoop);
   }
+
+  bind(doRetry);
+
+  // restore thread priority to default in userspace
+#ifdef LINUX
+  smt_prio_medium_low();
+#else
+  smt_prio_medium();
+#endif
 
   b(retryLabel);
 
