@@ -59,6 +59,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
+#include "memory/binaryTreeDictionary.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/padded.hpp"
 #include "memory/resourceArea.hpp"
