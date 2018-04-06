@@ -23,14 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/plab.hpp"
 #include "runtime/commandLineFlagWriteableList.hpp"
 #include "runtime/os.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/cms/concurrentMarkSweepGeneration.inline.hpp"
-#include "gc/g1/g1_globals.hpp"
-#include "gc/g1/heapRegionBounds.inline.hpp"
-#include "gc/shared/plab.hpp"
-#endif // INCLUDE_ALL_GCS
 #ifdef COMPILER1
 #include "c1/c1_globals.hpp"
 #endif // COMPILER1
@@ -122,20 +117,20 @@ void CommandLineFlagWriteableList::init(void) {
 
   _controls = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<CommandLineFlagWriteable*>(INITIAL_WRITEABLES_SIZE, true);
 
-  emit_writeable_no(NULL RUNTIME_FLAGS(EMIT_WRITEABLE_DEVELOPER_FLAG,
-                                   EMIT_WRITEABLE_PD_DEVELOPER_FLAG,
-                                   EMIT_WRITEABLE_PRODUCT_FLAG,
-                                   EMIT_WRITEABLE_PD_PRODUCT_FLAG,
-                                   EMIT_WRITEABLE_DIAGNOSTIC_FLAG,
-                                   EMIT_WRITEABLE_PD_DIAGNOSTIC_FLAG,
-                                   EMIT_WRITEABLE_EXPERIMENTAL_FLAG,
-                                   EMIT_WRITEABLE_NOTPRODUCT_FLAG,
-                                   EMIT_WRITEABLE_MANAGEABLE_FLAG,
-                                   EMIT_WRITEABLE_PRODUCT_RW_FLAG,
-                                   EMIT_WRITEABLE_LP64_PRODUCT_FLAG,
-                                   IGNORE_RANGE,
-                                   IGNORE_CONSTRAINT,
-                                   EMIT_WRITEABLE));
+  emit_writeable_no(NULL VM_FLAGS(EMIT_WRITEABLE_DEVELOPER_FLAG,
+                                  EMIT_WRITEABLE_PD_DEVELOPER_FLAG,
+                                  EMIT_WRITEABLE_PRODUCT_FLAG,
+                                  EMIT_WRITEABLE_PD_PRODUCT_FLAG,
+                                  EMIT_WRITEABLE_DIAGNOSTIC_FLAG,
+                                  EMIT_WRITEABLE_PD_DIAGNOSTIC_FLAG,
+                                  EMIT_WRITEABLE_EXPERIMENTAL_FLAG,
+                                  EMIT_WRITEABLE_NOTPRODUCT_FLAG,
+                                  EMIT_WRITEABLE_MANAGEABLE_FLAG,
+                                  EMIT_WRITEABLE_PRODUCT_RW_FLAG,
+                                  EMIT_WRITEABLE_LP64_PRODUCT_FLAG,
+                                  IGNORE_RANGE,
+                                  IGNORE_CONSTRAINT,
+                                  EMIT_WRITEABLE));
 
   EMIT_WRITEABLES_FOR_GLOBALS_EXT
 
@@ -188,22 +183,6 @@ void CommandLineFlagWriteableList::init(void) {
                               IGNORE_CONSTRAINT,
                               EMIT_WRITEABLE));
 #endif // COMPILER2
-
-#if INCLUDE_ALL_GCS
-  emit_writeable_no(NULL G1_FLAGS(EMIT_WRITEABLE_DEVELOPER_FLAG,
-                              EMIT_WRITEABLE_PD_DEVELOPER_FLAG,
-                              EMIT_WRITEABLE_PRODUCT_FLAG,
-                              EMIT_WRITEABLE_PD_PRODUCT_FLAG,
-                              EMIT_WRITEABLE_DIAGNOSTIC_FLAG,
-                              EMIT_WRITEABLE_PD_DIAGNOSTIC_FLAG,
-                              EMIT_WRITEABLE_EXPERIMENTAL_FLAG,
-                              EMIT_WRITEABLE_NOTPRODUCT_FLAG,
-                              EMIT_WRITEABLE_MANAGEABLE_FLAG,
-                              EMIT_WRITEABLE_PRODUCT_RW_FLAG,
-                              IGNORE_RANGE,
-                              IGNORE_CONSTRAINT,
-                              EMIT_WRITEABLE));
-#endif // INCLUDE_ALL_GCS
 }
 
 CommandLineFlagWriteable* CommandLineFlagWriteableList::find(const char* name) {
