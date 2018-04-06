@@ -459,7 +459,7 @@ class VM_Exit: public VM_Operation {
  private:
   int  _exit_code;
   static volatile bool _vm_exited;
-  static Thread * _shutdown_thread;
+  static Thread * volatile _shutdown_thread;
   static void wait_if_vm_exited();
  public:
   VM_Exit(int exit_code) {
@@ -468,6 +468,7 @@ class VM_Exit: public VM_Operation {
   static int wait_for_threads_in_native_to_block();
   static int set_vm_exited();
   static bool vm_exited()                      { return _vm_exited; }
+  static Thread * shutdown_thread()            { return _shutdown_thread; }
   static void block_if_vm_exited() {
     if (_vm_exited) {
       wait_if_vm_exited();

@@ -1241,9 +1241,6 @@ public:
   product(bool, CheckJNICalls, false,                                       \
           "Verify all arguments to JNI calls")                              \
                                                                             \
-  product(bool, CheckEndorsedAndExtDirs, false,                             \
-          "Verify the endorsed and extension directories are not used")     \
-                                                                            \
   product(bool, UseFastJNIAccessors, true,                                  \
           "Use optimized versions of Get<Primitive>Field")                  \
                                                                             \
@@ -4064,6 +4061,9 @@ public:
                                                                             \
   develop(bool, VerifyMetaspace, false,                                     \
           "Verify metaspace on chunk movements.")                           \
+                                                                            \
+  diagnostic(bool, ShowRegistersOnAssert, false,                            \
+          "On internal errors, include registers in error report.")         \
                                                                             \
 
 

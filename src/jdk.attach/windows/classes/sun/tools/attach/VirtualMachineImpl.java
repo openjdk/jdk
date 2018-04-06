@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,9 +80,19 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         assert args.length <= 3;        // includes null
 
         // create a pipe using a random name
-        int r = (new Random()).nextInt();
-        String pipename = "\\\\.\\pipe\\javatool" + r;
-        long hPipe = createPipe(pipename);
+        Random rnd = new Random();
+        int r = rnd.nextInt();
+        String pipeprefix = "\\\\.\\pipe\\javatool";
+        String pipename = pipeprefix + r;
+        long hPipe;
+        try {
+            hPipe = createPipe(pipename);
+        } catch (IOException ce) {
+            // Retry with another random pipe name.
+            r = rnd.nextInt();
+            pipename = pipeprefix + r;
+            hPipe = createPipe(pipename);
+        }
 
         // check if we are detached - in theory it's possible that detach is invoked
         // after this check but before we enqueue the command.

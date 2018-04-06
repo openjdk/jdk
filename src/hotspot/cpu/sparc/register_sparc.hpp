@@ -154,62 +154,6 @@ CONSTANT_REGISTER_DECLARATION(Register, I7    , (RegisterImpl::ibase + 7));
 CONSTANT_REGISTER_DECLARATION(Register, FP    , (RegisterImpl::ibase + 6));
 CONSTANT_REGISTER_DECLARATION(Register, SP    , (RegisterImpl::obase + 6));
 
-//
-// Because sparc has so many registers, #define'ing values for the is
-// beneficial in code size and the cost of some of the dangers of
-// defines.  We don't use them on Intel because win32 uses asm
-// directives which use the same names for registers as Hotspot does,
-// so #defines would screw up the inline assembly.  If a particular
-// file has a problem with these defines then it's possible to turn
-// them off in that file by defining DONT_USE_REGISTER_DEFINES.
-// register_definition_sparc.cpp does that so that it's able to
-// provide real definitions of these registers for use in debuggers
-// and such.
-//
-
-#ifndef DONT_USE_REGISTER_DEFINES
-#define noreg ((Register)(noreg_RegisterEnumValue))
-
-#define G0 ((Register)(G0_RegisterEnumValue))
-#define G1 ((Register)(G1_RegisterEnumValue))
-#define G2 ((Register)(G2_RegisterEnumValue))
-#define G3 ((Register)(G3_RegisterEnumValue))
-#define G4 ((Register)(G4_RegisterEnumValue))
-#define G5 ((Register)(G5_RegisterEnumValue))
-#define G6 ((Register)(G6_RegisterEnumValue))
-#define G7 ((Register)(G7_RegisterEnumValue))
-
-#define O0 ((Register)(O0_RegisterEnumValue))
-#define O1 ((Register)(O1_RegisterEnumValue))
-#define O2 ((Register)(O2_RegisterEnumValue))
-#define O3 ((Register)(O3_RegisterEnumValue))
-#define O4 ((Register)(O4_RegisterEnumValue))
-#define O5 ((Register)(O5_RegisterEnumValue))
-#define O6 ((Register)(O6_RegisterEnumValue))
-#define O7 ((Register)(O7_RegisterEnumValue))
-
-#define L0 ((Register)(L0_RegisterEnumValue))
-#define L1 ((Register)(L1_RegisterEnumValue))
-#define L2 ((Register)(L2_RegisterEnumValue))
-#define L3 ((Register)(L3_RegisterEnumValue))
-#define L4 ((Register)(L4_RegisterEnumValue))
-#define L5 ((Register)(L5_RegisterEnumValue))
-#define L6 ((Register)(L6_RegisterEnumValue))
-#define L7 ((Register)(L7_RegisterEnumValue))
-
-#define I0 ((Register)(I0_RegisterEnumValue))
-#define I1 ((Register)(I1_RegisterEnumValue))
-#define I2 ((Register)(I2_RegisterEnumValue))
-#define I3 ((Register)(I3_RegisterEnumValue))
-#define I4 ((Register)(I4_RegisterEnumValue))
-#define I5 ((Register)(I5_RegisterEnumValue))
-#define I6 ((Register)(I6_RegisterEnumValue))
-#define I7 ((Register)(I7_RegisterEnumValue))
-
-#define FP ((Register)(FP_RegisterEnumValue))
-#define SP ((Register)(SP_RegisterEnumValue))
-#endif // DONT_USE_REGISTER_DEFINES
-
 // Use FloatRegister as shortcut
 class FloatRegisterImpl;
 typedef FloatRegisterImpl* FloatRegister;
@@ -320,59 +264,6 @@ CONSTANT_REGISTER_DECLARATION(FloatRegister, F56    , (56));
 CONSTANT_REGISTER_DECLARATION(FloatRegister, F58    , (58));
 CONSTANT_REGISTER_DECLARATION(FloatRegister, F60    , (60));
 CONSTANT_REGISTER_DECLARATION(FloatRegister, F62    , (62));
-
-
-#ifndef DONT_USE_REGISTER_DEFINES
-#define fnoreg ((FloatRegister)(fnoreg_FloatRegisterEnumValue))
-#define F0     ((FloatRegister)(    F0_FloatRegisterEnumValue))
-#define F1     ((FloatRegister)(    F1_FloatRegisterEnumValue))
-#define F2     ((FloatRegister)(    F2_FloatRegisterEnumValue))
-#define F3     ((FloatRegister)(    F3_FloatRegisterEnumValue))
-#define F4     ((FloatRegister)(    F4_FloatRegisterEnumValue))
-#define F5     ((FloatRegister)(    F5_FloatRegisterEnumValue))
-#define F6     ((FloatRegister)(    F6_FloatRegisterEnumValue))
-#define F7     ((FloatRegister)(    F7_FloatRegisterEnumValue))
-#define F8     ((FloatRegister)(    F8_FloatRegisterEnumValue))
-#define F9     ((FloatRegister)(    F9_FloatRegisterEnumValue))
-#define F10    ((FloatRegister)(   F10_FloatRegisterEnumValue))
-#define F11    ((FloatRegister)(   F11_FloatRegisterEnumValue))
-#define F12    ((FloatRegister)(   F12_FloatRegisterEnumValue))
-#define F13    ((FloatRegister)(   F13_FloatRegisterEnumValue))
-#define F14    ((FloatRegister)(   F14_FloatRegisterEnumValue))
-#define F15    ((FloatRegister)(   F15_FloatRegisterEnumValue))
-#define F16    ((FloatRegister)(   F16_FloatRegisterEnumValue))
-#define F17    ((FloatRegister)(   F17_FloatRegisterEnumValue))
-#define F18    ((FloatRegister)(   F18_FloatRegisterEnumValue))
-#define F19    ((FloatRegister)(   F19_FloatRegisterEnumValue))
-#define F20    ((FloatRegister)(   F20_FloatRegisterEnumValue))
-#define F21    ((FloatRegister)(   F21_FloatRegisterEnumValue))
-#define F22    ((FloatRegister)(   F22_FloatRegisterEnumValue))
-#define F23    ((FloatRegister)(   F23_FloatRegisterEnumValue))
-#define F24    ((FloatRegister)(   F24_FloatRegisterEnumValue))
-#define F25    ((FloatRegister)(   F25_FloatRegisterEnumValue))
-#define F26    ((FloatRegister)(   F26_FloatRegisterEnumValue))
-#define F27    ((FloatRegister)(   F27_FloatRegisterEnumValue))
-#define F28    ((FloatRegister)(   F28_FloatRegisterEnumValue))
-#define F29    ((FloatRegister)(   F29_FloatRegisterEnumValue))
-#define F30    ((FloatRegister)(   F30_FloatRegisterEnumValue))
-#define F31    ((FloatRegister)(   F31_FloatRegisterEnumValue))
-#define F32    ((FloatRegister)(   F32_FloatRegisterEnumValue))
-#define F34    ((FloatRegister)(   F34_FloatRegisterEnumValue))
-#define F36    ((FloatRegister)(   F36_FloatRegisterEnumValue))
-#define F38    ((FloatRegister)(   F38_FloatRegisterEnumValue))
-#define F40    ((FloatRegister)(   F40_FloatRegisterEnumValue))
-#define F42    ((FloatRegister)(   F42_FloatRegisterEnumValue))
-#define F44    ((FloatRegister)(   F44_FloatRegisterEnumValue))
-#define F46    ((FloatRegister)(   F46_FloatRegisterEnumValue))
-#define F48    ((FloatRegister)(   F48_FloatRegisterEnumValue))
-#define F50    ((FloatRegister)(   F50_FloatRegisterEnumValue))
-#define F52    ((FloatRegister)(   F52_FloatRegisterEnumValue))
-#define F54    ((FloatRegister)(   F54_FloatRegisterEnumValue))
-#define F56    ((FloatRegister)(   F56_FloatRegisterEnumValue))
-#define F58    ((FloatRegister)(   F58_FloatRegisterEnumValue))
-#define F60    ((FloatRegister)(   F60_FloatRegisterEnumValue))
-#define F62    ((FloatRegister)(   F62_FloatRegisterEnumValue))
-#endif // DONT_USE_REGISTER_DEFINES
 
 // Maximum number of incoming arguments that can be passed in i registers.
 const int SPARC_ARGS_IN_REGS_NUM = 6;

@@ -49,6 +49,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/thread.hpp"
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"

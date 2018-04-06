@@ -38,7 +38,7 @@
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/vmPSOperations.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcWhen.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
@@ -622,7 +622,7 @@ void ParallelScavengeHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_trac
 ParallelScavengeHeap* ParallelScavengeHeap::heap() {
   CollectedHeap* heap = Universe::heap();
   assert(heap != NULL, "Uninitialized access to ParallelScavengeHeap::heap()");
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Not a ParallelScavengeHeap");
+  assert(heap->kind() == CollectedHeap::Parallel, "Invalid name");
   return (ParallelScavengeHeap*)heap;
 }
 

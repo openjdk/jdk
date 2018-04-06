@@ -30,6 +30,7 @@
 #include "gc/g1/g1StringDedupThread.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 
@@ -66,7 +67,7 @@ class G1StringDedupSharedClosure: public OopClosure {
 
   virtual void do_oop(oop* p) { ShouldNotReachHere(); }
   virtual void do_oop(narrowOop* p) {
-    oop java_string = oopDesc::load_decode_heap_oop(p);
+    oop java_string = RawAccess<>::oop_load(p);
     G1StringDedupTable::deduplicate(java_string, _stat);
   }
 };

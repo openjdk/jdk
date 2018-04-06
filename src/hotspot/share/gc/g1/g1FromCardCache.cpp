@@ -28,9 +28,9 @@
 #include "memory/padded.inline.hpp"
 #include "utilities/debug.hpp"
 
-int**  G1FromCardCache::_cache = NULL;
-uint   G1FromCardCache::_max_regions = 0;
-size_t G1FromCardCache::_static_mem_size = 0;
+uintptr_t** G1FromCardCache::_cache = NULL;
+uint        G1FromCardCache::_max_regions = 0;
+size_t      G1FromCardCache::_static_mem_size = 0;
 #ifdef ASSERT
 uint   G1FromCardCache::_max_workers = 0;
 #endif
@@ -43,9 +43,9 @@ void G1FromCardCache::initialize(uint num_par_rem_sets, uint max_num_regions) {
 #ifdef ASSERT
   _max_workers = num_par_rem_sets;
 #endif
-  _cache = Padded2DArray<int, mtGC>::create_unfreeable(_max_regions,
-                                                       num_par_rem_sets,
-                                                       &_static_mem_size);
+  _cache = Padded2DArray<uintptr_t, mtGC>::create_unfreeable(_max_regions,
+                                                             num_par_rem_sets,
+                                                             &_static_mem_size);
 
   invalidate(0, _max_regions);
 }
@@ -68,7 +68,7 @@ void G1FromCardCache::invalidate(uint start_idx, size_t new_num_regions) {
 void G1FromCardCache::print(outputStream* out) {
   for (uint i = 0; i < G1RemSet::num_par_rem_sets(); i++) {
     for (uint j = 0; j < _max_regions; j++) {
-      out->print_cr("_from_card_cache[%u][%u] = %d.",
+      out->print_cr("_from_card_cache[%u][%u] = " SIZE_FORMAT ".",
                     i, j, at(i, j));
     }
   }

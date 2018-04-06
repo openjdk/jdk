@@ -114,17 +114,7 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   fi
 
   # Math library
-  if test "x$OPENJDK_TARGET_OS" != xsolaris; then
-    BASIC_JVM_LIBS="$LIBM"
-  else
-    # FIXME: This hard-coded path is not really proper.
-    if test "x$OPENJDK_TARGET_CPU" = xx86_64; then
-      BASIC_SOLARIS_LIBM_LIBS="/usr/lib/amd64/libm.so.1"
-    elif test "x$OPENJDK_TARGET_CPU" = xsparcv9; then
-      BASIC_SOLARIS_LIBM_LIBS="/usr/lib/sparcv9/libm.so.1"
-    fi
-    BASIC_JVM_LIBS="$BASIC_SOLARIS_LIBM_LIBS"
-  fi
+  BASIC_JVM_LIBS="$LIBM"
 
   # Dynamic loading library
   if test "x$OPENJDK_TARGET_OS" = xlinux || test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xaix; then

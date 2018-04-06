@@ -27,7 +27,6 @@
 
 #include "asm/assembler.hpp"
 #include "code/vmreg.hpp"
-#include "memory/allocation.hpp"
 
 // A Location describes a concrete machine variable location
 // (such as integer or floating point register or a stack-held

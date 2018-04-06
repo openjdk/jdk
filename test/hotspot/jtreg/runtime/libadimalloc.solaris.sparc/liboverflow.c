@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <jni.h>
+#if defined (__SUNPRO_C) && __SUNPRO_C >= 0x5140
+#pragma error_messages(off, SEC_ARR_OUTSIDE_BOUND_READ)
+#endif
 
 #ifdef __cplusplus
 extern "C" {

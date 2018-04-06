@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1393,6 +1393,7 @@ int Jlookup_by_regs(jvm_agent_t* J, const prgregset_t regs, char *name,
     bcp          = (uintptr_t) regs[R_L1];
     methodPtr = (uintptr_t) regs[R_L2];
     sender_sp = regs[R_I5];
+    fp = (uintptr_t) regs[R_FP];
     if (debug > 2) {
         fprintf(stderr, "\nregs[R_I1]=%lx, regs[R_I2]=%lx, regs[R_I5]=%lx, regs[R_L1]=%lx, regs[R_L2]=%lx\n",
                          regs[R_I1], regs[R_I2], regs[R_I5], regs[R_L1], regs[R_L2]);

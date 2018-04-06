@@ -64,7 +64,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
@@ -148,8 +148,6 @@ ClassPathEntry* ClassLoader::_last_append_entry  = NULL;
 #if INCLUDE_CDS
 ClassPathEntry* ClassLoader::_app_classpath_entries = NULL;
 ClassPathEntry* ClassLoader::_last_app_classpath_entry = NULL;
-GrowableArray<char*>* ClassLoader::_boot_modules_array = NULL;
-GrowableArray<char*>* ClassLoader::_platform_modules_array = NULL;
 SharedPathsMiscInfo* ClassLoader::_shared_paths_misc_info = NULL;
 #endif
 

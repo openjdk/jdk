@@ -27,6 +27,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/vmError.hpp"
 
 #include <sys/types.h>
@@ -122,10 +123,19 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
     pc = (address) info->si_addr;
   }
 
+  // Needed to make it possible to call SafeFetch.. APIs in error handling.
   if (uc && pc && StubRoutines::is_safefetch_fault(pc)) {
     os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
     return;
   }
+
+  // Needed because asserts may happen in error handling too.
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  if ((sig == SIGSEGV || sig == SIGBUS) && info != NULL && info->si_addr == g_assert_poison) {
+    handle_assert_poison_fault(ucVoid, info->si_addr);
+    return;
+  }
+#endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
   VMError::report_and_die(NULL, sig, pc, info, ucVoid);
 }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ DIST_DIR = dist
 DIST_JAR = $(DIST_DIR)/JITtester.jar
 
 SRC_FILES = $(shell find $(SRC_DIR) -name '*.java')
-TESTLIBRARY_SRC_DIR = ../../../../test/lib/jdk/test/lib
+TESTLIBRARY_SRC_DIR = ../../../../lib/jdk/test/lib
 TESTLIBRARY_SRC_FILES = $(TESTLIBRARY_SRC_DIR)/Asserts.java \
                         $(TESTLIBRARY_SRC_DIR)/JDKToolFinder.java \
                         $(TESTLIBRARY_SRC_DIR)/JDKToolLauncher.java \
@@ -125,8 +125,16 @@ copyaot: $(TESTBASE_DIR)/compiler/aot
 	@cp ../../compiler/aot/AotCompiler.java $(TESTBASE_DIR)/compiler/aot
 
 testgroup: $(TESTBASE_DIR)
-	@echo 'jittester_all = \\' > $(TESTGROUP_FILE)
+	@echo 'jittester_all = \' > $(TESTGROUP_FILE)
 	@echo '	/' >> $(TESTGROUP_FILE)
+	@echo '' >> $(TESTGROUP_FILE)
+	@echo 'jit_tests = \' >> $(TESTGROUP_FILE)
+	@echo ' java_tests \' >> $(TESTGROUP_FILE)
+	@echo ' bytecode_tests' >> $(TESTGROUP_FILE)
+	@echo '' >> $(TESTGROUP_FILE)
+	@echo 'aot_tests = \' >> $(TESTGROUP_FILE)
+	@echo ' aot_bytecode_tests \' >> $(TESTGROUP_FILE)
+	@echo ' aot_java_tests' >> $(TESTGROUP_FILE)
 	@echo '' >> $(TESTGROUP_FILE)
 
 testroot: $(TESTBASE_DIR)
@@ -134,4 +142,3 @@ testroot: $(TESTBASE_DIR)
 
 $(TESTBASE_DIR) $(DIST_DIR) $(TESTBASE_DIR)/jdk/test/lib/jittester/jtreg $(TESTBASE_DIR)/compiler/aot:
 	$(shell if [ ! -d $@ ]; then mkdir -p $@; fi)
-

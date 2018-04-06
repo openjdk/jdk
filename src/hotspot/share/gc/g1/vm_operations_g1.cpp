@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/concurrentMarkThread.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/g1/vm_operations_g1.hpp"

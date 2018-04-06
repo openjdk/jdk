@@ -43,6 +43,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 
 // frequently used constants
@@ -634,7 +635,7 @@ JVMCIEnv::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler, Hand
 
   if (!compiled_code->is_a(HotSpotCompiledNmethod::klass())) {
     oop stubName = HotSpotCompiledCode::name(compiled_code_obj);
-    if (oopDesc::is_null(stubName)) {
+    if (stubName == NULL) {
       JVMCI_ERROR_OK("stub should have a name");
     }
     char* name = strdup(java_lang_String::as_utf8_string(stubName));

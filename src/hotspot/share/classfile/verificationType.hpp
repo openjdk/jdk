@@ -26,7 +26,6 @@
 #define SHARE_VM_CLASSFILE_VERIFICATIONTYPE_HPP
 
 #include "classfile/systemDictionary.hpp"
-#include "memory/allocation.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.hpp"
 #include "oops/symbol.hpp"

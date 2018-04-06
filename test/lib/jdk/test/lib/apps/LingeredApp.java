@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,12 @@
 package jdk.test.lib.apps;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -37,7 +40,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.UUID;
+import jdk.test.lib.process.OutputBuffer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.StreamPumper;
 
 /**
  * This is a framework to launch an app that could be synchronized with caller
@@ -69,38 +76,15 @@ public class LingeredApp {
     private static final long spinDelay = 1000;
 
     private long lockCreationTime;
-    private final ArrayList<String> storedAppOutput;
+    private ByteArrayOutputStream stderrBuffer;
+    private ByteArrayOutputStream stdoutBuffer;
+    private Thread outPumperThread;
+    private Thread errPumperThread;
 
     protected Process appProcess;
+    protected OutputBuffer output;
     protected static final int appWaitTime = 100;
     protected final String lockFileName;
-
-    /*
-     * Drain child process output, store it into string array
-     */
-    class InputGobbler extends Thread {
-
-        InputStream is;
-        List<String> astr;
-
-        InputGobbler(InputStream is, List<String> astr) {
-            this.is = is;
-            this.astr = astr;
-        }
-
-        public void run() {
-            try {
-                InputStreamReader isr = new InputStreamReader(is);
-                BufferedReader br = new BufferedReader(isr);
-                String line = null;
-                while ((line = br.readLine()) != null) {
-                    astr.add(line);
-                }
-            } catch (IOException ex) {
-                // pass
-            }
-        }
-    }
 
     /**
      * Create LingeredApp object on caller side. Lock file have be a valid filename
@@ -110,13 +94,11 @@ public class LingeredApp {
      */
     public LingeredApp(String lockFileName) {
         this.lockFileName = lockFileName;
-        this.storedAppOutput = new ArrayList<String>();
     }
 
     public LingeredApp() {
         final String lockName = UUID.randomUUID().toString() + ".lck";
         this.lockFileName = lockName;
-        this.storedAppOutput = new ArrayList<String>();
     }
 
     /**
@@ -156,13 +138,48 @@ public class LingeredApp {
 
     /**
      *
-     * @return application output as string array. Empty array if application produced no output
+     * @return OutputBuffer object for the LingeredApp's output. Can only be called
+     * after LingeredApp has exited.
+     */
+    public OutputBuffer getOutput() {
+        if (appProcess.isAlive()) {
+            throw new RuntimeException("Process is still alive. Can't get its output.");
+        }
+        if (output == null) {
+            output = new OutputBuffer(stdoutBuffer.toString(), stderrBuffer.toString());
+        }
+        return output;
+    }
+
+    /*
+     * Capture all stdout and stderr output from the LingeredApp so it can be returned
+     * to the driver app later. This code is modeled after ProcessTools.getOutput().
+     */
+    private void startOutputPumpers() {
+        stderrBuffer = new ByteArrayOutputStream();
+        stdoutBuffer = new ByteArrayOutputStream();
+        StreamPumper outPumper = new StreamPumper(appProcess.getInputStream(), stdoutBuffer);
+        StreamPumper errPumper = new StreamPumper(appProcess.getErrorStream(), stderrBuffer);
+        outPumperThread = new Thread(outPumper);
+        errPumperThread = new Thread(errPumper);
+
+        outPumperThread.setDaemon(true);
+        errPumperThread.setDaemon(true);
+
+        outPumperThread.start();
+        errPumperThread.start();
+    }
+
+    /**
+     *
+     * @return application output as List. Empty List if application produced no output
      */
     public List<String> getAppOutput() {
         if (appProcess.isAlive()) {
             throw new RuntimeException("Process is still alive. Can't get its output.");
         }
-        return storedAppOutput;
+        BufferedReader bufReader = new BufferedReader(new StringReader(output.getStdout()));
+        return bufReader.lines().collect(Collectors.toList());
     }
 
     /* Make sure all part of the app use the same method to get dates,
@@ -211,13 +228,14 @@ public class LingeredApp {
     }
 
     public void waitAppTerminate() {
-        while (true) {
-            try {
-                appProcess.waitFor();
-                break;
-            } catch (InterruptedException ex) {
-                // pass
-            }
+        // This code is modeled after tail end of ProcessTools.getOutput().
+        try {
+            appProcess.waitFor();
+            outPumperThread.join();
+            errPumperThread.join();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            // pass
         }
     }
 
@@ -280,7 +298,6 @@ public class LingeredApp {
         List<String> cmd = new ArrayList<String>();
         cmd.add(javapath);
 
-
         if (vmArguments == null) {
             // Propagate test.vm.options to LingeredApp, filter out possible empty options
             String testVmOpts[] = System.getProperty("test.vm.opts","").split("\\s+");
@@ -289,8 +306,7 @@ public class LingeredApp {
                     cmd.add(s);
                 }
             }
-        }
-        else{
+        } else {
             // Lets user manage LingeredApp options
             cmd.addAll(vmArguments);
         }
@@ -313,13 +329,7 @@ public class LingeredApp {
             cmdLine.append("'").append(strCmd).append("' ");
         }
 
-        System.out.println("Command line: [" + cmdLine.toString() + "]");
-    }
-
-    public void startGobblerPipe() {
-      // Create pipe reader for process, and read stdin and stderr to array of strings
-      InputGobbler gb = new InputGobbler(appProcess.getInputStream(), storedAppOutput);
-      gb.start();
+        System.err.println("Command line: [" + cmdLine.toString() + "]");
     }
 
     /**
@@ -339,13 +349,20 @@ public class LingeredApp {
         printCommandLine(cmd);
 
         ProcessBuilder pb = new ProcessBuilder(cmd);
-        // we don't expect any error output but make sure we are not stuck on pipe
-        // pb.redirectErrorStream(false);
         // ProcessBuilder.start can throw IOException
-        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
         appProcess = pb.start();
 
-        startGobblerPipe();
+        startOutputPumpers();
+    }
+
+    private void finishApp() {
+        OutputBuffer output = getOutput();
+        String msg =
+            " LingeredApp stdout: [" + output.getStdout() + "];\n" +
+            " LingeredApp stderr: [" + output.getStderr() + "]\n" +
+            " LingeredApp exitValue = " + appProcess.exitValue();
+
+        System.err.println(msg);
     }
 
     /**
@@ -364,6 +381,7 @@ public class LingeredApp {
                 throw new IOException("LingeredApp terminated with non-zero exit code " + exitcode);
             }
         }
+        finishApp();
     }
 
     /**
@@ -384,6 +402,8 @@ public class LingeredApp {
             a.waitAppReady(appWaitTime);
         } catch (Exception ex) {
             a.deleteLock();
+            System.err.println("LingeredApp failed to start: " + ex);
+            a.finishApp();
             throw ex;
         }
 

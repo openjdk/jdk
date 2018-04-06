@@ -25,12 +25,12 @@
 #ifndef SHARE_VM_RUNTIME_INTERFACESUPPORT_INLINE_HPP
 #define SHARE_VM_RUNTIME_INTERFACESUPPORT_INLINE_HPP
 
-#include "gc/shared/gcLocker.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vm_operations.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -356,6 +356,24 @@ class VMNativeEntryWrapper {
 
 // VM-internal runtime interface support
 
+// Definitions for JRT (Java (Compiler/Shared) Runtime)
+
+// JRT_LEAF currently can be called from either _thread_in_Java or
+// _thread_in_native mode. In _thread_in_native, it is ok
+// for another thread to trigger GC. The rest of the JRT_LEAF
+// rules apply.
+class JRTLeafVerifier : public NoSafepointVerifier {
+  static bool should_verify_GC();
+ public:
+#ifdef ASSERT
+  JRTLeafVerifier();
+  ~JRTLeafVerifier();
+#else
+  JRTLeafVerifier() {}
+  ~JRTLeafVerifier() {}
+#endif
+};
+
 #ifdef ASSERT
 
 class RuntimeHistogramElement : public HistogramElement {
@@ -435,9 +453,6 @@ class RuntimeHistogramElement : public HistogramElement {
     debug_only(VMEntryWrapper __vew;)
 
 #define IRT_END }
-
-
-// Definitions for JRT (Java (Compiler/Shared) Runtime)
 
 #define JRT_ENTRY(result_type, header)                               \
   result_type header {                                               \

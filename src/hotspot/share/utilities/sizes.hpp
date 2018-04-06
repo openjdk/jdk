@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_UTILITIES_SIZES_HPP
 #define SHARE_VM_UTILITIES_SIZES_HPP
 
-#include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // The following two classes are used to represent 'sizes' and 'offsets' in the VM;

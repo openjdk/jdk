@@ -31,7 +31,7 @@ class CollectedHeap;
 
 class ParallelArguments : public GCArguments {
 public:
-  virtual void initialize_flags();
+  virtual void initialize();
   virtual size_t conservative_max_heap_alignment();
   virtual CollectedHeap* create_heap();
 };

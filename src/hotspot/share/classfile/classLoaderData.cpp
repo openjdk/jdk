@@ -56,7 +56,6 @@
 #include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
-#include "gc/shared/gcLocker.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -74,6 +73,7 @@
 #include "runtime/mutex.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/synchronizer.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
@@ -201,7 +201,7 @@ class VerifyContainsOopClosure : public OopClosure {
   VerifyContainsOopClosure(oop target) : _target(target), _found(false) {}
 
   void do_oop(oop* p) {
-    if (p != NULL && *p == _target) {
+    if (p != NULL && oopDesc::equals(RawAccess<>::oop_load(p), _target)) {
       _found = true;
     }
   }
@@ -380,7 +380,7 @@ void ClassLoaderData::record_dependency(const Klass* k) {
 
     // Just return if this dependency is to a class with the same or a parent
     // class_loader.
-    if (from == to || java_lang_ClassLoader::isAncestor(from, to)) {
+    if (oopDesc::equals(from, to) || java_lang_ClassLoader::isAncestor(from, to)) {
       return; // this class loader is in the parent list, no need to add it.
     }
   }
@@ -1221,17 +1221,6 @@ GrowableArray<ClassLoaderData*>* ClassLoaderDataGraph::new_clds() {
   }
 
   return array;
-}
-
-bool ClassLoaderDataGraph::unload_list_contains(const void* x) {
-  assert(SafepointSynchronize::is_at_safepoint(), "only safe to call at safepoint");
-  for (ClassLoaderData* cld = _unloading; cld != NULL; cld = cld->next()) {
-    // Needs fixing, see JDK-8199007.
-    if (cld->metaspace_or_null() != NULL && Metaspace::contains(x)) {
-      return true;
-    }
-  }
-  return false;
 }
 
 #ifndef PRODUCT

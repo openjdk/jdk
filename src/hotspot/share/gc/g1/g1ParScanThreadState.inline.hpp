@@ -27,12 +27,12 @@
 
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1RemSet.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 
 template <class T> void G1ParScanThreadState::do_oop_evac(T* p, HeapRegion* from) {
-  assert(!oopDesc::is_null(oopDesc::load_decode_heap_oop(p)),
-         "Reference should not be NULL here as such are never pushed to the task queue.");
-  oop obj = oopDesc::load_decode_heap_oop_not_null(p);
+  // Reference should not be NULL here as such are never pushed to the task queue.
+  oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);
 
   // Although we never intentionally push references outside of the collection
   // set, due to (benign) races in the claim mechanism during RSet scanning more
@@ -46,7 +46,7 @@ template <class T> void G1ParScanThreadState::do_oop_evac(T* p, HeapRegion* from
     } else {
       obj = copy_to_survivor_space(in_cset_state, obj, m);
     }
-    oopDesc::encode_store_heap_oop(p, obj);
+    RawAccess<>::oop_store(p, obj);
   } else if (in_cset_state.is_humongous()) {
     _g1h->set_humongous_is_live(obj);
   } else {
@@ -146,4 +146,3 @@ void G1ParScanThreadState::steal_and_trim_queue(RefToScanQueueSet *task_queues) 
 }
 
 #endif // SHARE_VM_GC_G1_G1PARSCANTHREADSTATE_INLINE_HPP
-
