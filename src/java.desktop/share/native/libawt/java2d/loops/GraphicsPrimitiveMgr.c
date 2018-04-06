@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,12 +69,12 @@ static jboolean InitPrimTypes(JNIEnv *env);
 static jboolean InitSurfaceTypes(JNIEnv *env, jclass SurfaceType);
 static jboolean InitCompositeTypes(JNIEnv *env, jclass CompositeType);
 
-jfieldID path2DTypesID;
-jfieldID path2DNumTypesID;
-jfieldID path2DWindingRuleID;
-jfieldID path2DFloatCoordsID;
-jfieldID sg2dStrokeHintID;
-jint sunHints_INTVAL_STROKE_PURE;
+JNIEXPORT jfieldID path2DTypesID;
+JNIEXPORT jfieldID path2DNumTypesID;
+JNIEXPORT jfieldID path2DWindingRuleID;
+JNIEXPORT jfieldID path2DFloatCoordsID;
+JNIEXPORT jfieldID sg2dStrokeHintID;
+JNIEXPORT jint sunHints_INTVAL_STROKE_PURE;
 
 /*
  * Class:     sun_java2d_loops_GraphicsPrimitiveMgr

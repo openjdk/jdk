@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,7 +231,8 @@ SurfaceData_IntersectBlitBounds(SurfaceDataBounds *src,
     GETMIN(src->y2, dst->y2 - dy);
 }
 
-SurfaceDataOps *SurfaceData_InitOps(JNIEnv *env, jobject sData, int opsSize)
+JNIEXPORT SurfaceDataOps * JNICALL
+SurfaceData_InitOps(JNIEnv *env, jobject sData, int opsSize)
 {
     SurfaceDataOps *ops = malloc(opsSize);
     SurfaceData_SetOps(env, sData, ops);

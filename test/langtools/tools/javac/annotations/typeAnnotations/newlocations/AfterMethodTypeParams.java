@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class AfterMethodTypeParams {
             String test = TEMPLATE.replace("CONTENT", tc.snippet);
             List<JavaFileObject> files = Arrays.asList(new MyFileObject(test));
             StringWriter out = new StringWriter();
-            List<String> options = Arrays.asList("-XDrawDiagnostics", "--should-stop:at=FLOW");
+            List<String> options = Arrays.asList("-XDrawDiagnostics", "--should-stop=at=FLOW");
             JavacTask task = (JavacTask) compiler.getTask(out, null, null, options, null, files);
 
             new TreePathScanner<Void, Void>() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "jni.h"
 #include "jli_util.h"
 
 #include <zlib.h>
@@ -676,7 +677,7 @@ JLI_FreeManifest()
  *   -2 Error accessing the manifest from within the jarfile (most likely
  *      this means a manifest is not present, or it isn't a valid zip/jar file).
  */
-int
+JNIEXPORT int JNICALL
 JLI_ManifestIterate(const char *jarfile, attribute_closure ac, void *user_data)
 {
     int     fd;

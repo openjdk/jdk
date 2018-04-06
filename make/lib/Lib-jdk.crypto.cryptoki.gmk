@@ -37,7 +37,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJ2PKCS11, \
     CFLAGS := $(CFLAGS_JDKLIB) $(addprefix -I, $(LIBJ2PKCS11_SRC)) \
         $(LIBJAVA_HEADER_FLAGS) \
         -I$(SUPPORT_OUTPUTDIR)/headers/jdk.crypto.cryptoki, \
-    MAPFILE := $(TOPDIR)/make/mapfiles/libj2pkcs11/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := $(LIBDL), \

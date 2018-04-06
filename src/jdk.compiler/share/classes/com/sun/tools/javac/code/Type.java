@@ -2359,7 +2359,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
         public Type constType(Object constValue) { return this; }
         @DefinedBy(Api.LANGUAGE_MODEL)
-        public Type getEnclosingType()           { return this; }
+        public Type getEnclosingType()           { return Type.noType; }
         public Type getReturnType()              { return this; }
         public Type asSub(Symbol sym)            { return this; }
 

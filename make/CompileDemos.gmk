@@ -242,6 +242,13 @@ $(eval $(call SetupBuildDemo, FileChooserDemo, \
     DEMO_SUBDIR := jfc, \
 ))
 
+$(eval $(call SetupBuildDemo, SwingSet2, \
+    DEMO_SUBDIR := jfc, \
+    EXTRA_COPY_TO_JAR := .java, \
+    EXTRA_MANIFEST_ATTR := SplashScreen-Image: resources/images/splash.png, \
+    DISABLE_SJAVAC := true, \
+))
+
 $(eval $(call SetupBuildDemo, Font2DTest, \
     DEMO_SUBDIR := jfc, \
 ))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -290,7 +290,7 @@ public final class SNIHostName extends SNIServerName {
      * will accept hostnames "www.example.com" and "www.example.org".
      *
      * @param  regex
-     *         the <a href="{@docRoot}/java/util/regex/Pattern.html#sum">
+     *         the <a href="{@docRoot}/java.base/java/util/regex/Pattern.html#sum">
      *         regular expression pattern</a>
      *         representing the hostname(s) to match
      * @return a {@code SNIMatcher} object for {@code SNIHostName}s
@@ -330,7 +330,7 @@ public final class SNIHostName extends SNIServerName {
          * Creates an SNIHostNameMatcher object.
          *
          * @param  regex
-         *         the <a href="{@docRoot}/java/util/regex/Pattern.html#sum">
+         *         the <a href="{@docRoot}/java.base/java/util/regex/Pattern.html#sum">
          *         regular expression pattern</a>
          *         representing the hostname(s) to match
          * @throws NullPointerException if {@code regex} is

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package sun.java2d.marlin;
 
 import java.util.Arrays;
 import sun.java2d.marlin.DHelpers.PolyStack;
+import sun.java2d.marlin.DTransformingPathConsumer2D.CurveBasicMonotonizer;
+import sun.java2d.marlin.DTransformingPathConsumer2D.CurveClipSplitter;
 
 // TODO: some of the arithmetic here is too verbose and prone to hard to
 // debug typos. We should consider making a small Point/Vector class that
@@ -37,18 +39,15 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
     private static final int DRAWING_OP_TO = 1; // ie. curve, line, or quad
     private static final int CLOSE = 2;
 
-    // pisces used to use fixed point arithmetic with 16 decimal digits. I
-    // didn't want to change the values of the constant below when I converted
-    // it to floating point, so that's why the divisions by 2^16 are there.
-    private static final double ROUND_JOIN_THRESHOLD = 1000.0d/65536.0d;
+    // round join threshold = 1 subpixel
+    private static final double ERR_JOIN = (1.0f / MIN_SUBPIXELS);
+    private static final double ROUND_JOIN_THRESHOLD = ERR_JOIN * ERR_JOIN;
 
     // kappa = (4/3) * (SQRT(2) - 1)
     private static final double C = (4.0d * (Math.sqrt(2.0d) - 1.0d) / 3.0d);
 
     // SQRT(2)
     private static final double SQRT_2 = Math.sqrt(2.0d);
-
-    private static final int MAX_N_CURVES = 11;
 
     private DPathConsumer2D out;
 
@@ -80,12 +79,8 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
 
     private final PolyStack reverse;
 
-    // This is where the curve to be processed is put. We give it
-    // enough room to store all curves.
-    private final double[] middle = new double[MAX_N_CURVES * 6 + 2];
     private final double[] lp = new double[8];
     private final double[] rp = new double[8];
-    private final double[] subdivTs = new double[MAX_N_CURVES - 1];
 
     // per-thread renderer context
     final DRendererContext rdrCtx;
@@ -106,6 +101,11 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
     private boolean opened = false;
     // flag indicating if the starting point's cap is done
     private boolean capStart = false;
+    // flag indicating to monotonize curves
+    private boolean monotonize;
+
+    private boolean subdivide = false;
+    private final CurveClipSplitter curveSplitter;
 
     /**
      * Constructs a <code>DStroker</code>.
@@ -124,6 +124,7 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
             : new PolyStack(rdrCtx);
 
         this.curve = rdrCtx.curve;
+        this.curveSplitter = rdrCtx.curveClipSplitter;
     }
 
     /**
@@ -139,6 +140,7 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
      * <code>JOIN_BEVEL</code>.
      * @param miterLimit the desired miter limit
      * @param scale scaling factor applied to clip boundaries
+     * @param subdivideCurves true to indicate to subdivide curves, false if dasher does
      * @return this instance
      */
     DStroker init(final DPathConsumer2D pc2d,
@@ -146,12 +148,15 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
                   final int capStyle,
                   final int joinStyle,
                   final double miterLimit,
-                  final double scale)
+                  final double scale,
+                  final boolean subdivideCurves)
     {
         this.out = pc2d;
 
         this.lineWidth2 = lineWidth / 2.0d;
         this.invHalfLineWidth2Sq = 1.0d / (2.0d * lineWidth2 * lineWidth2);
+        this.monotonize = subdivideCurves;
+
         this.capStyle = capStyle;
         this.joinStyle = joinStyle;
 
@@ -189,12 +194,27 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
             _clipRect[2] -= margin - rdrOffX;
             _clipRect[3] += margin + rdrOffX;
             this.clipRect = _clipRect;
+
+            // initialize curve splitter here for stroker & dasher:
+            if (DO_CLIP_SUBDIVIDER) {
+                subdivide = subdivideCurves;
+                // adjust padded clip rectangle:
+                curveSplitter.init();
+            } else {
+                subdivide = false;
+            }
         } else {
             this.clipRect = null;
             this.cOutCode = 0;
             this.sOutCode = 0;
         }
         return this; // fluent API
+    }
+
+    void disableClipping() {
+        this.clipRect = null;
+        this.cOutCode = 0;
+        this.sOutCode = 0;
     }
 
     /**
@@ -213,10 +233,8 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
             Arrays.fill(offset1, 0.0d);
             Arrays.fill(offset2, 0.0d);
             Arrays.fill(miter, 0.0d);
-            Arrays.fill(middle, 0.0d);
             Arrays.fill(lp, 0.0d);
             Arrays.fill(rp, 0.0d);
-            Arrays.fill(subdivTs, 0.0d);
         }
     }
 
@@ -248,19 +266,20 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
         return dx1 * dy2 <= dy1 * dx2;
     }
 
-    private void drawRoundJoin(double x, double y,
-                               double omx, double omy, double mx, double my,
-                               boolean rev,
-                               double threshold)
+    private void mayDrawRoundJoin(double cx, double cy,
+                                  double omx, double omy,
+                                  double mx, double my,
+                                  boolean rev)
     {
         if ((omx == 0.0d && omy == 0.0d) || (mx == 0.0d && my == 0.0d)) {
             return;
         }
 
-        double domx = omx - mx;
-        double domy = omy - my;
-        double len = domx*domx + domy*domy;
-        if (len < threshold) {
+        final double domx = omx - mx;
+        final double domy = omy - my;
+        final double lenSq = domx*domx + domy*domy;
+
+        if (lenSq < ROUND_JOIN_THRESHOLD) {
             return;
         }
 
@@ -270,7 +289,7 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
             mx  = -mx;
             my  = -my;
         }
-        drawRoundJoin(x, y, omx, omy, mx, my, rev);
+        drawRoundJoin(cx, cy, omx, omy, mx, my, rev);
     }
 
     private void drawRoundJoin(double cx, double cy,
@@ -381,7 +400,7 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
                                      final double x1, final double y1,
                                      final double x0p, final double y0p,
                                      final double x1p, final double y1p,
-                                     final double[] m, int off)
+                                     final double[] m)
     {
         double x10 = x1 - x0;
         double y10 = y1 - y0;
@@ -400,8 +419,8 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
         double den = x10*y10p - x10p*y10;
         double t = x10p*(y0-y0p) - y10p*(x0-x0p);
         t /= den;
-        m[off++] = x0 + t*x10;
-        m[off]   = y0 + t*y10;
+        m[0] = x0 + t*x10;
+        m[1] = y0 + t*y10;
     }
 
     // Return the intersection point of the lines (x0, y0) -> (x1, y1)
@@ -410,7 +429,7 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
                                          final double x1, final double y1,
                                          final double x0p, final double y0p,
                                          final double x1p, final double y1p,
-                                         final double[] m, int off)
+                                         final double[] m)
     {
         double x10 = x1 - x0;
         double y10 = y1 - y0;
@@ -428,20 +447,21 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
         // immediately).
         double den = x10*y10p - x10p*y10;
         if (den == 0.0d) {
-            m[off++] = (x0 + x0p) / 2.0d;
-            m[off]   = (y0 + y0p) / 2.0d;
-            return;
+            m[2] = (x0 + x0p) / 2.0d;
+            m[3] = (y0 + y0p) / 2.0d;
+        } else {
+            double t = x10p*(y0-y0p) - y10p*(x0-x0p);
+            t /= den;
+            m[2] = x0 + t*x10;
+            m[3] = y0 + t*y10;
         }
-        double t = x10p*(y0-y0p) - y10p*(x0-x0p);
-        t /= den;
-        m[off++] = x0 + t*x10;
-        m[off] = y0 + t*y10;
     }
 
     private void drawMiter(final double pdx, final double pdy,
                            final double x0, final double y0,
                            final double dx, final double dy,
-                           double omx, double omy, double mx, double my,
+                           double omx, double omy,
+                           double mx, double my,
                            boolean rev)
     {
         if ((mx == omx && my == omy) ||
@@ -459,8 +479,7 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
         }
 
         computeMiter((x0 - pdx) + omx, (y0 - pdy) + omy, x0 + omx, y0 + omy,
-                     (dx + x0) + mx, (dy + y0) + my, x0 + mx, y0 + my,
-                     miter, 0);
+                     (dx + x0) + mx, (dy + y0) + my, x0 + mx, y0 + my, miter);
 
         final double miterX = miter[0];
         final double miterY = miter[1];
@@ -478,7 +497,7 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
 
     @Override
     public void moveTo(final double x0, final double y0) {
-        moveTo(x0, y0, cOutCode);
+        _moveTo(x0, y0, cOutCode);
         // update starting point:
         this.sx0 = x0;
         this.sy0 = y0;
@@ -494,7 +513,7 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
         }
     }
 
-    private void moveTo(final double x0, final double y0,
+    private void _moveTo(final double x0, final double y0,
                         final int outcode)
     {
         if (prev == MOVE_TO) {
@@ -521,16 +540,40 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
                         final boolean force)
     {
         final int outcode0 = this.cOutCode;
+
         if (!force && clipRect != null) {
             final int outcode1 = DHelpers.outcode(x1, y1, clipRect);
-            this.cOutCode = outcode1;
 
-            // basic rejection criteria
-            if ((outcode0 & outcode1) != 0) {
-                moveTo(x1, y1, outcode0);
-                opened = true;
-                return;
+            // Should clip
+            final int orCode = (outcode0 | outcode1);
+            if (orCode != 0) {
+                final int sideCode = outcode0 & outcode1;
+
+                // basic rejection criteria:
+                if (sideCode == 0) {
+                    // ovelap clip:
+                    if (subdivide) {
+                        // avoid reentrance
+                        subdivide = false;
+                        // subdivide curve => callback with subdivided parts:
+                        boolean ret = curveSplitter.splitLine(cx0, cy0, x1, y1,
+                                                              orCode, this);
+                        // reentrance is done:
+                        subdivide = true;
+                        if (ret) {
+                            return;
+                        }
+                    }
+                    // already subdivided so render it
+                } else {
+                    this.cOutCode = outcode1;
+                    _moveTo(x1, y1, outcode0);
+                    opened = true;
+                    return;
+                }
             }
+
+            this.cOutCode = outcode1;
         }
 
         double dx = x1 - cx0;
@@ -752,10 +795,7 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
                 if (joinStyle == JOIN_MITER) {
                     drawMiter(pdx, pdy, x0, y0, dx, dy, omx, omy, mx, my, cw);
                 } else if (joinStyle == JOIN_ROUND) {
-                    drawRoundJoin(x0, y0,
-                                  omx, omy,
-                                  mx, my, cw,
-                                  ROUND_JOIN_THRESHOLD);
+                    mayDrawRoundJoin(x0, y0, omx, omy, mx, my, cw);
                 }
             }
             emitLineTo(x0, y0, !cw);
@@ -765,18 +805,19 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
 
     private static boolean within(final double x1, final double y1,
                                   final double x2, final double y2,
-                                  final double ERR)
+                                  final double err)
     {
-        assert ERR > 0 : "";
+        assert err > 0 : "";
         // compare taxicab distance. ERR will always be small, so using
         // true distance won't give much benefit
-        return (DHelpers.within(x1, x2, ERR) &&  // we want to avoid calling Math.abs
-                DHelpers.within(y1, y2, ERR)); // this is just as good.
+        return (DHelpers.within(x1, x2, err) && // we want to avoid calling Math.abs
+                DHelpers.within(y1, y2, err));  // this is just as good.
     }
 
-    private void getLineOffsets(double x1, double y1,
-                                double x2, double y2,
-                                double[] left, double[] right) {
+    private void getLineOffsets(final double x1, final double y1,
+                                final double x2, final double y2,
+                                final double[] left, final double[] right)
+    {
         computeOffset(x2 - x1, y2 - y1, lineWidth2, offset0);
         final double mx = offset0[0];
         final double my = offset0[1];
@@ -784,14 +825,16 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
         left[1] = y1 + my;
         left[2] = x2 + mx;
         left[3] = y2 + my;
+
         right[0] = x1 - mx;
         right[1] = y1 - my;
         right[2] = x2 - mx;
         right[3] = y2 - my;
     }
 
-    private int computeOffsetCubic(double[] pts, final int off,
-                                   double[] leftOff, double[] rightOff)
+    private int computeOffsetCubic(final double[] pts, final int off,
+                                   final double[] leftOff,
+                                   final double[] rightOff)
     {
         // if p1=p2 or p3=p4 it means that the derivative at the endpoint
         // vanishes, which creates problems with computeOffset. Usually
@@ -800,7 +843,7 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
         // the input curve at the cusp, and passes it to this function.
         // because of inaccuracies in the splitting, we consider points
         // equal if they're very close to each other.
-        final double x1 = pts[off + 0], y1 = pts[off + 1];
+        final double x1 = pts[off    ], y1 = pts[off + 1];
         final double x2 = pts[off + 2], y2 = pts[off + 3];
         final double x3 = pts[off + 4], y3 = pts[off + 5];
         final double x4 = pts[off + 6], y4 = pts[off + 7];
@@ -814,6 +857,7 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
         // in which case ignore if p1 == p2
         final boolean p1eqp2 = within(x1, y1, x2, y2, 6.0d * Math.ulp(y2));
         final boolean p3eqp4 = within(x3, y3, x4, y4, 6.0d * Math.ulp(y4));
+
         if (p1eqp2 && p3eqp4) {
             getLineOffsets(x1, y1, x4, y4, leftOff, rightOff);
             return 4;
@@ -829,6 +873,7 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
         double dotsq = (dx1 * dx4 + dy1 * dy4);
         dotsq *= dotsq;
         double l1sq = dx1 * dx1 + dy1 * dy1, l4sq = dx4 * dx4 + dy4 * dy4;
+
         if (DHelpers.within(dotsq, l1sq * l4sq, 4.0d * Math.ulp(dotsq))) {
             getLineOffsets(x1, y1, x4, y4, leftOff, rightOff);
             return 4;
@@ -942,10 +987,11 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
     // compute offset curves using bezier spline through t=0.5 (i.e.
     // ComputedCurve(0.5) == IdealParallelCurve(0.5))
     // return the kind of curve in the right and left arrays.
-    private int computeOffsetQuad(double[] pts, final int off,
-                                  double[] leftOff, double[] rightOff)
+    private int computeOffsetQuad(final double[] pts, final int off,
+                                  final double[] leftOff,
+                                  final double[] rightOff)
     {
-        final double x1 = pts[off + 0], y1 = pts[off + 1];
+        final double x1 = pts[off    ], y1 = pts[off + 1];
         final double x2 = pts[off + 2], y2 = pts[off + 3];
         final double x3 = pts[off + 4], y3 = pts[off + 5];
 
@@ -966,6 +1012,7 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
         // in which case ignore.
         final boolean p1eqp2 = within(x1, y1, x2, y2, 6.0d * Math.ulp(y2));
         final boolean p2eqp3 = within(x2, y2, x3, y3, 6.0d * Math.ulp(y3));
+
         if (p1eqp2 || p2eqp3) {
             getLineOffsets(x1, y1, x3, y3, leftOff, rightOff);
             return 4;
@@ -975,6 +1022,7 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
         double dotsq = (dx1 * dx3 + dy1 * dy3);
         dotsq *= dotsq;
         double l1sq = dx1 * dx1 + dy1 * dy1, l3sq = dx3 * dx3 + dy3 * dy3;
+
         if (DHelpers.within(dotsq, l1sq * l3sq, 4.0d * Math.ulp(dotsq))) {
             getLineOffsets(x1, y1, x3, y3, leftOff, rightOff);
             return 4;
@@ -990,75 +1038,16 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
         double y1p = y1 + offset0[1]; // point
         double x3p = x3 + offset1[0]; // end
         double y3p = y3 + offset1[1]; // point
-        safeComputeMiter(x1p, y1p, x1p+dx1, y1p+dy1, x3p, y3p, x3p-dx3, y3p-dy3, leftOff, 2);
+        safeComputeMiter(x1p, y1p, x1p+dx1, y1p+dy1, x3p, y3p, x3p-dx3, y3p-dy3, leftOff);
         leftOff[0] = x1p; leftOff[1] = y1p;
         leftOff[4] = x3p; leftOff[5] = y3p;
 
         x1p = x1 - offset0[0]; y1p = y1 - offset0[1];
         x3p = x3 - offset1[0]; y3p = y3 - offset1[1];
-        safeComputeMiter(x1p, y1p, x1p+dx1, y1p+dy1, x3p, y3p, x3p-dx3, y3p-dy3, rightOff, 2);
+        safeComputeMiter(x1p, y1p, x1p+dx1, y1p+dy1, x3p, y3p, x3p-dx3, y3p-dy3, rightOff);
         rightOff[0] = x1p; rightOff[1] = y1p;
         rightOff[4] = x3p; rightOff[5] = y3p;
         return 6;
-    }
-
-    // finds values of t where the curve in pts should be subdivided in order
-    // to get good offset curves a distance of w away from the middle curve.
-    // Stores the points in ts, and returns how many of them there were.
-    private static int findSubdivPoints(final DCurve c, double[] pts, double[] ts,
-                                        final int type, final double w)
-    {
-        final double x12 = pts[2] - pts[0];
-        final double y12 = pts[3] - pts[1];
-        // if the curve is already parallel to either axis we gain nothing
-        // from rotating it.
-        if (y12 != 0.0d && x12 != 0.0d) {
-            // we rotate it so that the first vector in the control polygon is
-            // parallel to the x-axis. This will ensure that rotated quarter
-            // circles won't be subdivided.
-            final double hypot = Math.sqrt(x12 * x12 + y12 * y12);
-            final double cos = x12 / hypot;
-            final double sin = y12 / hypot;
-            final double x1 = cos * pts[0] + sin * pts[1];
-            final double y1 = cos * pts[1] - sin * pts[0];
-            final double x2 = cos * pts[2] + sin * pts[3];
-            final double y2 = cos * pts[3] - sin * pts[2];
-            final double x3 = cos * pts[4] + sin * pts[5];
-            final double y3 = cos * pts[5] - sin * pts[4];
-
-            switch(type) {
-            case 8:
-                final double x4 = cos * pts[6] + sin * pts[7];
-                final double y4 = cos * pts[7] - sin * pts[6];
-                c.set(x1, y1, x2, y2, x3, y3, x4, y4);
-                break;
-            case 6:
-                c.set(x1, y1, x2, y2, x3, y3);
-                break;
-            default:
-            }
-        } else {
-            c.set(pts, type);
-        }
-
-        int ret = 0;
-        // we subdivide at values of t such that the remaining rotated
-        // curves are monotonic in x and y.
-        ret += c.dxRoots(ts, ret);
-        ret += c.dyRoots(ts, ret);
-        // subdivide at inflection points.
-        if (type == 8) {
-            // quadratic curves can't have inflection points
-            ret += c.infPoints(ts, ret);
-        }
-
-        // now we must subdivide at points where one of the offset curves will have
-        // a cusp. This happens at ts where the radius of curvature is equal to w.
-        ret += c.rootsOfROCMinusW(ts, ret, w, 0.0001d);
-
-        ret = DHelpers.filterOutNotInAB(ts, 0, ret, 0.0001d, 0.9999d);
-        DHelpers.isort(ts, 0, ret);
-        return ret;
     }
 
     @Override
@@ -1067,74 +1056,93 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
                         final double x3, final double y3)
     {
         final int outcode0 = this.cOutCode;
+
         if (clipRect != null) {
+            final int outcode1 = DHelpers.outcode(x1, y1, clipRect);
+            final int outcode2 = DHelpers.outcode(x2, y2, clipRect);
             final int outcode3 = DHelpers.outcode(x3, y3, clipRect);
-            this.cOutCode = outcode3;
 
-            if ((outcode0 & outcode3) != 0) {
-                final int outcode1 = DHelpers.outcode(x1, y1, clipRect);
-                final int outcode2 = DHelpers.outcode(x2, y2, clipRect);
+            // Should clip
+            final int orCode = (outcode0 | outcode1 | outcode2 | outcode3);
+            if (orCode != 0) {
+                final int sideCode = outcode0 & outcode1 & outcode2 & outcode3;
 
-                // basic rejection criteria
-                if ((outcode0 & outcode1 & outcode2 & outcode3) != 0) {
-                    moveTo(x3, y3, outcode0);
+                // basic rejection criteria:
+                if (sideCode == 0) {
+                    // ovelap clip:
+                    if (subdivide) {
+                        // avoid reentrance
+                        subdivide = false;
+                        // subdivide curve => callback with subdivided parts:
+                        boolean ret = curveSplitter.splitCurve(cx0, cy0, x1, y1,
+                                                               x2, y2, x3, y3,
+                                                               orCode, this);
+                        // reentrance is done:
+                        subdivide = true;
+                        if (ret) {
+                            return;
+                        }
+                    }
+                    // already subdivided so render it
+                } else {
+                    this.cOutCode = outcode3;
+                    _moveTo(x3, y3, outcode0);
                     opened = true;
                     return;
                 }
             }
+
+            this.cOutCode = outcode3;
         }
+        _curveTo(x1, y1, x2, y2, x3, y3, outcode0);
+    }
 
-        final double[] mid = middle;
-
-        mid[0] = cx0; mid[1] = cy0;
-        mid[2] = x1;  mid[3] = y1;
-        mid[4] = x2;  mid[5] = y2;
-        mid[6] = x3;  mid[7] = y3;
-
+    private void _curveTo(final double x1, final double y1,
+                          final double x2, final double y2,
+                          final double x3, final double y3,
+                          final int outcode0)
+    {
         // need these so we can update the state at the end of this method
-        final double xf = x3, yf = y3;
-        double dxs = mid[2] - mid[0];
-        double dys = mid[3] - mid[1];
-        double dxf = mid[6] - mid[4];
-        double dyf = mid[7] - mid[5];
+        double dxs = x1 - cx0;
+        double dys = y1 - cy0;
+        double dxf = x3 - x2;
+        double dyf = y3 - y2;
 
-        boolean p1eqp2 = (dxs == 0.0d && dys == 0.0d);
-        boolean p3eqp4 = (dxf == 0.0d && dyf == 0.0d);
-        if (p1eqp2) {
-            dxs = mid[4] - mid[0];
-            dys = mid[5] - mid[1];
-            if (dxs == 0.0d && dys == 0.0d) {
-                dxs = mid[6] - mid[0];
-                dys = mid[7] - mid[1];
+        if ((dxs == 0.0d) && (dys == 0.0d)) {
+            dxs = x2 - cx0;
+            dys = y2 - cy0;
+            if ((dxs == 0.0d) && (dys == 0.0d)) {
+                dxs = x3 - cx0;
+                dys = y3 - cy0;
             }
         }
-        if (p3eqp4) {
-            dxf = mid[6] - mid[2];
-            dyf = mid[7] - mid[3];
-            if (dxf == 0.0d && dyf == 0.0d) {
-                dxf = mid[6] - mid[0];
-                dyf = mid[7] - mid[1];
+        if ((dxf == 0.0d) && (dyf == 0.0d)) {
+            dxf = x3 - x1;
+            dyf = y3 - y1;
+            if ((dxf == 0.0d) && (dyf == 0.0d)) {
+                dxf = x3 - cx0;
+                dyf = y3 - cy0;
             }
         }
-        if (dxs == 0.0d && dys == 0.0d) {
+        if ((dxs == 0.0d) && (dys == 0.0d)) {
             // this happens if the "curve" is just a point
             // fix outcode0 for lineTo() call:
             if (clipRect != null) {
                 this.cOutCode = outcode0;
             }
-            lineTo(mid[0], mid[1]);
+            lineTo(cx0, cy0);
             return;
         }
 
         // if these vectors are too small, normalize them, to avoid future
         // precision problems.
         if (Math.abs(dxs) < 0.1d && Math.abs(dys) < 0.1d) {
-            double len = Math.sqrt(dxs*dxs + dys*dys);
+            final double len = Math.sqrt(dxs * dxs + dys * dys);
             dxs /= len;
             dys /= len;
         }
         if (Math.abs(dxf) < 0.1d && Math.abs(dyf) < 0.1d) {
-            double len = Math.sqrt(dxf*dxf + dyf*dyf);
+            final double len = Math.sqrt(dxf * dxf + dyf * dyf);
             dxf /= len;
             dyf /= len;
         }
@@ -1142,17 +1150,25 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
         computeOffset(dxs, dys, lineWidth2, offset0);
         drawJoin(cdx, cdy, cx0, cy0, dxs, dys, cmx, cmy, offset0[0], offset0[1], outcode0);
 
-        final int nSplits = findSubdivPoints(curve, mid, subdivTs, 8, lineWidth2);
-
-        double prevT = 0.0d;
-        for (int i = 0, off = 0; i < nSplits; i++, off += 6) {
-            final double t = subdivTs[i];
-            DHelpers.subdivideCubicAt((t - prevT) / (1.0d - prevT),
-                                     mid, off, mid, off, mid, off + 6);
-            prevT = t;
-        }
-
+        int nSplits = 0;
+        final double[] mid;
         final double[] l = lp;
+
+        if (monotonize) {
+            // monotonize curve:
+            final CurveBasicMonotonizer monotonizer
+                = rdrCtx.monotonizer.curve(cx0, cy0, x1, y1, x2, y2, x3, y3);
+
+            nSplits = monotonizer.nbSplits;
+            mid = monotonizer.middle;
+        } else {
+            // use left instead:
+            mid = l;
+            mid[0] = cx0; mid[1] = cy0;
+            mid[2] = x1;  mid[3] = y1;
+            mid[4] = x2;  mid[5] = y2;
+            mid[6] = x3;  mid[7] = y3;
+        }
         final double[] r = rp;
 
         int kind = 0;
@@ -1176,8 +1192,8 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
         }
 
         this.prev = DRAWING_OP_TO;
-        this.cx0 = xf;
-        this.cy0 = yf;
+        this.cx0 = x3;
+        this.cy0 = y3;
         this.cdx = dxf;
         this.cdy = dyf;
         this.cmx = (l[kind - 2] - r[kind - 2]) / 2.0d;
@@ -1189,74 +1205,101 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
                        final double x2, final double y2)
     {
         final int outcode0 = this.cOutCode;
+
         if (clipRect != null) {
+            final int outcode1 = DHelpers.outcode(x1, y1, clipRect);
             final int outcode2 = DHelpers.outcode(x2, y2, clipRect);
-            this.cOutCode = outcode2;
 
-            if ((outcode0 & outcode2) != 0) {
-                final int outcode1 = DHelpers.outcode(x1, y1, clipRect);
+            // Should clip
+            final int orCode = (outcode0 | outcode1 | outcode2);
+            if (orCode != 0) {
+                final int sideCode = outcode0 & outcode1 & outcode2;
 
-                // basic rejection criteria
-                if ((outcode0 & outcode1 & outcode2) != 0) {
-                    moveTo(x2, y2, outcode0);
+                // basic rejection criteria:
+                if (sideCode == 0) {
+                    // ovelap clip:
+                    if (subdivide) {
+                        // avoid reentrance
+                        subdivide = false;
+                        // subdivide curve => call lineTo() with subdivided curves:
+                        boolean ret = curveSplitter.splitQuad(cx0, cy0, x1, y1,
+                                                              x2, y2, orCode, this);
+                        // reentrance is done:
+                        subdivide = true;
+                        if (ret) {
+                            return;
+                        }
+                    }
+                    // already subdivided so render it
+                } else {
+                    this.cOutCode = outcode2;
+                    _moveTo(x2, y2, outcode0);
                     opened = true;
                     return;
                 }
             }
+
+            this.cOutCode = outcode2;
         }
+        _quadTo(x1, y1, x2, y2, outcode0);
+    }
 
-        final double[] mid = middle;
-
-        mid[0] = cx0; mid[1] = cy0;
-        mid[2] = x1;  mid[3] = y1;
-        mid[4] = x2;  mid[5] = y2;
-
+    private void _quadTo(final double x1, final double y1,
+                         final double x2, final double y2,
+                         final int outcode0)
+    {
         // need these so we can update the state at the end of this method
-        final double xf = x2, yf = y2;
-        double dxs = mid[2] - mid[0];
-        double dys = mid[3] - mid[1];
-        double dxf = mid[4] - mid[2];
-        double dyf = mid[5] - mid[3];
-        if ((dxs == 0.0d && dys == 0.0d) || (dxf == 0.0d && dyf == 0.0d)) {
-            dxs = dxf = mid[4] - mid[0];
-            dys = dyf = mid[5] - mid[1];
+        double dxs = x1 - cx0;
+        double dys = y1 - cy0;
+        double dxf = x2 - x1;
+        double dyf = y2 - y1;
+
+        if (((dxs == 0.0d) && (dys == 0.0d)) || ((dxf == 0.0d) && (dyf == 0.0d))) {
+            dxs = dxf = x2 - cx0;
+            dys = dyf = y2 - cy0;
         }
-        if (dxs == 0.0d && dys == 0.0d) {
+        if ((dxs == 0.0d) && (dys == 0.0d)) {
             // this happens if the "curve" is just a point
             // fix outcode0 for lineTo() call:
             if (clipRect != null) {
                 this.cOutCode = outcode0;
             }
-            lineTo(mid[0], mid[1]);
+            lineTo(cx0, cy0);
             return;
         }
         // if these vectors are too small, normalize them, to avoid future
         // precision problems.
         if (Math.abs(dxs) < 0.1d && Math.abs(dys) < 0.1d) {
-            double len = Math.sqrt(dxs*dxs + dys*dys);
+            final double len = Math.sqrt(dxs * dxs + dys * dys);
             dxs /= len;
             dys /= len;
         }
         if (Math.abs(dxf) < 0.1d && Math.abs(dyf) < 0.1d) {
-            double len = Math.sqrt(dxf*dxf + dyf*dyf);
+            final double len = Math.sqrt(dxf * dxf + dyf * dyf);
             dxf /= len;
             dyf /= len;
         }
-
         computeOffset(dxs, dys, lineWidth2, offset0);
         drawJoin(cdx, cdy, cx0, cy0, dxs, dys, cmx, cmy, offset0[0], offset0[1], outcode0);
 
-        int nSplits = findSubdivPoints(curve, mid, subdivTs, 6, lineWidth2);
-
-        double prevt = 0.0d;
-        for (int i = 0, off = 0; i < nSplits; i++, off += 4) {
-            final double t = subdivTs[i];
-            DHelpers.subdivideQuadAt((t - prevt) / (1.0d - prevt),
-                                    mid, off, mid, off, mid, off + 4);
-            prevt = t;
-        }
-
+        int nSplits = 0;
+        final double[] mid;
         final double[] l = lp;
+
+        if (monotonize) {
+            // monotonize quad:
+            final CurveBasicMonotonizer monotonizer
+                = rdrCtx.monotonizer.quad(cx0, cy0, x1, y1, x2, y2);
+
+            nSplits = monotonizer.nbSplits;
+            mid = monotonizer.middle;
+        } else {
+            // use left instead:
+            mid = l;
+            mid[0] = cx0; mid[1] = cy0;
+            mid[2] = x1;  mid[3] = y1;
+            mid[4] = x2;  mid[5] = y2;
+        }
         final double[] r = rp;
 
         int kind = 0;
@@ -1280,8 +1323,8 @@ final class DStroker implements DPathConsumer2D, MarlinConst {
         }
 
         this.prev = DRAWING_OP_TO;
-        this.cx0 = xf;
-        this.cy0 = yf;
+        this.cx0 = x2;
+        this.cy0 = y2;
         this.cdx = dxf;
         this.cdy = dyf;
         this.cmx = (l[kind - 2] - r[kind - 2]) / 2.0d;

@@ -129,7 +129,7 @@ public final class Boolean implements java.io.Serializable,
      * @since 1.5
      */
     public static boolean parseBoolean(String s) {
-        return ((s != null) && s.equalsIgnoreCase("true"));
+        return "true".equalsIgnoreCase(s);
     }
 
     /**

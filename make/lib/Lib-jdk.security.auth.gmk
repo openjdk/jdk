@@ -27,18 +27,11 @@ include LibCommon.gmk
 
 ################################################################################
 
-LIBJAAS_MAPFILE :=
-ifeq ($(OPENJDK_TARGET_OS), solaris)
-  # only on solaris...wonder why
-  LIBJAAS_MAPFILE := $(TOPDIR)/make/mapfiles/libjaas/mapfile-vers
-endif
-
 $(eval $(call SetupJdkLibrary, BUILD_LIBJAAS, \
     NAME := jaas, \
     SRC := $(call FindSrcDirsForLib, jdk.security.auth, jaas), \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) -I$(SUPPORT_OUTPUTDIR)/headers/jdk.security.auth, \
-    MAPFILE := $(LIBJAAS_MAPFILE), \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_windows := netapi32.lib user32.lib mpr.lib advapi32.lib $(JDKLIB_LIBS), \

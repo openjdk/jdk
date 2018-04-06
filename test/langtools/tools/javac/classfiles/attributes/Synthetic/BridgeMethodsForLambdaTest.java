@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8044537
+ * @bug 8044537 8200301
  * @summary Checking ACC_SYNTHETIC flag is generated for bridge method
  *          generated for lambda expressions and method references.
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -31,7 +31,8 @@
  *          jdk.jdeps/com.sun.tools.classfile
  * @library /tools/lib /tools/javac/lib ../lib
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
- * @build BridgeMethodsForLambdaTest SyntheticTestDriver ExpectedClass ExpectedClasses
+ * @build SyntheticTestDriver ExpectedClass ExpectedClasses
+ * @compile -XDdeduplicateLambdas=false BridgeMethodsForLambdaTest.java
  * @run main SyntheticTestDriver BridgeMethodsForLambdaTest 1
  */
 

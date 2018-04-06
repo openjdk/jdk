@@ -241,7 +241,7 @@ public interface Doc extends Comparable<Object> {
 
     /**
      * Is this Doc item an
-     * <a href="{@docRoot}/com/sun/javadoc/package-summary.html#class">ordinary
+     * <a href="{@docRoot}/jdk.javadoc/com/sun/javadoc/package-summary.html#class">ordinary
      * class</a>?
      * (i.e. not an interface, annotation type, enum, exception, or error)?
      *
@@ -251,7 +251,7 @@ public interface Doc extends Comparable<Object> {
 
     /**
      * Is this Doc item a
-     * <a href="{@docRoot}/com/sun/javadoc/package-summary.html#class">class</a>
+     * <a href="{@docRoot}/jdk.javadoc/com/sun/javadoc/package-summary.html#class">class</a>
      * (and not an interface or annotation type)?
      * This includes ordinary classes, enums, errors and exceptions.
      *
@@ -261,11 +261,11 @@ public interface Doc extends Comparable<Object> {
 
     /**
      * Return true if this Doc item is
-     * <a href="{@docRoot}/com/sun/javadoc/package-summary.html#included">included</a>
+     * <a href="{@docRoot}/jdk.javadoc/com/sun/javadoc/package-summary.html#included">included</a>
      * in the result set.
      *
      * @return true if this Doc item is
-     *         <a href="{@docRoot}/com/sun/javadoc/package-summary.html#included">included</a>
+     *         <a href="{@docRoot}/jdk.javadoc/com/sun/javadoc/package-summary.html#included">included</a>
      *         in the result set.
      */
     boolean isIncluded();

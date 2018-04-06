@@ -33,16 +33,15 @@ import java.util.zip.*;
 public class ConstructDeflaterInput {
 
     static class MyDeflater extends Deflater {
-        private boolean ended = false;
-        boolean getEnded() { return ended; }
+        volatile boolean ended = false;
         public void end() {
-            fail("MyDeflater had end() called");
+            ended = true;
             super.end();
         }
     }
 
-    private static MyDeflater def = new MyDeflater();
     public static void realMain(String[] args) throws Throwable {
+        final MyDeflater def = new MyDeflater();
         ByteArrayInputStream bais = new ByteArrayInputStream(
             "hello, world".getBytes());
         DeflaterInputStream dis = null;
@@ -122,7 +121,7 @@ public class ConstructDeflaterInput {
         //
         check(!dis.markSupported());
         check(dis.available() == 1);
-        check(!def.getEnded());
+        check(!def.ended);
         try {
             dis.reset();
             fail();
@@ -133,7 +132,7 @@ public class ConstructDeflaterInput {
         // Check close
         //
         dis.close();
-        check(!def.getEnded());
+        check(!def.ended);
 
         try {
             dis.available();
@@ -155,7 +154,7 @@ public class ConstructDeflaterInput {
         } catch (IOException ex) {
             pass();
         }
-
+        java.lang.ref.Reference.reachabilityFence(def);
     }
 
     //--------------------- Infrastructure ---------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,41 +33,6 @@ var catSearchTags = "SearchTags";
 var highlight = "<span class=\"resultHighlight\">$&</span>";
 var camelCaseRegexp = "";
 var secondaryMatcher = "";
-function getName(name) {
-    var anchor = "";
-    var ch = '';
-    for (i = 0; i < name.length; i++) {
-        ch = name.charAt(i);
-        switch (ch) {
-            case '(':
-            case ')':
-            case '<':
-            case '>':
-            case ',':
-                anchor += "-";
-                break;
-            case ' ':
-            case '[':
-                break;
-            case ']':
-                anchor += ":A";
-                break;
-            case '$':
-                if (i == 0)
-                    anchor += "Z:Z";
-                anchor += ":D";
-                break;
-            case '_':
-                if (i == 0)
-                    anchor += "Z:Z";
-                anchor += ch;
-                break;
-            default:
-                anchor += ch;
-        }
-    }
-    return anchor;
-}
 function getHighlightedText(item) {
     var ccMatcher = new RegExp(camelCaseRegexp);
     var label = item.replace(ccMatcher, highlight);
@@ -357,7 +322,7 @@ $(function() {
                     if (ui.item.url) {
                         url += ui.item.url;
                     } else {
-                        url += getName(ui.item.l);
+                        url += ui.item.l;
                     }
                 } else if (ui.item.category === catSearchTags) {
                     url += ui.item.u;

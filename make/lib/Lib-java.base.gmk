@@ -53,7 +53,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNET, \
     DISABLED_WARNINGS_clang := parentheses-equality constant-logical-operand, \
     DISABLED_WARNINGS_microsoft := 4244 4047 4133 4996, \
     DISABLED_WARNINGS_solstudio := E_ARG_INCOMPATIBLE_WITH_ARG_L, \
-    MAPFILE := $(TOPDIR)/make/mapfiles/libnet/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_windows := -delayload:secur32.dll -delayload:iphlpapi.dll, \
@@ -90,22 +89,6 @@ BUILD_LIBNIO_CFLAGS := \
     $(LIBJAVA_HEADER_FLAGS) \
     $(addprefix -I, $(BUILD_LIBNET_SRC))
 
-ifeq ($(OPENJDK_TARGET_OS), linux)
-  BUILD_LIBNIO_MAPFILE := $(TOPDIR)/make/mapfiles/libnio/mapfile-$(OPENJDK_TARGET_OS)
-endif
-
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-  BUILD_LIBNIO_MAPFILE := $(TOPDIR)/make/mapfiles/libnio/mapfile-$(OPENJDK_TARGET_OS)
-endif
-
-ifeq ($(OPENJDK_TARGET_OS), solaris)
-  BUILD_LIBNIO_MAPFILE := $(TOPDIR)/make/mapfiles/libnio/mapfile-$(OPENJDK_TARGET_OS)
-endif
-
-ifeq ($(OPENJDK_TARGET_OS), aix)
-  BUILD_LIBNIO_MAPFILE := $(TOPDIR)/make/mapfiles/libnio/mapfile-$(OPENJDK_TARGET_OS)
-endif
-
 $(eval $(call SetupJdkLibrary, BUILD_LIBNIO, \
     NAME := nio, \
     SRC := $(BUILD_LIBNIO_SRC), \
@@ -114,7 +97,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNIO, \
     WARNINGS_AS_ERRORS_xlc := false, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(BUILD_LIBNIO_CFLAGS), \
-    MAPFILE := $(BUILD_LIBNIO_MAPFILE), \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljava -lnet, \
@@ -166,6 +148,61 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
     $(BUILD_LIBOSXSECURITY): $(BUILD_LIBJAVA)
 
     TARGETS += $(BUILD_LIBOSXSECURITY)
+
+  endif
+endif
+
+################################################################################
+# Create the jsig library
+
+ifneq ($(OPENJDK_TARGET_OS), windows)
+  ifeq ($(STATIC_BUILD), false)
+
+    LIBJSIG_SRC_DIR := $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjsig
+    LIBJSIG_MAPFILE := $(wildcard $(TOPDIR)/make/mapfiles/libjsig/mapfile-vers-$(OPENJDK_TARGET_OS))
+
+    ifeq ($(OPENJDK_TARGET_OS), linux)
+      # FIXME: This is probably not what we want to do, but keep it now for compatibility.
+      LIBJSIG_CFLAGS := $(EXPORT_ALL_SYMBOLS)
+    endif
+
+    $(eval $(call SetupJdkLibrary, BUILD_LIBJSIG, \
+        NAME := jsig, \
+        SRC := $(LIBJSIG_SRC_DIR), \
+        CFLAGS := $(CFLAGS_JDKLIB) $(LIBJSIG_CFLAGS), \
+        LDFLAGS := $(LDFLAGS_JDKLIB) \
+            $(call SET_SHARED_LIBRARY_ORIGIN), \
+        LIBS_linux := $(LIBDL), \
+        LIBS_solaris := $(LIBDL), \
+        LIBS_aix := $(LIBDL), \
+        MAPFILE := $(LIBJSIG_MAPFILE), \
+    ))
+
+    TARGETS += $(BUILD_LIBJSIG)
+
+    ############################################################################
+    # Create symlinks to libjsig in each JVM variant sub dir
+    LIB_OUTPUTDIR := $(call FindLibDirForModule, java.base)
+
+    # $1 variant subdir
+    define CreateSymlinks
+      # Always symlink from libdir/variant/libjsig.so -> ../libjsig.so.
+      $(LIB_OUTPUTDIR)/$1/$(call SHARED_LIBRARY,jsig): \
+          $(LIB_OUTPUTDIR)/$(call SHARED_LIBRARY,jsig)
+		$$(call MakeDir, $$(@D))
+		$(RM) $$@
+		$(LN) -s ../$$(@F) $$@
+
+      TARGETS += $(LIB_OUTPUTDIR)/$1/$(call SHARED_LIBRARY,jsig)
+    endef
+
+    # The subdir is the same as the variant for client and minimal, for all
+    # others it's server.
+    VARIANT_SUBDIRS := $(filter client minimal, $(JVM_VARIANTS)) \
+        $(if $(filter-out client minimal, $(JVM_VARIANTS)), server)
+    $(foreach v, $(VARIANT_SUBDIRS), $(eval $(call CreateSymlinks,$v)))
+
+    ############################################################################
 
   endif
 endif

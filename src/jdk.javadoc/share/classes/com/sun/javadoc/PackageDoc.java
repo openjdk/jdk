@@ -48,7 +48,7 @@ public interface PackageDoc extends Doc {
 
     /**
      * Get all classes and interfaces in the package, filtered to the specified
-     * <a href="{@docRoot}/com/sun/javadoc/package-summary.html#included">access
+     * <a href="{@docRoot}/jdk.javadoc/com/sun/javadoc/package-summary.html#included">access
      * modifier option</a>.
      *
      * @return       filtered classes and interfaces in this package
@@ -62,7 +62,7 @@ public interface PackageDoc extends Doc {
 
     /**
      * Get all
-     * <a href="{@docRoot}/com/sun/javadoc/package-summary.html#included">included</a>
+     * <a href="{@docRoot}/jdk.javadoc/com/sun/javadoc/package-summary.html#included">included</a>
      * classes and interfaces in the package.  Same as allClasses(true).
      *
      * @return all included classes and interfaces in this package.
@@ -71,7 +71,7 @@ public interface PackageDoc extends Doc {
 
     /**
      * Get included
-     * <a href="{@docRoot}/com/sun/javadoc/package-summary.html#class">ordinary</a>
+     * <a href="{@docRoot}/jdk.javadoc/com/sun/javadoc/package-summary.html#class">ordinary</a>
      * classes (that is, exclude exceptions, errors, enums, interfaces, and
      * annotation types)
      * in this package.

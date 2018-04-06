@@ -36,7 +36,6 @@ BUILD_LIBMLIB_CFLAGS := -D__USE_J2D_NAMES -D__MEDIALIB_OLD_NAMES \
     -I$(TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/libmlib_image
 
 BUILD_LIBMLIB_LDLIBS :=
-BUILD_LIBMLIB_IMAGE_MAPFILE := $(TOPDIR)/make/mapfiles/libmlib_image/mapfile-vers
 
 BUILD_LIBMLIB_CFLAGS += -DMLIB_NO_LIBSUNMATH
 
@@ -55,7 +54,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBMLIB_IMAGE, \
     OPTIMIZATION := HIGHEST, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(BUILD_LIBMLIB_CFLAGS), \
-    MAPFILE := $(BUILD_LIBMLIB_IMAGE_MAPFILE), \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(BUILD_LIBMLIB_LDLIBS) \
@@ -107,7 +105,6 @@ ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH), solaris-sparc)
       CFLAGS := -xarch=sparcvis \
           $(LIBMLIB_IMAGE_V_CFLAGS) \
           $(CFLAGS_JDKLIB), \
-      MAPFILE := $(BUILD_LIBMLIB_IMAGE_MAPFILE), \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := -ljava -ljvm $(BUILD_LIBMLIB_LDLIBS), \
@@ -202,9 +199,9 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   LIBAWT_VERSIONINFO_RESOURCE := $(TOPDIR)/src/java.desktop/windows/native/libawt/windows/awt.rc
 endif
 
-LIBAWT_MAPFILE := $(TOPDIR)/make/mapfiles/libawt/mapfile-vers
 ifeq ($(OPENJDK_TARGET_OS), linux)
-  LIBAWT_MAPFILE :=
+  # FIXME: This is probably not what we want to do, but keep it now for compatibility.
+  LIBAWT_CFLAGS += $(EXPORT_ALL_SYMBOLS)
 endif
 
 # Turn off all warnings for debug_mem.c This is needed because the specific warning
@@ -229,7 +226,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     DISABLED_WARNINGS_solstudio := E_DECLARATION_IN_CODE, \
     DISABLED_WARNINGS_microsoft := 4297 4244 4267 4996, \
     ASFLAGS := $(LIBAWT_ASFLAGS), \
-    MAPFILE := $(LIBAWT_MAPFILE), \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_macosx := -L$(INSTALL_LIBRARIES_HERE), \
     LDFLAGS_windows := -delayload:user32.dll -delayload:gdi32.dll \
@@ -349,7 +345,6 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
             implicit-fallthrough, \
         DISABLED_WARNINGS_solstudio := E_DECLARATION_IN_CODE \
             E_ASSIGNMENT_TYPE_MISMATCH E_NON_CONST_INIT, \
-        MAPFILE := $(TOPDIR)/make/mapfiles/libawt_xawt/mapfile-vers, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN) \
             -L$(INSTALL_LIBRARIES_HERE), \
@@ -405,7 +400,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
     DISABLED_WARNINGS_clang := tautological-compare, \
     DISABLED_WARNINGS_solstudio := E_STATEMENT_NOT_REACHED, \
     DISABLED_WARNINGS_microsoft := 4819, \
-    MAPFILE := $(TOPDIR)/make/mapfiles/liblcms/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
@@ -421,28 +415,13 @@ $(BUILD_LIBLCMS): $(BUILD_LIBAWT)
 
 LIBJAVAJPEG_SRC += $(TOPDIR)/src/java.desktop/share/native/libjavajpeg
 
-BUILD_LIBJAVAJPEG_REORDER :=
-ifeq ($(OPENJDK_TARGET_OS), solaris)
-  ifneq ($(OPENJDK_TARGET_CPU), x86_64)
-    BUILD_LIBJAVAJPEG_REORDER := $(TOPDIR)/make/mapfiles/libjpeg/reorder-$(OPENJDK_TARGET_CPU)
-  endif
-endif
-
-
+# "DISABLED_WARNINGS_gcc := clobbered" rationale:
 # Suppress gcc warnings like "variable might be clobbered by 'longjmp'
 # or 'vfork'": this warning indicates that some variable is placed to
 # a register by optimized compiler and it's value might be lost on longjmp().
 # Recommended way to avoid such warning is to declare the variable as
 # volatile to prevent the optimization. However, this approach does not
 # work because we have to declare all variables as volatile in result.
-#ifndef CROSS_COMPILE_ARCH
-#  CC_43_OR_NEWER := \
-#      $(shell $(EXPR) $(CC_MAJORVER) \> 4 \| \
-#          \( $(CC_MAJORVER) = 4 \& $(CC_MINORVER) \>= 3 \) )
-#  ifeq ($(CC_43_OR_NEWER), 1)
-#    BUILD_LIBJAVAJPEG_CFLAGS_linux += -Wno-clobbered
-#  endif
-#endif
 
 ifeq ($(USE_EXTERNAL_LIBJPEG), true)
   LIBJPEG_LIBS := -ljpeg
@@ -465,12 +444,10 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVAJPEG, \
         $(LIBJAVA_HEADER_FLAGS) \
         -I$(SUPPORT_OUTPUTDIR)/headers/java.desktop, \
     DISABLED_WARNINGS_gcc := clobbered implicit-fallthrough shift-negative-value, \
-    MAPFILE := $(TOPDIR)/make/mapfiles/libjpeg/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(LIBJPEG_LIBS) $(JDKLIB_LIBS), \
     LIBS_windows := $(WIN_JAVA_LIB) jvm.lib, \
-    REORDER := $(BUILD_LIBJAVAJPEG_REORDER), \
 ))
 
 $(BUILD_LIBJAVAJPEG): $(call FindLib, java.base, java)
@@ -506,13 +483,6 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS), windows macosx),)
       $(LIBJAVA_HEADER_FLAGS) \
       #
 
-  LIBAWT_HEADLESS_REORDER :=
-  ifeq ($(OPENJDK_TARGET_OS), solaris)
-    ifneq ($(OPENJDK_TARGET_CPU), x86_64)
-      LIBAWT_HEADLESS_REORDER := $(TOPDIR)/make/mapfiles/libawt_headless/reorder-$(OPENJDK_TARGET_CPU)
-    endif
-  endif
-
   $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_HEADLESS, \
       NAME := awt_headless, \
       SRC := $(LIBAWT_HEADLESS_DIRS), \
@@ -527,11 +497,9 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS), windows macosx),)
           $(LIBAWT_HEADLESS_CFLAGS), \
       DISABLED_WARNINGS_xlc := 1506-356, \
       DISABLED_WARNINGS_solstudio := E_EMPTY_TRANSLATION_UNIT, \
-      MAPFILE := $(TOPDIR)/make/mapfiles/libawt_headless/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
-      REORDER := $(LIBAWT_HEADLESS_REORDER), \
       LIBS_unix := -lawt -ljvm -ljava, \
       LIBS_linux := $(LIBM) $(LIBDL), \
       LIBS_solaris := $(LIBM) $(LIBDL) $(LIBCXX), \
@@ -567,11 +535,11 @@ else
       SRC := $(LIBFREETYPE_SRC)/src, \
       OPTIMIZATION := HIGHEST, \
       CFLAGS := $(CFLAGS_JDKLIB) $(BUILD_LIBFREETYPE_HEADERS) \
-          -DFT2_BUILD_LIBRARY, \
+          -DFT2_BUILD_LIBRARY $(EXPORT_ALL_SYMBOLS), \
       DISABLED_WARNINGS_solstudio := \
          E_STATEMENT_NOT_REACHED \
          E_END_OF_LOOP_CODE_NOT_REACHED, \
-      DISABLED_WARNINGS_microsoft := 4267 2220 4244, \
+      DISABLED_WARNINGS_microsoft := 4267 4244, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
   ))
@@ -622,8 +590,6 @@ LIBFONTMANAGER_CFLAGS += $(HARFBUZZ_CFLAGS)
 #### End harfbuzz configuration
 
 LIBFONTMANAGER_CFLAGS += $(LIBFREETYPE_CFLAGS)
-# This may be overridden in a custom makefile
-BUILD_LIBFONTMANAGER_MAPFILE ?= $(TOPDIR)/make/mapfiles/libfontmanager/mapfile-vers
 BUILD_LIBFONTMANAGER_FONTLIB += $(LIBFREETYPE_LIBS)
 
 LIBFONTMANAGER_OPTIMIZATION := HIGH
@@ -678,7 +644,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
         truncwarn wvarhidenmem wvarhidemem wbadlkginit identexpected \
         hidevf w_novirtualdescr arrowrtn2, \
     DISABLED_WARNINGS_microsoft := 4267 4244 4018 4090 4996 4146 4334 4819 4101, \
-    MAPFILE := $(BUILD_LIBFONTMANAGER_MAPFILE), \
     LDFLAGS := $(subst -Wl$(COMMA)-z$(COMMA)defs,,$(LDFLAGS_JDKLIB)) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
@@ -782,7 +747,6 @@ else # OPENJDK_TARGET_OS not windows
           $(LIBJAWT_CFLAGS), \
       CFLAGS_linux := $(HEADLESS_CFLAG), \
       CFLAGS_macosx := $(LIBJAWT_CFLAGS_macosx), \
-      MAPFILE := $(TOPDIR)/make/mapfiles/libjawt/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
@@ -914,7 +878,6 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       DISABLED_WARNINGS_solstudio := E_NEWLINE_NOT_LAST E_DECLARATION_IN_CODE \
           E_STATEMENT_NOT_REACHED, \
       DISABLED_WARNINGS_microsoft := 4018 4244 4267, \
-      MAPFILE := $(TOPDIR)/make/mapfiles/libsplashscreen/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_macosx := -L$(INSTALL_LIBRARIES_HERE), \

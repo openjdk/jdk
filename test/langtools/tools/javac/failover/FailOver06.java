@@ -4,7 +4,7 @@
  * @summary Flow.java should be more error-friendly
  * @author mcimadamore
  *
- * @compile/fail/ref=FailOver06.out -XDrawDiagnostics --should-stop:at=FLOW -XDdev FailOver06.java
+ * @compile/fail/ref=FailOver06.out -XDrawDiagnostics --should-stop=at=FLOW -XDdev FailOver06.java
  */
 
 class Test extends Test {

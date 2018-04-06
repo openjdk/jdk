@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ void buildJniFunctionName(const char *sym, const char *cname,
     return;
 }
 
-size_t
+JNIEXPORT size_t JNICALL
 getLastErrorString(char *utf8_jvmErrorMsg, size_t cbErrorMsg)
 {
     size_t n = 0;
@@ -144,7 +144,7 @@ getLastErrorString(char *utf8_jvmErrorMsg, size_t cbErrorMsg)
     return n;
 }
 
-int
+JNIEXPORT int JNICALL
 getErrorString(int err, char *buf, size_t len)
 {
     int ret = 0;

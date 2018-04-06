@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8035158 8145732
+ * @bug 8035158 8145732 8144300
  * @run main/othervm B8035158
  */
 
@@ -152,6 +152,8 @@ public class B8035158 {
 
         t.add(new TestCase("p-proxy.com", "http://p-proxy.com", false));
         t.add(new TestCase("google.co*|google.ie", "http://google.co.uk",
+                false));
+        t.add(new TestCase("*google.*", "http://google.co.uk",
                 false));
 
         t.add(new TestCase("*oracle.com", "http://my.oracle.com", false));

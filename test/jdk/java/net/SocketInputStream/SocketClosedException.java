@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 4681556
  * @summary Wrong text if a read is performed on a socket after it
  *      has been closed
+ * @run main SocketClosedException
+ * @run main/othervm -Djava.net.preferIPv4Stack=true SocketClosedException
  */
 
 import java.io.*;

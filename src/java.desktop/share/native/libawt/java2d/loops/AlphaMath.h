@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,10 @@
 #ifndef AlphaMath_h_Included
 #define AlphaMath_h_Included
 
-extern unsigned char mul8table[256][256];
-extern unsigned char div8table[256][256];
+#include "jni.h"
+
+JNIEXPORT extern unsigned char mul8table[256][256];
+JNIEXPORT extern unsigned char div8table[256][256];
 extern void initAlphaTables();
 
 

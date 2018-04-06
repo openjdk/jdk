@@ -263,8 +263,11 @@ public class HtmlTree extends Content {
      * is less aggressive about encoding some characters,
      * like '(', ')', ',' which are used in the anchor
      * names for Java methods in HTML5 mode.
+     *
+     * @param url the url to be percent-encoded.
+     * @return a percent-encoded string.
      */
-    private static String encodeURL(String url) {
+    public static String encodeURL(String url) {
         BitSet nonEncodingChars = MAIN_CHARS;
         StringBuilder sb = new StringBuilder();
         for (byte c : url.getBytes(Charset.forName("UTF-8"))) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ Java_java_io_FileOutputStream_writeBytes(JNIEnv *env,
     writeBytes(env, this, bytes, off, len, append, fos_fd);
 }
 
-JNIEXPORT void JNICALL
+void JNICALL
 Java_java_io_FileOutputStream_close0(JNIEnv *env, jobject this) {
     fileClose(env, this, fos_fd);
 }

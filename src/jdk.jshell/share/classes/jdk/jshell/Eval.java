@@ -850,17 +850,15 @@ class Eval {
                             ? expunge(value)
                             : "";
                 } catch (ResolutionException ex) {
-                    DeclarationSnippet sn = (DeclarationSnippet) state.maps.getSnippetDeadOrAlive(ex.id());
-                    exception = new UnresolvedReferenceException(sn, translateExceptionStack(ex));
+                    exception = asUnresolvedReferenceException(ex);
                 } catch (UserException ex) {
-                    exception = new EvalException(ex.getMessage(),
-                            ex.causeExceptionClass(),
-                            translateExceptionStack(ex));
+                    exception = asEvalException(ex);
                 } catch (RunException ex) {
                     // StopException - no-op
                 } catch (InternalException ex) {
                     state.debug(ex, "invoke");
                 } catch (EngineTerminationException ex) {
+                    state.debug(ex, "termination");
                     state.closeDown();
                 }
             } else if (si.subKind() == SubKind.VAR_DECLARATION_SUBKIND) {
@@ -888,6 +886,36 @@ class Eval {
             }
         }
         return events(c, outs, value, exception);
+    }
+
+    // Convert an internal UserException to an API EvalException, translating
+    // the stack to snippet form.  Convert any chained exceptions
+    private EvalException asEvalException(UserException ue) {
+        return new EvalException(ue.getMessage(),
+                ue.causeExceptionClass(),
+                translateExceptionStack(ue),
+                asJShellException(ue.getCause()));
+    }
+
+    // Convert an internal ResolutionException to an API UnresolvedReferenceException,
+    // translating the snippet id to snipper and the stack to snippet form
+    private UnresolvedReferenceException asUnresolvedReferenceException(ResolutionException re) {
+        DeclarationSnippet sn = (DeclarationSnippet) state.maps.getSnippetDeadOrAlive(re.id());
+        return new UnresolvedReferenceException(sn, translateExceptionStack(re));
+    }
+
+    // Convert an internal UserException/ResolutionException to an API
+    // EvalException/UnresolvedReferenceException
+    private JShellException asJShellException(Throwable e) {
+        if (e == null) {
+            return null;
+        } else if (e instanceof UserException) {
+            return asEvalException((UserException) e);
+        } else if (e instanceof ResolutionException) {
+            return asUnresolvedReferenceException((ResolutionException) e);
+        } else {
+            throw new AssertionError(e);
+        }
     }
 
     private boolean interestingEvent(SnippetEvent e) {
