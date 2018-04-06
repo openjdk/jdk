@@ -31,8 +31,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-#if INCLUDE_ALL_GCS
-
 // An implementation of memset, for use when there may be concurrent
 // readers of the region being stored into.
 //
@@ -156,5 +154,3 @@ void memset_with_concurrent_readers(void* to, int value, size_t size) {
   // Fill any partial word suffix.  Also the prefix if size < BytesPerWord.
   fill_subword(to, end, value);
 }
-
-#endif // INCLUDE_ALL_GCS
