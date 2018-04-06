@@ -3106,35 +3106,34 @@ public class JavacParser implements Parser {
             name = token.name();
             nextToken();
         } else {
-            if (allowThisIdent && !lambdaParameter) {
+            if (allowThisIdent ||
+                !lambdaParameter ||
+                LAX_IDENTIFIER.accepts(token.kind) ||
+                mods.flags != Flags.PARAMETER ||
+                mods.annotations.nonEmpty()) {
                 JCExpression pn = qualident(false);
                 if (pn.hasTag(Tag.IDENT) && ((JCIdent)pn).name != names._this) {
                     name = ((JCIdent)pn).name;
                 } else {
-                    if ((mods.flags & Flags.VARARGS) != 0) {
-                        log.error(token.pos, Errors.VarargsAndReceiver);
-                    }
-                    if (token.kind == LBRACKET) {
-                        log.error(token.pos, Errors.ArrayAndReceiver);
+                    if (allowThisIdent) {
+                        if ((mods.flags & Flags.VARARGS) != 0) {
+                            log.error(token.pos, Errors.VarargsAndReceiver);
+                        }
+                        if (token.kind == LBRACKET) {
+                            log.error(token.pos, Errors.ArrayAndReceiver);
+                        }
                     }
                     return toP(F.at(pos).ReceiverVarDef(mods, pn, type));
                 }
             } else {
-                if (!lambdaParameter ||
-                        LAX_IDENTIFIER.accepts(token.kind) ||
-                        mods.flags != Flags.PARAMETER ||
-                        mods.annotations.nonEmpty()) {
-                    name = ident();
-                } else {
-                    /** if it is a lambda parameter and the token kind is not an identifier,
-                     *  and there are no modifiers or annotations, then this means that the compiler
-                     *  supposed the lambda to be explicit but it can contain a mix of implicit,
-                     *  var or explicit parameters. So we assign the error name to the parameter name
-                     *  instead of issuing an error and analyze the lambda parameters as a whole at
-                     *  a higher level.
-                     */
-                    name = names.empty;
-                }
+                /** if it is a lambda parameter and the token kind is not an identifier,
+                 *  and there are no modifiers or annotations, then this means that the compiler
+                 *  supposed the lambda to be explicit but it can contain a mix of implicit,
+                 *  var or explicit parameters. So we assign the error name to the parameter name
+                 *  instead of issuing an error and analyze the lambda parameters as a whole at
+                 *  a higher level.
+                 */
+                name = names.empty;
             }
         }
         if ((mods.flags & Flags.VARARGS) != 0 &&
@@ -3905,7 +3904,7 @@ public class JavacParser implements Parser {
         JCVariableDecl lastParam;
         accept(LPAREN);
         if (token.kind != RPAREN) {
-            this.allowThisIdent = true;
+            this.allowThisIdent = !lambdaParameters;
             lastParam = formalParameter(lambdaParameters);
             if (lastParam.nameexpr != null) {
                 this.receiverParam = lastParam;
