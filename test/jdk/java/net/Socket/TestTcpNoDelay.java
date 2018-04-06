@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
  * @test
  * @bug 6404388
  * @summary VISTA: Socket setTcpNoDelay & setKeepAlive working incorrectly
+ * @run main TestTcpNoDelay
+ * @run main/othervm -Djava.net.preferIPv4Stack=true TestTcpNoDelay
  */
 
 import java.net.*;

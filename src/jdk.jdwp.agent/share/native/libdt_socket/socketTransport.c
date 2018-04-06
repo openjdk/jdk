@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include "jni.h"
 #include "jdwpTransport.h"
 #include "sysSocket.h"
 
@@ -1018,7 +1019,7 @@ socketTransport_setConfiguration(jdwpTransportEnv* env, jdwpTransportConfigurati
     return JDWPTRANSPORT_ERROR_NONE;
 }
 
-jint JNICALL
+JNIEXPORT jint JNICALL
 jdwpTransport_OnLoad(JavaVM *vm, jdwpTransportCallback* cbTablePtr,
                      jint version, jdwpTransportEnv** env)
 {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,18 +29,22 @@
 #include <string.h>
 
 #include "colordata.h"
+#include "jni.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern sgn_ordered_dither_array std_img_oda_red;
-extern sgn_ordered_dither_array std_img_oda_green;
-extern sgn_ordered_dither_array std_img_oda_blue;
-extern int std_odas_computed;
+JNIEXPORT extern sgn_ordered_dither_array std_img_oda_red;
+JNIEXPORT extern sgn_ordered_dither_array std_img_oda_green;
+JNIEXPORT extern sgn_ordered_dither_array std_img_oda_blue;
+JNIEXPORT extern int std_odas_computed;
 
-void make_dither_arrays(int cmapsize, ColorData *cData);
-void initInverseGrayLut(int* prgb, int rgbsize, ColorData* cData);
+JNIEXPORT void JNICALL
+make_dither_arrays(int cmapsize, ColorData *cData);
+
+JNIEXPORT void JNICALL
+initInverseGrayLut(int* prgb, int rgbsize, ColorData* cData);
 
 /*
  * state info needed for breadth-first recursion of color cube from

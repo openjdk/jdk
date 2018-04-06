@@ -51,14 +51,6 @@ java.base_EXCLUDES += java/lang/doc-files
 # data files and shouldn't go in the product
 java.base_EXCLUDE_FILES += sun/text/resources/BreakIteratorRules.java
 
-ifneq ($(filter solaris macosx linux windows,$(OPENJDK_TARGET_OS)), )
-  java.base_EXCLUDE_FILES += \
-      sun/nio/ch/AbstractPollSelectorImpl.java \
-      sun/nio/ch/PollSelectorImpl.java \
-      sun/nio/ch/PollSelectorProvider.java \
-      #
-endif
-
 ifneq ($(OPENJDK_TARGET_OS), solaris)
   java.base_EXCLUDE_FILES += \
       SolarisLoginModule.java \

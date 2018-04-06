@@ -2180,24 +2180,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      */
     @Transient
     public int[] getSelectedIndices() {
-        ListSelectionModel sm = getSelectionModel();
-        int iMin = sm.getMinSelectionIndex();
-        int iMax = sm.getMaxSelectionIndex();
-
-        if ((iMin < 0) || (iMax < 0)) {
-            return new int[0];
-        }
-
-        int[] rvTmp = new int[1+ (iMax - iMin)];
-        int n = 0;
-        for(int i = iMin; i <= iMax; i++) {
-            if (sm.isSelectedIndex(i)) {
-                rvTmp[n++] = i;
-            }
-        }
-        int[] rv = new int[n];
-        System.arraycopy(rvTmp, 0, rv, 0, n);
-        return rv;
+        return getSelectionModel().getSelectedIndices();
     }
 
 
@@ -2301,25 +2284,23 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      */
     @BeanProperty(bound = false)
     public List<E> getSelectedValuesList() {
-        ListSelectionModel sm = getSelectionModel();
         ListModel<E> dm = getModel();
+        int[] selectedIndices = getSelectedIndices();
 
-        int iMin = sm.getMinSelectionIndex();
-        int iMax = sm.getMaxSelectionIndex();
-        int size = dm.getSize();
-
-        if ((iMin < 0) || (iMax < 0) || (iMin >= size)) {
-            return Collections.emptyList();
-        }
-        iMax = iMax < size ? iMax : size - 1;
-
-        List<E> selectedItems = new ArrayList<E>();
-        for(int i = iMin; i <= iMax; i++) {
-            if (sm.isSelectedIndex(i)) {
+        if (selectedIndices.length > 0) {
+            int size = dm.getSize();
+            if (selectedIndices[0] >= size) {
+                return Collections.emptyList();
+            }
+            List<E> selectedItems = new ArrayList<E>();
+            for (int i : selectedIndices) {
+                if (i >= size)
+                    break;
                 selectedItems.add(dm.getElementAt(i));
             }
+            return selectedItems;
         }
-        return selectedItems;
+        return Collections.emptyList();
     }
 
 

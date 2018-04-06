@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ public class VarTree {
         String src = prefix + parts[0] + parts[1] + parts[2] + " } }";
 
         JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, d -> {},
-                                                        List.of("--should-stop:at=FLOW"),
+                                                        List.of("--should-stop=at=FLOW"),
                                                         null, Arrays.asList(new MyFileObject(src)));
 
         Iterable<? extends CompilationUnitTree> units = ct.parse();

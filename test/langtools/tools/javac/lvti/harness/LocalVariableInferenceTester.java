@@ -56,8 +56,18 @@ import static javax.tools.StandardLocation.SOURCE_PATH;
 
 public class LocalVariableInferenceTester {
 
-    static final JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
-    static final StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
+    static final StandardJavaFileManager fm;
+
+    static {
+        final JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
+        fm = comp.getStandardFileManager(null, null, null);
+        File destDir = new File(System.getProperty("user.dir"));
+        try {
+            fm.setLocation(javax.tools.StandardLocation.CLASS_OUTPUT, Arrays.asList(destDir));
+        } catch (IOException ex) {
+            throw new AssertionError(ex);
+        }
+    }
 
     public static void main(String[] args) throws IOException {
         try {

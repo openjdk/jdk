@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,187 +22,108 @@
  */
 
 /* @test
+ * @bug 8195649
  * @summary Basic functional test of OptionalDouble
  * @author Mike Duigou
+ * @build ObscureException
  * @run testng BasicDouble
  */
 
 import java.util.NoSuchElementException;
 import java.util.OptionalDouble;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.DoubleStream;
 
 import static org.testng.Assert.*;
 import org.testng.annotations.Test;
 
-
 public class BasicDouble {
+    static final double DOUBLEVAL = Math.PI;
+    static final double UNEXPECTED = 6.62607004E-34;
+
+    /**
+     * Checks a block of assertions over an empty OptionalDouble.
+     */
+    void checkEmpty(OptionalDouble empty) {
+        assertTrue(empty.equals(OptionalDouble.empty()));
+        assertTrue(OptionalDouble.empty().equals(empty));
+        assertFalse(empty.equals(OptionalDouble.of(UNEXPECTED)));
+        assertFalse(OptionalDouble.of(UNEXPECTED).equals(empty));
+        assertFalse(empty.equals("unexpected"));
+
+        assertFalse(empty.isPresent());
+        assertEquals(empty.hashCode(), 0);
+        assertEquals(empty.orElse(UNEXPECTED), UNEXPECTED);
+        assertEquals(empty.orElseGet(() -> UNEXPECTED), UNEXPECTED);
+
+        assertThrows(NoSuchElementException.class, () -> empty.getAsDouble());
+        assertThrows(NoSuchElementException.class, () -> empty.orElseThrow());
+        assertThrows(ObscureException.class,       () -> empty.orElseThrow(ObscureException::new));
+
+        var b = new AtomicBoolean();
+        empty.ifPresent(s -> b.set(true));
+        assertFalse(b.get());
+
+        var b1 = new AtomicBoolean(false);
+        var b2 = new AtomicBoolean(false);
+        empty.ifPresentOrElse(s -> b1.set(true), () -> b2.set(true));
+        assertFalse(b1.get());
+        assertTrue(b2.get());
+
+        assertEquals(empty.toString(), "OptionalDouble.empty");
+    }
+
+    /**
+     * Checks a block of assertions over an OptionalDouble that is expected to
+     * have a particular value present.
+     */
+    void checkPresent(OptionalDouble opt, double expected) {
+        assertFalse(opt.equals(OptionalDouble.empty()));
+        assertFalse(OptionalDouble.empty().equals(opt));
+        assertTrue(opt.equals(OptionalDouble.of(expected)));
+        assertTrue(OptionalDouble.of(expected).equals(opt));
+        assertFalse(opt.equals(OptionalDouble.of(UNEXPECTED)));
+        assertFalse(OptionalDouble.of(UNEXPECTED).equals(opt));
+        assertFalse(opt.equals("unexpected"));
+
+        assertTrue(opt.isPresent());
+        assertEquals(opt.hashCode(), Double.hashCode(expected));
+        assertEquals(opt.orElse(UNEXPECTED), expected);
+        assertEquals(opt.orElseGet(() -> UNEXPECTED), expected);
+
+        assertEquals(opt.getAsDouble(), expected);
+        assertEquals(opt.orElseThrow(), expected);
+        assertEquals(opt.orElseThrow(ObscureException::new), expected);
+
+        var b = new AtomicBoolean(false);
+        opt.ifPresent(s -> b.set(true));
+        assertTrue(b.get());
+
+        var b1 = new AtomicBoolean(false);
+        var b2 = new AtomicBoolean(false);
+        opt.ifPresentOrElse(s -> b1.set(true), () -> b2.set(true));
+        assertTrue(b1.get());
+        assertFalse(b2.get());
+
+        assertEquals(opt.toString(), "OptionalDouble[" + expected + "]");
+    }
 
     @Test(groups = "unit")
     public void testEmpty() {
-        OptionalDouble empty = OptionalDouble.empty();
-        OptionalDouble present = OptionalDouble.of(1.0);
-
-        // empty
-        assertTrue(empty.equals(empty));
-        assertTrue(empty.equals(OptionalDouble.empty()));
-        assertTrue(!empty.equals(present));
-        assertTrue(0 == empty.hashCode());
-        assertTrue(!empty.toString().isEmpty());
-        assertTrue(!empty.isPresent());
-
-        empty.ifPresent(v -> { fail(); });
-
-        AtomicBoolean emptyCheck = new AtomicBoolean();
-        empty.ifPresentOrElse(v -> fail(), () -> emptyCheck.set(true));
-        assertTrue(emptyCheck.get());
-
-        try {
-            empty.ifPresentOrElse(v -> fail(), () -> { throw new ObscureException(); });
-            fail();
-        } catch (ObscureException expected) {
-        } catch (AssertionError e) {
-            throw e;
-        } catch (Throwable t) {
-            fail();
-        }
-
-        assertEquals(2.0, empty.orElse(2.0));
-        assertEquals(2.0, empty.orElseGet(()-> 2.0));
-    }
-
-    @Test(groups = "unit")
-    public void testIfPresentAndOrElseAndNull() {
-        OptionalDouble empty = OptionalDouble.empty();
-        OptionalDouble present = OptionalDouble.of(1.0);
-
-        // No NPE
-        present.ifPresentOrElse(v -> {}, null);
-        empty.ifPresent(null);
-        empty.ifPresentOrElse(null, () -> {});
-
-        // NPE
-        try {
-            present.ifPresent(null);
-            fail();
-        } catch (NullPointerException ex) {}
-        try {
-            present.ifPresentOrElse(null, () -> {});
-            fail();
-        } catch (NullPointerException ex) {}
-        try {
-            empty.ifPresentOrElse(v -> {}, null);
-            fail();
-        } catch (NullPointerException ex) {}
-    }
-
-    @Test(expectedExceptions=NoSuchElementException.class)
-    public void testEmptyGet() {
-        OptionalDouble empty = OptionalDouble.empty();
-
-        double got = empty.getAsDouble();
-    }
-
-    @Test(expectedExceptions=NullPointerException.class)
-    public void testEmptyOrElseGetNull() {
-        OptionalDouble empty = OptionalDouble.empty();
-
-        double got = empty.orElseGet(null);
-    }
-
-    @Test(expectedExceptions=NullPointerException.class)
-    public void testEmptyOrElseThrowNull() throws Throwable {
-        OptionalDouble empty = OptionalDouble.empty();
-
-        double got = empty.orElseThrow(null);
-    }
-
-    @Test(expectedExceptions=ObscureException.class)
-    public void testEmptyOrElseThrow() throws Exception {
-        OptionalDouble empty = OptionalDouble.empty();
-
-        double got = empty.orElseThrow(ObscureException::new);
-    }
-
-    @Test(expectedExceptions=NoSuchElementException.class)
-    public void testEmptyOrElseThrowNoArg() throws Exception {
-        OptionalDouble empty = OptionalDouble.empty();
-
-        double got = empty.orElseThrow();
+        checkEmpty(OptionalDouble.empty());
     }
 
     @Test(groups = "unit")
     public void testPresent() {
-        OptionalDouble empty = OptionalDouble.empty();
-        OptionalDouble present = OptionalDouble.of(1.0);
-
-        // present
-        assertTrue(present.equals(present));
-        assertFalse(present.equals(OptionalDouble.of(0.0)));
-        assertTrue(present.equals(OptionalDouble.of(1.0)));
-        assertTrue(!present.equals(empty));
-        assertTrue(Double.hashCode(1.0) == present.hashCode());
-        assertFalse(present.toString().isEmpty());
-        assertTrue(-1 != present.toString().indexOf(Double.toString(present.getAsDouble()).toString()));
-        assertTrue(-1 != present.toString().indexOf(Double.toString(present.orElseThrow()).toString()));
-        assertEquals(1.0, present.getAsDouble());
-        assertEquals(1.0, present.orElseThrow());
-
-        AtomicBoolean presentCheck = new AtomicBoolean();
-        present.ifPresent(v -> presentCheck.set(true));
-        assertTrue(presentCheck.get());
-        presentCheck.set(false);
-        present.ifPresentOrElse(v -> presentCheck.set(true), () -> fail());
-        assertTrue(presentCheck.get());
-
-        try {
-            present.ifPresent(v -> { throw new ObscureException(); });
-            fail();
-        } catch (ObscureException expected) {
-        } catch (AssertionError e) {
-            throw e;
-        } catch (Throwable t) {
-            fail();
-        }
-        try {
-            present.ifPresentOrElse(v -> { throw new ObscureException(); }, () -> fail());
-            fail();
-        } catch (ObscureException expected) {
-        } catch (AssertionError e) {
-            throw e;
-        } catch (Throwable t) {
-            fail();
-        }
-
-        assertEquals(1.0, present.orElse(2.0));
-        assertEquals(1.0, present.orElseGet(null));
-        assertEquals(1.0, present.orElseGet(()-> 2.0));
-        assertEquals(1.0, present.orElseGet(()-> 3.0));
-        assertEquals(1.0, present.<RuntimeException>orElseThrow(null));
-        assertEquals(1.0, present.<RuntimeException>orElseThrow(ObscureException::new));
+        checkPresent(OptionalDouble.of(DOUBLEVAL), DOUBLEVAL);
     }
 
     @Test(groups = "unit")
-    public void testStream() {
-        {
-            DoubleStream s = OptionalDouble.empty().stream();
-            assertFalse(s.isParallel());
-
-            double[] es = s.toArray();
-            assertEquals(es.length, 0);
-        }
-
-        {
-            DoubleStream s = OptionalDouble.of(42.0).stream();
-            assertFalse(s.isParallel());
-
-            double[] es = s.toArray();
-            assertEquals(es.length, 1);
-            assertEquals(es[0], 42.0);
-        }
+    public void testStreamEmpty() {
+        assertEquals(OptionalDouble.empty().stream().toArray(), new double[] { });
     }
 
-    private static class ObscureException extends RuntimeException {
-
+    @Test(groups = "unit")
+    public void testStreamPresent() {
+        assertEquals(OptionalDouble.of(DOUBLEVAL).stream().toArray(), new double[] { DOUBLEVAL });
     }
 }

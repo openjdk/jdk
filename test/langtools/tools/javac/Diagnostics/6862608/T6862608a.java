@@ -3,7 +3,7 @@
  * @bug     6862608
  * @summary rich diagnostic sometimes contain wrong type variable numbering
  * @author  mcimadamore
- * @compile/fail/ref=T6862608a.out -XDrawDiagnostics --diags:formatterOptions=disambiguateTvars,where T6862608a.java
+ * @compile/fail/ref=T6862608a.out -XDrawDiagnostics --diags=formatterOptions=disambiguateTvars,where T6862608a.java
  */
 
 

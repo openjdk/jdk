@@ -212,7 +212,7 @@ public class ChoiceFormat extends NumberFormat {
                 } else if (tempBuffer.equals("-\u221E")) {
                     startValue = Double.NEGATIVE_INFINITY;
                 } else {
-                    startValue = Double.valueOf(tempBuffer);
+                    startValue = Double.parseDouble(tempBuffer);
                 }
 
                 if (ch == '<' && startValue != Double.POSITIVE_INFINITY &&

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include "jni.h"
 #include "jli_util.h"
 
 /*
  * Returns a pointer to a block of at least 'size' bytes of memory.
  * Prints error message and exits if the memory could not be allocated.
  */
-void *
+JNIEXPORT void * JNICALL
 JLI_MemAlloc(size_t size)
 {
     void *p = malloc(size);
@@ -62,7 +63,7 @@ JLI_MemRealloc(void *ptr, size_t size)
  * Wrapper over strdup(3C) which prints an error message and exits if memory
  * could not be allocated.
  */
-char *
+JNIEXPORT char * JNICALL
 JLI_StringDup(const char *s1)
 {
     char *s = strdup(s1);
@@ -77,7 +78,7 @@ JLI_StringDup(const char *s1)
  * Very equivalent to free(ptr).
  * Here to maintain pairing with the above routines.
  */
-void
+JNIEXPORT void JNICALL
 JLI_MemFree(void *ptr)
 {
     free(ptr);
@@ -99,7 +100,7 @@ JLI_TraceLauncher(const char* fmt, ...)
     fflush(stdout);
 }
 
-void
+JNIEXPORT void JNICALL
 JLI_SetTraceLauncher()
 {
    if (getenv(JLDEBUG_ENV_ENTRY) != 0) {
@@ -120,7 +121,7 @@ JLI_StrCCmp(const char *s1, const char* s2)
    return JLI_StrNCmp(s1, s2, JLI_StrLen(s2));
 }
 
-JLI_List
+JNIEXPORT JLI_List JNICALL
 JLI_List_new(size_t capacity)
 {
     JLI_List l = (JLI_List) JLI_MemAlloc(sizeof(struct JLI_List_));
@@ -155,7 +156,7 @@ JLI_List_ensureCapacity(JLI_List sl, size_t capacity)
     }
 }
 
-void
+JNIEXPORT void JNICALL
 JLI_List_add(JLI_List sl, char *str)
 {
     JLI_List_ensureCapacity(sl, sl->size+1);

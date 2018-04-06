@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,20 @@
 /*
  * @test
  * @summary Tests for exceptions
+ * @bug 8198801
  * @build KullaTesting TestingInputStream
  * @run testng ExceptionsTest
  */
 
-import jdk.jshell.SnippetEvent;
-import jdk.jshell.EvalException;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-
+import jdk.jshell.EvalException;
+import jdk.jshell.JShellException;
 import jdk.jshell.Snippet;
+import jdk.jshell.SnippetEvent;
+import jdk.jshell.UnresolvedReferenceException;
+
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
@@ -79,6 +83,54 @@ public class ExceptionsTest extends KullaTesting {
                         newStackTraceElement("", "f", s1, 1),
                         newStackTraceElement("A", "g", s2, 1),
                         newStackTraceElement("", "", cr3.snippet(), 1)));
+    }
+
+    public void throwChained() {
+        String message1 = "error_message1";
+        String message2 = "error_message2";
+        Snippet s1 = methodKey(assertEval("void p() throws Exception { ((String) null).toString(); }"));
+        Snippet s2 = methodKey(assertEval("void n() throws Exception { try { p(); } catch (Exception ex) { throw new java.io.IOException(\"" + message2 + "\", ex); }}"));
+        Snippet s3 = methodKey(assertEval("void m() {\n"
+                + "try { n(); }\n"
+                + "catch (Exception ex) {\n"
+                + "    throw new RuntimeException(\"" + message1 + "\", ex);\n"
+                + "}}"));
+        SnippetEvent cr4 = assertEvalException("m();");
+        assertExceptionMatch(cr4,
+                new ExceptionInfo(RuntimeException.class, message1,
+                        new ExceptionInfo(IOException.class, message2,
+                                new ExceptionInfo(NullPointerException.class, null,
+                                        newStackTraceElement("", "p", s1, 1),
+                                        newStackTraceElement("", "n", s2, 1),
+                                        newStackTraceElement("", "m", s3, 2),
+                                        newStackTraceElement("", "", cr4.snippet(), 1)),
+                                newStackTraceElement("", "n", s2, 1),
+                                newStackTraceElement("", "m", s3, 2),
+                                newStackTraceElement("", "", cr4.snippet(), 1)),
+                        newStackTraceElement("", "m", s3, 4),
+                        newStackTraceElement("", "", cr4.snippet(), 1)));
+    }
+
+    public void throwChainedUnresolved() {
+        String message1 = "error_message1";
+        String message2 = "error_message2";
+        Snippet s1 = methodKey(assertEval("void p() throws Exception { ((String) null).toString(); }"));
+        Snippet s2 = methodKey(assertEval("void n() throws Exception { try { p(); } catch (Exception ex) { throw new java.io.IOException(\"" + message2 + "\", ex); }}"));
+        Snippet s3 = methodKey(assertEval("void m() {\n"
+                + "try { n(); }\n"
+                + "catch (Exception ex) {\n"
+                + "    throw new RuntimeException(\"" + message1 + "\", ex);\n"
+                + "}}"));
+        getState().drop(s1);
+        SnippetEvent cr4 = assertEvalException("m();");
+        assertExceptionMatch(cr4,
+                new ExceptionInfo(RuntimeException.class, message1,
+                        new UnresolvedExceptionInfo(s2,
+                                newStackTraceElement("", "n", s2, 1),
+                                newStackTraceElement("", "m", s3, 2),
+                                newStackTraceElement("", "", cr4.snippet(), 1)),
+                        newStackTraceElement("", "m", s3, 4),
+                        newStackTraceElement("", "", cr4.snippet(), 1)));
     }
 
     public void throwFromConstructor() {
@@ -171,15 +223,42 @@ public class ExceptionsTest extends KullaTesting {
         return new StackTraceElement(className, methodName, "#" + key.id(), lineNumber);
     }
 
-    private static class ExceptionInfo {
-        public final Class<? extends Throwable> exception;
-        public final String message;
+    private static class AnyExceptionInfo {
+
         public final StackTraceElement[] stackTraceElements;
 
-        public ExceptionInfo(Class<? extends Throwable> exception, String message, StackTraceElement...stackTraceElements) {
+        public AnyExceptionInfo(StackTraceElement... stackTraceElements) {
+            this.stackTraceElements = stackTraceElements.length == 0 ? null : stackTraceElements;
+        }
+    }
+
+    private static class UnresolvedExceptionInfo extends AnyExceptionInfo {
+
+        public final Snippet sn;
+
+        public UnresolvedExceptionInfo(Snippet sn, StackTraceElement... stackTraceElements) {
+            super(stackTraceElements);
+            this.sn = sn;
+        }
+    }
+
+    private static class ExceptionInfo extends AnyExceptionInfo {
+
+        public final Class<? extends Throwable> exception;
+        public final String message;
+        public final AnyExceptionInfo cause;
+
+        public ExceptionInfo(Class<? extends Throwable> exception, String message,
+                StackTraceElement... stackTraceElements) {
+            this(exception, message, null, stackTraceElements);
+        }
+
+        public ExceptionInfo(Class<? extends Throwable> exception, String message,
+                AnyExceptionInfo cause, StackTraceElement... stackTraceElements) {
+            super(stackTraceElements);
             this.exception = exception;
             this.message = message;
-            this.stackTraceElements = stackTraceElements.length == 0 ? null : stackTraceElements;
+            this.cause = cause;
         }
     }
 
@@ -188,28 +267,51 @@ public class ExceptionsTest extends KullaTesting {
     }
 
     private void assertExceptionMatch(SnippetEvent cr, ExceptionInfo exceptionInfo) {
-        assertNotNull(cr.exception(), "Expected exception was not thrown: " + exceptionInfo.exception);
-        if (cr.exception() instanceof EvalException) {
-            EvalException ex = (EvalException) cr.exception();
+        assertExceptionMatch(cr.exception(), cr.snippet().source(), exceptionInfo);
+    }
+
+    private void assertExceptionMatch(Throwable exception, String source, ExceptionInfo exceptionInfo) {
+        assertNotNull(exception, "Expected exception was not thrown: " + exceptionInfo.exception);
+        if (exception instanceof EvalException) {
+            EvalException ex = (EvalException) exception;
             String actualException = ex.getExceptionClassName();
             String expectedException = exceptionInfo.exception.getCanonicalName();
-            String stackTrace = getStackTrace(ex);
-            String source = cr.snippet().source();
             assertEquals(actualException, expectedException,
                     String.format("Given \"%s\" expected exception: %s, got: %s%nStack trace:%n%s",
-                            source, expectedException, actualException, stackTrace));
+                            source, expectedException, actualException, getStackTrace(ex)));
             if (exceptionInfo.message != null) {
                 assertEquals(ex.getMessage(), exceptionInfo.message,
                         String.format("Given \"%s\" expected message: %s, got: %s",
                                 source, exceptionInfo.message, ex.getMessage()));
             }
-            if (exceptionInfo.stackTraceElements != null) {
-                assertStackTrace(ex.getStackTrace(), exceptionInfo.stackTraceElements,
-                        String.format("Given \"%s\"%nStack trace:%n%s%n",
-                                source, stackTrace));
+            assertStackMatch(ex, source, exceptionInfo);
+            if (exceptionInfo.cause != null) {
+                assertAnyExceptionMatch(exception.getCause(), exceptionInfo.cause);
             }
         } else {
-            fail("Unexpected execution exceptionInfo: " + cr.exception());
+            fail("Unexpected exception: " + exception + " or exceptionInfo: " + exceptionInfo);
+        }
+    }
+
+    private void assertStackMatch(JShellException exception, String source, AnyExceptionInfo exceptionInfo) {
+        if (exceptionInfo.stackTraceElements != null) {
+            assertStackTrace(exception.getStackTrace(), exceptionInfo.stackTraceElements,
+                    String.format("Given \"%s\"%nStack trace:%n%s%n",
+                            source, getStackTrace(exception)));
+        }
+    }
+
+    private void assertAnyExceptionMatch(Throwable exception, AnyExceptionInfo exceptionInfo) {
+        if (exceptionInfo instanceof ExceptionInfo) {
+            assertExceptionMatch(exception, "", (ExceptionInfo) exceptionInfo);
+        } else {
+            assertTrue(exceptionInfo instanceof UnresolvedExceptionInfo, "Bad exceptionInfo: " + exceptionInfo);
+            assertTrue(exception instanceof UnresolvedReferenceException,
+                    "Expected UnresolvedReferenceException: " + exception);
+            UnresolvedExceptionInfo uei = (UnresolvedExceptionInfo) exceptionInfo;
+            UnresolvedReferenceException ure = (UnresolvedReferenceException) exception;
+            assertEquals(ure.getSnippet(), uei.sn);
+            assertStackMatch(ure, "", exceptionInfo);
         }
     }
 
@@ -236,7 +338,7 @@ public class ExceptionsTest extends KullaTesting {
         }
     }
 
-    private String getStackTrace(EvalException ex) {
+    private String getStackTrace(Throwable ex) {
         StringWriter st = new StringWriter();
         ex.printStackTrace(new PrintWriter(st));
         return st.toString();

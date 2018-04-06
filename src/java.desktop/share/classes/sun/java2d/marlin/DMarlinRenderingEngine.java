@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
 import java.security.AccessController;
+import sun.awt.geom.PathConsumer2D;
 import static sun.java2d.marlin.MarlinUtils.logInfo;
 import sun.java2d.ReentrantContextProvider;
 import sun.java2d.ReentrantContextProviderCLQ;
@@ -46,7 +47,21 @@ import sun.security.action.GetPropertyAction;
 public final class DMarlinRenderingEngine extends RenderingEngine
                                           implements MarlinConst
 {
-    private static enum NormMode {
+    // slightly slower ~2% if enabled stroker clipping (lines) but skipping cap / join handling is few percents faster in specific cases
+    static final boolean DISABLE_2ND_STROKER_CLIPPING = true;
+
+    static final boolean DO_TRACE_PATH = false;
+
+    static final boolean DO_CLIP = MarlinProperties.isDoClip();
+    static final boolean DO_CLIP_FILL = true;
+    static final boolean DO_CLIP_RUNTIME_ENABLE = MarlinProperties.isDoClipRuntimeFlag();
+
+    private static final float MIN_PEN_SIZE = 1.0f / MIN_SUBPIXELS;
+
+    static final double UPPER_BND = Float.MAX_VALUE / 2.0d;
+    static final double LOWER_BND = -UPPER_BND;
+
+    private enum NormMode {
         ON_WITH_AA {
             @Override
             PathIterator getNormalizingPathIterator(final DRendererContext rdrCtx,
@@ -78,18 +93,6 @@ public final class DMarlinRenderingEngine extends RenderingEngine
         abstract PathIterator getNormalizingPathIterator(DRendererContext rdrCtx,
                                                          PathIterator src);
     }
-
-    private static final float MIN_PEN_SIZE = 1.0f / NORM_SUBPIXELS;
-
-    static final double UPPER_BND = Float.MAX_VALUE / 2.0d;
-    static final double LOWER_BND = -UPPER_BND;
-
-    static final boolean DO_CLIP = MarlinProperties.isDoClip();
-    static final boolean DO_CLIP_FILL = true;
-
-    static final boolean DO_TRACE_PATH = false;
-
-    static final boolean DO_CLIP_RUNTIME_ENABLE = MarlinProperties.isDoClipRuntimeFlag();
 
     /**
      * Public constructor
@@ -186,7 +189,7 @@ public final class DMarlinRenderingEngine extends RenderingEngine
                          boolean thin,
                          boolean normalize,
                          boolean antialias,
-                         final sun.awt.geom.PathConsumer2D consumer)
+                         final PathConsumer2D consumer)
     {
         final NormMode norm = (normalize) ?
                 ((antialias) ? NormMode.ON_WITH_AA : NormMode.ON_NO_AA)
@@ -424,11 +427,24 @@ public final class DMarlinRenderingEngine extends RenderingEngine
         pc2d = transformerPC2D.deltaTransformConsumer(pc2d, strokerat);
 
         // stroker will adjust the clip rectangle (width / miter limit):
-        pc2d = rdrCtx.stroker.init(pc2d, width, caps, join, miterlimit, scale);
+        pc2d = rdrCtx.stroker.init(pc2d, width, caps, join, miterlimit, scale,
+                (dashesD == null));
+
+        // Curve Monotizer:
+        rdrCtx.monotonizer.init(width);
 
         if (dashesD != null) {
+            if (DO_TRACE_PATH) {
+                pc2d = transformerPC2D.traceDasher(pc2d);
+            }
             pc2d = rdrCtx.dasher.init(pc2d, dashesD, dashLen, dashphase,
                                       recycleDashes);
+
+            if (DISABLE_2ND_STROKER_CLIPPING) {
+                // disable stoker clipping:
+                rdrCtx.stroker.disableClipping();
+            }
+
         } else if (rdrCtx.doClip && (caps != Stroker.CAP_BUTT)) {
             if (DO_TRACE_PATH) {
                 pc2d = transformerPC2D.traceClosedPathDetector(pc2d);
@@ -627,6 +643,12 @@ public final class DMarlinRenderingEngine extends RenderingEngine
     private static void pathTo(final DRendererContext rdrCtx, final PathIterator pi,
                                DPathConsumer2D pc2d)
     {
+        if (USE_PATH_SIMPLIFIER) {
+            // Use path simplifier at the first step
+            // to remove useless points
+            pc2d = rdrCtx.pathSimplifier.init(pc2d);
+        }
+
         // mark context as DIRTY:
         rdrCtx.dirty = true;
 
@@ -851,8 +873,6 @@ public final class DMarlinRenderingEngine extends RenderingEngine
                     // trace Input:
                     pc2d = rdrCtx.transformerPC2D.traceInput(pc2d);
                 }
-
-                // TODO: subdivide quad/cubic curves into monotonic curves ?
                 pathTo(rdrCtx, pi, pc2d);
 
             } else {
@@ -1002,14 +1022,17 @@ public final class DMarlinRenderingEngine extends RenderingEngine
         final String refType = AccessController.doPrivileged(
                             new GetPropertyAction("sun.java2d.renderer.useRef",
                             "soft"));
-
-        // Java 1.6 does not support strings in switch:
-        if ("hard".equalsIgnoreCase(refType)) {
-            REF_TYPE = ReentrantContextProvider.REF_HARD;
-        } else if ("weak".equalsIgnoreCase(refType)) {
-            REF_TYPE = ReentrantContextProvider.REF_WEAK;
-        } else {
-            REF_TYPE = ReentrantContextProvider.REF_SOFT;
+        switch (refType) {
+            default:
+            case "soft":
+                REF_TYPE = ReentrantContextProvider.REF_SOFT;
+                break;
+            case "weak":
+                REF_TYPE = ReentrantContextProvider.REF_WEAK;
+                break;
+            case "hard":
+                REF_TYPE = ReentrantContextProvider.REF_HARD;
+                break;
         }
 
         if (USE_THREAD_LOCAL) {
@@ -1069,8 +1092,10 @@ public final class DMarlinRenderingEngine extends RenderingEngine
 
         logInfo("sun.java2d.renderer.edges            = "
                 + MarlinConst.INITIAL_EDGES_COUNT);
-        logInfo("sun.java2d.renderer.pixelsize        = "
-                + MarlinConst.INITIAL_PIXEL_DIM);
+        logInfo("sun.java2d.renderer.pixelWidth       = "
+                + MarlinConst.INITIAL_PIXEL_WIDTH);
+        logInfo("sun.java2d.renderer.pixelHeight      = "
+                + MarlinConst.INITIAL_PIXEL_HEIGHT);
 
         logInfo("sun.java2d.renderer.subPixel_log2_X  = "
                 + MarlinConst.SUBPIXEL_LG_POSITIONS_X);
@@ -1100,11 +1125,20 @@ public final class DMarlinRenderingEngine extends RenderingEngine
         // optimisation parameters
         logInfo("sun.java2d.renderer.useSimplifier    = "
                 + MarlinConst.USE_SIMPLIFIER);
+        logInfo("sun.java2d.renderer.usePathSimplifier= "
+                + MarlinConst.USE_PATH_SIMPLIFIER);
+        logInfo("sun.java2d.renderer.pathSimplifier.pixTol = "
+                + MarlinProperties.getPathSimplifierPixelTolerance());
 
         logInfo("sun.java2d.renderer.clip             = "
                 + MarlinProperties.isDoClip());
         logInfo("sun.java2d.renderer.clip.runtime.enable = "
                 + MarlinProperties.isDoClipRuntimeFlag());
+
+        logInfo("sun.java2d.renderer.clip.subdivider  = "
+                + MarlinProperties.isDoClipSubdivider());
+        logInfo("sun.java2d.renderer.clip.subdivider.minLength = "
+                + MarlinProperties.getSubdividerMinLength());
 
         // debugging parameters
         logInfo("sun.java2d.renderer.doStats          = "
@@ -1123,6 +1157,8 @@ public final class DMarlinRenderingEngine extends RenderingEngine
                 + MarlinConst.LOG_UNSAFE_MALLOC);
 
         // quality settings
+        logInfo("sun.java2d.renderer.curve_len_err    = "
+                + MarlinProperties.getCurveLengthError());
         logInfo("sun.java2d.renderer.cubic_dec_d2     = "
                 + MarlinProperties.getCubicDecD2());
         logInfo("sun.java2d.renderer.cubic_inc_d1     = "

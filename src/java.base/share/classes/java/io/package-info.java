@@ -31,19 +31,17 @@
  * method in any class or interface in this package will cause a
  * {@code NullPointerException} to be thrown.
  *
- * <h2>Package Specification</h2>
+ * <h2>Object Serialization</h2>
+ * <p><strong>Warning: Deserialization of untrusted data is inherently dangerous
+ * and should be avoided. Untrusted data should be carefully validated according to the
+ * "Serialization and Deserialization" section of the
+ * {@extLink secure_coding_guidelines_javase Secure Coding Guidelines for Java SE}.
+ * </strong></p>
  * <ul>
  *   <li><a href="{@docRoot}/../specs/serialization/index.html">
  *       Java Object Serialization Specification </a>
- * </ul>
- *
- * <h2>Related Documentation</h2>
- *
- * For overviews, tutorials, examples, guides, and tool documentation,
- * please see:
- * <ul>
- *     <li>{@extLink serialver_tool_reference The serialver tool}</li>
- *     <li>{@extLink serialization_guide Serialization Documentation}</li>
+ *   <li>{@extLink serialization_filter_guide Serial Filtering} best practices</li>
+ *   <li>{@extLink serialver_tool_reference The serialver tool}</li>
  * </ul>
  *
  * @since 1.0

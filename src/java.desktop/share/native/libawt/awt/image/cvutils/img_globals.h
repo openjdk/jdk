@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #ifndef IMAGE_GLOBALS_H
 #define IMAGE_GLOBALS_H
 
+#include "jni.h"
 
 /* Image Conversion function return codes. */
 #define SCALEFAILURE    -1
@@ -144,8 +145,9 @@ typedef char sgn_ordered_dither_array[8][8];
  * error values appearing in the matrix which should be the same as the
  * distance between adjacent allocated component values in the color cube).
  */
-extern void make_uns_ordered_dither_array(uns_ordered_dither_array oda,
-                                          int quantum);
+JNIEXPORT void JNICALL
+make_uns_ordered_dither_array(uns_ordered_dither_array oda,
+                              int quantum);
 extern void make_sgn_ordered_dither_array(char* oda, int errmin, int errmax);
 
 /*

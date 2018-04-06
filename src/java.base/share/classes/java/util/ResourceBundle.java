@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,7 +251,7 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * or "{@code java.properties}" format are searched.
  *
  * <p>If the caller module is a
- * <a href="{@docRoot}/java/util/spi/ResourceBundleProvider.html#obtain-resource-bundle">
+ * <a href="{@docRoot}/java.base/java/util/spi/ResourceBundleProvider.html#obtain-resource-bundle">
  * resource bundle provider</a>, it does not fall back to the
  * class loader search.
  *
@@ -260,7 +260,7 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * A common format of resource bundles is in {@linkplain PropertyResourceBundle
  * .properties} file format.  Typically {@code .properties} resource bundles
  * are packaged in a JAR file.  Resource bundle only JAR file can be readily
- * deployed as an <a href="{@docRoot}/java/lang/module/ModuleFinder.html#automatic-modules">
+ * deployed as an <a href="{@docRoot}/java.base/java/lang/module/ModuleFinder.html#automatic-modules">
  * automatic module</a>.  For example, if the JAR file contains the
  * entry "{@code p/q/Foo_ja.properties}" and no {@code .class} entry,
  * when resolved and defined as an automatic module, no package is derived

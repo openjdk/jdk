@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import sun.java2d.ReentrantContext;
 import sun.java2d.marlin.ArrayCacheConst.CacheStats;
 import sun.java2d.marlin.MarlinRenderingEngine.NormalizingPathIterator;
+import sun.java2d.marlin.TransformingPathConsumer2D.CurveBasicMonotonizer;
+import sun.java2d.marlin.TransformingPathConsumer2D.CurveClipSplitter;
 
 /**
  * This class is a renderer context dedicated to a single thread
@@ -70,6 +72,8 @@ final class RendererContext extends ReentrantContext implements IRendererContext
     final Stroker stroker;
     // Simplifies out collinear lines
     final CollinearSimplifier simplifier = new CollinearSimplifier();
+    // Simplifies path
+    final PathSimplifier pathSimplifier = new PathSimplifier();
     final Dasher dasher;
     final MarlinTileGenerator ptg;
     final MarlinCache cache;
@@ -81,6 +85,10 @@ final class RendererContext extends ReentrantContext implements IRendererContext
     boolean closedPath = false;
     // clip rectangle (ymin, ymax, xmin, xmax):
     final float[] clipRect = new float[4];
+    // CurveBasicMonotonizer instance
+    final CurveBasicMonotonizer monotonizer;
+    // CurveClipSplitter instance
+    final CurveClipSplitter curveClipSplitter;
 
     // Array caches:
     /* clean int[] cache (zero-filled) = 5 refs */
@@ -120,6 +128,10 @@ final class RendererContext extends ReentrantContext implements IRendererContext
         // NormalizingPathIterator instances:
         nPCPathIterator = new NormalizingPathIterator.NearestPixelCenter(float6);
         nPQPathIterator  = new NormalizingPathIterator.NearestPixelQuarter(float6);
+
+        // curve monotonizer & clip subdivider (before transformerPC2D init)
+        monotonizer = new CurveBasicMonotonizer(this);
+        curveClipSplitter = new CurveClipSplitter(this);
 
         // MarlinRenderingEngine.TransformingPathConsumer2D
         transformerPC2D = new TransformingPathConsumer2D(this);

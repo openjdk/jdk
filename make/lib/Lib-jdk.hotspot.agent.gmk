@@ -36,8 +36,6 @@ SA_SRC += \
     $(SA_TOPDIR)/$(OPENJDK_TARGET_OS)/native/libsaproc \
     #
 
-SA_MAPFILE := $(TOPDIR)/make/mapfiles/libsaproc/mapfile-$(OPENJDK_TARGET_OS)
-
 SA_INCLUDES := \
     $(addprefix -I, $(SA_SRC)) \
     -I$(SUPPORT_OUTPUTDIR)/headers/jdk.hotspot.agent \
@@ -79,7 +77,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBSA, \
     LIBS_macosx := -framework Foundation -framework JavaNativeFoundation \
         -framework JavaRuntimeSupport -framework Security -framework CoreFoundation, \
     LIBS_windows := dbgeng.lib, \
-    MAPFILE := $(SA_MAPFILE), \
 ))
 
 TARGETS += $(BUILD_LIBSA)

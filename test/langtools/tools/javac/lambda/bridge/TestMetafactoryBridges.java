@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,7 +274,7 @@ public class TestMetafactoryBridges {
             sourcefiles.add(new JavaSource(ck));
         }
         JavacTask ct = (JavacTask)tool.getTask(debugWriter, null, diagChecker,
-                    Arrays.asList("--debug:dumpLambdaToMethodStats", "-d", outDir.getAbsolutePath(),
+                    Arrays.asList("--debug=dumpLambdaToMethodStats", "-d", outDir.getAbsolutePath(),
                                   "-sourcepath", srcDir.getAbsolutePath(),
                                   "-classpath", classesDir.getAbsolutePath(),
                                   pp.preferOpt), null, sourcefiles);

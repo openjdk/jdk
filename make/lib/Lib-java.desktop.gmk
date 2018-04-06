@@ -34,10 +34,63 @@ LIB_java.desktop_SRC_DIRS += $(TOPDIR)/src/java.desktop/*/native
 $(eval $(call FillCacheFind, $(wildcard $(LIB_java.desktop_SRC_DIRS))))
 
 ################################################################################
-# Create the AWT/2D and sound libraries
+# Create the AWT/2D libraries
 
 include Awt2dLibraries.gmk
-include SoundLibraries.gmk
+
+################################################################################
+# Create the libjsound library
+
+ifneq ($(OPENJDK_TARGET_OS), aix)
+
+  LIBJSOUND_SRC_DIRS := $(wildcard \
+      $(TOPDIR)/src/java.desktop/share/native/libjsound \
+      $(TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS)/native/libjsound \
+      )
+
+  LIBJSOUND_CFLAGS := \
+      -I$(SUPPORT_OUTPUTDIR)/headers/java.desktop \
+      $(LIBJAVA_HEADER_FLAGS) \
+      $(foreach dir, $(LIBJSOUND_SRC_DIRS), -I$(dir)) \
+      -DX_PLATFORM=X_$(OPENJDK_TARGET_OS_UPPERCASE) \
+      -DUSE_PORTS=TRUE \
+      -DUSE_DAUDIO=TRUE \
+      #
+
+  ifneq ($(OPENJDK_TARGET_OS), solaris)
+    LIBJSOUND_CFLAGS += \
+        -DUSE_PLATFORM_MIDI_OUT=TRUE \
+        -DUSE_PLATFORM_MIDI_IN=TRUE \
+        #
+  endif
+
+  ifeq ($(OPENJDK_TARGET_OS), macosx)
+    LIBJSOUND_TOOLCHAIN := TOOLCHAIN_LINK_CXX
+  endif
+
+  $(eval $(call SetupJdkLibrary, BUILD_LIBJSOUND, \
+      NAME := jsound, \
+      SRC := $(LIBJSOUND_SRC_DIRS), \
+      TOOLCHAIN := $(LIBJSOUND_TOOLCHAIN), \
+      OPTIMIZATION := LOW, \
+      CFLAGS := $(CFLAGS_JDKLIB) \
+          $(LIBJSOUND_CFLAGS), \
+      CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBJSOUND_CFLAGS), \
+      LDFLAGS := $(LDFLAGS_JDKLIB) \
+          $(call SET_SHARED_LIBRARY_ORIGIN), \
+      LIBS_unix := -ljava -ljvm, \
+      LIBS_linux := $(ALSA_LIBS), \
+      LIBS_macosx := -framework CoreAudio -framework CoreFoundation \
+          -framework CoreServices -framework AudioUnit \
+          -framework CoreMIDI -framework AudioToolbox $(LIBCXX), \
+      LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib dsound.lib winmm.lib user32.lib ole32.lib, \
+  ))
+
+  $(BUILD_LIBJSOUND): $(call FindLib, java.base, java)
+
+  TARGETS += $(BUILD_LIBJSOUND)
+
+endif
 
 ################################################################################
 # Create the macosx specific osxapp and osx libraries

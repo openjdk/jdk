@@ -29,7 +29,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 
-class UTF_16LE extends Unicode
+public class UTF_16LE extends Unicode
 {
 
     public UTF_16LE() {

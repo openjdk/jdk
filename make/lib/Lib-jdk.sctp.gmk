@@ -41,7 +41,6 @@ ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
             $(LIBJAVA_HEADER_FLAGS) \
             -I$(SUPPORT_OUTPUTDIR)/headers/jdk.sctp \
             -I$(SUPPORT_OUTPUTDIR)/headers/java.base, \
-        MAPFILE := $(TOPDIR)/make/mapfiles/libsctp/mapfile-vers, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN), \
         LIBS_unix := -lnio -lnet -ljava -ljvm, \

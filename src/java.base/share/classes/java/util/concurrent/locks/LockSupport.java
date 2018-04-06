@@ -412,11 +412,11 @@ public class LockSupport {
     /**
      * Returns the thread id for the given thread.  We must access
      * this directly rather than via method Thread.getId() because
-     * getId() is not final, and has been known to be overridden in
-     * ways that do not preserve unique mappings.
+     * getId() has been known to be overridden in ways that do not
+     * preserve unique mappings.
      */
     static final long getThreadId(Thread thread) {
-        return U.getLongVolatile(thread, TID);
+        return U.getLong(thread, TID);
     }
 
     // Hotspot implementation via intrinsics API

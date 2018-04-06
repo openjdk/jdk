@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 7014860
  * @summary Socket.getInputStream().available() not clear for
  *          case that connection is shutdown for reading
+ * @run main ShutdownInput
+ * @run main/othervm -Djava.net.preferIPv4Stack=true ShutdownInput
  */
 
 import java.io.InputStream;

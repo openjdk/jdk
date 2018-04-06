@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,11 @@ import com.sun.tools.classfile.*;
 
 /*
  * @test
- * @bug 8136419
+ * @bug 8136419 8200301
  * @summary test that type annotations on entities in initializers are emitted to classfile
  * @modules jdk.jdeps/com.sun.tools.classfile
+ * @compile -XDdeduplicateLambdas=false InstanceInitializer.java
+ * @run main InstanceInitializer
  */
 
 public class InstanceInitializer extends ClassfileTestHelper {

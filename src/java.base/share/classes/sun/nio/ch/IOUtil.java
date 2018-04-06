@@ -401,7 +401,16 @@ public class IOUtil {
 
     static native int write1(int fd, byte b) throws IOException;
 
+    /**
+     * Read and discard all bytes.
+     */
     static native boolean drain(int fd) throws IOException;
+
+    /**
+     * Read and discard at most one byte
+     * @return the number of bytes read or IOS_INTERRUPTED
+     */
+    static native int drain1(int fd) throws IOException;
 
     public static native void configureBlocking(FileDescriptor fd,
                                                 boolean blocking)

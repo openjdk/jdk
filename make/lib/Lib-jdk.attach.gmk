@@ -42,10 +42,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBATTACH, \
         -I$(SUPPORT_OUTPUTDIR)/headers/jdk.attach \
         $(LIBJAVA_HEADER_FLAGS) $(LIBATTACH_CFLAGS), \
     CFLAGS_windows := /Gy, \
-    MAPFILE := $(TOPDIR)/make/mapfiles/libattach/mapfile-$(OPENJDK_TARGET_OS), \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_windows := -order:@$(TOPDIR)/make/mapfiles/libattach/reorder-windows-$(OPENJDK_TARGET_CPU), \
     LIBS := $(JDKLIB_LIBS), \
     LIBS_solaris := -ldoor, \
     LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib psapi.lib, \
