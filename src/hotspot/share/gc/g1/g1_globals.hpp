@@ -25,25 +25,25 @@
 #ifndef SHARE_VM_GC_G1_G1_GLOBALS_HPP
 #define SHARE_VM_GC_G1_G1_GLOBALS_HPP
 
-#include "runtime/globals.hpp"
 #include <float.h> // for DBL_MAX
 //
 // Defines all globals flags used by the garbage-first compiler.
 //
 
-#define G1_FLAGS(develop, \
-                 develop_pd, \
-                 product, \
-                 product_pd, \
-                 diagnostic, \
-                 diagnostic_pd, \
-                 experimental, \
-                 notproduct, \
-                 manageable, \
-                 product_rw, \
-                 range, \
-                 constraint, \
-                 writeable) \
+#define GC_G1_FLAGS(develop,                                                \
+                    develop_pd,                                             \
+                    product,                                                \
+                    product_pd,                                             \
+                    diagnostic,                                             \
+                    diagnostic_pd,                                          \
+                    experimental,                                           \
+                    notproduct,                                             \
+                    manageable,                                             \
+                    product_rw,                                             \
+                    lp64_product,                                           \
+                    range,                                                  \
+                    constraint,                                             \
+                    writeable)                                              \
                                                                             \
   product(bool, G1UseAdaptiveIHOP, true,                                    \
           "Adaptively adjust the initiating heap occupancy from the "       \
@@ -302,19 +302,5 @@
                                                                             \
   develop(bool, G1VerifyBitmaps, false,                                     \
           "Verifies the consistency of the marking bitmaps")
-
-G1_FLAGS(DECLARE_DEVELOPER_FLAG, \
-         DECLARE_PD_DEVELOPER_FLAG, \
-         DECLARE_PRODUCT_FLAG, \
-         DECLARE_PD_PRODUCT_FLAG, \
-         DECLARE_DIAGNOSTIC_FLAG, \
-         DECLARE_PD_DIAGNOSTIC_FLAG, \
-         DECLARE_EXPERIMENTAL_FLAG, \
-         DECLARE_NOTPRODUCT_FLAG, \
-         DECLARE_MANAGEABLE_FLAG, \
-         DECLARE_PRODUCT_RW_FLAG, \
-         IGNORE_RANGE, \
-         IGNORE_CONSTRAINT, \
-         IGNORE_WRITEABLE)
 
 #endif // SHARE_VM_GC_G1_G1_GLOBALS_HPP
