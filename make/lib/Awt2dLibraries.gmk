@@ -667,7 +667,7 @@ ifneq (, $(findstring $(OPENJDK_TARGET_OS), solaris aix))
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
-  $(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT_LWAWT)
+  $(BUILD_LIBFONTMANAGER): $(call FindLib, java.desktop, awt_lwawt)
 endif
 
 ifeq ($(FREETYPE_TO_USE), bundled)
