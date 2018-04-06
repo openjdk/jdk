@@ -1426,7 +1426,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   _workers->initialize_workers();
   _verifier = new G1HeapVerifier(this);
 
-  _allocator = new G1DefaultAllocator(this);
+  _allocator = new G1Allocator(this);
 
   _heap_sizing_policy = G1HeapSizingPolicy::create(this, _g1_policy->analytics());
 

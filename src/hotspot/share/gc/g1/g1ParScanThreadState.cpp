@@ -66,7 +66,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint worker_id,
   _surviving_young_words = _surviving_young_words_base + PADDING_ELEM_NUM;
   memset(_surviving_young_words, 0, real_length * sizeof(size_t));
 
-  _plab_allocator = new G1DefaultPLABAllocator(_g1h->allocator());
+  _plab_allocator = new G1PLABAllocator(_g1h->allocator());
 
   _dest[InCSetState::NotInCSet]    = InCSetState::NotInCSet;
   // The dest for Young is used when the objects are aged enough to
