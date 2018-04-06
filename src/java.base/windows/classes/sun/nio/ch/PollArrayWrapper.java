@@ -64,7 +64,7 @@ class PollArrayWrapper {
 
     // Prepare another pollfd struct for use.
     void putEntry(int index, SelectionKeyImpl ski) {
-        putDescriptor(index, ski.channel.getFDVal());
+        putDescriptor(index, ski.getFDVal());
         putEventOps(index, 0);
     }
 

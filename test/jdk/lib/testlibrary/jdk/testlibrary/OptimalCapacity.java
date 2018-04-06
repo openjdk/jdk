@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,10 +102,34 @@ public final class OptimalCapacity {
     public static void ofHashMap(Class<?> clazz, String fieldName,
             int initialCapacity)
     {
+        ofHashMap(clazz, null, fieldName, initialCapacity);
+    }
+
+    /**
+     * Checks adequacy of the initial capacity of a non-static field
+     * of type {@code HashMap}.
+     *
+     * Having
+     * <pre>
+     * class XClass {
+     *     HashMap theMap = new HashMap(N);
+     * }
+     * XClass instance = ...
+     * </pre>
+     *
+     * you should call from the test
+     *
+     * <pre>
+     * OptimalCapacity.ofHashMap(XClass.class, instance, "theMap", N);
+     * </pre>
+     */
+    public static void ofHashMap(Class<?> clazz, Object instance,
+            String fieldName, int initialCapacity)
+    {
         try {
             Field field = clazz.getDeclaredField(fieldName);
             field.setAccessible(true);
-            Object obj = field.get(null);
+            Object obj = field.get(instance);
             if (!HashMap.class.equals(obj.getClass())) {
                 throw new RuntimeException(field +
                     " expected to be of type HashMap");

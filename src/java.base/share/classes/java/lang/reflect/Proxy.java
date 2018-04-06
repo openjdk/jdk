@@ -593,8 +593,7 @@ public class Proxy implements java.io.Serializable {
                                   module.getName(), cn, loader);
             }
             if (isDebug("debug")) {
-                interfaces.stream()
-                          .forEach(c -> System.out.println(toDetails(c)));
+                interfaces.forEach(c -> System.out.println(toDetails(c)));
             }
         }
 
