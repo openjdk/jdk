@@ -358,6 +358,9 @@ class Arguments : AllStatic {
   static void set_xdebug_mode(bool arg) { _xdebug_mode = arg; }
   static bool xdebug_mode()             { return _xdebug_mode; }
 
+  // preview features
+  static bool _enable_preview;
+
   // Used to save default settings
   static bool _AlwaysCompileLoopMethods;
   static bool _UseOnStackReplacement;
@@ -691,6 +694,9 @@ class Arguments : AllStatic {
   static Mode mode()                        { return _mode; }
   static bool is_interpreter_only() { return mode() == _int; }
 
+  // preview features
+  static void set_enable_preview() { _enable_preview = true; }
+  static bool enable_preview() { return _enable_preview; }
 
   // Utility: copies src into buf, replacing "%%" with "%" and "%p" with pid.
   static bool copy_expand_pid(const char* src, size_t srclen, char* buf, size_t buflen);
