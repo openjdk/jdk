@@ -620,7 +620,7 @@ inline void Assembler::stdcx_(Register s, Register a, Register b)               
 inline void Assembler::stqcx_(Register s, Register a, Register b)                             { emit_int32( STQCX_OPCODE | rs(s) | ra0mem(a) | rb(b) | rc(1)); }
 
 // Instructions for adjusting thread priority
-// for simultaneous multithreading (SMT) on POWER5.
+// for simultaneous multithreading (SMT) on >= POWER5.
 inline void Assembler::smt_prio_very_low()    { Assembler::or_unchecked(R31, R31, R31); }
 inline void Assembler::smt_prio_low()         { Assembler::or_unchecked(R1,  R1,  R1); }
 inline void Assembler::smt_prio_medium_low()  { Assembler::or_unchecked(R6,  R6,  R6); }
@@ -628,11 +628,11 @@ inline void Assembler::smt_prio_medium()      { Assembler::or_unchecked(R2,  R2,
 inline void Assembler::smt_prio_medium_high() { Assembler::or_unchecked(R5,  R5,  R5); }
 inline void Assembler::smt_prio_high()        { Assembler::or_unchecked(R3,  R3,  R3); }
 // >= Power7
-inline void Assembler::smt_yield()            { Assembler::or_unchecked(R27, R27, R27); }
-inline void Assembler::smt_mdoio()            { Assembler::or_unchecked(R29, R29, R29); }
-inline void Assembler::smt_mdoom()            { Assembler::or_unchecked(R30, R30, R30); }
-// >= Power8
-inline void Assembler::smt_miso()             { Assembler::or_unchecked(R26, R26, R26); }
+inline void Assembler::smt_yield()            { Assembler::or_unchecked(R27, R27, R27); } // never actually implemented
+inline void Assembler::smt_mdoio()            { Assembler::or_unchecked(R29, R29, R29); } // never actually implemetned
+inline void Assembler::smt_mdoom()            { Assembler::or_unchecked(R30, R30, R30); } // never actually implemented
+// Power8
+inline void Assembler::smt_miso()             { Assembler::or_unchecked(R26, R26, R26); } // never actually implemented
 
 inline void Assembler::twi_0(Register a)      { twi_unchecked(0, a, 0);}
 
