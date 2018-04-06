@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,40 +22,18 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHARED_GCSTATS_HPP
-#define SHARE_VM_GC_SHARED_GCSTATS_HPP
+#ifndef SHARE_GC_CMS_CMSGCSTATS_HPP
+#define SHARE_GC_CMS_CMSGCSTATS_HPP
 
-#include "gc/shared/gcUtil.hpp"
+#include "gc/shared/gcStats.hpp"
 
-class GCStats : public CHeapObj<mtGC> {
- protected:
-  // Avg amount promoted; used for avoiding promotion undo
-  // This class does not update deviations if the sample is zero.
-  AdaptivePaddedNoZeroDevAverage*   _avg_promoted;
-
+class CMSGCStats : public GCStats {
  public:
-  GCStats();
-
-  enum Name {
-    GCStatsKind,
-    CMSGCStatsKind
-  };
+  CMSGCStats();
 
   virtual Name kind() {
-    return GCStatsKind;
-  }
-
-  AdaptivePaddedNoZeroDevAverage*  avg_promoted() const { return _avg_promoted; }
-
-  // Average in bytes
-  size_t average_promoted_in_bytes() const {
-    return (size_t)_avg_promoted->average();
-  }
-
-  // Padded average in bytes
-  size_t padded_average_promoted_in_bytes() const {
-    return (size_t)_avg_promoted->padded_average();
+    return CMSGCStatsKind;
   }
 };
 
-#endif // SHARE_VM_GC_SHARED_GCSTATS_HPP
+#endif // SHARE_GC_CMS_CMSGCSTATS_HPP

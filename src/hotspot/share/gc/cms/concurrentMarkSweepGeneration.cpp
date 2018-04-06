@@ -29,6 +29,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "gc/cms/cmsCollectorPolicy.hpp"
+#include "gc/cms/cmsGCStats.hpp"
 #include "gc/cms/cmsHeap.hpp"
 #include "gc/cms/cmsOopClosures.inline.hpp"
 #include "gc/cms/compactibleFreeListSpace.hpp"
