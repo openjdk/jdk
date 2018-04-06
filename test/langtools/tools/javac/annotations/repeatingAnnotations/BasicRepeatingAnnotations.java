@@ -72,7 +72,7 @@ public class BasicRepeatingAnnotations {
         }
         a = BasicNonRepeatingAnno.class.getAnnotation(Foo.class);
         if (a == null) {
-            throw new RuntimeException("Repeated annoation not directly present");
+            throw new RuntimeException("Repeated annotation not directly present");
         }
     }
 }

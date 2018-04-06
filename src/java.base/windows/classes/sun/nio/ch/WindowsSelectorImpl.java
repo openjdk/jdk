@@ -83,12 +83,12 @@ class WindowsSelectorImpl extends SelectorImpl {
             return get(Integer.valueOf(desc));
         }
         private MapEntry put(SelectionKeyImpl ski) {
-            return put(Integer.valueOf(ski.channel.getFDVal()), new MapEntry(ski));
+            return put(Integer.valueOf(ski.getFDVal()), new MapEntry(ski));
         }
         private MapEntry remove(SelectionKeyImpl ski) {
-            Integer fd = Integer.valueOf(ski.channel.getFDVal());
+            Integer fd = Integer.valueOf(ski.getFDVal());
             MapEntry x = get(fd);
-            if ((x != null) && (x.ski.channel == ski.channel))
+            if ((x != null) && (x.ski.channel() == ski.channel()))
                 return remove(fd);
             return null;
         }
@@ -98,7 +98,6 @@ class WindowsSelectorImpl extends SelectorImpl {
     private static final class MapEntry {
         final SelectionKeyImpl ski;
         long updateCount = 0;
-        long clearedCount = 0;
         MapEntry(SelectionKeyImpl ski) {
             this.ski = ski;
         }
@@ -114,11 +113,10 @@ class WindowsSelectorImpl extends SelectorImpl {
     private final Object interruptLock = new Object();
     private volatile boolean interruptTriggered;
 
-    // pending new registrations/updates, queued by implRegister and putEventOps
+    // pending new registrations/updates, queued by implRegister and setEventOps
     private final Object updateLock = new Object();
     private final Deque<SelectionKeyImpl> newKeys = new ArrayDeque<>();
     private final Deque<SelectionKeyImpl> updateKeys = new ArrayDeque<>();
-    private final Deque<Integer> updateEvents = new ArrayDeque<>();
 
 
     WindowsSelectorImpl(SelectorProvider sp) throws IOException {
@@ -204,10 +202,9 @@ class WindowsSelectorImpl extends SelectorImpl {
             }
 
             // changes to interest ops
-            assert updateKeys.size() == updateEvents.size();
             while ((ski = updateKeys.pollFirst()) != null) {
-                int events = updateEvents.pollFirst();
-                int fd = ski.channel.getFDVal();
+                int events = ski.translateInterestOps();
+                int fd = ski.getFDVal();
                 if (ski.isValid() && fdMap.containsKey(fd)) {
                     int index = ski.getIndex();
                     assert index >= 0 && index < totalChannels;
@@ -370,12 +367,10 @@ class WindowsSelectorImpl extends SelectorImpl {
         }
 
         /**
-         * Note, clearedCount is used to determine if the readyOps have
-         * been reset in this select operation. updateCount is used to
-         * tell if a key has been counted as updated in this select
-         * operation.
+         * updateCount is used to tell if a key has been counted as updated
+         * in this select operation.
          *
-         * me.updateCount <= me.clearedCount <= updateCount
+         * me.updateCount <= updateCount
          */
         private int processFDSet(long updateCount, int[] fds, int rOps,
                                  boolean isExceptFds)
@@ -407,37 +402,19 @@ class WindowsSelectorImpl extends SelectorImpl {
                 }
 
                 if (selectedKeys.contains(sk)) { // Key in selected set
-                    if (me.clearedCount != updateCount) {
-                        if (sk.channel.translateAndSetReadyOps(rOps, sk) &&
-                            (me.updateCount != updateCount)) {
-                            me.updateCount = updateCount;
-                            numKeysUpdated++;
-                        }
-                    } else { // The readyOps have been set; now add
-                        if (sk.channel.translateAndUpdateReadyOps(rOps, sk) &&
-                            (me.updateCount != updateCount)) {
+                    if (sk.translateAndUpdateReadyOps(rOps)) {
+                        if (me.updateCount != updateCount) {
                             me.updateCount = updateCount;
                             numKeysUpdated++;
                         }
                     }
-                    me.clearedCount = updateCount;
                 } else { // Key is not in selected set yet
-                    if (me.clearedCount != updateCount) {
-                        sk.channel.translateAndSetReadyOps(rOps, sk);
-                        if ((sk.nioReadyOps() & sk.nioInterestOps()) != 0) {
-                            selectedKeys.add(sk);
-                            me.updateCount = updateCount;
-                            numKeysUpdated++;
-                        }
-                    } else { // The readyOps have been set; now add
-                        sk.channel.translateAndUpdateReadyOps(rOps, sk);
-                        if ((sk.nioReadyOps() & sk.nioInterestOps()) != 0) {
-                            selectedKeys.add(sk);
-                            me.updateCount = updateCount;
-                            numKeysUpdated++;
-                        }
+                    sk.translateAndSetReadyOps(rOps);
+                    if ((sk.nioReadyOps() & sk.nioInterestOps()) != 0) {
+                        selectedKeys.add(sk);
+                        me.updateCount = updateCount;
+                        numKeysUpdated++;
                     }
-                    me.clearedCount = updateCount;
                 }
             }
             return numKeysUpdated;
@@ -613,10 +590,9 @@ class WindowsSelectorImpl extends SelectorImpl {
     }
 
     @Override
-    public void putEventOps(SelectionKeyImpl ski, int events) {
+    public void setEventOps(SelectionKeyImpl ski) {
         ensureOpen();
         synchronized (updateLock) {
-            updateEvents.addLast(events);  // events first in case adding key fails
             updateKeys.addLast(ski);
         }
     }

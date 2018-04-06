@@ -24,6 +24,7 @@
 #
 
 include CopyCommon.gmk
+include Modules.gmk
 include TextFileProcessing.gmk
 
 $(eval $(call IncludeCustomExtension, copy/Copy-java.base.gmk))
@@ -224,11 +225,26 @@ JDK_ADDITIONAL_LICENSE_INFO  ?= $(wildcard $(TOPDIR)/ADDITIONAL_LICENSE_INFO)
 
 $(eval $(call SetupCopyFiles, COPY_JDK_NOTICES, \
     FILES := $(JDK_LICENSE) $(JDK_NOTICE) $(JDK_ADDITIONAL_LICENSE_INFO), \
-    DEST := $(LEGAL_DST_DIR), \
+    DEST := $(COMMON_LEGAL_DST_DIR), \
     FLATTEN := true, \
 ))
 
 TARGETS += $(COPY_JDK_NOTICES)
+
+################################################################################
+#
+# Copy and filter the legal files depending on what 3rd party components are
+# bundled or linked from the OS.
+#
+ifeq ($(USE_EXTERNAL_LIBZ), true)
+  LEGAL_EXCLUDES += zlib.md
+endif
+
+$(eval $(call SetupCopyLegalFiles, COPY_LEGAL, \
+    EXCLUDES := $(LEGAL_EXCLUDES), \
+))
+
+TARGETS += $(COPY_LEGAL)
 
 ################################################################################
 # Optionally copy libffi.so.? into the the image

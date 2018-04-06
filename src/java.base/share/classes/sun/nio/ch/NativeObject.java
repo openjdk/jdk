@@ -388,7 +388,10 @@ class NativeObject {                                    // package-private
         return byteOrder;
     }
 
-    // Cache for page size
+    /**
+     * Cache for page size.
+     * Lazily initialized via a data race; safe because ints are atomic.
+     */
     private static int pageSize = -1;
 
     /**
@@ -397,9 +400,10 @@ class NativeObject {                                    // package-private
      * @return  The page size, in bytes
      */
     static int pageSize() {
-        if (pageSize == -1)
-            pageSize = unsafe.pageSize();
-        return pageSize;
+        int value = pageSize;
+        if (value == -1)
+            pageSize = value = unsafe.pageSize();
+        return value;
     }
 
 }

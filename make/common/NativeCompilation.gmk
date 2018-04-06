@@ -860,10 +860,48 @@ define SetupNativeCompilationBody
     endif
   endif
 
-  ifeq ($$($1_TYPE), LIBRARY)
-    # Generating a dynamic library.
-    $1_EXTRA_LDFLAGS += $$(call SET_SHARED_LIBRARY_NAME,$$($1_BASENAME))
+  ifeq ($$($1_TYPE), STATIC_LIBRARY)
+    $1_VARDEPS := $$($1_AR) $$($1_ARFLAGS) $$($1_LIBS) \
+        $$($1_EXTRA_LIBS)
+    $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
+        $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
+
+    # Generating a static library, ie object file archive.
+    ifeq ($(STATIC_BUILD), true)
+      ifeq ($$($1_USE_MAPFILE_FOR_SYMBOLS), true)
+        STATIC_MAPFILE_DEP := $$($1_MAPFILE)
+      endif
+    endif
+
+    $$($1_TARGET): $$($1_ALL_OBJS) $$($1_RES) $$($1_VARDEPS_FILE) $$(STATIC_MAPFILE_DEP)
+	$$(call LogInfo, Building static library $$($1_BASENAME))
+	$$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
+	    $$($1_AR) $$($1_ARFLAGS) $(AR_OUT_OPTION)$$($1_TARGET) $$($1_ALL_OBJS) \
+	        $$($1_RES))
+        ifeq ($(STATIC_BUILD), true)
+          ifeq ($$($1_USE_MAPFILE_FOR_SYMBOLS), true)
+	    $(CP) $$($1_MAPFILE) $$(@D)/$$(basename $$(@F)).symbols
+          else
+	    $(GetSymbols)
+          endif
+        endif
+  else
+    # A shared dynamic library or an executable binary has been specified
+    ifeq ($$($1_TYPE), LIBRARY)
+      # Generating a dynamic library.
+      $1_EXTRA_LDFLAGS += $$(call SET_SHARED_LIBRARY_NAME,$$($1_BASENAME))
+
+      # Create loadmap on AIX. Helps in diagnosing some problems.
+      ifneq ($(COMPILER_BINDCMD_FILE_FLAG), )
+        $1_EXTRA_LDFLAGS += $(COMPILER_BINDCMD_FILE_FLAG)$$($1_OBJECT_DIR)/$$($1_NOSUFFIX).loadmap
+      endif
+    endif
+
     ifeq ($(OPENJDK_TARGET_OS), windows)
+      ifeq ($$($1_EMBED_MANIFEST), true)
+        $1_EXTRA_LDFLAGS += -manifest:embed
+      endif
+
       $1_IMPORT_LIBRARY := $$($1_OBJECT_DIR)/$$($1_NAME).lib
       $1_EXTRA_LDFLAGS += "-implib:$$($1_IMPORT_LIBRARY)"
       # To properly trigger downstream dependants of the import library, just as
@@ -882,13 +920,9 @@ define SetupNativeCompilationBody
 		$(TOUCH) $$@
     endif
 
-    # Create loadmap on AIX. Helps in diagnosing some problems.
-    ifneq ($(COMPILER_BINDCMD_FILE_FLAG), )
-      $1_EXTRA_LDFLAGS += $(COMPILER_BINDCMD_FILE_FLAG)$$($1_OBJECT_DIR)/$$($1_NOSUFFIX).loadmap
-    endif
-
     $1_VARDEPS := $$($1_LD) $$($1_SYSROOT_LDFLAGS) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) \
-        $$(GLOBAL_LIBS) $$($1_LIBS) $$($1_EXTRA_LIBS) $$($1_CREATE_DEBUGINFO_CMDS) \
+        $$(GLOBAL_LIBS) $$($1_LIBS) $$($1_EXTRA_LIBS) $$($1_MT) \
+        $$($1_CODESIGN) $$($1_CREATE_DEBUGINFO_CMDS) $$($1_MANIFEST_VERSION) \
         $$($1_STRIP_CMD)
     $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
         $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
@@ -927,8 +961,8 @@ define SetupNativeCompilationBody
       endif
     endif
 
-    $$($1_TARGET): $$($1_ALL_OBJS) $$($1_RES) $$($1_REAL_MAPFILE) \
-        $$($1_VARDEPS_FILE)
+    $$($1_TARGET): $$($1_ALL_OBJS) $$($1_RES) $$($1_MANIFEST) \
+        $$($1_REAL_MAPFILE) $$($1_VARDEPS_FILE)
                 ifneq ($$($1_OBJ_FILE_LIST), )
                   ifeq ($$($1_LINK_OBJS_RELATIVE), true)
 		    $$(eval $$(call ListPathsSafely, $1_ALL_OBJS_RELATIVE, $$($1_OBJ_FILE_LIST)))
@@ -942,74 +976,21 @@ define SetupNativeCompilationBody
                 ifeq ($(OPENJDK_TARGET_OS), windows)
 		  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
 		      $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
-		      $(LD_OUT_OPTION)$$@ $$($1_LD_OBJ_ARG) $$($1_RES) $$(GLOBAL_LIBS) \
-		      $$($1_LIBS) $$($1_EXTRA_LIBS)) \
+		          $(LD_OUT_OPTION)$$($1_TARGET) $$($1_LD_OBJ_ARG) $$($1_RES) $$(GLOBAL_LIBS) \
+		          $$($1_LIBS) $$($1_EXTRA_LIBS)) \
 		      | $(GREP) -v "^   Creating library .*\.lib and object .*\.exp" || \
-		      test "$$$$?" = "1" ; \
+		          test "$$$$?" = "1" ; \
 		  $$($1_CREATE_DEBUGINFO_CMDS)
 		  $$($1_STRIP_CMD)
                 else
 		  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
 		      $$(if $$($1_LINK_OBJS_RELATIVE), $$(CD) $$(OUTPUTDIR) ; ) \
 		      $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
-		      $(LD_OUT_OPTION)$$@ $$($1_LD_OBJ_ARG) $$($1_RES) $$(GLOBAL_LIBS) \
-		      $$($1_LIBS) $$($1_EXTRA_LIBS)) ; \
+		          $(LD_OUT_OPTION)$$($1_TARGET) $$($1_LD_OBJ_ARG) $$($1_RES) $$(GLOBAL_LIBS) \
+		          $$($1_LIBS) $$($1_EXTRA_LIBS)) ; \
 		  $$($1_CREATE_DEBUGINFO_CMDS)
 		  $$($1_STRIP_CMD)
                 endif
-
-  endif
-
-  ifeq ($$($1_TYPE), STATIC_LIBRARY)
-    $1_VARDEPS := $$($1_AR) $$($1_ARFLAGS) $$($1_LIBS) \
-        $$($1_EXTRA_LIBS)
-    $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
-        $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
-
-    # Generating a static library, ie object file archive.
-    ifeq ($(STATIC_BUILD), true)
-      ifeq ($$($1_USE_MAPFILE_FOR_SYMBOLS), true)
-        STATIC_MAPFILE_DEP := $$($1_MAPFILE)
-      endif
-    endif
-
-    $$($1_TARGET): $$($1_ALL_OBJS) $$($1_RES) $$($1_VARDEPS_FILE) $$(STATIC_MAPFILE_DEP)
-	$$(call LogInfo, Building static library $$($1_BASENAME))
-	$$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
-	    $$($1_AR) $$($1_ARFLAGS) $(AR_OUT_OPTION)$$($1_TARGET) $$($1_ALL_OBJS) \
-	        $$($1_RES))
-        ifeq ($(STATIC_BUILD), true)
-          ifeq ($$($1_USE_MAPFILE_FOR_SYMBOLS), true)
-	    $(CP) $$($1_MAPFILE) $$(@D)/$$(basename $$(@F)).symbols
-          else
-	    $(GetSymbols)
-          endif
-        endif
-  endif
-
-  ifeq ($$($1_TYPE), EXECUTABLE)
-    # A executable binary has been specified, setup the target for it.
-    $1_VARDEPS := $$($1_LD) $$($1_SYSROOT_LDFLAGS) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) \
-        $$(GLOBAL_LIBS) $$($1_LIBS) $$($1_EXTRA_LIBS) $$($1_MT) \
-        $$($1_CODESIGN) $$($1_CREATE_DEBUGINFO_CMDS) $$($1_MANIFEST_VERSION) \
-        $$($1_STRIP_CMD)
-    $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
-        $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
-
-    ifeq ($(OPENJDK_TARGET_OS), windows)
-      ifeq ($$($1_EMBED_MANIFEST), true)
-        $1_EXTRA_LDFLAGS += -manifest:embed
-      endif
-    endif
-
-    $$($1_TARGET): $$($1_ALL_OBJS) $$($1_RES) $$($1_MANIFEST) \
-        $$($1_VARDEPS_FILE)
-		$$(call LogInfo, Linking executable $$($1_BASENAME))
-		$$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
-		    $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
-		        $(EXE_OUT_OPTION)$$($1_TARGET) \
-		        $$($1_ALL_OBJS) $$($1_RES) \
-		        $$(GLOBAL_LIBS) $$($1_LIBS) $$($1_EXTRA_LIBS))
                 ifeq ($(OPENJDK_TARGET_OS), windows)
                   ifneq ($$($1_MANIFEST), )
 		    $$($1_MT) -nologo -manifest $$($1_MANIFEST) -identity:"$$($1_NAME).exe, version=$$($1_MANIFEST_VERSION)" -outputresource:$$@;#1
@@ -1022,9 +1003,6 @@ define SetupNativeCompilationBody
 		    $(CODESIGN) -s openjdk_codesign $$@
                   endif
                 endif
-		$$($1_CREATE_DEBUGINFO_CMDS)
-		$$($1_STRIP_CMD)
-
   endif
 endef
 

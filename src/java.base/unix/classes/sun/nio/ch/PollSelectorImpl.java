@@ -60,7 +60,6 @@ class PollSelectorImpl extends SelectorImpl {
     // pending updates, queued by putEventOps
     private final Object updateLock = new Object();
     private final Deque<SelectionKeyImpl> updateKeys = new ArrayDeque<>();
-    private final Deque<Integer> updateEvents = new ArrayDeque<>();
 
     // interrupt triggering and clearing
     private final Object interruptLock = new Object();
@@ -136,10 +135,9 @@ class PollSelectorImpl extends SelectorImpl {
         assert Thread.holdsLock(this);
 
         synchronized (updateLock) {
-            assert updateKeys.size() == updateEvents.size();
             SelectionKeyImpl ski;
             while ((ski = updateKeys.pollFirst()) != null) {
-                int newEvents = updateEvents.pollFirst();
+                int newEvents = ski.translateInterestOps();
                 if (ski.isValid()) {
                     int index = ski.getIndex();
                     assert index >= 0 && index < pollArraySize;
@@ -173,14 +171,14 @@ class PollSelectorImpl extends SelectorImpl {
             int rOps = getReventOps(i);
             if (rOps != 0) {
                 SelectionKeyImpl ski = pollKeys.get(i);
-                assert ski.channel.getFDVal() == getDescriptor(i);
+                assert ski.getFDVal() == getDescriptor(i);
                 if (ski.isValid()) {
                     if (selectedKeys.contains(ski)) {
-                        if (ski.channel.translateAndSetReadyOps(rOps, ski)) {
+                        if (ski.translateAndUpdateReadyOps(rOps)) {
                             numKeysUpdated++;
                         }
                     } else {
-                        ski.channel.translateAndSetReadyOps(rOps, ski);
+                        ski.translateAndSetReadyOps(rOps);
                         if ((ski.nioReadyOps() & ski.nioInterestOps()) != 0) {
                             selectedKeys.add(ski);
                             numKeysUpdated++;
@@ -233,10 +231,9 @@ class PollSelectorImpl extends SelectorImpl {
     }
 
     @Override
-    public void putEventOps(SelectionKeyImpl ski, int events) {
+    public void setEventOps(SelectionKeyImpl ski) {
         ensureOpen();
         synchronized (updateLock) {
-            updateEvents.addLast(events);  // events first in case adding key fails
             updateKeys.addLast(ski);
         }
     }
@@ -285,7 +282,7 @@ class PollSelectorImpl extends SelectorImpl {
 
         int index = pollArraySize;
         assert index > 0;
-        putDescriptor(index, ski.channel.getFDVal());
+        putDescriptor(index, ski.getFDVal());
         putEventOps(index, ops);
         putReventOps(index, 0);
         ski.setIndex(index);
@@ -301,7 +298,7 @@ class PollSelectorImpl extends SelectorImpl {
     private void update(SelectionKeyImpl ski, int ops) {
         int index = ski.getIndex();
         assert index > 0 && index < pollArraySize;
-        assert getDescriptor(index) == ski.channel.getFDVal();
+        assert getDescriptor(index) == ski.getFDVal();
         putEventOps(index, ops);
     }
 
@@ -311,7 +308,7 @@ class PollSelectorImpl extends SelectorImpl {
     private void remove(SelectionKeyImpl ski) {
         int index = ski.getIndex();
         assert index > 0 && index < pollArraySize;
-        assert getDescriptor(index) == ski.channel.getFDVal();
+        assert getDescriptor(index) == ski.getFDVal();
 
         // replace pollfd at index with the last pollfd in array
         int lastIndex = pollArraySize - 1;
@@ -321,7 +318,7 @@ class PollSelectorImpl extends SelectorImpl {
             int lastFd = getDescriptor(lastIndex);
             int lastOps = getEventOps(lastIndex);
             int lastRevents = getReventOps(lastIndex);
-            assert lastKey.channel.getFDVal() == lastFd;
+            assert lastKey.getFDVal() == lastFd;
             putDescriptor(index, lastFd);
             putEventOps(index, lastOps);
             putReventOps(index, lastRevents);
