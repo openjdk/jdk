@@ -30,9 +30,6 @@
 #include <stddef.h>
 #include <string.h>
 
-// Only used by concurrent collectors.
-#if INCLUDE_ALL_GCS
-
 // Fill a block of memory with value, like memset, but with the
 // understanding that there may be concurrent readers of that memory.
 void memset_with_concurrent_readers(void* to, int value, size_t size);
@@ -49,7 +46,5 @@ inline void memset_with_concurrent_readers(void* to, int value, size_t size) {
 }
 
 #endif // End of target dispatch.
-
-#endif // INCLUDE_ALL_GCS
 
 #endif // SRC_SHARE_VM_GC_SHARED_MEMSETWITHCONCURRENTREADERS_HPP
