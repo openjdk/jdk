@@ -141,9 +141,11 @@
 #endif // INCLUDE_ALL_GCS
 
 #if INCLUDE_ALL_GCS
+#define ALL_GCS_ONLY(x) x
 #define NOT_ALL_GCS_RETURN        /* next token must be ; */
 #define NOT_ALL_GCS_RETURN_(code) /* next token must be ; */
 #else
+#define ALL_GCS_ONLY(x)
 #define NOT_ALL_GCS_RETURN        {}
 #define NOT_ALL_GCS_RETURN_(code) { return code; }
 #endif // INCLUDE_ALL_GCS
