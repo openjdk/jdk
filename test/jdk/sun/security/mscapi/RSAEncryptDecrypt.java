@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,12 @@
 
 
 /**
- * @see RSAEncryptDecrypt.sh
+ * @test
+ * @bug 6457422 6931562 8180570
+ * @summary Confirm that plaintext can be encrypted and then decrypted using the
+ *     RSA cipher in the SunMSCAPI crypto provider. NOTE: The RSA cipher is
+ *     absent from the SunMSCAPI provider in OpenJDK builds.
+ * @requires os.family == "windows"
  */
 
 import javax.crypto.Cipher;

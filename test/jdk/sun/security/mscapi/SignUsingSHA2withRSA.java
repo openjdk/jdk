@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,19 @@
  */
 
 /**
- * @see SignUsingSHA2withRSA.sh
+ * @test
+ * @bug 6753664 8180570
+ * @summary Support SHA256 (and higher) in SunMSCAPI
+ * @requires os.family == "windows"
+ * @modules java.base/sun.security.tools.keytool
+ *          java.base/sun.security.x509
  */
 
+import sun.security.tools.keytool.CertAndKeyGen;
+import sun.security.x509.X500Name;
+
 import java.security.*;
+import java.security.cert.Certificate;
 import java.util.*;
 
 public class SignUsingSHA2withRSA {
@@ -37,6 +46,29 @@ public class SignUsingSHA2withRSA {
     private static List<byte[]> generatedSignatures = new ArrayList<>();
 
     public static void main(String[] args) throws Exception {
+        KeyStore ks = KeyStore.getInstance("Windows-MY");
+        ks.load(null, null);
+        if (ks.containsAlias("6753664")) {
+            ks.deleteEntry("6753664");
+        }
+
+        CertAndKeyGen gen = new CertAndKeyGen("RSA", "SHA256withRSA");
+        gen.generate(2048);
+
+        ks.setKeyEntry("6753664", gen.getPrivateKey(), null,
+                new Certificate[] {
+                        gen.getSelfCertificate(new X500Name("cn=localhost,c=US"), 100)
+                });
+
+        try {
+            run();
+        } finally {
+            ks.deleteEntry("6753664");
+            ks.store(null, null);
+        }
+    }
+
+    static void run() throws Exception {
 
         Provider[] providers = Security.getProviders("Signature.SHA256withRSA");
         if (providers == null) {
