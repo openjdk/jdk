@@ -453,7 +453,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     ALWAYS_DEFINES_JDK="-DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_DEPRECATE \
         -D_CRT_NONSTDC_NO_DEPRECATE -DWIN32 -DIAL"
-    ALWAYS_DEFINES_JVM="-DNOMINMAX"
+    ALWAYS_DEFINES_JVM="-DNOMINMAX -DWIN32_LEAN_AND_MEAN"
   fi
 
   ###############################################################################
