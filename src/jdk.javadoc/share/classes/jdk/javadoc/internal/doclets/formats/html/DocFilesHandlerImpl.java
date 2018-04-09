@@ -27,16 +27,15 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import com.sun.source.doctree.AttributeTree;
 import com.sun.source.doctree.AttributeTree.ValueKind;
-import com.sun.source.doctree.DocRootTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.EndElementTree;
-import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.util.SimpleDocTreeVisitor;
 import com.sun.tools.doclint.HtmlTag;
 import com.sun.tools.doclint.HtmlTag.Attr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocFileElement;
 import jdk.javadoc.internal.doclets.toolkit.DocFilesHandler;
@@ -51,8 +50,11 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.tools.FileObject;
 import javax.tools.JavaFileManager.Location;
+
 import java.util.Collections;
 import java.util.List;
+
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
 
 public class DocFilesHandlerImpl implements DocFilesHandler {
 
@@ -60,6 +62,7 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
     public final Location location;
     public final DocPath  source;
     public final HtmlConfiguration configuration;
+    private Navigation navBar;
 
     /**
      * Constructor to construct the DocFilesWriter object.
@@ -171,14 +174,24 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
         String title = getWindowTitle(docletWriter, dfElement).trim();
         HtmlTree htmlContent = docletWriter.getBody(true, title);
         docletWriter.addTop(htmlContent);
-        docletWriter.addNavLinks(true, htmlContent);
+        PackageElement pkg = (PackageElement) element;
+        this.navBar = new Navigation(pkg, configuration, docletWriter.fixedNavDiv,
+                PageMode.DOCFILE, docletWriter.path);
+        Content mdleLinkContent = docletWriter.getModuleLink(utils.elementUtils.getModuleOf(pkg),
+                docletWriter.contents.moduleLabel);
+        navBar.setNavLinkModule(mdleLinkContent);
+        Content pkgLinkContent = docletWriter.getPackageLink(pkg, docletWriter.contents.packageLabel);
+        navBar.setNavLinkPackage(pkgLinkContent);
+        navBar.setUserHeader(docletWriter.getUserHeaderFooter(true));
+        htmlContent.addContent(navBar.getContent(true));
         List<? extends DocTree> fullBody = utils.getFullBody(dfElement);
         Content bodyContent = docletWriter.commentTagsToContent(null, dfElement, fullBody, false);
 
         docletWriter.addTagsInfo(dfElement, bodyContent);
         htmlContent.addContent(bodyContent);
 
-        docletWriter.addNavLinks(false, htmlContent);
+        navBar.setUserFooter(docletWriter.getUserHeaderFooter(false));
+        htmlContent.addContent(navBar.getContent(false));
         docletWriter.addBottom(htmlContent);
         docletWriter.printHtmlDocument(Collections.emptyList(), false, htmlContent);
         return true;
@@ -300,32 +313,6 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
                 default:
                     throw new AssertionError("unsupported element: " + e.getKind());
             }
-        }
-
-        /**
-         * Get the module link.
-         *
-         * @return a content tree for the module link
-         */
-        @Override
-        protected Content getNavLinkModule() {
-            Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(pkg),
-                    contents.moduleLabel);
-            Content li = HtmlTree.LI(linkContent);
-            return li;
-        }
-
-        /**
-         * Get this package link.
-         *
-         * @return a content tree for the package link
-         */
-        @Override
-        protected Content getNavLinkPackage() {
-            Content linkContent = getPackageLink(pkg,
-                    contents.packageLabel);
-            Content li = HtmlTree.LI(linkContent);
-            return li;
         }
     }
 }

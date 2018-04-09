@@ -247,11 +247,11 @@ public class HtmlConfiguration extends BaseConfiguration {
 
     protected Set<Character> tagSearchIndexKeys;
 
-    protected final Contents contents;
+    public final Contents contents;
 
     protected final Messages messages;
 
-    protected DocPaths docPaths;
+    public DocPaths docPaths;
 
     /**
      * Creates an object to hold the configuration for a doclet.
