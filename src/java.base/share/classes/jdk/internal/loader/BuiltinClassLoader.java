@@ -584,7 +584,7 @@ public class BuiltinClassLoader
     }
 
     /**
-     * A variation of {@code loadCass} to load a class with the specified
+     * A variation of {@code loadClass} to load a class with the specified
      * binary name. This method returns {@code null} when the class is not
      * found.
      */
@@ -633,16 +633,16 @@ public class BuiltinClassLoader
     }
 
     /**
-     * A variation of {@code loadCass} to load a class with the specified
+     * A variation of {@code loadClass} to load a class with the specified
      * binary name. This method returns {@code null} when the class is not
      * found.
      */
-    protected  Class<?> loadClassOrNull(String cn) {
+    protected Class<?> loadClassOrNull(String cn) {
         return loadClassOrNull(cn, false);
     }
 
     /**
-     * Find the candidate loaded module for the given class name.
+     * Finds the candidate loaded module for the given class name.
      * Returns {@code null} if none of the modules defined to this
      * class loader contain the API package for the class.
      */
@@ -656,7 +656,7 @@ public class BuiltinClassLoader
     }
 
     /**
-     * Find the candidate loaded module for the given class name
+     * Finds the candidate loaded module for the given class name
      * in the named module.  Returns {@code null} if the named module
      * is not defined to this class loader or does not contain
      * the API package for the class.
@@ -832,8 +832,8 @@ public class BuiltinClassLoader
     }
 
     /**
-     * Get the Package with the specified package name. If defined
-     * then verify that it against the manifest and code source.
+     * Gets the Package with the specified package name. If defined
+     * then verifies it against the manifest and code source.
      *
      * @throws SecurityException if there is a sealing violation (JAR spec)
      */
@@ -859,7 +859,7 @@ public class BuiltinClassLoader
 
     /**
      * Defines a new package in this ClassLoader. The attributes in the specified
-     * Manifest are use to get the package version and sealing information.
+     * Manifest are used to get the package version and sealing information.
      *
      * @throws IllegalArgumentException if the package name duplicates an
      * existing package either in this class loader or one of its ancestors
@@ -976,7 +976,7 @@ public class BuiltinClassLoader
     // -- miscellaneous supporting methods
 
     /**
-     * Returns the ModuleReader for the given module, creating it if needed
+     * Returns the ModuleReader for the given module, creating it if needed.
      */
     private ModuleReader moduleReaderFor(ModuleReference mref) {
         ModuleReader reader = moduleToReader.get(mref);

@@ -38,8 +38,8 @@ import jdk.internal.org.objectweb.asm.*;
 public class ClassFileGenerator {
 
     public static void main(String... args) throws Exception {
-        classFileWriter("AnnotationWithVoidReturn.class", AnnoationWithVoidReturnDump.dump());
-        classFileWriter("AnnotationWithParameter.class", AnnoationWithParameterDump.dump());
+        classFileWriter("AnnotationWithVoidReturn.class", AnnotationWithVoidReturnDump.dump());
+        classFileWriter("AnnotationWithParameter.class", AnnotationWithParameterDump.dump());
         classFileWriter("AnnotationWithExtraInterface.class", AnnotationWithExtraInterfaceDump.dump());
         classFileWriter("AnnotationWithException.class", AnnotationWithExceptionDump.dump());
         classFileWriter("AnnotationWithHashCode.class", AnnotationWithHashCodeDump.dump());
@@ -65,7 +65,7 @@ public class ClassFileGenerator {
 
     */
 
-    private static class AnnoationWithVoidReturnDump implements Opcodes {
+    private static class AnnotationWithVoidReturnDump implements Opcodes {
         public static byte[] dump() throws Exception {
             ClassWriter cw = new ClassWriter(0);
             MethodVisitor mv;
@@ -106,7 +106,7 @@ public class ClassFileGenerator {
 
     */
 
-    private static class AnnoationWithParameterDump implements Opcodes {
+    private static class AnnotationWithParameterDump implements Opcodes {
         public static byte[] dump() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);

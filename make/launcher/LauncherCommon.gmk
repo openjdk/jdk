@@ -26,11 +26,9 @@
 include JdkNativeCompilation.gmk
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
-  DISABLE_MAPFILES := true
   ORIGIN_ARG := $(call SET_EXECUTABLE_ORIGIN)
 else
   ifeq ($(OPENJDK_TARGET_OS), windows)
-    DISABLE_MAPFILES := true
   endif
   ORIGIN_ARG := $(call SET_EXECUTABLE_ORIGIN,/../lib/jli)
 
@@ -42,8 +40,27 @@ else
   endif
 endif
 
+# Tell the compiler not to export any functions unless declared so in
+# the source code. On Windows, this is the default and cannot be changed.
+# On Mac, we have always exported all symbols, probably due to oversight
+# and/or misunderstanding. To emulate this, don't hide any symbols
+# by default.
+# Also provide an override for non-conformant libraries.
+ifeq ($(TOOLCHAIN_TYPE), gcc)
+  LAUNCHER_CFLAGS += -fvisibility=hidden
+  LDFLAGS_JDKEXE += -Wl,--exclude-libs,ALL
+else ifeq ($(TOOLCHAIN_TYPE), clang)
+  ifneq ($(OPENJDK_TARGET_OS), macosx)
+    LAUNCHER_CFLAGS += -fvisibility=hidden
+  endif
+else ifeq ($(TOOLCHAIN_TYPE), solstudio)
+  LAUNCHER_CFLAGS += -xldscope=hidden
+else ifeq ($(TOOLCHAIN_TYPE), xlc)
+  LAUNCHER_CFLAGS += -qvisibility=hidden
+endif
+
 LAUNCHER_SRC := $(TOPDIR)/src/java.base/share/native/launcher
-LAUNCHER_CFLAGS := -I$(TOPDIR)/src/java.base/share/native/launcher \
+LAUNCHER_CFLAGS += -I$(TOPDIR)/src/java.base/share/native/launcher \
     -I$(TOPDIR)/src/java.base/share/native/libjli \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjli \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjli \
@@ -157,23 +174,6 @@ define SetupBuildLauncherBody
     $1_WINDOWS_JLI_LIB := $(SUPPORT_OUTPUTDIR)/native/java.base/libjli/jli.lib
   endif
 
-  # The linker on older SuSE distros (e.g. on SLES 10) complains with:
-  # "Invalid version tag `SUNWprivate_1.1'. Only anonymous version tag is allowed in executable."
-  # if feeded with a version script which contains named tags.
-  ifeq ($(USING_BROKEN_SUSE_LD),yes)
-    ifneq ($(wildcard $(TOPDIR)/make/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU).anonymous), )
-      $1_MAPFILE := $(TOPDIR)/make/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU).anonymous
-    else
-      $1_MAPFILE :=
-    endif
-  else
-    ifneq ($(wildcard $(TOPDIR)/make/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU)), )
-      $1_MAPFILE := $(TOPDIR)/make/mapfiles/launchers/mapfile-$(OPENJDK_TARGET_CPU)
-    else
-      $1_MAPFILE :=
-    endif
-  endif
-
   $$(eval $$(call SetupJdkExecutable, BUILD_LAUNCHER_$1, \
       NAME := $1, \
       EXTRA_FILES := $(LAUNCHER_SRC)/main.c, \
@@ -194,7 +194,6 @@ define SetupBuildLauncherBody
           -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base/jli, \
       LDFLAGS_solaris := $$($1_LDFLAGS_solaris) \
           -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base/jli, \
-      MAPFILE := $$($1_MAPFILE), \
       LIBS := $(JDKEXE_LIBS) $$($1_LIBS), \
       LIBS_unix := $$($1_LIBS_unix), \
       LIBS_linux := -lpthread -ljli $(LIBDL), \

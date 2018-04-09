@@ -81,7 +81,7 @@ import java.lang.annotation.*;
  *
  * @implNote
  * This annotation only takes effect for fields of classes loaded by the boot
- * loader.  Annoations on fields of classes loaded outside of the boot loader
+ * loader.  Annotations on fields of classes loaded outside of the boot loader
  * are ignored.
  */
 @Target(ElementType.FIELD)

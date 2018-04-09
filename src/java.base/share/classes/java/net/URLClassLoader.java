@@ -764,7 +764,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
             path = ParseUtil.decode(path);
             if (path.endsWith(File.separator))
                 path += "-";
-            p =  new FilePermission(path, SecurityConstants.FILE_READ_ACTION);
+            p = new FilePermission(path, SecurityConstants.FILE_READ_ACTION);
         } else {
             /**
              * Not loading from a 'file:' URL so we want to give the class

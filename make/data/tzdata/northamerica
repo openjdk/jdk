@@ -48,7 +48,7 @@
 # in New York City (1869-10).  His 1870 proposal was based on Washington, DC,
 # but in 1872-05 he moved the proposed origin to Greenwich.
 
-# From Paul Eggert (2016-09-21):
+# From Paul Eggert (2018-03-20):
 # Dowd's proposal left many details unresolved, such as where to draw
 # lines between time zones.  The key individual who made time zones
 # work in the US was William Frederick Allen - railway engineer,
@@ -59,10 +59,9 @@
 # to the General Time Convention on 1883-04-11, saying that his plan
 # meant "local time would be practically abolished" - a plus for
 # railway scheduling.  By the next convention on 1883-10-11 nearly all
-# railroads had agreed and it took effect on 1883-11-18 at 12:00.
-# That Sunday was called the "day of two noons", as the eastern parts
-# of the new zones observed noon twice.  Allen witnessed the
-# transition in New York City, writing:
+# railroads had agreed and it took effect on 1883-11-18.  That Sunday
+# was called the "day of two noons", as some locations observed noon
+# twice.  Allen witnessed the transition in New York City, writing:
 #
 #   I heard the bells of St. Paul's strike on the old time.  Four
 #   minutes later, obedient to the electrical signal from the Naval
@@ -447,8 +446,7 @@ Zone America/North_Dakota/New_Salem -6:45:39 - LMT	1883 Nov 18 12:14:21
 # ...according to the Census Bureau, the largest city is Beulah (although
 # it's commonly referred to as Beulah-Hazen, with Hazen being the next
 # largest city in Mercer County).  Google Maps places Beulah's city hall
-# at 47 degrees 15' 51" N, 101 degrees 46' 40" W, which yields an offset
-# of 6h47'07".
+# at 47° 15' 51" N, 101° 46' 40" W, which yields an offset of 6h47'07".
 
 Zone America/North_Dakota/Beulah -6:47:07 - LMT	1883 Nov 18 12:12:53
 			-7:00	US	M%sT	2010 Nov  7  2:00
@@ -481,7 +479,7 @@ Zone America/Denver	-6:59:56 -	LMT	1883 Nov 18 12:00:04
 # California, northern Idaho (Benewah, Bonner, Boundary, Clearwater,
 # Kootenai, Latah, Lewis, Nez Perce, and Shoshone counties, Idaho county
 # north of the Salmon River, and the towns of Burgdorf and Warren),
-# Nevada (except West Wendover), Oregon (except the northern 3/4 of
+# Nevada (except West Wendover), Oregon (except the northern ¾ of
 # Malheur county), and Washington
 
 # From Paul Eggert (2016-08-20):
@@ -979,6 +977,13 @@ Zone America/Indiana/Vevay -5:40:16 -	LMT	1883 Nov 18 12:19:44
 			-5:00	-	EST	2006
 			-5:00	US	E%sT
 
+# From Paul Eggert (2018-03-20):
+# The Louisville & Nashville Railroad's 1883-11-18 change occurred at
+# 10:00 old local time; train were supposed to come to a standstill
+# for precisely 18 minutes.  See Bartky Fig. 1 (page 50).  It is not
+# clear how this matched civil time in Louisville, so for now continue
+# to assume Louisville switched at noon new local time, like New York.
+#
 # Part of Kentucky left its clocks alone in 1974.
 # This also includes Clark, Floyd, and Harrison counties in Indiana.
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
@@ -3287,8 +3292,8 @@ Zone America/Tegucigalpa -5:48:52 -	LMT	1921 Apr
 # http://www.jamaicaobserver.com/columns/The-politician-in-all-of-us_17573647
 #
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	America/Jamaica	-5:07:11 -	LMT	1890        # Kingston
-			-5:07:11 -	KMT	1912 Feb    # Kingston Mean Time
+Zone	America/Jamaica	-5:07:10 -	LMT	1890        # Kingston
+			-5:07:10 -	KMT	1912 Feb    # Kingston Mean Time
 			-5:00	-	EST	1974
 			-5:00	US	E%sT	1984
 			-5:00	-	EST
@@ -3438,7 +3443,7 @@ Zone America/Miquelon	-3:44:40 -	LMT	1911 May 15 # St Pierre
 #
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone America/Grand_Turk	-4:44:32 -	LMT	1890
-			-5:07:11 -	KMT	1912 Feb # Kingston Mean Time
+			-5:07:10 -	KMT	1912 Feb # Kingston Mean Time
 			-5:00	-	EST	1979
 			-5:00	US	E%sT	2015 Nov Sun>=1 2:00
 			-4:00	-	AST	2018 Mar 11 3:00

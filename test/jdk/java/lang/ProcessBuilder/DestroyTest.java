@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,18 +145,16 @@ public class DestroyTest {
         String osName = System.getProperty("os.name");
         if (osName.startsWith("Windows")) {
             return new WindowsTest();
-        } else if (osName.startsWith("Linux") == true) {
-            return new UnixTest(
-                File.createTempFile("ProcessTrap-", ".sh",null));
-        } else if (osName.startsWith("Mac OS")) {
-            return new MacTest(
-                File.createTempFile("ProcessTrap-", ".sh",null));
-        } else if (osName.equals("SunOS")) {
-            return new UnixTest(
-                File.createTempFile("ProcessTrap-", ".sh",null));
-        } else if (osName.equals("AIX")) {
-            return new UnixTest(
-                File.createTempFile("ProcessTrap-", ".sh",null));
+        } else {
+            File userDir = new File(System.getProperty("user.dir", "."));
+            File tempFile = File.createTempFile("ProcessTrap-", ".sh", userDir);
+            if (osName.startsWith("Linux") == true
+                    || osName.equals("SunOS")
+                    || osName.equals("AIX")) {
+                return new UnixTest(tempFile);
+            } else if (osName.startsWith("Mac OS")) {
+                return new MacTest(tempFile);
+            }
         }
         return null;
     }

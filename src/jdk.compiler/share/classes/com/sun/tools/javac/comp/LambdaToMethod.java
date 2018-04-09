@@ -183,15 +183,7 @@ public class LambdaToMethod extends TreeTranslator {
         public int hashCode() {
             int hashCode = this.hashCode;
             if (hashCode == 0) {
-                this.hashCode = hashCode = TreeHasher.hash(tree, sym -> {
-                    if (sym.owner == symbol) {
-                        int idx = symbol.params().indexOf(sym);
-                        if (idx != -1) {
-                            return idx;
-                        }
-                    }
-                    return null;
-                });
+                this.hashCode = hashCode = TreeHasher.hash(tree, symbol.params());
             }
             return hashCode;
         }
@@ -203,17 +195,7 @@ public class LambdaToMethod extends TreeTranslator {
             }
             DedupedLambda that = (DedupedLambda) o;
             return types.isSameType(symbol.asType(), that.symbol.asType())
-                    && new TreeDiffer((lhs, rhs) -> {
-                if (lhs.owner == symbol) {
-                    int idx = symbol.params().indexOf(lhs);
-                    if (idx != -1) {
-                        if (Objects.equals(idx, that.symbol.params().indexOf(rhs))) {
-                            return true;
-                        }
-                    }
-                }
-                return null;
-            }).scan(tree, that.tree);
+                    && new TreeDiffer(symbol.params(), that.symbol.params()).scan(tree, that.tree);
         }
     }
 

@@ -63,20 +63,14 @@ class EPollSelectorImpl extends SelectorImpl {
     // maps file descriptor to selection key, synchronize on selector
     private final Map<Integer, SelectionKeyImpl> fdToKey = new HashMap<>();
 
-    // pending new registrations/updates, queued by implRegister and putEventOpos
+    // pending new registrations/updates, queued by setEventOps
     private final Object updateLock = new Object();
-    private final Deque<SelectionKeyImpl> newKeys = new ArrayDeque<>();
     private final Deque<SelectionKeyImpl> updateKeys = new ArrayDeque<>();
-    private final Deque<Integer> updateEvents = new ArrayDeque<>();
 
     // interrupt triggering and clearing
     private final Object interruptLock = new Object();
     private boolean interruptTriggered;
 
-    /**
-     * Package private constructor called by factory method in
-     * the abstract superclass Selector.
-     */
     EPollSelectorImpl(SelectorProvider sp) throws IOException {
         super(sp);
 
@@ -140,30 +134,21 @@ class EPollSelectorImpl extends SelectorImpl {
     }
 
     /**
-     * Process new registrations and changes to the interest ops.
+     * Process changes to the interest ops.
      */
     private void processUpdateQueue() {
         assert Thread.holdsLock(this);
 
         synchronized (updateLock) {
             SelectionKeyImpl ski;
-
-            // new registrations
-            while ((ski = newKeys.pollFirst()) != null) {
-                if (ski.isValid()) {
-                    int fd = ski.channel.getFDVal();
-                    SelectionKeyImpl previous = fdToKey.put(fd, ski);
-                    assert previous == null;
-                    assert ski.registeredEvents() == 0;
-                }
-            }
-
-            // changes to interest ops
-            assert updateKeys.size() == updateEvents.size();
             while ((ski = updateKeys.pollFirst()) != null) {
-                int newEvents = updateEvents.pollFirst();
-                int fd = ski.channel.getFDVal();
-                if (ski.isValid() && fdToKey.containsKey(fd)) {
+                if (ski.isValid()) {
+                    int fd = ski.getFDVal();
+                    // add to fdToKey if needed
+                    SelectionKeyImpl previous = fdToKey.putIfAbsent(fd, ski);
+                    assert (previous == null) || (previous == ski);
+
+                    int newEvents = ski.translateInterestOps();
                     int registeredEvents = ski.registeredEvents();
                     if (newEvents != registeredEvents) {
                         if (newEvents == 0) {
@@ -206,11 +191,11 @@ class EPollSelectorImpl extends SelectorImpl {
                 if (ski != null) {
                     int rOps = EPoll.getEvents(event);
                     if (selectedKeys.contains(ski)) {
-                        if (ski.channel.translateAndSetReadyOps(rOps, ski)) {
+                        if (ski.translateAndUpdateReadyOps(rOps)) {
                             numKeysUpdated++;
                         }
                     } else {
-                        ski.channel.translateAndSetReadyOps(rOps, ski);
+                        ski.translateAndSetReadyOps(rOps);
                         if ((ski.nioReadyOps() & ski.nioInterestOps()) != 0) {
                             selectedKeys.add(ski);
                             numKeysUpdated++;
@@ -244,19 +229,11 @@ class EPollSelectorImpl extends SelectorImpl {
     }
 
     @Override
-    protected void implRegister(SelectionKeyImpl ski) {
-        ensureOpen();
-        synchronized (updateLock) {
-            newKeys.addLast(ski);
-        }
-    }
-
-    @Override
     protected void implDereg(SelectionKeyImpl ski) throws IOException {
         assert !ski.isValid();
         assert Thread.holdsLock(this);
 
-        int fd = ski.channel.getFDVal();
+        int fd = ski.getFDVal();
         if (fdToKey.remove(fd) != null) {
             if (ski.registeredEvents() != 0) {
                 EPoll.ctl(epfd, EPOLL_CTL_DEL, fd, 0);
@@ -268,10 +245,9 @@ class EPollSelectorImpl extends SelectorImpl {
     }
 
     @Override
-    public void putEventOps(SelectionKeyImpl ski, int events) {
+    public void setEventOps(SelectionKeyImpl ski) {
         ensureOpen();
         synchronized (updateLock) {
-            updateEvents.addLast(events);  // events first in case adding key fails
             updateKeys.addLast(ski);
         }
     }

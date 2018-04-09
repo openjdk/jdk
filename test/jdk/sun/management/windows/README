@@ -5,7 +5,6 @@ utility to remove all non-owner Access Control Entries from a given file.
 The tool is used by regression tests in the following directories :-
 
 test/sun/management/jmxremote/bootstrap
-test/sun/management/snmp/bootstrap
 
 The tests in these directories create password or ACL files that need to
 be "secured" (meaning that only the owner should have access to the 

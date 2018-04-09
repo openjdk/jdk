@@ -80,10 +80,15 @@ ifneq ($(MAN_DIR), )
   DEPS += $(call CacheFind, $(MAN_DIR))
 endif
 
+# If a specific modules_legal dir exists for this module, only pick up files
+# from there. These files were explicitly filtered or modified in <module>-copy
+# targets. For the rest, just pick up everything from the source legal dirs.
 LEGAL_NOTICES := \
-    $(call uniq, $(SUPPORT_OUTPUTDIR)/modules_legal/java.base \
-    $(call FindModuleLegalDirs, $(MODULE))) \
-    #
+    $(SUPPORT_OUTPUTDIR)/modules_legal/common \
+    $(if $(wildcard $(SUPPORT_OUTPUTDIR)/modules_legal/$(MODULE)), \
+      $(wildcard $(SUPPORT_OUTPUTDIR)/modules_legal/$(MODULE)), \
+      $(call FindModuleLegalSrcDirs, $(MODULE)) \
+    )
 
 LEGAL_NOTICES_PATH := $(call PathList, $(LEGAL_NOTICES))
 DEPS += $(call CacheFind, $(LEGAL_NOTICES))
