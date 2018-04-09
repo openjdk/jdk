@@ -337,7 +337,6 @@ class MacroAssembler: public Assembler {
   void load_heap_oop(Register dst, Address src);
   void load_heap_oop_not_null(Register dst, Address src);
   void store_heap_oop(Address dst, Register src);
-  void cmp_heap_oop(Register src1, Address src2, Register tmp = noreg);
 
   // Used for storing NULL. All other oop constants should be
   // stored using routines that take a jobject.

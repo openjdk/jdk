@@ -6624,25 +6624,6 @@ void MacroAssembler::store_heap_oop(Address dst, Register src) {
     movptr(dst, src);
 }
 
-void MacroAssembler::cmp_heap_oop(Register src1, Address src2, Register tmp) {
-  assert_different_registers(src1, tmp);
-#ifdef _LP64
-  if (UseCompressedOops) {
-    bool did_push = false;
-    if (tmp == noreg) {
-      tmp = rax;
-      push(tmp);
-      did_push = true;
-      assert(!src2.uses(rsp), "can't push");
-    }
-    load_heap_oop(tmp, src2);
-    cmpptr(src1, tmp);
-    if (did_push)  pop(tmp);
-  } else
-#endif
-    cmpptr(src1, src2);
-}
-
 // Used for storing NULLs.
 void MacroAssembler::store_heap_oop_null(Address dst) {
 #ifdef _LP64
