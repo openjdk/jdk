@@ -394,12 +394,11 @@ ifneq ($(OPENJDK_TARGET_OS), $(OPENJDK_TARGET_OS_TYPE))
 endif
 LEGAL_SUBDIRS += share/legal
 
-# Find all legal dirs for a particular module
+# Find all legal src dirs for a particular module
 # $1 - Module to find legal dirs for
-FindModuleLegalDirs = \
+FindModuleLegalSrcDirs = \
     $(strip $(wildcard \
-        $(addsuffix /$(strip $1), $(SUPPORT_OUTPUTDIR)/modules_legal \
-            $(IMPORT_MODULES_LEGAL)) \
+        $(addsuffix /$(strip $1), $(IMPORT_MODULES_LEGAL)) \
         $(foreach sub, $(LEGAL_SUBDIRS), $(addsuffix /$(strip $1)/$(sub), $(TOP_SRC_DIRS))) \
     ))
 

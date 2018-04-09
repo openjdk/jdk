@@ -30,26 +30,31 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.tree.JCTree.JCLiteral;
+import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
 
 /** A tree visitor that computes a hash code. */
 public class TreeHasher extends TreeScanner {
 
-    private final Function<Symbol, Integer> symbolHasher;
+    private final Map<Symbol, Integer> symbolHashes;
     private int result = 17;
 
-    public TreeHasher(Function<Symbol, Integer> symbolHasher) {
-        this.symbolHasher = Objects.requireNonNull(symbolHasher);
+    public TreeHasher(Map<Symbol, Integer> symbolHashes) {
+        this.symbolHashes = Objects.requireNonNull(symbolHashes);
     }
 
-    public static int hash(JCTree tree, Function<Symbol, Integer> symbolHasher) {
+    public static int hash(JCTree tree, Collection<? extends Symbol> symbols) {
         if (tree == null) {
             return 0;
         }
-        TreeHasher hasher = new TreeHasher(symbolHasher);
+        Map<Symbol, Integer> symbolHashes = new HashMap<>();
+        symbols.forEach(s -> symbolHashes.put(s, symbolHashes.size()));
+        TreeHasher hasher = new TreeHasher(symbolHashes);
         tree.accept(hasher);
         return hasher.result;
     }
@@ -85,7 +90,7 @@ public class TreeHasher extends TreeScanner {
     public void visitIdent(JCIdent tree) {
         Symbol sym = tree.sym;
         if (sym != null) {
-            Integer hash = symbolHasher.apply(sym);
+            Integer hash = symbolHashes.get(sym);
             if (hash != null) {
                 hash(hash);
                 return;
@@ -98,5 +103,11 @@ public class TreeHasher extends TreeScanner {
     public void visitSelect(JCFieldAccess tree) {
         hash(tree.sym);
         super.visitSelect(tree);
+    }
+
+    @Override
+    public void visitVarDef(JCVariableDecl tree) {
+        symbolHashes.computeIfAbsent(tree.sym, k -> symbolHashes.size());
+        super.visitVarDef(tree);
     }
 }

@@ -446,7 +446,7 @@ public final class TimeZoneNames_fr extends TimeZoneNamesBundle {
                                               "Heure d'\u00e9t\u00e9 du Groenland de l'Ouest", "WGST",
                                               "Heure du Groenland de l'Ouest", "WGT"}},
             {"America/Goose_Bay", AST},
-            {"America/Grand_Turk", AST},
+            {"America/Grand_Turk", EST},
             {"America/Grenada", AST},
             {"America/Guadeloupe", AST},
             {"America/Guatemala", CST},

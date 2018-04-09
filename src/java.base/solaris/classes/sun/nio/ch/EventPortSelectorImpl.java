@@ -72,12 +72,10 @@ class EventPortSelectorImpl
     // the last update operation, incremented by processUpdateQueue
     private int lastUpdate;
 
-    // pending new registrations/updates, queued by implRegister, putEventOps,
-    // and updateSelectedKeys
+    // pending new registrations/updates, queued by setEventOps and
+    // updateSelectedKeys
     private final Object updateLock = new Object();
-    private final Deque<SelectionKeyImpl> newKeys = new ArrayDeque<>();
     private final Deque<SelectionKeyImpl> updateKeys = new ArrayDeque<>();
-    private final Deque<Integer> updateEvents = new ArrayDeque<>();
 
     // interrupt triggering and clearing
     private final Object interruptLock = new Object();
@@ -146,23 +144,14 @@ class EventPortSelectorImpl
 
         synchronized (updateLock) {
             SelectionKeyImpl ski;
-
-            // new registrations
-            while ((ski = newKeys.pollFirst()) != null) {
-                if (ski.isValid()) {
-                    int fd = ski.channel.getFDVal();
-                    SelectionKeyImpl previous = fdToKey.put(fd, ski);
-                    assert previous == null;
-                    assert ski.registeredEvents() == 0;
-                }
-            }
-
-            // changes to interest ops
-            assert updateKeys.size() == updateEvents.size();
             while ((ski = updateKeys.pollFirst()) != null) {
-                int newEvents = updateEvents.pollFirst();
-                int fd = ski.channel.getFDVal();
-                if (ski.isValid() && fdToKey.containsKey(fd)) {
+                if (ski.isValid()) {
+                    int fd = ski.getFDVal();
+                    // add to fdToKey if needed
+                    SelectionKeyImpl previous = fdToKey.putIfAbsent(fd, ski);
+                    assert (previous == null) || (previous == ski);
+
+                    int newEvents = ski.translateInterestOps();
                     if (newEvents != ski.registeredEvents()) {
                         if (newEvents == 0) {
                             port_dissociate(pfd, PORT_SOURCE_FD, fd);
@@ -199,22 +188,20 @@ class EventPortSelectorImpl
                     if (ski != null) {
                         int rOps = getEventOps(i);
                         if (selectedKeys.contains(ski)) {
-                            if (ski.channel.translateAndSetReadyOps(rOps, ski)) {
+                            if (ski.translateAndUpdateReadyOps(rOps)) {
                                 numKeysUpdated++;
                             }
                         } else {
-                            ski.channel.translateAndSetReadyOps(rOps, ski);
+                            ski.translateAndSetReadyOps(rOps);
                             if ((ski.nioReadyOps() & ski.nioInterestOps()) != 0) {
                                 selectedKeys.add(ski);
                                 numKeysUpdated++;
                             }
                         }
 
-                        // re-queue key to head so that it is re-associated at
-                        // next select (and before other changes)
-                        updateEvents.addFirst(ski.registeredEvents());
-                        updateKeys.addFirst(ski);
+                        // re-queue key so it re-associated at next select
                         ski.registeredEvents(0);
+                        updateKeys.addLast(ski);
                     }
                 } else if (source == PORT_SOURCE_USER) {
                     interrupted = true;
@@ -245,19 +232,11 @@ class EventPortSelectorImpl
     }
 
     @Override
-    protected void implRegister(SelectionKeyImpl ski) {
-        ensureOpen();
-        synchronized (updateLock) {
-            newKeys.addLast(ski);
-        }
-    }
-
-    @Override
     protected void implDereg(SelectionKeyImpl ski) throws IOException {
         assert !ski.isValid();
         assert Thread.holdsLock(this);
 
-        int fd = ski.channel.getFDVal();
+        int fd = ski.getFDVal();
         if (fdToKey.remove(fd) != null) {
             if (ski.registeredEvents() != 0) {
                 port_dissociate(pfd, PORT_SOURCE_FD, fd);
@@ -269,10 +248,9 @@ class EventPortSelectorImpl
     }
 
     @Override
-    public void putEventOps(SelectionKeyImpl ski, int events) {
+    public void setEventOps(SelectionKeyImpl ski) {
         ensureOpen();
         synchronized (updateLock) {
-            updateEvents.addLast(events);  // events first in case adding key fails
             updateKeys.addLast(ski);
         }
     }

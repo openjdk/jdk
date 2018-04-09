@@ -699,7 +699,7 @@ public abstract class ClassLoader {
     /**
      * Finds the class with the given <a href="#binary-name">binary name</a>
      * in a module defined to this class loader.
-     * Class loader implementations that support the loading from modules
+     * Class loader implementations that support loading from modules
      * should override this method.
      *
      * @apiNote This method returns {@code null} rather than throwing
@@ -1281,7 +1281,7 @@ public abstract class ClassLoader {
 
     /**
      * Returns a URL to a resource in a module defined to this class loader.
-     * Class loader implementations that support the loading from modules
+     * Class loader implementations that support loading from modules
      * should override this method.
      *
      * @apiNote This method is the basis for the {@link
@@ -1417,12 +1417,12 @@ public abstract class ClassLoader {
      * @param  name
      *         The resource name
      *
-     * @return  An enumeration of {@link java.net.URL URL} objects for
-     *          the resource. If no resources could  be found, the enumeration
-     *          will be empty. Resources for which a {@code URL} cannot be
-     *          constructed, are in package that is not opened unconditionally,
-     *          or access to the resource is denied by the security manager,
-     *          are not returned in the enumeration.
+     * @return  An enumeration of {@link java.net.URL URL} objects for the
+     *          resource. If no resources could be found, the enumeration will
+     *          be empty. Resources for which a {@code URL} cannot be
+     *          constructed, are in a package that is not opened
+     *          unconditionally, or access to the resource is denied by the
+     *          security manager, are not returned in the enumeration.
      *
      * @throws  IOException
      *          If I/O errors occur

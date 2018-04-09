@@ -332,7 +332,6 @@ com.sun.security.auth.login
 com.sun.security.auth.module
 module:jdk.security.jgss
 com.sun.security.jgss
-module:jdk.snmp
 module:jdk.xml.dom
 org.w3c.dom.css
 org.w3c.dom.html

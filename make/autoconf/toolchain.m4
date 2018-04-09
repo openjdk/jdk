@@ -1022,24 +1022,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
     # This is later checked when setting flags.
   fi
 
-  # Check for broken SuSE 'ld' for which 'Only anonymous version tag is allowed
-  # in executable.'
-  USING_BROKEN_SUSE_LD=no
-  if test "x$OPENJDK_TARGET_OS" = xlinux && test "x$TOOLCHAIN_TYPE" = xgcc; then
-    AC_MSG_CHECKING([for broken SuSE 'ld' which only understands anonymous version tags in executables])
-    $ECHO "SUNWprivate_1.1 { local: *; };" > version-script.map
-    $ECHO "int main() { }" > main.c
-    if $CXX -Wl,-version-script=version-script.map main.c 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD; then
-      AC_MSG_RESULT(no)
-      USING_BROKEN_SUSE_LD=no
-    else
-      AC_MSG_RESULT(yes)
-      USING_BROKEN_SUSE_LD=yes
-    fi
-    $RM version-script.map main.c a.out
-  fi
-  AC_SUBST(USING_BROKEN_SUSE_LD)
-
   # Setup hotspot lecagy names for toolchains
   HOTSPOT_TOOLCHAIN_TYPE=$TOOLCHAIN_TYPE
   if test "x$TOOLCHAIN_TYPE" = xclang; then

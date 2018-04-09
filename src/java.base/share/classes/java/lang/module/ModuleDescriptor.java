@@ -1742,7 +1742,7 @@ public class ModuleDescriptor
                 throw new IllegalArgumentException("Empty target set");
             if (strict) {
                 requirePackageName(e.source());
-                targets.stream().forEach(Checks::requireModuleName);
+                targets.forEach(Checks::requireModuleName);
             }
             return exports(e);
         }
@@ -1878,7 +1878,7 @@ public class ModuleDescriptor
                 throw new IllegalArgumentException("Empty target set");
             if (strict) {
                 requirePackageName(opens.source());
-                targets.stream().forEach(Checks::requireModuleName);
+                targets.forEach(Checks::requireModuleName);
             }
             return opens(opens);
         }

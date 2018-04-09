@@ -446,7 +446,7 @@ public final class TimeZoneNames_sv extends TimeZoneNamesBundle {
                                               "V\u00e4stra Gr\u00f6nland, sommartid", "WGST",
                                               "V\u00E4stgr\u00F6nl\u00E4ndsk tid", "WGT"}},
             {"America/Goose_Bay", AST},
-            {"America/Grand_Turk", AST},
+            {"America/Grand_Turk", EST},
             {"America/Grenada", AST},
             {"America/Guadeloupe", AST},
             {"America/Guatemala", CST},

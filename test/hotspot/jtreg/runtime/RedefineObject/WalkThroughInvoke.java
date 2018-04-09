@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ public class WalkThroughInvoke {
           SecurityManager sm = new SecurityManager();
           // Walks the stack with Method.invoke in the stack (which is the
           // purpose of the test) before it gets an AccessControlException.
-          sm.checkMemberAccess(b, Member.DECLARED);
+          sm.checkPermission(new RuntimePermission("accessDeclaredMembers"));
       } catch (java.security.AccessControlException e) {
           // Ignoring an 'AccessControlException' exception since
           // it is expected as part of this test.

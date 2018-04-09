@@ -35,7 +35,6 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -76,16 +75,15 @@ public class ModuleHashesBuilder {
         // build a graph containing the packaged modules and
         // its transitive dependences matching --hash-modules
         Graph.Builder<String> builder = new Graph.Builder<>();
-        Deque<ResolvedModule> deque = new ArrayDeque<>(configuration.modules());
+        Deque<ResolvedModule> todo = new ArrayDeque<>(configuration.modules());
         Set<ResolvedModule> visited = new HashSet<>();
-        while (!deque.isEmpty()) {
-            ResolvedModule rm = deque.pop();
-            if (!visited.contains(rm)) {
-                visited.add(rm);
+        ResolvedModule rm;
+        while ((rm = todo.poll()) != null) {
+            if (visited.add(rm)) {
                 builder.addNode(rm.name());
                 for (ResolvedModule dm : rm.reads()) {
                     if (!visited.contains(dm)) {
-                        deque.push(dm);
+                        todo.push(dm);
                     }
                     builder.addEdge(rm.name(), dm.name());
                 }
@@ -173,7 +171,7 @@ public class ModuleHashesBuilder {
         }
 
         /**
-         * Traverse this graph and performs the given action in topological order
+         * Traverses this graph and performs the given action in topological order.
          */
         public void ordered(Consumer<T> action) {
             TopoSorter<T> sorter = new TopoSorter<>(this);
@@ -181,7 +179,7 @@ public class ModuleHashesBuilder {
         }
 
         /**
-         * Traverses this graph and performs the given action in reverse topological order
+         * Traverses this graph and performs the given action in reverse topological order.
          */
         public void reverse(Consumer<T> action) {
             TopoSorter<T> sorter = new TopoSorter<>(this);
@@ -189,15 +187,14 @@ public class ModuleHashesBuilder {
         }
 
         /**
-         * Returns a transposed graph from this graph
+         * Returns a transposed graph from this graph.
          */
         public Graph<T> transpose() {
             Builder<T> builder = new Builder<>();
-            nodes.stream().forEach(builder::addNode);
+            nodes.forEach(builder::addNode);
             // reverse edges
             edges.keySet().forEach(u -> {
-                edges.get(u).stream()
-                    .forEach(v -> builder.addEdge(v, u));
+                edges.get(u).forEach(v -> builder.addEdge(v, u));
             });
             return builder.build();
         }
@@ -213,17 +210,14 @@ public class ModuleHashesBuilder {
          * Returns all nodes reachable from the given set of roots.
          */
         public Set<T> dfs(Set<T> roots) {
-            Deque<T> deque = new LinkedList<>(roots);
+            ArrayDeque<T> todo = new ArrayDeque<>(roots);
             Set<T> visited = new HashSet<>();
-            while (!deque.isEmpty()) {
-                T u = deque.pop();
-                if (!visited.contains(u)) {
-                    visited.add(u);
-                    if (contains(u)) {
-                        adjacentNodes(u).stream()
-                            .filter(v -> !visited.contains(v))
-                            .forEach(deque::push);
-                    }
+            T u;
+            while ((u = todo.poll()) != null) {
+                if (visited.add(u) && contains(u)) {
+                    adjacentNodes(u).stream()
+                        .filter(v -> !visited.contains(v))
+                        .forEach(todo::push);
                 }
             }
             return visited;
@@ -231,8 +225,8 @@ public class ModuleHashesBuilder {
 
         public void printGraph(PrintStream out) {
             out.println("graph for " + nodes);
-            nodes.stream()
-                .forEach(u -> adjacentNodes(u).stream()
+            nodes
+                .forEach(u -> adjacentNodes(u)
                     .forEach(v -> out.format("  %s -> %s%n", u, v)));
         }
 
@@ -241,11 +235,9 @@ public class ModuleHashesBuilder {
             final Map<T, Set<T>> edges = new HashMap<>();
 
             public void addNode(T node) {
-                if (nodes.contains(node)) {
-                    return;
+                if (nodes.add(node)) {
+                    edges.computeIfAbsent(node, _e -> new HashSet<>());
                 }
-                nodes.add(node);
-                edges.computeIfAbsent(node, _e -> new HashSet<>());
             }
 
             public void addEdge(T u, T v) {
@@ -264,18 +256,16 @@ public class ModuleHashesBuilder {
      * Topological sort
      */
     private static class TopoSorter<T> {
-        final Deque<T> result = new LinkedList<>();
-        final Deque<T> nodes;
+        final Deque<T> result = new ArrayDeque<>();
         final Graph<T> graph;
 
         TopoSorter(Graph<T> graph) {
             this.graph = graph;
-            this.nodes = new LinkedList<>(graph.nodes);
             sort();
         }
 
         public void ordered(Consumer<T> action) {
-            result.iterator().forEachRemaining(action);
+            result.forEach(action);
         }
 
         public void reverse(Consumer<T> action) {
@@ -283,29 +273,26 @@ public class ModuleHashesBuilder {
         }
 
         private void sort() {
-            Deque<T> visited = new LinkedList<>();
-            Deque<T> done = new LinkedList<>();
-            T node;
-            while ((node = nodes.poll()) != null) {
-                if (!visited.contains(node)) {
-                    visit(node, visited, done);
-                }
-            }
+            Set<T> visited = new HashSet<>();
+            Deque<T> stack = new ArrayDeque<>();
+            graph.nodes.forEach(node -> visit(node, visited, stack));
         }
 
-        private void visit(T node, Deque<T> visited, Deque<T> done) {
-            if (visited.contains(node)) {
-                if (!done.contains(node)) {
-                    throw new IllegalArgumentException("Cyclic detected: " +
-                        node + " " + graph.edges().get(node));
-                }
-                return;
+        private Set<T> children(T node) {
+            return graph.edges().get(node);
+        }
+
+        private void visit(T node, Set<T> visited, Deque<T> stack) {
+            if (visited.add(node)) {
+                stack.push(node);
+                children(node).forEach(child -> visit(child, visited, stack));
+                stack.pop();
+                result.addLast(node);
             }
-            visited.add(node);
-            graph.edges().get(node).stream()
-                .forEach(x -> visit(x, visited, done));
-            done.add(node);
-            result.addLast(node);
+            else if (stack.contains(node)) {
+                throw new IllegalArgumentException(
+                    "Cycle detected: " + node + " -> " + children(node));
+            }
         }
     }
 }
