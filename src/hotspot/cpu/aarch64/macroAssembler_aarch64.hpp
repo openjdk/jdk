@@ -1225,9 +1225,11 @@ public:
 
   void has_negatives(Register ary1, Register len, Register result);
 
-  void arrays_equals(Register a1, Register a2,
-                     Register result, Register cnt1,
-                     int elem_size, bool is_string);
+  void arrays_equals(Register a1, Register a2, Register result, Register cnt1,
+                     Register tmp1, Register tmp2, Register tmp3, int elem_size);
+
+  void string_equals(Register a1, Register a2, Register result, Register cnt1,
+                     int elem_size);
 
   void fill_words(Register base, Register cnt, Register value);
   void zero_words(Register base, u_int64_t cnt);
