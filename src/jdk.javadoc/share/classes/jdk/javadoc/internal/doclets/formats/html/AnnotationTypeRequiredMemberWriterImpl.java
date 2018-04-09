@@ -37,7 +37,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeRequiredMemberWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -298,32 +298,6 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     protected Content getDeprecatedLink(Element member) {
         String name = utils.getFullyQualifiedName(member) + "." + member.getSimpleName();
         return writer.getDocLink(LinkInfoImpl.Kind.MEMBER, member, name);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    protected Content getNavSummaryLink(TypeElement typeElement, boolean link) {
-        if (link) {
-            return links.createLink(
-                    SectionName.ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY,
-                    contents.navAnnotationTypeRequiredMember);
-        } else {
-            return contents.navAnnotationTypeRequiredMember;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    protected void addNavDetailLink(boolean link, Content liNav) {
-        if (link) {
-            liNav.addContent(links.createLink(
-                    SectionName.ANNOTATION_TYPE_ELEMENT_DETAIL,
-                    contents.navAnnotationTypeMember));
-        } else {
-            liNav.addContent(contents.navAnnotationTypeMember);
-        }
     }
 
     private TypeMirror getType(Element member) {

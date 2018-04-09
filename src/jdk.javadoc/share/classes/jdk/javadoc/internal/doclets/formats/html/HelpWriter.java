@@ -29,6 +29,8 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -51,6 +53,8 @@ public class HelpWriter extends HtmlDocletWriter {
 
     HtmlTree mainTree = HtmlTree.MAIN();
 
+    private final Navigation navBar;
+
     /**
      * Constructor to construct HelpWriter object.
      * @param configuration the configuration
@@ -59,6 +63,7 @@ public class HelpWriter extends HtmlDocletWriter {
     public HelpWriter(HtmlConfiguration configuration,
                       DocPath filename) {
         super(configuration, filename);
+        this.navBar = new Navigation(null, configuration, fixedNavDiv, PageMode.HELP, path);
     }
 
     /**
@@ -88,7 +93,8 @@ public class HelpWriter extends HtmlDocletWriter {
                 ? HtmlTree.HEADER()
                 : body;
         addTop(htmlTree);
-        addNavLinks(true, htmlTree);
+        navBar.setUserHeader(getUserHeaderFooter(true));
+        htmlTree.addContent(navBar.getContent(true));
         if (configuration.allowTag(HtmlTag.HEADER)) {
             body.addContent(htmlTree);
         }
@@ -96,7 +102,8 @@ public class HelpWriter extends HtmlDocletWriter {
         if (configuration.allowTag(HtmlTag.FOOTER)) {
             htmlTree = HtmlTree.FOOTER();
         }
-        addNavLinks(false, htmlTree);
+        navBar.setUserFooter(getUserHeaderFooter(false));
+        htmlTree.addContent(navBar.getContent(false));
         addBottom(htmlTree);
         if (configuration.allowTag(HtmlTag.FOOTER)) {
             body.addContent(htmlTree);
@@ -427,16 +434,5 @@ public class HelpWriter extends HtmlDocletWriter {
         } else {
             contentTree.addContent(divContent);
         }
-    }
-
-    /**
-     * Get the help label.
-     *
-     * @return a content tree for the help label
-     */
-    @Override
-    protected Content getNavLinkHelp() {
-        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, contents.helpLabel);
-        return li;
     }
 }

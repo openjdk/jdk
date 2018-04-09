@@ -38,7 +38,8 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassUseMapper;
@@ -63,6 +64,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
     final SortedMap<String, Set<TypeElement>> usingPackageToUsedClasses = new TreeMap<>();
     protected HtmlTree mainTree = HtmlTree.MAIN();
     final String packageUseTableSummary;
+    private final Navigation navBar;
 
     /**
      * Constructor.
@@ -100,6 +102,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
 
         packageUseTableSummary = resources.getText("doclet.Use_Table_Summary",
                 resources.getText("doclet.packages"));
+        this.navBar = new Navigation(packageElement, configuration, fixedNavDiv, PageMode.USE, path);
     }
 
     /**
@@ -140,7 +143,8 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         HtmlTree tree = (configuration.allowTag(HtmlTag.FOOTER))
                 ? HtmlTree.FOOTER()
                 : body;
-        addNavLinks(false, tree);
+        navBar.setUserFooter(getUserHeaderFooter(false));
+        tree.addContent(navBar.getContent(false));
         addBottom(tree);
         if (configuration.allowTag(HtmlTag.FOOTER)) {
             body.addContent(tree);
@@ -249,7 +253,11 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                 ? HtmlTree.HEADER()
                 : bodyTree;
         addTop(htmlTree);
-        addNavLinks(true, htmlTree);
+        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
+                contents.moduleLabel);
+        navBar.setNavLinkModule(linkContent);
+        navBar.setUserHeader(getUserHeaderFooter(true));
+        htmlTree.addContent(navBar.getContent(true));
         if (configuration.allowTag(HtmlTag.HEADER)) {
             bodyTree.addContent(htmlTree);
         }
@@ -266,55 +274,5 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             bodyTree.addContent(div);
         }
         return bodyTree;
-    }
-
-    /**
-     * Get the module link.
-     *
-     * @return a content tree for the module link
-     */
-    @Override
-    protected Content getNavLinkModule() {
-        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
-                contents.moduleLabel);
-        Content li = HtmlTree.LI(linkContent);
-        return li;
-    }
-
-    /**
-     * Get this package link.
-     *
-     * @return a content tree for the package link
-     */
-    @Override
-    protected Content getNavLinkPackage() {
-        Content linkContent = links.createLink(DocPaths.PACKAGE_SUMMARY,
-                contents.packageLabel);
-        Content li = HtmlTree.LI(linkContent);
-        return li;
-    }
-
-    /**
-     * Get the use link.
-     *
-     * @return a content tree for the use link
-     */
-    @Override
-    protected Content getNavLinkClassUse() {
-        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, contents.useLabel);
-        return li;
-    }
-
-    /**
-     * Get the tree link.
-     *
-     * @return a content tree for the tree link
-     */
-    @Override
-    protected Content getNavLinkTree() {
-        Content linkContent = links.createLink(DocPaths.PACKAGE_TREE,
-                contents.treeLabel);
-        Content li = HtmlTree.LI(linkContent);
-        return li;
     }
 }

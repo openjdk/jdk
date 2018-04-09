@@ -37,7 +37,7 @@ import javax.lang.model.element.TypeElement;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
@@ -204,32 +204,5 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
     @Override
     protected Content getDeprecatedLink(Element member) {
         return writer.getQualifiedClassLink(LinkInfoImpl.Kind.MEMBER, member);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected Content getNavSummaryLink(TypeElement typeElement, boolean link) {
-        if (link) {
-            if (typeElement == null) {
-                return links.createLink(
-                        SectionName.NESTED_CLASS_SUMMARY,
-                        contents.navNested);
-            } else {
-                return links.createLink(
-                        SectionName.NESTED_CLASSES_INHERITANCE,
-                        utils.getFullyQualifiedName(typeElement), contents.navNested);
-            }
-        } else {
-            return contents.navNested;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void addNavDetailLink(boolean link, Content liNav) {
     }
 }

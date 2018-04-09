@@ -40,7 +40,8 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.ConstantsSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -86,6 +87,8 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
      */
     private HtmlTree summaryTree;
 
+    private final Navigation navBar;
+
     /**
      * Construct a ConstantsSummaryWriter.
      * @param configuration the configuration used in this run
@@ -98,6 +101,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
                 configuration.getText("doclet.Constants_Summary"));
         constantsTableHeader = new TableHeader(
                 contents.modifierAndTypeLabel, contents.constantFieldLabel, contents.valueLabel);
+        this.navBar = new Navigation(null, configuration, fixedNavDiv, PageMode.CONSTANTVALUES, path);
     }
 
     /**
@@ -111,7 +115,8 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
                 ? HtmlTree.HEADER()
                 : bodyTree;
         addTop(htmlTree);
-        addNavLinks(true, htmlTree);
+        navBar.setUserHeader(getUserHeaderFooter(true));
+        htmlTree.addContent(navBar.getContent(true));
         if (configuration.allowTag(HtmlTag.HEADER)) {
             bodyTree.addContent(htmlTree);
         }
@@ -341,7 +346,8 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         Content htmlTree = (configuration.allowTag(HtmlTag.FOOTER))
                 ? HtmlTree.FOOTER()
                 : contentTree;
-        addNavLinks(false, htmlTree);
+        navBar.setUserFooter(getUserHeaderFooter(false));
+        htmlTree.addContent(navBar.getContent(false));
         addBottom(htmlTree);
         if (configuration.allowTag(HtmlTag.FOOTER)) {
             contentTree.addContent(htmlTree);

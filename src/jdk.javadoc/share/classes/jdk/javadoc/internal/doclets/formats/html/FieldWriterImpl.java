@@ -39,7 +39,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.FieldWriter;
@@ -301,39 +301,5 @@ public class FieldWriterImpl extends AbstractMemberWriter
     protected Content getDeprecatedLink(Element member) {
         String name = utils.getFullyQualifiedName(member) + "." + member.getSimpleName();
         return writer.getDocLink(LinkInfoImpl.Kind.MEMBER, member, name);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected Content getNavSummaryLink(TypeElement typeElement, boolean link) {
-        if (link) {
-            if (typeElement == null) {
-                return links.createLink(
-                        SectionName.FIELD_SUMMARY,
-                        contents.navField);
-            } else {
-                return links.createLink(
-                        SectionName.FIELDS_INHERITANCE,
-                        configuration.getClassName(typeElement), contents.navField);
-            }
-        } else {
-            return contents.navField;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void addNavDetailLink(boolean link, Content liNav) {
-        if (link) {
-            liNav.addContent(links.createLink(
-                    SectionName.FIELD_DETAIL,
-                    contents.navField));
-        } else {
-            liNav.addContent(contents.navField);
-        }
     }
 }
