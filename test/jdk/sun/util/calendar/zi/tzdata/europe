@@ -140,8 +140,8 @@
 # along the towpath within a few yards of it.'
 #
 # I have a one inch to one mile map of London and my estimate of the stone's
-# position is 51 degrees 28' 30" N, 0 degrees 18' 45" W. The longitude should
-# be within about +-2". The Ordnance Survey grid reference is TQ172761.
+# position is 51° 28' 30" N, 0° 18' 45" W. The longitude should
+# be within about ±2". The Ordnance Survey grid reference is TQ172761.
 #
 # [This yields GMTOFF = -0:01:15 for London LMT in the 18th century.]
 
@@ -181,7 +181,7 @@
 # after-hours daylight in which to pursue his research.
 # In 1895 he presented a paper to the Wellington Philosophical Society
 # that proposed a two-hour daylight-saving shift.  See:
-# Hudson GV. On seasonal time-adjustment in countries south of lat. 30 deg.
+# Hudson GV. On seasonal time-adjustment in countries south of lat. 30°.
 # Transactions and Proceedings of the New Zealand Institute. 1895;28:734
 # http://rsnz.natlib.govt.nz/volume/rsnz_28/rsnz_28_00_006110.html
 # Although some interest was expressed in New Zealand, his proposal
@@ -531,11 +531,25 @@ Link	Europe/London	Europe/Jersey
 Link	Europe/London	Europe/Guernsey
 Link	Europe/London	Europe/Isle_of_Man
 
-# From Paul Eggert (2018-01-19):
+# From Paul Eggert (2018-02-15):
+# In January 2018 we discovered that the negative SAVE values in the
+# Eire rules cause problems with tests for ICU:
+# https://mm.icann.org/pipermail/tz/2018-January/025825.html
+# and with tests for OpenJDK:
+# https://mm.icann.org/pipermail/tz/2018-January/025822.html
+#
+# To work around this problem, the build procedure can translate the
+# following data into two forms, one with negative SAVE values and the
+# other form with a traditional approximation for Irish time stamps
+# after 1971-10-31 02:00 UTC; although this approximation has tm_isdst
+# flags that are reversed, its UTC offsets are correct and this often
+# suffices.  This source file currently uses only nonnegative SAVE
+# values, but this is intended to change and downstream code should
+# not rely on it.
+#
 # The following is like GB-Eire and EU, except with standard time in
-# summer and negative daylight saving time in winter.
-# Although currently commented out, this will need to become uncommented
-# once the ICU/OpenJDK workaround is removed; see below.
+# summer and negative daylight saving time in winter.  It is for when
+# negative SAVE values are used.
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 #Rule	Eire	1971	only	-	Oct	31	 2:00u	-1:00	GMT
 #Rule	Eire	1972	1980	-	Mar	Sun>=16	 2:00u	0	IST
@@ -556,24 +570,12 @@ Zone	Europe/Dublin	-0:25:00 -	LMT	1880 Aug  2
 			 0:00	1:00	IST	1947 Nov  2  2:00s
 			 0:00	-	GMT	1948 Apr 18  2:00s
 			 0:00	GB-Eire	GMT/IST	1968 Oct 27
-# From Paul Eggert (2018-01-18):
-# The next line should look like this:
+# The next line is for when negative SAVE values are used.
 #			 1:00	Eire	IST/GMT
-# However, in January 2018 we discovered that the Eire rules cause
-# problems with tests for ICU:
-# https://mm.icann.org/pipermail/tz/2018-January/025825.html
-# and with tests for OpenJDK:
-# https://mm.icann.org/pipermail/tz/2018-January/025822.html
-# To work around this problem, use a traditional approximation for
-# time stamps after 1971-10-31 02:00 UTC, to give ICU and OpenJDK
-# developers breathing room to fix bugs.  This approximation has
-# correct UTC offsets, but results in tm_isdst flags are the reverse
-# of what they should be.  This workaround is temporary and should be
-# removed reasonably soon.
+# These three lines are for when SAVE values are always nonnegative.
 			 1:00	-	IST	1971 Oct 31  2:00u
 			 0:00	GB-Eire	GMT/IST	1996
 			 0:00	EU	GMT/IST
-# End of workaround for ICU and OpenJDK bugs.
 
 
 ###############################################################################
@@ -1557,21 +1559,21 @@ Zone	Europe/Budapest	1:16:20 -	LMT	1890 Oct
 # http://www.almanak.hi.is/klukkan.html
 #
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Iceland	1917	1919	-	Feb	19	23:00	1:00	S
+Rule	Iceland	1917	1919	-	Feb	19	23:00	1:00	-
 Rule	Iceland	1917	only	-	Oct	21	 1:00	0	-
 Rule	Iceland	1918	1919	-	Nov	16	 1:00	0	-
-Rule	Iceland	1921	only	-	Mar	19	23:00	1:00	S
+Rule	Iceland	1921	only	-	Mar	19	23:00	1:00	-
 Rule	Iceland	1921	only	-	Jun	23	 1:00	0	-
-Rule	Iceland	1939	only	-	Apr	29	23:00	1:00	S
+Rule	Iceland	1939	only	-	Apr	29	23:00	1:00	-
 Rule	Iceland	1939	only	-	Oct	29	 2:00	0	-
-Rule	Iceland	1940	only	-	Feb	25	 2:00	1:00	S
+Rule	Iceland	1940	only	-	Feb	25	 2:00	1:00	-
 Rule	Iceland	1940	1941	-	Nov	Sun>=2	 1:00s	0	-
-Rule	Iceland	1941	1942	-	Mar	Sun>=2	 1:00s	1:00	S
+Rule	Iceland	1941	1942	-	Mar	Sun>=2	 1:00s	1:00	-
 # 1943-1946 - first Sunday in March until first Sunday in winter
-Rule	Iceland	1943	1946	-	Mar	Sun>=1	 1:00s	1:00	S
+Rule	Iceland	1943	1946	-	Mar	Sun>=1	 1:00s	1:00	-
 Rule	Iceland	1942	1948	-	Oct	Sun>=22	 1:00s	0	-
 # 1947-1967 - first Sunday in April until first Sunday in winter
-Rule	Iceland	1947	1967	-	Apr	Sun>=1	 1:00s	1:00	S
+Rule	Iceland	1947	1967	-	Apr	Sun>=1	 1:00s	1:00	-
 # 1949 and 1967 Oct transitions delayed by 1 week
 Rule	Iceland	1949	only	-	Oct	30	 1:00s	0	-
 Rule	Iceland	1950	1966	-	Oct	Sun>=22	 1:00s	0	-
@@ -2161,15 +2163,19 @@ Zone	Europe/Warsaw	1:24:00 -	LMT	1880
 			1:00	EU	CE%sT
 
 # Portugal
-#
+
 # From Paul Eggert (2014-08-11), after a heads-up from Stephen Colebourne:
 # According to a Portuguese decree (1911-05-26)
 # https://dre.pt/application/dir/pdf1sdip/1911/05/12500/23132313.pdf
 # Lisbon was at -0:36:44.68, but switched to GMT on 1912-01-01 at 00:00.
-# Round the old offset to -0:36:45.  This agrees with Willett but disagrees
-# with Shanks, who says the transition occurred on 1911-05-24 at 00:00 for
-# Europe/Lisbon, Atlantic/Azores, and Atlantic/Madeira.
+# Round the old offset to -0:36:45.  This agrees with Willett....
 #
+# From Michael Deckers (2018-02-15):
+# article 5 [of the 1911 decree; Deckers's translation] ...:
+# These dispositions shall enter into force at the instant at which,
+# according to the 2nd article, the civil day January 1, 1912 begins,
+# all clocks therefore having to be advanced or set back correspondingly ...
+
 # From Rui Pedro Salgueiro (1992-11-12):
 # Portugal has recently (September, 27) changed timezone
 # (from WET to MET or CET) to harmonize with EEC.
@@ -2252,7 +2258,7 @@ Rule	Port	1983	only	-	Mar	lastSun	 2:00s	1:00	S
 #
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Europe/Lisbon	-0:36:45 -	LMT	1884
-			-0:36:45 -	LMT	1912 Jan  1 # Lisbon Mean Time
+			-0:36:45 -	LMT	1912 Jan  1  0:00u # Lisbon MT
 			 0:00	Port	WE%sT	1966 Apr  3  2:00
 			 1:00	-	CET	1976 Sep 26  1:00
 			 0:00	Port	WE%sT	1983 Sep 25  1:00s
@@ -2261,7 +2267,7 @@ Zone	Europe/Lisbon	-0:36:45 -	LMT	1884
 			 0:00	EU	WE%sT
 # This Zone can be simplified once we assume zic %z.
 Zone Atlantic/Azores	-1:42:40 -	LMT	1884        # Ponta Delgada
-			-1:54:32 -	HMT	1912 Jan  1 # Horta Mean Time
+			-1:54:32 -	HMT	1912 Jan  1  2:00u # Horta MT
 			-2:00	Port	-02/-01	1942 Apr 25 22:00s
 			-2:00	Port	+00	1942 Aug 15 22:00s
 			-2:00	Port	-02/-01	1943 Apr 17 22:00s
@@ -2277,7 +2283,7 @@ Zone Atlantic/Azores	-1:42:40 -	LMT	1884        # Ponta Delgada
 			-1:00	EU	-01/+00
 # This Zone can be simplified once we assume zic %z.
 Zone Atlantic/Madeira	-1:07:36 -	LMT	1884        # Funchal
-			-1:07:36 -	FMT	1912 Jan  1 # Funchal Mean Time
+			-1:07:36 -	FMT	1912 Jan  1  1:00u # Funchal MT
 			-1:00	Port	-01/+00	1942 Apr 25 22:00s
 			-1:00	Port	+01	1942 Aug 15 22:00s
 			-1:00	Port	-01/+00	1943 Apr 17 22:00s
@@ -2615,13 +2621,13 @@ Zone Europe/Kaliningrad	 1:22:00 -	LMT	1893 Apr
 
 # From Vladimir Karpinsky (2014-07-08):
 # LMT in Moscow (before Jul 3, 1916) is 2:30:17, that was defined by Moscow
-# Observatory (coordinates: 55 deg. 45'29.70", 37 deg. 34'05.30")....
+# Observatory (coordinates: 55° 45' 29.70", 37° 34' 05.30")....
 # LMT in Moscow since Jul 3, 1916 is 2:31:01 as a result of new standard.
 # (The info is from the book by Byalokoz ... p. 18.)
 # The time in St. Petersburg as capital of Russia was defined by
 # Pulkov observatory, near St. Petersburg.  In 1916 LMT Moscow
 # was synchronized with LMT St. Petersburg (+30 minutes), (Pulkov observatory
-# coordinates: 59 deg. 46'18.70", 30 deg. 19'40.70") so 30 deg. 19'40.70" >
+# coordinates: 59° 46' 18.70", 30° 19' 40.70") so 30° 19' 40.70" >
 # 2h01m18.7s = 2:01:19.  LMT Moscow = LMT St.Petersburg + 30m 2:01:19 + 0:30 =
 # 2:31:19 ...
 #
@@ -3450,7 +3456,7 @@ Zone	Atlantic/Canary	-1:01:36 -	LMT	1922 Mar # Las Palmas de Gran C.
 # three degrees, or twelve minutes of time, to the west of the
 # meridian of the Observatory of Stockholm".  The law is dated 1878-05-31.
 #
-# The observatory at that time had the meridian 18 degrees 03' 30"
+# The observatory at that time had the meridian 18° 03' 30"
 # eastern longitude = 01:12:14 in time.  Less 12 minutes gives the
 # national standard time as 01:00:14 ahead of GMT....
 #
@@ -3554,7 +3560,7 @@ Zone Europe/Stockholm	1:12:12 -	LMT	1879 Jan  1
 # From Alois Treindl (2013-09-11):
 # The Federal regulations say
 # https://www.admin.ch/opc/de/classified-compilation/20071096/index.html
-# ... the meridian for Bern mean time ... is 7 degrees 26' 22.50".
+# ... the meridian for Bern mean time ... is 7° 26' 22.50".
 # Expressed in time, it is 0h29m45.5s.
 
 # From Pierre-Yves Berger (2013-09-11):

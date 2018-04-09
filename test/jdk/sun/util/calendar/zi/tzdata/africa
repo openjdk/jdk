@@ -138,13 +138,13 @@ Zone	Africa/Algiers	0:12:12 -	LMT	1891 Mar 15  0:01
 
 # Cape Verde / Cabo Verde
 #
+# From Paul Eggert (2018-02-16):
 # Shanks gives 1907 for the transition to +02.
-# Perhaps the 1911-05-26 Portuguese decree
-# https://dre.pt/pdf1sdip/1911/05/12500/23132313.pdf
-# merely made it official?
+# For now, ignore that and follow the 1911-05-26 Portuguese decree
+# (see Europe/Lisbon).
 #
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Atlantic/Cape_Verde -1:34:04 -	LMT	1907        # Praia
+Zone Atlantic/Cape_Verde -1:34:04 -	LMT	1912 Jan 01  2:00u # Praia
 			-2:00	-	-02	1942 Sep
 			-2:00	1:00	-01	1945 Oct 15
 			-2:00	-	-02	1975 Nov 25  2:00
@@ -393,15 +393,34 @@ Zone	Africa/Cairo	2:05:09 -	LMT	1900 Oct
 # See Africa/Abidjan.
 
 # Ghana
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+
+# From Paul Eggert (2018-01-30):
 # Whitman says DST was observed from 1931 to "the present";
-# Shanks & Pottenger say 1936 to 1942;
-# and September 1 to January 1 is given by:
-# Scott Keltie J, Epstein M (eds), The Statesman's Year-Book,
-# 57th ed. Macmillan, London (1920), OCLC 609408015, pp xxviii.
-# For lack of better info, assume DST was observed from 1920 to 1942.
-Rule	Ghana	1920	1942	-	Sep	 1	0:00	0:20	GHST
-Rule	Ghana	1920	1942	-	Dec	31	0:00	0	GMT
+# Shanks & Pottenger say 1936 to 1942 with 20 minutes of DST,
+# with transitions on 09-01 and 12-31 at 00:00.
+# Page 33 of Parish GCB, Colonial Reports - Annual. No. 1066. Gold
+# Coast. Report for 1919. (March 1921), OCLC 784024077
+# http://libsysdigi.library.illinois.edu/ilharvest/africana/books2011-05/5530214/5530214_1919/5530214_1919_opt.pdf
+# lists the Determination of the Time Ordinance, 1919, No. 18,
+# "to advance the time observed locally by the space of twenty minutes
+# during the last four months of each year; the object in view being
+# to extend during those months the period of daylight-time available
+# for evening recreation after office hours."
+# Vanessa Ogle, The Global Transformation of Time, 1870-1950 (2015), p 33,
+# writes "In 1919, the Gold Coast (Ghana as of 1957) made Greenwich
+# time its legal time and simultaneously legalized a summer time of
+# UTC - 00:20 minutes from March to October."; a footnote lists
+# the ordinance as being dated 1919-11-24.
+# The Crown Colonist, Volume 12 (1942), p 176, says "the Government
+# intend advancing Gold Coast time half an hour ahead of G.M.T.
+# The actual date of the alteration has not yet been announced."
+# These sources are incomplete and contradictory.  Possibly what is
+# now Ghana observed different DST regimes in different years.  For
+# lack of better info, use Shanks except treat the minus sign as a
+# typo, and assume DST started in 1920 not 1936.
+# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+Rule	Ghana	1920	1942	-	Sep	 1	0:00	0:20	-
+Rule	Ghana	1920	1942	-	Dec	31	0:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Accra	-0:00:52 -	LMT	1918
 			 0:00	Ghana	GMT/+0020
@@ -411,13 +430,13 @@ Zone	Africa/Accra	-0:00:52 -	LMT	1918
 
 # Guinea-Bissau
 #
+# From Paul Eggert (2018-02-16):
 # Shanks gives 1911-05-26 for the transition to WAT,
 # evidently confusing the date of the Portuguese decree
-# https://dre.pt/pdf1sdip/1911/05/12500/23132313.pdf
-# with the date that it took effect, namely 1912-01-01.
+# (see Europe/Lisbon) with the date that it took effect.
 #
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Africa/Bissau	-1:02:20 -	LMT	1912 Jan  1
+Zone	Africa/Bissau	-1:02:20 -	LMT	1912 Jan  1  1:00u
 			-1:00	-	-01	1975
 			 0:00	-	GMT
 
@@ -613,9 +632,9 @@ Zone	Africa/Tripoli	0:52:44 -	LMT	1920
 # at 2am (or 02:00) local time..."
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule Mauritius	1982	only	-	Oct	10	0:00	1:00	S
+Rule Mauritius	1982	only	-	Oct	10	0:00	1:00	-
 Rule Mauritius	1983	only	-	Mar	21	0:00	0	-
-Rule Mauritius	2008	only	-	Oct	lastSun	2:00	1:00	S
+Rule Mauritius	2008	only	-	Oct	lastSun	2:00	1:00	-
 Rule Mauritius	2009	only	-	Mar	lastSun	2:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Indian/Mauritius	3:50:00 -	LMT	1907 # Port Louis
@@ -1060,6 +1079,8 @@ Zone	Indian/Reunion	3:41:52 -	LMT	1911 Jun # Saint-Denis
 
 # São Tomé and Príncipe
 
+# See Europe/Lisbon for info about the 1912 transition.
+
 # From Steffen Thorsen (2018-01-08):
 # Multiple sources tell that São Tomé changed from UTC to UTC+1 as
 # they entered the year 2018.
@@ -1068,7 +1089,7 @@ Zone	Indian/Reunion	3:41:52 -	LMT	1911 Jun # Saint-Denis
 # http://www.mnec.gov.st/index.php/publicacoes/documentos/file/90-decreto-lei-n-25-2017
 
 Zone	Africa/Sao_Tome	 0:26:56 -	LMT	1884
-			-0:36:45 -	LMT	1912 # Lisbon Mean Time
+			-0:36:45 -	LMT	1912 Jan  1 00:00u # Lisbon MT
 			 0:00	-	GMT	2018 Jan  1 01:00
 			 1:00	-	WAT
 

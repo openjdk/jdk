@@ -446,7 +446,7 @@ public final class TimeZoneNames_zh_TW extends TimeZoneNamesBundle {
                                               "\u897f\u683c\u6797\u862d\u5cf6\u590f\u4ee4\u6642\u9593", "WGST",
                                               "\u897F\u683C\u9675\u862D\u6642\u9593", "WGT"}},
             {"America/Goose_Bay", AST},
-            {"America/Grand_Turk", AST},
+            {"America/Grand_Turk", EST},
             {"America/Grenada", AST},
             {"America/Guadeloupe", AST},
             {"America/Guatemala", CST},
