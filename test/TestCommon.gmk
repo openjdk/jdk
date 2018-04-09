@@ -446,7 +446,7 @@ JTREG_BASIC_OPTIONS += -e:JIB_DATA_DIR
 JTREG_BASIC_OPTIONS += -e:JDK8_HOME=${JT_JAVA}
 # Give aot tests access to Visual Studio installation
 ifneq ($(VS120COMNTOOLS), )
-  JTREG_BASIC_OPTIONS += -e:VS120COMNTOOLS=$(shell $(GETMIXEDPATH) "$(VS120COMNTOOLS)")
+  JTREG_BASIC_OPTIONS += -e:VS120COMNTOOLS="$(shell $(GETMIXEDPATH) "$(patsubst %\,%,$(VS120COMNTOOLS))")"
 endif
 # Set other vm and test options
 JTREG_TEST_OPTIONS += $(JAVA_ARGS:%=-javaoptions:%) $(JAVA_VM_ARGS:%=-vmoption:%)
