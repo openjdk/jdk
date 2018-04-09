@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "runtime/os.hpp"
+#include "utilities/decoder.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/nativeCallStack.hpp"
 
@@ -102,6 +103,7 @@ void NativeCallStack::print_on(outputStream* out, int indent) const {
   address pc;
   char    buf[1024];
   int     offset;
+  int     line_no;
   if (is_empty()) {
     for (int index = 0; index < indent; index ++) out->print(" ");
     out->print("[BOOTSTRAP]");
@@ -112,10 +114,15 @@ void NativeCallStack::print_on(outputStream* out, int indent) const {
       // Print indent
       for (int index = 0; index < indent; index ++) out->print(" ");
       if (os::dll_address_to_function_name(pc, buf, sizeof(buf), &offset)) {
-        out->print_cr("[" PTR_FORMAT "] %s+0x%x", p2i(pc), buf, offset);
+        out->print("[" PTR_FORMAT "] %s+0x%x", p2i(pc), buf, offset);
       } else {
-        out->print_cr("[" PTR_FORMAT "]", p2i(pc));
+        out->print("[" PTR_FORMAT "]", p2i(pc));
       }
+
+      if (Decoder::get_source_info(pc, buf, sizeof(buf), &line_no)) {
+        out->print("  (%s:%d)", buf, line_no);
+      }
+      out->cr();
     }
   }
 }
