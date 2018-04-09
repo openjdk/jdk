@@ -5809,10 +5809,21 @@ NEXT:       while (i <= last) {
     static final Node lastAccept = new LastNode();
 
     /**
-     * Creates a predicate which can be used to match a string.
+     * Creates a predicate that tests if this pattern is found in a given input
+     * string.
      *
-     * @return  The predicate which can be used for matching on a string
+     * @apiNote
+     * This method creates a predicate that behaves as if it creates a matcher
+     * from the input sequence and then calls {@code find}, for example a
+     * predicate of the form:
+     * <pre>{@code
+     *   s -> matcher(s).find();
+     * }</pre>
+     *
+     * @return  The predicate which can be used for finding a match on a
+     * subsequence of a string
      * @since   1.8
+     * @see Matcher#find
      */
     public Predicate<String> asPredicate() {
         return s -> matcher(s).find();

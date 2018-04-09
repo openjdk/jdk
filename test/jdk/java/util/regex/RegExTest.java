@@ -4683,6 +4683,9 @@ public class RegExTest {
         if (p.test("1234")) {
             failCount++;
         }
+        if (!p.test("word1234")) {
+            failCount++;
+        }
         report("Pattern.asPredicate");
     }
 
