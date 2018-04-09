@@ -1027,6 +1027,8 @@ bufferedStream::~bufferedStream() {
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#elif defined(_WINDOWS)
+#include <winsock2.h>
 #endif
 
 // Network access
