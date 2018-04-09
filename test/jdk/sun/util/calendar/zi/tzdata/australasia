@@ -219,20 +219,20 @@ Zone Australia/Broken_Hill 9:25:48 -	LMT	1895 Feb
 
 # Lord Howe Island
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	LH	1981	1984	-	Oct	lastSun	2:00	1:00	D
-Rule	LH	1982	1985	-	Mar	Sun>=1	2:00	0	S
-Rule	LH	1985	only	-	Oct	lastSun	2:00	0:30	D
-Rule	LH	1986	1989	-	Mar	Sun>=15	2:00	0	S
-Rule	LH	1986	only	-	Oct	19	2:00	0:30	D
-Rule	LH	1987	1999	-	Oct	lastSun	2:00	0:30	D
-Rule	LH	1990	1995	-	Mar	Sun>=1	2:00	0	S
-Rule	LH	1996	2005	-	Mar	lastSun	2:00	0	S
-Rule	LH	2000	only	-	Aug	lastSun	2:00	0:30	D
-Rule	LH	2001	2007	-	Oct	lastSun	2:00	0:30	D
-Rule	LH	2006	only	-	Apr	Sun>=1	2:00	0	S
-Rule	LH	2007	only	-	Mar	lastSun	2:00	0	S
-Rule	LH	2008	max	-	Apr	Sun>=1	2:00	0	S
-Rule	LH	2008	max	-	Oct	Sun>=1	2:00	0:30	D
+Rule	LH	1981	1984	-	Oct	lastSun	2:00	1:00	-
+Rule	LH	1982	1985	-	Mar	Sun>=1	2:00	0	-
+Rule	LH	1985	only	-	Oct	lastSun	2:00	0:30	-
+Rule	LH	1986	1989	-	Mar	Sun>=15	2:00	0	-
+Rule	LH	1986	only	-	Oct	19	2:00	0:30	-
+Rule	LH	1987	1999	-	Oct	lastSun	2:00	0:30	-
+Rule	LH	1990	1995	-	Mar	Sun>=1	2:00	0	-
+Rule	LH	1996	2005	-	Mar	lastSun	2:00	0	-
+Rule	LH	2000	only	-	Aug	lastSun	2:00	0:30	-
+Rule	LH	2001	2007	-	Oct	lastSun	2:00	0:30	-
+Rule	LH	2006	only	-	Apr	Sun>=1	2:00	0	-
+Rule	LH	2007	only	-	Mar	lastSun	2:00	0	-
+Rule	LH	2008	max	-	Apr	Sun>=1	2:00	0	-
+Rule	LH	2008	max	-	Oct	Sun>=1	2:00	0:30	-
 Zone Australia/Lord_Howe 10:36:20 -	LMT	1895 Feb
 			10:00	-	AEST	1981 Mar
 			10:30	LH	+1030/+1130 1985 Jul
@@ -390,15 +390,15 @@ Zone	Indian/Cocos	6:27:40	-	LMT	1900
 # practice than guessing no DST.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Fiji	1998	1999	-	Nov	Sun>=1	2:00	1:00	S
+Rule	Fiji	1998	1999	-	Nov	Sun>=1	2:00	1:00	-
 Rule	Fiji	1999	2000	-	Feb	lastSun	3:00	0	-
-Rule	Fiji	2009	only	-	Nov	29	2:00	1:00	S
+Rule	Fiji	2009	only	-	Nov	29	2:00	1:00	-
 Rule	Fiji	2010	only	-	Mar	lastSun	3:00	0	-
-Rule	Fiji	2010	2013	-	Oct	Sun>=21	2:00	1:00	S
+Rule	Fiji	2010	2013	-	Oct	Sun>=21	2:00	1:00	-
 Rule	Fiji	2011	only	-	Mar	Sun>=1	3:00	0	-
 Rule	Fiji	2012	2013	-	Jan	Sun>=18	3:00	0	-
 Rule	Fiji	2014	only	-	Jan	Sun>=18	2:00	0	-
-Rule	Fiji	2014	max	-	Nov	Sun>=1	2:00	1:00	S
+Rule	Fiji	2014	max	-	Nov	Sun>=1	2:00	1:00	-
 Rule	Fiji	2015	max	-	Jan	Sun>=14	3:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Fiji	11:55:44 -	LMT	1915 Oct 26 # Suva
@@ -429,11 +429,11 @@ Zone Pacific/Tarawa	 11:32:04 -	LMT	1901 # Bairiki
 			 12:00	-	+12
 Zone Pacific/Enderbury	-11:24:20 -	LMT	1901
 			-12:00	-	-12	1979 Oct
-			-11:00	-	-11	1995
+			-11:00	-	-11	1994 Dec 31
 			 13:00	-	+13
 Zone Pacific/Kiritimati	-10:29:20 -	LMT	1901
 			-10:40	-	-1040	1979 Oct
-			-10:00	-	-10	1995
+			-10:00	-	-10	1994 Dec 31
 			 14:00	-	+14
 
 # N Mariana Is
@@ -470,9 +470,9 @@ Zone	Pacific/Nauru	11:07:40 -	LMT	1921 Jan 15 # Uaobe
 
 # New Caledonia
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	NC	1977	1978	-	Dec	Sun>=1	0:00	1:00	S
+Rule	NC	1977	1978	-	Dec	Sun>=1	0:00	1:00	-
 Rule	NC	1978	1979	-	Feb	27	0:00	0	-
-Rule	NC	1996	only	-	Dec	 1	2:00s	1:00	S
+Rule	NC	1996	only	-	Dec	 1	2:00s	1:00	-
 # Shanks & Pottenger say the following was at 2:00; go with IATA.
 Rule	NC	1997	only	-	Mar	 2	2:00s	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -492,27 +492,28 @@ Rule	NZ	1929	1933	-	Mar	Sun>=15	2:00	0	M
 Rule	NZ	1934	1940	-	Apr	lastSun	2:00	0	M
 Rule	NZ	1934	1940	-	Sep	lastSun	2:00	0:30	S
 Rule	NZ	1946	only	-	Jan	 1	0:00	0	S
-# Since 1957 Chatham has been 45 minutes ahead of NZ, but there's no
-# convenient single notation for the date and time of this transition
-# so we must duplicate the Rule lines.
+# Since 1957 Chatham has been 45 minutes ahead of NZ, but until 2018a
+# there was no documented single notation for the date and time of this
+# transition.  Duplicate the Rule lines for now, to give the 2018a change
+# time to percolate out.
 Rule	NZ	1974	only	-	Nov	Sun>=1	2:00s	1:00	D
-Rule	Chatham	1974	only	-	Nov	Sun>=1	2:45s	1:00	D
+Rule	Chatham	1974	only	-	Nov	Sun>=1	2:45s	1:00	-
 Rule	NZ	1975	only	-	Feb	lastSun	2:00s	0	S
-Rule	Chatham	1975	only	-	Feb	lastSun	2:45s	0	S
+Rule	Chatham	1975	only	-	Feb	lastSun	2:45s	0	-
 Rule	NZ	1975	1988	-	Oct	lastSun	2:00s	1:00	D
-Rule	Chatham	1975	1988	-	Oct	lastSun	2:45s	1:00	D
+Rule	Chatham	1975	1988	-	Oct	lastSun	2:45s	1:00	-
 Rule	NZ	1976	1989	-	Mar	Sun>=1	2:00s	0	S
-Rule	Chatham	1976	1989	-	Mar	Sun>=1	2:45s	0	S
+Rule	Chatham	1976	1989	-	Mar	Sun>=1	2:45s	0	-
 Rule	NZ	1989	only	-	Oct	Sun>=8	2:00s	1:00	D
-Rule	Chatham	1989	only	-	Oct	Sun>=8	2:45s	1:00	D
+Rule	Chatham	1989	only	-	Oct	Sun>=8	2:45s	1:00	-
 Rule	NZ	1990	2006	-	Oct	Sun>=1	2:00s	1:00	D
-Rule	Chatham	1990	2006	-	Oct	Sun>=1	2:45s	1:00	D
+Rule	Chatham	1990	2006	-	Oct	Sun>=1	2:45s	1:00	-
 Rule	NZ	1990	2007	-	Mar	Sun>=15	2:00s	0	S
-Rule	Chatham	1990	2007	-	Mar	Sun>=15	2:45s	0	S
+Rule	Chatham	1990	2007	-	Mar	Sun>=15	2:45s	0	-
 Rule	NZ	2007	max	-	Sep	lastSun	2:00s	1:00	D
-Rule	Chatham	2007	max	-	Sep	lastSun	2:45s	1:00	D
+Rule	Chatham	2007	max	-	Sep	lastSun	2:45s	1:00	-
 Rule	NZ	2008	max	-	Apr	Sun>=1	2:00s	0	S
-Rule	Chatham	2008	max	-	Apr	Sun>=1	2:45s	0	S
+Rule	Chatham	2008	max	-	Apr	Sun>=1	2:45s	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Auckland	11:39:04 -	LMT	1868 Nov  2
 			11:30	NZ	NZ%sT	1946 Jan  1
@@ -536,9 +537,9 @@ Link Pacific/Auckland Antarctica/McMurdo
 # Cook Is
 # From Shanks & Pottenger:
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Cook	1978	only	-	Nov	12	0:00	0:30	HS
+Rule	Cook	1978	only	-	Nov	12	0:00	0:30	-
 Rule	Cook	1979	1991	-	Mar	Sun>=1	0:00	0	-
-Rule	Cook	1979	1990	-	Oct	lastSun	0:00	0:30	HS
+Rule	Cook	1979	1990	-	Oct	lastSun	0:00	0:30	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Rarotonga	-10:39:04 -	LMT	1901        # Avarua
 			-10:30	-	-1030	1978 Nov 12
@@ -679,11 +680,11 @@ Link Pacific/Pago_Pago Pacific/Midway # in US minor outlying islands
 # Assume the pattern instituted in 2012 will continue indefinitely.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	WS	2010	only	-	Sep	lastSun	0:00	1	D
-Rule	WS	2011	only	-	Apr	Sat>=1	4:00	0	S
-Rule	WS	2011	only	-	Sep	lastSat	3:00	1	D
-Rule	WS	2012	max	-	Apr	Sun>=1	4:00	0	S
-Rule	WS	2012	max	-	Sep	lastSun	3:00	1	D
+Rule	WS	2010	only	-	Sep	lastSun	0:00	1	-
+Rule	WS	2011	only	-	Apr	Sat>=1	4:00	0	-
+Rule	WS	2011	only	-	Sep	lastSat	3:00	1	-
+Rule	WS	2012	max	-	Apr	Sun>=1	4:00	0	-
+Rule	WS	2012	max	-	Sep	lastSun	3:00	1	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Apia	 12:33:04 -	LMT	1892 Jul  5
 			-11:26:56 -	LMT	1911
@@ -723,11 +724,11 @@ Zone	Pacific/Fakaofo	-11:24:56 -	LMT	1901
 
 # Tonga
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Tonga	1999	only	-	Oct	 7	2:00s	1:00	S
+Rule	Tonga	1999	only	-	Oct	 7	2:00s	1:00	-
 Rule	Tonga	2000	only	-	Mar	19	2:00s	0	-
-Rule	Tonga	2000	2001	-	Nov	Sun>=1	2:00	1:00	S
+Rule	Tonga	2000	2001	-	Nov	Sun>=1	2:00	1:00	-
 Rule	Tonga	2001	2002	-	Jan	lastSun	2:00	0	-
-Rule	Tonga	2016	only	-	Nov	Sun>=1	2:00	1:00	S
+Rule	Tonga	2016	only	-	Nov	Sun>=1	2:00	1:00	-
 Rule	Tonga	2017	only	-	Jan	Sun>=15	3:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Tongatapu	12:19:20 -	LMT	1901
@@ -804,12 +805,12 @@ Zone	Pacific/Wake	11:06:28 -	LMT	1901
 
 # Vanuatu
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Vanuatu	1983	only	-	Sep	25	0:00	1:00	S
+Rule	Vanuatu	1983	only	-	Sep	25	0:00	1:00	-
 Rule	Vanuatu	1984	1991	-	Mar	Sun>=23	0:00	0	-
-Rule	Vanuatu	1984	only	-	Oct	23	0:00	1:00	S
-Rule	Vanuatu	1985	1991	-	Sep	Sun>=23	0:00	1:00	S
+Rule	Vanuatu	1984	only	-	Oct	23	0:00	1:00	-
+Rule	Vanuatu	1985	1991	-	Sep	Sun>=23	0:00	1:00	-
 Rule	Vanuatu	1992	1993	-	Jan	Sun>=23	0:00	0	-
-Rule	Vanuatu	1992	only	-	Oct	Sun>=23	0:00	1:00	S
+Rule	Vanuatu	1992	only	-	Oct	Sun>=23	0:00	1:00	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Efate	11:13:16 -	LMT	1912 Jan 13 # Vila
 			11:00	Vanuatu	+11/+12
@@ -1108,6 +1109,13 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # South Australian time even though it's located in Western Australia.
 
 # Queensland
+
+# From Paul Eggert (2018-02-26):
+# I lack access to the following source for Queensland DST:
+# Pearce C. History of daylight saving time in Queensland.
+# Queensland Hist J. 2017 Aug;23(6):389-403
+# https://search.informit.com.au/documentSummary;dn=994682348436426;res=IELHSS
+
 # From George Shepherd via Simon Woodhead via Robert Elz (1991-03-06):
 # #   The state of QUEENSLAND.. [ Courtesy Qld. Dept Premier Econ&Trade Devel ]
 # #						[ Dec 1990 ]
@@ -1534,6 +1542,12 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # "declared it the same day [throughout] the country as of Jan. 1, 1995"
 # as part of the competition to be first into the 21st century.
 
+# From Kerry Shetline (2018-02-03):
+# December 31 was the day that was skipped, so that the transition
+# would be from Friday December 30, 1994 to Sunday January 1, 1995.
+# From Paul Eggert (2018-02-04):
+# One source for this is page 202 of: Bartky IR. One Time Fits All:
+# The Campaigns for Global Uniformity (2007).
 
 # Kwajalein
 
@@ -1626,7 +1640,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 
 # From Howie Phelps (1999-11-10), who talked to a Pitcairner via shortwave:
 # Betty Christian told me yesterday that their local time is the same as
-# Pacific Standard Time. They used to be 1/2 hour different from us here in
+# Pacific Standard Time. They used to be ½ hour different from us here in
 # Sacramento but it was changed a couple of years ago.
 
 
@@ -1665,7 +1679,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # 12 hours and 20 minutes ahead of GMT.  When New Zealand adjusted its
 # standard time in 1940s, Tonga had the choice of subtracting from its
 # local time to come on the same standard time as New Zealand or of
-# advancing its time to maintain the differential of 13 degrees
+# advancing its time to maintain the differential of 13°
 # (approximately 50 minutes ahead of New Zealand time).
 #
 # Because His Majesty King Tāufaʻāhau Tupou IV, then Crown Prince
