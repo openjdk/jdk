@@ -297,7 +297,7 @@ define SetupCompileNativeFileBody
     endif
 
     $$($1_OBJ): $$($1_SRC_FILE) $$($$($1_BASE)_COMPILE_VARDEPS_FILE) \
-        $$($1_VARDEPS_FILE) | $$($$($1_BASE)_BUILD_INFO)
+        $$($$($1_BASE)_EXTRA_DEPS) $$($1_VARDEPS_FILE) | $$($$($1_BASE)_BUILD_INFO)
 	$$(call LogInfo, Compiling $$($1_FILENAME) (for $$($$($1_BASE)_BASENAME)))
 	$$(call MakeDir, $$(@D))
         ifneq ($(TOOLCHAIN_TYPE), microsoft)
@@ -366,6 +366,7 @@ endef
 #   EXCLUDE_PATTERN exclude files matching any of these substrings
 #   EXTRA_FILES List of extra files not in any of the SRC dirs
 #   EXTRA_OBJECT_FILES List of extra object files to include when linking
+#   EXTRA_DEPS List of extra dependencies to be added to each compiled file
 #   VERSIONINFO_RESOURCE Input file for RC. Setting this implies that RC will be run
 #   RC_FLAGS flags for RC.
 #   EMBED_MANIFEST if true, embed manifest on Windows.
