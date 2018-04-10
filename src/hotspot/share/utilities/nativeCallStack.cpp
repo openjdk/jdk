@@ -38,15 +38,15 @@ NativeCallStack::NativeCallStack(int toSkip, bool fillStack) :
     // to call os::get_native_stack. A tail call is used if _NMT_NOINLINE_ is not defined
     // (which means this is not a slowdebug build), and we are on 64-bit (except Windows).
     // This is not necessarily a rule, but what has been obvserved to date.
-#define TAIL_CALL (!defined(_NMT_NOINLINE_) && !defined(WINDOWS) && defined(_LP64))
-#if !TAIL_CALL
+#if (defined(_NMT_NOINLINE_) || defined(_WINDOWS) || !defined(_LP64))
+    // Not a tail call.
     toSkip++;
 #if (defined(_NMT_NOINLINE_) && defined(BSD) && defined(_LP64))
     // Mac OS X slowdebug builds have this odd behavior where NativeCallStack::NativeCallStack
     // appears as two frames, so we need to skip an extra frame.
     toSkip++;
-#endif
-#endif
+#endif // Special-case for BSD.
+#endif // Not a tail call.
     os::get_native_stack(_stack, NMT_TrackingStackDepth, toSkip);
   } else {
     for (int index = 0; index < NMT_TrackingStackDepth; index ++) {
