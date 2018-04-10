@@ -26,7 +26,6 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectorPolicy.hpp"
 #include "gc/shared/commandLineFlagConstraintsGC.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/plab.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "runtime/arguments.hpp"

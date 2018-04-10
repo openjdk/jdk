@@ -28,7 +28,6 @@
 #define SHARE_VM_PRIMS_JVMTITAGMAP_HPP
 
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
 #include "jvmtifiles/jvmti.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/allocation.hpp"

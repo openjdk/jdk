@@ -30,6 +30,7 @@
 #include "gc/cms/cmsHeap.hpp"
 #include "gc/cms/parNewGeneration.hpp"
 #include "gc/cms/vmCMSOperations.hpp"
+#include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genMemoryPools.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/strongRootsScope.hpp"
