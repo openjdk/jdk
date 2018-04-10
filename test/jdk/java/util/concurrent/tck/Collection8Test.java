@@ -35,6 +35,7 @@
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -46,6 +47,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Queue;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.BlockingQueue;
@@ -86,8 +88,9 @@ public class Collection8Test extends JSR166TestCase {
 
     Object bomb() {
         return new Object() {
-            public boolean equals(Object x) { throw new AssertionError(); }
-            public int hashCode() { throw new AssertionError(); }
+            @Override public boolean equals(Object x) { throw new AssertionError(); }
+            @Override public int hashCode() { throw new AssertionError(); }
+            @Override public String toString() { throw new AssertionError(); }
         };
     }
 
@@ -119,6 +122,23 @@ public class Collection8Test extends JSR166TestCase {
         assertTrue(c.isEmpty());
         assertEquals(0, c.size());
         assertEquals("[]", c.toString());
+        if (c instanceof List<?>) {
+            List x = (List) c;
+            assertEquals(1, x.hashCode());
+            assertEquals(x, Collections.emptyList());
+            assertEquals(Collections.emptyList(), x);
+            assertEquals(-1, x.indexOf(impl.makeElement(86)));
+            assertEquals(-1, x.lastIndexOf(impl.makeElement(99)));
+            assertThrows(
+                IndexOutOfBoundsException.class,
+                () -> x.get(0),
+                () -> x.set(0, impl.makeElement(42)));
+        }
+        else if (c instanceof Set<?>) {
+            assertEquals(0, c.hashCode());
+            assertEquals(c, Collections.emptySet());
+            assertEquals(Collections.emptySet(), c);
+        }
         {
             Object[] a = c.toArray();
             assertEquals(0, a.length);
@@ -278,6 +298,16 @@ public class Collection8Test extends JSR166TestCase {
                 () -> d.removeLast(),
                 () -> d.pop(),
                 () -> d.descendingIterator().next());
+        }
+        if (c instanceof List) {
+            List x = (List) c;
+            assertThrows(
+                NoSuchElementException.class,
+                () -> x.iterator().next(),
+                () -> x.listIterator().next(),
+                () -> x.listIterator(0).next(),
+                () -> x.listIterator().previous(),
+                () -> x.listIterator(0).previous());
         }
     }
 
@@ -902,6 +932,31 @@ public class Collection8Test extends JSR166TestCase {
         } catch (IllegalStateException ex) {
             assertFalse(reportsSorted);
         }
+    }
+
+    public void testCollectionCopies() throws Exception {
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        Collection c = impl.emptyCollection();
+        for (int n = rnd.nextInt(4); n--> 0; )
+            c.add(impl.makeElement(rnd.nextInt()));
+        assertEquals(c, c);
+        if (c instanceof List)
+            assertCollectionsEquals(c, new ArrayList(c));
+        else if (c instanceof Set)
+            assertCollectionsEquals(c, new HashSet(c));
+        else if (c instanceof Deque)
+            assertCollectionsEquivalent(c, new ArrayDeque(c));
+
+        Collection clone = cloneableClone(c);
+        if (clone != null) {
+            assertSame(c.getClass(), clone.getClass());
+            assertCollectionsEquivalent(c, clone);
+        }
+        try {
+            Collection serialClone = serialClonePossiblyFailing(c);
+            assertSame(c.getClass(), serialClone.getClass());
+            assertCollectionsEquivalent(c, serialClone);
+        } catch (java.io.NotSerializableException acceptable) {}
     }
 
 //     public void testCollection8DebugFail() {

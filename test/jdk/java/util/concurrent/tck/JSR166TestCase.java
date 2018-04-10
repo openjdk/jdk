@@ -93,11 +93,14 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Deque;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.PropertyPermission;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -475,6 +478,7 @@ public class JSR166TestCase extends TestCase {
     public static boolean atLeastJava8()  { return JAVA_CLASS_VERSION >= 52.0; }
     public static boolean atLeastJava9()  { return JAVA_CLASS_VERSION >= 53.0; }
     public static boolean atLeastJava10() { return JAVA_CLASS_VERSION >= 54.0; }
+    public static boolean atLeastJava11() { return JAVA_CLASS_VERSION >= 55.0; }
 
     /**
      * Collects all JSR166 unit tests as one suite.
@@ -1473,26 +1477,6 @@ public class JSR166TestCase extends TestCase {
         }
     }
 
-    public abstract class RunnableShouldThrow implements Runnable {
-        protected abstract void realRun() throws Throwable;
-
-        final Class<?> exceptionClass;
-
-        <T extends Throwable> RunnableShouldThrow(Class<T> exceptionClass) {
-            this.exceptionClass = exceptionClass;
-        }
-
-        public final void run() {
-            try {
-                realRun();
-                threadShouldThrow(exceptionClass.getSimpleName());
-            } catch (Throwable t) {
-                if (! exceptionClass.isInstance(t))
-                    threadUnexpectedException(t);
-            }
-        }
-    }
-
     public abstract class ThreadShouldThrow extends Thread {
         protected abstract void realRun() throws Throwable;
 
@@ -2097,5 +2081,43 @@ public class JSR166TestCase extends TestCase {
         assertEquals(savedTaskCount, p.getTaskCount());
         assertEquals(savedCompletedTaskCount, p.getCompletedTaskCount());
         assertEquals(savedQueueSize, p.getQueue().size());
+    }
+
+    void assertCollectionsEquals(Collection<?> x, Collection<?> y) {
+        assertEquals(x, y);
+        assertEquals(y, x);
+        assertEquals(x.isEmpty(), y.isEmpty());
+        assertEquals(x.size(), y.size());
+        if (x instanceof List) {
+            assertEquals(x.toString(), y.toString());
+        }
+        if (x instanceof List || x instanceof Set) {
+            assertEquals(x.hashCode(), y.hashCode());
+        }
+        if (x instanceof List || x instanceof Deque) {
+            assertTrue(Arrays.equals(x.toArray(), y.toArray()));
+            assertTrue(Arrays.equals(x.toArray(new Object[0]),
+                                     y.toArray(new Object[0])));
+        }
+    }
+
+    /**
+     * A weaker form of assertCollectionsEquals which does not insist
+     * that the two collections satisfy Object#equals(Object), since
+     * they may use identity semantics as Deques do.
+     */
+    void assertCollectionsEquivalent(Collection<?> x, Collection<?> y) {
+        if (x instanceof List || x instanceof Set)
+            assertCollectionsEquals(x, y);
+        else {
+            assertEquals(x.isEmpty(), y.isEmpty());
+            assertEquals(x.size(), y.size());
+            assertEquals(new HashSet(x), new HashSet(y));
+            if (x instanceof Deque) {
+                assertTrue(Arrays.equals(x.toArray(), y.toArray()));
+                assertTrue(Arrays.equals(x.toArray(new Object[0]),
+                                         y.toArray(new Object[0])));
+            }
+        }
     }
 }
