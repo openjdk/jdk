@@ -1260,6 +1260,24 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEFAULT_MAKE_TARGET],
   AC_SUBST(DEFAULT_MAKE_TARGET)
 ])
 
+# Setup the default value for LOG=
+#
+AC_DEFUN_ONCE([BASIC_SETUP_DEFAULT_LOG],
+[
+  AC_ARG_WITH(log, [AS_HELP_STRING([--with-log],
+      [[default vaue for make LOG argument [warn]]])])
+  AC_MSG_CHECKING([for default LOG value])
+  if test "x$with_log" = x; then
+    DEFAULT_LOG=""
+  else
+    # Syntax for valid LOG options is a bit too complex for it to be worth
+    # implementing a test for correctness in configure. Just accept it.
+    DEFAULT_LOG=$with_log
+  fi
+  AC_MSG_RESULT([$DEFAULT_LOG])
+  AC_SUBST(DEFAULT_LOG)
+])
+
 # Code to run after AC_OUTPUT
 AC_DEFUN_ONCE([BASIC_POST_CONFIG_OUTPUT],
 [
