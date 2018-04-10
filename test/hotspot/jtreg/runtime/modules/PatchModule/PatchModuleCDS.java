@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,8 @@ public class PatchModuleCDS {
             "-Xlog:class+path=info",
             "-version");
         new OutputAnalyzer(pb.start())
-            .shouldContain("ro  space:"); // Make sure archive got created.
+            // --patch-module is not supported during CDS dumping
+            .shouldContain("Cannot use the following option when dumping the shared archive: --patch-module");
 
         // Case 2: Test that directory in --patch-module is supported for CDS dumping
         // Create a class file in the module java.base.
@@ -73,7 +74,8 @@ public class PatchModuleCDS {
             "-Xlog:class+path=info",
             "-version");
         new OutputAnalyzer(pb.start())
-            .shouldContain("ro  space:"); // Make sure archive got created.
+            // --patch-module is not supported during CDS dumping
+            .shouldContain("Cannot use the following option when dumping the shared archive: --patch-module");
 
         // Case 3a: Test CDS dumping with jar file in --patch-module
         BasicJarBuilder.build("javanaming", "javax/naming/spi/NamingManager");
@@ -87,7 +89,8 @@ public class PatchModuleCDS {
             "-Xlog:class+path=info",
             "PatchModuleMain", "javax.naming.spi.NamingManager");
         new OutputAnalyzer(pb.start())
-            .shouldContain("ro  space:"); // Make sure archive got created.
+            // --patch-module is not supported during CDS dumping
+            .shouldContain("Cannot use the following option when dumping the shared archive: --patch-module");
 
         // Case 3b: Test CDS run with jar file in --patch-module
         pb = ProcessTools.createJavaProcessBuilder(

@@ -1446,35 +1446,23 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
 }
 
 #if INCLUDE_CDS
+const char* unsupported_properties[] = { "jdk.module.limitmods",
+                                         "jdk.module.upgrade.path",
+                                         "jdk.module.patch.0" };
+const char* unsupported_options[] = { "--limit-modules",
+                                      "--upgrade-module-path",
+                                      "--patch-module"
+                                    };
 void Arguments::check_unsupported_dumping_properties() {
   assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
-  const char* unsupported_properties[] = { "jdk.module.main",
-                                           "jdk.module.limitmods",
-                                           "jdk.module.path",
-                                           "jdk.module.upgrade.path",
-                                           "jdk.module.patch.0" };
-  const char* unsupported_options[] = { "-m", // cannot use at dump time
-                                        "--limit-modules", // ignored at dump time
-                                        "--module-path", // ignored at dump time
-                                        "--upgrade-module-path", // ignored at dump time
-                                        "--patch-module" // ignored at dump time
-                                      };
   assert(ARRAY_SIZE(unsupported_properties) == ARRAY_SIZE(unsupported_options), "must be");
-  // If a vm option is found in the unsupported_options array with index less than the info_idx,
-  // vm will exit with an error message. Otherwise, it will print an informational message if
-  // -Xlog:cds is enabled.
-  uint info_idx = 1;
+  // If a vm option is found in the unsupported_options array, vm will exit with an error message.
   SystemProperty* sp = system_properties();
   while (sp != NULL) {
     for (uint i = 0; i < ARRAY_SIZE(unsupported_properties); i++) {
       if (strcmp(sp->key(), unsupported_properties[i]) == 0) {
-        if (i < info_idx) {
-          vm_exit_during_initialization(
-            "Cannot use the following option when dumping the shared archive", unsupported_options[i]);
-        } else {
-          log_info(cds)("Info: the %s option is ignored when dumping the shared archive",
-                        unsupported_options[i]);
-        }
+        vm_exit_during_initialization(
+          "Cannot use the following option when dumping the shared archive", unsupported_options[i]);
       }
     }
     sp = sp->next();
@@ -1484,6 +1472,20 @@ void Arguments::check_unsupported_dumping_properties() {
   if (!has_jimage()) {
     vm_exit_during_initialization("Dumping the shared archive is not supported with an exploded module build");
   }
+}
+
+bool Arguments::check_unsupported_cds_runtime_properties() {
+  assert(UseSharedSpaces, "this function is only used with -Xshare:{on,auto}");
+  assert(ARRAY_SIZE(unsupported_properties) == ARRAY_SIZE(unsupported_options), "must be");
+  for (uint i = 0; i < ARRAY_SIZE(unsupported_properties); i++) {
+    if (get_property(unsupported_properties[i]) != NULL) {
+      if (RequireSharedSpaces) {
+        warning("CDS is disabled when the %s option is specified.", unsupported_options[i]);
+      }
+      return true;
+    }
+  }
+  return false;
 }
 #endif
 
@@ -3377,6 +3379,9 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   }
   if (UseSharedSpaces && patch_mod_javabase) {
     no_shared_spaces("CDS is disabled when " JAVA_BASE_NAME " module is patched.");
+  }
+  if (UseSharedSpaces && !DumpSharedSpaces && check_unsupported_cds_runtime_properties()) {
+    FLAG_SET_DEFAULT(UseSharedSpaces, false);
   }
 #endif
 
