@@ -40,6 +40,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBUNPACK, \
         $(LIBJAVA_HEADER_FLAGS), \
     CFLAGS_release := -DPRODUCT, \
     DISABLED_WARNINGS_gcc := implicit-fallthrough, \
+    DISABLED_WARNINGS_microsoft := 4005, \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_windows := -map:$(SUPPORT_OUTPUTDIR)/native/$(MODULE)/unpack.map -debug, \
