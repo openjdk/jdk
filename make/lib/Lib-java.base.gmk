@@ -155,10 +155,10 @@ endif
 ################################################################################
 # Create the jsig library
 
-ifneq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
   ifeq ($(STATIC_BUILD), false)
 
-    LIBJSIG_SRC_DIR := $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjsig
+    LIBJSIG_SRC_DIR := $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjsig
     LIBJSIG_MAPFILE := $(wildcard $(TOPDIR)/make/mapfiles/libjsig/mapfile-vers-$(OPENJDK_TARGET_OS))
 
     ifeq ($(OPENJDK_TARGET_OS), linux)
