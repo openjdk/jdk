@@ -2101,8 +2101,6 @@ static jint *pending_signals = NULL;
 static int *preinstalled_sigs = NULL;
 static struct sigaction *chainedsigactions = NULL;
 static Semaphore* sig_sem = NULL;
-typedef int (*version_getting_t)();
-version_getting_t os::Solaris::get_libjsig_version = NULL;
 
 int os::sigexitnum_pd() {
   assert(Sigexit > 0, "signal memory not yet initialized");
@@ -3968,13 +3966,7 @@ void os::Solaris::install_signal_handlers() {
                                         dlsym(RTLD_DEFAULT, "JVM_end_signal_setting"));
     get_signal_action = CAST_TO_FN_PTR(get_signal_t,
                                        dlsym(RTLD_DEFAULT, "JVM_get_signal_action"));
-    get_libjsig_version = CAST_TO_FN_PTR(version_getting_t,
-                                         dlsym(RTLD_DEFAULT, "JVM_get_libjsig_version"));
     libjsig_is_loaded = true;
-    if (os::Solaris::get_libjsig_version != NULL) {
-      int libjsigversion =  (*os::Solaris::get_libjsig_version)();
-      assert(libjsigversion == JSIG_VERSION_1_4_1, "libjsig version mismatch");
-    }
     assert(UseSignalChaining, "should enable signal-chaining");
   }
   if (libjsig_is_loaded) {
