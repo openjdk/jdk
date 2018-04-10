@@ -4691,7 +4691,13 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
                              obj->is_typeArray()
                             );
 
-    g1h->concurrent_mark()->humongous_object_eagerly_reclaimed(r);
+    G1ConcurrentMark* const cm = g1h->concurrent_mark();
+    cm->humongous_object_eagerly_reclaimed(r);
+    assert(!cm->is_marked_in_prev_bitmap(obj) && !cm->is_marked_in_next_bitmap(obj),
+           "Eagerly reclaimed humongous region %u should not be marked at all but is in prev %s next %s",
+           region_idx,
+           BOOL_TO_STR(cm->is_marked_in_prev_bitmap(obj)),
+           BOOL_TO_STR(cm->is_marked_in_next_bitmap(obj)));
     _humongous_objects_reclaimed++;
     do {
       HeapRegion* next = g1h->next_region_in_humongous(r);
