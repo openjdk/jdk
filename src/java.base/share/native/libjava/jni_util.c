@@ -774,8 +774,10 @@ newStringUTF8(JNIEnv *env, const char *str)
     return newSizedStringJava(env, str, len);
 }
 
-/* Initialize the fast encoding from the encoding name. */
-void
+/* Initialize the fast encoding from the encoding name.
+ * Export InitializeEncoding so that the VM can initialize it if required.
+ */
+JNIEXPORT void
 InitializeEncoding(JNIEnv *env, const char *encname)
 {
     jclass strClazz = NULL;
