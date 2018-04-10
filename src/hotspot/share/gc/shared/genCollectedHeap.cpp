@@ -110,7 +110,7 @@ jint GenCollectedHeap::initialize() {
 
   initialize_reserved_region((HeapWord*)heap_rs.base(), (HeapWord*)(heap_rs.base() + heap_rs.size()));
 
-  _rem_set = new CardTableRS(reserved_region());
+  _rem_set = create_rem_set(reserved_region());
   _rem_set->initialize();
   CardTableBarrierSet *bs = new CardTableBarrierSet(_rem_set);
   bs->initialize();
@@ -125,6 +125,10 @@ jint GenCollectedHeap::initialize() {
   clear_incremental_collection_failed();
 
   return JNI_OK;
+}
+
+CardTableRS* GenCollectedHeap::create_rem_set(const MemRegion& reserved_region) {
+  return new CardTableRS(reserved_region, false /* scan_concurrently */);
 }
 
 void GenCollectedHeap::initialize_size_policy(size_t init_eden_size,

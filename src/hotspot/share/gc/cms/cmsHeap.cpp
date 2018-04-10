@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/cms/cmsCardTable.hpp"
 #include "gc/cms/compactibleFreeListSpace.hpp"
 #include "gc/cms/concurrentMarkSweepGeneration.hpp"
 #include "gc/cms/concurrentMarkSweepThread.hpp"
@@ -88,6 +89,10 @@ jint CMSHeap::initialize() {
   }
 
   return JNI_OK;
+}
+
+CardTableRS* CMSHeap::create_rem_set(const MemRegion& reserved_region) {
+  return new CMSCardTable(reserved_region);
 }
 
 void CMSHeap::initialize_serviceability() {
