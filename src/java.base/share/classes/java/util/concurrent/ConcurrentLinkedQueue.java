@@ -1069,7 +1069,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
             ITEM = l.findVarHandle(Node.class, "item", Object.class);
             NEXT = l.findVarHandle(Node.class, "next", Node.class);
         } catch (ReflectiveOperationException e) {
-            throw new Error(e);
+            throw new ExceptionInInitializerError(e);
         }
     }
 }

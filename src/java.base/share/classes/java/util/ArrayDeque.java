@@ -208,7 +208,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
      */
     public ArrayDeque(Collection<? extends E> c) {
         this(c.size());
-        addAll(c);
+        copyElements(c);
     }
 
     /**
@@ -322,8 +322,12 @@ public class ArrayDeque<E> extends AbstractCollection<E>
         final int s, needed;
         if ((needed = (s = size()) + c.size() + 1 - elements.length) > 0)
             grow(needed);
-        c.forEach(this::addLast);
+        copyElements(c);
         return size() > s;
+    }
+
+    private void copyElements(Collection<? extends E> c) {
+        c.forEach(this::addLast);
     }
 
     /**

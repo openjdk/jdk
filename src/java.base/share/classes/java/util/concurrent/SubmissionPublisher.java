@@ -1096,7 +1096,7 @@ public class SubmissionPublisher<T> implements Publisher<T>,
             if (cap > 0) {
                 boolean added;
                 if (n >= cap && cap < maxCapacity) // resize
-                    added = growAndoffer(item, a, t);
+                    added = growAndOffer(item, a, t);
                 else if (n >= cap || unowned)      // need volatile CAS
                     added = QA.compareAndSet(a, i, null, item);
                 else {                             // can use release mode
@@ -1115,7 +1115,7 @@ public class SubmissionPublisher<T> implements Publisher<T>,
          * Tries to expand buffer and add item, returning true on
          * success. Currently fails only if out of memory.
          */
-        final boolean growAndoffer(T item, Object[] a, int t) {
+        final boolean growAndOffer(T item, Object[] a, int t) {
             int cap = 0, newCap = 0;
             Object[] newArray = null;
             if (a != null && (cap = a.length) > 0 && (newCap = cap << 1) > 0) {
@@ -1466,7 +1466,7 @@ public class SubmissionPublisher<T> implements Publisher<T>,
                                          long.class);
                 QA = MethodHandles.arrayElementVarHandle(Object[].class);
             } catch (ReflectiveOperationException e) {
-                throw new Error(e);
+                throw new ExceptionInInitializerError(e);
             }
 
             // Reduce the risk of rare disastrous classloading in first call to

@@ -56,7 +56,7 @@ public class AtomicReference<V> implements java.io.Serializable {
             MethodHandles.Lookup l = MethodHandles.lookup();
             VALUE = l.findVarHandle(AtomicReference.class, "value", Object.class);
         } catch (ReflectiveOperationException e) {
-            throw new Error(e);
+            throw new ExceptionInInitializerError(e);
         }
     }
 
