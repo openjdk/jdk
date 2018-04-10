@@ -530,13 +530,18 @@ void G1ConcurrentMark::clear_statistics(HeapRegion* r) {
   }
 }
 
+static void clear_mark_if_set(G1CMBitMap* bitmap, HeapWord* addr) {
+  if (bitmap->is_marked(addr)) {
+    bitmap->clear(addr);
+  }
+}
+
 void G1ConcurrentMark::humongous_object_eagerly_reclaimed(HeapRegion* r) {
   assert_at_safepoint_on_vm_thread();
 
-  // Need to clear mark bit of the humongous object.
-  if (_next_mark_bitmap->is_marked(r->bottom())) {
-    _next_mark_bitmap->clear(r->bottom());
-  }
+  // Need to clear all mark bits of the humongous object.
+  clear_mark_if_set(_prev_mark_bitmap, r->bottom());
+  clear_mark_if_set(_next_mark_bitmap, r->bottom());
 
   if (!_g1h->collector_state()->mark_or_rebuild_in_progress()) {
     return;
