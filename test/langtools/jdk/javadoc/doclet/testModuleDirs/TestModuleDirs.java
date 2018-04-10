@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8195795
+ * @bug 8195795 8201396
  * @summary test the use of module directories in output,
  *          and the --no-module-directories option
  * @modules jdk.javadoc/jdk.javadoc.internal.api
@@ -71,46 +71,85 @@ public class TestModuleDirs extends JavadocTester {
     @Test
     public void testNoModuleDirs(Path base) throws IOException {
         Path src = base.resolve("src");
-        new ModuleBuilder(tb, "m")
-                .classes("package p; public class A {}")
-                .exports("p")
+        new ModuleBuilder(tb, "ma")
+                .classes("package pa; public class A {}")
+                .exports("pa")
+                .write(src);
+        new ModuleBuilder(tb, "mb")
+                .classes("package pb; public class B {}")
+                .exports("pb")
                 .write(src);
 
         javadoc("-d", base.resolve("api").toString(),
                 "-quiet",
                 "--module-source-path", src.toString(),
                 "--no-module-directories",
-                "--module", "m");
+                "--module", "ma,mb");
 
         checkExit(Exit.OK);
         checkFiles(true,
-                "m-summary.html",
-                "p/package-summary.html");
+                "ma-frame.html",
+                "ma-summary.html",
+                "pa/package-summary.html");
         checkFiles(false,
-                "m/module-summary.html",
-                "m/p/package-summary.html");
+                "ma/module-frame.html",
+                "ma/module-summary.html",
+                "ma/pa/package-summary.html");
+        checkOutput("ma-frame.html", true,
+                "<ul>\n"
+                + "<li><a href=\"allclasses-frame.html\" target=\"packageFrame\">All&nbsp;Classes</a></li>\n"
+                + "<li><a href=\"overview-frame.html\" target=\"packageListFrame\">All&nbsp;Packages</a></li>\n"
+                + "<li><a href=\"module-overview-frame.html\" target=\"packageListFrame\">All&nbsp;Modules</a></li>\n"
+                + "</ul>\n");
+        checkOutput("ma-summary.html", true,
+                "<ul class=\"navList\" id=\"allclasses_navbar_top\">\n"
+                + "<li><a href=\"allclasses-noframe.html\">All&nbsp;Classes</a></li>\n"
+                + "</ul>\n");
+        checkOutput("pa/package-summary.html", true,
+                "<li><a href=\"../deprecated-list.html\">Deprecated</a></li>\n"
+                + "<li><a href=\"../index-all.html\">Index</a></li>");
+
     }
 
     @Test
     public void testModuleDirs(Path base) throws IOException {
         Path src = base.resolve("src");
-        new ModuleBuilder(tb, "m")
-                .classes("package p; public class A {}")
-                .exports("p")
+        new ModuleBuilder(tb, "ma")
+                .classes("package pa; public class A {}")
+                .exports("pa")
+                .write(src);
+        new ModuleBuilder(tb, "mb")
+                .classes("package pb; public class B {}")
+                .exports("pb")
                 .write(src);
 
         javadoc("-d", base.resolve("api").toString(),
                 "-quiet",
                 "--module-source-path", src.toString(),
-                "--module", "m");
+                "--module", "ma,mb");
 
         checkExit(Exit.OK);
         checkFiles(false,
-                "m-summary.html",
-                "p/package-summary.html");
+                "ma-frame.html",
+                "ma-summary.html",
+                "pa/package-summary.html");
         checkFiles(true,
-                "m/module-summary.html",
-                "m/p/package-summary.html");
+                "ma/module-frame.html",
+                "ma/module-summary.html",
+                "ma/pa/package-summary.html");
+        checkOutput("ma/module-frame.html", true,
+                "<ul>\n"
+                + "<li><a href=\"../allclasses-frame.html\" target=\"packageFrame\">All&nbsp;Classes</a></li>\n"
+                + "<li><a href=\"../overview-frame.html\" target=\"packageListFrame\">All&nbsp;Packages</a></li>\n"
+                + "<li><a href=\"../module-overview-frame.html\" target=\"packageListFrame\">All&nbsp;Modules</a></li>\n"
+                + "</ul>\n");
+        checkOutput("ma/module-summary.html", true,
+                "<ul class=\"navList\" id=\"allclasses_navbar_top\">\n"
+                + "<li><a href=\"../allclasses-noframe.html\">All&nbsp;Classes</a></li>\n"
+                + "</ul>\n");
+        checkOutput("ma/pa/package-summary.html", true,
+                "<li><a href=\"../../deprecated-list.html\">Deprecated</a></li>\n"
+                + "<li><a href=\"../../index-all.html\">Index</a></li>");
     }
 }
 

@@ -40,6 +40,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
+import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 
 /**
@@ -100,8 +101,11 @@ public class ModuleFrameWriter extends HtmlDocletWriter {
         HtmlTree htmlTree = (configuration.allowTag(HtmlTag.MAIN))
                 ? HtmlTree.MAIN()
                 : body;
+        DocPath moduleSummary = configuration.useModuleDirectories
+                ? DocPaths.DOT_DOT.resolve(configuration.docPaths.moduleSummary(moduleElement))
+                : configuration.docPaths.moduleSummary(moduleElement);
         Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, HtmlStyle.bar,
-                mdlgen.links.createLink(configuration.docPaths.moduleSummary(moduleElement), mdlLabel, "", "classFrame"));
+                mdlgen.links.createLink(moduleSummary, mdlLabel, "", "classFrame"));
         htmlTree.addContent(heading);
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.setStyle(HtmlStyle.indexContainer);
