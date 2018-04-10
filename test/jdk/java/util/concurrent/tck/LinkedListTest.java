@@ -37,7 +37,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.concurrent.ThreadLocalRandom;
 
 import junit.framework.Test;
 
@@ -49,14 +51,19 @@ public class LinkedListTest extends JSR166TestCase {
     public static Test suite() {
         class Implementation implements CollectionImplementation {
             public Class<?> klazz() { return LinkedList.class; }
-            public Collection emptyCollection() { return new LinkedList(); }
+            public List emptyCollection() { return new LinkedList(); }
             public Object makeElement(int i) { return i; }
             public boolean isConcurrent() { return false; }
             public boolean permitsNulls() { return true; }
         }
         class SubListImplementation extends Implementation {
-            public Collection emptyCollection() {
-                return new LinkedList().subList(0, 0);
+            public List emptyCollection() {
+                List list = super.emptyCollection();
+                ThreadLocalRandom rnd = ThreadLocalRandom.current();
+                if (rnd.nextBoolean())
+                    list.add(makeElement(rnd.nextInt()));
+                int i = rnd.nextInt(list.size() + 1);
+                return list.subList(i, i);
             }
         }
         return newTestSuite(
