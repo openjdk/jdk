@@ -80,13 +80,13 @@
 
 // Entry points in zip.dll for loading zip/jar file entries
 
-typedef void * * (JNICALL *ZipOpen_t)(const char *name, char **pmsg);
-typedef void (JNICALL *ZipClose_t)(jzfile *zip);
-typedef jzentry* (JNICALL *FindEntry_t)(jzfile *zip, const char *name, jint *sizeP, jint *nameLen);
-typedef jboolean (JNICALL *ReadEntry_t)(jzfile *zip, jzentry *entry, unsigned char *buf, char *namebuf);
-typedef jzentry* (JNICALL *GetNextEntry_t)(jzfile *zip, jint n);
-typedef jboolean (JNICALL *ZipInflateFully_t)(void *inBuf, jlong inLen, void *outBuf, jlong outLen, char **pmsg);
-typedef jint     (JNICALL *Crc32_t)(jint crc, const jbyte *buf, jint len);
+typedef void * * (*ZipOpen_t)(const char *name, char **pmsg);
+typedef void (*ZipClose_t)(jzfile *zip);
+typedef jzentry* (*FindEntry_t)(jzfile *zip, const char *name, jint *sizeP, jint *nameLen);
+typedef jboolean (*ReadEntry_t)(jzfile *zip, jzentry *entry, unsigned char *buf, char *namebuf);
+typedef jzentry* (*GetNextEntry_t)(jzfile *zip, jint n);
+typedef jboolean (*ZipInflateFully_t)(void *inBuf, jlong inLen, void *outBuf, jlong outLen, char **pmsg);
+typedef jint     (*Crc32_t)(jint crc, const jbyte *buf, jint len);
 
 static ZipOpen_t         ZipOpen            = NULL;
 static ZipClose_t        ZipClose           = NULL;
