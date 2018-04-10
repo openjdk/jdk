@@ -299,7 +299,7 @@ mlib_status mlib_ImageAffine_alltypes(mlib_image       *dst,
 }
 
 /***************************************************************/
-mlib_status mlib_ImageAffine(mlib_image       *dst,
+JNIEXPORT mlib_status JNICALL mlib_ImageAffine(mlib_image       *dst,
                              const mlib_image *src,
                              const mlib_d64   *mtx,
                              mlib_filter      filter,
