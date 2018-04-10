@@ -141,8 +141,8 @@ package java.util;
  * <p>Deques can also be used as LIFO (Last-In-First-Out) stacks.  This
  * interface should be used in preference to the legacy {@link Stack} class.
  * When a deque is used as a stack, elements are pushed and popped from the
- * beginning of the deque.  Stack methods are precisely equivalent to
- * {@code Deque} methods as indicated in the table below:
+ * beginning of the deque.  Stack methods are equivalent to {@code Deque}
+ * methods as indicated in the table below:
  *
  * <table class="striped">
  * <caption>Comparison of Stack and Deque methods</caption>
@@ -163,7 +163,7 @@ package java.util;
  *  </tr>
  *  <tr>
  *    <th scope="row">{@link #peek() peek()}</th>
- *    <td>{@link #peekFirst() peekFirst()}</td>
+ *    <td>{@link #getFirst() getFirst()}</td>
  *  </tr>
  *  </tbody>
  * </table>
