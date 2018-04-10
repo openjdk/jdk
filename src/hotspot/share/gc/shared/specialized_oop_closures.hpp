@@ -25,8 +25,10 @@
 #ifndef SHARE_VM_GC_SHARED_SPECIALIZED_OOP_CLOSURES_HPP
 #define SHARE_VM_GC_SHARED_SPECIALIZED_OOP_CLOSURES_HPP
 
+#include "gc/serial/serial_specialized_oop_closures.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc/cms/cms_specialized_oop_closures.hpp"
 #include "gc/g1/g1_specialized_oop_closures.hpp"
 #endif // INCLUDE_ALL_GCS
 
@@ -36,29 +38,9 @@
 // macros in the obvious way to add specializations for new closures.
 
 // Forward declarations.
-class OopClosure;
-class OopsInGenClosure;
-// DefNew
-class ScanClosure;
-class FastScanClosure;
-class FilteringClosure;
-// MarkSweep
-class MarkAndPushClosure;
-class AdjustPointerClosure;
-// ParNew
-class ParScanWithBarrierClosure;
-class ParScanWithoutBarrierClosure;
-// CMS
-class MarkRefsIntoAndScanClosure;
-class ParMarkRefsIntoAndScanClosure;
-class PushAndMarkClosure;
-class ParPushAndMarkClosure;
-class PushOrMarkClosure;
-class ParPushOrMarkClosure;
-class CMSKeepAliveClosure;
-class CMSInnerParMarkAndPushClosure;
-// Misc
+class ExtendedOopClosure;
 class NoHeaderExtendedOopClosure;
+class OopsInGenClosure;
 
 // This macro applies an argument macro to all OopClosures for which we
 // want specialized bodies of "oop_oop_iterate".  The arguments to "f" are:
@@ -72,80 +54,38 @@ class NoHeaderExtendedOopClosure;
 // This is split into several because of a Visual C++ 6.0 compiler bug
 // where very long macros cause the compiler to crash
 
-#define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_S(f)       \
-  f(ScanClosure,_nv)                                    \
-  f(FastScanClosure,_nv)                                \
-  f(FilteringClosure,_nv)
+#define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_1(f)                 \
+  f(NoHeaderExtendedOopClosure,_nv)                               \
+               SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_S(f)          \
+  ALL_GCS_ONLY(SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_P(f))
 
-#if INCLUDE_ALL_GCS
-#define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_P(f)       \
-  f(ParScanWithBarrierClosure,_nv)                      \
-  f(ParScanWithoutBarrierClosure,_nv)
-#else  // INCLUDE_ALL_GCS
-#define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_P(f)
-#endif // INCLUDE_ALL_GCS
-
-#define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_1(f)       \
-  f(NoHeaderExtendedOopClosure,_nv)                     \
-  SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_S(f)             \
-  SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_P(f)
-
-#define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_MS(f)      \
-  f(MarkAndPushClosure,_nv)                             \
-  f(AdjustPointerClosure,_nv)
-
-#if INCLUDE_ALL_GCS
-#define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_CMS(f)     \
-  f(MarkRefsIntoAndScanClosure,_nv)                     \
-  f(ParMarkRefsIntoAndScanClosure,_nv)                  \
-  f(PushAndMarkClosure,_nv)                             \
-  f(ParPushAndMarkClosure,_nv)                          \
-  f(PushOrMarkClosure,_nv)                              \
-  f(ParPushOrMarkClosure,_nv)                           \
-  f(CMSKeepAliveClosure,_nv)                            \
-  f(CMSInnerParMarkAndPushClosure,_nv)
-#endif
-
-#if INCLUDE_ALL_GCS
-#define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_2(f)       \
-  SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_MS(f)            \
-  SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_CMS(f)           \
-  SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1(f)            \
-  SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1FULL(f)
-#else  // INCLUDE_ALL_GCS
-#define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_2(f)       \
-  SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_MS(f)
-#endif // INCLUDE_ALL_GCS
-
+#define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_2(f)                 \
+               SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_MS(f)         \
+  ALL_GCS_ONLY(SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_CMS(f))       \
+  ALL_GCS_ONLY(SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1(f))        \
+  ALL_GCS_ONLY(SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1FULL(f))
 
 // We separate these out, because sometime the general one has
 // a different definition from the specialized ones, and sometimes it
 // doesn't.
 
-#define ALL_OOP_OOP_ITERATE_CLOSURES_1(f)               \
-  f(ExtendedOopClosure,_v)                              \
+#define ALL_OOP_OOP_ITERATE_CLOSURES_1(f)                         \
+  f(ExtendedOopClosure,_v)                                        \
   SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_1(f)
 
-#define ALL_OOP_OOP_ITERATE_CLOSURES_2(f)               \
+#define ALL_OOP_OOP_ITERATE_CLOSURES_2(f)                         \
   SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_2(f)
 
-#if INCLUDE_ALL_GCS
 // This macro applies an argument macro to all OopClosures for which we
 // want specialized bodies of a family of methods related to
 // "par_oop_iterate".  The arguments to f are the same as above.
 // The "root_class" is the most general class to define; this may be
 // "OopClosure" in some applications and "OopsInGenClosure" in others.
 
-#define SPECIALIZED_PAR_OOP_ITERATE_CLOSURES(f)        \
-  f(MarkRefsIntoAndScanClosure,_nv)                    \
-  f(PushAndMarkClosure,_nv)                            \
-  f(ParMarkRefsIntoAndScanClosure,_nv)                 \
-  f(ParPushAndMarkClosure,_nv)
 
-#define ALL_PAR_OOP_ITERATE_CLOSURES(f)                \
-  f(ExtendedOopClosure,_v)                             \
-  SPECIALIZED_PAR_OOP_ITERATE_CLOSURES(f)
-#endif // INCLUDE_ALL_GCS
+#define ALL_PAR_OOP_ITERATE_CLOSURES(f)                           \
+  f(ExtendedOopClosure,_v)                                        \
+  ALL_GCS_ONLY(SPECIALIZED_PAR_OOP_ITERATE_CLOSURES(f))
 
 // This macro applies an argument macro to all OopClosures for which we
 // want specialized bodies of a family of methods related to
@@ -153,31 +93,19 @@ class NoHeaderExtendedOopClosure;
 // The "root_class" is the most general class to define; this may be
 // "OopClosure" in some applications and "OopsInGenClosure" in others.
 
-#define SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG_S(f) \
-  f(ScanClosure,_nv)                                     \
-  f(FastScanClosure,_nv)
-
-#if INCLUDE_ALL_GCS
-#define SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG_P(f) \
-  f(ParScanWithBarrierClosure,_nv)                       \
-  f(ParScanWithoutBarrierClosure,_nv)
-#else  // INCLUDE_ALL_GCS
-#define SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG_P(f)
-#endif // INCLUDE_ALL_GCS
-
 #define SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG(f)  \
-  SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG_S(f)      \
-  SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG_P(f)
+               SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG_S(f)   \
+  ALL_GCS_ONLY(SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG_P(f))
 
-#define SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES(f)        \
+#define SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES(f)                  \
   SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG(f)
 
 // We separate these out, because sometime the general one has
 // a different definition from the specialized ones, and sometimes it
 // doesn't.
 
-#define ALL_SINCE_SAVE_MARKS_CLOSURES(f)                \
-  f(OopsInGenClosure,_v)                                \
+#define ALL_SINCE_SAVE_MARKS_CLOSURES(f)                          \
+  f(OopsInGenClosure,_v)                                          \
   SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES(f)
 
 #endif // SHARE_VM_GC_SHARED_SPECIALIZED_OOP_CLOSURES_HPP
