@@ -51,6 +51,7 @@ public:
 
   // Returns JNI_OK on success
   virtual jint initialize();
+  virtual CardTableRS* create_rem_set(const MemRegion& reserved_region);
 
   // Convenience function to be used in situations where the heap type can be
   // asserted to be this type.
