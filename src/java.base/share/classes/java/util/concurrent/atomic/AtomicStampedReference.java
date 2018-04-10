@@ -199,7 +199,7 @@ public class AtomicStampedReference<V> {
             PAIR = l.findVarHandle(AtomicStampedReference.class, "pair",
                                    Pair.class);
         } catch (ReflectiveOperationException e) {
-            throw new Error(e);
+            throw new ExceptionInInitializerError(e);
         }
     }
 

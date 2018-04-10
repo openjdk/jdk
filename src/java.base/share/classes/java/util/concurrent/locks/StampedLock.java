@@ -1614,7 +1614,7 @@ public class StampedLock implements java.io.Serializable {
             WNEXT = l.findVarHandle(WNode.class, "next", WNode.class);
             WCOWAIT = l.findVarHandle(WNode.class, "cowait", WNode.class);
         } catch (ReflectiveOperationException e) {
-            throw new Error(e);
+            throw new ExceptionInInitializerError(e);
         }
     }
 }

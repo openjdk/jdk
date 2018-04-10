@@ -209,7 +209,8 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
                 ? HtmlTree.HEADER()
                 : body;
         addTop(tree);
-        addNavLinks(true, tree);
+        navBar.setUserHeader(getUserHeaderFooter(true));
+        tree.addContent(navBar.getContent(true));
         if (configuration.allowTag(HtmlTag.HEADER)) {
             body.addContent(tree);
         }
@@ -226,7 +227,8 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
         Content tree = (configuration.allowTag(HtmlTag.FOOTER))
                 ? HtmlTree.FOOTER()
                 : body;
-        addNavLinks(false, tree);
+        navBar.setUserFooter(getUserHeaderFooter(false));
+        tree.addContent(navBar.getContent(false));
         addBottom(tree);
         if (configuration.allowTag(HtmlTag.FOOTER)) {
             body.addContent(tree);

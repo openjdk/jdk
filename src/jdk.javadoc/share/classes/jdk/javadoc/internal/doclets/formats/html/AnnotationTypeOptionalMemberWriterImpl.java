@@ -35,7 +35,7 @@ import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeOptionalMemberWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -151,19 +151,5 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
     public void addSummaryAnchor(TypeElement typeElement, Content memberTree) {
         memberTree.addContent(links.createAnchor(
                 SectionName.ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected Content getNavSummaryLink(TypeElement typeElement, boolean link) {
-        if (link) {
-            return links.createLink(
-                    SectionName.ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY,
-                    contents.navAnnotationTypeOptionalMember);
-        } else {
-            return contents.navAnnotationTypeOptionalMember;
-        }
     }
 }

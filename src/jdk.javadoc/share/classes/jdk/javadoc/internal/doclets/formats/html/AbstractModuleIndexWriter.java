@@ -37,6 +37,8 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -61,6 +63,8 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      */
     protected SortedMap<ModuleElement, Set<PackageElement>> modules;
 
+    protected Navigation navBar;
+
     /**
      * Constructor. Also initializes the modules variable.
      *
@@ -71,6 +75,7 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
                                       DocPath filename) {
         super(configuration, filename);
         modules = configuration.modulePackages;
+        this.navBar = new Navigation(null, configuration, fixedNavDiv, PageMode.OVERVIEW, path);
     }
 
     /**
@@ -249,18 +254,6 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
             Content div = HtmlTree.DIV(HtmlStyle.header, heading);
             body.addContent(div);
         }
-    }
-
-    /**
-     * Returns highlighted "Overview", in the navigation bar as this is the
-     * overview page.
-     *
-     * @return a Content object to be added to the documentation tree
-     */
-    @Override
-    protected Content getNavLinkContents() {
-        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, contents.overviewLabel);
-        return li;
     }
 
     /**

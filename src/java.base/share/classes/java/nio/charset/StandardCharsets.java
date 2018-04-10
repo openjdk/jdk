@@ -34,22 +34,28 @@ package java.nio.charset;
  */
 public final class StandardCharsets {
 
+    // To avoid accidental eager initialization of often unused Charsets
+    // from happening while the VM is booting up, which may delay
+    // initialization of VM components, we should generally avoid depending
+    // on this class from elsewhere in java.base.
+
     private StandardCharsets() {
         throw new AssertionError("No java.nio.charset.StandardCharsets instances for you!");
     }
+
     /**
      * Seven-bit ASCII, a.k.a. ISO646-US, a.k.a. the Basic Latin block of the
      * Unicode character set
      */
-    public static final Charset US_ASCII = new sun.nio.cs.US_ASCII();
+    public static final Charset US_ASCII = sun.nio.cs.US_ASCII.INSTANCE;
     /**
      * ISO Latin Alphabet No. 1, a.k.a. ISO-LATIN-1
      */
-    public static final Charset ISO_8859_1 = new sun.nio.cs.ISO_8859_1();
+    public static final Charset ISO_8859_1 = sun.nio.cs.ISO_8859_1.INSTANCE;
     /**
      * Eight-bit UCS Transformation Format
      */
-    public static final Charset UTF_8 = new sun.nio.cs.UTF_8();
+    public static final Charset UTF_8 = sun.nio.cs.UTF_8.INSTANCE;
     /**
      * Sixteen-bit UCS Transformation Format, big-endian byte order
      */

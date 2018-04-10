@@ -101,8 +101,7 @@ public class PrivilegedCallables {
         final Policy policy = new Policy();
         Policy.setPolicy(policy);
         policy.setPermissions(new RuntimePermission("getClassLoader"),
-                              new RuntimePermission("setContextClassLoader"),
-                              new RuntimePermission("stopThread"));
+                              new RuntimePermission("setContextClassLoader"));
         System.setSecurityManager(new SecurityManager());
 
         testPrivileged();

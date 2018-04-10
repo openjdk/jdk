@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,7 @@
 package sun.security.krb5.internal.util;
 
 import java.io.IOException;
-import java.security.AccessController;
-import sun.security.action.GetBooleanAction;
+import sun.security.action.GetPropertyAction;
 import sun.security.util.DerValue;
 
 /**
@@ -45,15 +44,21 @@ import sun.security.util.DerValue;
 public final class KerberosString {
     /**
      * RFC 4120 defines KerberosString as GeneralString (IA5String), which
-     * only includes ASCII characters. However, other implementations have been
-     * known to use GeneralString to contain UTF-8 encoding. To interop
-     * with these implementations, the following system property is defined.
-     * When set as true, KerberosString is encoded as UTF-8. Note that this
-     * only affects the byte encoding, the tag of the ASN.1 type is still
-     * GeneralString.
+     * only includes ASCII characters. However, most implementations have been
+     * known to use GeneralString to contain UTF-8 encoding. The following
+     * system property is defined. When set as true, KerberosString is encoded
+     * as UTF-8. Otherwise, it's ASCII. The default is true.
+     *
+     * Note that this only affects the byte encoding, the tag of the ASN.1
+     * type is still GeneralString.
      */
-    public static final boolean MSNAME = AccessController.doPrivileged(
-            new GetBooleanAction("sun.security.krb5.msinterop.kstring"));
+    public static final boolean MSNAME;
+
+    static {
+        String prop = GetPropertyAction.privilegedGetProperty(
+                "sun.security.krb5.msinterop.kstring", "true");
+        MSNAME = Boolean.parseBoolean(prop);
+    }
 
     private final String s;
 

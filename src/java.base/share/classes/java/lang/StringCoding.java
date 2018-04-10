@@ -42,7 +42,6 @@ import jdk.internal.HotSpotIntrinsicCandidate;
 import sun.nio.cs.HistoricallyNamedCharset;
 import sun.nio.cs.ArrayDecoder;
 import sun.nio.cs.ArrayEncoder;
-import sun.nio.cs.StandardCharsets;
 
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
@@ -52,9 +51,6 @@ import static java.lang.Character.highSurrogate;
 import static java.lang.Character.lowSurrogate;
 import static java.lang.Character.isSupplementaryCodePoint;
 import static java.lang.StringUTF16.putChar;
-import static java.nio.charset.StandardCharsets.ISO_8859_1;
-import static java.nio.charset.StandardCharsets.US_ASCII;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Utility class for string encoding and decoding.
@@ -69,6 +65,10 @@ class StringCoding {
         new ThreadLocal<>();
     private static final ThreadLocal<SoftReference<StringEncoder>> encoder =
         new ThreadLocal<>();
+
+    private static final Charset ISO_8859_1 = sun.nio.cs.ISO_8859_1.INSTANCE;
+    private static final Charset US_ASCII = sun.nio.cs.US_ASCII.INSTANCE;
+    private static final Charset UTF_8 = sun.nio.cs.UTF_8.INSTANCE;
 
     private static <T> T deref(ThreadLocal<SoftReference<T>> tl) {
         SoftReference<T> sr = tl.get();

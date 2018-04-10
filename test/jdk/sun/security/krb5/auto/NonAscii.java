@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,25 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_SOLARIS_DTRACE_GENERATEJVMOFFSETS_H
-#define OS_SOLARIS_DTRACE_GENERATEJVMOFFSETS_H
+/*
+ * @test
+ * @bug 8200152
+ * @summary KerberosString should use UTF-8 by default
+ * @library /test/lib
+ * @compile -XDignore.symbol.file NonAscii.java
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts NonAscii
+ * @run main/othervm/fail -Djdk.net.hosts.file=TestHosts
+ *                        -Dsun.security.krb5.msinterop.kstring=false
+ *                        NonAscii
+ * @run main/othervm/fail -Djdk.net.hosts.file=TestHosts
+ *                        -Dsun.security.krb5.msinterop.kstring=no
+ *                        NonAscii
+ */
 
-#include <stdio.h>
-#include <strings.h>
-
-typedef enum GEN_variant {
-        GEN_OFFSET = 0,
-        GEN_INDEX  = 1,
-        GEN_TABLE  = 2
-} GEN_variant;
-
-extern "C" {
-        int generateJvmOffsets(GEN_variant gen_var);
-        void gen_prologue(GEN_variant gen_var);
-        void gen_epilogue(GEN_variant gen_var);
+public class NonAscii {
+    public static void main(String[] args) throws Exception {
+        String name = "ab\u00e7";
+        char[] password = "password".toCharArray();
+        new OneKDC(null).addPrincipal(name, password);
+        Context.fromUserPass(name, password, false);
+    }
 }
-
-#endif // OS_SOLARIS_DTRACE_GENERATEJVMOFFSETS_H

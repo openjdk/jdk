@@ -31,6 +31,8 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -57,6 +59,8 @@ public class PackageTreeWriter extends AbstractTreeWriter {
      */
     protected PackageElement packageElement;
 
+    private final Navigation navBar;
+
     /**
      * Constructor.
      * @param configuration the configuration
@@ -67,6 +71,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
         super(configuration, path,
               new ClassTree(configuration.typeElementCatalog.allClasses(packageElement), configuration));
         this.packageElement = packageElement;
+        this.navBar = new Navigation(packageElement, configuration, fixedNavDiv, PageMode.TREE, path);
     }
 
     /**
@@ -118,7 +123,8 @@ public class PackageTreeWriter extends AbstractTreeWriter {
         HtmlTree tree = (configuration.allowTag(HtmlTag.FOOTER))
                 ? HtmlTree.FOOTER()
                 : body;
-        addNavLinks(false, tree);
+        navBar.setUserFooter(getUserHeaderFooter(false));
+        tree.addContent(navBar.getContent(false));
         addBottom(tree);
         if (configuration.allowTag(HtmlTag.FOOTER)) {
             body.addContent(tree);
@@ -139,7 +145,11 @@ public class PackageTreeWriter extends AbstractTreeWriter {
                 ? HtmlTree.HEADER()
                 : bodyTree;
         addTop(htmlTree);
-        addNavLinks(true, htmlTree);
+        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
+                contents.moduleLabel);
+        navBar.setNavLinkModule(linkContent);
+        navBar.setUserHeader(getUserHeaderFooter(true));
+        htmlTree.addContent(navBar.getContent(true));
         if (configuration.allowTag(HtmlTag.HEADER)) {
             bodyTree.addContent(htmlTree);
         }
@@ -159,31 +169,5 @@ public class PackageTreeWriter extends AbstractTreeWriter {
         ul.setStyle(HtmlStyle.horizontal);
         ul.addContent(getNavLinkMainTree(configuration.getText("doclet.All_Packages")));
         div.addContent(ul);
-    }
-
-    /**
-     * Get the module link.
-     *
-     * @return a content tree for the module link
-     */
-    @Override
-    protected Content getNavLinkModule() {
-        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
-                contents.moduleLabel);
-        Content li = HtmlTree.LI(linkContent);
-        return li;
-    }
-
-    /**
-     * Get link to the package summary page for the package of this tree.
-     *
-     * @return a content tree for the package link
-     */
-    @Override
-    protected Content getNavLinkPackage() {
-        Content linkContent = links.createLink(DocPaths.PACKAGE_SUMMARY,
-                contents.packageLabel);
-        Content li = HtmlTree.LI(linkContent);
-        return li;
     }
 }

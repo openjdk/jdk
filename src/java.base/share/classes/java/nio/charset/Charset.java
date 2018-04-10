@@ -609,7 +609,7 @@ public abstract class Charset
                 if (cs != null)
                     defaultCharset = cs;
                 else
-                    defaultCharset = StandardCharsets.UTF_8;
+                    defaultCharset = sun.nio.cs.UTF_8.INSTANCE;
             }
         }
         return defaultCharset;
