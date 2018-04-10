@@ -39,6 +39,8 @@ public class ISO_8859_1
     extends Charset
     implements HistoricallyNamedCharset
 {
+    public static final ISO_8859_1 INSTANCE = new ISO_8859_1();
+
     public ISO_8859_1() {
         super("ISO-8859-1", StandardCharsets.aliases_ISO_8859_1());
     }
