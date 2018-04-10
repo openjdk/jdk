@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,11 @@
 
 class FileMapHeaderExt: public FileMapInfo::FileMapHeader {
 public:
-  jshort _app_paths_start_index;    // Index of first app classpath entry
-  bool   _verify_local;             // BytecodeVerificationLocal setting
-  bool   _verify_remote;            // BytecodeVerificationRemote setting
-  bool   _has_platform_or_app_classes;          // Archive contains app classes
+  jshort _app_class_paths_start_index;  // Index of first app classpath entry
+  jshort _app_module_paths_start_index; // Index of first module path entry
+  bool   _verify_local;                 // BytecodeVerificationLocal setting
+  bool   _verify_remote;                // BytecodeVerificationRemote setting
+  bool   _has_platform_or_app_classes;  // Archive contains app classes
 
   FileMapHeaderExt() {
     _has_platform_or_app_classes = true;
@@ -56,12 +57,14 @@ private:
   int   _app_offset;
 public:
   enum {
-    APP       = 5
+    APP       = 5,
+    MODULE    = 6
   };
 
   virtual const char* type_name(int type) {
     switch (type) {
     case APP:     return "APP";
+    case MODULE:  return "MODULE";
     default:      return SharedPathsMiscInfo::type_name(type);
     }
   }

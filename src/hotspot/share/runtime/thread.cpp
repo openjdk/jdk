@@ -3891,6 +3891,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // cache the system and platform class loaders
   SystemDictionary::compute_java_loaders(CHECK_JNI_ERR);
 
+  if (DumpSharedSpaces) {
+    // capture the module path info from the ModuleEntryTable
+    ClassLoader::initialize_module_path(THREAD);
+  }
+
 #if INCLUDE_JVMCI
   if (force_JVMCI_intialization) {
     JVMCIRuntime::force_initialization(CHECK_JNI_ERR);

@@ -62,7 +62,8 @@ public class PatchJavaBase {
             TestCommon.dump(null, null,
                 "--patch-module=java.base=" + moduleJar,
                 "PatchMain", "java.lang.NewClass");
-        TestCommon.checkDump(output, "Loading classes to share");
+        output.shouldHaveExitValue(1)
+              .shouldContain("Cannot use the following option when dumping the shared archive: --patch-module");
 
         TestCommon.run(
             "-XX:+UnlockDiagnosticVMOptions",

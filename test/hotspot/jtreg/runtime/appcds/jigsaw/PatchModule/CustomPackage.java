@@ -70,7 +70,8 @@ public class CustomPackage {
                 "-Xlog:class+load",
                 "-Xlog:class+path=info",
                 "PatchMain", "javax.naming.myspi.NamingManager");
-        TestCommon.checkDump(output, "Preload Warning: Cannot find javax/naming/myspi/NamingManager");
+        output.shouldHaveExitValue(1)
+              .shouldContain("Cannot use the following option when dumping the shared archive: --patch-module");
 
         TestCommon.run(
             "-XX:+UnlockDiagnosticVMOptions",
@@ -78,6 +79,6 @@ public class CustomPackage {
             "-Xlog:class+load",
             "-Xlog:class+path=info",
             "PatchMain", "javax.naming.myspi.NamingManager")
-          .assertNormalExit("I pass!");
+            .assertSilentlyDisabledCDS(0, "I pass!");
     }
 }

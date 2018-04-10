@@ -88,7 +88,8 @@ public class SubClassOfPatchedClass {
                 "--patch-module=java.naming=" + moduleJar,
                 "-Xlog:class+load",
                 "PatchMain", "javax.naming.Reference", "mypackage.MyReference");
-        TestCommon.checkDump(output, "Loading classes to share");
+        output.shouldHaveExitValue(1)
+              .shouldContain("Cannot use the following option when dumping the shared archive: --patch-module");
 
         String classPath = appJar + File.pathSeparator + classDir;
         System.out.println("classPath: " + classPath);
@@ -98,8 +99,6 @@ public class SubClassOfPatchedClass {
             "--patch-module=java.naming=" + moduleJar,
             "-Xlog:class+load",
             "PatchMain", "javax.naming.Reference", "mypackage.MyReference")
-          .assertNormalExit(
-            "I pass!",
-            "MyReference source: file:");
+            .assertSilentlyDisabledCDS(0, "MyReference source: file:", "I pass!");
     }
 }

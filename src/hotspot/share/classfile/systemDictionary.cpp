@@ -1217,7 +1217,7 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
     }
   }
   SharedClassPathEntry* ent =
-            (SharedClassPathEntry*)FileMapInfo::shared_classpath(path_index);
+            (SharedClassPathEntry*)FileMapInfo::shared_path(path_index);
   if (!Universe::is_module_initialized()) {
     assert(ent != NULL && ent->is_modules_image(),
            "Loading non-bootstrap classes before the module system is initialized");
