@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_S390_GC_G1_BARRIERSETASSEMBLER_S390_HPP
-#define CPU_S390_GC_G1_BARRIERSETASSEMBLER_S390_HPP
+#ifndef CPU_S390_GC_SHARED_BARRIERSETASSEMBLER_S390_HPP
+#define CPU_S390_GC_SHARED_BARRIERSETASSEMBLER_S390_HPP
 
 #include "asm/macroAssembler.hpp"
 #include "memory/allocation.hpp"
@@ -40,4 +40,4 @@ public:
                                   Register dst, Register count, bool do_return = false);
 };
 
-#endif // CPU_S390_GC_G1_BARRIERSETASSEMBLER_S390_HPP
+#endif // CPU_S390_GC_SHARED_BARRIERSETASSEMBLER_S390_HPP
