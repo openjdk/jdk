@@ -55,26 +55,22 @@
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "code/codeCache.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
-#include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
-#include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/weakHandle.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/javaCalls.hpp"
-#include "runtime/jniHandles.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointVerifiers.hpp"
-#include "runtime/synchronizer.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -113,17 +109,21 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous) :
   // The null-class-loader should always be kept alive.
   _keep_alive((is_anonymous || h_class_loader.is_null()) ? 1 : 0),
   _metaspace(NULL), _unloading(false), _klasses(NULL),
-  _modules(NULL), _packages(NULL),
+  _modules(NULL), _packages(NULL), _unnamed_module(NULL), _dictionary(NULL),
   _claimed(0), _modified_oops(true), _accumulated_modified_oops(false),
   _jmethod_ids(NULL), _handles(), _deallocate_list(NULL),
   _next(NULL),
   _metaspace_lock(new Mutex(Monitor::leaf+1, "Metaspace allocation lock", true,
                             Monitor::_safepoint_check_never)) {
 
-  // A ClassLoaderData created solely for an anonymous class should never have a
-  // ModuleEntryTable or PackageEntryTable created for it. The defining package
-  // and module for an anonymous class will be found in its host class.
   if (!is_anonymous) {
+    // The holder is initialized later for anonymous classes, and before calling anything
+    // that call class_loader().
+    initialize_holder(h_class_loader);
+
+    // A ClassLoaderData created solely for an anonymous class should never have a
+    // ModuleEntryTable or PackageEntryTable created for it. The defining package
+    // and module for an anonymous class will be found in its host class.
     _packages = new PackageEntryTable(PackageEntryTable::_packagetable_entry_size);
     if (h_class_loader.is_null()) {
       // Create unnamed module for boot loader
@@ -133,10 +133,6 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous) :
       _unnamed_module = ModuleEntry::create_unnamed_module(this);
     }
     _dictionary = create_dictionary();
-  } else {
-    _packages = NULL;
-    _unnamed_module = NULL;
-    _dictionary = NULL;
   }
 
   NOT_PRODUCT(_dependency_count = 0); // number of class loader dependencies
@@ -510,6 +506,13 @@ InstanceKlass* ClassLoaderDataGraph::try_get_next_class() {
 }
 
 
+void ClassLoaderData::initialize_holder(Handle loader_or_mirror) {
+  if (loader_or_mirror() != NULL) {
+    assert(_holder.is_null(), "never replace holders");
+    _holder = WeakHandle<vm_class_loader_data>::create(loader_or_mirror);
+  }
+}
+
 // Remove a klass from the _klasses list for scratch_class during redefinition
 // or parsed class in the case of an error.
 void ClassLoaderData::remove_class(Klass* scratch_class) {
@@ -611,30 +614,23 @@ Dictionary* ClassLoaderData::create_dictionary() {
 }
 
 // Tell the GC to keep this klass alive while iterating ClassLoaderDataGraph
-oop ClassLoaderData::holder_phantom() {
+oop ClassLoaderData::holder_phantom() const {
   // A klass that was previously considered dead can be looked up in the
   // CLD/SD, and its _java_mirror or _class_loader can be stored in a root
   // or a reachable object making it alive again. The SATB part of G1 needs
   // to get notified about this potential resurrection, otherwise the marking
   // might not find the object.
-  if (!keep_alive()) {
-    oop* o = is_anonymous() ? _klasses->java_mirror_handle().ptr_raw() : &_class_loader;
-    return RootAccess<ON_PHANTOM_OOP_REF>::oop_load(o);
+  if (!_holder.is_null()) {  // NULL class_loader
+    return _holder.resolve();
   } else {
     return NULL;
   }
 }
 
 // Unloading support
-oop ClassLoaderData::keep_alive_object() const {
-  assert_locked_or_safepoint(_metaspace_lock);
-  assert(!keep_alive(), "Don't use with CLDs that are artificially kept alive");
-  return is_anonymous() ? _klasses->java_mirror() : class_loader();
-}
-
-bool ClassLoaderData::is_alive(BoolObjectClosure* is_alive_closure) const {
-  bool alive = keep_alive() // null class loader and incomplete anonymous klasses.
-      || is_alive_closure->do_object_b(keep_alive_object());
+bool ClassLoaderData::is_alive() const {
+  bool alive = keep_alive()         // null class loader and incomplete anonymous klasses.
+      || (_holder.peek() != NULL);  // not cleaned by weak reference processing
 
   return alive;
 }
@@ -667,6 +663,9 @@ ClassLoaderData::~ClassLoaderData() {
 
   ClassLoaderDataGraph::dec_array_classes(cl.array_class_released());
   ClassLoaderDataGraph::dec_instance_classes(cl.instance_class_released());
+
+  // Release the WeakHandle
+  _holder.release();
 
   // Release C heap allocated hashtable for all the packages.
   if (_packages != NULL) {
@@ -969,7 +968,6 @@ ClassLoaderData* ClassLoaderDataGraph::add(Handle loader, bool is_anonymous) {
 
   ClassLoaderData* cld = new ClassLoaderData(loader, is_anonymous);
 
-
   if (!is_anonymous) {
     // First, Atomically set it
     ClassLoaderData* old = java_lang_ClassLoader::cmpxchg_loader_data(cld, loader(), NULL);
@@ -1244,6 +1242,8 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure,
   ClassLoaderData* data = _head;
   ClassLoaderData* prev = NULL;
   bool seen_dead_loader = false;
+  uint loaders_processed = 0;
+  uint loaders_removed = 0;
 
   // Mark metadata seen on the stack only so we can delete unneeded entries.
   // Only walk all metadata, including the expensive code cache walk, for Full GC
@@ -1260,7 +1260,7 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure,
 
   data = _head;
   while (data != NULL) {
-    if (data->is_alive(is_alive_closure)) {
+    if (data->is_alive()) {
       // clean metaspace
       if (walk_all_metadata) {
         data->classes_do(InstanceKlass::purge_previous_versions);
@@ -1268,9 +1268,11 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure,
       data->free_deallocate_list();
       prev = data;
       data = data->next();
+      loaders_processed++;
       continue;
     }
     seen_dead_loader = true;
+    loaders_removed++;
     ClassLoaderData* dead = data;
     dead->unload();
     data = data->next();
@@ -1312,6 +1314,8 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure,
 
     post_class_unload_events();
   }
+
+  log_debug(class, loader, data)("do_unloading: loaders processed %u, loaders removed %u", loaders_processed, loaders_removed);
 
   return seen_dead_loader;
 }
