@@ -31,29 +31,23 @@
  * GENOFFS_SCCS_VER 34
  */
 
-#include "generateJvmOffsets.h"
+#include <stdio.h>
+#include <strings.h>
 
 /* A workaround for private and protected fields */
 #define private   public
 #define protected public
 
 #include <proc_service.h>
-#include "code/codeBlob.hpp"
-#include "code/nmethod.hpp"
-#include "code/pcDesc.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "memory/heap.hpp"
-#include "memory/memRegion.hpp"
-#include "memory/universe.hpp"
-#include "memory/virtualspace.hpp"
-#include "oops/constMethod.hpp"
-#include "oops/klass.hpp"
-#include "oops/method.hpp"
-#include "oops/oop.hpp"
-#include "oops/symbol.hpp"
 #include "runtime/vmStructs.hpp"
-#include "utilities/accessFlags.hpp"
-#include "utilities/globalDefinitions.hpp"
+
+typedef enum GEN_variant {
+        GEN_OFFSET = 0,
+        GEN_INDEX  = 1,
+        GEN_TABLE  = 2
+} GEN_variant;
+
 #ifdef COMPILER1
 #ifdef ASSERT
 

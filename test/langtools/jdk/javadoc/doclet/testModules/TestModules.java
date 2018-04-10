@@ -26,7 +26,7 @@
  * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363
  *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218
  *      8175823 8166306 8178043 8181622 8183511 8169819 8074407 8183037 8191464
-        8164407 8192007 8182765
+        8164407 8192007 8182765 8196200
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -940,9 +940,10 @@ public class TestModules extends JavadocTester {
         checkOutput("moduleA/module-summary.html", true,
                 "<ul class=\"subNavList\">\n"
                 + "<li>Module:&nbsp;</li>\n"
-                + "<li><a href=\"#module.description\">Description</a>&nbsp;|&nbsp;<a "
-                + "href=\"#modules.summary\">Modules</a>&nbsp;|&nbsp;<a href=\"#packages.summary\">"
-                + "Packages</a>&nbsp;|&nbsp;Services</li>\n"
+                + "<li><a href=\"#module.description\">Description</a>&nbsp;|&nbsp;</li>\n"
+                + "<li><a href=\"#modules.summary\">Modules</a>&nbsp;|&nbsp;</li>\n"
+                + "<li><a href=\"#packages.summary\">Packages</a>&nbsp;|&nbsp;</li>\n"
+                + "<li>Services</li>\n"
                 + "</ul>",
                 "<!-- ============ MODULES SUMMARY =========== -->\n"
                 + "<a id=\"modules.summary\">\n"
@@ -964,9 +965,10 @@ public class TestModules extends JavadocTester {
                 + "</td>\n"
                 + "</tr>");
         checkOutput("moduleB/module-summary.html", true,
-                "<li><a href=\"#module.description\">Description</a>&nbsp;|&nbsp;Modules&nbsp;|&nbsp;"
-                + "<a href=\"#packages.summary\">Packages</a>&nbsp;|&nbsp;<a href=\"#services.summary\">"
-                + "Services</a></li>",
+                "<li><a href=\"#module.description\">Description</a>&nbsp;|&nbsp;</li>\n"
+                + "<li>Modules&nbsp;|&nbsp;</li>\n"
+                + "<li><a href=\"#packages.summary\">Packages</a>&nbsp;|&nbsp;</li>\n"
+                + "<li><a href=\"#services.summary\">Services</a></li>",
                 "<!-- ============ PACKAGES SUMMARY =========== -->\n"
                 + "<a id=\"packages.summary\">\n"
                 + "<!--   -->\n"
@@ -1180,8 +1182,10 @@ public class TestModules extends JavadocTester {
                 + " Package Link: <a href=\"moduletags/testpkgmdltags/package-summary.html\"><code>testpkgmdltags</code></a>.<br></div>\n"
                 + "</td>");
         checkOutput("moduleA/module-summary.html", true,
-                "<li><a href=\"#module.description\">Description</a>&nbsp;|&nbsp;<a href=\"#modules.summary\">"
-                + "Modules</a>&nbsp;|&nbsp;<a href=\"#packages.summary\">Packages</a>&nbsp;|&nbsp;Services</li>",
+                "<li><a href=\"#module.description\">Description</a>&nbsp;|&nbsp;</li>\n"
+                + "<li><a href=\"#modules.summary\">Modules</a>&nbsp;|&nbsp;</li>\n"
+                + "<li><a href=\"#packages.summary\">Packages</a>&nbsp;|&nbsp;</li>\n"
+                + "<li>Services</li>",
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"../moduleB/module-summary.html\">moduleB</a></th>\n"
                 + "<td class=\"colLast\"><a href=\"../moduleB/testpkgmdlB/package-summary.html\">testpkgmdlB</a></td>\n");
         checkOutput("moduleB/module-summary.html", true,
@@ -1189,8 +1193,10 @@ public class TestModules extends JavadocTester {
                 + "<td class=\"colLast\">\n"
                 + "<div class=\"block\">With a test description for uses.</div>\n</td>\n");
         checkOutput("moduletags/module-summary.html", true,
-                "<li><a href=\"#module.description\">Description</a>&nbsp;|&nbsp;<a href=\"#modules.summary\">Modules"
-                + "</a>&nbsp;|&nbsp;<a href=\"#packages.summary\">Packages</a>&nbsp;|&nbsp;Services</li>",
+                "<li><a href=\"#module.description\">Description</a>&nbsp;|&nbsp;</li>\n"
+                + "<li><a href=\"#modules.summary\">Modules</a>&nbsp;|&nbsp;</li>\n"
+                + "<li><a href=\"#packages.summary\">Packages</a>&nbsp;|&nbsp;</li>\n"
+                + "<li>Services</li>",
                 "<table class=\"requiresSummary\">\n"
                 + "<caption><span>Indirect Requires</span><span class=\"tabEnd\">&nbsp;</span></caption>",
                 "<td class=\"colFirst\">transitive</td>\n"
@@ -1267,8 +1273,10 @@ public class TestModules extends JavadocTester {
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkgmdlA/package-summary.html\">testpkgmdlA</a></th>\n"
                 + "<td class=\"colLast\">&nbsp;</td>");
         checkOutput("moduleB/module-summary.html", found,
-                "<li><a href=\"#module.description\">Description</a>&nbsp;|&nbsp;Modules&nbsp;|&nbsp;"
-                + "<a href=\"#packages.summary\">Packages</a>&nbsp;|&nbsp;<a href=\"#services.summary\">Services</a></li>",
+                "<li><a href=\"#module.description\">Description</a>&nbsp;|&nbsp;</li>\n"
+                + "<li>Modules&nbsp;|&nbsp;</li>\n"
+                + "<li><a href=\"#packages.summary\">Packages</a>&nbsp;|&nbsp;</li>\n"
+                + "<li><a href=\"#services.summary\">Services</a></li>",
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkgmdlB/package-summary.html\">testpkgmdlB</a></th>\n"
                 + "<td class=\"colLast\">&nbsp;</td>",
                 "<table class=\"packagesSummary\">\n"
@@ -1329,8 +1337,10 @@ public class TestModules extends JavadocTester {
                 + "<td class=\"colSecond\">None</td>\n"
                 + "<td class=\"colLast\">&nbsp;</td>");
         checkOutput("moduleB/module-summary.html", found,
-                "<li><a href=\"#module.description\">Description</a>&nbsp;|&nbsp;<a href=\"#modules.summary\">"
-                + "Modules</a>&nbsp;|&nbsp;<a href=\"#packages.summary\">Packages</a>&nbsp;|&nbsp;<a href=\"#services.summary\">Services</a></li>",
+                "<li><a href=\"#module.description\">Description</a>&nbsp;|&nbsp;</li>\n"
+                + "<li><a href=\"#modules.summary\">Modules</a>&nbsp;|&nbsp;</li>\n"
+                + "<li><a href=\"#packages.summary\">Packages</a>&nbsp;|&nbsp;</li>\n"
+                + "<li><a href=\"#services.summary\">Services</a></li>",
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"testpkgmdlB/package-summary.html\">testpkgmdlB</a></th>\n"
                 + "<td class=\"colSecond\">None</td>\n"
                 + "<td class=\"colSecond\">All Modules</td>\n"

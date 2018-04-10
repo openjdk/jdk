@@ -361,6 +361,7 @@ public class WhiteBox {
         }
     }
 
+    @Test
     public void testSerialization() {
         LinkedTransferQueue q = serialClone(new LinkedTransferQueue());
         assertInvariants(q);

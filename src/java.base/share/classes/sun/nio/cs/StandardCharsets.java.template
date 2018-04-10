@@ -83,9 +83,9 @@ public class StandardCharsets extends CharsetProvider {
         Map<String,Charset> map = cache;
         if (map == null) {
             map = new Cache();
-            map.put("utf-8", java.nio.charset.StandardCharsets.UTF_8);
-            map.put("iso-8859-1", java.nio.charset.StandardCharsets.ISO_8859_1);
-            map.put("us-ascii", java.nio.charset.StandardCharsets.US_ASCII);
+            map.put("utf-8", UTF_8.INSTANCE);
+            map.put("iso-8859-1", ISO_8859_1.INSTANCE);
+            map.put("us-ascii", US_ASCII.INSTANCE);
             map.put("utf-16", java.nio.charset.StandardCharsets.UTF_16);
             map.put("utf-16be", java.nio.charset.StandardCharsets.UTF_16BE);
             map.put("utf-16le", java.nio.charset.StandardCharsets.UTF_16LE);
@@ -122,15 +122,19 @@ public class StandardCharsets extends CharsetProvider {
     private Charset lookup(String charsetName) {
         init();
 
-        // By checking these built-ins we can avoid initializing Aliases and
-        // Classes eagerly during bootstrap
+        // By checking these built-ins we can avoid initializing Aliases,
+        // Classes and Cache eagerly during bootstrap.
+        //
+        // Initialization of java.nio.charset.StandardCharsets should be
+        // avoided here to minimize time spent in System.initPhase1, as it
+        // may delay initialization of performance critical VM subsystems.
         String csn;
         if (charsetName.equals("UTF-8")) {
-            return java.nio.charset.StandardCharsets.UTF_8;
+            return UTF_8.INSTANCE;
         } else if (charsetName.equals("US-ASCII")) {
-            return java.nio.charset.StandardCharsets.US_ASCII;
+            return US_ASCII.INSTANCE;
         } else if (charsetName.equals("ISO-8859-1")) {
-            return java.nio.charset.StandardCharsets.ISO_8859_1;
+            return ISO_8859_1.INSTANCE;
         } else {
             csn = canonicalize(toLower(charsetName));
         }

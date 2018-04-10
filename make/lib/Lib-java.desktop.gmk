@@ -50,6 +50,7 @@ ifneq ($(OPENJDK_TARGET_OS), aix)
 
   LIBJSOUND_CFLAGS := \
       -I$(SUPPORT_OUTPUTDIR)/headers/java.desktop \
+      $(ALSA_CFLAGS) \
       $(LIBJAVA_HEADER_FLAGS) \
       $(foreach dir, $(LIBJSOUND_SRC_DIRS), -I$(dir)) \
       -DX_PLATFORM=X_$(OPENJDK_TARGET_OS_UPPERCASE) \

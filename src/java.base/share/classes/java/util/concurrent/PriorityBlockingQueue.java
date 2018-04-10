@@ -1014,7 +1014,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
                                                  "allocationSpinLock",
                                                  int.class);
         } catch (ReflectiveOperationException e) {
-            throw new Error(e);
+            throw new ExceptionInInitializerError(e);
         }
     }
 }

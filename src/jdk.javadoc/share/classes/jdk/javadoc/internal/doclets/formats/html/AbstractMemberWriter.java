@@ -45,6 +45,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
@@ -213,23 +214,6 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
      * @return a content tree representing the link
      */
     protected abstract Content getDeprecatedLink(Element member);
-
-    /**
-     * Get the navigation summary link.
-     *
-     * @param typeElement the TypeElement to be documented
-     * @param link true if its a link else the label to be printed
-     * @return a content tree for the navigation summary link.
-     */
-    protected abstract Content getNavSummaryLink(TypeElement typeElement, boolean link);
-
-    /**
-     * Add the navigation detail link.
-     *
-     * @param link true if its a link else the label to be printed
-     * @param liNav the content tree to which the navigation detail link will be added
-     */
-    protected abstract void addNavDetailLink(boolean link, Content liNav);
 
     /**
      * Add the member name to the content tree.
@@ -472,41 +456,6 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
             }
             contentTree.addContent(useTable.toContent());
         }
-    }
-
-    /**
-     * Add the navigation detail link.
-     *
-     * @param members the members to be linked
-     * @param liNav the content tree to which the navigation detail link will be added
-     */
-    protected void addNavDetailLink(SortedSet<Element> members, Content liNav) {
-        addNavDetailLink(!members.isEmpty(), liNav);
-    }
-
-    /**
-     * Add the navigation summary link.
-     *
-     * @param members members to be linked
-     * @param visibleMemberMap the visible inherited members map
-     * @param liNav the content tree to which the navigation summary link will be added
-     */
-    protected void addNavSummaryLink(SortedSet<? extends Element> members,
-            VisibleMemberMap visibleMemberMap, Content liNav) {
-        if (!members.isEmpty()) {
-            liNav.addContent(getNavSummaryLink(null, true));
-            return;
-        }
-
-        TypeElement superClass = utils.getSuperClass(typeElement);
-        while (superClass != null) {
-            if (visibleMemberMap.hasMembers(superClass)) {
-                liNav.addContent(getNavSummaryLink(superClass, true));
-                return;
-            }
-            superClass = utils.getSuperClass(superClass);
-        }
-        liNav.addContent(getNavSummaryLink(null, false));
     }
 
     protected void serialWarning(Element e, String key, String a1, String a2) {

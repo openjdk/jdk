@@ -746,12 +746,7 @@ class SynthParser extends DefaultHandler {
                 value = lookup(aValue, Object.class);
                 break;
             case 1: // boolean
-                if (aValue.toUpperCase().equals("TRUE")) {
-                    value = Boolean.TRUE;
-                }
-                else {
-                    value = Boolean.FALSE;
-                }
+                value = Boolean.parseBoolean(aValue);
                 break;
             case 2: // dimension
                 StringTokenizer tok = new StringTokenizer(aValue);
@@ -939,11 +934,11 @@ class SynthParser extends DefaultHandler {
                   ": destinationInsets must be top left bottom right");
             }
             else if (key.equals(ATTRIBUTE_PAINT_CENTER)) {
-                paintCenter = value.toLowerCase().equals("true");
+                paintCenter = Boolean.parseBoolean(value);
                 paintCenterSpecified = true;
             }
             else if (key.equals(ATTRIBUTE_STRETCH)) {
-                stretch = value.toLowerCase().equals("true");
+                stretch = Boolean.parseBoolean(value);
                 stretchSpecified = true;
             }
             else if (key.equals(ATTRIBUTE_DIRECTION)) {
@@ -989,7 +984,7 @@ class SynthParser extends DefaultHandler {
                 }
             }
             else if (key.equals(ATTRIBUTE_CENTER)) {
-                center = value.toLowerCase().equals("true");
+                center = Boolean.parseBoolean(value);
             }
         }
         if (painter == null) {

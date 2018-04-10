@@ -42,6 +42,8 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
@@ -72,6 +74,8 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      */
     protected IndexBuilder indexbuilder;
 
+    protected Navigation navBar;
+
     /**
      * This constructor will be used by {@link SplitIndexWriter}. Initializes
      * path to this file and relative path from this file.
@@ -85,17 +89,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
                                   IndexBuilder indexbuilder) {
         super(configuration, path);
         this.indexbuilder = indexbuilder;
-    }
-
-    /**
-     * Get the index label for navigation bar.
-     *
-     * @return a content tree for the tree label
-     */
-    @Override
-    protected Content getNavLinkIndex() {
-        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, contents.indexLabel);
-        return li;
+        this.navBar = new Navigation(null, configuration, fixedNavDiv, PageMode.INDEX, path);
     }
 
     /**

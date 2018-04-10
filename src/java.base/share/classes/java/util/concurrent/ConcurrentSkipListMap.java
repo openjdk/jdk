@@ -3412,7 +3412,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
             VAL = l.findVarHandle(Node.class, "val", Object.class);
             RIGHT = l.findVarHandle(Index.class, "right", Index.class);
         } catch (ReflectiveOperationException e) {
-            throw new Error(e);
+            throw new ExceptionInInitializerError(e);
         }
     }
 }

@@ -117,6 +117,17 @@ ifeq ($(MODULE), java.base)
           --hash-modules '^(?!$(EXCLUDE_PATTERN)$$)'
     endif
   endif
+else # not java.base
+  ifeq ($(OPENJDK_TARGET_OS), windows)
+    # Only java.base needs to include the MSVC*_DLLs. Make sure no other module
+    # tries to include them (typically imported ones).
+    ifneq ($(wildcard $(LIBS_DIR)/$(notdir $(MSVCR_DLL))), )
+      JMOD_FLAGS += --exclude '$(notdir $(MSVCR_DLL))'
+    endif
+    ifneq ($(wildcard $(LIBS_DIR)/$(notdir $(MSVCP_DLL))), )
+      JMOD_FLAGS += --exclude '$(notdir $(MSVCP_DLL))'
+    endif
+  endif
 endif
 
 # Changes to the jmod tool itself should also trigger a rebuild of all jmods.
@@ -133,18 +144,21 @@ ifeq ($(INTERIM_JMOD), true)
   DEPS := $(filter-out $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/classlist, $(DEPS))
 endif
 
+JMOD_FLAGS += --exclude '**{_the.*,_*.marker,*.diz,*.debuginfo,*.dSYM/**,*.dSYM,*.pdb,*.map}'
+
 # Create jmods in a temp dir and then move them into place to keep the
 # module path in $(IMAGES_OUTPUTDIR)/jmods valid at all times.
 $(JMODS_DIR)/$(MODULE).jmod: $(DEPS)
 	$(call LogWarn, Creating $(patsubst $(OUTPUTDIR)/%, %, $@))
 	$(call MakeDir, $(JMODS_DIR) $(JMODS_TEMPDIR))
 	$(RM) $@ $(JMODS_TEMPDIR)/$(notdir $@)
-	$(JMOD) create \
-            --module-version $(VERSION_SHORT) \
-            --target-platform '$(OPENJDK_MODULE_TARGET_PLATFORM)' \
-            --module-path $(JMODS_DIR) \
-	    --exclude '**{_the.*,_*.marker,*.diz,*.debuginfo,*.dSYM/**,*.dSYM,*.pdb,*.map}' \
-	    $(JMOD_FLAGS) $(JMODS_TEMPDIR)/$(notdir $@)
+	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/jmods/$(MODULE).jmod, \
+	    $(JMOD) create \
+	        --module-version $(VERSION_SHORT) \
+	        --target-platform '$(OPENJDK_MODULE_TARGET_PLATFORM)' \
+	        --module-path $(JMODS_DIR) \
+	        $(JMOD_FLAGS) $(JMODS_TEMPDIR)/$(notdir $@) \
+	)
 	$(MV) $(JMODS_TEMPDIR)/$(notdir $@) $@
 
 TARGETS += $(JMODS_DIR)/$(MODULE).jmod

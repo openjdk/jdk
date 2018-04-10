@@ -1739,7 +1739,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             NEXT = l.findVarHandle(Node.class, "next", Node.class);
             WAITER = l.findVarHandle(Node.class, "waiter", Thread.class);
         } catch (ReflectiveOperationException e) {
-            throw new Error(e);
+            throw new ExceptionInInitializerError(e);
         }
 
         // Reduce the risk of rare disastrous classloading in first call to

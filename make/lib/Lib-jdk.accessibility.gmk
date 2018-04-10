@@ -45,6 +45,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
         NAME := javaaccessbridge$1, \
         SRC := $(JAVA_AB_SRCDIR), \
         OPTIMIZATION := LOW, \
+        DISABLED_WARNINGS_microsoft := 4311 4302 4312, \
         CFLAGS := $(CFLAGS_JDKLIB) $(ACCESSBRIDGE_CFLAGS) \
             $(addprefix -I,$(JAVA_AB_SRCDIR)) \
             -I$(ROOT_SRCDIR)/include/bridge \
@@ -69,6 +70,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
         NAME := windowsaccessbridge$1, \
         SRC := $(WIN_AB_SRCDIR), \
         OPTIMIZATION := LOW, \
+        DISABLED_WARNINGS_microsoft := 4311 4302 4312, \
         CFLAGS := $(filter-out -MD, $(CFLAGS_JDKLIB)) -MT $(ACCESSBRIDGE_CFLAGS) \
             $(addprefix -I,$(WIN_AB_SRCDIR)) \
             -I$(ROOT_SRCDIR)/include/bridge \

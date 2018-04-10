@@ -1137,7 +1137,7 @@ public class Phaser {
             MethodHandles.Lookup l = MethodHandles.lookup();
             STATE = l.findVarHandle(Phaser.class, "state", long.class);
         } catch (ReflectiveOperationException e) {
-            throw new Error(e);
+            throw new ExceptionInInitializerError(e);
         }
 
         // Reduce the risk of rare disastrous classloading in first call to
