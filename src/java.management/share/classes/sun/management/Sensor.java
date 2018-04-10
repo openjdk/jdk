@@ -48,10 +48,10 @@ import java.util.HashMap;
  */
 
 public abstract class Sensor {
-    private Object  lock;
-    private String  name;
-    private long    count;
-    private boolean on;
+    private final Object lock = new Object();
+    private final String name;
+    private long count;                 // VM-initialized to 0
+    private boolean on;                 // VM-initialized to false
 
     /**
      * Constructs a {@code Sensor} object.
@@ -60,9 +60,6 @@ public abstract class Sensor {
      */
     public Sensor(String name) {
         this.name = name;
-        this.count = 0;
-        this.on = false;
-        this.lock = new Object();
     }
 
     /**
