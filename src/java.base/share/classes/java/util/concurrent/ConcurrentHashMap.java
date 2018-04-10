@@ -6383,7 +6383,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         ABASE = U.arrayBaseOffset(Node[].class);
         int scale = U.arrayIndexScale(Node[].class);
         if ((scale & (scale - 1)) != 0)
-            throw new Error("array index scale not a power of two");
+            throw new ExceptionInInitializerError("array index scale not a power of two");
         ASHIFT = 31 - Integer.numberOfLeadingZeros(scale);
 
         // Reduce the risk of rare disastrous classloading in first call to

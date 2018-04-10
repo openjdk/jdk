@@ -1540,7 +1540,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             MethodHandles.Lookup l = MethodHandles.lookup();
             STATUS = l.findVarHandle(ForkJoinTask.class, "status", int.class);
         } catch (ReflectiveOperationException e) {
-            throw new Error(e);
+            throw new ExceptionInInitializerError(e);
         }
     }
 

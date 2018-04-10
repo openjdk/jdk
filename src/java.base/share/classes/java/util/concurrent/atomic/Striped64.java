@@ -144,7 +144,7 @@ abstract class Striped64 extends Number {
                 MethodHandles.Lookup l = MethodHandles.lookup();
                 VALUE = l.findVarHandle(Cell.class, "value", long.class);
             } catch (ReflectiveOperationException e) {
-                throw new Error(e);
+                throw new ExceptionInInitializerError(e);
             }
         }
     }
@@ -396,13 +396,13 @@ abstract class Striped64 extends Number {
                             try {
                                 return MethodHandles.privateLookupIn(Thread.class, MethodHandles.lookup());
                             } catch (ReflectiveOperationException e) {
-                                throw new Error(e);
+                                throw new ExceptionInInitializerError(e);
                             }
                         }});
             THREAD_PROBE = l.findVarHandle(Thread.class,
                     "threadLocalRandomProbe", int.class);
         } catch (ReflectiveOperationException e) {
-            throw new Error(e);
+            throw new ExceptionInInitializerError(e);
         }
     }
 

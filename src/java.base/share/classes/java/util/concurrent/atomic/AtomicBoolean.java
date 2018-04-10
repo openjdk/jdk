@@ -56,7 +56,7 @@ public class AtomicBoolean implements java.io.Serializable {
             MethodHandles.Lookup l = MethodHandles.lookup();
             VALUE = l.findVarHandle(AtomicBoolean.class, "value", int.class);
         } catch (ReflectiveOperationException e) {
-            throw new Error(e);
+            throw new ExceptionInInitializerError(e);
         }
     }
 
