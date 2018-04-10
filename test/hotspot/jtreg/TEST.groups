@@ -265,7 +265,8 @@ hotspot_tier2_runtime = \
  -:tier1_runtime \
  -:tier1_serviceability \
  -:hotspot_tier2_runtime_platform_agnostic \
- -runtime/signal
+ -runtime/signal \
+ -runtime/NMT/MallocStressTest.java
 
 hotspot_tier2_runtime_platform_agnostic = \
   runtime/SelectionResolution \
