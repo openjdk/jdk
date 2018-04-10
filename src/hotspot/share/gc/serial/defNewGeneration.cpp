@@ -174,9 +174,6 @@ ScanWeakRefClosure::ScanWeakRefClosure(DefNewGeneration* g) :
 void ScanWeakRefClosure::do_oop(oop* p)       { ScanWeakRefClosure::do_oop_work(p); }
 void ScanWeakRefClosure::do_oop(narrowOop* p) { ScanWeakRefClosure::do_oop_work(p); }
 
-void FilteringClosure::do_oop(oop* p)       { FilteringClosure::do_oop_work(p); }
-void FilteringClosure::do_oop(narrowOop* p) { FilteringClosure::do_oop_work(p); }
-
 DefNewGeneration::DefNewGeneration(ReservedSpace rs,
                                    size_t initial_size,
                                    const char* policy)
