@@ -22,8 +22,8 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/serial/serial_specialized_oop_closures.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
-#include "gc/shared/specialized_oop_closures.hpp"
 #include "memory/iterator.inline.hpp"
 
 void FilteringClosure::do_oop(oop* p)       { do_oop_nv(p); }
