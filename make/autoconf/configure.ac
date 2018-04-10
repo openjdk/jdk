@@ -120,6 +120,7 @@ PLATFORM_SETUP_OPENJDK_BUILD_OS_VERSION
 
 # Misc basic settings
 BASIC_SETUP_DEFAULT_MAKE_TARGET
+BASIC_SETUP_DEFAULT_LOG
 
 ###############################################################################
 #
