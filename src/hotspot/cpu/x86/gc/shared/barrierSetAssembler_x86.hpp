@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_X86_GC_G1_BARRIERSETASSEMBLER_X86_HPP
-#define CPU_X86_GC_G1_BARRIERSETASSEMBLER_X86_HPP
+#ifndef CPU_X86_GC_SHARED_BARRIERSETASSEMBLER_X86_HPP
+#define CPU_X86_GC_SHARED_BARRIERSETASSEMBLER_X86_HPP
 
 #include "asm/macroAssembler.hpp"
 #include "memory/allocation.hpp"
@@ -40,4 +40,4 @@ public:
                                   Register src, Register dst, Register count) {}
 };
 
-#endif // CPU_X86_GC_G1_BARRIERSETASSEMBLER_X86_HPP
+#endif // CPU_X86_GC_SHARED_BARRIERSETASSEMBLER_X86_HPP

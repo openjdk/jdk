@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_X86_GC_SHARED_MODREFBARRIERSETASSEMBLER_X86_HPP
-#define CPU_X86_GC_SHARED_MODREFBARRIERSETASSEMBLER_X86_HPP
+#ifndef CPU_S390_GC_SHARED_MODREFBARRIERSETASSEMBLER_S390_HPP
+#define CPU_S390_GC_SHARED_MODREFBARRIERSETASSEMBLER_S390_HPP
 
 #include "asm/macroAssembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -42,4 +42,4 @@ public:
                                   Register dst, Register count, bool do_return = false);
 };
 
-#endif // CPU_X86_GC_SHARED_MODREFBARRIERSETASSEMBLER_X86_HPP
+#endif // CPU_S390_GC_SHARED_MODREFBARRIERSETASSEMBLER_S390_HPP
