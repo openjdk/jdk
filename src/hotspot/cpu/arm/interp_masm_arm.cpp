@@ -450,9 +450,11 @@ void InterpreterMacroAssembler::store_check_part2(Register obj, Register card_ta
 #endif
 
   if (UseCondCardMark) {
+#if INCLUDE_ALL_GCS
     if (UseConcMarkSweepGC) {
       membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreLoad), noreg);
     }
+#endif
     Label already_dirty;
 
     ldrb(tmp, card_table_addr);
@@ -462,9 +464,11 @@ void InterpreterMacroAssembler::store_check_part2(Register obj, Register card_ta
     bind(already_dirty);
 
   } else {
+#if INCLUDE_ALL_GCS
     if (UseConcMarkSweepGC && CMSPrecleaningEnabled) {
       membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreStore), noreg);
     }
+#endif
     set_card(card_table_base, card_table_addr, tmp);
   }
 }
