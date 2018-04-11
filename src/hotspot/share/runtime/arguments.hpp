@@ -703,7 +703,7 @@ class Arguments : AllStatic {
 
   static void check_unsupported_dumping_properties() NOT_CDS_RETURN;
 
-  static bool check_unsupported_cds_runtime_properties() NOT_CDS_RETURN;
+  static bool check_unsupported_cds_runtime_properties() NOT_CDS_RETURN0;
 
   static bool atojulong(const char *s, julong* result);
 };

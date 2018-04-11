@@ -106,6 +106,7 @@
 #include "trace/traceMacros.hpp"
 #include "trace/tracing.hpp"
 #include "utilities/align.hpp"
+#include "utilities/copy.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
@@ -3891,10 +3892,12 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // cache the system and platform class loaders
   SystemDictionary::compute_java_loaders(CHECK_JNI_ERR);
 
+#if INCLUDE_CDS
   if (DumpSharedSpaces) {
     // capture the module path info from the ModuleEntryTable
     ClassLoader::initialize_module_path(THREAD);
   }
+#endif
 
 #if INCLUDE_JVMCI
   if (force_JVMCI_intialization) {
