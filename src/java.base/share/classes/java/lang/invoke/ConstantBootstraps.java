@@ -49,6 +49,18 @@ public final class ConstantBootstraps {
                                Object info,
                                // Caller information:
                                Class<?> callerClass) {
+        // Restrict bootstrap methods to those whose first parameter is Lookup
+        // The motivation here is, in the future, to possibly support BSMs
+        // that do not accept the meta-data of lookup/name/type, thereby
+        // allowing the co-opting of existing methods to be used as BSMs as
+        // long as the static arguments can be passed as method arguments
+        MethodType mt = bootstrapMethod.type();
+        if (mt.parameterCount() < 2 ||
+            !MethodHandles.Lookup.class.isAssignableFrom(mt.parameterType(0))) {
+            throw new BootstrapMethodError(
+                    "Invalid bootstrap method declared for resolving a dynamic constant: " + bootstrapMethod);
+        }
+
         // BSMI.invoke handles all type checking and exception translation.
         // If type is not a reference type, the JVM is expecting a boxed
         // version, and will manage unboxing on the other side.
