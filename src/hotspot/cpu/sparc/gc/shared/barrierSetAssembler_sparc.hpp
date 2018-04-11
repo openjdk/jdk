@@ -37,6 +37,14 @@ public:
                                   Register src, Register dst, Register count) {}
   virtual void arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                   Register src, Register dst, Register count) {}
+
+  virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                        Register src, Address dst, Register tmp);
+
+  virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                       Address src, Register dst, Register tmp);
+
+  virtual void barrier_stubs_init() {}
 };
 
 #endif // CPU_SPARC_GC_SHARED_BARRIERSETASSEMBLER_SPARC_HPP

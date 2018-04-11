@@ -2474,14 +2474,14 @@ class StubGenerator: public StubCodeGenerator {
 
     __ BIND(store_element);
     __ deccc(G1_remain);                // decrement the count
-    __ store_heap_oop(G3_oop, O1_to, O5_offset); // store the oop
+    __ store_heap_oop(G3_oop, O1_to, O5_offset, noreg, AS_RAW); // store the oop
     __ inc(O5_offset, heapOopSize);     // step to next offset
     __ brx(Assembler::zero, true, Assembler::pt, do_epilogue);
     __ delayed()->set(0, O0);           // return -1 on success
 
     // ======== loop entry is here ========
     __ BIND(load_element);
-    __ load_heap_oop(O0_from, O5_offset, G3_oop);  // load the oop
+    __ load_heap_oop(O0_from, O5_offset, G3_oop, noreg, AS_RAW);  // load the oop
     __ br_null_short(G3_oop, Assembler::pt, store_element);
 
     __ load_klass(G3_oop, G4_klass); // query the object klass

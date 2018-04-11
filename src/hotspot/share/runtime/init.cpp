@@ -58,14 +58,8 @@ void VM_Version_init();
 void os_init_globals();        // depends on VM_Version_init, before universe_init
 void stubRoutines_init1();
 jint universe_init();          // depends on codeCache_init and stubRoutines_init
-#if INCLUDE_ALL_GCS
 // depends on universe_init, must be before interpreter_init (currently only on SPARC)
-#ifndef ZERO
-void g1_barrier_stubs_init() NOT_SPARC({});
-#else
-void g1_barrier_stubs_init() {};
-#endif
-#endif
+void gc_barrier_stubs_init();
 void interpreter_init();       // before any methods loaded
 void invocationCounter_init(); // before any methods loaded
 void marksweep_init();
@@ -120,9 +114,7 @@ jint init_globals() {
   if (status != JNI_OK)
     return status;
 
-#if INCLUDE_ALL_GCS
-  g1_barrier_stubs_init();   // depends on universe_init, must be before interpreter_init
-#endif
+  gc_barrier_stubs_init();   // depends on universe_init, must be before interpreter_init
   interpreter_init();        // before any methods loaded
   invocationCounter_init();  // before any methods loaded
   marksweep_init();

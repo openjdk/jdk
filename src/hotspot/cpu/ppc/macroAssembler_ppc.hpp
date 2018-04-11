@@ -650,20 +650,7 @@ class MacroAssembler: public Assembler {
   // Check if safepoint requested and if so branch
   void safepoint_poll(Label& slow_path, Register temp_reg);
 
-  // GC barrier support.
-  void card_write_barrier_post(Register Rstore_addr, Register Rnew_val, Register Rtmp);
-  void card_table_write(jbyte* byte_map_base, Register Rtmp, Register Robj);
-
   void resolve_jobject(Register value, Register tmp1, Register tmp2, bool needs_frame);
-
-#if INCLUDE_ALL_GCS
-  // General G1 pre-barrier generator.
-  void g1_write_barrier_pre(Register Robj, RegisterOrConstant offset, Register Rpre_val,
-                            Register Rtmp1, Register Rtmp2, bool needs_frame = false);
-  // General G1 post-barrier generator
-  void g1_write_barrier_post(Register Rstore_addr, Register Rnew_val, Register Rtmp1,
-                             Register Rtmp2, Register Rtmp3, Label *filtered_ext = NULL);
-#endif
 
   // Support for managing the JavaThread pointer (i.e.; the reference to
   // thread-local information).

@@ -72,3 +72,41 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   __ bdnz(Lstore_loop);
   __ bind(Lskip_loop);
 }
+
+void CardTableBarrierSetAssembler::card_table_write(MacroAssembler* masm,
+                                                    jbyte* byte_map_base,
+                                                    Register tmp, Register obj) {
+  assert_different_registers(obj, tmp, R0);
+  __ load_const_optimized(tmp, (address)byte_map_base, R0);
+  __ srdi(obj, obj, CardTable::card_shift);
+  __ li(R0, CardTable::dirty_card_val());
+  if (UseConcMarkSweepGC) { __ membar(Assembler::StoreStore); }
+  __ stbx(R0, tmp, obj);
+}
+
+void CardTableBarrierSetAssembler::card_write_barrier_post(MacroAssembler* masm, Register store_addr, Register tmp) {
+  CardTableBarrierSet* bs = barrier_set_cast<CardTableBarrierSet>(Universe::heap()->barrier_set());
+  card_table_write(masm, bs->card_table()->byte_map_base(), tmp, store_addr);
+}
+
+void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                                Register base, RegisterOrConstant ind_or_offs, Register val,
+                                                Register tmp1, Register tmp2, Register tmp3, bool needs_frame) {
+  bool on_array = (decorators & IN_HEAP_ARRAY) != 0;
+  bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
+  bool precise = on_array || on_anonymous;
+
+  BarrierSetAssembler::store_at(masm, decorators, type, base, ind_or_offs, val, tmp1, tmp2, tmp3, needs_frame);
+
+  // No need for post barrier if storing NULL
+  if (val != noreg) {
+    if (precise) {
+      if (ind_or_offs.is_constant()) {
+        __ add_const_optimized(base, base, ind_or_offs.as_constant(), tmp1);
+      } else {
+        __ add(base, ind_or_offs.as_register(), base);
+      }
+    }
+    card_write_barrier_post(masm, base, tmp1);
+  }
+}

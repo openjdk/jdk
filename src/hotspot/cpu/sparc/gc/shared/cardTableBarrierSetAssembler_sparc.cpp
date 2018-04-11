@@ -70,3 +70,45 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
 
   __ BIND(L_done);
 }
+
+void CardTableBarrierSetAssembler::card_table_write(MacroAssembler* masm,
+                                                    jbyte* byte_map_base,
+                                                    Register tmp, Register obj) {
+  __ srlx(obj, CardTable::card_shift, obj);
+  assert(tmp != obj, "need separate temp reg");
+  __ set((address) byte_map_base, tmp);
+  __ stb(G0, tmp, obj);
+}
+
+void CardTableBarrierSetAssembler::card_write_barrier_post(MacroAssembler* masm, Register store_addr, Register new_val, Register tmp) {
+  // If we're writing constant NULL, we can skip the write barrier.
+  if (new_val == G0) return;
+  CardTableBarrierSet* bs = barrier_set_cast<CardTableBarrierSet>(Universe::heap()->barrier_set());
+  card_table_write(masm, bs->card_table()->byte_map_base(), tmp, store_addr);
+}
+
+void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                                Register val, Address dst, Register tmp) {
+  bool in_heap = (decorators & IN_HEAP) != 0;
+
+  bool on_array = (decorators & IN_HEAP_ARRAY) != 0;
+  bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
+  bool precise = on_array || on_anonymous;
+
+  // No need for post barrier if storing NULL
+  bool needs_post_barrier = val != G0 && in_heap;
+
+  BarrierSetAssembler::store_at(masm, decorators, type, val, dst, tmp);
+  if (needs_post_barrier) {
+    Register base = dst.base();
+    if (precise) {
+      if (!dst.has_index()) {
+        __ add(base, dst.disp(), base);
+      } else {
+        assert(!dst.has_disp(), "not supported yet");
+        __ add(base, dst.index(), base);
+      }
+    }
+    card_write_barrier_post(masm, base, val, tmp);
+  }
+}

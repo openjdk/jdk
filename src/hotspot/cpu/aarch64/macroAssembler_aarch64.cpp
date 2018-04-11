@@ -30,6 +30,7 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "gc/shared/cardTable.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "interpreter/interpreter.hpp"
 #include "compiler/disassembler.hpp"
@@ -2090,6 +2091,28 @@ void MacroAssembler::verify_heapbase(const char* msg) {
 }
 #endif
 
+void MacroAssembler::resolve_jobject(Register value, Register thread, Register tmp) {
+  BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+  Label done, not_weak;
+  cbz(value, done);           // Use NULL as-is.
+
+  STATIC_ASSERT(JNIHandles::weak_tag_mask == 1u);
+  tbz(r0, 0, not_weak);    // Test for jweak tag.
+
+  // Resolve jweak.
+  bs->load_at(this, IN_ROOT | ON_PHANTOM_OOP_REF, T_OBJECT,
+                    value, Address(value, -JNIHandles::weak_tag_value), tmp, thread);
+  verify_oop(value);
+  b(done);
+
+  bind(not_weak);
+  // Resolve (untagged) jobject.
+  bs->load_at(this, IN_ROOT | ON_STRONG_OOP_REF, T_OBJECT,
+                    value, Address(value, 0), tmp, thread);
+  verify_oop(value);
+  bind(done);
+}
+
 void MacroAssembler::stop(const char* msg) {
   address ip = pc();
   pusha();
@@ -3608,43 +3631,6 @@ void MacroAssembler::cmpptr(Register src1, Address src2) {
   cmp(src1, rscratch1);
 }
 
-void MacroAssembler::store_check(Register obj, Address dst) {
-  store_check(obj);
-}
-
-void MacroAssembler::store_check(Register obj) {
-  // Does a store check for the oop in register obj. The content of
-  // register obj is destroyed afterwards.
-
-  BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->kind() == BarrierSet::CardTableBarrierSet,
-         "Wrong barrier set kind");
-
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
-  CardTable* ct = ctbs->card_table();
-  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
-
-  lsr(obj, obj, CardTable::card_shift);
-
-  assert(CardTable::dirty_card_val() == 0, "must be");
-
-  load_byte_map_base(rscratch1);
-
-  if (UseCondCardMark) {
-    Label L_already_dirty;
-    membar(StoreLoad);
-    ldrb(rscratch2,  Address(obj, rscratch1));
-    cbz(rscratch2, L_already_dirty);
-    strb(zr, Address(obj, rscratch1));
-    bind(L_already_dirty);
-  } else {
-    if (UseConcMarkSweepGC && CMSPrecleaningEnabled) {
-      membar(StoreStore);
-    }
-    strb(zr, Address(obj, rscratch1));
-  }
-}
-
 void MacroAssembler::load_klass(Register dst, Register src) {
   if (UseCompressedClassPointers) {
     ldrw(dst, Address(src, oopDesc::klass_offset_in_bytes()));
@@ -4007,190 +3993,6 @@ void MacroAssembler::store_heap_oop_null(Address dst) {
   } else
     str(zr, dst);
 }
-
-#if INCLUDE_ALL_GCS
-/*
- * g1_write_barrier_pre -- G1GC pre-write barrier for store of new_val at
- * store_addr.
- *
- * Allocates rscratch1
- */
-void MacroAssembler::g1_write_barrier_pre(Register obj,
-                                          Register pre_val,
-                                          Register thread,
-                                          Register tmp,
-                                          bool tosca_live,
-                                          bool expand_call) {
-  // If expand_call is true then we expand the call_VM_leaf macro
-  // directly to skip generating the check by
-  // InterpreterMacroAssembler::call_VM_leaf_base that checks _last_sp.
-
-  assert(thread == rthread, "must be");
-
-  Label done;
-  Label runtime;
-
-  assert_different_registers(obj, pre_val, tmp, rscratch1);
-  assert(pre_val != noreg &&  tmp != noreg, "expecting a register");
-
-  Address in_progress(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                       SATBMarkQueue::byte_offset_of_active()));
-  Address index(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                       SATBMarkQueue::byte_offset_of_index()));
-  Address buffer(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                       SATBMarkQueue::byte_offset_of_buf()));
-
-
-  // Is marking active?
-  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-    ldrw(tmp, in_progress);
-  } else {
-    assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-    ldrb(tmp, in_progress);
-  }
-  cbzw(tmp, done);
-
-  // Do we need to load the previous value?
-  if (obj != noreg) {
-    load_heap_oop(pre_val, Address(obj, 0));
-  }
-
-  // Is the previous value null?
-  cbz(pre_val, done);
-
-  // Can we store original value in the thread's buffer?
-  // Is index == 0?
-  // (The index field is typed as size_t.)
-
-  ldr(tmp, index);                      // tmp := *index_adr
-  cbz(tmp, runtime);                    // tmp == 0?
-                                        // If yes, goto runtime
-
-  sub(tmp, tmp, wordSize);              // tmp := tmp - wordSize
-  str(tmp, index);                      // *index_adr := tmp
-  ldr(rscratch1, buffer);
-  add(tmp, tmp, rscratch1);             // tmp := tmp + *buffer_adr
-
-  // Record the previous value
-  str(pre_val, Address(tmp, 0));
-  b(done);
-
-  bind(runtime);
-  // save the live input values
-  push(r0->bit(tosca_live) | obj->bit(obj != noreg) | pre_val->bit(true), sp);
-
-  // Calling the runtime using the regular call_VM_leaf mechanism generates
-  // code (generated by InterpreterMacroAssember::call_VM_leaf_base)
-  // that checks that the *(rfp+frame::interpreter_frame_last_sp) == NULL.
-  //
-  // If we care generating the pre-barrier without a frame (e.g. in the
-  // intrinsified Reference.get() routine) then ebp might be pointing to
-  // the caller frame and so this check will most likely fail at runtime.
-  //
-  // Expanding the call directly bypasses the generation of the check.
-  // So when we do not have have a full interpreter frame on the stack
-  // expand_call should be passed true.
-
-  if (expand_call) {
-    assert(pre_val != c_rarg1, "smashed arg");
-    pass_arg1(this, thread);
-    pass_arg0(this, pre_val);
-    MacroAssembler::call_VM_leaf_base(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), 2);
-  } else {
-    call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), pre_val, thread);
-  }
-
-  pop(r0->bit(tosca_live) | obj->bit(obj != noreg) | pre_val->bit(true), sp);
-
-  bind(done);
-}
-
-/*
- * g1_write_barrier_post -- G1GC post-write barrier for store of new_val at
- * store_addr
- *
- * Allocates rscratch1
- */
-void MacroAssembler::g1_write_barrier_post(Register store_addr,
-                                           Register new_val,
-                                           Register thread,
-                                           Register tmp,
-                                           Register tmp2) {
-  assert(thread == rthread, "must be");
-  assert_different_registers(store_addr, new_val, thread, tmp, tmp2,
-                             rscratch1);
-  assert(store_addr != noreg && new_val != noreg && tmp != noreg
-         && tmp2 != noreg, "expecting a register");
-
-  Address queue_index(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
-                                       DirtyCardQueue::byte_offset_of_index()));
-  Address buffer(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
-                                       DirtyCardQueue::byte_offset_of_buf()));
-
-  BarrierSet* bs = Universe::heap()->barrier_set();
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
-  CardTable* ct = ctbs->card_table();
-  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
-
-  Label done;
-  Label runtime;
-
-  // Does store cross heap regions?
-
-  eor(tmp, store_addr, new_val);
-  lsr(tmp, tmp, HeapRegion::LogOfHRGrainBytes);
-  cbz(tmp, done);
-
-  // crosses regions, storing NULL?
-
-  cbz(new_val, done);
-
-  // storing region crossing non-NULL, is card already dirty?
-
-  ExternalAddress cardtable((address) ct->byte_map_base());
-  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
-  const Register card_addr = tmp;
-
-  lsr(card_addr, store_addr, CardTable::card_shift);
-
-  // get the address of the card
-  load_byte_map_base(tmp2);
-  add(card_addr, card_addr, tmp2);
-  ldrb(tmp2, Address(card_addr));
-  cmpw(tmp2, (int)G1CardTable::g1_young_card_val());
-  br(Assembler::EQ, done);
-
-  assert((int)CardTable::dirty_card_val() == 0, "must be 0");
-
-  membar(Assembler::StoreLoad);
-
-  ldrb(tmp2, Address(card_addr));
-  cbzw(tmp2, done);
-
-  // storing a region crossing, non-NULL oop, card is clean.
-  // dirty card and log.
-
-  strb(zr, Address(card_addr));
-
-  ldr(rscratch1, queue_index);
-  cbz(rscratch1, runtime);
-  sub(rscratch1, rscratch1, wordSize);
-  str(rscratch1, queue_index);
-
-  ldr(tmp2, buffer);
-  str(card_addr, Address(tmp2, rscratch1));
-  b(done);
-
-  bind(runtime);
-  // save the live input values
-  push(store_addr->bit(true) | new_val->bit(true), sp);
-  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), card_addr, thread);
-  pop(store_addr->bit(true) | new_val->bit(true), sp);
-
-  bind(done);
-}
-
-#endif // INCLUDE_ALL_GCS
 
 Address MacroAssembler::allocate_metadata_address(Metadata* obj) {
   assert(oop_recorder() != NULL, "this assembler needs a Recorder");
