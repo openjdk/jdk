@@ -248,7 +248,7 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
       forwardee = _par_scan_state->copy_to_survivor_space(state, obj, m);
     }
     assert(forwardee != NULL, "forwardee should not be NULL");
-    RawAccess<>::oop_store(p, forwardee);
+    RawAccess<OOP_NOT_NULL>::oop_store(p, forwardee);
     if (do_mark_object != G1MarkNone && forwardee != obj) {
       // If the object is self-forwarded we don't need to explicitly
       // mark it, the evacuation failure protocol will do so.
