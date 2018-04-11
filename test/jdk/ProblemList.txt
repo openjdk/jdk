@@ -590,7 +590,6 @@ javax/net/ssl/DTLS/RespondToRetransmit.java                     8169086 macosx-x
 
 sun/security/krb5/auto/UnboundSSL.java                          8180265 windows-all
 sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all
-sun/security/ssl/X509KeyManager/PreferredKey.java               8190333 generic-all
 
 ############################################################################
 
