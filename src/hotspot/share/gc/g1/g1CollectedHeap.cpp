@@ -2840,11 +2840,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       // reference processing currently works in G1.
 
       // Enable discovery in the STW reference processor
-      if (g1_policy()->should_process_references()) {
-        ref_processor_stw()->enable_discovery();
-      } else {
-        ref_processor_stw()->disable_discovery();
-      }
+      ref_processor_stw()->enable_discovery();
 
       {
         // We want to temporarily turn off discovery by the
@@ -4193,12 +4189,8 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
   // as we may have to copy some 'reachable' referent
   // objects (and their reachable sub-graphs) that were
   // not copied during the pause.
-  if (g1_policy()->should_process_references()) {
-    preserve_cm_referents(per_thread_states);
-    process_discovered_references(per_thread_states);
-  } else {
-    ref_processor_stw()->verify_no_references_recorded();
-  }
+  preserve_cm_referents(per_thread_states);
+  process_discovered_references(per_thread_states);
 
   G1STWIsAliveClosure is_alive(this);
   G1KeepAliveClosure keep_alive(this);
@@ -4241,11 +4233,7 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
   // will log these updates (and dirty their associated
   // cards). We need these updates logged to update any
   // RSets.
-  if (g1_policy()->should_process_references()) {
-    enqueue_discovered_references(per_thread_states);
-  } else {
-    g1_policy()->phase_times()->record_ref_enq_time(0);
-  }
+  enqueue_discovered_references(per_thread_states);
 
   _allocator->release_gc_alloc_regions(evacuation_info);
 
