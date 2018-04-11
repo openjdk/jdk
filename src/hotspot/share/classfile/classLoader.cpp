@@ -797,7 +797,6 @@ void ClassLoader::setup_patch_mod_entries() {
       struct stat st;
       if (os::stat(path, &st) == 0) {
         // File or directory found
-        Thread* THREAD = Thread::current();
         ClassPathEntry* new_entry = create_class_path_entry(path, &st, false, false, CHECK);
         // If the path specification is valid, enter it into this module's list
         if (new_entry != NULL) {
@@ -867,7 +866,6 @@ void ClassLoader::setup_boot_search_path(const char *class_path) {
       struct stat st;
       if (os::stat(path, &st) == 0) {
         // Directory found
-        Thread* THREAD = Thread::current();
         ClassPathEntry* new_entry = create_class_path_entry(path, &st, false, false, CHECK);
 
         // Check for a jimage
@@ -912,7 +910,7 @@ void ClassLoader::add_to_exploded_build_list(Symbol* module_sym, TRAPS) {
   const char file_sep = os::file_separator()[0];
   // 10 represents the length of "modules" + 2 file separators + \0
   size_t len = strlen(home) + strlen(module_name) + 10;
-  char *path = NEW_C_HEAP_ARRAY(char, len, mtModule);
+  char *path = NEW_RESOURCE_ARRAY(char, len);
   jio_snprintf(path, len, "%s%cmodules%c%s", home, file_sep, file_sep, module_name);
 
   struct stat st;
@@ -934,7 +932,6 @@ void ClassLoader::add_to_exploded_build_list(Symbol* module_sym, TRAPS) {
       log_info(class, load)("path: %s", path);
     }
   }
-  FREE_C_HEAP_ARRAY(char, path);
 }
 
 ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const struct stat* st,
