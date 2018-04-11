@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+#include "jni_util.h"
+
 #include <windows.h>
 #include <Sddl.h>
 #include <string.h>
 
-#include "jni.h"
-#include "jni_util.h"
-
 #include "sun_tools_attach_VirtualMachineImpl.h"
-
 
 /* kernel32 */
 typedef HINSTANCE (WINAPI* GetModuleHandleFunc) (LPCTSTR);
@@ -303,9 +302,7 @@ JNIEXPORT jlong JNICALL Java_sun_tools_attach_VirtualMachineImpl_createPipe
     LocalFree(sa.lpSecurityDescriptor);
 
     if (hPipe == INVALID_HANDLE_VALUE) {
-        char msg[256];
-        _snprintf(msg, sizeof(msg), "CreateNamedPipe failed: %d", GetLastError());
-        JNU_ThrowIOExceptionWithLastError(env, msg);
+        JNU_ThrowIOExceptionWithLastError(env, "CreateNamedPipe failed");
     }
     return (jlong)hPipe;
 }
@@ -318,7 +315,7 @@ JNIEXPORT jlong JNICALL Java_sun_tools_attach_VirtualMachineImpl_createPipe
 JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_closePipe
   (JNIEnv *env, jclass cls, jlong hPipe)
 {
-    CloseHandle( (HANDLE)hPipe );
+    CloseHandle((HANDLE)hPipe);
 }
 
 /*
@@ -430,7 +427,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
             if ((*env)->ExceptionOccurred(env)) return;
         }
     }
-    for (i=argsLen; i<MAX_ARGS; i++) {
+    for (i = argsLen; i < MAX_ARGS; i++) {
         data.arg[i][0] = '\0';
     }
 
