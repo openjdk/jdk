@@ -166,7 +166,7 @@ private:
 #endif
   // The _archived_mirror is set at CDS dump time pointing to the cached mirror
   // in the open archive heap region when archiving java object is supported.
-  CDS_JAVA_HEAP_ONLY(narrowOop _archived_mirror);
+  CDS_JAVA_HEAP_ONLY(narrowOop _archived_mirror;)
 
   friend class SharedClassUtil;
 protected:

@@ -1659,9 +1659,11 @@ void LIRGenerator::CardTableBarrierSet_post_barrier(LIR_OprDesc* addr, LIR_OprDe
     __ move(dirty, card_addr);
     __ branch_destination(L_already_dirty->label());
   } else {
+#if INCLUDE_ALL_GCS
     if (UseConcMarkSweepGC && CMSPrecleaningEnabled) {
       __ membar_storestore();
     }
+#endif
     __ move(dirty, card_addr);
   }
 #endif
