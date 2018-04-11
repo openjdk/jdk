@@ -29,17 +29,28 @@
 #include "asm/macroAssembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 
+// The ModRefBarrierSetAssembler filters away accesses on BasicTypes other
+// than T_OBJECT/T_ARRAY (oops). The oop accesses call one of the protected
+// accesses, which are overridden in the concrete BarrierSetAssembler.
+
 class ModRefBarrierSetAssembler: public BarrierSetAssembler {
 protected:
   virtual void gen_write_ref_array_pre_barrier(MacroAssembler* masm, DecoratorSet decorators, Register from, Register to, Register count,
                                                Register preserve1, Register preserve2) {}
   virtual void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators, Register addr, Register count, Register preserve) {}
 
+  virtual void oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                            Register base, RegisterOrConstant ind_or_offs, Register val,
+                            Register tmp1, Register tmp2, Register tmp3, bool needs_frame);
 public:
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                   Register src, Register dst, Register count, Register preserve1, Register preserve2);
   virtual void arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                   Register dst, Register count, Register preserve);
+
+  virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                        Register base, RegisterOrConstant ind_or_offs, Register val,
+                        Register tmp1, Register tmp2, Register tmp3, bool needs_frame);
 };
 
 #endif // CPU_PPC_GC_SHARED_MODREFBARRIERSETASSEMBLER_PPC_HPP

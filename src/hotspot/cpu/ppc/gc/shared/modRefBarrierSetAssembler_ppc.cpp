@@ -55,3 +55,19 @@ void ModRefBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Decorat
     }
   }
 }
+
+void ModRefBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                             Register base, RegisterOrConstant ind_or_offs, Register val,
+                                             Register tmp1, Register tmp2, Register tmp3, bool needs_frame) {
+  BarrierSetAssembler::store_at(masm, decorators, type, base, ind_or_offs, val, tmp1, tmp2, tmp3, needs_frame);
+}
+
+void ModRefBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                         Register base, RegisterOrConstant ind_or_offs, Register val,
+                                         Register tmp1, Register tmp2, Register tmp3, bool needs_frame) {
+  if (type == T_OBJECT || type == T_ARRAY) {
+    oop_store_at(masm, decorators, type, base, ind_or_offs, val, tmp1, tmp2, tmp3, needs_frame);
+  } else {
+    BarrierSetAssembler::store_at(masm, decorators, type, base, ind_or_offs, val, tmp1, tmp2, tmp3, needs_frame);
+  }
+}

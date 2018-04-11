@@ -49,3 +49,17 @@ void ModRefBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Decorat
     if (do_return) { __ z_br(Z_R14); }
   }
 }
+
+void ModRefBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                             const Address& dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
+  BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);
+}
+
+void ModRefBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                         const Address& dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
+  if (type == T_OBJECT || type == T_ARRAY) {
+    oop_store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);
+  } else {
+    BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);
+  }
+}

@@ -31,8 +31,16 @@
 
 class CardTableBarrierSetAssembler: public ModRefBarrierSetAssembler {
 protected:
-  virtual void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators, Register addr,
-                                                Register count, Register preserve);
+  virtual void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
+                                                Register addr, Register count, Register preserve);
+
+  void card_table_write(MacroAssembler* masm, jbyte* byte_map_base, Register tmp, Register obj);
+
+  void card_write_barrier_post(MacroAssembler* masm, Register store_addr, Register tmp);
+
+  virtual void oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                            Register base, RegisterOrConstant ind_or_offs, Register val,
+                            Register tmp1, Register tmp2, Register tmp3, bool needs_frame);
 };
 
 #endif // CPU_PPC_GC_SHARED_CARDTABLEBARRIERSETASSEMBLER_PPC_HPP
