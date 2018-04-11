@@ -150,7 +150,7 @@
           "Force dynamic selection of the number of "                       \
           "parallel threads parallel gc will use to aid debugging")         \
                                                                             \
-  product(size_t, HeapSizePerGCThread, ScaleForWordSize(64*M),              \
+  product(size_t, HeapSizePerGCThread, ScaleForWordSize(32*M),              \
           "Size of heap (bytes) per GC thread used in calculating the "     \
           "number of GC threads")                                           \
           range((size_t)os::vm_page_size(), (size_t)max_uintx)              \
