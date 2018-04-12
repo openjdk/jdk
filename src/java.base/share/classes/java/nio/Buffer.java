@@ -183,7 +183,7 @@ import java.util.Spliterator;
 
 public abstract class Buffer {
     // Cached unsafe-access object
-    static final Unsafe UNSAFE = Bits.unsafe();
+    static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     /**
      * The characteristics of Spliterators that traverse and split elements

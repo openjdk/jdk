@@ -65,25 +65,13 @@ class Bits {                            // package-private
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
-    static Unsafe unsafe() {
-        return UNSAFE;
-    }
-
-
     // -- Processor and memory-system properties --
-
-    private static final ByteOrder BYTE_ORDER
-        = UNSAFE.isBigEndian() ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
-
-    static ByteOrder byteOrder() {
-        return BYTE_ORDER;
-    }
 
     private static int PAGE_SIZE = -1;
 
     static int pageSize() {
         if (PAGE_SIZE == -1)
-            PAGE_SIZE = unsafe().pageSize();
+            PAGE_SIZE = UNSAFE.pageSize();
         return PAGE_SIZE;
     }
 

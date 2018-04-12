@@ -25,6 +25,7 @@
 
 package java.nio;
 
+import jdk.internal.misc.Unsafe;
 
 /**
  * A typesafe enumeration for byte orders.
@@ -57,6 +58,12 @@ public final class ByteOrder {
     public static final ByteOrder LITTLE_ENDIAN
         = new ByteOrder("LITTLE_ENDIAN");
 
+    // Retrieve the native byte order. It's used early during bootstrap, and
+    // must be initialized after BIG_ENDIAN and LITTLE_ENDIAN.
+    private static final ByteOrder NATIVE_ORDER
+        = Unsafe.getUnsafe().isBigEndian()
+            ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
+
     /**
      * Retrieves the native byte order of the underlying platform.
      *
@@ -69,7 +76,7 @@ public final class ByteOrder {
      *          virtual machine is running
      */
     public static ByteOrder nativeOrder() {
-        return Bits.byteOrder();
+        return NATIVE_ORDER;
     }
 
     /**
