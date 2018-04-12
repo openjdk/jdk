@@ -3499,7 +3499,7 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
 }
 
 void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp2) {
-  BarrierSetAssembler* bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->resolve_jobject(this, value, tmp1, tmp2);
 }
 

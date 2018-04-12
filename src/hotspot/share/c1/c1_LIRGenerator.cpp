@@ -314,7 +314,7 @@ jlong LIRItem::get_jlong_constant() const {
 
 
 void LIRGenerator::init() {
-  _bs = Universe::heap()->barrier_set();
+  _bs = BarrierSet::barrier_set();
 }
 
 

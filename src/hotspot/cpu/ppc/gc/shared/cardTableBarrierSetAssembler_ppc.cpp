@@ -29,7 +29,6 @@
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/cardTableBarrierSetAssembler.hpp"
-#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interp_masm.hpp"
 
 #define __ masm->
@@ -44,7 +43,7 @@
 
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators, Register addr,
                                                                     Register count, Register preserve) {
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(Universe::heap()->barrier_set());
+  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
   CardTable* ct = ctbs->card_table();
   assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
   assert_different_registers(addr, count, R0);
@@ -85,7 +84,7 @@ void CardTableBarrierSetAssembler::card_table_write(MacroAssembler* masm,
 }
 
 void CardTableBarrierSetAssembler::card_write_barrier_post(MacroAssembler* masm, Register store_addr, Register tmp) {
-  CardTableBarrierSet* bs = barrier_set_cast<CardTableBarrierSet>(Universe::heap()->barrier_set());
+  CardTableBarrierSet* bs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
   card_table_write(masm, bs->card_table()->byte_map_base(), tmp, store_addr);
 }
 

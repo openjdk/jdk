@@ -1542,7 +1542,7 @@ jint G1CollectedHeap::initialize() {
   G1BarrierSet* bs = new G1BarrierSet(ct);
   bs->initialize();
   assert(bs->is_a(BarrierSet::G1BarrierSet), "sanity");
-  set_barrier_set(bs);
+  BarrierSet::set_barrier_set(bs);
   _card_table = ct;
 
   // Create the hot card cache.

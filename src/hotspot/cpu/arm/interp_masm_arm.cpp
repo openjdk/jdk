@@ -410,7 +410,7 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
 // Sets card_table_base register.
 void InterpreterMacroAssembler::store_check_part1(Register card_table_base) {
   // Check barrier set type (should be card table) and element size
-  BarrierSet* bs = Universe::heap()->barrier_set();
+  BarrierSet* bs = BarrierSet::barrier_set();
   assert(bs->kind() == BarrierSet::CardTableBarrierSet,
          "Wrong barrier set kind");
 
@@ -477,7 +477,7 @@ void InterpreterMacroAssembler::set_card(Register card_table_base, Address card_
 #ifdef AARCH64
   strb(ZR, card_table_addr);
 #else
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(Universe::heap()->barrier_set());
+  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
   CardTable* ct = ctbs->card_table();
   if ((((uintptr_t)ct->byte_map_base() & 0xff) == 0)) {
     // Card table is aligned so the lowest byte of the table address base is zero.

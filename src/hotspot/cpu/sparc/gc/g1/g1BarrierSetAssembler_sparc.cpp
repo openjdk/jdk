@@ -29,7 +29,6 @@
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
-#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
@@ -362,7 +361,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Register
 
   if (new_val == G0) return;
 
-  G1BarrierSet* bs = barrier_set_cast<G1BarrierSet>(Universe::heap()->barrier_set());
+  G1BarrierSet* bs = barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
 
   if (G1RSBarrierRegionFilter) {
     __ xor3(store_addr, new_val, tmp);

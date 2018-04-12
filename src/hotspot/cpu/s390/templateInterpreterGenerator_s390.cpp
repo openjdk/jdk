@@ -512,7 +512,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   __ z_bre(slow_path);
 
   //  Load the value of the referent field.
- BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+ BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
  bs->load_at(_masm, IN_HEAP | ON_WEAK_OOP_REF, T_OBJECT,
                    Address(pre_val, referent_offset), pre_val, scratch1, scratch2);
 

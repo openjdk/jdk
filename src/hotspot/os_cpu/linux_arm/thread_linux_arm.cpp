@@ -46,7 +46,7 @@ frame JavaThread::pd_last_frame() {
 }
 
 void JavaThread::cache_global_variables() {
-  BarrierSet* bs = Universe::heap()->barrier_set();
+  BarrierSet* bs = BarrierSet::barrier_set();
 
   const bool allow_shared_alloc =
     Universe::heap()->supports_inline_contig_alloc();

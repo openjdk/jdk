@@ -137,7 +137,7 @@ void CollectedHeap::print_on_error(outputStream* st) const {
   print_extended_on(st);
   st->cr();
 
-  _barrier_set->print_on(st);
+  BarrierSet::barrier_set()->print_on(st);
 }
 
 void CollectedHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
@@ -176,7 +176,6 @@ bool CollectedHeap::request_concurrent_phase(const char* phase) {
 
 
 CollectedHeap::CollectedHeap() :
-  _barrier_set(NULL),
   _is_gc_active(false),
   _total_collections(0),
   _total_full_collections(0),
@@ -309,11 +308,6 @@ MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loa
                             " size=" SIZE_FORMAT, loop_count, word_size);
     }
   } while (true);  // Until a GC is done
-}
-
-void CollectedHeap::set_barrier_set(BarrierSet* barrier_set) {
-  _barrier_set = barrier_set;
-  BarrierSet::set_barrier_set(barrier_set);
 }
 
 #ifndef PRODUCT
@@ -522,7 +516,7 @@ void CollectedHeap::ensure_parsability(bool retire_tlabs) {
   assert(!use_tlab || jtiwh.length() > 0,
          "Attempt to fill tlabs before main thread has been added"
          " to threads list is doomed to failure!");
-  BarrierSet *bs = barrier_set();
+  BarrierSet *bs = BarrierSet::barrier_set();
   for (; JavaThread *thread = jtiwh.next(); ) {
      if (use_tlab) thread->tlab().make_parsable(retire_tlabs);
      bs->make_parsable(thread);

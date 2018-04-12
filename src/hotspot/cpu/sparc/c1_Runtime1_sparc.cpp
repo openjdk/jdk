@@ -762,7 +762,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 #if INCLUDE_ALL_GCS
     case g1_pre_barrier_slow_id:
       { // G4: previous value of memory
-        BarrierSet* bs = Universe::heap()->barrier_set();
+        BarrierSet* bs = BarrierSet::barrier_set();
         if (bs->kind() != BarrierSet::G1BarrierSet) {
           __ save_frame(0);
           __ set((int)id, O1);
@@ -827,7 +827,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
     case g1_post_barrier_slow_id:
       {
-        BarrierSet* bs = Universe::heap()->barrier_set();
+        BarrierSet* bs = BarrierSet::barrier_set();
         if (bs->kind() != BarrierSet::G1BarrierSet) {
           __ save_frame(0);
           __ set((int)id, O1);
