@@ -1579,7 +1579,7 @@ public abstract class $Type$Buffer
     boolean bigEndian                                   // package-private
         = true;
     boolean nativeByteOrder                             // package-private
-        = (Bits.byteOrder() == ByteOrder.BIG_ENDIAN);
+        = (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN);
 
     /**
      * Retrieves this buffer's byte order.
@@ -1608,7 +1608,7 @@ public abstract class $Type$Buffer
     public final $Type$Buffer order(ByteOrder bo) {
         bigEndian = (bo == ByteOrder.BIG_ENDIAN);
         nativeByteOrder =
-            (bigEndian == (Bits.byteOrder() == ByteOrder.BIG_ENDIAN));
+            (bigEndian == (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN));
         return this;
     }
 
