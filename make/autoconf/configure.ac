@@ -120,6 +120,7 @@ PLATFORM_SETUP_OPENJDK_BUILD_OS_VERSION
 
 # Misc basic settings
 BASIC_SETUP_DEFAULT_MAKE_TARGET
+BASIC_SETUP_DEFAULT_LOG
 
 ###############################################################################
 #
@@ -272,7 +273,7 @@ BASIC_TEST_USABILITY_ISSUES
 CUSTOM_LATE_HOOK
 
 # This needs to be done after CUSTOM_LATE_HOOK since we can setup custom features.
-HOTSPOT_VALIDATE_JVM_FEATURES
+HOTSPOT_FINALIZE_JVM_FEATURES
 
 # Did user specify any unknown variables?
 BASIC_CHECK_LEFTOVER_OVERRIDDEN

@@ -32,6 +32,12 @@ public class Deduplication {
     void group(Object... xs) {}
 
     void test() {
+
+        group(
+                (Runnable) () -> { ( (Runnable) () -> {} ).run(); },
+                (Runnable) () -> { ( (Runnable) () -> {} ).run(); }
+        );
+
         group((Function<String, Integer>) x -> x.hashCode());
         group((Function<Object, Integer>) x -> x.hashCode());
 

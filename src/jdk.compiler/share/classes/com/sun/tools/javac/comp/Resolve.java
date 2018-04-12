@@ -2120,6 +2120,7 @@ public class Resolve {
 
         Set<ModuleSymbol> recoverableModules = new HashSet<>(syms.getAllModules());
 
+        recoverableModules.add(syms.unnamedModule);
         recoverableModules.remove(env.toplevel.modle);
 
         for (ModuleSymbol ms : recoverableModules) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8186046
+ * @bug 8186046 8199875
  * @summary Test basic invocation of bootstrap methods
  * @library /lib/testlibrary/bytecode /java/lang/invoke/common
  * @build jdk.experimental.bytecode.BasicClassBuilder test.java.lang.invoke.lib.InstructionHelper
@@ -40,8 +40,10 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.WrongMethodTypeException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static java.lang.invoke.MethodType.methodType;
 
@@ -63,85 +65,85 @@ public class CondyBSMInvocation {
         }
     }
 
+    static MethodHandle[] bsms(String bsmName) {
+        return Stream.of(CondyBSMInvocation.class.getDeclaredMethods()).
+                filter(m -> m.getName().equals(bsmName)).
+                map(m -> {
+                    try {
+                        return MethodHandles.lookup().unreflect(m);
+                    } catch (IllegalAccessException e) {
+                        throw new RuntimeException();
+                    }
+                }).toArray(MethodHandle[]::new);
+    }
 
-    public static Object _bsm() {
+    public static Object shape_bsm() {
         return "0";
     }
 
-    public static Object _bsm(Object a1) {
+    public static Object shape_bsm(Object a1) {
         return "0";
     }
 
-    // Note: when pull mode is supported for a BSM this test case
-    //       will fail and must be removed
-    public static Object _bsm(Object a1, Object a2) {
+    public static Object shape_bsm(Object... args) {
+        return "0";
+    }
+
+    public static Object shape_bsm(Object a1, Object a2) {
+        return "0";
+    }
+
+    public static Object shape_bsm(Object a1, Object... args) {
+        return "0";
+    }
+
+    public static Object shape_bsm(Object a1, Object a2, Object a3) {
+        return "0";
+    }
+
+    public static Object shape_bsm(MethodHandles.Lookup a1) {
         return "0";
     }
 
     @Test
-    public void testWrongArity() throws Throwable {
-        for (int i = 0; i < 3; i++) {
-            final int n = i;
-            MethodType mt = methodType(Object.class)
-                    .appendParameterTypes(Collections.nCopies(n, Object.class));
+    public void testWrongShape() throws Throwable {
+        for (MethodHandle bsm : bsms("shape_bsm")) {
             MethodHandle mh = InstructionHelper.ldcDynamicConstant(
                     L, "name", Object.class,
-                    "_bsm", mt,
-                    S -> IntStream.range(0, n).forEach(S::add)
+                    "shape_bsm", bsm.type(),
+                    S -> {}
             );
 
             try {
                 Object r = mh.invoke();
-                Assert.fail("BootstrapMethodError expected to be thrown for arrity " + n);
+                Assert.fail("BootstrapMethodError expected to be thrown for " + bsm);
             } catch (BootstrapMethodError e) {
-                Throwable t = e.getCause();
-                Assert.assertTrue(WrongMethodTypeException.class.isAssignableFrom(t.getClass()));
             }
         }
     }
 
 
-    public static Object _bsm(String[] ss) {
+    public static Object sig_bsm(MethodHandles.Lookup a1, String[] a2) {
         return "0";
     }
 
-    public static Object _bsm(String a1, String a2, String a3) {
+    public static Object sig_bsm(MethodHandles.Lookup a1, String a2, String a3) {
         return "0";
     }
 
     @Test
     public void testWrongSignature() throws Throwable {
-        {
+        for (MethodHandle bsm : bsms("sig_bsm")) {
             MethodHandle mh = InstructionHelper.ldcDynamicConstant(
                     L, "name", Object.class,
-                    "_bsm", methodType(Object.class, String[].class),
+                    "sig_bsm", bsm.type(),
                     S -> {}
             );
 
             try {
                 Object r = mh.invoke();
-                Assert.fail("BootstrapMethodError expected to be thrown");
-            }
-            catch (BootstrapMethodError e) {
-                Throwable t = e.getCause();
-                Assert.assertTrue(WrongMethodTypeException.class.isAssignableFrom(t.getClass()));
-            }
-        }
-
-        {
-            MethodHandle mh = InstructionHelper.ldcDynamicConstant(
-                    L, "name", Object.class,
-                    "_bsm", methodType(Object.class, String.class, String.class, String.class),
-                    S -> {}
-            );
-
-            try {
-                Object r = mh.invoke();
-                Assert.fail("BootstrapMethodError expected to be thrown");
-            }
-            catch (BootstrapMethodError e) {
-                Throwable t = e.getCause();
-                Assert.assertTrue(ClassCastException.class.isAssignableFrom(t.getClass()));
+                Assert.fail("BootstrapMethodError expected to be thrown for " + bsm);
+            } catch (BootstrapMethodError e) {
             }
         }
     }
@@ -193,6 +195,12 @@ public class CondyBSMInvocation {
         return "7";
     }
 
+    public static Object bsm(MethodHandles.Lookup l, Object... args) {
+        Object[] staticArgs = Arrays.copyOfRange(args, 2, args.length);
+        assertAll(staticArgs);
+        return Integer.toString(staticArgs.length);
+    }
+
     static void assertAll(Object... as) {
         for (int i = 0; i < as.length; i++) {
             Assert.assertEquals(as[i], i);
@@ -213,6 +221,19 @@ public class CondyBSMInvocation {
 
             Object r = mh.invoke();
             Assert.assertEquals(r, Integer.toString(n));
+        }
+
+        {
+            MethodType mt = methodType(Object.class, MethodHandles.Lookup.class, Object[].class);
+            MethodHandle mh = InstructionHelper.ldcDynamicConstant(
+                    L, "name", Object.class,
+                    "bsm", mt,
+                    S -> IntStream.range(0, 9).forEach(S::add)
+            );
+
+            Object r = mh.invoke();
+            Assert.assertEquals(r, Integer.toString(9));
+
         }
     }
 

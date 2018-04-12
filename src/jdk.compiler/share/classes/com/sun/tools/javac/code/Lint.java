@@ -287,7 +287,12 @@ public class Lint
         /**
          * Warn about potentially unsafe vararg methods
          */
-        VARARGS("varargs");
+        VARARGS("varargs"),
+
+        /**
+         * Warn about use of preview features.
+         */
+        PREVIEW("preview");
 
         LintCategory(String option) {
             this(option, false);

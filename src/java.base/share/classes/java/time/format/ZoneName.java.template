@@ -1,0 +1,249 @@
+/*
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+package java.time.format;
+
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
+/**
+ * A helper class to map a zone name to metazone and back to the
+ * appropriate zone id for the particular locale.
+ * <p>
+ * The zid<->metazone mappings are based on CLDR metaZones.xml.
+ * The alias mappings are based on Link entries in tzdb data files and
+ * CLDR's supplementalMetadata.xml.
+ */
+class ZoneName {
+
+    public static String toZid(String zid, Locale locale) {
+        String mzone = zidToMzone.get(zid);
+        if (mzone == null && aliases.containsKey(zid)) {
+            zid = aliases.get(zid);
+            mzone = zidToMzone.get(zid);
+        }
+        if (mzone != null) {
+            Map<String, String> map = mzoneToZidL.get(mzone);
+            if (map != null && map.containsKey(locale.getCountry())) {
+                zid = map.get(locale.getCountry());
+            } else {
+                zid = mzoneToZid.get(mzone);
+            }
+        }
+        return toZid(zid);
+    }
+
+    public static String toZid(String zid) {
+        if (aliases.containsKey(zid)) {
+            return aliases.get(zid);
+        }
+        return zid;
+    }
+
+    private static final String[] zidMap = new String[] {
+        // From metaZones.xml
+%%%%ZIDMAP%%%%
+
+        // From tzdb
+        "Africa/Khartoum", "Africa_Central", "Africa/Maputo", // tzdata2017c
+        "Africa/Windhoek", "Africa_Central", "Africa/Maputo", // tzdata2017c
+        "Africa/Sao_Tome", "Africa_Western", "Africa/Lagos",  // tzdata2018c
+    };
+    private static final String[] mzoneMap = new String[] {
+        // From metaZones.xml
+%%%%MZONEMAP%%%%
+
+        // From tzdb
+        "Africa_Western", "ST", "Africa/Sao_Tome", // tzdata2018c
+    };
+    private static final String[] aliasMap = new String[] {
+        // From supplementalMetadata.xml
+%%%%DEPRECATED%%%%
+
+        // From tzdb
+        "Brazil/Acre", "America/Rio_Branco",
+        "US/Indiana-Starke", "America/Indiana/Knox",
+        "America/Atka", "America/Adak",
+        "America/St_Barthelemy", "America/Guadeloupe",
+        "Australia/North", "Australia/Darwin",
+        "Europe/Zagreb", "Europe/Belgrade",
+        "Etc/Universal", "Etc/UTC",
+        "NZ-CHAT", "Pacific/Chatham",
+        "Asia/Macao", "Asia/Macau",
+        "Pacific/Yap", "Pacific/Chuuk",
+        "Egypt", "Africa/Cairo",
+        "US/Central", "America/Chicago",
+        "Canada/Atlantic", "America/Halifax",
+        "Brazil/East", "America/Sao_Paulo",
+        "America/Cordoba", "America/Argentina/Cordoba",
+        "US/Hawaii", "Pacific/Honolulu",
+        "America/Louisville", "America/Kentucky/Louisville",
+        "America/Shiprock", "America/Denver",
+        "Australia/Canberra", "Australia/Sydney",
+        "Asia/Chungking", "Asia/Chongqing",
+        "Universal", "Etc/UTC",
+        "US/Alaska", "America/Anchorage",
+        "Asia/Ujung_Pandang", "Asia/Makassar",
+        "Japan", "Asia/Tokyo",
+        "Atlantic/Faeroe", "Atlantic/Faroe",
+        "Asia/Istanbul", "Europe/Istanbul",
+        "US/Pacific", "America/Los_Angeles",
+        "Mexico/General", "America/Mexico_City",
+        "Poland", "Europe/Warsaw",
+        "Africa/Asmera", "Africa/Asmara",
+        "Asia/Saigon", "Asia/Ho_Chi_Minh",
+        "US/Michigan", "America/Detroit",
+        "America/Argentina/ComodRivadavia", "America/Argentina/Catamarca",
+        "W-SU", "Europe/Moscow",
+        "Australia/ACT", "Australia/Sydney",
+        "Asia/Calcutta", "Asia/Kolkata",
+        "Arctic/Longyearbyen", "Europe/Oslo",
+        "America/Knox_IN", "America/Indiana/Knox",
+        "ROC", "Asia/Taipei",
+        "Zulu", "Etc/UTC",
+        "Australia/Yancowinna", "Australia/Broken_Hill",
+        "Australia/West", "Australia/Perth",
+        "Singapore", "Asia/Singapore",
+        "Europe/Mariehamn", "Europe/Helsinki",
+        "ROK", "Asia/Seoul",
+        "America/Porto_Acre", "America/Rio_Branco",
+        "Etc/Zulu", "Etc/UTC",
+        "Canada/Yukon", "America/Whitehorse",
+        "Europe/Vatican", "Europe/Rome",
+        "Africa/Timbuktu", "Africa/Bamako",
+        "America/Buenos_Aires", "America/Argentina/Buenos_Aires",
+        "Canada/Pacific", "America/Vancouver",
+        "US/Pacific-New", "America/Los_Angeles",
+        "Mexico/BajaNorte", "America/Tijuana",
+        "Europe/Guernsey", "Europe/London",
+        "Asia/Tel_Aviv", "Asia/Jerusalem",
+        "Chile/Continental", "America/Santiago",
+        "Jamaica", "America/Jamaica",
+        "Mexico/BajaSur", "America/Mazatlan",
+        "Canada/Eastern", "America/Toronto",
+        "Australia/Tasmania", "Australia/Hobart",
+        "NZ", "Pacific/Auckland",
+        "America/Lower_Princes", "America/Curacao",
+        "GMT-", "Etc/GMT",
+        "America/Rosario", "America/Argentina/Cordoba",
+        "Libya", "Africa/Tripoli",
+        "Asia/Ashkhabad", "Asia/Ashgabat",
+        "Australia/NSW", "Australia/Sydney",
+        "America/Marigot", "America/Guadeloupe",
+        "Europe/Bratislava", "Europe/Prague",
+        "Portugal", "Europe/Lisbon",
+        "Etc/GMT-", "Etc/GMT",
+        "Europe/San_Marino", "Europe/Rome",
+        "Europe/Sarajevo", "Europe/Belgrade",
+        "Antarctica/South_Pole", "Antarctica/McMurdo",
+        "Canada/Central", "America/Winnipeg",
+        "Etc/GMT", "Etc/GMT",
+        "Europe/Isle_of_Man", "Europe/London",
+        "America/Fort_Wayne", "America/Indiana/Indianapolis",
+        "Eire", "Europe/Dublin",
+        "America/Coral_Harbour", "America/Atikokan",
+        "Europe/Nicosia", "Asia/Nicosia",
+        "US/Samoa", "Pacific/Pago_Pago",
+        "Hongkong", "Asia/Hong_Kong",
+        "Canada/Saskatchewan", "America/Regina",
+        "Asia/Thimbu", "Asia/Thimphu",
+        "Kwajalein", "Pacific/Kwajalein",
+        "GB", "Europe/London",
+        "Chile/EasterIsland", "Pacific/Easter",
+        "US/East-Indiana", "America/Indiana/Indianapolis",
+        "Australia/LHI", "Australia/Lord_Howe",
+        "Cuba", "America/Havana",
+        "America/Jujuy", "America/Argentina/Jujuy",
+        "US/Mountain", "America/Denver",
+        "Atlantic/Jan_Mayen", "Europe/Oslo",
+        "Europe/Tiraspol", "Europe/Chisinau",
+        "Europe/Podgorica", "Europe/Belgrade",
+        "US/Arizona", "America/Phoenix",
+        "Navajo", "America/Denver",
+        "Etc/Greenwich", "Etc/GMT",
+        "Canada/Mountain", "America/Edmonton",
+        "Iceland", "Atlantic/Reykjavik",
+        "Australia/Victoria", "Australia/Melbourne",
+        "Australia/South", "Australia/Adelaide",
+        "Brazil/West", "America/Manaus",
+        "Pacific/Ponape", "Pacific/Pohnpei",
+        "Europe/Ljubljana", "Europe/Belgrade",
+        "Europe/Jersey", "Europe/London",
+        "Australia/Queensland", "Australia/Brisbane",
+        "UTC", "Etc/UTC",
+        "Canada/Newfoundland", "America/St_Johns",
+        "Europe/Skopje", "Europe/Belgrade",
+        "PRC", "Asia/Shanghai",
+        "UCT", "Etc/UCT",
+        "America/Mendoza", "America/Argentina/Mendoza",
+        "Israel", "Asia/Jerusalem",
+        "US/Eastern", "America/New_York",
+        "Asia/Ulan_Bator", "Asia/Ulaanbaatar",
+        "Turkey", "Europe/Istanbul",
+        "GMT", "Etc/GMT",
+        "US/Aleutian", "America/Adak",
+        "Brazil/DeNoronha", "America/Noronha",
+        "GB-Eire", "Europe/London",
+        "Asia/Dacca", "Asia/Dhaka",
+        "America/Ensenada", "America/Tijuana",
+        "America/Catamarca", "America/Argentina/Catamarca",
+        "Iran", "Asia/Tehran",
+        "Greenwich", "Etc/GMT",
+        "Pacific/Truk", "Pacific/Chuuk",
+        "Pacific/Samoa", "Pacific/Pago_Pago",
+        "America/Virgin", "America/St_Thomas",
+        "Asia/Katmandu", "Asia/Kathmandu",
+        "America/Indianapolis", "America/Indiana/Indianapolis",
+        "Europe/Belfast", "Europe/London",
+        "America/Kralendijk", "America/Curacao",
+        "Asia/Rangoon", "Asia/Yangon",
+    };
+
+    private static final Map<String, String> zidToMzone = new HashMap<>();
+    private static final Map<String, String> mzoneToZid = new HashMap<>();
+    private static final Map<String, Map<String, String>> mzoneToZidL = new HashMap<>();
+    private static final Map<String, String> aliases = new HashMap<>();
+
+    static {
+        for (int i = 0; i < zidMap.length; i += 3) {
+            zidToMzone.put(zidMap[i], zidMap[i + 1]);
+            mzoneToZid.put(zidMap[i + 1], zidMap[i + 2]);
+        }
+
+        for (int i = 0; i < mzoneMap.length; i += 3) {
+            String mzone = mzoneMap[i];
+            Map<String, String> map = mzoneToZidL.get(mzone);
+            if (map == null) {
+                map = new HashMap<>();
+                mzoneToZidL.put(mzone, map);
+            }
+            map.put(mzoneMap[i + 1], mzoneMap[i + 2]);
+        }
+
+        for (int i = 0; i < aliasMap.length; i += 2) {
+            aliases.put(aliasMap[i], aliasMap[i + 1]);
+        }
+    }
+}

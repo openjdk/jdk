@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.parser;
 
+import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
@@ -52,6 +53,9 @@ public class JavaTokenizer {
     /** The source language setting.
      */
     private Source source;
+
+    /** The preview language setting. */
+    private Preview preview;
 
     /** The log to be used for error reporting.
      */
@@ -115,12 +119,20 @@ public class JavaTokenizer {
         this.log = fac.log;
         this.tokens = fac.tokens;
         this.source = fac.source;
+        this.preview = fac.preview;
         this.reader = reader;
     }
 
-    private void checkSourceLevel(int pos, Feature feature) {
-        if (!feature.allowedInSource(source)) {
+    protected void checkSourceLevel(int pos, Feature feature) {
+        if (preview.isPreview(feature) && !preview.isEnabled()) {
+            //preview feature without --preview flag, error
+            lexError(DiagnosticFlag.SOURCE_LEVEL, pos, preview.disabledError(feature));
+        } else if (!feature.allowedInSource(source)) {
+            //incompatible source level, error
             lexError(DiagnosticFlag.SOURCE_LEVEL, pos, feature.error(source.name));
+        } else if (preview.isPreview(feature)) {
+            //use of preview feature, warn
+            preview.warnPreview(pos, feature);
         }
     }
 

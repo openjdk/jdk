@@ -41,8 +41,8 @@ import java.io.FilePermission;
 import java.net.SocketPermission;
 import java.net.NetPermission;
 import java.util.concurrent.atomic.AtomicReference;
-import jdk.internal.misc.JavaSecurityProtectionDomainAccess;
-import static jdk.internal.misc.JavaSecurityProtectionDomainAccess.ProtectionDomainCache;
+import jdk.internal.misc.JavaSecurityAccess;
+import static jdk.internal.misc.JavaSecurityAccess.ProtectionDomainCache;
 import jdk.internal.misc.SharedSecrets;
 import sun.security.util.*;
 import sun.net.www.ParseUtil;
@@ -2202,8 +2202,8 @@ public class PolicyFile extends java.security.Policy {
             aliasMapping = Collections.synchronizedMap(new HashMap<>(11));
 
             pdMapping = new ProtectionDomainCache[numCaches];
-            JavaSecurityProtectionDomainAccess jspda
-                = SharedSecrets.getJavaSecurityProtectionDomainAccess();
+            JavaSecurityAccess jspda
+                = SharedSecrets.getJavaSecurityAccess();
             for (int i = 0; i < numCaches; i++) {
                 pdMapping[i] = jspda.getProtectionDomainCache();
             }

@@ -330,6 +330,8 @@ public enum Option {
         }
     },
 
+    PREVIEW("--enable-preview", "opt.preview", STANDARD, BASIC),
+
     PROFILE("-profile", "opt.arg.profile", "opt.profile", STANDARD, BASIC) {
         @Override
         public void process(OptionHelper helper, String option, String operand) throws InvalidValueException {
