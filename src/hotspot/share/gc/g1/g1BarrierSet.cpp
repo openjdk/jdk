@@ -37,25 +37,26 @@
 #include "runtime/thread.inline.hpp"
 #include "utilities/macros.hpp"
 
+SATBMarkQueueSet G1BarrierSet::_satb_mark_queue_set;
+DirtyCardQueueSet G1BarrierSet::_dirty_card_queue_set;
+
 G1BarrierSet::G1BarrierSet(G1CardTable* card_table) :
   CardTableBarrierSet(make_barrier_set_assembler<G1BarrierSetAssembler>(),
                       card_table,
-                      BarrierSet::FakeRtti(BarrierSet::G1BarrierSet)),
-  _dcqs(JavaThread::dirty_card_queue_set())
-{ }
+                      BarrierSet::FakeRtti(BarrierSet::G1BarrierSet)) {}
 
 void G1BarrierSet::enqueue(oop pre_val) {
   // Nulls should have been already filtered.
   assert(oopDesc::is_oop(pre_val, true), "Error");
 
-  if (!JavaThread::satb_mark_queue_set().is_active()) return;
+  if (!_satb_mark_queue_set.is_active()) return;
   Thread* thr = Thread::current();
   if (thr->is_Java_thread()) {
     JavaThread* jt = (JavaThread*)thr;
     jt->satb_mark_queue().enqueue(pre_val);
   } else {
     MutexLockerEx x(Shared_SATB_Q_lock, Mutex::_no_safepoint_check_flag);
-    JavaThread::satb_mark_queue_set().shared_satb_queue()->enqueue(pre_val);
+    _satb_mark_queue_set.shared_satb_queue()->enqueue(pre_val);
   }
 }
 
@@ -76,7 +77,7 @@ void G1BarrierSet::write_ref_array_post_entry(HeapWord* dst, size_t length) {
 
 template <class T> void
 G1BarrierSet::write_ref_array_pre_work(T* dst, size_t count) {
-  if (!JavaThread::satb_mark_queue_set().is_active()) return;
+  if (!_satb_mark_queue_set.is_active()) return;
   T* elem_ptr = dst;
   for (size_t i = 0; i < count; i++, elem_ptr++) {
     T heap_oop = RawAccess<>::oop_load(elem_ptr);
@@ -111,7 +112,7 @@ void G1BarrierSet::write_ref_field_post_slow(volatile jbyte* byte) {
     } else {
       MutexLockerEx x(Shared_DirtyCardQ_lock,
                       Mutex::_no_safepoint_check_flag);
-      _dcqs.shared_dirty_card_queue()->enqueue(byte);
+      _dirty_card_queue_set.shared_dirty_card_queue()->enqueue(byte);
     }
   }
 }
@@ -149,7 +150,7 @@ void G1BarrierSet::invalidate(MemRegion mr) {
         }
         if (*byte != G1CardTable::dirty_card_val()) {
           *byte = G1CardTable::dirty_card_val();
-          _dcqs.shared_dirty_card_queue()->enqueue(byte);
+          _dirty_card_queue_set.shared_dirty_card_queue()->enqueue(byte);
         }
       }
     }
@@ -181,7 +182,7 @@ void G1BarrierSet::on_thread_attach(JavaThread* thread) {
 
   // If we are creating the thread during a marking cycle, we should
   // set the active field of the SATB queue to true.
-  if (thread->satb_mark_queue_set().is_active()) {
+  if (_satb_mark_queue_set.is_active()) {
     thread->satb_mark_queue().set_active(true);
   }
 }

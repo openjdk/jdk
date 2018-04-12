@@ -1063,12 +1063,8 @@ class JavaThread: public Thread {
   // Support for G1 barriers
 
   SATBMarkQueue _satb_mark_queue;        // Thread-local log for SATB barrier.
-  // Set of all such queues.
-  static SATBMarkQueueSet _satb_mark_queue_set;
 
   DirtyCardQueue _dirty_card_queue;      // Thread-local log for dirty cards.
-  // Set of all such queues.
-  static DirtyCardQueueSet _dirty_card_queue_set;
 #endif // INCLUDE_ALL_GCS
 
   friend class VMThread;
@@ -1948,15 +1944,9 @@ class JavaThread: public Thread {
 #if INCLUDE_ALL_GCS
   // SATB marking queue support
   SATBMarkQueue& satb_mark_queue() { return _satb_mark_queue; }
-  static SATBMarkQueueSet& satb_mark_queue_set() {
-    return _satb_mark_queue_set;
-  }
 
   // Dirty card queue support
   DirtyCardQueue& dirty_card_queue() { return _dirty_card_queue; }
-  static DirtyCardQueueSet& dirty_card_queue_set() {
-    return _dirty_card_queue_set;
-  }
 #endif // INCLUDE_ALL_GCS
 
   // Machine dependent stuff

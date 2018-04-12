@@ -30,6 +30,7 @@
 #include "code/icBuffer.hpp"
 #include "gc/g1/bufferingOopClosure.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
@@ -1036,7 +1037,7 @@ void G1CollectedHeap::abort_refinement() {
   }
 
   // Discard all remembered set updates.
-  JavaThread::dirty_card_queue_set().abandon_logs();
+  G1BarrierSet::dirty_card_queue_set().abandon_logs();
   assert(dirty_card_queue_set().completed_buffers_num() == 0, "DCQS should be empty");
 }
 
@@ -1636,10 +1637,10 @@ jint G1CollectedHeap::initialize() {
   // Perform any initialization actions delegated to the policy.
   g1_policy()->init(this, &_collection_set);
 
-  JavaThread::satb_mark_queue_set().initialize(SATB_Q_CBL_mon,
-                                               SATB_Q_FL_lock,
-                                               G1SATBProcessCompletedThreshold,
-                                               Shared_SATB_Q_lock);
+  G1BarrierSet::satb_mark_queue_set().initialize(SATB_Q_CBL_mon,
+                                                 SATB_Q_FL_lock,
+                                                 G1SATBProcessCompletedThreshold,
+                                                 Shared_SATB_Q_lock);
 
   jint ecode = initialize_concurrent_refinement();
   if (ecode != JNI_OK) {
@@ -1651,20 +1652,20 @@ jint G1CollectedHeap::initialize() {
     return ecode;
   }
 
-  JavaThread::dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
-                                                DirtyCardQ_FL_lock,
-                                                (int)concurrent_refine()->yellow_zone(),
-                                                (int)concurrent_refine()->red_zone(),
-                                                Shared_DirtyCardQ_lock,
-                                                NULL,  // fl_owner
-                                                true); // init_free_ids
+  G1BarrierSet::dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
+                                                  DirtyCardQ_FL_lock,
+                                                  (int)concurrent_refine()->yellow_zone(),
+                                                  (int)concurrent_refine()->red_zone(),
+                                                  Shared_DirtyCardQ_lock,
+                                                  NULL,  // fl_owner
+                                                  true); // init_free_ids
 
   dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
                                     DirtyCardQ_FL_lock,
                                     -1, // never trigger processing
                                     -1, // no limit on length
                                     Shared_DirtyCardQ_lock,
-                                    &JavaThread::dirty_card_queue_set());
+                                    &G1BarrierSet::dirty_card_queue_set());
 
   // Here we allocate the dummy HeapRegion that is required by the
   // G1AllocRegion class.
@@ -1833,7 +1834,7 @@ void G1CollectedHeap::iterate_hcc_closure(CardTableEntryClosure* cl, uint worker
 }
 
 void G1CollectedHeap::iterate_dirty_card_closure(CardTableEntryClosure* cl, uint worker_i) {
-  DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
+  DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
   size_t n_completed_buffers = 0;
   while (dcqs.apply_closure_during_gc(cl, worker_i)) {
     n_completed_buffers++;
@@ -2467,7 +2468,7 @@ size_t G1CollectedHeap::pending_card_num() {
     DirtyCardQueue& dcq = curr->dirty_card_queue();
     extra_cards += dcq.size();
   }
-  DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
+  DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
   size_t buffer_size = dcqs.buffer_size();
   size_t buffer_num = dcqs.completed_buffers_num();
 
@@ -2551,7 +2552,7 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
   RegisterHumongousWithInCSetFastTestClosure()
   : _total_humongous(0),
     _candidate_humongous(0),
-    _dcq(&JavaThread::dirty_card_queue_set()) {
+    _dcq(&G1BarrierSet::dirty_card_queue_set()) {
   }
 
   virtual bool do_heap_region(HeapRegion* r) {
@@ -3623,7 +3624,7 @@ void G1CollectedHeap::redirty_logged_cards() {
   dirty_card_queue_set().reset_for_par_iteration();
   workers()->run_task(&redirty_task);
 
-  DirtyCardQueueSet& dcq = JavaThread::dirty_card_queue_set();
+  DirtyCardQueueSet& dcq = G1BarrierSet::dirty_card_queue_set();
   dcq.merge_bufferlists(&dirty_card_queue_set());
   assert(dirty_card_queue_set().completed_buffers_num() == 0, "All should be consumed");
 
