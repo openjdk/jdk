@@ -33,6 +33,7 @@
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 #define __ masm->
 
