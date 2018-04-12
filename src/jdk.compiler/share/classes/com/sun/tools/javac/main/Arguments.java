@@ -536,6 +536,20 @@ public class Arguments {
             }
         }
 
+        if (options.isSet(Option.PREVIEW)) {
+            if (sourceString == null) {
+                //enable-preview must be used with explicit -source or --release
+                error("err.preview.without.source.or.release");
+                return false;
+            } else if (source != Source.DEFAULT) {
+                //enable-preview must be used with latest source version
+                error("err.preview.not.latest",
+                        sourceString,
+                        Source.DEFAULT.name);
+                return false;
+            }
+        }
+
         String profileString = options.get(Option.PROFILE);
         if (profileString != null) {
             Profile profile = Profile.lookup(profileString);

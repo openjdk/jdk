@@ -217,6 +217,16 @@ public enum Source {
                     source.compareTo(maxLevel) <= 0;
         }
 
+        public boolean isPlural() {
+            Assert.checkNonNull(optKind);
+            return optKind == DiagKind.PLURAL;
+        }
+
+        public Fragment nameFragment() {
+            Assert.checkNonNull(optFragment);
+            return optFragment;
+        }
+
         public Fragment fragment(String sourceName) {
             Assert.checkNonNull(optFragment);
             return optKind == DiagKind.NORMAL ?

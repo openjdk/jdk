@@ -105,6 +105,8 @@ public class ClassFile {
     public final static int MAX_LOCALS = 0xffff;
     public final static int MAX_STACK = 0xffff;
 
+    public final static int PREVIEW_MINOR_VERSION = 0xffff;
+
     public enum Version {
         V45_3(45, 3), // base level for all attributes
         V49(49, 0),   // JDK 1.5: enum, generics, annotations
