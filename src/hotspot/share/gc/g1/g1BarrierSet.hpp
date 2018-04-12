@@ -74,6 +74,8 @@ class G1BarrierSet: public CardTableBarrierSet {
   void write_ref_field_post(T* field, oop new_val);
   void write_ref_field_post_slow(volatile jbyte* byte);
 
+  virtual void on_thread_create(Thread* thread);
+  virtual void on_thread_destroy(Thread* thread);
   virtual void on_thread_attach(JavaThread* thread);
   virtual void on_thread_detach(JavaThread* thread);
 

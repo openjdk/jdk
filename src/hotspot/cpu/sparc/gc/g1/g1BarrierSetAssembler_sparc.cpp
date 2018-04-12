@@ -27,11 +27,11 @@
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/macros.hpp"
 
 #define __ masm->
@@ -46,11 +46,10 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
     Label filtered;
     // Is marking active?
     if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-      __ ld(G2, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active()), tmp);
+      __ ld(G2, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()), tmp);
     } else {
-      guarantee(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1,
-                "Assumption");
-      __ ldsb(G2, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active()), tmp);
+      guarantee(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+      __ ldsb(G2, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()), tmp);
     }
     // Is marking active?
     __ cmp_and_br_short(tmp, G0, Assembler::equal, Assembler::pt, filtered);
@@ -120,13 +119,8 @@ static void generate_satb_log_enqueue(bool with_frame) {
     pre_val = O0;
   }
 
-  int satb_q_index_byte_offset =
-    in_bytes(JavaThread::satb_mark_queue_offset() +
-             SATBMarkQueue::byte_offset_of_index());
-
-  int satb_q_buf_byte_offset =
-    in_bytes(JavaThread::satb_mark_queue_offset() +
-             SATBMarkQueue::byte_offset_of_buf());
+  int satb_q_index_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset());
+  int satb_q_buf_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset());
 
   assert(in_bytes(SATBMarkQueue::byte_width_of_index()) == sizeof(intptr_t) &&
          in_bytes(SATBMarkQueue::byte_width_of_buf()) == sizeof(intptr_t),
@@ -216,17 +210,10 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
 
   // Is marking active?
   if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-    __ ld(G2,
-          in_bytes(JavaThread::satb_mark_queue_offset() +
-                   SATBMarkQueue::byte_offset_of_active()),
-          tmp);
+    __ ld(G2, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()), tmp);
   } else {
-    guarantee(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1,
-              "Assumption");
-    __ ldsb(G2,
-            in_bytes(JavaThread::satb_mark_queue_offset() +
-                     SATBMarkQueue::byte_offset_of_active()),
-            tmp);
+    guarantee(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+    __ ldsb(G2, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()), tmp);
   }
 
   // Is marking active?
@@ -318,12 +305,8 @@ static void generate_dirty_card_log_enqueue(jbyte* byte_map_base) {
   // First, dirty it.
   __ stb(G0, O3, G0);  // [cardPtr] := 0  (i.e., dirty).
 
-  int dirty_card_q_index_byte_offset =
-    in_bytes(JavaThread::dirty_card_queue_offset() +
-             DirtyCardQueue::byte_offset_of_index());
-  int dirty_card_q_buf_byte_offset =
-    in_bytes(JavaThread::dirty_card_queue_offset() +
-             DirtyCardQueue::byte_offset_of_buf());
+  int dirty_card_q_index_byte_offset = in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset());
+  int dirty_card_q_buf_byte_offset = in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset());
   __ bind(restart);
 
   // Load the index into the update buffer. DirtyCardQueue::_index is

@@ -45,6 +45,7 @@
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #endif
 
 // Implementation of StubAssembler
@@ -724,15 +725,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Register tmp2 = R15;
 
         Label refill, restart, marking_not_active;
-        int satb_q_active_byte_offset =
-          in_bytes(JavaThread::satb_mark_queue_offset() +
-                   SATBMarkQueue::byte_offset_of_active());
-        int satb_q_index_byte_offset =
-          in_bytes(JavaThread::satb_mark_queue_offset() +
-                   SATBMarkQueue::byte_offset_of_index());
-        int satb_q_buf_byte_offset =
-          in_bytes(JavaThread::satb_mark_queue_offset() +
-                   SATBMarkQueue::byte_offset_of_buf());
+        int satb_q_active_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset());
+        int satb_q_index_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset());
+        int satb_q_buf_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset());
 
         // Spill
         __ std(tmp, -16, R1_SP);
@@ -829,12 +824,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ li(tmp, G1CardTable::dirty_card_val());
         __ stb(tmp, 0, addr);
 
-        int dirty_card_q_index_byte_offset =
-          in_bytes(JavaThread::dirty_card_queue_offset() +
-                   DirtyCardQueue::byte_offset_of_index());
-        int dirty_card_q_buf_byte_offset =
-          in_bytes(JavaThread::dirty_card_queue_offset() +
-                   DirtyCardQueue::byte_offset_of_buf());
+        int dirty_card_q_index_byte_offset = in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset());
+        int dirty_card_q_buf_byte_offset = in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset());
 
         __ bind(restart);
 

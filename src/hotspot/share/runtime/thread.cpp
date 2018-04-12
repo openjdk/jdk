@@ -33,6 +33,7 @@
 #include "code/scopeDesc.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileTask.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/workgroup.hpp"
@@ -115,7 +116,6 @@
 #include "utilities/vmError.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc/cms/concurrentMarkSweepThread.hpp"
-#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/parallel/pcTasks.hpp"
 #endif // INCLUDE_ALL_GCS
@@ -312,6 +312,15 @@ Thread::Thread() {
            "bug in forced alignment of thread objects");
   }
 #endif // ASSERT
+
+  // Notify the barrier set that a thread is being created. Note that the
+  // main thread is created before a barrier set is available. The call to
+  // BarrierSet::on_thread_create() for the main thread is therefore deferred
+  // until it calls BarrierSet::set_barrier_set().
+  BarrierSet* const barrier_set = BarrierSet::barrier_set();
+  if (barrier_set != NULL) {
+    barrier_set->on_thread_create(this);
+  }
 }
 
 void Thread::initialize_thread_current() {
@@ -361,6 +370,13 @@ void Thread::record_stack_base_and_size() {
 
 Thread::~Thread() {
   EVENT_THREAD_DESTRUCT(this);
+
+  // Notify the barrier set that a thread is being destroyed. Note that a barrier
+  // set might not be available if we encountered errors during bootstrapping.
+  BarrierSet* const barrier_set = BarrierSet::barrier_set();
+  if (barrier_set != NULL) {
+    barrier_set->on_thread_destroy(this);
+  }
 
   // stack_base can be NULL if the thread is never started or exited before
   // record_stack_base_and_size called. Although, we would like to ensure
@@ -1591,12 +1607,7 @@ void JavaThread::initialize() {
 }
 
 JavaThread::JavaThread(bool is_attaching_via_jni) :
-                       Thread()
-#if INCLUDE_ALL_GCS
-                       , _satb_mark_queue(&G1BarrierSet::satb_mark_queue_set()),
-                       _dirty_card_queue(&G1BarrierSet::dirty_card_queue_set())
-#endif // INCLUDE_ALL_GCS
-{
+                       Thread() {
   initialize();
   if (is_attaching_via_jni) {
     _jni_attach_state = _attaching_via_jni;
@@ -1658,12 +1669,7 @@ static void compiler_thread_entry(JavaThread* thread, TRAPS);
 static void sweeper_thread_entry(JavaThread* thread, TRAPS);
 
 JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) :
-                       Thread()
-#if INCLUDE_ALL_GCS
-                       , _satb_mark_queue(&G1BarrierSet::satb_mark_queue_set()),
-                       _dirty_card_queue(&G1BarrierSet::dirty_card_queue_set())
-#endif // INCLUDE_ALL_GCS
-{
+                       Thread() {
   initialize();
   _jni_attach_state = _not_attaching_via_jni;
   set_entry_point(entry_point);

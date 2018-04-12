@@ -208,7 +208,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   volatile_nonstatic_field(oopDesc,            _mark,                                         markOop)                               \
   volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
   volatile_nonstatic_field(oopDesc,            _metadata._compressed_klass,                   narrowKlass)                           \
-  static_field(BarrierSet,                     _bs,                                           BarrierSet*)                           \
+  static_field(BarrierSet,                     _barrier_set,                                  BarrierSet*)                           \
   nonstatic_field(ArrayKlass,                  _dimension,                                    int)                                   \
   volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             Klass*)                                \
   volatile_nonstatic_field(ArrayKlass,         _lower_dimension,                              Klass*)                                \

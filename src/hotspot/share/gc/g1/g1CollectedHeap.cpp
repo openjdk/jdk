@@ -54,6 +54,7 @@
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
 #include "gc/g1/g1StringDedup.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1YCTypes.hpp"
 #include "gc/g1/g1YoungRemSetSamplingThread.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
@@ -2465,7 +2466,7 @@ void G1CollectedHeap::do_concurrent_mark() {
 size_t G1CollectedHeap::pending_card_num() {
   size_t extra_cards = 0;
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *curr = jtiwh.next(); ) {
-    DirtyCardQueue& dcq = curr->dirty_card_queue();
+    DirtyCardQueue& dcq = G1ThreadLocalData::dirty_card_queue(curr);
     extra_cards += dcq.size();
   }
   DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();

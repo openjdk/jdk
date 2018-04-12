@@ -26,6 +26,7 @@
 #define SHARE_VM_RUNTIME_THREAD_HPP
 
 #include "jni.h"
+#include "gc/shared/gcThreadLocalData.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
@@ -47,10 +48,6 @@
 #include "utilities/align.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/dirtyCardQueue.hpp"
-#include "gc/g1/satbMarkQueue.hpp"
-#endif // INCLUDE_ALL_GCS
 #ifdef ZERO
 # include "stack_zero.hpp"
 #endif
@@ -111,6 +108,22 @@ class Thread: public ThreadShadow {
   // Current thread is maintained as a thread-local variable
   static THREAD_LOCAL_DECL Thread* _thr_current;
 #endif
+
+ private:
+  // Thread local data area available to the GC. The internal
+  // structure and contents of this data area is GC-specific.
+  // Only GC and GC barrier code should access this data area.
+  GCThreadLocalData _gc_data;
+
+ public:
+  static ByteSize gc_data_offset() {
+    return byte_offset_of(Thread, _gc_data);
+  }
+
+  template <typename T> T* gc_data() {
+    STATIC_ASSERT(sizeof(T) <= sizeof(_gc_data));
+    return reinterpret_cast<T*>(&_gc_data);
+  }
 
   // Exception handling
   // (Note: _pending_exception and friends are in ThreadShadow)
@@ -1059,14 +1072,6 @@ class JavaThread: public Thread {
   }   _jmp_ring[jump_ring_buffer_size];
 #endif // PRODUCT
 
-#if INCLUDE_ALL_GCS
-  // Support for G1 barriers
-
-  SATBMarkQueue _satb_mark_queue;        // Thread-local log for SATB barrier.
-
-  DirtyCardQueue _dirty_card_queue;      // Thread-local log for dirty cards.
-#endif // INCLUDE_ALL_GCS
-
   friend class VMThread;
   friend class ThreadWaitTransition;
   friend class VM_Exit;
@@ -1666,11 +1671,6 @@ class JavaThread: public Thread {
     return byte_offset_of(JavaThread, _should_post_on_exceptions_flag);
   }
 
-#if INCLUDE_ALL_GCS
-  static ByteSize satb_mark_queue_offset()       { return byte_offset_of(JavaThread, _satb_mark_queue); }
-  static ByteSize dirty_card_queue_offset()      { return byte_offset_of(JavaThread, _dirty_card_queue); }
-#endif // INCLUDE_ALL_GCS
-
   // Returns the jni environment for this thread
   JNIEnv* jni_environment()                      { return &_jni_environment; }
 
@@ -1940,14 +1940,6 @@ class JavaThread: public Thread {
   static inline void set_stack_size_at_create(size_t value) {
     _stack_size_at_create = value;
   }
-
-#if INCLUDE_ALL_GCS
-  // SATB marking queue support
-  SATBMarkQueue& satb_mark_queue() { return _satb_mark_queue; }
-
-  // Dirty card queue support
-  DirtyCardQueue& dirty_card_queue() { return _dirty_card_queue; }
-#endif // INCLUDE_ALL_GCS
 
   // Machine dependent stuff
 #include OS_CPU_HEADER(thread)

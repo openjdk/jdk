@@ -27,9 +27,9 @@
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "runtime/thread.hpp"
 #include "interpreter/interp_masm.hpp"
 
 #define __ masm->
@@ -95,13 +95,9 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
   assert_different_registers(obj, pre_val, tmp, rscratch1);
   assert(pre_val != noreg &&  tmp != noreg, "expecting a register");
 
-  Address in_progress(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                       SATBMarkQueue::byte_offset_of_active()));
-  Address index(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                       SATBMarkQueue::byte_offset_of_index()));
-  Address buffer(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                       SATBMarkQueue::byte_offset_of_buf()));
-
+  Address in_progress(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()));
+  Address index(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()));
+  Address buffer(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset()));
 
   // Is marking active?
   if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
@@ -182,10 +178,8 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
   assert(store_addr != noreg && new_val != noreg && tmp != noreg
          && tmp2 != noreg, "expecting a register");
 
-  Address queue_index(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
-                                       DirtyCardQueue::byte_offset_of_index()));
-  Address buffer(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
-                                       DirtyCardQueue::byte_offset_of_buf()));
+  Address queue_index(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()));
+  Address buffer(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()));
 
   BarrierSet* bs = Universe::heap()->barrier_set();
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);

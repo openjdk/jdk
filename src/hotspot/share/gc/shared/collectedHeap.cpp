@@ -313,7 +313,7 @@ MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loa
 
 void CollectedHeap::set_barrier_set(BarrierSet* barrier_set) {
   _barrier_set = barrier_set;
-  BarrierSet::set_bs(barrier_set);
+  BarrierSet::set_barrier_set(barrier_set);
 }
 
 #ifndef PRODUCT

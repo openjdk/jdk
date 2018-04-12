@@ -73,6 +73,9 @@
 #include "runtime/timer.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc/g1/g1ThreadLocalData.hpp"
+#endif // INCLUDE_ALL_GCS
 
 
 // -------------------- Compile::mach_constant_base_node -----------------------
@@ -3752,7 +3755,7 @@ void Compile::verify_graph_edges(bool no_dead_code) {
 void Compile::verify_barriers() {
   if (UseG1GC) {
     // Verify G1 pre-barriers
-    const int marking_offset = in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active());
+    const int marking_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset());
 
     ResourceArea *area = Thread::current()->resource_area();
     Unique_Node_List visited(area);

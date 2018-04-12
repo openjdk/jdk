@@ -28,9 +28,9 @@
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "runtime/thread.hpp"
 #include "interpreter/interp_masm.hpp"
 
 #define __ masm->
@@ -49,10 +49,10 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
 
     // Is marking active?
     if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-      __ lwz(R0, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active()), R16_thread);
+      __ lwz(R0, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()), R16_thread);
     } else {
       guarantee(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-      __ lbz(R0, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active()), R16_thread);
+      __ lbz(R0, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()), R16_thread);
     }
     __ cmpdi(CCR0, R0, 0);
     __ beq(CCR0, filtered);
@@ -120,10 +120,10 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, Decorator
 
   // Is marking active?
   if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-    __ lwz(tmp1, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active()), R16_thread);
+    __ lwz(tmp1, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()), R16_thread);
   } else {
     guarantee(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-    __ lbz(tmp1, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active()), R16_thread);
+    __ lbz(tmp1, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()), R16_thread);
   }
   __ cmpdi(CCR0, tmp1, 0);
   __ beq(CCR0, filtered);
@@ -165,13 +165,13 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, Decorator
   // (The index field is typed as size_t.)
   const Register Rbuffer = tmp1, Rindex = tmp2;
 
-  __ ld(Rindex, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_index()), R16_thread);
+  __ ld(Rindex, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()), R16_thread);
   __ cmpdi(CCR0, Rindex, 0);
   __ beq(CCR0, runtime); // If index == 0, goto runtime.
-  __ ld(Rbuffer, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_buf()), R16_thread);
+  __ ld(Rbuffer, in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset()), R16_thread);
 
   __ addi(Rindex, Rindex, -wordSize); // Decrement index.
-  __ std(Rindex, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_index()), R16_thread);
+  __ std(Rindex, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()), R16_thread);
 
   // Record the previous value.
   __ stdx(pre_val, Rbuffer, Rindex);
@@ -253,13 +253,13 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
 
   const Register Rqueue_index = tmp2,
                  Rqueue_buf   = tmp3;
-  __ ld(Rqueue_index, in_bytes(JavaThread::dirty_card_queue_offset() + DirtyCardQueue::byte_offset_of_index()), R16_thread);
+  __ ld(Rqueue_index, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()), R16_thread);
   __ cmpdi(CCR0, Rqueue_index, 0);
   __ beq(CCR0, runtime); // index == 0 then jump to runtime
-  __ ld(Rqueue_buf, in_bytes(JavaThread::dirty_card_queue_offset() + DirtyCardQueue::byte_offset_of_buf()), R16_thread);
+  __ ld(Rqueue_buf, in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()), R16_thread);
 
   __ addi(Rqueue_index, Rqueue_index, -wordSize); // decrement index
-  __ std(Rqueue_index, in_bytes(JavaThread::dirty_card_queue_offset() + DirtyCardQueue::byte_offset_of_index()), R16_thread);
+  __ std(Rqueue_index, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()), R16_thread);
 
   __ stdx(Rcard_addr, Rqueue_buf, Rqueue_index); // store card
   __ b(filtered);

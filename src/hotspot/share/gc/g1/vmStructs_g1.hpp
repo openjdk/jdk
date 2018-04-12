@@ -69,10 +69,7 @@
                                                                               \
   nonstatic_field(PtrQueue,            _active,         bool)                 \
   nonstatic_field(PtrQueue,            _buf,            void**)               \
-  nonstatic_field(PtrQueue,            _index,          size_t)               \
-                                                                              \
-  nonstatic_field(JavaThread,          _satb_mark_queue,  SATBMarkQueue)      \
-  nonstatic_field(JavaThread,          _dirty_card_queue, DirtyCardQueue)
+  nonstatic_field(PtrQueue,            _index,          size_t)
 
 #define VM_INT_CONSTANTS_G1GC(declare_constant, declare_constant_with_value)  \
   declare_constant(HeapRegionType::FreeTag)                                   \
