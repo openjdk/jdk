@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8169197 8172668 8173117 8175007
+ * @bug 8169197 8172668 8173117 8175007 8189765
  * @summary Check convenient errors are produced for inaccessible classes.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -199,7 +199,7 @@ public class ConvenientAccessErrorsTest extends ModuleTestBase {
             throw new Exception("expected output not found; actual: " + log);
     }
 
-//    @Test
+    @Test
     public void testInaccessibleUnnamedModule(Path base) throws Exception {
         Path jar = prepareTestJar(base, "package api; class Api { public static class Foo {} }");
 
@@ -224,8 +224,8 @@ public class ConvenientAccessErrorsTest extends ModuleTestBase {
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList(
-                "Test.java:1:38: compiler.err.not.def.access.package.cant.access: api.Api, api, (compiler.misc.not.def.access.does.not.read.unnamed: api, m1x)",
-                "Test.java:1:51: compiler.err.not.def.access.package.cant.access: api.Api, api, (compiler.misc.not.def.access.does.not.read.unnamed: api, m1x)",
+                "Test.java:1:35: compiler.err.package.not.visible: api, (compiler.misc.not.def.access.does.not.read.unnamed: api, m1x)",
+                "Test.java:1:48: compiler.err.package.not.visible: api, (compiler.misc.not.def.access.does.not.read.unnamed: api, m1x)",
                 "2 errors");
 
         if (!expected.equals(log))
