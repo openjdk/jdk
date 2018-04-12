@@ -107,10 +107,16 @@ AC_DEFUN([BASIC_GET_NON_MATCHING_VALUES],
 [
   # grep filter function inspired by a comment to http://stackoverflow.com/a/1617326
   # Notice that the original variant fails on SLES 10 and 11
+  # Some grep versions (at least bsd) behaves strangely on the base case with
+  # no legal_values, so make it explicit.
   values_to_check=`$ECHO $2 | $TR ' ' '\n'`
   legal_values=`$ECHO $3 | $TR ' ' '\n'`
-  result=`$GREP -Fvx "$legal_values" <<< "$values_to_check" | $GREP -v '^$'`
-  $1=${result//$'\n'/ }
+  if test -z "$legal_values"; then
+    $1="$2"
+  else
+    result=`$GREP -Fvx "$legal_values" <<< "$values_to_check" | $GREP -v '^$'`
+    $1=${result//$'\n'/ }
+  fi
 ])
 
 ###############################################################################
