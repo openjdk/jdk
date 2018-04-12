@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "jni_util.h"
 /* Define uintptr_t */
 #include "gdefs.h"
+#include "Disposer.h"
 
 /**
  * This include file contains support code for loops using the
@@ -80,19 +81,6 @@ Java_sun_awt_image_BufImgSurfaceData_initIDs
 }
 
 /*
- * Class:     sun_java2d_SurfaceData
- * Method:    freeNativeICMData
- * Signature: (Ljava/awt/image/IndexColorModel;)V
- */
-JNIEXPORT void JNICALL
-Java_sun_awt_image_BufImgSurfaceData_freeNativeICMData
-    (JNIEnv *env, jclass sd, jlong pData)
-{
-    ColorData *cdata = (ColorData*)jlong_to_ptr(pData);
-    freeICMColorData(cdata);
-}
-
-/*
  * Class:     sun_awt_image_BufImgSurfaceData
  * Method:    initOps
  * Signature: (Ljava/lang/Object;IIIII)V
@@ -137,6 +125,15 @@ Java_sun_awt_image_BufImgSurfaceData_initRaster(JNIEnv *env, jobject bisd,
     bisdo->rasbounds.y1 = 0;
     bisdo->rasbounds.x2 = width;
     bisdo->rasbounds.y2 = height;
+}
+
+/*
+ * Releases native structures associated with BufImgSurfaceData.ICMColorData.
+ */
+static void BufImg_Dispose_ICMColorData(JNIEnv *env, jlong pData)
+{
+    ColorData *cdata = (ColorData*)jlong_to_ptr(pData);
+    freeICMColorData(cdata);
 }
 
 /*
@@ -373,6 +370,7 @@ static ColorData *BufImg_SetupICM(JNIEnv *env,
             }
 
             (*env)->SetObjectField(env, bisdo->icm, colorDataID, colorData);
+            Disposer_AddRecord(env, colorData, BufImg_Dispose_ICMColorData, pData);
         }
     }
 
