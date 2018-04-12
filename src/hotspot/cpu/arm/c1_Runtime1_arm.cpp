@@ -45,6 +45,7 @@
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #endif
 
 // Note: Rtemp usage is this file should not impact C2 and should be
@@ -564,12 +565,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         const Register r_index_1    = R1;
         const Register r_buffer_2   = R2;
 
-        Address queue_active(Rthread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                               SATBMarkQueue::byte_offset_of_active()));
-        Address queue_index(Rthread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                              SATBMarkQueue::byte_offset_of_index()));
-        Address buffer(Rthread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                         SATBMarkQueue::byte_offset_of_buf()));
+        Address queue_active(Rthread, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()));
+        Address queue_index(Rthread, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()));
+        Address buffer(Rthread, in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset()));
 
         Label done;
         Label runtime;
@@ -632,10 +630,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Label recheck;
         Label runtime;
 
-        Address queue_index(Rthread, in_bytes(JavaThread::dirty_card_queue_offset() +
-                                              DirtyCardQueue::byte_offset_of_index()));
-        Address buffer(Rthread, in_bytes(JavaThread::dirty_card_queue_offset() +
-                                         DirtyCardQueue::byte_offset_of_buf()));
+        Address queue_index(Rthread, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()));
+        Address buffer(Rthread, in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()));
 
         AddressLiteral cardtable(ci_card_table_address_as<address>(), relocInfo::none);
 

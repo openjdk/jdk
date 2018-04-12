@@ -46,6 +46,7 @@
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #endif
 
 
@@ -1118,13 +1119,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         const Register thread = rthread;
         const Register tmp = rscratch1;
 
-        Address in_progress(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                             SATBMarkQueue::byte_offset_of_active()));
-
-        Address queue_index(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                             SATBMarkQueue::byte_offset_of_index()));
-        Address buffer(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                        SATBMarkQueue::byte_offset_of_buf()));
+        Address in_progress(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()));
+        Address queue_index(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()));
+        Address buffer(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset()));
 
         Label done;
         Label runtime;
@@ -1181,10 +1178,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         const Register thread = rthread;
 
-        Address queue_index(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
-                                             DirtyCardQueue::byte_offset_of_index()));
-        Address buffer(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
-                                        DirtyCardQueue::byte_offset_of_buf()));
+        Address queue_index(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()));
+        Address buffer(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()));
 
         const Register card_offset = rscratch2;
         // LR is free here, so we can use it to hold the byte_map_base.

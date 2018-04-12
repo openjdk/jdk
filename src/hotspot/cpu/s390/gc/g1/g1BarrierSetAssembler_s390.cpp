@@ -29,9 +29,9 @@
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "runtime/thread.hpp"
 #include "interpreter/interp_masm.hpp"
 
 #define __ masm->
@@ -49,8 +49,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
     assert_different_registers(addr,  Z_R0_scratch);  // would be destroyed by push_frame()
     assert_different_registers(count, Z_R0_scratch);  // would be destroyed by push_frame()
     Register Rtmp1 = Z_R0_scratch;
-    const int active_offset = in_bytes(JavaThread::satb_mark_queue_offset() +
-                                       SATBMarkQueue::byte_offset_of_active());
+    const int active_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset());
     if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
       __ load_and_test_int(Rtmp1, Address(Z_thread, active_offset));
     } else {
@@ -127,9 +126,9 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, Decorator
 
   const Register Robj = obj ? obj->base() : noreg,
                  Roff = obj ? obj->index() : noreg;
-  const int active_offset = in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active());
-  const int buffer_offset = in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_buf());
-  const int index_offset  = in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_index());
+  const int active_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset());
+  const int buffer_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset());
+  const int index_offset  = in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset());
   assert_different_registers(Rtmp1, Rtmp2, Z_R0_scratch); // None of the Rtmp<i> must be Z_R0!!
   assert_different_registers(Robj, Z_R0_scratch);         // Used for addressing. Furthermore, push_frame destroys Z_R0!!
   assert_different_registers(Rval, Z_R0_scratch);         // push_frame destroys Z_R0!!
@@ -324,8 +323,8 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
   Register Rcard_addr_x = Rcard_addr;
   Register Rqueue_index = (Rtmp2 != Z_R0_scratch) ? Rtmp2 : Rtmp1;
   Register Rqueue_buf   = (Rtmp3 != Z_R0_scratch) ? Rtmp3 : Rtmp1;
-  const int qidx_off    = in_bytes(JavaThread::dirty_card_queue_offset() + SATBMarkQueue::byte_offset_of_index());
-  const int qbuf_off    = in_bytes(JavaThread::dirty_card_queue_offset() + SATBMarkQueue::byte_offset_of_buf());
+  const int qidx_off    = in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset());
+  const int qbuf_off    = in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset());
   if ((Rcard_addr == Rqueue_buf) || (Rcard_addr == Rqueue_index)) {
     Rcard_addr_x = Z_R0_scratch;  // Register shortage. We have to use Z_R0.
   }
