@@ -140,10 +140,12 @@ class LinuxFileStore
             if ((entry().hasOption("user_xattr")))
                 return true;
 
-            // user_xattr option not present but we special-case ext3/4 as we
-            // know that extended attributes are not enabled by default.
-            if (entry().fstype().equals("ext3") || entry().fstype().equals("ext4"))
-                return false;
+            // for ext3 and ext4 user_xattr option is enabled by default so
+            // check for explicit disabling of this option
+            if (entry().fstype().equals("ext3") ||
+                entry().fstype().equals("ext4")) {
+                return !entry().hasOption("nouser_xattr");
+            }
 
             // not ext3/4 so probe mount point
             if (!xattrChecked) {
