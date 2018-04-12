@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -213,8 +213,16 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   printf "Configuration summary:\n"
   printf "* Debug level:    $DEBUG_LEVEL\n"
   printf "* HS debug level: $HOTSPOT_DEBUG_LEVEL\n"
-  printf "* JDK variant:    $JDK_VARIANT\n"
   printf "* JVM variants:   $JVM_VARIANTS\n"
+  printf "* JVM features:   "
+
+  for variant in $JVM_VARIANTS; do
+    features_var_name=JVM_FEATURES_$variant
+    JVM_FEATURES_FOR_VARIANT=${!features_var_name}
+    printf "$variant: \'$JVM_FEATURES_FOR_VARIANT\' "
+  done
+  printf "\n"
+
   printf "* OpenJDK target: OS: $OPENJDK_TARGET_OS, CPU architecture: $OPENJDK_TARGET_CPU_ARCH, address length: $OPENJDK_TARGET_CPU_BITS\n"
   printf "* Version string: $VERSION_STRING ($VERSION_SHORT)\n"
 
