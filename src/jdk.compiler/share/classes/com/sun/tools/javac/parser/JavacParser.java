@@ -95,6 +95,9 @@ public class JavacParser implements Parser {
     /** The Source language setting. */
     private Source source;
 
+    /** The Preview language setting. */
+    private Preview preview;
+
     /** The name table. */
     private Names names;
 
@@ -169,6 +172,7 @@ public class JavacParser implements Parser {
         this.log = fac.log;
         this.names = fac.names;
         this.source = fac.source;
+        this.preview = fac.preview;
         this.allowStringFolding = fac.options.getBoolean("allowStringFolding", true);
         this.keepDocComments = keepDocComments;
         this.parseModuleInfo = parseModuleInfo;
@@ -4219,8 +4223,15 @@ public class JavacParser implements Parser {
     }
 
     protected void checkSourceLevel(int pos, Feature feature) {
-        if (!feature.allowedInSource(source)) {
+        if (preview.isPreview(feature) && !preview.isEnabled()) {
+            //preview feature without --preview flag, error
+            log.error(DiagnosticFlag.SOURCE_LEVEL, pos, preview.disabledError(feature));
+        } else if (!feature.allowedInSource(source)) {
+            //incompatible source level, error
             log.error(DiagnosticFlag.SOURCE_LEVEL, pos, feature.error(source.name));
+        } else if (preview.isPreview(feature)) {
+            //use of preview feature, warn
+            preview.warnPreview(pos, feature);
         }
     }
 

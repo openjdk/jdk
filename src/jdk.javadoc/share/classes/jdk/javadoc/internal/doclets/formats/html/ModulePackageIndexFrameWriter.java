@@ -37,7 +37,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -189,7 +188,10 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
      * @param ul the Content object to which the all classes link should be added
      */
     protected void addAllClassesLink(Content ul) {
-        Content linkContent = links.createLink(DocPaths.ALLCLASSES_FRAME,
+        DocPath allClassesFrame = configuration.useModuleDirectories
+                ? DocPaths.DOT_DOT.resolve(DocPaths.ALLCLASSES_FRAME)
+                : DocPaths.ALLCLASSES_FRAME;
+        Content linkContent = links.createLink(allClassesFrame,
                 contents.allClassesLabel, "", "packageFrame");
         Content li = HtmlTree.LI(linkContent);
         ul.addContent(li);
@@ -202,7 +204,10 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
      * @param ul the Content object to which the all packages link should be added
      */
     protected void addAllPackagesLink(Content ul) {
-        Content linkContent = links.createLink(DocPaths.OVERVIEW_FRAME,
+        DocPath overviewFrame = configuration.useModuleDirectories
+                ? DocPaths.DOT_DOT.resolve(DocPaths.OVERVIEW_FRAME)
+                : DocPaths.OVERVIEW_FRAME;
+        Content linkContent = links.createLink(overviewFrame,
                 contents.allPackagesLabel, "", "packageListFrame");
         Content li = HtmlTree.LI(linkContent);
         ul.addContent(li);
@@ -215,7 +220,10 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
      * @param ul the Content object to which the all modules link should be added
      */
     protected void addAllModulesLink(Content ul) {
-        Content linkContent = links.createLink(DocPaths.MODULE_OVERVIEW_FRAME,
+        DocPath moduleOverviewFrame = configuration.useModuleDirectories
+                ? DocPaths.DOT_DOT.resolve(DocPaths.MODULE_OVERVIEW_FRAME)
+                : DocPaths.MODULE_OVERVIEW_FRAME;
+        Content linkContent = links.createLink(moduleOverviewFrame,
                 contents.allModulesLabel, "", "packageListFrame");
         Content li = HtmlTree.LI(linkContent);
         ul.addContent(li);

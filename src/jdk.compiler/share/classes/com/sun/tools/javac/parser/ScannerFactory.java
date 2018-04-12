@@ -27,6 +27,7 @@ package com.sun.tools.javac.parser;
 
 import java.nio.CharBuffer;
 
+import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
@@ -56,6 +57,7 @@ public class ScannerFactory {
     final Log log;
     final Names names;
     final Source source;
+    final Preview preview;
     final Tokens tokens;
 
     /** Create a new scanner factory. */
@@ -64,6 +66,7 @@ public class ScannerFactory {
         this.log = Log.instance(context);
         this.names = Names.instance(context);
         this.source = Source.instance(context);
+        this.preview = Preview.instance(context);
         this.tokens = Tokens.instance(context);
     }
 

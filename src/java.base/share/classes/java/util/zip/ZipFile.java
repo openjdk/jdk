@@ -37,7 +37,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.Files;
-
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -52,13 +51,14 @@ import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.WeakHashMap;
-
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import jdk.internal.misc.JavaLangAccess;
 import jdk.internal.misc.JavaUtilZipFileAccess;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.misc.VM;
@@ -834,11 +834,10 @@ class ZipFile implements ZipConstants, Closeable {
         static CleanableResource get(ZipFile zf, File file, int mode)
             throws IOException {
             Class<?> clz = zf.getClass();
-            while (clz != ZipFile.class) {
-                try {
-                    clz.getDeclaredMethod("close");
+            while (clz != ZipFile.class && clz != JarFile.class) {
+                if (JLA.getDeclaredPublicMethods(clz, "close").size() != 0) {
                     return new FinalizableResource(zf, file, mode);
-                } catch (NoSuchMethodException nsme) {}
+                }
                 clz = clz.getSuperclass();
             }
             return new CleanableResource(zf, file, mode);
@@ -1101,6 +1100,8 @@ class ZipFile implements ZipConstants, Closeable {
     }
 
     private static boolean isWindows;
+    private static final JavaLangAccess JLA;
+
     static {
         SharedSecrets.setJavaUtilZipFileAccess(
             new JavaUtilZipFileAccess() {
@@ -1133,6 +1134,7 @@ class ZipFile implements ZipConstants, Closeable {
                 }
              }
         );
+        JLA = jdk.internal.misc.SharedSecrets.getJavaLangAccess();
         isWindows = VM.getSavedProperty("os.name").contains("Windows");
     }
 

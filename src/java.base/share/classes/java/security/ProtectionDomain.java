@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.WeakHashMap;
 import jdk.internal.misc.JavaSecurityAccess;
-import jdk.internal.misc.JavaSecurityProtectionDomainAccess;
-import static jdk.internal.misc.JavaSecurityProtectionDomainAccess.ProtectionDomainCache;
 import jdk.internal.misc.SharedSecrets;
 import sun.security.action.GetPropertyAction;
 import sun.security.provider.PolicyFile;
@@ -109,6 +107,21 @@ public class ProtectionDomain {
                 new AccessControlContext(context, stack.getCombiner(), true);
 
             return new AccessControlContext(stack.getContext(), acc).optimize();
+        }
+
+        @Override
+        public ProtectionDomainCache getProtectionDomainCache() {
+            return new ProtectionDomainCache() {
+                private final Map<Key, PermissionCollection> map =
+                        Collections.synchronizedMap(new WeakHashMap<>());
+                public void put(ProtectionDomain pd,
+                                PermissionCollection pc) {
+                    map.put((pd == null ? null : pd.key), pc);
+                }
+                public PermissionCollection get(ProtectionDomain pd) {
+                    return pd == null ? map.get(null) : map.get(pd.key);
+                }
+            };
         }
     }
 
@@ -560,23 +573,4 @@ public class ProtectionDomain {
      */
     final class Key {}
 
-    static {
-        SharedSecrets.setJavaSecurityProtectionDomainAccess(
-            new JavaSecurityProtectionDomainAccess() {
-                public ProtectionDomainCache getProtectionDomainCache() {
-                    return new ProtectionDomainCache() {
-                        private final Map<Key, PermissionCollection> map =
-                            Collections.synchronizedMap
-                                (new WeakHashMap<Key, PermissionCollection>());
-                        public void put(ProtectionDomain pd,
-                            PermissionCollection pc) {
-                            map.put((pd == null ? null : pd.key), pc);
-                        }
-                        public PermissionCollection get(ProtectionDomain pd) {
-                            return pd == null ? map.get(null) : map.get(pd.key);
-                        }
-                    };
-                }
-            });
-    }
 }

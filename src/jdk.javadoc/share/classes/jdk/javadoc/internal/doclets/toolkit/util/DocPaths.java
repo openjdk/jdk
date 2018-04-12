@@ -49,6 +49,8 @@ public class DocPaths {
         moduleSeparator = useModuleDirectories ? "/module-" : "-";
     }
 
+    public static final DocPath DOT_DOT = DocPath.create("..");
+
     /** The name of the file for all classes, without using frames, when --no-frames is specified. */
     public static final DocPath ALLCLASSES = DocPath.create("allclasses.html");
 

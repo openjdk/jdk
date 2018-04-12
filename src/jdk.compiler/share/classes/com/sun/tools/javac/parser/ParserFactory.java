@@ -27,6 +27,7 @@ package com.sun.tools.javac.parser;
 
 import java.util.Locale;
 
+import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.tree.DocTreeMaker;
 import com.sun.tools.javac.tree.TreeMaker;
@@ -62,6 +63,7 @@ public class ParserFactory {
     final Log log;
     final Tokens tokens;
     final Source source;
+    final Preview preview;
     final Names names;
     final Options options;
     final ScannerFactory scannerFactory;
@@ -76,6 +78,7 @@ public class ParserFactory {
         this.names = Names.instance(context);
         this.tokens = Tokens.instance(context);
         this.source = Source.instance(context);
+        this.preview = Preview.instance(context);
         this.options = Options.instance(context);
         this.scannerFactory = ScannerFactory.instance(context);
         this.locale = context.get(Locale.class);

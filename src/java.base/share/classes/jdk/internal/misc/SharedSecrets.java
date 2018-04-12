@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.io.FilePermission;
 import java.io.ObjectInputStream;
 import java.io.RandomAccessFile;
 import java.security.ProtectionDomain;
-import java.security.AccessController;
 
 /** A repository of "shared secrets", which are a mechanism for
     calling implementation-private methods in another package without
@@ -63,7 +62,6 @@ public class SharedSecrets {
     private static JavaNioAccess javaNioAccess;
     private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
     private static JavaIOFilePermissionAccess javaIOFilePermissionAccess;
-    private static JavaSecurityProtectionDomainAccess javaSecurityProtectionDomainAccess;
     private static JavaSecurityAccess javaSecurityAccess;
     private static JavaUtilZipFileAccess javaUtilZipFileAccess;
     private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
@@ -235,25 +233,13 @@ public class SharedSecrets {
         return javaIOFileDescriptorAccess;
     }
 
-    public static void setJavaSecurityProtectionDomainAccess
-        (JavaSecurityProtectionDomainAccess jspda) {
-            javaSecurityProtectionDomainAccess = jspda;
-    }
-
-    public static JavaSecurityProtectionDomainAccess
-        getJavaSecurityProtectionDomainAccess() {
-            if (javaSecurityProtectionDomainAccess == null)
-                unsafe.ensureClassInitialized(ProtectionDomain.class);
-            return javaSecurityProtectionDomainAccess;
-    }
-
     public static void setJavaSecurityAccess(JavaSecurityAccess jsa) {
         javaSecurityAccess = jsa;
     }
 
     public static JavaSecurityAccess getJavaSecurityAccess() {
         if (javaSecurityAccess == null) {
-            unsafe.ensureClassInitialized(AccessController.class);
+            unsafe.ensureClassInitialized(ProtectionDomain.class);
         }
         return javaSecurityAccess;
     }

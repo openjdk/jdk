@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,8 +122,11 @@
  * On success the call site then becomes permanently linked to the {@code invokedynamic}
  * instruction.
  * <p>
- * For a dynamically-computed constant, the result of the bootstrap method is cached
- * as the resolved constant value.
+ * For a dynamically-computed constant, the first parameter of the bootstrap
+ * method must be assignable to {@code MethodHandles.Lookup}. If this condition
+ * is not met, a {@code BootstrapMethodError} is thrown.
+ * On success the result of the bootstrap method is cached as the resolved
+ * constant value.
  * <p>
  * If an exception, {@code E} say, occurs during execution of the bootstrap method, then
  * resolution fails and terminates abnormally. {@code E} is rethrown if the type of
@@ -171,16 +174,25 @@
  * <h2>Types of bootstrap methods</h2>
  * For a dynamically-computed call site, the bootstrap method is invoked with parameter
  * types {@code MethodHandles.Lookup}, {@code String}, {@code MethodType}, and the types
- * of any static arguments; the return type is {@code CallSite}. For a
- * dynamically-computed constant, the bootstrap method is invoked with parameter types
+ * of any static arguments; the return type is {@code CallSite}.
+ * <p>
+ * For a dynamically-computed constant, the bootstrap method is invoked with parameter types
  * {@code MethodHandles.Lookup}, {@code String}, {@code Class}, and the types of any
  * static arguments; the return type is the type represented by the {@code Class}.
- *
+ * <p>
  * Because {@link java.lang.invoke.MethodHandle#invoke MethodHandle.invoke} allows for
- * adaptations between the invoked method type and the method handle's method type,
+ * adaptations between the invoked method type and the bootstrap method handle's method type,
  * there is flexibility in the declaration of the bootstrap method.
- * For example, the first argument could be {@code Object}
- * instead of {@code MethodHandles.Lookup}, and the return type
+ * For a dynamically-computed constant the first parameter type of the bootstrap method handle
+ * must be assignable to {@code MethodHandles.Lookup}, other than that constraint the same degree
+ * of flexibility applies to bootstrap methods of dynamically-computed call sites and
+ * dynamically-computed constants.
+ * Note: this constraint allows for the future possibility where the bootstrap method is
+ * invoked with just the parameter types of static arguments, thereby supporting a wider
+ * range of methods compatible with the static arguments (such as methods that don't declare
+ * or require the lookup, name, and type meta-data parameters).
+ * <p> For example, for dynamically-computed call site, a the first argument
+ * could be {@code Object} instead of {@code MethodHandles.Lookup}, and the return type
  * could also be {@code Object} instead of {@code CallSite}.
  * (Note that the types and number of the stacked arguments limit
  * the legal kinds of bootstrap methods to appropriately typed
@@ -227,7 +239,10 @@
  * {@code String} and {@code Integer} (or {@code int}), respectively.
  * The second-to-last example assumes that all extra arguments are of type
  * {@code String}.
- * The other examples work with all types of extra arguments.
+ * The other examples work with all types of extra arguments.  Note that all
+ * the examples except the second and third also work with dynamically-computed
+ * constants if the return type is changed to be compatible with the
+ * constant's declared type (such as {@code Object}, which is always compatible).
  * <p>
  * Since dynamically-computed constants can be provided as static arguments to bootstrap
  * methods, there are no limitations on the types of bootstrap arguments.

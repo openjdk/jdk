@@ -49,7 +49,6 @@ import com.sun.tools.javac.jvm.Pool.DynamicMethod;
 import com.sun.tools.javac.jvm.Pool.Method;
 import com.sun.tools.javac.jvm.Pool.MethodHandle;
 import com.sun.tools.javac.jvm.Pool.Variable;
-import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.util.*;
 
 import static com.sun.tools.javac.code.Flags.*;
@@ -88,6 +87,10 @@ public class ClassWriter extends ClassFile {
     /** Switch: describe the generated stackmap.
      */
     private boolean debugstackmap;
+
+    /** Preview language level.
+     */
+    private Preview preview;
 
     /**
      * Target class version.
@@ -178,6 +181,7 @@ public class ClassWriter extends ClassFile {
         log = Log.instance(context);
         names = Names.instance(context);
         options = Options.instance(context);
+        preview = Preview.instance(context);
         target = Target.instance(context);
         source = Source.instance(context);
         types = Types.instance(context);
@@ -1819,7 +1823,11 @@ public class ClassWriter extends ClassFile {
         acount += writeExtraClassAttributes(c);
 
         poolbuf.appendInt(JAVA_MAGIC);
-        poolbuf.appendChar(target.minorVersion);
+        if (preview.isEnabled()) {
+            poolbuf.appendChar(ClassFile.PREVIEW_MINOR_VERSION);
+        } else {
+            poolbuf.appendChar(target.minorVersion);
+        }
         poolbuf.appendChar(target.majorVersion);
 
         writePool(c.pool);

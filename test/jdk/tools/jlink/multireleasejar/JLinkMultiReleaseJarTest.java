@@ -52,7 +52,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.jar.JarFile;
 import java.util.spi.ToolProvider;
@@ -134,14 +136,15 @@ public class JLinkMultiReleaseJarTest {
     }
 
     private void javac(Path source, Path destination, String srcpath) throws IOException {
-        String[] args = Stream.concat(
-                Stream.of("-d", destination.toString(), "--module-source-path", srcpath),
-                Files.walk(source)
-                        .map(Path::toString)
-                        .filter(s -> s.endsWith(".java"))
-        ).toArray(String[]::new);
-        int rc = JAVAC_TOOL.run(System.out, System.err, args);
-        Assert.assertEquals(rc, 0);
+        var args = Stream.of("-d", destination.toString(), "--module-source-path", srcpath);
+        try (Stream<Path> pathStream = Files.walk(source)) {
+            args = Stream.concat(args,
+                    pathStream.map(Path::toString)
+                              .filter(s -> s.endsWith(".java")));
+
+            int rc = JAVAC_TOOL.run(System.out, System.err, args.toArray(String[]::new));
+            Assert.assertEquals(rc, 0);
+        }
     }
 
     @Test
@@ -149,7 +152,7 @@ public class JLinkMultiReleaseJarTest {
         if (ignoreTest()) return;
 
         // use jlink to build image from multi-release jar
-       jlink("m1.jar", "myimage");
+        jlink("m1.jar", "myimage");
 
         // validate image
         Path jimage = userdir.resolve("myimage").resolve("lib").resolve("modules");

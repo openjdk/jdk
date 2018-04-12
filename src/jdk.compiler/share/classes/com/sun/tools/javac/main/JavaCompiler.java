@@ -275,6 +275,10 @@ public class JavaCompiler {
      */
     protected Source source;
 
+    /** The preview language version.
+     */
+    protected Preview preview;
+
     /** The module for code generation.
      */
     protected Gen gen;
@@ -405,6 +409,7 @@ public class JavaCompiler {
             log.error(Errors.CantAccess(ex.sym, ex.getDetailValue()));
         }
         source = Source.instance(context);
+        preview = Preview.instance(context);
         attr = Attr.instance(context);
         analyzer = Analyzer.instance(context);
         chk = Check.instance(context);
@@ -1725,6 +1730,7 @@ public class JavaCompiler {
                 log.warning(Warnings.ProcUseProcOrImplicit);
         }
         chk.reportDeferredDiagnostics();
+        preview.reportDeferredDiagnostics();
         if (log.compressedOutput) {
             log.mandatoryNote(null, Notes.CompressedDiags);
         }

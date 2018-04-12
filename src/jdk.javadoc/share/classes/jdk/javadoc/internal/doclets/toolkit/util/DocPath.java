@@ -30,10 +30,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import javax.lang.model.element.ModuleElement;
-import javax.lang.model.element.PackageElement;
-import javax.lang.model.element.TypeElement;
-
 /**
  * Abstraction for immutable relative paths.
  * Paths always use '/' as a separator, and never begin or end with '/'.

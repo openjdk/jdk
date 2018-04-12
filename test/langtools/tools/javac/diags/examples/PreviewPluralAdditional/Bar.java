@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.misc;
 
-import java.security.PermissionCollection;
-import java.security.ProtectionDomain;
+import java.util.ArrayList;
 
-public interface JavaSecurityProtectionDomainAccess {
-    interface ProtectionDomainCache {
-        void put(ProtectionDomain pd, PermissionCollection pc);
-        PermissionCollection get(ProtectionDomain pd);
+class Bar {
+    Runnable r = () -> {};
+    void test() {
+        new ArrayList<>();
     }
-    /**
-     * Returns the ProtectionDomainCache.
-     */
-    ProtectionDomainCache getProtectionDomainCache();
 }
