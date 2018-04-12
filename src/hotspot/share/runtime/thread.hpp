@@ -2096,6 +2096,7 @@ class Threads: AllStatic {
   // thread to the thread list before allocating its thread object
   static void add(JavaThread* p, bool force_daemon = false);
   static void remove(JavaThread* p);
+  static void non_java_threads_do(ThreadClosure* tc);
   static void threads_do(ThreadClosure* tc);
   static void possibly_parallel_threads_do(bool is_par, ThreadClosure* tc);
 
