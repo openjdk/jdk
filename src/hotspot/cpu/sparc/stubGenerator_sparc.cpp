@@ -2277,7 +2277,7 @@ class StubGenerator: public StubCodeGenerator {
       decorators |= ARRAYCOPY_ALIGNED;
     }
 
-    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, T_OBJECT, from, to, count);
 
     assert_clean_int(count, O3);     // Make sure 'count' is clean int.
@@ -2334,7 +2334,7 @@ class StubGenerator: public StubCodeGenerator {
       decorators |= ARRAYCOPY_ALIGNED;
     }
 
-    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, T_OBJECT, from, to, count);
 
     if (UseCompressedOops) {
@@ -2451,7 +2451,7 @@ class StubGenerator: public StubCodeGenerator {
       decorators |= AS_DEST_NOT_INITIALIZED;
     }
 
-    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, T_OBJECT, O0_from, O1_to, O2_count);
 
     Label load_element, store_element, do_epilogue, fail, done;

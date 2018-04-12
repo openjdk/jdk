@@ -3035,7 +3035,7 @@ void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg) {
 }
 
 void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp2, bool needs_frame) {
-  BarrierSetAssembler* bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->resolve_jobject(this, value, tmp1, tmp2, needs_frame);
 }
 

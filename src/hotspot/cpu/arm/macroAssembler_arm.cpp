@@ -29,6 +29,7 @@
 #include "ci/ciEnv.hpp"
 #include "code/nativeInst.hpp"
 #include "compiler/disassembler.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -2261,7 +2262,7 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
   Address queue_index(Rthread, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()));
   Address buffer(Rthread, in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()));
 
-  BarrierSet* bs = Universe::heap()->barrier_set();
+  BarrierSet* bs = BarrierSet::barrier_set();
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
   Label done;

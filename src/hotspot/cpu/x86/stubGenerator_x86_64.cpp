@@ -1829,7 +1829,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     BasicType type = is_oop ? T_OBJECT : T_INT;
-    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, type, from, to, count);
 
     // 'from', 'to' and 'count' are now valid
@@ -1923,7 +1923,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     BasicType type = is_oop ? T_OBJECT : T_INT;
-    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     // no registers are destroyed by this call
     bs->arraycopy_prologue(_masm, decorators, type, from, to, count);
 
@@ -2027,7 +2027,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     BasicType type = is_oop ? T_OBJECT : T_LONG;
-    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, type, from, to, qword_count);
 
     // Copy from low to high addresses.  Use 'to' as scratch.
@@ -2120,7 +2120,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     BasicType type = is_oop ? T_OBJECT : T_LONG;
-    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, type, from, to, qword_count);
 
     __ jmp(L_copy_bytes);
@@ -2300,7 +2300,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     BasicType type = T_OBJECT;
-    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, type, from, to, count);
 
     // Copy from low to high addresses, indexed from the end of each array.

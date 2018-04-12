@@ -36,6 +36,7 @@
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -3149,6 +3150,6 @@ void SharedRuntime::on_slowpath_allocation_exit(JavaThread* thread) {
   oop new_obj = thread->vm_result();
   if (new_obj == NULL) return;
 
-  BarrierSet *bs = Universe::heap()->barrier_set();
+  BarrierSet *bs = BarrierSet::barrier_set();
   bs->on_slowpath_allocation_exit(thread, new_obj);
 }

@@ -200,7 +200,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
                          Register           tmp3,
                          DecoratorSet       decorators) {
   assert_different_registers(tmp1, tmp2, tmp3, val, addr.base());
-  BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->store_at(_masm, decorators, T_OBJECT, addr, val, tmp1, tmp2, tmp3);
 }
 
@@ -212,7 +212,7 @@ static void do_oop_load(InterpreterMacroAssembler* _masm,
                         DecoratorSet decorators) {
   assert_different_registers(addr.base(), tmp1, tmp2);
   assert_different_registers(dst, tmp1, tmp2);
-  BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->load_at(_masm, decorators, T_OBJECT, addr, dst, tmp1, tmp2);
 }
 

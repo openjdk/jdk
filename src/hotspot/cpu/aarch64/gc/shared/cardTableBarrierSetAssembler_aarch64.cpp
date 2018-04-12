@@ -28,7 +28,6 @@
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/cardTableBarrierSetAssembler.hpp"
-#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interp_masm.hpp"
 
 #define __ masm->
@@ -36,7 +35,7 @@
 
 void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register obj, Address dst) {
 
-  BarrierSet* bs = Universe::heap()->barrier_set();
+  BarrierSet* bs = BarrierSet::barrier_set();
   assert(bs->kind() == BarrierSet::CardTableBarrierSet, "Wrong barrier set kind");
 
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
@@ -66,7 +65,7 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
 
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                                     Register start, Register end, Register scratch, RegSet saved_regs) {
-  BarrierSet* bs = Universe::heap()->barrier_set();
+  BarrierSet* bs = BarrierSet::barrier_set();
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
   assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");

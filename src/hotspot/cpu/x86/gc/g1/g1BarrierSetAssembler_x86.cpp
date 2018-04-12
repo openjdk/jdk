@@ -29,7 +29,6 @@
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
-#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
@@ -267,7 +266,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
   Address buffer(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()));
 
   CardTableBarrierSet* ct =
-    barrier_set_cast<CardTableBarrierSet>(Universe::heap()->barrier_set());
+    barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
   assert(sizeof(*ct->card_table()->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
   Label done;

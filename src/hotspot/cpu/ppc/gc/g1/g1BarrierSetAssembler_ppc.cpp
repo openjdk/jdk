@@ -30,7 +30,6 @@
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
-#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "runtime/sharedRuntime.hpp"
 
@@ -205,7 +204,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
   Label runtime, filtered;
   assert_different_registers(store_addr, new_val, tmp1, tmp2);
 
-  CardTableBarrierSet* ct = barrier_set_cast<CardTableBarrierSet>(Universe::heap()->barrier_set());
+  CardTableBarrierSet* ct = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
   assert(sizeof(*ct->card_table()->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
   // Does store cross heap regions?

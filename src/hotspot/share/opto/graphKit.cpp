@@ -1562,7 +1562,7 @@ void GraphKit::pre_barrier(bool do_load,
                            Node* pre_val,
                            BasicType bt) {
 
-  BarrierSet* bs = Universe::heap()->barrier_set();
+  BarrierSet* bs = BarrierSet::barrier_set();
   set_control(ctl);
   switch (bs->kind()) {
     case BarrierSet::G1BarrierSet:
@@ -1579,7 +1579,7 @@ void GraphKit::pre_barrier(bool do_load,
 }
 
 bool GraphKit::can_move_pre_barrier() const {
-  BarrierSet* bs = Universe::heap()->barrier_set();
+  BarrierSet* bs = BarrierSet::barrier_set();
   switch (bs->kind()) {
     case BarrierSet::G1BarrierSet:
       return true; // Can move it if no safepoint
@@ -1601,7 +1601,7 @@ void GraphKit::post_barrier(Node* ctl,
                             Node* val,
                             BasicType bt,
                             bool use_precise) {
-  BarrierSet* bs = Universe::heap()->barrier_set();
+  BarrierSet* bs = BarrierSet::barrier_set();
   set_control(ctl);
   switch (bs->kind()) {
     case BarrierSet::G1BarrierSet:
@@ -3814,7 +3814,7 @@ void GraphKit::add_predicate(int nargs) {
 #define __ ideal.
 
 bool GraphKit::use_ReduceInitialCardMarks() {
-  BarrierSet *bs = Universe::heap()->barrier_set();
+  BarrierSet *bs = BarrierSet::barrier_set();
   return bs->is_a(BarrierSet::CardTableBarrierSet)
          && barrier_set_cast<CardTableBarrierSet>(bs)->can_elide_tlab_store_barriers()
          && ReduceInitialCardMarks;
@@ -3885,7 +3885,7 @@ void GraphKit::write_barrier_post(Node* oop_store,
   Node* cast = __ CastPX(__ ctrl(), adr);
 
   // Divide by card size
-  assert(Universe::heap()->barrier_set()->is_a(BarrierSet::CardTableBarrierSet),
+  assert(BarrierSet::barrier_set()->is_a(BarrierSet::CardTableBarrierSet),
          "Only one we handle so far.");
   Node* card_offset = __ URShiftX( cast, __ ConI(CardTable::card_shift) );
 

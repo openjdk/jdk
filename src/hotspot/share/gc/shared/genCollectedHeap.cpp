@@ -114,7 +114,7 @@ jint GenCollectedHeap::initialize() {
   _rem_set->initialize();
   CardTableBarrierSet *bs = new CardTableBarrierSet(_rem_set);
   bs->initialize();
-  set_barrier_set(bs);
+  BarrierSet::set_barrier_set(bs);
 
   ReservedSpace young_rs = heap_rs.first_part(_young_gen_spec->max_size(), false, false);
   _young_gen = _young_gen_spec->init(young_rs, rem_set());

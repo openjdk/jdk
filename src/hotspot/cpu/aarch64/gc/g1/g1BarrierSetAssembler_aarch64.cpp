@@ -25,11 +25,10 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
-#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "runtime/sharedRuntime.hpp"
 
@@ -182,7 +181,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
   Address queue_index(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()));
   Address buffer(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()));
 
-  BarrierSet* bs = Universe::heap()->barrier_set();
+  BarrierSet* bs = BarrierSet::barrier_set();
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
   assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");

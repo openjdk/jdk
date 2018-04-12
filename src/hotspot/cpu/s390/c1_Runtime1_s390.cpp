@@ -768,7 +768,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
     case g1_pre_barrier_slow_id:
       { // Z_R1_scratch: previous value of memory
 
-        BarrierSet* bs = Universe::heap()->barrier_set();
+        BarrierSet* bs = BarrierSet::barrier_set();
         if (bs->kind() != BarrierSet::G1BarrierSet) {
           __ should_not_reach_here(FILE_AND_LINE);
           break;
@@ -831,7 +831,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
     case g1_post_barrier_slow_id:
       { // Z_R1_scratch: oop address, address of updated memory slot
-        BarrierSet* bs = Universe::heap()->barrier_set();
+        BarrierSet* bs = BarrierSet::barrier_set();
         if (bs->kind() != BarrierSet::G1BarrierSet) {
           __ should_not_reach_here(FILE_AND_LINE);
           break;

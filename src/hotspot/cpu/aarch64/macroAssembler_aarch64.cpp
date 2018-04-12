@@ -29,6 +29,7 @@
 #include "jvm.h"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
@@ -2092,7 +2093,7 @@ void MacroAssembler::verify_heapbase(const char* msg) {
 #endif
 
 void MacroAssembler::resolve_jobject(Register value, Register thread, Register tmp) {
-  BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
   Label done, not_weak;
   cbz(value, done);           // Use NULL as-is.
 
@@ -4316,7 +4317,7 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, unsigned long &byt
 
 void MacroAssembler::load_byte_map_base(Register reg) {
   jbyte *byte_map_base =
-    ((CardTableBarrierSet*)(Universe::heap()->barrier_set()))->card_table()->byte_map_base();
+    ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base();
 
   if (is_valid_AArch64_address((address)byte_map_base)) {
     // Strictly speaking the byte_map_base isn't an address at all,
