@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/dirtyCardQueue.hpp"
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CardTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -488,7 +489,7 @@ void G1RemSet::oops_into_collection_set_do(G1ParScanThreadState* pss,
 }
 
 void G1RemSet::prepare_for_oops_into_collection_set_do() {
-  DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
+  DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
   dcqs.concatenate_logs();
 
   _scan_state->reset();
@@ -641,7 +642,7 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
       MutexLockerEx x(Shared_DirtyCardQ_lock,
                       Mutex::_no_safepoint_check_flag);
       DirtyCardQueue* sdcq =
-        JavaThread::dirty_card_queue_set().shared_dirty_card_queue();
+        G1BarrierSet::dirty_card_queue_set().shared_dirty_card_queue();
       sdcq->enqueue(card_ptr);
     }
   } else {

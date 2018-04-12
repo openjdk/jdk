@@ -25,6 +25,8 @@
 #ifndef SHARE_VM_GC_G1_G1BARRIERSET_HPP
 #define SHARE_VM_GC_G1_G1BARRIERSET_HPP
 
+#include "gc/g1/dirtyCardQueue.hpp"
+#include "gc/g1/satbMarkQueue.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 
 class DirtyCardQueueSet;
@@ -37,7 +39,8 @@ class G1CardTable;
 class G1BarrierSet: public CardTableBarrierSet {
   friend class VMStructs;
  private:
-  DirtyCardQueueSet& _dcqs;
+  static SATBMarkQueueSet  _satb_mark_queue_set;
+  static DirtyCardQueueSet _dirty_card_queue_set;
 
  public:
   G1BarrierSet(G1CardTable* table);
@@ -73,6 +76,14 @@ class G1BarrierSet: public CardTableBarrierSet {
 
   virtual void on_thread_attach(JavaThread* thread);
   virtual void on_thread_detach(JavaThread* thread);
+
+  static SATBMarkQueueSet& satb_mark_queue_set() {
+    return _satb_mark_queue_set;
+  }
+
+  static DirtyCardQueueSet& dirty_card_queue_set() {
+    return _dirty_card_queue_set;
+  }
 
   // Callbacks for runtime accesses.
   template <DecoratorSet decorators, typename BarrierSetT = G1BarrierSet>

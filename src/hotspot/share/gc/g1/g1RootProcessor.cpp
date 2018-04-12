@@ -29,6 +29,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "gc/g1/bufferingOopClosure.hpp"
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CodeBlobClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorState.hpp"
@@ -134,7 +135,7 @@ void G1RootProcessor::evacuate_roots(G1EvacuationRootClosures* closures, uint wo
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::SATBFiltering, worker_i);
     if (!_process_strong_tasks.is_task_claimed(G1RP_PS_filter_satb_buffers) && _g1h->collector_state()->mark_or_rebuild_in_progress()) {
-      JavaThread::satb_mark_queue_set().filter_thread_buffers();
+      G1BarrierSet::satb_mark_queue_set().filter_thread_buffers();
     }
   }
 
