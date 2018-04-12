@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interp_masm_aarch64.hpp"
 #include "interpreter/interpreter.hpp"
