@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -469,7 +469,7 @@ jstring getJavaString(JNIEnv *env, gss_buffer_t bytes) {
   if (bytes != NULL) {
     /* constructs the String object with new String(byte[])
        NOTE: do NOT include the trailing NULL */
-    len = bytes->length;
+    len = (int) bytes->length;
     jbytes = (*env)->NewByteArray(env, len);
     if (jbytes == NULL) {
       goto finish;
@@ -497,7 +497,6 @@ jstring getMinorMessage(JNIEnv *env, jobject jstub, OM_uint32 statusValue) {
   OM_uint32 messageContext, minor, major;
   gss_buffer_desc statusString;
   gss_OID mech;
-  jstring msg;
 
   messageContext = 0;
   if (jstub != NULL) {
@@ -636,11 +635,11 @@ jbyteArray getJavaBuffer(JNIEnv *env, gss_buffer_t cbytes) {
 
   if (cbytes != NULL) {
     if ((cbytes != GSS_C_NO_BUFFER) && (cbytes->length != 0)) {
-      result = (*env)->NewByteArray(env, cbytes->length);
+      result = (*env)->NewByteArray(env, (int) cbytes->length);
       if (result == NULL) {
         goto finish;
       }
-      (*env)->SetByteArrayRegion(env, result, 0, cbytes->length,
+      (*env)->SetByteArrayRegion(env, result, 0, (int) cbytes->length,
                                  cbytes->value);
       if ((*env)->ExceptionCheck(env)) {
         result = NULL;
@@ -661,7 +660,6 @@ jbyteArray getJavaBuffer(JNIEnv *env, gss_buffer_t cbytes) {
 gss_OID newGSSOID(JNIEnv *env, jobject jOid) {
   jbyteArray jbytes;
   gss_OID cOid;
-  jthrowable gssEx;
   if (jOid != NULL) {
     jbytes = (*env)->CallObjectMethod(env, jOid, MID_Oid_getDER);
     if ((*env)->ExceptionCheck(env)) {
@@ -783,10 +781,9 @@ jobjectArray getJavaOIDArray(JNIEnv *env, gss_OID_set cOidSet) {
   jobjectArray jOidSet;
   jobject jOid;
   int i;
-  jthrowable gssEx;
 
   if (cOidSet != NULL && cOidSet != GSS_C_NO_OID_SET) {
-    numOfOids = cOidSet->count;
+    numOfOids = (int) cOidSet->count;
     jOidSet = (*env)->NewObjectArray(env, numOfOids, CLS_Oid, NULL);
     if ((*env)->ExceptionCheck(env)) {
       return NULL;
