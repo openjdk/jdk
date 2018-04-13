@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/gcLocker.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
@@ -31,6 +30,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/constMethod.hpp"
 #include "oops/method.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "utilities/align.hpp"
 
 // Static initialization

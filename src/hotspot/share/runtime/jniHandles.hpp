@@ -28,9 +28,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/handles.hpp"
 
-class JNIHandleBlock;
 class OopStorage;
-
 
 // Interface for creating and resolving local/global JNI handles
 
@@ -41,8 +39,8 @@ class JNIHandles : AllStatic {
   static OopStorage* _weak_global_handles;
 
   inline static bool is_jweak(jobject handle);
-  inline static oop& jobject_ref(jobject handle); // NOT jweak!
-  inline static oop& jweak_ref(jobject handle);
+  inline static oop* jobject_ptr(jobject handle); // NOT jweak!
+  inline static oop* jweak_ptr(jobject handle);
 
   template<bool external_guard> inline static oop resolve_impl(jobject handle);
   static oop resolve_jweak(jweak handle);

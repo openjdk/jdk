@@ -199,41 +199,6 @@ REGISTER_DECLARATION(Register, ImethodDataPtr   , I2); // Pointer to the current
 REGISTER_DECLARATION(Register, Oexception  , O0); // exception being thrown
 REGISTER_DECLARATION(Register, Oissuing_pc , O1); // where the exception is coming from
 
-
-// These must occur after the declarations above
-#ifndef DONT_USE_REGISTER_DEFINES
-
-#define Gthread             AS_REGISTER(Register, Gthread)
-#define Gmethod             AS_REGISTER(Register, Gmethod)
-#define Gmegamorphic_method AS_REGISTER(Register, Gmegamorphic_method)
-#define Ginline_cache_reg   AS_REGISTER(Register, Ginline_cache_reg)
-#define Gargs               AS_REGISTER(Register, Gargs)
-#define Lthread_cache       AS_REGISTER(Register, Lthread_cache)
-#define Gframe_size         AS_REGISTER(Register, Gframe_size)
-#define Gtemp               AS_REGISTER(Register, Gtemp)
-
-#define Lesp                AS_REGISTER(Register, Lesp)
-#define Lbcp                AS_REGISTER(Register, Lbcp)
-#define Lmethod             AS_REGISTER(Register, Lmethod)
-#define Llocals             AS_REGISTER(Register, Llocals)
-#define Lmonitors           AS_REGISTER(Register, Lmonitors)
-#define Lbyte_code          AS_REGISTER(Register, Lbyte_code)
-#define Lscratch            AS_REGISTER(Register, Lscratch)
-#define Lscratch2           AS_REGISTER(Register, Lscratch2)
-#define LcpoolCache         AS_REGISTER(Register, LcpoolCache)
-
-#define Lentry_args         AS_REGISTER(Register, Lentry_args)
-#define I5_savedSP          AS_REGISTER(Register, I5_savedSP)
-#define O5_savedSP          AS_REGISTER(Register, O5_savedSP)
-#define IdispatchAddress    AS_REGISTER(Register, IdispatchAddress)
-#define ImethodDataPtr      AS_REGISTER(Register, ImethodDataPtr)
-
-#define Oexception          AS_REGISTER(Register, Oexception)
-#define Oissuing_pc         AS_REGISTER(Register, Oissuing_pc)
-
-#endif
-
-
 // Address is an abstraction used to represent a memory location.
 //
 // Note: A register location is represented via a Register, not

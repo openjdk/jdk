@@ -29,6 +29,7 @@
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/vmStructs_jvmci.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "utilities/resourceHash.hpp"
 
 

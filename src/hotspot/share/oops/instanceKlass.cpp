@@ -2401,7 +2401,7 @@ bool InstanceKlass::is_same_class_package(const Klass* class2) const {
   // and package entries. Both must be the same. This rule
   // applies even to classes that are defined in the unnamed
   // package, they still must have the same class loader.
-  if ((classloader1 == classloader2) && (classpkg1 == classpkg2)) {
+  if (oopDesc::equals(classloader1, classloader2) && (classpkg1 == classpkg2)) {
     return true;
   }
 
@@ -2412,7 +2412,7 @@ bool InstanceKlass::is_same_class_package(const Klass* class2) const {
 // and classname information is enough to determine a class's package
 bool InstanceKlass::is_same_class_package(oop other_class_loader,
                                           const Symbol* other_class_name) const {
-  if (class_loader() != other_class_loader) {
+  if (!oopDesc::equals(class_loader(), other_class_loader)) {
     return false;
   }
   if (name()->fast_compare(other_class_name) == 0) {
@@ -3210,7 +3210,7 @@ void InstanceKlass::collect_statistics(KlassSizeStats *sz) const {
 class VerifyFieldClosure: public OopClosure {
  protected:
   template <class T> void do_oop_work(T* p) {
-    oop obj = oopDesc::load_decode_heap_oop(p);
+    oop obj = RawAccess<>::oop_load(p);
     if (!oopDesc::is_oop_or_null(obj)) {
       tty->print_cr("Failed: " PTR_FORMAT " -> " PTR_FORMAT, p2i(p), p2i(obj));
       Universe::print_on(tty);

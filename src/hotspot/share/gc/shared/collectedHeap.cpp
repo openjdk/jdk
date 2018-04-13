@@ -586,12 +586,50 @@ void CollectedHeap::post_initialize() {
   initialize_serviceability();
 }
 
-oop CollectedHeap::pin_object(JavaThread* thread, oop o) {
-  Handle handle(thread, o);
-  GCLocker::lock_critical(thread);
-  return handle();
+#ifndef PRODUCT
+
+bool CollectedHeap::promotion_should_fail(volatile size_t* count) {
+  // Access to count is not atomic; the value does not have to be exact.
+  if (PromotionFailureALot) {
+    const size_t gc_num = total_collections();
+    const size_t elapsed_gcs = gc_num - _promotion_failure_alot_gc_number;
+    if (elapsed_gcs >= PromotionFailureALotInterval) {
+      // Test for unsigned arithmetic wrap-around.
+      if (++*count >= PromotionFailureALotCount) {
+        *count = 0;
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
-void CollectedHeap::unpin_object(JavaThread* thread, oop o) {
-  GCLocker::unlock_critical(thread);
+bool CollectedHeap::promotion_should_fail() {
+  return promotion_should_fail(&_promotion_failure_alot_count);
+}
+
+void CollectedHeap::reset_promotion_should_fail(volatile size_t* count) {
+  if (PromotionFailureALot) {
+    _promotion_failure_alot_gc_number = total_collections();
+    *count = 0;
+  }
+}
+
+void CollectedHeap::reset_promotion_should_fail() {
+  reset_promotion_should_fail(&_promotion_failure_alot_count);
+}
+
+#endif  // #ifndef PRODUCT
+
+bool CollectedHeap::supports_object_pinning() const {
+  return false;
+}
+
+oop CollectedHeap::pin_object(JavaThread* thread, oop obj) {
+  ShouldNotReachHere();
+  return NULL;
+}
+
+void CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
+  ShouldNotReachHere();
 }

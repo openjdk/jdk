@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
  * @test
  * @bug 8141551
  * @summary C2 can not handle returns with inccompatible interface arrays
+ * @requires vm.compMode == "Xmixed" & vm.flavor == "server"
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
- * @library /test/lib
+ * @library /test/lib /
  *
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
@@ -37,8 +38,8 @@
  *        -XX:+UnlockDiagnosticVMOptions
  *        -XX:+WhiteBoxAPI
  *        -Xbatch
- *        -XX:CompileThreshold=1
  *        -XX:-TieredCompilation
+ *        -XX:TieredStopAtLevel=4
  *        -XX:CICompilerCount=1
  *        -XX:+PrintCompilation
  *        -XX:+PrintInlining
@@ -51,8 +52,8 @@
  *        -XX:+UnlockDiagnosticVMOptions
  *        -XX:+WhiteBoxAPI
  *        -Xbatch
- *        -XX:CompileThreshold=1
  *        -XX:-TieredCompilation
+ *        -XX:TieredStopAtLevel=4
  *        -XX:CICompilerCount=1
  *        -XX:+PrintCompilation
  *        -XX:+PrintInlining
@@ -65,11 +66,8 @@
  *        -XX:+UnlockDiagnosticVMOptions
  *        -XX:+WhiteBoxAPI
  *        -Xbatch
- *        -XX:CompileThreshold=1
- *        -XX:Tier0InvokeNotifyFreqLog=0 -XX:Tier2InvokeNotifyFreqLog=0 -XX:Tier3InvokeNotifyFreqLog=0 -XX:Tier23InlineeNotifyFreqLog=0
- *        -XX:Tier3InvocationThreshold=2 -XX:Tier3MinInvocationThreshold=2 -XX:Tier3CompileThreshold=2
- *        -XX:Tier4InvocationThreshold=1 -XX:Tier4MinInvocationThreshold=1 -XX:Tier4CompileThreshold=1
  *        -XX:+TieredCompilation
+ *        -XX:TieredStopAtLevel=4
  *        -XX:CICompilerCount=2
  *        -XX:+PrintCompilation
  *        -XX:+PrintInlining
@@ -84,6 +82,7 @@
 
 package compiler.types;
 
+import compiler.whitebox.CompilerWhiteBoxTest;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import sun.hotspot.WhiteBox;
@@ -190,8 +189,8 @@ public class TestMeetIncompatibleInterfaceArrays extends ClassLoader {
      *     return Helper.createI2Array3(); // returns I1[][][] which gives a verifier error because return expects I1[][][][]
      *   }
      *   public static void test() {
-     *     I1[][][][][] i1 = run();
-     *     System.out.println(i1[0][0][0][0][0].getName());
+     *     I1[][][][] i1 = run();
+     *     System.out.println(i1[0][0][0][0].getName());
      *   }
      * ...
      * public class MeetIncompatibleInterfaceArrays5ASM {
@@ -306,9 +305,25 @@ public class TestMeetIncompatibleInterfaceArrays extends ClassLoader {
 
     }
 
-    public static String[][] tier = { { "interpreted", "C2 (tier 4) without inlining", "C2 (tier4) without inlining" },
-            { "interpreted", "C2 (tier 4) with inlining", "C2 (tier4) with inlining" },
-            { "interpreted", "C1 (tier 3) with inlining", "C2 (tier4) with inlining" } };
+    public static String[][] tier = { { "interpreted (tier 0)",
+                                        "C2 (tier 4) without inlining",
+                                        "C2 (tier 4) without inlining" },
+                                      { "interpreted (tier 0)",
+                                        "C2 (tier 4) with inlining",
+                                        "C2 (tier 4) with inlining" },
+                                      { "interpreted (tier 0)",
+                                        "C1 (tier 3) with inlining",
+                                        "C2 (tier 4) with inlining" } };
+
+    public static int[][] level = { { CompilerWhiteBoxTest.COMP_LEVEL_NONE,
+                                      CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION,
+                                      CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION },
+                                    { CompilerWhiteBoxTest.COMP_LEVEL_NONE,
+                                      CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION,
+                                      CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION },
+                                    { CompilerWhiteBoxTest.COMP_LEVEL_NONE,
+                                      CompilerWhiteBoxTest.COMP_LEVEL_FULL_PROFILE,
+                                      CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION } };
 
     public static void main(String[] args) throws Exception {
         final int pass = Integer.parseInt(args.length > 0 ? args[0] : "0");
@@ -344,8 +359,11 @@ public class TestMeetIncompatibleInterfaceArrays extends ClassLoader {
                 Method m = c.getMethod("test");
                 Method r = c.getMethod("run");
                 for (int j = 0; j < 3; j++) {
-                    System.out.println((j + 1) + ". invokation of " + baseClassName + i + "ASM.test() [should be "
-                            + tier[pass][j] + "]");
+                    System.out.println((j + 1) + ". invokation of " + baseClassName + i + "ASM.test() [::" +
+                                       r.getName() + "() should be '" + tier[pass][j] + "' compiled]");
+
+                    WB.enqueueMethodForCompilation(r, level[pass][j]);
+
                     try {
                         m.invoke(null);
                     } catch (InvocationTargetException ite) {
@@ -360,10 +378,17 @@ public class TestMeetIncompatibleInterfaceArrays extends ClassLoader {
                             }
                         }
                     }
-                }
-                System.out.println("Method " + r + (WB.isMethodCompiled(r) ? " has" : " has not") + " been compiled.");
-                if (!WB.isMethodCompiled(r)) {
-                    throw new Exception("Method " + r + " must be compiled!");
+
+                    int r_comp_level = WB.getMethodCompilationLevel(r);
+                    System.out.println("   invokation of " + baseClassName + i + "ASM.test() [::" +
+                                       r.getName() + "() was compiled at tier " + r_comp_level + "]");
+
+                    if (r_comp_level != level[pass][j]) {
+                      throw new Exception("Method " + r + " must be compiled at tier " + level[pass][j] +
+                                          " but was compiled at " + r_comp_level + " instead!");
+                    }
+
+                    WB.deoptimizeMethod(r);
                 }
             }
         }

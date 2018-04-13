@@ -27,6 +27,7 @@
 
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/modRefBarrierSet.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.hpp"
@@ -105,7 +106,7 @@ oop_arraycopy_in_heap(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t
     T* end = from + length;
     for (T* p = dst; from < end; from++, p++) {
       T element = *from;
-      if (bound->is_instanceof_or_null(element)) {
+      if (oopDesc::is_instanceof_or_null(CompressedOops::decode(element), bound)) {
         bs->template write_ref_field_pre<decorators>(p);
         *p = element;
       } else {

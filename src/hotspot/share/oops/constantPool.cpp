@@ -841,7 +841,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
   if (cache_index >= 0) {
     result_oop = this_cp->resolved_references()->obj_at(cache_index);
     if (result_oop != NULL) {
-      if (result_oop == Universe::the_null_sentinel()) {
+      if (oopDesc::equals(result_oop, Universe::the_null_sentinel())) {
         DEBUG_ONLY(int temp_index = (index >= 0 ? index : this_cp->object_to_cp_index(cache_index)));
         assert(this_cp->tag_at(temp_index).is_dynamic_constant(), "only condy uses the null sentinel");
         result_oop = NULL;
@@ -1074,12 +1074,12 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
     } else {
       // Return the winning thread's result.  This can be different than
       // the result here for MethodHandles.
-      if (old_result == Universe::the_null_sentinel())
+      if (oopDesc::equals(old_result, Universe::the_null_sentinel()))
         old_result = NULL;
       return old_result;
     }
   } else {
-    assert(result_oop != Universe::the_null_sentinel(), "");
+    assert(!oopDesc::equals(result_oop, Universe::the_null_sentinel()), "");
     return result_oop;
   }
 }
@@ -1245,7 +1245,7 @@ void ConstantPool::copy_bootstrap_arguments_at_impl(const constantPoolHandle& th
 oop ConstantPool::string_at_impl(const constantPoolHandle& this_cp, int which, int obj_index, TRAPS) {
   // If the string has already been interned, this entry will be non-null
   oop str = this_cp->resolved_references()->obj_at(obj_index);
-  assert(str != Universe::the_null_sentinel(), "");
+  assert(!oopDesc::equals(str, Universe::the_null_sentinel()), "");
   if (str != NULL) return str;
   Symbol* sym = this_cp->unresolved_string_at(which);
   str = StringTable::intern(sym, CHECK_(NULL));

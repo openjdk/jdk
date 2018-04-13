@@ -549,7 +549,7 @@ class MallocArrayAllocator : public AllStatic {
   static size_t size_for(size_t length);
 
   static E* allocate(size_t length, MEMFLAGS flags);
-  static void free(E* addr, size_t length);
+  static void free(E* addr);
 };
 
 #endif // SHARE_VM_MEMORY_ALLOCATION_HPP

@@ -28,7 +28,6 @@
 #include "code/codeCache.hpp"
 #include "code/debugInfoRec.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
-#include "gc/shared/gcLocker.hpp"
 #include "gc/shared/generation.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodeTracer.hpp"
@@ -58,6 +57,7 @@
 #include "runtime/init.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/relocator.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "utilities/align.hpp"
@@ -2372,9 +2372,9 @@ void Method::log_touched(TRAPS) {
     ptr = ptr->_next;
   }
   TouchedMethodRecord* nptr = NEW_C_HEAP_OBJ(TouchedMethodRecord, mtTracing);
-  my_class->set_permanent();  // prevent reclaimed by GC
-  my_name->set_permanent();
-  my_sig->set_permanent();
+  my_class->increment_refcount();
+  my_name->increment_refcount();
+  my_sig->increment_refcount();
   nptr->_class_name         = my_class;
   nptr->_method_name        = my_name;
   nptr->_method_signature   = my_sig;

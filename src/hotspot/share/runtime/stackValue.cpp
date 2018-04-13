@@ -24,7 +24,8 @@
 
 #include "precompiled.hpp"
 #include "code/debugInfo.hpp"
-#include "oops/oop.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
+#include "oops/oop.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/stackValue.hpp"
@@ -103,7 +104,7 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
         value.noop = *(narrowOop*) value_addr;
       }
       // Decode narrowoop and wrap a handle around the oop
-      Handle h(Thread::current(), oopDesc::decode_heap_oop(value.noop));
+      Handle h(Thread::current(), CompressedOops::decode(value.noop));
       return new StackValue(h);
     }
 #endif

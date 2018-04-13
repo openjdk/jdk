@@ -49,7 +49,8 @@ class MethodHandleNatives {
 
     static native void init(MemberName self, Object ref);
     static native void expand(MemberName self);
-    static native MemberName resolve(MemberName self, Class<?> caller) throws LinkageError, ClassNotFoundException;
+    static native MemberName resolve(MemberName self, Class<?> caller,
+            boolean speculativeResolve) throws LinkageError, ClassNotFoundException;
     static native int getMembers(Class<?> defc, String matchName, String matchSig,
             int matchFlags, Class<?> caller, int skip, MemberName[] results);
 

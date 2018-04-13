@@ -60,6 +60,12 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_CPU],
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=little
       ;;
+    ia64)
+      VAR_CPU=ia64
+      VAR_CPU_ARCH=ia64
+      VAR_CPU_BITS=64
+      VAR_CPU_ENDIAN=little
+      ;;
     m68k)
       VAR_CPU=m68k
       VAR_CPU_ARCH=m68k

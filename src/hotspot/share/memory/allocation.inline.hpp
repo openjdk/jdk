@@ -105,7 +105,7 @@ E* MallocArrayAllocator<E>::allocate(size_t length, MEMFLAGS flags) {
 }
 
 template<class E>
-void MallocArrayAllocator<E>::free(E* addr, size_t /*length*/) {
+void MallocArrayAllocator<E>::free(E* addr) {
   FreeHeap(addr);
 }
 
@@ -152,7 +152,7 @@ E* ArrayAllocator<E>::reallocate(E* old_addr, size_t old_length, size_t new_leng
 
 template<class E>
 void ArrayAllocator<E>::free_malloc(E* addr, size_t length) {
-  MallocArrayAllocator<E>::free(addr, length);
+  MallocArrayAllocator<E>::free(addr);
 }
 
 template<class E>

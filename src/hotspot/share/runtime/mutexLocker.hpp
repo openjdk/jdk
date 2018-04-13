@@ -117,7 +117,6 @@ extern Mutex*   ParkerFreeList_lock;
 extern Mutex*   OopMapCacheAlloc_lock;           // protects allocation of oop_map caches
 
 extern Mutex*   FreeList_lock;                   // protects the free region list during safepoints
-extern Monitor* SecondaryFreeList_lock;          // protects the secondary free region list
 extern Mutex*   OldSets_lock;                    // protects the old region sets
 extern Monitor* RootRegionScan_lock;             // used to notify that the CM threads have finished scanning the IM snapshot regions
 
@@ -136,6 +135,12 @@ extern Mutex*   JfrStream_lock;                  // protects JFR stream access
 #ifndef SUPPORTS_NATIVE_CX8
 extern Mutex*   UnsafeJlong_lock;                // provides Unsafe atomic updates to jlongs on platforms that don't support cx8
 #endif
+
+extern Mutex*   MetaspaceExpand_lock;            // protects Metaspace virtualspace and chunk expansions
+
+
+extern Monitor* CodeHeapStateAnalytics_lock;     // lock print functions against concurrent analyze functions.
+                                                 // Only used locally in PrintCodeCacheLayout processing.
 
 // A MutexLocker provides mutual exclusion with respect to a given mutex
 // for the scope which contains the locker.  The lock is an OS lock, not

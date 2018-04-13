@@ -39,6 +39,8 @@
 #include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/safepointVerifiers.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
@@ -171,7 +173,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc * obj, Thread * self, bool all) {
 
   if (mark->has_monitor()) {
     ObjectMonitor * const mon = mark->monitor();
-    assert(mon->object() == obj, "invariant");
+    assert(oopDesc::equals((oop) mon->object(), obj), "invariant");
     if (mon->owner() != self) return false;  // slow-path for IMS exception
 
     if (mon->first_waiter() != NULL) {
@@ -215,7 +217,7 @@ bool ObjectSynchronizer::quick_enter(oop obj, Thread * Self,
 
   if (mark->has_monitor()) {
     ObjectMonitor * const m = mark->monitor();
-    assert(m->object() == obj, "invariant");
+    assert(oopDesc::equals((oop) m->object(), obj), "invariant");
     Thread * const owner = (Thread *) m->_owner;
 
     // Lock contention and Transactional Lock Elision (TLE) diagnostics
@@ -1402,7 +1404,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread * Self,
     if (mark->has_monitor()) {
       ObjectMonitor * inf = mark->monitor();
       assert(inf->header()->is_neutral(), "invariant");
-      assert(inf->object() == object, "invariant");
+      assert(oopDesc::equals((oop) inf->object(), object), "invariant");
       assert(ObjectSynchronizer::verify_objmon_isinpool(inf), "monitor is invalid");
       return inf;
     }

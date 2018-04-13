@@ -28,6 +28,8 @@
 #include "gc/cms/cmsOopClosures.hpp"
 #include "gc/cms/concurrentMarkSweepGeneration.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "oops/access.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 
 // MetadataAwareOopClosure and MetadataAwareOopsInGenClosure are duplicated,
@@ -45,13 +47,13 @@ inline void MetadataAwareOopsInGenClosure::do_cld_nv(ClassLoaderData* cld) {
 }
 
 // Decode the oop and call do_oop on it.
-#define DO_OOP_WORK_IMPL(cls)                                 \
-  template <class T> void cls::do_oop_work(T* p) {            \
-    T heap_oop = oopDesc::load_heap_oop(p);                   \
-    if (!oopDesc::is_null(heap_oop)) {                        \
-      oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);  \
-      do_oop(obj);                                            \
-    }                                                         \
+#define DO_OOP_WORK_IMPL(cls)                               \
+  template <class T> void cls::do_oop_work(T* p) {          \
+    T heap_oop = RawAccess<>::oop_load(p);                  \
+    if (!CompressedOops::is_null(heap_oop)) {               \
+      oop obj = CompressedOops::decode_not_null(heap_oop);  \
+      do_oop(obj);                                          \
+    }                                                       \
   }
 
 #define DO_OOP_WORK_NV_IMPL(cls)                              \

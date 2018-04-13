@@ -28,6 +28,7 @@
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/privilegedStack.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 
 void PrivilegedElement::initialize(vframeStream* vfst, oop context, PrivilegedElement* next, TRAPS) {

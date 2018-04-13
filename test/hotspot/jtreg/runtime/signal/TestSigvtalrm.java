@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,23 +19,17 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_VM_GC_G1_CONCURRENTMARKTHREAD_INLINE_HPP
-#define SHARE_VM_GC_G1_CONCURRENTMARKTHREAD_INLINE_HPP
 
-#include "gc/g1/concurrentMarkThread.hpp"
-#include "gc/g1/g1ConcurrentMark.hpp"
+/*
+ * @test
+ * @requires os.family != "windows"
+ *
+ * @summary converted from VM testbase runtime/signal/sigvtalrm01.
+ * VM testbase keywords: [signal, runtime, linux, solaris, macosx]
+ *
+ * @library /test/lib
+ * @run main/native SigTestDriver SIGVTALRM
+ */
 
-  // Total virtual time so far.
-inline double ConcurrentMarkThread::vtime_accum() {
-  return _vtime_accum + _cm->all_task_accum_vtime();
-}
-
-// Marking virtual time so far
-inline double ConcurrentMarkThread::vtime_mark_accum() {
-  return _vtime_mark_accum + _cm->all_task_accum_vtime();
-}
-
-#endif // SHARE_VM_GC_G1_CONCURRENTMARKTHREAD_INLINE_HPP

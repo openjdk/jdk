@@ -34,6 +34,8 @@
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "oops/access.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
 
 class UpdateRSetDeferred : public ExtendedOopClosure {
 private:
@@ -51,12 +53,12 @@ public:
     assert(_g1->heap_region_containing(p)->is_in_reserved(p), "paranoia");
     assert(!_g1->heap_region_containing(p)->is_survivor(), "Unexpected evac failure in survivor region");
 
-    T const o = oopDesc::load_heap_oop(p);
-    if (oopDesc::is_null(o)) {
+    T const o = RawAccess<>::oop_load(p);
+    if (CompressedOops::is_null(o)) {
       return;
     }
 
-    if (HeapRegion::is_in_same_region(p, oopDesc::decode_heap_oop(o))) {
+    if (HeapRegion::is_in_same_region(p, CompressedOops::decode(o))) {
       return;
     }
     size_t card_index = _ct->index_for(p);
@@ -124,7 +126,7 @@ public:
         // explicitly and all objects in the CSet are considered
         // (implicitly) live. So, we won't mark them explicitly and
         // we'll leave them over NTAMS.
-        _cm->mark_in_next_bitmap(_hr, obj);
+        _cm->mark_in_next_bitmap(_worker_id, obj);
       }
       size_t obj_size = obj->size();
 
@@ -226,8 +228,8 @@ public:
 
     if (_hrclaimer->claim_region(hr->hrm_index())) {
       if (hr->evacuation_failed()) {
-        bool during_initial_mark = _g1h->collector_state()->during_initial_mark_pause();
-        bool during_conc_mark = _g1h->collector_state()->mark_in_progress();
+        bool during_initial_mark = _g1h->collector_state()->in_initial_mark_gc();
+        bool during_conc_mark = _g1h->collector_state()->mark_or_rebuild_in_progress();
 
         hr->note_self_forwarding_removal_start(during_initial_mark,
                                                during_conc_mark);
@@ -238,6 +240,7 @@ public:
         size_t live_bytes = remove_self_forward_ptr_by_walking_hr(hr, during_initial_mark);
 
         hr->rem_set()->clean_strong_code_roots(hr);
+        hr->rem_set()->clear_locked(true);
 
         hr->note_self_forwarding_removal_end(live_bytes);
       }

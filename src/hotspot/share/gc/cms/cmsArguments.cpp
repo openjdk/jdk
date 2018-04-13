@@ -80,8 +80,8 @@ void CMSArguments::set_parnew_gc_flags() {
 // sparc/solaris for certain applications, but would gain from
 // further optimization and tuning efforts, and would almost
 // certainly gain from analysis of platform and environment.
-void CMSArguments::initialize_flags() {
-  GCArguments::initialize_flags();
+void CMSArguments::initialize() {
+  GCArguments::initialize();
   assert(!UseSerialGC && !UseParallelOldGC && !UseParallelGC, "Error");
   assert(UseConcMarkSweepGC, "CMS is expected to be on here");
 

@@ -29,6 +29,8 @@
 #include "gc/parallel/parMarkBitMap.inline.hpp"
 #include "gc/parallel/psParallelCompact.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "oops/access.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
 
@@ -105,9 +107,9 @@ inline bool PSParallelCompact::mark_obj(oop obj) {
 
 template <class T>
 inline void PSParallelCompact::adjust_pointer(T* p, ParCompactionManager* cm) {
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (!oopDesc::is_null(heap_oop)) {
-    oop obj     = oopDesc::decode_heap_oop_not_null(heap_oop);
+  T heap_oop = RawAccess<>::oop_load(p);
+  if (!CompressedOops::is_null(heap_oop)) {
+    oop obj = CompressedOops::decode_not_null(heap_oop);
     assert(ParallelScavengeHeap::heap()->is_in(obj), "should be in heap");
 
     oop new_obj = (oop)summary_data().calc_new_pointer(obj, cm);
@@ -117,7 +119,7 @@ inline void PSParallelCompact::adjust_pointer(T* p, ParCompactionManager* cm) {
     if (new_obj != NULL) {
       assert(ParallelScavengeHeap::heap()->is_in_reserved(new_obj),
              "should be in object space");
-      oopDesc::encode_store_heap_oop_not_null(p, new_obj);
+      RawAccess<OOP_NOT_NULL>::oop_store(p, new_obj);
     }
   }
 }

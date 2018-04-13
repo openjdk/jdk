@@ -213,7 +213,7 @@ void G1FullCollector::phase2_prepare_compaction() {
 
 void G1FullCollector::phase3_adjust_pointers() {
   // Adjust the pointers to reflect the new locations
-  GCTraceTime(Info, gc, phases) info("Phase 3: Adjust pointers and remembered sets", scope()->timer());
+  GCTraceTime(Info, gc, phases) info("Phase 3: Adjust pointers", scope()->timer());
 
   G1FullGCAdjustTask task(this);
   run_task(&task);

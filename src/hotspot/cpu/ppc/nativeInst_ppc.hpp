@@ -27,7 +27,6 @@
 #define CPU_PPC_VM_NATIVEINST_PPC_HPP
 
 #include "asm/macroAssembler.hpp"
-#include "memory/allocation.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointMechanism.hpp"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,8 @@ class NMethodSweeper : public AllStatic {
   static void report_state_change(nmethod* nm);
   static void possibly_enable_sweeper();
   static void possibly_flush(nmethod* nm);
-  static void print();   // Printing/debugging
+  static void print(outputStream* out);   // Printing/debugging
+  static void print() { print(tty); }
 };
 
 #endif // SHARE_VM_RUNTIME_SWEEPER_HPP

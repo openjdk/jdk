@@ -28,6 +28,7 @@
 #include "code/nmethod.hpp"
 #include "code/relocInfo.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "utilities/copy.hpp"
 #include "oops/oop.inline.hpp"
@@ -307,7 +308,7 @@ void Relocation::set_value(address x) {
 void Relocation::const_set_data_value(address x) {
 #ifdef _LP64
   if (format() == relocInfo::narrow_oop_in_const) {
-    *(narrowOop*)addr() = oopDesc::encode_heap_oop((oop) x);
+    *(narrowOop*)addr() = CompressedOops::encode((oop) x);
   } else {
 #endif
     *(address*)addr() = x;
@@ -319,7 +320,7 @@ void Relocation::const_set_data_value(address x) {
 void Relocation::const_verify_data_value(address x) {
 #ifdef _LP64
   if (format() == relocInfo::narrow_oop_in_const) {
-    guarantee(*(narrowOop*)addr() == oopDesc::encode_heap_oop((oop) x), "must agree");
+    guarantee(*(narrowOop*)addr() == CompressedOops::encode((oop) x), "must agree");
   } else {
 #endif
     guarantee(*(address*)addr() == x, "must agree");
