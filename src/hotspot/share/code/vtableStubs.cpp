@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ void* VtableStub::operator new(size_t size, int code_size) throw() {
 
    // There is a dependency on the name of the blob in src/share/vm/prims/jvmtiCodeBlobEvents.cpp
    // If changing the name, update the other file accordingly.
-    BufferBlob* blob = BufferBlob::create("vtable chunks", bytes);
+    VtableBlob* blob = VtableBlob::create("vtable chunks", bytes);
     if (blob == NULL) {
       return NULL;
     }
@@ -167,16 +167,17 @@ void VtableStubs::enter(bool is_vtable_stub, int vtable_index, VtableStub* s) {
   _number_of_vtable_stubs++;
 }
 
-
-bool VtableStubs::is_entry_point(address pc) {
+VtableStub* VtableStubs::entry_point(address pc) {
   MutexLocker ml(VtableStubs_lock);
   VtableStub* stub = (VtableStub*)(pc - VtableStub::entry_offset());
   uint hash = VtableStubs::hash(stub->is_vtable_stub(), stub->index());
   VtableStub* s;
   for (s = _table[hash]; s != NULL && s != stub; s = s->next()) {}
-  return s == stub;
+  if (s == stub) {
+    return s;
+  }
+  return NULL;
 }
-
 
 bool VtableStubs::contains(address pc) {
   // simple solution for now - we may want to use

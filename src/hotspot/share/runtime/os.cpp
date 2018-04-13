@@ -53,6 +53,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
@@ -1157,32 +1158,10 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   st->print_cr(INTPTR_FORMAT " is an unknown value", p2i(addr));
 }
 
-// Looks like all platforms except IA64 can use the same function to check
-// if C stack is walkable beyond current frame. The check for fp() is not
+// Looks like all platforms can use the same function to check if C
+// stack is walkable beyond current frame. The check for fp() is not
 // necessary on Sparc, but it's harmless.
 bool os::is_first_C_frame(frame* fr) {
-#if (defined(IA64) && !defined(AIX)) && !defined(_WIN32)
-  // On IA64 we have to check if the callers bsp is still valid
-  // (i.e. within the register stack bounds).
-  // Notice: this only works for threads created by the VM and only if
-  // we walk the current stack!!! If we want to be able to walk
-  // arbitrary other threads, we'll have to somehow store the thread
-  // object in the frame.
-  Thread *thread = Thread::current();
-  if ((address)fr->fp() <=
-      thread->register_stack_base() HPUX_ONLY(+ 0x0) LINUX_ONLY(+ 0x50)) {
-    // This check is a little hacky, because on Linux the first C
-    // frame's ('start_thread') register stack frame starts at
-    // "register_stack_base + 0x48" while on HPUX, the first C frame's
-    // ('__pthread_bound_body') register stack frame seems to really
-    // start at "register_stack_base".
-    return true;
-  } else {
-    return false;
-  }
-#elif defined(IA64) && defined(_WIN32)
-  return true;
-#else
   // Load up sp, fp, sender sp and sender fp, check for reasonable values.
   // Check usp first, because if that's bad the other accessors may fault
   // on some architectures.  Ditto ufp second, etc.
@@ -1212,7 +1191,6 @@ bool os::is_first_C_frame(frame* fr) {
   if (old_fp - ufp > 64 * K) return true;
 
   return false;
-#endif
 }
 
 

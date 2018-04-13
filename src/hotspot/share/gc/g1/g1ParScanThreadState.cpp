@@ -33,6 +33,7 @@
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "memory/allocation.inline.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
 
@@ -104,7 +105,7 @@ bool G1ParScanThreadState::verify_ref(narrowOop* ref) const {
   assert(ref != NULL, "invariant");
   assert(UseCompressedOops, "sanity");
   assert(!has_partial_array_mask(ref), "ref=" PTR_FORMAT, p2i(ref));
-  oop p = oopDesc::load_decode_heap_oop(ref);
+  oop p = RawAccess<>::oop_load(ref);
   assert(_g1h->is_in_g1_reserved(p),
          "ref=" PTR_FORMAT " p=" PTR_FORMAT, p2i(ref), p2i(p));
   return true;
@@ -118,7 +119,7 @@ bool G1ParScanThreadState::verify_ref(oop* ref) const {
     assert(_g1h->is_in_cset(p),
            "ref=" PTR_FORMAT " p=" PTR_FORMAT, p2i(ref), p2i(p));
   } else {
-    oop p = oopDesc::load_decode_heap_oop(ref);
+    oop p = RawAccess<>::oop_load(ref);
     assert(_g1h->is_in_g1_reserved(p),
            "ref=" PTR_FORMAT " p=" PTR_FORMAT, p2i(ref), p2i(p));
   }

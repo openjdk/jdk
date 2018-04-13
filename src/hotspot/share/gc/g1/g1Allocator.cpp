@@ -27,8 +27,10 @@
 #include "gc/g1/g1AllocRegion.inline.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1Policy.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
+#include "gc/g1/heapRegionType.hpp"
 #include "utilities/align.hpp"
 
 G1DefaultAllocator::G1DefaultAllocator(G1CollectedHeap* heap) :
@@ -72,13 +74,12 @@ void G1Allocator::reuse_retained_old_region(EvacuationInfo& evacuation_info,
       !(retained_region->top() == retained_region->end()) &&
       !retained_region->is_empty() &&
       !retained_region->is_humongous()) {
-    retained_region->record_timestamp();
     // The retained region was added to the old region set when it was
     // retired. We have to remove it now, since we don't allow regions
     // we allocate to in the region sets. We'll re-add it later, when
     // it's retired again.
     _g1h->old_set_remove(retained_region);
-    bool during_im = _g1h->collector_state()->during_initial_mark_pause();
+    bool during_im = _g1h->collector_state()->in_initial_mark_gc();
     retained_region->note_start_of_copying(during_im);
     old->set(retained_region);
     _g1h->hr_printer()->reuse(retained_region);
@@ -342,6 +343,7 @@ bool G1ArchiveAllocator::alloc_new_region() {
   } else {
     hr->set_closed_archive();
   }
+  _g1h->g1_policy()->remset_tracker()->update_at_allocate(hr);
   _g1h->old_set_add(hr);
   _g1h->hr_printer()->alloc(hr);
   _allocated_regions.append(hr);

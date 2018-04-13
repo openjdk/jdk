@@ -27,7 +27,6 @@
 
 #if INCLUDE_NMT
 
-#include "memory/allocation.hpp"
 #include "runtime/mutex.hpp"
 #include "services/mallocSiteTable.hpp"
 #include "services/mallocTracker.hpp"

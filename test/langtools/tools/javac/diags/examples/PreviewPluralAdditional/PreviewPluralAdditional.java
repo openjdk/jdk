@@ -30,9 +30,9 @@
 
 import java.util.ArrayList;
 
-class PreviewPlural {
+class PreviewPluralAdditional {
     void test() {
-        new Bar();
+        new PreviewPluralAdditionalBar();
         new ArrayList<>();
     }
 }

@@ -1319,10 +1319,8 @@ class PushAndMarkVerifyClosure: public MetadataAwareOopClosure {
   CMSMarkStack*    _mark_stack;
  protected:
   void do_oop(oop p);
-  template <class T> inline void do_oop_work(T *p) {
-    oop obj = oopDesc::load_decode_heap_oop(p);
-    do_oop(obj);
-  }
+  template <class T> void do_oop_work(T *p);
+
  public:
   PushAndMarkVerifyClosure(CMSCollector* cms_collector,
                            MemRegion span,

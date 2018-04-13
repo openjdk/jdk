@@ -31,7 +31,7 @@ import java.util.ArrayList;
 
 class PreviewPlural {
     void test() {
-        new Bar();
+        new PreviewPluralBar();
         new ArrayList<>();
     }
 }

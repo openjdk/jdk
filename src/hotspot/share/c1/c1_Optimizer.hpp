@@ -27,7 +27,6 @@
 
 #include "c1/c1_IR.hpp"
 #include "c1/c1_Instruction.hpp"
-#include "memory/allocation.hpp"
 
 class Optimizer {
  private:

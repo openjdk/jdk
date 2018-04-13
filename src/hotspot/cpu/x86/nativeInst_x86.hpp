@@ -26,7 +26,6 @@
 #define CPU_X86_VM_NATIVEINST_X86_HPP
 
 #include "asm/assembler.hpp"
-#include "memory/allocation.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointMechanism.hpp"

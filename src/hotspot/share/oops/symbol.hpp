@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,13 +165,6 @@ class Symbol : public MetaspaceObj {
   int refcount() const      { return _refcount; }
   void increment_refcount();
   void decrement_refcount();
-  // Set _refcount non zero to avoid being reclaimed by GC.
-  void set_permanent() {
-    assert(LogTouchedMethods, "Should not be called with LogTouchedMethods off");
-    if (_refcount != PERM_REFCOUNT) {
-      _refcount = PERM_REFCOUNT;
-    }
-  }
   bool is_permanent() {
     return (_refcount == PERM_REFCOUNT);
   }

@@ -28,6 +28,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.inline.hpp"
+#include "runtime/vm_operations.hpp"
 #include "services/threadService.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -469,6 +470,16 @@ ThreadsList *ThreadsList::remove_thread(ThreadsList* list, JavaThread* java_thre
 
 ThreadsListHandle::ThreadsListHandle(Thread *self) : _list(ThreadsSMRSupport::acquire_stable_list(self, /* is_ThreadsListSetter */ false)), _self(self) {
   assert(self == Thread::current(), "sanity check");
+  // Threads::threads_do() is used by the Thread-SMR protocol to visit all
+  // Threads in the system which ensures the safety of the ThreadsList
+  // managed by this ThreadsListHandle, but JavaThreads that are not on
+  // the Threads list cannot be included in that visit. The JavaThread that
+  // calls Threads::destroy_vm() is exempt from this check because it has
+  // to logically exit as part of the shutdown procedure. This is safe
+  // because VM_Exit::_shutdown_thread is not set until after the VMThread
+  // has started the final safepoint which holds the Threads_lock for the
+  // remainder of the VM's life.
+  assert(!self->is_Java_thread() || self == VM_Exit::shutdown_thread() || (((JavaThread*)self)->on_thread_list() && !((JavaThread*)self)->is_terminated()), "JavaThread must be on the Threads list to use a ThreadsListHandle");
   if (EnableThreadSMRStatistics) {
     _timer.start();
   }

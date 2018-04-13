@@ -143,7 +143,8 @@ public:
     }
   }
 
-  using TraceEvent::commit; // else commit() is hidden by overloaded versions in this class
+  using <xsl:value-of select="concat('TraceEvent&lt;Event', @id, '&gt;')"/>::commit; // else commit() is hidden by overloaded versions in this class
+
 <xsl:variable name="instant" select="@is_instant"/>
 <!-- non static method (only for non instant events)-->
 <xsl:if test="$instant='false'">

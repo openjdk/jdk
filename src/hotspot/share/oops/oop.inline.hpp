@@ -26,12 +26,12 @@
 #define SHARE_VM_OOPS_OOP_INLINE_HPP
 
 #include "gc/shared/ageTable.hpp"
-#include "gc/shared/collectedHeap.inline.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/generation.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/markOop.inline.hpp"
 #include "oops/oop.hpp"
@@ -136,7 +136,7 @@ void oopDesc::set_klass_to_list_ptr(oop k) {
   // This is only to be used during GC, for from-space objects, so no
   // barrier is needed.
   if (UseCompressedClassPointers) {
-    _metadata._compressed_klass = (narrowKlass)encode_heap_oop(k);  // may be null (parnew overflow handling)
+    _metadata._compressed_klass = (narrowKlass)CompressedOops::encode(k);  // may be null (parnew overflow handling)
   } else {
     _metadata._klass = (Klass*)(address)k;
   }
@@ -145,7 +145,7 @@ void oopDesc::set_klass_to_list_ptr(oop k) {
 oop oopDesc::list_ptr_from_klass() {
   // This is only to be used during GC, for from-space objects.
   if (UseCompressedClassPointers) {
-    return decode_heap_oop((narrowOop)_metadata._compressed_klass);
+    return CompressedOops::decode((narrowOop)_metadata._compressed_klass);
   } else {
     // Special case for GC
     return (oop)(address)_metadata._klass;
@@ -238,83 +238,6 @@ void*    oopDesc::field_addr(int offset)         const { return Access<>::resolv
 
 template <class T>
 T*       oopDesc::obj_field_addr_raw(int offset) const { return (T*) field_addr_raw(offset); }
-
-// Functions for getting and setting oops within instance objects.
-// If the oops are compressed, the type passed to these overloaded functions
-// is narrowOop.  All functions are overloaded so they can be called by
-// template functions without conditionals (the compiler instantiates via
-// the right type and inlines the appopriate code).
-
-// Algorithm for encoding and decoding oops from 64 bit pointers to 32 bit
-// offset from the heap base.  Saving the check for null can save instructions
-// in inner GC loops so these are separated.
-
-inline bool check_obj_alignment(oop obj) {
-  return (cast_from_oop<intptr_t>(obj) & MinObjAlignmentInBytesMask) == 0;
-}
-
-oop oopDesc::decode_heap_oop_not_null(narrowOop v) {
-  assert(!is_null(v), "narrow oop value can never be zero");
-  address base = Universe::narrow_oop_base();
-  int    shift = Universe::narrow_oop_shift();
-  oop result = (oop)(void*)((uintptr_t)base + ((uintptr_t)v << shift));
-  assert(check_obj_alignment(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
-  return result;
-}
-
-oop oopDesc::decode_heap_oop(narrowOop v) {
-  return is_null(v) ? (oop)NULL : decode_heap_oop_not_null(v);
-}
-
-narrowOop oopDesc::encode_heap_oop_not_null(oop v) {
-  assert(!is_null(v), "oop value can never be zero");
-  assert(check_obj_alignment(v), "Address not aligned");
-  assert(Universe::heap()->is_in_reserved(v), "Address not in heap");
-  address base = Universe::narrow_oop_base();
-  int    shift = Universe::narrow_oop_shift();
-  uint64_t  pd = (uint64_t)(pointer_delta((void*)v, (void*)base, 1));
-  assert(OopEncodingHeapMax > pd, "change encoding max if new encoding");
-  uint64_t result = pd >> shift;
-  assert((result & CONST64(0xffffffff00000000)) == 0, "narrow oop overflow");
-  assert(decode_heap_oop(result) == v, "reversibility");
-  return (narrowOop)result;
-}
-
-narrowOop oopDesc::encode_heap_oop(oop v) {
-  return (is_null(v)) ? (narrowOop)0 : encode_heap_oop_not_null(v);
-}
-
-narrowOop oopDesc::load_heap_oop(narrowOop* p) { return *p; }
-oop       oopDesc::load_heap_oop(oop* p)       { return *p; }
-
-void oopDesc::store_heap_oop(narrowOop* p, narrowOop v) { *p = v; }
-void oopDesc::store_heap_oop(oop* p, oop v)             { *p = v; }
-
-// Load and decode an oop out of the Java heap into a wide oop.
-oop oopDesc::load_decode_heap_oop_not_null(narrowOop* p) {
-  return decode_heap_oop_not_null(load_heap_oop(p));
-}
-
-// Load and decode an oop out of the heap accepting null
-oop oopDesc::load_decode_heap_oop(narrowOop* p) {
-  return decode_heap_oop(load_heap_oop(p));
-}
-
-oop oopDesc::load_decode_heap_oop_not_null(oop* p) { return *p; }
-oop oopDesc::load_decode_heap_oop(oop* p)          { return *p; }
-
-void oopDesc::encode_store_heap_oop_not_null(oop* p, oop v) { *p = v; }
-void oopDesc::encode_store_heap_oop(oop* p, oop v)          { *p = v; }
-
-// Encode and store a heap oop.
-void oopDesc::encode_store_heap_oop_not_null(narrowOop* p, oop v) {
-  *p = encode_heap_oop_not_null(v);
-}
-
-// Encode and store a heap oop allowing for null.
-void oopDesc::encode_store_heap_oop(narrowOop* p, oop v) {
-  *p = encode_heap_oop(v);
-}
 
 template <DecoratorSet decorators>
 inline oop  oopDesc::obj_field_access(int offset) const             { return HeapAccess<decorators>::oop_load_at(as_oop(), offset); }
@@ -524,6 +447,10 @@ inline void oopDesc::oop_iterate_backwards(OopClosureType* blk) {   \
 
 ALL_OOP_OOP_ITERATE_CLOSURES_1(ALL_OOPDESC_OOP_ITERATE)
 ALL_OOP_OOP_ITERATE_CLOSURES_2(ALL_OOPDESC_OOP_ITERATE)
+
+bool oopDesc::is_instanceof_or_null(oop obj, Klass* klass) {
+  return obj == NULL || obj->klass()->is_subtype_of(klass);
+}
 
 intptr_t oopDesc::identity_hash() {
   // Fast case; if the object is unlocked and the hash value is set, no locking is needed

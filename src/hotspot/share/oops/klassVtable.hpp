@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_OOPS_KLASSVTABLE_HPP
 #define SHARE_VM_OOPS_KLASSVTABLE_HPP
 
-#include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/growableArray.hpp"

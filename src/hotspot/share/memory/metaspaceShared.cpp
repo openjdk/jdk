@@ -35,11 +35,6 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "code/codeCache.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1Allocator.inline.hpp"
-#include "gc/g1/g1CollectedHeap.hpp"
-#endif
-#include "gc/shared/gcLocker.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "logging/log.hpp"
@@ -49,6 +44,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
@@ -59,6 +55,7 @@
 #include "prims/jvmtiRedefineClasses.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vmThread.hpp"
@@ -66,6 +63,10 @@
 #include "utilities/align.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/hashtable.inline.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc/g1/g1Allocator.inline.hpp"
+#include "gc/g1/g1CollectedHeap.hpp"
+#endif
 
 ReservedSpace MetaspaceShared::_shared_rs;
 VirtualSpace MetaspaceShared::_shared_vs;
@@ -844,7 +845,7 @@ public:
       assert(MetaspaceShared::is_heap_object_archiving_allowed(),
              "Archiving heap object is not allowed");
       _dump_region->append_intptr_t(
-        (intptr_t)oopDesc::encode_heap_oop_not_null(*o));
+        (intptr_t)CompressedOops::encode_not_null(*o));
     }
   }
 
@@ -1936,7 +1937,7 @@ public:
              "Archived heap object is not allowed");
       assert(MetaspaceShared::open_archive_heap_region_mapped(),
              "Open archive heap region is not mapped");
-      RootAccess<IN_ARCHIVE_ROOT>::oop_store(p, oopDesc::decode_heap_oop_not_null(o));
+      RootAccess<IN_ARCHIVE_ROOT>::oop_store(p, CompressedOops::decode_not_null(o));
     }
   }
 

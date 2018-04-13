@@ -27,25 +27,22 @@ include LibCommon.gmk
 
 ################################################################################
 
-ifneq ($(OPENJDK_TARGET_OS), windows)
-  LIBJ2GSS_SRC := $(TOPDIR)/src/java.security.jgss/share/native/libj2gss \
-      $(TOPDIR)/src/java.security.jgss/$(OPENJDK_TARGET_OS_TYPE)/native/libj2gss \
-      #
+LIBJ2GSS_SRC := $(TOPDIR)/src/java.security.jgss/share/native/libj2gss \
+  #
 
-  $(eval $(call SetupJdkLibrary, BUILD_LIBJ2GSS, \
-      NAME := j2gss, \
-      SRC := $(LIBJ2GSS_SRC), \
-      OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB) $(addprefix -I, $(LIBJ2GSS_SRC)) \
-          $(LIBJAVA_HEADER_FLAGS) \
-          -I$(SUPPORT_OUTPUTDIR)/headers/java.security.jgss, \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LIBS := $(LIBDL), \
-  ))
+$(eval $(call SetupJdkLibrary, BUILD_LIBJ2GSS, \
+    NAME := j2gss, \
+    SRC := $(LIBJ2GSS_SRC), \
+    OPTIMIZATION := LOW, \
+    CFLAGS := $(CFLAGS_JDKLIB) $(addprefix -I, $(LIBJ2GSS_SRC)) \
+        $(LIBJAVA_HEADER_FLAGS) \
+        -I$(SUPPORT_OUTPUTDIR)/headers/java.security.jgss, \
+    LDFLAGS := $(LDFLAGS_JDKLIB) \
+        $(call SET_SHARED_LIBRARY_ORIGIN), \
+    LIBS := $(LIBDL), \
+))
 
-  TARGETS += $(BUILD_LIBJ2GSS)
-endif
+TARGETS += $(BUILD_LIBJ2GSS)
 
 ################################################################################
 

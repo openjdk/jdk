@@ -57,7 +57,7 @@ public:
   static CMSHeap* heap();
 
   virtual Name kind() const {
-    return CollectedHeap::CMSHeap;
+    return CollectedHeap::CMS;
   }
 
   virtual const char* name() const {

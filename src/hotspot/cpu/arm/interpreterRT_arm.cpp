@@ -37,7 +37,7 @@
 
 #define __ _masm->
 
-Interpreter::SignatureHandlerGenerator::SignatureHandlerGenerator(
+InterpreterRuntime::SignatureHandlerGenerator::SignatureHandlerGenerator(
     const methodHandle& method, CodeBuffer* buffer) : NativeSignatureIterator(method) {
   _masm = new MacroAssembler(buffer);
   _abi_offset = 0;

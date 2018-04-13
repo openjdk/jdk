@@ -31,6 +31,7 @@
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psTasks.hpp"
 #include "gc/parallel/psYoungGen.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "utilities/align.hpp"
@@ -45,7 +46,7 @@ class CheckForUnmarkedOops : public OopClosure {
 
  protected:
   template <class T> void do_oop_work(T* p) {
-    oop obj = oopDesc::load_decode_heap_oop(p);
+    oop obj = RawAccess<>::oop_load(p);
     if (_young_gen->is_in_reserved(obj) &&
         !_card_table->addr_is_marked_imprecise(p)) {
       // Don't overwrite the first missing card mark
@@ -102,7 +103,7 @@ class CheckForPreciseMarks : public OopClosure {
 
  protected:
   template <class T> void do_oop_work(T* p) {
-    oop obj = oopDesc::load_decode_heap_oop_not_null(p);
+    oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);
     if (_young_gen->is_in_reserved(obj)) {
       assert(_card_table->addr_is_marked_precise(p), "Found unmarked precise oop");
       _card_table->set_card_newgen(p);

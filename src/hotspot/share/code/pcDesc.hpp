@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_CODE_PCDESC_HPP
 #define SHARE_VM_CODE_PCDESC_HPP
 
-#include "memory/allocation.hpp"
 
 // PcDescs map a physical PC (given as offset from start of nmethod) to
 // the corresponding source scope and byte code index.

@@ -127,9 +127,6 @@ class oopDesc {
   // Need this as public for garbage collection.
   template <class T> inline T* obj_field_addr_raw(int offset) const;
 
-  inline static bool is_null(oop obj)       { return obj == NULL; }
-  inline static bool is_null(narrowOop obj) { return obj == 0; }
-
   // Standard compare function returns negative value if o1 < o2
   //                                   0              if o1 == o2
   //                                   positive value if o1 > o2
@@ -145,40 +142,7 @@ class oopDesc {
     }
   }
 
-  // Decode an oop pointer from a narrowOop if compressed.
-  // These are overloaded for oop and narrowOop as are the other functions
-  // below so that they can be called in template functions.
-  static inline oop decode_heap_oop_not_null(oop v) { return v; }
-  static inline oop decode_heap_oop_not_null(narrowOop v);
-  static inline oop decode_heap_oop(oop v) { return v; }
-  static inline oop decode_heap_oop(narrowOop v);
-
-  // Encode an oop pointer to a narrow oop. The or_null versions accept
-  // null oop pointer, others do not in order to eliminate the
-  // null checking branches.
-  static inline narrowOop encode_heap_oop_not_null(oop v);
-  static inline narrowOop encode_heap_oop(oop v);
-
-  // Load an oop out of the Java heap as is without decoding.
-  // Called by GC to check for null before decoding.
-  static inline narrowOop load_heap_oop(narrowOop* p);
-  static inline oop       load_heap_oop(oop* p);
-
-  // Load an oop out of Java heap and decode it to an uncompressed oop.
-  static inline oop load_decode_heap_oop_not_null(narrowOop* p);
-  static inline oop load_decode_heap_oop_not_null(oop* p);
-  static inline oop load_decode_heap_oop(narrowOop* p);
-  static inline oop load_decode_heap_oop(oop* p);
-
-  // Store already encoded heap oop into the heap.
-  static inline void store_heap_oop(narrowOop* p, narrowOop v);
-  static inline void store_heap_oop(oop* p, oop v);
-
-  // Encode oop if UseCompressedOops and store into the heap.
-  static inline void encode_store_heap_oop_not_null(narrowOop* p, oop v);
-  static inline void encode_store_heap_oop_not_null(oop* p, oop v);
-  static inline void encode_store_heap_oop(narrowOop* p, oop v);
-  static inline void encode_store_heap_oop(oop* p, oop v);
+  inline static bool equals(oop o1, oop o2) { return Access<>::equals(o1, o2); }
 
   // Access to fields in a instanceOop through these methods.
   template <DecoratorSet decorator>
@@ -346,6 +310,8 @@ class oopDesc {
 
   inline int oop_iterate_no_header(OopClosure* bk);
   inline int oop_iterate_no_header(OopClosure* bk, MemRegion mr);
+
+  inline static bool is_instanceof_or_null(oop obj, Klass* klass);
 
   // identity hash; returns the identity hash key (computes it if necessary)
   // NOTE with the introduction of UseBiasedLocking that identity_hash() might reach a

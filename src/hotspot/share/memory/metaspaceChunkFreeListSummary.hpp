@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_MEMORY_METASPACECHUNKFREELISTSUMMARY_HPP
 #define SHARE_VM_MEMORY_METASPACECHUNKFREELISTSUMMARY_HPP
 
-#include "memory/allocation.hpp"
 
 class MetaspaceChunkFreeListSummary {
   size_t _num_specialized_chunks;

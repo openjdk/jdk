@@ -24,12 +24,13 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "gc/g1/concurrentMarkThread.inline.hpp"
 #include "gc/g1/g1Analytics.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
+#include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1MMUTracker.hpp"
 #include "gc/g1/g1Policy.hpp"
+#include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/vm_operations_g1.hpp"
 #include "gc/shared/concurrentGCPhaseManager.hpp"
 #include "gc/shared/gcId.hpp"
@@ -48,19 +49,18 @@
 STATIC_ASSERT(ConcurrentGCPhaseManager::UNCONSTRAINED_PHASE <
               ConcurrentGCPhaseManager::IDLE_PHASE);
 
-#define EXPAND_CONCURRENT_PHASES(expander)                              \
-  expander(ANY, = ConcurrentGCPhaseManager::UNCONSTRAINED_PHASE, NULL)  \
-  expander(IDLE, = ConcurrentGCPhaseManager::IDLE_PHASE, NULL)          \
-  expander(CONCURRENT_CYCLE,, "Concurrent Cycle")                       \
-  expander(CLEAR_CLAIMED_MARKS,, "Concurrent Clear Claimed Marks")      \
-  expander(SCAN_ROOT_REGIONS,, "Concurrent Scan Root Regions")          \
-  expander(CONCURRENT_MARK,, "Concurrent Mark")                         \
-  expander(MARK_FROM_ROOTS,, "Concurrent Mark From Roots")              \
-  expander(BEFORE_REMARK,, NULL)                                        \
-  expander(REMARK,, NULL)                                               \
-  expander(CREATE_LIVE_DATA,, "Concurrent Create Live Data")            \
-  expander(COMPLETE_CLEANUP,, "Concurrent Complete Cleanup")            \
-  expander(CLEANUP_FOR_NEXT_MARK,, "Concurrent Cleanup for Next Mark")  \
+#define EXPAND_CONCURRENT_PHASES(expander)                                 \
+  expander(ANY, = ConcurrentGCPhaseManager::UNCONSTRAINED_PHASE, NULL)     \
+  expander(IDLE, = ConcurrentGCPhaseManager::IDLE_PHASE, NULL)             \
+  expander(CONCURRENT_CYCLE,, "Concurrent Cycle")                          \
+  expander(CLEAR_CLAIMED_MARKS,, "Concurrent Clear Claimed Marks")         \
+  expander(SCAN_ROOT_REGIONS,, "Concurrent Scan Root Regions")             \
+  expander(CONCURRENT_MARK,, "Concurrent Mark")                            \
+  expander(MARK_FROM_ROOTS,, "Concurrent Mark From Roots")                 \
+  expander(BEFORE_REMARK,, NULL)                                           \
+  expander(REMARK,, NULL)                                                  \
+  expander(REBUILD_REMEMBERED_SETS,, "Concurrent Rebuild Remembered Sets") \
+  expander(CLEANUP_FOR_NEXT_MARK,, "Concurrent Cleanup for Next Mark")     \
   /* */
 
 class G1ConcurrentPhase : public AllStatic {
@@ -75,7 +75,7 @@ public:
 
 // The CM thread is created when the G1 garbage collector is used
 
-ConcurrentMarkThread::ConcurrentMarkThread(G1ConcurrentMark* cm) :
+G1ConcurrentMarkThread::G1ConcurrentMarkThread(G1ConcurrentMark* cm) :
   ConcurrentGCThread(),
   _cm(cm),
   _state(Idle),
@@ -87,32 +87,27 @@ ConcurrentMarkThread::ConcurrentMarkThread(G1ConcurrentMark* cm) :
   create_and_start();
 }
 
-class CMCheckpointRootsFinalClosure: public VoidClosure {
-
+class CMRemark : public VoidClosure {
   G1ConcurrentMark* _cm;
 public:
-
-  CMCheckpointRootsFinalClosure(G1ConcurrentMark* cm) :
-    _cm(cm) {}
+  CMRemark(G1ConcurrentMark* cm) : _cm(cm) {}
 
   void do_void(){
-    _cm->checkpoint_roots_final(false); // !clear_all_soft_refs
+    _cm->remark();
   }
 };
 
-class CMCleanUp: public VoidClosure {
+class CMCleanup : public VoidClosure {
   G1ConcurrentMark* _cm;
 public:
-
-  CMCleanUp(G1ConcurrentMark* cm) :
-    _cm(cm) {}
+  CMCleanup(G1ConcurrentMark* cm) : _cm(cm) {}
 
   void do_void(){
     _cm->cleanup();
   }
 };
 
-double ConcurrentMarkThread::mmu_sleep_time(G1Policy* g1_policy, bool remark) {
+double G1ConcurrentMarkThread::mmu_sleep_time(G1Policy* g1_policy, bool remark) {
   // There are 3 reasons to use SuspendibleThreadSetJoiner.
   // 1. To avoid concurrency problem.
   //    - G1MMUTracker::add_pause(), when_sec() and its variation(when_ms() etc..) can be called
@@ -131,10 +126,10 @@ double ConcurrentMarkThread::mmu_sleep_time(G1Policy* g1_policy, bool remark) {
   return mmu_tracker->when_ms(now, prediction_ms);
 }
 
-void ConcurrentMarkThread::delay_to_keep_mmu(G1Policy* g1_policy, bool remark) {
+void G1ConcurrentMarkThread::delay_to_keep_mmu(G1Policy* g1_policy, bool remark) {
   if (g1_policy->adaptive_young_list_length()) {
     jlong sleep_time_ms = mmu_sleep_time(g1_policy, remark);
-    if (!cm()->has_aborted() && sleep_time_ms > 0) {
+    if (!_cm->has_aborted() && sleep_time_ms > 0) {
       os::sleep(this, sleep_time_ms, false);
     }
   }
@@ -199,7 +194,7 @@ class G1ConcPhaseManager : public StackObj {
   ConcurrentGCPhaseManager _manager;
 
 public:
-  G1ConcPhaseManager(int phase, ConcurrentMarkThread* thread) :
+  G1ConcPhaseManager(int phase, G1ConcurrentMarkThread* thread) :
     _cm(thread->cm()),
     _manager(phase, thread->phase_manager_stack())
   { }
@@ -223,17 +218,17 @@ class G1ConcPhase : public StackObj {
   G1ConcPhaseManager _manager;
 
 public:
-  G1ConcPhase(int phase, ConcurrentMarkThread* thread) :
+  G1ConcPhase(int phase, G1ConcurrentMarkThread* thread) :
     _timer(thread->cm(), lookup_concurrent_phase_title(phase)),
     _manager(phase, thread)
   { }
 };
 
-const char* const* ConcurrentMarkThread::concurrent_phases() const {
+const char* const* G1ConcurrentMarkThread::concurrent_phases() const {
   return concurrent_phase_names;
 }
 
-bool ConcurrentMarkThread::request_concurrent_phase(const char* phase_name) {
+bool G1ConcurrentMarkThread::request_concurrent_phase(const char* phase_name) {
   int phase = lookup_concurrent_phase(phase_name);
   if (phase < 0) return false;
 
@@ -248,7 +243,7 @@ bool ConcurrentMarkThread::request_concurrent_phase(const char* phase_name) {
   return true;
 }
 
-void ConcurrentMarkThread::run_service() {
+void G1ConcurrentMarkThread::run_service() {
   _vtime_start = os::elapsedVTime();
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
@@ -258,7 +253,7 @@ void ConcurrentMarkThread::run_service() {
 
   while (!should_terminate()) {
     // wait until started is set.
-    sleepBeforeNextCycle();
+    sleep_before_next_cycle();
     if (should_terminate()) {
       break;
     }
@@ -267,7 +262,7 @@ void ConcurrentMarkThread::run_service() {
 
     GCIdMark gc_id_mark;
 
-    cm()->concurrent_cycle_start();
+    _cm->concurrent_cycle_start();
 
     GCTraceConcTime(Info, gc) tt("Concurrent Cycle");
     {
@@ -300,31 +295,36 @@ void ConcurrentMarkThread::run_service() {
       {
         G1ConcPhaseManager mark_manager(G1ConcurrentPhase::CONCURRENT_MARK, this);
         jlong mark_start = os::elapsed_counter();
-        const char* cm_title =
-          lookup_concurrent_phase_title(G1ConcurrentPhase::CONCURRENT_MARK);
+        const char* cm_title = lookup_concurrent_phase_title(G1ConcurrentPhase::CONCURRENT_MARK);
         log_info(gc, marking)("%s (%.3fs)",
                               cm_title,
                               TimeHelper::counter_to_seconds(mark_start));
-        for (uint iter = 1; !cm()->has_aborted(); ++iter) {
+        for (uint iter = 1; !_cm->has_aborted(); ++iter) {
           // Concurrent marking.
           {
             G1ConcPhase p(G1ConcurrentPhase::MARK_FROM_ROOTS, this);
             _cm->mark_from_roots();
           }
-          if (cm()->has_aborted()) break;
+          if (_cm->has_aborted()) {
+            break;
+          }
 
           // Provide a control point after mark_from_roots.
           {
             G1ConcPhaseManager p(G1ConcurrentPhase::BEFORE_REMARK, this);
           }
-          if (cm()->has_aborted()) break;
+          if (_cm->has_aborted()) {
+            break;
+          }
 
           // Delay remark pause for MMU.
           double mark_end_time = os::elapsedVTime();
           jlong mark_end = os::elapsed_counter();
           _vtime_mark_accum += (mark_end_time - cycle_start);
           delay_to_keep_mmu(g1_policy, true /* remark */);
-          if (cm()->has_aborted()) break;
+          if (_cm->has_aborted()) {
+            break;
+          }
 
           // Pause Remark.
           log_info(gc, marking)("%s (%.3fs, %.3fs) %.3fms",
@@ -333,12 +333,12 @@ void ConcurrentMarkThread::run_service() {
                                 TimeHelper::counter_to_seconds(mark_end),
                                 TimeHelper::counter_to_millis(mark_end - mark_start));
           mark_manager.set_phase(G1ConcurrentPhase::REMARK, false);
-          CMCheckpointRootsFinalClosure final_cl(_cm);
-          VM_CGC_Operation op(&final_cl, "Pause Remark");
+          CMRemark cl(_cm);
+          VM_CGC_Operation op(&cl, "Pause Remark");
           VMThread::execute(&op);
-          if (cm()->has_aborted()) {
+          if (_cm->has_aborted()) {
             break;
-          } else if (!cm()->restart_for_overflow()) {
+          } else if (!_cm->restart_for_overflow()) {
             break;              // Exit loop if no restart requested.
           } else {
             // Loop to restart for overflow.
@@ -349,99 +349,31 @@ void ConcurrentMarkThread::run_service() {
         }
       }
 
-      if (!cm()->has_aborted()) {
-        G1ConcPhase p(G1ConcurrentPhase::CREATE_LIVE_DATA, this);
-        cm()->create_live_data();
+      if (!_cm->has_aborted()) {
+        G1ConcPhase p(G1ConcurrentPhase::REBUILD_REMEMBERED_SETS, this);
+        _cm->rebuild_rem_set_concurrently();
       }
 
       double end_time = os::elapsedVTime();
       // Update the total virtual time before doing this, since it will try
-      // to measure it to get the vtime for this marking.  We purposely
-      // neglect the presumably-short "completeCleanup" phase here.
+      // to measure it to get the vtime for this marking.
       _vtime_accum = (end_time - _vtime_start);
 
-      if (!cm()->has_aborted()) {
+      if (!_cm->has_aborted()) {
         delay_to_keep_mmu(g1_policy, false /* cleanup */);
-
-        if (!cm()->has_aborted()) {
-          CMCleanUp cl_cl(_cm);
-          VM_CGC_Operation op(&cl_cl, "Pause Cleanup");
-          VMThread::execute(&op);
-        }
-      } else {
-        // We don't want to update the marking status if a GC pause
-        // is already underway.
-        SuspendibleThreadSetJoiner sts_join;
-        g1h->collector_state()->set_mark_in_progress(false);
       }
 
-      // Check if cleanup set the free_regions_coming flag. If it
-      // hasn't, we can just skip the next step.
-      if (g1h->free_regions_coming()) {
-        // The following will finish freeing up any regions that we
-        // found to be empty during cleanup. We'll do this part
-        // without joining the suspendible set. If an evacuation pause
-        // takes place, then we would carry on freeing regions in
-        // case they are needed by the pause. If a Full GC takes
-        // place, it would wait for us to process the regions
-        // reclaimed by cleanup.
-
-        // Now do the concurrent cleanup operation.
-        G1ConcPhase p(G1ConcurrentPhase::COMPLETE_CLEANUP, this);
-        _cm->complete_cleanup();
-
-        // Notify anyone who's waiting that there are no more free
-        // regions coming. We have to do this before we join the STS
-        // (in fact, we should not attempt to join the STS in the
-        // interval between finishing the cleanup pause and clearing
-        // the free_regions_coming flag) otherwise we might deadlock:
-        // a GC worker could be blocked waiting for the notification
-        // whereas this thread will be blocked for the pause to finish
-        // while it's trying to join the STS, which is conditional on
-        // the GC workers finishing.
-        g1h->reset_free_regions_coming();
-      }
-      guarantee(cm()->cleanup_list_is_empty(),
-                "at this point there should be no regions on the cleanup list");
-
-      // There is a tricky race before recording that the concurrent
-      // cleanup has completed and a potential Full GC starting around
-      // the same time. We want to make sure that the Full GC calls
-      // abort() on concurrent mark after
-      // record_concurrent_mark_cleanup_completed(), since abort() is
-      // the method that will reset the concurrent mark state. If we
-      // end up calling record_concurrent_mark_cleanup_completed()
-      // after abort() then we might incorrectly undo some of the work
-      // abort() did. Checking the has_aborted() flag after joining
-      // the STS allows the correct ordering of the two methods. There
-      // are two scenarios:
-      //
-      // a) If we reach here before the Full GC, the fact that we have
-      // joined the STS means that the Full GC cannot start until we
-      // leave the STS, so record_concurrent_mark_cleanup_completed()
-      // will complete before abort() is called.
-      //
-      // b) If we reach here during the Full GC, we'll be held up from
-      // joining the STS until the Full GC is done, which means that
-      // abort() will have completed and has_aborted() will return
-      // true to prevent us from calling
-      // record_concurrent_mark_cleanup_completed() (and, in fact, it's
-      // not needed any more as the concurrent mark state has been
-      // already reset).
-      {
-        SuspendibleThreadSetJoiner sts_join;
-        if (!cm()->has_aborted()) {
-          g1_policy->record_concurrent_mark_cleanup_completed();
-        } else {
-          log_info(gc, marking)("Concurrent Mark Abort");
-        }
+      if (!_cm->has_aborted()) {
+        CMCleanup cl_cl(_cm);
+        VM_CGC_Operation op(&cl_cl, "Pause Cleanup");
+        VMThread::execute(&op);
       }
 
       // We now want to allow clearing of the marking bitmap to be
       // suspended by a collection pause.
       // We may have aborted just before the remark. Do not bother clearing the
       // bitmap then, as it has been done during mark abort.
-      if (!cm()->has_aborted()) {
+      if (!_cm->has_aborted()) {
         G1ConcPhase p(G1ConcurrentPhase::CLEANUP_FOR_NEXT_MARK, this);
         _cm->cleanup_for_next_mark();
       } else {
@@ -457,20 +389,21 @@ void ConcurrentMarkThread::run_service() {
       SuspendibleThreadSetJoiner sts_join;
       g1h->increment_old_marking_cycles_completed(true /* concurrent */);
 
-      cm()->concurrent_cycle_end();
+      _cm->concurrent_cycle_end();
     }
 
-    cpmanager.set_phase(G1ConcurrentPhase::IDLE, cm()->has_aborted() /* force */);
+    cpmanager.set_phase(G1ConcurrentPhase::IDLE, _cm->has_aborted() /* force */);
   }
   _cm->root_regions()->cancel_scan();
 }
 
-void ConcurrentMarkThread::stop_service() {
+void G1ConcurrentMarkThread::stop_service() {
   MutexLockerEx ml(CGC_lock, Mutex::_no_safepoint_check_flag);
   CGC_lock->notify_all();
 }
 
-void ConcurrentMarkThread::sleepBeforeNextCycle() {
+
+void G1ConcurrentMarkThread::sleep_before_next_cycle() {
   // We join here because we don't want to do the "shouldConcurrentMark()"
   // below while the world is otherwise stopped.
   assert(!in_progress(), "should have been cleared");

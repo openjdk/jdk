@@ -145,6 +145,9 @@ class Space: public CHeapObj<mtGC> {
   bool is_in(const void* p) const {
     return used_region().contains(p);
   }
+  bool is_in(oop obj) const {
+    return is_in((void*)obj);
+  }
 
   // Returns true iff the given reserved memory of the space contains the
   // given address.

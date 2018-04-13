@@ -29,6 +29,7 @@
 #include "logging/logConfiguration.hpp"
 #include "memory/heap.hpp"
 #include "memory/memRegion.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
