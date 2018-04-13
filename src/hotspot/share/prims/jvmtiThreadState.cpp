@@ -23,12 +23,12 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/gcLocker.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/vframe.hpp"
 
 // marker for when the stack depth has been reset and is now unknown.

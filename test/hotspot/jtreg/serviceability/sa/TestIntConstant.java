@@ -110,7 +110,7 @@ public class TestIntConstant {
             // with names and the values derived from enums and #define preprocessor
             // macros in hotspot.
             String[] defaultOutputStrings =
-                {"CollectedHeap::G1CollectedHeap 2",
+                {"CollectedHeap::G1 4",
                  "RUNNABLE 2",
                  "Deoptimization::Reason_class_check 4",
                  "InstanceKlass::_misc_is_anonymous 32",

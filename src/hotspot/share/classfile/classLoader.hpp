@@ -233,12 +233,6 @@ class ClassLoader: AllStatic {
   // Last entry in linked list of appended ClassPathEntry instances
   static ClassPathEntry* _last_append_entry;
 
-  // Array of module names associated with the boot class loader
-  CDS_ONLY(static GrowableArray<char*>* _boot_modules_array;)
-
-  // Array of module names associated with the platform class loader
-  CDS_ONLY(static GrowableArray<char*>* _platform_modules_array;)
-
   // Info used by CDS
   CDS_ONLY(static SharedPathsMiscInfo * _shared_paths_misc_info;)
 

@@ -28,6 +28,7 @@
 #include "gc/shared/generation.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "memory/allocation.inline.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/java.hpp"
@@ -351,7 +352,7 @@ protected:
            "Error: jp " PTR_FORMAT " should be within "
            "[_begin, _end) = [" PTR_FORMAT "," PTR_FORMAT ")",
            p2i(jp), p2i(_begin), p2i(_end));
-    oop obj = oopDesc::load_decode_heap_oop(p);
+    oop obj = RawAccess<>::oop_load(p);
     guarantee(obj == NULL || (HeapWord*)obj >= _boundary,
               "pointer " PTR_FORMAT " at " PTR_FORMAT " on "
               "clean card crosses boundary" PTR_FORMAT,

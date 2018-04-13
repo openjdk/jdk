@@ -29,6 +29,7 @@
 #include "logging/logMessage.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/numberSeq.hpp"
 #include <sys/stat.h>
@@ -182,7 +183,7 @@ void CompactSymbolTableWriter::add(unsigned int hash, Symbol *symbol) {
 }
 
 void CompactStringTableWriter::add(unsigned int hash, oop string) {
-  CompactHashtableWriter::add(hash, oopDesc::encode_heap_oop(string));
+  CompactHashtableWriter::add(hash, CompressedOops::encode(string));
 }
 
 void CompactSymbolTableWriter::dump(CompactHashtable<Symbol*, char> *cht) {

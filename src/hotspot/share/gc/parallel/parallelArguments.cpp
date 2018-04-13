@@ -38,8 +38,8 @@ size_t ParallelArguments::conservative_max_heap_alignment() {
   return CollectorPolicy::compute_heap_alignment();
 }
 
-void ParallelArguments::initialize_flags() {
-  GCArguments::initialize_flags();
+void ParallelArguments::initialize() {
+  GCArguments::initialize();
   assert(UseParallelGC || UseParallelOldGC, "Error");
   // Enable ParallelOld unless it was explicitly disabled (cmd line or rc file).
   if (FLAG_IS_DEFAULT(UseParallelOldGC)) {

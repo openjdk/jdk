@@ -998,8 +998,13 @@ AddressLiteral MacroAssembler::constant_metadata_address(Metadata* obj) {
 
 
 AddressLiteral MacroAssembler::constant_oop_address(jobject obj) {
-  assert(oop_recorder() != NULL, "this assembler needs an OopRecorder");
-  assert(Universe::heap()->is_in_reserved(JNIHandles::resolve(obj)), "not an oop");
+#ifdef ASSERT
+  {
+    ThreadInVMfromUnknown tiv;
+    assert(oop_recorder() != NULL, "this assembler needs an OopRecorder");
+    assert(Universe::heap()->is_in_reserved(JNIHandles::resolve(obj)), "not an oop");
+  }
+#endif
   int oop_index = oop_recorder()->find_index(obj);
   return AddressLiteral(obj, oop_Relocation::spec(oop_index));
 }
@@ -3703,7 +3708,7 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr, Register new_val
 // Called from init_globals() after universe_init() and before interpreter_init()
 void g1_barrier_stubs_init() {
   CollectedHeap* heap = Universe::heap();
-  if (heap->kind() == CollectedHeap::G1CollectedHeap) {
+  if (heap->kind() == CollectedHeap::G1) {
     // Only needed for G1
     if (dirty_card_log_enqueue == 0) {
       G1BarrierSet* bs =

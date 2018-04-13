@@ -35,8 +35,9 @@
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_aarch64.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
-#include "oops/oop.inline.hpp"
+#include "oops/oop.hpp"
 #include "opto/compile.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/node.hpp"
@@ -46,7 +47,6 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.hpp"
-
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
@@ -173,7 +173,7 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
   // instruction.
   if (Instruction_aarch64::extract(insn, 31, 21) == 0b11010010101) {
     // Move narrow OOP
-    narrowOop n = oopDesc::encode_heap_oop((oop)o);
+    narrowOop n = CompressedOops::encode((oop)o);
     Instruction_aarch64::patch(insn_addr, 20, 5, n >> 16);
     Instruction_aarch64::patch(insn_addr+4, 20, 5, n & 0xffff);
     instructions = 2;
@@ -3712,7 +3712,7 @@ void MacroAssembler::store_klass_gap(Register dst, Register src) {
   }
 }
 
-// Algorithm must match oop.inline.hpp encode_heap_oop.
+// Algorithm must match CompressedOops::encode.
 void MacroAssembler::encode_heap_oop(Register d, Register s) {
 #ifdef ASSERT
   verify_heapbase("MacroAssembler::encode_heap_oop: heap base corrupted?");

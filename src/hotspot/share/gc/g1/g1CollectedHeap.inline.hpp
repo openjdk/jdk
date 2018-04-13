@@ -84,16 +84,6 @@ inline HeapRegion* G1CollectedHeap::heap_region_containing(const T addr) const {
   return _hrm.addr_to_region((HeapWord*) addr);
 }
 
-inline void G1CollectedHeap::reset_gc_time_stamp() {
-  assert_at_safepoint_on_vm_thread();
-  _gc_time_stamp = 0;
-}
-
-inline void G1CollectedHeap::increment_gc_time_stamp() {
-  assert_at_safepoint_on_vm_thread();
-  ++_gc_time_stamp;
-}
-
 inline void G1CollectedHeap::old_set_add(HeapRegion* hr) {
   _old_set.add(hr);
 }
@@ -162,17 +152,17 @@ void G1CollectedHeap::register_humongous_region_with_cset(uint index) {
 // Support for G1EvacuationFailureALot
 
 inline bool
-G1CollectedHeap::evacuation_failure_alot_for_gc_type(bool gcs_are_young,
+G1CollectedHeap::evacuation_failure_alot_for_gc_type(bool for_young_gc,
                                                      bool during_initial_mark,
-                                                     bool during_marking) {
+                                                     bool mark_or_rebuild_in_progress) {
   bool res = false;
-  if (during_marking) {
+  if (mark_or_rebuild_in_progress) {
     res |= G1EvacuationFailureALotDuringConcMark;
   }
   if (during_initial_mark) {
     res |= G1EvacuationFailureALotDuringInitialMark;
   }
-  if (gcs_are_young) {
+  if (for_young_gc) {
     res |= G1EvacuationFailureALotDuringYoungGC;
   } else {
     // GCs are mixed
@@ -196,14 +186,14 @@ G1CollectedHeap::set_evacuation_failure_alot_for_current_gc() {
     _evacuation_failure_alot_for_current_gc = (elapsed_gcs >= G1EvacuationFailureALotInterval);
 
     // Now check if G1EvacuationFailureALot is enabled for the current GC type.
-    const bool gcs_are_young = collector_state()->gcs_are_young();
-    const bool during_im = collector_state()->during_initial_mark_pause();
-    const bool during_marking = collector_state()->mark_in_progress();
+    const bool in_young_only_phase = collector_state()->in_young_only_phase();
+    const bool in_initial_mark_gc = collector_state()->in_initial_mark_gc();
+    const bool mark_or_rebuild_in_progress = collector_state()->mark_or_rebuild_in_progress();
 
     _evacuation_failure_alot_for_current_gc &=
-      evacuation_failure_alot_for_gc_type(gcs_are_young,
-                                          during_im,
-                                          during_marking);
+      evacuation_failure_alot_for_gc_type(in_young_only_phase,
+                                          in_initial_mark_gc,
+                                          mark_or_rebuild_in_progress);
   }
 }
 

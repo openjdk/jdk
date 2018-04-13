@@ -641,6 +641,33 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+//---<  BEGIN  >--- CodeHeap State Analytics.
+class CodeHeapAnalyticsDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<char*> _function;
+  DCmdArgument<char*> _granularity;
+public:
+  CodeHeapAnalyticsDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "Compiler.CodeHeap_Analytics";
+  }
+  static const char* description() {
+    return "Print CodeHeap analytics";
+  }
+  static const char* impact() {
+    return "Low: Depends on code heap size and content. "
+           "Holds CodeCache_lock during analysis step, usually sub-second duration.";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
+  static int num_arguments();
+  virtual void execute(DCmdSource source, TRAPS);
+};
+//---<  END  >--- CodeHeap State Analytics.
+
 class CompilerDirectivesPrintDCmd : public DCmd {
 public:
   CompilerDirectivesPrintDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}

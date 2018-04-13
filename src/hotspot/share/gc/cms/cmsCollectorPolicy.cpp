@@ -28,7 +28,7 @@
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectorPolicy.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/generationSpec.hpp"

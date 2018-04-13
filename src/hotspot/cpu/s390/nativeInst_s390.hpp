@@ -29,7 +29,6 @@
 #define CPU_S390_VM_NATIVEINST_S390_HPP
 
 #include "asm/macroAssembler.hpp"
-#include "memory/allocation.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
 

@@ -30,6 +30,7 @@
 #include "gc/g1/heapRegion.hpp"
 #include "memory/heap.hpp"
 #include "memory/iterator.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/stack.inline.hpp"
@@ -274,7 +275,7 @@ class CleanCallback : public StackObj {
 
     template <typename T>
     void do_oop_work(T* p) {
-      if (_hr->is_in(oopDesc::load_decode_heap_oop(p))) {
+      if (_hr->is_in(RawAccess<>::oop_load(p))) {
         _points_into = true;
       }
     }

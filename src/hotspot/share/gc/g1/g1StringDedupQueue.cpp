@@ -27,11 +27,11 @@
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1StringDedupQueue.hpp"
-#include "gc/shared/gcLocker.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "utilities/stack.inline.hpp"
 
 G1StringDedupQueue* G1StringDedupQueue::_queue = NULL;

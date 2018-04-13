@@ -30,6 +30,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "gc/shared/gcArguments.hpp"
+#include "gc/shared/gcConfig.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -49,7 +50,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/vm_version.hpp"
@@ -511,7 +512,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "UseMembar",                    JDK_Version::jdk(10), JDK_Version::undefined(), JDK_Version::undefined() },
   { "IgnoreUnverifiableClassesDuringDump", JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
-  { "CheckEndorsedAndExtDirs",      JDK_Version::jdk(10), JDK_Version::undefined(), JDK_Version::undefined() },
   { "CompilerThreadHintNoPreempt",  JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
   { "VMThreadHintNoPreempt",        JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
   { "PrintSafepointStatistics",     JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
@@ -535,6 +535,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "ShowSafepointMsgs",             JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "FastTLABRefill",                JDK_Version::jdk(10),     JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "SafepointSpinBeforeYield",      JDK_Version::jdk(10),     JDK_Version::jdk(11), JDK_Version::jdk(12) },
+  { "CheckEndorsedAndExtDirs",       JDK_Version::jdk(10),     JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "DeferThrSuspendLoopCount",      JDK_Version::jdk(10),     JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "DeferPollingPageLoopCount",     JDK_Version::jdk(10),     JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "PermSize",                      JDK_Version::undefined(), JDK_Version::jdk(8),  JDK_Version::undefined() },
@@ -1749,7 +1750,7 @@ void Arguments::set_conservative_max_heap_alignment() {
   // the alignments imposed by several sources: any requirements from the heap
   // itself, the collector policy and the maximum page size we may run the VM
   // with.
-  size_t heap_alignment = GCArguments::arguments()->conservative_max_heap_alignment();
+  size_t heap_alignment = GCConfig::arguments()->conservative_max_heap_alignment();
   _conservative_max_heap_alignment = MAX4(heap_alignment,
                                           (size_t)os::vm_allocation_granularity(),
                                           os::max_page_size(),
@@ -1815,10 +1816,7 @@ jint Arguments::set_ergonomics_flags() {
   }
 #endif
 
-  jint gc_result = GCArguments::initialize();
-  if (gc_result != JNI_OK) {
-    return gc_result;
-  }
+  GCConfig::initialize();
 
 #if COMPILER2_OR_JVMCI
   // Shared spaces work fine with other GCs but causes bytecode rewriting
@@ -2176,26 +2174,6 @@ bool Arguments::check_jvmci_args_consistency() {
 }
 #endif //INCLUDE_JVMCI
 
-// Check consistency of GC selection
-bool Arguments::check_gc_consistency() {
-  // Ensure that the user has not selected conflicting sets
-  // of collectors.
-  uint i = 0;
-  if (UseSerialGC)                       i++;
-  if (UseConcMarkSweepGC)                i++;
-  if (UseParallelGC || UseParallelOldGC) i++;
-  if (UseG1GC)                           i++;
-  if (i > 1) {
-    jio_fprintf(defaultStream::error_stream(),
-                "Conflicting collector combinations in option list; "
-                "please refer to the release notes for the combinations "
-                "allowed\n");
-    return false;
-  }
-
-  return true;
-}
-
 // Check the consistency of vm_init_args
 bool Arguments::check_vm_args_consistency() {
   // Method for adding checks for flag consistency.
@@ -2224,8 +2202,6 @@ bool Arguments::check_vm_args_consistency() {
     // Turn off gc-overhead-limit-exceeded checks
     FLAG_SET_DEFAULT(UseGCOverheadLimit, false);
   }
-
-  status = status && check_gc_consistency();
 
   // CMS space iteration, which FLSVerifyAllHeapreferences entails,
   // insists that we hold the requisite locks so that the iteration is
@@ -3326,68 +3302,11 @@ void Arguments::fix_appclasspath() {
   }
 }
 
-static bool has_jar_files(const char* directory) {
-  DIR* dir = os::opendir(directory);
-  if (dir == NULL) return false;
-
-  struct dirent *entry;
-  char *dbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(directory), mtArguments);
-  bool hasJarFile = false;
-  while (!hasJarFile && (entry = os::readdir(dir, (dirent *) dbuf)) != NULL) {
-    const char* name = entry->d_name;
-    const char* ext = name + strlen(name) - 4;
-    hasJarFile = ext > name && (os::file_name_strcmp(ext, ".jar") == 0);
-  }
-  FREE_C_HEAP_ARRAY(char, dbuf);
-  os::closedir(dir);
-  return hasJarFile ;
-}
-
-static int check_non_empty_dirs(const char* path) {
-  const char separator = *os::path_separator();
-  const char* const end = path + strlen(path);
-  int nonEmptyDirs = 0;
-  while (path < end) {
-    const char* tmp_end = strchr(path, separator);
-    if (tmp_end == NULL) {
-      if (has_jar_files(path)) {
-        nonEmptyDirs++;
-        jio_fprintf(defaultStream::output_stream(),
-          "Non-empty directory: %s\n", path);
-      }
-      path = end;
-    } else {
-      char* dirpath = NEW_C_HEAP_ARRAY(char, tmp_end - path + 1, mtArguments);
-      memcpy(dirpath, path, tmp_end - path);
-      dirpath[tmp_end - path] = '\0';
-      if (has_jar_files(dirpath)) {
-        nonEmptyDirs++;
-        jio_fprintf(defaultStream::output_stream(),
-          "Non-empty directory: %s\n", dirpath);
-      }
-      FREE_C_HEAP_ARRAY(char, dirpath);
-      path = tmp_end + 1;
-    }
-  }
-  return nonEmptyDirs;
-}
-
 jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   // check if the default lib/endorsed directory exists; if so, error
   char path[JVM_MAXPATHLEN];
   const char* fileSep = os::file_separator();
   jio_snprintf(path, JVM_MAXPATHLEN, "%s%slib%sendorsed", Arguments::get_java_home(), fileSep, fileSep);
-
-  if (CheckEndorsedAndExtDirs) {
-    int nonEmptyDirs = 0;
-    // check endorsed directory
-    nonEmptyDirs += check_non_empty_dirs(path);
-    // check the extension directories
-    nonEmptyDirs += check_non_empty_dirs(Arguments::get_ext_dirs());
-    if (nonEmptyDirs > 0) {
-      return JNI_ERR;
-    }
-  }
 
   DIR* dir = os::opendir(path);
   if (dir != NULL) {
@@ -3492,6 +3411,10 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     no_shared_spaces("CDS is disabled when " JAVA_BASE_NAME " module is patched.");
   }
 #endif
+
+#ifndef CAN_SHOW_REGISTERS_ON_ASSERT
+  UNSUPPORTED_OPTION(ShowRegistersOnAssert);
+#endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
   return JNI_OK;
 }
@@ -4241,11 +4164,6 @@ jint Arguments::apply_ergo() {
 
   set_shared_spaces_flags();
 
-  // Check the GC selections again.
-  if (!check_gc_consistency()) {
-    return JNI_EINVAL;
-  }
-
   if (TieredCompilation) {
     set_tiered_flags();
   } else {
@@ -4278,7 +4196,7 @@ jint Arguments::apply_ergo() {
   // Set heap size based on available physical memory
   set_heap_size();
 
-  GCArguments::arguments()->initialize_flags();
+  GCConfig::arguments()->initialize();
 
   // Initialize Metaspace flags and alignments
   Metaspace::ergo_initialize();

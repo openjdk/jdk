@@ -235,7 +235,7 @@ bool CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecod
     assert(k->verify_itable_index(itable_index), "sanity check");
 #endif //ASSERT
     CompiledICHolder* holder = new CompiledICHolder(call_info->resolved_method()->method_holder(),
-                                                    call_info->resolved_klass());
+                                                    call_info->resolved_klass(), false);
     holder->claim();
     InlineCacheBuffer::create_transition_stub(this, holder, entry);
   } else {
@@ -273,7 +273,7 @@ bool CompiledIC::is_megamorphic() const {
   assert(!is_optimized(), "an optimized call cannot be megamorphic");
 
   // Cannot rely on cached_value. It is either an interface or a method.
-  return VtableStubs::is_entry_point(ic_destination());
+  return VtableStubs::entry_point(ic_destination()) != NULL;
 }
 
 bool CompiledIC::is_call_to_compiled() const {
@@ -525,9 +525,11 @@ bool CompiledIC::is_icholder_entry(address entry) {
     return true;
   }
   // itable stubs also use CompiledICHolder
-  if (VtableStubs::is_entry_point(entry) && VtableStubs::stub_containing(entry)->is_itable_stub()) {
-    return true;
+  if (cb != NULL && cb->is_vtable_blob()) {
+    VtableStub* s = VtableStubs::entry_point(entry);
+    return (s != NULL) && s->is_itable_stub();
   }
+
   return false;
 }
 

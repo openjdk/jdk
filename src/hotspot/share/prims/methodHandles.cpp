@@ -44,6 +44,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/reflection.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/exceptions.hpp"
@@ -305,7 +306,7 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
 
   Handle resolved_method = info.resolved_method_name();
   assert(java_lang_invoke_ResolvedMethodName::vmtarget(resolved_method()) == m(),
-         "Should not change after link resolultion");
+         "Should not change after link resolution");
 
   oop mname_oop = mname();
   java_lang_invoke_MemberName::set_flags  (mname_oop, flags);
@@ -681,7 +682,8 @@ oop MethodHandles::field_signature_type_or_null(Symbol* s) {
 // An unresolved member name is a mere symbolic reference.
 // Resolving it plants a vmtarget/vmindex in it,
 // which refers directly to JVM internals.
-Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, TRAPS) {
+Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller,
+                                         bool speculative_resolve, TRAPS) {
   Handle empty;
   assert(java_lang_invoke_MemberName::is_instance(mname()), "");
 
@@ -780,6 +782,9 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, TRAPS) {
           assert(false, "ref_kind=%d", ref_kind);
         }
         if (HAS_PENDING_EXCEPTION) {
+          if (speculative_resolve) {
+            CLEAR_PENDING_EXCEPTION;
+          }
           return empty;
         }
       }
@@ -805,6 +810,9 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, TRAPS) {
           break;                // will throw after end of switch
         }
         if (HAS_PENDING_EXCEPTION) {
+          if (speculative_resolve) {
+            CLEAR_PENDING_EXCEPTION;
+          }
           return empty;
         }
       }
@@ -821,6 +829,9 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, TRAPS) {
         LinkInfo link_info(defc, name, type, caller, LinkInfo::skip_access_check);
         LinkResolver::resolve_field(result, link_info, Bytecodes::_nop, false, THREAD);
         if (HAS_PENDING_EXCEPTION) {
+          if (speculative_resolve) {
+            CLEAR_PENDING_EXCEPTION;
+          }
           return empty;
         }
       }
@@ -961,7 +972,7 @@ int MethodHandles::find_MemberNames(Klass* k,
         if (!java_lang_invoke_MemberName::is_instance(result()))
           return -99;  // caller bug!
         oop saved = MethodHandles::init_field_MemberName(result, st.field_descriptor());
-        if (saved != result())
+        if (!oopDesc::equals(saved, result()))
           results->obj_at_put(rfill-1, saved);  // show saved instance to user
       } else if (++overflow >= overflow_limit) {
         match_flags = 0; break; // got tired of looking at overflow
@@ -1013,7 +1024,7 @@ int MethodHandles::find_MemberNames(Klass* k,
           return -99;  // caller bug!
         CallInfo info(m, NULL, CHECK_0);
         oop saved = MethodHandles::init_method_MemberName(result, info);
-        if (saved != result())
+        if (!oopDesc::equals(saved, result()))
           results->obj_at_put(rfill-1, saved);  // show saved instance to user
       } else if (++overflow >= overflow_limit) {
         match_flags = 0; break; // got tired of looking at overflow
@@ -1186,7 +1197,8 @@ JVM_ENTRY(void, MHN_expand_Mem(JNIEnv *env, jobject igcls, jobject mname_jh)) {
 JVM_END
 
 // void resolve(MemberName self, Class<?> caller)
-JVM_ENTRY(jobject, MHN_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh, jclass caller_jh)) {
+JVM_ENTRY(jobject, MHN_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh, jclass caller_jh,
+    jboolean speculative_resolve)) {
   if (mname_jh == NULL) { THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "mname is null"); }
   Handle mname(THREAD, JNIHandles::resolve_non_null(mname_jh));
 
@@ -1214,13 +1226,18 @@ JVM_ENTRY(jobject, MHN_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh,
 
   Klass* caller = caller_jh == NULL ? NULL :
                      java_lang_Class::as_Klass(JNIHandles::resolve_non_null(caller_jh));
-  Handle resolved = MethodHandles::resolve_MemberName(mname, caller, CHECK_NULL);
+  Handle resolved = MethodHandles::resolve_MemberName(mname, caller, speculative_resolve == JNI_TRUE,
+                                                      CHECK_NULL);
 
   if (resolved.is_null()) {
     int flags = java_lang_invoke_MemberName::flags(mname());
     int ref_kind = (flags >> REFERENCE_KIND_SHIFT) & REFERENCE_KIND_MASK;
     if (!MethodHandles::ref_kind_is_valid(ref_kind)) {
       THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "obsolete MemberName format");
+    }
+    if (speculative_resolve) {
+      assert(!HAS_PENDING_EXCEPTION, "No exceptions expected when resolving speculatively");
+      return NULL;
     }
     if ((flags & ALL_KINDS) == IS_FIELD) {
       THROW_MSG_NULL(vmSymbols::java_lang_NoSuchFieldError(), "field resolution failed");
@@ -1513,7 +1530,7 @@ JVM_END
 static JNINativeMethod MHN_methods[] = {
   {CC "init",                      CC "(" MEM "" OBJ ")V",                   FN_PTR(MHN_init_Mem)},
   {CC "expand",                    CC "(" MEM ")V",                          FN_PTR(MHN_expand_Mem)},
-  {CC "resolve",                   CC "(" MEM "" CLS ")" MEM,                FN_PTR(MHN_resolve_Mem)},
+  {CC "resolve",                   CC "(" MEM "" CLS "Z)" MEM,               FN_PTR(MHN_resolve_Mem)},
   //  static native int getNamedCon(int which, Object[] name)
   {CC "getNamedCon",               CC "(I[" OBJ ")I",                        FN_PTR(MHN_getNamedCon)},
   //  static native int getMembers(Class<?> defc, String matchName, String matchSig,

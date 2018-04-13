@@ -125,8 +125,14 @@ public class GraalWithLimitedMetaspace {
             "-XX:MetaspaceSize=12M",
             "-XX:MaxMetaspaceSize=12M"));
 
-        OutputAnalyzer output = TestCommon.executeAndLog(pb, "dump-archive")
-            .shouldHaveExitValue(1)
-            .shouldContain("Failed allocating metaspace object type");
+        OutputAnalyzer output = TestCommon.executeAndLog(pb, "dump-archive");
+        int exitValue = output.getExitValue();
+        if (exitValue == 1) {
+            output.shouldContain("Failed allocating metaspace object type");
+        } else if (exitValue == 0) {
+            output.shouldContain("Loading classes to share");
+        } else {
+            throw new RuntimeException("Unexpected exit value " + exitValue);
+        }
     }
 }

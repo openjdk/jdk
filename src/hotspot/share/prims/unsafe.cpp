@@ -123,6 +123,10 @@ static inline void* index_oop_from_field_offset_long(oop p, jlong field_offset) 
   assert_field_offset_sane(p, field_offset);
   jlong byte_offset = field_offset_to_byte_offset(field_offset);
 
+  if (p != NULL) {
+    p = Access<>::resolve(p);
+  }
+
   if (sizeof(char*) == sizeof(jint)) {   // (this constant folds!)
     return (address)p + (jint) byte_offset;
   } else {
@@ -209,7 +213,7 @@ public:
   }
 
   T get() {
-    if (oopDesc::is_null(_obj)) {
+    if (_obj == NULL) {
       GuardUnsafeAccess guard(_thread);
       T ret = RawAccess<>::load(addr());
       return normalize_for_read(ret);
@@ -220,7 +224,7 @@ public:
   }
 
   void put(T x) {
-    if (oopDesc::is_null(_obj)) {
+    if (_obj == NULL) {
       GuardUnsafeAccess guard(_thread);
       RawAccess<>::store(addr(), normalize_for_write(x));
     } else {
@@ -230,7 +234,7 @@ public:
 
 
   T get_volatile() {
-    if (oopDesc::is_null(_obj)) {
+    if (_obj == NULL) {
       GuardUnsafeAccess guard(_thread);
       volatile T ret = RawAccess<MO_SEQ_CST>::load(addr());
       return normalize_for_read(ret);
@@ -241,7 +245,7 @@ public:
   }
 
   void put_volatile(T x) {
-    if (oopDesc::is_null(_obj)) {
+    if (_obj == NULL) {
       GuardUnsafeAccess guard(_thread);
       RawAccess<MO_SEQ_CST>::store(addr(), normalize_for_write(x));
     } else {
@@ -871,7 +875,7 @@ UNSAFE_ENTRY(jobject, Unsafe_CompareAndExchangeObject(JNIEnv *env, jobject unsaf
 
 UNSAFE_ENTRY(jint, Unsafe_CompareAndExchangeInt(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jint e, jint x)) {
   oop p = JNIHandles::resolve(obj);
-  if (oopDesc::is_null(p)) {
+  if (p == NULL) {
     volatile jint* addr = (volatile jint*)index_oop_from_field_offset_long(p, offset);
     return RawAccess<>::atomic_cmpxchg(x, addr, e);
   } else {
@@ -882,7 +886,7 @@ UNSAFE_ENTRY(jint, Unsafe_CompareAndExchangeInt(JNIEnv *env, jobject unsafe, job
 
 UNSAFE_ENTRY(jlong, Unsafe_CompareAndExchangeLong(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong e, jlong x)) {
   oop p = JNIHandles::resolve(obj);
-  if (oopDesc::is_null(p)) {
+  if (p == NULL) {
     volatile jlong* addr = (volatile jlong*)index_oop_from_field_offset_long(p, offset);
     return RawAccess<>::atomic_cmpxchg(x, addr, e);
   } else {
@@ -897,12 +901,12 @@ UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetObject(JNIEnv *env, jobject unsafe, j
   oop p = JNIHandles::resolve(obj);
   assert_field_offset_sane(p, offset);
   oop ret = HeapAccess<ON_UNKNOWN_OOP_REF>::oop_atomic_cmpxchg_at(x, p, (ptrdiff_t)offset, e);
-  return ret == e;
+  return oopDesc::equals(ret, e);
 } UNSAFE_END
 
 UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetInt(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jint e, jint x)) {
   oop p = JNIHandles::resolve(obj);
-  if (oopDesc::is_null(p)) {
+  if (p == NULL) {
     volatile jint* addr = (volatile jint*)index_oop_from_field_offset_long(p, offset);
     return RawAccess<>::atomic_cmpxchg(x, addr, e) == e;
   } else {
@@ -913,7 +917,7 @@ UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetInt(JNIEnv *env, jobject unsafe, jobj
 
 UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetLong(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong e, jlong x)) {
   oop p = JNIHandles::resolve(obj);
-  if (oopDesc::is_null(p)) {
+  if (p == NULL) {
     volatile jlong* addr = (volatile jlong*)index_oop_from_field_offset_long(p, offset);
     return RawAccess<>::atomic_cmpxchg(x, addr, e) == e;
   } else {

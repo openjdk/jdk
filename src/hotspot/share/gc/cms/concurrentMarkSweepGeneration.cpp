@@ -44,7 +44,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/collectorPolicy.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
@@ -62,6 +62,7 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/padded.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
@@ -6637,6 +6638,11 @@ PushAndMarkVerifyClosure::PushAndMarkVerifyClosure(
   _cms_bm(cms_bm),
   _mark_stack(mark_stack)
 { }
+
+template <class T> void PushAndMarkVerifyClosure::do_oop_work(T *p) {
+  oop obj = RawAccess<>::oop_load(p);
+  do_oop(obj);
+}
 
 void PushAndMarkVerifyClosure::do_oop(oop* p)       { PushAndMarkVerifyClosure::do_oop_work(p); }
 void PushAndMarkVerifyClosure::do_oop(narrowOop* p) { PushAndMarkVerifyClosure::do_oop_work(p); }

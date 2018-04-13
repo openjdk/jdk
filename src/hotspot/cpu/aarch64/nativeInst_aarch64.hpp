@@ -27,7 +27,6 @@
 #define CPU_AARCH64_VM_NATIVEINST_AARCH64_HPP
 
 #include "asm/assembler.hpp"
-#include "memory/allocation.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
 

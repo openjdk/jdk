@@ -250,6 +250,7 @@ class InstanceKlass: public Klass {
   u1              _init_state;                    // state of class
   u1              _reference_type;                // reference type
 
+  u2              _this_class_index;              // constant pool entry
 #if INCLUDE_JVMTI
   JvmtiCachedClassFieldMap* _jvmti_cached_class_field_map;  // JVMTI: used during heap iteration
 #endif
@@ -515,6 +516,10 @@ class InstanceKlass: public Klass {
     assert(t == (u1)t, "overflow");
     _reference_type = (u1)t;
   }
+
+  // this class cp index
+  u2 this_class_index() const             { return _this_class_index; }
+  void set_this_class_index(u2 index)     { _this_class_index = index; }
 
   static ByteSize reference_type_offset() { return in_ByteSize(offset_of(InstanceKlass, _reference_type)); }
 
