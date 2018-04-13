@@ -35,6 +35,7 @@ CLDR_METAINFO_FILE := $(GENSRC_DIR)/sun/util/resources/cldr/provider/CLDRLocaleD
 CLDR_BASE_LOCALES := "en-US"
 
 ZONENAME_TEMPLATE := $(TOPDIR)/src/java.base/share/classes/java/time/format/ZoneName.java.template
+TZDATA_DIR := $(TOPDIR)/make/data/tzdata
 
 $(CLDR_BASEMETAINFO_FILE): $(wildcard $(CLDRSRCDIR)/common/dtd/*.dtd) \
     $(wildcard $(CLDRSRCDIR)/common/main/en*.xml) \
@@ -46,7 +47,8 @@ $(CLDR_BASEMETAINFO_FILE): $(wildcard $(CLDRSRCDIR)/common/dtd/*.dtd) \
 	    -baselocales $(CLDR_BASE_LOCALES) \
 	    -o $(GENSRC_BASEDIR) \
 	    -basemodule \
-	    -zntempfile $(ZONENAME_TEMPLATE)
+	    -zntempfile $(ZONENAME_TEMPLATE) \
+	    -tzdatadir $(TZDATA_DIR)
 
 $(CLDR_METAINFO_FILE): $(wildcard $(CLDRSRCDIR)/common/dtd/*.dtd) \
     $(wildcard $(CLDRSRCDIR)/common/main/*.xml) \
