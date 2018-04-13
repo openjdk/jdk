@@ -161,9 +161,10 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   inline void do_oop_partial_array(oop* p);
 
   // This method is applied to the fields of the objects that have just been copied.
-  template <class T> inline void do_oop_evac(T* p, HeapRegion* from);
+  template <class T> inline void do_oop_evac(T* p);
 
-  template <class T> inline void deal_with_reference(T* ref_to_scan);
+  inline void deal_with_reference(oop* ref_to_scan);
+  inline void deal_with_reference(narrowOop* ref_to_scan);
 
   inline void dispatch_reference(StarTask ref);
 

@@ -30,6 +30,7 @@
 #include "logging/logStream.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/oop.inline.hpp"
 
 void G1MarkAndPushClosure::do_oop(oop* p) {
   do_oop_nv(p);

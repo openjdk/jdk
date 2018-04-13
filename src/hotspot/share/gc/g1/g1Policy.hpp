@@ -383,10 +383,6 @@ public:
 
   bool adaptive_young_list_length() const;
 
-  bool should_process_references() const {
-    return true;
-  }
-
   void transfer_survivors_to_cset(const G1SurvivorRegions* survivors);
 
 private:

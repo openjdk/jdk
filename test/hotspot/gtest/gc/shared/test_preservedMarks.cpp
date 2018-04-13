@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "unittest.hpp"
 
 class ScopedDisabledBiasedLocking {
@@ -38,14 +39,14 @@ class FakeOop {
   oopDesc _oop;
 
 public:
-  FakeOop() : _oop() { _oop.set_mark(originalMark()); }
+  FakeOop() : _oop() { _oop.set_mark_raw(originalMark()); }
 
   oop get_oop() { return &_oop; }
-  markOop mark() { return _oop.mark(); }
-  void set_mark(markOop m) { _oop.set_mark(m); }
+  markOop mark() { return _oop.mark_raw(); }
+  void set_mark(markOop m) { _oop.set_mark_raw(m); }
   void forward_to(oop obj) {
     markOop m = markOopDesc::encode_pointer_as_mark(obj);
-    _oop.set_mark(m);
+    _oop.set_mark_raw(m);
   }
 
   static markOop originalMark() { return markOop(markOopDesc::lock_mask_in_place); }

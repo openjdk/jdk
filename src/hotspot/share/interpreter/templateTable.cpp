@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/templateTable.hpp"
 #include "runtime/timerTrace.hpp"
@@ -247,7 +247,7 @@ void TemplateTable::initialize() {
   // Initialize table
   TraceTime timer("TemplateTable initialization", TRACETIME_LOG(Info, startuptime));
 
-  _bs = Universe::heap()->barrier_set();
+  _bs = BarrierSet::barrier_set();
 
   // For better readability
   const char _    = ' ';

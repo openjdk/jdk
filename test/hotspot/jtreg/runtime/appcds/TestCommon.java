@@ -200,13 +200,18 @@ public class TestCommon extends CDSTestUtils {
         return new Result(opts, runWithArchive(opts));
     }
 
-
     public static OutputAnalyzer exec(String appJar, String... suffix) throws Exception {
         AppCDSOptions opts = (new AppCDSOptions()).setAppJar(appJar);
         opts.addSuffix(suffix);
         return runWithArchive(opts);
     }
 
+    public static Result runWithModules(String prefix[], String upgrademodulepath, String modulepath,
+                                            String mid, String... testClassArgs) throws Exception {
+        AppCDSOptions opts = makeModuleOptions(prefix, upgrademodulepath, modulepath,
+                                               mid, testClassArgs);
+        return new Result(opts, runWithArchive(opts));
+    }
 
     public static OutputAnalyzer execAuto(String... suffix) throws Exception {
         AppCDSOptions opts = (new AppCDSOptions());
@@ -220,10 +225,9 @@ public class TestCommon extends CDSTestUtils {
         return runWithArchive(opts);
     }
 
-    public static OutputAnalyzer execModule(String prefix[], String upgrademodulepath, String modulepath,
-                                            String mid, String... testClassArgs)
-        throws Exception {
 
+    private static AppCDSOptions makeModuleOptions(String prefix[], String upgrademodulepath, String modulepath,
+                                            String mid, String testClassArgs[]) {
         AppCDSOptions opts = (new AppCDSOptions());
 
         opts.addPrefix(prefix);
@@ -234,7 +238,14 @@ public class TestCommon extends CDSTestUtils {
                            "-p", modulepath, "-m", mid);
         }
         opts.addSuffix(testClassArgs);
+        return opts;
+    }
 
+    public static OutputAnalyzer execModule(String prefix[], String upgrademodulepath, String modulepath,
+                                            String mid, String... testClassArgs)
+        throws Exception {
+        AppCDSOptions opts = makeModuleOptions(prefix, upgrademodulepath, modulepath,
+                                               mid, testClassArgs);
         return runWithArchive(opts);
     }
 

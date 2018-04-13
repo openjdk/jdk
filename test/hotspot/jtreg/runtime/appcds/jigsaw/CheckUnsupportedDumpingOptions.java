@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,20 +40,15 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class CheckUnsupportedDumpingOptions {
     private static final String[] jigsawOptions = {
-        "-m",
         "--limit-modules",
-        "--module-path",
         "--upgrade-module-path",
         "--patch-module"
     };
     private static final String[] optionValues = {
         "mymod",
-        "mymod",
-        "mydir",
         ".",
         "java.naming=javax.naming.spi.NamingManger"
     };
-    private static final int infoIdx = 1;
 
     public static void main(String[] args) throws Exception {
         String source = "package javax.naming.spi; "                +
@@ -71,31 +66,11 @@ public class CheckUnsupportedDumpingOptions {
         String appClasses[] = {"Hello"};
         for (int i = 0; i < jigsawOptions.length; i++) {
             OutputAnalyzer output;
-            if (i == 5) {
-                // --patch-module
-                output = TestCommon.dump(appJar, appClasses, "-Xlog:cds,cds+hashtables",
-                                         jigsawOptions[i] + optionValues[i] + appJar);
-            } else {
-                output = TestCommon.dump(appJar, appClasses, "-Xlog:cds,cds+hashtables",
-                                         jigsawOptions[i], optionValues[i]);
-            }
-            if (i < infoIdx) {
-                output.shouldContain("Cannot use the following option " +
-                    "when dumping the shared archive: " + jigsawOptions[i])
-                      .shouldHaveExitValue(1);
-            } else {
-                output.shouldContain("Info: the " + jigsawOptions[i] +
-                    " option is ignored when dumping the shared archive");
-                if (optionValues[i].equals("mymod")) {
-                      // java will throw FindException for a module
-                      // which cannot be found during init_phase2() of vm init
-                      output.shouldHaveExitValue(1)
-                            .shouldContain("java.lang.module.FindException: Module mymod not found");
-                } else {
-                      output.shouldHaveExitValue(0);
-                }
-            }
+            output = TestCommon.dump(appJar, appClasses, "-Xlog:cds,cds+hashtables",
+                                     jigsawOptions[i], optionValues[i]);
+            output.shouldContain("Cannot use the following option " +
+                "when dumping the shared archive: " + jigsawOptions[i])
+                  .shouldHaveExitValue(1);
         }
     }
 }
-

@@ -46,6 +46,7 @@ address StubRoutines::aarch64::_double_sign_flip = NULL;
 address StubRoutines::aarch64::_zero_blocks = NULL;
 address StubRoutines::aarch64::_has_negatives = NULL;
 address StubRoutines::aarch64::_has_negatives_long = NULL;
+address StubRoutines::aarch64::_large_array_equals = NULL;
 bool StubRoutines::aarch64::_completed = false;
 
 /**

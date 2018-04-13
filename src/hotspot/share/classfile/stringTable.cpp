@@ -45,7 +45,6 @@
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #endif
 

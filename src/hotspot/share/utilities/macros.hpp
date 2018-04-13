@@ -109,11 +109,13 @@
 #define CDS_ONLY(x) x
 #define NOT_CDS(x)
 #define NOT_CDS_RETURN        /* next token must be ; */
+#define NOT_CDS_RETURN0       /* next token must be ; */
 #define NOT_CDS_RETURN_(code) /* next token must be ; */
 #else
 #define CDS_ONLY(x)
 #define NOT_CDS(x) x
-#define NOT_CDS_RETURN          {}
+#define NOT_CDS_RETURN        {}
+#define NOT_CDS_RETURN0       { return 0; }
 #define NOT_CDS_RETURN_(code) { return code; }
 #endif // INCLUDE_CDS
 
@@ -141,9 +143,11 @@
 #endif // INCLUDE_ALL_GCS
 
 #if INCLUDE_ALL_GCS
+#define ALL_GCS_ONLY(x) x
 #define NOT_ALL_GCS_RETURN        /* next token must be ; */
 #define NOT_ALL_GCS_RETURN_(code) /* next token must be ; */
 #else
+#define ALL_GCS_ONLY(x)
 #define NOT_ALL_GCS_RETURN        {}
 #define NOT_ALL_GCS_RETURN_(code) { return code; }
 #endif // INCLUDE_ALL_GCS

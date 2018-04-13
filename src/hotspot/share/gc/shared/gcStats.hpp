@@ -58,13 +58,4 @@ class GCStats : public CHeapObj<mtGC> {
   }
 };
 
-class CMSGCStats : public GCStats {
- public:
-  CMSGCStats();
-
-  virtual Name kind() {
-    return CMSGCStatsKind;
-  }
-};
-
 #endif // SHARE_VM_GC_SHARED_GCSTATS_HPP

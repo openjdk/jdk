@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
 
 inline bool G1FullGCMarker::mark_object(oop obj) {
@@ -48,7 +49,7 @@ inline bool G1FullGCMarker::mark_object(oop obj) {
   }
 
   // Marked by us, preserve if needed.
-  markOop mark = obj->mark();
+  markOop mark = obj->mark_raw();
   if (mark->must_be_preserved(obj) &&
       !G1ArchiveAllocator::is_open_archive_object(obj)) {
     preserved_stack()->push(obj, mark);

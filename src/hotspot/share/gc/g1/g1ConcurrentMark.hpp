@@ -589,6 +589,8 @@ public:
   inline bool mark_in_next_bitmap(uint worker_id, HeapRegion* const hr, oop const obj, size_t const obj_size = 0);
   inline bool mark_in_next_bitmap(uint worker_id, oop const obj, size_t const obj_size = 0);
 
+  inline bool is_marked_in_next_bitmap(oop p) const;
+
   // Returns true if initialization was successfully completed.
   bool completed_initialization() const {
     return _completed_initialization;

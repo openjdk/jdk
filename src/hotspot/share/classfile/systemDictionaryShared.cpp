@@ -92,7 +92,7 @@ Handle SystemDictionaryShared::get_shared_jar_manifest(int shared_path_index, TR
   Handle empty;
   Handle manifest ;
   if (shared_jar_manifest(shared_path_index) == NULL) {
-    SharedClassPathEntryExt* ent = (SharedClassPathEntryExt*)FileMapInfo::shared_classpath(shared_path_index);
+    SharedClassPathEntryExt* ent = (SharedClassPathEntryExt*)FileMapInfo::shared_path(shared_path_index);
     long size = ent->manifest_size();
     if (size <= 0) {
       return empty; // No manifest - return NULL handle
@@ -138,7 +138,7 @@ Handle SystemDictionaryShared::get_shared_jar_url(int shared_path_index, TRAPS) 
   Handle url_h;
   if (shared_jar_url(shared_path_index) == NULL) {
     JavaValue result(T_OBJECT);
-    const char* path = FileMapInfo::shared_classpath_name(shared_path_index);
+    const char* path = FileMapInfo::shared_path_name(shared_path_index);
     Handle path_string = java_lang_String::create_from_str(path, CHECK_(url_h));
     Klass* classLoaders_klass =
         SystemDictionary::jdk_internal_loader_ClassLoaders_klass();
@@ -304,7 +304,7 @@ Handle SystemDictionaryShared::init_security_info(Handle class_loader, InstanceK
     int index = ik->shared_classpath_index();
     assert(index >= 0, "Sanity");
     SharedClassPathEntryExt* ent =
-            (SharedClassPathEntryExt*)FileMapInfo::shared_classpath(index);
+            (SharedClassPathEntryExt*)FileMapInfo::shared_path(index);
     Symbol* class_name = ik->name();
 
     if (ent->is_modules_image()) {
@@ -328,13 +328,13 @@ Handle SystemDictionaryShared::init_security_info(Handle class_loader, InstanceK
       // For shared app/platform classes originated from JAR files on the class path:
       //   Each of the 3 SystemDictionaryShared::_shared_xxx arrays has the same length
       //   as the shared classpath table in the shared archive (see
-      //   FileMap::_classpath_entry_table in filemap.hpp for details).
+      //   FileMap::_shared_path_table in filemap.hpp for details).
       //
       //   If a shared InstanceKlass k is loaded from the class path, let
       //
       //     index = k->shared_classpath_index():
       //
-      //   FileMap::_classpath_entry_table[index] identifies the JAR file that contains k.
+      //   FileMap::_shared_path_table[index] identifies the JAR file that contains k.
       //
       //   k's protection domain is:
       //
@@ -358,9 +358,7 @@ Handle SystemDictionaryShared::init_security_info(Handle class_loader, InstanceK
 }
 
 // Currently AppCDS only archives classes from the run-time image, the
-// -Xbootclasspath/a path, and the class path. The following rules need to be
-// revised when AppCDS is changed to archive classes from other code sources
-// in the future, for example the module path (specified by -p).
+// -Xbootclasspath/a path, the class path, and the module path.
 //
 // Check if a shared class can be loaded by the specific classloader. Following
 // are the "visible" archived classes for different classloaders.
@@ -368,10 +366,10 @@ Handle SystemDictionaryShared::init_security_info(Handle class_loader, InstanceK
 // NULL classloader:
 //   - see SystemDictionary::is_shared_class_visible()
 // Platform classloader:
-//   - Module class from "modules" jimage. ModuleEntry must be defined in the
+//   - Module class from runtime image. ModuleEntry must be defined in the
 //     classloader.
-// App Classloader:
-//   - Module class from "modules" jimage. ModuleEntry must be defined in the
+// App classloader:
+//   - Module Class from runtime image and module path. ModuleEntry must be defined in the
 //     classloader.
 //   - Class from -cp. The class must have no PackageEntry defined in any of the
 //     boot/platform/app classloader, or must be in the unnamed module defined in the
@@ -386,10 +384,11 @@ bool SystemDictionaryShared::is_shared_class_visible_for_classloader(
                                                      TRAPS) {
   assert(class_loader.not_null(), "Class loader should not be NULL");
   assert(Universe::is_module_initialized(), "Module system is not initialized");
+  ResourceMark rm(THREAD);
 
   int path_index = ik->shared_classpath_index();
   SharedClassPathEntry* ent =
-            (SharedClassPathEntry*)FileMapInfo::shared_classpath(path_index);
+            (SharedClassPathEntry*)FileMapInfo::shared_path(path_index);
 
   if (SystemDictionary::is_platform_class_loader(class_loader())) {
     assert(ent != NULL, "shared class for PlatformClassLoader should have valid SharedClassPathEntry");
@@ -400,7 +399,7 @@ bool SystemDictionaryShared::is_shared_class_visible_for_classloader(
       // PackageEntry/ModuleEntry is found in the classloader. Check if the
       // ModuleEntry's location agrees with the archived class' origination.
       if (ent->is_modules_image() && mod_entry->location()->starts_with("jrt:")) {
-        return true; // Module class from the "modules" jimage
+        return true; // Module class from the runtime image
       }
     }
   } else if (SystemDictionary::is_system_class_loader(class_loader())) {
@@ -409,7 +408,8 @@ bool SystemDictionaryShared::is_shared_class_visible_for_classloader(
       // The archived class is in the unnamed package. Currently, the boot image
       // does not contain any class in the unnamed package.
       assert(!ent->is_modules_image(), "Class in the unnamed package must be from the classpath");
-      if (path_index >= ClassLoaderExt::app_paths_start_index()) {
+      if (path_index >= ClassLoaderExt::app_class_paths_start_index()) {
+        assert(path_index < ClassLoaderExt::app_module_paths_start_index(), "invalid path_index");
         return true;
       }
     } else {
@@ -421,23 +421,37 @@ bool SystemDictionaryShared::is_shared_class_visible_for_classloader(
         if (get_package_entry(pkg_name, ClassLoaderData::class_loader_data_or_null(SystemDictionary::java_platform_loader())) == NULL &&
             get_package_entry(pkg_name, ClassLoaderData::the_null_class_loader_data()) == NULL) {
           // The PackageEntry is not defined in any of the boot/platform/app classloaders.
-          // The archived class must from -cp path and not from the run-time image.
-          if (!ent->is_modules_image() && path_index >= ClassLoaderExt::app_paths_start_index()) {
+          // The archived class must from -cp path and not from the runtime image.
+          if (!ent->is_modules_image() && path_index >= ClassLoaderExt::app_class_paths_start_index() &&
+                                          path_index < ClassLoaderExt::app_module_paths_start_index()) {
             return true;
           }
         }
       } else if (mod_entry != NULL) {
-        // The package/module is defined in the AppClassLoader. Currently we only
-        // support archiving application module class from the run-time image.
+        // The package/module is defined in the AppClassLoader. We support
+        // archiving application module class from the runtime image or from
+        // a named module from a module path.
         // Packages from the -cp path are in the unnamed_module.
-        if ((ent->is_modules_image() && mod_entry->location()->starts_with("jrt:")) ||
-            (pkg_entry->in_unnamed_module() && path_index >= ClassLoaderExt::app_paths_start_index())) {
+        if (ent->is_modules_image() && mod_entry->location()->starts_with("jrt:")) {
+          // shared module class from runtime image
+          return true;
+        } else if (pkg_entry->in_unnamed_module() && path_index >= ClassLoaderExt::app_class_paths_start_index() &&
+            path_index < ClassLoaderExt::app_module_paths_start_index()) {
+          // shared class from -cp
           DEBUG_ONLY( \
             ClassLoaderData* loader_data = class_loader_data(class_loader); \
-            if (pkg_entry->in_unnamed_module()) \
-              assert(mod_entry == loader_data->unnamed_module(), "the unnamed module is not defined in the classloader");)
-
+            assert(mod_entry == loader_data->unnamed_module(), "the unnamed module is not defined in the classloader");)
           return true;
+        } else {
+          if(!pkg_entry->in_unnamed_module() &&
+              (path_index >= ClassLoaderExt::app_module_paths_start_index())&&
+              (path_index < FileMapInfo::get_number_of_shared_paths()) &&
+              (strcmp(ent->name(), ClassLoader::skip_uri_protocol(mod_entry->location()->as_C_string())) == 0)) {
+            // shared module class from module path
+            return true;
+          } else {
+            assert(path_index < FileMapInfo::get_number_of_shared_paths(), "invalid path_index");
+          }
         }
       }
     }

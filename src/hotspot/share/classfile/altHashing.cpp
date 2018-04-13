@@ -27,6 +27,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "oops/markOop.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/thread.hpp"
 
 // Get the hash code of the classes mirror if it exists, otherwise just

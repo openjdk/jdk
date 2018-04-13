@@ -31,13 +31,13 @@
 
 oop objArrayOopDesc::atomic_compare_exchange_oop(int index, oop exchange_value,
                                                  oop compare_value) {
-  volatile HeapWord* dest;
+  ptrdiff_t offs;
   if (UseCompressedOops) {
-    dest = (HeapWord*)obj_at_addr<narrowOop>(index);
+    offs = objArrayOopDesc::obj_at_offset<narrowOop>(index);
   } else {
-    dest = (HeapWord*)obj_at_addr<oop>(index);
+    offs = objArrayOopDesc::obj_at_offset<oop>(index);
   }
-  return HeapAccess<>::oop_atomic_cmpxchg(exchange_value, dest, compare_value);
+  return HeapAccess<IN_HEAP_ARRAY>::oop_atomic_cmpxchg_at(exchange_value, as_oop(), offs, compare_value);
 }
 
 Klass* objArrayOopDesc::element_klass() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,15 +112,15 @@ void G1FullGCCompactionPoint::forward(oop object, size_t size) {
       // with BiasedLocking, in this case forwardee() will return NULL
       // even if the mark-word is used. This is no problem since
       // forwardee() will return NULL in the compaction phase as well.
-      object->init_mark();
+      object->init_mark_raw();
     } else {
       // Make sure object has the correct mark-word set or that it will be
       // fixed when restoring the preserved marks.
-      assert(object->mark() == markOopDesc::prototype_for_object(object) || // Correct mark
-             object->mark()->must_be_preserved(object) || // Will be restored by PreservedMarksSet
-             (UseBiasedLocking && object->has_bias_pattern()), // Will be restored by BiasedLocking
+      assert(object->mark_raw() == markOopDesc::prototype_for_object(object) || // Correct mark
+             object->mark_raw()->must_be_preserved(object) || // Will be restored by PreservedMarksSet
+             (UseBiasedLocking && object->has_bias_pattern_raw()), // Will be restored by BiasedLocking
              "should have correct prototype obj: " PTR_FORMAT " mark: " PTR_FORMAT " prototype: " PTR_FORMAT,
-             p2i(object), p2i(object->mark()), p2i(markOopDesc::prototype_for_object(object)));
+             p2i(object), p2i(object->mark_raw()), p2i(markOopDesc::prototype_for_object(object)));
     }
     assert(object->forwardee() == NULL, "should be forwarded to NULL");
   }

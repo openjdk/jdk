@@ -44,16 +44,44 @@
 // Implementation of all inlined member functions defined in oop.hpp
 // We need a separate file to avoid circular references
 
+markOop  oopDesc::mark()      const {
+  return HeapAccess<MO_VOLATILE>::load_at(as_oop(), mark_offset_in_bytes());
+}
+
+markOop  oopDesc::mark_raw()  const {
+  return _mark;
+}
+
+markOop* oopDesc::mark_addr_raw() const {
+  return (markOop*) &_mark;
+}
+
+void oopDesc::set_mark(volatile markOop m) {
+  HeapAccess<MO_VOLATILE>::store_at(as_oop(), mark_offset_in_bytes(), m);
+}
+
+void oopDesc::set_mark_raw(volatile markOop m) {
+  _mark = m;
+}
+
 void oopDesc::release_set_mark(markOop m) {
-  OrderAccess::release_store(&_mark, m);
+  HeapAccess<MO_RELEASE>::store_at(as_oop(), mark_offset_in_bytes(), m);
 }
 
 markOop oopDesc::cas_set_mark(markOop new_mark, markOop old_mark) {
+  return HeapAccess<>::atomic_cmpxchg_at(new_mark, as_oop(), mark_offset_in_bytes(), old_mark);
+}
+
+markOop oopDesc::cas_set_mark_raw(markOop new_mark, markOop old_mark) {
   return Atomic::cmpxchg(new_mark, &_mark, old_mark);
 }
 
 void oopDesc::init_mark() {
   set_mark(markOopDesc::prototype_for_object(this));
+}
+
+void oopDesc::init_mark_raw() {
+  set_mark_raw(markOopDesc::prototype_for_object(this));
 }
 
 Klass* oopDesc::klass() const {
@@ -281,16 +309,20 @@ bool oopDesc::has_bias_pattern() const {
   return mark()->has_bias_pattern();
 }
 
+bool oopDesc::has_bias_pattern_raw() const {
+  return mark_raw()->has_bias_pattern();
+}
+
 // Used only for markSweep, scavenging
 bool oopDesc::is_gc_marked() const {
-  return mark()->is_marked();
+  return mark_raw()->is_marked();
 }
 
 // Used by scavengers
 bool oopDesc::is_forwarded() const {
   // The extra heap check is needed since the obj might be locked, in which case the
   // mark would point to a stack location and have the sentinel bit cleared
-  return mark()->is_marked();
+  return mark_raw()->is_marked();
 }
 
 // Used by scavengers
@@ -304,7 +336,7 @@ void oopDesc::forward_to(oop p) {
          "forwarding archive object");
   markOop m = markOopDesc::encode_pointer_as_mark(p);
   assert(m->decode_pointer() == p, "encoding must be reversable");
-  set_mark(m);
+  set_mark_raw(m);
 }
 
 // Used by parallel scavengers
@@ -315,12 +347,12 @@ bool oopDesc::cas_forward_to(oop p, markOop compare) {
          "forwarding to something not in heap");
   markOop m = markOopDesc::encode_pointer_as_mark(p);
   assert(m->decode_pointer() == p, "encoding must be reversable");
-  return cas_set_mark(m, compare) == compare;
+  return cas_set_mark_raw(m, compare) == compare;
 }
 
 #if INCLUDE_ALL_GCS
 oop oopDesc::forward_to_atomic(oop p) {
-  markOop oldMark = mark();
+  markOop oldMark = mark_raw();
   markOop forwardPtrMark = markOopDesc::encode_pointer_as_mark(p);
   markOop curMark;
 
@@ -328,7 +360,7 @@ oop oopDesc::forward_to_atomic(oop p) {
   assert(sizeof(markOop) == sizeof(intptr_t), "CAS below requires this.");
 
   while (!oldMark->is_marked()) {
-    curMark = Atomic::cmpxchg(forwardPtrMark, &_mark, oldMark);
+    curMark = cas_set_mark_raw(forwardPtrMark, oldMark);
     assert(is_forwarded(), "object should have been forwarded");
     if (curMark == oldMark) {
       return NULL;
@@ -346,25 +378,25 @@ oop oopDesc::forward_to_atomic(oop p) {
 // The forwardee is used when copying during scavenge and mark-sweep.
 // It does need to clear the low two locking- and GC-related bits.
 oop oopDesc::forwardee() const {
-  return (oop) mark()->decode_pointer();
+  return (oop) mark_raw()->decode_pointer();
 }
 
 // The following method needs to be MT safe.
 uint oopDesc::age() const {
   assert(!is_forwarded(), "Attempt to read age from forwarded mark");
-  if (has_displaced_mark()) {
-    return displaced_mark()->age();
+  if (has_displaced_mark_raw()) {
+    return displaced_mark_raw()->age();
   } else {
-    return mark()->age();
+    return mark_raw()->age();
   }
 }
 
 void oopDesc::incr_age() {
   assert(!is_forwarded(), "Attempt to increment age of forwarded mark");
-  if (has_displaced_mark()) {
-    set_displaced_mark(displaced_mark()->incr_age());
+  if (has_displaced_mark_raw()) {
+    set_displaced_mark_raw(displaced_mark_raw()->incr_age());
   } else {
-    set_mark(mark()->incr_age());
+    set_mark_raw(mark_raw()->incr_age());
   }
 }
 
@@ -465,16 +497,16 @@ intptr_t oopDesc::identity_hash() {
   }
 }
 
-bool oopDesc::has_displaced_mark() const {
-  return mark()->has_displaced_mark_helper();
+bool oopDesc::has_displaced_mark_raw() const {
+  return mark_raw()->has_displaced_mark_helper();
 }
 
-markOop oopDesc::displaced_mark() const {
-  return mark()->displaced_mark_helper();
+markOop oopDesc::displaced_mark_raw() const {
+  return mark_raw()->displaced_mark_helper();
 }
 
-void oopDesc::set_displaced_mark(markOop m) {
-  mark()->set_displaced_mark_helper(m);
+void oopDesc::set_displaced_mark_raw(markOop m) {
+  mark_raw()->set_displaced_mark_helper(m);
 }
 
 #endif // SHARE_VM_OOPS_OOP_INLINE_HPP
