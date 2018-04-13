@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
 
 #include "memory/allocation.hpp"
 #include "runtime/timer.hpp"
+
+class ThreadClosure;
 
 // Thread Safe Memory Reclamation (Thread-SMR) support.
 //
@@ -124,9 +126,12 @@ class ThreadsSMRSupport : AllStatic {
   static void release_stable_list_nested_path(Thread *self);
   static void release_stable_list_wake_up(char *log_str);
   static void set_delete_notify();
+  static void threads_do(ThreadClosure *tc);
+  static void threads_do(ThreadClosure *tc, ThreadsList *list);
   static void update_deleted_thread_time_max(uint new_value);
   static void update_java_thread_list_max(uint new_value);
   static void update_tlh_time_max(uint new_value);
+  static void verify_hazard_pointer_scanned(Thread *self, ThreadsList *threads);
   static ThreadsList* xchg_java_thread_list(ThreadsList* new_list);
 
  public:

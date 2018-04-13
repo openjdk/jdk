@@ -61,10 +61,10 @@ void CollectedHeap::post_allocation_setup_no_klass_install(Klass* klass,
 
   assert(obj != NULL, "NULL object pointer");
   if (UseBiasedLocking && (klass != NULL)) {
-    obj->set_mark(klass->prototype_header());
+    obj->set_mark_raw(klass->prototype_header());
   } else {
     // May be bootstrapping
-    obj->set_mark(markOopDesc::prototype());
+    obj->set_mark_raw(markOopDesc::prototype());
   }
 }
 

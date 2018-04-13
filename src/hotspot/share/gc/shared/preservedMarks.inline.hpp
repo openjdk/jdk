@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ inline void PreservedMarks::push_if_necessary(oop obj, markOop m) {
 }
 
 inline void PreservedMarks::init_forwarded_mark(oop obj) {
-  obj->init_mark();
+  obj->init_mark_raw();
 }
 
 inline void PreservedMarksSet::restore(RestorePreservedMarksTaskExecutor* executor) {
@@ -77,5 +77,9 @@ inline PreservedMarks::PreservedMarks()
              // waste of space most of the time). So we set the max
              // cache size to 0.
              0 /* max_cache_size */) { }
+
+void PreservedMarks::OopAndMarkOop::set_mark() const {
+  _o->set_mark_raw(_m);
+}
 
 #endif // SHARE_VM_GC_SHARED_PRESERVEDMARKS_INLINE_HPP

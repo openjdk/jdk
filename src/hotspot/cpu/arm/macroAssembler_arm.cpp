@@ -29,6 +29,7 @@
 #include "ci/ciEnv.hpp"
 #include "code/nativeInst.hpp"
 #include "compiler/disassembler.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -46,7 +47,7 @@
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
 #endif
 
@@ -2175,12 +2176,9 @@ void MacroAssembler::g1_write_barrier_pre(Register store_addr,
     assert_different_registers(pre_val, tmp1, tmp2, noreg);
   }
 
-  Address in_progress(Rthread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                        SATBMarkQueue::byte_offset_of_active()));
-  Address index(Rthread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                  SATBMarkQueue::byte_offset_of_index()));
-  Address buffer(Rthread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                   SATBMarkQueue::byte_offset_of_buf()));
+  Address in_progress(Rthread, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()));
+  Address index(Rthread, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()));
+  Address buffer(Rthread, in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset()));
 
   // Is marking active?
   assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "adjust this code");
@@ -2261,12 +2259,10 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
                                            Register tmp2,
                                            Register tmp3) {
 
-  Address queue_index(Rthread, in_bytes(JavaThread::dirty_card_queue_offset() +
-                                        DirtyCardQueue::byte_offset_of_index()));
-  Address buffer(Rthread, in_bytes(JavaThread::dirty_card_queue_offset() +
-                                   DirtyCardQueue::byte_offset_of_buf()));
+  Address queue_index(Rthread, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()));
+  Address buffer(Rthread, in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()));
 
-  BarrierSet* bs = Universe::heap()->barrier_set();
+  BarrierSet* bs = BarrierSet::barrier_set();
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
   Label done;

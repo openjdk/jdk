@@ -1359,7 +1359,7 @@ class StubGenerator: public StubCodeGenerator {
       decorators |= ARRAYCOPY_ALIGNED;
     }
 
-    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, is_oop, d, count, saved_reg);
 
     if (is_oop) {
@@ -1433,7 +1433,7 @@ class StubGenerator: public StubCodeGenerator {
       decorators |= ARRAYCOPY_ALIGNED;
     }
 
-    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, is_oop, d, count, saved_regs);
 
     if (is_oop) {
@@ -1795,7 +1795,7 @@ class StubGenerator: public StubCodeGenerator {
       decorators |= AS_DEST_NOT_INITIALIZED;
     }
 
-    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, is_oop, to, count, wb_pre_saved_regs);
 
     // save the original count
@@ -3813,6 +3813,182 @@ class StubGenerator: public StubCodeGenerator {
     __ ret(lr);
     return entry;
   }
+
+  void generate_large_array_equals_loop_nonsimd(int loopThreshold,
+        bool usePrefetch, Label &NOT_EQUAL) {
+    Register a1 = r1, a2 = r2, result = r0, cnt1 = r10, tmp1 = rscratch1,
+        tmp2 = rscratch2, tmp3 = r3, tmp4 = r4, tmp5 = r5, tmp6 = r11,
+        tmp7 = r12, tmp8 = r13;
+    Label LOOP;
+
+    __ ldp(tmp1, tmp3, Address(__ post(a1, 2 * wordSize)));
+    __ ldp(tmp2, tmp4, Address(__ post(a2, 2 * wordSize)));
+    __ bind(LOOP);
+    if (usePrefetch) {
+      __ prfm(Address(a1, SoftwarePrefetchHintDistance));
+      __ prfm(Address(a2, SoftwarePrefetchHintDistance));
+    }
+    __ ldp(tmp5, tmp7, Address(__ post(a1, 2 * wordSize)));
+    __ eor(tmp1, tmp1, tmp2);
+    __ eor(tmp3, tmp3, tmp4);
+    __ ldp(tmp6, tmp8, Address(__ post(a2, 2 * wordSize)));
+    __ orr(tmp1, tmp1, tmp3);
+    __ cbnz(tmp1, NOT_EQUAL);
+    __ ldp(tmp1, tmp3, Address(__ post(a1, 2 * wordSize)));
+    __ eor(tmp5, tmp5, tmp6);
+    __ eor(tmp7, tmp7, tmp8);
+    __ ldp(tmp2, tmp4, Address(__ post(a2, 2 * wordSize)));
+    __ orr(tmp5, tmp5, tmp7);
+    __ cbnz(tmp5, NOT_EQUAL);
+    __ ldp(tmp5, tmp7, Address(__ post(a1, 2 * wordSize)));
+    __ eor(tmp1, tmp1, tmp2);
+    __ eor(tmp3, tmp3, tmp4);
+    __ ldp(tmp6, tmp8, Address(__ post(a2, 2 * wordSize)));
+    __ orr(tmp1, tmp1, tmp3);
+    __ cbnz(tmp1, NOT_EQUAL);
+    __ ldp(tmp1, tmp3, Address(__ post(a1, 2 * wordSize)));
+    __ eor(tmp5, tmp5, tmp6);
+    __ sub(cnt1, cnt1, 8 * wordSize);
+    __ eor(tmp7, tmp7, tmp8);
+    __ ldp(tmp2, tmp4, Address(__ post(a2, 2 * wordSize)));
+    __ cmp(cnt1, loopThreshold);
+    __ orr(tmp5, tmp5, tmp7);
+    __ cbnz(tmp5, NOT_EQUAL);
+    __ br(__ GE, LOOP);
+    // post-loop
+    __ eor(tmp1, tmp1, tmp2);
+    __ eor(tmp3, tmp3, tmp4);
+    __ orr(tmp1, tmp1, tmp3);
+    __ sub(cnt1, cnt1, 2 * wordSize);
+    __ cbnz(tmp1, NOT_EQUAL);
+  }
+
+  void generate_large_array_equals_loop_simd(int loopThreshold,
+        bool usePrefetch, Label &NOT_EQUAL) {
+    Register a1 = r1, a2 = r2, result = r0, cnt1 = r10, tmp1 = rscratch1,
+        tmp2 = rscratch2;
+    Label LOOP;
+
+    __ bind(LOOP);
+    if (usePrefetch) {
+      __ prfm(Address(a1, SoftwarePrefetchHintDistance));
+      __ prfm(Address(a2, SoftwarePrefetchHintDistance));
+    }
+    __ ld1(v0, v1, v2, v3, __ T2D, Address(__ post(a1, 4 * 2 * wordSize)));
+    __ sub(cnt1, cnt1, 8 * wordSize);
+    __ ld1(v4, v5, v6, v7, __ T2D, Address(__ post(a2, 4 * 2 * wordSize)));
+    __ cmp(cnt1, loopThreshold);
+    __ eor(v0, __ T16B, v0, v4);
+    __ eor(v1, __ T16B, v1, v5);
+    __ eor(v2, __ T16B, v2, v6);
+    __ eor(v3, __ T16B, v3, v7);
+    __ orr(v0, __ T16B, v0, v1);
+    __ orr(v1, __ T16B, v2, v3);
+    __ orr(v0, __ T16B, v0, v1);
+    __ umov(tmp1, v0, __ D, 0);
+    __ umov(tmp2, v0, __ D, 1);
+    __ orr(tmp1, tmp1, tmp2);
+    __ cbnz(tmp1, NOT_EQUAL);
+    __ br(__ GE, LOOP);
+  }
+
+  // a1 = r1 - array1 address
+  // a2 = r2 - array2 address
+  // result = r0 - return value. Already contains "false"
+  // cnt1 = r10 - amount of elements left to check, reduced by wordSize
+  // r3-r5 are reserved temporary registers
+  address generate_large_array_equals() {
+    StubCodeMark mark(this, "StubRoutines", "large_array_equals");
+    Register a1 = r1, a2 = r2, result = r0, cnt1 = r10, tmp1 = rscratch1,
+        tmp2 = rscratch2, tmp3 = r3, tmp4 = r4, tmp5 = r5, tmp6 = r11,
+        tmp7 = r12, tmp8 = r13;
+    Label TAIL, NOT_EQUAL, EQUAL, NOT_EQUAL_NO_POP, NO_PREFETCH_LARGE_LOOP,
+        SMALL_LOOP, POST_LOOP;
+    const int PRE_LOOP_SIZE = UseSIMDForArrayEquals ? 0 : 16;
+    // calculate if at least 32 prefetched bytes are used
+    int prefetchLoopThreshold = SoftwarePrefetchHintDistance + 32;
+    int nonPrefetchLoopThreshold = (64 + PRE_LOOP_SIZE);
+    RegSet spilled_regs = RegSet::range(tmp6, tmp8);
+    assert_different_registers(a1, a2, result, cnt1, tmp1, tmp2, tmp3, tmp4,
+        tmp5, tmp6, tmp7, tmp8);
+
+    __ align(CodeEntryAlignment);
+    address entry = __ pc();
+    __ enter();
+    __ sub(cnt1, cnt1, wordSize);  // first 8 bytes were loaded outside of stub
+    // also advance pointers to use post-increment instead of pre-increment
+    __ add(a1, a1, wordSize);
+    __ add(a2, a2, wordSize);
+    if (AvoidUnalignedAccesses) {
+      // both implementations (SIMD/nonSIMD) are using relatively large load
+      // instructions (ld1/ldp), which has huge penalty (up to x2 exec time)
+      // on some CPUs in case of address is not at least 16-byte aligned.
+      // Arrays are 8-byte aligned currently, so, we can make additional 8-byte
+      // load if needed at least for 1st address and make if 16-byte aligned.
+      Label ALIGNED16;
+      __ tbz(a1, 3, ALIGNED16);
+      __ ldr(tmp1, Address(__ post(a1, wordSize)));
+      __ ldr(tmp2, Address(__ post(a2, wordSize)));
+      __ sub(cnt1, cnt1, wordSize);
+      __ eor(tmp1, tmp1, tmp2);
+      __ cbnz(tmp1, NOT_EQUAL_NO_POP);
+      __ bind(ALIGNED16);
+    }
+    if (UseSIMDForArrayEquals) {
+      if (SoftwarePrefetchHintDistance >= 0) {
+        __ cmp(cnt1, prefetchLoopThreshold);
+        __ br(__ LE, NO_PREFETCH_LARGE_LOOP);
+        generate_large_array_equals_loop_simd(prefetchLoopThreshold,
+            /* prfm = */ true, NOT_EQUAL);
+        __ cmp(cnt1, nonPrefetchLoopThreshold);
+        __ br(__ LT, TAIL);
+      }
+      __ bind(NO_PREFETCH_LARGE_LOOP);
+      generate_large_array_equals_loop_simd(nonPrefetchLoopThreshold,
+          /* prfm = */ false, NOT_EQUAL);
+    } else {
+      __ push(spilled_regs, sp);
+      if (SoftwarePrefetchHintDistance >= 0) {
+        __ cmp(cnt1, prefetchLoopThreshold);
+        __ br(__ LE, NO_PREFETCH_LARGE_LOOP);
+        generate_large_array_equals_loop_nonsimd(prefetchLoopThreshold,
+            /* prfm = */ true, NOT_EQUAL);
+        __ cmp(cnt1, nonPrefetchLoopThreshold);
+        __ br(__ LT, TAIL);
+      }
+      __ bind(NO_PREFETCH_LARGE_LOOP);
+      generate_large_array_equals_loop_nonsimd(nonPrefetchLoopThreshold,
+          /* prfm = */ false, NOT_EQUAL);
+    }
+    __ bind(TAIL);
+      __ cbz(cnt1, EQUAL);
+      __ subs(cnt1, cnt1, wordSize);
+      __ br(__ LE, POST_LOOP);
+    __ bind(SMALL_LOOP);
+      __ ldr(tmp1, Address(__ post(a1, wordSize)));
+      __ ldr(tmp2, Address(__ post(a2, wordSize)));
+      __ subs(cnt1, cnt1, wordSize);
+      __ eor(tmp1, tmp1, tmp2);
+      __ cbnz(tmp1, NOT_EQUAL);
+      __ br(__ GT, SMALL_LOOP);
+    __ bind(POST_LOOP);
+      __ ldr(tmp1, Address(a1, cnt1));
+      __ ldr(tmp2, Address(a2, cnt1));
+      __ eor(tmp1, tmp1, tmp2);
+      __ cbnz(tmp1, NOT_EQUAL);
+    __ bind(EQUAL);
+      __ mov(result, true);
+    __ bind(NOT_EQUAL);
+      if (!UseSIMDForArrayEquals) {
+        __ pop(spilled_regs, sp);
+      }
+    __ bind(NOT_EQUAL_NO_POP);
+    __ leave();
+    __ ret(lr);
+    return entry;
+  }
+
+
   /**
    *  Arguments:
    *
@@ -4894,6 +5070,11 @@ class StubGenerator: public StubCodeGenerator {
 
     // has negatives stub for large arrays.
     StubRoutines::aarch64::_has_negatives = generate_has_negatives(StubRoutines::aarch64::_has_negatives_long);
+
+    // array equals stub for large arrays.
+    if (!UseSimpleArrayEquals) {
+      StubRoutines::aarch64::_large_array_equals = generate_large_array_equals();
+    }
 
     if (UseMultiplyToLenIntrinsic) {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();

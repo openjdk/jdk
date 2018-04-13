@@ -22,22 +22,19 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/cms/allocationStats.hpp"
+#ifndef SHARE_VM_MEMORY_BINARYTREEDICTIONARY_INLINE_HPP
+#define SHARE_VM_MEMORY_BINARYTREEDICTIONARY_INLINE_HPP
+
 #include "gc/shared/spaceDecorator.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/binaryTreeDictionary.hpp"
-#include "memory/freeList.hpp"
+#include "memory/freeList.inline.hpp"
 #include "memory/metachunk.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/cms/adaptiveFreeList.hpp"
-#include "gc/cms/freeChunk.hpp"
-#endif // INCLUDE_ALL_GCS
 
 ////////////////////////////////////////////////////////////////////////////////
 // A binary tree based search structure for free blocks.
@@ -102,50 +99,6 @@ TreeList<Chunk_t, FreeList_t>::as_TreeList(HeapWord* addr, size_t size) {
   return tl;
 }
 
-
-#if INCLUDE_ALL_GCS
-// Specialize for AdaptiveFreeList which tries to avoid
-// splitting a chunk of a size that is under populated in favor of
-// an over populated size.  The general get_better_list() just returns
-// the current list.
-template <>
-TreeList<FreeChunk, AdaptiveFreeList<FreeChunk> >*
-TreeList<FreeChunk, AdaptiveFreeList<FreeChunk> >::get_better_list(
-  BinaryTreeDictionary<FreeChunk, ::AdaptiveFreeList<FreeChunk> >* dictionary) {
-  // A candidate chunk has been found.  If it is already under
-  // populated, get a chunk associated with the hint for this
-  // chunk.
-
-  TreeList<FreeChunk, ::AdaptiveFreeList<FreeChunk> >* curTL = this;
-  if (curTL->surplus() <= 0) {
-    /* Use the hint to find a size with a surplus, and reset the hint. */
-    TreeList<FreeChunk, ::AdaptiveFreeList<FreeChunk> >* hintTL = this;
-    while (hintTL->hint() != 0) {
-      assert(hintTL->hint() > hintTL->size(),
-        "hint points in the wrong direction");
-      hintTL = dictionary->find_list(hintTL->hint());
-      assert(curTL != hintTL, "Infinite loop");
-      if (hintTL == NULL ||
-          hintTL == curTL /* Should not happen but protect against it */ ) {
-        // No useful hint.  Set the hint to NULL and go on.
-        curTL->set_hint(0);
-        break;
-      }
-      assert(hintTL->size() > curTL->size(), "hint is inconsistent");
-      if (hintTL->surplus() > 0) {
-        // The hint led to a list that has a surplus.  Use it.
-        // Set the hint for the candidate to an overpopulated
-        // size.
-        curTL->set_hint(hintTL->size());
-        // Change the candidate.
-        curTL = hintTL;
-        break;
-      }
-    }
-  }
-  return curTL;
-}
-#endif // INCLUDE_ALL_GCS
 
 template <class Chunk_t, class FreeList_t>
 TreeList<Chunk_t, FreeList_t>*
@@ -849,168 +802,6 @@ size_t BinaryTreeDictionary<Chunk_t, FreeList_t>::total_nodes_in_tree(TreeList<C
   return total_nodes_helper(root());
 }
 
-template <class Chunk_t, class FreeList_t>
-void BinaryTreeDictionary<Chunk_t, FreeList_t>::dict_census_update(size_t size, bool split, bool birth){}
-
-#if INCLUDE_ALL_GCS
-template <>
-void AFLBinaryTreeDictionary::dict_census_update(size_t size, bool split, bool birth) {
-  TreeList<FreeChunk, AdaptiveFreeList<FreeChunk> >* nd = find_list(size);
-  if (nd) {
-    if (split) {
-      if (birth) {
-        nd->increment_split_births();
-        nd->increment_surplus();
-      }  else {
-        nd->increment_split_deaths();
-        nd->decrement_surplus();
-      }
-    } else {
-      if (birth) {
-        nd->increment_coal_births();
-        nd->increment_surplus();
-      } else {
-        nd->increment_coal_deaths();
-        nd->decrement_surplus();
-      }
-    }
-  }
-  // A list for this size may not be found (nd == 0) if
-  //   This is a death where the appropriate list is now
-  //     empty and has been removed from the list.
-  //   This is a birth associated with a LinAB.  The chunk
-  //     for the LinAB is not in the dictionary.
-}
-#endif // INCLUDE_ALL_GCS
-
-template <class Chunk_t, class FreeList_t>
-bool BinaryTreeDictionary<Chunk_t, FreeList_t>::coal_dict_over_populated(size_t size) {
-  // For the general type of freelists, encourage coalescing by
-  // returning true.
-  return true;
-}
-
-#if INCLUDE_ALL_GCS
-template <>
-bool AFLBinaryTreeDictionary::coal_dict_over_populated(size_t size) {
-  if (FLSAlwaysCoalesceLarge) return true;
-
-  TreeList<FreeChunk, AdaptiveFreeList<FreeChunk> >* list_of_size = find_list(size);
-  // None of requested size implies overpopulated.
-  return list_of_size == NULL || list_of_size->coal_desired() <= 0 ||
-         list_of_size->count() > list_of_size->coal_desired();
-}
-#endif // INCLUDE_ALL_GCS
-
-// Closures for walking the binary tree.
-//   do_list() walks the free list in a node applying the closure
-//     to each free chunk in the list
-//   do_tree() walks the nodes in the binary tree applying do_list()
-//     to each list at each node.
-
-template <class Chunk_t, class FreeList_t>
-class TreeCensusClosure : public StackObj {
- protected:
-  virtual void do_list(FreeList_t* fl) = 0;
- public:
-  virtual void do_tree(TreeList<Chunk_t, FreeList_t>* tl) = 0;
-};
-
-template <class Chunk_t, class FreeList_t>
-class AscendTreeCensusClosure : public TreeCensusClosure<Chunk_t, FreeList_t> {
- public:
-  void do_tree(TreeList<Chunk_t, FreeList_t>* tl) {
-    if (tl != NULL) {
-      do_tree(tl->left());
-      this->do_list(tl);
-      do_tree(tl->right());
-    }
-  }
-};
-
-template <class Chunk_t, class FreeList_t>
-class DescendTreeCensusClosure : public TreeCensusClosure<Chunk_t, FreeList_t> {
- public:
-  void do_tree(TreeList<Chunk_t, FreeList_t>* tl) {
-    if (tl != NULL) {
-      do_tree(tl->right());
-      this->do_list(tl);
-      do_tree(tl->left());
-    }
-  }
-};
-
-// For each list in the tree, calculate the desired, desired
-// coalesce, count before sweep, and surplus before sweep.
-template <class Chunk_t, class FreeList_t>
-class BeginSweepClosure : public AscendTreeCensusClosure<Chunk_t, FreeList_t> {
-  double _percentage;
-  float _inter_sweep_current;
-  float _inter_sweep_estimate;
-  float _intra_sweep_estimate;
-
- public:
-  BeginSweepClosure(double p, float inter_sweep_current,
-                              float inter_sweep_estimate,
-                              float intra_sweep_estimate) :
-   _percentage(p),
-   _inter_sweep_current(inter_sweep_current),
-   _inter_sweep_estimate(inter_sweep_estimate),
-   _intra_sweep_estimate(intra_sweep_estimate) { }
-
-  void do_list(FreeList<Chunk_t>* fl) {}
-
-#if INCLUDE_ALL_GCS
-  void do_list(AdaptiveFreeList<Chunk_t>* fl) {
-    double coalSurplusPercent = _percentage;
-    fl->compute_desired(_inter_sweep_current, _inter_sweep_estimate, _intra_sweep_estimate);
-    fl->set_coal_desired((ssize_t)((double)fl->desired() * coalSurplusPercent));
-    fl->set_before_sweep(fl->count());
-    fl->set_bfr_surp(fl->surplus());
-  }
-#endif // INCLUDE_ALL_GCS
-};
-
-// Used to search the tree until a condition is met.
-// Similar to TreeCensusClosure but searches the
-// tree and returns promptly when found.
-
-template <class Chunk_t, class FreeList_t>
-class TreeSearchClosure : public StackObj {
- protected:
-  virtual bool do_list(FreeList_t* fl) = 0;
- public:
-  virtual bool do_tree(TreeList<Chunk_t, FreeList_t>* tl) = 0;
-};
-
-#if 0 //  Don't need this yet but here for symmetry.
-template <class Chunk_t, class FreeList_t>
-class AscendTreeSearchClosure : public TreeSearchClosure<Chunk_t> {
- public:
-  bool do_tree(TreeList<Chunk_t, FreeList_t>* tl) {
-    if (tl != NULL) {
-      if (do_tree(tl->left())) return true;
-      if (do_list(tl)) return true;
-      if (do_tree(tl->right())) return true;
-    }
-    return false;
-  }
-};
-#endif
-
-template <class Chunk_t, class FreeList_t>
-class DescendTreeSearchClosure : public TreeSearchClosure<Chunk_t, FreeList_t> {
- public:
-  bool do_tree(TreeList<Chunk_t, FreeList_t>* tl) {
-    if (tl != NULL) {
-      if (do_tree(tl->right())) return true;
-      if (this->do_list(tl)) return true;
-      if (do_tree(tl->left())) return true;
-    }
-    return false;
-  }
-};
-
 // Searches the tree for a chunk that ends at the
 // specified address.
 template <class Chunk_t, class FreeList_t>
@@ -1041,15 +832,6 @@ Chunk_t* BinaryTreeDictionary<Chunk_t, FreeList_t>::find_chunk_ends_at(HeapWord*
   assert(found_target || etsc.found() == NULL, "Consistency check");
   assert(!found_target || etsc.found() != NULL, "Consistency check");
   return etsc.found();
-}
-
-template <class Chunk_t, class FreeList_t>
-void BinaryTreeDictionary<Chunk_t, FreeList_t>::begin_sweep_dict_census(double coalSurplusPercent,
-  float inter_sweep_current, float inter_sweep_estimate, float intra_sweep_estimate) {
-  BeginSweepClosure<Chunk_t, FreeList_t> bsc(coalSurplusPercent, inter_sweep_current,
-                                            inter_sweep_estimate,
-                                            intra_sweep_estimate);
-  bsc.do_tree(root());
 }
 
 // Closures and methods for calculating total bytes returned to the
@@ -1128,91 +910,6 @@ void BinaryTreeDictionary<Chunk_t, FreeList_t>::verify_par_locked() const {
 }
 #endif // PRODUCT
 
-// Calculate surpluses for the lists in the tree.
-template <class Chunk_t, class FreeList_t>
-class setTreeSurplusClosure : public AscendTreeCensusClosure<Chunk_t, FreeList_t> {
-  double percentage;
- public:
-  setTreeSurplusClosure(double v) { percentage = v; }
-  void do_list(FreeList<Chunk_t>* fl) {}
-
-#if INCLUDE_ALL_GCS
-  void do_list(AdaptiveFreeList<Chunk_t>* fl) {
-    double splitSurplusPercent = percentage;
-    fl->set_surplus(fl->count() -
-                   (ssize_t)((double)fl->desired() * splitSurplusPercent));
-  }
-#endif // INCLUDE_ALL_GCS
-};
-
-template <class Chunk_t, class FreeList_t>
-void BinaryTreeDictionary<Chunk_t, FreeList_t>::set_tree_surplus(double splitSurplusPercent) {
-  setTreeSurplusClosure<Chunk_t, FreeList_t> sts(splitSurplusPercent);
-  sts.do_tree(root());
-}
-
-// Set hints for the lists in the tree.
-template <class Chunk_t, class FreeList_t>
-class setTreeHintsClosure : public DescendTreeCensusClosure<Chunk_t, FreeList_t> {
-  size_t hint;
- public:
-  setTreeHintsClosure(size_t v) { hint = v; }
-  void do_list(FreeList<Chunk_t>* fl) {}
-
-#if INCLUDE_ALL_GCS
-  void do_list(AdaptiveFreeList<Chunk_t>* fl) {
-    fl->set_hint(hint);
-    assert(fl->hint() == 0 || fl->hint() > fl->size(),
-      "Current hint is inconsistent");
-    if (fl->surplus() > 0) {
-      hint = fl->size();
-    }
-  }
-#endif // INCLUDE_ALL_GCS
-};
-
-template <class Chunk_t, class FreeList_t>
-void BinaryTreeDictionary<Chunk_t, FreeList_t>::set_tree_hints(void) {
-  setTreeHintsClosure<Chunk_t, FreeList_t> sth(0);
-  sth.do_tree(root());
-}
-
-// Save count before previous sweep and splits and coalesces.
-template <class Chunk_t, class FreeList_t>
-class clearTreeCensusClosure : public AscendTreeCensusClosure<Chunk_t, FreeList_t> {
-  void do_list(FreeList<Chunk_t>* fl) {}
-
-#if INCLUDE_ALL_GCS
-  void do_list(AdaptiveFreeList<Chunk_t>* fl) {
-    fl->set_prev_sweep(fl->count());
-    fl->set_coal_births(0);
-    fl->set_coal_deaths(0);
-    fl->set_split_births(0);
-    fl->set_split_deaths(0);
-  }
-#endif // INCLUDE_ALL_GCS
-};
-
-template <class Chunk_t, class FreeList_t>
-void BinaryTreeDictionary<Chunk_t, FreeList_t>::clear_tree_census(void) {
-  clearTreeCensusClosure<Chunk_t, FreeList_t> ctc;
-  ctc.do_tree(root());
-}
-
-// Do reporting and post sweep clean up.
-template <class Chunk_t, class FreeList_t>
-void BinaryTreeDictionary<Chunk_t, FreeList_t>::end_sweep_dict_census(double splitSurplusPercent) {
-  // Does walking the tree 3 times hurt?
-  set_tree_surplus(splitSurplusPercent);
-  set_tree_hints();
-  LogTarget(Trace, gc, freelist, stats) log;
-  if (log.is_enabled()) {
-    LogStream out(log);
-    report_statistics(&out);
-  }
-  clear_tree_census();
-}
-
 // Print summary statistics
 template <class Chunk_t, class FreeList_t>
 void BinaryTreeDictionary<Chunk_t, FreeList_t>::report_statistics(outputStream* st) const {
@@ -1229,92 +926,6 @@ void BinaryTreeDictionary<Chunk_t, FreeList_t>::report_statistics(outputStream* 
   }
   st->print_cr("Tree      Height: " SIZE_FORMAT, tree_height());
 }
-
-// Print census information - counts, births, deaths, etc.
-// for each list in the tree.  Also print some summary
-// information.
-template <class Chunk_t, class FreeList_t>
-class PrintTreeCensusClosure : public AscendTreeCensusClosure<Chunk_t, FreeList_t> {
-  int _print_line;
-  size_t _total_free;
-  FreeList_t _total;
-
- public:
-  PrintTreeCensusClosure() {
-    _print_line = 0;
-    _total_free = 0;
-  }
-  FreeList_t* total() { return &_total; }
-  size_t total_free() { return _total_free; }
-  void do_list(FreeList<Chunk_t>* fl) {
-    LogStreamHandle(Debug, gc, freelist, census) out;
-
-    if (++_print_line >= 40) {
-      FreeList_t::print_labels_on(&out, "size");
-      _print_line = 0;
-    }
-    fl->print_on(&out);
-    _total_free += fl->count() * fl->size();
-    total()->set_count(total()->count() + fl->count());
-  }
-
-#if INCLUDE_ALL_GCS
-  void do_list(AdaptiveFreeList<Chunk_t>* fl) {
-    LogStreamHandle(Debug, gc, freelist, census) out;
-
-    if (++_print_line >= 40) {
-      FreeList_t::print_labels_on(&out, "size");
-      _print_line = 0;
-    }
-    fl->print_on(&out);
-    _total_free +=           fl->count()             * fl->size()        ;
-    total()->set_count(      total()->count()        + fl->count()      );
-    total()->set_bfr_surp(   total()->bfr_surp()     + fl->bfr_surp()    );
-    total()->set_surplus(    total()->split_deaths() + fl->surplus()    );
-    total()->set_desired(    total()->desired()      + fl->desired()    );
-    total()->set_prev_sweep(  total()->prev_sweep()   + fl->prev_sweep()  );
-    total()->set_before_sweep(total()->before_sweep() + fl->before_sweep());
-    total()->set_coal_births( total()->coal_births()  + fl->coal_births() );
-    total()->set_coal_deaths( total()->coal_deaths()  + fl->coal_deaths() );
-    total()->set_split_births(total()->split_births() + fl->split_births());
-    total()->set_split_deaths(total()->split_deaths() + fl->split_deaths());
-  }
-#endif // INCLUDE_ALL_GCS
-};
-
-template <class Chunk_t, class FreeList_t>
-void BinaryTreeDictionary<Chunk_t, FreeList_t>::print_dict_census(outputStream* st) const {
-
-  st->print("BinaryTree");
-  FreeList_t::print_labels_on(st, "size");
-  PrintTreeCensusClosure<Chunk_t, FreeList_t> ptc;
-  ptc.do_tree(root());
-
-  FreeList_t* total = ptc.total();
-  FreeList_t::print_labels_on(st, " ");
-}
-
-#if INCLUDE_ALL_GCS
-template <>
-void AFLBinaryTreeDictionary::print_dict_census(outputStream* st) const {
-
-  st->print_cr("BinaryTree");
-  AdaptiveFreeList<FreeChunk>::print_labels_on(st, "size");
-  PrintTreeCensusClosure<FreeChunk, AdaptiveFreeList<FreeChunk> > ptc;
-  ptc.do_tree(root());
-
-  AdaptiveFreeList<FreeChunk>* total = ptc.total();
-  AdaptiveFreeList<FreeChunk>::print_labels_on(st, " ");
-  total->print_on(st, "TOTAL\t");
-  st->print_cr("total_free(words): " SIZE_FORMAT_W(16) " growth: %8.5f  deficit: %8.5f",
-               ptc.total_free(),
-               (double)(total->split_births() + total->coal_births()
-                      - total->split_deaths() - total->coal_deaths())
-               /(total->prev_sweep() != 0 ? (double)total->prev_sweep() : 1.0),
-              (double)(total->desired() - total->count())
-              /(total->desired() != 0 ? (double)total->desired() : 1.0));
-}
-#endif // INCLUDE_ALL_GCS
 
 template <class Chunk_t, class FreeList_t>
 class PrintFreeListsClosure : public AscendTreeCensusClosure<Chunk_t, FreeList_t> {
@@ -1411,19 +1022,4 @@ void BinaryTreeDictionary<Chunk_t, FreeList_t>::verify() const {
   guarantee(total_size() == total_size_in_tree(root()), "Total Size inconsistency");
 }
 
-template class TreeList<Metablock, FreeList<Metablock> >;
-template class BinaryTreeDictionary<Metablock, FreeList<Metablock> >;
-template class TreeChunk<Metablock, FreeList<Metablock> >;
-
-template class TreeList<Metachunk, FreeList<Metachunk> >;
-template class BinaryTreeDictionary<Metachunk, FreeList<Metachunk> >;
-template class TreeChunk<Metachunk, FreeList<Metachunk> >;
-
-
-#if INCLUDE_ALL_GCS
-// Explicitly instantiate these types for FreeChunk.
-template class TreeList<FreeChunk, AdaptiveFreeList<FreeChunk> >;
-template class BinaryTreeDictionary<FreeChunk, AdaptiveFreeList<FreeChunk> >;
-template class TreeChunk<FreeChunk, AdaptiveFreeList<FreeChunk> >;
-
-#endif // INCLUDE_ALL_GCS
+#endif // SHARE_VM_MEMORY_BINARYTREEDICTIONARY_INLINE_HPP

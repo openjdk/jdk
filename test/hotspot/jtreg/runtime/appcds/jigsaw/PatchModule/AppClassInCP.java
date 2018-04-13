@@ -86,7 +86,8 @@ public class AppClassInCP {
                 "--patch-module=java.naming=" + moduleJar,
                 "-Xlog:class+load",
                 "PatchMain", "javax.naming.spi.NamingManager", "mypackage.Hello");
-        TestCommon.checkDump(output, "Loading classes to share");
+        output.shouldHaveExitValue(1)
+              .shouldContain("Cannot use the following option when dumping the shared archive: --patch-module");
 
         String classPath = appJar + File.pathSeparator + classDir;
         System.out.println("classPath: " + classPath);
@@ -96,9 +97,6 @@ public class AppClassInCP {
             "--patch-module=java.naming=" + moduleJar,
             "-Xlog:class+load",
             "PatchMain", "javax.naming.spi.NamingManager", "mypackage.Hello")
-          .assertNormalExit(
-            "I pass!",
-            "Hello!",
-            "Hello source: shared objects file");
+            .assertSilentlyDisabledCDS(0, "I pass!", "Hello!");
     }
 }

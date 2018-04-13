@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
@@ -142,76 +143,20 @@ static Assembler::Condition j_not(TemplateTable::Condition cc) {
 // Store an oop (or NULL) at the Address described by obj.
 // If val == noreg this means store a NULL
 static void do_oop_store(InterpreterMacroAssembler* _masm,
-                         Address obj,
+                         Address dst,
                          Register val,
-                         BarrierSet::Name barrier,
-                         bool precise) {
+                         DecoratorSet decorators) {
   assert(val == noreg || val == r0, "parameter is just for looks");
-  switch (barrier) {
-#if INCLUDE_ALL_GCS
-    case BarrierSet::G1BarrierSet:
-      {
-        // flatten object address if needed
-        if (obj.index() == noreg && obj.offset() == 0) {
-          if (obj.base() != r3) {
-            __ mov(r3, obj.base());
-          }
-        } else {
-          __ lea(r3, obj);
-        }
-        __ g1_write_barrier_pre(r3 /* obj */,
-                                r1 /* pre_val */,
-                                rthread /* thread */,
-                                r10  /* tmp */,
-                                val != noreg /* tosca_live */,
-                                false /* expand_call */);
-        if (val == noreg) {
-          __ store_heap_oop_null(Address(r3, 0));
-        } else {
-          // G1 barrier needs uncompressed oop for region cross check.
-          Register new_val = val;
-          if (UseCompressedOops) {
-            new_val = rscratch2;
-            __ mov(new_val, val);
-          }
-          __ store_heap_oop(Address(r3, 0), val);
-          __ g1_write_barrier_post(r3 /* store_adr */,
-                                   new_val /* new_val */,
-                                   rthread /* thread */,
-                                   r10 /* tmp */,
-                                   r1 /* tmp2 */);
-        }
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->store_at(_masm, decorators, T_OBJECT, dst, val, /*tmp1*/ r10, /*tmp2*/ r1);
+}
 
-      }
-      break;
-#endif // INCLUDE_ALL_GCS
-    case BarrierSet::CardTableBarrierSet:
-      {
-        if (val == noreg) {
-          __ store_heap_oop_null(obj);
-        } else {
-          __ store_heap_oop(obj, val);
-          // flatten object address if needed
-          if (!precise || (obj.index() == noreg && obj.offset() == 0)) {
-            __ store_check(obj.base());
-          } else {
-            __ lea(r3, obj);
-            __ store_check(r3);
-          }
-        }
-      }
-      break;
-    case BarrierSet::ModRef:
-      if (val == noreg) {
-        __ store_heap_oop_null(obj);
-      } else {
-        __ store_heap_oop(obj, val);
-      }
-      break;
-    default      :
-      ShouldNotReachHere();
-
-  }
+static void do_oop_load(InterpreterMacroAssembler* _masm,
+                        Address src,
+                        Register dst,
+                        DecoratorSet decorators) {
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->load_at(_masm, decorators, T_OBJECT, dst, src, /*tmp1*/ r10, /*tmp_thread*/ r1);
 }
 
 Address TemplateTable::at_bcp(int offset) {
@@ -865,7 +810,10 @@ void TemplateTable::aaload()
   index_check(r0, r1); // leaves index in r1, kills rscratch1
   int s = (UseCompressedOops ? 2 : 3);
   __ lea(r1, Address(r0, r1, Address::uxtw(s)));
-  __ load_heap_oop(r0, Address(r1, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
+  do_oop_load(_masm,
+              Address(r1, arrayOopDesc::base_offset_in_bytes(T_OBJECT)),
+              r0,
+              IN_HEAP | IN_HEAP_ARRAY);
 }
 
 void TemplateTable::baload()
@@ -1193,7 +1141,7 @@ void TemplateTable::aastore() {
   // Get the value we will store
   __ ldr(r0, at_tos());
   // Now store using the appropriate barrier
-  do_oop_store(_masm, element_address, r0, _bs->kind(), true);
+  do_oop_store(_masm, element_address, r0, IN_HEAP | IN_HEAP_ARRAY);
   __ b(done);
 
   // Have a NULL in r0, r3=array, r2=index.  Store NULL at ary[idx]
@@ -1201,7 +1149,7 @@ void TemplateTable::aastore() {
   __ profile_null_seen(r2);
 
   // Store a NULL
-  do_oop_store(_masm, element_address, noreg, _bs->kind(), true);
+  do_oop_store(_masm, element_address, noreg, IN_HEAP | IN_HEAP_ARRAY);
 
   // Pop stack arguments
   __ bind(done);
@@ -2591,7 +2539,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ cmp(flags, atos);
   __ br(Assembler::NE, notObj);
   // atos
-  __ load_heap_oop(r0, field);
+  do_oop_load(_masm, field, r0, IN_HEAP);
   __ push(atos);
   if (rc == may_rewrite) {
     patch_bytecode(Bytecodes::_fast_agetfield, bc, r1);
@@ -2834,7 +2782,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
     __ pop(atos);
     if (!is_static) pop_and_check_object(obj);
     // Store into the field
-    do_oop_store(_masm, field, r0, _bs->kind(), false);
+    do_oop_store(_masm, field, r0, IN_HEAP);
     if (rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_aputfield, bc, r1, true, byte_no);
     }
@@ -3054,7 +3002,7 @@ void TemplateTable::fast_storefield(TosState state)
   // access field
   switch (bytecode()) {
   case Bytecodes::_fast_aputfield:
-    do_oop_store(_masm, field, r0, _bs->kind(), false);
+    do_oop_store(_masm, field, r0, IN_HEAP);
     break;
   case Bytecodes::_fast_lputfield:
     __ str(r0, field);
@@ -3146,7 +3094,7 @@ void TemplateTable::fast_accessfield(TosState state)
   // access field
   switch (bytecode()) {
   case Bytecodes::_fast_agetfield:
-    __ load_heap_oop(r0, field);
+    do_oop_load(_masm, field, r0, IN_HEAP);
     __ verify_oop(r0);
     break;
   case Bytecodes::_fast_lgetfield:
@@ -3216,7 +3164,7 @@ void TemplateTable::fast_xaccess(TosState state)
     __ ldrw(r0, Address(r0, r1, Address::lsl(0)));
     break;
   case atos:
-    __ load_heap_oop(r0, Address(r0, r1, Address::lsl(0)));
+    do_oop_load(_masm, Address(r0, r1, Address::lsl(0)), r0, IN_HEAP);
     __ verify_oop(r0);
     break;
   case ftos:
