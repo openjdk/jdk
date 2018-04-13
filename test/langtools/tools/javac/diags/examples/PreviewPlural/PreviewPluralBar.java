@@ -23,6 +23,6 @@
  * questions.
  */
 
-class Bar {
+class PreviewPluralBar {
     Runnable r = () -> {};
 }

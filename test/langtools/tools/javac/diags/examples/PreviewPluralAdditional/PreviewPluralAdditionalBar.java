@@ -25,7 +25,7 @@
 
 import java.util.ArrayList;
 
-class Bar {
+class PreviewPluralAdditionalBar {
     Runnable r = () -> {};
     void test() {
         new ArrayList<>();
