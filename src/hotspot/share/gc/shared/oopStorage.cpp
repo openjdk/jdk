@@ -120,12 +120,6 @@ const unsigned section_size = BitsPerByte;
 const unsigned section_count = BytesPerWord;
 const unsigned block_alignment = sizeof(oop) * section_size;
 
-// VS2013 warns (C4351) that elements of _data will be *correctly* default
-// initialized, unlike earlier versions that *incorrectly* did not do so.
-#ifdef _WINDOWS
-#pragma warning(push)
-#pragma warning(disable: 4351)
-#endif // _WINDOWS
 OopStorage::Block::Block(const OopStorage* owner, void* memory) :
   _data(),
   _allocated_bitmask(0),
@@ -142,9 +136,6 @@ OopStorage::Block::Block(const OopStorage* owner, void* memory) :
   assert(owner != NULL, "NULL owner");
   assert(is_aligned(this, block_alignment), "misaligned block");
 }
-#ifdef _WINDOWS
-#pragma warning(pop)
-#endif
 
 OopStorage::Block::~Block() {
   assert(_release_refcount == 0, "deleting block while releasing");

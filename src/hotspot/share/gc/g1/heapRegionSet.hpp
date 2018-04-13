@@ -59,7 +59,6 @@ public:
 };
 
 class MasterFreeRegionListMtSafeChecker    : public HRSMtSafeChecker { public: void check(); };
-class SecondaryFreeRegionListMtSafeChecker : public HRSMtSafeChecker { public: void check(); };
 class HumongousRegionSetMtSafeChecker      : public HRSMtSafeChecker { public: void check(); };
 class OldRegionSetMtSafeChecker            : public HRSMtSafeChecker { public: void check(); };
 

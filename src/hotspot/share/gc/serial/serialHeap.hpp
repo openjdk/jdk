@@ -47,7 +47,7 @@ public:
   SerialHeap(GenCollectorPolicy* policy);
 
   virtual Name kind() const {
-    return CollectedHeap::SerialHeap;
+    return CollectedHeap::Serial;
   }
 
   virtual const char* name() const {

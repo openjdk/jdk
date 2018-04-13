@@ -54,10 +54,19 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 
 #include <stdio.h>
+
+// Support for showing register content on asserts/guarantees.
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+static char g_dummy;
+char* g_assert_poison = &g_dummy;
+static intx g_asserting_thread = 0;
+static void* g_assertion_context = NULL;
+#endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
 #ifndef ASSERT
 #  ifdef _DEBUG
@@ -212,7 +221,13 @@ void report_vm_error(const char* file, int line, const char* error_msg, const ch
   if (Debugging || error_is_suppressed(file, line)) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
-  VMError::report_and_die(Thread::current_or_null(), file, line, error_msg, detail_fmt, detail_args);
+  void* context = NULL;
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  if (g_assertion_context != NULL && os::current_thread_id() == g_asserting_thread) {
+    context = g_assertion_context;
+  }
+#endif // CAN_SHOW_REGISTERS_ON_ASSERT
+  VMError::report_and_die(Thread::current_or_null(), context, file, line, error_msg, detail_fmt, detail_args);
   va_end(detail_args);
 }
 
@@ -226,7 +241,13 @@ void report_fatal(const char* file, int line, const char* detail_fmt, ...)
   if (Debugging || error_is_suppressed(file, line)) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
-  VMError::report_and_die(Thread::current_or_null(), file, line, "fatal error", detail_fmt, detail_args);
+  void* context = NULL;
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  if (g_assertion_context != NULL && os::current_thread_id() == g_asserting_thread) {
+    context = g_assertion_context;
+  }
+#endif // CAN_SHOW_REGISTERS_ON_ASSERT
+  VMError::report_and_die(Thread::current_or_null(), context, file, line, "fatal error", detail_fmt, detail_args);
   va_end(detail_args);
 }
 
@@ -676,3 +697,50 @@ struct TestMultipleStaticAssertFormsInClassScope {
 };
 
 #endif // !PRODUCT
+
+// Support for showing register content on asserts/guarantees.
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+
+static ucontext_t g_stored_assertion_context;
+
+void initialize_assert_poison() {
+  char* page = os::reserve_memory(os::vm_page_size());
+  if (page) {
+    if (os::commit_memory(page, os::vm_page_size(), false) &&
+        os::protect_memory(page, os::vm_page_size(), os::MEM_PROT_NONE)) {
+      g_assert_poison = page;
+    }
+  }
+}
+
+static bool store_context(const void* context) {
+  if (memcpy(&g_stored_assertion_context, context, sizeof(ucontext_t)) == false) {
+    return false;
+  }
+#if defined(__linux) && defined(PPC64)
+  // on Linux ppc64, ucontext_t contains pointers into itself which have to be patched up
+  //  after copying the context (see comment in sys/ucontext.h):
+  *((void**) &g_stored_assertion_context.uc_mcontext.regs) = &(g_stored_assertion_context.uc_mcontext.gp_regs);
+#endif
+  return true;
+}
+
+bool handle_assert_poison_fault(const void* ucVoid, const void* faulting_address) {
+  if (faulting_address == g_assert_poison) {
+    // Disarm poison page.
+    os::protect_memory((char*)g_assert_poison, os::vm_page_size(), os::MEM_PROT_RWX);
+    // Store Context away.
+    if (ucVoid) {
+      const intx my_tid = os::current_thread_id();
+      if (Atomic::cmpxchg(my_tid, &g_asserting_thread, (intx)0) == 0) {
+        if (store_context(ucVoid)) {
+          g_assertion_context = &g_stored_assertion_context;
+        }
+      }
+    }
+    return true;
+  }
+  return false;
+}
+#endif // CAN_SHOW_REGISTERS_ON_ASSERT
+

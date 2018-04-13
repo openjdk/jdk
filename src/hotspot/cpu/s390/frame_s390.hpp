@@ -465,10 +465,10 @@
  // Constructors
 
  public:
-  frame(intptr_t* sp);
+  inline frame(intptr_t* sp);
   // To be used, if sp was not extended to match callee's calling convention.
-  frame(intptr_t* sp, address pc);
-  frame(intptr_t* sp, address pc, intptr_t* unextended_sp);
+  inline frame(intptr_t* sp, address pc);
+  inline frame(intptr_t* sp, address pc, intptr_t* unextended_sp);
 
   // Access frame via stack pointer.
   inline intptr_t* sp_addr_at(int index) const  { return &sp()[index]; }

@@ -607,7 +607,7 @@ bool ThreadStackTrace::is_owned_monitor_on_stack(oop object) {
     for (int j = 0; j < len; j++) {
       oop monitor = locked_monitors->at(j);
       assert(monitor != NULL, "must be a Java object");
-      if (monitor == object) {
+      if (oopDesc::equals(monitor, object)) {
         found = true;
         break;
       }

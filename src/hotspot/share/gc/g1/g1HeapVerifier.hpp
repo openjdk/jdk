@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,9 @@ class G1CollectedHeap;
 
 class G1HeapVerifier : public CHeapObj<mtGC> {
 private:
+  static int _enabled_verification_types;
+
   G1CollectedHeap* _g1h;
-  int _enabled_verification_types;
 
   // verify_region_sets() performs verification over the region
   // lists. It will be compiled in the product code to be used when
@@ -52,11 +53,10 @@ public:
     G1VerifyAll         = -1
   };
 
-  G1HeapVerifier(G1CollectedHeap* heap) : _g1h(heap), _enabled_verification_types(G1VerifyAll) { }
+  G1HeapVerifier(G1CollectedHeap* heap) : _g1h(heap) {}
 
-  void parse_verification_type(const char* type);
-  void enable_verification_type(G1VerifyType type);
-  bool should_verify(G1VerifyType type);
+  static void enable_verification_type(G1VerifyType type);
+  static bool should_verify(G1VerifyType type);
 
   // Perform verification.
 

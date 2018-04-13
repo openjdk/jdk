@@ -27,6 +27,7 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "memory/allocation.hpp"
+#include "oops/oop.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/timer.hpp"
@@ -68,7 +69,7 @@ public:
 
   void add_pool(MemoryPool* pool);
 
-  bool is_manager(instanceHandle mh)     { return mh() == _memory_mgr_obj; }
+  bool is_manager(instanceHandle mh)     { return oopDesc::equals(mh(), _memory_mgr_obj); }
 
   virtual instanceOop get_memory_manager_instance(TRAPS);
   virtual bool is_gc_memory_manager()    { return false; }

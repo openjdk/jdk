@@ -24,7 +24,6 @@
 #ifndef SHARE_VM_MEMORY_METACHUNK_HPP
 #define SHARE_VM_MEMORY_METACHUNK_HPP
 
-#include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 

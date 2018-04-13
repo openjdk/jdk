@@ -1498,6 +1498,14 @@ public:
     // 0x11 - multiply upper 64 bits [64:127]
     Assembler::vpclmulqdq(dst, nds, src, 0x11);
   }
+  void evpclmulldq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+    // 0x00 - multiply lower 64 bits [0:63]
+    Assembler::evpclmulqdq(dst, nds, src, 0x00, vector_len);
+  }
+  void evpclmulhdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+    // 0x11 - multiply upper 64 bits [64:127]
+    Assembler::evpclmulqdq(dst, nds, src, 0x11, vector_len);
+  }
 
   // Data
 
@@ -1723,6 +1731,7 @@ public:
   // Fold 8-bit data
   void fold_8bit_crc32(Register crc, Register table, Register tmp);
   void fold_8bit_crc32(XMMRegister crc, Register table, XMMRegister xtmp, Register tmp);
+  void fold_128bit_crc32_avx512(XMMRegister xcrc, XMMRegister xK, XMMRegister xtmp, Register buf, int offset);
 
   // Compress char[] array to byte[].
   void char_array_compress(Register src, Register dst, Register len,

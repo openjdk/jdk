@@ -36,7 +36,7 @@
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcId.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
@@ -47,6 +47,8 @@
 #include "gc/shared/weakProcessor.hpp"
 #include "memory/resourceArea.hpp"
 #include "logging/log.hpp"
+#include "oops/access.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/handles.inline.hpp"
@@ -93,8 +95,7 @@ public:
   }
 
   template <class T> void do_oop_work(T* p) {
-    assert (!oopDesc::is_null(*p), "expected non-null ref");
-    assert (oopDesc::is_oop(oopDesc::load_decode_heap_oop_not_null(p)),
+    assert (oopDesc::is_oop(RawAccess<OOP_NOT_NULL>::oop_load(p)),
             "expected an oop while scanning weak refs");
 
     // Weak refs may be visited more than once.
@@ -738,7 +739,7 @@ GCTaskManager* const PSScavenge::gc_task_manager() {
 void PSScavenge::set_young_generation_boundary(HeapWord* v) {
   _young_generation_boundary = v;
   if (UseCompressedOops) {
-    _young_generation_boundary_compressed = (uintptr_t)oopDesc::encode_heap_oop((oop)v);
+    _young_generation_boundary_compressed = (uintptr_t)CompressedOops::encode((oop)v);
   }
 }
 

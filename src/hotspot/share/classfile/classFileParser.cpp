@@ -37,7 +37,6 @@
 #include "classfile/verificationType.hpp"
 #include "classfile/verifier.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "gc/shared/gcLocker.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
@@ -62,6 +61,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/reflection.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/timer.hpp"
 #include "services/classLoadingService.hpp"
@@ -69,6 +69,7 @@
 #include "trace/traceMacros.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/copy.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
@@ -5422,6 +5423,8 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   // that changes, then InstanceKlass::idnum_can_increment()
   // has to be changed accordingly.
   ik->set_initial_method_idnum(ik->methods()->length());
+
+  ik->set_this_class_index(_this_class_index);
 
   if (is_anonymous()) {
     // _this_class_index is a CONSTANT_Class entry that refers to this

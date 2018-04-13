@@ -26,8 +26,9 @@
 #include "gc/cms/compactibleFreeListSpace.hpp"
 #include "gc/cms/promotionInfo.hpp"
 #include "gc/shared/genOopClosures.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/markOop.inline.hpp"
-#include "oops/oop.inline.hpp"
+#include "oops/oop.hpp"
 
 /////////////////////////////////////////////////////////////////////////
 //// PromotionInfo
@@ -39,7 +40,7 @@ PromotedObject* PromotedObject::next() const {
   PromotedObject* res;
   if (UseCompressedOops) {
     // The next pointer is a compressed oop stored in the top 32 bits
-    res = (PromotedObject*)oopDesc::decode_heap_oop(_data._narrow_next);
+    res = (PromotedObject*)CompressedOops::decode(_data._narrow_next);
   } else {
     res = (PromotedObject*)(_next & next_mask);
   }
@@ -52,7 +53,7 @@ inline void PromotedObject::setNext(PromotedObject* x) {
          "or insufficient alignment of objects");
   if (UseCompressedOops) {
     assert(_data._narrow_next == 0, "Overwrite?");
-    _data._narrow_next = oopDesc::encode_heap_oop(oop(x));
+    _data._narrow_next = CompressedOops::encode(oop(x));
   } else {
     _next |= (intptr_t)x;
   }

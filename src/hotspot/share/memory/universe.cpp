@@ -35,7 +35,8 @@
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcArguments.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/gcConfig.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/space.hpp"
@@ -602,12 +603,12 @@ bool Universe::should_fill_in_stack_trace(Handle throwable) {
   // preallocated errors with backtrace have been consumed. Also need to avoid
   // a potential loop which could happen if an out of memory occurs when attempting
   // to allocate the backtrace.
-  return ((throwable() != Universe::_out_of_memory_error_java_heap) &&
-          (throwable() != Universe::_out_of_memory_error_metaspace)  &&
-          (throwable() != Universe::_out_of_memory_error_class_metaspace)  &&
-          (throwable() != Universe::_out_of_memory_error_array_size) &&
-          (throwable() != Universe::_out_of_memory_error_gc_overhead_limit) &&
-          (throwable() != Universe::_out_of_memory_error_realloc_objects));
+  return ((!oopDesc::equals(throwable(), Universe::_out_of_memory_error_java_heap)) &&
+          (!oopDesc::equals(throwable(), Universe::_out_of_memory_error_metaspace))  &&
+          (!oopDesc::equals(throwable(), Universe::_out_of_memory_error_class_metaspace))  &&
+          (!oopDesc::equals(throwable(), Universe::_out_of_memory_error_array_size)) &&
+          (!oopDesc::equals(throwable(), Universe::_out_of_memory_error_gc_overhead_limit)) &&
+          (!oopDesc::equals(throwable(), Universe::_out_of_memory_error_realloc_objects)));
 }
 
 
@@ -745,8 +746,7 @@ jint universe_init() {
 
 CollectedHeap* Universe::create_heap() {
   assert(_collectedHeap == NULL, "Heap already created");
-  assert(GCArguments::is_initialized(), "GC must be initialized here");
-  return GCArguments::arguments()->create_heap();
+  return GCConfig::arguments()->create_heap();
 }
 
 // Choose the heap base address and oop encoding mode
@@ -765,7 +765,6 @@ jint Universe::initialize_heap() {
   }
   log_info(gc)("Using %s", _collectedHeap->name());
 
-  GCArguments::arguments()->post_heap_initialize();
   ThreadLocalAllocBuffer::set_max_size(Universe::heap()->max_tlab_size());
 
 #ifdef _LP64

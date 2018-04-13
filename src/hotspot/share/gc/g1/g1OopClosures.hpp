@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,11 +151,11 @@ public:
 };
 
 class G1CLDScanClosure : public CLDClosure {
- G1ParCopyHelper* _closure;
- bool             _process_only_dirty;
- bool             _must_claim;
- int              _count;
- public:
+  G1ParCopyHelper* _closure;
+  bool             _process_only_dirty;
+  bool             _must_claim;
+  int              _count;
+public:
   G1CLDScanClosure(G1ParCopyHelper* closure,
                    bool process_only_dirty, bool must_claim)
       : _process_only_dirty(process_only_dirty), _must_claim(must_claim), _closure(closure), _count(0) {}
@@ -164,13 +164,10 @@ class G1CLDScanClosure : public CLDClosure {
 
 // Closure for iterating over object fields during concurrent marking
 class G1CMOopClosure : public MetadataAwareOopClosure {
-protected:
-  G1ConcurrentMark*  _cm;
-private:
   G1CollectedHeap*   _g1h;
   G1CMTask*          _task;
 public:
-  G1CMOopClosure(G1CollectedHeap* g1h, G1ConcurrentMark* cm, G1CMTask* task);
+  G1CMOopClosure(G1CollectedHeap* g1h,G1CMTask* task);
   template <class T> void do_oop_nv(T* p);
   virtual void do_oop(      oop* p) { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
@@ -181,9 +178,10 @@ class G1RootRegionScanClosure : public MetadataAwareOopClosure {
 private:
   G1CollectedHeap* _g1h;
   G1ConcurrentMark* _cm;
+  uint _worker_id;
 public:
-  G1RootRegionScanClosure(G1CollectedHeap* g1h, G1ConcurrentMark* cm) :
-    _g1h(g1h), _cm(cm) { }
+  G1RootRegionScanClosure(G1CollectedHeap* g1h, G1ConcurrentMark* cm, uint worker_id) :
+    _g1h(g1h), _cm(cm), _worker_id(worker_id) { }
   template <class T> void do_oop_nv(T* p);
   virtual void do_oop(      oop* p) { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
@@ -205,6 +203,20 @@ public:
   template <class T> void do_oop_nv(T* p);
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
   virtual void do_oop(oop* p)       { do_oop_nv(p); }
+};
+
+class G1RebuildRemSetClosure : public ExtendedOopClosure {
+  G1CollectedHeap* _g1;
+  uint _worker_id;
+public:
+  G1RebuildRemSetClosure(G1CollectedHeap* g1, uint worker_id) : _g1(g1), _worker_id(worker_id) {
+  }
+
+  template <class T> void do_oop_nv(T* p);
+  virtual void do_oop(oop* p)       { do_oop_nv(p); }
+  virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
+  // This closure needs special handling for InstanceRefKlass.
+  virtual ReferenceIterationMode reference_iteration_mode() { return DO_DISCOVERED_AND_DISCOVERY; }
 };
 
 #endif // SHARE_VM_GC_G1_G1OOPCLOSURES_HPP

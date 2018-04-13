@@ -680,6 +680,20 @@
 #define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field, c2_nonstatic_field, unchecked_c1_static_field, unchecked_c2_static_field) \
   volatile_nonstatic_field(JavaFrameAnchor, _last_Java_fp, intptr_t*)
 
+#define VM_INT_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant) \
+  declare_constant(VM_Version::CPU_FP)                  \
+  declare_constant(VM_Version::CPU_ASIMD)               \
+  declare_constant(VM_Version::CPU_EVTSTRM)             \
+  declare_constant(VM_Version::CPU_AES)                 \
+  declare_constant(VM_Version::CPU_PMULL)               \
+  declare_constant(VM_Version::CPU_SHA1)                \
+  declare_constant(VM_Version::CPU_SHA2)                \
+  declare_constant(VM_Version::CPU_CRC32)               \
+  declare_constant(VM_Version::CPU_LSE)                 \
+  declare_constant(VM_Version::CPU_STXR_PREFETCH)       \
+  declare_constant(VM_Version::CPU_A53MAC)              \
+  declare_constant(VM_Version::CPU_DMB_ATOMICS)
+
 #endif
 
 

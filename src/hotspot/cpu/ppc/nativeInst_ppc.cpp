@@ -27,8 +27,10 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_ppc.hpp"
-#include "oops/oop.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
+#include "oops/oop.hpp"
 #include "runtime/handles.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/ostream.hpp"
@@ -194,7 +196,7 @@ intptr_t NativeMovConstReg::data() const {
   CodeBlob* cb = CodeCache::find_blob_unsafe(addr);
   if (MacroAssembler::is_set_narrow_oop(addr, cb->content_begin())) {
     narrowOop no = (narrowOop)MacroAssembler::get_narrow_oop(addr, cb->content_begin());
-    return cast_from_oop<intptr_t>(oopDesc::decode_heap_oop(no));
+    return cast_from_oop<intptr_t>(CompressedOops::decode(no));
   } else {
     assert(MacroAssembler::is_load_const_from_method_toc_at(addr), "must be load_const_from_pool");
 
@@ -415,4 +417,3 @@ void NativeCallTrampolineStub::set_destination(address new_destination) {
 
   *(address*)(ctable + destination_toc_offset()) = new_destination;
 }
-

@@ -29,16 +29,21 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkObjArrayProcessor.inline.hpp"
+#include "gc/g1/g1Policy.hpp"
+#include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
+#include "gc/g1/g1RemSetTrackingPolicy.hpp"
+#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegion.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 
-inline bool G1ConcurrentMark::mark_in_next_bitmap(oop const obj) {
+inline bool G1ConcurrentMark::mark_in_next_bitmap(uint const worker_id, oop const obj, size_t const obj_size) {
   HeapRegion* const hr = _g1h->heap_region_containing(obj);
-  return mark_in_next_bitmap(hr, obj);
+  return mark_in_next_bitmap(worker_id, hr, obj, obj_size);
 }
 
-inline bool G1ConcurrentMark::mark_in_next_bitmap(HeapRegion* const hr, oop const obj) {
+inline bool G1ConcurrentMark::mark_in_next_bitmap(uint const worker_id, HeapRegion* const hr, oop const obj, size_t const obj_size) {
   assert(hr != NULL, "just checking");
   assert(hr->is_in_reserved(obj), "Attempting to mark object at " PTR_FORMAT " that is not contained in the given region %u", p2i(obj), hr->hrm_index());
 
@@ -52,7 +57,11 @@ inline bool G1ConcurrentMark::mark_in_next_bitmap(HeapRegion* const hr, oop cons
 
   HeapWord* const obj_addr = (HeapWord*)obj;
 
-  return _next_mark_bitmap->par_mark(obj_addr);
+  bool success = _next_mark_bitmap->par_mark(obj_addr);
+  if (success) {
+    add_to_liveness(worker_id, obj, obj_size == 0 ? obj->size() : obj_size);
+  }
+  return success;
 }
 
 #ifndef PRODUCT
@@ -157,8 +166,35 @@ inline size_t G1CMTask::scan_objArray(objArrayOop obj, MemRegion mr) {
   return mr.word_size();
 }
 
+inline HeapWord* G1ConcurrentMark::top_at_rebuild_start(uint region) const {
+  assert(region < _g1h->max_regions(), "Tried to access TARS for region %u out of bounds", region);
+  return _top_at_rebuild_starts[region];
+}
+
+inline void G1ConcurrentMark::update_top_at_rebuild_start(HeapRegion* r) {
+  uint const region = r->hrm_index();
+  assert(region < _g1h->max_regions(), "Tried to access TARS for region %u out of bounds", region);
+  assert(_top_at_rebuild_starts[region] == NULL,
+         "TARS for region %u has already been set to " PTR_FORMAT " should be NULL",
+         region, p2i(_top_at_rebuild_starts[region]));
+  G1RemSetTrackingPolicy* tracker = _g1h->g1_policy()->remset_tracker();
+  if (tracker->needs_scan_for_rebuild(r)) {
+    _top_at_rebuild_starts[region] = r->top();
+  } else {
+    // Leave TARS at NULL.
+  }
+}
+
+inline void G1CMTask::update_liveness(oop const obj, const size_t obj_size) {
+  _mark_stats_cache.add_live_words(_g1h->addr_to_region((HeapWord*)obj), obj_size);
+}
+
+inline void G1ConcurrentMark::add_to_liveness(uint worker_id, oop const obj, size_t size) {
+  task(worker_id)->update_liveness(obj, size);
+}
+
 inline void G1CMTask::make_reference_grey(oop obj) {
-  if (!_cm->mark_in_next_bitmap(obj)) {
+  if (!_cm->mark_in_next_bitmap(_worker_id, obj)) {
     return;
   }
 
@@ -199,8 +235,10 @@ inline void G1CMTask::make_reference_grey(oop obj) {
   }
 }
 
-inline void G1CMTask::deal_with_reference(oop obj) {
+template <class T>
+inline void G1CMTask::deal_with_reference(T* p) {
   increment_refs_reached();
+  oop const obj = RawAccess<MO_VOLATILE>::oop_load(p);
   if (obj == NULL) {
     return;
   }

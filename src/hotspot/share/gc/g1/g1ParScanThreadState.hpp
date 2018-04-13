@@ -31,6 +31,7 @@
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
+#include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
@@ -102,8 +103,9 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   template <class T> void update_rs(HeapRegion* from, T* p, oop o) {
     assert(!HeapRegion::is_in_same_region(p, o), "Caller should have filtered out cross-region references already.");
     // If the field originates from the to-space, we don't need to include it
-    // in the remembered set updates.
-    if (!from->is_young()) {
+    // in the remembered set updates. Also, if we are not tracking the remembered
+    // set in the destination region, do not bother either.
+    if (!from->is_young() && _g1h->heap_region_containing((HeapWord*)o)->rem_set()->is_tracked()) {
       size_t card_index = ct()->index_for(p);
       // If the card hasn't been added to the buffer, do it.
       if (ct()->mark_card_deferred(card_index)) {

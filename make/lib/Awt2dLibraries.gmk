@@ -403,11 +403,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
-    LDFLAGS_solaris := /usr/lib$(OPENJDK_TARGET_CPU_ISADIR)/libm.so.2, \
-    LIBS_unix := -lawt -ljvm -ljava $(LCMS_LIBS), \
-    LIBS_linux := $(LIBM), \
-    LIBS_macosx := $(LIBM), \
-    LIBS_aix := $(LIBM),\
+    LIBS_unix := -lawt -ljvm -ljava $(LCMS_LIBS) $(LIBM), \
     LIBS_windows := $(WIN_AWT_LIB) $(WIN_JAVA_LIB), \
 ))
 

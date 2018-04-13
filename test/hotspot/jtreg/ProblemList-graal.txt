@@ -47,10 +47,6 @@ compiler/jvmci/SecurityRestrictionsTest.java                    8181837   generi
 compiler/jvmci/TestValidateModules.java                         8194942   generic-all
 gc/arguments/TestVerifyBeforeAndAfterGCFlags.java               8194942   generic-all
 
-compiler/rangechecks/TestRangeCheckSmearing.java                8195632   generic-all
-compiler/uncommontrap/Test8009761.java                          8195632   generic-all
-compiler/whitebox/ForceNMethodSweepTest.java                    8195632   generic-all
-
 compiler/unsafe/UnsafeGetConstantField.java                     8181833   generic-all
 compiler/unsafe/UnsafeGetStableArrayElement.java                8181833   generic-all
 compiler/unsafe/UnsafeOffHeapBooleanTest.java                   8181833   generic-all
@@ -70,12 +66,10 @@ gc/g1/plab/TestPLABResize.java                                  8191048   generi
 
 gc/TestNUMAPageSize.java                                        8194949   generic-all
 
-runtime/appcds/UseAppCDS.java                                   8196626   generic-all
-
 runtime/ReservedStack/ReservedStackTestCompiler.java            8181855   generic-all
 
 serviceability/jvmti/GetModulesInfo/JvmtiGetAllModulesTest.java 8195156   generic-all
 
-compiler/compilercontrol/directives/LogTest.java                8197446   generic-all
+compiler/compilercontrol/directives/LogTest.java                8181753   generic-all
 
 gc/g1/ihop/TestIHOPStatic.java                                  8199486   generic-all

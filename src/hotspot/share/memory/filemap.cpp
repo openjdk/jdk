@@ -31,9 +31,6 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/altHashing.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1CollectedHeap.hpp"
-#endif
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "logging/logMessage.hpp"
@@ -42,6 +39,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/objArrayOop.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
@@ -51,6 +49,9 @@
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/defaultStream.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc/g1/g1CollectedHeap.hpp"
+#endif
 
 # include <sys/stat.h>
 # include <errno.h>
@@ -468,7 +469,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
   if (MetaspaceShared::is_heap_region(region)) {
     assert((base - (char*)Universe::narrow_oop_base()) % HeapWordSize == 0, "Sanity");
     if (base != NULL) {
-      si->_addr._offset = (intx)oopDesc::encode_heap_oop_not_null((oop)base);
+      si->_addr._offset = (intx)CompressedOops::encode_not_null((oop)base);
     } else {
       si->_addr._offset = 0;
     }
@@ -783,7 +784,7 @@ bool FileMapInfo::map_heap_data(MemRegion **heap_mem, int first,
     size_t used = si->_used;
     if (used > 0) {
       size_t size = used;
-      char* requested_addr = (char*)((void*)oopDesc::decode_heap_oop_not_null(
+      char* requested_addr = (char*)((void*)CompressedOops::decode_not_null(
                                             (narrowOop)si->_addr._offset));
       regions[region_num] = MemRegion((HeapWord*)requested_addr, size / HeapWordSize);
       region_num ++;
@@ -964,7 +965,7 @@ bool FileMapInfo::initialize() {
 char* FileMapInfo::FileMapHeader::region_addr(int idx) {
   if (MetaspaceShared::is_heap_region(idx)) {
     return _space[idx]._used > 0 ?
-             (char*)((void*)oopDesc::decode_heap_oop_not_null((narrowOop)_space[idx]._addr._offset)) : NULL;
+             (char*)((void*)CompressedOops::decode_not_null((narrowOop)_space[idx]._addr._offset)) : NULL;
   } else {
     return _space[idx]._addr._base;
   }

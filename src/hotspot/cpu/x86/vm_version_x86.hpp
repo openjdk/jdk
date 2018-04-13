@@ -334,6 +334,7 @@ protected:
 #define CPU_FMA ((uint64_t)UCONST64(0x800000000))      // FMA instructions
 #define CPU_VZEROUPPER ((uint64_t)UCONST64(0x1000000000))       // Vzeroupper instruction
 #define CPU_AVX512_VPOPCNTDQ ((uint64_t)UCONST64(0x2000000000)) // Vector popcount
+#define CPU_VPCLMULQDQ ((uint64_t)UCONST64(0x4000000000)) //Vector carryless multiplication
 
   enum Extended_Family {
     // AMD
@@ -542,6 +543,8 @@ protected:
           result |= CPU_AVX512VL;
         if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_vpopcntdq != 0)
           result |= CPU_AVX512_VPOPCNTDQ;
+        if (_cpuid_info.sef_cpuid7_ecx.bits.vpclmulqdq != 0)
+          result |= CPU_VPCLMULQDQ;
       }
     }
     if(_cpuid_info.sef_cpuid7_ebx.bits.bmi1 != 0)
@@ -819,6 +822,7 @@ public:
   static bool supports_fma()        { return (_features & CPU_FMA) != 0 && supports_avx(); }
   static bool supports_vzeroupper() { return (_features & CPU_VZEROUPPER) != 0; }
   static bool supports_vpopcntdq()  { return (_features & CPU_AVX512_VPOPCNTDQ) != 0; }
+  static bool supports_vpclmulqdq() { return (_features & CPU_VPCLMULQDQ) != 0; }
 
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&

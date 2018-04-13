@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_METAPROGRAMMING_INTEGRALCONSTANT_HPP
 #define SHARE_VM_METAPROGRAMMING_INTEGRALCONSTANT_HPP
 
-#include "memory/allocation.hpp"
 
 // An Integral Constant is a class providing a compile-time value of an
 // integral type.  An Integral Constant is also a nullary metafunction,

@@ -766,7 +766,6 @@ com/sun/jdi/NashornPopFrameTest.java                            8187143 generic-
 
 sun/tools/jstat/jstatClassloadOutput1.sh                        8173942 generic-all
 
-sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java    8057732 generic-all
 
 ############################################################################
 
