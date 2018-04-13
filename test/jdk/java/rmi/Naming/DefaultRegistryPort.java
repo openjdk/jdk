@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,7 @@
 /*
  * Ensure that the default registry port for java.rmi.Naming URLs
  * is 1099. Test creates a registry on port 1099 and then does a
- * lookup with a Naming URL that uses the default port. Test fails
- * if the lookup yields a NotBoundException. If the registry could
- * not be created, a fallback strategy of using an existing one is
- * tried.
+ * lookup with a Naming URL that uses the default port.
  */
 
 import java.rmi.Naming;
@@ -52,67 +49,37 @@ import java.rmi.registry.Registry;
 
 public class DefaultRegistryPort {
 
-    public static void main(String args[]) {
+    public static void main(String args[]) throws Exception {
 
         Registry registry = null;
-        try {
-
-            System.err.println(
-                "Starting registry on default port REGISTRY_PORT=" +
-                Registry.REGISTRY_PORT);
-
-            registry = LocateRegistry.createRegistry(Registry.REGISTRY_PORT);
-
-            System.err.println("Created registry=" + registry);
-
-        } catch(java.rmi.RemoteException e) {
-
+        System.err.println("Starting registry on default port REGISTRY_PORT="
+                           + Registry.REGISTRY_PORT);
+        final int NUM = 10;
+        for (int loop = 0; loop < NUM; loop++) {
+            System.err.println("in loop: " + loop);
             try {
-
-                System.err.println(
-                    "Failed to create a registry, try using existing one");
-                registry = LocateRegistry.getRegistry();
-
-                System.err.println("Found registry=" + registry);
-
-            } catch (Exception ge) {
-
-                TestLibrary.bomb(
-                    "Test Failed: cound not find or create a registry");
+                registry = LocateRegistry.createRegistry(Registry.REGISTRY_PORT);
+                System.err.println("Created registry=" + registry);
+                break;
+            } catch(java.rmi.RemoteException e) {
+                String err = e.getMessage();
+                if (err.contains("Address already in use")
+                        || err.contains("Port already in use")) {
+                    try {
+                        Thread.sleep((long)(TestLibrary.getTimeoutFactor() * 100));
+                    } catch (InterruptedException ignore) { }
+                    continue;
+                }
+                TestLibrary.bomb(e);
             }
-
+        }
+        if (registry == null) {
+            throw new RuntimeException("can not create registry at "
+                  + Registry.REGISTRY_PORT + " after trying " + NUM + "times");
         }
 
-        try {
-
-            if (registry != null) {
-
-                registry.rebind("myself", registry);
-
-                Remote myself = Naming.lookup("rmi://localhost/myself");
-
-                System.err.println("Test PASSED");
-
-            } else {
-
-                TestLibrary.bomb(
-                    "Test Failed: cound not find or create a registry");
-
-            }
-
-        } catch(java.rmi.NotBoundException e) {
-
-            TestLibrary.bomb(
-                "Test Failed: could not find myself");
-
-        } catch(Exception e) {
-
-            e.printStackTrace();
-            TestLibrary.bomb(
-                "Test failed: unexpected exception");
-
-        }
-
+        registry.rebind("myself", registry);
+        Remote myself = Naming.lookup("rmi://localhost/myself");
+        System.err.println("Test PASSED");
     }
-
 }
