@@ -431,8 +431,8 @@ class ServerSocketChannelImpl
             boolean polled = false;
             try {
                 begin(true);
-                int n = Net.poll(fd, Net.POLLIN, timeout);
-                polled = (n > 0);
+                int events = Net.poll(fd, Net.POLLIN, timeout);
+                polled = (events != 0);
             } finally {
                 end(true, polled);
             }
