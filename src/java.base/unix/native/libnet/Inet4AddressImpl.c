@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ Java_java_net_Inet4AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
     hostname[0] = '\0';
     if (gethostname(hostname, NI_MAXHOST) != 0) {
         strcpy(hostname, "localhost");
+#if defined(__solaris__)
     } else {
         // try to resolve hostname via nameservice
         // if it is known but getnameinfo fails, hostname will still be the
@@ -86,6 +87,12 @@ Java_java_net_Inet4AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
             freeaddrinfo(res);
         }
     }
+#else
+    } else {
+        // make sure string is null-terminated
+        hostname[NI_MAXHOST] = '\0';
+    }
+#endif
     return (*env)->NewStringUTF(env, hostname);
 }
 
