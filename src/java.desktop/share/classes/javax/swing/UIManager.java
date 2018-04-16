@@ -606,15 +606,16 @@ public class UIManager implements Serializable
      *
      * @param className  a string specifying the name of the class that implements
      *        the look and feel
-     * @exception ClassNotFoundException if the <code>LookAndFeel</code>
+     * @throws ClassNotFoundException if the <code>LookAndFeel</code>
      *           class could not be found
-     * @exception InstantiationException if a new instance of the class
+     * @throws InstantiationException if a new instance of the class
      *          couldn't be created
-     * @exception IllegalAccessException if the class or initializer isn't accessible
-     * @exception UnsupportedLookAndFeelException if
+     * @throws IllegalAccessException if the class or initializer isn't accessible
+     * @throws UnsupportedLookAndFeelException if
      *          <code>lnf.isSupportedLookAndFeel()</code> is false
      * @throws ClassCastException if {@code className} does not identify
      *         a class that extends {@code LookAndFeel}
+     * @throws NullPointerException if {@code className} is {@code null}
      */
     @SuppressWarnings("deprecation")
     public static void setLookAndFeel(String className)
