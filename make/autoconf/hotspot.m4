@@ -443,7 +443,7 @@ AC_DEFUN_ONCE([HOTSPOT_FINALIZE_JVM_FEATURES],
     AC_MSG_RESULT(["$JVM_FEATURES_FOR_VARIANT"])
 
     # Validate features (for configure script errors, not user errors)
-    INVALID_FEATURES=`$GREP -Fvx "${VALID_JVM_FEATURES// /$'\n'}" <<< "${JVM_FEATURES_FOR_VARIANT// /$'\n'}"`
+    BASIC_GET_NON_MATCHING_VALUES(INVALID_FEATURES, $JVM_FEATURES_FOR_VARIANT, $VALID_JVM_FEATURES)
     if test "x$INVALID_FEATURES" != x; then
       AC_MSG_ERROR([Internal configure script error. Invalid JVM feature(s): $INVALID_FEATURES])
     fi
