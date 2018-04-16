@@ -652,9 +652,9 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
         $(subst -Wl$(COMMA)-z$(COMMA)defs,,$(LDFLAGS_JDKLIB))) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
+    LDFLAGS_aix := -Wl$(COMMA)-berok, \
     LIBS := $(BUILD_LIBFONTMANAGER_FONTLIB), \
     LIBS_unix := -lawt -ljava -ljvm $(LIBM) $(LIBCXX), \
-    LIBS_aix := -lawt_headless, \
     LIBS_macosx := -lawt_lwawt -framework CoreText -framework CoreFoundation \
         -framework CoreGraphics, \
     LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib user32.lib gdi32.lib \
@@ -662,10 +662,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
 ))
 
 $(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT)
-
-ifneq (, $(findstring $(OPENJDK_TARGET_OS), solaris aix))
-  $(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT_HEADLESS)
-endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
   $(BUILD_LIBFONTMANAGER): $(call FindLib, java.desktop, awt_lwawt)
