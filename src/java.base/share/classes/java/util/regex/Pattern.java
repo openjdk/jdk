@@ -5821,12 +5821,32 @@ NEXT:       while (i <= last) {
      * }</pre>
      *
      * @return  The predicate which can be used for finding a match on a
-     * subsequence of a string
+     *          subsequence of a string
      * @since   1.8
-     * @see Matcher#find
+     * @see     Matcher#find
      */
     public Predicate<String> asPredicate() {
         return s -> matcher(s).find();
+    }
+
+    /**
+     * Creates a predicate that tests if this pattern matches a given input string.
+     *
+     * @apiNote
+     * This method creates a predicate that behaves as if it creates a matcher
+     * from the input sequence and then calls {@code matches}, for example a
+     * predicate of the form:
+     * <pre>{@code
+     *   s -> matcher(s).matches();
+     * }</pre>
+     *
+     * @return  The predicate which can be used for matching an input string
+     *          against this pattern.
+     * @since   11
+     * @see     Matcher#matches
+     */
+    public Predicate<String> asMatchPredicate() {
+        return s -> matcher(s).matches();
     }
 
     /**
