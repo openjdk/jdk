@@ -264,6 +264,11 @@ AWT_NS_WINDOW_IMPLEMENTATION
         }
     }
 
+    if (IS(self.styleBits, DARK_TITLE_BAR)) {
+        [self.nsWindow setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameVibrantDark]];
+    } else {
+        [self.nsWindow setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameVibrantLight]];
+    }    
 }
 
 - (id) initWithPlatformWindow:(JNFWeakJObjectWrapper *)platformWindow
