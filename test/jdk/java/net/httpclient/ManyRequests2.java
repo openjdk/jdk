@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8087112 8180044
- * @modules jdk.incubator.httpclient
+ * @modules java.net.http
  *          java.logging
  *          jdk.httpserver
  * @library /lib/testlibrary/ /

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -32,7 +33,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
-import jdk.incubator.http.HttpClient;
+import java.net.http.HttpClient;
 import javax.net.ssl.SSLContext;
 import jdk.testlibrary.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
@@ -91,6 +92,11 @@ public abstract class AbstractNoBody {
                 .build();
     }
 
+    static String serverAuthority(HttpServer server) {
+        return InetAddress.getLoopbackAddress().getHostName() + ":"
+                + server.getAddress().getPort();
+    }
+
     @BeforeTest
     public void setup() throws Exception {
         printStamp(START, "setup");
@@ -101,39 +107,37 @@ public abstract class AbstractNoBody {
         // HTTP/1.1
         HttpHandler h1_fixedLengthNoBodyHandler = new HTTP1_FixedLengthNoBodyHandler();
         HttpHandler h1_chunkNoBodyHandler = new HTTP1_ChunkedNoBodyHandler();
-        InetSocketAddress sa = new InetSocketAddress("localhost", 0);
+        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         httpTestServer = HttpServer.create(sa, 0);
         httpTestServer.setExecutor(serverExecutor);
         httpTestServer.createContext("/http1/noBodyFixed", h1_fixedLengthNoBodyHandler);
         httpTestServer.createContext("/http1/noBodyChunk", h1_chunkNoBodyHandler);
-        httpURI_fixed = "http://127.0.0.1:" + httpTestServer.getAddress().getPort() + "/http1/noBodyFixed";
-        httpURI_chunk = "http://127.0.0.1:" + httpTestServer.getAddress().getPort() + "/http1/noBodyChunk";
+        httpURI_fixed = "http://" + serverAuthority(httpTestServer) + "/http1/noBodyFixed";
+        httpURI_chunk = "http://" + serverAuthority(httpTestServer) + "/http1/noBodyChunk";
 
         httpsTestServer = HttpsServer.create(sa, 0);
         httpsTestServer.setExecutor(serverExecutor);
         httpsTestServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
         httpsTestServer.createContext("/https1/noBodyFixed", h1_fixedLengthNoBodyHandler);
         httpsTestServer.createContext("/https1/noBodyChunk", h1_chunkNoBodyHandler);
-        httpsURI_fixed = "https://127.0.0.1:" + httpsTestServer.getAddress().getPort() + "/https1/noBodyFixed";
-        httpsURI_chunk = "https://127.0.0.1:" + httpsTestServer.getAddress().getPort() + "/https1/noBodyChunk";
+        httpsURI_fixed = "https://" + serverAuthority(httpsTestServer) + "/https1/noBodyFixed";
+        httpsURI_chunk = "https://" + serverAuthority(httpsTestServer) + "/https1/noBodyChunk";
 
         // HTTP/2
         Http2Handler h2_fixedLengthNoBodyHandler = new HTTP2_FixedLengthNoBodyHandler();
         Http2Handler h2_chunkedNoBodyHandler = new HTTP2_ChunkedNoBodyHandler();
 
-        http2TestServer = new Http2TestServer("127.0.0.1", false, 0, serverExecutor, null);
+        http2TestServer = new Http2TestServer("localhost", false, 0, serverExecutor, null);
         http2TestServer.addHandler(h2_fixedLengthNoBodyHandler, "/http2/noBodyFixed");
         http2TestServer.addHandler(h2_chunkedNoBodyHandler, "/http2/noBodyChunk");
-        int port = http2TestServer.getAddress().getPort();
-        http2URI_fixed = "http://127.0.0.1:" + port + "/http2/noBodyFixed";
-        http2URI_chunk = "http://127.0.0.1:" + port + "/http2/noBodyChunk";
+        http2URI_fixed = "http://" + http2TestServer.serverAuthority() + "/http2/noBodyFixed";
+        http2URI_chunk = "http://" + http2TestServer.serverAuthority() + "/http2/noBodyChunk";
 
-        https2TestServer = new Http2TestServer("127.0.0.1", true, 0, serverExecutor, sslContext);
+        https2TestServer = new Http2TestServer("localhost", true, 0, serverExecutor, sslContext);
         https2TestServer.addHandler(h2_fixedLengthNoBodyHandler, "/https2/noBodyFixed");
         https2TestServer.addHandler(h2_chunkedNoBodyHandler, "/https2/noBodyChunk");
-        port = https2TestServer.getAddress().getPort();
-        https2URI_fixed = "https://127.0.0.1:" + port + "/https2/noBodyFixed";
-        https2URI_chunk = "https://127.0.0.1:" + port + "/https2/noBodyChunk";
+        https2URI_fixed = "https://" + https2TestServer.serverAuthority() + "/https2/noBodyFixed";
+        https2URI_chunk = "https://" + https2TestServer.serverAuthority() + "/https2/noBodyChunk";
 
         httpTestServer.start();
         httpsTestServer.start();

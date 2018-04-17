@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * @summary Basic test for headers
  */
 
-import jdk.incubator.http.HttpHeaders;
-import jdk.incubator.http.HttpRequest;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
 import java.net.URI;
 import java.util.List;
 import java.util.Iterator;

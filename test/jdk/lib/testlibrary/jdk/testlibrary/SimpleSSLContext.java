@@ -53,27 +53,44 @@ public class SimpleSSLContext {
      * source directory
      */
     public SimpleSSLContext() throws IOException {
-        String paths = System.getProperty("test.src.path");
-        StringTokenizer st = new StringTokenizer(paths, File.pathSeparator);
-        boolean securityExceptions = false;
-        while (st.hasMoreTokens()) {
-            String path = st.nextToken();
-            try {
-                File f = new File(path, "jdk/testlibrary/testkeys");
-                if (f.exists()) {
-                    try (FileInputStream fis = new FileInputStream(f)) {
-                        init(fis);
-                        return;
+        try {
+            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
+                @Override
+                public Void run() throws Exception {
+                    String paths = System.getProperty("test.src.path");
+                    StringTokenizer st = new StringTokenizer(paths, File.pathSeparator);
+                    boolean securityExceptions = false;
+                    while (st.hasMoreTokens()) {
+                        String path = st.nextToken();
+                        try {
+                            File f = new File(path, "jdk/testlibrary/testkeys");
+                            if (f.exists()) {
+                                try (FileInputStream fis = new FileInputStream(f)) {
+                                    init(fis);
+                                    return null;
+                                }
+                            }
+                        } catch (SecurityException e) {
+                            // catch and ignore because permission only required
+                            // for one entry on path (at most)
+                            securityExceptions = true;
+                        }
                     }
+                    if (securityExceptions) {
+                        System.err.println("SecurityExceptions thrown on loading testkeys");
+                    }
+                    return null;
                 }
-            } catch (SecurityException e) {
-                // catch and ignore because permission only required
-                // for one entry on path (at most)
-                securityExceptions = true;
-            }
-        }
-        if (securityExceptions) {
-            System.err.println("SecurityExceptions thrown on loading testkeys");
+            });
+        } catch (PrivilegedActionException pae) {
+            Throwable t = pae.getCause() != null ? pae.getCause() : pae;
+            if (t instanceof IOException)
+                throw (IOException)t;
+            if (t instanceof RuntimeException)
+                throw (RuntimeException)t;
+            if (t instanceof Error)
+                throw (Error)t;
+            throw new RuntimeException(t);
         }
     }
 

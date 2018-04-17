@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 import com.sun.net.httpserver.*;
 import java.net.*;
-import jdk.incubator.http.*;
+import java.net.http.*;
 import java.io.*;
 import java.util.concurrent.*;
 import javax.net.ssl.*;
@@ -33,8 +33,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import jdk.testlibrary.SimpleSSLContext;
-import static jdk.incubator.http.HttpRequest.*;
-import static jdk.incubator.http.HttpResponse.*;
+import static java.net.http.HttpRequest.*;
+import static java.net.http.HttpResponse.*;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;

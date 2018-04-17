@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SNIServerName;
-import jdk.incubator.http.internal.frame.ErrorFrame;
+import jdk.internal.net.http.frame.ErrorFrame;
 
 /**
  * Waits for incoming TCP connections from a client and establishes
@@ -76,6 +76,11 @@ public class Http2TestServer implements AutoCloseable {
 
     public InetSocketAddress getAddress() {
         return (InetSocketAddress)server.getLocalSocketAddress();
+    }
+
+    public String serverAuthority() {
+        return InetAddress.getLoopbackAddress().getHostName() + ":"
+                + getAddress().getPort();
     }
 
     public Http2TestServer(boolean secure,
@@ -167,7 +172,10 @@ public class Http2TestServer implements AutoCloseable {
     }
 
     final ServerSocket initPlaintext(int port) throws Exception {
-        return new ServerSocket(port);
+        ServerSocket ss = new ServerSocket();
+        ss.setReuseAddress(false);
+        ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+        return ss;
     }
 
     public synchronized void stop() {
@@ -191,9 +199,12 @@ public class Http2TestServer implements AutoCloseable {
         } else {
             fac = SSLServerSocketFactory.getDefault();
         }
-        SSLServerSocket se = (SSLServerSocket) fac.createServerSocket(port);
+        SSLServerSocket se = (SSLServerSocket) fac.createServerSocket();
+        se.setReuseAddress(false);
+        se.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
         SSLParameters sslp = se.getSSLParameters();
         sslp.setApplicationProtocols(new String[]{"h2"});
+        sslp.setEndpointIdentificationAlgorithm("HTTPS");
         se.setSSLParameters(sslp);
         se.setEnabledCipherSuites(se.getSupportedCipherSuites());
         se.setEnabledProtocols(se.getSupportedProtocols());
@@ -222,23 +233,33 @@ public class Http2TestServer implements AutoCloseable {
             try {
                 while (!stopping) {
                     Socket socket = server.accept();
-                    InetSocketAddress addr = (InetSocketAddress) socket.getRemoteSocketAddress();
-                    Http2TestServerConnection c =
-                            new Http2TestServerConnection(this, socket, exchangeSupplier);
-                    putConnection(addr, c);
+                    Http2TestServerConnection c = null;
+                    InetSocketAddress addr = null;
                     try {
+                        addr = (InetSocketAddress) socket.getRemoteSocketAddress();
+                        c = createConnection(this, socket, exchangeSupplier);
+                        putConnection(addr, c);
                         c.run();
                     } catch (Throwable e) {
                         // we should not reach here, but if we do
                         // the connection might not have been closed
                         // and if so then the client might wait
                         // forever.
-                        removeConnection(addr, c);
-                        c.close(ErrorFrame.PROTOCOL_ERROR);
+                        if (c != null) {
+                            removeConnection(addr, c);
+                            c.close(ErrorFrame.PROTOCOL_ERROR);
+                        } else {
+                            socket.close();
+                        }
                         System.err.println("TestServer: start exception: " + e);
                         //throw e;
                     }
                 }
+            } catch (SecurityException se) {
+                System.err.println("TestServer: terminating, caught " + se);
+                se.printStackTrace();
+                stopping = true;
+                try { server.close(); } catch (IOException ioe) { /* ignore */}
             } catch (Throwable e) {
                 if (!stopping) {
                     System.err.println("TestServer: terminating, caught " + e);
@@ -246,6 +267,13 @@ public class Http2TestServer implements AutoCloseable {
                 }
             }
         });
+    }
+
+    protected Http2TestServerConnection createConnection(Http2TestServer http2TestServer,
+                                                         Socket socket,
+                                                         Http2TestExchangeSupplier exchangeSupplier)
+            throws IOException {
+        return new Http2TestServerConnection(http2TestServer, socket, exchangeSupplier);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@
  * @summary Verifies that the ConnectionPool correctly handle
  *          connection deadlines and purges the right connections
  *          from the cache.
- * @modules jdk.incubator.httpclient java.management
- * @run main/othervm --add-reads jdk.incubator.httpclient=java.management jdk.incubator.httpclient/jdk.incubator.http.ConnectionPoolTest
+ * @modules java.net.http/jdk.internal.net.http
+  *         java.management
+ * @run main/othervm
+ *       --add-reads java.net.http=java.management
+ *       java.net.http/jdk.internal.net.http.ConnectionPoolTest
  */

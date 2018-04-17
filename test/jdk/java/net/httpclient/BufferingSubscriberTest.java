@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,10 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.SubmissionPublisher;
 import java.util.function.BiConsumer;
-import jdk.incubator.http.HttpResponse.BodyHandler;
-import jdk.incubator.http.HttpResponse.BodySubscriber;
+import java.net.http.HttpResponse.BodyHandler;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.net.http.HttpResponse.BodySubscriber;
+import java.net.http.HttpResponse.BodySubscribers;
 import jdk.test.lib.RandomFactory;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -87,8 +89,8 @@ public class BufferingSubscriberTest {
     public void subscriberThrowsIAE(int bufferSize) {
         printStamp(START, "subscriberThrowsIAE(%d)", bufferSize);
         try {
-            BodySubscriber<?> bp = BodySubscriber.asByteArray();
-            BodySubscriber.buffering(bp, bufferSize);
+            BodySubscriber<?> bp = BodySubscribers.ofByteArray();
+            BodySubscribers.buffering(bp, bufferSize);
         } finally {
             printStamp(END, "subscriberThrowsIAE(%d)", bufferSize);
         }
@@ -98,8 +100,8 @@ public class BufferingSubscriberTest {
     public void handlerThrowsIAE(int bufferSize) {
         printStamp(START, "handlerThrowsIAE(%d)", bufferSize);
         try {
-            BodyHandler<?> bp = BodyHandler.asByteArray();
-            BodyHandler.buffering(bp, bufferSize);
+            BodyHandler<?> bp = BodyHandlers.ofByteArray();
+            BodyHandlers.buffering(bp, bufferSize);
         } finally {
             printStamp(END, "handlerThrowsIAE(%d)", bufferSize);
         }
@@ -242,7 +244,7 @@ public class BufferingSubscriberTest {
                                                 delay,
                                                 expectedTotalSize,
                                                 requestAmount);
-            return BodySubscriber.buffering(s, bufferSize);
+            return BodySubscribers.buffering(s, bufferSize);
         }
 
         private void requestMore() {

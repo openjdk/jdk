@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8087112
- * @modules jdk.incubator.httpclient
+ * @modules java.net.http
  *          jdk.httpserver
  * @run main/othervm ImmutableHeaders
  * @summary ImmutableHeaders
@@ -37,21 +37,26 @@ import com.sun.net.httpserver.Headers;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import jdk.incubator.http.*;
+import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.List;
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static jdk.incubator.http.HttpResponse.BodyHandler.discard;
 
 public class ImmutableHeaders {
 
     final static String RESPONSE = "Hello world";
 
     public static void main(String[] args) throws Exception {
-        HttpServer server = HttpServer.create(new InetSocketAddress(0), 10);
+        InetSocketAddress addr = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
+        HttpServer server = HttpServer.create(addr, 10);
         ExecutorService serverExecutor = Executors.newCachedThreadPool();
         ExecutorService clientExecutor = Executors.newCachedThreadPool();
         server.createContext("/test", new ImmutableHeadersHandler());
@@ -65,7 +70,7 @@ public class ImmutableHeaders {
                                       .build();
 
         try {
-            URI uri = new URI("http://127.0.0.1:" + port + "/test/foo");
+            URI uri = new URI("http://localhost:" + port + "/test/foo");
             HttpRequest req = HttpRequest.newBuilder(uri)
                                          .headers("X-Foo", "bar")
                                          .headers("X-Bar", "foo")
@@ -81,7 +86,7 @@ public class ImmutableHeaders {
                 throw new RuntimeException("Test failed");
             } catch (UnsupportedOperationException ex) {
             }
-            HttpResponse resp = client.send(req, discard(null));
+            HttpResponse resp = client.send(req, BodyHandlers.discarding());
             try {
                 HttpHeaders hd = resp.headers();
                 List<String> v = hd.allValues("X-Foo-Response");

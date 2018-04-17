@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,19 @@
  * questions.
  */
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.URI;
-import jdk.incubator.http.HttpClient;
-import jdk.incubator.http.HttpRequest;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse.BodyHandlers;
 import static java.lang.System.out;
-import static jdk.incubator.http.HttpResponse.BodyHandler.discard;
 
 /**
  * @test
  * @summary Basic test for interrupted blocking send
+ * @run main/othervm InterruptedBlockingSend
  */
 
 public class InterruptedBlockingSend {
@@ -39,15 +42,17 @@ public class InterruptedBlockingSend {
 
     public static void main(String[] args) throws Exception {
         HttpClient client = HttpClient.newHttpClient();
-        try (ServerSocket ss = new ServerSocket(0, 20)) {
+        try (ServerSocket ss = new ServerSocket()) {
+            ss.setReuseAddress(false);
+            ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
             int port = ss.getLocalPort();
-            URI uri = new URI("http://127.0.0.1:" + port + "/");
+            URI uri = new URI("http://localhost:" + port + "/");
 
             HttpRequest request = HttpRequest.newBuilder(uri).build();
 
             Thread t = new Thread(() -> {
                 try {
-                    client.send(request, discard(null));
+                    client.send(request, BodyHandlers.discarding());
                 } catch (InterruptedException e) {
                     throwable = e;
                 } catch (Throwable th) {

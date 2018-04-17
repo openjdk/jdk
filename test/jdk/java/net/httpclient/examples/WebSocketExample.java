@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,9 @@ import java.net.ProxySelector;
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 
-import jdk.incubator.http.HttpClient;
-import jdk.incubator.http.WebSocket;
+import java.net.http.HttpClient;
+import java.net.http.WebSocket;
+import java.util.concurrent.CompletionStage;
 
 /*
  * THE CONTENTS OF THIS FILE HAVE TO BE IN SYNC WITH THE EXAMPLES USED IN THE
@@ -56,4 +57,26 @@ public class WebSocketExample {
         CompletableFuture<WebSocket> ws = client.newWebSocketBuilder()
                 .buildAsync(URI.create("ws://websocket.example.com"), listener);
     }
+
+    public void requestExample() {
+        WebSocket.Listener listener = new WebSocket.Listener() {
+
+            StringBuilder text = new StringBuilder();
+
+            @Override
+            public CompletionStage<?> onText(WebSocket webSocket,
+                                             CharSequence message,
+                                             boolean last) {
+                text.append(message);
+                if (last) {
+                    processCompleteTextMessage(text);
+                    text = new StringBuilder();
+                }
+                webSocket.request(1);
+                return null;
+            }
+        };
+    }
+
+    static void processCompleteTextMessage(CharSequence result) { }
 }

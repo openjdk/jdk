@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,26 +28,25 @@
  * @library /lib/testlibrary http2/server
  * @build jdk.testlibrary.SimpleSSLContext
  * @modules java.base/sun.net.www.http
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.common
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.frame
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.hpack
- * @run testng/othervm -Djdk.internal.httpclient.debug=true -Djdk.httpclient.HttpClient.log=all NoBodyPartTwo
+ *          java.net.http/jdk.internal.net.http.common
+ *          java.net.http/jdk.internal.net.http.frame
+ *          java.net.http/jdk.internal.net.http.hpack
+ * @run testng/othervm
+ *      -Djdk.internal.httpclient.debug=true
+ *      -Djdk.httpclient.HttpClient.log=all
+ *      NoBodyPartTwo
  */
 
 import java.io.InputStream;
 import java.net.URI;
 import java.util.Optional;
 import java.util.function.Consumer;
-import jdk.incubator.http.HttpClient;
-import jdk.incubator.http.HttpRequest;
-import jdk.incubator.http.HttpResponse;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import org.testng.annotations.Test;
-import static jdk.incubator.http.HttpRequest.BodyPublisher.fromString;
-import static jdk.incubator.http.HttpResponse.BodyHandler.asByteArray;
-import static jdk.incubator.http.HttpResponse.BodyHandler.asByteArrayConsumer;
-import static jdk.incubator.http.HttpResponse.BodyHandler.asInputStream;
-import static jdk.incubator.http.HttpResponse.BodyHandler.buffering;
-import static jdk.incubator.http.HttpResponse.BodyHandler.discard;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
@@ -64,14 +63,14 @@ public class NoBodyPartTwo extends AbstractNoBody {
                 client = newHttpClient();
 
             HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
-                    .PUT(fromString(SIMPLE_STRING))
+                    .PUT(BodyPublishers.ofString(SIMPLE_STRING))
                     .build();
             Consumer<Optional<byte[]>>  consumer = oba -> {
                 consumerHasBeenCalled = true;
                 oba.ifPresent(ba -> fail("Unexpected non-empty optional:" + ba));
             };
             consumerHasBeenCalled = false;
-            client.send(req, asByteArrayConsumer(consumer));
+            client.send(req, BodyHandlers.ofByteArrayConsumer(consumer));
             assertTrue(consumerHasBeenCalled);
         }
         // We have created many clients here. Try to speed up their release.
@@ -87,9 +86,9 @@ public class NoBodyPartTwo extends AbstractNoBody {
                 client = newHttpClient();
 
             HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
-                    .PUT(fromString(SIMPLE_STRING))
+                    .PUT(BodyPublishers.ofString(SIMPLE_STRING))
                     .build();
-            HttpResponse<InputStream> response = client.send(req, asInputStream());
+            HttpResponse<InputStream> response = client.send(req, BodyHandlers.ofInputStream());
             byte[] body = response.body().readAllBytes();
             assertEquals(body.length, 0);
         }
@@ -106,9 +105,10 @@ public class NoBodyPartTwo extends AbstractNoBody {
                 client = newHttpClient();
 
             HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
-                    .PUT(fromString(SIMPLE_STRING))
+                    .PUT(BodyPublishers.ofString(SIMPLE_STRING))
                     .build();
-            HttpResponse<byte[]> response = client.send(req, buffering(asByteArray(), 1024));
+            HttpResponse<byte[]> response = client.send(req,
+                    BodyHandlers.buffering(BodyHandlers.ofByteArray(), 1024));
             byte[] body = response.body();
             assertEquals(body.length, 0);
         }
@@ -125,10 +125,10 @@ public class NoBodyPartTwo extends AbstractNoBody {
                 client = newHttpClient();
 
             HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
-                    .PUT(fromString(SIMPLE_STRING))
+                    .PUT(BodyPublishers.ofString(SIMPLE_STRING))
                     .build();
             Object obj = new Object();
-            HttpResponse<Object> response = client.send(req, discard(obj));
+            HttpResponse<Object> response = client.send(req, BodyHandlers.replacing(obj));
             assertEquals(response.body(), obj);
         }
         // We have created many clients here. Try to speed up their release.

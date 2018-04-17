@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,9 @@
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.StandardSocketOptions;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -42,6 +44,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -80,12 +83,14 @@ import static java.util.Objects.requireNonNull;
  *     Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
  *     Sec-WebSocket-Protocol: chat
  */
-public final class DummyWebSocketServer implements Closeable {
+public class DummyWebSocketServer implements Closeable {
 
     private final AtomicBoolean started = new AtomicBoolean();
     private final Thread thread;
     private volatile ServerSocketChannel ssc;
     private volatile InetSocketAddress address;
+    private ByteBuffer read = ByteBuffer.allocate(16384);
+    private final CountDownLatch readReady = new CountDownLatch(1);
 
     public DummyWebSocketServer() {
         this(defaultMapping());
@@ -100,6 +105,7 @@ public final class DummyWebSocketServer implements Closeable {
                     SocketChannel channel = ssc.accept();
                     err.println("Accepted: " + channel);
                     try {
+                        channel.setOption(StandardSocketOptions.TCP_NODELAY, true);
                         channel.configureBlocking(true);
                         StringBuilder request = new StringBuilder();
                         if (!readRequest(channel, request)) {
@@ -108,21 +114,17 @@ public final class DummyWebSocketServer implements Closeable {
                         List<String> strings = asList(request.toString().split("\r\n"));
                         List<String> response = mapping.apply(strings);
                         writeResponse(channel, response);
-                        // Read until the thread is interrupted or an error occurred
-                        // or the input is shutdown
-                        ByteBuffer b = ByteBuffer.allocate(1024);
-                        while (channel.read(b) != -1) {
-                            b.clear();
-                        }
+                        serve(channel);
                     } catch (IOException e) {
                         err.println("Error in connection: " + channel + ", " + e);
                     } finally {
                         err.println("Closed: " + channel);
                         close(channel);
+                        readReady.countDown();
                     }
                 }
             } catch (ClosedByInterruptException ignored) {
-            } catch (IOException e) {
+            } catch (Exception e) {
                 err.println(e);
             } finally {
                 close(ssc);
@@ -133,6 +135,58 @@ public final class DummyWebSocketServer implements Closeable {
         thread.setDaemon(false);
     }
 
+    protected void read(SocketChannel ch) throws IOException {
+        // Read until the thread is interrupted or an error occurred
+        // or the input is shutdown
+        ByteBuffer b = ByteBuffer.allocate(65536);
+        while (ch.read(b) != -1) {
+            b.flip();
+            if (read.remaining() < b.remaining()) {
+                int required = read.capacity() - read.remaining() + b.remaining();
+                int log2required = 32 - Integer.numberOfLeadingZeros(required - 1);
+                ByteBuffer newBuffer = ByteBuffer.allocate(1 << log2required);
+                newBuffer.put(read.flip());
+                read = newBuffer;
+            }
+            read.put(b);
+            b.clear();
+        }
+    }
+
+    protected void write(SocketChannel ch) throws IOException { }
+
+    protected final void serve(SocketChannel channel)
+            throws InterruptedException
+    {
+        Thread reader = new Thread(() -> {
+            try {
+                read(channel);
+            } catch (IOException ignored) { }
+        });
+        Thread writer = new Thread(() -> {
+            try {
+                write(channel);
+            } catch (IOException ignored) { }
+        });
+        reader.start();
+        writer.start();
+        try {
+            reader.join();
+        } finally {
+            reader.interrupt();
+            try {
+                writer.join();
+            } finally {
+                writer.interrupt();
+            }
+        }
+    }
+
+    public ByteBuffer read() throws InterruptedException {
+        readReady.await();
+        return read.duplicate().asReadOnlyBuffer().flip();
+    }
+
     public void open() throws IOException {
         err.println("Starting");
         if (!started.compareAndSet(false, true)) {
@@ -141,7 +195,7 @@ public final class DummyWebSocketServer implements Closeable {
         ssc = ServerSocketChannel.open();
         try {
             ssc.configureBlocking(true);
-            ssc.bind(new InetSocketAddress("localhost", 0));
+            ssc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
             address = (InetSocketAddress) ssc.getLocalAddress();
             thread.start();
         } catch (IOException e) {
@@ -161,7 +215,7 @@ public final class DummyWebSocketServer implements Closeable {
         if (!started.get()) {
             throw new IllegalStateException("Not yet started");
         }
-        return URI.create("ws://" + address.getHostName() + ":" + address.getPort());
+        return URI.create("ws://localhost:" + address.getPort());
     }
 
     private boolean readRequest(SocketChannel channel, StringBuilder request)
