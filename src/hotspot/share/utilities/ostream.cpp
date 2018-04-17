@@ -36,7 +36,9 @@
 #include "utilities/vmError.hpp"
 #include "utilities/xmlstream.hpp"
 
-extern "C" void jio_print(const char* s); // Declarationtion of jvm method
+// Declarations of jvm methods
+extern "C" void jio_print(const char* s, size_t len);
+extern "C" int jio_printf(const char *fmt, ...);
 
 outputStream::outputStream(int width) {
   _width       = width;
@@ -612,19 +614,15 @@ fileStream* defaultStream::open_file(const char* log_name) {
 
   // Try again to open the file in the temp directory.
   delete file;
-  char warnbuf[O_BUFLEN*2];
-  jio_snprintf(warnbuf, sizeof(warnbuf), "Warning:  Cannot open log file: %s\n", log_name);
-  // Note:  This feature is for maintainer use only.  No need for L10N.
-  jio_print(warnbuf);
+  // Note: This feature is for maintainer use only.  No need for L10N.
+  jio_printf("Warning:  Cannot open log file: %s\n", log_name);
   try_name = make_log_name(log_name, os::get_temp_directory());
   if (try_name == NULL) {
     warning("Cannot open file %s: file name is too long for directory %s.\n", log_name, os::get_temp_directory());
     return NULL;
   }
 
-  jio_snprintf(warnbuf, sizeof(warnbuf),
-               "Warning:  Forcing option -XX:LogFile=%s\n", try_name);
-  jio_print(warnbuf);
+  jio_printf("Warning:  Forcing option -XX:LogFile=%s\n", try_name);
 
   file = new(ResourceObj::C_HEAP, mtInternal) fileStream(try_name);
   FREE_C_HEAP_ARRAY(char, try_name);
@@ -824,20 +822,6 @@ void defaultStream::release(intx holder) {
   tty_lock->unlock();
 }
 
-
-// Yuck:  jio_print does not accept char*/len.
-static void call_jio_print(const char* s, size_t len) {
-  char buffer[O_BUFLEN+100];
-  if (len > sizeof(buffer)-1) {
-    warning("increase O_BUFLEN in ostream.cpp -- output truncated");
-    len = sizeof(buffer)-1;
-  }
-  strncpy(buffer, s, len);
-  buffer[len] = '\0';
-  jio_print(buffer);
-}
-
-
 void defaultStream::write(const char* s, size_t len) {
   intx thread_id = os::current_thread_id();
   intx holder = hold(thread_id);
@@ -845,11 +829,7 @@ void defaultStream::write(const char* s, size_t len) {
   if (DisplayVMOutput &&
       (_outer_xmlStream == NULL || !_outer_xmlStream->inside_attrs())) {
     // print to output stream. It can be redirected by a vfprintf hook
-    if (s[len] == '\0') {
-      jio_print(s);
-    } else {
-      call_jio_print(s, len);
-    }
+    jio_print(s, len);
   }
 
   // print to log file
