@@ -1731,11 +1731,11 @@ bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
   assert(DumpSharedSpaces, "should only be called during dumping");
   if (ik->init_state() < InstanceKlass::linked) {
     bool saved = BytecodeVerificationLocal;
-    if (!(ik->is_shared_boot_class())) {
+    if (ik->loader_type() == 0 && ik->class_loader() == NULL) {
       // The verification decision is based on BytecodeVerificationRemote
       // for non-system classes. Since we are using the NULL classloader
-      // to load non-system classes during dumping, we need to temporarily
-      // change BytecodeVerificationLocal to be the same as
+      // to load non-system classes for customized class loaders during dumping,
+      // we need to temporarily change BytecodeVerificationLocal to be the same as
       // BytecodeVerificationRemote. Note this can cause the parent system
       // classes also being verified. The extra overhead is acceptable during
       // dumping.
