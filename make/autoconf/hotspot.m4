@@ -269,9 +269,9 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
     USER_JVM_FEATURE_LIST=`$ECHO $with_jvm_features | $SED -e 's/,/ /g'`
     AC_MSG_RESULT([$user_jvm_feature_list])
     # These features will be added to all variant defaults
-    JVM_FEATURES=`$ECHO $USER_JVM_FEATURE_LIST | $AWK '{ for (i=1; i<=NF; i++) if (!match($i, /-.*/)) print $i }'`
+    JVM_FEATURES=`$ECHO $USER_JVM_FEATURE_LIST | $AWK '{ for (i=1; i<=NF; i++) if (!match($i, /^-.*/)) print $i }'`
     # These features will be removed from all variant defaults
-    DISABLED_JVM_FEATURES=`$ECHO $USER_JVM_FEATURE_LIST | $AWK '{ for (i=1; i<=NF; i++) if (match($i, /-.*/)) print substr($i, 2) }'`
+    DISABLED_JVM_FEATURES=`$ECHO $USER_JVM_FEATURE_LIST | $AWK '{ for (i=1; i<=NF; i++) if (match($i, /^-.*/)) print substr($i, 2) }'`
 
     # Verify that the user has provided valid features
     BASIC_GET_NON_MATCHING_VALUES(INVALID_FEATURES, $JVM_FEATURES $DISABLED_JVM_FEATURES, $VALID_JVM_FEATURES)
