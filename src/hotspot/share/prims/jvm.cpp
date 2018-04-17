@@ -2768,15 +2768,14 @@ JNIEXPORT int jio_printf(const char *fmt, ...) {
   return len;
 }
 
-
 // HotSpot specific jio method
-void jio_print(const char* s) {
+void jio_print(const char* s, size_t len) {
   // Try to make this function as atomic as possible.
   if (Arguments::vfprintf_hook() != NULL) {
-    jio_fprintf(defaultStream::output_stream(), "%s", s);
+    jio_fprintf(defaultStream::output_stream(), "%.*s", (int)len, s);
   } else {
     // Make an unused local variable to avoid warning from gcc 4.x compiler.
-    size_t count = ::write(defaultStream::output_fd(), s, (int)strlen(s));
+    size_t count = ::write(defaultStream::output_fd(), s, (int)len);
   }
 }
 
