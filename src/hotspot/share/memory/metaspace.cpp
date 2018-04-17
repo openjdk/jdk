@@ -28,9 +28,9 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
-#include "memory/binaryTreeDictionary.hpp"
+#include "memory/binaryTreeDictionary.inline.hpp"
 #include "memory/filemap.hpp"
-#include "memory/freeList.hpp"
+#include "memory/freeList.inline.hpp"
 #include "memory/metachunk.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceGCThresholdUpdater.hpp"
@@ -5342,4 +5342,3 @@ extern void test_metaspace_retrieve_chunk_geometry(Metaspace::MetadataType mdTyp
     out->medium_chunk_word_size = ClassMediumChunk;
   }
 }
-

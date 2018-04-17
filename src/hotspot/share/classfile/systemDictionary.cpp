@@ -44,6 +44,7 @@
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "gc/shared/oopStorage.inline.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
@@ -116,6 +117,8 @@ InstanceKlass* volatile SystemDictionary::_abstract_ownable_synchronizer_klass =
 // Default ProtectionDomainCacheSize value
 
 const int defaultProtectionDomainCacheSize = 1009;
+
+OopStorage* SystemDictionary::_vm_weak_oop_storage = NULL;
 
 
 // ----------------------------------------------------------------------------
@@ -1012,7 +1015,9 @@ InstanceKlass* SystemDictionary::parse_stream(Symbol* class_name,
                                                       CHECK_NULL);
 
   if (host_klass != NULL && k != NULL) {
-    // If it's anonymous, initialize it now, since nobody else will.
+    // Anonymous classes must update ClassLoaderData holder (was host_klass loader)
+    // so that they can be unloaded when the mirror is no longer referenced.
+    k->class_loader_data()->initialize_holder(Handle(THREAD, k->java_mirror()));
 
     {
       MutexLocker mu_r(Compile_lock, THREAD);
@@ -1032,6 +1037,8 @@ InstanceKlass* SystemDictionary::parse_stream(Symbol* class_name,
     if (cp_patches != NULL) {
       k->constants()->patch_resolved_references(cp_patches);
     }
+
+    // If it's anonymous, initialize it now, since nobody else will.
     k->eager_initialize(CHECK_NULL);
 
     // notify jvmti
@@ -1210,7 +1217,7 @@ bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
     }
   }
   SharedClassPathEntry* ent =
-            (SharedClassPathEntry*)FileMapInfo::shared_classpath(path_index);
+            (SharedClassPathEntry*)FileMapInfo::shared_path(path_index);
   if (!Universe::is_module_initialized()) {
     assert(ent != NULL && ent->is_modules_image(),
            "Loading non-bootstrap classes before the module system is initialized");
@@ -1848,6 +1855,10 @@ bool SystemDictionary::do_unloading(BoolObjectClosure* is_alive,
                                     GCTimer* gc_timer,
                                     bool do_cleaning) {
 
+  {
+    GCTraceTime(Debug, gc, phases) t("SystemDictionary WeakHandle cleaning", gc_timer);
+    vm_weak_oop_storage()->weak_oops_do(is_alive, &do_nothing_cl);
+  }
 
   bool unloading_occurred;
   {
@@ -1896,9 +1907,11 @@ void SystemDictionary::roots_oops_do(OopClosure* strong, OopClosure* weak) {
     // Only the protection domain oops contain references into the heap. Iterate
     // over all of them.
     _pd_cache_table->oops_do(strong);
+    vm_weak_oop_storage()->oops_do(strong);
   } else {
    if (weak != NULL) {
      _pd_cache_table->oops_do(weak);
+     vm_weak_oop_storage()->oops_do(weak);
    }
   }
 
@@ -1924,6 +1937,8 @@ void SystemDictionary::oops_do(OopClosure* f) {
   invoke_method_table()->oops_do(f);
 
   ResolvedMethodTable::oops_do(f);
+
+  vm_weak_oop_storage()->oops_do(f);
 }
 
 // CDS: scan and relocate all classes in the system dictionary.
@@ -3104,4 +3119,16 @@ const char* SystemDictionary::loader_name(const oop loader) {
 const char* SystemDictionary::loader_name(const ClassLoaderData* loader_data) {
   return (loader_data->class_loader() == NULL ? "<bootloader>" :
           SystemDictionary::loader_name(loader_data->class_loader()));
+}
+
+void SystemDictionary::initialize_oop_storage() {
+  _vm_weak_oop_storage =
+    new OopStorage("VM Weak Oop Handles",
+                   VMWeakAlloc_lock,
+                   VMWeakActive_lock);
+}
+
+OopStorage* SystemDictionary::vm_weak_oop_storage() {
+  assert(_vm_weak_oop_storage != NULL, "Uninitialized");
+  return _vm_weak_oop_storage;
 }

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2017, SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -744,31 +744,7 @@ class MacroAssembler: public Assembler {
   void compiler_fast_lock_object(Register oop, Register box, Register temp1, Register temp2, bool try_bias = UseBiasedLocking);
   void compiler_fast_unlock_object(Register oop, Register box, Register temp1, Register temp2, bool try_bias = UseBiasedLocking);
 
-  // Write to card table for modification at store_addr - register is destroyed afterwards.
-  void card_write_barrier_post(Register store_addr, Register tmp);
-
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
-
-#if INCLUDE_ALL_GCS
-  // General G1 pre-barrier generator.
-  // Purpose: record the previous value if it is not null.
-  // All non-tmps are preserved.
-  void g1_write_barrier_pre(Register           Robj,
-                            RegisterOrConstant offset,
-                            Register           Rpre_val,        // Ideally, this is a non-volatile register.
-                            Register           Rval,            // Will be preserved.
-                            Register           Rtmp1,           // If Rpre_val is volatile, either Rtmp1
-                            Register           Rtmp2,           // or Rtmp2 has to be non-volatile.
-                            bool               pre_val_needed); // Save Rpre_val across runtime call, caller uses it.
-
-  // General G1 post-barrier generator.
-  // Purpose: Store cross-region card.
-  void g1_write_barrier_post(Register Rstore_addr,
-                             Register Rnew_val,
-                             Register Rtmp1,
-                             Register Rtmp2,
-                             Register Rtmp3);
-#endif // INCLUDE_ALL_GCS
 
   // Support for last Java frame (but use call_VM instead where possible).
  private:

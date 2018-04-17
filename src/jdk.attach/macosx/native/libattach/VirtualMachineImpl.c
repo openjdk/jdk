@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,20 @@
  * questions.
  */
 
-#include "jni.h"
 #include "jni_util.h"
-#include "jvm.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <unistd.h>
-#include <signal.h>
-#include <dirent.h>
-#include <ctype.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/syslimits.h>
+#include <sys/types.h>
 #include <sys/un.h>
+#include <errno.h>
 #include <fcntl.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "sun_tools_attach_VirtualMachineImpl.h"
 
@@ -144,6 +140,8 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_checkPermissions
         uid_t uid, gid;
         int res;
 
+        memset(&sb, 0, sizeof(struct stat));
+
         /*
          * Check that the path is owned by the effective uid/gid of this
          * process. Also check that group/other access is not allowed.
@@ -161,21 +159,21 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_checkPermissions
             char msg[100];
             jboolean isError = JNI_FALSE;
             if (sb.st_uid != uid) {
-                jio_snprintf(msg, sizeof(msg)-1,
+                snprintf(msg, sizeof(msg),
                     "file should be owned by the current user (which is %d) but is owned by %d", uid, sb.st_uid);
                 isError = JNI_TRUE;
             } else if (sb.st_gid != gid) {
-                jio_snprintf(msg, sizeof(msg)-1,
+                snprintf(msg, sizeof(msg),
                     "file's group should be the current group (which is %d) but the group is %d", gid, sb.st_gid);
                 isError = JNI_TRUE;
             } else if ((sb.st_mode & (S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)) != 0) {
-                jio_snprintf(msg, sizeof(msg)-1,
+                snprintf(msg, sizeof(msg),
                     "file should only be readable and writable by the owner but has 0%03o access", sb.st_mode & 0777);
                 isError = JNI_TRUE;
             }
             if (isError) {
                 char buf[256];
-                jio_snprintf(buf, sizeof(buf)-1, "well-known file %s is not secure: %s", p, msg);
+                snprintf(buf, sizeof(buf), "well-known file %s is not secure: %s", p, msg);
                 JNU_ThrowIOException(env, buf);
             }
         } else {
@@ -201,6 +199,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_close
   (JNIEnv *env, jclass cls, jint fd)
 {
     int res;
+    shutdown(fd, SHUT_RDWR);
     RESTARTABLE(close(fd), res);
 }
 
@@ -255,8 +254,8 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_write
 
         RESTARTABLE(write(fd, buf, len), n);
         if (n > 0) {
-           off += n;
-           remaining -= n;
+            off += n;
+            remaining -= n;
         } else {
             JNU_ThrowIOExceptionWithLastError(env, "write");
             return;

@@ -22,7 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
+#ifndef SHARE_MEMORY_FREELIST_INLINE_HPP
+#define SHARE_MEMORY_FREELIST_INLINE_HPP
+
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/freeList.hpp"
 #include "memory/metachunk.hpp"
@@ -30,9 +32,6 @@
 #include "runtime/mutex.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/cms/freeChunk.hpp"
-#endif // INCLUDE_ALL_GCS
 
 // Free list.  A FreeList is used to access a linked list of chunks
 // of space in the heap.  The head and tail are maintained so that
@@ -329,8 +328,4 @@ void FreeList<Chunk_t>::print_on(outputStream* st, const char* c) const {
   }
 }
 
-template class FreeList<Metablock>;
-template class FreeList<Metachunk>;
-#if INCLUDE_ALL_GCS
-template class FreeList<FreeChunk>;
-#endif // INCLUDE_ALL_GCS
+#endif // SHARE_MEMORY_FREELIST_INLINE_HPP

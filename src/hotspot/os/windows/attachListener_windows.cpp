@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,12 +131,12 @@ class Win32AttachOperation: public AttachOperation {
     pipe_name_max = 256             // maximum pipe name
   };
 
-  char _pipe[pipe_name_max+1];
+  char _pipe[pipe_name_max + 1];
 
   const char* pipe() const                              { return _pipe; }
   void set_pipe(const char* pipe) {
-    assert(strlen(pipe) <= pipe_name_max, "execeds maximum length of pipe name");
-    strcpy(_pipe, pipe);
+    assert(strlen(pipe) <= pipe_name_max, "exceeds maximum length of pipe name");
+    os::snprintf(_pipe, sizeof(_pipe), "%s", pipe);
   }
 
   HANDLE open_pipe();
@@ -329,12 +329,20 @@ void Win32AttachOperation::complete(jint result, bufferedStream* result_stream) 
 
     fSuccess = write_pipe(hPipe, msg, (int)strlen(msg));
     if (fSuccess) {
-      write_pipe(hPipe, (char*) result_stream->base(), (int)(result_stream->size()));
+      fSuccess = write_pipe(hPipe, (char*)result_stream->base(), (int)(result_stream->size()));
     }
 
     // Need to flush buffers
     FlushFileBuffers(hPipe);
     CloseHandle(hPipe);
+
+    if (fSuccess) {
+      log_debug(attach)("wrote result of attach operation %s to pipe %s", name(), pipe());
+    } else {
+      log_error(attach)("failure writing result of operation %s to pipe %s", name(), pipe());
+    }
+  } else {
+    log_error(attach)("could not open pipe %s to send result of operation %s", pipe(), name());
   }
 
   DWORD res = ::WaitForSingleObject(Win32AttachListener::mutex(), INFINITE);

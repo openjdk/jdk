@@ -28,7 +28,6 @@
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/cardTableBarrierSetAssembler.hpp"
-#include "gc/shared/collectedHeap.hpp"
 
 #define __ masm->
 
@@ -44,7 +43,7 @@
 
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                                     Register addr, Register count, Register tmp) {
-  BarrierSet *bs = Universe::heap()->barrier_set();
+  BarrierSet *bs = BarrierSet::barrier_set();
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
   assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
@@ -84,4 +83,71 @@ __ BIND(L_loop);
 #endif
 
 __ BIND(L_done);
+}
+
+void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register obj, Address dst) {
+  // Does a store check for the oop in register obj. The content of
+  // register obj is destroyed afterwards.
+  BarrierSet* bs = BarrierSet::barrier_set();
+
+  CardTableBarrierSet* ct = barrier_set_cast<CardTableBarrierSet>(bs);
+  assert(sizeof(*ct->card_table()->byte_map_base()) == sizeof(jbyte), "adjust this code");
+
+  __ shrptr(obj, CardTable::card_shift);
+
+  Address card_addr;
+
+  // The calculation for byte_map_base is as follows:
+  // byte_map_base = _byte_map - (uintptr_t(low_bound) >> card_shift);
+  // So this essentially converts an address to a displacement and it will
+  // never need to be relocated. On 64bit however the value may be too
+  // large for a 32bit displacement.
+  intptr_t disp = (intptr_t) ct->card_table()->byte_map_base();
+  if (__ is_simm32(disp)) {
+    card_addr = Address(noreg, obj, Address::times_1, disp);
+  } else {
+    // By doing it as an ExternalAddress 'disp' could be converted to a rip-relative
+    // displacement and done in a single instruction given favorable mapping and a
+    // smarter version of as_Address. However, 'ExternalAddress' generates a relocation
+    // entry and that entry is not properly handled by the relocation code.
+    AddressLiteral cardtable((address)ct->card_table()->byte_map_base(), relocInfo::none);
+    Address index(noreg, obj, Address::times_1);
+    card_addr = __ as_Address(ArrayAddress(cardtable, index));
+  }
+
+  int dirty = CardTable::dirty_card_val();
+  if (UseCondCardMark) {
+    Label L_already_dirty;
+    if (UseConcMarkSweepGC) {
+      __ membar(Assembler::StoreLoad);
+    }
+    __ cmpb(card_addr, dirty);
+    __ jcc(Assembler::equal, L_already_dirty);
+    __ movb(card_addr, dirty);
+    __ bind(L_already_dirty);
+  } else {
+    __ movb(card_addr, dirty);
+  }
+}
+
+void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                                Address dst, Register val, Register tmp1, Register tmp2) {
+  bool in_heap = (decorators & IN_HEAP) != 0;
+
+  bool on_array = (decorators & IN_HEAP_ARRAY) != 0;
+  bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
+  bool precise = on_array || on_anonymous;
+
+  bool needs_post_barrier = val != noreg && in_heap;
+
+  BarrierSetAssembler::store_at(masm, decorators, type, dst, val, noreg, noreg);
+  if (needs_post_barrier) {
+    // flatten object address if needed
+    if (!precise || (dst.index() == noreg && dst.disp() == 0)) {
+      store_check(masm, dst.base(), dst);
+    } else {
+      __ lea(tmp1, dst);
+      store_check(masm, tmp1, dst);
+    }
+  }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,11 +65,22 @@ public class LimitModsHelper {
                 // Make sure we got the expected defining ClassLoader
                 testLoader(clazz, expectedLoaders[i]);
 
-                // Make sure the class is in the shared space
-                if (!wb.isSharedClass(clazz)) {
-                    throw new RuntimeException(clazz.getName() +
-                        ".class should be in the shared space. " +
-                         "loader=" + clazz.getClassLoader() + " module=" + clazz.getModule().getName());
+                // Make sure the class is not in the shared space
+                // because CDS is disabled with --limit-modules during run time.
+                if (excludeModIdx != -1) {
+                    if (wb.isSharedClass(clazz)) {
+                        throw new RuntimeException(clazz.getName() +
+                            ".class should not be in the shared space. " +
+                             "loader=" + clazz.getClassLoader() + " module=" + clazz.getModule().getName());
+                    }
+                } else {
+                    // class should be in the shared space if --limit-modules
+                    // isn't specified during run time
+                    if (!wb.isSharedClass(clazz)) {
+                        throw new RuntimeException(clazz.getName() +
+                            ".class should be in the shared space. " +
+                             "loader=" + clazz.getClassLoader() + " module=" + clazz.getModule().getName());
+                    }
                 }
             }
             clazz = null;

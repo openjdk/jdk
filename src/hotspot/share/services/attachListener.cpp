@@ -334,7 +334,9 @@ static AttachOperationFunctionInfo funcs[] = {
 static void attach_listener_thread_entry(JavaThread* thread, TRAPS) {
   os::set_priority(thread, NearMaxPriority);
 
-  thread->record_stack_base_and_size();
+  assert(thread == Thread::current(), "Must be");
+  assert(thread->stack_base() != NULL && thread->stack_size() > 0,
+         "Should already be setup");
 
   if (AttachListener::pd_init() != 0) {
     return;

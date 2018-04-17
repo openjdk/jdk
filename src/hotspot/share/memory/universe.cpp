@@ -689,6 +689,8 @@ jint universe_init() {
     return status;
   }
 
+  SystemDictionary::initialize_oop_storage();
+
   Metaspace::global_initialize();
 
   // Initialize performance counters for metaspaces

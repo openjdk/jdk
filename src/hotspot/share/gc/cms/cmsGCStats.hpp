@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,18 @@
  *
  */
 
-#ifndef SHARE_VM_GC_CMS_VMSTRUCTS_PARNEW_HPP
-#define SHARE_VM_GC_CMS_VMSTRUCTS_PARNEW_HPP
+#ifndef SHARE_GC_CMS_CMSGCSTATS_HPP
+#define SHARE_GC_CMS_CMSGCSTATS_HPP
 
-#define VM_TYPES_PARNEW(declare_type)                                     \
-           declare_type(ParNewGeneration,             DefNewGeneration)
+#include "gc/shared/gcStats.hpp"
 
-#define VM_INT_CONSTANTS_PARNEW(declare_constant)                         \
-  declare_constant(Generation::ParNew)
+class CMSGCStats : public GCStats {
+ public:
+  CMSGCStats();
 
-#endif // SHARE_VM_GC_CMS_VMSTRUCTS_PARNEW_HPP
+  virtual Name kind() {
+    return CMSGCStatsKind;
+  }
+};
+
+#endif // SHARE_GC_CMS_CMSGCSTATS_HPP

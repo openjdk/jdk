@@ -26,6 +26,8 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "interp_masm_ppc.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "prims/jvmtiThreadState.hpp"
@@ -492,9 +494,8 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
 #endif
   // Add in the index.
   add(result, tmp, result);
-  load_heap_oop(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result, is_null);
-  // The resulting oop is null if the reference is not yet resolved.
-  // It is Universe::the_null_sentinel() if the reference resolved to NULL via condy.
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->load_at(this, IN_HEAP, T_OBJECT, result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result, tmp, R0, false, is_null);
 }
 
 // load cpool->resolved_klass_at(index)
@@ -2446,4 +2447,3 @@ void InterpreterMacroAssembler::notify_method_exit(bool is_native_method, TosSta
 
   // Dtrace support not implemented.
 }
-

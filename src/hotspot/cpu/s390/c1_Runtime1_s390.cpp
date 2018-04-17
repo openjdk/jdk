@@ -45,6 +45,7 @@
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #endif
 
 // Implementation of StubAssembler
@@ -767,7 +768,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
     case g1_pre_barrier_slow_id:
       { // Z_R1_scratch: previous value of memory
 
-        BarrierSet* bs = Universe::heap()->barrier_set();
+        BarrierSet* bs = BarrierSet::barrier_set();
         if (bs->kind() != BarrierSet::G1BarrierSet) {
           __ should_not_reach_here(FILE_AND_LINE);
           break;
@@ -780,15 +781,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Register tmp2 = Z_R7;
 
         Label refill, restart, marking_not_active;
-        int satb_q_active_byte_offset =
-          in_bytes(JavaThread::satb_mark_queue_offset() +
-                   SATBMarkQueue::byte_offset_of_active());
-        int satb_q_index_byte_offset =
-          in_bytes(JavaThread::satb_mark_queue_offset() +
-                   SATBMarkQueue::byte_offset_of_index());
-        int satb_q_buf_byte_offset =
-          in_bytes(JavaThread::satb_mark_queue_offset() +
-                   SATBMarkQueue::byte_offset_of_buf());
+        int satb_q_active_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset());
+        int satb_q_index_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset());
+        int satb_q_buf_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset());
 
         // Save tmp registers (see assertion in G1PreBarrierStub::emit_code()).
         __ z_stg(tmp,  0*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
@@ -836,7 +831,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
     case g1_post_barrier_slow_id:
       { // Z_R1_scratch: oop address, address of updated memory slot
-        BarrierSet* bs = Universe::heap()->barrier_set();
+        BarrierSet* bs = BarrierSet::barrier_set();
         if (bs->kind() != BarrierSet::G1BarrierSet) {
           __ should_not_reach_here(FILE_AND_LINE);
           break;
@@ -890,10 +885,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         // Save registers used below (see assertion in G1PreBarrierStub::emit_code()).
         __ z_stg(r2, 1*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
 
-        ByteSize dirty_card_q_index_byte_offset =
-          JavaThread::dirty_card_queue_offset() + DirtyCardQueue::byte_offset_of_index();
-        ByteSize dirty_card_q_buf_byte_offset =
-          JavaThread::dirty_card_queue_offset() + DirtyCardQueue::byte_offset_of_buf();
+        ByteSize dirty_card_q_index_byte_offset = G1ThreadLocalData::dirty_card_queue_index_offset();
+        ByteSize dirty_card_q_buf_byte_offset = G1ThreadLocalData::dirty_card_queue_buffer_offset();
 
         __ bind(restart);
 

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,12 @@
 #include "services/attachListener.hpp"
 #include "services/dtraceAttacher.hpp"
 
-#include <unistd.h>
 #include <signal.h>
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/un.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/un.h>
+#include <unistd.h>
 
 #ifndef UNIX_PATH_MAX
 #define UNIX_PATH_MAX   sizeof(((struct sockaddr_un *)0)->sun_path)
@@ -145,10 +145,10 @@ class ArgumentIterator : public StackObj {
   }
   char* next() {
     if (*_pos == '\0') {
+      // advance the iterator if possible (null arguments)
       if (_pos < _end) {
         _pos += 1;
       }
-
       return NULL;
     }
     char* res = _pos;
@@ -233,10 +233,10 @@ int AixAttachListener::init() {
   // put in listen mode, set permissions, and rename into place
   res = ::listen(listener, 5);
   if (res == 0) {
-      RESTARTABLE(::chmod(initial_path, (S_IREAD|S_IWRITE) & ~(S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)), res);
-      if (res == 0) {
-          res = ::rename(initial_path, path);
-      }
+    RESTARTABLE(::chmod(initial_path, S_IREAD|S_IWRITE), res);
+    if (res == 0) {
+      res = ::rename(initial_path, path);
+    }
   }
   if (res == -1) {
     ::close(listener);
@@ -284,10 +284,12 @@ AixAttachOperation* AixAttachListener::read_request(int s) {
     // Don't block on interrupts because this will
     // hang in the clean-up when shutting down.
     n = read(s, buf+off, left);
+    assert(n <= left, "buffer was too small, impossible!");
+    buf[max_len - 1] = '\0';
     if (n == -1) {
       return NULL;      // reset by peer or other error
     }
-    if (n == 0) {       // end of file reached
+    if (n == 0) {
       break;
     }
     for (int i=0; i<n; i++) {
@@ -362,7 +364,7 @@ AixAttachOperation* AixAttachListener::dequeue() {
     socklen_t len = sizeof(addr);
     memset(&addr, 0, len);
     // We must prevent accept blocking on the socket if it has been shut down.
-    // Therefore we allow interrups and check whether we have been shut down already.
+    // Therefore we allow interrupts and check whether we have been shut down already.
     if (AixAttachListener::is_shutdown()) {
       return NULL;
     }
@@ -371,19 +373,11 @@ AixAttachOperation* AixAttachListener::dequeue() {
       return NULL;      // log a warning?
     }
 
-    // Added timeouts for read and write.  If we get no request within the
-    // next AttachListenerTimeout milliseconds we just finish the connection.
-    struct timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = AttachListenerTimeout * 1000;
-    ::setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof(tv));
-    ::setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, (char*)&tv, sizeof(tv));
-
     // get the credentials of the peer and check the effective uid/guid
-    // - check with jeff on this.
     struct peercred_struct cred_info;
     socklen_t optlen = sizeof(cred_info);
     if (::getsockopt(s, SOL_SOCKET, SO_PEERID, (void*)&cred_info, &optlen) == -1) {
+      log_debug(attach)("Failed to get socket option SO_PEERID");
       ::close(s);
       continue;
     }
@@ -391,6 +385,7 @@ AixAttachOperation* AixAttachListener::dequeue() {
     gid_t egid = getegid();
 
     if (cred_info.euid != euid || cred_info.egid != egid) {
+      log_debug(attach)("euid/egid check failed (%d/%d vs %d/%d)", cred_info.euid, cred_info.egid, euid, egid);
       ::close(s);
       continue;
     }
@@ -532,10 +527,10 @@ bool AttachListener::is_init_trigger() {
   if (init_at_startup() || is_initialized()) {
     return false;               // initialized at startup or already initialized
   }
-  char fn[PATH_MAX+1];
-  sprintf(fn, ".attach_pid%d", os::current_process_id());
+  char fn[PATH_MAX + 1];
   int ret;
   struct stat64 st;
+  sprintf(fn, ".attach_pid%d", os::current_process_id());
   RESTARTABLE(::stat64(fn, &st), ret);
   if (ret == -1) {
     log_trace(attach)("Failed to find attach file: %s, trying alternate", fn);
@@ -551,7 +546,7 @@ bool AttachListener::is_init_trigger() {
     // a bogus user creates the file
     if (st.st_uid == geteuid()) {
       init();
-      log_trace(attach)("Attach trigerred by %s", fn);
+      log_trace(attach)("Attach triggered by %s", fn);
       return true;
     } else {
       log_debug(attach)("File %s has wrong user id %d (vs %d). Attach is not triggered", fn, st.st_uid, geteuid());

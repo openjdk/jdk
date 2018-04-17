@@ -31,9 +31,3 @@ GCStats::GCStats() {
                                                   AdaptiveSizePolicyWeight,
                                                   PromotedPadding);
 }
-
-CMSGCStats::CMSGCStats() {
-    _avg_promoted       = new AdaptivePaddedNoZeroDevAverage(
-                                                  CMSExpAvgFactor,
-                                                  PromotedPadding);
-}

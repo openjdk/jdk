@@ -28,7 +28,6 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/gcLocker.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/vmGCOperations.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -52,9 +51,6 @@
 #include "services/threadService.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/parallel/parallelScavengeHeap.hpp"
-#endif // INCLUDE_ALL_GCS
 
 /*
  * HPROF binary format - description copied from:

@@ -380,9 +380,7 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
     public final int javaThreadAnchorOffset = getFieldOffset("JavaThread::_anchor", Integer.class, "JavaFrameAnchor");
     public final int threadObjectOffset = getFieldOffset("JavaThread::_threadObj", Integer.class, "oop");
     public final int osThreadOffset = getFieldOffset("JavaThread::_osthread", Integer.class, "OSThread*");
-    public final int javaThreadDirtyCardQueueOffset = getFieldOffset("JavaThread::_dirty_card_queue", Integer.class, "DirtyCardQueue");
     public final int threadIsMethodHandleReturnOffset = getFieldOffset("JavaThread::_is_method_handle_return", Integer.class, "int");
-    public final int javaThreadSatbMarkQueueOffset = getFieldOffset("JavaThread::_satb_mark_queue", Integer.class);
     public final int threadObjectResultOffset = getFieldOffset("JavaThread::_vm_result", Integer.class, "oop");
     public final int jvmciCountersThreadOffset = getFieldOffset("JavaThread::_jvmci_counters", Integer.class, "jlong*");
     public final int javaThreadReservedStackActivationOffset = getFieldOffset("JavaThread::_reserved_stack_activation", Integer.class, "address", intNotPresentInJDK8);
@@ -454,13 +452,6 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
     public final int runtimeCallStackSize = getConstant("frame::arg_reg_save_area_bytes", Integer.class, intRequiredOnAMD64);
     public final int frameInterpreterFrameSenderSpOffset = getConstant("frame::interpreter_frame_sender_sp_offset", Integer.class, intRequiredOnAMD64);
     public final int frameInterpreterFrameLastSpOffset = getConstant("frame::interpreter_frame_last_sp_offset", Integer.class, intRequiredOnAMD64);
-
-    private final int dirtyCardQueueBufferOffset = isJDK8 ? getFieldOffset("PtrQueue::_buf", Integer.class, "void**") : getConstant("dirtyCardQueueBufferOffset", Integer.class);
-    private final int dirtyCardQueueIndexOffset = isJDK8 ? getFieldOffset("PtrQueue::_index", Integer.class, "size_t") : getConstant("dirtyCardQueueIndexOffset", Integer.class);
-
-    private final int satbMarkQueueBufferOffset = getConstant("satbMarkQueueBufferOffset", Integer.class, intNotPresentInJDK8);
-    private final int satbMarkQueueIndexOffset = getConstant("satbMarkQueueIndexOffset", Integer.class, intNotPresentInJDK8);
-    private final int satbMarkQueueActiveOffset = isJDK8 ? getFieldOffset("PtrQueue::_active", Integer.class, "bool") : getConstant("satbMarkQueueActiveOffset", Integer.class, intNotPresentInJDK8);
 
     public final int osThreadInterruptedOffset = getFieldOffset("OSThread::_interrupted", Integer.class, "jint");
 
@@ -575,25 +566,11 @@ public class GraalHotSpotVMConfig extends HotSpotVMConfigAccess {
 
     // G1 Collector Related Values.
 
-    public int g1CardQueueIndexOffset() {
-        return javaThreadDirtyCardQueueOffset + dirtyCardQueueIndexOffset;
-    }
-
-    public int g1CardQueueBufferOffset() {
-        return javaThreadDirtyCardQueueOffset + dirtyCardQueueBufferOffset;
-    }
-
-    public int g1SATBQueueMarkingOffset() {
-        return javaThreadSatbMarkQueueOffset + satbMarkQueueActiveOffset;
-    }
-
-    public int g1SATBQueueIndexOffset() {
-        return javaThreadSatbMarkQueueOffset + (isJDK8 ? dirtyCardQueueIndexOffset : satbMarkQueueIndexOffset);
-    }
-
-    public int g1SATBQueueBufferOffset() {
-        return javaThreadSatbMarkQueueOffset + (isJDK8 ? dirtyCardQueueBufferOffset : satbMarkQueueBufferOffset);
-    }
+    public final int g1SATBQueueMarkingOffset = getConstant("G1ThreadLocalData::satb_mark_queue_active_offset", Integer.class);
+    public final int g1SATBQueueIndexOffset = getConstant("G1ThreadLocalData::satb_mark_queue_index_offset", Integer.class);
+    public final int g1SATBQueueBufferOffset = getConstant("G1ThreadLocalData::satb_mark_queue_buffer_offset", Integer.class);
+    public final int g1CardQueueIndexOffset = getConstant("G1ThreadLocalData::dirty_card_queue_index_offset", Integer.class);
+    public final int g1CardQueueBufferOffset = getConstant("G1ThreadLocalData::dirty_card_queue_buffer_offset", Integer.class);
 
     public final int klassOffset = getFieldValue("java_lang_Class::_klass_offset", Integer.class, "int");
     public final int arrayKlassOffset = getFieldValue("java_lang_Class::_array_klass_offset", Integer.class, "int");

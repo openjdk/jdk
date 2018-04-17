@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 import sun.hotspot.WhiteBox;
 
 public class JvmtiApp {
-    static Class forname() {
+    static Class forname(String cn) {
         try {
-            return Class.forName("Hello");
+            return Class.forName(cn);
         } catch (Throwable t) {
             return null;
         }
@@ -40,9 +40,14 @@ public class JvmtiApp {
 
     // See ../JvmtiAddPath.java for how the classpaths are configured.
     public static void main(String args[]) {
+        String cn = "Hello";
+        if (args.length >= 3) {
+            cn = args[args.length - 1];
+        }
+
         if (args[0].equals("noadd")) {
-            if (forname() != null) {
-                failed("Hello class was loaded unexpectedly");
+            if (forname(cn) != null) {
+                failed(cn + " class was loaded unexpectedly");
             }
             // We use -verbose:class to verify that Extra.class IS loaded by AppCDS if
             // the boot classpath HAS NOT been appended.
@@ -54,39 +59,41 @@ public class JvmtiApp {
 
         if (args[0].equals("bootonly")) {
             wb.addToBootstrapClassLoaderSearch(args[1]);
-            Class cls = forname();
+            Class cls = forname(cn);
             if (cls == null) {
-                failed("Cannot find Hello class");
+                failed("Cannot find " + cn + " class");
             }
             if (cls.getClassLoader() != null) {
                 failed("Hello class not loaded by boot classloader");
             }
         } else if (args[0].equals("apponly")) {
             wb.addToSystemClassLoaderSearch(args[1]);
-            Class cls = forname();
+            Class cls = forname(cn);
             if (cls == null) {
-                failed("Cannot find Hello class");
+                failed("Cannot find " + cn + " class");
             }
             if (cls.getClassLoader() != JvmtiApp.class.getClassLoader()) {
-                failed("Hello class not loaded by app classloader");
+                failed(cn + " class not loaded by app classloader");
             }
         } else if (args[0].equals("noadd-appcds")) {
-            Class cls = forname();
+            cn = (args.length == 1) ? "Hello" : args[1];
+            Class cls = forname(cn);
             if (cls == null) {
-                failed("Cannot find Hello class");
+                failed("Cannot find " + cn + " class");
             }
             if (cls.getClassLoader() != JvmtiApp.class.getClassLoader()) {
-                failed("Hello class not loaded by app classloader");
+                failed(cn + " class not loaded by app classloader");
             }
         } else if (args[0].equals("appandboot")) {
             wb.addToBootstrapClassLoaderSearch(args[1]);
             wb.addToSystemClassLoaderSearch(args[2]);
-            Class cls = forname();
+            cn = (args.length == 3) ? "Hello" : args[3];
+            Class cls = forname(cn);
             if (cls == null) {
-                failed("Cannot find Hello class");
+                failed("Cannot find " + cn + " class");
             }
             if (cls.getClassLoader() != null) {
-                failed("Hello class not loaded by boot classloader");
+                failed(cn + " class not loaded by boot classloader");
             }
         } else {
             failed("unknown option " + args[0]);

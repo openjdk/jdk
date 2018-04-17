@@ -1308,7 +1308,7 @@ class StubGenerator: public StubCodeGenerator {
       decorators |= ARRAYCOPY_ALIGNED;
     }
 
-    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, T_OBJECT, Z_ARG1, Z_ARG2, Z_ARG3);
 
     generate_disjoint_copy(aligned, size, true, true);
@@ -1400,7 +1400,7 @@ class StubGenerator: public StubCodeGenerator {
       decorators |= ARRAYCOPY_ALIGNED;
     }
 
-    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, T_OBJECT, Z_ARG1, Z_ARG2, Z_ARG3);
 
     generate_conjoint_copy(aligned, size, true);  // Must preserve ARG2, ARG3.

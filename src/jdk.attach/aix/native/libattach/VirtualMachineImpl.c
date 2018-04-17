@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,27 +24,18 @@
  * questions.
  */
 
-#include "jni.h"
 #include "jni_util.h"
-#include "jvm.h"
 
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/un.h>
+#include <errno.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
 #include <unistd.h>
-#include <signal.h>
-#include <dirent.h>
-#include <ctype.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <sys/un.h>
-
-/*
- * Based on 'LinuxVirtualMachine.c'. Non-relevant code has been removed and all
- * occurrences of the string "Linux" have been replaced by "Aix".
- */
 
 #include "sun_tools_attach_VirtualMachineImpl.h"
 
@@ -66,15 +57,6 @@ JNIEXPORT jint JNICALL Java_sun_tools_attach_VirtualMachineImpl_socket
     int fd = socket(PF_UNIX, SOCK_STREAM, 0);
     if (fd == -1) {
         JNU_ThrowIOExceptionWithLastError(env, "socket");
-    }
-    /* added time out values */
-    else {
-        struct timeval tv;
-        tv.tv_sec = 2 * 60;
-        tv.tv_usec = 0;
-
-        setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof(tv));
-        setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (char*)&tv, sizeof(tv));
     }
     return (jint)fd;
 }
@@ -125,23 +107,6 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_connect
     }
 }
 
-
-/*
- * Structure and callback function used to send a QUIT signal to all
- * children of a given process
- */
-typedef struct {
-    pid_t ppid;
-} SendQuitContext;
-
-static void SendQuitCallback(const pid_t pid, void* user_data) {
-    SendQuitContext* context = (SendQuitContext*)user_data;
-    pid_t parent = getParent(pid);
-    if (parent == context->ppid) {
-        kill(pid, SIGQUIT);
-    }
-}
-
 /*
  * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    sendQuitTo
@@ -169,7 +134,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_checkPermissions
         struct stat64 sb;
         uid_t uid, gid;
         int res;
-        /* added missing initialization of the stat64 buffer */
+
         memset(&sb, 0, sizeof(struct stat64));
 
         /*
@@ -189,21 +154,21 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_checkPermissions
             char msg[100];
             jboolean isError = JNI_FALSE;
             if (sb.st_uid != uid) {
-                jio_snprintf(msg, sizeof(msg)-1,
+                snprintf(msg, sizeof(msg),
                     "file should be owned by the current user (which is %d) but is owned by %d", uid, sb.st_uid);
                 isError = JNI_TRUE;
             } else if (sb.st_gid != gid) {
-                jio_snprintf(msg, sizeof(msg)-1,
+                snprintf(msg, sizeof(msg),
                     "file's group should be the current group (which is %d) but the group is %d", gid, sb.st_gid);
                 isError = JNI_TRUE;
             } else if ((sb.st_mode & (S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)) != 0) {
-                jio_snprintf(msg, sizeof(msg)-1,
+                snprintf(msg, sizeof(msg),
                     "file should only be readable and writable by the owner but has 0%03o access", sb.st_mode & 0777);
                 isError = JNI_TRUE;
             }
             if (isError) {
                 char buf[256];
-                jio_snprintf(buf, sizeof(buf)-1, "well-known file %s is not secure: %s", p, msg);
+                snprintf(buf, sizeof(buf), "well-known file %s is not secure: %s", p, msg);
                 JNU_ThrowIOException(env, buf);
             }
         } else {
@@ -229,11 +194,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_close
   (JNIEnv *env, jclass cls, jint fd)
 {
     int res;
-    /* Fixed deadlock when this call of close by the client is not seen by the attach server
-     * which has accepted the (very short) connection already and is waiting for the request. But read don't get a byte,
-     * because the close is lost without shutdown.
-     */
-    shutdown(fd, 2);
+    shutdown(fd, SHUT_RDWR);
     RESTARTABLE(close(fd), res);
 }
 
