@@ -48,6 +48,8 @@ Mutex*   JNIGlobalActive_lock         = NULL;
 Mutex*   JNIWeakAlloc_lock            = NULL;
 Mutex*   JNIWeakActive_lock           = NULL;
 Mutex*   JNIHandleBlockFreeList_lock  = NULL;
+Mutex*   VMWeakAlloc_lock             = NULL;
+Mutex*   VMWeakActive_lock            = NULL;
 Mutex*   ResolvedMethodTable_lock     = NULL;
 Mutex*   JmethodIdCreation_lock       = NULL;
 Mutex*   JfieldIdCreation_lock        = NULL;
@@ -260,6 +262,8 @@ void mutex_init() {
   def(JNIGlobalActive_lock         , PaddedMutex  , nonleaf-1,   true,  Monitor::_safepoint_check_never);
   def(JNIWeakAlloc_lock            , PaddedMutex  , nonleaf,     true,  Monitor::_safepoint_check_never);
   def(JNIWeakActive_lock           , PaddedMutex  , nonleaf-1,   true,  Monitor::_safepoint_check_never);
+  def(VMWeakAlloc_lock             , PaddedMutex  , nonleaf,     true,  Monitor::_safepoint_check_never);
+  def(VMWeakActive_lock            , PaddedMutex  , nonleaf-1,   true,  Monitor::_safepoint_check_never);
   def(JNICritical_lock             , PaddedMonitor, nonleaf,     true,  Monitor::_safepoint_check_always);     // used for JNI critical regions
   def(AdapterHandlerLibrary_lock   , PaddedMutex  , nonleaf,     true,  Monitor::_safepoint_check_always);
 

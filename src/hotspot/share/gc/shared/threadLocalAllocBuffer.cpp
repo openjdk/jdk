@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"

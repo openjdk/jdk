@@ -687,7 +687,6 @@ size_t OopStorage::total_memory_usage() const {
 }
 
 // Parallel iteration support
-#if INCLUDE_ALL_GCS
 
 static char* not_started_marker_dummy = NULL;
 static void* const not_started_marker = &not_started_marker_dummy;
@@ -736,8 +735,6 @@ OopStorage::Block* OopStorage::BasicParState::claim_next_block() {
   }
   return static_cast<Block*>(next);
 }
-
-#endif // INCLUDE_ALL_GCS
 
 const char* OopStorage::name() const { return _name; }
 

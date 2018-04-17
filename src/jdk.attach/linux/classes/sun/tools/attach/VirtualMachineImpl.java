@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             } finally {
                 f.delete();
             }
-      }
+        }
 
         // Check that the file owner/permission to avoid attaching to
         // bogus process
@@ -274,7 +274,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         return new File(root, ".java_pid" + ns_pid);
     }
 
-    // On Solaris/Linux a simple handshake is used to start the attach mechanism
+    // On Linux a simple handshake is used to start the attach mechanism
     // if not already started. The client creates a .attach_pid<pid> file in the
     // target VM's working directory (or temp directory), and the SIGQUIT handler
     // checks for the file.
@@ -355,8 +355,6 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
 
     //-- native methods
-
-    static native void sendQuitToChildrenOf(int pid) throws IOException;
 
     static native void sendQuitTo(int pid) throws IOException;
 

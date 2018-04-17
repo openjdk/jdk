@@ -41,7 +41,7 @@ class Tracker : public StackObj {
      release
   };
   Tracker(enum TrackerType type) : _type(type) { }
-  void record(address addr, size_t size);
+  void record(address addr, size_t size) { }
  private:
   enum TrackerType  _type;
 };
@@ -313,4 +313,3 @@ class MemTracker : AllStatic {
 #endif // INCLUDE_NMT
 
 #endif // SHARE_VM_SERVICES_MEM_TRACKER_HPP
-

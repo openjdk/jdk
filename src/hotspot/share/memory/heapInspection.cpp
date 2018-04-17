@@ -27,7 +27,6 @@
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
@@ -35,9 +34,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/parallel/parallelScavengeHeap.hpp"
-#endif // INCLUDE_ALL_GCS
 
 // HeapInspection
 

@@ -766,7 +766,7 @@ private:
 
   // The concurrent marker (and the thread it runs in.)
   G1ConcurrentMark* _cm;
-  G1ConcurrentMarkThread* _cmThread;
+  G1ConcurrentMarkThread* _cm_thread;
 
   // The concurrent refiner.
   G1ConcurrentRefine* _cr;
@@ -1253,7 +1253,7 @@ public:
   // bitmap off to the side.
   void do_concurrent_mark();
 
-  bool isMarkedNext(oop obj) const;
+  bool is_marked_next(oop obj) const;
 
   // Determine if an object is dead, given the object and also
   // the region to which the object belongs. An object is dead
@@ -1271,7 +1271,7 @@ public:
   bool is_obj_ill(const oop obj, const HeapRegion* hr) const {
     return
       !hr->obj_allocated_since_next_marking(obj) &&
-      !isMarkedNext(obj) &&
+      !is_marked_next(obj) &&
       !hr->is_archive();
   }
 

@@ -1619,7 +1619,6 @@ void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
 void MetaspaceShared::prepare_for_dumping() {
   Arguments::check_unsupported_dumping_properties();
   ClassLoader::initialize_shared_path();
-  FileMapInfo::allocate_classpath_entry_table();
 }
 
 // Preload classes from a list, populate the shared spaces and dump to a
@@ -2001,7 +2000,7 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
       (md_base = mapinfo->map_region(md, &md_top)) != NULL &&
       (od_base = mapinfo->map_region(od, &od_top)) != NULL &&
       (image_alignment == (size_t)os::vm_allocation_granularity()) &&
-      mapinfo->validate_classpath_entry_table()) {
+      mapinfo->validate_shared_path_table()) {
     // Success -- set up MetaspaceObj::_shared_metaspace_{base,top} for
     // fast checking in MetaspaceShared::is_in_shared_metaspace() and
     // MetaspaceObj::is_shared().

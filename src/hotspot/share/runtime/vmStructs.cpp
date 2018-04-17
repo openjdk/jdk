@@ -44,19 +44,7 @@
 #include "code/vmreg.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/oopMap.hpp"
-#include "gc/parallel/immutableSpace.hpp"
-#include "gc/parallel/mutableSpace.hpp"
-#include "gc/serial/defNewGeneration.hpp"
-#include "gc/serial/serialHeap.hpp"
-#include "gc/serial/tenuredGeneration.hpp"
-#include "gc/cms/cmsHeap.hpp"
-#include "gc/shared/cardTableRS.hpp"
-#include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
-#include "gc/shared/generation.hpp"
-#include "gc/shared/generationSpec.hpp"
-#include "gc/shared/oopStorage.hpp"
-#include "gc/shared/space.hpp"
+#include "gc/shared/vmStructs_gc.hpp"
 #include "interpreter/bytecodeInterpreter.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
@@ -112,23 +100,6 @@
 #include CPU_HEADER(vmStructs)
 #include OS_HEADER(vmStructs)
 #include OS_CPU_HEADER(vmStructs)
-
-#if INCLUDE_ALL_GCS
-#include "gc/cms/compactibleFreeListSpace.hpp"
-#include "gc/cms/concurrentMarkSweepGeneration.hpp"
-#include "gc/cms/concurrentMarkSweepThread.hpp"
-#include "gc/cms/parNewGeneration.hpp"
-#include "gc/cms/vmStructs_cms.hpp"
-#include "gc/cms/vmStructs_parNew.hpp"
-#include "gc/g1/vmStructs_g1.hpp"
-#include "gc/parallel/asPSOldGen.hpp"
-#include "gc/parallel/asPSYoungGen.hpp"
-#include "gc/parallel/parallelScavengeHeap.hpp"
-#include "gc/parallel/psOldGen.hpp"
-#include "gc/parallel/psVirtualspace.hpp"
-#include "gc/parallel/psYoungGen.hpp"
-#include "gc/parallel/vmStructs_parallelgc.hpp"
-#endif // INCLUDE_ALL_GCS
 
 #if INCLUDE_JVMCI
 # include "jvmci/vmStructs_jvmci.hpp"
@@ -210,29 +181,38 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
 // NOTE that there are platform-specific additions to this table in
 // vmStructs_<os>_<cpu>.hpp.
 
-#define VM_STRUCTS(nonstatic_field, \
-                   static_field, \
-                   static_ptr_volatile_field, \
-                   unchecked_nonstatic_field, \
-                   volatile_nonstatic_field, \
-                   nonproduct_nonstatic_field, \
-                   c1_nonstatic_field, \
-                   c2_nonstatic_field, \
-                   unchecked_c1_static_field, \
-                   unchecked_c2_static_field) \
+#define VM_STRUCTS(nonstatic_field,                                                                                                  \
+                   static_field,                                                                                                     \
+                   static_ptr_volatile_field,                                                                                        \
+                   unchecked_nonstatic_field,                                                                                        \
+                   volatile_nonstatic_field,                                                                                         \
+                   nonproduct_nonstatic_field,                                                                                       \
+                   c1_nonstatic_field,                                                                                               \
+                   c2_nonstatic_field,                                                                                               \
+                   unchecked_c1_static_field,                                                                                        \
+                   unchecked_c2_static_field)                                                                                        \
+                                                                                                                                     \
+  /*************/                                                                                                                    \
+  /* GC fields */                                                                                                                    \
+  /*************/                                                                                                                    \
+                                                                                                                                     \
+  VM_STRUCTS_GC(nonstatic_field,                                                                                                     \
+                volatile_nonstatic_field,                                                                                            \
+                static_field,                                                                                                        \
+                unchecked_nonstatic_field)                                                                                           \
                                                                                                                                      \
   /******************************************************************/                                                               \
-  /* OopDesc and Klass hierarchies (NOTE: MethodData* incomplete) */                                                                 \
+  /* OopDesc and Klass hierarchies (NOTE: MethodData* incomplete)   */                                                               \
   /******************************************************************/                                                               \
                                                                                                                                      \
   volatile_nonstatic_field(oopDesc,            _mark,                                         markOop)                               \
   volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
   volatile_nonstatic_field(oopDesc,            _metadata._compressed_klass,                   narrowKlass)                           \
-  static_field(BarrierSet,                     _bs,                                           BarrierSet*)                           \
+  static_field(BarrierSet,                     _barrier_set,                                  BarrierSet*)                           \
   nonstatic_field(ArrayKlass,                  _dimension,                                    int)                                   \
   volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             Klass*)                                \
   volatile_nonstatic_field(ArrayKlass,         _lower_dimension,                              Klass*)                                \
-  nonstatic_field(CompiledICHolder,            _holder_metadata,                              Metadata*)                               \
+  nonstatic_field(CompiledICHolder,            _holder_metadata,                              Metadata*)                             \
   nonstatic_field(CompiledICHolder,            _holder_klass,                                 Klass*)                                \
   nonstatic_field(ConstantPool,                _tags,                                         Array<u1>*)                            \
   nonstatic_field(ConstantPool,                _cache,                                        ConstantPoolCache*)                    \
@@ -433,99 +413,9 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
                                                                                                                                      \
      static_field(os,                          _polling_page,                                 address)                               \
                                                                                                                                      \
-  /**********************************************************************************/                                               \
-  /* Generation and Space hierarchies                                               */                                               \
-  /**********************************************************************************/                                               \
-                                                                                                                                     \
-  unchecked_nonstatic_field(AgeTable,          sizes,                                         sizeof(AgeTable::sizes))               \
-                                                                                                                                     \
-  nonstatic_field(BarrierSet,                  _fake_rtti,                                    BarrierSet::FakeRtti)                  \
-                                                                                                                                     \
-  nonstatic_field(BarrierSet::FakeRtti,        _concrete_tag,                                 BarrierSet::Name)                      \
-                                                                                                                                     \
-  nonstatic_field(BlockOffsetTable,            _bottom,                                       HeapWord*)                             \
-  nonstatic_field(BlockOffsetTable,            _end,                                          HeapWord*)                             \
-                                                                                                                                     \
-  nonstatic_field(BlockOffsetSharedArray,      _reserved,                                     MemRegion)                             \
-  nonstatic_field(BlockOffsetSharedArray,      _end,                                          HeapWord*)                             \
-  nonstatic_field(BlockOffsetSharedArray,      _vs,                                           VirtualSpace)                          \
-  nonstatic_field(BlockOffsetSharedArray,      _offset_array,                                 u_char*)                               \
-                                                                                                                                     \
-  nonstatic_field(BlockOffsetArray,            _array,                                        BlockOffsetSharedArray*)               \
-  nonstatic_field(BlockOffsetArray,            _sp,                                           Space*)                                \
-  nonstatic_field(BlockOffsetArrayContigSpace, _next_offset_threshold,                        HeapWord*)                             \
-  nonstatic_field(BlockOffsetArrayContigSpace, _next_offset_index,                            size_t)                                \
-                                                                                                                                     \
-  nonstatic_field(BlockOffsetArrayNonContigSpace, _unallocated_block,                         HeapWord*)                             \
-                                                                                                                                     \
-  nonstatic_field(CardGeneration,              _rs,                                           CardTableRS*)                          \
-  nonstatic_field(CardGeneration,              _bts,                                          BlockOffsetSharedArray*)               \
-  nonstatic_field(CardGeneration,              _shrink_factor,                                size_t)                                \
-  nonstatic_field(CardGeneration,              _capacity_at_prologue,                         size_t)                                \
-  nonstatic_field(CardGeneration,              _used_at_prologue,                             size_t)                                \
-                                                                                                                                     \
-  nonstatic_field(CardTable,                   _whole_heap,                                   const MemRegion)                       \
-  nonstatic_field(CardTable,                   _guard_index,                                  const size_t)                          \
-  nonstatic_field(CardTable,                   _last_valid_index,                             const size_t)                          \
-  nonstatic_field(CardTable,                   _page_size,                                    const size_t)                          \
-  nonstatic_field(CardTable,                   _byte_map_size,                                const size_t)                          \
-  nonstatic_field(CardTable,                   _byte_map,                                     jbyte*)                                \
-  nonstatic_field(CardTable,                   _cur_covered_regions,                          int)                                   \
-  nonstatic_field(CardTable,                   _covered,                                      MemRegion*)                            \
-  nonstatic_field(CardTable,                   _committed,                                    MemRegion*)                            \
-  nonstatic_field(CardTable,                   _guard_region,                                 MemRegion)                             \
-  nonstatic_field(CardTable,                   _byte_map_base,                                jbyte*)                                \
-  nonstatic_field(CardTableBarrierSet,         _defer_initial_card_mark,                      bool)                                  \
-  nonstatic_field(CardTableBarrierSet,         _card_table,                                   CardTable*)                            \
-                                                                                                                                     \
-  nonstatic_field(CollectedHeap,               _reserved,                                     MemRegion)                             \
-  nonstatic_field(CollectedHeap,               _barrier_set,                                  BarrierSet*)                           \
-  nonstatic_field(CollectedHeap,               _is_gc_active,                                 bool)                                  \
-  nonstatic_field(CollectedHeap,               _total_collections,                            unsigned int)                          \
-                                                                                                                                     \
-  nonstatic_field(CompactibleSpace,            _compaction_top,                               HeapWord*)                             \
-  nonstatic_field(CompactibleSpace,            _first_dead,                                   HeapWord*)                             \
-  nonstatic_field(CompactibleSpace,            _end_of_live,                                  HeapWord*)                             \
-                                                                                                                                     \
-  nonstatic_field(ContiguousSpace,             _top,                                          HeapWord*)                             \
-  nonstatic_field(ContiguousSpace,             _concurrent_iteration_safe_limit,              HeapWord*)                             \
-  nonstatic_field(ContiguousSpace,             _saved_mark_word,                              HeapWord*)                             \
-                                                                                                                                     \
-  nonstatic_field(DefNewGeneration,            _old_gen,                                      Generation*)                           \
-  nonstatic_field(DefNewGeneration,            _tenuring_threshold,                           uint)                                  \
-  nonstatic_field(DefNewGeneration,            _age_table,                                    AgeTable)                              \
-  nonstatic_field(DefNewGeneration,            _eden_space,                                   ContiguousSpace*)                      \
-  nonstatic_field(DefNewGeneration,            _from_space,                                   ContiguousSpace*)                      \
-  nonstatic_field(DefNewGeneration,            _to_space,                                     ContiguousSpace*)                      \
-                                                                                                                                     \
-  nonstatic_field(Generation,                  _reserved,                                     MemRegion)                             \
-  nonstatic_field(Generation,                  _virtual_space,                                VirtualSpace)                          \
-  nonstatic_field(Generation,                  _stat_record,                                  Generation::StatRecord)                \
-                                                                                                                                     \
-  nonstatic_field(Generation::StatRecord,      invocations,                                   int)                                   \
-  nonstatic_field(Generation::StatRecord,      accumulated_time,                              elapsedTimer)                          \
-                                                                                                                                     \
-  nonstatic_field(GenerationSpec,              _name,                                         Generation::Name)                      \
-  nonstatic_field(GenerationSpec,              _init_size,                                    size_t)                                \
-  nonstatic_field(GenerationSpec,              _max_size,                                     size_t)                                \
-                                                                                                                                     \
-  nonstatic_field(GenCollectedHeap,            _young_gen,                                    Generation*)                           \
-  nonstatic_field(GenCollectedHeap,            _old_gen,                                      Generation*)                           \
-  nonstatic_field(GenCollectedHeap,            _young_gen_spec,                               GenerationSpec*)                       \
-  nonstatic_field(GenCollectedHeap,            _old_gen_spec,                                 GenerationSpec*)                       \
-                                                                                                                                     \
-  nonstatic_field(HeapWord,                    i,                                             char*)                                 \
-                                                                                                                                     \
-  nonstatic_field(MemRegion,                   _start,                                        HeapWord*)                             \
-  nonstatic_field(MemRegion,                   _word_size,                                    size_t)                                \
-                                                                                                                                     \
-  nonstatic_field(OffsetTableContigSpace,      _offsets,                                      BlockOffsetArray)                      \
-                                                                                                                                     \
-  nonstatic_field(TenuredGeneration,           _min_heap_delta_bytes,                         size_t)                                \
-  nonstatic_field(TenuredGeneration,           _the_space,                                    ContiguousSpace*)                      \
-                                                                                                                                     \
-  nonstatic_field(Space,                       _bottom,                                       HeapWord*)                             \
-  nonstatic_field(Space,                       _end,                                          HeapWord*)                             \
+  /**********/                                                                                                                       \
+  /* Memory */                                                                                                                       \
+  /**********/                                                                                                                       \
                                                                                                                                      \
   nonstatic_field(ThreadLocalAllocBuffer,      _start,                                        HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,      _top,                                          HeapWord*)                             \
@@ -910,8 +800,6 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   nonstatic_field(JavaThread,                  _stack_size,                                   size_t)                                \
   nonstatic_field(JavaThread,                  _vframe_array_head,                            vframeArray*)                          \
   nonstatic_field(JavaThread,                  _vframe_array_last,                            vframeArray*)                          \
-  nonstatic_field(JavaThread,                  _satb_mark_queue,                              SATBMarkQueue)                         \
-  nonstatic_field(JavaThread,                  _dirty_card_queue,                             DirtyCardQueue)                        \
   volatile_nonstatic_field(JavaThread,         _terminated,                                   JavaThread::TerminatedTypes)           \
   nonstatic_field(Thread,                      _resource_area,                                ResourceArea*)                         \
   nonstatic_field(CompilerThread,              _env,                                          ciEnv*)                                \
@@ -1260,13 +1148,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   nonstatic_field(AccessFlags,                 _flags,                                        jint)                                  \
   nonstatic_field(elapsedTimer,                _counter,                                      jlong)                                 \
   nonstatic_field(elapsedTimer,                _active,                                       bool)                                  \
-  nonstatic_field(InvocationCounter,           _counter,                                      unsigned int)                          \
-  volatile_nonstatic_field(FreeChunk,          _size,                                         size_t)                                \
-  nonstatic_field(FreeChunk,                   _next,                                         FreeChunk*)                            \
-  nonstatic_field(FreeChunk,                   _prev,                                         FreeChunk*)                            \
-  nonstatic_field(AdaptiveFreeList<FreeChunk>, _size,                                         size_t)                                \
-  nonstatic_field(AdaptiveFreeList<FreeChunk>, _count,                                        ssize_t)
-
+  nonstatic_field(InvocationCounter,           _counter,                                      unsigned int)
 
 //--------------------------------------------------------------------------------
 // VM_TYPES
@@ -1452,73 +1334,6 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
                                                                           \
   declare_toplevel_type(ClassLoaderData)                                  \
   declare_toplevel_type(ClassLoaderDataGraph)                             \
-                                                                          \
-  /******************************************/                            \
-  /* Generation and space hierarchies       */                            \
-  /* (needed for run-time type information) */                            \
-  /******************************************/                            \
-                                                                          \
-  declare_toplevel_type(CollectedHeap)                                    \
-           declare_type(GenCollectedHeap,             CollectedHeap)      \
-           declare_type(CMSHeap,                      GenCollectedHeap)   \
-           declare_type(SerialHeap,                   GenCollectedHeap)   \
-  declare_toplevel_type(Generation)                                       \
-           declare_type(DefNewGeneration,             Generation)         \
-           declare_type(CardGeneration,               Generation)         \
-           declare_type(TenuredGeneration,            CardGeneration)     \
-  declare_toplevel_type(Space)                                            \
-           declare_type(CompactibleSpace,             Space)              \
-           declare_type(ContiguousSpace,              CompactibleSpace)   \
-           declare_type(OffsetTableContigSpace,       ContiguousSpace)    \
-           declare_type(TenuredSpace,                 OffsetTableContigSpace) \
-  declare_toplevel_type(BarrierSet)                                       \
-           declare_type(ModRefBarrierSet,             BarrierSet)         \
-           declare_type(CardTableBarrierSet,          ModRefBarrierSet)   \
-  declare_toplevel_type(CardTable)                                        \
-           declare_type(CardTableRS, CardTable)                           \
-  declare_toplevel_type(BarrierSet::Name)                                 \
-  declare_toplevel_type(BlockOffsetSharedArray)                           \
-  declare_toplevel_type(BlockOffsetTable)                                 \
-           declare_type(BlockOffsetArray,             BlockOffsetTable)   \
-           declare_type(BlockOffsetArrayContigSpace,  BlockOffsetArray)   \
-           declare_type(BlockOffsetArrayNonContigSpace, BlockOffsetArray) \
-                                                                          \
-  /* Miscellaneous other GC types */                                      \
-                                                                          \
-  declare_toplevel_type(AgeTable)                                         \
-  declare_toplevel_type(Generation::StatRecord)                           \
-  declare_toplevel_type(GenerationSpec)                                   \
-  declare_toplevel_type(HeapWord)                                         \
-  declare_toplevel_type(MemRegion)                                        \
-  declare_toplevel_type(ThreadLocalAllocBuffer)                           \
-  declare_toplevel_type(VirtualSpace)                                     \
-  declare_toplevel_type(SATBMarkQueue)                                    \
-  declare_toplevel_type(DirtyCardQueue)                                   \
-                                                                          \
-  /* Pointers to Garbage Collection types */                              \
-                                                                          \
-  declare_toplevel_type(BarrierSet*)                                      \
-  declare_toplevel_type(BlockOffsetSharedArray*)                          \
-  declare_toplevel_type(CardTable*)                                       \
-  declare_toplevel_type(CardTable*const)                                  \
-  declare_toplevel_type(CardTableRS*)                                     \
-  declare_toplevel_type(CardTableBarrierSet*)                             \
-  declare_toplevel_type(CardTableBarrierSet**)                            \
-  declare_toplevel_type(CollectedHeap*)                                   \
-  declare_toplevel_type(ContiguousSpace*)                                 \
-  declare_toplevel_type(DefNewGeneration*)                                \
-  declare_toplevel_type(GenCollectedHeap*)                                \
-  declare_toplevel_type(Generation*)                                      \
-  declare_toplevel_type(GenerationSpec**)                                 \
-  declare_toplevel_type(HeapWord*)                                        \
-  declare_toplevel_type(HeapWord* volatile)                               \
-  declare_toplevel_type(MemRegion*)                                       \
-  declare_toplevel_type(OffsetTableContigSpace*)                          \
-  declare_toplevel_type(Space*)                                           \
-  declare_toplevel_type(TenuredGeneration*)                               \
-  declare_toplevel_type(ThreadLocalAllocBuffer*)                          \
-                                                                          \
-  declare_toplevel_type(BarrierSet::FakeRtti)                             \
                                                                           \
   /************************/                                              \
   /* PerfMemory - jvmstat */                                              \
@@ -2183,15 +1998,13 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_toplevel_type(Annotations*)                                     \
   declare_type(OopMapValue, StackObj)                                     \
                                                                           \
-  /***************/                                                       \
-  /* Miscellaneous types */                                               \
-  /***************/                                                       \
+  /************/                                                          \
+  /* GC types */                                                          \
+  /************/                                                          \
                                                                           \
-  /* freelist */                                                          \
-  declare_toplevel_type(FreeChunk*)                                       \
-  declare_toplevel_type(AdaptiveFreeList<FreeChunk>*)                     \
-  declare_toplevel_type(AdaptiveFreeList<FreeChunk>)
-
+  VM_TYPES_GC(declare_type,                                               \
+              declare_toplevel_type,                                      \
+              declare_integer_type)
 
 //--------------------------------------------------------------------------------
 // VM_INT_CONSTANTS
@@ -2202,10 +2015,18 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
 // all #defined constants.
 
 #define VM_INT_CONSTANTS(declare_constant,                                \
+                         declare_constant_with_value,                     \
                          declare_preprocessor_constant,                   \
                          declare_c1_constant,                             \
                          declare_c2_constant,                             \
                          declare_c2_preprocessor_constant)                \
+                                                                          \
+  /****************/                                                      \
+  /* GC constants */                                                      \
+  /****************/                                                      \
+                                                                          \
+  VM_INT_CONSTANTS_GC(declare_constant,                                   \
+                      declare_constant_with_value)                        \
                                                                           \
   /******************/                                                    \
   /* Useful globals */                                                    \
@@ -2229,51 +2050,6 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_constant(BytesPerLong)                                          \
                                                                           \
   declare_constant(LogKlassAlignmentInBytes)                              \
-                                                                          \
-  /********************************************/                          \
-  /* Generation and Space Hierarchy Constants */                          \
-  /********************************************/                          \
-                                                                          \
-  declare_constant(AgeTable::table_size)                                  \
-                                                                          \
-  declare_constant(BarrierSet::ModRef)                                    \
-  declare_constant(BarrierSet::CardTableBarrierSet)                           \
-  declare_constant(BarrierSet::G1BarrierSet)                              \
-                                                                          \
-  declare_constant(BOTConstants::LogN)                                    \
-  declare_constant(BOTConstants::LogN_words)                              \
-  declare_constant(BOTConstants::N_bytes)                                 \
-  declare_constant(BOTConstants::N_words)                                 \
-  declare_constant(BOTConstants::LogBase)                                 \
-  declare_constant(BOTConstants::Base)                                    \
-  declare_constant(BOTConstants::N_powers)                                \
-                                                                          \
-  declare_constant(CardTable::clean_card)                                 \
-  declare_constant(CardTable::last_card)                                  \
-  declare_constant(CardTable::dirty_card)                                 \
-  declare_constant(CardTable::Precise)                                    \
-  declare_constant(CardTable::ObjHeadPreciseArray)                        \
-  declare_constant(CardTable::card_shift)                                 \
-  declare_constant(CardTable::card_size)                                  \
-  declare_constant(CardTable::card_size_in_words)                         \
-                                                                          \
-  declare_constant(CardTableRS::youngergen_card)                          \
-                                                                          \
-  declare_constant(G1CardTable::g1_young_gen)                             \
-                                                                          \
-  declare_constant(CollectedHeap::Serial)                                 \
-  declare_constant(CollectedHeap::Parallel)                               \
-  declare_constant(CollectedHeap::CMS)                                    \
-  declare_constant(CollectedHeap::G1)                                     \
-                                                                          \
-  /* constants from Generation::Name enum */                              \
-                                                                          \
-  declare_constant(Generation::DefNew)                                    \
-  declare_constant(Generation::MarkSweepCompact)                          \
-  declare_constant(Generation::Other)                                     \
-                                                                          \
-  declare_constant(Generation::LogOfGenGrain)                             \
-  declare_constant(Generation::GenGrain)                                  \
                                                                           \
   declare_constant(HeapWordSize)                                          \
   declare_constant(LogHeapWordSize)                                       \
@@ -3012,19 +2788,6 @@ VMStructEntry VMStructs::localHotSpotVMStructs[] = {
              GENERATE_C1_UNCHECKED_STATIC_VM_STRUCT_ENTRY,
              GENERATE_C2_UNCHECKED_STATIC_VM_STRUCT_ENTRY)
 
-#if INCLUDE_ALL_GCS
-  VM_STRUCTS_PARALLELGC(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-                        GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-                        GENERATE_STATIC_VM_STRUCT_ENTRY)
-
-  VM_STRUCTS_CMS(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-                 GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-                 GENERATE_STATIC_VM_STRUCT_ENTRY)
-
-  VM_STRUCTS_G1(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-                GENERATE_STATIC_VM_STRUCT_ENTRY)
-#endif // INCLUDE_ALL_GCS
-
 #if INCLUDE_TRACE
   VM_STRUCTS_TRACE(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
                    GENERATE_STATIC_VM_STRUCT_ENTRY)
@@ -3075,20 +2838,6 @@ VMTypeEntry VMStructs::localHotSpotVMTypes[] = {
            GENERATE_C2_VM_TYPE_ENTRY,
            GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY)
 
-#if INCLUDE_ALL_GCS
-  VM_TYPES_PARALLELGC(GENERATE_VM_TYPE_ENTRY,
-                      GENERATE_TOPLEVEL_VM_TYPE_ENTRY)
-
-  VM_TYPES_CMS(GENERATE_VM_TYPE_ENTRY,
-               GENERATE_TOPLEVEL_VM_TYPE_ENTRY)
-
-  VM_TYPES_PARNEW(GENERATE_VM_TYPE_ENTRY)
-
-  VM_TYPES_G1(GENERATE_VM_TYPE_ENTRY,
-              GENERATE_TOPLEVEL_VM_TYPE_ENTRY,
-              GENERATE_INTEGER_VM_TYPE_ENTRY)
-#endif // INCLUDE_ALL_GCS
-
 #if INCLUDE_TRACE
   VM_TYPES_TRACE(GENERATE_VM_TYPE_ENTRY,
               GENERATE_TOPLEVEL_VM_TYPE_ENTRY)
@@ -3131,19 +2880,11 @@ size_t VMStructs::localHotSpotVMTypesLength() {
 VMIntConstantEntry VMStructs::localHotSpotVMIntConstants[] = {
 
   VM_INT_CONSTANTS(GENERATE_VM_INT_CONSTANT_ENTRY,
+                   GENERATE_VM_INT_CONSTANT_WITH_VALUE_ENTRY,
                    GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY,
                    GENERATE_C1_VM_INT_CONSTANT_ENTRY,
                    GENERATE_C2_VM_INT_CONSTANT_ENTRY,
                    GENERATE_C2_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
-
-#if INCLUDE_ALL_GCS
-  VM_INT_CONSTANTS_CMS(GENERATE_VM_INT_CONSTANT_ENTRY)
-
-  VM_INT_CONSTANTS_PARNEW(GENERATE_VM_INT_CONSTANT_ENTRY)
-
-  VM_INT_CONSTANTS_G1(GENERATE_VM_INT_CONSTANT_ENTRY,
-                      GENERATE_VM_INT_CONSTANT_WITH_VALUE_ENTRY)
-#endif // INCLUDE_ALL_GCS
 
 #if INCLUDE_TRACE
   VM_INT_CONSTANTS_TRACE(GENERATE_VM_INT_CONSTANT_ENTRY)
@@ -3222,20 +2963,6 @@ VMStructs::init() {
              CHECK_NO_OP,
              CHECK_NO_OP);
 
-#if INCLUDE_ALL_GCS
-  VM_STRUCTS_PARALLELGC(CHECK_NONSTATIC_VM_STRUCT_ENTRY,
-                        CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY,
-                        CHECK_STATIC_VM_STRUCT_ENTRY);
-
-  VM_STRUCTS_CMS(CHECK_NONSTATIC_VM_STRUCT_ENTRY,
-                 CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY,
-                 CHECK_STATIC_VM_STRUCT_ENTRY);
-
-  VM_STRUCTS_G1(CHECK_NONSTATIC_VM_STRUCT_ENTRY,
-                CHECK_STATIC_VM_STRUCT_ENTRY);
-
-#endif // INCLUDE_ALL_GCS
-
 #if INCLUDE_TRACE
   VM_STRUCTS_TRACE(CHECK_NONSTATIC_VM_STRUCT_ENTRY,
                    CHECK_STATIC_VM_STRUCT_ENTRY);
@@ -3267,21 +2994,6 @@ VMStructs::init() {
            CHECK_C1_TOPLEVEL_VM_TYPE_ENTRY,
            CHECK_C2_VM_TYPE_ENTRY,
            CHECK_C2_TOPLEVEL_VM_TYPE_ENTRY);
-
-#if INCLUDE_ALL_GCS
-  VM_TYPES_PARALLELGC(CHECK_VM_TYPE_ENTRY,
-                      CHECK_SINGLE_ARG_VM_TYPE_NO_OP);
-
-  VM_TYPES_CMS(CHECK_VM_TYPE_ENTRY,
-               CHECK_SINGLE_ARG_VM_TYPE_NO_OP);
-
-  VM_TYPES_PARNEW(CHECK_VM_TYPE_ENTRY)
-
-  VM_TYPES_G1(CHECK_VM_TYPE_ENTRY,
-              CHECK_SINGLE_ARG_VM_TYPE_NO_OP,
-              CHECK_SINGLE_ARG_VM_TYPE_NO_OP);
-
-#endif // INCLUDE_ALL_GCS
 
 #if INCLUDE_TRACE
   VM_TYPES_TRACE(CHECK_VM_TYPE_ENTRY,
@@ -3343,16 +3055,6 @@ VMStructs::init() {
                         ENSURE_C2_FIELD_TYPE_PRESENT,
                         CHECK_NO_OP,
                         CHECK_NO_OP));
-#if INCLUDE_ALL_GCS
-  debug_only(VM_STRUCTS_PARALLELGC(ENSURE_FIELD_TYPE_PRESENT,
-                                   ENSURE_FIELD_TYPE_PRESENT,
-                                   ENSURE_FIELD_TYPE_PRESENT));
-  debug_only(VM_STRUCTS_CMS(ENSURE_FIELD_TYPE_PRESENT,
-                            ENSURE_FIELD_TYPE_PRESENT,
-                            ENSURE_FIELD_TYPE_PRESENT));
-  debug_only(VM_STRUCTS_G1(ENSURE_FIELD_TYPE_PRESENT,
-                           ENSURE_FIELD_TYPE_PRESENT));
-#endif // INCLUDE_ALL_GCS
 
 #if INCLUDE_TRACE
   debug_only(VM_STRUCTS_TRACE(ENSURE_FIELD_TYPE_PRESENT,

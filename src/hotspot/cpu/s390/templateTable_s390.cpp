@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
@@ -192,97 +193,27 @@ static Assembler::branch_condition j_not(TemplateTable::Condition cc) {
 // Do an oop store like *(base + offset) = val
 // offset can be a register or a constant.
 static void do_oop_store(InterpreterMacroAssembler* _masm,
-                         Register base,
-                         RegisterOrConstant offset,
-                         Register val,
-                         bool val_is_null, // == false does not guarantee that val really is not equal NULL.
-                         Register tmp1,    // If tmp3 is volatile, either tmp1 or tmp2 must be
-                         Register tmp2,    // non-volatile to hold a copy of pre_val across runtime calls.
-                         Register tmp3,    // Ideally, this tmp register is non-volatile, as it is used to
-                                           // hold pre_val (must survive runtime calls).
-                         BarrierSet::Name barrier,
-                         bool precise) {
-  BLOCK_COMMENT("do_oop_store {");
-  assert(val != noreg, "val must always be valid, even if it is zero");
-  assert_different_registers(tmp1, tmp2, tmp3, val, base, offset.register_or_noreg());
-  __ verify_oop(val);
-  switch (barrier) {
-#if INCLUDE_ALL_GCS
-    case BarrierSet::G1BarrierSet:
-      {
-#ifdef ASSERT
-        if (val_is_null) { // Check if the flag setting reflects reality.
-          Label OK;
-          __ z_ltgr(val, val);
-          __ z_bre(OK);
-          __ z_illtrap(0x11);
-          __ bind(OK);
-        }
-#endif
-        Register pre_val = tmp3;
-        // Load and record the previous value.
-        __ g1_write_barrier_pre(base, offset, pre_val, val,
-                                tmp1, tmp2,
-                                false);  // Needs to hold pre_val in non_volatile register?
+                         const Address&     addr,
+                         Register           val,         // Noreg means always null.
+                         Register           tmp1,
+                         Register           tmp2,
+                         Register           tmp3,
+                         DecoratorSet       decorators) {
+  assert_different_registers(tmp1, tmp2, tmp3, val, addr.base());
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->store_at(_masm, decorators, T_OBJECT, addr, val, tmp1, tmp2, tmp3);
+}
 
-        if (val_is_null) {
-          __ store_heap_oop_null(val, offset, base);
-        } else {
-          Label Done;
-          // val_is_null == false does not guarantee that val really is not equal NULL.
-          // Checking for this case dynamically has some cost, but also some benefit (in GC).
-          // It's hard to say if cost or benefit is greater.
-          { Label OK;
-            __ z_ltgr(val, val);
-            __ z_brne(OK);
-            __ store_heap_oop_null(val, offset, base);
-            __ z_bru(Done);
-            __ bind(OK);
-          }
-          // G1 barrier needs uncompressed oop for region cross check.
-          // Store_heap_oop compresses the oop in the argument register.
-          Register val_work = val;
-          if (UseCompressedOops) {
-            val_work = tmp3;
-            __ z_lgr(val_work, val);
-          }
-          __ store_heap_oop_not_null(val_work, offset, base);
-
-          // We need precise card marks for oop array stores.
-          // Otherwise, cardmarking the object which contains the oop is sufficient.
-          if (precise && !(offset.is_constant() && offset.as_constant() == 0)) {
-            __ add2reg_with_index(base,
-                                  offset.constant_or_zero(),
-                                  offset.register_or_noreg(),
-                                  base);
-          }
-          __ g1_write_barrier_post(base /* store_adr */, val, tmp1, tmp2, tmp3);
-          __ bind(Done);
-        }
-      }
-      break;
-#endif // INCLUDE_ALL_GCS
-    case BarrierSet::CardTableBarrierSet:
-    {
-      if (val_is_null) {
-        __ store_heap_oop_null(val, offset, base);
-      } else {
-        __ store_heap_oop(val, offset, base);
-        // Flatten object address if needed.
-        if (precise && ((offset.register_or_noreg() != noreg) || (offset.constant_or_zero() != 0))) {
-          __ load_address(base, Address(base, offset.register_or_noreg(), offset.constant_or_zero()));
-        }
-        __ card_write_barrier_post(base, tmp1);
-      }
-    }
-    break;
-  case BarrierSet::ModRef:
-    // fall through
-  default:
-    ShouldNotReachHere();
-
-  }
-  BLOCK_COMMENT("} do_oop_store");
+static void do_oop_load(InterpreterMacroAssembler* _masm,
+                        const Address& addr,
+                        Register dst,
+                        Register tmp1,
+                        Register tmp2,
+                        DecoratorSet decorators) {
+  assert_different_registers(addr.base(), tmp1, tmp2);
+  assert_different_registers(dst, tmp1, tmp2);
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->load_at(_masm, decorators, T_OBJECT, addr, dst, tmp1, tmp2);
 }
 
 Address TemplateTable::at_bcp(int offset) {
@@ -923,8 +854,8 @@ void TemplateTable::aaload() {
   Register index = Z_tos;
   index_check(Z_tmp_1, index, shift);
   // Now load array element.
-  __ load_heap_oop(Z_tos,
-                   Address(Z_tmp_1, index, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
+  do_oop_load(_masm, Address(Z_tmp_1, index, arrayOopDesc::base_offset_in_bytes(T_OBJECT)), Z_tos,
+              Z_tmp_2, Z_tmp_3, IN_HEAP | IN_HEAP_ARRAY);
   __ verify_oop(Z_tos);
 }
 
@@ -1260,22 +1191,23 @@ void TemplateTable::aastore() {
   __ load_absolute_address(tmp1, Interpreter::_throw_ArrayStoreException_entry);
   __ z_br(tmp1);
 
-  // Come here on success.
-  __ bind(ok_is_subtype);
-
-  // Now store using the appropriate barrier.
   Register tmp3 = Rsub_klass;
-  do_oop_store(_masm, Rstore_addr, (intptr_t)0/*offset*/, Rvalue, false/*val==null*/,
-               tmp3, tmp2, tmp1, _bs->kind(), true);
-  __ z_bru(done);
 
   // Have a NULL in Rvalue.
   __ bind(is_null);
   __ profile_null_seen(tmp1);
 
   // Store a NULL.
-  do_oop_store(_masm, Rstore_addr, (intptr_t)0/*offset*/, Rvalue, true/*val==null*/,
-               tmp3, tmp2, tmp1, _bs->kind(), true);
+  do_oop_store(_masm, Address(Rstore_addr, (intptr_t)0), noreg,
+               tmp3, tmp2, tmp1, IN_HEAP | IN_HEAP_ARRAY);
+  __ z_bru(done);
+
+  // Come here on success.
+  __ bind(ok_is_subtype);
+
+  // Now store using the appropriate barrier.
+  do_oop_store(_masm, Address(Rstore_addr, (intptr_t)0), Rvalue,
+               tmp3, tmp2, tmp1, IN_HEAP | IN_HEAP_ARRAY | OOP_NOT_NULL);
 
   // Pop stack arguments.
   __ bind(done);
@@ -2831,7 +2763,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
                       // to here is compensated for by the fallthru to "Done".
   {
     unsigned int b_off = __ offset();
-    __ load_heap_oop(Z_tos, field);
+    do_oop_load(_masm, field, Z_tos, Z_tmp_2, Z_tmp_3, IN_HEAP);
     __ verify_oop(Z_tos);
     __ push(atos);
     if (do_rewrite) {
@@ -3160,8 +3092,8 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
       pop_and_check_object(obj);
     }
     // Store into the field
-    do_oop_store(_masm, obj, off, Z_tos, false,
-                 oopStore_tmp1, oopStore_tmp2, oopStore_tmp3, _bs->kind(), false);
+    do_oop_store(_masm, Address(obj, off), Z_tos,
+                 oopStore_tmp1, oopStore_tmp2, oopStore_tmp3, IN_HEAP);
     if (do_rewrite) {
       patch_bytecode(Bytecodes::_fast_aputfield, bc, Z_ARG5, true, byte_no);
     }
@@ -3322,8 +3254,8 @@ void TemplateTable::fast_storefield(TosState state) {
   // access field
   switch (bytecode()) {
     case Bytecodes::_fast_aputfield:
-      do_oop_store(_masm, obj, field_offset, Z_tos, false,
-                   Z_ARG2, Z_ARG3, Z_ARG4, _bs->kind(), false);
+      do_oop_store(_masm, Address(obj, field_offset), Z_tos,
+                   Z_ARG2, Z_ARG3, Z_ARG4, IN_HEAP);
       break;
     case Bytecodes::_fast_lputfield:
       __ reg2mem_opt(Z_tos, field);
@@ -3414,7 +3346,7 @@ void TemplateTable::fast_accessfield(TosState state) {
   // access field
   switch (bytecode()) {
     case Bytecodes::_fast_agetfield:
-      __ load_heap_oop(Z_tos, field);
+      do_oop_load(_masm, field, Z_tos, Z_tmp_1, Z_tmp_2, IN_HEAP);
       __ verify_oop(Z_tos);
       return;
     case Bytecodes::_fast_lgetfield:
@@ -3470,7 +3402,7 @@ void TemplateTable::fast_xaccess(TosState state) {
       __ mem2reg_opt(Z_tos, Address(receiver, index), false);
       break;
     case atos:
-      __ load_heap_oop(Z_tos, Address(receiver, index));
+      do_oop_load(_masm, Address(receiver, index), Z_tos, Z_tmp_1, Z_tmp_2, IN_HEAP);
       __ verify_oop(Z_tos);
       break;
     case ftos:

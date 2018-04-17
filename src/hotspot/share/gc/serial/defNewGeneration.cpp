@@ -174,9 +174,6 @@ ScanWeakRefClosure::ScanWeakRefClosure(DefNewGeneration* g) :
 void ScanWeakRefClosure::do_oop(oop* p)       { ScanWeakRefClosure::do_oop_work(p); }
 void ScanWeakRefClosure::do_oop(narrowOop* p) { ScanWeakRefClosure::do_oop_work(p); }
 
-void FilteringClosure::do_oop(oop* p)       { FilteringClosure::do_oop_work(p); }
-void FilteringClosure::do_oop(narrowOop* p) { FilteringClosure::do_oop_work(p); }
-
 DefNewGeneration::DefNewGeneration(ReservedSpace rs,
                                    size_t initial_size,
                                    const char* policy)
@@ -753,7 +750,7 @@ void DefNewGeneration::handle_promotion_failure(oop old) {
 
   _promotion_failed = true;
   _promotion_failed_info.register_copy_failure(old->size());
-  _preserved_marks_set.get()->push_if_necessary(old, old->mark());
+  _preserved_marks_set.get()->push_if_necessary(old, old->mark_raw());
   // forward to self
   old->forward_to(old);
 
@@ -1009,9 +1006,11 @@ HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
   // have to use it here, as well.
   HeapWord* result = eden()->par_allocate(word_size);
   if (result != NULL) {
+#if INCLUDE_ALL_GCS
     if (CMSEdenChunksRecordAlways && _old_gen != NULL) {
       _old_gen->sample_eden_chunk();
     }
+#endif
   } else {
     // If the eden is full and the last collection bailed out, we are running
     // out of heap space, and we try to allocate the from-space, too.
@@ -1025,9 +1024,11 @@ HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
 HeapWord* DefNewGeneration::par_allocate(size_t word_size,
                                          bool is_tlab) {
   HeapWord* res = eden()->par_allocate(word_size);
+#if INCLUDE_ALL_GCS
   if (CMSEdenChunksRecordAlways && _old_gen != NULL) {
     _old_gen->sample_eden_chunk();
   }
+#endif
   return res;
 }
 

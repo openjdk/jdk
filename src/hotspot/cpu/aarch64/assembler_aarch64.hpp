@@ -819,7 +819,7 @@ public:
   void NAME(Register Rd, Register Rn, unsigned immr, unsigned imms) {   \
     starti;                                                             \
     f(opcode, 31, 22), f(immr, 21, 16), f(imms, 15, 10);                \
-    rf(Rn, 5), rf(Rd, 0);                                               \
+    zrf(Rn, 5), rf(Rd, 0);                                              \
   }
 
   INSN(sbfmw, 0b0001001100);

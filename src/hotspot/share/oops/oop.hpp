@@ -63,17 +63,21 @@ class oopDesc {
   } _metadata;
 
  public:
-  markOop  mark()      const { return _mark; }
-  markOop* mark_addr() const { return (markOop*) &_mark; }
+  inline markOop  mark()          const;
+  inline markOop  mark_raw()      const;
+  inline markOop* mark_addr_raw() const;
 
-  void set_mark(volatile markOop m) { _mark = m; }
+  inline void set_mark(volatile markOop m);
+  inline void set_mark_raw(volatile markOop m);
 
   inline void release_set_mark(markOop m);
   inline markOop cas_set_mark(markOop new_mark, markOop old_mark);
+  inline markOop cas_set_mark_raw(markOop new_mark, markOop old_mark);
 
   // Used only to re-initialize the mark word (e.g., of promoted
   // objects during a GC) -- requires a valid klass pointer
   inline void init_mark();
+  inline void init_mark_raw();
 
   inline Klass* klass() const;
   inline Klass* klass_or_null() const volatile;
@@ -237,6 +241,7 @@ class oopDesc {
   inline bool is_locked()   const;
   inline bool is_unlocked() const;
   inline bool has_bias_pattern() const;
+  inline bool has_bias_pattern_raw() const;
 
   // asserts and guarantees
   static bool is_oop(oop obj, bool ignore_mark_word = false);
@@ -323,9 +328,9 @@ class oopDesc {
   unsigned int new_hash(juint seed);
 
   // marks are forwarded to stack when object is locked
-  inline bool    has_displaced_mark() const;
-  inline markOop displaced_mark() const;
-  inline void    set_displaced_mark(markOop m);
+  inline bool    has_displaced_mark_raw() const;
+  inline markOop displaced_mark_raw() const;
+  inline void    set_displaced_mark_raw(markOop m);
 
   static bool has_klass_gap();
 
