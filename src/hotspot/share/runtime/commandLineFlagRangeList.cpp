@@ -335,20 +335,20 @@ void CommandLineFlagRangeList::init(void) {
 
   _ranges = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<CommandLineFlagRange*>(INITIAL_RANGES_SIZE, true);
 
-  emit_range_no(NULL RUNTIME_FLAGS(EMIT_RANGE_DEVELOPER_FLAG,
-                                   EMIT_RANGE_PD_DEVELOPER_FLAG,
-                                   EMIT_RANGE_PRODUCT_FLAG,
-                                   EMIT_RANGE_PD_PRODUCT_FLAG,
-                                   EMIT_RANGE_DIAGNOSTIC_FLAG,
-                                   EMIT_RANGE_PD_DIAGNOSTIC_FLAG,
-                                   EMIT_RANGE_EXPERIMENTAL_FLAG,
-                                   EMIT_RANGE_NOTPRODUCT_FLAG,
-                                   EMIT_RANGE_MANAGEABLE_FLAG,
-                                   EMIT_RANGE_PRODUCT_RW_FLAG,
-                                   EMIT_RANGE_LP64_PRODUCT_FLAG,
-                                   EMIT_RANGE_CHECK,
-                                   IGNORE_CONSTRAINT,
-                                   IGNORE_WRITEABLE));
+  emit_range_no(NULL VM_FLAGS(EMIT_RANGE_DEVELOPER_FLAG,
+                              EMIT_RANGE_PD_DEVELOPER_FLAG,
+                              EMIT_RANGE_PRODUCT_FLAG,
+                              EMIT_RANGE_PD_PRODUCT_FLAG,
+                              EMIT_RANGE_DIAGNOSTIC_FLAG,
+                              EMIT_RANGE_PD_DIAGNOSTIC_FLAG,
+                              EMIT_RANGE_EXPERIMENTAL_FLAG,
+                              EMIT_RANGE_NOTPRODUCT_FLAG,
+                              EMIT_RANGE_MANAGEABLE_FLAG,
+                              EMIT_RANGE_PRODUCT_RW_FLAG,
+                              EMIT_RANGE_LP64_PRODUCT_FLAG,
+                              EMIT_RANGE_CHECK,
+                              IGNORE_CONSTRAINT,
+                              IGNORE_WRITEABLE));
 
   EMIT_RANGES_FOR_GLOBALS_EXT
 
@@ -401,22 +401,6 @@ void CommandLineFlagRangeList::init(void) {
                               IGNORE_CONSTRAINT,
                               IGNORE_WRITEABLE));
 #endif // COMPILER2
-
-#if INCLUDE_ALL_GCS
-  emit_range_no(NULL G1_FLAGS(EMIT_RANGE_DEVELOPER_FLAG,
-                              EMIT_RANGE_PD_DEVELOPER_FLAG,
-                              EMIT_RANGE_PRODUCT_FLAG,
-                              EMIT_RANGE_PD_PRODUCT_FLAG,
-                              EMIT_RANGE_DIAGNOSTIC_FLAG,
-                              EMIT_RANGE_PD_DIAGNOSTIC_FLAG,
-                              EMIT_RANGE_EXPERIMENTAL_FLAG,
-                              EMIT_RANGE_NOTPRODUCT_FLAG,
-                              EMIT_RANGE_MANAGEABLE_FLAG,
-                              EMIT_RANGE_PRODUCT_RW_FLAG,
-                              EMIT_RANGE_CHECK,
-                              IGNORE_CONSTRAINT,
-                              IGNORE_WRITEABLE));
-#endif // INCLUDE_ALL_GCS
 }
 
 CommandLineFlagRange* CommandLineFlagRangeList::find(const char* name) {

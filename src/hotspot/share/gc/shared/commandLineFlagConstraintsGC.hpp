@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,16 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_COMMANDLINEFLAGCONSTRAINTSGC_HPP
-#define SHARE_VM_RUNTIME_COMMANDLINEFLAGCONSTRAINTSGC_HPP
+#ifndef SHARE_GC_SHARED_COMMANDLINEFLAGCONSTRAINTSGC_HPP
+#define SHARE_GC_SHARED_COMMANDLINEFLAGCONSTRAINTSGC_HPP
 
-#include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc/cms/commandLineFlagConstraintsCMS.hpp"
+#include "gc/g1/commandLineFlagConstraintsG1.hpp"
+#include "gc/parallel/commandLineFlagConstraintsParallel.hpp"
+#endif
 
 /*
  * Here we have GC arguments constraints functions, which are called automatically
@@ -41,31 +46,12 @@ Flag::Error OldPLABSizeConstraintFunc(size_t value, bool verbose);
 Flag::Error MinHeapFreeRatioConstraintFunc(uintx value, bool verbose);
 Flag::Error MaxHeapFreeRatioConstraintFunc(uintx value, bool verbose);
 Flag::Error SoftRefLRUPolicyMSPerMBConstraintFunc(intx value, bool verbose);
+Flag::Error MarkStackSizeConstraintFunc(size_t value, bool verbose);
 Flag::Error MinMetaspaceFreeRatioConstraintFunc(uintx value, bool verbose);
 Flag::Error MaxMetaspaceFreeRatioConstraintFunc(uintx value, bool verbose);
 Flag::Error InitialTenuringThresholdConstraintFunc(uintx value, bool verbose);
 Flag::Error MaxTenuringThresholdConstraintFunc(uintx value, bool verbose);
 
-#if INCLUDE_ALL_GCS
-Flag::Error G1RSetRegionEntriesConstraintFunc(intx value, bool verbose);
-Flag::Error G1RSetSparseRegionEntriesConstraintFunc(intx value, bool verbose);
-Flag::Error G1HeapRegionSizeConstraintFunc(size_t value, bool verbose);
-Flag::Error G1NewSizePercentConstraintFunc(uintx value, bool verbose);
-Flag::Error G1MaxNewSizePercentConstraintFunc(uintx value, bool verbose);
-#endif // INCLUDE_ALL_GCS
-
-Flag::Error ParGCStridesPerThreadConstraintFunc(uintx value, bool verbose);
-Flag::Error ParGCCardsPerStrideChunkConstraintFunc(intx value, bool verbose);
-Flag::Error CMSOldPLABMinConstraintFunc(size_t value, bool verbose);
-Flag::Error CMSOldPLABMaxConstraintFunc(size_t value, bool verbose);
-Flag::Error MarkStackSizeConstraintFunc(size_t value, bool verbose);
-Flag::Error CMSRescanMultipleConstraintFunc(size_t value, bool verbose);
-Flag::Error CMSConcMarkMultipleConstraintFunc(size_t value, bool verbose);
-Flag::Error CMSPrecleanDenominatorConstraintFunc(uintx value, bool verbose);
-Flag::Error CMSPrecleanNumeratorConstraintFunc(uintx value, bool verbose);
-Flag::Error CMSSamplingGrainConstraintFunc(uintx value, bool verbose);
-Flag::Error CMSWorkQueueDrainThresholdConstraintFunc(uintx value, bool verbose);
-Flag::Error CMSBitMapYieldQuantumConstraintFunc(size_t value, bool verbose);
 Flag::Error MaxGCPauseMillisConstraintFunc(uintx value, bool verbose);
 Flag::Error GCPauseIntervalMillisConstraintFunc(uintx value, bool verbose);
 Flag::Error InitialBootClassLoaderMetaspaceSizeConstraintFunc(size_t value, bool verbose);
@@ -81,4 +67,7 @@ Flag::Error MetaspaceSizeConstraintFunc(size_t value, bool verbose);
 Flag::Error MaxMetaspaceSizeConstraintFunc(size_t value, bool verbose);
 Flag::Error SurvivorAlignmentInBytesConstraintFunc(intx value, bool verbose);
 
-#endif /* SHARE_VM_RUNTIME_COMMANDLINEFLAGCONSTRAINTSGC_HPP */
+// Internal
+Flag::Error MaxPLABSizeBounds(const char* name, size_t value, bool verbose);
+
+#endif // SHARE_GC_SHARED_COMMANDLINEFLAGCONSTRAINTSGC_HPP

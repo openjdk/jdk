@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,18 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/g1/g1_globals.hpp"
+package com.simple;
 
-G1_FLAGS(MATERIALIZE_DEVELOPER_FLAG, \
-         MATERIALIZE_PD_DEVELOPER_FLAG, \
-         MATERIALIZE_PRODUCT_FLAG, \
-         MATERIALIZE_PD_PRODUCT_FLAG,     \
-         MATERIALIZE_DIAGNOSTIC_FLAG, \
-         MATERIALIZE_PD_DIAGNOSTIC_FLAG, \
-         MATERIALIZE_EXPERIMENTAL_FLAG, \
-         MATERIALIZE_NOTPRODUCT_FLAG,  \
-         MATERIALIZE_MANAGEABLE_FLAG, \
-         MATERIALIZE_PRODUCT_RW_FLAG, \
-         IGNORE_RANGE, \
-         IGNORE_CONSTRAINT, \
-         IGNORE_WRITEABLE)
+import java.lang.reflect.Method;
+
+public class Main {
+    public static void main(String[] args) throws Exception {
+        System.out.println("Hello World!");
+        if (args.length > 0 && args[0].equals("with_add_opens")) {
+            Method method = ClassLoader.class.getDeclaredMethod("defineClass",
+                byte[].class, int.class, int.class);
+            method.setAccessible(true);
+            System.out.println("method.setAccessible succeeded!");
+        }
+    }
+}

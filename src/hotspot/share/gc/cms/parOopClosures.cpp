@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/cms/parOopClosures.inline.hpp"
-#include "gc/shared/specialized_oop_closures.hpp"
+#include "gc/cms/cms_specialized_oop_closures.hpp"
 #include "memory/iterator.inline.hpp"
 
 // Generate ParNew specialized oop_oop_iterate functions.

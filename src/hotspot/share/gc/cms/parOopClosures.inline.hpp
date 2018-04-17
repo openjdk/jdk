@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "logging/logStream.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/oop.inline.hpp"
 
 template <class T> inline void ParScanWeakRefClosure::do_oop_work(T* p) {
   oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);
@@ -43,7 +44,7 @@ template <class T> inline void ParScanWeakRefClosure::do_oop_work(T* p) {
     // we need to ensure that it is copied (see comment in
     // ParScanClosure::do_oop_work).
     Klass* objK = obj->klass();
-    markOop m = obj->mark();
+    markOop m = obj->mark_raw();
     oop new_obj;
     if (m->is_marked()) { // Contains forwarding pointer.
       new_obj = ParNewGeneration::real_forwardee(obj);
@@ -107,7 +108,7 @@ inline void ParScanClosure::do_oop_work(T* p,
       // overwritten with an overflow next pointer after the object is
       // forwarded.
       Klass* objK = obj->klass();
-      markOop m = obj->mark();
+      markOop m = obj->mark_raw();
       oop new_obj;
       if (m->is_marked()) { // Contains forwarding pointer.
         new_obj = ParNewGeneration::real_forwardee(obj);

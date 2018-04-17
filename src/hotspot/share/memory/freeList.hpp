@@ -25,10 +25,6 @@
 #ifndef SHARE_VM_MEMORY_FREELIST_HPP
 #define SHARE_VM_MEMORY_FREELIST_HPP
 
-#include "gc/cms/allocationStats.hpp"
-
-class CompactibleFreeListSpace;
-
 // A class for maintaining a free list of Chunk's.  The FreeList
 // maintains a the structure of the list (head, tail, etc.) plus
 // statistics for allocations from the list.  The links between items

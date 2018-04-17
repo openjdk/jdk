@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ public class Loader2 extends ClassLoader {
     print("Fetching the implementation of "+name);
     int old = _recur;
     try {
-      FileInputStream fi = new FileInputStream(name+".impl2");
+      FileInputStream fi = new FileInputStream(name+".class");
       byte result[] = new byte[fi.available()];
       fi.read(result);
 

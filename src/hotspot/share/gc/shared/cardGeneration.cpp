@@ -28,6 +28,7 @@
 #include "gc/shared/cardGeneration.inline.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/gcLocker.hpp"
+#include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/space.inline.hpp"

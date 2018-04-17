@@ -36,6 +36,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
 
 template <class T>
@@ -45,8 +46,8 @@ inline void G1ScanClosureBase::prefetch_and_push(T* p, const oop obj) {
   // stall. We'll try to prefetch the object (for write, given that
   // we might need to install the forwarding reference) and we'll
   // get back to it when pop it from the queue
-  Prefetch::write(obj->mark_addr(), 0);
-  Prefetch::read(obj->mark_addr(), (HeapWordSize*2));
+  Prefetch::write(obj->mark_addr_raw(), 0);
+  Prefetch::read(obj->mark_addr_raw(), (HeapWordSize*2));
 
   // slightly paranoid test; I'm trying to catch potential
   // problems before we go into push_on_queue to know where the
@@ -240,14 +241,14 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
   const InCSetState state = _g1->in_cset_state(obj);
   if (state.is_in_cset()) {
     oop forwardee;
-    markOop m = obj->mark();
+    markOop m = obj->mark_raw();
     if (m->is_marked()) {
       forwardee = (oop) m->decode_pointer();
     } else {
       forwardee = _par_scan_state->copy_to_survivor_space(state, obj, m);
     }
     assert(forwardee != NULL, "forwardee should not be NULL");
-    RawAccess<>::oop_store(p, forwardee);
+    RawAccess<OOP_NOT_NULL>::oop_store(p, forwardee);
     if (do_mark_object != G1MarkNone && forwardee != obj) {
       // If the object is self-forwarded we don't need to explicitly
       // mark it, the evacuation failure protocol will do so.

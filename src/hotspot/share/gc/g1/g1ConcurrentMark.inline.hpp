@@ -255,6 +255,11 @@ bool G1ConcurrentMark::is_marked_in_prev_bitmap(oop p) const {
   return _prev_mark_bitmap->is_marked((HeapWord*)p);
 }
 
+bool G1ConcurrentMark::is_marked_in_next_bitmap(oop p) const {
+  assert(p != NULL && oopDesc::is_oop(p), "expected an oop");
+  return _next_mark_bitmap->is_marked((HeapWord*)p);
+}
+
 inline bool G1ConcurrentMark::do_yield_check() {
   if (SuspendibleThreadSet::should_yield()) {
     SuspendibleThreadSet::yield();

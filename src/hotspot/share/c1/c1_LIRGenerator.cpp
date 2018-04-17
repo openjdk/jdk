@@ -44,6 +44,7 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
 #endif // INCLUDE_ALL_GCS
 #ifdef TRACE_HAVE_INTRINSICS
@@ -313,7 +314,7 @@ jlong LIRItem::get_jlong_constant() const {
 
 
 void LIRGenerator::init() {
-  _bs = Universe::heap()->barrier_set();
+  _bs = BarrierSet::barrier_set();
 }
 
 
@@ -1506,10 +1507,7 @@ void LIRGenerator::G1BarrierSet_pre_barrier(LIR_Opr addr_opr, LIR_Opr pre_val,
   }
   LIR_Opr thrd = getThreadPointer();
   LIR_Address* mark_active_flag_addr =
-    new LIR_Address(thrd,
-                    in_bytes(JavaThread::satb_mark_queue_offset() +
-                             SATBMarkQueue::byte_offset_of_active()),
-                    flag_type);
+    new LIR_Address(thrd, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()), flag_type);
   // Read the marking-in-progress flag.
   LIR_Opr flag_val = new_register(T_INT);
   __ load(mark_active_flag_addr, flag_val);
@@ -1659,9 +1657,11 @@ void LIRGenerator::CardTableBarrierSet_post_barrier(LIR_OprDesc* addr, LIR_OprDe
     __ move(dirty, card_addr);
     __ branch_destination(L_already_dirty->label());
   } else {
+#if INCLUDE_ALL_GCS
     if (UseConcMarkSweepGC && CMSPrecleaningEnabled) {
       __ membar_storestore();
     }
+#endif
     __ move(dirty, card_addr);
   }
 #endif

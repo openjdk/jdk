@@ -72,7 +72,7 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
   // by the GC but need to be strong roots if reachable from a current compilation.
   // InstanceKlass are created for both weak and strong metadata.  Ensuring this metadata
   // alive covers the cases where there are weak roots without performance cost.
-  oop holder = ik->klass_holder_phantom();
+  oop holder = ik->holder_phantom();
   if (ik->is_anonymous()) {
     // Though ciInstanceKlass records class loader oop, it's not enough to keep
     // VM anonymous classes alive (loader == NULL). Klass holder should be used instead.

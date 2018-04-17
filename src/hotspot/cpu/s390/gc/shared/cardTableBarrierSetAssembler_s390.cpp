@@ -29,7 +29,6 @@
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/cardTableBarrierSetAssembler.hpp"
-#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interp_masm.hpp"
 
 #define __ masm->
@@ -46,7 +45,7 @@
 
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators, Register addr, Register count,
                                                                     bool do_return) {
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(Universe::heap()->barrier_set());
+  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
   CardTable* ct = ctbs->card_table();
   assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
@@ -138,4 +137,39 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   }
 
   __ bind(done);
+}
+
+void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register store_addr, Register tmp) {
+  // Does a store check for the oop in register obj. The content of
+  // register obj is destroyed afterwards.
+  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
+  CardTable* ct = ctbs->card_table();
+  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
+
+  assert_different_registers(store_addr, tmp);
+
+  __ z_srlg(store_addr, store_addr, CardTable::card_shift);
+  __ load_absolute_address(tmp, (address)ct->byte_map_base());
+  __ z_agr(store_addr, tmp);
+  __ z_mvi(0, store_addr, CardTable::dirty_card_val());
+}
+
+void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                                const Address& dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
+  bool on_array = (decorators & IN_HEAP_ARRAY) != 0;
+  bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
+  bool precise = on_array || on_anonymous;
+
+  BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);
+
+  // No need for post barrier if storing NULL
+  if (val != noreg) {
+    const Register base = dst.base(),
+                   idx  = dst.index();
+    const intptr_t disp = dst.disp();
+    if (precise && (disp != 0 || idx != noreg)) {
+      __ add2reg_with_index(base, disp, idx, base);
+    }
+    store_check(masm, base, tmp1);
+  }
 }

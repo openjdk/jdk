@@ -753,7 +753,7 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   resolve_oop_handle(result);
   // Add in the index
   add(result, tmp, result);
-  load_heap_oop(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result);
+  load_heap_oop(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result, tmp);
 }
 
 

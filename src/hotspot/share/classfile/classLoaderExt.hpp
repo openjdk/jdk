@@ -26,6 +26,7 @@
 #define SHARE_VM_CLASSFILE_CLASSLOADEREXT_HPP
 
 #include "classfile/classLoader.hpp"
+#include "classfile/moduleEntry.hpp"
 #include "utilities/macros.hpp"
 
 CDS_ONLY(class SharedPathsMiscInfoExt;)
@@ -59,14 +60,14 @@ public:
       _file_name = file_name;
 #if INCLUDE_CDS
       if (!DumpSharedSpaces && !UseSharedSpaces) {
-        // Must not modify _app_paths_start_index if we're not using CDS.
-        assert(_app_paths_start_index == ClassLoaderExt::max_classpath_index, "must be");
+        // Must not modify _app_class_paths_start_index if we're not using CDS.
+        assert(_app_class_paths_start_index == ClassLoaderExt::max_classpath_index, "must be");
       }
 #endif
     }
 
     bool should_verify(int classpath_index) {
-      CDS_ONLY(return (classpath_index >= _app_paths_start_index);)
+      CDS_ONLY(return (classpath_index >= _app_class_paths_start_index);)
       NOT_CDS(return false;)
     }
 
@@ -82,8 +83,8 @@ public:
     ~Context() {
 #if INCLUDE_CDS
       if (!DumpSharedSpaces && !UseSharedSpaces) {
-        // Must not modify app_paths_start_index if we're not using CDS.
-        assert(_app_paths_start_index == ClassLoaderExt::max_classpath_index, "must be");
+        // Must not modify app_class_paths_start_index if we're not using CDS.
+        assert(_app_class_paths_start_index == ClassLoaderExt::max_classpath_index, "must be");
       }
 #endif
     }
@@ -93,10 +94,16 @@ private:
 #if INCLUDE_CDS
   static char* get_class_path_attr(const char* jar_path, char* manifest, jint manifest_size);
   static void setup_app_search_path(); // Only when -Xshare:dump
+  static void process_module_table(ModuleEntryTable* met, TRAPS);
+  static void setup_module_search_path(TRAPS);
   static SharedPathsMiscInfoExt* shared_paths_misc_info() {
     return (SharedPathsMiscInfoExt*)_shared_paths_misc_info;
   }
-  static jshort _app_paths_start_index; // index of first app JAR in shared classpath entry table
+  // index of first app JAR in shared classpath entry table
+  static jshort _app_class_paths_start_index;
+  // index of first modular JAR in shared modulepath entry table
+  static jshort _app_module_paths_start_index;
+
   static bool _has_app_classes;
   static bool _has_platform_classes;
 #endif
@@ -116,6 +123,7 @@ public:
   }
 
   static void setup_search_paths() NOT_CDS_RETURN;
+  static void setup_module_paths(TRAPS) NOT_CDS_RETURN;
 
 #if INCLUDE_CDS
 private:
@@ -137,14 +145,20 @@ public:
 
   static void finalize_shared_paths_misc_info();
 
-  static jshort app_paths_start_index() { return _app_paths_start_index; }
+  static jshort app_class_paths_start_index() { return _app_class_paths_start_index; }
+
+  static jshort app_module_paths_start_index() { return _app_module_paths_start_index; }
 
   static void init_paths_start_index(jshort app_start) {
-    _app_paths_start_index = app_start;
+    _app_class_paths_start_index = app_start;
+  }
+
+  static void init_app_module_paths_start_index(jshort module_start) {
+    _app_module_paths_start_index = module_start;
   }
 
   static bool is_boot_classpath(int classpath_index) {
-    return classpath_index < _app_paths_start_index;
+    return classpath_index < _app_class_paths_start_index;
   }
 
   static bool has_platform_or_app_classes() {

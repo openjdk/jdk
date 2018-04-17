@@ -30,6 +30,7 @@
 #include "code/icBuffer.hpp"
 #include "gc/g1/bufferingOopClosure.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
@@ -53,6 +54,7 @@
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
 #include "gc/g1/g1StringDedup.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1YCTypes.hpp"
 #include "gc/g1/g1YoungRemSetSamplingThread.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
@@ -1036,7 +1038,7 @@ void G1CollectedHeap::abort_refinement() {
   }
 
   // Discard all remembered set updates.
-  JavaThread::dirty_card_queue_set().abandon_logs();
+  G1BarrierSet::dirty_card_queue_set().abandon_logs();
   assert(dirty_card_queue_set().completed_buffers_num() == 0, "DCQS should be empty");
 }
 
@@ -1426,7 +1428,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   _workers->initialize_workers();
   _verifier = new G1HeapVerifier(this);
 
-  _allocator = new G1DefaultAllocator(this);
+  _allocator = new G1Allocator(this);
 
   _heap_sizing_policy = G1HeapSizingPolicy::create(this, _g1_policy->analytics());
 
@@ -1540,7 +1542,7 @@ jint G1CollectedHeap::initialize() {
   G1BarrierSet* bs = new G1BarrierSet(ct);
   bs->initialize();
   assert(bs->is_a(BarrierSet::G1BarrierSet), "sanity");
-  set_barrier_set(bs);
+  BarrierSet::set_barrier_set(bs);
   _card_table = ct;
 
   // Create the hot card cache.
@@ -1625,7 +1627,7 @@ jint G1CollectedHeap::initialize() {
     vm_shutdown_during_initialization("Could not create/initialize G1ConcurrentMark");
     return JNI_ENOMEM;
   }
-  _cmThread = _cm->cm_thread();
+  _cm_thread = _cm->cm_thread();
 
   // Now expand into the initial heap size.
   if (!expand(init_byte_size, _workers)) {
@@ -1636,10 +1638,10 @@ jint G1CollectedHeap::initialize() {
   // Perform any initialization actions delegated to the policy.
   g1_policy()->init(this, &_collection_set);
 
-  JavaThread::satb_mark_queue_set().initialize(SATB_Q_CBL_mon,
-                                               SATB_Q_FL_lock,
-                                               G1SATBProcessCompletedThreshold,
-                                               Shared_SATB_Q_lock);
+  G1BarrierSet::satb_mark_queue_set().initialize(SATB_Q_CBL_mon,
+                                                 SATB_Q_FL_lock,
+                                                 G1SATBProcessCompletedThreshold,
+                                                 Shared_SATB_Q_lock);
 
   jint ecode = initialize_concurrent_refinement();
   if (ecode != JNI_OK) {
@@ -1651,20 +1653,20 @@ jint G1CollectedHeap::initialize() {
     return ecode;
   }
 
-  JavaThread::dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
-                                                DirtyCardQ_FL_lock,
-                                                (int)concurrent_refine()->yellow_zone(),
-                                                (int)concurrent_refine()->red_zone(),
-                                                Shared_DirtyCardQ_lock,
-                                                NULL,  // fl_owner
-                                                true); // init_free_ids
+  G1BarrierSet::dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
+                                                  DirtyCardQ_FL_lock,
+                                                  (int)concurrent_refine()->yellow_zone(),
+                                                  (int)concurrent_refine()->red_zone(),
+                                                  Shared_DirtyCardQ_lock,
+                                                  NULL,  // fl_owner
+                                                  true); // init_free_ids
 
   dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
                                     DirtyCardQ_FL_lock,
                                     -1, // never trigger processing
                                     -1, // no limit on length
                                     Shared_DirtyCardQ_lock,
-                                    &JavaThread::dirty_card_queue_set());
+                                    &G1BarrierSet::dirty_card_queue_set());
 
   // Here we allocate the dummy HeapRegion that is required by the
   // G1AllocRegion class.
@@ -1714,7 +1716,7 @@ void G1CollectedHeap::stop() {
   // that are destroyed during shutdown.
   _cr->stop();
   _young_gen_sampling_thread->stop();
-  _cmThread->stop();
+  _cm_thread->stop();
   if (G1StringDedup::is_enabled()) {
     G1StringDedup::stop();
   }
@@ -1833,7 +1835,7 @@ void G1CollectedHeap::iterate_hcc_closure(CardTableEntryClosure* cl, uint worker
 }
 
 void G1CollectedHeap::iterate_dirty_card_closure(CardTableEntryClosure* cl, uint worker_i) {
-  DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
+  DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
   size_t n_completed_buffers = 0;
   while (dcqs.apply_closure_during_gc(cl, worker_i)) {
     n_completed_buffers++;
@@ -1967,7 +1969,7 @@ void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent) {
   // is set) so that if a waiter requests another System.gc() it doesn't
   // incorrectly see that a marking cycle is still in progress.
   if (concurrent) {
-    _cmThread->set_idle();
+    _cm_thread->set_idle();
   }
 
   // This notify_all() will ensure that a thread that called
@@ -2178,11 +2180,11 @@ bool G1CollectedHeap::supports_concurrent_phase_control() const {
 }
 
 const char* const* G1CollectedHeap::concurrent_phases() const {
-  return _cmThread->concurrent_phases();
+  return _cm_thread->concurrent_phases();
 }
 
 bool G1CollectedHeap::request_concurrent_phase(const char* phase) {
-  return _cmThread->request_concurrent_phase(phase);
+  return _cm_thread->request_concurrent_phase(phase);
 }
 
 class PrintRegionClosure: public HeapRegionClosure {
@@ -2272,7 +2274,7 @@ void G1CollectedHeap::print_on_error(outputStream* st) const {
 
 void G1CollectedHeap::print_gc_threads_on(outputStream* st) const {
   workers()->print_worker_threads_on(st);
-  _cmThread->print_on(st);
+  _cm_thread->print_on(st);
   st->cr();
   _cm->print_worker_threads_on(st);
   _cr->print_threads_on(st);
@@ -2284,7 +2286,7 @@ void G1CollectedHeap::print_gc_threads_on(outputStream* st) const {
 
 void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   workers()->threads_do(tc);
-  tc->do_thread(_cmThread);
+  tc->do_thread(_cm_thread);
   _cm->threads_do(tc);
   _cr->threads_do(tc);
   tc->do_thread(_young_gen_sampling_thread);
@@ -2455,8 +2457,8 @@ HeapWord* G1CollectedHeap::do_collection_pause(size_t word_size,
 
 void G1CollectedHeap::do_concurrent_mark() {
   MutexLockerEx x(CGC_lock, Mutex::_no_safepoint_check_flag);
-  if (!_cmThread->in_progress()) {
-    _cmThread->set_started();
+  if (!_cm_thread->in_progress()) {
+    _cm_thread->set_started();
     CGC_lock->notify();
   }
 }
@@ -2464,10 +2466,10 @@ void G1CollectedHeap::do_concurrent_mark() {
 size_t G1CollectedHeap::pending_card_num() {
   size_t extra_cards = 0;
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *curr = jtiwh.next(); ) {
-    DirtyCardQueue& dcq = curr->dirty_card_queue();
+    DirtyCardQueue& dcq = G1ThreadLocalData::dirty_card_queue(curr);
     extra_cards += dcq.size();
   }
-  DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
+  DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
   size_t buffer_size = dcqs.buffer_size();
   size_t buffer_num = dcqs.completed_buffers_num();
 
@@ -2551,7 +2553,7 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
   RegisterHumongousWithInCSetFastTestClosure()
   : _total_humongous(0),
     _candidate_humongous(0),
-    _dcq(&JavaThread::dirty_card_queue_set()) {
+    _dcq(&G1BarrierSet::dirty_card_queue_set()) {
   }
 
   virtual bool do_heap_region(HeapRegion* r) {
@@ -2752,7 +2754,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   _verifier->verify_dirty_young_regions();
 
   // We should not be doing initial mark unless the conc mark thread is running
-  if (!_cmThread->should_terminate()) {
+  if (!_cm_thread->should_terminate()) {
     // This call will decide whether this pause is an initial-mark
     // pause. If it is, in_initial_mark_gc() will return true
     // for the duration of this pause.
@@ -2840,11 +2842,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       // reference processing currently works in G1.
 
       // Enable discovery in the STW reference processor
-      if (g1_policy()->should_process_references()) {
-        ref_processor_stw()->enable_discovery();
-      } else {
-        ref_processor_stw()->disable_discovery();
-      }
+      ref_processor_stw()->enable_discovery();
 
       {
         // We want to temporarily turn off discovery by the
@@ -3627,7 +3625,7 @@ void G1CollectedHeap::redirty_logged_cards() {
   dirty_card_queue_set().reset_for_par_iteration();
   workers()->run_task(&redirty_task);
 
-  DirtyCardQueueSet& dcq = JavaThread::dirty_card_queue_set();
+  DirtyCardQueueSet& dcq = G1BarrierSet::dirty_card_queue_set();
   dcq.merge_bufferlists(&dirty_card_queue_set());
   assert(dirty_card_queue_set().completed_buffers_num() == 0, "All should be consumed");
 
@@ -4193,12 +4191,8 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
   // as we may have to copy some 'reachable' referent
   // objects (and their reachable sub-graphs) that were
   // not copied during the pause.
-  if (g1_policy()->should_process_references()) {
-    preserve_cm_referents(per_thread_states);
-    process_discovered_references(per_thread_states);
-  } else {
-    ref_processor_stw()->verify_no_references_recorded();
-  }
+  preserve_cm_referents(per_thread_states);
+  process_discovered_references(per_thread_states);
 
   G1STWIsAliveClosure is_alive(this);
   G1KeepAliveClosure keep_alive(this);
@@ -4241,11 +4235,7 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
   // will log these updates (and dirty their associated
   // cards). We need these updates logged to update any
   // RSets.
-  if (g1_policy()->should_process_references()) {
-    enqueue_discovered_references(per_thread_states);
-  } else {
-    g1_policy()->phase_times()->record_ref_enq_time(0);
-  }
+  enqueue_discovered_references(per_thread_states);
 
   _allocator->release_gc_alloc_regions(evacuation_info);
 
@@ -4691,7 +4681,13 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
                              obj->is_typeArray()
                             );
 
-    g1h->concurrent_mark()->humongous_object_eagerly_reclaimed(r);
+    G1ConcurrentMark* const cm = g1h->concurrent_mark();
+    cm->humongous_object_eagerly_reclaimed(r);
+    assert(!cm->is_marked_in_prev_bitmap(obj) && !cm->is_marked_in_next_bitmap(obj),
+           "Eagerly reclaimed humongous region %u should not be marked at all but is in prev %s next %s",
+           region_idx,
+           BOOL_TO_STR(cm->is_marked_in_prev_bitmap(obj)),
+           BOOL_TO_STR(cm->is_marked_in_next_bitmap(obj)));
     _humongous_objects_reclaimed++;
     do {
       HeapRegion* next = g1h->next_region_in_humongous(r);

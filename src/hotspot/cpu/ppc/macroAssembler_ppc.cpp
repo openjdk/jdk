@@ -26,9 +26,9 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
-#include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_ppc.hpp"
@@ -43,12 +43,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/heapRegion.hpp"
-#endif // INCLUDE_ALL_GCS
 #ifdef COMPILER2
 #include "opto/intrinsicnode.hpp"
 #endif
@@ -2579,7 +2573,6 @@ void MacroAssembler::rtm_retry_lock_on_abort(Register retry_count_Reg, Register 
   if (checkRetry) { bind(*checkRetry); }
   addic_(retry_count_Reg, retry_count_Reg, -1);
   blt(CCR0, doneRetry);
-  smt_yield(); // Can't use wait(). No permission (SIGILL).
   b(retryLabel);
   bind(doneRetry);
 }
@@ -2590,7 +2583,7 @@ void MacroAssembler::rtm_retry_lock_on_abort(Register retry_count_Reg, Register 
 // output: retry_count_Reg decremented by 1
 // CTR is killed
 void MacroAssembler::rtm_retry_lock_on_busy(Register retry_count_Reg, Register owner_addr_Reg, Label& retryLabel) {
-  Label SpinLoop, doneRetry;
+  Label SpinLoop, doneRetry, doRetry;
   addic_(retry_count_Reg, retry_count_Reg, -1);
   blt(CCR0, doneRetry);
 
@@ -2599,15 +2592,25 @@ void MacroAssembler::rtm_retry_lock_on_busy(Register retry_count_Reg, Register o
     mtctr(R0);
   }
 
+  // low thread priority
+  smt_prio_low();
   bind(SpinLoop);
-  smt_yield(); // Can't use waitrsv(). No permission (SIGILL).
 
   if (RTMSpinLoopCount > 1) {
-    bdz(retryLabel);
+    bdz(doRetry);
     ld(R0, 0, owner_addr_Reg);
     cmpdi(CCR0, R0, 0);
     bne(CCR0, SpinLoop);
   }
+
+  bind(doRetry);
+
+  // restore thread priority to default in userspace
+#ifdef LINUX
+  smt_prio_medium_low();
+#else
+  smt_prio_medium();
+#endif
 
   b(retryLabel);
 
@@ -3031,212 +3034,10 @@ void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg) {
   bne(CCR0, slow_path);
 }
 
-
-// GC barrier helper macros
-
-// Write the card table byte if needed.
-void MacroAssembler::card_write_barrier_post(Register Rstore_addr, Register Rnew_val, Register Rtmp) {
-  CardTableBarrierSet* bs =
-    barrier_set_cast<CardTableBarrierSet>(Universe::heap()->barrier_set());
-  assert(bs->kind() == BarrierSet::CardTableBarrierSet, "wrong barrier");
-  CardTable* ct = bs->card_table();
-#ifdef ASSERT
-  cmpdi(CCR0, Rnew_val, 0);
-  asm_assert_ne("null oop not allowed", 0x321);
-#endif
-  card_table_write(ct->byte_map_base(), Rtmp, Rstore_addr);
-}
-
-// Write the card table byte.
-void MacroAssembler::card_table_write(jbyte* byte_map_base, Register Rtmp, Register Robj) {
-  assert_different_registers(Robj, Rtmp, R0);
-  load_const_optimized(Rtmp, (address)byte_map_base, R0);
-  srdi(Robj, Robj, CardTable::card_shift);
-  li(R0, 0); // dirty
-  if (UseConcMarkSweepGC) membar(Assembler::StoreStore);
-  stbx(R0, Rtmp, Robj);
-}
-
-// Kills R31 if value is a volatile register.
 void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp2, bool needs_frame) {
-  Label done;
-  cmpdi(CCR0, value, 0);
-  beq(CCR0, done);         // Use NULL as-is.
-
-  clrrdi(tmp1, value, JNIHandles::weak_tag_size);
-#if INCLUDE_ALL_GCS
-  if (UseG1GC) { andi_(tmp2, value, JNIHandles::weak_tag_mask); }
-#endif
-  ld(value, 0, tmp1);      // Resolve (untagged) jobject.
-
-#if INCLUDE_ALL_GCS
-  if (UseG1GC) {
-    Label not_weak;
-    beq(CCR0, not_weak);   // Test for jweak tag.
-    verify_oop(value);
-    g1_write_barrier_pre(noreg, // obj
-                         noreg, // offset
-                         value, // pre_val
-                         tmp1, tmp2, needs_frame);
-    bind(not_weak);
-  }
-#endif // INCLUDE_ALL_GCS
-  verify_oop(value);
-  bind(done);
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->resolve_jobject(this, value, tmp1, tmp2, needs_frame);
 }
-
-#if INCLUDE_ALL_GCS
-// General G1 pre-barrier generator.
-// Goal: record the previous value if it is not null.
-void MacroAssembler::g1_write_barrier_pre(Register Robj, RegisterOrConstant offset, Register Rpre_val,
-                                          Register Rtmp1, Register Rtmp2, bool needs_frame) {
-  Label runtime, filtered;
-
-  // Is marking active?
-  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-    lwz(Rtmp1, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active()), R16_thread);
-  } else {
-    guarantee(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-    lbz(Rtmp1, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active()), R16_thread);
-  }
-  cmpdi(CCR0, Rtmp1, 0);
-  beq(CCR0, filtered);
-
-  // Do we need to load the previous value?
-  if (Robj != noreg) {
-    // Load the previous value...
-    if (UseCompressedOops) {
-      lwz(Rpre_val, offset, Robj);
-    } else {
-      ld(Rpre_val, offset, Robj);
-    }
-    // Previous value has been loaded into Rpre_val.
-  }
-  assert(Rpre_val != noreg, "must have a real register");
-
-  // Is the previous value null?
-  cmpdi(CCR0, Rpre_val, 0);
-  beq(CCR0, filtered);
-
-  if (Robj != noreg && UseCompressedOops) {
-    decode_heap_oop_not_null(Rpre_val);
-  }
-
-  // OK, it's not filtered, so we'll need to call enqueue. In the normal
-  // case, pre_val will be a scratch G-reg, but there are some cases in
-  // which it's an O-reg. In the first case, do a normal call. In the
-  // latter, do a save here and call the frameless version.
-
-  // Can we store original value in the thread's buffer?
-  // Is index == 0?
-  // (The index field is typed as size_t.)
-  const Register Rbuffer = Rtmp1, Rindex = Rtmp2;
-
-  ld(Rindex, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_index()), R16_thread);
-  cmpdi(CCR0, Rindex, 0);
-  beq(CCR0, runtime); // If index == 0, goto runtime.
-  ld(Rbuffer, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_buf()), R16_thread);
-
-  addi(Rindex, Rindex, -wordSize); // Decrement index.
-  std(Rindex, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_index()), R16_thread);
-
-  // Record the previous value.
-  stdx(Rpre_val, Rbuffer, Rindex);
-  b(filtered);
-
-  bind(runtime);
-
-  // May need to preserve LR. Also needed if current frame is not compatible with C calling convention.
-  if (needs_frame) {
-    save_LR_CR(Rtmp1);
-    push_frame_reg_args(0, Rtmp2);
-  }
-
-  if (Rpre_val->is_volatile() && Robj == noreg) mr(R31, Rpre_val); // Save pre_val across C call if it was preloaded.
-  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), Rpre_val, R16_thread);
-  if (Rpre_val->is_volatile() && Robj == noreg) mr(Rpre_val, R31); // restore
-
-  if (needs_frame) {
-    pop_frame();
-    restore_LR_CR(Rtmp1);
-  }
-
-  bind(filtered);
-}
-
-// General G1 post-barrier generator
-// Store cross-region card.
-void MacroAssembler::g1_write_barrier_post(Register Rstore_addr, Register Rnew_val, Register Rtmp1, Register Rtmp2, Register Rtmp3, Label *filtered_ext) {
-  Label runtime, filtered_int;
-  Label& filtered = (filtered_ext != NULL) ? *filtered_ext : filtered_int;
-  assert_different_registers(Rstore_addr, Rnew_val, Rtmp1, Rtmp2);
-
-  G1BarrierSet* bs =
-    barrier_set_cast<G1BarrierSet>(Universe::heap()->barrier_set());
-  CardTable* ct = bs->card_table();
-
-  // Does store cross heap regions?
-  if (G1RSBarrierRegionFilter) {
-    xorr(Rtmp1, Rstore_addr, Rnew_val);
-    srdi_(Rtmp1, Rtmp1, HeapRegion::LogOfHRGrainBytes);
-    beq(CCR0, filtered);
-  }
-
-  // Crosses regions, storing NULL?
-#ifdef ASSERT
-  cmpdi(CCR0, Rnew_val, 0);
-  asm_assert_ne("null oop not allowed (G1)", 0x322); // Checked by caller on PPC64, so following branch is obsolete:
-  //beq(CCR0, filtered);
-#endif
-
-  // Storing region crossing non-NULL, is card already dirty?
-  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
-  const Register Rcard_addr = Rtmp1;
-  Register Rbase = Rtmp2;
-  load_const_optimized(Rbase, (address)ct->byte_map_base(), /*temp*/ Rtmp3);
-
-  srdi(Rcard_addr, Rstore_addr, CardTable::card_shift);
-
-  // Get the address of the card.
-  lbzx(/*card value*/ Rtmp3, Rbase, Rcard_addr);
-  cmpwi(CCR0, Rtmp3, (int)G1CardTable::g1_young_card_val());
-  beq(CCR0, filtered);
-
-  membar(Assembler::StoreLoad);
-  lbzx(/*card value*/ Rtmp3, Rbase, Rcard_addr);  // Reload after membar.
-  cmpwi(CCR0, Rtmp3 /* card value */, CardTable::dirty_card_val());
-  beq(CCR0, filtered);
-
-  // Storing a region crossing, non-NULL oop, card is clean.
-  // Dirty card and log.
-  li(Rtmp3, CardTable::dirty_card_val());
-  //release(); // G1: oops are allowed to get visible after dirty marking.
-  stbx(Rtmp3, Rbase, Rcard_addr);
-
-  add(Rcard_addr, Rbase, Rcard_addr); // This is the address which needs to get enqueued.
-  Rbase = noreg; // end of lifetime
-
-  const Register Rqueue_index = Rtmp2,
-                 Rqueue_buf   = Rtmp3;
-  ld(Rqueue_index, in_bytes(JavaThread::dirty_card_queue_offset() + DirtyCardQueue::byte_offset_of_index()), R16_thread);
-  cmpdi(CCR0, Rqueue_index, 0);
-  beq(CCR0, runtime); // index == 0 then jump to runtime
-  ld(Rqueue_buf, in_bytes(JavaThread::dirty_card_queue_offset() + DirtyCardQueue::byte_offset_of_buf()), R16_thread);
-
-  addi(Rqueue_index, Rqueue_index, -wordSize); // decrement index
-  std(Rqueue_index, in_bytes(JavaThread::dirty_card_queue_offset() + DirtyCardQueue::byte_offset_of_index()), R16_thread);
-
-  stdx(Rcard_addr, Rqueue_buf, Rqueue_index); // store card
-  b(filtered);
-
-  bind(runtime);
-
-  // Save the live input values.
-  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), Rcard_addr, R16_thread);
-
-  bind(filtered_int);
-}
-#endif // INCLUDE_ALL_GCS
 
 // Values for last_Java_pc, and last_Java_sp must comply to the rules
 // in frame_ppc.hpp.

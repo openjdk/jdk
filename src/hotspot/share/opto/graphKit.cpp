@@ -48,6 +48,9 @@
 #include "opto/runtime.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/sharedRuntime.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc/g1/g1ThreadLocalData.hpp"
+#endif // INCLUDE_ALL_GCS
 
 //----------------------------GraphKit-----------------------------------------
 // Main utility constructor.
@@ -1559,7 +1562,7 @@ void GraphKit::pre_barrier(bool do_load,
                            Node* pre_val,
                            BasicType bt) {
 
-  BarrierSet* bs = Universe::heap()->barrier_set();
+  BarrierSet* bs = BarrierSet::barrier_set();
   set_control(ctl);
   switch (bs->kind()) {
     case BarrierSet::G1BarrierSet:
@@ -1576,7 +1579,7 @@ void GraphKit::pre_barrier(bool do_load,
 }
 
 bool GraphKit::can_move_pre_barrier() const {
-  BarrierSet* bs = Universe::heap()->barrier_set();
+  BarrierSet* bs = BarrierSet::barrier_set();
   switch (bs->kind()) {
     case BarrierSet::G1BarrierSet:
       return true; // Can move it if no safepoint
@@ -1598,7 +1601,7 @@ void GraphKit::post_barrier(Node* ctl,
                             Node* val,
                             BasicType bt,
                             bool use_precise) {
-  BarrierSet* bs = Universe::heap()->barrier_set();
+  BarrierSet* bs = BarrierSet::barrier_set();
   set_control(ctl);
   switch (bs->kind()) {
     case BarrierSet::G1BarrierSet:
@@ -3811,7 +3814,7 @@ void GraphKit::add_predicate(int nargs) {
 #define __ ideal.
 
 bool GraphKit::use_ReduceInitialCardMarks() {
-  BarrierSet *bs = Universe::heap()->barrier_set();
+  BarrierSet *bs = BarrierSet::barrier_set();
   return bs->is_a(BarrierSet::CardTableBarrierSet)
          && barrier_set_cast<CardTableBarrierSet>(bs)->can_elide_tlab_store_barriers()
          && ReduceInitialCardMarks;
@@ -3882,7 +3885,7 @@ void GraphKit::write_barrier_post(Node* oop_store,
   Node* cast = __ CastPX(__ ctrl(), adr);
 
   // Divide by card size
-  assert(Universe::heap()->barrier_set()->is_a(BarrierSet::CardTableBarrierSet),
+  assert(BarrierSet::barrier_set()->is_a(BarrierSet::CardTableBarrierSet),
          "Only one we handle so far.");
   Node* card_offset = __ URShiftX( cast, __ ConI(CardTable::card_shift) );
 
@@ -4081,12 +4084,9 @@ void GraphKit::g1_write_barrier_pre(bool do_load,
   assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 4 || in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "flag width");
 
   // Offsets into the thread
-  const int marking_offset = in_bytes(JavaThread::satb_mark_queue_offset() +  // 648
-                                          SATBMarkQueue::byte_offset_of_active());
-  const int index_offset   = in_bytes(JavaThread::satb_mark_queue_offset() +  // 656
-                                          SATBMarkQueue::byte_offset_of_index());
-  const int buffer_offset  = in_bytes(JavaThread::satb_mark_queue_offset() +  // 652
-                                          SATBMarkQueue::byte_offset_of_buf());
+  const int marking_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset());
+  const int index_offset   = in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset());
+  const int buffer_offset  = in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset());
 
   // Now the actual pointers into the thread
   Node* marking_adr = __ AddP(no_base, tls, __ ConX(marking_offset));
@@ -4286,10 +4286,8 @@ void GraphKit::g1_write_barrier_post(Node* oop_store,
   const TypeFunc *tf = OptoRuntime::g1_wb_post_Type();
 
   // Offsets into the thread
-  const int index_offset  = in_bytes(JavaThread::dirty_card_queue_offset() +
-                                     DirtyCardQueue::byte_offset_of_index());
-  const int buffer_offset = in_bytes(JavaThread::dirty_card_queue_offset() +
-                                     DirtyCardQueue::byte_offset_of_buf());
+  const int index_offset  = in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset());
+  const int buffer_offset = in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset());
 
   // Pointers into the thread
 
