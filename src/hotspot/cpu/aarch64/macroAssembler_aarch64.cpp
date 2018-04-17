@@ -29,7 +29,9 @@
 #include "jvm.h"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "interpreter/interpreter.hpp"
 #include "compiler/disassembler.hpp"
@@ -50,7 +52,6 @@
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/heapRegion.hpp"
 #endif
 
@@ -2091,6 +2092,28 @@ void MacroAssembler::verify_heapbase(const char* msg) {
 }
 #endif
 
+void MacroAssembler::resolve_jobject(Register value, Register thread, Register tmp) {
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  Label done, not_weak;
+  cbz(value, done);           // Use NULL as-is.
+
+  STATIC_ASSERT(JNIHandles::weak_tag_mask == 1u);
+  tbz(r0, 0, not_weak);    // Test for jweak tag.
+
+  // Resolve jweak.
+  bs->load_at(this, IN_ROOT | ON_PHANTOM_OOP_REF, T_OBJECT,
+                    value, Address(value, -JNIHandles::weak_tag_value), tmp, thread);
+  verify_oop(value);
+  b(done);
+
+  bind(not_weak);
+  // Resolve (untagged) jobject.
+  bs->load_at(this, IN_ROOT | ON_STRONG_OOP_REF, T_OBJECT,
+                    value, Address(value, 0), tmp, thread);
+  verify_oop(value);
+  bind(done);
+}
+
 void MacroAssembler::stop(const char* msg) {
   address ip = pc();
   pusha();
@@ -3609,43 +3632,6 @@ void MacroAssembler::cmpptr(Register src1, Address src2) {
   cmp(src1, rscratch1);
 }
 
-void MacroAssembler::store_check(Register obj, Address dst) {
-  store_check(obj);
-}
-
-void MacroAssembler::store_check(Register obj) {
-  // Does a store check for the oop in register obj. The content of
-  // register obj is destroyed afterwards.
-
-  BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->kind() == BarrierSet::CardTableBarrierSet,
-         "Wrong barrier set kind");
-
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
-  CardTable* ct = ctbs->card_table();
-  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
-
-  lsr(obj, obj, CardTable::card_shift);
-
-  assert(CardTable::dirty_card_val() == 0, "must be");
-
-  load_byte_map_base(rscratch1);
-
-  if (UseCondCardMark) {
-    Label L_already_dirty;
-    membar(StoreLoad);
-    ldrb(rscratch2,  Address(obj, rscratch1));
-    cbz(rscratch2, L_already_dirty);
-    strb(zr, Address(obj, rscratch1));
-    bind(L_already_dirty);
-  } else {
-    if (UseConcMarkSweepGC && CMSPrecleaningEnabled) {
-      membar(StoreStore);
-    }
-    strb(zr, Address(obj, rscratch1));
-  }
-}
-
 void MacroAssembler::load_klass(Register dst, Register src) {
   if (UseCompressedClassPointers) {
     ldrw(dst, Address(src, oopDesc::klass_offset_in_bytes()));
@@ -4009,190 +3995,6 @@ void MacroAssembler::store_heap_oop_null(Address dst) {
     str(zr, dst);
 }
 
-#if INCLUDE_ALL_GCS
-/*
- * g1_write_barrier_pre -- G1GC pre-write barrier for store of new_val at
- * store_addr.
- *
- * Allocates rscratch1
- */
-void MacroAssembler::g1_write_barrier_pre(Register obj,
-                                          Register pre_val,
-                                          Register thread,
-                                          Register tmp,
-                                          bool tosca_live,
-                                          bool expand_call) {
-  // If expand_call is true then we expand the call_VM_leaf macro
-  // directly to skip generating the check by
-  // InterpreterMacroAssembler::call_VM_leaf_base that checks _last_sp.
-
-  assert(thread == rthread, "must be");
-
-  Label done;
-  Label runtime;
-
-  assert_different_registers(obj, pre_val, tmp, rscratch1);
-  assert(pre_val != noreg &&  tmp != noreg, "expecting a register");
-
-  Address in_progress(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                       SATBMarkQueue::byte_offset_of_active()));
-  Address index(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                       SATBMarkQueue::byte_offset_of_index()));
-  Address buffer(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                       SATBMarkQueue::byte_offset_of_buf()));
-
-
-  // Is marking active?
-  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-    ldrw(tmp, in_progress);
-  } else {
-    assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-    ldrb(tmp, in_progress);
-  }
-  cbzw(tmp, done);
-
-  // Do we need to load the previous value?
-  if (obj != noreg) {
-    load_heap_oop(pre_val, Address(obj, 0));
-  }
-
-  // Is the previous value null?
-  cbz(pre_val, done);
-
-  // Can we store original value in the thread's buffer?
-  // Is index == 0?
-  // (The index field is typed as size_t.)
-
-  ldr(tmp, index);                      // tmp := *index_adr
-  cbz(tmp, runtime);                    // tmp == 0?
-                                        // If yes, goto runtime
-
-  sub(tmp, tmp, wordSize);              // tmp := tmp - wordSize
-  str(tmp, index);                      // *index_adr := tmp
-  ldr(rscratch1, buffer);
-  add(tmp, tmp, rscratch1);             // tmp := tmp + *buffer_adr
-
-  // Record the previous value
-  str(pre_val, Address(tmp, 0));
-  b(done);
-
-  bind(runtime);
-  // save the live input values
-  push(r0->bit(tosca_live) | obj->bit(obj != noreg) | pre_val->bit(true), sp);
-
-  // Calling the runtime using the regular call_VM_leaf mechanism generates
-  // code (generated by InterpreterMacroAssember::call_VM_leaf_base)
-  // that checks that the *(rfp+frame::interpreter_frame_last_sp) == NULL.
-  //
-  // If we care generating the pre-barrier without a frame (e.g. in the
-  // intrinsified Reference.get() routine) then ebp might be pointing to
-  // the caller frame and so this check will most likely fail at runtime.
-  //
-  // Expanding the call directly bypasses the generation of the check.
-  // So when we do not have have a full interpreter frame on the stack
-  // expand_call should be passed true.
-
-  if (expand_call) {
-    assert(pre_val != c_rarg1, "smashed arg");
-    pass_arg1(this, thread);
-    pass_arg0(this, pre_val);
-    MacroAssembler::call_VM_leaf_base(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), 2);
-  } else {
-    call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), pre_val, thread);
-  }
-
-  pop(r0->bit(tosca_live) | obj->bit(obj != noreg) | pre_val->bit(true), sp);
-
-  bind(done);
-}
-
-/*
- * g1_write_barrier_post -- G1GC post-write barrier for store of new_val at
- * store_addr
- *
- * Allocates rscratch1
- */
-void MacroAssembler::g1_write_barrier_post(Register store_addr,
-                                           Register new_val,
-                                           Register thread,
-                                           Register tmp,
-                                           Register tmp2) {
-  assert(thread == rthread, "must be");
-  assert_different_registers(store_addr, new_val, thread, tmp, tmp2,
-                             rscratch1);
-  assert(store_addr != noreg && new_val != noreg && tmp != noreg
-         && tmp2 != noreg, "expecting a register");
-
-  Address queue_index(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
-                                       DirtyCardQueue::byte_offset_of_index()));
-  Address buffer(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
-                                       DirtyCardQueue::byte_offset_of_buf()));
-
-  BarrierSet* bs = Universe::heap()->barrier_set();
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
-  CardTable* ct = ctbs->card_table();
-  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
-
-  Label done;
-  Label runtime;
-
-  // Does store cross heap regions?
-
-  eor(tmp, store_addr, new_val);
-  lsr(tmp, tmp, HeapRegion::LogOfHRGrainBytes);
-  cbz(tmp, done);
-
-  // crosses regions, storing NULL?
-
-  cbz(new_val, done);
-
-  // storing region crossing non-NULL, is card already dirty?
-
-  ExternalAddress cardtable((address) ct->byte_map_base());
-  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
-  const Register card_addr = tmp;
-
-  lsr(card_addr, store_addr, CardTable::card_shift);
-
-  // get the address of the card
-  load_byte_map_base(tmp2);
-  add(card_addr, card_addr, tmp2);
-  ldrb(tmp2, Address(card_addr));
-  cmpw(tmp2, (int)G1CardTable::g1_young_card_val());
-  br(Assembler::EQ, done);
-
-  assert((int)CardTable::dirty_card_val() == 0, "must be 0");
-
-  membar(Assembler::StoreLoad);
-
-  ldrb(tmp2, Address(card_addr));
-  cbzw(tmp2, done);
-
-  // storing a region crossing, non-NULL oop, card is clean.
-  // dirty card and log.
-
-  strb(zr, Address(card_addr));
-
-  ldr(rscratch1, queue_index);
-  cbz(rscratch1, runtime);
-  sub(rscratch1, rscratch1, wordSize);
-  str(rscratch1, queue_index);
-
-  ldr(tmp2, buffer);
-  str(card_addr, Address(tmp2, rscratch1));
-  b(done);
-
-  bind(runtime);
-  // save the live input values
-  push(store_addr->bit(true) | new_val->bit(true), sp);
-  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), card_addr, thread);
-  pop(store_addr->bit(true) | new_val->bit(true), sp);
-
-  bind(done);
-}
-
-#endif // INCLUDE_ALL_GCS
-
 Address MacroAssembler::allocate_metadata_address(Metadata* obj) {
   assert(oop_recorder() != NULL, "this assembler needs a Recorder");
   int index = oop_recorder()->allocate_metadata_index(obj);
@@ -4515,7 +4317,7 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, unsigned long &byt
 
 void MacroAssembler::load_byte_map_base(Register reg) {
   jbyte *byte_map_base =
-    ((CardTableBarrierSet*)(Universe::heap()->barrier_set()))->card_table()->byte_map_base();
+    ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base();
 
   if (is_valid_AArch64_address((address)byte_map_base)) {
     // Strictly speaking the byte_map_base isn't an address at all,
@@ -5182,28 +4984,11 @@ void MacroAssembler::has_negatives(Register ary1, Register len, Register result)
   BIND(DONE);
 }
 
-// Compare Strings or char/byte arrays.
-
-// is_string is true iff this is a string comparison.
-
-// For Strings we're passed the address of the first characters in a1
-// and a2 and the length in cnt1.
-
-// For byte and char arrays we're passed the arrays themselves and we
-// have to extract length fields and do null checks here.
-
-// elem_size is the element size in bytes: either 1 or 2.
-
-// There are two implementations.  For arrays >= 8 bytes, all
-// comparisons (including the final one, which may overlap) are
-// performed 8 bytes at a time.  For arrays < 8 bytes, we compare a
-// halfword, then a short, and then a byte.
-
-void MacroAssembler::arrays_equals(Register a1, Register a2,
-                                   Register result, Register cnt1,
-                                   int elem_size, bool is_string)
+void MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
+                                   Register tmp4, Register tmp5, Register result,
+                                   Register cnt1, int elem_size)
 {
-  Label SAME, DONE, SHORT, NEXT_WORD, ONE;
+  Label DONE;
   Register tmp1 = rscratch1;
   Register tmp2 = rscratch2;
   Register cnt2 = tmp2;  // cnt2 only used in array length compare
@@ -5212,6 +4997,7 @@ void MacroAssembler::arrays_equals(Register a1, Register a2,
   int length_offset = arrayOopDesc::length_offset_in_bytes();
   int base_offset
     = arrayOopDesc::base_offset_in_bytes(elem_size == 2 ? T_CHAR : T_BYTE);
+  int stubBytesThreshold = 3 * 64 + (UseSIMDForArrayEquals ? 0 : 16);
 
   assert(elem_size == 1 || elem_size == 2, "must be char or byte");
   assert_different_registers(a1, a2, result, cnt1, rscratch1, rscratch2);
@@ -5220,43 +5006,229 @@ void MacroAssembler::arrays_equals(Register a1, Register a2,
   {
     const char kind = (elem_size == 2) ? 'U' : 'L';
     char comment[64];
-    snprintf(comment, sizeof comment, "%s%c%s {",
-             is_string ? "string_equals" : "array_equals",
-             kind, "{");
+    snprintf(comment, sizeof comment, "array_equals%c{", kind);
+    BLOCK_COMMENT(comment);
+  }
+#endif
+  if (UseSimpleArrayEquals) {
+    Label NEXT_WORD, SHORT, SAME, TAIL03, TAIL01, A_MIGHT_BE_NULL, A_IS_NOT_NULL;
+    // if (a1==a2)
+    //     return true;
+    // if (a==null || a2==null)
+    //     return false;
+    // a1 & a2 == 0 means (some-pointer is null) or
+    // (very-rare-or-even-probably-impossible-pointer-values)
+    // so, we can save one branch in most cases
+    eor(rscratch1, a1, a2);
+    tst(a1, a2);
+    mov(result, false);
+    cbz(rscratch1, SAME);
+    br(EQ, A_MIGHT_BE_NULL);
+    // if (a1.length != a2.length)
+    //      return false;
+    bind(A_IS_NOT_NULL);
+    ldrw(cnt1, Address(a1, length_offset));
+    ldrw(cnt2, Address(a2, length_offset));
+    eorw(tmp5, cnt1, cnt2);
+    cbnzw(tmp5, DONE);
+    lea(a1, Address(a1, base_offset));
+    lea(a2, Address(a2, base_offset));
+    // Check for short strings, i.e. smaller than wordSize.
+    subs(cnt1, cnt1, elem_per_word);
+    br(Assembler::LT, SHORT);
+    // Main 8 byte comparison loop.
+    bind(NEXT_WORD); {
+      ldr(tmp1, Address(post(a1, wordSize)));
+      ldr(tmp2, Address(post(a2, wordSize)));
+      subs(cnt1, cnt1, elem_per_word);
+      eor(tmp5, tmp1, tmp2);
+      cbnz(tmp5, DONE);
+    } br(GT, NEXT_WORD);
+    // Last longword.  In the case where length == 4 we compare the
+    // same longword twice, but that's still faster than another
+    // conditional branch.
+    // cnt1 could be 0, -1, -2, -3, -4 for chars; -4 only happens when
+    // length == 4.
+    if (log_elem_size > 0)
+      lsl(cnt1, cnt1, log_elem_size);
+    ldr(tmp3, Address(a1, cnt1));
+    ldr(tmp4, Address(a2, cnt1));
+    eor(tmp5, tmp3, tmp4);
+    cbnz(tmp5, DONE);
+    b(SAME);
+    bind(A_MIGHT_BE_NULL);
+    // in case both a1 and a2 are not-null, proceed with loads
+    cbz(a1, DONE);
+    cbz(a2, DONE);
+    b(A_IS_NOT_NULL);
+    bind(SHORT);
+
+    tbz(cnt1, 2 - log_elem_size, TAIL03); // 0-7 bytes left.
+    {
+      ldrw(tmp1, Address(post(a1, 4)));
+      ldrw(tmp2, Address(post(a2, 4)));
+      eorw(tmp5, tmp1, tmp2);
+      cbnzw(tmp5, DONE);
+    }
+    bind(TAIL03);
+    tbz(cnt1, 1 - log_elem_size, TAIL01); // 0-3 bytes left.
+    {
+      ldrh(tmp3, Address(post(a1, 2)));
+      ldrh(tmp4, Address(post(a2, 2)));
+      eorw(tmp5, tmp3, tmp4);
+      cbnzw(tmp5, DONE);
+    }
+    bind(TAIL01);
+    if (elem_size == 1) { // Only needed when comparing byte arrays.
+      tbz(cnt1, 0, SAME); // 0-1 bytes left.
+      {
+        ldrb(tmp1, a1);
+        ldrb(tmp2, a2);
+        eorw(tmp5, tmp1, tmp2);
+        cbnzw(tmp5, DONE);
+      }
+    }
+    bind(SAME);
+    mov(result, true);
+  } else {
+    Label NEXT_DWORD, A_IS_NULL, SHORT, TAIL, TAIL2, STUB, EARLY_OUT,
+        CSET_EQ, LAST_CHECK, LEN_IS_ZERO, SAME;
+    cbz(a1, A_IS_NULL);
+    ldrw(cnt1, Address(a1, length_offset));
+    cbz(a2, A_IS_NULL);
+    ldrw(cnt2, Address(a2, length_offset));
+    mov(result, false);
+    // on most CPUs a2 is still "locked"(surprisingly) in ldrw and it's
+    // faster to perform another branch before comparing a1 and a2
+    cmp(cnt1, elem_per_word);
+    br(LE, SHORT); // short or same
+    cmp(a1, a2);
+    br(EQ, SAME);
+    ldr(tmp3, Address(pre(a1, base_offset)));
+    cmp(cnt1, stubBytesThreshold);
+    br(GE, STUB);
+    ldr(tmp4, Address(pre(a2, base_offset)));
+    sub(tmp5, zr, cnt1, LSL, 3 + log_elem_size);
+    cmp(cnt2, cnt1);
+    br(NE, DONE);
+
+    // Main 16 byte comparison loop with 2 exits
+    bind(NEXT_DWORD); {
+      ldr(tmp1, Address(pre(a1, wordSize)));
+      ldr(tmp2, Address(pre(a2, wordSize)));
+      subs(cnt1, cnt1, 2 * elem_per_word);
+      br(LE, TAIL);
+      eor(tmp4, tmp3, tmp4);
+      cbnz(tmp4, DONE);
+      ldr(tmp3, Address(pre(a1, wordSize)));
+      ldr(tmp4, Address(pre(a2, wordSize)));
+      cmp(cnt1, elem_per_word);
+      br(LE, TAIL2);
+      cmp(tmp1, tmp2);
+    } br(EQ, NEXT_DWORD);
+    b(DONE);
+
+    bind(TAIL);
+    eor(tmp4, tmp3, tmp4);
+    eor(tmp2, tmp1, tmp2);
+    lslv(tmp2, tmp2, tmp5);
+    orr(tmp5, tmp4, tmp2);
+    cmp(tmp5, zr);
+    b(CSET_EQ);
+
+    bind(TAIL2);
+    eor(tmp2, tmp1, tmp2);
+    cbnz(tmp2, DONE);
+    b(LAST_CHECK);
+
+    bind(STUB);
+    ldr(tmp4, Address(pre(a2, base_offset)));
+    cmp(cnt2, cnt1);
+    br(NE, DONE);
+    if (elem_size == 2) { // convert to byte counter
+      lsl(cnt1, cnt1, 1);
+    }
+    eor(tmp5, tmp3, tmp4);
+    cbnz(tmp5, DONE);
+    RuntimeAddress stub = RuntimeAddress(StubRoutines::aarch64::large_array_equals());
+    assert(stub.target() != NULL, "array_equals_long stub has not been generated");
+    trampoline_call(stub);
+    b(DONE);
+
+    bind(SAME);
+    mov(result, true);
+    b(DONE);
+    bind(A_IS_NULL);
+    // a1 or a2 is null. if a2 == a2 then return true. else return false
+    cmp(a1, a2);
+    b(CSET_EQ);
+    bind(EARLY_OUT);
+    // (a1 != null && a2 == null) || (a1 != null && a2 != null && a1 == a2)
+    // so, if a2 == null => return false(0), else return true, so we can return a2
+    mov(result, a2);
+    b(DONE);
+    bind(LEN_IS_ZERO);
+    cmp(cnt2, zr);
+    b(CSET_EQ);
+    bind(SHORT);
+    cbz(cnt1, LEN_IS_ZERO);
+    sub(tmp5, zr, cnt1, LSL, 3 + log_elem_size);
+    ldr(tmp3, Address(a1, base_offset));
+    ldr(tmp4, Address(a2, base_offset));
+    bind(LAST_CHECK);
+    eor(tmp4, tmp3, tmp4);
+    lslv(tmp5, tmp4, tmp5);
+    cmp(tmp5, zr);
+    bind(CSET_EQ);
+    cset(result, EQ);
+  }
+
+  // That's it.
+  bind(DONE);
+
+  BLOCK_COMMENT("} array_equals");
+}
+
+// Compare Strings
+
+// For Strings we're passed the address of the first characters in a1
+// and a2 and the length in cnt1.
+// elem_size is the element size in bytes: either 1 or 2.
+// There are two implementations.  For arrays >= 8 bytes, all
+// comparisons (including the final one, which may overlap) are
+// performed 8 bytes at a time.  For strings < 8 bytes, we compare a
+// halfword, then a short, and then a byte.
+
+void MacroAssembler::string_equals(Register a1, Register a2,
+                                   Register result, Register cnt1, int elem_size)
+{
+  Label SAME, DONE, SHORT, NEXT_WORD;
+  Register tmp1 = rscratch1;
+  Register tmp2 = rscratch2;
+  Register cnt2 = tmp2;  // cnt2 only used in array length compare
+
+  assert(elem_size == 1 || elem_size == 2, "must be 2 or 1 byte");
+  assert_different_registers(a1, a2, result, cnt1, rscratch1, rscratch2);
+
+#ifndef PRODUCT
+  {
+    const char kind = (elem_size == 2) ? 'U' : 'L';
+    char comment[64];
+    snprintf(comment, sizeof comment, "{string_equals%c", kind);
     BLOCK_COMMENT(comment);
   }
 #endif
 
   mov(result, false);
 
-  if (!is_string) {
-    // if (a==a2)
-    //     return true;
-    eor(rscratch1, a1, a2);
-    cbz(rscratch1, SAME);
-    // if (a==null || a2==null)
-    //     return false;
-    cbz(a1, DONE);
-    cbz(a2, DONE);
-    // if (a1.length != a2.length)
-    //      return false;
-    ldrw(cnt1, Address(a1, length_offset));
-    ldrw(cnt2, Address(a2, length_offset));
-    eorw(tmp1, cnt1, cnt2);
-    cbnzw(tmp1, DONE);
-
-    lea(a1, Address(a1, base_offset));
-    lea(a2, Address(a2, base_offset));
-  }
-
   // Check for short strings, i.e. smaller than wordSize.
-  subs(cnt1, cnt1, elem_per_word);
+  subs(cnt1, cnt1, wordSize);
   br(Assembler::LT, SHORT);
   // Main 8 byte comparison loop.
   bind(NEXT_WORD); {
     ldr(tmp1, Address(post(a1, wordSize)));
     ldr(tmp2, Address(post(a2, wordSize)));
-    subs(cnt1, cnt1, elem_per_word);
+    subs(cnt1, cnt1, wordSize);
     eor(tmp1, tmp1, tmp2);
     cbnz(tmp1, DONE);
   } br(GT, NEXT_WORD);
@@ -5265,18 +5237,16 @@ void MacroAssembler::arrays_equals(Register a1, Register a2,
   // conditional branch.
   // cnt1 could be 0, -1, -2, -3, -4 for chars; -4 only happens when
   // length == 4.
-  if (log_elem_size > 0)
-    lsl(cnt1, cnt1, log_elem_size);
   ldr(tmp1, Address(a1, cnt1));
   ldr(tmp2, Address(a2, cnt1));
-  eor(tmp1, tmp1, tmp2);
-  cbnz(tmp1, DONE);
+  eor(tmp2, tmp1, tmp2);
+  cbnz(tmp2, DONE);
   b(SAME);
 
   bind(SHORT);
   Label TAIL03, TAIL01;
 
-  tbz(cnt1, 2 - log_elem_size, TAIL03); // 0-7 bytes left.
+  tbz(cnt1, 2, TAIL03); // 0-7 bytes left.
   {
     ldrw(tmp1, Address(post(a1, 4)));
     ldrw(tmp2, Address(post(a2, 4)));
@@ -5284,7 +5254,7 @@ void MacroAssembler::arrays_equals(Register a1, Register a2,
     cbnzw(tmp1, DONE);
   }
   bind(TAIL03);
-  tbz(cnt1, 1 - log_elem_size, TAIL01); // 0-3 bytes left.
+  tbz(cnt1, 1, TAIL01); // 0-3 bytes left.
   {
     ldrh(tmp1, Address(post(a1, 2)));
     ldrh(tmp2, Address(post(a2, 2)));
@@ -5292,7 +5262,7 @@ void MacroAssembler::arrays_equals(Register a1, Register a2,
     cbnzw(tmp1, DONE);
   }
   bind(TAIL01);
-  if (elem_size == 1) { // Only needed when comparing byte arrays.
+  if (elem_size == 1) { // Only needed when comparing 1-byte elements
     tbz(cnt1, 0, SAME); // 0-1 bytes left.
     {
       ldrb(tmp1, a1);
@@ -5307,7 +5277,7 @@ void MacroAssembler::arrays_equals(Register a1, Register a2,
 
   // That's it.
   bind(DONE);
-  BLOCK_COMMENT(is_string ? "} string_equals" : "} array_equals");
+  BLOCK_COMMENT("} string_equals");
 }
 
 

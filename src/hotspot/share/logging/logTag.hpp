@@ -112,6 +112,7 @@
   LOG_TAG(perf) \
   LOG_TAG(phases) \
   LOG_TAG(plab) \
+  LOG_TAG(preview)   /* Trace loading of preview feature types */ \
   LOG_TAG(promotion) \
   LOG_TAG(preorder) /* Trace all classes loaded in order referenced (not loaded) */ \
   LOG_TAG(protectiondomain) /* "Trace protection domain verification" */ \

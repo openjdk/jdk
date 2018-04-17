@@ -31,7 +31,6 @@
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciCompiler.hpp"

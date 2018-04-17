@@ -26,6 +26,7 @@
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/symbolTable.hpp"
 #include "code/codeCache.hpp"
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
@@ -35,6 +36,7 @@
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
 #include "gc/g1/g1StringDedup.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
@@ -405,7 +407,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
 
   assert(CGC_lock != NULL, "CGC_lock must be initialized");
 
-  SATBMarkQueueSet& satb_qs = JavaThread::satb_mark_queue_set();
+  SATBMarkQueueSet& satb_qs = G1BarrierSet::satb_mark_queue_set();
   satb_qs.set_buffer_size(G1SATBBufferSize);
 
   _root_regions.init(_g1h->survivor(), this);
@@ -530,13 +532,18 @@ void G1ConcurrentMark::clear_statistics(HeapRegion* r) {
   }
 }
 
+static void clear_mark_if_set(G1CMBitMap* bitmap, HeapWord* addr) {
+  if (bitmap->is_marked(addr)) {
+    bitmap->clear(addr);
+  }
+}
+
 void G1ConcurrentMark::humongous_object_eagerly_reclaimed(HeapRegion* r) {
   assert_at_safepoint_on_vm_thread();
 
-  // Need to clear mark bit of the humongous object.
-  if (_next_mark_bitmap->is_marked(r->bottom())) {
-    _next_mark_bitmap->clear(r->bottom());
-  }
+  // Need to clear all mark bits of the humongous object.
+  clear_mark_if_set(_prev_mark_bitmap, r->bottom());
+  clear_mark_if_set(_next_mark_bitmap, r->bottom());
 
   if (!_g1h->collector_state()->mark_or_rebuild_in_progress()) {
     return;
@@ -757,7 +764,7 @@ void G1ConcurrentMark::post_initial_mark() {
   rp->enable_discovery();
   rp->setup_policy(false); // snapshot the soft ref policy to be used in this cycle
 
-  SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
+  SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
   // This is the start of  the marking cycle, we're expected all
   // threads to have SATB queues with active set to false.
   satb_mq_set.set_active_all_threads(true, /* new active value */
@@ -1068,7 +1075,7 @@ void G1ConcurrentMark::remark() {
   if (mark_finished) {
     weak_refs_work(false /* clear_all_soft_refs */);
 
-    SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
+    SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
     // We're done with marking.
     // This is the end of the marking cycle, we're expected all
     // threads to have SATB queues with active set to true.
@@ -1686,11 +1693,11 @@ class G1RemarkThreadsClosure : public ThreadClosure {
         // live by the SATB invariant but other oops recorded in nmethods may behave differently.
         jt->nmethods_do(&_code_cl);
 
-        jt->satb_mark_queue().apply_closure_and_empty(&_cm_satb_cl);
+        G1ThreadLocalData::satb_mark_queue(jt).apply_closure_and_empty(&_cm_satb_cl);
       }
     } else if (thread->is_VM_thread()) {
       if (thread->claim_oops_do(true, _thread_parity)) {
-        JavaThread::satb_mark_queue_set().shared_satb_queue()->apply_closure_and_empty(&_cm_satb_cl);
+        G1BarrierSet::satb_mark_queue_set().shared_satb_queue()->apply_closure_and_empty(&_cm_satb_cl);
       }
     }
   }
@@ -1750,7 +1757,7 @@ void G1ConcurrentMark::finalize_marking() {
     _g1h->workers()->run_task(&remarkTask);
   }
 
-  SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
+  SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
   guarantee(has_overflown() ||
             satb_mq_set.completed_buffers_num() == 0,
             "Invariant: has_overflown = %s, num buffers = " SIZE_FORMAT,
@@ -1932,7 +1939,7 @@ void G1ConcurrentMark::concurrent_cycle_abort() {
   _second_overflow_barrier_sync.abort();
   _has_aborted = true;
 
-  SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
+  SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
   satb_mq_set.abandon_partial_marking();
   // This can be called either during or outside marking, we'll read
   // the expected_active value from the SATB queue set.
@@ -2142,7 +2149,7 @@ void G1CMTask::regular_clock_call() {
 
   // (6) Finally, we check whether there are enough completed STAB
   // buffers available for processing. If there are, we abort.
-  SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
+  SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
   if (!_draining_satb_buffers && satb_mq_set.process_completed_buffers()) {
     // we do need to process SATB buffers, we'll abort and restart
     // the marking task to do so
@@ -2297,7 +2304,7 @@ void G1CMTask::drain_satb_buffers() {
   _draining_satb_buffers = true;
 
   G1CMSATBBufferClosure satb_cl(this, _g1h);
-  SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
+  SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
 
   // This keeps claiming and applying the closure to completed buffers
   // until we run out of buffers or we need to abort.

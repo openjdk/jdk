@@ -238,12 +238,18 @@ class ClassLoader: AllStatic {
 
   CDS_ONLY(static ClassPathEntry* _app_classpath_entries;)
   CDS_ONLY(static ClassPathEntry* _last_app_classpath_entry;)
-  CDS_ONLY(static void setup_app_search_path(const char *class_path);)
+  CDS_ONLY(static ClassPathEntry* _module_path_entries;)
+  CDS_ONLY(static ClassPathEntry* _last_module_path_entry;)
+  CDS_ONLY(static void setup_app_search_path(const char* class_path);)
+  CDS_ONLY(static void setup_module_search_path(const char* path, TRAPS);)
   static void add_to_app_classpath_entries(const char* path,
                                            ClassPathEntry* entry,
                                            bool check_for_duplicates);
+  CDS_ONLY(static void add_to_module_path_entries(const char* path,
+                                           ClassPathEntry* entry);)
  public:
   CDS_ONLY(static ClassPathEntry* app_classpath_entries() {return _app_classpath_entries;})
+  CDS_ONLY(static ClassPathEntry* module_path_entries() {return _module_path_entries;})
 
  protected:
   // Initialization:
@@ -286,6 +292,7 @@ class ClassLoader: AllStatic {
                                            bool check_for_duplicates,
                                            bool is_boot_append,
                                            bool throw_exception=true);
+  CDS_ONLY(static void update_module_path_entry_list(const char *path, TRAPS);)
   static void print_bootclasspath();
 
   // Timing
@@ -382,6 +389,7 @@ class ClassLoader: AllStatic {
   static void initialize();
   static void classLoader_init2(TRAPS);
   CDS_ONLY(static void initialize_shared_path();)
+  CDS_ONLY(static void initialize_module_path(TRAPS);)
 
   static int compute_Object_vtable();
 
@@ -402,14 +410,28 @@ class ClassLoader: AllStatic {
   // entries during shared classpath setup time.
   static int num_app_classpath_entries();
 
+  // Helper function used by CDS code to get the number of module path
+  // entries during shared classpath setup time.
+  static int num_module_path_entries() {
+    assert(DumpSharedSpaces, "Should only be called at CDS dump time");
+    int num_entries = 0;
+    ClassPathEntry* e= ClassLoader::_module_path_entries;
+    while (e != NULL) {
+      num_entries ++;
+      e = e->next();
+    }
+    return num_entries;
+  }
   static void  check_shared_classpath(const char *path);
   static void  finalize_shared_paths_misc_info();
   static int   get_shared_paths_misc_info_size();
   static void* get_shared_paths_misc_info();
   static bool  check_shared_paths_misc_info(void* info, int size);
+  static int   get_module_paths_misc_info_size();
+  static void* get_module_paths_misc_info();
   static void  exit_with_path_failure(const char* error, const char* message);
-
-  static void record_result(InstanceKlass* ik, const ClassFileStream* stream);
+  static char* skip_uri_protocol(char* source);
+  static void  record_result(InstanceKlass* ik, const ClassFileStream* stream, TRAPS);
 #endif
   static JImageLocationRef jimage_find_resource(JImageFile* jf, const char* module_name,
                                                 const char* file_name, jlong &size);

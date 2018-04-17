@@ -44,6 +44,7 @@
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #endif
 
 #define VM_STRUCTS(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field) \
@@ -172,8 +173,6 @@
   volatile_nonstatic_field(JavaThread,         _exception_pc,                                 address)                               \
   volatile_nonstatic_field(JavaThread,         _is_method_handle_return,                      int)                                   \
   nonstatic_field(JavaThread,                  _osthread,                                     OSThread*)                             \
-  nonstatic_field(JavaThread,                  _satb_mark_queue,                              SATBMarkQueue)                         \
-  nonstatic_field(JavaThread,                  _dirty_card_queue,                             DirtyCardQueue)                        \
   nonstatic_field(JavaThread,                  _pending_deoptimization,                       int)                                   \
   nonstatic_field(JavaThread,                  _pending_failed_speculation,                   oop)                                   \
   nonstatic_field(JavaThread,                  _pending_transfer_to_interpreter,              bool)                                  \
@@ -515,9 +514,6 @@
   declare_constant(Deoptimization::Reason_jsr_mismatch)                   \
   declare_constant(Deoptimization::Reason_LIMIT)                          \
                                                                           \
-  declare_constant_with_value("dirtyCardQueueBufferOffset", in_bytes(DirtyCardQueue::byte_offset_of_buf())) \
-  declare_constant_with_value("dirtyCardQueueIndexOffset", in_bytes(DirtyCardQueue::byte_offset_of_index())) \
-                                                                          \
   declare_constant(FieldInfo::access_flags_offset)                        \
   declare_constant(FieldInfo::name_index_offset)                          \
   declare_constant(FieldInfo::signature_index_offset)                     \
@@ -572,10 +568,6 @@
   declare_constant(ReceiverTypeData::receiver_type_row_cell_count)        \
   declare_constant(ReceiverTypeData::receiver0_offset)                    \
   declare_constant(ReceiverTypeData::count0_offset)                       \
-                                                                          \
-  declare_constant_with_value("satbMarkQueueBufferOffset", in_bytes(SATBMarkQueue::byte_offset_of_buf())) \
-  declare_constant_with_value("satbMarkQueueIndexOffset", in_bytes(SATBMarkQueue::byte_offset_of_index())) \
-  declare_constant_with_value("satbMarkQueueActiveOffset", in_bytes(SATBMarkQueue::byte_offset_of_active())) \
                                                                           \
   declare_constant(vmIntrinsics::_invokeBasic)                            \
   declare_constant(vmIntrinsics::_linkToVirtual)                          \
@@ -641,8 +633,8 @@
   declare_function(JVMCIRuntime::log_printf) \
   declare_function(JVMCIRuntime::vm_error) \
   declare_function(JVMCIRuntime::load_and_clear_exception) \
-  declare_function(JVMCIRuntime::write_barrier_pre) \
-  declare_function(JVMCIRuntime::write_barrier_post) \
+  ALL_GCS_ONLY(declare_function(JVMCIRuntime::write_barrier_pre)) \
+  ALL_GCS_ONLY(declare_function(JVMCIRuntime::write_barrier_post)) \
   declare_function(JVMCIRuntime::validate_object) \
   \
   declare_function(JVMCIRuntime::test_deoptimize_call_int)
@@ -650,11 +642,16 @@
 
 #if INCLUDE_ALL_GCS
 
-#define VM_STRUCTS_G1(nonstatic_field, static_field) \
+#define VM_STRUCTS_JVMCI_G1GC(nonstatic_field, static_field) \
   static_field(HeapRegion, LogOfHRGrainBytes, int)
 
-#define VM_INT_CONSTANTS_G1(declare_constant, declare_constant_with_value, declare_preprocessor_constant) \
-  declare_constant_with_value("G1CardTable::g1_young_gen", G1CardTable::g1_young_card_val())
+#define VM_INT_CONSTANTS_JVMCI_G1GC(declare_constant, declare_constant_with_value, declare_preprocessor_constant) \
+  declare_constant_with_value("G1CardTable::g1_young_gen", G1CardTable::g1_young_card_val()) \
+  declare_constant_with_value("G1ThreadLocalData::satb_mark_queue_active_offset", in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset())) \
+  declare_constant_with_value("G1ThreadLocalData::satb_mark_queue_index_offset", in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset())) \
+  declare_constant_with_value("G1ThreadLocalData::satb_mark_queue_buffer_offset", in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset())) \
+  declare_constant_with_value("G1ThreadLocalData::dirty_card_queue_index_offset", in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset())) \
+  declare_constant_with_value("G1ThreadLocalData::dirty_card_queue_buffer_offset", in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()))
 
 #endif // INCLUDE_ALL_GCS
 
@@ -873,8 +870,8 @@ VMStructEntry JVMCIVMStructs::localHotSpotVMStructs[] = {
                  GENERATE_C2_UNCHECKED_STATIC_VM_STRUCT_ENTRY)
 
 #if INCLUDE_ALL_GCS
-  VM_STRUCTS_G1(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-                GENERATE_STATIC_VM_STRUCT_ENTRY)
+  VM_STRUCTS_JVMCI_G1GC(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
+                        GENERATE_STATIC_VM_STRUCT_ENTRY)
 #endif
 
   GENERATE_VM_STRUCT_LAST_ENTRY()
@@ -925,9 +922,9 @@ VMIntConstantEntry JVMCIVMStructs::localHotSpotVMIntConstants[] = {
                        GENERATE_C2_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
 
 #if INCLUDE_ALL_GCS
-  VM_INT_CONSTANTS_G1(GENERATE_VM_INT_CONSTANT_ENTRY,
-                      GENERATE_VM_INT_CONSTANT_WITH_VALUE_ENTRY,
-                      GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
+  VM_INT_CONSTANTS_JVMCI_G1GC(GENERATE_VM_INT_CONSTANT_ENTRY,
+                              GENERATE_VM_INT_CONSTANT_WITH_VALUE_ENTRY,
+                              GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
 #endif
 
   GENERATE_VM_INT_CONSTANT_LAST_ENTRY()

@@ -177,7 +177,7 @@ tier1_gc_gcbasher = \
 
 tier1_runtime = \
   runtime/ \
- -runtime/6626217/Test6626217.sh \
+ -runtime/6626217/bug_21227.java \
  -runtime/7100935 \
  -runtime/7158988/FieldMonitor.java \
  -runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java \
@@ -265,7 +265,8 @@ hotspot_tier2_runtime = \
  -:tier1_runtime \
  -:tier1_serviceability \
  -:hotspot_tier2_runtime_platform_agnostic \
- -runtime/signal
+ -runtime/signal \
+ -runtime/NMT/MallocStressTest.java
 
 hotspot_tier2_runtime_platform_agnostic = \
   runtime/SelectionResolution \

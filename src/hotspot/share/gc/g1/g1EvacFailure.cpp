@@ -36,6 +36,7 @@
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/oop.inline.hpp"
 
 class UpdateRSetDeferred : public ExtendedOopClosure {
 private:

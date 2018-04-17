@@ -2495,7 +2495,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // --------------------------------------------------------------------------
 
   if (ret_type == T_OBJECT || ret_type == T_ARRAY) {
-    __ resolve_jobject(R3_RET, r_temp_1, r_temp_2, /* needs_frame */ false); // kills R31
+    __ resolve_jobject(R3_RET, r_temp_1, r_temp_2, /* needs_frame */ false);
   }
 
   if (CheckJNICalls) {

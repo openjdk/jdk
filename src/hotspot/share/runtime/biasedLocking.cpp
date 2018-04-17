@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -616,7 +616,7 @@ BiasedLocking::Condition BiasedLocking::revoke_and_rebias(Handle obj, bool attem
       // with it.
       markOop biased_value       = mark;
       markOop res_mark = obj->cas_set_mark(prototype_header, mark);
-      assert(!(*(obj->mark_addr()))->has_bias_pattern(), "even if we raced, should still be revoked");
+      assert(!obj->mark()->has_bias_pattern(), "even if we raced, should still be revoked");
       return BIAS_REVOKED;
     } else if (prototype_header->bias_epoch() != mark->bias_epoch()) {
       // The epoch of this biasing has expired indicating that the

@@ -25,6 +25,16 @@
 #ifndef SHARE_VM_GC_PARALLEL_VMSTRUCTS_PARALLELGC_HPP
 #define SHARE_VM_GC_PARALLEL_VMSTRUCTS_PARALLELGC_HPP
 
+#include "gc/parallel/asPSOldGen.hpp"
+#include "gc/parallel/asPSYoungGen.hpp"
+#include "gc/parallel/immutableSpace.hpp"
+#include "gc/parallel/mutableSpace.hpp"
+#include "gc/parallel/parallelScavengeHeap.hpp"
+#include "gc/parallel/psOldGen.hpp"
+#include "gc/parallel/psVirtualspace.hpp"
+#include "gc/parallel/psYoungGen.hpp"
+#include "gc/parallel/vmStructs_parallelgc.hpp"
+
 #define VM_STRUCTS_PARALLELGC(nonstatic_field, \
                               volatile_nonstatic_field, \
                               static_field) \
@@ -65,7 +75,9 @@
                                                                                                                                      \
 
 #define VM_TYPES_PARALLELGC(declare_type,                                 \
-                            declare_toplevel_type)                        \
+                            declare_toplevel_type,                        \
+                            declare_integer_type)                         \
+                                                                          \
                                                                           \
   /*****************************************/                             \
   /* Parallel GC - space, gen abstractions */                             \
@@ -92,5 +104,8 @@
   declare_toplevel_type(PSOldGen*)                                        \
   declare_toplevel_type(ASPSOldGen*)                                      \
   declare_toplevel_type(ParallelScavengeHeap*)
+
+#define VM_INT_CONSTANTS_PARALLELGC(declare_constant,                     \
+                                    declare_constant_with_value)
 
 #endif // SHARE_VM_GC_PARALLEL_VMSTRUCTS_PARALLELGC_HPP

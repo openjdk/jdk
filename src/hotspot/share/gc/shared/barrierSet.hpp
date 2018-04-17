@@ -42,7 +42,7 @@ class BarrierSetAssembler;
 class BarrierSet: public CHeapObj<mtGC> {
   friend class VMStructs;
 
-  static BarrierSet* _bs;
+  static BarrierSet* _barrier_set;
 
 public:
   enum Name {
@@ -51,8 +51,6 @@ public:
 #undef BARRIER_SET_DECLARE_BS_ENUM
     UnknownBS
   };
-
-  static BarrierSet* barrier_set() { return _bs; }
 
 protected:
   // Fake RTTI support.  For a derived class T to participate
@@ -107,6 +105,8 @@ public:
   // is redone until it succeeds. This can e.g. prevent allocations from the slow path
   // to be in old.
   virtual void on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {}
+  virtual void on_thread_create(Thread* thread) {}
+  virtual void on_thread_destroy(Thread* thread) {}
   virtual void on_thread_attach(JavaThread* thread) {}
   virtual void on_thread_detach(JavaThread* thread) {}
   virtual void make_parsable(JavaThread* thread) {}
@@ -115,7 +115,8 @@ public:
   // Print a description of the memory for the barrier set
   virtual void print_on(outputStream* st) const = 0;
 
-  static void set_bs(BarrierSet* bs) { _bs = bs; }
+  static BarrierSet* barrier_set() { return _barrier_set; }
+  static void set_barrier_set(BarrierSet* barrier_set);
 
   BarrierSetAssembler* barrier_set_assembler() {
     assert(_barrier_set_assembler != NULL, "should be set");

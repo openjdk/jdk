@@ -99,12 +99,14 @@ class CardTableRS: public CardTable {
   jbyte find_unused_youngergenP_card_value();
 
 public:
-  CardTableRS(MemRegion whole_heap);
+  CardTableRS(MemRegion whole_heap, bool scanned_concurrently);
   ~CardTableRS();
 
   CLDRemSet* cld_rem_set() { return &_cld_rem_set; }
 
   void younger_refs_in_space_iterate(Space* sp, OopsInGenClosure* cl, uint n_threads);
+
+  virtual void verify_used_region_at_save_marks(Space* sp) const NOT_DEBUG_RETURN;
 
   // Override.
   void prepare_for_younger_refs_iterate(bool parallel);
@@ -174,9 +176,9 @@ public:
 
   // Work method used to implement non_clean_card_iterate_possibly_parallel()
   // above in the parallel case.
-  void non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
-                                            OopsInGenClosure* cl, CardTableRS* ct,
-                                            uint n_threads);
+  virtual void non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
+                                                    OopsInGenClosure* cl, CardTableRS* ct,
+                                                    uint n_threads);
 
   // This is an array, one element per covered region of the card table.
   // Each entry is itself an array, with one element per chunk in the
@@ -190,53 +192,7 @@ public:
   uintptr_t* _lowest_non_clean_base_chunk_index;
   volatile int* _last_LNC_resizing_collection;
 
-  // Initializes "lowest_non_clean" to point to the array for the region
-  // covering "sp", and "lowest_non_clean_base_chunk_index" to the chunk
-  // index of the corresponding to the first element of that array.
-  // Ensures that these arrays are of sufficient size, allocating if necessary.
-  // May be called by several threads concurrently.
-  void get_LNC_array_for_space(Space* sp,
-                               jbyte**& lowest_non_clean,
-                               uintptr_t& lowest_non_clean_base_chunk_index,
-                               size_t& lowest_non_clean_chunk_size);
-
-  // Returns the number of chunks necessary to cover "mr".
-  size_t chunks_to_cover(MemRegion mr) {
-    return (size_t)(addr_to_chunk_index(mr.last()) -
-                    addr_to_chunk_index(mr.start()) + 1);
-  }
-
-  // Returns the index of the chunk in a stride which
-  // covers the given address.
-  uintptr_t addr_to_chunk_index(const void* addr) {
-    uintptr_t card = (uintptr_t) byte_for(addr);
-    return card / ParGCCardsPerStrideChunk;
-  }
-
-  // Apply cl, which must either itself apply dcto_cl or be dcto_cl,
-  // to the cards in the stride (of n_strides) within the given space.
-  void process_stride(Space* sp,
-                      MemRegion used,
-                      jint stride, int n_strides,
-                      OopsInGenClosure* cl,
-                      CardTableRS* ct,
-                      jbyte** lowest_non_clean,
-                      uintptr_t lowest_non_clean_base_chunk_index,
-                      size_t lowest_non_clean_chunk_size);
-
-  // Makes sure that chunk boundaries are handled appropriately, by
-  // adjusting the min_done of dcto_cl, and by using a special card-table
-  // value to indicate how min_done should be set.
-  void process_chunk_boundaries(Space* sp,
-                                DirtyCardToOopClosure* dcto_cl,
-                                MemRegion chunk_mr,
-                                MemRegion used,
-                                jbyte** lowest_non_clean,
-                                uintptr_t lowest_non_clean_base_chunk_index,
-                                size_t    lowest_non_clean_chunk_size);
-
   virtual bool is_in_young(oop obj) const;
-
 };
 
 class ClearNoncleanCardWrapper: public MemRegionClosure {

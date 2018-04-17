@@ -51,6 +51,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sweeper.hpp"
+#include "runtime/vmThread.hpp"
 #include "services/memoryService.hpp"
 #include "trace/tracing.hpp"
 #include "utilities/align.hpp"

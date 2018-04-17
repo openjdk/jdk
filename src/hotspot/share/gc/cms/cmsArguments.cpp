@@ -82,8 +82,35 @@ void CMSArguments::set_parnew_gc_flags() {
 // certainly gain from analysis of platform and environment.
 void CMSArguments::initialize() {
   GCArguments::initialize();
+
   assert(!UseSerialGC && !UseParallelOldGC && !UseParallelGC, "Error");
   assert(UseConcMarkSweepGC, "CMS is expected to be on here");
+
+  // CMS space iteration, which FLSVerifyAllHeapreferences entails,
+  // insists that we hold the requisite locks so that the iteration is
+  // MT-safe. For the verification at start-up and shut-down, we don't
+  // yet have a good way of acquiring and releasing these locks,
+  // which are not visible at the CollectedHeap level. We want to
+  // be able to acquire these locks and then do the iteration rather
+  // than just disable the lock verification. This will be fixed under
+  // bug 4788986.
+  if (UseConcMarkSweepGC && FLSVerifyAllHeapReferences) {
+    if (VerifyDuringStartup) {
+      warning("Heap verification at start-up disabled "
+              "(due to current incompatibility with FLSVerifyAllHeapReferences)");
+      VerifyDuringStartup = false; // Disable verification at start-up
+    }
+
+    if (VerifyBeforeExit) {
+      warning("Heap verification at shutdown disabled "
+              "(due to current incompatibility with FLSVerifyAllHeapReferences)");
+      VerifyBeforeExit = false; // Disable verification at shutdown
+    }
+  }
+
+  if (!ClassUnloading) {
+    FLAG_SET_CMDLINE(bool, CMSClassUnloadingEnabled, false);
+  }
 
   // Set CMS global values
   CompactibleFreeListSpace::set_cms_values();

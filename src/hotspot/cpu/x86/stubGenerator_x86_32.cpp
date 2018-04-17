@@ -845,7 +845,7 @@ class StubGenerator: public StubCodeGenerator {
       decorators |= ARRAYCOPY_ALIGNED;
     }
 
-    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, t, from, to, count);
 
     __ subptr(to, from); // to --> to_from
@@ -1034,7 +1034,7 @@ class StubGenerator: public StubCodeGenerator {
       decorators |= ARRAYCOPY_ALIGNED;
     }
 
-    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, t, from, to, count);
 
     // copy from high to low
@@ -1389,7 +1389,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     BasicType type = T_OBJECT;
-    BarrierSetAssembler *bs = Universe::heap()->barrier_set()->barrier_set_assembler();
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, type, from, to, count);
 
     // Copy from low to high addresses, indexed from the end of each array.

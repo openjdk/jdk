@@ -25,9 +25,15 @@
 #ifndef SHARE_VM_GC_CMS_VMSTRUCTS_CMS_HPP
 #define SHARE_VM_GC_CMS_VMSTRUCTS_CMS_HPP
 
-#define VM_STRUCTS_CMS(nonstatic_field, \
-                   volatile_nonstatic_field, \
-                   static_field) \
+#include "gc/cms/cmsHeap.hpp"
+#include "gc/cms/compactibleFreeListSpace.hpp"
+#include "gc/cms/concurrentMarkSweepGeneration.hpp"
+#include "gc/cms/concurrentMarkSweepThread.hpp"
+#include "gc/cms/parNewGeneration.hpp"
+
+#define VM_STRUCTS_CMSGC(nonstatic_field,                                                                                            \
+                         volatile_nonstatic_field,                                                                                   \
+                         static_field)                                                                                               \
   nonstatic_field(CompactibleFreeListSpace,    _collector,                                    CMSCollector*)                         \
   nonstatic_field(CompactibleFreeListSpace,    _bt,                                           BlockOffsetArrayNonContigSpace)        \
      static_field(CompactibleFreeListSpace,    _min_chunk_size_in_bytes,                      size_t)                                \
@@ -43,13 +49,22 @@
   nonstatic_field(AFLBinaryTreeDictionary,     _total_size,                                   size_t)                                \
   nonstatic_field(CompactibleFreeListSpace,    _dictionary,                                   AFLBinaryTreeDictionary*)              \
   nonstatic_field(CompactibleFreeListSpace,    _indexedFreeList[0],                           AdaptiveFreeList<FreeChunk>)           \
-  nonstatic_field(CompactibleFreeListSpace,    _smallLinearAllocBlock,                        LinearAllocBlock)
+  nonstatic_field(CompactibleFreeListSpace,    _smallLinearAllocBlock,                        LinearAllocBlock)                      \
+  volatile_nonstatic_field(FreeChunk,          _size,                                         size_t)                                \
+  nonstatic_field(FreeChunk,                   _next,                                         FreeChunk*)                            \
+  nonstatic_field(FreeChunk,                   _prev,                                         FreeChunk*)                            \
+  nonstatic_field(AdaptiveFreeList<FreeChunk>, _size,                                         size_t)                                \
+  nonstatic_field(AdaptiveFreeList<FreeChunk>, _count,                                        ssize_t)
 
 
-#define VM_TYPES_CMS(declare_type,                                        \
-                     declare_toplevel_type)                               \
+
+#define VM_TYPES_CMSGC(declare_type,                                      \
+                       declare_toplevel_type,                             \
+                       declare_integer_type)                              \
                                                                           \
+           declare_type(CMSHeap,                      GenCollectedHeap)   \
            declare_type(ConcurrentMarkSweepGeneration,CardGeneration)     \
+           declare_type(ParNewGeneration,             DefNewGeneration)   \
            declare_type(CompactibleFreeListSpace,     CompactibleSpace)   \
            declare_type(ConcurrentMarkSweepThread,    NamedThread)        \
   declare_toplevel_type(CMSCollector)                                     \
@@ -61,10 +76,16 @@
   declare_toplevel_type(CompactibleFreeListSpace*)                        \
   declare_toplevel_type(CMSCollector*)                                    \
   declare_toplevel_type(AFLBinaryTreeDictionary)                          \
-  declare_toplevel_type(LinearAllocBlock)
+  declare_toplevel_type(LinearAllocBlock)                                 \
+  declare_toplevel_type(FreeChunk*)                                       \
+  declare_toplevel_type(AdaptiveFreeList<FreeChunk>*)                     \
+  declare_toplevel_type(AdaptiveFreeList<FreeChunk>)
 
-#define VM_INT_CONSTANTS_CMS(declare_constant)                            \
+
+#define VM_INT_CONSTANTS_CMSGC(declare_constant,                          \
+                               declare_constant_with_value)               \
   declare_constant(CompactibleFreeListSpace::IndexSetSize)                \
   declare_constant(Generation::ConcurrentMarkSweep)                       \
+  declare_constant(Generation::ParNew)
 
 #endif // SHARE_VM_GC_CMS_VMSTRUCTS_CMS_HPP

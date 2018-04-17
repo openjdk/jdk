@@ -32,6 +32,7 @@
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 inline void PSScavenge::save_to_space_top_before_gc() {

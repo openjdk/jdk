@@ -23,16 +23,21 @@
  *
  */
 
-#ifndef CPU_X86_GC_SHARED_CARDTABLEBARRIERSETASSEMBLER_X86_HPP
-#define CPU_X86_GC_SHARED_CARDTABLEBARRIERSETASSEMBLER_X86_HPP
+#ifndef CPU_S390_GC_SHARED_CARDTABLEBARRIERSETASSEMBLER_S390_HPP
+#define CPU_S390_GC_SHARED_CARDTABLEBARRIERSETASSEMBLER_S390_HPP
 
 #include "asm/macroAssembler.hpp"
 #include "gc/shared/modRefBarrierSetAssembler.hpp"
 
 class CardTableBarrierSetAssembler: public ModRefBarrierSetAssembler {
 protected:
+  void store_check(MacroAssembler* masm, Register store_addr, Register tmp);
+
   virtual void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators, Register addr, Register count,
                                                 bool do_return);
+
+  virtual void oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                            const Address& dst, Register val, Register tmp1, Register tmp2, Register tmp3);
 };
 
-#endif // CPU_X86_GC_SHARED_CARDTABLEBARRIERSETASSEMBLER_X86_HPP
+#endif // CPU_S390_GC_SHARED_CARDTABLEBARRIERSETASSEMBLER_S390_HPP

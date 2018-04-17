@@ -62,41 +62,18 @@ public class MismatchedPatchModule {
         JarBuilder.build("javanaming", "javax/naming/spi/NamingManager");
         moduleJar = TestCommon.getTestJar("javanaming.jar");
 
-        // Case 1: --patch-module specified for dump time and run time
+        // Case 1: --patch-module specified for dump time
         System.out.println("Case 1: --patch-module specified for dump time and run time");
         OutputAnalyzer output =
             TestCommon.dump(null,
                 TestCommon.list("javax/naming/spi/NamingManager"),
                 "--patch-module=java.naming=" + moduleJar,
                 "PatchMain", "javax.naming.spi.NamingManager");
-        TestCommon.checkDump(output, "Loading classes to share");
+        output.shouldHaveExitValue(1)
+              .shouldContain("Cannot use the following option when dumping the shared archive: --patch-module");
 
-        // javax.naming.spi.NamingManager is not patched at runtime
-        TestCommon.run(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "--patch-module=java.naming2=" + moduleJar,
-            "-Xlog:class+path=info",
-            "PatchMain", "javax.naming.spi.NamingManager")
-          .assertNormalExit(o -> o.shouldNotContain("I pass!"));
-
-        // Case 2: --patch-module specified for dump time but not for run time
-        System.out.println("Case 2: --patch-module specified for dump time but not for run time");
-        output =
-            TestCommon.dump(null,
-                TestCommon.list("javax/naming/spi/NamingManager"),
-                "--patch-module=java.naming=" + moduleJar,
-                "PatchMain", "javax.naming.spi.NamingManager");
-        TestCommon.checkDump(output, "Loading classes to share");
-
-        // javax.naming.spi.NamingManager is not patched at runtime
-        TestCommon.run(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-Xlog:class+path=info",
-            "PatchMain", "javax.naming.spi.NamingManager")
-          .assertNormalExit(o -> o.shouldNotContain("I pass!"));
-
-        // Case 3: --patch-module specified for run time but not for dump time
-        System.out.println("Case 3: --patch-module specified for run time but not for dump time");
+        // Case 2: --patch-module specified for run time but not for dump time
+        System.out.println("Case 2: --patch-module specified for run time but not for dump time");
         output =
             TestCommon.dump(null,
                 TestCommon.list("javax/naming/spi/NamingManager"),
@@ -107,26 +84,9 @@ public class MismatchedPatchModule {
         TestCommon.run(
             "-XX:+UnlockDiagnosticVMOptions",
             "--patch-module=java.naming=" + moduleJar,
-            "-Xlog:class+path=info",
-            "PatchMain", "javax.naming.spi.NamingManager")
-          .assertNormalExit("I pass!");
-
-        // Case 4: mismatched --patch-module entry counts between dump time and run time
-        System.out.println("Case 4: mismatched --patch-module entry counts between dump time and run time");
-        output =
-            TestCommon.dump(null,
-                TestCommon.list("javax/naming/spi/NamingManager"),
-                "--patch-module=java.naming=" + moduleJar,
-                "PatchMain", "javax.naming.spi.NamingManager");
-        TestCommon.checkDump(output, "Loading classes to share");
-
-        // javax.naming.spi.NamingManager is patched at runtime
-        TestCommon.run(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "--patch-module=java.naming=" + moduleJar,
             "--patch-module=java.naming2=" + moduleJar,
             "-Xlog:class+path=info",
             "PatchMain", "javax.naming.spi.NamingManager")
-          .assertNormalExit("I pass!");
+            .assertSilentlyDisabledCDS(0, "I pass!");
     }
 }
