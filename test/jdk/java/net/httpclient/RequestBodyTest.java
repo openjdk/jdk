@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,31 +24,37 @@
 /*
  * @test
  * @bug 8087112
- * @modules jdk.incubator.httpclient
+ * @modules java.net.http
  *          java.logging
  *          jdk.httpserver
  * @library /lib/testlibrary/ /test/lib
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../com/sun/net/httpserver/EchoHandler.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
+ * @build jdk.testlibrary.SimpleSSLContext
+ * @build LightWeightHttpServer
  * @build jdk.test.lib.Platform
  * @build jdk.test.lib.util.FileUtils
- * @build LightWeightHttpServer
- * @build jdk.testlibrary.SimpleSSLContext
  * @run testng/othervm RequestBodyTest
+ * @run testng/othervm/java.security.policy=RequestBodyTest.policy RequestBodyTest
  */
 
 import java.io.*;
 import java.net.URI;
-import jdk.incubator.http.HttpClient;
-import jdk.incubator.http.HttpRequest;
-import jdk.incubator.http.HttpResponse;
-import jdk.incubator.http.HttpResponse.BodyHandler;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse.BodyHandler;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -61,8 +67,6 @@ import jdk.test.lib.util.FileUtils;
 import static java.lang.System.out;
 import static java.nio.charset.StandardCharsets.*;
 import static java.nio.file.StandardOpenOption.*;
-import static jdk.incubator.http.HttpRequest.BodyPublisher.*;
-import static jdk.incubator.http.HttpResponse.BodyHandler.*;
 
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -191,28 +195,28 @@ public class RequestBodyTest {
 
         switch (requestBodyType) {
             case BYTE_ARRAY:
-                rb.POST(fromByteArray(fileAsBytes));
+                rb.POST(BodyPublishers.ofByteArray(fileAsBytes));
                 break;
             case BYTE_ARRAY_OFFSET:
-                rb.POST(fromByteArray(fileAsBytes,
-                                      DEFAULT_OFFSET,
-                                      fileAsBytes.length * DEFAULT_LENGTH_FACTOR));
+                rb.POST(BodyPublishers.ofByteArray(fileAsBytes,
+                        DEFAULT_OFFSET,
+                        fileAsBytes.length * DEFAULT_LENGTH_FACTOR));
                 break;
             case BYTE_ARRAYS:
                 Iterable<byte[]> iterable = Arrays.asList(fileAsBytes);
-                rb.POST(fromByteArrays(iterable));
+                rb.POST(BodyPublishers.ofByteArrays(iterable));
                 break;
             case FILE:
-                rb.POST(fromFile(file));
+                rb.POST(BodyPublishers.ofFile(file));
                 break;
             case INPUTSTREAM:
-                rb.POST(fromInputStream(fileInputStreamSupplier(file)));
+                rb.POST(BodyPublishers.ofInputStream(fileInputStreamSupplier(file)));
                 break;
             case STRING:
-                rb.POST(fromString(fileAsString));
+                rb.POST(BodyPublishers.ofString(fileAsString));
                 break;
             case STRING_WITH_CHARSET:
-                rb.POST(fromString(new String(fileAsBytes), Charset.defaultCharset()));
+                rb.POST(BodyPublishers.ofString(new String(fileAsBytes), Charset.defaultCharset()));
                 break;
             default:
                 throw new AssertionError("Unknown request body:" + requestBodyType);
@@ -242,8 +246,8 @@ public class RequestBodyTest {
 
         switch (responseBodyType) {
             case BYTE_ARRAY:
-                BodyHandler<byte[]> bh = asByteArray();
-                if (bufferResponseBody) bh = buffering(bh, 50);
+                BodyHandler<byte[]> bh = BodyHandlers.ofByteArray();
+                if (bufferResponseBody) bh = BodyHandlers.buffering(bh, 50);
                 HttpResponse<byte[]> bar = getResponse(client, request, bh, async);
                 assertEquals(bar.statusCode(), 200);
                 assertEquals(bar.body(), fileAsBytes);
@@ -251,8 +255,8 @@ public class RequestBodyTest {
             case BYTE_ARRAY_CONSUMER:
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 Consumer<Optional<byte[]>> consumer = o -> consumerBytes(o, baos);
-                BodyHandler<Void> bh1 = asByteArrayConsumer(consumer);
-                if (bufferResponseBody) bh1 = buffering(bh1, 49);
+                BodyHandler<Void> bh1 = BodyHandlers.ofByteArrayConsumer(consumer);
+                if (bufferResponseBody) bh1 = BodyHandlers.buffering(bh1, 49);
                 HttpResponse<Void> v = getResponse(client, request, bh1, async);
                 byte[] ba = baos.toByteArray();
                 assertEquals(v.statusCode(), 200);
@@ -260,38 +264,38 @@ public class RequestBodyTest {
                 break;
             case DISCARD:
                 Object o = new Object();
-                BodyHandler<Object> bh2 = discard(o);
-                if (bufferResponseBody) bh2 = buffering(bh2, 51);
+                BodyHandler<Object> bh2 = BodyHandlers.replacing(o);
+                if (bufferResponseBody) bh2 = BodyHandlers.buffering(bh2, 51);
                 HttpResponse<Object> or = getResponse(client, request, bh2, async);
                 assertEquals(or.statusCode(), 200);
                 assertSame(or.body(), o);
                 break;
             case FILE:
-                BodyHandler<Path> bh3 = asFile(tempFile);
-                if (bufferResponseBody) bh3 = buffering(bh3, 48);
+                BodyHandler<Path> bh3 = BodyHandlers.ofFile(tempFile);
+                if (bufferResponseBody) bh3 = BodyHandlers.buffering(bh3, 48);
                 HttpResponse<Path> fr = getResponse(client, request, bh3, async);
                 assertEquals(fr.statusCode(), 200);
                 assertEquals(Files.size(tempFile), fileAsString.length());
                 assertEquals(Files.readAllBytes(tempFile), fileAsBytes);
                 break;
             case FILE_WITH_OPTION:
-                BodyHandler<Path> bh4 = asFile(tempFile, CREATE_NEW, WRITE);
-                if (bufferResponseBody) bh4 = buffering(bh4, 52);
+                BodyHandler<Path> bh4 = BodyHandlers.ofFile(tempFile, CREATE_NEW, WRITE);
+                if (bufferResponseBody) bh4 = BodyHandlers.buffering(bh4, 52);
                 fr = getResponse(client, request, bh4, async);
                 assertEquals(fr.statusCode(), 200);
                 assertEquals(Files.size(tempFile), fileAsString.length());
                 assertEquals(Files.readAllBytes(tempFile), fileAsBytes);
                 break;
             case STRING:
-                BodyHandler<String> bh5 = asString();
-                if(bufferResponseBody) bh5 = buffering(bh5, 47);
+                BodyHandler<String> bh5 = BodyHandlers.ofString();
+                if(bufferResponseBody) bh5 = BodyHandlers.buffering(bh5, 47);
                 HttpResponse<String> sr = getResponse(client, request, bh5, async);
                 assertEquals(sr.statusCode(), 200);
                 assertEquals(sr.body(), fileAsString);
                 break;
             case STRING_WITH_CHARSET:
-                BodyHandler<String> bh6 = asString(StandardCharsets.UTF_8);
-                if (bufferResponseBody) bh6 = buffering(bh6, 53);
+                BodyHandler<String> bh6 = BodyHandlers.ofString(StandardCharsets.UTF_8);
+                if (bufferResponseBody) bh6 = BodyHandlers.buffering(bh6, 53);
                 HttpResponse<String> r = getResponse(client, request, bh6, async);
                 assertEquals(r.statusCode(), 200);
                 assertEquals(r.body(), fileAsString);
@@ -328,9 +332,11 @@ public class RequestBodyTest {
             @Override
             public FileInputStream get() {
                 try {
-                    return new FileInputStream(file.toFile());
-                } catch (FileNotFoundException x) {
-                    throw new UncheckedIOException(x);
+                    PrivilegedExceptionAction<FileInputStream> pa =
+                            () -> new FileInputStream(file.toFile());
+                    return AccessController.doPrivileged(pa);
+                } catch (PrivilegedActionException x) {
+                    throw new UncheckedIOException((IOException)x.getCause());
                 }
             }
         };

@@ -24,32 +24,26 @@
 /*
  * @test
  * @bug 8164941
- * @modules jdk.incubator.httpclient java.logging jdk.httpserver
+ * @modules java.net.http java.logging jdk.httpserver
  * @run main/othervm ZeroRedirects
  */
 
-import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.URI;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.net.InetSocketAddress;
-import jdk.incubator.http.HttpClient;
-import jdk.incubator.http.HttpRequest;
-import jdk.incubator.http.HttpResponse;
-import static jdk.incubator.http.HttpRequest.BodyPublisher.fromString;
-import static jdk.incubator.http.HttpResponse.BodyHandler.asString;
-import static jdk.incubator.http.HttpResponse.BodyHandler.discard;
-import static jdk.incubator.http.HttpClient.Version.HTTP_1_1;
-import static jdk.incubator.http.HttpClient.Version.HTTP_2;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
-/**
- */
 public class ZeroRedirects {
     static HttpServer s1 ;
     static ExecutorService executor;
@@ -73,19 +67,19 @@ public class ZeroRedirects {
     }
 
     public static void test() throws Exception {
-        System.setProperty("java.net.httpclient.redirects.retrylimit", "0");
+        System.setProperty("java.net.http.redirects.retrylimit", "0");
         HttpRequest r = HttpRequest.newBuilder(uri)
                 .GET()
                 .build();
-        HttpResponse<Void> resp = client.send(r, discard(null));
+        HttpResponse<Void> resp = client.send(r, BodyHandlers.discarding());
         System.out.printf("Client: response is %d\n", resp.statusCode());
         if (resp.statusCode() != 200)
             throw new RuntimeException();
     }
 
     static void initServer() throws Exception {
-        InetSocketAddress addr = new InetSocketAddress (0);
-        s1 = HttpServer.create (addr, 0);
+        InetSocketAddress addr = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
+        s1 = HttpServer.create(addr, 0);
         HttpHandler h = new Handler();
 
         HttpContext c1 = s1.createContext("/", h);
@@ -95,23 +89,21 @@ public class ZeroRedirects {
         s1.start();
 
         port = s1.getAddress().getPort();
-        uri = new URI("http://127.0.0.1:" + Integer.toString(port) + "/foo");
+        uri = new URI("http://localhost:" + port + "/foo");
         System.out.println("HTTP server port = " + port);
     }
-}
 
-class Handler implements HttpHandler {
+    static class Handler implements HttpHandler {
 
-    @Override
-    public synchronized void handle(HttpExchange t)
-        throws IOException
-    {
-        String reply = "Hello world";
-        int len = reply.length();
-        System.out.printf("Sending response 200\n");
-        t.sendResponseHeaders(200, len);
-        OutputStream o = t.getResponseBody();
-        o.write(reply.getBytes());
-        t.close();
+        @Override
+        public synchronized void handle(HttpExchange t) throws IOException {
+            String reply = "Hello world";
+            int len = reply.length();
+            System.out.printf("Sending response 200\n");
+            t.sendResponseHeaders(200, len);
+            OutputStream o = t.getResponseBody();
+            o.write(reply.getBytes());
+            t.close();
+        }
     }
 }

@@ -24,7 +24,9 @@
 /*
  * @test
  * @bug 8195823
- * @modules jdk.incubator.httpclient/jdk.incubator.http.internal.frame
- * @run testng/othervm -Djdk.internal.httpclient.debug=true jdk.incubator.httpclient/jdk.incubator.http.internal.frame.FramesDecoderTest
+ * @modules java.net.http/jdk.internal.net.http.frame
+ * @run testng/othervm
+ *       -Djdk.internal.httpclient.debug=true
+ *       java.net.http/jdk.internal.net.http.frame.FramesDecoderTest
  */
 

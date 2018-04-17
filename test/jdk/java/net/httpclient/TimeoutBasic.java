@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,15 @@
  */
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.URI;
-import jdk.incubator.http.HttpClient;
-import jdk.incubator.http.HttpRequest;
-import jdk.incubator.http.HttpResponse;
-import jdk.incubator.http.HttpTimeoutException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.net.http.HttpTimeoutException;
 import jdk.testlibrary.SimpleSSLContext;
 
 import javax.net.ServerSocketFactory;
@@ -40,7 +43,6 @@ import java.util.concurrent.CompletionException;
 import java.util.function.Function;
 
 import static java.lang.System.out;
-import static jdk.incubator.http.HttpResponse.BodyHandler.discard;
 
 /**
  * @test
@@ -96,17 +98,16 @@ public class TimeoutBasic {
     }
 
     static HttpRequest.Builder DELETE(HttpRequest.Builder builder) {
-        HttpRequest.BodyPublisher noBody = HttpRequest.BodyPublisher.noBody();
-        return builder.DELETE(noBody);
+        return builder.DELETE();
     }
 
     static HttpRequest.Builder PUT(HttpRequest.Builder builder) {
-        HttpRequest.BodyPublisher noBody = HttpRequest.BodyPublisher.noBody();
+        HttpRequest.BodyPublisher noBody = HttpRequest.BodyPublishers.noBody();
         return builder.PUT(noBody);
     }
 
     static HttpRequest.Builder POST(HttpRequest.Builder builder) {
-        HttpRequest.BodyPublisher noBody = HttpRequest.BodyPublisher.noBody();
+        HttpRequest.BodyPublisher noBody = HttpRequest.BodyPublishers.noBody();
         return builder.POST(noBody);
     }
 
@@ -140,9 +141,11 @@ public class TimeoutBasic {
         if (version != null) builder.version(version);
         HttpClient client = builder.build();
         out.printf("%ntest(version=%s, reqVersion=%s, scheme=%s)%n", version, reqVersion, scheme);
-        try (ServerSocket ss = ssf.createServerSocket(0, 20)) {
+        try (ServerSocket ss = ssf.createServerSocket()) {
+            ss.setReuseAddress(false);
+            ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
             int port = ss.getLocalPort();
-            URI uri = new URI(scheme +"://127.0.0.1:" + port + "/");
+            URI uri = new URI(scheme +"://localhost:" + port + "/");
 
             out.println("--- TESTING Async");
             int count = 0;
@@ -152,7 +155,12 @@ public class TimeoutBasic {
                 if (request == null) continue;
                 count++;
                 try {
-                    HttpResponse<?> resp = client.sendAsync(request, discard(null)).join();
+                    HttpResponse<?> resp = client.sendAsync(request, BodyHandlers.discarding()).join();
+                    out.println("Unexpected response for: " + request);
+                    out.println("\t from " + ss.getLocalSocketAddress());
+                    out.println("Response is: " + resp);
+                    out.println("Headers: " + resp.headers().map());
+                    out.println("Body (should be null): " + resp.body());
                     throw new RuntimeException("Unexpected response: " + resp.statusCode());
                 } catch (CompletionException e) {
                     if (!(e.getCause() instanceof HttpTimeoutException)) {
@@ -172,7 +180,7 @@ public class TimeoutBasic {
                 if (request == null) continue;
                 count++;
                 try {
-                    client.send(request, discard(null));
+                    client.send(request, BodyHandlers.discarding());
                 } catch (HttpTimeoutException e) {
                     out.println("Caught expected timeout: " + e);
                 }

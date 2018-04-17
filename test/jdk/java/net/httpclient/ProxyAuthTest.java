@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @test
  * @bug 8163561
  * @modules java.base/sun.net.www
- *          jdk.incubator.httpclient
+ *          java.net.http
  * @summary Verify that Proxy-Authenticate header is correctly handled
  * @run main/othervm ProxyAuthTest
  */
@@ -39,6 +39,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Authenticator;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.Proxy;
@@ -47,27 +48,29 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.URI;
-import jdk.incubator.http.HttpClient;
-import jdk.incubator.http.HttpRequest;
-import jdk.incubator.http.HttpResponse;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Base64;
 import java.util.List;
 import sun.net.www.MessageHeader;
-import static jdk.incubator.http.HttpResponse.BodyHandler.discard;
 
 public class ProxyAuthTest {
     private static final String AUTH_USER = "user";
     private static final String AUTH_PASSWORD = "password";
 
     public static void main(String[] args) throws Exception {
-        try (ServerSocket ss = new ServerSocket(0)) {
+        try (ServerSocket ss = new ServerSocket()) {
+            ss.setReuseAddress(false);
+            ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
             int port = ss.getLocalPort();
             MyProxy proxy = new MyProxy(ss);
             (new Thread(proxy)).start();
             System.out.println("Proxy listening port " + port);
 
             Auth auth = new Auth();
-            InetSocketAddress paddr = new InetSocketAddress("localhost", port);
+            InetSocketAddress paddr = new InetSocketAddress(InetAddress.getLoopbackAddress(), port);
 
             URI uri = new URI("http://www.google.ie/");
             CountingProxySelector ps = CountingProxySelector.of(paddr);
@@ -76,7 +79,7 @@ public class ProxyAuthTest {
                                           .authenticator(auth)
                                           .build();
             HttpRequest req = HttpRequest.newBuilder(uri).GET().build();
-            HttpResponse<?> resp = client.sendAsync(req, discard(null)).get();
+            HttpResponse<?> resp = client.sendAsync(req, BodyHandlers.discarding()).get();
             if (resp.statusCode() != 404) {
                 throw new RuntimeException("Unexpected status code: " + resp.statusCode());
             }

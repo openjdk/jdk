@@ -27,7 +27,10 @@
  * @library /lib/testlibrary
  * @build jdk.testlibrary.SimpleSSLContext
  * @build MockServer SplitResponse
- * @run main/othervm -Djdk.internal.httpclient.debug=true -Djdk.httpclient.HttpClient.log=all SplitResponseSSL SSL
+ * @run main/othervm
+ *      -Djdk.internal.httpclient.debug=true
+ *      -Djdk.httpclient.HttpClient.log=all
+ *      SplitResponseSSL SSL
  */
 public class SplitResponseSSL {
     public static void main(String[] args) throws Exception {

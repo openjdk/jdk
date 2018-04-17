@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,19 @@
  * questions.
  */
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URI;
-import jdk.incubator.http.HttpClient;
-import jdk.incubator.http.HttpHeaders;
-import jdk.incubator.http.HttpRequest;
-import jdk.incubator.http.HttpResponse;
-import java.nio.ByteBuffer;
+import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Flow;
 import java.util.stream.Stream;
 import static java.lang.System.err;
 
@@ -95,14 +87,14 @@ public class BodyProcessorInputStreamTest {
         // This example shows how to return an InputStream that can be used to
         // start reading the response body before the response is fully received.
         // In comparison, the snipet below (which uses
-        // HttpResponse.BodyHandler.asString()) obviously will not return before the
+        // HttpResponse.BodyHandlers.ofString()) obviously will not return before the
         // response body is fully read:
         //
         // System.out.println(
-        //    client.sendAsync(request, HttpResponse.BodyHandler.asString()).get().body());
+        //    client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).get().body());
 
         CompletableFuture<HttpResponse<InputStream>> handle =
-            client.sendAsync(request, HttpResponse.BodyHandler.asInputStream());
+            client.sendAsync(request, BodyHandlers.ofInputStream());
         if (DEBUG) err.println("Request sent");
 
         HttpResponse<InputStream> pending = handle.get();

@@ -48,6 +48,7 @@ module java.se {
     requires transitive java.management;
     requires transitive java.management.rmi;
     requires transitive java.naming;
+    requires transitive java.net.http;
     requires transitive java.prefs;
     requires transitive java.rmi;
     requires transitive java.scripting;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@
  * @library /lib/testlibrary server
  * @build jdk.testlibrary.SimpleSSLContext
  * @modules java.base/sun.net.www.http
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.common
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.frame
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.hpack
+ *          java.net.http/jdk.internal.net.http.common
+ *          java.net.http/jdk.internal.net.http.frame
+ *          java.net.http/jdk.internal.net.http.hpack
  *          java.security.jgss
  * @run testng/othervm/timeout=60 -Djavax.net.debug=ssl -Djdk.httpclient.HttpClient.log=all ErrorTest
  * @summary check exception thrown when bad TLS parameters selected
@@ -37,17 +37,17 @@
 
 import java.io.IOException;
 import java.net.URI;
-import jdk.incubator.http.HttpClient;
-import jdk.incubator.http.HttpRequest;
-import jdk.incubator.http.HttpResponse;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import jdk.testlibrary.SimpleSSLContext;
-import static jdk.incubator.http.HttpClient.Version.HTTP_2;
-import static jdk.incubator.http.HttpRequest.BodyPublisher.fromString;
-import static jdk.incubator.http.HttpResponse.BodyHandler.discard;
+import static java.net.http.HttpClient.Version.HTTP_2;
 
 import org.testng.annotations.Test;
 
@@ -85,18 +85,18 @@ public class ErrorTest {
                                               serverContext);
             httpsServer.addHandler(new Http2EchoHandler(), "/");
             int httpsPort = httpsServer.getAddress().getPort();
-            String httpsURIString = "https://127.0.0.1:" + httpsPort + "/bar/";
+            String httpsURIString = "https://localhost:" + httpsPort + "/bar/";
 
             httpsServer.start();
             URI uri = URI.create(httpsURIString);
             System.err.println("Request to " + uri);
 
             HttpRequest req = HttpRequest.newBuilder(uri)
-                                    .POST(fromString(SIMPLE_STRING))
+                                    .POST(BodyPublishers.ofString(SIMPLE_STRING))
                                     .build();
             HttpResponse response;
             try {
-                response = client.send(req, discard(null));
+                response = client.send(req, BodyHandlers.discarding());
                 throw new RuntimeException("Unexpected response: " + response);
             } catch (IOException e) {
                 System.err.println("Caught Expected IOException: " + e);

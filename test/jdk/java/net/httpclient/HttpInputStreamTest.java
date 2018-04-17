@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URI;
-import jdk.incubator.http.HttpClient;
-import jdk.incubator.http.HttpHeaders;
-import jdk.incubator.http.HttpRequest;
-import jdk.incubator.http.HttpResponse;
+import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Iterator;
@@ -78,7 +78,7 @@ public class HttpInputStreamTest {
 
         @Override
         public HttpResponse.BodySubscriber<InputStream>
-                apply(int i, HttpHeaders hh) {
+                apply(HttpResponse.ResponseInfo rinfo) {
             return new HttpResponseInputStream(maxBuffers);
         }
 
@@ -293,11 +293,11 @@ public class HttpInputStreamTest {
         // This example shows how to return an InputStream that can be used to
         // start reading the response body before the response is fully received.
         // In comparison, the snipet below (which uses
-        // HttpResponse.BodyHandler.asString()) obviously will not return before the
+        // HttpResponse.BodyHandlers.ofString()) obviously will not return before the
         // response body is fully read:
         //
         // System.out.println(
-        //    client.sendAsync(request, HttpResponse.BodyHandler.asString()).get().body());
+        //    client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).get().body());
 
         CompletableFuture<HttpResponse<InputStream>> handle =
             client.sendAsync(request, new HttpInputStreamHandler(3));

@@ -49,9 +49,9 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
-import jdk.incubator.http.HttpClient;
-import jdk.incubator.http.HttpRequest;
-import jdk.incubator.http.HttpResponse;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import jdk.testlibrary.SimpleSSLContext;
 import java.util.concurrent.*;
 
@@ -60,12 +60,12 @@ import java.util.concurrent.*;
  * @bug 8181422
  * @summary  Verifies that you can access an HTTP/2 server over HTTPS by
  *           tunnelling through an HTTP/1.1 proxy.
- * @modules jdk.incubator.httpclient
+ * @modules java.net.http
  * @library /lib/testlibrary server
  * @modules java.base/sun.net.www.http
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.common
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.frame
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.hpack
+ *          java.net.http/jdk.internal.net.http.common
+ *          java.net.http/jdk.internal.net.http.frame
+ *          java.net.http/jdk.internal.net.http.hpack
  * @build jdk.testlibrary.SimpleSSLContext ProxyTest2
  * @run main/othervm ProxyTest2
  * @author danielfuchs
@@ -146,7 +146,7 @@ public class ProxyTest2 {
 
             System.out.println("Sending request with HttpClient");
             HttpResponse<String> response
-                = client.send(request, HttpResponse.BodyHandler.asString());
+                = client.send(request, HttpResponse.BodyHandlers.ofString());
             System.out.println("Got response");
             String resp = response.body();
             System.out.println("Received: " + resp);
@@ -165,19 +165,25 @@ public class ProxyTest2 {
         final ServerSocket ss;
         final boolean DEBUG = false;
         final Http2TestServer serverImpl;
+        final CopyOnWriteArrayList<CompletableFuture<Void>> connectionCFs
+                = new CopyOnWriteArrayList<>();
+        private volatile boolean stopped;
         TunnelingProxy(Http2TestServer serverImpl) throws IOException {
             this.serverImpl = serverImpl;
             ss = new ServerSocket();
             accept = new Thread(this::accept);
+            accept.setDaemon(true);
         }
 
         void start() throws IOException {
+            ss.setReuseAddress(false);
             ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
             accept.start();
         }
 
         // Pipe the input stream to the output stream.
-        private synchronized Thread pipe(InputStream is, OutputStream os, char tag) {
+        private synchronized Thread pipe(InputStream is, OutputStream os,
+                                         char tag, CompletableFuture<Void> end) {
             return new Thread("TunnelPipe("+tag+")") {
                 @Override
                 public void run() {
@@ -197,13 +203,15 @@ public class ProxyTest2 {
                         }
                     } catch (IOException ex) {
                         if (DEBUG) ex.printStackTrace(System.out);
+                    } finally {
+                        end.complete(null);
                     }
                 }
             };
         }
 
         public InetSocketAddress getAddress() {
-            return new InetSocketAddress(ss.getInetAddress(), ss.getLocalPort());
+            return new InetSocketAddress( InetAddress.getLoopbackAddress(), ss.getLocalPort());
         }
 
         // This is a bit shaky. It doesn't handle continuation
@@ -228,18 +236,14 @@ public class ProxyTest2 {
         public void accept() {
             Socket clientConnection = null;
             try {
-                while (true) {
+                while (!stopped) {
                     System.out.println("Tunnel: Waiting for client");
-                    Socket previous = clientConnection;
+                    Socket toClose;
                     try {
-                        clientConnection = ss.accept();
+                        toClose = clientConnection = ss.accept();
                     } catch (IOException io) {
                         if (DEBUG) io.printStackTrace(System.out);
                         break;
-                    } finally {
-                        // we have only 1 client at a time, so it is safe
-                        // to close the previous connection here
-                        if (previous != null) previous.close();
                     }
                     System.out.println("Tunnel: Client accepted");
                     Socket targetConnection = null;
@@ -259,40 +263,59 @@ public class ProxyTest2 {
                         // signals the end of all headers.
                         while(!requestLine.equals("")) {
                             System.out.println("Tunnel: Reading header: "
-                                               + (requestLine = readLine(ccis)));
+                                    + (requestLine = readLine(ccis)));
                         }
 
                         // Open target connection
                         targetConnection = new Socket(
-                                serverImpl.getAddress().getAddress(),
+                                InetAddress.getLoopbackAddress(),
                                 serverImpl.getAddress().getPort());
 
                         // Then send the 200 OK response to the client
                         System.out.println("Tunnel: Sending "
-                                           + "HTTP/1.1 200 OK\r\n\r\n");
+                                + "HTTP/1.1 200 OK\r\n\r\n");
                         pw.print("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
                         pw.flush();
                     } else {
-                        // This should not happen.
-                        throw new IOException("Tunnel: Unexpected status line: "
-                                           + requestLine);
+                        // This should not happen. If it does then just print an
+                        // error - both on out and err, and close the accepted
+                        // socket
+                        System.out.println("WARNING: Tunnel: Unexpected status line: "
+                                + requestLine + " received by "
+                                + ss.getLocalSocketAddress()
+                                + " from "
+                                + toClose.getRemoteSocketAddress()
+                                + " - closing accepted socket");
+                        // Print on err
+                        System.err.println("WARNING: Tunnel: Unexpected status line: "
+                                + requestLine + " received by "
+                                + ss.getLocalSocketAddress()
+                                + " from "
+                                + toClose.getRemoteSocketAddress());
+                        // close accepted socket.
+                        toClose.close();
+                        System.err.println("Tunnel: accepted socket closed.");
+                        continue;
                     }
 
                     // Pipe the input stream of the client connection to the
                     // output stream of the target connection and conversely.
                     // Now the client and target will just talk to each other.
                     System.out.println("Tunnel: Starting tunnel pipes");
-                    Thread t1 = pipe(ccis, targetConnection.getOutputStream(), '+');
-                    Thread t2 = pipe(targetConnection.getInputStream(), ccos, '-');
+                    CompletableFuture<Void> end, end1, end2;
+                    Thread t1 = pipe(ccis, targetConnection.getOutputStream(), '+',
+                            end1 = new CompletableFuture<>());
+                    Thread t2 = pipe(targetConnection.getInputStream(), ccos, '-',
+                            end2 = new CompletableFuture<>());
+                    end = CompletableFuture.allOf(end1, end2);
+                    end.whenComplete(
+                            (r,t) -> {
+                                try { toClose.close(); } catch (IOException x) { }
+                                finally {connectionCFs.remove(end);}
+                            });
+                    connectionCFs.add(end);
                     t1.start();
                     t2.start();
-
-                    // We have only 1 client... wait until it has finished before
-                    // accepting a new connection request.
-                    // System.out.println("Tunnel: Waiting for pipes to close");
-                    t1.join();
-                    t2.join();
-                    System.out.println("Tunnel: Done - waiting for next client");
                 }
             } catch (Throwable ex) {
                 try {
@@ -301,10 +324,14 @@ public class ProxyTest2 {
                     ex.addSuppressed(ex1);
                 }
                 ex.printStackTrace(System.err);
+            } finally {
+                System.out.println("Tunnel: exiting (stopped=" + stopped + ")");
+                connectionCFs.forEach(cf -> cf.complete(null));
             }
         }
 
-        void stop() throws IOException {
+        public void stop() throws IOException {
+            stopped = true;
             ss.close();
         }
 

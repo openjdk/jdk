@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8087112
- * @modules jdk.incubator.httpclient
+ * @modules java.net.http
  *          jdk.httpserver
  * @run main/othervm BasicAuthTest
  * @summary Basic Authentication Test
@@ -38,15 +38,18 @@ import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.URI;
-import jdk.incubator.http.*;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static jdk.incubator.http.HttpRequest.BodyPublisher.fromString;
-import static jdk.incubator.http.HttpResponse.BodyHandler.asString;
 
 public class BasicAuthTest {
 
@@ -55,7 +58,8 @@ public class BasicAuthTest {
     static final String POST_BODY = "This is the POST body 123909090909090";
 
     public static void main(String[] args) throws Exception {
-        HttpServer server = HttpServer.create(new InetSocketAddress(0), 10);
+        InetSocketAddress addr = new InetSocketAddress(InetAddress.getLoopbackAddress(),0);
+        HttpServer server = HttpServer.create(addr, 10);
         ExecutorService e = Executors.newCachedThreadPool();
         Handler h = new Handler();
         HttpContext serverContext = server.createContext("/test", h);
@@ -72,10 +76,10 @@ public class BasicAuthTest {
                                       .build();
 
         try {
-            URI uri = new URI("http://127.0.0.1:" + Integer.toString(port) + "/test/foo");
+            URI uri = new URI("http://localhost:" + Integer.toString(port) + "/test/foo");
             HttpRequest req = HttpRequest.newBuilder(uri).GET().build();
 
-            HttpResponse resp = client.send(req, asString());
+            HttpResponse resp = client.send(req, BodyHandlers.ofString());
             ok = resp.statusCode() == 200 && resp.body().equals(RESPONSE);
 
             if (!ok || ca.count != 1)
@@ -83,7 +87,7 @@ public class BasicAuthTest {
 
             // repeat same request, should succeed but no additional authenticator calls
 
-            resp = client.send(req, asString());
+            resp = client.send(req, BodyHandlers.ofString());
             ok = resp.statusCode() == 200 && resp.body().equals(RESPONSE);
 
             if (!ok || ca.count != 1)
@@ -92,9 +96,9 @@ public class BasicAuthTest {
             // try a POST
 
             req = HttpRequest.newBuilder(uri)
-                             .POST(fromString(POST_BODY))
+                             .POST(BodyPublishers.ofString(POST_BODY))
                              .build();
-            resp = client.send(req, asString());
+            resp = client.send(req, BodyHandlers.ofString());
             ok = resp.statusCode() == 200;
 
             if (!ok || ca.count != 1)
@@ -156,6 +160,5 @@ public class BasicAuthTest {
                 ok = true;
             }
         }
-
    }
 }

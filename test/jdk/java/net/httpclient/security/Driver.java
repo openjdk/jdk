@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8087112
  * @library /lib/testlibrary/
- * @modules jdk.incubator.httpclient
+ * @modules java.net.http
  *          java.logging
  *          jdk.httpserver
  * @build jdk.testlibrary.SimpleSSLContext jdk.testlibrary.Utils
@@ -49,6 +49,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -59,7 +62,7 @@ import jdk.testlibrary.Utils;
  */
 public class Driver {
     // change the default value to "true" to get the subprocess traces.
-    final static boolean DEBUG = Boolean.parseBoolean(System.getProperty("test.debug", "false"));
+    final static boolean DEBUG = Boolean.parseBoolean(System.getProperty("test.debug", "true"));
 
     public static void main(String[] args) throws Throwable {
         System.out.println("Starting Driver");
@@ -70,16 +73,18 @@ public class Driver {
         System.out.println("DONE");
     }
 
+    static final Path CWD = Paths.get(".");
+
     static class Logger extends Thread {
         private final OutputStream ps;
         private final InputStream stdout;
 
-        Logger(String cmdLine, Process p, String dir) throws IOException {
+        Logger(String cmdLine, Process p) throws IOException {
             super();
             setDaemon(true);
             cmdLine = "Command line = [" + cmdLine + "]\n";
             stdout = p.getInputStream();
-            File f = File.createTempFile("debug", ".txt", new File(dir));
+            File f = Files.createTempFile(CWD, "debug", ".txt").toFile();
             ps = new FileOutputStream(f);
             ps.write(cmdLine.getBytes());
             ps.flush();
@@ -127,7 +132,6 @@ public class Driver {
             cmd.add("-Dtest.src=" + testSrc);
             cmd.add("-Dtest.classes=" + testClasses);
             cmd.add("-Djava.security.manager");
-            cmd.add("--add-modules=jdk.incubator.httpclient");
             cmd.add("-Djava.security.policy=" + testSrc + sep + policy);
             cmd.add("-Dport.number=" + Integer.toString(Utils.getFreePort()));
             cmd.add("-Dport.number1=" + Integer.toString(Utils.getFreePort()));
@@ -144,7 +148,7 @@ public class Driver {
             String cmdLine = cmd.stream().collect(Collectors.joining(" "));
             long start = System.currentTimeMillis();
             Process child = processBuilder.start();
-            Logger log = new Logger(cmdLine, child, testClasses);
+            Logger log = new Logger(cmdLine, child);
             log.start();
             retval = child.waitFor();
             long elapsed = System.currentTimeMillis() - start;

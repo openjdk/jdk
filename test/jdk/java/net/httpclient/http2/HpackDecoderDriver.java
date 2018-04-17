@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,11 @@
 /*
  * @test
  * @bug 8153353
- * @modules jdk.incubator.httpclient/jdk.incubator.http.internal.hpack
+ * @modules java.net.http/jdk.internal.net.http.hpack
  * @key randomness
- * @compile/module=jdk.incubator.httpclient jdk/incubator/http/internal/hpack/SpecHelper.java
- * @compile/module=jdk.incubator.httpclient jdk/incubator/http/internal/hpack/TestHelper.java
- * @compile/module=jdk.incubator.httpclient jdk/incubator/http/internal/hpack/BuffersTestingKit.java
- * @run testng/othervm jdk.incubator.httpclient/jdk.incubator.http.internal.hpack.DecoderTest
+ * @compile/module=java.net.http jdk/internal/net/http/hpack/SpecHelper.java
+ * @compile/module=java.net.http jdk/internal/net/http/hpack/TestHelper.java
+ * @compile/module=java.net.http jdk/internal/net/http/hpack/BuffersTestingKit.java
+ * @run testng/othervm java.net.http/jdk.internal.net.http.hpack.DecoderTest
  */
 public class HpackDecoderDriver { }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -39,9 +40,9 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
-import jdk.incubator.http.HttpClient;
-import jdk.incubator.http.HttpRequest;
-import jdk.incubator.http.HttpResponse;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import jdk.testlibrary.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -50,8 +51,8 @@ import org.testng.annotations.Test;
 import javax.net.ssl.SSLContext;
 import static java.util.stream.Collectors.joining;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static jdk.incubator.http.HttpRequest.BodyPublisher.fromPublisher;
-import static jdk.incubator.http.HttpResponse.BodyHandler.asString;
+import static java.net.http.HttpRequest.BodyPublishers.fromPublisher;
+import static java.net.http.HttpResponse.BodyHandlers.ofString;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
@@ -61,9 +62,9 @@ import static org.testng.Assert.fail;
  * @test
  * @summary Basic tests for Flow adapter Publishers
  * @modules java.base/sun.net.www.http
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.common
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.frame
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.hpack
+ *          java.net.http/jdk.internal.net.http.common
+ *          java.net.http/jdk.internal.net.http.frame
+ *          java.net.http/jdk.internal.net.http.hpack
  *          java.logging
  *          jdk.httpserver
  * @library /lib/testlibrary http2/server
@@ -119,7 +120,7 @@ public class FlowAdapterPublisherTest {
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
                 .POST(fromPublisher(new BBPublisher(body))).build();
 
-        HttpResponse<String> response = client.sendAsync(request, asString(UTF_8)).join();
+        HttpResponse<String> response = client.sendAsync(request, ofString(UTF_8)).join();
         String text = response.body();
         System.out.println(text);
         assertEquals(response.statusCode(), 200);
@@ -135,7 +136,7 @@ public class FlowAdapterPublisherTest {
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
                 .POST(fromPublisher(new BBPublisher(body), cl)).build();
 
-        HttpResponse<String> response = client.sendAsync(request, asString(UTF_8)).join();
+        HttpResponse<String> response = client.sendAsync(request, ofString(UTF_8)).join();
         String text = response.body();
         System.out.println(text);
         assertEquals(response.statusCode(), 200);
@@ -152,7 +153,7 @@ public class FlowAdapterPublisherTest {
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
                 .POST(fromPublisher(new MBBPublisher(body))).build();
 
-        HttpResponse<String> response = client.sendAsync(request, asString(UTF_8)).join();
+        HttpResponse<String> response = client.sendAsync(request, ofString(UTF_8)).join();
         String text = response.body();
         System.out.println(text);
         assertEquals(response.statusCode(), 200);
@@ -168,7 +169,7 @@ public class FlowAdapterPublisherTest {
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
                 .POST(fromPublisher(new MBBPublisher(body), cl)).build();
 
-        HttpResponse<String> response = client.sendAsync(request, asString(UTF_8)).join();
+        HttpResponse<String> response = client.sendAsync(request, ofString(UTF_8)).join();
         String text = response.body();
         System.out.println(text);
         assertEquals(response.statusCode(), 200);
@@ -189,11 +190,10 @@ public class FlowAdapterPublisherTest {
                 .POST(fromPublisher(new BBPublisher(body), cl)).build();
 
         try {
-            HttpResponse<String> response = client.send(request, asString(UTF_8));
+            HttpResponse<String> response = client.send(request, ofString(UTF_8));
             fail("Unexpected response: " + response);
         } catch (IOException expected) {
-            assertTrue(expected.getMessage().contains("Too few bytes returned"),
-                       "Exception message:[" + expected.toString() + "]");
+            assertMessage(expected, "Too few bytes returned");
         }
     }
 
@@ -207,11 +207,17 @@ public class FlowAdapterPublisherTest {
                 .POST(fromPublisher(new BBPublisher(body), cl)).build();
 
         try {
-            HttpResponse<String> response = client.send(request, asString(UTF_8));
+            HttpResponse<String> response = client.send(request, ofString(UTF_8));
             fail("Unexpected response: " + response);
         } catch (IOException expected) {
-            assertTrue(expected.getMessage().contains("Too many bytes in request body"),
-                    "Exception message:[" + expected.toString() + "]");
+            assertMessage(expected, "Too many bytes in request body");
+        }
+    }
+
+    private void assertMessage(Throwable t, String contains) {
+        if (!t.getMessage().contains(contains)) {
+            String error = "Exception message:[" + t.toString() + "] doesn't contain [" + contains + "]";
+            throw new AssertionError(error, t);
         }
     }
 
@@ -328,31 +334,34 @@ public class FlowAdapterPublisherTest {
         }
     }
 
+    static String serverAuthority(HttpServer server) {
+        return InetAddress.getLoopbackAddress().getHostName() + ":"
+                + server.getAddress().getPort();
+    }
+
     @BeforeTest
     public void setup() throws Exception {
         sslContext = new SimpleSSLContext().get();
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
 
-        InetSocketAddress sa = new InetSocketAddress("localhost", 0);
+        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(),0);
         httpTestServer = HttpServer.create(sa, 0);
         httpTestServer.createContext("/http1/echo", new Http1EchoHandler());
-        httpURI = "http://127.0.0.1:" + httpTestServer.getAddress().getPort() + "/http1/echo";
+        httpURI = "http://" + serverAuthority(httpTestServer) + "/http1/echo";
 
         httpsTestServer = HttpsServer.create(sa, 0);
         httpsTestServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
         httpsTestServer.createContext("/https1/echo", new Http1EchoHandler());
-        httpsURI = "https://127.0.0.1:" + httpsTestServer.getAddress().getPort() + "/https1/echo";
+        httpsURI = "https://" + serverAuthority(httpsTestServer) + "/https1/echo";
 
-        http2TestServer = new Http2TestServer("127.0.0.1", false, 0);
+        http2TestServer = new Http2TestServer("localhost", false, 0);
         http2TestServer.addHandler(new Http2EchoHandler(), "/http2/echo");
-        int port = http2TestServer.getAddress().getPort();
-        http2URI = "http://127.0.0.1:" + port + "/http2/echo";
+        http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/echo";
 
-        https2TestServer = new Http2TestServer("127.0.0.1", true, 0);
+        https2TestServer = new Http2TestServer("localhost", true, 0);
         https2TestServer.addHandler(new Http2EchoHandler(), "/https2/echo");
-        port = https2TestServer.getAddress().getPort();
-        https2URI = "https://127.0.0.1:" + port + "/https2/echo";
+        https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/echo";
 
         httpTestServer.start();
         httpsTestServer.start();
