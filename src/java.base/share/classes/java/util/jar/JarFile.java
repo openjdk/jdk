@@ -417,10 +417,10 @@ class JarFile extends ZipFile {
             if (manEntry != null) {
                 if (verify) {
                     byte[] b = getBytes(manEntry);
-                    man = new Manifest(new ByteArrayInputStream(b), getName());
                     if (!jvInitialized) {
                         jv = new JarVerifier(b);
                     }
+                    man = new Manifest(jv, new ByteArrayInputStream(b), getName());
                 } else {
                     man = new Manifest(super.getInputStream(manEntry), getName());
                 }

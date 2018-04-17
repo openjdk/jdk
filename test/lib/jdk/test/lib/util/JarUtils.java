@@ -23,6 +23,7 @@
 
 package jdk.test.lib.util;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -271,6 +272,11 @@ public final class JarUtils {
         changes = new HashMap<>(changes);
 
         System.out.printf("Creating %s from %s...\n", dest, src);
+
+        if (dest.equals(src)) {
+            throw new IOException("src and dest cannot be the same");
+        }
+
         try (JarOutputStream jos = new JarOutputStream(
                 new FileOutputStream(dest))) {
 
@@ -296,6 +302,22 @@ public final class JarUtils {
             }
         }
         System.out.println();
+    }
+
+    /**
+     * Update the Manifest inside a jar.
+     *
+     * @param src the original jar file name
+     * @param dest the new jar file name
+     * @param man the Manifest
+     *
+     * @throws IOException
+     */
+    public static void updateManifest(String src, String dest, Manifest man)
+            throws IOException {
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        man.write(bout);
+        updateJar(src, dest, Map.of(JarFile.MANIFEST_NAME, bout.toByteArray()));
     }
 
     private static void updateEntry(JarOutputStream jos, String name, Object content)
