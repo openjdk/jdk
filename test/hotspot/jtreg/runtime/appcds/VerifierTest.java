@@ -46,6 +46,8 @@ public class VerifierTest implements Opcodes {
         "shared archive file was created with less restrictive verification setting";
     static final String VFY_ERR = "java.lang.VerifyError";
     static final String PASS_RESULT = "Hi, how are you?";
+    static final String VFY_INFO_MESSAGE =
+        "All non-system classes will be verified (-Xverify:remote) during CDS dump time.";
 
     enum Testset1Part {
         A, B
@@ -137,7 +139,7 @@ public class VerifierTest implements Opcodes {
             {"app",   VFY_ALL,    VFY_ALL,    VFY_ERR },
             {"app",   VFY_ALL,    VFY_NONE,   ERR },
             // Dump app/ext with -Xverify:none
-            {"app",   VFY_NONE,   VFY_REMOTE, MAP_FAIL},
+            {"app",   VFY_NONE,   VFY_REMOTE, VFY_ERR},
             {"app",   VFY_NONE,   VFY_ALL,    MAP_FAIL},
             {"app",   VFY_NONE,   VFY_NONE,   ERR },
             // Dump sys only with -Xverify:remote
@@ -188,6 +190,10 @@ public class VerifierTest implements Opcodes {
                                                             // issue - assert failure when dumping archive with the -Xverify:all
                                                             "-Xms256m",
                                                             "-Xmx256m");
+                if (dump_setting.equals(VFY_NONE) &&
+                    runtime_setting.equals(VFY_REMOTE)) {
+                    dumpOutput.shouldContain(VFY_INFO_MESSAGE);
+                }
             }
             TestCommon.run("-cp", jar,
                            runtime_setting,
@@ -221,10 +227,11 @@ public class VerifierTest implements Opcodes {
             {"app",   VFY_ALL,    VFY_ALL,    PASS_RESULT },
             {"app",   VFY_ALL,    VFY_NONE,   PASS_RESULT },
             // Dump app/ext with -Xverify:none
-            {"app",   VFY_NONE,   VFY_REMOTE, MAP_FAIL},
+            {"app",   VFY_NONE,   VFY_REMOTE, PASS_RESULT},
             {"app",   VFY_NONE,   VFY_ALL,    MAP_FAIL},
             {"app",   VFY_NONE,   VFY_NONE,   PASS_RESULT },
         };
+        String prev_dump_setting = "";
         for (int i = 0; i < config2.length; i ++) {
             // config2[i][0] is always set to "app" in this test
             String dump_setting = config2[i][1];
@@ -233,17 +240,24 @@ public class VerifierTest implements Opcodes {
             System.out.println("Test case [" + i + "]: dumping " + config2[i][0] +
                                " with " + dump_setting +
                                ", run with " + runtime_setting);
-            OutputAnalyzer dumpOutput = TestCommon.dump(
-                                                        jar, appClasses, dump_setting,
-                                                        "-XX:+UnlockDiagnosticVMOptions",
-                                                        // FIXME: the following options are for working around a GC
-                                                        // issue - assert failure when dumping archive with the -Xverify:all
-                                                        "-Xms256m",
-                                                        "-Xmx256m");
+            if (!dump_setting.equals(prev_dump_setting)) {
+                OutputAnalyzer dumpOutput = TestCommon.dump(
+                                                            jar, appClasses, dump_setting,
+                                                            "-XX:+UnlockDiagnosticVMOptions",
+                                                            // FIXME: the following options are for working around a GC
+                                                            // issue - assert failure when dumping archive with the -Xverify:all
+                                                            "-Xms256m",
+                                                            "-Xmx256m");
+                if (dump_setting.equals(VFY_NONE) &&
+                    runtime_setting.equals(VFY_REMOTE)) {
+                    dumpOutput.shouldContain(VFY_INFO_MESSAGE);
+                }
+            }
             TestCommon.run("-cp", jar,
                            runtime_setting,
                            "Hi")
                 .ifNoMappingFailure(output -> checkRuntimeOutput(output, expected_output_str));
+           prev_dump_setting = dump_setting;
         }
     }
 
