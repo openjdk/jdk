@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -730,14 +730,6 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         return Toolkit.getDefaultToolkit().checkImage(img, w, h, o);
     }
 
-    public Dimension preferredSize() {
-        return getPreferredSize();
-    }
-
-    public Dimension minimumSize() {
-        return getMinimumSize();
-    }
-
     public Insets getInsets() {
         return new Insets(0, 0, 0, 0);
     }
@@ -746,15 +738,6 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
     }
 
     public void endValidate() {
-    }
-
-
-    /**
-     * DEPRECATED:  Replaced by getInsets().
-     */
-
-    public Insets insets() {
-        return getInsets();
     }
 
     // Returns true if we are inside begin/endLayout and

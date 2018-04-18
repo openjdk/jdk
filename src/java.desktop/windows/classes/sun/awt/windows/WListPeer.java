@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,34 +54,36 @@ final class WListPeer extends WComponentPeer implements ListPeer {
         return selected;
     }
 
-    /* New method name for 1.1 */
     @Override
     public void add(String item, int index) {
         addItem(item, index);
     }
 
-    /* New method name for 1.1 */
     @Override
     public void removeAll() {
         clear();
     }
 
-    /* New method name for 1.1 */
     @Override
     public void setMultipleMode (boolean b) {
         setMultipleSelections(b);
     }
 
-    /* New method name for 1.1 */
     @Override
     public Dimension getPreferredSize(int rows) {
-        return preferredSize(rows);
+        if ( fm == null ) {
+            List li = (List)target;
+            fm = getFontMetrics( li.getFont() );
+        }
+        Dimension d = getMinimumSize(rows);
+        d.width = Math.max(d.width, getMaxWidth() + 20);
+        return d;
     }
 
-    /* New method name for 1.1 */
     @Override
     public Dimension getMinimumSize(int rows) {
-        return minimumSize(rows);
+        return new Dimension(20 + fm.stringWidth("0123456789abcde"),
+                             (fm.getHeight() * rows) + 4); // include borders
     }
 
     private FontMetrics   fm;
@@ -104,21 +106,6 @@ final class WListPeer extends WComponentPeer implements ListPeer {
     public native void makeVisible(int index);
     public native void setMultipleSelections(boolean v);
     public native int  getMaxWidth();
-
-    public Dimension preferredSize(int v) {
-        if ( fm == null ) {
-            List li = (List)target;
-            fm = getFontMetrics( li.getFont() );
-        }
-        Dimension d = minimumSize(v);
-        d.width = Math.max(d.width, getMaxWidth() + 20);
-        return d;
-    }
-    public Dimension minimumSize(int v) {
-        return new Dimension(20 + fm.stringWidth("0123456789abcde"),
-                             (fm.getHeight() * v) + 4); // include borders
-    }
-
     // Toolkit & peer internals
 
     WListPeer(List target) {
