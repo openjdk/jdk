@@ -794,16 +794,7 @@ void ReferenceProcessor::process_discovered_reflist(
 
   phase_times->set_processing_is_mt(mt_processing);
 
-  // If discovery used MT and a dynamic number of GC threads, then
-  // the queues must be balanced for correctness if fewer than the
-  // maximum number of queues were used.  The number of queue used
-  // during discovery may be different than the number to be used
-  // for processing so don't depend of _num_q < _max_num_q as part
-  // of the test.
-  bool must_balance = _discovery_is_mt;
-
-  if ((mt_processing && ParallelRefProcBalancingEnabled) ||
-      must_balance) {
+  if (mt_processing && ParallelRefProcBalancingEnabled) {
     RefProcBalanceQueuesTimeTracker tt(phase_times);
     balance_queues(refs_lists);
   }
