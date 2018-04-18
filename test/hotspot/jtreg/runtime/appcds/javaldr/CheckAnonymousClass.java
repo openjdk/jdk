@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary ensure no anonymous class is being dumped into the CDS archive
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules jdk.jartool/sun.tools.jar
  * @compile ../test-classes/Hello.java
@@ -45,9 +44,6 @@ public class CheckAnonymousClass {
     TestCommon.dump(appJar, TestCommon.list("Hello", "org/omg/CORBA/ORB"),
         "--add-modules", "java.corba", "-Xlog:class+load=info");
 
-    OutputAnalyzer output = TestCommon.execCommon("-XX:+UnlockDiagnosticVMOptions",
-        "-cp", appJar, "-Xlog:class+load=info", "--add-modules", "java.corba", "Hello");
-
     String prefix = ".class.load. ";
     // class name pattern like the following:
     // jdk.internal.loader.BuiltinClassLoader$$Lambda$1/1816757085
@@ -56,20 +52,14 @@ public class CheckAnonymousClass {
     String suffix = ".*source: shared objects file.*";
     String pattern = prefix + class_pattern + suffix;
     // during run time, anonymous classes shouldn't be loaded from the archive
-    try {
-        output.shouldNotMatch(pattern);
-    } catch (Exception e) {
-        TestCommon.checkCommonExecExceptions(output, e);
-    }
+    TestCommon.run("-XX:+UnlockDiagnosticVMOptions",
+        "-cp", appJar, "-Xlog:class+load=info", "--add-modules", "java.corba", "Hello")
+      .assertNormalExit(output -> output.shouldNotMatch(pattern));
 
     // inspect the archive and make sure no anonymous class is in there
-    output = TestCommon.execCommon("-XX:+UnlockDiagnosticVMOptions",
+    TestCommon.run("-XX:+UnlockDiagnosticVMOptions",
         "-cp", appJar, "-Xlog:class+load=info", "-XX:+PrintSharedArchiveAndExit",
-        "-XX:+PrintSharedDictionary", "--add-modules", "java.corba", "Hello");
-    try {
-        output.shouldNotMatch(class_pattern);
-    } catch (Exception e) {
-        TestCommon.checkCommonExecExceptions(output, e);
-    }
+        "-XX:+PrintSharedDictionary", "--add-modules", "java.corba", "Hello")
+      .assertNormalExit(output -> output.shouldNotMatch(class_pattern));
   }
 }

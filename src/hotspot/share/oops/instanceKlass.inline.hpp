@@ -56,7 +56,7 @@ inline void InstanceKlass::release_set_methods_jmethod_ids(jmethodID* jmeths) {
 
 template <bool nv, typename T, class OopClosureType>
 ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_map(OopMapBlock* map, oop obj, OopClosureType* closure) {
-  T* p         = (T*)obj->obj_field_addr<T>(map->offset());
+  T* p         = (T*)obj->obj_field_addr_raw<T>(map->offset());
   T* const end = p + map->count();
 
   for (; p < end; ++p) {
@@ -67,7 +67,7 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_map(OopMapBlock* map, oop o
 #if INCLUDE_ALL_GCS
 template <bool nv, typename T, class OopClosureType>
 ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_map_reverse(OopMapBlock* map, oop obj, OopClosureType* closure) {
-  T* const start = (T*)obj->obj_field_addr<T>(map->offset());
+  T* const start = (T*)obj->obj_field_addr_raw<T>(map->offset());
   T*       p     = start + map->count();
 
   while (start < p) {
@@ -79,7 +79,7 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_map_reverse(OopMapBlock* ma
 
 template <bool nv, typename T, class OopClosureType>
 ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_map_bounded(OopMapBlock* map, oop obj, OopClosureType* closure, MemRegion mr) {
-  T* p   = (T*)obj->obj_field_addr<T>(map->offset());
+  T* p   = (T*)obj->obj_field_addr_raw<T>(map->offset());
   T* end = p + map->count();
 
   T* const l   = (T*)mr.start();

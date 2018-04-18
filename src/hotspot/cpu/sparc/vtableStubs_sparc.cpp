@@ -212,7 +212,12 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   __ delayed()->nop();
 
   __ bind(L_no_such_interface);
-  AddressLiteral icce(StubRoutines::throw_IncompatibleClassChangeError_entry());
+  // Handle IncompatibleClassChangeError in itable stubs.
+  // More detailed error message.
+  // We force resolving of the call site by jumping to the "handle
+  // wrong method" stub, and so let the interpreter runtime do all the
+  // dirty work.
+  AddressLiteral icce(SharedRuntime::get_handle_wrong_method_stub());
   __ jump_to(icce, G3_scratch);
   __ delayed()->restore();
 

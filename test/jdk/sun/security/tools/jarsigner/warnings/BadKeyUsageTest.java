@@ -53,17 +53,13 @@ public class BadKeyUsageTest extends Test {
 
         // create a certificate whose signer certificate's KeyUsage extension
         // doesn't allow code signing
-        keytool(
-                "-genkey",
-                "-alias", KEY_ALIAS,
-                "-keyalg", KEY_ALG,
-                "-keysize", Integer.toString(KEY_SIZE),
-                "-keystore", KEYSTORE,
-                "-storepass", PASSWORD,
-                "-keypass", PASSWORD,
-                "-dname", "CN=Test",
+        createAlias(CA_KEY_ALIAS);
+        createAlias(KEY_ALIAS);
+
+        issueCert(
+                KEY_ALIAS,
                 "-ext", "KeyUsage=keyAgreement",
-                "-validity", Integer.toString(VALIDITY)).shouldHaveExitValue(0);
+                "-validity", Integer.toString(VALIDITY));
 
         // sign jar
         OutputAnalyzer analyzer = jarsigner(

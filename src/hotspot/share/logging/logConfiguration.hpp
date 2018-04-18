@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 
 class LogOutput;
 class LogDecorators;
-class LogTagLevelExpression;
+class LogSelectionList;
 
 // Global configuration of logging. Handles parsing and configuration of the logging framework,
 // and manages the list of configured log outputs. The actual tag and level configuration is
@@ -38,6 +38,7 @@ class LogTagLevelExpression;
 // are iterated over and updated accordingly.
 class LogConfiguration : public AllStatic {
  friend class VMError;
+ friend class LogTestFixture;
  public:
   // Function for listeners
   typedef void (*UpdateListenerFunction)(void);
@@ -75,7 +76,7 @@ class LogConfiguration : public AllStatic {
   static size_t find_output(const char* name);
 
   // Configure output (add or update existing configuration) to log on tag-level combination using specified decorators.
-  static void configure_output(size_t idx, const LogTagLevelExpression& tag_level_expression, const LogDecorators& decorators);
+  static void configure_output(size_t idx, const LogSelectionList& tag_level_expression, const LogDecorators& decorators);
 
   // This should be called after any configuration change while still holding ConfigurationLock
   static void notify_update_listeners();
@@ -102,7 +103,7 @@ class LogConfiguration : public AllStatic {
   // (exact_match=false is the same as "-Xlog:<tags>*=<level>", and exact_match=true is "-Xlog:<tags>=<level>").
   // Tags should be specified using the LOG_TAGS macro, e.g.
   // LogConfiguration::configure_stdout(LogLevel::<level>, <true/false>, LOG_TAGS(<tags>));
-  static void configure_stdout(LogLevelType level, bool exact_match, ...);
+  static void configure_stdout(LogLevelType level, int exact_match, ...);
 
   // Parse command line configuration. Parameter 'opts' is the string immediately following the -Xlog: argument ("gc" for -Xlog:gc).
   static bool parse_command_line_arguments(const char* opts = "all");
@@ -118,7 +119,7 @@ class LogConfiguration : public AllStatic {
   static void describe(outputStream* out);
 
   // Prints usage help for command line log configuration.
-  static void print_command_line_help(FILE* out);
+  static void print_command_line_help(outputStream* out);
 
   // Rotates all LogOutput
   static void rotate_all_outputs();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.io;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * This class implements an output stream in which the data is
@@ -56,7 +57,7 @@ public class ByteArrayOutputStream extends OutputStream {
     protected int count;
 
     /**
-     * Creates a new byte array output stream. The buffer capacity is
+     * Creates a new {@code ByteArrayOutputStream}. The buffer capacity is
      * initially 32 bytes, though its size increases if necessary.
      */
     public ByteArrayOutputStream() {
@@ -64,11 +65,11 @@ public class ByteArrayOutputStream extends OutputStream {
     }
 
     /**
-     * Creates a new byte array output stream, with a buffer capacity of
+     * Creates a new {@code ByteArrayOutputStream}, with a buffer capacity of
      * the specified size, in bytes.
      *
-     * @param   size   the initial size.
-     * @exception  IllegalArgumentException if size is negative.
+     * @param  size   the initial size.
+     * @throws IllegalArgumentException if size is negative.
      */
     public ByteArrayOutputStream(int size) {
         if (size < 0) {
@@ -83,7 +84,7 @@ public class ByteArrayOutputStream extends OutputStream {
      * at least the number of elements specified by the minimum
      * capacity argument.
      *
-     * @param minCapacity the desired minimum capacity
+     * @param  minCapacity the desired minimum capacity
      * @throws OutOfMemoryError if {@code minCapacity < 0}.  This is
      * interpreted as a request for the unsatisfiably large capacity
      * {@code (long) Integer.MAX_VALUE + (minCapacity - Integer.MAX_VALUE)}.
@@ -128,7 +129,7 @@ public class ByteArrayOutputStream extends OutputStream {
     }
 
     /**
-     * Writes the specified byte to this byte array output stream.
+     * Writes the specified byte to this {@code ByteArrayOutputStream}.
      *
      * @param   b   the byte to be written.
      */
@@ -140,37 +141,55 @@ public class ByteArrayOutputStream extends OutputStream {
 
     /**
      * Writes {@code len} bytes from the specified byte array
-     * starting at offset {@code off} to this byte array output stream.
+     * starting at offset {@code off} to this {@code ByteArrayOutputStream}.
      *
      * @param   b     the data.
      * @param   off   the start offset in the data.
      * @param   len   the number of bytes to write.
+     * @throws  NullPointerException if {@code b} is {@code null}.
+     * @throws  IndexOutOfBoundsException if {@code off} is negative,
+     * {@code len} is negative, or {@code len} is greater than
+     * {@code b.length - off}
      */
     public synchronized void write(byte b[], int off, int len) {
-        if ((off < 0) || (off > b.length) || (len < 0) ||
-            ((off + len) - b.length > 0)) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkFromIndexSize(off, len, b.length);
         ensureCapacity(count + len);
         System.arraycopy(b, off, buf, count, len);
         count += len;
     }
 
     /**
-     * Writes the complete contents of this byte array output stream to
+     * Writes the complete contents of the specified byte array
+     * to this {@code ByteArrayOutputStream}.
+     *
+     * @apiNote
+     * This method is equivalent to {@link #write(byte[],int,int)
+     * write(b, 0, b.length)}.
+     *
+     * @param   b     the data.
+     * @throws  NullPointerException if {@code b} is {@code null}.
+     * @since   11
+     */
+    public void writeBytes(byte b[]) {
+        write(b, 0, b.length);
+    }
+
+    /**
+     * Writes the complete contents of this {@code ByteArrayOutputStream} to
      * the specified output stream argument, as if by calling the output
      * stream's write method using {@code out.write(buf, 0, count)}.
      *
-     * @param      out   the output stream to which to write the data.
-     * @exception  IOException  if an I/O error occurs.
+     * @param   out   the output stream to which to write the data.
+     * @throws  NullPointerException if {@code out} is {@code null}.
+     * @throws  IOException if an I/O error occurs.
      */
     public synchronized void writeTo(OutputStream out) throws IOException {
         out.write(buf, 0, count);
     }
 
     /**
-     * Resets the {@code count} field of this byte array output
-     * stream to zero, so that all currently accumulated output in the
+     * Resets the {@code count} field of this {@code ByteArrayOutputStream}
+     * to zero, so that all currently accumulated output in the
      * output stream is discarded. The output stream can be used again,
      * reusing the already allocated buffer space.
      *
@@ -246,12 +265,12 @@ public class ByteArrayOutputStream extends OutputStream {
      * </pre>
      *
      *
-     * @param      charsetName  the name of a supported
-     *             {@link java.nio.charset.Charset charset}
-     * @return     String decoded from the buffer's contents.
-     * @exception  UnsupportedEncodingException
-     *             If the named charset is not supported
-     * @since      1.1
+     * @param  charsetName  the name of a supported
+     *         {@link java.nio.charset.Charset charset}
+     * @return String decoded from the buffer's contents.
+     * @throws UnsupportedEncodingException
+     *         If the named charset is not supported
+     * @since  1.1
      */
     public synchronized String toString(String charsetName)
         throws UnsupportedEncodingException

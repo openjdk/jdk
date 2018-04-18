@@ -24,10 +24,13 @@ package org.graalvm.compiler.replacements;
 
 import static org.graalvm.compiler.replacements.SnippetTemplate.DEFAULT_REPLACER;
 
+import org.graalvm.compiler.api.replacements.Fold;
+import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
-import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
+import org.graalvm.compiler.core.common.spi.ArrayOffsetProvider;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
@@ -38,7 +41,7 @@ import org.graalvm.compiler.replacements.SnippetTemplate.SnippetInfo;
 import org.graalvm.compiler.replacements.nodes.ExplodeLoopNode;
 
 import jdk.vm.ci.code.TargetDescription;
-import sun.misc.Unsafe;
+import jdk.vm.ci.meta.JavaKind;
 
 public class ConstantStringIndexOfSnippets implements Snippets {
     public static class Templates extends AbstractTemplates {
@@ -62,7 +65,7 @@ public class ConstantStringIndexOfSnippets implements Snippets {
             char[] targetCharArray = snippetReflection.asObject(char[].class, stringIndexOf.getArgument(3).asJavaConstant());
             args.addConst("md2", md2(targetCharArray));
             args.addConst("cache", computeCache(targetCharArray));
-            template(graph.getDebug(), args).instantiate(providers.getMetaAccess(), stringIndexOf, DEFAULT_REPLACER, args);
+            template(stringIndexOf, args).instantiate(providers.getMetaAccess(), stringIndexOf, DEFAULT_REPLACER, args);
         }
     }
 
@@ -91,6 +94,14 @@ public class ConstantStringIndexOfSnippets implements Snippets {
         return cache;
     }
 
+    @Fold
+    static int charArrayBaseOffset(@InjectedParameter ArrayOffsetProvider arrayOffsetProvider) {
+        return arrayOffsetProvider.arrayBaseOffset(JavaKind.Char);
+    }
+
+    /** Marker value for the {@link InjectedParameter} injected parameter. */
+    static final ArrayOffsetProvider INJECTED = null;
+
     @Snippet
     public static int indexOfConstant(char[] source, int sourceOffset, int sourceCount,
                     @ConstantParameter char[] target, int targetOffset, int targetCount,
@@ -109,7 +120,7 @@ public class ConstantStringIndexOfSnippets implements Snippets {
         int targetCountLess1 = targetCount - 1;
         int sourceEnd = sourceCount - targetCountLess1;
 
-        long base = Unsafe.ARRAY_CHAR_BASE_OFFSET;
+        long base = charArrayBaseOffset(INJECTED);
         int lastChar = UnsafeAccess.UNSAFE.getChar(target, base + targetCountLess1 * 2);
 
         outer_loop: for (long i = sourceOffset + fromIndex; i < sourceEnd;) {

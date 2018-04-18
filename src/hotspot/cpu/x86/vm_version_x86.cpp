@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -257,6 +257,8 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::sef_cpuid7_offset())));
     __ movl(Address(rsi, 0), rax);
     __ movl(Address(rsi, 4), rbx);
+    __ movl(Address(rsi, 8), rcx);
+    __ movl(Address(rsi, 12), rdx);
 
     //
     // Extended cpuid(0x80000000)
@@ -628,6 +630,11 @@ void VM_Version::get_processor_features() {
   if (UseSSE < 1)
     _features &= ~CPU_SSE;
 
+  //since AVX instructions is slower than SSE in some ZX cpus, force USEAVX=0.
+  if (is_zx() && ((cpu_family() == 6) || (cpu_family() == 7))) {
+    UseAVX = 0;
+  }
+
   // first try initial setting and detect what we can support
   int use_avx_limit = 0;
   if (UseAVX > 0) {
@@ -657,6 +664,8 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_AVX512CD;
     _features &= ~CPU_AVX512BW;
     _features &= ~CPU_AVX512VL;
+    _features &= ~CPU_AVX512_VPOPCNTDQ;
+    _features &= ~CPU_VPCLMULQDQ;
   }
 
   if (UseAVX < 2)
@@ -1078,6 +1087,66 @@ void VM_Version::get_processor_features() {
   // UseXmmRegToRegMoveAll == true  --> movaps(xmm, xmm), movapd(xmm, xmm).
   // UseXmmRegToRegMoveAll == false --> movss(xmm, xmm),  movsd(xmm, xmm).
 
+
+  if (is_zx()) { // ZX cpus specific settings
+    if (FLAG_IS_DEFAULT(UseStoreImmI16)) {
+      UseStoreImmI16 = false; // don't use it on ZX cpus
+    }
+    if ((cpu_family() == 6) || (cpu_family() == 7)) {
+      if (FLAG_IS_DEFAULT(UseAddressNop)) {
+        // Use it on all ZX cpus
+        UseAddressNop = true;
+      }
+    }
+    if (FLAG_IS_DEFAULT(UseXmmLoadAndClearUpper)) {
+      UseXmmLoadAndClearUpper = true; // use movsd on all ZX cpus
+    }
+    if (FLAG_IS_DEFAULT(UseXmmRegToRegMoveAll)) {
+      if (supports_sse3()) {
+        UseXmmRegToRegMoveAll = true; // use movaps, movapd on new ZX cpus
+      } else {
+        UseXmmRegToRegMoveAll = false;
+      }
+    }
+    if (((cpu_family() == 6) || (cpu_family() == 7)) && supports_sse3()) { // new ZX cpus
+#ifdef COMPILER2
+      if (FLAG_IS_DEFAULT(MaxLoopPad)) {
+        // For new ZX cpus do the next optimization:
+        // don't align the beginning of a loop if there are enough instructions
+        // left (NumberOfLoopInstrToAlign defined in c2_globals.hpp)
+        // in current fetch line (OptoLoopAlignment) or the padding
+        // is big (> MaxLoopPad).
+        // Set MaxLoopPad to 11 for new ZX cpus to reduce number of
+        // generated NOP instructions. 11 is the largest size of one
+        // address NOP instruction '0F 1F' (see Assembler::nop(i)).
+        MaxLoopPad = 11;
+      }
+#endif // COMPILER2
+      if (FLAG_IS_DEFAULT(UseXMMForArrayCopy)) {
+        UseXMMForArrayCopy = true; // use SSE2 movq on new ZX cpus
+      }
+      if (supports_sse4_2()) { // new ZX cpus
+        if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
+          UseUnalignedLoadStores = true; // use movdqu on newest ZX cpus
+        }
+      }
+      if (supports_sse4_2()) {
+        if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
+          FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
+        }
+      } else {
+        if (UseSSE42Intrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+          warning("SSE4.2 intrinsics require SSE4.2 instructions or higher. Intrinsics will be disabled.");
+        }
+        FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
+      }
+    }
+
+    if (FLAG_IS_DEFAULT(AllocatePrefetchInstr) && supports_3dnow_prefetch()) {
+      FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
+    }
+  }
+
   if( is_amd() ) { // AMD cpus specific settings
     if( supports_sse2() && FLAG_IS_DEFAULT(UseAddressNop) ) {
       // Use it on new AMD cpus starting from Opteron.
@@ -1369,6 +1438,14 @@ void VM_Version::get_processor_features() {
     }
 #ifdef COMPILER2
     if (FLAG_IS_DEFAULT(UseFPUForSpilling) && supports_sse4_2()) {
+      FLAG_SET_DEFAULT(UseFPUForSpilling, true);
+    }
+#endif
+  }
+
+  if (is_zx() && ((cpu_family() == 6) || (cpu_family() == 7)) && supports_sse4_2()) {
+#ifdef COMPILER2
+    if (FLAG_IS_DEFAULT(UseFPUForSpilling)) {
       FLAG_SET_DEFAULT(UseFPUForSpilling, true);
     }
 #endif

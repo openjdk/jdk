@@ -31,6 +31,7 @@
 #include "gc/shared/generation.hpp"
 
 class BlockOffsetSharedArray;
+class CardTableRS;
 class CompactibleSpace;
 
 class CardGeneration: public Generation {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,30 +29,59 @@
 #include "gc/g1/g1AllocRegion.inline.hpp"
 #include "gc/shared/plab.inline.hpp"
 
-HeapWord* G1Allocator::attempt_allocation(size_t word_size, AllocationContext_t context) {
-  return mutator_alloc_region(context)->attempt_allocation(word_size);
+inline MutatorAllocRegion* G1Allocator::mutator_alloc_region() {
+  return &_mutator_alloc_region;
 }
 
-HeapWord* G1Allocator::attempt_allocation_locked(size_t word_size, AllocationContext_t context) {
-  HeapWord* result = mutator_alloc_region(context)->attempt_allocation_locked(word_size);
-  assert(result != NULL || mutator_alloc_region(context)->get() == NULL,
-         "Must not have a mutator alloc region if there is no memory, but is " PTR_FORMAT, p2i(mutator_alloc_region(context)->get()));
+inline SurvivorGCAllocRegion* G1Allocator::survivor_gc_alloc_region() {
+  return &_survivor_gc_alloc_region;
+}
+
+inline OldGCAllocRegion* G1Allocator::old_gc_alloc_region() {
+  return &_old_gc_alloc_region;
+}
+
+inline HeapWord* G1Allocator::attempt_allocation(size_t word_size) {
+  return mutator_alloc_region()->attempt_allocation(word_size);
+}
+
+inline HeapWord* G1Allocator::attempt_allocation_locked(size_t word_size) {
+  HeapWord* result = mutator_alloc_region()->attempt_allocation_locked(word_size);
+  assert(result != NULL || mutator_alloc_region()->get() == NULL,
+         "Must not have a mutator alloc region if there is no memory, but is " PTR_FORMAT, p2i(mutator_alloc_region()->get()));
   return result;
 }
 
-HeapWord* G1Allocator::attempt_allocation_force(size_t word_size, AllocationContext_t context) {
-  return mutator_alloc_region(context)->attempt_allocation_force(word_size);
+inline HeapWord* G1Allocator::attempt_allocation_force(size_t word_size) {
+  return mutator_alloc_region()->attempt_allocation_force(word_size);
+}
+
+inline PLAB* G1PLABAllocator::alloc_buffer(InCSetState dest) {
+  assert(dest.is_valid(),
+         "Allocation buffer index out-of-bounds: " CSETSTATE_FORMAT, dest.value());
+  assert(_alloc_buffers[dest.value()] != NULL,
+         "Allocation buffer is NULL: " CSETSTATE_FORMAT, dest.value());
+  return _alloc_buffers[dest.value()];
 }
 
 inline HeapWord* G1PLABAllocator::plab_allocate(InCSetState dest,
-                                                size_t word_sz,
-                                                AllocationContext_t context) {
-  G1PLAB* buffer = alloc_buffer(dest, context);
+                                                size_t word_sz) {
+  PLAB* buffer = alloc_buffer(dest);
   if (_survivor_alignment_bytes == 0 || !dest.is_young()) {
     return buffer->allocate(word_sz);
   } else {
     return buffer->allocate_aligned(word_sz, _survivor_alignment_bytes);
   }
+}
+
+inline HeapWord* G1PLABAllocator::allocate(InCSetState dest,
+                                           size_t word_sz,
+                                           bool* refill_failed) {
+  HeapWord* const obj = plab_allocate(dest, word_sz);
+  if (obj != NULL) {
+    return obj;
+  }
+  return allocate_direct_or_new_plab(dest, word_sz, refill_failed);
 }
 
 // Create the maps which is used to identify archive objects.

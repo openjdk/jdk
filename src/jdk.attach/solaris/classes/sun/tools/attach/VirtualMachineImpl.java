@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
     // door descriptor;
     private int fd = -1;
+    String socket_path;
 
     /**
      * Attaches to the target VM
@@ -60,7 +61,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         try {
             pid = Integer.parseInt(vmid);
         } catch (NumberFormatException x) {
-            throw new AttachNotSupportedException("invalid process identifier");
+            throw new AttachNotSupportedException("Invalid process identifier");
         }
 
         // Opens the door file to the target VM. If the file is not
@@ -100,7 +101,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                     throw new AttachNotSupportedException(
                         String.format("Unable to open door %s: " +
                           "target process %d doesn't respond within %dms " +
-                          "or HotSpot VM not loaded", f.getPath(), pid, time_spend));
+                          "or HotSpot VM not loaded", socket_path, pid, time_spend));
                 }
             } finally {
                 f.delete();
@@ -210,13 +211,13 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
     // The door is attached to .java_pid<pid> in the temporary directory.
     private int openDoor(int pid) throws IOException {
-        String path = tmpdir + "/.java_pid" + pid;;
-        fd = open(path);
+        socket_path = tmpdir + "/.java_pid" + pid;
+        fd = open(socket_path);
 
         // Check that the file owner/permission to avoid attaching to
         // bogus process
         try {
-            checkPermissions(path);
+            checkPermissions(socket_path);
         } catch (IOException ioe) {
             close(fd);
             throw ioe;
@@ -224,7 +225,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         return fd;
     }
 
-    // On Solaris/Linux a simple handshake is used to start the attach mechanism
+    // On Solaris a simple handshake is used to start the attach mechanism
     // if not already started. The client creates a .attach_pid<pid> file in the
     // target VM's working directory (or temporary directory), and the SIGQUIT
     // handler checks for the file.

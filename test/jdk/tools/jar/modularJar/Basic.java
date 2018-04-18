@@ -46,7 +46,7 @@ import static java.lang.System.out;
 
 /*
  * @test
- * @bug 8167328 8171830 8165640 8174248 8176772
+ * @bug 8167328 8171830 8165640 8174248 8176772 8196748
  * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
  *          jdk.jartool
@@ -155,6 +155,8 @@ public class Basic {
                     } else if (line.startsWith("contains:")) {
                         line = line.substring("contains:".length());
                         conceals = stringToSet(line);
+                    } else if (line.contains("VM warning:")) {
+                        continue;  // ignore server vm warning see#8196748
                     } else {
                         throw new AssertionError("Unknown value " + line);
                     }

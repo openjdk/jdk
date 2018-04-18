@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,9 +87,8 @@ class FieldPrinter: public FieldClosure {
 };
 #endif  // !PRODUCT
 
-// ValueObjs embedded in klass. Describes where oops are located in instances of
-// this klass.
-class OopMapBlock VALUE_OBJ_CLASS_SPEC {
+// Describes where oops are located in instances of this klass.
+class OopMapBlock {
  public:
   // Byte offset of the first oop mapped by this block.
   int offset() const          { return _offset; }
@@ -135,10 +134,7 @@ class InstanceKlass: public Klass {
     initialization_error                // error happened during initialization
   };
 
-  static int number_of_instance_classes() { return _total_instanceKlass_count; }
-
  private:
-  static volatile int _total_instanceKlass_count;
   static InstanceKlass* allocate_instance_klass(const ClassFileParser& parser, TRAPS);
 
  protected:
@@ -254,6 +250,7 @@ class InstanceKlass: public Klass {
   u1              _init_state;                    // state of class
   u1              _reference_type;                // reference type
 
+  u2              _this_class_index;              // constant pool entry
 #if INCLUDE_JVMTI
   JvmtiCachedClassFieldMap* _jvmti_cached_class_field_map;  // JVMTI: used during heap iteration
 #endif
@@ -520,6 +517,10 @@ class InstanceKlass: public Klass {
     _reference_type = (u1)t;
   }
 
+  // this class cp index
+  u2 this_class_index() const             { return _this_class_index; }
+  void set_this_class_index(u2 index)     { _this_class_index = index; }
+
   static ByteSize reference_type_offset() { return in_ByteSize(offset_of(InstanceKlass, _reference_type)); }
 
   // find local field, returns true if found
@@ -644,6 +645,11 @@ class InstanceKlass: public Klass {
   oop klass_holder() const {
     return is_anonymous() ? java_mirror() : class_loader();
   }
+
+  // Load the klass's holder as a phantom. This is useful when a weak Klass
+  // pointer has been "peeked" and then must be kept alive before it may
+  // be used safely.
+  oop holder_phantom() const;
 
   bool is_contended() const                {
     return (_misc_flags & _misc_is_contended) != 0;
@@ -910,7 +916,7 @@ public:
   instanceOop allocate_instance(TRAPS);
 
   // additional member function to return a handle
-  instanceHandle allocate_instance_handle(TRAPS)      { return instanceHandle(THREAD, allocate_instance(THREAD)); }
+  instanceHandle allocate_instance_handle(TRAPS);
 
   objArrayOop allocate_objArray(int n, int length, TRAPS);
   // Helper function
@@ -1069,7 +1075,7 @@ public:
 
   int  itable_offset_in_words() const { return start_of_itable() - (intptr_t*)this; }
 
-  address static_field_addr(int offset);
+  oop static_field_base_raw() { return java_mirror(); }
 
   OopMapBlock* start_of_nonstatic_oop_maps() const {
     return (OopMapBlock*)(start_of_itable() + itable_length());

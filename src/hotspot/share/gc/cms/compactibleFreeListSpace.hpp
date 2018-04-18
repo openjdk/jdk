@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/cms/adaptiveFreeList.hpp"
 #include "gc/cms/promotionInfo.hpp"
 #include "gc/shared/blockOffsetTable.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/space.hpp"
 #include "logging/log.hpp"
 #include "memory/binaryTreeDictionary.hpp"
@@ -47,7 +48,38 @@ class UpwardsObjectClosure;
 class ObjectClosureCareful;
 class Klass;
 
-class LinearAllocBlock VALUE_OBJ_CLASS_SPEC {
+class AFLBinaryTreeDictionary : public BinaryTreeDictionary<FreeChunk, AdaptiveFreeList<FreeChunk> > {
+ public:
+  AFLBinaryTreeDictionary(MemRegion mr)
+      : BinaryTreeDictionary<FreeChunk, AdaptiveFreeList<FreeChunk> >(mr) {}
+
+  // Find the list with size "size" in the binary tree and update
+  // the statistics in the list according to "split" (chunk was
+  // split or coalesce) and "birth" (chunk was added or removed).
+  void       dict_census_update(size_t size, bool split, bool birth);
+  // Return true if the dictionary is overpopulated (more chunks of
+  // this size than desired) for size "size".
+  bool       coal_dict_over_populated(size_t size);
+  // Methods called at the beginning of a sweep to prepare the
+  // statistics for the sweep.
+  void       begin_sweep_dict_census(double coalSurplusPercent,
+                                     float inter_sweep_current,
+                                     float inter_sweep_estimate,
+                                     float intra_sweep_estimate);
+  // Methods called after the end of a sweep to modify the
+  // statistics for the sweep.
+  void       end_sweep_dict_census(double splitSurplusPercent);
+  // Accessors for statistics
+  void       set_tree_surplus(double splitSurplusPercent);
+  void       set_tree_hints(void);
+  // Reset statistics for all the lists in the tree.
+  void       clear_tree_census(void);
+  // Print the statistics for all the lists in the tree.  Also may
+  // print out summaries.
+  void       print_dict_census(outputStream* st) const;
+};
+
+class LinearAllocBlock {
  public:
   LinearAllocBlock() : _ptr(0), _word_size(0), _refillSize(0),
     _allocation_size_limit(0) {}
@@ -432,7 +464,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
 
   // Override: provides a DCTO_CL specific to this kind of space.
   DirtyCardToOopClosure* new_dcto_cl(ExtendedOopClosure* cl,
-                                     CardTableModRefBS::PrecisionStyle precision,
+                                     CardTable::PrecisionStyle precision,
                                      HeapWord* boundary,
                                      bool parallel);
 

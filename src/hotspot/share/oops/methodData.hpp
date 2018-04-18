@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@
 
 #include "interpreter/bytecodes.hpp"
 #include "memory/universe.hpp"
+#include "oops/metadata.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.hpp"
-#include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci_globals.hpp"
@@ -75,7 +75,7 @@ class ProfileData;
 // DataLayout
 //
 // Overlay for generic profiling data.
-class DataLayout VALUE_OBJ_CLASS_SPEC {
+class DataLayout {
   friend class VMStructs;
   friend class JVMCIVMStructs;
 
@@ -201,9 +201,7 @@ public:
   void set_cell_at(int index, intptr_t value) {
     _cells[index] = value;
   }
-  void release_set_cell_at(int index, intptr_t value) {
-    OrderAccess::release_store(&_cells[index], value);
-  }
+  void release_set_cell_at(int index, intptr_t value);
   intptr_t cell_at(int index) const {
     return _cells[index];
   }
@@ -325,10 +323,7 @@ protected:
     assert(0 <= index && index < cell_count(), "oob");
     data()->set_cell_at(index, value);
   }
-  void release_set_intptr_at(int index, intptr_t value) {
-    assert(0 <= index && index < cell_count(), "oob");
-    data()->release_set_cell_at(index, value);
-  }
+  void release_set_intptr_at(int index, intptr_t value);
   intptr_t intptr_at(int index) const {
     assert(0 <= index && index < cell_count(), "oob");
     return data()->cell_at(index);
@@ -336,18 +331,14 @@ protected:
   void set_uint_at(int index, uint value) {
     set_intptr_at(index, (intptr_t) value);
   }
-  void release_set_uint_at(int index, uint value) {
-    release_set_intptr_at(index, (intptr_t) value);
-  }
+  void release_set_uint_at(int index, uint value);
   uint uint_at(int index) const {
     return (uint)intptr_at(index);
   }
   void set_int_at(int index, int value) {
     set_intptr_at(index, (intptr_t) value);
   }
-  void release_set_int_at(int index, int value) {
-    release_set_intptr_at(index, (intptr_t) value);
-  }
+  void release_set_int_at(int index, int value);
   int int_at(int index) const {
     return (int)intptr_at(index);
   }
@@ -1603,12 +1594,7 @@ protected:
     assert((uint)row < row_limit(), "oob");
     set_int_at(bci0_offset + row * ret_row_cell_count, bci);
   }
-  void release_set_bci(uint row, int bci) {
-    assert((uint)row < row_limit(), "oob");
-    // 'release' when setting the bci acts as a valid flag for other
-    // threads wrt bci_count and bci_displacement.
-    release_set_int_at(bci0_offset + row * ret_row_cell_count, bci);
-  }
+  void release_set_bci(uint row, int bci);
   void set_bci_count(uint row, uint count) {
     assert((uint)row < row_limit(), "oob");
     set_uint_at(count0_offset + row * ret_row_cell_count, count);

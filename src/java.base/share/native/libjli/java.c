@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@
 
 
 #include "java.h"
+#include "jni.h"
 
 /*
  * A NOTE TO DEVELOPERS: For performance reasons it is important that
@@ -212,7 +213,7 @@ static jlong initialHeapSize    = 0;  /* inital heap size */
 /*
  * Entry point.
  */
-int
+JNIEXPORT int JNICALL
 JLI_Launch(int argc, char ** argv,              /* main argc, argc */
         int jargc, const char** jargv,          /* java args */
         int appclassc, const char** appclassv,  /* app classpath */
@@ -2337,7 +2338,7 @@ DumpState()
 /*
  * A utility procedure to always print to stderr
  */
-void
+JNIEXPORT void JNICALL
 JLI_ReportMessage(const char* fmt, ...)
 {
     va_list vl;

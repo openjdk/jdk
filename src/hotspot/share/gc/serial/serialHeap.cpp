@@ -29,7 +29,13 @@
 #include "services/memoryManager.hpp"
 
 SerialHeap::SerialHeap(GenCollectorPolicy* policy) :
-  GenCollectedHeap(policy), _eden_pool(NULL), _survivor_pool(NULL), _old_pool(NULL) {
+    GenCollectedHeap(policy,
+                     Generation::DefNew,
+                     Generation::MarkSweepCompact,
+                     "Copy:MSC"),
+    _eden_pool(NULL),
+    _survivor_pool(NULL),
+    _old_pool(NULL) {
   _young_manager = new GCMemoryManager("Copy", "end of minor GC");
   _old_manager = new GCMemoryManager("MarkSweepCompact", "end of major GC");
 }

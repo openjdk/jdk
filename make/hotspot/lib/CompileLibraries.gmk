@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,8 @@ include NativeCompilation.gmk
 
 include HotspotCommon.gmk
 
-# The dtrace setup must be done both before and after CompileJvm.gmk, due to
-# intricate dependencies.
-include lib/CompileDtracePreJvm.gmk
 include lib/CompileJvm.gmk
-include lib/CompileDtracePostJvm.gmk
+include lib/CompileDtraceLibraries.gmk
 
 ifeq ($(BUILD_GTEST), true)
   include lib/CompileGtest.gmk

@@ -18,8 +18,7 @@ ParserTest.java:59:14: compiler.err.var.not.allowed.here
 ParserTest.java:60:24: compiler.err.var.not.allowed.here
 ParserTest.java:61:22: compiler.err.var.not.allowed.here
 ParserTest.java:63:22: compiler.err.var.not.allowed.here
-ParserTest.java:63:40: compiler.err.var.not.allowed.here
 ParserTest.java:64:18: compiler.err.var.not.allowed.here
 ParserTest.java:68:35: compiler.err.var.not.allowed.here
 ParserTest.java:69:22: compiler.err.var.not.allowed.here
-24 errors
+23 errors

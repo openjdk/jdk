@@ -37,8 +37,7 @@ import sun.lwawt.macosx.CPlatformWindow;
  * Utility class perform animated full screen actions to top-level {@link Window}s.
  *
  * This class manages the relationship between {@link Window}s and the {@link FullScreenListener}s
- * attached to them. It's design is similar to the Java SE 6u10 {@code com.sun.awt.AWTUtilities}
- * class which adds additional functionality to AWT Windows, without adding new API to the
+ * attached to them. It adds additional functionality to AWT Windows, without adding new API to the
  * {@link java.awt.Window} class.
  *
  * Full screen operations can only be performed on top-level {@link Window}s that are also {@link RootPaneContainer}s.

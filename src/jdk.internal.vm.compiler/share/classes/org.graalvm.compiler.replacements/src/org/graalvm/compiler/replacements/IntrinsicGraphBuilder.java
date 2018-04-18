@@ -31,6 +31,8 @@ import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.core.common.type.TypeReference;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
+import org.graalvm.compiler.debug.DebugCloseable;
+import org.graalvm.compiler.graph.NodeSourcePosition;
 import org.graalvm.compiler.nodes.CallTargetNode;
 import org.graalvm.compiler.nodes.CallTargetNode.InvokeKind;
 import org.graalvm.compiler.nodes.FixedNode;
@@ -91,6 +93,7 @@ public class IntrinsicGraphBuilder implements GraphBuilderContext, Receiver {
         this.code = code;
         this.method = code.getMethod();
         this.graph = new StructuredGraph.Builder(options, debug, allowAssumptions).method(method).build();
+        this.graph.setTrackNodeSourcePosition();
         this.invokeBci = invokeBci;
         this.lastInstr = graph.start();
 
@@ -255,14 +258,18 @@ public class IntrinsicGraphBuilder implements GraphBuilderContext, Receiver {
         return arguments[0];
     }
 
+    @SuppressWarnings("try")
     public StructuredGraph buildGraph(InvocationPlugin plugin) {
-        Receiver receiver = method.isStatic() ? null : this;
-        if (plugin.execute(this, method, receiver, arguments)) {
-            assert (returnValue != null) == (method.getSignature().getReturnKind() != JavaKind.Void) : method;
-            append(new ReturnNode(returnValue));
-            return graph;
+        NodeSourcePosition position = graph.trackNodeSourcePosition() ? NodeSourcePosition.placeholder(method) : null;
+        try (DebugCloseable context = graph.withNodeSourcePosition(position)) {
+            Receiver receiver = method.isStatic() ? null : this;
+            if (plugin.execute(this, method, receiver, arguments)) {
+                assert (returnValue != null) == (method.getSignature().getReturnKind() != JavaKind.Void) : method;
+                append(new ReturnNode(returnValue));
+                return graph;
+            }
+            return null;
         }
-        return null;
     }
 
     @Override

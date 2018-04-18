@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,9 @@
 #include "runtime/timer.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc/g1/g1ThreadLocalData.hpp"
+#endif // INCLUDE_ALL_GCS
 
 
 // -------------------- Compile::mach_constant_base_node -----------------------
@@ -397,11 +400,18 @@ void Compile::remove_useless_nodes(Unique_Node_List &useful) {
       remove_range_check_cast(cast);
     }
   }
-  // Remove useless expensive node
+  // Remove useless expensive nodes
   for (int i = C->expensive_count()-1; i >= 0; i--) {
     Node* n = C->expensive_node(i);
     if (!useful.member(n)) {
       remove_expensive_node(n);
+    }
+  }
+  // Remove useless Opaque4 nodes
+  for (int i = opaque4_count() - 1; i >= 0; i--) {
+    Node* opaq = opaque4_node(i);
+    if (!useful.member(opaq)) {
+      remove_opaque4_node(opaq);
     }
   }
   // clean up the late inline lists
@@ -1179,6 +1189,7 @@ void Compile::Init(int aliaslevel) {
   _predicate_opaqs = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
   _expensive_nodes = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
   _range_check_casts = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
+  _opaque4_nodes = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
   register_library_intrinsics();
 }
 
@@ -1957,6 +1968,22 @@ void Compile::remove_range_check_casts(PhaseIterGVN &igvn) {
   assert(range_check_cast_count() == 0, "should be empty");
 }
 
+void Compile::add_opaque4_node(Node* n) {
+  assert(n->Opcode() == Op_Opaque4, "Opaque4 only");
+  assert(!_opaque4_nodes->contains(n), "duplicate entry in Opaque4 list");
+  _opaque4_nodes->append(n);
+}
+
+// Remove all Opaque4 nodes.
+void Compile::remove_opaque4_nodes(PhaseIterGVN &igvn) {
+  for (int i = opaque4_count(); i > 0; i--) {
+    Node* opaq = opaque4_node(i-1);
+    assert(opaq->Opcode() == Op_Opaque4, "Opaque4 only");
+    igvn.replace_node(opaq, opaq->in(2));
+  }
+  assert(opaque4_count() == 0, "should be empty");
+}
+
 // StringOpts and late inlining of string methods
 void Compile::inline_string_calls(bool parse_time) {
   {
@@ -2332,6 +2359,11 @@ void Compile::Optimize() {
     }
   }
 
+  if (opaque4_count() > 0) {
+    C->remove_opaque4_nodes(igvn);
+    igvn.optimize();
+  }
+
   DEBUG_ONLY( _modified_nodes = NULL; )
  } // (End scope of igvn; run destructor if necessary for asserts.)
 
@@ -2449,8 +2481,8 @@ void Compile::Code_Gen() {
   print_method(PHASE_FINAL_CODE);
 
   // He's dead, Jim.
-  _cfg     = (PhaseCFG*)0xdeadbeef;
-  _regalloc = (PhaseChaitin*)0xdeadbeef;
+  _cfg     = (PhaseCFG*)((intptr_t)0xdeadbeef);
+  _regalloc = (PhaseChaitin*)((intptr_t)0xdeadbeef);
 }
 
 
@@ -3332,6 +3364,20 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
     }
     break;
   }
+  case Op_CmpUL: {
+    if (!Matcher::has_match_rule(Op_CmpUL)) {
+      // We don't support unsigned long comparisons. Set 'max_idx_expr'
+      // to max_julong if < 0 to make the signed comparison fail.
+      ConINode* sign_pos = new ConINode(TypeInt::make(BitsPerLong - 1));
+      Node* sign_bit_mask = new RShiftLNode(n->in(1), sign_pos);
+      Node* orl = new OrLNode(n->in(1), sign_bit_mask);
+      ConLNode* remove_sign_mask = new ConLNode(TypeLong::make(max_jlong));
+      Node* andl = new AndLNode(orl, remove_sign_mask);
+      Node* cmp = new CmpLNode(andl, n->in(2));
+      n->subsume_by(cmp, this);
+    }
+    break;
+  }
   default:
     assert( !n->is_Call(), "" );
     assert( !n->is_Mem(), "" );
@@ -3709,7 +3755,7 @@ void Compile::verify_graph_edges(bool no_dead_code) {
 void Compile::verify_barriers() {
   if (UseG1GC) {
     // Verify G1 pre-barriers
-    const int marking_offset = in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active());
+    const int marking_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset());
 
     ResourceArea *area = Thread::current()->resource_area();
     Unique_Node_List visited(area);

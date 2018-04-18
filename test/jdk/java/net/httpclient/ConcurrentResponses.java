@@ -27,9 +27,9 @@
  * @summary Buffers given to response body subscribers should not contain
  *          unprocessed HTTP data
  * @modules java.base/sun.net.www.http
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.common
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.frame
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.hpack
+ *          java.net.http/jdk.internal.net.http.common
+ *          java.net.http/jdk.internal.net.http.frame
+ *          java.net.http/jdk.internal.net.http.hpack
  *          java.logging
  *          jdk.httpserver
  * @library /lib/testlibrary http2/server
@@ -41,6 +41,7 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -57,19 +58,20 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
-import jdk.incubator.http.HttpClient;
-import jdk.incubator.http.HttpRequest;
-import jdk.incubator.http.HttpResponse;
-import jdk.incubator.http.HttpResponse.BodyHandler;
-import jdk.incubator.http.HttpResponse.BodySubscriber;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandler;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.net.http.HttpResponse.BodySubscriber;
+import java.net.http.HttpResponse.BodySubscribers;
 import jdk.testlibrary.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static jdk.incubator.http.HttpResponse.BodyHandler.asString;
-import static jdk.incubator.http.HttpResponse.BodyHandler.discard;
+import static java.net.http.HttpResponse.BodyHandlers.discarding;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.fail;
@@ -144,7 +146,7 @@ public class ConcurrentResponses {
     }
 
 
-    // The asString implementation accumulates data, below a certain threshold
+    // The ofString implementation accumulates data, below a certain threshold
     // into the byte buffers it is given.
     @Test(dataProvider = "uris")
     void testAsString(String uri) throws Exception {
@@ -158,11 +160,11 @@ public class ConcurrentResponses {
         }
 
         // initial connection to seed the cache so next parallel connections reuse it
-        client.sendAsync(HttpRequest.newBuilder(URI.create(uri)).build(), discard(null)).join();
+        client.sendAsync(HttpRequest.newBuilder(URI.create(uri)).build(), discarding()).join();
 
         // will reuse connection cached from the previous request ( when HTTP/2 )
         CompletableFuture.allOf(requests.keySet().parallelStream()
-                .map(request -> client.sendAsync(request, asString()))
+                .map(request -> client.sendAsync(request, BodyHandlers.ofString()))
                 .map(cf -> cf.thenCompose(ConcurrentResponses::assert200ResponseCode))
                 .map(cf -> cf.thenCompose(response -> assertbody(response, requests.get(response.request()))))
                 .toArray(CompletableFuture<?>[]::new))
@@ -183,7 +185,7 @@ public class ConcurrentResponses {
         }
 
         // initial connection to seed the cache so next parallel connections reuse it
-        client.sendAsync(HttpRequest.newBuilder(URI.create(uri)).build(), discard(null)).join();
+        client.sendAsync(HttpRequest.newBuilder(URI.create(uri)).build(), discarding()).join();
 
         // will reuse connection cached from the previous request ( when HTTP/2 )
         CompletableFuture.allOf(requests.keySet().parallelStream()
@@ -195,21 +197,21 @@ public class ConcurrentResponses {
     }
 
     /**
-     * A subscriber that wraps asString, but mucks with any data between limit
+     * A subscriber that wraps ofString, but mucks with any data between limit
      * and capacity, if the client mistakenly passes it any that is should not.
      */
     static class CustomSubscriber implements BodySubscriber<String> {
-        static final BodyHandler<String> handler = (r,h) -> new CustomSubscriber();
-        private final BodySubscriber<String> asString = BodySubscriber.asString(UTF_8);
+        static final BodyHandler<String> handler = (r) -> new CustomSubscriber();
+        private final BodySubscriber<String> ofString = BodySubscribers.ofString(UTF_8);
 
         @Override
         public CompletionStage<String> getBody() {
-            return asString.getBody();
+            return ofString.getBody();
         }
 
         @Override
         public void onSubscribe(Flow.Subscription subscription) {
-            asString.onSubscribe(subscription);
+            ofString.onSubscribe(subscription);
         }
 
         @Override
@@ -217,6 +219,9 @@ public class ConcurrentResponses {
             // Muck any data beyond the give limit, since there shouldn't
             // be any of interest to the HTTP Client.
             for (ByteBuffer buffer : buffers) {
+                if (buffer.isReadOnly())
+                    continue;
+
                 if (buffer.limit() != buffer.capacity()) {
                     final int limit = buffer.limit();
                     final int position = buffer.position();
@@ -228,22 +233,26 @@ public class ConcurrentResponses {
                     buffer.limit(limit);       // restore original limit
                 }
             }
-            asString.onNext(buffers);
+            ofString.onNext(buffers);
         }
 
         @Override
         public void onError(Throwable throwable) {
-            asString.onError(throwable);
+            ofString.onError(throwable);
             throwable.printStackTrace();
             fail("UNEXPECTED:" + throwable);
         }
 
         @Override
         public void onComplete() {
-            asString.onComplete();
+            ofString.onComplete();
         }
     }
 
+    static String serverAuthority(HttpServer server) {
+        return InetAddress.getLoopbackAddress().getHostName() + ":"
+                + server.getAddress().getPort();
+    }
 
     @BeforeTest
     public void setup() throws Exception {
@@ -251,31 +260,31 @@ public class ConcurrentResponses {
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
 
-        InetSocketAddress sa = new InetSocketAddress("localhost", 0);
+        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         httpTestServer = HttpServer.create(sa, 0);
         httpTestServer.createContext("/http1/fixed", new Http1FixedHandler());
-        httpFixedURI = "http://127.0.0.1:" + httpTestServer.getAddress().getPort() + "/http1/fixed";
+        httpFixedURI = "http://" + serverAuthority(httpTestServer) + "/http1/fixed";
         httpTestServer.createContext("/http1/chunked", new Http1ChunkedHandler());
-        httpChunkedURI = "http://127.0.0.1:" + httpTestServer.getAddress().getPort() + "/http1/chunked";
+        httpChunkedURI = "http://" + serverAuthority(httpTestServer) + "/http1/chunked";
 
         httpsTestServer = HttpsServer.create(sa, 0);
         httpsTestServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
         httpsTestServer.createContext("/https1/fixed", new Http1FixedHandler());
-        httpsFixedURI = "https://127.0.0.1:" + httpsTestServer.getAddress().getPort() + "/https1/fixed";
+        httpsFixedURI = "https://" + serverAuthority(httpsTestServer) + "/https1/fixed";
         httpsTestServer.createContext("/https1/chunked", new Http1ChunkedHandler());
-        httpsChunkedURI = "https://127.0.0.1:" + httpsTestServer.getAddress().getPort() + "/https1/chunked";
+        httpsChunkedURI = "https://" + serverAuthority(httpsTestServer) + "/https1/chunked";
 
-        http2TestServer = new Http2TestServer("127.0.0.1", false, 0);
+        http2TestServer = new Http2TestServer("localhost", false, 0);
         http2TestServer.addHandler(new Http2FixedHandler(), "/http2/fixed");
-        http2FixedURI = "http://127.0.0.1:" + http2TestServer.getAddress().getPort() + "/http2/fixed";
+        http2FixedURI = "http://" + http2TestServer.serverAuthority()+ "/http2/fixed";
         http2TestServer.addHandler(new Http2VariableHandler(), "/http2/variable");
-        http2VariableURI = "http://127.0.0.1:" + http2TestServer.getAddress().getPort() + "/http2/variable";
+        http2VariableURI = "http://" + http2TestServer.serverAuthority() + "/http2/variable";
 
-        https2TestServer = new Http2TestServer("127.0.0.1", true, 0);
+        https2TestServer = new Http2TestServer("localhost", true, 0);
         https2TestServer.addHandler(new Http2FixedHandler(), "/https2/fixed");
-        https2FixedURI = "https://127.0.0.1:" + https2TestServer.getAddress().getPort() + "/https2/fixed";
+        https2FixedURI = "https://" + https2TestServer.serverAuthority() + "/https2/fixed";
         https2TestServer.addHandler(new Http2VariableHandler(), "/https2/variable");
-        https2VariableURI = "https://127.0.0.1:" + https2TestServer.getAddress().getPort() + "/https2/variable";
+        https2VariableURI = "https://" + https2TestServer.serverAuthority() + "/https2/variable";
 
         httpTestServer.start();
         httpsTestServer.start();

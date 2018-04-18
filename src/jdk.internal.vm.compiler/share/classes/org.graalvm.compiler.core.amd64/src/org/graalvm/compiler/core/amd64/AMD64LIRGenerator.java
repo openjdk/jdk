@@ -59,6 +59,7 @@ import org.graalvm.compiler.lir.SwitchStrategy;
 import org.graalvm.compiler.lir.Variable;
 import org.graalvm.compiler.lir.amd64.AMD64AddressValue;
 import org.graalvm.compiler.lir.amd64.AMD64ArithmeticLIRGeneratorTool;
+import org.graalvm.compiler.lir.amd64.AMD64ArrayCompareToOp;
 import org.graalvm.compiler.lir.amd64.AMD64ArrayEqualsOp;
 import org.graalvm.compiler.lir.amd64.AMD64Binary;
 import org.graalvm.compiler.lir.amd64.AMD64BinaryConsumer;
@@ -74,6 +75,7 @@ import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.FloatCondSetOp;
 import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.ReturnOp;
 import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.StrategySwitchOp;
 import org.graalvm.compiler.lir.amd64.AMD64ControlFlow.TableSwitchOp;
+import org.graalvm.compiler.lir.amd64.AMD64LFenceOp;
 import org.graalvm.compiler.lir.amd64.AMD64Move;
 import org.graalvm.compiler.lir.amd64.AMD64Move.CompareAndSwapOp;
 import org.graalvm.compiler.lir.amd64.AMD64Move.MembarOp;
@@ -490,6 +492,20 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
     }
 
     @Override
+    public Variable emitArrayCompareTo(JavaKind kind1, JavaKind kind2, Value array1, Value array2, Value length1, Value length2) {
+        LIRKind resultKind = LIRKind.value(AMD64Kind.DWORD);
+        RegisterValue raxRes = AMD64.rax.asValue(resultKind);
+        RegisterValue cnt1 = AMD64.rcx.asValue(length1.getValueKind());
+        RegisterValue cnt2 = AMD64.rdx.asValue(length2.getValueKind());
+        emitMove(cnt1, length1);
+        emitMove(cnt2, length2);
+        append(new AMD64ArrayCompareToOp(this, kind1, kind2, raxRes, array1, array2, cnt1, cnt2));
+        Variable result = newVariable(resultKind);
+        emitMove(result, raxRes);
+        return result;
+    }
+
+    @Override
     public Variable emitArrayEquals(JavaKind kind, Value array1, Value array2, Value length) {
         Variable result = newVariable(LIRKind.value(AMD64Kind.DWORD));
         append(new AMD64ArrayEqualsOp(this, kind, result, array1, array2, asAllocatable(length)));
@@ -553,5 +569,9 @@ public abstract class AMD64LIRGenerator extends LIRGenerator {
     @Override
     public LIRInstruction createZapArgumentSpace(StackSlot[] zappedStack, JavaConstant[] zapValues) {
         return new AMD64ZapStackOp(zappedStack, zapValues);
+    }
+
+    public void emitLFence() {
+        append(new AMD64LFenceOp());
     }
 }

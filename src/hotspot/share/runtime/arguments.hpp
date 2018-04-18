@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,6 +142,7 @@ public:
   void*           _os_lib;
   bool            _is_absolute_path;
   bool            _is_static_lib;
+  bool            _is_instrument_lib;
   AgentState      _state;
   AgentLibrary*   _next;
 
@@ -154,17 +155,19 @@ public:
   void set_os_lib(void* os_lib)             { _os_lib = os_lib; }
   AgentLibrary* next() const                { return _next; }
   bool is_static_lib() const                { return _is_static_lib; }
+  bool is_instrument_lib() const            { return _is_instrument_lib; }
   void set_static_lib(bool is_static_lib)   { _is_static_lib = is_static_lib; }
   bool valid()                              { return (_state == agent_valid); }
   void set_valid()                          { _state = agent_valid; }
   void set_invalid()                        { _state = agent_invalid; }
 
   // Constructor
-  AgentLibrary(const char* name, const char* options, bool is_absolute_path, void* os_lib);
+  AgentLibrary(const char* name, const char* options, bool is_absolute_path,
+               void* os_lib, bool instrument_lib=false);
 };
 
 // maintain an order of entry list of AgentLibrary
-class AgentLibraryList VALUE_OBJ_CLASS_SPEC {
+class AgentLibraryList {
  private:
   AgentLibrary*   _first;
   AgentLibrary*   _last;
@@ -337,6 +340,7 @@ class Arguments : AllStatic {
   // -agentlib and -agentpath arguments
   static AgentLibraryList _agentList;
   static void add_init_agent(const char* name, char* options, bool absolute_path);
+  static void add_instrument_agent(const char* name, char* options, bool absolute_path);
 
   // Late-binding agents not started via arguments
   static void add_loaded_agent(AgentLibrary *agentLib);
@@ -354,6 +358,9 @@ class Arguments : AllStatic {
   static void set_xdebug_mode(bool arg) { _xdebug_mode = arg; }
   static bool xdebug_mode()             { return _xdebug_mode; }
 
+  // preview features
+  static bool _enable_preview;
+
   // Used to save default settings
   static bool _AlwaysCompileLoopMethods;
   static bool _UseOnStackReplacement;
@@ -369,13 +376,7 @@ class Arguments : AllStatic {
 
   // Tiered
   static void set_tiered_flags();
-  // CMS/ParNew garbage collectors
-  static void set_parnew_gc_flags();
-  static void set_cms_and_parnew_gc_flags();
-  // UseParallel[Old]GC
-  static void set_parallel_gc_flags();
-  // Garbage-First (UseG1GC)
-  static void set_g1_gc_flags();
+
   // GC ergonomics
   static void set_conservative_max_heap_alignment();
   static void set_use_compressed_oops();
@@ -541,7 +542,6 @@ class Arguments : AllStatic {
   // Adjusts the arguments after the OS have adjusted the arguments
   static jint adjust_after_os();
 
-  static void set_gc_specific_flags();
 #if INCLUDE_JVMCI
   // Check consistency of jvmci vm argument settings.
   static bool check_jvmci_args_consistency();
@@ -694,11 +694,16 @@ class Arguments : AllStatic {
   static Mode mode()                        { return _mode; }
   static bool is_interpreter_only() { return mode() == _int; }
 
+  // preview features
+  static void set_enable_preview() { _enable_preview = true; }
+  static bool enable_preview() { return _enable_preview; }
 
   // Utility: copies src into buf, replacing "%%" with "%" and "%p" with pid.
   static bool copy_expand_pid(const char* src, size_t srclen, char* buf, size_t buflen);
 
   static void check_unsupported_dumping_properties() NOT_CDS_RETURN;
+
+  static bool check_unsupported_cds_runtime_properties() NOT_CDS_RETURN0;
 
   static bool atojulong(const char *s, julong* result);
 };

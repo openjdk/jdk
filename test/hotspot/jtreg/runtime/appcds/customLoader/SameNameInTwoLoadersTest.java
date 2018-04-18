@@ -26,8 +26,7 @@
  * @test
  * @summary Testing the loading of a class with the same name in two different class loaders.
  *
- * (NOTE: AppCDS does not support uncompressed oops)
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires vm.cds.custom.loaders
  *
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
@@ -38,7 +37,7 @@
  *     test-classes/CustomLoadee3.java
  *     test-classes/SameNameUnrelatedLoaders.java
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main SameNameInTwoLoadersTest
  */
 

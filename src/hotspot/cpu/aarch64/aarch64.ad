@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, Red Hat Inc. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -995,7 +995,10 @@ definitions %{
 
 source_hpp %{
 
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "asm/macroAssembler.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "opto/addnode.hpp"
 
 class CallStubImpl {
@@ -4438,8 +4441,8 @@ encode %{
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
                Assembler::byte, /*acquire*/ false, /*release*/ true,
                /*weak*/ false, noreg);
-  %}  
-    
+  %}
+
 
   // The only difference between aarch64_enc_cmpxchg and
   // aarch64_enc_cmpxchg_acq is that we use load-acquire in the
@@ -5844,8 +5847,8 @@ operand immPollPage()
 operand immByteMapBase()
 %{
   // Get base of card map
-  predicate((jbyte*)n->get_ptr() ==
-        ((CardTableModRefBS*)(Universe::heap()->barrier_set()))->byte_map_base);
+  predicate(BarrierSet::barrier_set()->is_a(BarrierSet::CardTableBarrierSet) &&
+            (jbyte*)n->get_ptr() == ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base());
   match(ConP);
 
   op_cost(0);
@@ -16164,9 +16167,8 @@ instruct string_equalsL(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
   format %{ "String Equals $str1,$str2,$cnt -> $result" %}
   ins_encode %{
     // Count is in 8-bit bytes; non-Compact chars are 16 bits.
-    __ arrays_equals($str1$$Register, $str2$$Register,
-                     $result$$Register, $cnt$$Register,
-                     1, /*is_string*/true);
+    __ string_equals($str1$$Register, $str2$$Register,
+                     $result$$Register, $cnt$$Register, 1);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -16181,42 +16183,42 @@ instruct string_equalsU(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
   format %{ "String Equals $str1,$str2,$cnt -> $result" %}
   ins_encode %{
     // Count is in 8-bit bytes; non-Compact chars are 16 bits.
-    __ asrw($cnt$$Register, $cnt$$Register, 1);
-    __ arrays_equals($str1$$Register, $str2$$Register,
-                     $result$$Register, $cnt$$Register,
-                     2, /*is_string*/true);
+    __ string_equals($str1$$Register, $str2$$Register,
+                     $result$$Register, $cnt$$Register, 2);
   %}
   ins_pipe(pipe_class_memory);
 %}
 
 instruct array_equalsB(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
-                      iRegP_R10 tmp, rFlagsReg cr)
+                       iRegP_R3 tmp1, iRegP_R4 tmp2, iRegP_R5 tmp3,
+                       iRegP_R10 tmp, rFlagsReg cr)
 %{
   predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (AryEq ary1 ary2));
-  effect(KILL tmp, USE_KILL ary1, USE_KILL ary2, KILL cr);
+  effect(KILL tmp, USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
 
   format %{ "Array Equals $ary1,ary2 -> $result    // KILL $tmp" %}
   ins_encode %{
     __ arrays_equals($ary1$$Register, $ary2$$Register,
-                     $result$$Register, $tmp$$Register,
-                     1, /*is_string*/false);
+                     $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
+                     $result$$Register, $tmp$$Register, 1);
     %}
   ins_pipe(pipe_class_memory);
 %}
 
 instruct array_equalsC(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
-                      iRegP_R10 tmp, rFlagsReg cr)
+                       iRegP_R3 tmp1, iRegP_R4 tmp2, iRegP_R5 tmp3,
+                       iRegP_R10 tmp, rFlagsReg cr)
 %{
   predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (AryEq ary1 ary2));
-  effect(KILL tmp, USE_KILL ary1, USE_KILL ary2, KILL cr);
+  effect(KILL tmp, USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
 
   format %{ "Array Equals $ary1,ary2 -> $result    // KILL $tmp" %}
   ins_encode %{
     __ arrays_equals($ary1$$Register, $ary2$$Register,
-                     $result$$Register, $tmp$$Register,
-                     2, /*is_string*/false);
+                     $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
+                     $result$$Register, $tmp$$Register, 2);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -17725,7 +17727,7 @@ instruct vsll8B_imm(vecD dst, vecD src, immI shift) %{
   ins_cost(INSN_COST);
   format %{ "shl    $dst, $src, $shift\t# vector (8B)" %}
   ins_encode %{
-    int sh = (int)$shift$$constant & 31;
+    int sh = (int)$shift$$constant;
     if (sh >= 8) {
       __ eor(as_FloatRegister($dst$$reg), __ T8B,
              as_FloatRegister($src$$reg),
@@ -17744,7 +17746,7 @@ instruct vsll16B_imm(vecX dst, vecX src, immI shift) %{
   ins_cost(INSN_COST);
   format %{ "shl    $dst, $src, $shift\t# vector (16B)" %}
   ins_encode %{
-    int sh = (int)$shift$$constant & 31;
+    int sh = (int)$shift$$constant;
     if (sh >= 8) {
       __ eor(as_FloatRegister($dst$$reg), __ T16B,
              as_FloatRegister($src$$reg),
@@ -17764,9 +17766,8 @@ instruct vsra8B_imm(vecD dst, vecD src, immI shift) %{
   ins_cost(INSN_COST);
   format %{ "sshr    $dst, $src, $shift\t# vector (8B)" %}
   ins_encode %{
-    int sh = (int)$shift$$constant & 31;
+    int sh = (int)$shift$$constant;
     if (sh >= 8) sh = 7;
-    sh = -sh & 7;
     __ sshr(as_FloatRegister($dst$$reg), __ T8B,
            as_FloatRegister($src$$reg), sh);
   %}
@@ -17779,9 +17780,8 @@ instruct vsra16B_imm(vecX dst, vecX src, immI shift) %{
   ins_cost(INSN_COST);
   format %{ "sshr    $dst, $src, $shift\t# vector (16B)" %}
   ins_encode %{
-    int sh = (int)$shift$$constant & 31;
+    int sh = (int)$shift$$constant;
     if (sh >= 8) sh = 7;
-    sh = -sh & 7;
     __ sshr(as_FloatRegister($dst$$reg), __ T16B,
            as_FloatRegister($src$$reg), sh);
   %}
@@ -17795,14 +17795,14 @@ instruct vsrl8B_imm(vecD dst, vecD src, immI shift) %{
   ins_cost(INSN_COST);
   format %{ "ushr    $dst, $src, $shift\t# vector (8B)" %}
   ins_encode %{
-    int sh = (int)$shift$$constant & 31;
+    int sh = (int)$shift$$constant;
     if (sh >= 8) {
       __ eor(as_FloatRegister($dst$$reg), __ T8B,
              as_FloatRegister($src$$reg),
              as_FloatRegister($src$$reg));
     } else {
       __ ushr(as_FloatRegister($dst$$reg), __ T8B,
-             as_FloatRegister($src$$reg), -sh & 7);
+             as_FloatRegister($src$$reg), sh);
     }
   %}
   ins_pipe(vshift64_imm);
@@ -17814,14 +17814,14 @@ instruct vsrl16B_imm(vecX dst, vecX src, immI shift) %{
   ins_cost(INSN_COST);
   format %{ "ushr    $dst, $src, $shift\t# vector (16B)" %}
   ins_encode %{
-    int sh = (int)$shift$$constant & 31;
+    int sh = (int)$shift$$constant;
     if (sh >= 8) {
       __ eor(as_FloatRegister($dst$$reg), __ T16B,
              as_FloatRegister($src$$reg),
              as_FloatRegister($src$$reg));
     } else {
       __ ushr(as_FloatRegister($dst$$reg), __ T16B,
-             as_FloatRegister($src$$reg), -sh & 7);
+             as_FloatRegister($src$$reg), sh);
     }
   %}
   ins_pipe(vshift128_imm);
@@ -17890,7 +17890,7 @@ instruct vsll4S_imm(vecD dst, vecD src, immI shift) %{
   ins_cost(INSN_COST);
   format %{ "shl    $dst, $src, $shift\t# vector (4H)" %}
   ins_encode %{
-    int sh = (int)$shift$$constant & 31;
+    int sh = (int)$shift$$constant;
     if (sh >= 16) {
       __ eor(as_FloatRegister($dst$$reg), __ T8B,
              as_FloatRegister($src$$reg),
@@ -17909,7 +17909,7 @@ instruct vsll8S_imm(vecX dst, vecX src, immI shift) %{
   ins_cost(INSN_COST);
   format %{ "shl    $dst, $src, $shift\t# vector (8H)" %}
   ins_encode %{
-    int sh = (int)$shift$$constant & 31;
+    int sh = (int)$shift$$constant;
     if (sh >= 16) {
       __ eor(as_FloatRegister($dst$$reg), __ T16B,
              as_FloatRegister($src$$reg),
@@ -17929,9 +17929,8 @@ instruct vsra4S_imm(vecD dst, vecD src, immI shift) %{
   ins_cost(INSN_COST);
   format %{ "sshr    $dst, $src, $shift\t# vector (4H)" %}
   ins_encode %{
-    int sh = (int)$shift$$constant & 31;
+    int sh = (int)$shift$$constant;
     if (sh >= 16) sh = 15;
-    sh = -sh & 15;
     __ sshr(as_FloatRegister($dst$$reg), __ T4H,
            as_FloatRegister($src$$reg), sh);
   %}
@@ -17944,9 +17943,8 @@ instruct vsra8S_imm(vecX dst, vecX src, immI shift) %{
   ins_cost(INSN_COST);
   format %{ "sshr    $dst, $src, $shift\t# vector (8H)" %}
   ins_encode %{
-    int sh = (int)$shift$$constant & 31;
+    int sh = (int)$shift$$constant;
     if (sh >= 16) sh = 15;
-    sh = -sh & 15;
     __ sshr(as_FloatRegister($dst$$reg), __ T8H,
            as_FloatRegister($src$$reg), sh);
   %}
@@ -17960,14 +17958,14 @@ instruct vsrl4S_imm(vecD dst, vecD src, immI shift) %{
   ins_cost(INSN_COST);
   format %{ "ushr    $dst, $src, $shift\t# vector (4H)" %}
   ins_encode %{
-    int sh = (int)$shift$$constant & 31;
+    int sh = (int)$shift$$constant;
     if (sh >= 16) {
       __ eor(as_FloatRegister($dst$$reg), __ T8B,
              as_FloatRegister($src$$reg),
              as_FloatRegister($src$$reg));
     } else {
       __ ushr(as_FloatRegister($dst$$reg), __ T4H,
-             as_FloatRegister($src$$reg), -sh & 15);
+             as_FloatRegister($src$$reg), sh);
     }
   %}
   ins_pipe(vshift64_imm);
@@ -17979,14 +17977,14 @@ instruct vsrl8S_imm(vecX dst, vecX src, immI shift) %{
   ins_cost(INSN_COST);
   format %{ "ushr    $dst, $src, $shift\t# vector (8H)" %}
   ins_encode %{
-    int sh = (int)$shift$$constant & 31;
+    int sh = (int)$shift$$constant;
     if (sh >= 16) {
       __ eor(as_FloatRegister($dst$$reg), __ T16B,
              as_FloatRegister($src$$reg),
              as_FloatRegister($src$$reg));
     } else {
       __ ushr(as_FloatRegister($dst$$reg), __ T8H,
-             as_FloatRegister($src$$reg), -sh & 15);
+             as_FloatRegister($src$$reg), sh);
     }
   %}
   ins_pipe(vshift128_imm);
@@ -18054,7 +18052,7 @@ instruct vsll2I_imm(vecD dst, vecD src, immI shift) %{
   ins_encode %{
     __ shl(as_FloatRegister($dst$$reg), __ T2S,
            as_FloatRegister($src$$reg),
-           (int)$shift$$constant & 31);
+           (int)$shift$$constant);
   %}
   ins_pipe(vshift64_imm);
 %}
@@ -18067,7 +18065,7 @@ instruct vsll4I_imm(vecX dst, vecX src, immI shift) %{
   ins_encode %{
     __ shl(as_FloatRegister($dst$$reg), __ T4S,
            as_FloatRegister($src$$reg),
-           (int)$shift$$constant & 31);
+           (int)$shift$$constant);
   %}
   ins_pipe(vshift128_imm);
 %}
@@ -18080,7 +18078,7 @@ instruct vsra2I_imm(vecD dst, vecD src, immI shift) %{
   ins_encode %{
     __ sshr(as_FloatRegister($dst$$reg), __ T2S,
             as_FloatRegister($src$$reg),
-            -(int)$shift$$constant & 31);
+            (int)$shift$$constant);
   %}
   ins_pipe(vshift64_imm);
 %}
@@ -18093,7 +18091,7 @@ instruct vsra4I_imm(vecX dst, vecX src, immI shift) %{
   ins_encode %{
     __ sshr(as_FloatRegister($dst$$reg), __ T4S,
             as_FloatRegister($src$$reg),
-            -(int)$shift$$constant & 31);
+            (int)$shift$$constant);
   %}
   ins_pipe(vshift128_imm);
 %}
@@ -18106,7 +18104,7 @@ instruct vsrl2I_imm(vecD dst, vecD src, immI shift) %{
   ins_encode %{
     __ ushr(as_FloatRegister($dst$$reg), __ T2S,
             as_FloatRegister($src$$reg),
-            -(int)$shift$$constant & 31);
+            (int)$shift$$constant);
   %}
   ins_pipe(vshift64_imm);
 %}
@@ -18119,7 +18117,7 @@ instruct vsrl4I_imm(vecX dst, vecX src, immI shift) %{
   ins_encode %{
     __ ushr(as_FloatRegister($dst$$reg), __ T4S,
             as_FloatRegister($src$$reg),
-            -(int)$shift$$constant & 31);
+            (int)$shift$$constant);
   %}
   ins_pipe(vshift128_imm);
 %}
@@ -18159,7 +18157,7 @@ instruct vsll2L_imm(vecX dst, vecX src, immI shift) %{
   ins_encode %{
     __ shl(as_FloatRegister($dst$$reg), __ T2D,
            as_FloatRegister($src$$reg),
-           (int)$shift$$constant & 63);
+           (int)$shift$$constant);
   %}
   ins_pipe(vshift128_imm);
 %}
@@ -18172,7 +18170,7 @@ instruct vsra2L_imm(vecX dst, vecX src, immI shift) %{
   ins_encode %{
     __ sshr(as_FloatRegister($dst$$reg), __ T2D,
             as_FloatRegister($src$$reg),
-            -(int)$shift$$constant & 63);
+            (int)$shift$$constant);
   %}
   ins_pipe(vshift128_imm);
 %}
@@ -18185,7 +18183,7 @@ instruct vsrl2L_imm(vecX dst, vecX src, immI shift) %{
   ins_encode %{
     __ ushr(as_FloatRegister($dst$$reg), __ T2D,
             as_FloatRegister($src$$reg),
-            -(int)$shift$$constant & 63);
+            (int)$shift$$constant);
   %}
   ins_pipe(vshift128_imm);
 %}

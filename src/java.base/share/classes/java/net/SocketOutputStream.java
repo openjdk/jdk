@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,7 @@ import java.nio.channels.FileChannel;
  * @author      Jonathan Payne
  * @author      Arthur van Hoff
  */
-class SocketOutputStream extends FileOutputStream
-{
+class SocketOutputStream extends FileOutputStream {
     static {
         init();
     }
@@ -111,7 +110,7 @@ class SocketOutputStream extends FileOutputStream
             socketWrite0(fd, b, off, len);
         } catch (SocketException se) {
             if (se instanceof sun.net.ConnectionResetException) {
-                impl.setConnectionResetPending();
+                impl.setConnectionReset();
                 se = new SocketException("Connection reset");
             }
             if (impl.isClosedOrPending()) {

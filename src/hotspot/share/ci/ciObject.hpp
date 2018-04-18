@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 
 #include "ci/ciBaseObject.hpp"
 #include "ci/ciClassList.hpp"
-#include "memory/allocation.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/jniHandles.hpp"
 
@@ -67,10 +66,7 @@ protected:
 
   jobject      handle()  const { return _handle; }
   // Get the VM oop that this object holds.
-  oop get_oop() const {
-    assert(_handle != NULL, "null oop");
-    return JNIHandles::resolve_non_null(_handle);
-  }
+  oop get_oop() const;
 
   void init_flags_from(oop x);
 

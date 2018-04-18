@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2016 Marti Maria Saguer
+//  Copyright (c) 1998-2017 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -320,7 +320,7 @@ cmsHPROFILE CMSEXPORT cmsCreateLinearizationDeviceLinkTHR(cmsContext ContextID,
 {
     cmsHPROFILE hICC;
     cmsPipeline* Pipeline;
-    int nChannels;
+    cmsUInt32Number nChannels;
 
     hICC = cmsCreateProfilePlaceholder(ContextID);
     if (!hICC)
@@ -426,7 +426,7 @@ cmsHPROFILE CMSEXPORT cmsCreateInkLimitingDeviceLinkTHR(cmsContext ContextID,
     cmsHPROFILE hICC;
     cmsPipeline* LUT;
     cmsStage* CLUT;
-    int nChannels;
+    cmsUInt32Number nChannels;
 
     if (ColorSpace != cmsSigCmykData) {
         cmsSignalError(ContextID, cmsERROR_COLORSPACE_CHECK, "InkLimiting: Only CMYK currently supported");
@@ -755,13 +755,13 @@ int bchswSampler(register const cmsUInt16Number In[], register cmsUInt16Number O
 // contrast, Saturation and white point displacement
 
 cmsHPROFILE CMSEXPORT cmsCreateBCHSWabstractProfileTHR(cmsContext ContextID,
-    int nLUTPoints,
-    cmsFloat64Number Bright,
-    cmsFloat64Number Contrast,
-    cmsFloat64Number Hue,
-    cmsFloat64Number Saturation,
-    int TempSrc,
-    int TempDest)
+                                                       cmsUInt32Number nLUTPoints,
+                                                       cmsFloat64Number Bright,
+                                                       cmsFloat64Number Contrast,
+                                                       cmsFloat64Number Hue,
+                                                       cmsFloat64Number Saturation,
+                                                       cmsUInt32Number TempSrc,
+                                                       cmsUInt32Number TempDest)
 {
     cmsHPROFILE hICC;
     cmsPipeline* Pipeline;
@@ -769,7 +769,7 @@ cmsHPROFILE CMSEXPORT cmsCreateBCHSWabstractProfileTHR(cmsContext ContextID,
     cmsCIExyY WhitePnt;
     cmsStage* CLUT;
     cmsUInt32Number Dimensions[MAX_INPUT_DIMENSIONS];
-    int i;
+    cmsUInt32Number i;
 
     bchsw.Brightness = Bright;
     bchsw.Contrast   = Contrast;
@@ -807,7 +807,7 @@ cmsHPROFILE CMSEXPORT cmsCreateBCHSWabstractProfileTHR(cmsContext ContextID,
 
     for (i=0; i < MAX_INPUT_DIMENSIONS; i++) Dimensions[i] = nLUTPoints;
     CLUT = cmsStageAllocCLut16bitGranular(ContextID, Dimensions, 3, 3, NULL);
-    if (CLUT == NULL) return NULL;
+    if (CLUT == NULL) goto Error;
 
 
     if (!cmsStageSampleCLut16bit(CLUT, bchswSampler, (void*) &bchsw, 0)) {
@@ -840,13 +840,13 @@ Error:
 }
 
 
-CMSAPI cmsHPROFILE   CMSEXPORT cmsCreateBCHSWabstractProfile(int nLUTPoints,
+CMSAPI cmsHPROFILE   CMSEXPORT cmsCreateBCHSWabstractProfile(cmsUInt32Number nLUTPoints,
                                                              cmsFloat64Number Bright,
                                                              cmsFloat64Number Contrast,
                                                              cmsFloat64Number Hue,
                                                              cmsFloat64Number Saturation,
-                                                             int TempSrc,
-                                                             int TempDest)
+                                                             cmsUInt32Number TempSrc,
+                                                             cmsUInt32Number TempDest)
 {
     return cmsCreateBCHSWabstractProfileTHR(NULL, nLUTPoints, Bright, Contrast, Hue, Saturation, TempSrc, TempDest);
 }
@@ -859,8 +859,10 @@ cmsHPROFILE CMSEXPORT cmsCreateNULLProfileTHR(cmsContext ContextID)
     cmsHPROFILE hProfile;
     cmsPipeline* LUT = NULL;
     cmsStage* PostLin;
-    cmsToneCurve* EmptyTab;
+    cmsStage* OutLin;
+    cmsToneCurve* EmptyTab[3];
     cmsUInt16Number Zero[2] = { 0, 0 };
+    const cmsFloat64Number PickLstarMatrix[] = { 1, 0, 0 };
 
     hProfile = cmsCreateProfilePlaceholder(ContextID);
     if (!hProfile)                          // can't allocate
@@ -871,20 +873,26 @@ cmsHPROFILE CMSEXPORT cmsCreateNULLProfileTHR(cmsContext ContextID)
     if (!SetTextTags(hProfile, L"NULL profile built-in")) goto Error;
 
 
-
     cmsSetDeviceClass(hProfile, cmsSigOutputClass);
     cmsSetColorSpace(hProfile,  cmsSigGrayData);
     cmsSetPCS(hProfile,         cmsSigLabData);
 
-    // An empty LUTs is all we need
-    LUT = cmsPipelineAlloc(ContextID, 1, 1);
+    // Create a valid ICC 4 structure
+    LUT = cmsPipelineAlloc(ContextID, 3, 1);
     if (LUT == NULL) goto Error;
 
-    EmptyTab = cmsBuildTabulatedToneCurve16(ContextID, 2, Zero);
-    PostLin = cmsStageAllocToneCurves(ContextID, 1, &EmptyTab);
-    cmsFreeToneCurve(EmptyTab);
+    EmptyTab[0] = EmptyTab[1] = EmptyTab[2] = cmsBuildTabulatedToneCurve16(ContextID, 2, Zero);
+    PostLin = cmsStageAllocToneCurves(ContextID, 3, EmptyTab);
+    OutLin  = cmsStageAllocToneCurves(ContextID, 1, EmptyTab);
+    cmsFreeToneCurve(EmptyTab[0]);
 
     if (!cmsPipelineInsertStage(LUT, cmsAT_END, PostLin))
+        goto Error;
+
+    if (!cmsPipelineInsertStage(LUT, cmsAT_END, cmsStageAllocMatrix(ContextID, 1, 3, PickLstarMatrix, NULL)))
+        goto Error;
+
+    if (!cmsPipelineInsertStage(LUT, cmsAT_END, OutLin))
         goto Error;
 
     if (!cmsWriteTag(hProfile, cmsSigBToA0Tag, (void*) LUT)) goto Error;
@@ -967,7 +975,7 @@ cmsHPROFILE CreateNamedColorDevicelink(cmsHTRANSFORM xform)
 {
     _cmsTRANSFORM* v = (_cmsTRANSFORM*) xform;
     cmsHPROFILE hICC = NULL;
-    int i, nColors;
+    cmsUInt32Number i, nColors;
     cmsNAMEDCOLORLIST *nc2 = NULL, *Original = NULL;
 
     // Create an empty placeholder
@@ -1084,7 +1092,7 @@ cmsHPROFILE CMSEXPORT cmsTransform2DeviceLink(cmsHTRANSFORM hTransform, cmsFloat
 {
     cmsHPROFILE hProfile = NULL;
     cmsUInt32Number FrmIn, FrmOut, ChansIn, ChansOut;
-    cmsUInt32Number ColorSpaceBitsIn, ColorSpaceBitsOut;
+    int ColorSpaceBitsIn, ColorSpaceBitsOut;
     _cmsTRANSFORM* xform = (_cmsTRANSFORM*) hTransform;
     cmsPipeline* LUT = NULL;
     cmsStage* mpe;

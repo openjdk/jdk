@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,7 +27,6 @@
 #define CPU_AARCH64_VM_NATIVEINST_AARCH64_HPP
 
 #include "asm/assembler.hpp"
-#include "memory/allocation.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
 
@@ -49,7 +48,7 @@
 // The base class for different kinds of native instruction abstractions.
 // Provides the primitive operations to manipulate code relative to this.
 
-class NativeInstruction VALUE_OBJ_CLASS_SPEC {
+class NativeInstruction {
   friend class Relocation;
   friend bool is_NativeCallTrampolineStub_at(address);
  public:
@@ -61,7 +60,7 @@ class NativeInstruction VALUE_OBJ_CLASS_SPEC {
     return uint_at(0);
   }
 
-  bool is_blr()                      const { return (encoding() & 0xfffffc1f) == 0xd63f0000; }
+  bool is_blr()                      const { return (encoding() & 0xff9ffc1f) == 0xd61f0000; } // blr(register) or br(register)
   bool is_adr_aligned()              const { return (encoding() & 0xff000000) == 0x10000000; } // adr Xn, <label>, where label is aligned to 4 bytes (address of instruction).
 
   inline bool is_nop();
@@ -131,6 +130,13 @@ class NativeInstruction VALUE_OBJ_CLASS_SPEC {
     return Instruction_aarch64::extract(insn, 31, 12) == 0b11010101000000110011 &&
       Instruction_aarch64::extract(insn, 7, 0) == 0b10111111;
   }
+
+  bool is_Imm_LdSt() {
+    unsigned int insn = uint_at(0);
+    return Instruction_aarch64::extract(insn, 29, 27) == 0b111 &&
+      Instruction_aarch64::extract(insn, 23, 23) == 0b0 &&
+      Instruction_aarch64::extract(insn, 26, 25) == 0b00;
+  }
 };
 
 inline NativeInstruction* nativeInstruction_at(address address) {
@@ -143,8 +149,9 @@ inline NativeInstruction* nativeInstruction_at(uint32_t *address) {
 }
 
 inline NativeCall* nativeCall_at(address address);
-// The NativeCall is an abstraction for accessing/manipulating native call imm32/rel32off
-// instructions (used to manipulate inline caches, primitive & dll calls, etc.).
+// The NativeCall is an abstraction for accessing/manipulating native
+// call instructions (used to manipulate inline caches, primitive &
+// DSO calls, etc.).
 
 class NativeCall: public NativeInstruction {
  public:
@@ -155,7 +162,6 @@ class NativeCall: public NativeInstruction {
     return_address_offset       =    4
   };
 
-  enum { cache_line_size = BytesPerWord };  // conservative estimate!
   address instruction_address() const       { return addr_at(instruction_offset); }
   address next_instruction_address() const  { return addr_at(return_address_offset); }
   int   displacement() const                { return (int_at(displacement_offset) << 6) >> 4; }
@@ -206,6 +212,7 @@ class NativeCall: public NativeInstruction {
   void set_destination_mt_safe(address dest, bool assert_lock = true);
 
   address get_trampoline();
+  address trampoline_jump(CodeBuffer &cbuf, address dest);
 };
 
 inline NativeCall* nativeCall_at(address address) {
@@ -531,4 +538,57 @@ inline NativeMembar *NativeMembar_at(address addr) {
   return (NativeMembar*)addr;
 }
 
+class NativeLdSt : public NativeInstruction {
+private:
+  int32_t size() { return Instruction_aarch64::extract(uint_at(0), 31, 30); }
+  // Check whether instruction is with unscaled offset.
+  bool is_ldst_ur() {
+    return (Instruction_aarch64::extract(uint_at(0), 29, 21) == 0b111000010 ||
+            Instruction_aarch64::extract(uint_at(0), 29, 21) == 0b111000000) &&
+      Instruction_aarch64::extract(uint_at(0), 11, 10) == 0b00;
+  }
+  bool is_ldst_unsigned_offset() {
+    return Instruction_aarch64::extract(uint_at(0), 29, 22) == 0b11100101 ||
+      Instruction_aarch64::extract(uint_at(0), 29, 22) == 0b11100100;
+  }
+public:
+  Register target() {
+    uint32_t r = Instruction_aarch64::extract(uint_at(0), 4, 0);
+    return r == 0x1f ? zr : as_Register(r);
+  }
+  Register base() {
+    uint32_t b = Instruction_aarch64::extract(uint_at(0), 9, 5);
+    return b == 0x1f ? sp : as_Register(b);
+  }
+  int64_t offset() {
+    if (is_ldst_ur()) {
+      return Instruction_aarch64::sextract(uint_at(0), 20, 12);
+    } else if (is_ldst_unsigned_offset()) {
+      return Instruction_aarch64::extract(uint_at(0), 21, 10) << size();
+    } else {
+      // others like: pre-index or post-index.
+      ShouldNotReachHere();
+      return 0;
+    }
+  }
+  size_t size_in_bytes() { return 1 << size(); }
+  bool is_not_pre_post_index() { return (is_ldst_ur() || is_ldst_unsigned_offset()); }
+  bool is_load() {
+    assert(Instruction_aarch64::extract(uint_at(0), 23, 22) == 0b01 ||
+           Instruction_aarch64::extract(uint_at(0), 23, 22) == 0b00, "must be ldr or str");
+
+    return Instruction_aarch64::extract(uint_at(0), 23, 22) == 0b01;
+  }
+  bool is_store() {
+    assert(Instruction_aarch64::extract(uint_at(0), 23, 22) == 0b01 ||
+           Instruction_aarch64::extract(uint_at(0), 23, 22) == 0b00, "must be ldr or str");
+
+    return Instruction_aarch64::extract(uint_at(0), 23, 22) == 0b00;
+  }
+};
+
+inline NativeLdSt *NativeLdSt_at(address addr) {
+  assert(nativeInstruction_at(addr)->is_Imm_LdSt(), "no immediate load/store found");
+  return (NativeLdSt*)addr;
+}
 #endif // CPU_AARCH64_VM_NATIVEINST_AARCH64_HPP

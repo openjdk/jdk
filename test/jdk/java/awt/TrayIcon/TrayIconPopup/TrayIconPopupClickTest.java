@@ -34,6 +34,7 @@ import java.awt.image.BufferedImage;
 
 /*
  * @test
+ * @key headful
  * @summary Check if a action performed event is received when TrayIcon display
  *          message is clicked on.
  * @author Shashidhara Veerabhadraiah (shashidhara.veerabhadraiah@oracle.com)

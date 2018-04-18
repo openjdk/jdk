@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,12 @@
 
 /*
  * @test
- * @bug 6728834 6749060
+ * @bug 6728834 6749060 8198613
  * @summary Tests that LCD AA text rendering works properly with destinations
  * being VolatileImage of all transparency types
  * @author Dmitri.Trembovetski: area=Graphics
  * @run main/manual/othervm -Dsun.java2d.d3d=false NonOpaqueDestLCDAATest
  * @run main/manual/othervm NonOpaqueDestLCDAATest
- * @run main/manual/othervm -Dsun.java2d.opengl=True NonOpaqueDestLCDAATest
  */
 
 import java.awt.AlphaComposite;

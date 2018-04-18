@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package jdk.test.lib;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.URL;
@@ -34,6 +35,7 @@ import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -260,29 +262,38 @@ public final class Utils {
     }
 
     /**
+     * Returns the socket address of an endpoint that refuses connections. The
+     * endpoint is an InetSocketAddress where the address is the loopback address
+     * and the port is a system port (1-1023 range).
+     * This method is a better choice than getFreePort for tests that need
+     * an endpoint that refuses connections.
+     */
+    public static InetSocketAddress refusingEndpoint() {
+        InetAddress lb = InetAddress.getLoopbackAddress();
+        int port = 1;
+        while (port < 1024) {
+            InetSocketAddress sa = new InetSocketAddress(lb, port);
+            try {
+                SocketChannel.open(sa).close();
+            } catch (IOException ioe) {
+                return sa;
+            }
+            port++;
+        }
+        throw new RuntimeException("Unable to find system port that is refusing connections");
+    }
+
+    /**
      * Returns the free port on the local host.
-     * The function will spin until a valid port number is found.
      *
      * @return The port number
-     * @throws InterruptedException if any thread has interrupted the current thread
      * @throws IOException if an I/O error occurs when opening the socket
      */
-    public static int getFreePort() throws InterruptedException, IOException {
-        int port = -1;
-
-        while (port <= 0) {
-            Thread.sleep(100);
-
-            ServerSocket serverSocket = null;
-            try {
-                serverSocket = new ServerSocket(0);
-                port = serverSocket.getLocalPort();
-            } finally {
-                serverSocket.close();
-            }
+    public static int getFreePort() throws IOException {
+        try (ServerSocket serverSocket =
+                new ServerSocket(0, 5, InetAddress.getLoopbackAddress());) {
+            return serverSocket.getLocalPort();
         }
-
-        return port;
     }
 
     /**

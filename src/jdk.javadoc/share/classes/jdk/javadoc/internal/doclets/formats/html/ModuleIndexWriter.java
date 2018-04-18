@@ -227,7 +227,8 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
                 ? HtmlTree.HEADER()
                 : body;
         addTop(tree);
-        addNavLinks(true, tree);
+        navBar.setUserHeader(getUserHeaderFooter(true));
+        tree.addContent(navBar.getContent(true));
         if (configuration.allowTag(HtmlTag.HEADER)) {
             body.addContent(tree);
         }
@@ -244,7 +245,8 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
         Content htmltree = (configuration.allowTag(HtmlTag.FOOTER))
                 ? HtmlTree.FOOTER()
                 : body;
-        addNavLinks(false, htmltree);
+        navBar.setUserFooter(getUserHeaderFooter(false));
+        htmltree.addContent(navBar.getContent(false));
         addBottom(htmltree);
         if (configuration.allowTag(HtmlTag.FOOTER)) {
             body.addContent(htmltree);

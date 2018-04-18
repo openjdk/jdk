@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ void ThrowException(JNIEnv *env, const char *exceptionName, DWORD dwError)
  * Overloaded 'operator new[]' variant, which will raise Java's
  * OutOfMemoryError in the case of a failure.
  */
-static void* operator new[](std::size_t size, JNIEnv *env)
+void* operator new[](std::size_t size, JNIEnv *env)
 {
     void* buf = ::operator new[](size, std::nothrow);
     if (buf == NULL) {
@@ -1356,212 +1356,6 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_KeyStore_destroyKeyContainer
     }
 }
 
-
-
-
-/*
- * Class:     sun_security_mscapi_RSACipher
- * Method:    findCertificateUsingAlias
- * Signature: (Ljava/lang/String;Ljava/lang/String;)J
- */
-JNIEXPORT jlong JNICALL Java_sun_security_mscapi_RSACipher_findCertificateUsingAlias
-  (JNIEnv *env, jobject obj, jstring jCertStoreName, jstring jCertAliasName)
-{
-    const char* pszCertStoreName = NULL;
-    const char* pszCertAliasName = NULL;
-    HCERTSTORE hCertStore = NULL;
-    PCCERT_CONTEXT pCertContext = NULL;
-    char* pszNameString = NULL; // certificate's friendly name
-    DWORD cchNameString = 0;
-
-    __try
-    {
-        if ((pszCertStoreName = env->GetStringUTFChars(jCertStoreName, NULL))
-            == NULL) {
-            __leave;
-        }
-        if ((pszCertAliasName = env->GetStringUTFChars(jCertAliasName, NULL))
-            == NULL) {
-            __leave;
-        }
-
-        // Open a system certificate store.
-        if ((hCertStore = ::CertOpenSystemStore(NULL, pszCertStoreName)) == NULL) {
-            ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
-            __leave;
-        }
-
-        // Use CertEnumCertificatesInStore to get the certificates
-        // from the open store. pCertContext must be reset to
-        // NULL to retrieve the first certificate in the store.
-        while (pCertContext = ::CertEnumCertificatesInStore(hCertStore, pCertContext))
-        {
-            if ((cchNameString = ::CertGetNameString(pCertContext,
-                CERT_NAME_FRIENDLY_DISPLAY_TYPE, 0, NULL, NULL, 0)) == 1) {
-
-                continue; // not found
-            }
-
-            pszNameString = new (env) char[cchNameString];
-            if (pszNameString == NULL) {
-                __leave;
-            }
-
-            if (::CertGetNameString(pCertContext,
-                CERT_NAME_FRIENDLY_DISPLAY_TYPE, 0, NULL, pszNameString,
-                cchNameString) == 1) {
-
-                continue; // not found
-            }
-
-            // Compare the certificate's friendly name with supplied alias name
-            if (strcmp(pszCertAliasName, pszNameString) == 0) {
-                delete [] pszNameString;
-                break;
-
-            } else {
-                delete [] pszNameString;
-            }
-        }
-    }
-    __finally
-    {
-        if (hCertStore)
-            ::CertCloseStore(hCertStore, 0);
-
-        if (pszCertStoreName)
-            env->ReleaseStringUTFChars(jCertStoreName, pszCertStoreName);
-
-        if (pszCertAliasName)
-            env->ReleaseStringUTFChars(jCertAliasName, pszCertAliasName);
-    }
-
-    return (jlong) pCertContext;
-}
-
-/*
- * Class:     sun_security_mscapi_RSACipher
- * Method:    getKeyFromCert
- * Signature: (JZ)J
- */
-JNIEXPORT jlong JNICALL Java_sun_security_mscapi_RSACipher_getKeyFromCert
-  (JNIEnv *env, jobject obj, jlong pCertContext, jboolean usePrivateKey)
-{
-    HCRYPTPROV hCryptProv = NULL;
-    HCRYPTKEY hKey = NULL;
-    DWORD dwKeySpec;
-    BOOL bCallerFreeProv = FALSE;
-    BOOL bRes;
-
-    __try
-    {
-        if (usePrivateKey == JNI_TRUE) {
-            // Locate the key container for the certificate's private key
-
-            // First, probe it silently
-            bRes = ::CryptAcquireCertificatePrivateKey(
-                    (PCCERT_CONTEXT) pCertContext, CRYPT_ACQUIRE_SILENT_FLAG,
-                    NULL, &hCryptProv, &dwKeySpec, &bCallerFreeProv);
-
-            if (bRes == FALSE && GetLastError() != NTE_SILENT_CONTEXT)
-            {
-                ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
-                __leave;
-            }
-
-            if (bCallerFreeProv == TRUE) {
-                ::CryptReleaseContext(hCryptProv, NULL);
-                bCallerFreeProv = FALSE;
-            }
-
-            // Now, do it normally (not silently)
-            if (::CryptAcquireCertificatePrivateKey(
-                    (PCCERT_CONTEXT) pCertContext, 0, NULL, &hCryptProv,
-                    &dwKeySpec, &bCallerFreeProv) == FALSE)
-            {
-                ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
-                __leave;
-            }
-
-            // Get a handle to the private key
-            if (::CryptGetUserKey(hCryptProv, dwKeySpec, &hKey) == FALSE) {
-                ThrowException(env, KEY_EXCEPTION, GetLastError());
-                __leave;
-            }
-        }
-        else // use public key
-        {
-            bCallerFreeProv = TRUE;
-
-            //  Acquire a CSP context.
-            if (::CryptAcquireContext(&hCryptProv, "J2SE", NULL,
-                    PROV_RSA_FULL, 0) == FALSE)
-            {
-                // If CSP context hasn't been created, create one.
-                //
-                if (::CryptAcquireContext(&hCryptProv, "J2SE", NULL,
-                        PROV_RSA_FULL, CRYPT_NEWKEYSET) == FALSE)
-                {
-                    ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
-                    __leave;
-                }
-            }
-
-            // Import the certificate's public key into the key container
-            if (::CryptImportPublicKeyInfo(hCryptProv, X509_ASN_ENCODING,
-                    &(((PCCERT_CONTEXT) pCertContext)->pCertInfo->SubjectPublicKeyInfo),
-                    &hKey) == FALSE)
-            {
-                ThrowException(env, KEY_EXCEPTION, GetLastError());
-                __leave;
-            }
-        }
-    }
-    __finally
-    {
-        //--------------------------------------------------------------------
-        // Clean up.
-
-        if (bCallerFreeProv == TRUE && hCryptProv != NULL)
-            ::CryptReleaseContext(hCryptProv, 0);
-    }
-
-    return hKey;        // TODO - when finished with this key, call
-                        //              CryptDestroyKey(hKey)
-}
-
-/*
- * Class:     sun_security_mscapi_KeyStore
- * Method:    getKeyLength
- * Signature: (J)I
- */
-JNIEXPORT jint JNICALL Java_sun_security_mscapi_KeyStore_getKeyLength
-  (JNIEnv *env, jobject obj, jlong hKey)
-{
-    DWORD dwDataLen = sizeof(DWORD);
-    BYTE pbData[sizeof(DWORD)];
-    DWORD length = 0;
-
-    __try
-    {
-        // Get key length (in bits)
-        //TODO - may need to use KP_BLOCKLEN instead?
-        if (!(::CryptGetKeyParam((HCRYPTKEY) hKey, KP_KEYLEN, (BYTE *)pbData, &dwDataLen,
-            0))) {
-
-            ThrowException(env, KEY_EXCEPTION, GetLastError());
-            __leave;
-        }
-        length = (DWORD) pbData;
-    }
-    __finally
-    {
-        // no cleanup required
-    }
-
-    return (jint) length;
-}
-
 /*
  * Class:     sun_security_mscapi_RSACipher
  * Method:    encryptDecrypt
@@ -1804,38 +1598,47 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_RSAPublicKey_getModulus
  * Convert an array in big-endian byte order into little-endian byte order.
  */
 int convertToLittleEndian(JNIEnv *env, jbyteArray source, jbyte* destination,
-    int destinationLength) {
+        int destinationLength) {
 
-    int sourceLength = env->GetArrayLength(source);
+    int result = -1;
+    jbyte* sourceBytes = NULL;
 
-    jbyte* sourceBytes = env->GetByteArrayElements(source, 0);
-    if (sourceBytes == NULL) {
-        return -1;
-    }
+    __try {
+        int sourceLength = env->GetArrayLength(source);
 
-    int copyLen = sourceLength;
-    if (sourceLength > destinationLength) {
-        // source might include an extra sign byte
-        if (sourceLength == destinationLength + 1 && sourceBytes[0] == 0) {
-            copyLen--;
-        } else {
-            return -1;
+        sourceBytes = env->GetByteArrayElements(source, 0);
+        if (sourceBytes == NULL) {
+            __leave;
+        }
+
+        int copyLen = sourceLength;
+        if (sourceLength > destinationLength) {
+            // source might include an extra sign byte
+            if (sourceLength == destinationLength + 1 && sourceBytes[0] == 0) {
+                copyLen--;
+            } else {
+                __leave;
+            }
+        }
+
+        // Copy bytes from the end of the source array to the beginning of the
+        // destination array (until the destination array is full).
+        // This ensures that the sign byte from the source array will be excluded.
+        for (int i = 0; i < copyLen; i++) {
+            destination[i] = sourceBytes[sourceLength - 1 - i];
+        }
+        if (copyLen < destinationLength) {
+            memset(destination + copyLen, 0, destinationLength - copyLen);
+        }
+        result = destinationLength;
+    } __finally {
+        // Clean up.
+        if (sourceBytes) {
+            env->ReleaseByteArrayElements(source, sourceBytes, JNI_ABORT);
         }
     }
 
-    // Copy bytes from the end of the source array to the beginning of the
-    // destination array (until the destination array is full).
-    // This ensures that the sign byte from the source array will be excluded.
-    for (int i = 0; i < copyLen; i++) {
-        destination[i] = sourceBytes[sourceLength - 1 - i];
-    }
-    if (copyLen < destinationLength) {
-        memset(destination + copyLen, 0, destinationLength - copyLen);
-    }
-
-    env->ReleaseByteArrayElements(source, sourceBytes, JNI_ABORT);
-
-    return destinationLength;
+    return result;
 }
 
 /*

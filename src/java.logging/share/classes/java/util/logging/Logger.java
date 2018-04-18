@@ -640,7 +640,7 @@ public class Logger {
                     return System.getProperty(key);
                 }
             });
-            return Boolean.valueOf(s);
+            return Boolean.parseBoolean(s);
         }
     }
 

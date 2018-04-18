@@ -183,7 +183,6 @@ void G1AllocRegion::update_alloc_region(HeapRegion* alloc_region) {
   assert_alloc_region(alloc_region != NULL && !alloc_region->is_empty(), "pre-condition");
 
   _alloc_region = alloc_region;
-  _alloc_region->set_allocation_context(allocation_context());
   _count += 1;
   trace("updated");
 }
@@ -246,8 +245,7 @@ void G1AllocRegion::trace(const char* str, size_t min_word_size, size_t desired_
 G1AllocRegion::G1AllocRegion(const char* name,
                              bool bot_updates)
   : _name(name), _bot_updates(bot_updates),
-    _alloc_region(NULL), _count(0), _used_bytes_before(0),
-    _allocation_context(AllocationContext::system()) { }
+    _alloc_region(NULL), _count(0), _used_bytes_before(0) { }
 
 
 HeapRegion* MutatorAllocRegion::allocate_new_region(size_t word_size,

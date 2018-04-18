@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,10 @@
 #include "runtime/init.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/objectMonitor.hpp"
-#include "runtime/objectMonitor.inline.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
 #include "services/management.hpp"
-#include "services/serviceUtil.hpp"
 
 class OopClosure;
 class ThreadDumpResult;
@@ -548,7 +546,7 @@ class JavaThreadBlockedOnMonitorEnterState : public JavaThreadStatusChanger {
   static bool wait_reenter_begin(JavaThread *java_thread, ObjectMonitor *obj_m) {
     assert((java_thread != NULL), "Java thread should not be null here");
     bool active = false;
-    if (is_alive(java_thread) && ServiceUtil::visible_oop((oop)obj_m->object())) {
+    if (is_alive(java_thread)) {
       active = contended_enter_begin(java_thread);
     }
     return active;
@@ -569,7 +567,7 @@ class JavaThreadBlockedOnMonitorEnterState : public JavaThreadStatusChanger {
     // like for vm internal objects and for external objects which are not contended
     // thread status is not changed and contended enter stat is not collected.
     _active = false;
-    if (is_alive() && ServiceUtil::visible_oop((oop)obj_m->object()) && obj_m->contentions() > 0) {
+    if (is_alive() && obj_m->contentions() > 0) {
       _stat = java_thread->get_thread_stat();
       _active = contended_enter_begin(java_thread);
     }

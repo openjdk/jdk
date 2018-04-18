@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,8 +69,9 @@ public class PointerLocation {
   boolean inBlobOops;
   boolean inBlobUnknownLocation;
 
-  boolean inStrongGlobalJNIHandleBlock;
-  boolean inWeakGlobalJNIHandleBlock;
+  boolean inStrongGlobalJNIHandles;
+  boolean inWeakGlobalJNIHandles;
+
   boolean inLocalJNIHandleBlock;
   JNIHandleBlock handleBlock;
   sun.jvm.hotspot.runtime.Thread handleThread;
@@ -149,32 +150,33 @@ public class PointerLocation {
     return inBlobUnknownLocation;
   }
 
-  public boolean isInStrongGlobalJNIHandleBlock() {
-    return inStrongGlobalJNIHandleBlock;
+  public boolean isInStrongGlobalJNIHandles() {
+    return inStrongGlobalJNIHandles;
   }
 
-  public boolean isInWeakGlobalJNIHandleBlock() {
-    return inWeakGlobalJNIHandleBlock;
+  public boolean isInWeakGlobalJNIHandles() {
+    return inWeakGlobalJNIHandles;
   }
 
   public boolean isInLocalJNIHandleBlock() {
     return inLocalJNIHandleBlock;
   }
 
-  /** Only valid if isInStrongGlobalJNIHandleBlock,
-      isInWeakGlobalJNIHandleBlock, or isInLocalJNIHandleBlock is true */
+  /** Only valid if isInLocalJNIHandleBlock is true */
   public JNIHandleBlock getJNIHandleBlock() {
+    assert isInLocalJNIHandleBlock();
     return handleBlock;
   }
 
   /** Only valid if isInLocalJNIHandleBlock is true */
   public sun.jvm.hotspot.runtime.Thread getJNIHandleThread() {
+    assert isInLocalJNIHandleBlock();
     return handleThread;
   }
 
   public boolean isUnknown() {
     return (!(isInHeap() || isInInterpreter() || isInCodeCache() ||
-              isInStrongGlobalJNIHandleBlock() || isInWeakGlobalJNIHandleBlock() || isInLocalJNIHandleBlock()));
+              isInStrongGlobalJNIHandles() || isInWeakGlobalJNIHandles() || isInLocalJNIHandleBlock()));
   }
 
   public String toString() {
@@ -236,25 +238,18 @@ public class PointerLocation {
       b.printOn(tty);
 
       // FIXME: add more detail
-    } else if (isInStrongGlobalJNIHandleBlock() ||
-               isInWeakGlobalJNIHandleBlock() ||
-               isInLocalJNIHandleBlock()) {
-      tty.print("In ");
-      if (isInStrongGlobalJNIHandleBlock()) {
-        tty.print("strong global");
-      } else if (isInWeakGlobalJNIHandleBlock()) {
-        tty.print("weak global");
-      } else {
-        tty.print("thread-local");
-      }
+    } else if (isInStrongGlobalJNIHandles()) {
+      tty.print("In JNI strong global");
+    } else if (isInWeakGlobalJNIHandles()) {
+      tty.print("In JNI weak global");
+    } else if (isInLocalJNIHandleBlock()) {
+      tty.print("In thread-local");
       tty.print(" JNI handle block (" + handleBlock.top() + " handle slots present)");
-      if (isInLocalJNIHandleBlock()) {
-        if (handleThread.isJavaThread()) {
-          tty.print(" for JavaThread ");
-          ((JavaThread) handleThread).printThreadIDOn(tty);
-        } else {
-          tty.print("for a non-Java Thread");
-        }
+      if (handleThread.isJavaThread()) {
+        tty.print(" for JavaThread ");
+        ((JavaThread) handleThread).printThreadIDOn(tty);
+      } else {
+        tty.print(" for a non-Java Thread");
       }
     } else {
       // This must be last

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,8 @@
 class ProtectionDomainCacheEntry : public HashtableEntry<oop, mtClass> {
   friend class VMStructs;
  public:
-  oop protection_domain() { return literal(); }
+  oop object();
+  oop object_no_keepalive();
 
   ProtectionDomainCacheEntry* next() {
     return (ProtectionDomainCacheEntry*)HashtableEntry<oop, mtClass>::next();
@@ -112,6 +113,8 @@ class ProtectionDomainEntry :public CHeapObj<mtClass> {
   }
 
   ProtectionDomainEntry* next() { return _next; }
-  oop protection_domain() { return _pd_cache->protection_domain(); }
+  void set_next(ProtectionDomainEntry* entry) { _next = entry; }
+  oop object();
+  oop object_no_keepalive();
 };
 #endif // SHARE_VM_CLASSFILE_PROTECTIONDOMAINCACHE_HPP

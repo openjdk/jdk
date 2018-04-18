@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,9 +97,10 @@ define_pd_global(bool, PreserveFramePointer, false);
 
 define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
 
-#ifdef _LP64
+#if defined(_LP64) || defined(_WINDOWS)
 define_pd_global(bool, ThreadLocalHandshakes, true);
 #else
+// get_thread() is slow on linux 32 bit, therefore off by default
 define_pd_global(bool, ThreadLocalHandshakes, false);
 #endif
 

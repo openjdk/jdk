@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -404,25 +404,25 @@ static int
 createStream(char *name, Stream *stream)
 {
     jint error;
-    char prefix[MAX_IPC_PREFIX];
+    char objectName[MAX_IPC_NAME];
 
-    sprintf(prefix, "%s.mutex", name);
-    error = createWithGeneratedName(prefix, stream->shared->mutexName,
+    sprintf(objectName, "%s.mutex", name);
+    error = createWithGeneratedName(objectName, stream->shared->mutexName,
                                     createMutex, &stream->mutex);
     if (error != SYS_OK) {
         return error;
     }
 
-    sprintf(prefix, "%s.hasData", name);
-    error = createWithGeneratedName(prefix, stream->shared->hasDataEventName,
+    sprintf(objectName, "%s.hasData", name);
+    error = createWithGeneratedName(objectName, stream->shared->hasDataEventName,
                                     createEvent, &stream->hasData);
     if (error != SYS_OK) {
         (void)closeStream(stream, JNI_FALSE);
         return error;
     }
 
-    sprintf(prefix, "%s.hasSpace", name);
-    error = createWithGeneratedName(prefix, stream->shared->hasSpaceEventName,
+    sprintf(objectName, "%s.hasSpace", name);
+    error = createWithGeneratedName(objectName, stream->shared->hasSpaceEventName,
                                     createEvent, &stream->hasSpace);
     if (error != SYS_OK) {
         (void)closeStream(stream, JNI_FALSE);
@@ -598,7 +598,7 @@ createConnection(SharedMemoryTransport *transport, jlong otherPID,
                  SharedMemoryConnection **connectionPtr)
 {
     jint error;
-    char streamPrefix[MAX_IPC_NAME];
+    char streamName[MAX_IPC_NAME];
 
     SharedMemoryConnection *connection = allocConnection();
     if (connection == NULL) {
@@ -619,17 +619,17 @@ createConnection(SharedMemoryTransport *transport, jlong otherPID,
     connection->incoming.shared = &connection->shared->toServer;
     connection->outgoing.shared = &connection->shared->toClient;
 
-    strcpy(streamPrefix, connection->name);
-    strcat(streamPrefix, ".ctos");
-    error = createStream(streamPrefix, &connection->incoming);
+    strcpy(streamName, connection->name);
+    strcat(streamName, ".ctos");
+    error = createStream(streamName, &connection->incoming);
     if (error != SYS_OK) {
         closeConnection(connection);
         return error;
     }
 
-    strcpy(streamPrefix, connection->name);
-    strcat(streamPrefix, ".stoc");
-    error = createStream(streamPrefix, &connection->outgoing);
+    strcpy(streamName, connection->name);
+    strcat(streamName, ".stoc");
+    error = createStream(streamName, &connection->outgoing);
     if (error != SYS_OK) {
         closeConnection(connection);
         return error;
@@ -746,9 +746,7 @@ createTransport(const char *address, SharedMemoryTransport **transportPtr)
 {
     SharedMemoryTransport *transport;
     jint error;
-    char prefix[MAX_IPC_PREFIX];
-
-
+    char objectName[MAX_IPC_NAME];
 
     transport = allocTransport();
     if (transport == NULL) {
@@ -784,24 +782,24 @@ createTransport(const char *address, SharedMemoryTransport **transportPtr)
     memset(transport->shared, 0, sizeof(SharedListener));
     transport->shared->acceptingPID = sysProcessGetID();
 
-    sprintf(prefix, "%s.mutex", transport->name);
-    error = createWithGeneratedName(prefix, transport->shared->mutexName,
+    sprintf(objectName, "%s.mutex", transport->name);
+    error = createWithGeneratedName(objectName, transport->shared->mutexName,
                                     createMutex, &transport->mutex);
     if (error != SYS_OK) {
         closeTransport(transport);
         return error;
     }
 
-    sprintf(prefix, "%s.accept", transport->name);
-    error = createWithGeneratedName(prefix, transport->shared->acceptEventName,
+    sprintf(objectName, "%s.accept", transport->name);
+    error = createWithGeneratedName(objectName, transport->shared->acceptEventName,
                                     createEvent, &transport->acceptEvent);
     if (error != SYS_OK) {
         closeTransport(transport);
         return error;
     }
 
-    sprintf(prefix, "%s.attach", transport->name);
-    error = createWithGeneratedName(prefix, transport->shared->attachEventName,
+    sprintf(objectName, "%s.attach", transport->name);
+    error = createWithGeneratedName(objectName, transport->shared->attachEventName,
                                     createEvent, &transport->attachEvent);
     if (error != SYS_OK) {
         closeTransport(transport);

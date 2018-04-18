@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,9 @@
 #include "c1/c1_Defs.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
+#include "ci/ciUtilities.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_s390.hpp"
 #include "oops/compiledICHolder.hpp"
@@ -40,7 +43,9 @@
 #include "vmreg_s390.inline.hpp"
 #include "registerSaver_s390.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc/g1/g1BarrierSet.hpp"
+#include "gc/g1/g1CardTable.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #endif
 
 // Implementation of StubAssembler
@@ -346,11 +351,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ set_info("fast new_instance init check", dont_gc_arguments);
         }
 
-        if ((id == fast_new_instance_id || id == fast_new_instance_init_check_id) &&
-            UseTLAB && FastTLABRefill) {
-          // Sapjvm: must call RT to generate allocation events.
-        }
-
         OopMap* map = save_live_registers_except_r2(sasm);
         int call_offset = __ call_RT(obj, noreg, CAST_FROM_FN_PTR(address, new_instance), klass);
         oop_maps = new OopMapSet();
@@ -410,10 +410,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ bind(ok);
         }
 #endif // ASSERT
-
-        if (UseTLAB && FastTLABRefill) {
-          // sapjvm: must call RT to generate allocation events.
-        }
 
         OopMap* map = save_live_registers_except_r2(sasm);
         int call_offset;
@@ -772,8 +768,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
     case g1_pre_barrier_slow_id:
       { // Z_R1_scratch: previous value of memory
 
-        BarrierSet* bs = Universe::heap()->barrier_set();
-        if (bs->kind() != BarrierSet::G1SATBCTLogging) {
+        BarrierSet* bs = BarrierSet::barrier_set();
+        if (bs->kind() != BarrierSet::G1BarrierSet) {
           __ should_not_reach_here(FILE_AND_LINE);
           break;
         }
@@ -785,15 +781,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Register tmp2 = Z_R7;
 
         Label refill, restart, marking_not_active;
-        int satb_q_active_byte_offset =
-          in_bytes(JavaThread::satb_mark_queue_offset() +
-                   SATBMarkQueue::byte_offset_of_active());
-        int satb_q_index_byte_offset =
-          in_bytes(JavaThread::satb_mark_queue_offset() +
-                   SATBMarkQueue::byte_offset_of_index());
-        int satb_q_buf_byte_offset =
-          in_bytes(JavaThread::satb_mark_queue_offset() +
-                   SATBMarkQueue::byte_offset_of_buf());
+        int satb_q_active_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset());
+        int satb_q_index_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset());
+        int satb_q_buf_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset());
 
         // Save tmp registers (see assertion in G1PreBarrierStub::emit_code()).
         __ z_stg(tmp,  0*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
@@ -841,8 +831,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
     case g1_post_barrier_slow_id:
       { // Z_R1_scratch: oop address, address of updated memory slot
-        BarrierSet* bs = Universe::heap()->barrier_set();
-        if (bs->kind() != BarrierSet::G1SATBCTLogging) {
+        BarrierSet* bs = BarrierSet::barrier_set();
+        if (bs->kind() != BarrierSet::G1BarrierSet) {
           __ should_not_reach_here(FILE_AND_LINE);
           break;
         }
@@ -854,7 +844,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Register r1        = Z_R6; // Must be saved/restored.
         Register r2        = Z_R7; // Must be saved/restored.
         Register cardtable = r1;   // Must be non-volatile, because it is used to save addr_card.
-        jbyte* byte_map_base = ((CardTableModRefBS*)bs)->byte_map_base;
+        jbyte* byte_map_base = ci_card_table_address();
 
         // Save registers used below (see assertion in G1PreBarrierStub::emit_code()).
         __ z_stg(r1, 0*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
@@ -863,17 +853,17 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         // Calculate address of card corresponding to the updated oop slot.
         AddressLiteral rs(byte_map_base);
-        __ z_srlg(addr_card, addr_oop, CardTableModRefBS::card_shift);
+        __ z_srlg(addr_card, addr_oop, CardTable::card_shift);
         addr_oop = noreg; // dead now
         __ load_const_optimized(cardtable, rs); // cardtable := <card table base>
         __ z_agr(addr_card, cardtable); // addr_card := addr_oop>>card_shift + cardtable
 
-        __ z_cli(0, addr_card, (int)G1SATBCardTableModRefBS::g1_young_card_val());
+        __ z_cli(0, addr_card, (int)G1CardTable::g1_young_card_val());
         __ z_bre(young_card);
 
         __ z_sync(); // Required to support concurrent cleaning.
 
-        __ z_cli(0, addr_card, (int)CardTableModRefBS::dirty_card_val());
+        __ z_cli(0, addr_card, (int)CardTable::dirty_card_val());
         __ z_brne(not_already_dirty);
 
         __ bind(young_card);
@@ -886,7 +876,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ bind(not_already_dirty);
 
         // First, dirty it: [addr_card] := 0
-        __ z_mvi(0, addr_card, CardTableModRefBS::dirty_card_val());
+        __ z_mvi(0, addr_card, CardTable::dirty_card_val());
 
         Register idx = cardtable; // Must be non-volatile, because it is used to save addr_card.
         Register buf = r2;
@@ -895,10 +885,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         // Save registers used below (see assertion in G1PreBarrierStub::emit_code()).
         __ z_stg(r2, 1*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
 
-        ByteSize dirty_card_q_index_byte_offset =
-          JavaThread::dirty_card_queue_offset() + DirtyCardQueue::byte_offset_of_index();
-        ByteSize dirty_card_q_buf_byte_offset =
-          JavaThread::dirty_card_queue_offset() + DirtyCardQueue::byte_offset_of_buf();
+        ByteSize dirty_card_q_index_byte_offset = G1ThreadLocalData::dirty_card_queue_index_offset();
+        ByteSize dirty_card_q_buf_byte_offset = G1ThreadLocalData::dirty_card_queue_buffer_offset();
 
         __ bind(restart);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_SHARED_BLOCKOFFSETTABLE_HPP
 
 #include "gc/shared/memset_with_concurrent_readers.hpp"
+#include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
 #include "runtime/globals.hpp"
@@ -77,7 +78,7 @@ public:
 //////////////////////////////////////////////////////////////////////////
 // The BlockOffsetTable "interface"
 //////////////////////////////////////////////////////////////////////////
-class BlockOffsetTable VALUE_OBJ_CLASS_SPEC {
+class BlockOffsetTable {
   friend class VMStructs;
 protected:
   // These members describe the region covered by the table.

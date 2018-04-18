@@ -976,8 +976,7 @@ public class ElementsTable {
      */
     private void addAllClasses(Collection<TypeElement> list, PackageElement pkg) {
         boolean filtered = true;
-        PackageSymbol sym = (PackageSymbol)pkg;
-        for (Symbol isym : sym.members().getSymbols(NON_RECURSIVE)) {
+        for (Element isym : pkg.getEnclosedElements()) {
             addAllClasses(list, (TypeElement)isym, filtered);
         }
     }

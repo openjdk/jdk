@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,10 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "logging/log.hpp"
+#include "oops/oop.inline.hpp"
 #include "utilities/ticks.inline.hpp"
 
-bool G1FullGCPrepareTask::G1CalculatePointersClosure::doHeapRegion(HeapRegion* hr) {
+bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion* hr) {
   if (hr->is_humongous()) {
     oop obj = oop(hr->humongous_start_region()->bottom());
     if (_bitmap->is_marked(obj)) {
@@ -103,16 +104,14 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::free_humongous_region(Heap
   hr->set_containing_set(NULL);
   _humongous_regions_removed++;
 
-  _g1h->free_humongous_region(hr, &dummy_free_list, false /* skip_remset */);
+  _g1h->free_humongous_region(hr, &dummy_free_list);
   prepare_for_compaction(hr);
   dummy_free_list.remove_all();
 }
 
 void G1FullGCPrepareTask::G1CalculatePointersClosure::reset_region_metadata(HeapRegion* hr) {
-  hr->reset_gc_time_stamp();
   hr->rem_set()->clear();
-
-  _g1h->g1_barrier_set()->clear(MemRegion(hr->bottom(), hr->end()));
+  hr->clear_cardtable();
 
   if (_g1h->g1_hot_card_cache()->use_cache()) {
     _g1h->g1_hot_card_cache()->reset_card_counts(hr);

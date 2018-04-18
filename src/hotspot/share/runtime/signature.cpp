@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,14 +54,6 @@ void SignatureIterator::expect(char c) {
   _index++;
 }
 
-
-void SignatureIterator::skip_optional_size() {
-  Symbol* sig = _signature;
-  char c = sig->byte_at(_index);
-  while ('0' <= c && c <= '9') c = sig->byte_at(++_index);
-}
-
-
 int SignatureIterator::parse_type() {
   // Note: This function could be simplified by using "return T_XXX_size;"
   //       instead of the assignment and the break statements. However, it
@@ -99,11 +91,9 @@ int SignatureIterator::parse_type() {
       break;
     case '[':
       { int begin = ++_index;
-        skip_optional_size();
         Symbol* sig = _signature;
         while (sig->byte_at(_index) == '[') {
           _index++;
-          skip_optional_size();
         }
         if (sig->byte_at(_index) == 'L') {
           while (sig->byte_at(_index++) != ';') ;
@@ -250,10 +240,8 @@ void SignatureIterator::iterate_returntype() {
       case '[':
         {
           int begin = ++_index;
-          skip_optional_size();
           while (sig->byte_at(_index) == '[') {
             _index++;
-            skip_optional_size();
           }
           if (sig->byte_at(_index) == 'L') {
             while (sig->byte_at(_index++) != ';') ;

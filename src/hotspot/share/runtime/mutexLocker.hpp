@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,13 @@ extern Mutex*   Module_lock;                     // a lock on module and package
 extern Mutex*   CompiledIC_lock;                 // a lock used to guard compiled IC patching and access
 extern Mutex*   InlineCacheBuffer_lock;          // a lock used to guard the InlineCacheBuffer
 extern Mutex*   VMStatistic_lock;                // a lock used to guard statistics count increment
-extern Mutex*   JNIGlobalHandle_lock;            // a lock on creating JNI global handles
+extern Mutex*   JNIGlobalAlloc_lock;             // JNI global storage allocate list lock
+extern Mutex*   JNIGlobalActive_lock;            // JNI global storage active list lock
+extern Mutex*   JNIWeakAlloc_lock;               // JNI weak storage allocate list lock
+extern Mutex*   JNIWeakActive_lock;              // JNI weak storage active list lock
 extern Mutex*   JNIHandleBlockFreeList_lock;     // a lock on the JNI handle block free list
+extern Mutex*   VMWeakAlloc_lock;                // VM Weak Handles storage allocate list lock
+extern Mutex*   VMWeakActive_lock;               // VM Weak Handles storage active list lock
 extern Mutex*   ResolvedMethodTable_lock;        // a lock on the ResolvedMethodTable updates
 extern Mutex*   JmethodIdCreation_lock;          // a lock on creating JNI method identifiers
 extern Mutex*   JfieldIdCreation_lock;           // a lock on creating JNI static field identifiers
@@ -114,7 +119,6 @@ extern Mutex*   ParkerFreeList_lock;
 extern Mutex*   OopMapCacheAlloc_lock;           // protects allocation of oop_map caches
 
 extern Mutex*   FreeList_lock;                   // protects the free region list during safepoints
-extern Monitor* SecondaryFreeList_lock;          // protects the secondary free region list
 extern Mutex*   OldSets_lock;                    // protects the old region sets
 extern Monitor* RootRegionScan_lock;             // used to notify that the CM threads have finished scanning the IM snapshot regions
 
@@ -133,6 +137,12 @@ extern Mutex*   JfrStream_lock;                  // protects JFR stream access
 #ifndef SUPPORTS_NATIVE_CX8
 extern Mutex*   UnsafeJlong_lock;                // provides Unsafe atomic updates to jlongs on platforms that don't support cx8
 #endif
+
+extern Mutex*   MetaspaceExpand_lock;            // protects Metaspace virtualspace and chunk expansions
+
+
+extern Monitor* CodeHeapStateAnalytics_lock;     // lock print functions against concurrent analyze functions.
+                                                 // Only used locally in PrintCodeCacheLayout processing.
 
 // A MutexLocker provides mutual exclusion with respect to a given mutex
 // for the scope which contains the locker.  The lock is an OS lock, not

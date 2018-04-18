@@ -51,7 +51,7 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_initIDs
     initInetAddressIDs(env);
 
     // implement read timeout with select.
-    isRcvTimeoutSupported = 0;
+    isRcvTimeoutSupported = JNI_FALSE;
 }
 
 /*

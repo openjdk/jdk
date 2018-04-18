@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,33 +25,14 @@
 #ifndef SHARE_VM_GC_G1_VM_OPERATIONS_G1_HPP
 #define SHARE_VM_GC_G1_VM_OPERATIONS_G1_HPP
 
-#include "gc/g1/g1AllocationContext.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/vmGCOperations.hpp"
 
 // VM_operations for the G1 collector.
 // VM_GC_Operation:
 //   - VM_CGC_Operation
+//   - VM_G1CollectForAllocation
 //   - VM_G1CollectFull
-//   - VM_G1OperationWithAllocRequest
-//     - VM_G1CollectForAllocation
-//     - VM_G1IncCollectionPause
-
-class VM_G1OperationWithAllocRequest : public VM_CollectForAllocation {
-protected:
-  bool      _pause_succeeded;
-  AllocationContext_t _allocation_context;
-
-public:
-  VM_G1OperationWithAllocRequest(uint           gc_count_before,
-                                 size_t         word_size,
-                                 GCCause::Cause gc_cause)
-    : VM_CollectForAllocation(word_size, gc_count_before, gc_cause),
-      _pause_succeeded(false) {}
-  bool pause_succeeded() { return _pause_succeeded; }
-  void set_allocation_context(AllocationContext_t context) { _allocation_context = context; }
-  AllocationContext_t  allocation_context() { return _allocation_context; }
-};
 
 class VM_G1CollectFull: public VM_GC_Operation {
 public:
@@ -62,41 +43,33 @@ public:
   virtual VMOp_Type type() const { return VMOp_G1CollectFull; }
   virtual void doit();
   virtual const char* name() const {
-    return "full garbage-first collection";
+    return "G1 Full collection";
   }
 };
 
-class VM_G1CollectForAllocation: public VM_G1OperationWithAllocRequest {
-public:
-  VM_G1CollectForAllocation(uint         gc_count_before,
-                            size_t       word_size);
-  virtual VMOp_Type type() const { return VMOp_G1CollectForAllocation; }
-  virtual void doit();
-  virtual const char* name() const {
-    return "garbage-first collection to satisfy allocation";
-  }
-};
-
-class VM_G1IncCollectionPause: public VM_G1OperationWithAllocRequest {
+class VM_G1CollectForAllocation: public VM_CollectForAllocation {
 private:
+  bool      _pause_succeeded;
+
   bool         _should_initiate_conc_mark;
   bool         _should_retry_gc;
   double       _target_pause_time_ms;
   uint         _old_marking_cycles_completed_before;
 public:
-  VM_G1IncCollectionPause(uint           gc_count_before,
-                          size_t         word_size,
-                          bool           should_initiate_conc_mark,
-                          double         target_pause_time_ms,
-                          GCCause::Cause gc_cause);
-  virtual VMOp_Type type() const { return VMOp_G1IncCollectionPause; }
+  VM_G1CollectForAllocation(size_t         word_size,
+                            uint           gc_count_before,
+                            GCCause::Cause gc_cause,
+                            bool           should_initiate_conc_mark,
+                            double         target_pause_time_ms);
+  virtual VMOp_Type type() const { return VMOp_G1CollectForAllocation; }
   virtual bool doit_prologue();
   virtual void doit();
   virtual void doit_epilogue();
   virtual const char* name() const {
-    return "garbage-first incremental collection pause";
+    return "G1 collect for allocation";
   }
   bool should_retry_gc() const { return _should_retry_gc; }
+  bool pause_succeeded() { return _pause_succeeded; }
 };
 
 // Concurrent GC stop-the-world operations such as remark and cleanup;

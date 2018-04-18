@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,10 +210,6 @@ inline oop* frame::interpreter_frame_temp_oop_addr() const {
   return (oop *)(fp() + interpreter_frame_oop_temp_offset);
 }
 
-inline int frame::pd_oop_map_offset_adjustment() const {
-  return 0;
-}
-
 inline int frame::interpreter_frame_monitor_size() {
   return BasicObjectLock::size();
 }
@@ -227,10 +223,6 @@ inline intptr_t* frame::interpreter_frame_expression_stack() const {
   return monitor_end-1;
 }
 
-
-inline jint frame::interpreter_frame_expression_stack_direction() { return -1; }
-
-
 // Entry frames
 
 inline JavaCallWrapper** frame::entry_frame_call_wrapper_addr() const {
@@ -238,22 +230,6 @@ inline JavaCallWrapper** frame::entry_frame_call_wrapper_addr() const {
 }
 
 // Compiled frames
-
-inline int frame::local_offset_for_compiler(int local_index, int nof_args, int max_nof_locals, int max_nof_monitors) {
-  return (nof_args - local_index + (local_index < nof_args ? 1: -1));
-}
-
-inline int frame::monitor_offset_for_compiler(int local_index, int nof_args, int max_nof_locals, int max_nof_monitors) {
-  return local_offset_for_compiler(local_index, nof_args, max_nof_locals, max_nof_monitors);
-}
-
-inline int frame::min_local_offset_for_compiler(int nof_args, int max_nof_locals, int max_nof_monitors) {
-  return (nof_args - (max_nof_locals + max_nof_monitors*2) - 1);
-}
-
-inline bool frame::volatile_across_calls(Register reg) {
-  return true;
-}
 
 inline oop frame::saved_oop_result(RegisterMap* map) const {
   oop* result_adr = (oop *)map->location(rax->as_VMReg());

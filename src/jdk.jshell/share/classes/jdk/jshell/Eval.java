@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import javax.lang.model.element.Modifier;
 import com.sun.source.tree.ArrayTypeTree;
 import com.sun.source.tree.AssignmentTree;
 import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.ExpressionStatementTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MethodTree;
@@ -43,6 +44,7 @@ import com.sun.source.tree.ModifiersTree;
 import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
+import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.Pretty;
 import java.io.IOException;
@@ -52,6 +54,8 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import jdk.jshell.ExpressionToTypeInfo.ExpressionInfo;
+import jdk.jshell.ExpressionToTypeInfo.ExpressionInfo.AnonymousDescription;
+import jdk.jshell.ExpressionToTypeInfo.ExpressionInfo.AnonymousDescription.VariableDesc;
 import jdk.jshell.Key.ErroneousKey;
 import jdk.jshell.Key.MethodKey;
 import jdk.jshell.Key.TypeDeclKey;
@@ -60,6 +64,7 @@ import jdk.jshell.Snippet.SubKind;
 import jdk.jshell.TaskFactory.AnalyzeTask;
 import jdk.jshell.TaskFactory.BaseTask;
 import jdk.jshell.TaskFactory.ParseTask;
+import jdk.jshell.Util.Pair;
 import jdk.jshell.Wrap.CompoundWrap;
 import jdk.jshell.Wrap.Range;
 import jdk.jshell.Snippet.Status;
@@ -74,6 +79,7 @@ import jdk.jshell.spi.ExecutionControl.UserException;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static java.util.Collections.singletonList;
+import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
 import static jdk.jshell.Util.DOIT_METHOD_NAME;
 import static jdk.jshell.Util.PREFIX_PATTERN;
@@ -97,6 +103,11 @@ class Eval {
     private boolean preserveState = false;
 
     private int varNumber = 0;
+
+    /* The number of anonymous innerclasses seen so far. Used to generate unique
+     * names of these classes.
+     */
+    private int anonCount = 0;
 
     private final JShell state;
 
@@ -203,7 +214,7 @@ class Eval {
                 case VARIABLE:
                     return processVariables(userSource, units, compileSourceInt, pt);
                 case EXPRESSION_STATEMENT:
-                    return processExpression(userSource, compileSourceInt);
+                    return processExpression(userSource, unitTree, compileSourceInt, pt);
                 case CLASS:
                     return processClass(userSource, unitTree, compileSourceInt, SubKind.CLASS_SUBKIND, pt);
                 case ENUM:
@@ -285,15 +296,19 @@ class Eval {
             String name = vt.getName().toString();
             String typeName;
             String fullTypeName;
+            String displayType;
+            boolean hasEnhancedType = false;
             TreeDependencyScanner tds = new TreeDependencyScanner();
             Wrap typeWrap;
             Wrap anonDeclareWrap = null;
             Wrap winit = null;
+            boolean enhancedDesugaring = false;
+            Set<String> anonymousClasses = Collections.emptySet();
             StringBuilder sbBrackets = new StringBuilder();
             Tree baseType = vt.getType();
             if (baseType != null) {
                 tds.scan(baseType); // Not dependent on initializer
-                fullTypeName = typeName = EvalPretty.prettyExpr((JCTree) vt.getType(), false);
+                fullTypeName = displayType = typeName = EvalPretty.prettyExpr((JCTree) vt.getType(), false);
                 while (baseType instanceof ArrayTypeTree) {
                     //TODO handle annotations too
                     baseType = ((ArrayTypeTree) baseType).getType();
@@ -311,83 +326,27 @@ class Eval {
                     Range rinit = dis.treeToRange(init);
                     String initCode = rinit.part(compileSource);
                     ExpressionInfo ei =
-                            ExpressionToTypeInfo.localVariableTypeForInitializer(initCode, state);
-                    typeName = ei == null ? "java.lang.Object" : ei.typeName;
-                    fullTypeName = ei == null ? "java.lang.Object" : ei.fullTypeName;
-                    if (ei != null && init.getKind() == Tree.Kind.NEW_CLASS &&
-                        ((NewClassTree) init).getClassBody() != null) {
-                        NewClassTree nct = (NewClassTree) init;
-                        StringBuilder constructor = new StringBuilder();
-                        constructor.append(fullTypeName).append("(");
-                        String sep = "";
-                        if (ei.enclosingInstanceType != null) {
-                            constructor.append(ei.enclosingInstanceType);
-                            constructor.append(" encl");
-                            sep = ", ";
-                        }
-                        int idx = 0;
-                        for (String type : ei.parameterTypes) {
-                            constructor.append(sep);
-                            constructor.append(type);
-                            constructor.append(" ");
-                            constructor.append("arg" + idx++);
-                            sep = ", ";
-                        }
-                        if (ei.enclosingInstanceType != null) {
-                            constructor.append(") { encl.super (");
-                        } else {
-                            constructor.append(") { super (");
-                        }
-                        sep = "";
-                        for (int i = 0; i < idx; i++) {
-                            constructor.append(sep);
-                            constructor.append("arg" + i++);
-                            sep = ", ";
-                        }
-                        constructor.append("); }");
-                        List<? extends Tree> members = nct.getClassBody().getMembers();
-                        Range bodyRange = dis.treeListToRange(members);
-                        Wrap bodyWrap;
+                            ExpressionToTypeInfo.localVariableTypeForInitializer(initCode, state, false);
+                    if (ei != null) {
+                        typeName = ei.declareTypeName;
+                        fullTypeName = ei.fullTypeName;
+                        displayType = ei.displayTypeName;
 
-                        if (bodyRange != null) {
-                            bodyWrap = Wrap.rangeWrap(compileSource, bodyRange);
-                        } else {
-                            bodyWrap = Wrap.simpleWrap(" ");
-                        }
+                        hasEnhancedType = !typeName.equals(fullTypeName);
 
-                        Range argRange = dis.treeListToRange(nct.getArguments());
-                        Wrap argWrap;
+                        enhancedDesugaring = !ei.isPrimitiveType;
 
-                        if (argRange != null) {
-                            argWrap = Wrap.rangeWrap(compileSource, argRange);
-                        } else {
-                            argWrap = Wrap.simpleWrap(" ");
-                        }
-
-                        if (ei.enclosingInstanceType != null) {
-                            Range enclosingRanges =
-                                    dis.treeToRange(nct.getEnclosingExpression());
-                            Wrap enclosingWrap = Wrap.rangeWrap(compileSource, enclosingRanges);
-                            argWrap = argRange != null ? new CompoundWrap(enclosingWrap,
-                                                                          Wrap.simpleWrap(","),
-                                                                          argWrap)
-                                                       : enclosingWrap;
-                        }
-                        Wrap hwrap = Wrap.simpleWrap("public static class " + fullTypeName +
-                                                     (ei.isClass ? " extends " : " implements ") +
-                                                     typeName + " { " + constructor);
-                        anonDeclareWrap = new CompoundWrap(hwrap, bodyWrap, Wrap.simpleWrap("}"));
-                        winit = new CompoundWrap("new " + fullTypeName + "(", argWrap, ")");
-
-                        String superType = typeName;
-
-                        typeName = fullTypeName;
-                        fullTypeName = ei.isClass ? "<anonymous class extending " + superType + ">"
-                                                  : "<anonymous class implementing " + superType + ">";
+                        Pair<Wrap, Wrap> anonymous2Member =
+                                anonymous2Member(ei, compileSource, rinit, dis, init);
+                        anonDeclareWrap = anonymous2Member.first;
+                        winit = anonymous2Member.second;
+                        anonymousClasses = ei.anonymousClasses.stream().map(ad -> ad.declareTypeName).collect(Collectors.toSet());
+                    } else {
+                        displayType = fullTypeName = typeName = "java.lang.Object";
                     }
                     tds.scan(init);
                 } else {
-                    fullTypeName = typeName = "java.lang.Object";
+                    displayType = fullTypeName = typeName = "java.lang.Object";
                 }
                 typeWrap = Wrap.identityWrap(typeName);
             }
@@ -411,17 +370,193 @@ class Eval {
             int nameEnd = nameStart + name.length();
             Range rname = new Range(nameStart, nameEnd);
             Wrap guts = Wrap.varWrap(compileSource, typeWrap, sbBrackets.toString(), rname,
-                                     winit, anonDeclareWrap);
-                        DiagList modDiag = modifierDiagnostics(vt.getModifiers(), dis, true);
+                                     winit, enhancedDesugaring, anonDeclareWrap);
+            DiagList modDiag = modifierDiagnostics(vt.getModifiers(), dis, true);
             Snippet snip = new VarSnippet(state.keyMap.keyForVariable(name), userSource, guts,
-                    name, subkind, fullTypeName,
+                    name, subkind, displayType, hasEnhancedType ? fullTypeName : null, anonymousClasses,
                     tds.declareReferences(), modDiag);
             snippets.add(snip);
         }
         return snippets;
     }
 
-    private List<Snippet> processExpression(String userSource, String compileSource) {
+    /**Convert anonymous classes in "init" to member classes, based
+     * on the additional information from ExpressionInfo.anonymousClasses.
+     *
+     * This means:
+     * -if the code in the anonymous class captures any variables from the
+     *  enclosing context, create fields for them
+     * -creating an explicit constructor that:
+     * --if the new class expression has a base/enclosing expression, make it an
+     *   explicit constructor parameter "encl" and use "encl.super" when invoking
+     *   the supertype constructor
+     * --if the (used) supertype constructor has any parameters, declare them
+     *   as explicit parameters of the constructor, and pass them to the super
+     *   constructor
+     * --if the code in the anonymous class captures any variables from the
+     *   enclosing context, make them an explicit paramters of the constructor
+     *   and assign to respective fields.
+     * --if there are any explicit fields with initializers in the anonymous class,
+     *   move the initializers at the end of the constructor (after the captured fields
+     *   are assigned, so that the initializers of these fields can use them).
+     * -from the captured variables fields, constructor, and existing members
+     *  (with cleared field initializers), create an explicit class that extends or
+     *  implements the supertype of the anonymous class.
+     *
+     * This method returns two wraps: the first contains the class declarations for the
+     * converted classes, the first one should be used instead of "init" in the variable
+     * declaration.
+     */
+    private Pair<Wrap, Wrap> anonymous2Member(ExpressionInfo ei,
+                                              String compileSource,
+                                              Range rinit,
+                                              TreeDissector dis,
+                                              Tree init) {
+        List<Wrap> anonymousDeclarations = new ArrayList<>();
+        List<Wrap> partitionedInit = new ArrayList<>();
+        int lastPos = rinit.begin;
+        com.sun.tools.javac.util.List<NewClassTree> toConvert =
+                ExpressionToTypeInfo.listAnonymousClassesToConvert(init);
+        com.sun.tools.javac.util.List<AnonymousDescription> descriptions =
+                ei.anonymousClasses;
+        while (toConvert.nonEmpty() && descriptions.nonEmpty()) {
+            NewClassTree node = toConvert.head;
+            AnonymousDescription ad = descriptions.head;
+
+            toConvert = toConvert.tail;
+            descriptions = descriptions.tail;
+
+            List<Object> classBodyParts = new ArrayList<>();
+            //declarations of the captured variables:
+            for (VariableDesc vd : ad.capturedVariables) {
+                classBodyParts.add(vd.type + " " + vd.name + ";\n");
+            }
+
+            List<Object> constructorParts = new ArrayList<>();
+            constructorParts.add(ad.declareTypeName + "(");
+            String sep = "";
+            //add the parameter for the base/enclosing expression, if any:
+            if (ad.enclosingInstanceType != null) {
+                constructorParts.add(ad.enclosingInstanceType + " encl");
+                sep = ", ";
+            }
+            int idx = 0;
+            //add parameters of the super constructor, if any:
+            for (String type : ad.parameterTypes) {
+                constructorParts.add(sep);
+                constructorParts.add(type + " " + "arg" + idx++);
+                sep = ", ";
+            }
+            //add parameters for the captured variables:
+            for (VariableDesc vd : ad.capturedVariables) {
+                constructorParts.add(sep);
+                constructorParts.add(vd.type + " " + "cap$" + vd.name);
+                sep = ", ";
+            }
+            //construct super constructor call:
+            if (ad.enclosingInstanceType != null) {
+                //if there's an enclosing instance, call super on it:
+                constructorParts.add(") { encl.super (");
+            } else {
+                constructorParts.add(") { super (");
+            }
+            sep = "";
+            for (int i = 0; i < idx; i++) {
+                constructorParts.add(sep);
+                constructorParts.add("arg" + i);
+                sep = ", ";
+            }
+            constructorParts.add(");");
+            //initialize the captured variables:
+            for (VariableDesc vd : ad.capturedVariables) {
+                constructorParts.add("this." + vd.name + " = " + "cap$" + vd.name + ";\n");
+            }
+            List<? extends Tree> members =
+                    node.getClassBody().getMembers();
+            for (Tree member : members) {
+                if (member.getKind() == Tree.Kind.VARIABLE) {
+                    VariableTree vt = (VariableTree) member;
+
+                    if (vt.getInitializer() != null) {
+                        //for variables with initializer, explicitly move the initializer
+                        //to the constructor after the captured variables as assigned
+                        //(the initializers would otherwise run too early):
+                        Range wholeVar = dis.treeToRange(vt);
+                        int name = ((JCTree) vt).pos;
+                        classBodyParts.add(new CompoundWrap(Wrap.rangeWrap(compileSource,
+                                                                      new Range(wholeVar.begin, name)),
+                                                       vt.getName().toString(),
+                                                       ";\n"));
+                        constructorParts.add(Wrap.rangeWrap(compileSource,
+                                                            new Range(name, wholeVar.end)));
+                        continue;
+                    }
+                }
+                classBodyParts.add(Wrap.rangeWrap(compileSource,
+                                             dis.treeToRange(member)));
+            }
+
+            constructorParts.add("}");
+
+            //construct the member class:
+            classBodyParts.add(new CompoundWrap(constructorParts.toArray()));
+
+            Wrap classBodyWrap = new CompoundWrap(classBodyParts.toArray());
+
+            anonymousDeclarations.add(new CompoundWrap("public static class ", ad.declareTypeName,
+                                         (ad.isClass ? " extends " : " implements "),
+                                         ad.superTypeName, " { ", classBodyWrap, "}"));
+
+            //change the new class expression to use the newly created member type:
+            Range argRange = dis.treeListToRange(node.getArguments());
+            Wrap argWrap;
+
+            if (argRange != null) {
+                argWrap = Wrap.rangeWrap(compileSource, argRange);
+            } else {
+                argWrap = Wrap.simpleWrap(" ");
+            }
+
+            if (ad.enclosingInstanceType != null) {
+                //if there's an enclosing expression, set it as the first parameter:
+                Range enclosingRanges =
+                        dis.treeToRange(node.getEnclosingExpression());
+                Wrap enclosingWrap = Wrap.rangeWrap(compileSource, enclosingRanges);
+                argWrap = argRange != null ? new CompoundWrap(enclosingWrap,
+                                                              Wrap.simpleWrap(","),
+                                                              argWrap)
+                                           : enclosingWrap;
+            }
+
+            Range current = dis.treeToRange(node);
+            String capturedArgs;
+            if (!ad.capturedVariables.isEmpty()) {
+                capturedArgs = (ad.parameterTypes.isEmpty() ? "" : ", ") +
+                               ad.capturedVariables.stream()
+                                                   .map(vd -> vd.name)
+                                                   .collect(Collectors.joining(","));
+            } else {
+                capturedArgs = "";
+            }
+            if (lastPos < current.begin)
+                partitionedInit.add(Wrap.rangeWrap(compileSource,
+                                                   new Range(lastPos, current.begin)));
+            partitionedInit.add(new CompoundWrap("new " + ad.declareTypeName + "(",
+                                                 argWrap,
+                                                 capturedArgs,
+                                                 ")"));
+            lastPos = current.end;
+        }
+
+        if (lastPos < rinit.end)
+            partitionedInit.add(Wrap.rangeWrap(compileSource, new Range(lastPos, rinit.end)));
+
+        return new Pair<>(new CompoundWrap(anonymousDeclarations.toArray()),
+                          new CompoundWrap(partitionedInit.toArray()));
+    }
+
+    private List<Snippet> processExpression(String userSource, Tree tree, String compileSource, ParseTask pt) {
+        ExpressionStatementTree expr = (ExpressionStatementTree) tree;
         String name = null;
         ExpressionInfo ei = ExpressionToTypeInfo.expressionInfo(compileSource, state);
         ExpressionTree assignVar;
@@ -453,10 +588,31 @@ class Eval {
                         name = "$" + ++varNumber;
                     }
                 }
-                guts = Wrap.tempVarWrap(compileSource, ei.accessibleTypeName, name);
+                TreeDissector dis = TreeDissector.createByFirstClass(pt);
+                ExpressionInfo varEI =
+                        ExpressionToTypeInfo.localVariableTypeForInitializer(compileSource, state, true);
+                String declareTypeName;
+                String fullTypeName;
+                String displayTypeName;
+                Set<String> anonymousClasses;
+                if (varEI != null) {
+                    declareTypeName = varEI.declareTypeName;
+                    fullTypeName = varEI.fullTypeName;
+                    displayTypeName = varEI.displayTypeName;
+
+                    Pair<Wrap, Wrap> anonymous2Member =
+                            anonymous2Member(varEI, compileSource, new Range(0, compileSource.length()), dis, expr.getExpression());
+                    guts = Wrap.tempVarWrap(anonymous2Member.second.wrapped(), declareTypeName, name, anonymous2Member.first);
+                    anonymousClasses = varEI.anonymousClasses.stream().map(ad -> ad.declareTypeName).collect(Collectors.toSet());
+                } else {
+                    declareTypeName = ei.accessibleTypeName;
+                    displayTypeName = fullTypeName = typeName;
+                    guts = Wrap.tempVarWrap(compileSource, declareTypeName, name, null);
+                    anonymousClasses = Collections.emptySet();
+                }
                 Collection<String> declareReferences = null; //TODO
                 snip = new VarSnippet(state.keyMap.keyForVariable(name), userSource, guts,
-                        name, SubKind.TEMP_VAR_EXPRESSION_SUBKIND, typeName, declareReferences, null);
+                        name, SubKind.TEMP_VAR_EXPRESSION_SUBKIND, displayTypeName, fullTypeName, anonymousClasses, declareReferences, null);
             } else {
                 guts = Wrap.methodReturnWrap(compileSource);
                 snip = new ExpressionSnippet(state.keyMap.keyForExpression(name, typeName), userSource, guts,
@@ -694,17 +850,15 @@ class Eval {
                             ? expunge(value)
                             : "";
                 } catch (ResolutionException ex) {
-                    DeclarationSnippet sn = (DeclarationSnippet) state.maps.getSnippetDeadOrAlive(ex.id());
-                    exception = new UnresolvedReferenceException(sn, translateExceptionStack(ex));
+                    exception = asUnresolvedReferenceException(ex);
                 } catch (UserException ex) {
-                    exception = new EvalException(ex.getMessage(),
-                            ex.causeExceptionClass(),
-                            translateExceptionStack(ex));
+                    exception = asEvalException(ex);
                 } catch (RunException ex) {
                     // StopException - no-op
                 } catch (InternalException ex) {
                     state.debug(ex, "invoke");
                 } catch (EngineTerminationException ex) {
+                    state.debug(ex, "termination");
                     state.closeDown();
                 }
             } else if (si.subKind() == SubKind.VAR_DECLARATION_SUBKIND) {
@@ -732,6 +886,36 @@ class Eval {
             }
         }
         return events(c, outs, value, exception);
+    }
+
+    // Convert an internal UserException to an API EvalException, translating
+    // the stack to snippet form.  Convert any chained exceptions
+    private EvalException asEvalException(UserException ue) {
+        return new EvalException(ue.getMessage(),
+                ue.causeExceptionClass(),
+                translateExceptionStack(ue),
+                asJShellException(ue.getCause()));
+    }
+
+    // Convert an internal ResolutionException to an API UnresolvedReferenceException,
+    // translating the snippet id to snipper and the stack to snippet form
+    private UnresolvedReferenceException asUnresolvedReferenceException(ResolutionException re) {
+        DeclarationSnippet sn = (DeclarationSnippet) state.maps.getSnippetDeadOrAlive(re.id());
+        return new UnresolvedReferenceException(sn, translateExceptionStack(re));
+    }
+
+    // Convert an internal UserException/ResolutionException to an API
+    // EvalException/UnresolvedReferenceException
+    private JShellException asJShellException(Throwable e) {
+        if (e == null) {
+            return null;
+        } else if (e instanceof UserException) {
+            return asEvalException((UserException) e);
+        } else if (e instanceof ResolutionException) {
+            return asUnresolvedReferenceException((ResolutionException) e);
+        } else {
+            throw new AssertionError(e);
+        }
     }
 
     private boolean interestingEvent(SnippetEvent e) {
@@ -1059,4 +1243,7 @@ class Eval {
                 : new DiagList(new ModifierDiagnostic(list, fatal));
     }
 
+    String computeDeclareName(TypeSymbol ts) {
+        return Util.JSHELL_ANONYMOUS + "$" + Long.toUnsignedString(anonCount++);
+    }
 }

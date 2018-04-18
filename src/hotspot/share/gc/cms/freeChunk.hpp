@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_GC_CMS_FREECHUNK_HPP
 #define SHARE_VM_GC_CMS_FREECHUNK_HPP
 
-#include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/markOop.hpp"
 #include "runtime/mutex.hpp"
@@ -55,7 +54,7 @@
 // but are not part of the free list and should not be coalesced into larger
 // free blocks. These free blocks have their two LSB's set.
 
-class FreeChunk VALUE_OBJ_CLASS_SPEC {
+class FreeChunk {
   friend class VMStructs;
   // For 64 bit compressed oops, the markOop encodes both the size and the
   // indication that this is a FreeChunk and not an object.

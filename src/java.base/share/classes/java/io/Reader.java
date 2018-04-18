@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.io;
 
 
+import java.nio.CharBuffer;
 import java.util.Objects;
 
 /**
@@ -53,6 +54,85 @@ import java.util.Objects;
 public abstract class Reader implements Readable, Closeable {
 
     private static final int TRANSFER_BUFFER_SIZE = 8192;
+
+    /**
+     * Returns a new {@code Reader} that reads no characters. The returned
+     * stream is initially open.  The stream is closed by calling the
+     * {@code close()} method.  Subsequent calls to {@code close()} have no
+     * effect.
+     *
+     * <p> While the stream is open, the {@code read()}, {@code read(char[])},
+     * {@code read(char[], int, int)}, {@code read(Charbuffer)}, {@code
+     * ready())}, {@code skip(long)}, and {@code transferTo()} methods all
+     * behave as if end of stream has been reached.  After the stream has been
+     * closed, these methods all throw {@code IOException}.
+     *
+     * <p> The {@code markSupported()} method returns {@code false}.  The
+     * {@code mark()} method does nothing, and the {@code reset()} method
+     * throws {@code IOException}.
+     *
+     * <p> The {@link #lock object} used to synchronize operations on the
+     * returned {@code Reader} is not specified.
+     *
+     * @return a {@code Reader} which reads no characters
+     *
+     * @since 11
+     */
+    public static Reader nullReader() {
+        return new Reader() {
+            private volatile boolean closed;
+
+            private void ensureOpen() throws IOException {
+                if (closed) {
+                    throw new IOException("Stream closed");
+                }
+            }
+
+            @Override
+            public int read() throws IOException {
+                ensureOpen();
+                return -1;
+            }
+
+            @Override
+            public int read(char[] cbuf, int off, int len) throws IOException {
+                Objects.checkFromIndexSize(off, len, cbuf.length);
+                ensureOpen();
+                if (len == 0) {
+                    return 0;
+                }
+                return -1;
+            }
+
+            @Override
+            public int read(CharBuffer target) throws IOException {
+                Objects.requireNonNull(target);
+                ensureOpen();
+                if (target.hasRemaining()) {
+                    return -1;
+                }
+                return 0;
+            }
+
+            @Override
+            public long skip(long n) throws IOException {
+                ensureOpen();
+                return 0L;
+            }
+
+            @Override
+            public long transferTo(Writer out) throws IOException {
+                Objects.requireNonNull(out);
+                ensureOpen();
+                return 0L;
+            }
+
+            @Override
+            public void close() {
+                closed = true;
+            }
+        };
+    }
 
     /**
      * The object used to synchronize operations on this stream.  For

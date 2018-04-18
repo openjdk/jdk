@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ class HRRSCleanupTask : public SparsePRTCleanupTask {
 //      is represented.  If a deleted PRT is re-used, a thread adding a bit,
 //      thinking the PRT is for a different region, does no harm.
 
-class OtherRegionsTable VALUE_OBJ_CLASS_SPEC {
+class OtherRegionsTable {
   friend class HeapRegionRemSetIterator;
 
   G1CollectedHeap* _g1h;
@@ -123,15 +123,17 @@ class OtherRegionsTable VALUE_OBJ_CLASS_SPEC {
 
   bool contains_reference_locked(OopOrNarrowOopStar from) const;
 
+public:
   // Clear the from_card_cache entries for this region.
   void clear_fcc();
-public:
   // Create a new remembered set for the given heap region. The given mutex should
   // be used to ensure consistency.
   OtherRegionsTable(HeapRegion* hr, Mutex* m);
 
-  // For now.  Could "expand" some tables in the future, so that this made
-  // sense.
+  // Returns the card index of the given within_region pointer relative to the bottom
+  // of the given heap region.
+  static CardIdx_t card_within_region(OopOrNarrowOopStar within_region, HeapRegion* hr);
+  // Adds the reference from "from to this remembered set.
   void add_reference(OopOrNarrowOopStar from, uint tid);
 
   // Returns whether the remembered set contains the given reference.
@@ -140,11 +142,6 @@ public:
   // Returns whether this remembered set (and all sub-sets) have an occupancy
   // that is less or equal than the given occupancy.
   bool occupancy_less_or_equal_than(size_t limit) const;
-
-  // Removes any entries shown by the given bitmaps to contain only dead
-  // objects. Not thread safe.
-  // Set bits in the bitmaps indicate that the given region or card is live.
-  void scrub(G1CardLiveData* live_data);
 
   // Returns whether this remembered set (and all sub-sets) does not contain any entry.
   bool is_empty() const;
@@ -217,24 +214,64 @@ public:
 
   static jint n_coarsenings() { return OtherRegionsTable::n_coarsenings(); }
 
+private:
+  enum RemSetState {
+    Untracked,
+    Updating,
+    Complete
+  };
+
+  RemSetState _state;
+
+  static const char* _state_strings[];
+  static const char* _short_state_strings[];
+public:
+
+  const char* get_state_str() const { return _state_strings[_state]; }
+  const char* get_short_state_str() const { return _short_state_strings[_state]; }
+
+  bool is_tracked() { return _state != Untracked; }
+  bool is_updating() { return _state == Updating; }
+  bool is_complete() { return _state == Complete; }
+
+  void set_state_empty() {
+    guarantee(SafepointSynchronize::is_at_safepoint() || !is_tracked(), "Should only set to Untracked during safepoint but is %s.", get_state_str());
+    if (_state == Untracked) {
+      return;
+    }
+    _other_regions.clear_fcc();
+    _state = Untracked;
+  }
+
+  void set_state_updating() {
+    guarantee(SafepointSynchronize::is_at_safepoint() && !is_tracked(), "Should only set to Updating from Untracked during safepoint but is %s", get_state_str());
+    _other_regions.clear_fcc();
+    _state = Updating;
+  }
+
+  void set_state_complete() {
+    _other_regions.clear_fcc();
+    _state = Complete;
+  }
+
   // Used in the sequential case.
   void add_reference(OopOrNarrowOopStar from) {
-    _other_regions.add_reference(from, 0);
+    add_reference(from, 0);
   }
 
   // Used in the parallel case.
   void add_reference(OopOrNarrowOopStar from, uint tid) {
+    RemSetState state = _state;
+    if (state == Untracked) {
+      return;
+    }
     _other_regions.add_reference(from, tid);
   }
 
-  // Removes any entries in the remembered set shown by the given card live data to
-  // contain only dead objects. Not thread safe.
-  void scrub(G1CardLiveData* live_data);
-
   // The region is being reclaimed; clear its remset, and any mention of
   // entries for this region in other remsets.
-  void clear();
-  void clear_locked();
+  void clear(bool only_cardset = false);
+  void clear_locked(bool only_cardset = false);
 
   // The actual # of bytes this hr_remset takes up.
   // Note also includes the strong code root set.

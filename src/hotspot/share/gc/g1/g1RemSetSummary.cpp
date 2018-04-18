@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public:
 
 void G1RemSetSummary::update() {
   _num_conc_refined_cards = _rem_set->num_conc_refined_cards();
-  DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
+  DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
   _num_processed_buf_mutator = dcqs.processed_buffers_mut();
   _num_processed_buf_rs_threads = dcqs.processed_buffers_rs_thread();
 
@@ -145,7 +145,7 @@ void G1RemSetSummary::subtract_from(G1RemSetSummary* other) {
   _sampling_thread_vtime = other->sampling_thread_vtime() - _sampling_thread_vtime;
 }
 
-class RegionTypeCounter VALUE_OBJ_CLASS_SPEC {
+class RegionTypeCounter {
 private:
   const char* _name;
 
@@ -252,7 +252,7 @@ public:
     _max_rs_mem_sz(0), _max_code_root_mem_sz(0)
   {}
 
-  bool doHeapRegion(HeapRegion* r) {
+  bool do_heap_region(HeapRegion* r) {
     HeapRegionRemSet* hrrs = r->rem_set();
 
     // HeapRegionRemSet::mem_size() includes the

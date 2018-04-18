@@ -332,4 +332,61 @@ public interface ListSelectionModel
      * @see #addListSelectionListener
      */
     void removeListSelectionListener(ListSelectionListener x);
+
+    /**
+     * Returns an array of all of the selected indices in the selection model,
+     * in increasing order.
+     *
+     * @return all of the selected indices, in increasing order,
+     *         or an empty array if nothing is selected
+     * @see #removeSelectionInterval
+     * @see #addListSelectionListener
+     * @since 11
+     * @implSpec The default implementation iterates from minimum selected
+     * index {@link #getMinSelectionIndex()} to maximum selected index {@link
+     * #getMaxSelectionIndex()} and returns the selected indices {@link
+     * #isSelectedIndex(int)} in a newly allocated int array.
+     */
+    default int[] getSelectedIndices() {
+        int iMin = getMinSelectionIndex();
+        int iMax = getMaxSelectionIndex();
+
+        if ((iMin < 0) || (iMax < 0)) {
+            return new int[0];
+        }
+
+        int[] rvTmp = new int[1+ (iMax - iMin)];
+        int n = 0;
+        for(int i = iMin; i <= iMax; i++) {
+            if (isSelectedIndex(i)) {
+                rvTmp[n++] = i;
+            }
+        }
+        int[] rv = new int[n];
+        System.arraycopy(rvTmp, 0, rv, 0, n);
+        return rv;
+    }
+
+    /**
+     * Returns the number of selected items.
+     *
+     * @return the number of selected items, 0 if no items are selected
+     * @since 11
+     * @implSpec The default implementation iterates from minimum selected
+     * index {@link #getMinSelectionIndex()} to maximum selected index {@link
+     * #getMaxSelectionIndex()} and returns the number of selected indices
+     * {@link #isSelectedIndex(int)}
+     */
+    default int getSelectedItemsCount() {
+        int iMin = getMinSelectionIndex();
+        int iMax = getMaxSelectionIndex();
+        int count = 0;
+
+        for(int i = iMin; i <= iMax; i++) {
+            if (isSelectedIndex(i)) {
+                count++;
+            }
+        }
+        return count;
+    }
 }

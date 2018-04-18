@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "memory/filemap.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/vmError.hpp"
 
 #include <sys/types.h>
@@ -122,10 +123,19 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
     pc = (address) info->si_addr;
   }
 
+  // Needed to make it possible to call SafeFetch.. APIs in error handling.
   if (uc && pc && StubRoutines::is_safefetch_fault(pc)) {
     os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
     return;
   }
+
+  // Needed because asserts may happen in error handling too.
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  if ((sig == SIGSEGV || sig == SIGBUS) && info != NULL && info->si_addr == g_assert_poison) {
+    handle_assert_poison_fault(ucVoid, info->si_addr);
+    return;
+  }
+#endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
   VMError::report_and_die(NULL, sig, pc, info, ucVoid);
 }
@@ -153,8 +163,7 @@ void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
     if (si->si_signo == SIGBUS || si->si_signo == SIGSEGV) {
       const void* const fault_addr = si->si_addr;
       if (fault_addr != NULL) {
-        FileMapInfo* const mapinfo = FileMapInfo::current_info();
-        if (mapinfo->is_in_shared_space(fault_addr)) {
+        if (MetaspaceShared::is_in_shared_metaspace(fault_addr)) {
           st->print("Error accessing class data sharing archive. "
             "Mapped file inaccessible during execution, possible disk/network problem.");
         }

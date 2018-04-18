@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073 8173848 8174041 8173916 8174028 8174262 8174797 8177079 8180508 8177466 8172154 8192979
+ * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073 8173848 8174041 8173916 8174028 8174262 8174797 8177079 8180508 8177466 8172154 8192979 8191842 8198573 8198801
  * @summary Simple jshell tool tests
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -83,6 +83,32 @@ public class ToolSimpleTest extends ReplToolTesting {
                 (a) -> assertCommand(a, "int a, b", "a ==> 0\n" +
                         "b ==> 0"),
                 (a) -> assertCommand(a, "a < b", "$6 ==> false")
+        );
+    }
+
+    @Test
+    public void testChainedThrow() {
+        test(
+                (a) -> assertCommand(a, "void p() throws Exception { ((String) null).toString(); }",
+                        "|  created method p()"),
+                (a) -> assertCommand(a, "void n() throws Exception { try { p(); } catch (Exception ex) { throw new IOException(\"bar\", ex); }}",
+                        "|  created method n()"),
+                (a) -> assertCommand(a, "void m() { try { n(); } catch (Exception ex) { throw new RuntimeException(\"foo\", ex); }}",
+                        "|  created method m()"),
+                (a) -> assertCommand(a, "m()",
+                          "|  Exception java.lang.RuntimeException: foo\n"
+                        + "|        at m (#3:1)\n"
+                        + "|        at (#4:1)\n"
+                        + "|  Caused by: java.io.IOException: bar\n"
+                        + "|        at n (#2:1)\n"
+                        + "|        ...\n"
+                        + "|  Caused by: java.lang.NullPointerException\n"
+                        + "|        at p (#1:1)\n"
+                        + "|        ..."),
+                (a) -> assertCommand(a, "/drop p",
+                        "|  dropped method p()"),
+                (a) -> assertCommand(a, "m()",
+                        "|  attempted to call method n() which cannot be invoked until method p() is declared")
         );
     }
 
@@ -786,7 +812,22 @@ public class ToolSimpleTest extends ReplToolTesting {
                 (a) -> assertCommandOutputContains(a, "var r1 = new Object() {}", "r1"),
                 (a) -> assertCommandOutputContains(a, "/vars r1", "|    <anonymous class extending Object> r1 = "),
                 (a) -> assertCommandOutputContains(a, "var r2 = new Runnable() { public void run() { } }", "r2"),
-                (a) -> assertCommandOutputContains(a, "/vars r2", "|    <anonymous class implementing Runnable> r2 = ")
+                (a) -> assertCommandOutputContains(a, "/vars r2", "|    <anonymous class implementing Runnable> r2 = "),
+                (a) -> assertCommandOutputContains(a, "import java.util.stream.*;", ""),
+                (a) -> assertCommandOutputContains(a, "var list = Stream.of(1, 2, 3).map(j -> new Object() { int i = j; }).collect(Collectors.toList());",
+                                                      "list"),
+                (a) -> assertCommandOutputContains(a, "/vars list", "|    List<<anonymous class extending Object>> list = ")
+        );
+    }
+
+    // This is mainly interesting in the TestLocalSimpleTest case (8198573)
+    @Test
+    public void testUpdateFalsePositive() {
+        test(
+                a -> assertClass(a, "class A { int a() { int error = 0; return error; } }", "class", "A"),
+                a -> assertVariable(a, "A", "a", "new A()", "A@.+"),
+                a -> assertVariable(a, "int", "error", "4711", "4711"),
+                a -> assertCommandOutputContains(a, "a", "A@")
         );
     }
 }

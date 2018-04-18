@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "logging/log.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.inline.hpp"
 #include "services/attachListener.hpp"
 #include "services/dtraceAttacher.hpp"
@@ -136,6 +137,10 @@ class ArgumentIterator : public StackObj {
   }
   char* next() {
     if (*_pos == '\0') {
+      // advance the iterator if possible (null arguments)
+      if (_pos < _end) {
+        _pos += 1;
+      }
       return NULL;
     }
     char* res = _pos;
@@ -194,6 +199,7 @@ int BsdAttachListener::init() {
 
   // bind socket
   struct sockaddr_un addr;
+  memset((void *)&addr, 0, sizeof(addr));
   addr.sun_family = AF_UNIX;
   strcpy(addr.sun_path, initial_path);
   ::unlink(initial_path);
@@ -259,6 +265,8 @@ BsdAttachOperation* BsdAttachListener::read_request(int s) {
   do {
     int n;
     RESTARTABLE(read(s, buf+off, left), n);
+    assert(n <= left, "buffer was too small, impossible!");
+    buf[max_len - 1] = '\0';
     if (n == -1) {
       return NULL;      // reset by peer or other error
     }
@@ -341,10 +349,10 @@ BsdAttachOperation* BsdAttachListener::dequeue() {
     }
 
     // get the credentials of the peer and check the effective uid/guid
-    // - check with jeff on this.
     uid_t puid;
     gid_t pgid;
     if (::getpeereid(s, &puid, &pgid) != 0) {
+      log_debug(attach)("Failed to get peer id");
       ::close(s);
       continue;
     }
@@ -352,6 +360,7 @@ BsdAttachOperation* BsdAttachListener::dequeue() {
     gid_t egid = getegid();
 
     if (puid != euid || pgid != egid) {
+      log_debug(attach)("euid/egid check failed (%d/%d vs %d/%d)", puid, pgid, euid, egid);
       ::close(s);
       continue;
     }
@@ -437,7 +446,6 @@ AttachOperation* AttachListener::dequeue() {
   return op;
 }
 
-
 // Performs initialization at vm startup
 // For BSD we remove any stale .java_pid file which could cause
 // an attaching process to think we are ready to receive on the
@@ -496,7 +504,6 @@ bool AttachListener::is_init_trigger() {
   char fn[PATH_MAX + 1];
   int ret;
   struct stat st;
-
   snprintf(fn, PATH_MAX + 1, "%s/.attach_pid%d",
            os::get_temp_directory(), os::current_process_id());
   RESTARTABLE(::stat(fn, &st), ret);
@@ -508,7 +515,7 @@ bool AttachListener::is_init_trigger() {
     // a bogus user creates the file
     if (st.st_uid == geteuid()) {
       init();
-      log_trace(attach)("Attach trigerred by %s", fn);
+      log_trace(attach)("Attach triggered by %s", fn);
       return true;
     } else {
       log_debug(attach)("File %s has wrong user id %d (vs %d). Attach is not triggered", fn, st.st_uid, geteuid());

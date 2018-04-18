@@ -84,7 +84,7 @@ public class ExceptionParameters {
     }
 
     @TADescription(annotation = "RTAs", type = EXCEPTION_PARAMETER, exceptionIndex = 0)
-    public String exceptionRepeatableAnnoation() {
+    public String exceptionRepeatableAnnotation() {
         return "void exception() { try { new Object(); } catch(@RTA @RTA Exception e) { } }";
     }
 

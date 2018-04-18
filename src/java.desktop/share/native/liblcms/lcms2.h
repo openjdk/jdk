@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2016 Marti Maria Saguer
+//  Copyright (c) 1998-2017 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -52,7 +52,7 @@
 //
 //---------------------------------------------------------------------------------
 //
-// Version 2.8
+// Version 2.9rc3
 //
 
 #ifndef _lcms2_H
@@ -78,7 +78,7 @@
 // #define CMS_USE_CPP_API
 
 // Uncomment this line if you need strict CGATS syntax. Makes CGATS files to
-// require "KEYWORD" on undefined identifiers, keep it comented out unless needed
+// require "KEYWORD" on undefined identifiers, keep it commented out unless needed
 // #define CMS_STRICT_CGATS  1
 
 // Uncomment to get rid of the tables for "half" float support
@@ -86,6 +86,9 @@
 
 // Uncomment to get rid of pthreads/windows dependency
 // #define CMS_NO_PTHREADS  1
+
+// Uncomment this for special windows mutex initialization (see lcms2_internal.h)
+// #define CMS_RELY_ON_WINDOWS_STATIC_MUTEX_INIT
 
 // ********** End of configuration toggles ******************************
 
@@ -104,7 +107,7 @@ extern "C" {
 #endif
 
 // Version/release
-#define LCMS_VERSION        2080
+#define LCMS_VERSION        2090
 
 // I will give the chance of redefining basic types for compilers that are not fully C99 compliant
 #ifndef CMS_BASIC_TYPES_ALREADY_DEFINED
@@ -254,16 +257,21 @@ typedef int                  cmsBool;
 #            define CMSAPI    __declspec(dllexport)
 #        else
 #           define CMSAPI     __declspec(dllimport)
-#       endif
+#        endif
 #     endif
 #  else
-#       define CMSEXPORT
-#       define CMSAPI
+#     define CMSEXPORT
+#     define CMSAPI
 #  endif
-#else
-# define CMSEXPORT
-# define CMSAPI
-#endif
+#else  // not Windows
+#  ifdef HAVE_FUNC_ATTRIBUTE_VISIBILITY
+#     define CMSEXPORT
+#     define CMSAPI    __attribute__((visibility("default")))
+#  else
+#     define CMSEXPORT
+#     define CMSAPI
+#  endif
+#endif  // CMS_IS_WINDOWS_
 
 #ifdef HasTHREADS
 # if HasTHREADS == 1
@@ -284,9 +292,9 @@ typedef int                  cmsBool;
 #endif
 
 // D50 XYZ normalized to Y=1.0
-#define cmsD50X             0.9642
-#define cmsD50Y             1.0
-#define cmsD50Z             0.8249
+#define cmsD50X  0.9642
+#define cmsD50Y  1.0
+#define cmsD50Z  0.8249
 
 // V4 perceptual black
 #define cmsPERCEPTUAL_BLACK_X  0.00336
@@ -294,8 +302,8 @@ typedef int                  cmsBool;
 #define cmsPERCEPTUAL_BLACK_Z  0.00287
 
 // Definitions in ICC spec
-#define cmsMagicNumber      0x61637370     // 'acsp'
-#define lcmsSignature       0x6c636d73     // 'lcms'
+#define cmsMagicNumber  0x61637370     // 'acsp'
+#define lcmsSignature   0x6c636d73     // 'lcms'
 
 
 // Base ICC type definitions
@@ -1154,7 +1162,7 @@ typedef struct {
     cmsCIEXYZ        whitePoint;
     cmsFloat64Number Yb;
     cmsFloat64Number La;
-    int              surround;
+    cmsUInt32Number  surround;
     cmsFloat64Number D_value;
 
     } cmsViewingConditions;
@@ -1182,16 +1190,16 @@ typedef struct {
 // The internal representation is none of your business.
 typedef struct _cms_curve_struct cmsToneCurve;
 
-CMSAPI cmsToneCurve*     CMSEXPORT cmsBuildSegmentedToneCurve(cmsContext ContextID, cmsInt32Number nSegments, const cmsCurveSegment Segments[]);
+CMSAPI cmsToneCurve*     CMSEXPORT cmsBuildSegmentedToneCurve(cmsContext ContextID, cmsUInt32Number nSegments, const cmsCurveSegment Segments[]);
 CMSAPI cmsToneCurve*     CMSEXPORT cmsBuildParametricToneCurve(cmsContext ContextID, cmsInt32Number Type, const cmsFloat64Number Params[]);
 CMSAPI cmsToneCurve*     CMSEXPORT cmsBuildGamma(cmsContext ContextID, cmsFloat64Number Gamma);
-CMSAPI cmsToneCurve*     CMSEXPORT cmsBuildTabulatedToneCurve16(cmsContext ContextID, cmsInt32Number nEntries, const cmsUInt16Number values[]);
+CMSAPI cmsToneCurve*     CMSEXPORT cmsBuildTabulatedToneCurve16(cmsContext ContextID, cmsUInt32Number nEntries, const cmsUInt16Number values[]);
 CMSAPI cmsToneCurve*     CMSEXPORT cmsBuildTabulatedToneCurveFloat(cmsContext ContextID, cmsUInt32Number nEntries, const cmsFloat32Number values[]);
 CMSAPI void              CMSEXPORT cmsFreeToneCurve(cmsToneCurve* Curve);
 CMSAPI void              CMSEXPORT cmsFreeToneCurveTriple(cmsToneCurve* Curve[3]);
 CMSAPI cmsToneCurve*     CMSEXPORT cmsDupToneCurve(const cmsToneCurve* Src);
 CMSAPI cmsToneCurve*     CMSEXPORT cmsReverseToneCurve(const cmsToneCurve* InGamma);
-CMSAPI cmsToneCurve*     CMSEXPORT cmsReverseToneCurveEx(cmsInt32Number nResultSamples, const cmsToneCurve* InGamma);
+CMSAPI cmsToneCurve*     CMSEXPORT cmsReverseToneCurveEx(cmsUInt32Number nResultSamples, const cmsToneCurve* InGamma);
 CMSAPI cmsToneCurve*     CMSEXPORT cmsJoinToneCurve(cmsContext ContextID, const cmsToneCurve* X,  const cmsToneCurve* Y, cmsUInt32Number nPoints);
 CMSAPI cmsBool           CMSEXPORT cmsSmoothToneCurve(cmsToneCurve* Tab, cmsFloat64Number lambda);
 CMSAPI cmsFloat32Number  CMSEXPORT cmsEvalToneCurveFloat(const cmsToneCurve* Curve, cmsFloat32Number v);
@@ -1236,7 +1244,7 @@ CMSAPI cmsBool           CMSEXPORT cmsPipelineSetSaveAs8bitsFlag(cmsPipeline* lu
 // Where to place/locate the stages in the pipeline chain
 typedef enum { cmsAT_BEGIN, cmsAT_END } cmsStageLoc;
 
-CMSAPI int               CMSEXPORT cmsPipelineInsertStage(cmsPipeline* lut, cmsStageLoc loc, cmsStage* mpe);
+CMSAPI cmsBool           CMSEXPORT cmsPipelineInsertStage(cmsPipeline* lut, cmsStageLoc loc, cmsStage* mpe);
 CMSAPI void              CMSEXPORT cmsPipelineUnlinkStage(cmsPipeline* lut, cmsStageLoc loc, cmsStage** mpe);
 
 // This function is quite useful to analyze the structure of a Pipeline and retrieve the Stage elements
@@ -1459,7 +1467,7 @@ CMSAPI cmsBool           CMSEXPORT cmsLinkTag(cmsHPROFILE hProfile, cmsTagSignat
 CMSAPI cmsTagSignature   CMSEXPORT cmsTagLinkedTo(cmsHPROFILE hProfile, cmsTagSignature sig);
 
 // Read and write raw data
-CMSAPI cmsInt32Number    CMSEXPORT cmsReadRawTag(cmsHPROFILE hProfile, cmsTagSignature sig, void* Buffer, cmsUInt32Number BufferSize);
+CMSAPI cmsUInt32Number   CMSEXPORT cmsReadRawTag(cmsHPROFILE hProfile, cmsTagSignature sig, void* Buffer, cmsUInt32Number BufferSize);
 CMSAPI cmsBool           CMSEXPORT cmsWriteRawTag(cmsHPROFILE hProfile, cmsTagSignature sig, const void* data, cmsUInt32Number Size);
 
 // Access header data
@@ -1550,7 +1558,7 @@ CMSAPI cmsBool           CMSEXPORT cmsCloseIOhandler(cmsIOHANDLER* io);
 
 CMSAPI cmsBool           CMSEXPORT cmsMD5computeID(cmsHPROFILE hProfile);
 
-// Profile high level funtions ------------------------------------------------------------------------------------------
+// Profile high level functions ------------------------------------------------------------------------------------------
 
 CMSAPI cmsHPROFILE      CMSEXPORT cmsOpenProfileFromFile(const char *ICCProfile, const char *sAccess);
 CMSAPI cmsHPROFILE      CMSEXPORT cmsOpenProfileFromFileTHR(cmsContext ContextID, const char *ICCProfile, const char *sAccess);
@@ -1610,21 +1618,21 @@ CMSAPI cmsHPROFILE      CMSEXPORT cmsCreate_sRGBProfileTHR(cmsContext ContextID)
 CMSAPI cmsHPROFILE      CMSEXPORT cmsCreate_sRGBProfile(void);
 
 CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateBCHSWabstractProfileTHR(cmsContext ContextID,
-                                                             int nLUTPoints,
+                                                             cmsUInt32Number nLUTPoints,
                                                              cmsFloat64Number Bright,
                                                              cmsFloat64Number Contrast,
                                                              cmsFloat64Number Hue,
                                                              cmsFloat64Number Saturation,
-                                                             int TempSrc,
-                                                             int TempDest);
+                                                             cmsUInt32Number TempSrc,
+                                                             cmsUInt32Number TempDest);
 
-CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateBCHSWabstractProfile(int nLUTPoints,
+CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateBCHSWabstractProfile(cmsUInt32Number nLUTPoints,
                                                              cmsFloat64Number Bright,
                                                              cmsFloat64Number Contrast,
                                                              cmsFloat64Number Hue,
                                                              cmsFloat64Number Saturation,
-                                                             int TempSrc,
-                                                             int TempDest);
+                                                             cmsUInt32Number TempSrc,
+                                                             cmsUInt32Number TempDest);
 
 CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateNULLProfileTHR(cmsContext ContextID);
 CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateNULLProfile(void);
@@ -1666,7 +1674,7 @@ CMSAPI cmsUInt32Number  CMSEXPORT cmsGetSupportedIntentsTHR(cmsContext ContextID
 #define cmsFLAGS_BLACKPOINTCOMPENSATION   0x2000
 #define cmsFLAGS_NOWHITEONWHITEFIXUP      0x0004    // Don't fix scum dot
 #define cmsFLAGS_HIGHRESPRECALC           0x0400    // Use more memory to give better accurancy
-#define cmsFLAGS_LOWRESPRECALC            0x0800    // Use less memory to minimize resouces
+#define cmsFLAGS_LOWRESPRECALC            0x0800    // Use less memory to minimize resources
 
 // For devicelink creation
 #define cmsFLAGS_8BITS_DEVICELINK         0x0008   // Create 8 bits devicelinks

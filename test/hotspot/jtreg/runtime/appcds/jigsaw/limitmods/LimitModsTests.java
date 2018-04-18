@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @requires ((vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)) & !vm.graal.enabled
+ * @requires vm.cds & !vm.graal.enabled
  * @library ../..
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -35,7 +35,7 @@
  * @compile ../../test-classes/jdk/dynalink/DynamicLinker.jasm
  * @compile ../../test-classes/com/sun/tools/javac/Main.jasm
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main LimitModsTests
  * @summary AppCDS tests for excluding class in module by using --limit-modules.
  */
@@ -150,14 +150,14 @@ public class LimitModsTests {
                     }
                 }
             }
-            output = TestCommon.exec(
-                appJar + File.pathSeparator + helperJar,
+            TestCommon.run(
+                "-cp", appJar + File.pathSeparator + helperJar,
                 "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI", bootClassPath,
                 "--limit-modules", limitMods,
                 "LimitModsHelper",
                 BOOT_ARCHIVE_CLASS, PLATFORM_ARCHIVE_CLASS, APP_ARCHIVE_CLASS,
-                Integer.toString(excludeModIdx)); // last 4 args passed to test
-            TestCommon.checkExec(output);
+                Integer.toString(excludeModIdx)) // last 4 args passed to test
+                .assertSilentlyDisabledCDS(0);
             limitMods = null;
         }
     }

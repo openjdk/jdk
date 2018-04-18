@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1_globals.hpp"
-#endif // INCLUDE_ALL_GCS
+#include "utilities/stringUtils.hpp"
 #ifdef COMPILER1
 #include "c1/c1_globals.hpp"
 #endif
@@ -51,20 +49,20 @@
 #include "opto/c2_globals.hpp"
 #endif
 
-RUNTIME_FLAGS(MATERIALIZE_DEVELOPER_FLAG, \
-              MATERIALIZE_PD_DEVELOPER_FLAG, \
-              MATERIALIZE_PRODUCT_FLAG, \
-              MATERIALIZE_PD_PRODUCT_FLAG, \
-              MATERIALIZE_DIAGNOSTIC_FLAG, \
-              MATERIALIZE_PD_DIAGNOSTIC_FLAG, \
-              MATERIALIZE_EXPERIMENTAL_FLAG, \
-              MATERIALIZE_NOTPRODUCT_FLAG, \
-              MATERIALIZE_MANAGEABLE_FLAG, \
-              MATERIALIZE_PRODUCT_RW_FLAG, \
-              MATERIALIZE_LP64_PRODUCT_FLAG, \
-              IGNORE_RANGE, \
-              IGNORE_CONSTRAINT, \
-              IGNORE_WRITEABLE)
+VM_FLAGS(MATERIALIZE_DEVELOPER_FLAG, \
+         MATERIALIZE_PD_DEVELOPER_FLAG, \
+         MATERIALIZE_PRODUCT_FLAG, \
+         MATERIALIZE_PD_PRODUCT_FLAG, \
+         MATERIALIZE_DIAGNOSTIC_FLAG, \
+         MATERIALIZE_PD_DIAGNOSTIC_FLAG, \
+         MATERIALIZE_EXPERIMENTAL_FLAG, \
+         MATERIALIZE_NOTPRODUCT_FLAG, \
+         MATERIALIZE_MANAGEABLE_FLAG, \
+         MATERIALIZE_PRODUCT_RW_FLAG, \
+         MATERIALIZE_LP64_PRODUCT_FLAG, \
+         IGNORE_RANGE, \
+         IGNORE_CONSTRAINT, \
+         IGNORE_WRITEABLE)
 
 RUNTIME_OS_FLAGS(MATERIALIZE_DEVELOPER_FLAG, \
                  MATERIALIZE_PD_DEVELOPER_FLAG, \
@@ -446,8 +444,7 @@ Flag::MsgType Flag::get_locked_message(char* buf, int buflen) const {
                  _name);
     return Flag::NOTPRODUCT_FLAG_BUT_PRODUCT_BUILD;
   }
-  get_locked_message_ext(buf, buflen);
-  return Flag::NONE;
+  return get_locked_message_ext(buf, buflen);
 }
 
 bool Flag::is_writeable() const {
@@ -461,6 +458,18 @@ bool Flag::is_external() const {
   return is_manageable() || is_external_ext();
 }
 
+// Helper function for Flag::print_on().
+// Fills current line up to requested position.
+// Should the current position already be past the requested position,
+// one separator blank is enforced.
+void fill_to_pos(outputStream* st, unsigned int req_pos) {
+  if ((unsigned int)st->position() < req_pos) {
+    st->fill_to(req_pos);  // need to fill with blanks to reach req_pos
+  } else {
+    st->print(" ");        // enforce blank separation. Previous field too long.
+  }
+}
+
 void Flag::print_on(outputStream* st, bool withComments, bool printRanges) {
   // Don't print notproduct and develop flags in a product build.
   if (is_constant_in_binary()) {
@@ -468,36 +477,82 @@ void Flag::print_on(outputStream* st, bool withComments, bool printRanges) {
   }
 
   if (!printRanges) {
-    // Use some named constants to make code more readable.
-    const unsigned int nSpaces    = 10;
-    const unsigned int maxFlagLen = 40 + nSpaces;
+    // The command line options -XX:+PrintFlags* cause this function to be called
+    // for each existing flag to print information pertinent to this flag. The data
+    // is displayed in columnar form, with the following layout:
+    //  col1 - data type, right-justified
+    //  col2 - name,      left-justified
+    //  col3 - ' ='       double-char, leading space to align with possible '+='
+    //  col4 - value      left-justified
+    //  col5 - kind       right-justified
+    //  col6 - origin     left-justified
+    //  col7 - comments   left-justified
+    //
+    //  The column widths are fixed. They are defined such that, for most cases,
+    //  an eye-pleasing tabular output is created.
+    //
+    //  Sample output:
+    //       bool CMSScavengeBeforeRemark                  = false                                     {product} {default}
+    //      uintx CMSScheduleRemarkEdenPenetration         = 50                                        {product} {default}
+    //     size_t CMSScheduleRemarkEdenSizeThreshold       = 2097152                                   {product} {default}
+    //      uintx CMSScheduleRemarkSamplingRatio           = 5                                         {product} {default}
+    //     double CMSSmallCoalSurplusPercent               = 1.050000                                  {product} {default}
+    //      ccstr CompileCommandFile                       = MyFile.cmd                                {product} {command line}
+    //  ccstrlist CompileOnly                              = Method1
+    //            CompileOnly                             += Method2                                   {product} {command line}
+    //  |         |                                       |  |                              |                    |               |
+    //  |         |                                       |  |                              |                    |               +-- col7
+    //  |         |                                       |  |                              |                    +-- col6
+    //  |         |                                       |  |                              +-- col5
+    //  |         |                                       |  +-- col4
+    //  |         |                                       +-- col3
+    //  |         +-- col2
+    //  +-- col1
 
-    // The print below assumes that the flag name is 40 characters or less.
-    // This works for most flags, but there are exceptions. Our longest flag
-    // name right now is UseAdaptiveGenerationSizePolicyAtMajorCollection and
-    // its minor collection buddy. These are 48 characters. We use a buffer of
-    // nSpaces spaces below to adjust the space between the flag value and the
-    // column of flag type and origin that is printed in the end of the line.
-    char spaces[nSpaces + 1] = "          ";
-    st->print("%9s %-*s = ", _type, maxFlagLen-nSpaces, _name);
+    const unsigned int col_spacing = 1;
+    const unsigned int col1_pos    = 0;
+    const unsigned int col1_width  = 9;
+    const unsigned int col2_pos    = col1_pos + col1_width + col_spacing;
+    const unsigned int col2_width  = 39;
+    const unsigned int col3_pos    = col2_pos + col2_width + col_spacing;
+    const unsigned int col3_width  = 2;
+    const unsigned int col4_pos    = col3_pos + col3_width + col_spacing;
+    const unsigned int col4_width  = 30;
+    const unsigned int col5_pos    = col4_pos + col4_width + col_spacing;
+    const unsigned int col5_width  = 20;
+    const unsigned int col6_pos    = col5_pos + col5_width + col_spacing;
+    const unsigned int col6_width  = 15;
+    const unsigned int col7_pos    = col6_pos + col6_width + col_spacing;
+    const unsigned int col7_width  = 1;
 
+    st->fill_to(col1_pos);
+    st->print("%*s", col1_width, _type);  // right-justified, therefore width is required.
+
+    fill_to_pos(st, col2_pos);
+    st->print("%s", _name);
+
+    fill_to_pos(st, col3_pos);
+    st->print(" =");  // use " =" for proper alignment with multiline ccstr output.
+
+    fill_to_pos(st, col4_pos);
     if (is_bool()) {
-      st->print("%-20s", get_bool() ? "true" : "false");
+      st->print("%s", get_bool() ? "true" : "false");
     } else if (is_int()) {
-      st->print("%-20d", get_int());
+      st->print("%d", get_int());
     } else if (is_uint()) {
-      st->print("%-20u", get_uint());
+      st->print("%u", get_uint());
     } else if (is_intx()) {
-      st->print(INTX_FORMAT_W(-20), get_intx());
+      st->print(INTX_FORMAT, get_intx());
     } else if (is_uintx()) {
-      st->print(UINTX_FORMAT_W(-20), get_uintx());
+      st->print(UINTX_FORMAT, get_uintx());
     } else if (is_uint64_t()) {
-      st->print(UINT64_FORMAT_W(-20), get_uint64_t());
+      st->print(UINT64_FORMAT, get_uint64_t());
     } else if (is_size_t()) {
-      st->print(SIZE_FORMAT_W(-20), get_size_t());
+      st->print(SIZE_FORMAT, get_size_t());
     } else if (is_double()) {
-      st->print("%-20f", get_double());
+      st->print("%f", get_double());
     } else if (is_ccstr()) {
+      // Honor <newline> characters in ccstr: print multiple lines.
       const char* cp = get_ccstr();
       if (cp != NULL) {
         const char* eol;
@@ -506,31 +561,85 @@ void Flag::print_on(outputStream* st, bool withComments, bool printRanges) {
           st->print("%.*s", (int)llen, cp);
           st->cr();
           cp = eol+1;
-          st->print("%5s %-35s += ", "", _name);
+          fill_to_pos(st, col2_pos);
+          st->print("%s", _name);
+          fill_to_pos(st, col3_pos);
+          st->print("+=");
+          fill_to_pos(st, col4_pos);
         }
-        st->print("%-20s", cp);
+        st->print("%s", cp);
       }
-      else st->print("%-20s", "");
+    } else {
+      st->print("unhandled  type %s", _type);
+      st->cr();
+      return;
     }
-    // Make sure we do not punch a '\0' at a negative char array index.
-    unsigned int nameLen = (unsigned int)strlen(_name);
-    if (nameLen <= maxFlagLen) {
-      spaces[maxFlagLen - MAX2(maxFlagLen-nSpaces, nameLen)] = '\0';
-      st->print("%s", spaces);
-    }
-    print_kind_and_origin(st);
+
+    fill_to_pos(st, col5_pos);
+    print_kind(st, col5_width);
+
+    fill_to_pos(st, col6_pos);
+    print_origin(st, col6_width);
 
 #ifndef PRODUCT
     if (withComments) {
+      fill_to_pos(st, col7_pos);
       st->print("%s", _doc);
     }
 #endif
-
     st->cr();
-
   } else if (!is_bool() && !is_ccstr()) {
-    st->print("%9s %-50s ", _type, _name);
+    // The command line options -XX:+PrintFlags* cause this function to be called
+    // for each existing flag to print information pertinent to this flag. The data
+    // is displayed in columnar form, with the following layout:
+    //  col1 - data type, right-justified
+    //  col2 - name,      left-justified
+    //  col4 - range      [ min ... max]
+    //  col5 - kind       right-justified
+    //  col6 - origin     left-justified
+    //  col7 - comments   left-justified
+    //
+    //  The column widths are fixed. They are defined such that, for most cases,
+    //  an eye-pleasing tabular output is created.
+    //
+    //  Sample output:
+    //       intx MinPassesBeforeFlush                               [ 0                         ...       9223372036854775807 ]                         {diagnostic} {default}
+    //      uintx MinRAMFraction                                     [ 1                         ...      18446744073709551615 ]                            {product} {default}
+    //     double MinRAMPercentage                                   [ 0.000                     ...                   100.000 ]                            {product} {default}
+    //      uintx MinSurvivorRatio                                   [ 3                         ...      18446744073709551615 ]                            {product} {default}
+    //     size_t MinTLABSize                                        [ 1                         ...       9223372036854775807 ]                            {product} {default}
+    //       intx MonitorBound                                       [ 0                         ...                2147483647 ]                            {product} {default}
+    //  |         |                                                  |                                                           |                                    |               |
+    //  |         |                                                  |                                                           |                                    |               +-- col7
+    //  |         |                                                  |                                                           |                                    +-- col6
+    //  |         |                                                  |                                                           +-- col5
+    //  |         |                                                  +-- col4
+    //  |         +-- col2
+    //  +-- col1
 
+    const unsigned int col_spacing = 1;
+    const unsigned int col1_pos    = 0;
+    const unsigned int col1_width  = 9;
+    const unsigned int col2_pos    = col1_pos + col1_width + col_spacing;
+    const unsigned int col2_width  = 49;
+    const unsigned int col3_pos    = col2_pos + col2_width + col_spacing;
+    const unsigned int col3_width  = 0;
+    const unsigned int col4_pos    = col3_pos + col3_width + col_spacing;
+    const unsigned int col4_width  = 60;
+    const unsigned int col5_pos    = col4_pos + col4_width + col_spacing;
+    const unsigned int col5_width  = 35;
+    const unsigned int col6_pos    = col5_pos + col5_width + col_spacing;
+    const unsigned int col6_width  = 15;
+    const unsigned int col7_pos    = col6_pos + col6_width + col_spacing;
+    const unsigned int col7_width  = 1;
+
+    st->fill_to(col1_pos);
+    st->print("%*s", col1_width, _type);  // right-justified, therefore width is required.
+
+    fill_to_pos(st, col2_pos);
+    st->print("%s", _name);
+
+    fill_to_pos(st, col4_pos);
     RangeStrFunc func = NULL;
     if (is_int()) {
       func = Flag::get_int_default_range_str;
@@ -547,24 +656,29 @@ void Flag::print_on(outputStream* st, bool withComments, bool printRanges) {
     } else if (is_double()) {
       func = Flag::get_double_default_range_str;
     } else {
-      ShouldNotReachHere();
+      st->print("unhandled  type %s", _type);
+      st->cr();
+      return;
     }
     CommandLineFlagRangeList::print(st, _name, func);
 
-    st->print(" %-16s", " ");
-    print_kind_and_origin(st);
+    fill_to_pos(st, col5_pos);
+    print_kind(st, col5_width);
+
+    fill_to_pos(st, col6_pos);
+    print_origin(st, col6_width);
 
 #ifndef PRODUCT
     if (withComments) {
+      fill_to_pos(st, col7_pos);
       st->print("%s", _doc);
     }
 #endif
-
     st->cr();
   }
 }
 
-void Flag::print_kind_and_origin(outputStream* st) {
+void Flag::print_kind(outputStream* st, unsigned int width) {
   struct Data {
     int flag;
     const char* name;
@@ -614,11 +728,13 @@ void Flag::print_kind_and_origin(outputStream* st) {
     }
     assert(buffer_used + 2 <= buffer_size, "Too small buffer");
     jio_snprintf(kind + buffer_used, buffer_size - buffer_used, "}");
-    st->print("%20s", kind);
+    st->print("%*s", width, kind);
   }
+}
 
+void Flag::print_origin(outputStream* st, unsigned int width) {
   int origin = _flags & VALUE_ORIGIN_MASK;
-  st->print(" {");
+  st->print("{");
   switch(origin) {
     case DEFAULT:
       st->print("default"); break;
@@ -751,20 +867,21 @@ const char* Flag::flag_error_str(Flag::Error error) {
 #define ARCH_NOTPRODUCT_FLAG_STRUCT(     type, name, value, doc) { #type, XSTR(name), (void*) &name, NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_ARCH | Flag::KIND_NOT_PRODUCT) },
 
 static Flag flagTable[] = {
- RUNTIME_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, \
-               RUNTIME_PD_DEVELOP_FLAG_STRUCT, \
-               RUNTIME_PRODUCT_FLAG_STRUCT, \
-               RUNTIME_PD_PRODUCT_FLAG_STRUCT, \
-               RUNTIME_DIAGNOSTIC_FLAG_STRUCT, \
-               RUNTIME_PD_DIAGNOSTIC_FLAG_STRUCT, \
-               RUNTIME_EXPERIMENTAL_FLAG_STRUCT, \
-               RUNTIME_NOTPRODUCT_FLAG_STRUCT, \
-               RUNTIME_MANAGEABLE_FLAG_STRUCT, \
-               RUNTIME_PRODUCT_RW_FLAG_STRUCT, \
-               RUNTIME_LP64_PRODUCT_FLAG_STRUCT, \
-               IGNORE_RANGE, \
-               IGNORE_CONSTRAINT, \
-               IGNORE_WRITEABLE)
+  VM_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, \
+           RUNTIME_PD_DEVELOP_FLAG_STRUCT, \
+           RUNTIME_PRODUCT_FLAG_STRUCT, \
+           RUNTIME_PD_PRODUCT_FLAG_STRUCT, \
+           RUNTIME_DIAGNOSTIC_FLAG_STRUCT, \
+           RUNTIME_PD_DIAGNOSTIC_FLAG_STRUCT, \
+           RUNTIME_EXPERIMENTAL_FLAG_STRUCT, \
+           RUNTIME_NOTPRODUCT_FLAG_STRUCT, \
+           RUNTIME_MANAGEABLE_FLAG_STRUCT, \
+           RUNTIME_PRODUCT_RW_FLAG_STRUCT, \
+           RUNTIME_LP64_PRODUCT_FLAG_STRUCT, \
+           IGNORE_RANGE, \
+           IGNORE_CONSTRAINT, \
+           IGNORE_WRITEABLE)
+
  RUNTIME_OS_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, \
                   RUNTIME_PD_DEVELOP_FLAG_STRUCT, \
                   RUNTIME_PRODUCT_FLAG_STRUCT, \
@@ -775,21 +892,6 @@ static Flag flagTable[] = {
                   IGNORE_RANGE, \
                   IGNORE_CONSTRAINT, \
                   IGNORE_WRITEABLE)
-#if INCLUDE_ALL_GCS
- G1_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, \
-          RUNTIME_PD_DEVELOP_FLAG_STRUCT, \
-          RUNTIME_PRODUCT_FLAG_STRUCT, \
-          RUNTIME_PD_PRODUCT_FLAG_STRUCT, \
-          RUNTIME_DIAGNOSTIC_FLAG_STRUCT, \
-          RUNTIME_PD_DIAGNOSTIC_FLAG_STRUCT, \
-          RUNTIME_EXPERIMENTAL_FLAG_STRUCT, \
-          RUNTIME_NOTPRODUCT_FLAG_STRUCT, \
-          RUNTIME_MANAGEABLE_FLAG_STRUCT, \
-          RUNTIME_PRODUCT_RW_FLAG_STRUCT, \
-          IGNORE_RANGE, \
-          IGNORE_CONSTRAINT, \
-          IGNORE_WRITEABLE)
-#endif // INCLUDE_ALL_GCS
 #if INCLUDE_JVMCI
  JVMCI_FLAGS(JVMCI_DEVELOP_FLAG_STRUCT, \
              JVMCI_PD_DEVELOP_FLAG_STRUCT, \
@@ -880,25 +982,6 @@ size_t Flag::get_name_length() {
   return _name_len;
 }
 
-// Compute string similarity based on Dice's coefficient
-static float str_similar(const char* str1, const char* str2, size_t len2) {
-  int len1 = (int) strlen(str1);
-  int total = len1 + (int) len2;
-
-  int hit = 0;
-
-  for (int i = 0; i < len1 -1; ++i) {
-    for (int j = 0; j < (int) len2 -1; ++j) {
-      if ((str1[i] == str2[j]) && (str1[i+1] == str2[j+1])) {
-        ++hit;
-        break;
-      }
-    }
-  }
-
-  return 2.0f * (float) hit / (float) total;
-}
-
 Flag* Flag::fuzzy_match(const char* name, size_t length, bool allow_locked) {
   float VMOptionsFuzzyMatchSimilarity = 0.7f;
   Flag* match = NULL;
@@ -906,7 +989,7 @@ Flag* Flag::fuzzy_match(const char* name, size_t length, bool allow_locked) {
   float max_score = -1;
 
   for (Flag* current = &flagTable[0]; current->_name != NULL; current++) {
-    score = str_similar(current->_name, name, length);
+    score = StringUtils::similarity(current->_name, strlen(current->_name), name, length);
     if (score > max_score) {
       max_score = score;
       match = current;

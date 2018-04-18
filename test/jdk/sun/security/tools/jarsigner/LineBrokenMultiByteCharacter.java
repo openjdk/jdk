@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class LineBrokenMultiByteCharacter {
      * @see #verifyClassNameLineBroken(JarFile, String)
      */
     static final String testClassName =
-            "LineBrokenMultiByteCharacterA1234567890B1234567890C123456789D12\u00E9xyz.class";
+            "LineBrokenMultiByteCharacterA1234567890B1234567890C123456789D1234\u00E9xyz.class";
 
     static final String anotherName =
             "LineBrokenMultiByteCharacterA1234567890B1234567890C123456789D1234567890.class";

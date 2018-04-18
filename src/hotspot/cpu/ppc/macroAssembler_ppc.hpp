@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2017, SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -602,7 +602,6 @@ class MacroAssembler: public Assembler {
     Register t1,                       // temp register
     Label&   slow_case                 // continuation point if fast allocation fails
   );
-  void tlab_refill(Label& retry_tlab, Label& try_eden, Label& slow_case);
   void incr_allocated_bytes(RegisterOrConstant size_in_bytes, Register t1, Register t2);
 
   enum { trampoline_stub_size = 6 * 4 };
@@ -651,20 +650,7 @@ class MacroAssembler: public Assembler {
   // Check if safepoint requested and if so branch
   void safepoint_poll(Label& slow_path, Register temp_reg);
 
-  // GC barrier support.
-  void card_write_barrier_post(Register Rstore_addr, Register Rnew_val, Register Rtmp);
-  void card_table_write(jbyte* byte_map_base, Register Rtmp, Register Robj);
-
   void resolve_jobject(Register value, Register tmp1, Register tmp2, bool needs_frame);
-
-#if INCLUDE_ALL_GCS
-  // General G1 pre-barrier generator.
-  void g1_write_barrier_pre(Register Robj, RegisterOrConstant offset, Register Rpre_val,
-                            Register Rtmp1, Register Rtmp2, bool needs_frame = false);
-  // General G1 post-barrier generator
-  void g1_write_barrier_post(Register Rstore_addr, Register Rnew_val, Register Rtmp1,
-                             Register Rtmp2, Register Rtmp3, Label *filtered_ext = NULL);
-#endif
 
   // Support for managing the JavaThread pointer (i.e.; the reference to
   // thread-local information).
@@ -857,13 +843,13 @@ class MacroAssembler: public Assembler {
   void kernel_crc32_1byte(Register crc, Register buf, Register len, Register table,
                           Register t0,  Register t1,  Register t2,  Register t3,
                           bool invertCRC);
-  void kernel_crc32_1word_vpmsumd(Register crc, Register buf, Register len, Register table,
+  void kernel_crc32_1word_vpmsum(Register crc, Register buf, Register len, Register table,
                           Register constants, Register barretConstants,
                           Register t0,  Register t1, Register t2, Register t3, Register t4,
                           bool invertCRC);
   void kernel_crc32_1word_aligned(Register crc, Register buf, Register len,
                           Register constants, Register barretConstants,
-                          Register t0, Register t1, Register t2);
+                          Register t0, Register t1, Register t2, Register t3, Register t4);
 
   void kernel_crc32_singleByte(Register crc, Register buf, Register len, Register table, Register tmp,
                                bool invertCRC);
@@ -980,6 +966,8 @@ class SkipIfEqualZero : public StackObj {
  public:
    // 'Temp' is a temp register that this object can use (and trash).
    explicit SkipIfEqualZero(MacroAssembler*, Register temp, const bool* flag_addr);
+   static void skip_to_label_if_equal_zero(MacroAssembler*, Register temp,
+                                           const bool* flag_addr, Label& label);
    ~SkipIfEqualZero();
 };
 

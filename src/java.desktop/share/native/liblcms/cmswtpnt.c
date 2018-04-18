@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2016 Marti Maria Saguer
+//  Copyright (c) 1998-2017 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -105,7 +105,6 @@ cmsBool  CMSEXPORT cmsWhitePointFromTemp(cmsCIExyY* WhitePoint, cmsFloat64Number
         }
 
         // Obtain y(x)
-
         y = -3.000*(x*x) + 2.870*x - 0.275;
 
         // wave factors (not used, but here for futures extensions)
@@ -131,7 +130,7 @@ typedef struct {
 
     } ISOTEMPERATURE;
 
-static ISOTEMPERATURE isotempdata[] = {
+static const ISOTEMPERATURE isotempdata[] = {
 //  {Mirek, Ut,       Vt,      Tt      }
     {0,     0.18006,  0.26352,  -0.24341},
     {10,    0.18066,  0.26589,  -0.25479},
@@ -295,7 +294,7 @@ cmsBool _cmsAdaptMatrixToD50(cmsMAT3* r, const cmsCIExyY* SourceWhitePt)
 // Build a White point, primary chromas transfer matrix from RGB to CIE XYZ
 // This is just an approximation, I am not handling all the non-linear
 // aspects of the RGB to XYZ process, and assumming that the gamma correction
-// has transitive property in the tranformation chain.
+// has transitive property in the transformation chain.
 //
 // the alghoritm:
 //

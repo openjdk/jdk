@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@ endef
 # In GNU Make 4.0 and higher, there is a file function for writing to files.
 ifeq (4.0, $(firstword $(sort 4.0 $(MAKE_VERSION))))
   HAS_FILE_FUNCTION := true
+  CORRECT_FUNCTION_IN_RECIPE_EVALUATION := true
 endif
 
 ##############################
@@ -423,7 +424,7 @@ _sequence-do = \
 
 ################################################################################
 
-MAX_PARAMS := 35
+MAX_PARAMS := 36
 PARAM_SEQUENCE := $(call sequence, 2, $(MAX_PARAMS))
 
 # Template for creating a macro taking named parameters. To use it, assign the
@@ -518,12 +519,14 @@ ifeq ($(OPENJDK_TARGET_OS),solaris)
   define install-file
 	$(call MakeTargetDir)
 	$(RM) '$(call DecodeSpace, $@)'
-	if [ '$(call DecodeSpace, $(dir $@))' != \
+	if [ '$(call DecodeSpace, $(dir $(call EncodeSpace, $@)))' != \
 	    '$(call DecodeSpace, $(dir $(call EncodeSpace, $<)))' ]; then \
-	  $(CP) -f -r -P '$(call DecodeSpace, $<)' '$(call DecodeSpace, $(@D))'; \
-	  if [ '$(call DecodeSpace, $(@F))' != \
+	  $(CP) -f -r -P '$(call DecodeSpace, $<)' \
+	      '$(call DecodeSpace, $(dir $(call EncodeSpace, $@)))'; \
+	  if [ '$(call DecodeSpace, $(notdir $(call EncodeSpace, $@)))' != \
 	      '$(call DecodeSpace, $(notdir $(call EncodeSpace, $(<))))' ]; then \
-	    $(MV) '$(call DecodeSpace, $(@D)/$(<F))' '$(call DecodeSpace, $@)'; \
+	    $(MV) '$(call DecodeSpace, $(dir $(call EncodeSpace, $@))/$(notdir $(call EncodeSpace, $<)))' \
+	        '$(call DecodeSpace, $@)'; \
 	  fi; \
 	else \
 	  if [ -L '$(call DecodeSpace, $<)' ]; then \
@@ -545,8 +548,18 @@ else ifeq ($(OPENJDK_TARGET_OS),macosx)
   define install-file
 	$(call MakeTargetDir)
 	$(RM) '$(call DecodeSpace, $@)'
-	$(CP) -fRP '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'
-	if [ -n "`$(XATTR) -ls '$(call DecodeSpace, $@)'`" ]; then $(XATTR) -cs '$(call DecodeSpace, $@)'; fi
+        # Work around a weirdness with cp on Macosx. When copying a symlink, if
+        # the target of the link is write protected (e.g. 444), cp will add
+        # write permission for the user on the target file (644). Avoid this by
+        # using ln to create a new link instead.
+	if [ -h '$(call DecodeSpace, $<)' ]; then \
+	  $(LN) -s "`$(READLINK) '$(call DecodeSpace, $<)'`" '$(call DecodeSpace, $@)'; \
+	else \
+	  $(CP) -fRP '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'; \
+	fi
+	if [ -n "`$(XATTR) -ls '$(call DecodeSpace, $@)'`" ]; then \
+	  $(XATTR) -cs '$(call DecodeSpace, $@)'; \
+	fi
   endef
 else
   define install-file
@@ -1000,6 +1013,7 @@ endif
 # Param 2 - The command to run
 ExecuteWithLog = \
   $(call LogCmdlines, Exececuting: [$(strip $2)]) \
+  $(call MakeDir, $(dir $(strip $1))) \
   $(call WriteFile, $2, $(strip $1).cmdline) \
   ( $(strip $2) > >($(TEE) $(strip $1).log) 2> >($(TEE) $(strip $1).log >&2) || \
       ( exitcode=$(DOLLAR)? && \
@@ -1012,6 +1026,12 @@ ExecuteWithLog = \
 # Param 1 - module name
 FindLibDirForModule = \
     $(SUPPORT_OUTPUTDIR)/modules_libs/$(strip $1)
+
+################################################################################
+# Find executable dir for module
+# Param 1 - module name
+FindExecutableDirForModule = \
+    $(SUPPORT_OUTPUTDIR)/modules_cmds/$(strip $1)
 
 ################################################################################
 # Return a string suitable for use after a -classpath or --module-path option. It

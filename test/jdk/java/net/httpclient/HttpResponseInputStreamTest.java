@@ -21,12 +21,12 @@
  * questions.
  */
 
-import jdk.incubator.http.HttpResponse;
-import jdk.incubator.http.HttpResponse.BodySubscriber;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodySubscriber;
+import java.net.http.HttpResponse.BodySubscribers;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -63,7 +63,7 @@ public class HttpResponseInputStreamTest {
     @Test
     public static void testOnError() throws InterruptedException, ExecutionException {
         CountDownLatch latch = new CountDownLatch(1);
-        BodySubscriber<InputStream> isb = BodySubscriber.asInputStream();
+        BodySubscriber<InputStream> isb = BodySubscribers.ofInputStream();
         ErrorTestSubscription s = new ErrorTestSubscription(isb);
         CompletionStage<Throwable> cs =
                 isb.getBody().thenApplyAsync((is) -> s.accept(latch, is));
@@ -158,7 +158,7 @@ public class HttpResponseInputStreamTest {
     public static void testCloseAndSubscribe()
             throws InterruptedException, ExecutionException
     {
-        BodySubscriber<InputStream> isb = BodySubscriber.asInputStream();
+        BodySubscriber<InputStream> isb = BodySubscribers.ofInputStream();
         TestCancelOnCloseSubscription s = new TestCancelOnCloseSubscription();
         InputStream is = isb.getBody()
                 .thenApply(HttpResponseInputStreamTest::close)
@@ -187,7 +187,7 @@ public class HttpResponseInputStreamTest {
     public static void testSubscribeAndClose()
             throws InterruptedException, ExecutionException
     {
-        BodySubscriber<InputStream> isb = BodySubscriber.asInputStream();
+        BodySubscriber<InputStream> isb = BodySubscribers.ofInputStream();
         TestCancelOnCloseSubscription s = new TestCancelOnCloseSubscription();
         InputStream is = isb.getBody().toCompletableFuture().get();
         isb.onSubscribe(s);

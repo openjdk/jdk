@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary Test the -XX:+IgnoreEmptyClassPaths flag
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -52,12 +51,12 @@ public class IgnoreEmptyClassPaths {
     TestCommon.testDump(cp_dump, TestCommon.list("Hello", "HelloMore"),
                         "-XX:+TraceClassPaths", "-XX:+IgnoreEmptyClassPaths");
 
-    OutputAnalyzer output = TestCommon.execCommon(
+    TestCommon.run(
         "-verbose:class",
         "-cp", cp_exec,
         "-XX:+IgnoreEmptyClassPaths", // should affect classpath even if placed after the "-cp" argument
         "-XX:+TraceClassPaths",
-        "HelloMore");
-    TestCommon.checkExec(output);
+        "HelloMore")
+      .assertNormalExit();
   }
 }

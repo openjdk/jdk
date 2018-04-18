@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,11 @@
 #ifndef SHARE_VM_PRIMS_PRIVILEGEDSTACK_HPP
 #define SHARE_VM_PRIMS_PRIVILEGEDSTACK_HPP
 
-#include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/vframe.hpp"
 #include "utilities/growableArray.hpp"
 
-class PrivilegedElement VALUE_OBJ_CLASS_SPEC {
+class PrivilegedElement {
  private:
   Klass*    _klass;                // klass for method
   oop       _privileged_context;   // context for operation

@@ -86,7 +86,7 @@ public final class ObjectCloneNode extends BasicObjectCloneNode implements Virtu
                     StructuredGraph snippetGraph = null;
                     DebugContext debug = getDebug();
                     try (DebugContext.Scope s = debug.scope("ArrayCloneSnippet", snippetMethod)) {
-                        snippetGraph = replacements.getSnippet(snippetMethod, null);
+                        snippetGraph = replacements.getSnippet(snippetMethod, null, graph().trackNodeSourcePosition(), this.getNodeSourcePosition());
                     } catch (Throwable e) {
                         throw debug.handle(e);
                     }

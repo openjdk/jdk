@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,8 +80,8 @@ import javax.lang.model.element.TypeElement;
  *  - handling of covariant overrides
  *  - handling of override of method found in multiple superinterfaces
  *  - convert type/method/field output to Java source like syntax, e.g.
- *      instead of java/lang/Runtime.runFinalizersOnExit(Z)V
- *      print void java.lang.Runtime.runFinalizersOnExit(boolean)
+ *      instead of java/lang/Character.isJavaLetter(C)Z
+ *      print void java.lang.Character.isJavaLetter(char)boolean
  *  - more example output in man page
  *  - more rigorous GNU style option parsing; use joptsimple?
  *
@@ -106,7 +106,7 @@ public class Main implements DiagnosticListener<JavaFileObject> {
     // Keep these updated manually until there's a compiler API
     // that allows querying of supported releases.
     final Set<String> releasesWithoutForRemoval = Set.of("6", "7", "8");
-    final Set<String> releasesWithForRemoval = Set.of("9", "10");
+    final Set<String> releasesWithForRemoval = Set.of("9", "10", "11");
 
     final Set<String> validReleases;
     {
@@ -358,14 +358,15 @@ public class Main implements DiagnosticListener<JavaFileObject> {
      * Process classes from a particular JDK release, using only information
      * in this JDK.
      *
-     * @param release "6", "7", "8", "9", or "10"
+     * @param release "6", "7", "8", "9", "10", or "11"
      * @param classes collection of classes to process, may be empty
      * @return success value
      */
     boolean processRelease(String release, Collection<String> classes) throws IOException {
         options.addAll(List.of("--release", release));
 
-        if (release.equals("9") || release.equals("10")) {
+        if (release.equals("9") || release.equals("10") ||
+            release.equals("11")) {
             List<String> rootMods = List.of("java.se", "java.se.ee");
             TraverseProc proc = new TraverseProc(rootMods);
             JavaCompiler.CompilationTask task =
@@ -481,7 +482,7 @@ public class Main implements DiagnosticListener<JavaFileObject> {
         String dir = null;
         String jar = null;
         String jdkHome = null;
-        String release = "10";
+        String release = "11";
         List<String> loadClasses = new ArrayList<>();
         String csvFile = null;
 
@@ -505,10 +506,11 @@ public class Main implements DiagnosticListener<JavaFileObject> {
                             return false;
                         case "--help":
                         case "-h":
+                        case "-?":
                             out.println(Messages.get("main.usage"));
                             out.println();
                             out.println(Messages.get("main.help"));
-                            return false;
+                            return true;
                         case "-l":
                         case "--list":
                             require(scanMode == ScanMode.ARGS);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ class InterpreterMacroAssembler;
 // A Template describes the properties of a code template for a given bytecode
 // and provides a generator to generate the code template.
 
-class Template VALUE_OBJ_CLASS_SPEC {
+class Template {
  private:
   enum Flags {
     uses_bcp_bit,                                // set if template needs the bcp pointing to bytecode
@@ -295,6 +295,7 @@ class TemplateTable: AllStatic {
   static void getstatic(int byte_no);
   static void putstatic(int byte_no);
   static void pop_and_check_object(Register obj);
+  static void condy_helper(Label& Done);  // shared by ldc instances
 
   static void _new();
   static void newarray();

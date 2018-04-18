@@ -83,6 +83,12 @@ public class ButtonDemoScreenshotTest {
 
     private void checkButton(JFrameOperator jfo, int i, Robot rob) {
         JButtonOperator button = new JButtonOperator(jfo, i);
+
+        //additional instrumentation for JDK-8198920. To be removed after the bug is fixed
+        java.util.concurrent.atomic.AtomicBoolean actionListenerCalled = new java.util.concurrent.atomic.AtomicBoolean(false);
+        button.addActionListener(e -> actionListenerCalled.set(true));
+        //end of instrumentation for JDK-8198920
+
         button.moveMouse(button.getCenterX(), button.getCenterY());
 
         BufferedImage initialButtonImage = capture(rob, button);
@@ -92,8 +98,14 @@ public class ButtonDemoScreenshotTest {
         BufferedImage[] pressedImage = new BufferedImage[1];
 
         button.pressMouse();
+        //additional instrumentation for JDK-8198920. To be removed after the bug is fixed
+        button.getOutput().printTrace("JDK-8198920: Button pressed at " + System.currentTimeMillis());
+        //end of instrumentation for JDK-8198920
         try {
             waitPressed(button);
+            //additional instrumentation for JDK-8198920. To be removed after the bug is fixed
+            button.getOutput().printTrace("JDK-8198920: Button press confirmed by " + System.currentTimeMillis());
+            //end of instrumentation for JDK-8198920
             button.waitState(new ComponentChooser() {
                 public boolean checkComponent(Component c) {
                     pressedImage[0] = capture(rob, button);
@@ -107,6 +119,15 @@ public class ButtonDemoScreenshotTest {
         } finally {
             if(pressedImage[0] != null) save(pressedImage[0], "button" + i + "_pressed.png");
             button.releaseMouse();
+            //additional instrumentation for JDK-8198920. To be removed after the bug is fixed
+            button.getOutput().printTrace("JDK-8198920: Button released at " + System.currentTimeMillis());
+            try {
+                button.waitState(comp -> actionListenerCalled.get());
+                button.getOutput().printTrace("JDK-8198920: Action listener was called by " + System.currentTimeMillis());
+            } catch(org.netbeans.jemmy.TimeoutExpiredException e) {
+                button.getOutput().printTrace("JDK-8198920: Action listener was not called by " + System.currentTimeMillis());
+            }
+            //end of instrumentation for JDK-8198920
         }
     }
 }

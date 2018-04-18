@@ -26,10 +26,13 @@
  * @library /lib/testlibrary server
  * @build jdk.testlibrary.SimpleSSLContext
  * @modules java.base/sun.net.www.http
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.common
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.frame
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.hpack
- * @run testng/othervm -Djdk.internal.httpclient.debug=true -Djdk.httpclient.HttpClient.log=errors,requests,responses,trace ImplicitPushCancel
+ *          java.net.http/jdk.internal.net.http.common
+ *          java.net.http/jdk.internal.net.http.frame
+ *          java.net.http/jdk.internal.net.http.hpack
+ * @run testng/othervm
+ *      -Djdk.internal.httpclient.debug=true
+ *      -Djdk.httpclient.HttpClient.log=errors,requests,responses,trace
+ *      ImplicitPushCancel
  */
 
 import java.io.ByteArrayInputStream;
@@ -39,13 +42,16 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import jdk.incubator.http.HttpClient;
-import jdk.incubator.http.HttpRequest;
-import jdk.incubator.http.HttpResponse;
-import jdk.incubator.http.HttpResponse.BodyHandler;
-import jdk.incubator.http.MultiMapResult;
-import jdk.incubator.http.internal.common.HttpHeadersImpl;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.net.http.HttpResponse.PushPromiseHandler;
+import jdk.internal.net.http.common.HttpHeadersImpl;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -79,7 +85,7 @@ public class ImplicitPushCancel {
         server.start();
         int port = server.getAddress().getPort();
         System.err.println("Server listening on port " + port);
-        uri = new URI("http://127.0.0.1:" + port + "/foo/a/b/c");
+        uri = new URI("http://localhost:" + port + "/foo/a/b/c");
     }
 
     @AfterTest
@@ -101,21 +107,26 @@ public class ImplicitPushCancel {
     public void test() throws Exception {
         HttpClient client = HttpClient.newHttpClient();
 
-        client.sendAsync(HttpRequest.newBuilder(uri).build(), BodyHandler.asString())
+        client.sendAsync(HttpRequest.newBuilder(uri).build(), BodyHandlers.ofString())
                 .thenApply(ImplicitPushCancel::assert200ResponseCode)
                 .thenApply(HttpResponse::body)
                 .thenAccept(body -> body.equals(MAIN_RESPONSE_BODY))
                 .join();
 
-        MultiMapResult<String> map = client.sendAsync(
+        ConcurrentMap<HttpRequest, CompletableFuture<HttpResponse<String>>> promises
+                = new ConcurrentHashMap<>();
+        PushPromiseHandler<String> pph = PushPromiseHandler
+                .of((r) -> BodyHandlers.ofString(), promises);
+        HttpResponse<String> main = client.sendAsync(
                 HttpRequest.newBuilder(uri).build(),
-                HttpResponse.MultiSubscriber.asMap(
-                       (req) -> Optional.of(HttpResponse.BodyHandler.asString()))
-                ).join();
+                BodyHandlers.ofString(),
+                pph)
+                .join();
 
-        map.entrySet().stream().forEach(e -> System.out.println(e.getKey() + ":" + e.getValue().join().body()));
+        promises.entrySet().stream().forEach(e -> System.out.println(e.getKey() + ":" + e.getValue().join().body()));
 
-        map.entrySet().stream().forEach(entry -> {
+        promises.putIfAbsent(main.request(), CompletableFuture.completedFuture(main));
+        promises.entrySet().stream().forEach(entry -> {
             HttpRequest request = entry.getKey();
             HttpResponse<String> response = entry.getValue().join();
             assertEquals(response.statusCode(), 200);

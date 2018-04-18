@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package jdk.jshell;
 
 import java.util.Collection;
+import java.util.Set;
+import java.util.stream.Collectors;
 import jdk.jshell.Key.VarKey;
 
 /**
@@ -41,15 +43,30 @@ import jdk.jshell.Key.VarKey;
  */
 public class VarSnippet extends DeclarationSnippet {
 
+    /**A human readable type of the variable. May include intersection types
+     * and human readable description of anonymous classes.
+     */
     final String typeName;
 
+    /**The full type inferred for "var" variables. May include intersection types
+     * and inaccessible types. {@literal null} if enhancing the type is not necessary.
+     */
+    final String fullTypeName;
+
+    /**The anonymous class declared in the initializer of the "var" variable.
+     * These are automatically statically imported when the field is imported.
+     */
+    final Set<String> anonymousClasses;
+
      VarSnippet(VarKey key, String userSource, Wrap guts,
-            String name, SubKind subkind, String typeName,
-            Collection<String> declareReferences,
+            String name, SubKind subkind, String typeName, String fullTypeName,
+            Set<String> anonymousClasses, Collection<String> declareReferences,
             DiagList syntheticDiags) {
         super(key, userSource, guts, name, subkind, null, declareReferences,
                 null, syntheticDiags);
         this.typeName = typeName;
+        this.fullTypeName = fullTypeName;
+        this.anonymousClasses = anonymousClasses;
     }
 
     /**
@@ -59,4 +76,13 @@ public class VarSnippet extends DeclarationSnippet {
     public String typeName() {
         return typeName;
     }
+
+    @Override
+    String importLine(JShell state) {
+        return "import static " + classFullName() + "." + name() + ";   " +
+               anonymousClasses.stream()
+                               .map(c -> "import static " + classFullName() + "." + c + ";   ")
+                               .collect(Collectors.joining());
+    }
+
 }

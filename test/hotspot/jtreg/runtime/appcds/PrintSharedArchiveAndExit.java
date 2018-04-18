@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary test the -XX:+PrintSharedArchiveAndExit flag
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -68,81 +67,79 @@ public class PrintSharedArchiveAndExit {
 
     TestCommon.testDump(cp, TestCommon.list("Hello"));
 
-    OutputAnalyzer output;
-
     log("Normal execution -- all the JAR paths should be checked");
-    output = TestCommon.execCommon(
+    TestCommon.run(
         "-cp", cp,
-        "-XX:+PrintSharedArchiveAndExit");
-    check(output, 0, true, lastCheckMsg);
+        "-XX:+PrintSharedArchiveAndExit")
+      .ifNoMappingFailure(output -> check(output, 0, true, lastCheckMsg));
 
-    output = TestCommon.execCommon(
+    TestCommon.run(
         "-cp", cp,
         "-XX:+PrintSharedArchiveAndExit",
-        "-XX:+PrintSharedDictionary");  // Test PrintSharedDictionary as well.
-    check(output, 0, true, lastCheckMsg, "java.lang.Object");
+        "-XX:+PrintSharedDictionary")  // Test PrintSharedDictionary as well.
+      .ifNoMappingFailure(output -> check(output, 0, true, lastCheckMsg, "java.lang.Object"));
 
     log("Normal execution -- Make sure -version, help message and app main()\n" +
         "class are not invoked. These are checked inside check().");
-    output = TestCommon.execCommon("-cp", cp, "-XX:+PrintSharedArchiveAndExit", "-version");
-    check(output, 0, true, lastCheckMsg);
+    TestCommon.run("-cp", cp, "-XX:+PrintSharedArchiveAndExit", "-version")
+      .ifNoMappingFailure(output -> check(output, 0, true, lastCheckMsg));
 
-    output = TestCommon.execCommon("-cp", cp, "-XX:+PrintSharedArchiveAndExit", "-help");
-    check(output, 0, true, lastCheckMsg);
+    TestCommon.run("-cp", cp, "-XX:+PrintSharedArchiveAndExit", "-help")
+      .ifNoMappingFailure(output -> check(output, 0, true, lastCheckMsg));
 
-    output = TestCommon.execCommon("-cp", cp, "-XX:+PrintSharedArchiveAndExit", "Hello");
-    check(output, 0, true, lastCheckMsg);
+    TestCommon.run("-cp", cp, "-XX:+PrintSharedArchiveAndExit", "Hello")
+      .ifNoMappingFailure(output -> check(output, 0, true, lastCheckMsg));
 
     log("Execution with simple errors -- with 'simple' errors like missing or modified\n" +
         "JAR files, the VM should try to continue to print the remaining information.\n" +
         "Use an invalid Boot CP -- all the JAR paths should be checked");
-    output = TestCommon.execCommon(
+    TestCommon.run(
         "-cp", cp,
         "-Xbootclasspath/a:foo.jar",
-        "-XX:+PrintSharedArchiveAndExit");
-    check(output, 1, true, lastCheckMsg, "[BOOT classpath mismatch, ");
+        "-XX:+PrintSharedArchiveAndExit")
+      .ifNoMappingFailure(output -> check(output, 1, true, lastCheckMsg, "[BOOT classpath mismatch, "));
 
     log("Use an App CP shorter than the one at dump time -- all the JAR paths should be checked");
-    output = TestCommon.execCommon(
+    TestCommon.run(
         "-cp", ".",
-        "-XX:+PrintSharedArchiveAndExit");
-    check(output, 1, true, lastCheckMsg, "Run time APP classpath is shorter than the one at dump time: .");
+        "-XX:+PrintSharedArchiveAndExit")
+      .ifNoMappingFailure(output -> check(output, 1, true, lastCheckMsg, "Run time APP classpath is shorter than the one at dump time: ."));
 
     log("Use an invalid App CP -- all the JAR paths should be checked");
     String invalidCP = "non-existing-dir" + File.pathSeparator + cp;
-    output = TestCommon.execCommon(
+    TestCommon.run(
         "-cp", invalidCP,
-        "-XX:+PrintSharedArchiveAndExit");
-    check(output, 1, true, lastCheckMsg, "APP classpath mismatch, actual: -Djava.class.path=" + invalidCP);
+        "-XX:+PrintSharedArchiveAndExit")
+      .ifNoMappingFailure(output -> check(output, 1, true, lastCheckMsg, "APP classpath mismatch, actual: -Djava.class.path=" + invalidCP));
 
     log("Changed modification time of hello.jar -- all the JAR paths should be checked");
     (new File(appJar)).setLastModified(System.currentTimeMillis() + 2000);
-    output = TestCommon.execCommon(
+    TestCommon.run(
         "-cp", cp,
-        "-XX:+PrintSharedArchiveAndExit");
-    check(output, 1, true, lastCheckMsg, "[Timestamp mismatch]");
+        "-XX:+PrintSharedArchiveAndExit")
+      .ifNoMappingFailure(output -> check(output, 1, true, lastCheckMsg, "[Timestamp mismatch]"));
 
     log("Even if hello.jar is out of date, we should still be able to print the dictionary.");
-    output = TestCommon.execCommon(
+    TestCommon.run(
         "-cp", cp,
         "-XX:+PrintSharedArchiveAndExit",
-        "-XX:+PrintSharedDictionary");  // Test PrintSharedDictionary as well.
-    check(output, 1, true, lastCheckMsg, "java.lang.Object");
+        "-XX:+PrintSharedDictionary")  // Test PrintSharedDictionary as well.
+      .ifNoMappingFailure(output -> check(output, 1, true, lastCheckMsg, "java.lang.Object"));
 
 
     log("Remove hello.jar -- all the JAR paths should be checked");
     (new File(appJar)).delete();
-    output = TestCommon.execCommon(
+    TestCommon.run(
         "-cp", cp,
-        "-XX:+PrintSharedArchiveAndExit");
-    check(output, 1, true, lastCheckMsg, "[Required classpath entry does not exist: " + appJar + "]");
+        "-XX:+PrintSharedArchiveAndExit")
+      .ifNoMappingFailure(output -> check(output, 1, true, lastCheckMsg, "[Required classpath entry does not exist: " + appJar + "]"));
 
     log("Execution with major errors -- with 'major' errors like the JSA file\n" +
         "is missing, we should stop immediately to avoid crashing the JVM.");
-    output = TestCommon.execCommon(
+    TestCommon.run(
         "-cp", cp,
         "-XX:+PrintSharedArchiveAndExit",
-        "-XX:SharedArchiveFile=./no-such-fileappcds.jsa");
-    check(output, 1, false, lastCheckMsg);
+        "-XX:SharedArchiveFile=./no-such-fileappcds.jsa")
+      .ifNoMappingFailure(output -> check(output, 1, false, lastCheckMsg));
   }
 }

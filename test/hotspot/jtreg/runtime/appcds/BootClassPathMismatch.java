@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary bootclasspath mismatch test.
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -63,20 +62,13 @@ public class BootClassPathMismatch {
     public void testBootClassPathMismatch() throws Exception {
         String appJar = JarBuilder.getOrCreateHelloJar();
         String appClasses[] = {"Hello"};
-        OutputAnalyzer dumpOutput = TestCommon.dump(
+        TestCommon.dump(
             appJar, appClasses, "-Xbootclasspath/a:" + appJar);
         String testDir = TestCommon.getTestDir("newdir");
         String otherJar = testDir + File.separator + "hello.jar";
-        OutputAnalyzer execOutput = TestCommon.exec(
-            appJar, "-verbose:class", "-Xbootclasspath/a:" + otherJar, "Hello");
-        try {
-            TestCommon.checkExec(execOutput, mismatchMessage);
-        } catch (java.lang.RuntimeException re) {
-          String cause = re.getMessage();
-          if (!mismatchMessage.equals(cause)) {
-              throw re;
-          }
-        }
+        TestCommon.run(
+                "-cp", appJar, "-verbose:class", "-Xbootclasspath/a:" + otherJar, "Hello")
+            .assertAbnormalExit(mismatchMessage);
     }
 
     /* Error should be detected if:
@@ -86,17 +78,10 @@ public class BootClassPathMismatch {
     public void testBootClassPathMismatch2() throws Exception {
         String appJar = JarBuilder.getOrCreateHelloJar();
         String appClasses[] = {"Hello"};
-        OutputAnalyzer dumpOutput = TestCommon.dump(appJar, appClasses);
-        OutputAnalyzer execOutput = TestCommon.exec(
-            appJar, "-verbose:class", "-Xbootclasspath/a:" + appJar, "Hello");
-        try {
-            TestCommon.checkExec(execOutput, mismatchMessage);
-        } catch (java.lang.RuntimeException re) {
-          String cause = re.getMessage();
-          if (!mismatchMessage.equals(cause)) {
-              throw re;
-          }
-        }
+        TestCommon.dump(appJar, appClasses);
+        TestCommon.run(
+                "-cp", appJar, "-verbose:class", "-Xbootclasspath/a:" + appJar, "Hello")
+            .assertAbnormalExit(mismatchMessage);
     }
 
     /* No error if:
@@ -106,13 +91,12 @@ public class BootClassPathMismatch {
     public void testBootClassPathMatch() throws Exception {
         String appJar = TestCommon.getTestJar("hello.jar");
         String appClasses[] = {"Hello"};
-        OutputAnalyzer dumpOutput = TestCommon.dump(
+        TestCommon.dump(
             appJar, appClasses, "-Xbootclasspath/a:" + appJar);
-        OutputAnalyzer execOutput = TestCommon.exec(
-            appJar, "-verbose:class",
-            "-Xbootclasspath/a:" + appJar, "Hello");
-        TestCommon.checkExec(execOutput,
-                "[class,load] Hello source: shared objects file");
+        TestCommon.run(
+                "-cp", appJar, "-verbose:class",
+                "-Xbootclasspath/a:" + appJar, "Hello")
+            .assertNormalExit("[class,load] Hello source: shared objects file");
     }
 
     private static void copyHelloToNewDir() throws Exception {

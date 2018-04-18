@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -129,7 +129,6 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 // Portability macros
 #define PRAGMA_INTERFACE             #pragma interface
 #define PRAGMA_IMPLEMENTATION        #pragma implementation
-#define VALUE_OBJ_CLASS_SPEC
 
 // Formatting.
 #ifdef _LP64
@@ -153,7 +152,18 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 #endif
 
 // Inlining support
-#define NOINLINE
-#define ALWAYSINLINE inline __attribute__((always_inline))
+//
+// Be aware that for function/method declarations, xlC only supports the following
+// syntax (i.e. the attribute must be placed AFTER the function/method declarator):
+//
+//   void* operator new(size_t size) throw() NOINLINE;
+//
+// For function/method defintions, the more common placement BEFORE the
+// function/method declarator seems to be supported as well:
+//
+//   NOINLINE void* CHeapObj<F>::operator new(size_t size) throw() {...}
+
+#define NOINLINE     __attribute__((__noinline__))
+#define ALWAYSINLINE inline __attribute__((__always_inline__))
 
 #endif // SHARE_VM_UTILITIES_GLOBALDEFINITIONS_XLC_HPP

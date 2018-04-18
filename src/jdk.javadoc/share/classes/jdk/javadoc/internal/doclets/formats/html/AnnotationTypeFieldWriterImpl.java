@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 
-import java.util.Arrays;
-
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -39,7 +37,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeFieldWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -287,31 +285,6 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
                 member, utils.getFullyQualifiedName(member));
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    protected Content getNavSummaryLink(TypeElement typeElement, boolean link) {
-        if (link) {
-            return Links.createLink(
-                    SectionName.ANNOTATION_TYPE_FIELD_SUMMARY,
-                    contents.navField);
-        } else {
-            return contents.navField;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    protected void addNavDetailLink(boolean link, Content liNav) {
-        if (link) {
-            liNav.addContent(Links.createLink(
-                    SectionName.ANNOTATION_TYPE_FIELD_DETAIL,
-                    contents.navField));
-        } else {
-            liNav.addContent(contents.navField);
-        }
-    }
     private TypeMirror getType(Element member) {
         if (utils.isConstructor(member))
             return null;

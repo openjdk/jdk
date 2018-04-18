@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,35 +122,40 @@ template <typename T> int subsystem_file_contents(CgroupSubsystem* c,
   char file[MAXPATHLEN+1];
   char buf[MAXPATHLEN+1];
 
-  if (c != NULL && c->subsystem_path() != NULL) {
-    strncpy(file, c->subsystem_path(), MAXPATHLEN);
-    file[MAXPATHLEN-1] = '\0';
-    int filelen = strlen(file);
-    if ((filelen + strlen(filename)) > (MAXPATHLEN-1)) {
-       log_debug(os, container)("File path too long %s, %s", file, filename);
-       return OSCONTAINER_ERROR;
-    }
-    strncat(file, filename, MAXPATHLEN-filelen);
-    log_trace(os, container)("Path to %s is %s", filename, file);
-    fp = fopen(file, "r");
-    if (fp != NULL) {
-      p = fgets(buf, MAXPATHLEN, fp);
-      if (p != NULL) {
-        int matched = sscanf(p, scan_fmt, returnval);
-        if (matched == 1) {
-          fclose(fp);
-          return 0;
-        } else {
-          log_debug(os, container)("Type %s not found in file %s",
-                                     scan_fmt , file);
-        }
+  if (c == NULL) {
+    log_debug(os, container)("subsystem_file_contents: CgroupSubsytem* is NULL");
+    return OSCONTAINER_ERROR;
+  }
+  if (c->subsystem_path() == NULL) {
+    log_debug(os, container)("subsystem_file_contents: subsystem path is NULL");
+    return OSCONTAINER_ERROR;
+  }
+
+  strncpy(file, c->subsystem_path(), MAXPATHLEN);
+  file[MAXPATHLEN-1] = '\0';
+  int filelen = strlen(file);
+  if ((filelen + strlen(filename)) > (MAXPATHLEN-1)) {
+    log_debug(os, container)("File path too long %s, %s", file, filename);
+    return OSCONTAINER_ERROR;
+  }
+  strncat(file, filename, MAXPATHLEN-filelen);
+  log_trace(os, container)("Path to %s is %s", filename, file);
+  fp = fopen(file, "r");
+  if (fp != NULL) {
+    p = fgets(buf, MAXPATHLEN, fp);
+    if (p != NULL) {
+      int matched = sscanf(p, scan_fmt, returnval);
+      if (matched == 1) {
+        fclose(fp);
+        return 0;
       } else {
-        log_debug(os, container)("Empty file %s", file);
+        log_debug(os, container)("Type %s not found in file %s", scan_fmt, file);
       }
     } else {
-      log_debug(os, container)("Open of file %s failed, %s", file,
-                               os::strerror(errno));
+      log_debug(os, container)("Empty file %s", file);
     }
+  } else {
+    log_debug(os, container)("Open of file %s failed, %s", file, os::strerror(errno));
   }
   if (fp != NULL)
     fclose(fp);
@@ -273,7 +278,7 @@ void OSContainer::init() {
         else {
           log_debug(os, container)("Incompatible str containing cgroup and cpuset: %s", p);
         }
-      } else if (strstr(p, "cpu,cpuacct") != NULL) {
+      } else if (strstr(p, "cpu,cpuacct") != NULL || strstr(p, "cpuacct,cpu") != NULL) {
         int matched = sscanf(p, "%d %d %d:%d %s %s",
                              &mountid,
                              &parentid,
@@ -322,8 +327,20 @@ void OSContainer::init() {
 
   fclose(mntinfo);
 
-  if (memory == NULL || cpuset == NULL || cpu == NULL || cpuacct == NULL) {
-    log_debug(os, container)("Required cgroup subsystems not found");
+  if (memory == NULL) {
+    log_debug(os, container)("Required cgroup memory subsystem not found");
+    return;
+  }
+  if (cpuset == NULL) {
+    log_debug(os, container)("Required cgroup cpuset subsystem not found");
+    return;
+  }
+  if (cpu == NULL) {
+    log_debug(os, container)("Required cgroup cpu subsystem not found");
+    return;
+  }
+  if (cpuacct == NULL) {
+    log_debug(os, container)("Required cgroup cpuacct subsystem not found");
     return;
   }
 
@@ -374,7 +391,7 @@ void OSContainer::init() {
         memory->set_subsystem_path(base);
       } else if (strstr(controller, "cpuset") != NULL) {
         cpuset->set_subsystem_path(base);
-      } else if (strstr(controller, "cpu,cpuacct") != NULL) {
+      } else if (strstr(controller, "cpu,cpuacct") != NULL || strstr(controller, "cpuacct,cpu") != NULL) {
         cpu->set_subsystem_path(base);
         cpuacct->set_subsystem_path(base);
       } else if (strstr(controller, "cpuacct") != NULL) {
@@ -397,9 +414,9 @@ void OSContainer::init() {
 
 }
 
-char * OSContainer::container_type() {
+const char * OSContainer::container_type() {
   if (is_containerized()) {
-    return (char *)"cgroupv1";
+    return "cgroupv1";
   } else {
     return NULL;
   }
@@ -482,11 +499,11 @@ jlong OSContainer::memory_max_usage_in_bytes() {
 /* active_processor_count
  *
  * Calculate an appropriate number of active processors for the
- * VM to use based on these three cgroup options.
+ * VM to use based on these three inputs.
  *
  * cpu affinity
- * cpu quota & cpu period
- * cpu shares
+ * cgroup cpu quota & cpu period
+ * cgroup cpu shares
  *
  * Algorithm:
  *
@@ -496,42 +513,61 @@ jlong OSContainer::memory_max_usage_in_bytes() {
  * required CPUs by dividing quota by period.
  *
  * If shares are in effect (shares != -1), calculate the number
- * of cpus required for the shares by dividing the share value
+ * of CPUs required for the shares by dividing the share value
  * by PER_CPU_SHARES.
  *
  * All results of division are rounded up to the next whole number.
  *
- * Return the smaller number from the three different settings.
+ * If neither shares or quotas have been specified, return the
+ * number of active processors in the system.
+ *
+ * If both shares and quotas have been specified, the results are
+ * based on the flag PreferContainerQuotaForCPUCount.  If true,
+ * return the quota value.  If false return the smallest value
+ * between shares or quotas.
+ *
+ * If shares and/or quotas have been specified, the resulting number
+ * returned will never exceed the number of active processors.
  *
  * return:
- *    number of cpus
- *    OSCONTAINER_ERROR if failure occured during extract of cpuset info
+ *    number of CPUs
  */
 int OSContainer::active_processor_count() {
-  int cpu_count, share_count, quota_count;
-  int share, quota, period;
+  int quota_count = 0, share_count = 0;
+  int cpu_count, limit_count;
   int result;
 
-  cpu_count = os::Linux::active_processor_count();
+  cpu_count = limit_count = os::Linux::active_processor_count();
+  int quota  = cpu_quota();
+  int period = cpu_period();
+  int share  = cpu_shares();
 
-  share = cpu_shares();
-  if (share > -1) {
-    share_count = ceilf((float)share / (float)PER_CPU_SHARES);
-    log_trace(os, container)("cpu_share count: %d", share_count);
-  } else {
-    share_count = cpu_count;
-  }
-
-  quota = cpu_quota();
-  period = cpu_period();
   if (quota > -1 && period > 0) {
     quota_count = ceilf((float)quota / (float)period);
-    log_trace(os, container)("quota_count: %d", quota_count);
-  } else {
-    quota_count = cpu_count;
+    log_trace(os, container)("CPU Quota count based on quota/period: %d", quota_count);
+  }
+  if (share > -1) {
+    share_count = ceilf((float)share / (float)PER_CPU_SHARES);
+    log_trace(os, container)("CPU Share count based on shares: %d", share_count);
   }
 
-  result = MIN2(cpu_count, MIN2(share_count, quota_count));
+  // If both shares and quotas are setup results depend
+  // on flag PreferContainerQuotaForCPUCount.
+  // If true, limit CPU count to quota
+  // If false, use minimum of shares and quotas
+  if (quota_count !=0 && share_count != 0) {
+    if (PreferContainerQuotaForCPUCount) {
+      limit_count = quota_count;
+    } else {
+      limit_count = MIN2(quota_count, share_count);
+    }
+  } else if (quota_count != 0) {
+    limit_count = quota_count;
+  } else if (share_count != 0) {
+    limit_count = share_count;
+  }
+
+  result = MIN2(cpu_count, limit_count);
   log_trace(os, container)("OSContainer::active_processor_count: %d", result);
   return result;
 }

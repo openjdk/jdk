@@ -68,7 +68,7 @@ import java.util.function.Predicate;
  * methods of the {@link Collection} and {@link Iterator} interfaces.
  *
  * <p>This class is a member of the
- * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
+ * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @since 1.6
@@ -1353,17 +1353,16 @@ public class LinkedBlockingDeque<E>
     @SuppressWarnings("unchecked")
     private boolean bulkRemove(Predicate<? super E> filter) {
         boolean removed = false;
-        Node<E> p = null;
         final ReentrantLock lock = this.lock;
+        Node<E> p = null;
         Node<E>[] nodes = null;
         int n, len = 0;
         do {
             // 1. Extract batch of up to 64 elements while holding the lock.
-            long deathRow = 0;          // "bitset" of size 64
             lock.lock();
             try {
-                if (nodes == null) {
-                    if (p == null) p = first;
+                if (nodes == null) {  // first batch; initialize
+                    p = first;
                     for (Node<E> q = p; q != null; q = succ(q))
                         if (q.item != null && ++len == 64)
                             break;
@@ -1376,6 +1375,7 @@ public class LinkedBlockingDeque<E>
             }
 
             // 2. Run the filter on the elements while lock is free.
+            long deathRow = 0L;       // "bitset" of size 64
             for (int i = 0; i < n; i++) {
                 final E e;
                 if ((e = nodes[i].item) != null && filter.test(e))
@@ -1393,6 +1393,7 @@ public class LinkedBlockingDeque<E>
                             unlink(q);
                             removed = true;
                         }
+                        nodes[i] = null; // help GC
                     }
                 } finally {
                     lock.unlock();

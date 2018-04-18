@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ class SimpleCompactHashtable;
 class SerializeClosure;
 
 // Stats for symbol tables in the CDS archive
-class CompactHashtableStats VALUE_OBJ_CLASS_SPEC {
+class CompactHashtableStats {
 public:
   int hashentry_count;
   int hashentry_bytes;
@@ -71,7 +71,7 @@ public:
 //
 class CompactHashtableWriter: public StackObj {
 public:
-  class Entry VALUE_OBJ_CLASS_SPEC {
+  class Entry {
     unsigned int _hash;
     u4 _value;
 
@@ -194,7 +194,7 @@ public:
 // See CompactHashtableWriter::dump() for how the table is written at CDS
 // dump time.
 //
-class SimpleCompactHashtable VALUE_OBJ_CLASS_SPEC {
+class SimpleCompactHashtable {
 protected:
   address  _base_address;
   u4  _bucket_count;
@@ -281,7 +281,7 @@ public:
 // Because the dump file may be big (hundred of MB in extreme cases),
 // we use mmap for fast access when reading it.
 //
-class HashtableTextDump VALUE_OBJ_CLASS_SPEC {
+class HashtableTextDump {
   int _fd;
   const char* _base;
   const char* _p;

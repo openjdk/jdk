@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Verify that we do not leak contents when we clone a HashMap
  * @author david.buck@oracle.com
  * @run main/othervm HashMapCloneLeak
- * @run main/othervm -XX:+AggressiveOpts HashMapCloneLeak
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+EliminateAutoBox -XX:AutoBoxCacheMax=20000 HashMapCloneLeak
  */
 
 import java.util.HashMap;

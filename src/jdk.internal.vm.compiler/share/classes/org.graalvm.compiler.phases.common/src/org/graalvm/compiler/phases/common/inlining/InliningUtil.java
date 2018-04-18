@@ -33,7 +33,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.EconomicSet;
+import org.graalvm.collections.Equivalence;
+import org.graalvm.collections.UnmodifiableEconomicMap;
+import org.graalvm.collections.UnmodifiableMapCursor;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
+import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -42,8 +48,8 @@ import org.graalvm.compiler.core.common.util.Util;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.GraalGraphError;
-import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Graph.DuplicationReplacement;
+import org.graalvm.compiler.graph.Graph.Mark;
 import org.graalvm.compiler.graph.Graph.NodeEventScope;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeInputList;
@@ -63,6 +69,7 @@ import org.graalvm.compiler.nodes.FixedGuardNode;
 import org.graalvm.compiler.nodes.FixedNode;
 import org.graalvm.compiler.nodes.FixedWithNextNode;
 import org.graalvm.compiler.nodes.FrameState;
+import org.graalvm.compiler.nodes.InliningLog;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.InvokeWithExceptionNode;
@@ -77,6 +84,7 @@ import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StartNode;
 import org.graalvm.compiler.nodes.StateSplit;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.StructuredGraph.GuardsStage;
 import org.graalvm.compiler.nodes.UnwindNode;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
@@ -92,17 +100,11 @@ import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.phases.common.inlining.info.InlineInfo;
 import org.graalvm.compiler.phases.common.util.HashSetNodeEventListener;
 import org.graalvm.compiler.phases.util.ValueMergeUtil;
-import org.graalvm.util.EconomicMap;
-import org.graalvm.util.EconomicSet;
-import org.graalvm.util.Equivalence;
-import org.graalvm.util.UnmodifiableEconomicMap;
-import org.graalvm.util.UnmodifiableMapCursor;
 
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.meta.Assumptions;
 import jdk.vm.ci.meta.DeoptimizationAction;
 import jdk.vm.ci.meta.DeoptimizationReason;
-import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -118,43 +120,104 @@ public class InliningUtil extends ValueMergeUtil {
         printInlining(info.methodAt(0), info.invoke(), inliningDepth, success, msg, args);
     }
 
+    /**
+     * @see #printInlining
+     */
     private static void printInlining(final ResolvedJavaMethod method, final Invoke invoke, final int inliningDepth, final boolean success, final String msg, final Object... args) {
         if (HotSpotPrintInlining.getValue(invoke.asNode().getOptions())) {
             Util.printInlining(method, invoke.bci(), inliningDepth, success, msg, args);
         }
     }
 
-    public static void logInlinedMethod(InlineInfo info, int inliningDepth, boolean allowLogging, String msg, Object... args) {
-        logInliningDecision(info, inliningDepth, allowLogging, true, msg, args);
+    /**
+     * Trace a decision to inline a method.
+     *
+     * This prints a HotSpot-style inlining message to the console, and it also logs the decision to
+     * the logging stream.
+     *
+     * Phases that perform inlining should use this method to trace the inlining decisions, and use
+     * the {@link #traceNotInlinedMethod} methods only for debugging purposes.
+     */
+    public static void traceInlinedMethod(InlineInfo info, int inliningDepth, boolean allowLogging, String msg, Object... args) {
+        traceMethod(info, inliningDepth, allowLogging, true, msg, args);
     }
 
-    public static void logNotInlinedMethod(InlineInfo info, int inliningDepth, String msg, Object... args) {
-        logInliningDecision(info, inliningDepth, true, false, msg, args);
+    /**
+     * Trace a decision to inline a method.
+     *
+     * This prints a HotSpot-style inlining message to the console, and it also logs the decision to
+     * the logging stream.
+     *
+     * Phases that perform inlining should use this method to trace the inlining decisions, and use
+     * the {@link #traceNotInlinedMethod} methods only for debugging purposes.
+     */
+    public static void traceInlinedMethod(Invoke invoke, int inliningDepth, boolean allowLogging, ResolvedJavaMethod method, String msg, Object... args) {
+        traceMethod(invoke, inliningDepth, allowLogging, true, method, msg, args);
     }
 
-    public static void logInliningDecision(InlineInfo info, int inliningDepth, boolean allowLogging, boolean success, String msg, final Object... args) {
+    /**
+     * Trace a decision to not inline a method.
+     *
+     * This prints a HotSpot-style inlining message to the console, and it also logs the decision to
+     * the logging stream.
+     *
+     * Phases that perform inlining should use this method to trace the inlining decisions, and use
+     * the {@link #traceNotInlinedMethod} methods only for debugging purposes.
+     */
+    public static void traceNotInlinedMethod(InlineInfo info, int inliningDepth, String msg, Object... args) {
+        traceMethod(info, inliningDepth, true, false, msg, args);
+    }
+
+    /**
+     * Trace a decision about not inlining a method.
+     *
+     * This prints a HotSpot-style inlining message to the console, and it also logs the decision to
+     * the logging stream.
+     *
+     * Phases that perform inlining should use this method to trace the inlining decisions, and use
+     * the {@link #traceNotInlinedMethod} methods only for debugging purposes.
+     */
+    public static void traceNotInlinedMethod(Invoke invoke, int inliningDepth, ResolvedJavaMethod method, String msg, Object... args) {
+        traceMethod(invoke, inliningDepth, true, false, method, msg, args);
+    }
+
+    private static void traceMethod(Invoke invoke, int inliningDepth, boolean allowLogging, boolean success, ResolvedJavaMethod method, String msg, Object... args) {
+        if (allowLogging) {
+            DebugContext debug = invoke.asNode().getDebug();
+            printInlining(method, invoke, inliningDepth, success, msg, args);
+            if (shouldLogMethod(debug)) {
+                String methodString = methodName(method, invoke);
+                logMethod(debug, methodString, success, msg, args);
+            }
+        }
+    }
+
+    private static void traceMethod(InlineInfo info, int inliningDepth, boolean allowLogging, boolean success, String msg, final Object... args) {
         if (allowLogging) {
             printInlining(info, inliningDepth, success, msg, args);
             DebugContext debug = info.graph().getDebug();
-            if (shouldLogInliningDecision(debug)) {
-                logInliningDecision(debug, methodName(info), success, msg, args);
+            if (shouldLogMethod(debug)) {
+                logMethod(debug, methodName(info), success, msg, args);
             }
         }
     }
 
-    @SuppressWarnings("try")
+    /**
+     * Output a generic inlining decision to the logging stream (e.g. inlining termination
+     * condition).
+     *
+     * Used for debugging purposes.
+     */
     public static void logInliningDecision(DebugContext debug, final String msg, final Object... args) {
-        try (DebugContext.Scope s = debug.scope(inliningDecisionsScopeString)) {
-            // Can't use log here since we are varargs
-            if (debug.isLogEnabled()) {
-                debug.logv(msg, args);
-            }
-        }
+        logInlining(debug, msg, args);
     }
 
+    /**
+     * Output a decision about not inlining a method to the logging stream, for debugging purposes.
+     */
     public static void logNotInlinedMethod(Invoke invoke, String msg) {
         DebugContext debug = invoke.asNode().getDebug();
-        if (shouldLogInliningDecision(debug)) {
+        if (shouldLogMethod(debug)) {
             String methodString = invoke.toString();
             if (invoke.callTarget() == null) {
                 methodString += " callTarget=null";
@@ -164,33 +227,30 @@ public class InliningUtil extends ValueMergeUtil {
                     methodString += " " + targetName;
                 }
             }
-            logInliningDecision(debug, methodString, false, msg, new Object[0]);
+            logMethod(debug, methodString, false, msg, new Object[0]);
         }
     }
 
-    public static void logNotInlined(Invoke invoke, int inliningDepth, ResolvedJavaMethod method, String msg) {
-        logNotInlinedInvoke(invoke, inliningDepth, method, msg, new Object[0]);
-    }
-
-    public static void logNotInlinedInvoke(Invoke invoke, int inliningDepth, ResolvedJavaMethod method, String msg, Object... args) {
-        DebugContext debug = invoke.asNode().getDebug();
-        printInlining(method, invoke, inliningDepth, false, msg, args);
-        if (shouldLogInliningDecision(debug)) {
-            String methodString = methodName(method, invoke);
-            logInliningDecision(debug, methodString, false, msg, args);
-        }
-    }
-
-    private static void logInliningDecision(DebugContext debug, final String methodString, final boolean success, final String msg, final Object... args) {
+    private static void logMethod(DebugContext debug, final String methodString, final boolean success, final String msg, final Object... args) {
         String inliningMsg = "inlining " + methodString + ": " + msg;
         if (!success) {
             inliningMsg = "not " + inliningMsg;
         }
-        logInliningDecision(debug, inliningMsg, args);
+        logInlining(debug, inliningMsg, args);
     }
 
     @SuppressWarnings("try")
-    public static boolean shouldLogInliningDecision(DebugContext debug) {
+    private static void logInlining(DebugContext debug, final String msg, final Object... args) {
+        try (DebugContext.Scope s = debug.scope(inliningDecisionsScopeString)) {
+            // Can't use log here since we are varargs
+            if (debug.isLogEnabled()) {
+                debug.logv(msg, args);
+            }
+        }
+    }
+
+    @SuppressWarnings("try")
+    private static boolean shouldLogMethod(DebugContext debug) {
         try (DebugContext.Scope s = debug.scope(inliningDecisionsScopeString)) {
             return debug.isLogEnabled();
         }
@@ -269,7 +329,8 @@ public class InliningUtil extends ValueMergeUtil {
     }
 
     /**
-     * Performs an actual inlining, thereby replacing the given invoke with the given inlineGraph.
+     * Performs an actual inlining, thereby replacing the given invoke with the given
+     * {@code inlineGraph}.
      *
      * @param invoke the invoke that will be replaced
      * @param inlineGraph the graph that the invoke will be replaced with
@@ -279,6 +340,23 @@ public class InliningUtil extends ValueMergeUtil {
      */
     @SuppressWarnings("try")
     public static UnmodifiableEconomicMap<Node, Node> inline(Invoke invoke, StructuredGraph inlineGraph, boolean receiverNullCheck, ResolvedJavaMethod inlineeMethod) {
+        return inline(invoke, inlineGraph, receiverNullCheck, inlineeMethod, "", "");
+    }
+
+    /**
+     * Performs an actual inlining, thereby replacing the given invoke with the given
+     * {@code inlineGraph}.
+     *
+     * @param invoke the invoke that will be replaced
+     * @param inlineGraph the graph that the invoke will be replaced with
+     * @param receiverNullCheck true if a null check needs to be generated for non-static inlinings,
+     *            false if no such check is required
+     * @param inlineeMethod the actual method being inlined. Maybe be null for snippets.
+     * @param reason the reason for inlining, used in tracing
+     * @param phase the phase that invoked inlining
+     */
+    @SuppressWarnings("try")
+    public static UnmodifiableEconomicMap<Node, Node> inline(Invoke invoke, StructuredGraph inlineGraph, boolean receiverNullCheck, ResolvedJavaMethod inlineeMethod, String reason, String phase) {
         FixedNode invokeNode = invoke.asNode();
         StructuredGraph graph = invokeNode.graph();
         final NodeInputList<ValueNode> parameters = invoke.callTarget().arguments();
@@ -339,7 +417,15 @@ public class InliningUtil extends ValueMergeUtil {
         assert invokeNode.successors().first() != null : invoke;
         assert invokeNode.predecessor() != null;
 
-        EconomicMap<Node, Node> duplicates = graph.addDuplicates(nodes, inlineGraph, inlineGraph.getNodeCount(), localReplacement);
+        Mark mark = graph.getMark();
+        // Instead, attach the inlining log of the child graph to the current inlining log.
+        EconomicMap<Node, Node> duplicates;
+        try (InliningLog.UpdateScope scope = graph.getInliningLog().openDefaultUpdateScope()) {
+            duplicates = graph.addDuplicates(nodes, inlineGraph, inlineGraph.getNodeCount(), localReplacement);
+            if (scope != null) {
+                graph.getInliningLog().addDecision(invoke, true, reason, phase, duplicates, inlineGraph.getInliningLog());
+            }
+        }
 
         FrameState stateAfter = invoke.stateAfter();
         assert stateAfter == null || stateAfter.isAlive();
@@ -353,7 +439,7 @@ public class InliningUtil extends ValueMergeUtil {
             }
         }
 
-        updateSourcePositions(invoke, inlineGraph, duplicates, !Objects.equals(inlineGraph.method(), inlineeMethod));
+        updateSourcePositions(invoke, inlineGraph, duplicates, !Objects.equals(inlineGraph.method(), inlineeMethod), mark);
         if (stateAfter != null) {
             processFrameStates(invoke, inlineGraph, duplicates, stateAtExceptionEdge, returnNodes.size() > 1);
             int callerLockDepth = stateAfter.nestedLockDepth();
@@ -409,9 +495,14 @@ public class InliningUtil extends ValueMergeUtil {
         return inlineForCanonicalization(invoke, inlineGraph, receiverNullCheck, inlineeMethod, null);
     }
 
-    @SuppressWarnings("try")
     public static EconomicSet<Node> inlineForCanonicalization(Invoke invoke, StructuredGraph inlineGraph, boolean receiverNullCheck, ResolvedJavaMethod inlineeMethod,
                     Consumer<UnmodifiableEconomicMap<Node, Node>> duplicatesConsumer) {
+        return inlineForCanonicalization(invoke, inlineGraph, receiverNullCheck, inlineeMethod, duplicatesConsumer, "", "");
+    }
+
+    @SuppressWarnings("try")
+    public static EconomicSet<Node> inlineForCanonicalization(Invoke invoke, StructuredGraph inlineGraph, boolean receiverNullCheck, ResolvedJavaMethod inlineeMethod,
+                    Consumer<UnmodifiableEconomicMap<Node, Node>> duplicatesConsumer, String reason, String phase) {
         HashSetNodeEventListener listener = new HashSetNodeEventListener();
         /*
          * This code relies on the fact that Graph.addDuplicates doesn't trigger the
@@ -419,7 +510,7 @@ public class InliningUtil extends ValueMergeUtil {
          * the graph into the current graph.
          */
         try (NodeEventScope nes = invoke.asNode().graph().trackNodeEvents(listener)) {
-            UnmodifiableEconomicMap<Node, Node> duplicates = InliningUtil.inline(invoke, inlineGraph, receiverNullCheck, inlineeMethod);
+            UnmodifiableEconomicMap<Node, Node> duplicates = InliningUtil.inline(invoke, inlineGraph, receiverNullCheck, inlineeMethod, reason, phase);
             if (duplicatesConsumer != null) {
                 duplicatesConsumer.accept(duplicates);
             }
@@ -462,7 +553,7 @@ public class InliningUtil extends ValueMergeUtil {
             }
         } else {
             if (unwindNode != null && unwindNode.isAlive()) {
-                DeoptimizeNode deoptimizeNode = graph.add(new DeoptimizeNode(DeoptimizationAction.InvalidateRecompile, DeoptimizationReason.NotCompiledExceptionHandler));
+                DeoptimizeNode deoptimizeNode = addDeoptimizeNode(graph, DeoptimizationAction.InvalidateRecompile, DeoptimizationReason.NotCompiledExceptionHandler);
                 unwindNode.replaceAndDelete(deoptimizeNode);
             }
         }
@@ -571,27 +662,47 @@ public class InliningUtil extends ValueMergeUtil {
     }
 
     @SuppressWarnings("try")
-    private static void updateSourcePositions(Invoke invoke, StructuredGraph inlineGraph, UnmodifiableEconomicMap<Node, Node> duplicates, boolean isSubstitution) {
-        if (inlineGraph.mayHaveNodeSourcePosition() && invoke.stateAfter() != null) {
-            if (invoke.asNode().getNodeSourcePosition() == null) {
-                // Temporarily ignore the assert below.
-                return;
+    private static void updateSourcePositions(Invoke invoke, StructuredGraph inlineGraph, UnmodifiableEconomicMap<Node, Node> duplicates, boolean isSub, Mark mark) {
+        FixedNode invokeNode = invoke.asNode();
+        boolean isSubstitution = isSub || inlineGraph.method().getAnnotation(MethodSubstitution.class) != null || inlineGraph.method().getAnnotation(Snippet.class) != null;
+        StructuredGraph invokeGraph = invokeNode.graph();
+        assert !invokeGraph.trackNodeSourcePosition() || inlineGraph.trackNodeSourcePosition() ||
+                        isSubstitution : String.format("trackNodeSourcePosition mismatch %s %s != %s %s", invokeGraph, invokeGraph.trackNodeSourcePosition(), inlineGraph,
+                                        inlineGraph.trackNodeSourcePosition());
+        if (invokeGraph.trackNodeSourcePosition() && invoke.stateAfter() != null) {
+            final NodeSourcePosition invokePos = invoke.asNode().getNodeSourcePosition();
+            updateSourcePosition(invokeGraph, duplicates, mark, invokePos, isSubstitution);
+        }
+    }
+
+    public static void updateSourcePosition(StructuredGraph invokeGraph, UnmodifiableEconomicMap<Node, Node> duplicates, Mark mark, NodeSourcePosition invokePos, boolean isSubstitution) {
+        /*
+         * Not every duplicate node is newly created, so only update the position of the newly
+         * created nodes.
+         */
+        EconomicSet<Node> newNodes = EconomicSet.create(Equivalence.DEFAULT);
+        newNodes.addAll(invokeGraph.getNewNodes(mark));
+        EconomicMap<NodeSourcePosition, NodeSourcePosition> posMap = EconomicMap.create(Equivalence.DEFAULT);
+        UnmodifiableMapCursor<Node, Node> cursor = duplicates.getEntries();
+        while (cursor.advance()) {
+            if (!newNodes.contains(cursor.getValue())) {
+                continue;
             }
-
-            JavaConstant constantReceiver = invoke.getInvokeKind().hasReceiver() && !isSubstitution ? invoke.getReceiver().asJavaConstant() : null;
-            NodeSourcePosition invokePos = invoke.asNode().getNodeSourcePosition();
-            assert invokePos != null : "missing source information";
-
-            EconomicMap<NodeSourcePosition, NodeSourcePosition> posMap = EconomicMap.create(Equivalence.DEFAULT);
-            UnmodifiableMapCursor<Node, Node> cursor = duplicates.getEntries();
-            while (cursor.advance()) {
-                NodeSourcePosition pos = cursor.getKey().getNodeSourcePosition();
-                if (pos != null) {
-                    NodeSourcePosition callerPos = pos.addCaller(constantReceiver, invokePos);
-                    if (!posMap.containsKey(callerPos)) {
-                        posMap.put(callerPos, callerPos);
-                    }
-                    cursor.getValue().setNodeSourcePosition(posMap.get(callerPos));
+            NodeSourcePosition pos = cursor.getKey().getNodeSourcePosition();
+            if (pos != null) {
+                NodeSourcePosition callerPos = posMap.get(pos);
+                if (callerPos == null) {
+                    callerPos = pos.addCaller(invokePos, isSubstitution);
+                    posMap.put(pos, callerPos);
+                }
+                cursor.getValue().setNodeSourcePosition(callerPos);
+            } else {
+                if (isSubstitution) {
+                    /*
+                     * If no other position is provided at least attribute the substituted node to
+                     * the original invoke.
+                     */
+                    cursor.getValue().setNodeSourcePosition(invokePos);
                 }
             }
         }
@@ -642,7 +753,15 @@ public class InliningUtil extends ValueMergeUtil {
             }
             frameState.replaceAndDelete(stateAfterException);
             return stateAfterException;
-        } else if (frameState.bci == BytecodeFrame.UNWIND_BCI || frameState.bci == BytecodeFrame.AFTER_EXCEPTION_BCI) {
+        } else if ((frameState.bci == BytecodeFrame.UNWIND_BCI && frameState.graph().getGuardsStage() == GuardsStage.FLOATING_GUARDS) || frameState.bci == BytecodeFrame.AFTER_EXCEPTION_BCI) {
+            /*
+             * This path converts the frame states relevant for exception unwinding to
+             * deoptimization. This is only allowed in configurations when Graal compiles code for
+             * speculative execution (e.g., JIT compilation in HotSpot) but not when compiled code
+             * must be deoptimization free (e.g., AOT compilation for native image generation).
+             * There is currently no global flag in StructuredGraph to distinguish such modes, but
+             * the GuardsStage during inlining indicates the mode in which Graal operates.
+             */
             handleMissingAfterExceptionFrameState(frameState, invoke, replacements, alwaysDuplicateStateAfter);
             return frameState;
         } else if (frameState.bci == BytecodeFrame.BEFORE_BCI) {
@@ -706,7 +825,6 @@ public class InliningUtil extends ValueMergeUtil {
         assert frameState.bci != BytecodeFrame.AFTER_EXCEPTION_BCI : frameState;
         assert frameState.bci != BytecodeFrame.BEFORE_BCI : frameState;
         assert frameState.bci != BytecodeFrame.UNKNOWN_BCI : frameState;
-        assert frameState.bci != BytecodeFrame.UNWIND_BCI : frameState;
         if (frameState.bci != BytecodeFrame.INVALID_FRAMESTATE_BCI) {
             ResolvedJavaMethod method = frameState.getMethod();
             if (method.equals(inlinedMethod)) {
@@ -738,7 +856,7 @@ public class InliningUtil extends ValueMergeUtil {
     }
 
     public static FrameState handleMissingAfterExceptionFrameState(FrameState nonReplaceableFrameState, Invoke invoke, EconomicMap<Node, Node> replacements, boolean alwaysDuplicateStateAfter) {
-        Graph graph = nonReplaceableFrameState.graph();
+        StructuredGraph graph = nonReplaceableFrameState.graph();
         NodeWorkList workList = graph.createNodeWorkList();
         workList.add(nonReplaceableFrameState);
         for (Node node : workList) {
@@ -756,7 +874,7 @@ public class InliningUtil extends ValueMergeUtil {
                         AbstractMergeNode merge = (AbstractMergeNode) fixedStateSplit;
                         while (merge.isAlive()) {
                             AbstractEndNode end = merge.forwardEnds().first();
-                            DeoptimizeNode deoptimizeNode = graph.add(new DeoptimizeNode(DeoptimizationAction.InvalidateRecompile, DeoptimizationReason.NotCompiledExceptionHandler));
+                            DeoptimizeNode deoptimizeNode = addDeoptimizeNode(graph, DeoptimizationAction.InvalidateRecompile, DeoptimizationReason.NotCompiledExceptionHandler);
                             end.replaceAtPredecessor(deoptimizeNode);
                             GraphUtil.killCFG(end);
                         }
@@ -775,7 +893,7 @@ public class InliningUtil extends ValueMergeUtil {
                         }
                         handleAfterBciFrameState(newInvoke.stateAfter(), invoke, alwaysDuplicateStateAfter);
                     } else {
-                        FixedNode deoptimizeNode = graph.add(new DeoptimizeNode(DeoptimizationAction.InvalidateRecompile, DeoptimizationReason.NotCompiledExceptionHandler));
+                        FixedNode deoptimizeNode = addDeoptimizeNode(graph, DeoptimizationAction.InvalidateRecompile, DeoptimizationReason.NotCompiledExceptionHandler);
                         if (fixedStateSplit instanceof AbstractBeginNode) {
                             deoptimizeNode = BeginNode.begin(deoptimizeNode);
                         }
@@ -786,6 +904,11 @@ public class InliningUtil extends ValueMergeUtil {
             }
         }
         return nonReplaceableFrameState;
+    }
+
+    private static DeoptimizeNode addDeoptimizeNode(StructuredGraph graph, DeoptimizationAction action, DeoptimizationReason reason) {
+        GraalError.guarantee(graph.getGuardsStage() == GuardsStage.FLOATING_GUARDS, "Cannot introduce speculative deoptimization when Graal is used with fixed guards");
+        return graph.add(new DeoptimizeNode(action, reason));
     }
 
     /**
@@ -856,8 +979,8 @@ public class InliningUtil extends ValueMergeUtil {
         return replacements.hasSubstitution(target, invokeBci);
     }
 
-    public static StructuredGraph getIntrinsicGraph(Replacements replacements, ResolvedJavaMethod target, int invokeBci) {
-        return replacements.getSubstitution(target, invokeBci);
+    public static StructuredGraph getIntrinsicGraph(Replacements replacements, ResolvedJavaMethod target, int invokeBci, boolean trackNodeSourcePosition, NodeSourcePosition replaceePosition) {
+        return replacements.getSubstitution(target, invokeBci, trackNodeSourcePosition, replaceePosition);
     }
 
     public static FixedWithNextNode inlineMacroNode(Invoke invoke, ResolvedJavaMethod concrete, Class<? extends FixedWithNextNode> macroNodeClass) throws GraalError {

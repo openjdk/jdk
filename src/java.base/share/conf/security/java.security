@@ -676,7 +676,7 @@ jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
 # Example:
 #   jdk.tls.disabledAlgorithms=MD5, SSLv3, DSA, RSA keySize < 2048
 jdk.tls.disabledAlgorithms=SSLv3, RC4, MD5withRSA, DH keySize < 1024, \
-    EC keySize < 224, DES40_CBC, RC4_40
+    EC keySize < 224, DES40_CBC, RC4_40, 3DES_EDE_CBC
 
 #
 # Legacy algorithms for Secure Socket Layer/Transport Layer Security (SSL/TLS)
@@ -812,14 +812,14 @@ jdk.tls.legacyAlgorithms= \
 #     limited:    These policy files contain more restricted cryptographic
 #                 strengths
 #
-# The default setting is determined by the value of the “crypto.policy”
+# The default setting is determined by the value of the "crypto.policy"
 # Security property below. If your country or usage requires the
-# traditional restrictive policy, the “limited” Java cryptographic
+# traditional restrictive policy, the "limited" Java cryptographic
 # policy is still available and may be appropriate for your environment.
 #
 # If you have restrictions that do not fit either use case mentioned
 # above, Java provides the capability to customize these policy files.
-# The “crypto.policy” security property points to a subdirectory
+# The "crypto.policy" security property points to a subdirectory
 # within <java-home>/conf/security/policy/ which can be customized.
 # Please see the <java-home>/conf/security/policy/README.txt file or consult
 # the Java Security Guide/JCA documentation for more information.
@@ -881,6 +881,7 @@ jdk.xml.dsig.secureValidationPolicy=\
     disallowReferenceUriSchemes file http https,\
     minKeySize RSA 1024,\
     minKeySize DSA 1024,\
+    minKeySize EC 224,\
     noDuplicateIds,\
     noRetrievalMethodLoops
 
@@ -893,6 +894,9 @@ jdk.xml.dsig.secureValidationPolicy=\
 # matched against the name of a class in the stream or defines a limit.
 # Patterns are separated by ";" (semicolon).
 # Whitespace is significant and is considered part of the pattern.
+#
+# If the system property jdk.serialFilter is also specified, it supersedes
+# the security property value defined here.
 #
 # If a pattern includes a "=", it sets a limit.
 # If a limit appears more than once the last value is used.
@@ -1004,3 +1008,20 @@ jdk.xml.dsig.secureValidationPolicy=\
 # It is not guaranteed to be examined and used by other implementations.
 #
 #com.sun.CORBA.ORBIorTypeCheckRegistryFilter=binary_class_name;binary_class_name
+
+#
+# JCEKS Encrypted Key Serial Filter
+#
+# This filter, if configured, is used by the JCEKS KeyStore during the
+# deserialization of the encrypted Key object stored inside a key entry.
+# If not configured or the filter result is UNDECIDED (i.e. none of the patterns
+# matches), the filter configured by jdk.serialFilter will be consulted.
+#
+# If the system property jceks.key.serialFilter is also specified, it supersedes
+# the security property value defined here.
+#
+# The filter pattern uses the same format as jdk.serialFilter. The default
+# pattern allows java.lang.Enum, java.security.KeyRep, java.security.KeyRep$Type,
+# and javax.crypto.spec.SecretKeySpec and rejects all the others.
+jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep;\
+  java.base/java.security.KeyRep$Type;java.base/javax.crypto.spec.SecretKeySpec;!*

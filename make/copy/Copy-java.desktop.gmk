@@ -24,54 +24,9 @@
 #
 
 include CopyCommon.gmk
+include Modules.gmk
 
 $(eval $(call IncludeCustomExtension, copy/Copy-java.desktop.gmk))
-
-################################################################################
-
-ifneq ($(FREETYPE_BUNDLE_LIB_PATH), )
-  # We need to bundle the freetype library, so it will be available at runtime
-  # as well as link time.
-  #
-  # NB: Default freetype build system uses -h linker option and
-  # result .so contains hardcoded library name that is later
-  # used for adding dependencies to other objects
-  # (e.g. libfontmanager.so).
-  #
-  # It is not obvious how to extract that hardcoded name (libfreetype.so.6)
-  # without overcomplicating logic here.
-  # To workaround this we hardcode .6 suffix for now.
-  #
-  # Note that .so.6 library will not be found by System.loadLibrary()
-  # but fortunately we need to load FreeType library explicitly
-  # on windows only
-  #
-  #TODO: rework this to avoid hardcoding library name in the makefile
-  #
-  ifneq ($(filter $(OPENJDK_TARGET_OS), linux solaris), )
-    FREETYPE_TARGET_LIB := $(LIB_DST_DIR)/$(call SHARED_LIBRARY,freetype).6
-  else
-    FREETYPE_TARGET_LIB := $(LIB_DST_DIR)/$(call SHARED_LIBRARY,freetype)
-  endif
-
-  # We can't use $(install-file) in this rule because it preserves symbolic links and
-  # libfreetype.so is usually a symbolic link to something like libfreetype.so.6 on Unix.
-  $(FREETYPE_TARGET_LIB): $(FREETYPE_BUNDLE_LIB_PATH)/$(call SHARED_LIBRARY,freetype)
-	$(MKDIR) -p $(@D)
-	$(CP) $< $@
-        ifeq ($(OPENJDK_BUILD_OS), windows)
-	  $(CHMOD) +rx $@
-        endif
-
-  TARGETS += $(FREETYPE_TARGET_LIB)
-
-  $(eval $(call SetupCopyFiles, COPY_FREETYPE_LICENSE, \
-      FILES := $(FREETYPE_LICENSE), \
-      DEST := $(LEGAL_DST_DIR), \
-  ))
-
-  TARGETS += $(COPY_FREETYPE_LICENSE)
-endif
 
 ################################################################################
 
@@ -92,5 +47,36 @@ $(LIB_DST_DIR)/%: $(PSFONTPROPFILE_SRC_DIR)/%
 	$(call install-file)
 
 TARGETS += $(PSFONTPROPFILE_TARGET_FILES)
+
+################################################################################
+#
+# Copy and filter the legal files depending on what 3rd party components are
+# bundled or linked from the OS.
+#
+ifeq ($(USE_EXTERNAL_LIBJPEG), true)
+  LEGAL_EXCLUDES += jpeg.md
+endif
+
+ifeq ($(USE_EXTERNAL_LIBGIF), true)
+  LEGAL_EXCLUDES += giflib.md
+endif
+
+ifeq ($(USE_EXTERNAL_LIBPNG), true)
+  LEGAL_EXCLUDES += libpng.md
+endif
+
+ifeq ($(USE_EXTERNAL_LCMS), true)
+  LEGAL_EXCLUDES += lcms.md
+endif
+
+ifeq ($(FREETYPE_TO_USE), system)
+  LEGAL_EXCLUDES += freetype.md
+endif
+
+$(eval $(call SetupCopyLegalFiles, COPY_LEGAL, \
+    EXCLUDES := $(LEGAL_EXCLUDES), \
+))
+
+TARGETS += $(COPY_LEGAL)
 
 ################################################################################

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8157000 8192850
+ * @bug 8157000 8192850 8182765
  * @summary  test the behavior of --override-methods option
  * @library  ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -73,94 +73,94 @@ public class TestOverrideMethods  extends JavadocTester {
 
         checkOrder("pkg5/Classes.C.html",
                 // Check properties
-                "Properties declared in class&nbsp;pkg5.<a href=\"../pkg5/Classes.P.html",
+                "Properties declared in class&nbsp;pkg5.<a href=\"Classes.P.html",
                 "Classes.P",
-                "../pkg5/Classes.P.html#rateProperty\">rate",
+                "Classes.P.html#rateProperty\">rate",
 
                 // Check nested classes
                 "Nested classes/interfaces declared in class&nbsp;pkg5.",
                 "Classes.P",
-                "./pkg5/Classes.P.PN.html",
+                "Classes.P.PN.html",
                 "Classes.P.PN.html",
                 "type parameter in Classes.P.PN\">K",
                 "type parameter in Classes.P.PN",
                 "V",
 
                 // Check fields
-                "Fields declared in class&nbsp;pkg5.<a href=\"../pkg5/Classes.P.html",
+                "Fields declared in class&nbsp;pkg5.<a href=\"Classes.P.html",
                 "Classes.P",
-                "../pkg5/Classes.P.html#field0\">field0",
+                "Classes.P.html#field0\">field0",
 
                 // Check method summary
                 "Method Summary",
                 "void",
-                "../pkg5/Classes.C.html#m1--\">m1",
+                "#m1()\">m1",
                 "A modified method",
 
                 "void",
-                "../pkg5/Classes.C.html#m4-java.lang.String-java.lang.String-\">m4",
+                "#m4(java.lang.String,java.lang.String)\">m4",
                 "java.lang.String&nbsp;k,",
                 "java.lang.String",
                 "&nbsp;v)",
 
                 // Check footnotes
-                "Methods declared in class&nbsp;pkg5.<a href=\"../pkg5/Classes.GP.html",
+                "Methods declared in class&nbsp;pkg5.<a href=\"Classes.GP.html",
                 "Classes.GP",
-                "../pkg5/Classes.GP.html#m0--\">m0",
+                "Classes.GP.html#m0()\">m0",
 
                 // Check method details for override
                 "overrideSpecifyLabel",
                 "Overrides:",
-                "../pkg5/Classes.GP.html#m7--\">m7",
+                "Classes.GP.html#m7()\">m7",
                 "in class",
-                "../pkg5/Classes.GP.html",
+                "Classes.GP.html",
                 "Classes.GP"
         );
 
         checkOrder("pkg5/Classes.C.html",
                 // Check footnotes 2
                 "Methods declared in class&nbsp;pkg5.",
-                "../pkg5/Classes.P.html#getRate--\">getRate",
-                "../pkg5/Classes.P.html#m2--\">m2",
-                "../pkg5/Classes.P.html#m3--\">m3",
-                "../pkg5/Classes.P.html#m4-K-V-\">m4",
-                "../pkg5/Classes.P.html#rateProperty--\">rateProperty",
-                "../pkg5/Classes.P.html#setRate-double-\">setRate",
+                "Classes.P.html#getRate()\">getRate",
+                "Classes.P.html#m2()\">m2",
+                "Classes.P.html#m3()\">m3",
+                "Classes.P.html#m4(K,V)\">m4",
+                "Classes.P.html#rateProperty()\">rateProperty",
+                "Classes.P.html#setRate(double)\">setRate",
 
                 // Check @link
                 "A test of links to the methods in this class. <p>\n",
-                "../pkg5/Classes.GP.html#m0--",
+                "Classes.GP.html#m0()",
                 "Classes.GP.m0()",
-                "../pkg5/Classes.C.html#m1--",
+                "#m1()",
                 "m1()",
-                "../pkg5/Classes.P.html#m2--",
+                "Classes.P.html#m2()",
                 "Classes.P.m2()",
-                "../pkg5/Classes.P.html#m3--",
+                "Classes.P.html#m3()",
                 "Classes.P.m3()",
                 "m4(java.lang.String,java.lang.String)",
-                "../pkg5/Classes.P.html#m5--",
+                "Classes.P.html#m5()",
                 "Classes.P.m5()",
-                "../pkg5/Classes.C.html#m6--",
+                "#m6()",
                 "m6()",
-                "../pkg5/Classes.C.html#m7--",
+                "#m7()",
                 "m7()",
                 "End of links",
 
                 // Check @see
                 "See Also:",
-                "../pkg5/Classes.GP.html#m0--",
+                "Classes.GP.html#m0()",
                 "Classes.GP.m0()",
-                "../pkg5/Classes.C.html#m1--",
+                "#m1()",
                 "m1()",
-                "../pkg5/Classes.P.html#m2--",
+                "Classes.P.html#m2()",
                 "Classes.P.m2()",
-                "../pkg5/Classes.P.html#m3--",
+                "Classes.P.html#m3()",
                 "Classes.P.m3()",
-                "../pkg5/Classes.C.html#m4-java.lang.String-java.lang.String-",
+                "#m4(java.lang.String,java.lang.String)",
                 "m4(String k, String v)",
-                "../pkg5/Classes.P.html#m5--\"><code>Classes.P.m5()",
-                "../pkg5/Classes.C.html#m6--\"><code>m6()",
-                "../pkg5/Classes.C.html#m7--\"><code>m7()"
+                "Classes.P.html#m5()\"><code>Classes.P.m5()",
+                "#m6()\"><code>m6()",
+                "#m7()\"><code>m7()"
         );
 
         // Tests for interfaces
@@ -172,61 +172,165 @@ public class TestOverrideMethods  extends JavadocTester {
 
         checkOrder("pkg5/Interfaces.D.html",
                 "Start of links <p>",
-                "../pkg5/Interfaces.A.html#m0--\"><code>Interfaces.A.m0()",
-                "../pkg5/Interfaces.A.html#m1--\"><code>Interfaces.A.m1()",
-                "../pkg5/Interfaces.A.html#m2--\"><code>Interfaces.A.m2()",
-                "../pkg5/Interfaces.A.html#m3--\"><code>Interfaces.A.m3()",
-                "../pkg5/Interfaces.D.html#m--\"><code>m()",
-                "../pkg5/Interfaces.D.html#n--\"><code>n()",
-                "../pkg5/Interfaces.C.html#o--\"><code>Interfaces.C.o()",
+                "Interfaces.A.html#m0()\"><code>Interfaces.A.m0()",
+                "Interfaces.A.html#m1()\"><code>Interfaces.A.m1()",
+                "Interfaces.A.html#m2()\"><code>Interfaces.A.m2()",
+                "Interfaces.A.html#m3()\"><code>Interfaces.A.m3()",
+                "#m()\"><code>m()",
+                "#n()\"><code>n()",
+                "Interfaces.C.html#o()\"><code>Interfaces.C.o()",
                 "End of links",
 
                 // Check @see links
                 "See Also:",
-                "../pkg5/Interfaces.A.html#m0--\"><code>Interfaces.A.m0()",
-                "../pkg5/Interfaces.A.html#m1--\"><code>Interfaces.A.m1()",
-                "../pkg5/Interfaces.A.html#m2--\"><code>Interfaces.A.m2()",
-                "../pkg5/Interfaces.A.html#m3--\"><code>Interfaces.A.m3()",
-                "../pkg5/Interfaces.D.html#m--\"><code>m()",
-                "../pkg5/Interfaces.D.html#n--\"><code>n()",
-                "../pkg5/Interfaces.C.html#o--\"><code>Interfaces.C.o()",
+                "Interfaces.A.html#m0()\"><code>Interfaces.A.m0()",
+                "Interfaces.A.html#m1()\"><code>Interfaces.A.m1()",
+                "Interfaces.A.html#m2()\"><code>Interfaces.A.m2()",
+                "Interfaces.A.html#m3()\"><code>Interfaces.A.m3()",
+                "#m()\"><code>m()",
+                "#n()\"><code>n()",
+                "Interfaces.C.html#o()\"><code>Interfaces.C.o()",
 
                 // Check properties
-                "Properties declared in interface&nbsp;pkg5.<a href=\"../pkg5/Interfaces.A.html\" "
+                "Properties declared in interface&nbsp;pkg5.<a href=\"Interfaces.A.html\" "
                 + "title=\"interface in pkg5\">Interfaces.A</a>",
 
                 // Check nested classes
                 "Nested classes/interfaces declared in interface&nbsp;pkg5.",
                 "Interfaces.A",
-                "../pkg5/Interfaces.A.AA.html",
+                "Interfaces.A.AA.html",
                 "Interfaces.A.AA",
 
                 // Check Fields
-                "Fields declared in interface&nbsp;pkg5.<a href=\"../pkg5/Interfaces.A.html",
-                "../pkg5/Interfaces.A.html#f",
-                "../pkg5/Interfaces.A.html#QUOTE\">QUOTE",
-                "../pkg5/Interfaces.A.html#rate\">rate",
+                "Fields declared in interface&nbsp;pkg5.<a href=\"Interfaces.A.html",
+                "Interfaces.A.html#f",
+                "Interfaces.A.html#QUOTE\">QUOTE",
+                "Interfaces.A.html#rate\">rate",
 
                 // Check Method Summary
                 "Method Summary",
-                "../pkg5/Interfaces.D.html#m--\">m",
-                "../pkg5/Interfaces.D.html#n--\">n",
+                "#m()\">m",
+                "#n()\">n",
 
                 // Check footnotes
-                "Methods declared in interface&nbsp;pkg5.<a href=\"../pkg5/Interfaces.A.html",
-                "../pkg5/Interfaces.A.html#getRate--\">getRate",
-                "../pkg5/Interfaces.A.html#rateProperty--\">rateProperty",
-                "../pkg5/Interfaces.A.html#setRate-double-",
-                "Methods declared in interface&nbsp;pkg5.<a href=\"../pkg5/Interfaces.B.html",
-                "../pkg5/Interfaces.B.html#m1--\">m1",
-                "../pkg5/Interfaces.B.html#m3--\">m3",
-                "Methods declared in interface&nbsp;pkg5.<a href=\"../pkg5/Interfaces.C.html",
-                "<a href=\"../pkg5/Interfaces.C.html#o--\">o</a>"
+                "Methods declared in interface&nbsp;pkg5.<a href=\"Interfaces.A.html",
+                "Interfaces.A.html#getRate()\">getRate",
+                "Interfaces.A.html#rateProperty()\">rateProperty",
+                "Interfaces.A.html#setRate(double)",
+                "Methods declared in interface&nbsp;pkg5.<a href=\"Interfaces.B.html",
+                "Interfaces.B.html#m1()\">m1",
+                "Interfaces.B.html#m3()\">m3",
+                "Methods declared in interface&nbsp;pkg5.<a href=\"Interfaces.C.html",
+                "<a href=\"Interfaces.C.html#o()\">o</a>"
         );
 
         // Test synthetic values and valuesof of an enum.
         checkOrder("index-all.html",
                 "<h2 class=\"title\">M</h2>",
+                "<a href=\"pkg5/Interfaces.C.html#m()\">m()",
+                "<a href=\"pkg5/Interfaces.D.html#m()\">m()</a>",
+                "<a href=\"pkg5/Classes.GP.html#m0()\">m0()",
+                "<a href=\"pkg5/Interfaces.A.html#m0()\">m0()</a>",
+                "<a href=\"pkg5/Classes.C.html#m1()\">m1()</a>",
+                "<a href=\"pkg5/Classes.P.html#m1()\">m1()</a>",
+                "<a href=\"pkg5/Interfaces.A.html#m1()\">m1()</a>",
+                "<a href=\"pkg5/Interfaces.B.html#m1()\">m1()</a>",
+                "<a href=\"pkg5/Classes.P.html#m2()\">m2()</a>",
+                "<a href=\"pkg5/Interfaces.A.html#m2()\">m2()</a>",
+                "<a href=\"pkg5/Classes.P.html#m3()\">m3()</a>",
+                "<a href=\"pkg5/Interfaces.A.html#m3()\">m3()</a>",
+                "<a href=\"pkg5/Interfaces.B.html#m3()\">m3()</a>",
+                "<a href=\"pkg5/Classes.C.html#m4(java.lang.String,java.lang.String)\">m4(String, String)</a>",
+                "<a href=\"pkg5/Classes.P.html#m4(K,V)\">m4(K, V)</a>",
+                "<a href=\"pkg5/Classes.P.html#m5()\">m5()</a>",
+                "<a href=\"pkg5/Classes.C.html#m6()\">m6()</a>",
+                "<a href=\"pkg5/Classes.P.html#m6()\">m6()</a>",
+                "<a href=\"pkg5/Classes.C.html#m7()\">m7()</a>",
+                "<a href=\"pkg5/Classes.GP.html#m7()\">m7()</a>",
+                "Returns the enum constant of this type with the specified name.",
+                "Returns an array containing the constants of this enum type, in\n" +
+                        "the order they are declared."
+        );
+    }
+
+    @Test
+    void testSummary_html4() {
+        javadoc("-d", "out-summary-html4",
+                "-html4",
+                "-sourcepath", testSrc,
+                "-javafx",
+                "--override-methods=summary",
+                "pkg5");
+
+        checkExit(Exit.OK);
+
+        checkOrder("pkg5/Classes.C.html",
+                "#m1--\">m1",
+                "#m4-java.lang.String-java.lang.String-\">m4",
+                "Classes.GP.html#m0--\">m0",
+                "Classes.GP.html#m7--\">m7"
+        );
+
+        checkOrder("pkg5/Classes.C.html",
+                // Check footnotes 2
+                "Classes.P.html#getRate--\">getRate",
+                "Classes.P.html#m2--\">m2",
+                "Classes.P.html#m3--\">m3",
+                "Classes.P.html#m4-K-V-\">m4",
+                "Classes.P.html#rateProperty--\">rateProperty",
+                "Classes.P.html#setRate-double-\">setRate",
+
+                // Check @link
+                "Classes.GP.html#m0--",
+                "#m1--",
+                "Classes.P.html#m2--",
+                "Classes.P.html#m3--",
+                "Classes.P.html#m5--",
+                "#m6--",
+                "#m7--",
+
+                // Check @see
+                "Classes.GP.html#m0--",
+                "#m1--",
+                "Classes.P.html#m2--",
+                "Classes.P.html#m3--",
+                "#m4-java.lang.String-java.lang.String-",
+                "Classes.P.html#m5--\"><code>Classes.P.m5()",
+                "#m6--\"><code>m6()",
+                "#m7--\"><code>m7()"
+        );
+
+        // Tests for interfaces
+
+        // Make sure the static methods in the super interface
+        // do not make it to this interface
+        checkOrder("pkg5/Interfaces.D.html",
+                "Interfaces.A.html#m0--\"><code>Interfaces.A.m0()",
+                "Interfaces.A.html#m1--\"><code>Interfaces.A.m1()",
+                "Interfaces.A.html#m2--\"><code>Interfaces.A.m2()",
+                "Interfaces.A.html#m3--\"><code>Interfaces.A.m3()",
+                "#m--\"><code>m()",
+                "#n--\"><code>n()",
+                "Interfaces.C.html#o--\"><code>Interfaces.C.o()",
+                "Interfaces.A.html#m0--\"><code>Interfaces.A.m0()",
+                "Interfaces.A.html#m1--\"><code>Interfaces.A.m1()",
+                "Interfaces.A.html#m2--\"><code>Interfaces.A.m2()",
+                "Interfaces.A.html#m3--\"><code>Interfaces.A.m3()",
+                "#m--\"><code>m()",
+                "#n--\"><code>n()",
+                "Interfaces.C.html#o--\"><code>Interfaces.C.o()",
+                "#m--\">m",
+                "#n--\">n",
+                "Interfaces.A.html#getRate--\">getRate",
+                "Interfaces.A.html#rateProperty--\">rateProperty",
+                "Interfaces.A.html#setRate-double-",
+                "Interfaces.B.html#m1--\">m1",
+                "Interfaces.B.html#m3--\">m3",
+                "<a href=\"Interfaces.C.html#o--\">o</a>"
+        );
+
+        // Test synthetic values and valuesof of an enum.
+        checkOrder("index-all.html",
                 "<a href=\"pkg5/Interfaces.C.html#m--\">m()",
                 "<a href=\"pkg5/Interfaces.D.html#m--\">m()</a>",
                 "<a href=\"pkg5/Classes.GP.html#m0--\">m0()",
@@ -246,10 +350,7 @@ public class TestOverrideMethods  extends JavadocTester {
                 "<a href=\"pkg5/Classes.C.html#m6--\">m6()</a>",
                 "<a href=\"pkg5/Classes.P.html#m6--\">m6()</a>",
                 "<a href=\"pkg5/Classes.C.html#m7--\">m7()</a>",
-                "<a href=\"pkg5/Classes.GP.html#m7--\">m7()</a>",
-                "Returns the enum constant of this type with the specified name.",
-                "Returns an array containing the constants of this enum type, in\n" +
-                        "the order they are declared."
+                "<a href=\"pkg5/Classes.GP.html#m7--\">m7()</a>"
         );
     }
 }

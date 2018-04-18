@@ -24,6 +24,7 @@
  /*
  * @test
  * @bug 6883341
+ * @key headful
  * @summary Checks that menu items with no text don't throw an exception
  * @author Alexander Potochkin
  * @run main bug6883341

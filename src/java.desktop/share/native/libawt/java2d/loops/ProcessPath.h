@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,18 +92,20 @@ typedef struct _ProcessHandler {
 } ProcessHandler;
 
 
-jboolean doDrawPath(DrawHandler* hnd,
-                    void (*pProcessEndSubPath)(ProcessHandler* hnd),
-                    jint transX, jint transY,
-                    jfloat* coords, jint maxCoords,
-                    jbyte* types, jint numTypes,
-                    PHStroke stroke);
+JNIEXPORT jboolean JNICALL
+doDrawPath(DrawHandler* hnd,
+           void (*pProcessEndSubPath)(ProcessHandler* hnd),
+           jint transX, jint transY,
+           jfloat* coords, jint maxCoords,
+           jbyte* types, jint numTypes,
+           PHStroke stroke);
 
-jboolean doFillPath(DrawHandler* hnd,
-                    jint transX, jint transY,
-                    jfloat* coords, jint maxCoords,
-                    jbyte* types, jint numTypes,
-                    PHStroke stroke,
-                    jint fillRule);
+JNIEXPORT jboolean JNICALL
+doFillPath(DrawHandler* hnd,
+           jint transX, jint transY,
+           jfloat* coords, jint maxCoords,
+           jbyte* types, jint numTypes,
+           PHStroke stroke,
+           jint fillRule);
 
 #endif

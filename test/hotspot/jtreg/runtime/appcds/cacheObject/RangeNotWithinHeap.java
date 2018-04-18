@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,8 @@
  *          mapped due to out of range, and -Xshare:on should not fail. Test on
  *          linux 64-bit only since the HeapBaseMinAddress value is platform specific.
  *          The value used in the test may cause different behavior on other platforms.
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
- * @requires (os.family == "linux") & (os.arch == "amd64") & (sun.arch.data.model == "64")
- * @requires (vm.gc=="null")
+ * @requires vm.cds.archived.java.heap
+ * @requires os.family == "linux"
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules java.base/jdk.internal.misc
  * @modules java.management

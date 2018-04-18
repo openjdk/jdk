@@ -71,7 +71,7 @@ import java.util.function.Predicate;
  * methods of the {@link Collection} and {@link Iterator} interfaces.
  *
  * <p>This class is a member of the
- * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
+ * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @since 1.5
@@ -323,10 +323,8 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
      */
     public void put(E e) throws InterruptedException {
         if (e == null) throw new NullPointerException();
-        // Note: convention in all put/take/etc is to preset local var
-        // holding count negative to indicate failure unless set.
-        int c = -1;
-        Node<E> node = new Node<E>(e);
+        final int c;
+        final Node<E> node = new Node<E>(e);
         final ReentrantLock putLock = this.putLock;
         final AtomicInteger count = this.count;
         putLock.lockInterruptibly();
@@ -367,7 +365,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
 
         if (e == null) throw new NullPointerException();
         long nanos = unit.toNanos(timeout);
-        int c = -1;
+        final int c;
         final ReentrantLock putLock = this.putLock;
         final AtomicInteger count = this.count;
         putLock.lockInterruptibly();
@@ -405,28 +403,28 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         final AtomicInteger count = this.count;
         if (count.get() == capacity)
             return false;
-        int c = -1;
-        Node<E> node = new Node<E>(e);
+        final int c;
+        final Node<E> node = new Node<E>(e);
         final ReentrantLock putLock = this.putLock;
         putLock.lock();
         try {
-            if (count.get() < capacity) {
-                enqueue(node);
-                c = count.getAndIncrement();
-                if (c + 1 < capacity)
-                    notFull.signal();
-            }
+            if (count.get() == capacity)
+                return false;
+            enqueue(node);
+            c = count.getAndIncrement();
+            if (c + 1 < capacity)
+                notFull.signal();
         } finally {
             putLock.unlock();
         }
         if (c == 0)
             signalNotEmpty();
-        return c >= 0;
+        return true;
     }
 
     public E take() throws InterruptedException {
-        E x;
-        int c = -1;
+        final E x;
+        final int c;
         final AtomicInteger count = this.count;
         final ReentrantLock takeLock = this.takeLock;
         takeLock.lockInterruptibly();
@@ -447,8 +445,8 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
     }
 
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
-        E x = null;
-        int c = -1;
+        final E x;
+        final int c;
         long nanos = unit.toNanos(timeout);
         final AtomicInteger count = this.count;
         final ReentrantLock takeLock = this.takeLock;
@@ -475,17 +473,17 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         final AtomicInteger count = this.count;
         if (count.get() == 0)
             return null;
-        E x = null;
-        int c = -1;
+        final E x;
+        final int c;
         final ReentrantLock takeLock = this.takeLock;
         takeLock.lock();
         try {
-            if (count.get() > 0) {
-                x = dequeue();
-                c = count.getAndDecrement();
-                if (c > 1)
-                    notEmpty.signal();
-            }
+            if (count.get() == 0)
+                return null;
+            x = dequeue();
+            c = count.getAndDecrement();
+            if (c > 1)
+                notEmpty.signal();
         } finally {
             takeLock.unlock();
         }
@@ -495,6 +493,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
     }
 
     public E peek() {
+        final AtomicInteger count = this.count;
         if (count.get() == 0)
             return null;
         final ReentrantLock takeLock = this.takeLock;
@@ -1060,11 +1059,10 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         int n, len = 0;
         do {
             // 1. Extract batch of up to 64 elements while holding the lock.
-            long deathRow = 0;          // "bitset" of size 64
             fullyLock();
             try {
-                if (nodes == null) {
-                    if (p == null) p = head.next;
+                if (nodes == null) {  // first batch; initialize
+                    p = head.next;
                     for (Node<E> q = p; q != null; q = succ(q))
                         if (q.item != null && ++len == 64)
                             break;
@@ -1077,6 +1075,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
             }
 
             // 2. Run the filter on the elements while lock is free.
+            long deathRow = 0L;       // "bitset" of size 64
             for (int i = 0; i < n; i++) {
                 final E e;
                 if ((e = nodes[i].item) != null && filter.test(e))
@@ -1095,6 +1094,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
                             unlink(q, ancestor);
                             removed = true;
                         }
+                        nodes[i] = null; // help GC
                     }
                 } finally {
                     fullyUnlock();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,28 +26,23 @@
 #define SHARE_VM_RUNTIME_THREAD_INLINE_HPP
 
 #include "runtime/atomic.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/thread.hpp"
 
 inline void Thread::set_suspend_flag(SuspendFlags f) {
-  assert(sizeof(jint) == sizeof(_suspend_flags), "size mismatch");
   uint32_t flags;
   do {
     flags = _suspend_flags;
   }
-  while (Atomic::cmpxchg((jint)(flags | f),
-                         (volatile jint*)&_suspend_flags,
-                         (jint)flags) != (jint)flags);
+  while (Atomic::cmpxchg((flags | f), &_suspend_flags, flags) != flags);
 }
 inline void Thread::clear_suspend_flag(SuspendFlags f) {
-  assert(sizeof(jint) == sizeof(_suspend_flags), "size mismatch");
   uint32_t flags;
   do {
     flags = _suspend_flags;
   }
-  while (Atomic::cmpxchg((jint)(flags & ~f),
-                         (volatile jint*)&_suspend_flags,
-                         (jint)flags) != (jint)flags);
+  while (Atomic::cmpxchg((flags & ~f), &_suspend_flags, flags) != flags);
 }
 
 inline void Thread::set_has_async_exception() {

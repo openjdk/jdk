@@ -24,7 +24,8 @@
 
 #include "precompiled.hpp"
 #include "ci/ciTypeArray.hpp"
-#include "ci/ciUtilities.hpp"
+#include "ci/ciUtilities.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 
 // ciTypeArray
 //

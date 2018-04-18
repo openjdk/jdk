@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 // After calling the initial mark/mixed gc notifications, the result can be
 // obtained in last_marking_time() once, after which the tracking resets.
 // Any pauses recorded by add_pause() will be subtracted from that results.
-class G1InitialMarkToMixedTimeTracker VALUE_OBJ_CLASS_SPEC {
+class G1InitialMarkToMixedTimeTracker {
 private:
   bool _active;
   double _initial_mark_end_time;

@@ -219,7 +219,7 @@ JNIEXPORT void JNICALL Java_sun_font_StrikeCache_freeIntPointer
      * accelerated glyph cache cells as we do in freeInt/LongMemory().
      */
     if (ptr != 0) {
-        free((void*)ptr);
+        free((void*)((intptr_t)ptr));
     }
 }
 
@@ -257,13 +257,13 @@ JNIEXPORT void JNICALL Java_sun_font_StrikeCache_freeIntMemory
     if (ptrs) {
         for (i=0; i< len; i++) {
             if (ptrs[i] != 0) {
-                GlyphInfo *ginfo = (GlyphInfo *)ptrs[i];
+                GlyphInfo *ginfo = (GlyphInfo *)((intptr_t)ptrs[i]);
                 if (ginfo->cellInfo != NULL &&
                     ginfo->managed == MANAGED_GLYPH) {
                     // invalidate this glyph's accelerated cache cell
                     AccelGlyphCache_RemoveAllCellInfos(ginfo);
                 }
-                free((void*)ginfo);
+                free(ginfo);
             }
         }
         (*env)->ReleasePrimitiveArrayCritical(env, jmemArray, ptrs, JNI_ABORT);

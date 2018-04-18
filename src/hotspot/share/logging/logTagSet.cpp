@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,17 +118,17 @@ void LogTagSet::vwrite(LogLevelType level, const char* fmt, va_list args) {
   // Check that string fits in buffer; resize buffer if necessary
   int ret;
   if (prefix_len < vwrite_buffer_size) {
-    ret = os::log_vsnprintf(buf + prefix_len, sizeof(buf) - prefix_len, fmt, args);
+    ret = os::vsnprintf(buf + prefix_len, sizeof(buf) - prefix_len, fmt, args);
   } else {
     // Buffer too small. Just call printf to find out the length for realloc below.
-    ret = os::log_vsnprintf(buf, sizeof(buf), fmt, args);
+    ret = os::vsnprintf(buf, sizeof(buf), fmt, args);
   }
   assert(ret >= 0, "Log message buffer issue");
   if ((size_t)ret >= sizeof(buf)) {
     size_t newbuf_len = prefix_len + ret + 1;
     char* newbuf = NEW_C_HEAP_ARRAY(char, newbuf_len, mtLogging);
     prefix_len = _write_prefix(newbuf, newbuf_len);
-    ret = os::log_vsnprintf(newbuf + prefix_len, newbuf_len - prefix_len, fmt, saved_args);
+    ret = os::vsnprintf(newbuf + prefix_len, newbuf_len - prefix_len, fmt, saved_args);
     assert(ret >= 0, "Log message buffer issue");
     log(level, newbuf);
     FREE_C_HEAP_ARRAY(char, newbuf);
@@ -141,7 +141,7 @@ void LogTagSet::vwrite(LogLevelType level, const char* fmt, va_list args) {
 static const size_t TagSetBufferSize = 128;
 
 void LogTagSet::describe_tagsets(outputStream* out) {
-  out->print_cr("Described tag combinations:");
+  out->print_cr("Described tag sets:");
   for (const LogTagSetDescription* d = tagset_descriptions; d->tagset != NULL; d++) {
     char buf[TagSetBufferSize];
     d->tagset->label(buf, sizeof(buf), "+");
@@ -169,7 +169,7 @@ void LogTagSet::list_all_tagsets(outputStream* out) {
   qsort(tagset_labels, _ntagsets, sizeof(*tagset_labels), qsort_strcmp);
 
   // Print and then free the labels
-  out->print("All available tag sets: ");
+  out->print("Available tag sets: ");
   for (idx = 0; idx < _ntagsets; idx++) {
     out->print("%s%s", (idx == 0 ? "" : ", "), tagset_labels[idx]);
     os::free(tagset_labels[idx]);

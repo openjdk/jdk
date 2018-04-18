@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,20 +37,7 @@
     _in_top_frame_unsafe_section = NULL;
   }
 
-  frame pd_last_frame() {
-    assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
-#ifdef AARCH64
-    assert (_anchor.last_Java_pc() != NULL, "pc should be stored");
-    return frame(_anchor.last_Java_sp(), _anchor.last_Java_fp(), _anchor.last_Java_pc());
-#else
-    if (_anchor.last_Java_pc() != NULL) {
-      return frame(_anchor.last_Java_sp(), _anchor.last_Java_fp(), _anchor.last_Java_pc());
-    } else {
-      // This will pick up pc from sp
-      return frame(_anchor.last_Java_sp(), _anchor.last_Java_fp());
-    }
-#endif // AARCH64
-  }
+  frame pd_last_frame();
 
  public:
   intptr_t* last_Java_fp()                       { return _anchor.last_Java_fp(); }

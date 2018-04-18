@@ -23,17 +23,16 @@
  */
 
 /*
- *  @test
- *  @summary If -Djava.system.class.loader=xxx is specified in command-line, disable UseAppCDS
- *  AppCDS does not support uncompressed oops
- *  @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
- *  @library /test/lib
- *  @modules java.base/jdk.internal.misc
+ * @test
+ * @summary If -Djava.system.class.loader=xxx is specified in command-line, disable UseAppCDS
+ * @requires vm.cds
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
  *      jdk.jartool/sun.tools.jar
- *  @compile test-classes/TestClassLoader.java
- *  @compile test-classes/ReportMyLoader.java
- *  @compile test-classes/TrySwitchMyLoader.java
- *  @run main SpecifySysLoaderProp
+ * @compile test-classes/TestClassLoader.java
+ * @compile test-classes/ReportMyLoader.java
+ * @compile test-classes/TrySwitchMyLoader.java
+ * @run main SpecifySysLoaderProp
  */
 
 import java.io.*;
@@ -52,56 +51,49 @@ public class SpecifySysLoaderProp {
 
     // (0) Baseline. Do not specify -Djava.system.class.loader
     //     The test class should be loaded from archive
-    OutputAnalyzer output = TestCommon.execCommon(
+    TestCommon.run(
         "-verbose:class",
         "-cp", appJar,
-        "ReportMyLoader");
-    TestCommon.checkExec(output,
-                         "[class,load] ReportMyLoader source: shared objects file",
-                         "ReportMyLoader's loader = jdk.internal.loader.ClassLoaders$AppClassLoader@");
+        "ReportMyLoader")
+      .assertNormalExit("[class,load] ReportMyLoader source: shared objects file",
+                        "ReportMyLoader's loader = jdk.internal.loader.ClassLoaders$AppClassLoader@");
 
     // (1) Try to execute the archive with -Djava.system.class.loader=no.such.Klass,
     //     it should fail
-    output = TestCommon.execCommon(
+    TestCommon.run(
         "-cp", appJar,
         "-Djava.system.class.loader=no.such.Klass",
-        "ReportMyLoader");
-    try {
-        output.shouldContain(warning);
-        output.shouldContain("ClassNotFoundException: no.such.Klass");
-    } catch (Exception e) {
-        TestCommon.checkCommonExecExceptions(output, e);
-    }
+        "ReportMyLoader")
+      .assertAbnormalExit(output -> {
+          output.shouldContain(warning);
+          output.shouldContain("ClassNotFoundException: no.such.Klass");
+        });
 
     // (2) Try to execute the archive with -Djava.system.class.loader=TestClassLoader,
     //     it should run, but AppCDS should be disabled
-    output = TestCommon.execCommon(
+    TestCommon.run(
         "-verbose:class",
         "-cp", appJar,
         "-Djava.system.class.loader=TestClassLoader",
-        "ReportMyLoader");
-    TestCommon.checkExec(output,
-                         "ReportMyLoader's loader = jdk.internal.loader.ClassLoaders$AppClassLoader@", //<-this is still printed because TestClassLoader simply delegates to Launcher$AppLoader, but ...
-                         "TestClassLoader.called = true", //<-but this proves that TestClassLoader was indeed called.
-                         "TestClassLoader: loadClass(\"ReportMyLoader\","); //<- this also proves that TestClassLoader was indeed called.
-    try {
+        "ReportMyLoader")
+      .assertNormalExit("ReportMyLoader's loader = jdk.internal.loader.ClassLoaders$AppClassLoader@", //<-this is still printed because TestClassLoader simply delegates to Launcher$AppLoader, but ...
+             "TestClassLoader.called = true", //<-but this proves that TestClassLoader was indeed called.
+             "TestClassLoader: loadClass(\"ReportMyLoader\",") //<- this also proves that TestClassLoader was indeed called.
+      .assertNormalExit(output -> {
         output.shouldMatch(".class,load. TestClassLoader source: file:");
         output.shouldMatch(".class,load. ReportMyLoader source: file:.*" + jarFileName);
-    } catch (Exception e) {
-        TestCommon.checkCommonExecExceptions(output, e);
-    }
+        });
 
     // (3) Try to change the java.system.class.loader programmatically after
     //     the app's main method is executed. This should have no effect in terms of
     //     changing or switching the actual system class loader that's already in use.
-    output = TestCommon.execCommon(
+    TestCommon.run(
         "-verbose:class",
         "-cp", appJar,
-        "TrySwitchMyLoader");
-    TestCommon.checkExec(output,
-                         "[class,load] ReportMyLoader source: shared objects file",
-                         "TrySwitchMyLoader's loader = jdk.internal.loader.ClassLoaders$AppClassLoader@",
-                         "ReportMyLoader's loader = jdk.internal.loader.ClassLoaders$AppClassLoader@",
-                         "TestClassLoader.called = false");
+        "TrySwitchMyLoader")
+      .assertNormalExit("[class,load] ReportMyLoader source: shared objects file",
+             "TrySwitchMyLoader's loader = jdk.internal.loader.ClassLoaders$AppClassLoader@",
+             "ReportMyLoader's loader = jdk.internal.loader.ClassLoaders$AppClassLoader@",
+             "TestClassLoader.called = false");
   }
 }

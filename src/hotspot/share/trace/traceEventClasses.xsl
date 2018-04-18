@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
- Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -142,6 +142,49 @@ public:
       writeEventContent();
     }
   }
+
+  using <xsl:value-of select="concat('TraceEvent&lt;Event', @id, '&gt;')"/>::commit; // else commit() is hidden by overloaded versions in this class
+
+<xsl:variable name="instant" select="@is_instant"/>
+<!-- non static method (only for non instant events)-->
+<xsl:if test="$instant='false'">
+  <xsl:value-of select="concat('  Event', @id)"/>(
+    <xsl:for-each select="value|structvalue|transition_value|relation">
+    <xsl:apply-templates select="." mode="cpp-type"/><xsl:value-of select="concat(' ', @field)"/>
+    <xsl:if test="position() != last()">,
+    </xsl:if></xsl:for-each>) : TraceEvent&lt;<xsl:value-of select="concat('Event', @id)"/>&gt;(TIMED) {
+    if (should_commit()) {<xsl:for-each select="value|structvalue|transition_value|relation">
+      set_<xsl:value-of select="@field"/>(<xsl:value-of select="@field"/>);</xsl:for-each>
+    }
+  }
+
+  void commit(<xsl:for-each select="value|structvalue|transition_value|relation">
+    <xsl:apply-templates select="." mode="cpp-type"/><xsl:value-of select="concat(' ', @field)"/>
+    <xsl:if test="position() != last()">,
+              </xsl:if></xsl:for-each>) {
+    if (should_commit()) {
+      <xsl:for-each select="value|structvalue|transition_value|relation">set_<xsl:value-of select="@field"/>(<xsl:value-of select="@field"/>);
+      </xsl:for-each>commit();
+    }
+  }</xsl:if>
+<!-- static method (for all events) -->
+  static void commit(<xsl:if test="$instant='false'">const Ticks&amp; startTicks,
+                     const Ticks&amp; endTicks<xsl:choose><xsl:when test="value|structvalue|transition_value|relation">,
+                     </xsl:when></xsl:choose></xsl:if>
+                     <xsl:for-each select="value|structvalue|transition_value|relation">
+    <xsl:apply-templates select="." mode="cpp-type"/><xsl:value-of select="concat(' ', @field)"/>
+    <xsl:if test="position() != last()">,
+                     </xsl:if></xsl:for-each>) {
+    <xsl:value-of select="concat('Event', @id)"/> me(UNTIMED);
+
+    if (me.should_commit()) {
+      <xsl:if test="$instant='false'">me.set_starttime(startTicks);
+      me.set_endtime(endTicks);
+      </xsl:if>
+      <xsl:for-each select="value|structvalue|transition_value|relation">me.set_<xsl:value-of select="@field"/>(<xsl:value-of select="@field"/>);
+      </xsl:for-each>me.commit();
+    }
+  }
 };
 
 </xsl:template>
@@ -247,6 +290,15 @@ public:
     ts.print(", ");
 </xsl:text>
   </xsl:if>
+</xsl:template>
+
+
+<xsl:template match="value|transition_value|relation" mode="cpp-type">
+  <xsl:variable name="type" select="@type"/>
+  <xsl:value-of select="//primary_type[@symbol=$type]/@type"/>
+</xsl:template>
+<xsl:template match="structvalue" mode="cpp-type">
+  <xsl:value-of select="concat('const TraceStruct', @type, '&amp;')"/>
 </xsl:template>
 
 </xsl:stylesheet>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_VM_CLASSFILE_VERIFIER_HPP
 
 #include "classfile/verificationType.hpp"
-#include "gc/shared/gcLocker.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.hpp"
 #include "runtime/handles.hpp"
@@ -40,7 +39,8 @@ class Verifier : AllStatic {
     STRICTER_ACCESS_CTRL_CHECK_VERSION  = 49,
     STACKMAP_ATTRIBUTE_MAJOR_VERSION    = 50,
     INVOKEDYNAMIC_MAJOR_VERSION         = 51,
-    NO_RELAX_ACCESS_CTRL_CHECK_VERSION  = 52
+    NO_RELAX_ACCESS_CTRL_CHECK_VERSION  = 52,
+    DYNAMICCONSTANT_MAJOR_VERSION       = 55
   };
   typedef enum { ThrowException, NoException } Mode;
 
@@ -95,7 +95,7 @@ class StackMapTable;
 #define CHECK_VERIFY_(verifier, result) \
   CHECK_(result)); if ((verifier)->has_error()) return (result); ((void)0
 
-class TypeOrigin VALUE_OBJ_CLASS_SPEC {
+class TypeOrigin {
  private:
   typedef enum {
     CF_LOCALS,  // Comes from the current frame locals
@@ -145,7 +145,7 @@ class TypeOrigin VALUE_OBJ_CLASS_SPEC {
 #endif
 };
 
-class ErrorContext VALUE_OBJ_CLASS_SPEC {
+class ErrorContext {
  private:
   typedef enum {
     INVALID_BYTECODE,     // There was a problem with the bytecode

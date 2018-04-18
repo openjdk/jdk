@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "os_share_linux.hpp"
 #include "prims/jniFastGetField.hpp"
@@ -39,7 +40,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/extendedPC.hpp"
 #include "runtime/frame.inline.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -50,6 +51,7 @@
 #include "runtime/timer.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 
@@ -302,6 +304,13 @@ JVM_handle_linux_signal(int sig,
       return true;
     }
   }
+
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  if ((sig == SIGSEGV || sig == SIGBUS) && info != NULL && info->si_addr == g_assert_poison) {
+    handle_assert_poison_fault(ucVoid, info->si_addr);
+    return 1;
+  }
+#endif
 
   JavaThread* thread = NULL;
   VMThread* vmthread = NULL;
@@ -834,6 +843,28 @@ void os::verify_stack_alignment() {
 void os::workaround_expand_exec_shield_cs_limit() {
 #if defined(IA32)
   size_t page_size = os::vm_page_size();
+
+  /*
+   * JDK-8197429
+   *
+   * Expand the stack mapping to the end of the initial stack before
+   * attempting to install the codebuf.  This is needed because newer
+   * Linux kernels impose a distance of a megabyte between stack
+   * memory and other memory regions.  If we try to install the
+   * codebuf before expanding the stack the installation will appear
+   * to succeed but we'll get a segfault later if we expand the stack
+   * in Java code.
+   *
+   */
+  if (os::is_primordial_thread()) {
+    address limit = Linux::initial_thread_stack_bottom();
+    if (! DisablePrimordialThreadGuardPages) {
+      limit += JavaThread::stack_red_zone_size() +
+        JavaThread::stack_yellow_zone_size();
+    }
+    os::Linux::expand_stack_to(limit);
+  }
+
   /*
    * Take the highest VA the OS will give us and exec
    *
@@ -852,6 +883,16 @@ void os::workaround_expand_exec_shield_cs_limit() {
   char* hint = (char*)(Linux::initial_thread_stack_bottom() -
                        (JavaThread::stack_guard_zone_size() + page_size));
   char* codebuf = os::attempt_reserve_memory_at(page_size, hint);
+
+  if (codebuf == NULL) {
+    // JDK-8197429: There may be a stack gap of one megabyte between
+    // the limit of the stack and the nearest memory region: this is a
+    // Linux kernel workaround for CVE-2017-1000364.  If we failed to
+    // map our codebuf, try again at an address one megabyte lower.
+    hint -= 1 * M;
+    codebuf = os::attempt_reserve_memory_at(page_size, hint);
+  }
+
   if ((codebuf == NULL) || (!os::commit_memory(codebuf, page_size, true))) {
     return; // No matter, we tried, best effort.
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,10 @@ class EPoll {
     static final int EPOLL_CTL_DEL  = 2;
     static final int EPOLL_CTL_MOD  = 3;
 
+    // events
+    static final int EPOLLIN   = 0x1;
+    static final int EPOLLOUT  = 0x4;
+
     // flags
     static final int EPOLLONESHOT   = (1 << 30);
 
@@ -105,11 +109,11 @@ class EPoll {
 
     private static native int dataOffset();
 
-    static native int epollCreate() throws IOException;
+    static native int create() throws IOException;
 
-    static native int epollCtl(int epfd, int opcode, int fd, int events);
+    static native int ctl(int epfd, int opcode, int fd, int events);
 
-    static native int epollWait(int epfd, long pollAddress, int numfds)
+    static native int wait(int epfd, long pollAddress, int numfds, int timeout)
         throws IOException;
 
     static {

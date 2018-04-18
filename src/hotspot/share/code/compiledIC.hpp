@@ -344,6 +344,7 @@ class CompiledStaticCall : public ResourceObj {
   // Code
   static address emit_to_interp_stub(CodeBuffer &cbuf, address mark = NULL);
   static int to_interp_stub_size();
+  static int to_trampoline_stub_size();
   static int reloc_to_interp_stub();
   static void emit_to_aot_stub(CodeBuffer &cbuf, address mark = NULL);
   static int to_aot_stub_size();

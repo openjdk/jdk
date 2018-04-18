@@ -1841,10 +1841,13 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
             @Override
             public byte[] generateInvokersHolderClassBytes(final String className,
-                    MethodType[] methodTypes) {
+                    MethodType[] invokerMethodTypes,
+                    MethodType[] callSiteMethodTypes) {
                 return GenerateJLIClassesHelper
-                        .generateInvokersHolderClassBytes(className, methodTypes);
+                        .generateInvokersHolderClassBytes(className,
+                                invokerMethodTypes, callSiteMethodTypes);
             }
+
         });
     }
 

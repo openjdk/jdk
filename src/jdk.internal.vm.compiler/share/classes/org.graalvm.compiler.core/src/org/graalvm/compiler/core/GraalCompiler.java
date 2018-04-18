@@ -25,6 +25,7 @@ package org.graalvm.compiler.core;
 import java.util.Collection;
 import java.util.List;
 
+import org.graalvm.collections.EconomicSet;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.LIRGenerationPhase.LIRGenerationContext;
 import org.graalvm.compiler.core.common.GraalOptions;
@@ -64,7 +65,6 @@ import org.graalvm.compiler.phases.tiers.MidTierContext;
 import org.graalvm.compiler.phases.tiers.Suites;
 import org.graalvm.compiler.phases.tiers.TargetProvider;
 import org.graalvm.compiler.phases.util.Providers;
-import org.graalvm.util.EconomicSet;
 
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.TargetDescription;
@@ -240,6 +240,7 @@ public class GraalCompiler {
             debug.dump(DebugContext.BASIC_LEVEL, graph, "After low tier");
 
             debug.dump(DebugContext.BASIC_LEVEL, graph.getLastSchedule(), "Final HIR schedule");
+            graph.logInliningTree();
         } catch (Throwable e) {
             throw debug.handle(e);
         } finally {

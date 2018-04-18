@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,12 @@
 
 /**
  * @test CdsDifferentObjectAlignment
- * @requires vm.cds
  * @summary Testing CDS (class data sharing) using varying object alignment.
  *          Using different object alignment for each dump/load pair.
  *          This is a negative test; using  object alignment for loading that
  *          is different from object alignment for creating a CDS file
  *          should fail when loading.
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @bug 8025642
  * @modules java.base/jdk.internal.misc

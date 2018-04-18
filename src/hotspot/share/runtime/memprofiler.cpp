@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.inline.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -116,10 +117,10 @@ void MemProfiler::do_trace() {
     }
 
     // Print trace line in log
-    fprintf(_log_fp, "%6.1f,%5d,%5d," UINTX_FORMAT_W(6) "," UINTX_FORMAT_W(6) ",",
+    fprintf(_log_fp, "%6.1f,%5d," SIZE_FORMAT_W(5) "," UINTX_FORMAT_W(6) "," UINTX_FORMAT_W(6) ",",
             os::elapsedTime(),
             jtiwh.length(),
-            InstanceKlass::number_of_instance_classes(),
+            ClassLoaderDataGraph::num_instance_classes(),
             Universe::heap()->used() / K,
             Universe::heap()->capacity() / K);
   }

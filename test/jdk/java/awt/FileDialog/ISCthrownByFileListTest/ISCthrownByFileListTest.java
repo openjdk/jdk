@@ -24,6 +24,7 @@
 /*
   @test
   @bug 6304979
+  @key headful
   @summary REG: File Dialog throws ArrayIndexOutOfBounds Exception on XToolkit with b45
   @author Dmitry Cherepanov: area=awt.filedialog
   @run main/othervm -Dsun.awt.disableGtkFileDialogs=true ISCthrownByFileListTest

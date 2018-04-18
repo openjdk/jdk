@@ -40,7 +40,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
@@ -422,39 +422,6 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                     new LinkInfoImpl(configuration, LinkInfoImpl.Kind.RETURN_TYPE, type));
             htmltree.addContent(linkContent);
             htmltree.addContent(Contents.SPACE);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected Content getNavSummaryLink(TypeElement typeElement, boolean link) {
-        if (link) {
-            if (typeElement == null) {
-                return Links.createLink(
-                        SectionName.METHOD_SUMMARY,
-                        contents.navMethod);
-            } else {
-                return links.createLink(
-                        SectionName.METHODS_INHERITANCE,
-                        configuration.getClassName(typeElement), contents.navMethod);
-            }
-        } else {
-            return contents.navMethod;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void addNavDetailLink(boolean link, Content liNav) {
-        if (link) {
-            liNav.addContent(Links.createLink(
-                    SectionName.METHOD_DETAIL, contents.navMethod));
-        } else {
-            liNav.addContent(contents.navMethod);
         }
     }
 }

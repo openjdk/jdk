@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -337,12 +337,6 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
 void C1_MacroAssembler::remove_frame(int frame_size_in_bytes) {
   increment(rsp, frame_size_in_bytes);  // Does not emit code for frame_size == 0
   pop(rbp);
-}
-
-
-void C1_MacroAssembler::unverified_entry(Register receiver, Register ic_klass) {
-  if (C1Breakpoint) int3();
-  inline_cache_check(receiver, ic_klass);
 }
 
 

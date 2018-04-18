@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -72,7 +72,8 @@ typedef jlong JImageLocationRef;
  *   ...
  */
 
-extern "C" JImageFile* JIMAGE_Open(const char *name, jint* error);
+extern "C" JNIEXPORT JImageFile* JNICALL
+JIMAGE_Open(const char *name, jint* error);
 
 typedef JImageFile* (*JImageOpen_t)(const char *name, jint* error);
 
@@ -86,7 +87,8 @@ typedef JImageFile* (*JImageOpen_t)(const char *name, jint* error);
  *  (*JImageClose)(image);
  */
 
-extern "C" void JIMAGE_Close(JImageFile* jimage);
+extern "C" JNIEXPORT void JNICALL
+JIMAGE_Close(JImageFile* jimage);
 
 typedef void (*JImageClose_t)(JImageFile* jimage);
 
@@ -104,7 +106,8 @@ typedef void (*JImageClose_t)(JImageFile* jimage);
  *  -> java.base
  */
 
-extern "C" const char * JIMAGE_PackageToModule(JImageFile* jimage, const char* package_name);
+extern "C" JNIEXPORT const char * JNICALL
+JIMAGE_PackageToModule(JImageFile* jimage, const char* package_name);
 
 typedef const char* (*JImagePackageToModule_t)(JImageFile* jimage, const char* package_name);
 
@@ -123,7 +126,7 @@ typedef const char* (*JImagePackageToModule_t)(JImageFile* jimage, const char* p
  *   JImageLocationRef location = (*JImageFindResource)(image,
  *                                "java.base", "9.0", "java/lang/String.class", &size);
  */
-extern "C" JImageLocationRef JIMAGE_FindResource(JImageFile* jimage,
+extern "C" JNIEXPORT JImageLocationRef JIMAGE_FindResource(JImageFile* jimage,
         const char* module_name, const char* version, const char* name,
         jlong* size);
 
@@ -147,7 +150,8 @@ typedef JImageLocationRef(*JImageFindResource_t)(JImageFile* jimage,
  *  char* buffer = new char[size];
  *  (*JImageGetResource)(image, location, buffer, size);
  */
-extern "C" jlong JIMAGE_GetResource(JImageFile* jimage, JImageLocationRef location,
+extern "C" JNIEXPORT jlong JNICALL
+JIMAGE_GetResource(JImageFile* jimage, JImageLocationRef location,
         char* buffer, jlong size);
 
 typedef jlong(*JImageGetResource_t)(JImageFile* jimage, JImageLocationRef location,
@@ -181,7 +185,8 @@ typedef bool (*JImageResourceVisitor_t)(JImageFile* jimage,
         const char* module_name, const char* version, const char* package,
         const char* name, const char* extension, void* arg);
 
-extern "C" void JIMAGE_ResourceIterator(JImageFile* jimage,
+extern "C" JNIEXPORT void JNICALL
+JIMAGE_ResourceIterator(JImageFile* jimage,
         JImageResourceVisitor_t visitor, void *arg);
 
 typedef void (*JImageResourceIterator_t)(JImageFile* jimage,
@@ -197,7 +202,8 @@ typedef void (*JImageResourceIterator_t)(JImageFile* jimage,
  *   char path[JIMAGE_MAX_PATH];
  *    (*JImageResourcePath)(image, location, path, JIMAGE_MAX_PATH);
  */
-extern "C" bool JIMAGE_ResourcePath(JImageFile* image, JImageLocationRef locationRef,
+extern "C" JNIEXPORT bool JNICALL
+JIMAGE_ResourcePath(JImageFile* image, JImageLocationRef locationRef,
                                     char* path, size_t max);
 
 typedef bool (*JImage_ResourcePath_t)(JImageFile* jimage, JImageLocationRef location,

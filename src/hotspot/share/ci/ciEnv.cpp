@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #include "ci/ciMethod.hpp"
 #include "ci/ciNullObject.hpp"
 #include "ci/ciReplay.hpp"
-#include "ci/ciUtilities.hpp"
+#include "ci/ciUtilities.inline.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
@@ -45,7 +45,10 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
+#include "oops/constantPool.inline.hpp"
+#include "oops/cpCache.inline.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -53,6 +56,8 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/init.hpp"
 #include "runtime/reflection.hpp"
+#include "runtime/jniHandles.inline.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.inline.hpp"
 #include "trace/tracing.hpp"
@@ -536,7 +541,7 @@ ciKlass* ciEnv::get_klass_by_index_impl(const constantPoolHandle& cpool,
     // Calculate accessibility the hard way.
     if (!k->is_loaded()) {
       is_accessible = false;
-    } else if (k->loader() != accessor->loader() &&
+    } else if (!oopDesc::equals(k->loader(), accessor->loader()) &&
                get_klass_by_name_impl(accessor, cpool, k->name(), true) == NULL) {
       // Loaded only remotely.  Not linked yet.
       is_accessible = false;
@@ -584,8 +589,34 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
   int index = pool_index;
   if (cache_index >= 0) {
     assert(index < 0, "only one kind of index at a time");
+    index = cpool->object_to_cp_index(cache_index);
     oop obj = cpool->resolved_references()->obj_at(cache_index);
     if (obj != NULL) {
+      if (oopDesc::equals(obj, Universe::the_null_sentinel())) {
+        return ciConstant(T_OBJECT, get_object(NULL));
+      }
+      BasicType bt = T_OBJECT;
+      if (cpool->tag_at(index).is_dynamic_constant())
+        bt = FieldType::basic_type(cpool->uncached_signature_ref_at(index));
+      if (is_reference_type(bt)) {
+      } else {
+        // we have to unbox the primitive value
+        if (!is_java_primitive(bt))  return ciConstant();
+        jvalue value;
+        BasicType bt2 = java_lang_boxing_object::get_value(obj, &value);
+        assert(bt2 == bt, "");
+        switch (bt2) {
+        case T_DOUBLE:  return ciConstant(value.d);
+        case T_FLOAT:   return ciConstant(value.f);
+        case T_LONG:    return ciConstant(value.j);
+        case T_INT:     return ciConstant(bt2, value.i);
+        case T_SHORT:   return ciConstant(bt2, value.s);
+        case T_BYTE:    return ciConstant(bt2, value.b);
+        case T_CHAR:    return ciConstant(bt2, value.c);
+        case T_BOOLEAN: return ciConstant(bt2, value.z);
+        default:  return ciConstant();
+        }
+      }
       ciObject* ciobj = get_object(obj);
       if (ciobj->is_array()) {
         return ciConstant(T_ARRAY, ciobj);
@@ -594,7 +625,6 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
         return ciConstant(T_OBJECT, ciobj);
       }
     }
-    index = cpool->object_to_cp_index(cache_index);
   }
   constantTag tag = cpool->tag_at(index);
   if (tag.is_int()) {
@@ -650,6 +680,8 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
     ciSymbol* signature = get_symbol(cpool->method_handle_signature_ref_at(index));
     ciObject* ciobj     = get_unloaded_method_handle_constant(callee, name, signature, ref_kind);
     return ciConstant(T_OBJECT, ciobj);
+  } else if (tag.is_dynamic_constant()) {
+    return ciConstant();
   } else {
     ShouldNotReachHere();
     return ciConstant();

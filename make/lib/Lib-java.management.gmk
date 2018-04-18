@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -44,25 +44,17 @@ ifneq ($(findstring $(OPENJDK_TARGET_OS), solaris linux), )
   endif
 endif
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBMANAGEMENT, \
-    LIBRARY := management, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+$(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT, \
+    NAME := management, \
     SRC := $(LIBMANAGEMENT_SRC), \
     OPTIMIZATION := $(LIBMANAGEMENT_OPTIMIZATION), \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBMANAGEMENT_CFLAGS), \
-    MAPFILE := $(TOPDIR)/make/mapfiles/libmanagement/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(JDKLIB_LIBS), \
     LIBS_solaris := -lkstat, \
     LIBS_aix := -lperfstat,\
     LIBS_windows := jvm.lib psapi.lib $(WIN_JAVA_LIB) advapi32.lib, \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=management.dll" \
-        -D "JDK_INTERNAL_NAME=management" \
-        -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libmanagement, \
 ))
 
 $(BUILD_LIBMANAGEMENT): $(call FindLib, java.base, java)
@@ -70,3 +62,7 @@ $(BUILD_LIBMANAGEMENT): $(call FindLib, java.base, java)
 TARGETS += $(BUILD_LIBMANAGEMENT)
 
 ################################################################################
+
+# Include custom extension post hook
+$(eval $(call IncludeCustomExtension, lib/Lib-java.management-post.gmk))
+

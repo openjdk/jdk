@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -649,7 +649,8 @@ SurfaceData_IntersectBlitBounds(SurfaceDataBounds *Abounds,
  * Subclasses of SurfaceData should call this function instead of allocating
  * the memory directly.
  */
-SurfaceDataOps *SurfaceData_InitOps(JNIEnv *env, jobject sData, int opsSize);
+JNIEXPORT SurfaceDataOps * JNICALL
+SurfaceData_InitOps(JNIEnv *env, jobject sData, int opsSize);
 
 /*
  * This function invokes the ops-specific disposal function.

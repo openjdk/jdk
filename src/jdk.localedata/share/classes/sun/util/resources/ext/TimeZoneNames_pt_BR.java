@@ -446,7 +446,7 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
                                               "Fuso hor\u00e1rio de ver\u00e3o da Groenl\u00e2ndia Ocidental", "WGST",
                                               "Hor\u00E1rio da Groenl\u00E2ndia Ocidental", "WGT"}},
             {"America/Goose_Bay", AST},
-            {"America/Grand_Turk", AST},
+            {"America/Grand_Turk", EST},
             {"America/Grenada", AST},
             {"America/Guadeloupe", AST},
             {"America/Guatemala", CST},

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
 #ifndef SHARE_VM_GC_G1_HEAPREGION_HPP
 #define SHARE_VM_GC_G1_HEAPREGION_HPP
 
-#include "gc/g1/g1AllocationContext.hpp"
 #include "gc/g1/g1BlockOffsetTable.hpp"
 #include "gc/g1/g1HeapRegionTraceType.hpp"
 #include "gc/g1/heapRegionTracer.hpp"
 #include "gc/g1/heapRegionType.hpp"
 #include "gc/g1/survRateGroup.hpp"
 #include "gc/shared/ageTable.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "utilities/macros.hpp"
 
@@ -100,7 +100,6 @@ class G1ContiguousSpace: public CompactibleSpace {
  protected:
   G1BlockOffsetTablePart _bot_part;
   Mutex _par_alloc_lock;
-  volatile uint _gc_time_stamp;
   // When we need to retire an allocation region, while other threads
   // are also concurrently trying to allocate into it, we typically
   // allocate a dummy object at the end of the region to ensure that
@@ -146,10 +145,6 @@ class G1ContiguousSpace: public CompactibleSpace {
 
   void mangle_unused_area() PRODUCT_RETURN;
   void mangle_unused_area_complete() PRODUCT_RETURN;
-
-  void record_timestamp();
-  void reset_gc_time_stamp() { _gc_time_stamp = 0; }
-  uint get_gc_time_stamp() { return _gc_time_stamp; }
 
   // See the comment above in the declaration of _pre_dummy_top for an
   // explanation of what it is.
@@ -231,8 +226,6 @@ class HeapRegion: public G1ContiguousSpace {
  protected:
   // The index of this region in the heap region sequence.
   uint  _hrm_index;
-
-  AllocationContext_t _allocation_context;
 
   HeapRegionType _type;
 
@@ -472,14 +465,6 @@ class HeapRegion: public G1ContiguousSpace {
 
   inline bool in_collection_set() const;
 
-  void set_allocation_context(AllocationContext_t context) {
-    _allocation_context = context;
-  }
-
-  AllocationContext_t  allocation_context() const {
-    return _allocation_context;
-  }
-
   // Methods used by the HeapRegionSetBase class and subclasses.
 
   // Getter and setter for the next and prev fields used to link regions into
@@ -516,10 +501,11 @@ class HeapRegion: public G1ContiguousSpace {
 
   // Reset the HeapRegion to default values.
   // If skip_remset is true, do not clear the remembered set.
+  // If clear_space is true, clear the HeapRegion's memory.
+  // If locked is true, assume we are the only thread doing this operation.
   void hr_clear(bool skip_remset, bool clear_space, bool locked = false);
-  // Clear the parts skipped by skip_remset in hr_clear() in the HeapRegion during
-  // a concurrent phase.
-  void par_clear();
+  // Clear the card table corresponding to this region.
+  void clear_cardtable();
 
   // Get the start of the unmarked area in this region.
   HeapWord* prev_top_at_mark_start() const { return _prev_top_at_mark_start; }
@@ -719,23 +705,24 @@ class HeapRegion: public G1ContiguousSpace {
 };
 
 // HeapRegionClosure is used for iterating over regions.
-// Terminates the iteration when the "doHeapRegion" method returns "true".
+// Terminates the iteration when the "do_heap_region" method returns "true".
 class HeapRegionClosure : public StackObj {
   friend class HeapRegionManager;
   friend class G1CollectionSet;
+  friend class CollectionSetChooser;
 
-  bool _complete;
-  void incomplete() { _complete = false; }
+  bool _is_complete;
+  void set_incomplete() { _is_complete = false; }
 
  public:
-  HeapRegionClosure(): _complete(true) {}
+  HeapRegionClosure(): _is_complete(true) {}
 
   // Typically called on each region until it returns true.
-  virtual bool doHeapRegion(HeapRegion* r) = 0;
+  virtual bool do_heap_region(HeapRegion* r) = 0;
 
   // True after iteration if the closure was applied to all heap regions
   // and returned "false" in all cases.
-  bool complete() { return _complete; }
+  bool is_complete() { return _is_complete; }
 };
 
 #endif // SHARE_VM_GC_G1_HEAPREGION_HPP

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,108 +41,49 @@ $(eval $(call IncludeCustomExtension, test/JtregNativeHotspot.gmk))
 # Targets for building the native tests themselves.
 ################################################################################
 
-# Add more directories here when needed.
-BUILD_HOTSPOT_JTREG_NATIVE_SRC += \
-    $(TOPDIR)/test/hotspot/jtreg/gc/g1/TestJNIWeakG1 \
-    $(TOPDIR)/test/hotspot/jtreg/gc/stress/gclocker \
-    $(TOPDIR)/test/hotspot/jtreg/gc/cslocker \
-    $(TOPDIR)/test/hotspot/jtreg/native_sanity \
-    $(TOPDIR)/test/hotspot/jtreg/runtime/jni/8025979 \
-    $(TOPDIR)/test/hotspot/jtreg/runtime/jni/8033445 \
-    $(TOPDIR)/test/hotspot/jtreg/runtime/jni/checked \
-    $(TOPDIR)/test/hotspot/jtreg/runtime/jni/FindClass \
-    $(TOPDIR)/test/hotspot/jtreg/runtime/jni/PrivateInterfaceMethods \
-    $(TOPDIR)/test/hotspot/jtreg/runtime/jni/ToStringInInterfaceTest \
-    $(TOPDIR)/test/hotspot/jtreg/runtime/jni/CalleeSavedRegisters \
-    $(TOPDIR)/test/hotspot/jtreg/runtime/jni/CallWithJNIWeak \
-    $(TOPDIR)/test/hotspot/jtreg/runtime/jni/ReturnJNIWeak \
-    $(TOPDIR)/test/hotspot/jtreg/runtime/modules/getModuleJNI \
-    $(TOPDIR)/test/hotspot/jtreg/runtime/SameObject \
-    $(TOPDIR)/test/hotspot/jtreg/runtime/BoolReturn \
-    $(TOPDIR)/test/hotspot/jtreg/runtime/noClassDefFoundMsg \
-    $(TOPDIR)/test/hotspot/jtreg/runtime/handshake \
-    $(TOPDIR)/test/hotspot/jtreg/runtime/RedefineTests \
-    $(TOPDIR)/test/hotspot/jtreg/compiler/floatingpoint/ \
-    $(TOPDIR)/test/hotspot/jtreg/compiler/calls \
-    $(TOPDIR)/test/hotspot/jtreg/compiler/runtime/criticalnatives/lookup \
-    $(TOPDIR)/test/hotspot/jtreg/compiler/runtime/criticalnatives/argumentcorruption \
-    $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/GetOwnedMonitorInfo \
-    $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/GetNamedModule \
-    $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/IsModifiableModule \
-    $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/AddModuleReads \
-    $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/AddModuleExportsAndOpens \
-    $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/AddModuleUsesAndProvides \
-    $(TOPDIR)/test/hotspot/jtreg/testlibrary/jvmti \
-    $(TOPDIR)/test/hotspot/jtreg/compiler/jvmci/jdk.vm.ci.code.test \
-    $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/GetModulesInfo \
-    $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/ModuleAwareAgents/ClassFileLoadHook \
-    $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/ModuleAwareAgents/ClassLoadPrepare \
-    $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/ModuleAwareAgents/ThreadStart \
-    $(TOPDIR)/test/hotspot/jtreg/serviceability/jvmti/StartPhase/AllowedFunctions \
-    $(TOPDIR)/test/hotspot/jtreg/serviceability/dcmd/jvmti/AttachFailed \
-    #
+# This might have been added to by a custom extension.
+BUILD_HOTSPOT_JTREG_NATIVE_SRC += $(TOPDIR)/test/hotspot/jtreg
 
-# Add conditional directories here when needed.
-ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH), solaris-sparc)
-BUILD_HOTSPOT_JTREG_NATIVE_SRC += \
-    $(TOPDIR)/test/hotspot/jtreg/runtime/libadimalloc.solaris.sparc \
-    $(TOPDIR)/test/hotspot/jtreg/runtime/ThreadSignalMask
-endif
+BUILD_HOTSPOT_JTREG_OUTPUT_DIR := $(OUTPUTDIR)/support/test/hotspot/jtreg/native
 
-ifeq ($(OPENJDK_TARGET_OS), linux)
-BUILD_HOTSPOT_JTREG_NATIVE_SRC += \
-    $(TOPDIR)/test/hotspot/jtreg/runtime/execstack \
-    $(TOPDIR)/test/hotspot/jtreg/runtime/jsig \
-    $(TOPDIR)/test/hotspot/jtreg/runtime/StackGuardPages
-endif
+BUILD_HOTSPOT_JTREG_IMAGE_DIR := $(TEST_IMAGE_DIR)/hotspot/jtreg
 
-ifeq ($(TOOLCHAIN_TYPE), solstudio)
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_liboverflow := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libSimpleClassFileLoadHook := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libGetOwnedMonitorInfoTest := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libGetNamedModuleTest := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libIsModifiableModuleTest := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libAddModuleReadsTest := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libAddModuleExportsAndOpensTest := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libAddModuleUsesAndProvidesTest := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libMAAClassFileLoadHook := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libMAAClassLoadPrepare := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libMAAThreadStart := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAllowedFunctions := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libRedefineDoubleDelete := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libHandshakeTransitionTest := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libHasNoEntryPoint := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libReturnError := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libCNLookUp := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libTestCheckedEnsureLocalCapacity := -lc
+# Platform specific setup
+ifneq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH), solaris-sparc)
+  BUILD_HOTSPOT_JTREG_EXCLUDE += liboverflow.c exeThreadSignalMask.c
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), linux)
     BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rw := -z noexecstack
     BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rwx := -z execstack
     BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeinvoke := -ljvm -lpthread
-    BUILD_TEST_invoke_exeinvoke.c_OPTIMIZATION := NONE
+    BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exestack-gap := -ljvm -lpthread
+    BUILD_TEST_exeinvoke_exeinvoke.c_OPTIMIZATION := NONE
     BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeFPRegs := -ldl
+else
+  BUILD_HOTSPOT_JTREG_EXCLUDE += libtest-rw.c libtest-rwx.c libTestJNI.c \
+      exeinvoke.c exestack-gap.c
 endif
+
+BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exesigtest := -ljvm
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
     BUILD_HOTSPOT_JTREG_EXECUTABLES_CFLAGS_exeFPRegs := -MT
+    BUILD_HOTSPOT_JTREG_EXCLUDE += exesigtest.c
 endif
-
-BUILD_HOTSPOT_JTREG_OUTPUT_DIR := $(OUTPUTDIR)/support/test/hotspot/jtreg/native
-
-BUILD_HOTSPOT_JTREG_IMAGE_DIR := $(TEST_IMAGE_DIR)/hotspot/jtreg
 
 $(eval $(call SetupTestFilesCompilation, BUILD_HOTSPOT_JTREG_LIBRARIES, \
     TYPE := LIBRARY, \
     SOURCE_DIRS := $(BUILD_HOTSPOT_JTREG_NATIVE_SRC), \
     OUTPUT_DIR := $(BUILD_HOTSPOT_JTREG_OUTPUT_DIR), \
+    EXCLUDE := $(BUILD_HOTSPOT_JTREG_EXCLUDE), \
 ))
 
 $(eval $(call SetupTestFilesCompilation, BUILD_HOTSPOT_JTREG_EXECUTABLES, \
     TYPE := PROGRAM, \
     SOURCE_DIRS := $(BUILD_HOTSPOT_JTREG_NATIVE_SRC), \
     OUTPUT_DIR := $(BUILD_HOTSPOT_JTREG_OUTPUT_DIR), \
+    EXCLUDE := $(BUILD_HOTSPOT_JTREG_EXCLUDE), \
 ))
 
 build-test-hotspot-jtreg-native: $(BUILD_HOTSPOT_JTREG_LIBRARIES) $(BUILD_HOTSPOT_JTREG_EXECUTABLES)

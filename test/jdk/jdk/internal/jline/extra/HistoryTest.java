@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8178821
+ * @bug 8178821 8198670
  * @summary Test Completion
  * @modules jdk.internal.le/jdk.internal.jline
  *          jdk.internal.le/jdk.internal.jline.console
@@ -133,16 +133,27 @@ public class HistoryTest {
         complete.set(true);  history.add("/*current2*/");
         complete.set(true);  history.add("/*current3*/");
 
-        assertEquals(history.currentSessionEntries(), Arrays.asList("/*current1*/", "/*current2*/", "/*current3*/"));
+        assertEquals(history.entries(true), Arrays.asList("/*current1*/", "/*current2*/", "/*current3*/"));
+        assertEquals(history.entries(false), Arrays.asList(
+                "void test() {",
+                "    System.err.println(1);",
+                "}",
+                "/exit",
+                "void test() { /*changed*/",
+                "    System.err.println(2);",
+                "} /*changed*/",
+                "{",
+                "}",
+                "/*current1*/", "/*current2*/", "/*current3*/"), history.entries(false).toString());
 
         history.remove(0);
 
-        assertEquals(history.currentSessionEntries(), Arrays.asList("/*current1*/", "/*current2*/", "/*current3*/"));
+        assertEquals(history.entries(true), Arrays.asList("/*current1*/", "/*current2*/", "/*current3*/"));
 
         while (history.size() > 2)
             history.remove(0);
 
-        assertEquals(history.currentSessionEntries(), Arrays.asList("/*current2*/", "/*current3*/"));
+        assertEquals(history.entries(true), Arrays.asList("/*current2*/", "/*current3*/"));
 
         for (int i = 0; i < MemoryHistory.DEFAULT_MAX_SIZE * 2; i++) {
             complete.set(true);  history.add("/exit");

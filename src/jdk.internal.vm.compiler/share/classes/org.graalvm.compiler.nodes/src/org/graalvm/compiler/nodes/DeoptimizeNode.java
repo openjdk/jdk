@@ -39,12 +39,12 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.Value;
 
 @NodeInfo(shortName = "Deopt", nameTemplate = "Deopt {p#reason/s}")
-public final class DeoptimizeNode extends AbstractDeoptimizeNode implements Lowerable, LIRLowerable {
+public final class DeoptimizeNode extends AbstractDeoptimizeNode implements Lowerable, LIRLowerable, StaticDeoptimizingNode {
     public static final int DEFAULT_DEBUG_ID = 0;
 
     public static final NodeClass<DeoptimizeNode> TYPE = NodeClass.create(DeoptimizeNode.class);
-    protected final DeoptimizationAction action;
-    protected final DeoptimizationReason reason;
+    protected DeoptimizationAction action;
+    protected DeoptimizationReason reason;
     protected int debugId;
     protected final JavaConstant speculation;
 
@@ -67,12 +67,24 @@ public final class DeoptimizeNode extends AbstractDeoptimizeNode implements Lowe
         this.speculation = speculation;
     }
 
-    public DeoptimizationAction action() {
+    @Override
+    public DeoptimizationAction getAction() {
         return action;
     }
 
-    public DeoptimizationReason reason() {
+    @Override
+    public void setAction(DeoptimizationAction action) {
+        this.action = action;
+    }
+
+    @Override
+    public DeoptimizationReason getReason() {
         return reason;
+    }
+
+    @Override
+    public void setReason(DeoptimizationReason reason) {
+        this.reason = reason;
     }
 
     @Override
@@ -115,6 +127,7 @@ public final class DeoptimizeNode extends AbstractDeoptimizeNode implements Lowe
         return ConstantNode.forConstant(speculation, metaAccess, graph());
     }
 
+    @Override
     public JavaConstant getSpeculation() {
         return speculation;
     }

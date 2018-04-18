@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,8 @@ include LibCommon.gmk
 
 ################################################################################
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBUNPACK, \
-    LIBRARY := unpack, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+$(eval $(call SetupJdkLibrary, BUILD_LIBUNPACK, \
+    NAME := unpack, \
     SRC := $(TOPDIR)/src/jdk.pack/share/native/libunpack \
         $(TOPDIR)/src/jdk.pack/share/native/common-unpack, \
     TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
@@ -40,18 +39,13 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBUNPACK, \
         -I$(TOPDIR)/src/jdk.pack/share/native/common-unpack \
         $(LIBJAVA_HEADER_FLAGS), \
     CFLAGS_release := -DPRODUCT, \
-    MAPFILE := $(TOPDIR)/make/mapfiles/libunpack/mapfile-vers, \
+    DISABLED_WARNINGS_gcc := implicit-fallthrough, \
+    DISABLED_WARNINGS_microsoft := 4005, \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_windows := -map:$(SUPPORT_OUTPUTDIR)/native/$(MODULE)/unpack.map -debug, \
-    LIBS_unix := -ljvm $(LIBCXX) -ljava -lc, \
+    LIBS_unix := -ljvm $(LIBCXX) -ljava, \
     LIBS_windows := jvm.lib $(WIN_JAVA_LIB), \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libunpack, \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=unpack.dll" \
-        -D "JDK_INTERNAL_NAME=unpack" \
-        -D "JDK_FTYPE=0x2L", \
 ))
 
 $(BUILD_LIBUNPACK): $(call FindLib, java.base, java)

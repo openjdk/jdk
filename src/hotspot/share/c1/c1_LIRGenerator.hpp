@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,15 +275,15 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   // specific implementations
   // pre barriers
 
-  void G1SATBCardTableModRef_pre_barrier(LIR_Opr addr_opr, LIR_Opr pre_val,
-                                         bool do_load, bool patch, CodeEmitInfo* info);
+  void G1BarrierSet_pre_barrier(LIR_Opr addr_opr, LIR_Opr pre_val,
+                                bool do_load, bool patch, CodeEmitInfo* info);
 
   // post barriers
 
-  void G1SATBCardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val);
-  void CardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val);
-#ifdef CARDTABLEMODREF_POST_BARRIER_HELPER
-  void CardTableModRef_post_barrier_helper(LIR_OprDesc* addr, LIR_Const* card_table_base);
+  void G1BarrierSet_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val);
+  void CardTableBarrierSet_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val);
+#ifdef CARDTABLEBARRIERSET_POST_BARRIER_HELPER
+  void CardTableBarrierSet_post_barrier_helper(LIR_OprDesc* addr, LIR_Const* card_table_base);
 #endif
 
 
@@ -340,7 +340,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   // machine dependent
   void cmp_mem_int(LIR_Condition condition, LIR_Opr base, int disp, int c, CodeEmitInfo* info);
   void cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr base, int disp, BasicType type, CodeEmitInfo* info);
-  void cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr base, LIR_Opr disp, BasicType type, CodeEmitInfo* info);
 
   void arraycopy_helper(Intrinsic* x, int* flags, ciArrayKlass** expected_type);
 

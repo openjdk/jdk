@@ -78,8 +78,11 @@ public enum Source {
     /** 1.9 modularity. */
     JDK9("9"),
 
-    /** 1.10 covers the to be determined language features that will be added in JDK 10. */
-    JDK10("10");
+    /** 1.10 local-variable type inference (var). */
+    JDK10("10"),
+
+    /** 1.11 covers the to be determined language features that will be added in JDK 11. */
+    JDK11("11");
 
     private static final Context.Key<Source> sourceKey = new Context.Key<>();
 
@@ -108,6 +111,7 @@ public enum Source {
         tab.put("1.8", JDK8); // Make 8 an alias for 1.8
         tab.put("1.9", JDK9); // Make 9 an alias for 1.9
         tab.put("1.10", JDK10); // Make 10 an alias for 1.10
+        // Decline to make 1.11 an alias for 11.
     }
 
     private Source(String name) {
@@ -125,6 +129,7 @@ public enum Source {
     }
 
     public Target requiredTarget() {
+        if (this.compareTo(JDK11) >= 0) return Target.JDK1_11;
         if (this.compareTo(JDK10) >= 0) return Target.JDK1_10;
         if (this.compareTo(JDK9) >= 0) return Target.JDK1_9;
         if (this.compareTo(JDK8) >= 0) return Target.JDK1_8;
@@ -212,6 +217,16 @@ public enum Source {
                     source.compareTo(maxLevel) <= 0;
         }
 
+        public boolean isPlural() {
+            Assert.checkNonNull(optKind);
+            return optKind == DiagKind.PLURAL;
+        }
+
+        public Fragment nameFragment() {
+            Assert.checkNonNull(optFragment);
+            return optFragment;
+        }
+
         public Fragment fragment(String sourceName) {
             Assert.checkNonNull(optFragment);
             return optKind == DiagKind.NORMAL ?
@@ -247,6 +262,8 @@ public enum Source {
             return RELEASE_9;
         case JDK10:
             return RELEASE_10;
+        case JDK11:
+            return RELEASE_11;
         default:
             return null;
         }

@@ -63,6 +63,8 @@ import static javax.tools.StandardLocation.*;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
+import com.sun.tools.javac.code.Symbol;
+import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.main.DelegatingJavaFileManager;
 
 import com.sun.tools.javac.util.Dependencies.CompletionCause;
@@ -131,6 +133,8 @@ public class ClassFinder {
      */
     JCDiagnostic.Factory diagFactory;
 
+    final DeferredCompletionFailureHandler dcfh;
+
     /** Can be reassigned from outside:
      *  the completer to be used for ".java" files. If this remains unassigned
      *  ".java" files will not be loaded.
@@ -185,6 +189,7 @@ public class ClassFinder {
         if (fileManager == null)
             throw new AssertionError("FileManager initialization error");
         diagFactory = JCDiagnostic.Factory.instance(context);
+        dcfh = DeferredCompletionFailureHandler.instance(context);
 
         log = Log.instance(context);
         annotate = Annotate.instance(context);
@@ -217,6 +222,8 @@ public class ClassFinder {
         jrtIndex = useCtProps && JRTIndex.isAvailable() ? JRTIndex.getSharedInstance() : null;
 
         profile = Profile.instance(context);
+        cachedCompletionFailure = new CompletionFailure(null, (JCDiagnostic) null, dcfh);
+        cachedCompletionFailure.setStackTrace(new StackTraceElement[0]);
     }
 
 
@@ -293,7 +300,7 @@ public class ClassFinder {
             } catch (IOException ex) {
                 JCDiagnostic msg =
                         diagFactory.fragment(Fragments.ExceptionMessage(ex.getLocalizedMessage()));
-                throw new CompletionFailure(sym, msg).initCause(ex);
+                throw new CompletionFailure(sym, msg, dcfh).initCause(ex);
             }
         }
         if (!reader.filling)
@@ -332,7 +339,7 @@ public class ClassFinder {
         if (completionFailureName == c.fullname) {
             JCDiagnostic msg =
                     diagFactory.fragment(Fragments.UserSelectedCompletionFailure);
-            throw new CompletionFailure(c, msg);
+            throw new CompletionFailure(c, msg, dcfh);
         }
         currentOwner = c;
         JavaFileObject classfile = c.classfile;
@@ -397,7 +404,7 @@ public class ClassFinder {
                 // log.warning("proc.messager",
                 //             Log.getLocalizedString("class.file.not.found", c.flatname));
                 // c.debug.printStackTrace();
-                return new CompletionFailure(c, diag);
+                return new CompletionFailure(c, diag, dcfh);
             } else {
                 CompletionFailure result = cachedCompletionFailure;
                 result.sym = c;
@@ -405,11 +412,7 @@ public class ClassFinder {
                 return result;
             }
         }
-        private final CompletionFailure cachedCompletionFailure =
-            new CompletionFailure(null, (JCDiagnostic) null);
-        {
-            cachedCompletionFailure.setStackTrace(new StackTraceElement[0]);
-        }
+        private final CompletionFailure cachedCompletionFailure;
 
 
     /** Load a toplevel class with given fully qualified name
@@ -633,6 +636,7 @@ public class ClassFinder {
         boolean haveSourcePath = includeSourcePath && fileManager.hasLocation(SOURCE_PATH);
 
         if (verbose && verbosePath) {
+            verbosePath = false; // print once per compile
             if (fileManager instanceof StandardJavaFileManager) {
                 StandardJavaFileManager fm = (StandardJavaFileManager)fileManager;
                 if (haveSourcePath && wantSourceFiles) {
@@ -774,8 +778,8 @@ public class ClassFinder {
         private static final long serialVersionUID = 0;
 
         public BadClassFile(TypeSymbol sym, JavaFileObject file, JCDiagnostic diag,
-                JCDiagnostic.Factory diagFactory) {
-            super(sym, createBadClassFileDiagnostic(file, diag, diagFactory));
+                JCDiagnostic.Factory diagFactory, DeferredCompletionFailureHandler dcfh) {
+            super(sym, createBadClassFileDiagnostic(file, diag, diagFactory), dcfh);
         }
         // where
         private static JCDiagnostic createBadClassFileDiagnostic(
@@ -790,8 +794,8 @@ public class ClassFinder {
         private static final long serialVersionUID = 0;
 
         public BadEnclosingMethodAttr(TypeSymbol sym, JavaFileObject file, JCDiagnostic diag,
-                JCDiagnostic.Factory diagFactory) {
-            super(sym, file, diag, diagFactory);
+                JCDiagnostic.Factory diagFactory, DeferredCompletionFailureHandler dcfh) {
+            super(sym, file, diag, diagFactory, dcfh);
         }
     }
 }

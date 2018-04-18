@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 // key: compiler.misc.where.description.typevar
 // key: compiler.err.prob.found.req
 // key: compiler.misc.inconvertible.types
-// options: --diags:formatterOptions=where,simpleNames
+// options: --diags=formatterOptions=where,simpleNames
 // run: simple
 
 import java.util.*;

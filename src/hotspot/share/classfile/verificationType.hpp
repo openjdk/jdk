@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_VM_CLASSFILE_VERIFICATIONTYPE_HPP
 
 #include "classfile/systemDictionary.hpp"
-#include "memory/allocation.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.hpp"
 #include "oops/symbol.hpp"
@@ -49,7 +48,7 @@ enum {
 
 class ClassVerifier;
 
-class VerificationType VALUE_OBJ_CLASS_SPEC {
+class VerificationType {
   private:
     // Least significant bits of _handle are always 0, so we use these as
     // the indicator that the _handle is valid.  Otherwise, the _data field

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8039410 8042601 8042829 8049393 8050031 8155061 8155995 8167967 8169813
+ * @bug 8039410 8042601 8042829 8049393 8050031 8155061 8155995 8167967 8169813 8182765
  * @summary test to determine if members are ordered correctly
  * @library ../lib/
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -93,9 +93,9 @@ public class TestOrdering extends JavadocTester {
             String contents = tester.readFile(usePage);
             // check constructors
             tester.checking("constructors");
-            int idx1 = contents.indexOf("C.html#C-UsedInC");
-            int idx2 = contents.indexOf("C.html#C-UsedInC-int");
-            int idx3 = contents.indexOf("C.html#C-UsedInC-java.lang.String");
+            int idx1 = contents.indexOf("C.html#%3Cinit%3E(UsedInC");
+            int idx2 = contents.indexOf("C.html#%3Cinit%3E(UsedInC,int");
+            int idx3 = contents.indexOf("C.html#%3Cinit%3E(UsedInC,java.lang.String");
             if (idx1 == -1 || idx2 == -1 || idx3 == -1) {
                 tester.failed("ctor strings not found");
             } else if (idx1 > idx2 || idx2 > idx3 || idx1 > idx3) {
@@ -106,8 +106,8 @@ public class TestOrdering extends JavadocTester {
 
             // check methods
             tester.checking("methods");
-            idx1 = contents.indexOf("C.html#ymethod-int");
-            idx2 = contents.indexOf("C.html#ymethod-java.lang.String");
+            idx1 = contents.indexOf("C.html#ymethod(int");
+            idx2 = contents.indexOf("C.html#ymethod(java.lang.String");
             if (idx1 == -1 || idx2 == -1) {
                 tester.failed("#ymethod strings not found");
             } else if (idx1 > idx2) {
@@ -135,42 +135,42 @@ public class TestOrdering extends JavadocTester {
             checkClassUseOrdering("pkg1/class-use/UsedClass.html");
 
             tester.checkOrder("pkg1/class-use/UsedClass.html",
-                    "../../pkg1/MethodOrder.html#m--",
-                    "../../pkg1/MethodOrder.html#m-byte:A-",
-                    "../../pkg1/MethodOrder.html#m-double-",
-                    "../../pkg1/MethodOrder.html#m-double-double-",
-                    "../../pkg1/MethodOrder.html#m-double-java.lang.Double-",
-                    "../../pkg1/MethodOrder.html#m-int-",
-                    "../../pkg1/MethodOrder.html#m-int-int-",
-                    "../../pkg1/MethodOrder.html#m-int-java.lang.Integer-",
-                    "../../pkg1/MethodOrder.html#m-long-",
-                    "../../pkg1/MethodOrder.html#m-long-long-",
-                    "../../pkg1/MethodOrder.html#m-long-java.lang.Long-",
-                    "../../pkg1/MethodOrder.html#m-long-java.lang.Long...-",
-                    "../../pkg1/MethodOrder.html#m-java.lang.Double-",
-                    "../../pkg1/MethodOrder.html#m-java.lang.Double-double-",
-                    "../../pkg1/MethodOrder.html#m-java.lang.Double-java.lang.Double-",
-                    "../../pkg1/MethodOrder.html#m-java.lang.Integer-",
-                    "../../pkg1/MethodOrder.html#m-java.lang.Integer-int-",
-                    "../../pkg1/MethodOrder.html#m-java.lang.Integer-java.lang.Integer-",
-                    "../../pkg1/MethodOrder.html#m-java.lang.Object:A-",
-                    "../../pkg1/MethodOrder.html#m-java.util.ArrayList-",
-                    "../../pkg1/MethodOrder.html#m-java.util.Collection-",
-                    "../../pkg1/MethodOrder.html#m-java.util.List-");
+                    "../MethodOrder.html#m()",
+                    "../MethodOrder.html#m(byte%5B%5D)",
+                    "../MethodOrder.html#m(double)",
+                    "../MethodOrder.html#m(double,double)",
+                    "../MethodOrder.html#m(double,java.lang.Double)",
+                    "../MethodOrder.html#m(int)",
+                    "../MethodOrder.html#m(int,int)",
+                    "../MethodOrder.html#m(int,java.lang.Integer)",
+                    "../MethodOrder.html#m(long)",
+                    "../MethodOrder.html#m(long,long)",
+                    "../MethodOrder.html#m(long,java.lang.Long)",
+                    "../MethodOrder.html#m(long,java.lang.Long...)",
+                    "../MethodOrder.html#m(java.lang.Double)",
+                    "../MethodOrder.html#m(java.lang.Double,double)",
+                    "../MethodOrder.html#m(java.lang.Double,java.lang.Double)",
+                    "../MethodOrder.html#m(java.lang.Integer)",
+                    "../MethodOrder.html#m(java.lang.Integer,int)",
+                    "../MethodOrder.html#m(java.lang.Integer,java.lang.Integer)",
+                    "../MethodOrder.html#m(java.lang.Object%5B%5D)",
+                    "../MethodOrder.html#m(java.util.ArrayList)",
+                    "../MethodOrder.html#m(java.util.Collection)",
+                    "../MethodOrder.html#m(java.util.List)");
 
             tester.checkOrder("pkg1/class-use/UsedClass.html",
-                    "../../pkg1/MethodOrder.html#tpm-pkg1.UsedClass-",
-                    "../../pkg1/MethodOrder.html#tpm-pkg1.UsedClass-pkg1.UsedClass-",
-                    "../../pkg1/MethodOrder.html#tpm-pkg1.UsedClass-pkg1.UsedClass:A-",
-                    "../../pkg1/MethodOrder.html#tpm-pkg1.UsedClass-java.lang.String-");
+                    "../MethodOrder.html#tpm(pkg1.UsedClass)",
+                    "../MethodOrder.html#tpm(pkg1.UsedClass,pkg1.UsedClass)",
+                    "../MethodOrder.html#tpm(pkg1.UsedClass,pkg1.UsedClass%5B%5D)",
+                    "../MethodOrder.html#tpm(pkg1.UsedClass,java.lang.String)");
 
             tester.checkOrder("pkg1/class-use/UsedClass.html",
-                    "../../pkg1/A.html#A-pkg1.UsedClass-",
-                    "../../pkg1/B.A.html#A-pkg1.UsedClass-",
-                    "../../pkg1/B.html#B-pkg1.UsedClass-",
-                    "../../pkg1/A.C.html#C-pkg1.UsedClass-java.lang.Object:A-",
-                    "../../pkg1/A.C.html#C-pkg1.UsedClass-java.util.Collection-",
-                    "../../pkg1/A.C.html#C-pkg1.UsedClass-java.util.List-");
+                    "../A.html#%3Cinit%3E(pkg1.UsedClass)",
+                    "../B.A.html#%3Cinit%3E(pkg1.UsedClass)",
+                    "../B.html#%3Cinit%3E(pkg1.UsedClass)",
+                    "../A.C.html#%3Cinit%3E(pkg1.UsedClass,java.lang.Object%5B%5D)",
+                    "../A.C.html#%3Cinit%3E(pkg1.UsedClass,java.util.Collection)",
+                    "../A.C.html#%3Cinit%3E(pkg1.UsedClass,java.util.List)");
 
             tester.checkOrder("pkg1/ImplementsOrdering.html",
                     "<dd><code>close</code>&nbsp;in interface&nbsp;<code>java.lang.AutoCloseable</code></dd>",
@@ -211,10 +211,10 @@ public class TestOrdering extends JavadocTester {
         }
 
         void checkClassUseOrdering(String usePage) {
-            checkClassUseOrdering(usePage, "pkg1/C#ITERATION#.html#zfield");
-            checkClassUseOrdering(usePage, "pkg1/C#ITERATION#.html#fieldInC#ITERATION#");
-            checkClassUseOrdering(usePage, "pkg1/C#ITERATION#.html#zmethod-pkg1.UsedClass");
-            checkClassUseOrdering(usePage, "pkg1/C#ITERATION#.html#methodInC#ITERATION#");
+            checkClassUseOrdering(usePage, "C#ITERATION#.html#zfield");
+            checkClassUseOrdering(usePage, "C#ITERATION#.html#fieldInC#ITERATION#");
+            checkClassUseOrdering(usePage, "C#ITERATION#.html#zmethod(pkg1.UsedClass");
+            checkClassUseOrdering(usePage, "C#ITERATION#.html#methodInC#ITERATION#");
         }
 
         void checkClassUseOrdering(String usePage, String searchString) {
@@ -346,17 +346,17 @@ public class TestOrdering extends JavadocTester {
         };
 
         static String expectedMethodOrdering[] = {
-            "Add.html#add--",
-            "Add.html#add-double-",
-            "Add.html#add-double-byte-",
-            "Add.html#add-double-double-",
-            "Add.html#add-double-java.lang.Double-",
-            "Add.html#add-float-",
-            "Add.html#add-float-int-",
-            "Add.html#add-int-",
-            "Add.html#add-int-float-",
-            "Add.html#add-java.lang.Double-",
-            "Add.html#add-java.lang.Integer-"
+            "Add.html#add()",
+            "Add.html#add(double)",
+            "Add.html#add(double,byte)",
+            "Add.html#add(double,double)",
+            "Add.html#add(double,java.lang.Double)",
+            "Add.html#add(float)",
+            "Add.html#add(float,int)",
+            "Add.html#add(int)",
+            "Add.html#add(int,float)",
+            "Add.html#add(java.lang.Double)",
+            "Add.html#add(java.lang.Integer)"
         };
 
         static String expectedPackageOrdering[] = {
@@ -405,8 +405,8 @@ public class TestOrdering extends JavadocTester {
             tester.checkExit(Exit.OK);
             tester.checkOrder("index-all.html", composeTestVectors());
             tester.checkOrder("add0/add/package-tree.html",
-                    "<a href=\"../../add0/add/Add.add.html\" title=\"enum in add0.add\">",
-                    "<a href=\"../../add0/add/Add.ADD.html\" title=\"enum in add0.add\">");
+                    "<a href=\"Add.add.html\" title=\"enum in add0.add\">",
+                    "<a href=\"Add.ADD.html\" title=\"enum in add0.add\">");
             tester.checkOrder("overview-tree.html",
                     "<a href=\"Add.add.html\" title=\"enum in &lt;Unnamed&gt;\">",
                     "<a href=\"add0/Add.add.html\" title=\"enum in add0\">",
@@ -593,10 +593,10 @@ public class TestOrdering extends JavadocTester {
 
             tester.checkOrder("pkg5/AnnoOptionalTest.html",
                     "<h3>Optional Element Summary</h3>",
-                    "<a href=\"../pkg5/AnnoOptionalTest.html#four--\">four</a>",
-                    "<a href=\"../pkg5/AnnoOptionalTest.html#one--\">one</a>",
-                    "<a href=\"../pkg5/AnnoOptionalTest.html#three--\">three</a>",
-                    "<a href=\"../pkg5/AnnoOptionalTest.html#two--\">two</a>",
+                    "<a href=\"#four()\">four</a>",
+                    "<a href=\"#one()\">one</a>",
+                    "<a href=\"#three()\">three</a>",
+                    "<a href=\"#two()\">two</a>",
                     "<h3>Element Detail</h3>",
                     "<h4>one</h4>",
                     "<h4>two</h4>",
@@ -605,10 +605,10 @@ public class TestOrdering extends JavadocTester {
 
             tester.checkOrder("pkg5/AnnoRequiredTest.html",
                     "<h3>Required Element Summary</h3>",
-                    "<a href=\"../pkg5/AnnoRequiredTest.html#four--\">four</a>",
-                    "<a href=\"../pkg5/AnnoRequiredTest.html#one--\">one</a>",
-                    "<a href=\"../pkg5/AnnoRequiredTest.html#three--\">three</a>",
-                    "<a href=\"../pkg5/AnnoRequiredTest.html#two--\">two</a>",
+                    "<a href=\"#four()\">four</a>",
+                    "<a href=\"#one()\">one</a>",
+                    "<a href=\"#three()\">three</a>",
+                    "<a href=\"#two()\">two</a>",
                     "<h3>Element Detail</h3>",
                     "<h4>one</h4>",
                     "<h4>two</h4>",
@@ -617,22 +617,22 @@ public class TestOrdering extends JavadocTester {
 
             tester.checkOrder("pkg5/CtorTest.html",
                     "<h3>Constructor Summary</h3>",
-                    "<a href=\"../pkg5/CtorTest.html#CtorTest-int-\"",
-                    "<a href=\"../pkg5/CtorTest.html#CtorTest-int-int-\"",
-                    "<a href=\"../pkg5/CtorTest.html#CtorTest-int-int-int-\"",
-                    "<a href=\"../pkg5/CtorTest.html#CtorTest-int-int-int-int-\"",
+                    "<a href=\"#%3Cinit%3E(int)\"",
+                    "<a href=\"#%3Cinit%3E(int,int)\"",
+                    "<a href=\"#%3Cinit%3E(int,int,int)\"",
+                    "<a href=\"#%3Cinit%3E(int,int,int,int)\"",
                     "<h3>Constructor Detail</h3>",
-                    "<a name=\"CtorTest-int-int-int-int-\">",
-                    "<a name=\"CtorTest-int-int-int-\">",
-                    "<a name=\"CtorTest-int-int-\">",
-                    "<a name=\"CtorTest-int-\">");
+                    "<a id=\"&lt;init&gt;(int,int,int,int)\">",
+                    "<a id=\"&lt;init&gt;(int,int,int)\">",
+                    "<a id=\"&lt;init&gt;(int,int)\">",
+                    "<a id=\"&lt;init&gt;(int)\">");
 
             tester.checkOrder("pkg5/EnumTest.html",
                     "<h3>Enum Constant Summary</h3>",
-                    "<a href=\"../pkg5/EnumTest.html#FOUR\">FOUR</a>",
-                    "<a href=\"../pkg5/EnumTest.html#ONE\">ONE</a>",
-                    "<a href=\"../pkg5/EnumTest.html#THREE\">THREE</a>",
-                    "<a href=\"../pkg5/EnumTest.html#TWO\">TWO</a>",
+                    "<a href=\"#FOUR\">FOUR</a>",
+                    "<a href=\"#ONE\">ONE</a>",
+                    "<a href=\"#THREE\">THREE</a>",
+                    "<a href=\"#TWO\">TWO</a>",
                     "<h3>Enum Constant Detail</h3>",
                     "<h4>ONE</h4>",
                     "<h4>TWO</h4>",
@@ -641,10 +641,10 @@ public class TestOrdering extends JavadocTester {
 
             tester.checkOrder("pkg5/FieldTest.html",
                     "<h3>Field Summary</h3>",
-                    "<a href=\"../pkg5/FieldTest.html#four\">four</a>",
-                    "<a href=\"../pkg5/FieldTest.html#one\">one</a>",
-                    "<a href=\"../pkg5/FieldTest.html#three\">three</a>",
-                    "<a href=\"../pkg5/FieldTest.html#two\">two</a>",
+                    "<a href=\"#four\">four</a>",
+                    "<a href=\"#one\">one</a>",
+                    "<a href=\"#three\">three</a>",
+                    "<a href=\"#two\">two</a>",
                     "<h3>Field Detail</h3>",
                     "<h4>one</h4>",
                     "<h4>two</h4>",
@@ -653,10 +653,10 @@ public class TestOrdering extends JavadocTester {
 
             tester.checkOrder("pkg5/IntfTest.html",
                     "<h3>Method Summary</h3>",
-                    "<a href=\"../pkg5/IntfTest.html#four--\">four</a>",
-                    "<a href=\"../pkg5/IntfTest.html#one--\">one</a>",
-                    "<a href=\"../pkg5/IntfTest.html#three--\">three</a>",
-                    "<a href=\"../pkg5/IntfTest.html#two--\">two</a>",
+                    "<a href=\"#four()\">four</a>",
+                    "<a href=\"#one()\">one</a>",
+                    "<a href=\"#three()\">three</a>",
+                    "<a href=\"#two()\">two</a>",
                     "<h3>Method Detail</h3>",
                     "<h4>one</h4>",
                     "<h4>two</h4>",
@@ -665,10 +665,10 @@ public class TestOrdering extends JavadocTester {
 
             tester.checkOrder("pkg5/MethodTest.html",
                     "<h3>Method Summary</h3>",
-                    "<a href=\"../pkg5/MethodTest.html#four--\">four</a>",
-                    "<a href=\"../pkg5/MethodTest.html#one--\">one</a>",
-                    "<a href=\"../pkg5/MethodTest.html#three--\">three</a>",
-                    "<a href=\"../pkg5/MethodTest.html#two--\">two</a>",
+                    "<a href=\"#four()\">four</a>",
+                    "<a href=\"#one()\">one</a>",
+                    "<a href=\"#three()\">three</a>",
+                    "<a href=\"#two()\">two</a>",
                     "<h3>Method Detail</h3>",
                     "<h4>one</h4>",
                     "<h4>two</h4>",
@@ -677,15 +677,34 @@ public class TestOrdering extends JavadocTester {
 
             tester.checkOrder("pkg5/PropertyTest.html",
                     "<h3>Property Summary</h3>",
-                    "<a href=\"../pkg5/PropertyTest.html#fourProperty\">four</a>",
-                    "<a href=\"../pkg5/PropertyTest.html#oneProperty\">one</a>",
-                    "<a href=\"../pkg5/PropertyTest.html#threeProperty\">three</a>",
-                    "<a href=\"../pkg5/PropertyTest.html#twoProperty\">two</a>",
+                    "<a href=\"#fourProperty\">four</a>",
+                    "<a href=\"#oneProperty\">one</a>",
+                    "<a href=\"#threeProperty\">three</a>",
+                    "<a href=\"#twoProperty\">two</a>",
                     "<h3>Property Detail</h3>",
                     "<h4>oneProperty</h4>",
                     "<h4>twoProperty</h4>",
                     "<h4>threeProperty</h4>",
                     "<h4>fourProperty</h4>");
+
+            tester.javadoc("-d", "out-5-html4",
+                    "-html4",
+                    "-javafx",
+                    "-sourcepath", tester.testSrc(new File(".").getPath()),
+                    "pkg5"
+            );
+
+            tester.checkExit(Exit.OK);
+
+            tester.checkOrder("pkg5/CtorTest.html",
+                    "<a href=\"#CtorTest-int-\"",
+                    "<a href=\"#CtorTest-int-int-\"",
+                    "<a href=\"#CtorTest-int-int-int-\"",
+                    "<a href=\"#CtorTest-int-int-int-int-\"",
+                    "<a name=\"CtorTest-int-int-int-int-\">",
+                    "<a name=\"CtorTest-int-int-int-\">",
+                    "<a name=\"CtorTest-int-int-\">",
+                    "<a name=\"CtorTest-int-\">");
         }
     }
 }

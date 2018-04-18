@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,21 +29,22 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #endif
 
@@ -124,6 +125,22 @@ unsigned int StringTable::hash_string(oop string) {
   }
 }
 
+oop StringTable::string_object(HashtableEntry<oop, mtSymbol>* entry) {
+  return RootAccess<ON_PHANTOM_OOP_REF>::oop_load(entry->literal_addr());
+}
+
+oop StringTable::string_object_no_keepalive(HashtableEntry<oop, mtSymbol>* entry) {
+  // The AS_NO_KEEPALIVE peeks at the oop without keeping it alive.
+  // This is *very dangerous* in general but is okay in this specific
+  // case. The subsequent oop_load keeps the oop alive if it it matched
+  // the jchar* string.
+  return RootAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(entry->literal_addr());
+}
+
+void StringTable::set_string_object(HashtableEntry<oop, mtSymbol>* entry, oop string) {
+  RootAccess<ON_PHANTOM_OOP_REF>::oop_store(entry->literal_addr(), string);
+}
+
 oop StringTable::lookup_shared(jchar* name, int len, unsigned int hash) {
   assert(hash == java_lang_String::hash_code(name, len),
          "hash must be computed using java_lang_String::hash_code");
@@ -131,13 +148,16 @@ oop StringTable::lookup_shared(jchar* name, int len, unsigned int hash) {
 }
 
 oop StringTable::lookup_in_main_table(int index, jchar* name,
-                                int len, unsigned int hash) {
+                                      int len, unsigned int hash) {
   int count = 0;
   for (HashtableEntry<oop, mtSymbol>* l = bucket(index); l != NULL; l = l->next()) {
     count++;
     if (l->hash() == hash) {
-      if (java_lang_String::equals(l->literal(), name, len)) {
-        return l->literal();
+      if (java_lang_String::equals(string_object_no_keepalive(l), name, len)) {
+        // We must perform a new load with string_object() that keeps the string
+        // alive as we must expose the oop as strongly reachable when exiting
+        // this context, in case the oop gets published.
+        return string_object(l);
       }
     }
   }
@@ -192,18 +212,6 @@ oop StringTable::lookup(Symbol* symbol) {
   return lookup(chars, length);
 }
 
-// Tell the GC that this string was looked up in the StringTable.
-static void ensure_string_alive(oop string) {
-  // A lookup in the StringTable could return an object that was previously
-  // considered dead. The SATB part of G1 needs to get notified about this
-  // potential resurrection, otherwise the marking might not find the object.
-#if INCLUDE_ALL_GCS
-  if (UseG1GC && string != NULL) {
-    G1SATBCardTableModRefBS::enqueue(string);
-  }
-#endif
-}
-
 oop StringTable::lookup(jchar* name, int len) {
   // shared table always uses java_lang_String::hash_code
   unsigned int hash = java_lang_String::hash_code(name, len);
@@ -216,8 +224,6 @@ oop StringTable::lookup(jchar* name, int len) {
   }
   int index = the_table()->hash_to_index(hash);
   string = the_table()->lookup_in_main_table(index, name, len, hash);
-
-  ensure_string_alive(string);
 
   return string;
 }
@@ -238,9 +244,6 @@ oop StringTable::intern(Handle string_or_null, jchar* name,
 
   // Found
   if (found_string != NULL) {
-    if (found_string != string_or_null()) {
-      ensure_string_alive(found_string);
-    }
     return found_string;
   }
 
@@ -274,10 +277,6 @@ oop StringTable::intern(Handle string_or_null, jchar* name,
     // Otherwise, add to symbol to table
     added_or_found = the_table()->basic_add(index, string, name, len,
                                   hashValue, CHECK_NULL);
-  }
-
-  if (added_or_found != string()) {
-    ensure_string_alive(added_or_found);
   }
 
   return added_or_found;
@@ -388,9 +387,9 @@ void StringTable::buckets_unlink_or_oops_do(BoolObjectClosure* is_alive, OopClos
     while (entry != NULL) {
       assert(!entry->is_shared(), "CDS not used for the StringTable");
 
-      if (is_alive->do_object_b(entry->literal())) {
+      if (is_alive->do_object_b(string_object_no_keepalive(entry))) {
         if (f != NULL) {
-          f->do_oop((oop*)entry->literal_addr());
+          f->do_oop(entry->literal_addr());
         }
         p = entry->next_addr();
       } else {
@@ -429,7 +428,7 @@ void StringTable::verify() {
   for (int i = 0; i < the_table()->table_size(); ++i) {
     HashtableEntry<oop, mtSymbol>* p = the_table()->bucket(i);
     for ( ; p != NULL; p = p->next()) {
-      oop s = p->literal();
+      oop s = string_object_no_keepalive(p);
       guarantee(s != NULL, "interned string is NULL");
       unsigned int h = hash_string(s);
       guarantee(p->hash() == h, "broken hash in string table entry");
@@ -448,10 +447,10 @@ void StringTable::dump(outputStream* st, bool verbose) {
     for (int i = 0; i < the_table()->table_size(); ++i) {
       HashtableEntry<oop, mtSymbol>* p = the_table()->bucket(i);
       for ( ; p != NULL; p = p->next()) {
-        oop s = p->literal();
-        typeArrayOop value  = java_lang_String::value(s);
-        int          length = java_lang_String::length(s);
-        bool      is_latin1 = java_lang_String::is_latin1(s);
+        oop s = string_object_no_keepalive(p);
+        typeArrayOop value     = java_lang_String::value_no_keepalive(s);
+        int          length    = java_lang_String::length(s);
+        bool         is_latin1 = java_lang_String::is_latin1(s);
 
         if (length <= 0) {
           st->print("%d: ", length);
@@ -484,8 +483,8 @@ StringTable::VerifyRetTypes StringTable::compare_entries(
                                       HashtableEntry<oop, mtSymbol>* e_ptr2) {
   // These entries are sanity checked by verify_and_compare_entries()
   // before this function is called.
-  oop str1 = e_ptr1->literal();
-  oop str2 = e_ptr2->literal();
+  oop str1 = string_object_no_keepalive(e_ptr1);
+  oop str2 = string_object_no_keepalive(e_ptr2);
 
   if (str1 == str2) {
     tty->print_cr("ERROR: identical oop values (0x" PTR_FORMAT ") "
@@ -505,12 +504,12 @@ StringTable::VerifyRetTypes StringTable::compare_entries(
 }
 
 StringTable::VerifyRetTypes StringTable::verify_entry(int bkt, int e_cnt,
-                                      HashtableEntry<oop, mtSymbol>* e_ptr,
-                                      StringTable::VerifyMesgModes mesg_mode) {
+                                                      HashtableEntry<oop, mtSymbol>* e_ptr,
+                                                      StringTable::VerifyMesgModes mesg_mode) {
 
   VerifyRetTypes ret = _verify_pass;  // be optimistic
 
-  oop str = e_ptr->literal();
+  oop str = string_object_no_keepalive(e_ptr);
   if (str == NULL) {
     if (mesg_mode == _verify_with_mesgs) {
       tty->print_cr("ERROR: NULL oop value in entry @ bucket[%d][%d]", bkt,
@@ -684,7 +683,7 @@ oop StringTable::create_archived_string(oop s, Thread* THREAD) {
   assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
 
   oop new_s = NULL;
-  typeArrayOop v = java_lang_String::value(s);
+  typeArrayOop v = java_lang_String::value_no_keepalive(s);
   typeArrayOop new_v = (typeArrayOop)MetaspaceShared::archive_heap_object(v, THREAD);
   if (new_v == NULL) {
     return NULL;
@@ -704,11 +703,10 @@ bool StringTable::copy_shared_string(GrowableArray<MemRegion> *string_space,
   assert(MetaspaceShared::is_heap_object_archiving_allowed(), "must be");
 
   Thread* THREAD = Thread::current();
-  G1CollectedHeap::heap()->begin_archive_alloc_range();
   for (int i = 0; i < the_table()->table_size(); ++i) {
     HashtableEntry<oop, mtSymbol>* bucket = the_table()->bucket(i);
     for ( ; bucket != NULL; bucket = bucket->next()) {
-      oop s = bucket->literal();
+      oop s = string_object_no_keepalive(bucket);
       unsigned int hash = java_lang_String::hash_code(s);
       if (hash == 0) {
         continue;
@@ -721,14 +719,13 @@ bool StringTable::copy_shared_string(GrowableArray<MemRegion> *string_space,
       }
 
       // set the archived string in bucket
-      bucket->set_literal(new_s);
+      set_string_object(bucket, new_s);
 
       // add to the compact table
       writer->add(hash, new_s);
     }
   }
 
-  G1CollectedHeap::heap()->end_archive_alloc_range(string_space, os::vm_allocation_granularity());
   return true;
 }
 
@@ -763,4 +760,3 @@ void StringTable::shared_oops_do(OopClosure* f) {
   _shared_table.oops_do(f);
 }
 #endif //INCLUDE_CDS_JAVA_HEAP
-

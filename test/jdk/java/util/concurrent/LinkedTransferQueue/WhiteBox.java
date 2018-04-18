@@ -56,7 +56,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import static java.util.stream.Collectors.toList;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 @Test
 public class WhiteBox {
@@ -362,6 +361,7 @@ public class WhiteBox {
         }
     }
 
+    @Test
     public void testSerialization() {
         LinkedTransferQueue q = serialClone(new LinkedTransferQueue());
         assertInvariants(q);

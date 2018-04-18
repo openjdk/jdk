@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_CLASSFILE_STRINGTABLE_HPP
 #define SHARE_VM_CLASSFILE_STRINGTABLE_HPP
 
-#include "memory/allocation.hpp"
 #include "utilities/hashtable.hpp"
 
 template <class T, class N> class CompactHashtable;
@@ -75,6 +74,13 @@ private:
   static unsigned int hash_string(const jchar* s, int len);
   static unsigned int hash_string(oop string);
   static unsigned int alt_hash_string(const jchar* s, int len);
+
+  // Accessors for the string roots in the hashtable entries.
+  // Use string_object_no_keepalive() only when the value is not returned
+  // outside of a scope where a thread transition is possible.
+  static oop string_object(HashtableEntry<oop, mtSymbol>* entry);
+  static oop string_object_no_keepalive(HashtableEntry<oop, mtSymbol>* entry);
+  static void set_string_object(HashtableEntry<oop, mtSymbol>* entry, oop string);
 
   StringTable() : RehashableHashtable<oop, mtSymbol>((int)StringTableSize,
                               sizeof (HashtableEntry<oop, mtSymbol>)) {}

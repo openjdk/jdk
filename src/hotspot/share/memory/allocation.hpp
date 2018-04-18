@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,20 +37,23 @@ public:
 };
 typedef AllocFailStrategy::AllocFailEnum AllocFailType;
 
-// All classes in the virtual machine must be subclassed
-// by one of the following allocation classes:
+// The virtual machine must never call one of the implicitly declared
+// global allocation or deletion functions.  (Such calls may result in
+// link-time or run-time errors.)  For convenience and documentation of
+// intended use, classes in the virtual machine may be derived from one
+// of the following allocation classes, some of which define allocation
+// and deletion functions.
+// Note: std::malloc and std::free should never called directly.
+
 //
 // For objects allocated in the resource area (see resourceArea.hpp).
 // - ResourceObj
 //
-// For objects allocated in the C-heap (managed by: free & malloc).
+// For objects allocated in the C-heap (managed by: free & malloc and tracked with NMT)
 // - CHeapObj
 //
 // For objects allocated on the stack.
 // - StackObj
-//
-// For embedded objects.
-// - ValueObj
 //
 // For classes used as name spaces.
 // - AllStatic
@@ -84,15 +87,10 @@ typedef AllocFailStrategy::AllocFailEnum AllocFailType;
 //   char* AllocateHeap(size_t size, const char* name);
 //   void  FreeHeap(void* p);
 //
-// C-heap allocation can be traced using +PrintHeapAllocation.
-// malloc and free should therefore never called directly.
-
-// Base class for objects allocated in the C-heap.
 
 // In non product mode we introduce a super class for all allocation classes
 // that supports printing.
-// We avoid the superclass in product mode since some C++ compilers add
-// a word overhead for empty super classes.
+// We avoid the superclass in product mode to save space.
 
 #ifdef PRODUCT
 #define ALLOCATION_SUPER_CLASS_SPEC
@@ -156,22 +154,61 @@ const bool NMT_track_callsite = false;
 class NativeCallStack;
 
 
+char* AllocateHeap(size_t size,
+                   MEMFLAGS flags,
+                   const NativeCallStack& stack,
+                   AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+char* AllocateHeap(size_t size,
+                   MEMFLAGS flags,
+                   AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+
+char* ReallocateHeap(char *old,
+                     size_t size,
+                     MEMFLAGS flag,
+                     AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+
+void FreeHeap(void* p);
+
 template <MEMFLAGS F> class CHeapObj ALLOCATION_SUPER_CLASS_SPEC {
  public:
-  NOINLINE void* operator new(size_t size, const NativeCallStack& stack) throw();
-  NOINLINE void* operator new(size_t size) throw();
-  NOINLINE void* operator new (size_t size, const std::nothrow_t&  nothrow_constant,
-                               const NativeCallStack& stack) throw();
-  NOINLINE void* operator new (size_t size, const std::nothrow_t&  nothrow_constant)
-                               throw();
-  NOINLINE void* operator new [](size_t size, const NativeCallStack& stack) throw();
-  NOINLINE void* operator new [](size_t size) throw();
-  NOINLINE void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant,
-                               const NativeCallStack& stack) throw();
-  NOINLINE void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant)
-                               throw();
-  void  operator delete(void* p);
-  void  operator delete [] (void* p);
+  ALWAYSINLINE void* operator new(size_t size) throw() {
+    return (void*)AllocateHeap(size, F);
+  }
+
+  ALWAYSINLINE void* operator new(size_t size,
+                                  const NativeCallStack& stack) throw() {
+    return (void*)AllocateHeap(size, F, stack);
+  }
+
+  ALWAYSINLINE void* operator new(size_t size, const std::nothrow_t&,
+                                  const NativeCallStack& stack) throw() {
+    return (void*)AllocateHeap(size, F, stack, AllocFailStrategy::RETURN_NULL);
+  }
+
+  ALWAYSINLINE void* operator new(size_t size, const std::nothrow_t&) throw() {
+    return (void*)AllocateHeap(size, F, AllocFailStrategy::RETURN_NULL);
+  }
+
+  ALWAYSINLINE void* operator new[](size_t size) throw() {
+    return (void*)AllocateHeap(size, F);
+  }
+
+  ALWAYSINLINE void* operator new[](size_t size,
+                                  const NativeCallStack& stack) throw() {
+    return (void*)AllocateHeap(size, F, stack);
+  }
+
+  ALWAYSINLINE void* operator new[](size_t size, const std::nothrow_t&,
+                                    const NativeCallStack& stack) throw() {
+    return (void*)AllocateHeap(size, F, stack, AllocFailStrategy::RETURN_NULL);
+  }
+
+  ALWAYSINLINE void* operator new[](size_t size, const std::nothrow_t&) throw() {
+    return (void*)AllocateHeap(size, F, AllocFailStrategy::RETURN_NULL);
+  }
+
+  void  operator delete(void* p)     { FreeHeap(p); }
+  void  operator delete [] (void* p) { FreeHeap(p); }
 };
 
 // Base class for objects allocated on the stack only.
@@ -188,33 +225,6 @@ class StackObj ALLOCATION_SUPER_CLASS_SPEC {
   void  operator delete [](void* p);
 };
 
-// Base class for objects used as value objects.
-// Calling new or delete will result in fatal error.
-//
-// Portability note: Certain compilers (e.g. gcc) will
-// always make classes bigger if it has a superclass, even
-// if the superclass does not have any virtual methods or
-// instance fields. The HotSpot implementation relies on this
-// not to happen. So never make a ValueObj class a direct subclass
-// of this object, but use the VALUE_OBJ_CLASS_SPEC class instead, e.g.,
-// like this:
-//
-//   class A VALUE_OBJ_CLASS_SPEC {
-//     ...
-//   }
-//
-// With gcc and possible other compilers the VALUE_OBJ_CLASS_SPEC can
-// be defined as a an empty string "".
-//
-class _ValueObj {
- private:
-  void* operator new(size_t size) throw();
-  void  operator delete(void* p);
-  void* operator new [](size_t size) throw();
-  void  operator delete [](void* p);
-};
-
-
 // Base class for objects stored in Metaspace.
 // Calling delete will result in fatal error.
 //
@@ -227,9 +237,23 @@ class ClassLoaderData;
 class MetaspaceClosure;
 
 class MetaspaceObj {
+  friend class MetaspaceShared;
+  // When CDS is enabled, all shared metaspace objects are mapped
+  // into a single contiguous memory block, so we can use these
+  // two pointers to quickly determine if something is in the
+  // shared metaspace.
+  //
+  // When CDS is not enabled, both pointers are set to NULL.
+  static void* _shared_metaspace_base; // (inclusive) low address
+  static void* _shared_metaspace_top;  // (exclusive) high address
+
  public:
   bool is_metaspace_object() const;
-  bool is_shared() const;
+  bool is_shared() const {
+    // If no shared metaspace regions are mapped, _shared_metaspace_{base,top} will
+    // both be NULL and all values of p will be rejected quickly.
+    return (((void*)this) < _shared_metaspace_top && ((void*)this) >= _shared_metaspace_base);
+  }
   void print_address_on(outputStream* st) const;  // nonvirtual address printing
 
 #define METASPACE_OBJ_TYPES_DO(f) \
@@ -525,7 +549,7 @@ class MallocArrayAllocator : public AllStatic {
   static size_t size_for(size_t length);
 
   static E* allocate(size_t length, MEMFLAGS flags);
-  static void free(E* addr, size_t length);
+  static void free(E* addr);
 };
 
 #endif // SHARE_VM_MEMORY_ALLOCATION_HPP

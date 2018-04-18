@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,14 @@
 #include "oops/oop.hpp"
 #include "runtime/perfData.hpp"
 
-/* Copyright (c) 1992, 2016, Oracle and/or its affiliates, and Stanford University.
+/* Copyright (c) 1992, 2018, Oracle and/or its affiliates, and Stanford University.
    See the LICENSE file for license information. */
 
 // Age table for adaptive feedback-mediated tenuring (scavenging)
 //
 // Note: all sizes are in oops
 
-class AgeTable VALUE_OBJ_CLASS_SPEC {
+class AgeTable {
   friend class VMStructs;
 
  public:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 # include <string.h>
 # include <stdarg.h>
 # include <stdlib.h>
+# include <stdint.h>
 # include <stddef.h>// for offsetof
 # include <io.h>    // for stream.cpp
 # include <float.h> // for _isnan
@@ -42,6 +43,7 @@
 # include <time.h>
 # include <fcntl.h>
 # include <limits.h>
+# include <inttypes.h>
 // Need this on windows to get the math constants (e.g., M_PI).
 #define _USE_MATH_DEFINES
 # include <math.h>
@@ -77,43 +79,18 @@
 // pointer is stored as integer value.
 #define NULL_WORD NULL
 
-// Compiler-specific primitive types
-typedef unsigned __int8  uint8_t;
-typedef unsigned __int16 uint16_t;
-typedef unsigned __int32 uint32_t;
-typedef unsigned __int64 uint64_t;
-
 #ifdef _WIN64
-typedef unsigned __int64 uintptr_t;
+typedef int64_t ssize_t;
 #else
-typedef unsigned int uintptr_t;
-#endif
-typedef signed   __int8  int8_t;
-typedef signed   __int16 int16_t;
-typedef signed   __int32 int32_t;
-typedef signed   __int64 int64_t;
-#ifdef _WIN64
-typedef signed   __int64 intptr_t;
-typedef signed   __int64 ssize_t;
-#else
-typedef signed   int intptr_t;
-typedef signed   int ssize_t;
-#endif
-
-#ifndef UINTPTR_MAX
-#ifdef _WIN64
-#define UINTPTR_MAX _UI64_MAX
-#else
-#define UINTPTR_MAX _UI32_MAX
-#endif
+typedef int32_t ssize_t;
 #endif
 
 // Additional Java basic types
 
-typedef unsigned char    jubyte;
-typedef unsigned short   jushort;
-typedef unsigned int     juint;
-typedef unsigned __int64 julong;
+typedef uint8_t  jubyte;
+typedef uint16_t jushort;
+typedef uint32_t juint;
+typedef uint64_t julong;
 
 // Non-standard stdlib-like stuff:
 inline int strcasecmp(const char *s1, const char *s2) { return _stricmp(s1,s2); }
@@ -162,6 +139,7 @@ inline int g_isfinite(jdouble f)                 { return _finite(f); }
 #pragma warning( disable : 4201 ) // nonstandard extension used : nameless struct/union (needed in windows.h)
 #pragma warning( disable : 4511 ) // copy constructor could not be generated
 #pragma warning( disable : 4291 ) // no matching operator delete found; memory will not be freed if initialization thows an exception
+#pragma warning( disable : 4351 ) // new behavior: elements of array ... will be default initialized
 #ifdef CHECK_UNHANDLED_OOPS
 #pragma warning( disable : 4521 ) // class has multiple copy ctors of a single type
 #pragma warning( disable : 4522 ) // class has multiple assignment operators of a single type
@@ -170,42 +148,13 @@ inline int g_isfinite(jdouble f)                 { return _finite(f); }
 #pragma warning( disable : 4996 ) // unsafe string functions. Same as define _CRT_SECURE_NO_WARNINGS/_CRT_SECURE_NO_DEPRICATE
 #endif
 
-inline int vsnprintf(char* buf, size_t count, const char* fmt, va_list argptr) {
-  // If number of characters written == count, Windows doesn't write a
-  // terminating NULL, so we do it ourselves.
-  int ret = _vsnprintf(buf, count, fmt, argptr);
-  if (count > 0) buf[count-1] = '\0';
-  return ret;
-}
-
 // Portability macros
 #define PRAGMA_INTERFACE
 #define PRAGMA_IMPLEMENTATION
 #define PRAGMA_IMPLEMENTATION_(arg)
-#define VALUE_OBJ_CLASS_SPEC    : public _ValueObj
 
 // Formatting.
 #define FORMAT64_MODIFIER "I64"
-
-// Visual Studio doesn't provide inttypes.h so provide appropriate definitions here.
-// The 32 bits ones might need I32 but seem to work ok without it.
-#define PRId32       "d"
-#define PRIu32       "u"
-#define PRIx32       "x"
-
-#define PRId64       "I64d"
-#define PRIu64       "I64u"
-#define PRIx64       "I64x"
-
-#ifdef _LP64
-#define PRIdPTR       "I64d"
-#define PRIuPTR       "I64u"
-#define PRIxPTR       "I64x"
-#else
-#define PRIdPTR       "d"
-#define PRIuPTR       "u"
-#define PRIxPTR       "x"
-#endif
 
 #define offset_of(klass,field) offsetof(klass,field)
 

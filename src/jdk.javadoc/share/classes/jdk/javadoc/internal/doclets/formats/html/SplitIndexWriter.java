@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.util.TreeSet;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -60,16 +59,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
  */
 public class SplitIndexWriter extends AbstractIndexWriter {
 
-    /**
-     * Previous unicode character index in the built index.
-     */
-    protected int prev;
-
-    /**
-     * Next unicode character in the built index.
-     */
-    protected int next;
-
     private final List<Character> indexElements;
 
     /**
@@ -80,18 +69,13 @@ public class SplitIndexWriter extends AbstractIndexWriter {
      * @param path       Path to the file which is getting generated.
      * @param indexbuilder Unicode based Index from {@link IndexBuilder}
      * @param elements the collection of characters for which to generate index files
-     * @param prev  the previous character that was indexed
-     * @param next  the next character to be indexed
      */
     public SplitIndexWriter(HtmlConfiguration configuration,
                             DocPath path,
                             IndexBuilder indexbuilder,
-                            Collection<Character> elements,
-                            int prev, int next) {
+                            Collection<Character> elements) {
         super(configuration, path, indexbuilder);
         this.indexElements = new ArrayList<>(elements);
-        this.prev = prev;
-        this.next = next;
     }
 
     /**
@@ -117,7 +101,7 @@ public class SplitIndexWriter extends AbstractIndexWriter {
             DocPath filename = DocPaths.indexN(li.nextIndex());
             SplitIndexWriter indexgen = new SplitIndexWriter(configuration,
                     path.resolve(filename),
-                    indexbuilder, keys, prev, next);
+                    indexbuilder, keys);
             indexgen.generateIndexFile((Character) ch);
             if (!li.hasNext()) {
                 indexgen.createSearchIndexFiles();
@@ -141,7 +125,8 @@ public class SplitIndexWriter extends AbstractIndexWriter {
                 ? HtmlTree.HEADER()
                 : body;
         addTop(htmlTree);
-        addNavLinks(true, htmlTree);
+        navBar.setUserHeader(getUserHeaderFooter(true));
+        htmlTree.addContent(navBar.getContent(true));
         if (configuration.allowTag(HtmlTag.HEADER)) {
             body.addContent(htmlTree);
         }
@@ -161,7 +146,8 @@ public class SplitIndexWriter extends AbstractIndexWriter {
         if (configuration.allowTag(HtmlTag.FOOTER)) {
             htmlTree = HtmlTree.FOOTER();
         }
-        addNavLinks(false, htmlTree);
+        navBar.setUserFooter(getUserHeaderFooter(false));
+        htmlTree.addContent(navBar.getContent(false));
         addBottom(htmlTree);
         if (configuration.allowTag(HtmlTag.FOOTER)) {
             body.addContent(htmlTree);
@@ -177,45 +163,9 @@ public class SplitIndexWriter extends AbstractIndexWriter {
     protected void addLinksForIndexes(Content contentTree) {
         for (int i = 0; i < indexElements.size(); i++) {
             int j = i + 1;
-            contentTree.addContent(Links.createLink(DocPaths.indexN(j),
+            contentTree.addContent(links.createLink(DocPaths.indexN(j),
                     new StringContent(indexElements.get(i).toString())));
             contentTree.addContent(Contents.SPACE);
-        }
-    }
-
-    /**
-     * Get link to the previous unicode character.
-     *
-     * @return a content tree for the link
-     */
-    @Override
-    public Content getNavLinkPrevious() {
-        Content prevletterLabel = contents.prevLetter;
-        if (prev == -1) {
-            return HtmlTree.LI(prevletterLabel);
-        }
-        else {
-            Content prevLink = Links.createLink(DocPaths.indexN(prev),
-                    prevletterLabel);
-            return HtmlTree.LI(prevLink);
-        }
-    }
-
-    /**
-     * Get link to the next unicode character.
-     *
-     * @return a content tree for the link
-     */
-    @Override
-    public Content getNavLinkNext() {
-        Content nextletterLabel = contents.nextLetter;
-        if (next == -1) {
-            return HtmlTree.LI(nextletterLabel);
-        }
-        else {
-            Content nextLink = Links.createLink(DocPaths.indexN(next),
-                    nextletterLabel);
-            return HtmlTree.LI(nextLink);
         }
     }
 }

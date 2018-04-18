@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,18 @@
 
 #include "aot/aotCodeHeap.hpp"
 #include "aot/aotLoader.hpp"
+#include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaAssertions.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/g1/heapRegion.hpp"
-#include "gc/shared/gcLocker.hpp"
 #include "interpreter/abstractInterpreter.hpp"
 #include "jvmci/compilerRuntime.hpp"
 #include "jvmci/jvmciRuntime.hpp"
-#include "oops/method.hpp"
+#include "memory/allocation.inline.hpp"
+#include "oops/method.inline.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vm_operations.hpp"
@@ -194,7 +199,7 @@ void AOTLib::verify_config() {
 }
 
 AOTLib::~AOTLib() {
-  free((void*) _name);
+  os::free((void*) _name);
 }
 
 AOTCodeHeap::~AOTCodeHeap() {
@@ -207,7 +212,7 @@ AOTCodeHeap::~AOTCodeHeap() {
 }
 
 AOTLib::AOTLib(void* handle, const char* name, int dso_id) : _valid(true), _dl_handle(handle), _dso_id(dso_id) {
-  _name = (const char*) strdup(name);
+  _name = (const char*) os::strdup(name);
 
   // Verify that VM runs with the same parameters as AOT tool.
   _config = (AOTConfiguration*) load_symbol("A.config");
@@ -539,8 +544,7 @@ void AOTCodeHeap::link_global_lib_symbols() {
     _lib_symbols_initialized = true;
 
     CollectedHeap* heap = Universe::heap();
-    CardTableModRefBS* ct = (CardTableModRefBS*)(heap->barrier_set());
-    SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_card_table_address", address, ct->byte_map_base);
+    SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_card_table_address", address, ci_card_table_address());
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_heap_top_address", address, (heap->supports_inline_contig_alloc() ? heap->top_addr() : NULL));
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_heap_end_address", address, (heap->supports_inline_contig_alloc() ? heap->end_addr() : NULL));
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_polling_page", address, os::get_polling_page());

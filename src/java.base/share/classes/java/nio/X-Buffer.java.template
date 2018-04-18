@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ import java.util.Spliterator;
 import java.util.stream.StreamSupport;
 import java.util.stream.$Streamtype$Stream;
 #end[streamableType]
+
+import jdk.internal.util.ArraysSupport;
 
 /**
  * $A$ $type$ buffer.
@@ -285,6 +287,11 @@ public abstract class $Type$Buffer
     //
     $Type$Buffer(int mark, int pos, int lim, int cap) { // package-private
         this(mark, pos, lim, cap, null, 0);
+    }
+
+    @Override
+    Object base() {
+        return hb;
     }
 
 #if[byte]
@@ -1297,19 +1304,9 @@ public abstract class $Type$Buffer
         $Type$Buffer that = ($Type$Buffer)ob;
         if (this.remaining() != that.remaining())
             return false;
-        int p = this.position();
-        for (int i = this.limit() - 1, j = that.limit() - 1; i >= p; i--, j--)
-            if (!equals(this.get(i), that.get(j)))
-                return false;
-        return true;
-    }
-
-    private static boolean equals($type$ x, $type$ y) {
-#if[floatingPointType]
-        return (x == y) || ($Fulltype$.isNaN(x) && $Fulltype$.isNaN(y));
-#else[floatingPointType]
-        return x == y;
-#end[floatingPointType]
+        return BufferMismatch.mismatch(this, this.position(),
+                                       that, that.position(),
+                                       this.remaining()) < 0;
     }
 
     /**
@@ -1336,11 +1333,11 @@ public abstract class $Type$Buffer
      *          is less than, equal to, or greater than the given buffer
      */
     public int compareTo($Type$Buffer that) {
-        int n = this.position() + Math.min(this.remaining(), that.remaining());
-        for (int i = this.position(), j = that.position(); i < n; i++, j++) {
-            int cmp = compare(this.get(i), that.get(j));
-            if (cmp != 0)
-                return cmp;
+        int i = BufferMismatch.mismatch(this, this.position(),
+                                        that, that.position(),
+                                        Math.min(this.remaining(), that.remaining()));
+        if (i >= 0) {
+            return compare(this.get(this.position() + i), that.get(that.position() + i));
         }
         return this.remaining() - that.remaining();
     }
@@ -1571,12 +1568,18 @@ public abstract class $Type$Buffer
 
 #end[!byte]
 
+#if[char]
+    // The order or null if the buffer does not cover a memory region,
+    // such as StringCharBuffer
+    abstract ByteOrder charRegionOrder();
+#end[char]
+
 #if[byte]
 
     boolean bigEndian                                   // package-private
         = true;
     boolean nativeByteOrder                             // package-private
-        = (Bits.byteOrder() == ByteOrder.BIG_ENDIAN);
+        = (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN);
 
     /**
      * Retrieves this buffer's byte order.
@@ -1605,7 +1608,7 @@ public abstract class $Type$Buffer
     public final $Type$Buffer order(ByteOrder bo) {
         bigEndian = (bo == ByteOrder.BIG_ENDIAN);
         nativeByteOrder =
-            (bigEndian == (Bits.byteOrder() == ByteOrder.BIG_ENDIAN));
+            (bigEndian == (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN));
         return this;
     }
 
@@ -1745,11 +1748,6 @@ public abstract class $Type$Buffer
     }
 
     abstract ByteBuffer slice(int pos, int lim);
-
-    // Unchecked accessors, for use by ByteBufferAs-X-Buffer classes
-    //
-    abstract byte _get(int i);                          // package-private
-    abstract void _put(int i, byte b);                  // package-private
 
     // #BIN
     //

@@ -27,12 +27,14 @@
  * @summary iterators on collection views of empty map weren't fail-fast.
  */
 
-import java.util.*;
+import java.util.ConcurrentModificationException;
+import java.util.HashMap;
+import java.util.Iterator;
 
 public class EmptyMapIterator {
     public static void main(String[] args) throws Exception {
         HashMap map = new HashMap();
-        Iterator iter = iter = map.entrySet().iterator();
+        Iterator iter = map.entrySet().iterator();
         map.put("key", "value");
 
         try {

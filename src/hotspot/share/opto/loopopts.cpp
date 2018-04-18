@@ -693,7 +693,9 @@ static void enqueue_cfg_uses(Node* m, Unique_Node_List& wq) {
 Node* PhaseIdealLoop::try_move_store_before_loop(Node* n, Node *n_ctrl) {
   // Store has to be first in the loop body
   IdealLoopTree *n_loop = get_loop(n_ctrl);
-  if (n->is_Store() && n_loop != _ltree_root && n_loop->is_loop() && n->in(0) != NULL) {
+  if (n->is_Store() && n_loop != _ltree_root &&
+      n_loop->is_loop() && n_loop->_head->is_Loop() &&
+      n->in(0) != NULL) {
     Node* address = n->in(MemNode::Address);
     Node* value = n->in(MemNode::ValueIn);
     Node* mem = n->in(MemNode::Memory);
@@ -1027,11 +1029,18 @@ static bool merge_point_safe(Node* region) {
 //------------------------------place_near_use---------------------------------
 // Place some computation next to use but not inside inner loops.
 // For inner loop uses move it to the preheader area.
-Node *PhaseIdealLoop::place_near_use( Node *useblock ) const {
+Node *PhaseIdealLoop::place_near_use(Node *useblock) const {
   IdealLoopTree *u_loop = get_loop( useblock );
-  return (u_loop->_irreducible || u_loop->_child)
-    ? useblock
-    : u_loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
+  if (u_loop->_irreducible) {
+    return useblock;
+  }
+  if (u_loop->_child) {
+    if (useblock == u_loop->_head && u_loop->_head->is_OuterStripMinedLoop()) {
+      return u_loop->_head->in(LoopNode::EntryControl);
+    }
+    return useblock;
+  }
+  return u_loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
 }
 
 

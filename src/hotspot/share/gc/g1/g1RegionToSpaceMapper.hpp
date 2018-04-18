@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 
 class WorkGang;
 
-class G1MappingChangedListener VALUE_OBJ_CLASS_SPEC {
+class G1MappingChangedListener {
  public:
   // Fired after commit of the memory, i.e. the memory this listener is registered
   // for can be accessed.

@@ -44,10 +44,7 @@
 <li><a href="#ibm-xl-cc">IBM XL C/C++</a></li>
 </ul></li>
 <li><a href="#boot-jdk-requirements">Boot JDK Requirements</a><ul>
-<li><a href="#jdk-8-on-linux">JDK 8 on Linux</a></li>
-<li><a href="#jdk-8-on-windows">JDK 8 on Windows</a></li>
-<li><a href="#jdk-8-on-macos">JDK 8 on macOS</a></li>
-<li><a href="#jdk-8-on-aix">JDK 8 on AIX</a></li>
+<li><a href="#getting-jdk-binaries">Getting JDK binaries</a></li>
 </ul></li>
 <li><a href="#external-library-requirements">External Library Requirements</a><ul>
 <li><a href="#freetype">FreeType</a></li>
@@ -56,10 +53,10 @@
 <li><a href="#alsa">ALSA</a></li>
 <li><a href="#libffi">libffi</a></li>
 </ul></li>
-<li><a href="#other-tooling-requirements">Other Tooling Requirements</a><ul>
+<li><a href="#build-tools-requirements">Build Tools Requirements</a><ul>
+<li><a href="#autoconf">Autoconf</a></li>
 <li><a href="#gnu-make">GNU Make</a></li>
 <li><a href="#gnu-bash">GNU Bash</a></li>
-<li><a href="#autoconf">Autoconf</a></li>
 </ul></li>
 <li><a href="#running-configure">Running Configure</a><ul>
 <li><a href="#common-configure-arguments">Common Configure Arguments</a></li>
@@ -116,10 +113,10 @@
 <p>If you are eager to try out building OpenJDK, these simple steps works most of the time. They assume that you have installed Mercurial (and Cygwin if running on Windows) and cloned the top-level OpenJDK repository that you want to build.</p>
 <ol type="1">
 <li><p><a href="#getting-the-source-code">Get the complete source code</a>:<br />
-<code>hg clone http://hg.openjdk.java.net/jdk10/master</code></p></li>
+<code>hg clone http://hg.openjdk.java.net/jdk/jdk</code></p></li>
 <li><p><a href="#running-configure">Run configure</a>:<br />
 <code>bash configure</code></p>
-<p>If <code>configure</code> fails due to missing dependencies (to either the <a href="#native-compiler-toolchain-requirements">toolchain</a>, <a href="#external-library-requirements">external libraries</a> or the <a href="#boot-jdk-requirements">boot JDK</a>), most of the time it prints a suggestion on how to resolve the situation on your platform. Follow the instructions, and try running <code>bash configure</code> again.</p></li>
+<p>If <code>configure</code> fails due to missing dependencies (to either the <a href="#native-compiler-toolchain-requirements">toolchain</a>, <a href="#build-tools-requirements">build tools</a>, <a href="#external-library-requirements">external libraries</a> or the <a href="#boot-jdk-requirements">boot JDK</a>), most of the time it prints a suggestion on how to resolve the situation on your platform. Follow the instructions, and try running <code>bash configure</code> again.</p></li>
 <li><p><a href="#running-make">Run make</a>:<br />
 <code>make images</code></p></li>
 <li><p>Verify your newly built JDK:<br />
@@ -194,19 +191,20 @@
 <p>Windows XP is not a supported platform, but all newer Windows should be able to build OpenJDK.</p>
 <p>On Windows, it is important that you pay attention to the instructions in the <a href="#special-considerations">Special Considerations</a>.</p>
 <p>Windows is the only non-POSIX OS supported by OpenJDK, and as such, requires some extra care. A POSIX support layer is required to build on Windows. For OpenJDK 9, the only supported such layer is Cygwin. (Msys is no longer supported due to a too old bash; msys2 and the new Windows Subsystem for Linux (WSL) would likely be possible to support in a future version but that would require a community effort to implement.)</p>
-<p>Internally in the build system, all paths are represented as Unix-style paths, e.g. <code>/cygdrive/c/hg/jdk9/Makefile</code> rather than <code>C:\hg\jdk9\Makefile</code>. This rule also applies to input to the build system, e.g. in arguments to <code>configure</code>. So, use <code>--with-freetype=/cygdrive/c/freetype</code> rather than <code>--with-freetype=c:\freetype</code>. For details on this conversion, see the section on <a href="#fixpath">Fixpath</a>.</p>
+<p>Internally in the build system, all paths are represented as Unix-style paths, e.g. <code>/cygdrive/c/hg/jdk9/Makefile</code> rather than <code>C:\hg\jdk9\Makefile</code>. This rule also applies to input to the build system, e.g. in arguments to <code>configure</code>. So, use <code>--with-msvcr-dll=/cygdrive/c/msvcr100.dll</code> rather than <code>--with-msvcr-dll=c:\msvcr100.dll</code>. For details on this conversion, see the section on <a href="#fixpath">Fixpath</a>.</p>
 <h4 id="cygwin">Cygwin</h4>
 <p>A functioning <a href="http://www.cygwin.com/">Cygwin</a> environment is thus required for building OpenJDK on Windows. If you have a 64-bit OS, we strongly recommend using the 64-bit version of Cygwin.</p>
 <p><strong>Note:</strong> Cygwin has a model of continuously updating all packages without any easy way to install or revert to a specific version of a package. This means that whenever you add or update a package in Cygwin, you might (inadvertently) update tools that are used by the OpenJDK build process, and that can cause unexpected build problems.</p>
 <p>OpenJDK requires GNU Make 4.0 or greater on Windows. This is usually not a problem, since Cygwin currently only distributes GNU Make at a version above 4.0.</p>
 <p>Apart from the basic Cygwin installation, the following packages must also be installed:</p>
 <ul>
+<li><code>autoconf</code></li>
 <li><code>make</code></li>
 <li><code>zip</code></li>
 <li><code>unzip</code></li>
 </ul>
 <p>Often, you can install these packages using the following command line:</p>
-<pre><code>&lt;path to Cygwin setup&gt;/setup-x86_64 -q -P make -P unzip -P zip</code></pre>
+<pre><code>&lt;path to Cygwin setup&gt;/setup-x86_64 -q -P autoconf -P make -P unzip -P zip</code></pre>
 <p>Unfortunately, Cygwin can be unreliable in certain circumstances. If you experience build tool crashes or strange issues when building on Windows, please check the Cygwin FAQ on the <a href="https://cygwin.com/faq/faq.html#faq.using.bloda">&quot;BLODA&quot; list</a> and the section on <a href="https://cygwin.com/faq/faq.html#faq.using.fixing-fork-failures">fork() failures</a>.</p>
 <h3 id="solaris">Solaris</h3>
 <p>See <code>make/devkit/solaris11.1-package-list.txt</code> for a list of recommended packages to install when building on Solaris. The versions specified in this list is the versions used by the daily builds at Oracle, and is likely to work properly.</p>
@@ -363,37 +361,24 @@ CC: Sun C++ 5.13 SunOS_i386 151846-10 2015/10/30</code></pre>
 <p>See the <a href="http://cr.openjdk.java.net/~simonis/ppc-aix-port">OpenJDK PowerPC Port Status Page</a> for details.</p>
 <h2 id="boot-jdk-requirements">Boot JDK Requirements</h2>
 <p>Paradoxically, building OpenJDK requires a pre-existing JDK. This is called the &quot;boot JDK&quot;. The boot JDK does not have to be OpenJDK, though. If you are porting OpenJDK to a new platform, chances are that there already exists another JDK for that platform that is usable as boot JDK.</p>
-<p>The rule of thumb is that the boot JDK for building JDK major version <em>N</em> should be an JDK of major version <em>N-1</em>, so for building JDK 9 a JDK 8 would be suitable as boot JDK. However, OpenJDK should be able to &quot;build itself&quot;, so an up-to-date build of the current OpenJDK source is an acceptable alternative. If you are following the <em>N-1</em> rule, make sure you got the latest update version, since JDK 8 GA might not be able to build JDK 9 on all platforms.</p>
+<p>The rule of thumb is that the boot JDK for building JDK major version <em>N</em> should be a JDK of major version <em>N-1</em>, so for building JDK 9 a JDK 8 would be suitable as boot JDK. However, OpenJDK should be able to &quot;build itself&quot;, so an up-to-date build of the current OpenJDK source is an acceptable alternative. If you are following the <em>N-1</em> rule, make sure you've got the latest update version, since JDK 8 GA might not be able to build JDK 9 on all platforms.</p>
+<p>Early in the release cycle, version <em>N-1</em> may not yet have been released. In that case, the preferred boot JDK will be version <em>N-2</em> until version <em>N-1</em> is available.</p>
 <p>If the Boot JDK is not automatically detected, or the wrong JDK is picked, use <code>--with-boot-jdk</code> to point to the JDK to use.</p>
-<h3 id="jdk-8-on-linux">JDK 8 on Linux</h3>
-<p>On apt-based distros (like Debian and Ubuntu), <code>sudo apt-get install openjdk-8-jdk</code> is typically enough to install OpenJDK 8. On rpm-based distros (like Fedora and Red Hat), try <code>sudo yum install java-1.8.0-openjdk-devel</code>.</p>
-<h3 id="jdk-8-on-windows">JDK 8 on Windows</h3>
-<p>No pre-compiled binaries of OpenJDK 8 are readily available for Windows at the time of writing. An alternative is to download the <a href="http://www.oracle.com/technetwork/java/javase/downloads">Oracle JDK</a>. Another is the <a href="https://adoptopenjdk.net/">Adopt OpenJDK Project</a>, which publishes experimental prebuilt binaries for Windows.</p>
-<h3 id="jdk-8-on-macos">JDK 8 on macOS</h3>
-<p>No pre-compiled binaries of OpenJDK 8 are readily available for macOS at the time of writing. An alternative is to download the <a href="http://www.oracle.com/technetwork/java/javase/downloads">Oracle JDK</a>, or to install it using <code>brew cask install java</code>. Another option is the <a href="https://adoptopenjdk.net/">Adopt OpenJDK Project</a>, which publishes experimental prebuilt binaries for macOS.</p>
-<h3 id="jdk-8-on-aix">JDK 8 on AIX</h3>
-<p>No pre-compiled binaries of OpenJDK 8 are readily available for AIX at the time of writing. A starting point for working with OpenJDK on AIX is the <a href="http://openjdk.java.net/projects/ppc-aix-port/">PowerPC/AIX Port Project</a>.</p>
+<h3 id="getting-jdk-binaries">Getting JDK binaries</h3>
+<p>OpenJDK binaries for Linux, Windows and macOS can be downloaded from <a href="http://jdk.java.net">jdk.java.net</a>. An alternative is to download the <a href="http://www.oracle.com/technetwork/java/javase/downloads">Oracle JDK</a>. Another is the <a href="https://adoptopenjdk.net/">Adopt OpenJDK Project</a>, which publishes experimental prebuilt binaries for various platforms.</p>
+<p>On Linux you can also get OpenJDK from the Linux distribution. On apt-based distros (like Debian and Ubuntu), <code>sudo apt-get install openjdk-&lt;VERSION&gt;-jdk</code> is typically enough to install OpenJDK &lt;VERSION&gt;. On rpm-based distros (like Fedora and Red Hat), try <code>sudo yum install java-&lt;VERSION&gt;-openjdk-devel</code>.</p>
 <h2 id="external-library-requirements">External Library Requirements</h2>
 <p>Different platforms require different external libraries. In general, libraries are not optional - that is, they are either required or not used.</p>
 <p>If a required library is not detected by <code>configure</code>, you need to provide the path to it. There are two forms of the <code>configure</code> arguments to point to an external library: <code>--with-&lt;LIB&gt;=&lt;path&gt;</code> or <code>--with-&lt;LIB&gt;-include=&lt;path to include&gt; --with-&lt;LIB&gt;-lib=&lt;path to lib&gt;</code>. The first variant is more concise, but require the include files an library files to reside in a default hierarchy under this directory. In most cases, it works fine.</p>
 <p>As a fallback, the second version allows you to point to the include directory and the lib directory separately.</p>
 <h3 id="freetype">FreeType</h3>
-<p>FreeType2 from <a href="http://www.freetype.org/">The FreeType Project</a> is required on all platforms. At least version 2.3 is required.</p>
+<p>FreeType2 from <a href="http://www.freetype.org/">The FreeType Project</a> is not required on any platform. The exception is on Unix-based platforms when configuring such that the build artifacts will reference a system installed library, rather than bundling OpenJDK's own copy.</p>
 <ul>
-<li>To install on an apt-based Linux, try running <code>sudo apt-get install libcups2-dev</code>.</li>
-<li>To install on an rpm-based Linux, try running <code>sudo yum install cups-devel</code>.</li>
+<li>To install on an apt-based Linux, try running <code>sudo apt-get install libfreetype6-dev</code>.</li>
+<li>To install on an rpm-based Linux, try running <code>sudo yum install freetype-devel</code>.</li>
 <li>To install on Solaris, try running <code>pkg install system/library/freetype-2</code>.</li>
-<li>To install on macOS, try running <code>brew install freetype</code>.</li>
-<li>To install on Windows, see <a href="#building-freetype-on-windows">below</a>.</li>
 </ul>
-<p>Use <code>--with-freetype=&lt;path&gt;</code> if <code>configure</code> does not properly locate your FreeType files.</p>
-<h4 id="building-freetype-on-windows">Building FreeType on Windows</h4>
-<p>On Windows, there is no readily available compiled version of FreeType. OpenJDK can help you compile FreeType from source. Download the FreeType sources and unpack them into an arbitrary directory:</p>
-<pre><code>wget http://download.savannah.gnu.org/releases/freetype/freetype-2.5.3.tar.gz
-tar -xzf freetype-2.5.3.tar.gz</code></pre>
-<p>Then run <code>configure</code> with <code>--with-freetype-src=&lt;freetype_src&gt;</code>. This will automatically build the freetype library into <code>&lt;freetype_src&gt;/lib64</code> for 64-bit builds or into <code>&lt;freetype_src&gt;/lib32</code> for 32-bit builds. Afterwards you can always use <code>--with-freetype-include=&lt;freetype_src&gt;/include</code> and <code>--with-freetype-lib=&lt;freetype_src&gt;/lib[32|64]</code> for other builds.</p>
-<p>Alternatively you can unpack the sources like this to use the default directory:</p>
-<pre><code>tar --one-top-level=$HOME/freetype --strip-components=1 -xzf freetype-2.5.3.tar.gz</code></pre>
+<p>Use <code>--with-freetype-include=&lt;path&gt;</code> and <code>--with-freetype-lib=&lt;path&gt;</code> if <code>configure</code> does not automatically locate the platform FreeType files.</p>
 <h3 id="cups">CUPS</h3>
 <p>CUPS, <a href="http://www.cups.org">Common UNIX Printing System</a> header files are required on all platforms, except Windows. Often these files are provided by your operating system.</p>
 <ul>
@@ -424,7 +409,17 @@ tar -xzf freetype-2.5.3.tar.gz</code></pre>
 <li>To install on an rpm-based Linux, try running <code>sudo yum install libffi-devel</code>.</li>
 </ul>
 <p>Use <code>--with-libffi=&lt;path&gt;</code> if <code>configure</code> does not properly locate your libffi files.</p>
-<h2 id="other-tooling-requirements">Other Tooling Requirements</h2>
+<h2 id="build-tools-requirements">Build Tools Requirements</h2>
+<h3 id="autoconf">Autoconf</h3>
+<p>OpenJDK requires <a href="http://www.gnu.org/software/autoconf">Autoconf</a> on all platforms. At least version 2.69 is required.</p>
+<ul>
+<li>To install on an apt-based Linux, try running <code>sudo apt-get install autoconf</code>.</li>
+<li>To install on an rpm-based Linux, try running <code>sudo yum install autoconf</code>.</li>
+<li>To install on macOS, try running <code>brew install autoconf</code>.</li>
+<li>To install on Windows, try running <code>&lt;path to Cygwin setup&gt;/setup-x86_64 -q -P autoconf</code>.</li>
+</ul>
+<p>If <code>configure</code> has problems locating your installation of autoconf, you can specify it using the <code>AUTOCONF</code> environment variable, like this:</p>
+<pre><code>AUTOCONF=&lt;path to autoconf&gt; configure ...</code></pre>
 <h3 id="gnu-make">GNU Make</h3>
 <p>OpenJDK requires <a href="http://www.gnu.org/software/make">GNU Make</a>. No other flavors of make are supported.</p>
 <p>At least version 3.81 of GNU Make must be used. For distributions supporting GNU Make 4.0 or above, we strongly recommend it. GNU Make 4.0 contains useful functionality to handle parallel building (supported by <code>--with-output-sync</code>) and speed and stability improvements.</p>
@@ -434,10 +429,6 @@ tar -xzf freetype-2.5.3.tar.gz</code></pre>
 <h3 id="gnu-bash">GNU Bash</h3>
 <p>OpenJDK requires <a href="http://www.gnu.org/software/bash">GNU Bash</a>. No other shells are supported.</p>
 <p>At least version 3.2 of GNU Bash must be used.</p>
-<h3 id="autoconf">Autoconf</h3>
-<p>If you want to modify the build system itself, you need to install <a href="http://www.gnu.org/software/autoconf">Autoconf</a>.</p>
-<p>However, if you only need to build OpenJDK or if you only edit the actual OpenJDK source files, there is no dependency on autoconf, since the source distribution includes a pre-generated <code>configure</code> shell script.</p>
-<p>See the section on <a href="#autoconf-details">Autoconf Details</a> for details on how OpenJDK uses autoconf. This is especially important if you plan to contribute changes to OpenJDK that modifies the build system.</p>
 <h2 id="running-configure">Running Configure</h2>
 <p>To build OpenJDK, you need a &quot;configuration&quot;, which consists of a directory where to store the build output, coupled with information about the platform, the specific build machine, and choices that affect how OpenJDK is built.</p>
 <p>The configuration is created by the <code>configure</code> script. The basic invocation of the <code>configure</code> script looks like this:</p>
@@ -871,15 +862,9 @@ test-support/</code></pre>
 <p>When building for distribution, <code>zipped</code> is a good solution. Binaries built with <code>internal</code> is suitable for use by developers, since they facilitate debugging, but should be stripped before distributed to end users.</p>
 <h3 id="autoconf-details">Autoconf Details</h3>
 <p>The <code>configure</code> script is based on the autoconf framework, but in some details deviate from a normal autoconf <code>configure</code> script.</p>
-<p>The <code>configure</code> script in the top level directory of OpenJDK is just a thin wrapper that calls <code>make/autoconf/configure</code>. This in turn provides functionality that is not easily expressed in the normal Autoconf framework, and then calls into the core of the <code>configure</code> script, which is the <code>make/autoconf/generated-configure.sh</code> file.</p>
-<p>As the name implies, this file is generated by Autoconf. It is checked in after regeneration, to alleviate the common user to have to install Autoconf.</p>
-<p>The build system will detect if the Autoconf source files have changed, and will trigger a regeneration of <code>make/autoconf/generated-configure.sh</code> if needed. You can also manually request such an update by <code>bash make/autoconf/autogen.sh</code>.</p>
-<p>If you make changes to the build system that requires a re-generation, note the following:</p>
-<ul>
-<li><p>You must use <em>exactly</em> version 2.69 of autoconf for your patch to be accepted. This is to avoid spurious changes in the generated file. Note that Ubuntu 16.04 ships a patched version of autoconf which claims to be 2.69, but is not.</p></li>
-<li><p>You do not need to include the generated file in reviews.</p></li>
-<li><p>If the generated file needs updating, the Oracle JDK closed counter-part will also need to be updated. It is very much appreciated if you ask for an Oracle engineer to sponsor your push so this can be made in tandem.</p></li>
-</ul>
+<p>The <code>configure</code> script in the top level directory of OpenJDK is just a thin wrapper that calls <code>make/autoconf/configure</code>. This in turn will run <code>autoconf</code> to create the runnable (generated) configure script, as <code>.build/generated-configure.sh</code>. Apart from being responsible for the generation of the runnable script, the <code>configure</code> script also provides functionality that is not easily expressed in the normal Autoconf framework. As part of this functionality, the generated script is called.</p>
+<p>The build system will detect if the Autoconf source files have changed, and will trigger a regeneration of the generated script if needed. You can also manually request such an update by <code>bash configure autogen</code>.</p>
+<p>In previous versions of the OpenJDK, the generated script was checked in at <code>make/autoconf/generated-configure.sh</code>. This is no longer the case.</p>
 <h3 id="developing-the-build-system-itself">Developing the Build System Itself</h3>
 <p>This section contains a few remarks about how to develop for the build system itself. It is not relevant if you are only making changes in the product source code.</p>
 <p>While technically using <code>make</code>, the make source files of the OpenJDK does not resemble most other Makefiles. Instead of listing specific targets and actions (perhaps using patterns), the basic modus operandi is to call a high-level function (or properly, macro) from the API in <code>make/common</code>. For instance, to compile all classes in the <code>jdk.internal.foo</code> package in the <code>jdk.foo</code> module, a call like this would be made:</p>
@@ -897,7 +882,7 @@ test-support/</code></pre>
 <pre><code>make COMPARE_BUILD=CONF=--enable-new-hotspot-feature:MAKE=hotspot</code></pre>
 <p>See <code>make/InitSupport.gmk</code> for details on how to use <code>COMPARE_BUILD</code>.</p>
 <p>To analyze build performance, run with <code>LOG=trace</code> and check <code>$BUILD/build-trace-time.log</code>. Use <code>JOBS=1</code> to avoid parallelism.</p>
-<p>Please check that you adhere to the <a href="http://openjdk.java.net/groups/build/doc/code-conventions.html">Code Conventions for the Build System</a> before submitting patches. Also see the section in <a href="#autoconf-details">Autoconf Details</a> about the generated configure script.</p>
+<p>Please check that you adhere to the <a href="http://openjdk.java.net/groups/build/doc/code-conventions.html">Code Conventions for the Build System</a> before submitting patches.</p>
 <h2 id="contributing-to-openjdk">Contributing to OpenJDK</h2>
 <p>So, now you've build your OpenJDK, and made your first patch, and want to contribute it back to the OpenJDK community.</p>
 <p>First of all: Thank you! We gladly welcome your contribution to the OpenJDK. However, please bear in mind that OpenJDK is a massive project, and we must ask you to follow our rules and guidelines to be able to accept your contribution.</p>

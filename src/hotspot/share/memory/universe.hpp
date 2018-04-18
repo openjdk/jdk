@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,6 +141,7 @@ class Universe: AllStatic {
   static oop          _system_thread_group;           // Reference to the system thread group object
 
   static objArrayOop  _the_empty_class_klass_array;   // Canonicalized obj array of type java.lang.Class
+  static oop          _the_null_sentinel;             // A unique object pointer unused except as a sentinel for null.
   static oop          _the_null_string;               // A cache of "null" as a Java string
   static oop          _the_min_jint_string;          // A cache of "-2147483648" as a Java string
   static LatestMethodCache* _finalizer_register_cache; // static method for registering finalizable objects
@@ -180,8 +181,6 @@ class Universe: AllStatic {
   // the vm thread.
   static oop          _vm_exception;
 
-  static oop          _allocation_context_notification_obj;
-
   // References waiting to be transferred to the ReferenceHandler
   static oop          _reference_pending_list;
 
@@ -195,7 +194,8 @@ class Universe: AllStatic {
   // For UseCompressedClassPointers.
   static struct NarrowPtrStruct _narrow_klass;
   static address _narrow_ptrs_base;
-
+  // CompressedClassSpaceSize set to 1GB, but appear 3GB away from _narrow_ptrs_base during CDS dump.
+  static uint64_t _narrow_klass_range;
   // array of dummy objects used with +FullGCAlot
   debug_only(static objArrayOop _fullgc_alot_dummy_array;)
   // index of next entry to clear
@@ -221,7 +221,6 @@ class Universe: AllStatic {
   static size_t _heap_used_at_last_gc;
 
   static CollectedHeap* create_heap();
-  static CollectedHeap* create_heap_ext();
   static jint initialize_heap();
   static void initialize_basic_type_mirrors(TRAPS);
   static void fixup_mirrors(TRAPS);
@@ -245,6 +244,10 @@ class Universe: AllStatic {
   static void     set_narrow_klass_base(address base) {
     assert(UseCompressedClassPointers, "no compressed klass ptrs?");
     _narrow_klass._base   = base;
+  }
+  static void     set_narrow_klass_range(uint64_t range) {
+     assert(UseCompressedClassPointers, "no compressed klass ptrs?");
+     _narrow_klass_range = range;
   }
   static void     set_narrow_oop_use_implicit_null_checks(bool use) {
     assert(UseCompressedOops, "no compressed ptrs?");
@@ -296,6 +299,16 @@ class Universe: AllStatic {
   static oop short_mirror()                 { return check_mirror(_short_mirror); }
   static oop void_mirror()                  { return check_mirror(_void_mirror); }
 
+  static void set_int_mirror(oop m)         { _int_mirror = m;    }
+  static void set_float_mirror(oop m)       { _float_mirror = m;  }
+  static void set_double_mirror(oop m)      { _double_mirror = m; }
+  static void set_byte_mirror(oop m)        { _byte_mirror = m;   }
+  static void set_bool_mirror(oop m)        { _bool_mirror = m;   }
+  static void set_char_mirror(oop m)        { _char_mirror = m;   }
+  static void set_long_mirror(oop m)        { _long_mirror = m;   }
+  static void set_short_mirror(oop m)       { _short_mirror = m;  }
+  static void set_void_mirror(oop m)        { _void_mirror = m;   }
+
   // table of same
   static oop _mirrors[T_VOID+1];
 
@@ -322,6 +335,9 @@ class Universe: AllStatic {
 
   static Method*      do_stack_walk_method()          { return _do_stack_walk_cache->get_method(); }
 
+  static oop          the_null_sentinel()             { return _the_null_sentinel;             }
+  static address      the_null_sentinel_addr()        { return (address) &_the_null_sentinel;  }
+
   // Function to initialize these
   static void initialize_known_methods(TRAPS);
 
@@ -329,9 +345,6 @@ class Universe: AllStatic {
   static oop          arithmetic_exception_instance() { return _arithmetic_exception_instance; }
   static oop          virtual_machine_error_instance() { return _virtual_machine_error_instance; }
   static oop          vm_exception()                  { return _vm_exception; }
-
-  static inline oop   allocation_context_notification_obj();
-  static inline void  set_allocation_context_notification_obj(oop obj);
 
   // Reference pending list manipulation.  Access is protected by
   // Heap_lock.  The getter, setter and predicate require the caller
@@ -421,6 +434,7 @@ class Universe: AllStatic {
   // For UseCompressedClassPointers
   static address  narrow_klass_base()                     { return  _narrow_klass._base; }
   static bool  is_narrow_klass_base(void* addr)           { return (narrow_klass_base() == (address)addr); }
+  static uint64_t narrow_klass_range()                    { return  _narrow_klass_range; }
   static int      narrow_klass_shift()                    { return  _narrow_klass._shift; }
   static bool     narrow_klass_use_implicit_null_checks() { return  _narrow_klass._use_implicit_null_checks; }
 
@@ -454,14 +468,9 @@ class Universe: AllStatic {
   static bool is_module_initialized()                 { return _module_initialized; }
   static bool is_fully_initialized()                  { return _fully_initialized; }
 
-  static inline bool element_type_should_be_aligned(BasicType type);
-  static inline bool field_type_should_be_aligned(BasicType type);
   static bool        on_page_boundary(void* addr);
   static bool        should_fill_in_stack_trace(Handle throwable);
   static void check_alignment(uintx size, uintx alignment, const char* name);
-
-  // Finalizer support.
-  static void run_finalizers_on_exit();
 
   // Iteration
 
@@ -486,7 +495,7 @@ class Universe: AllStatic {
     Verify_CodeCache = 16,
     Verify_SystemDictionary = 32,
     Verify_ClassLoaderDataGraph = 64,
-    Verify_MetaspaceAux = 128,
+    Verify_MetaspaceUtils = 128,
     Verify_JNIHandles = 256,
     Verify_CodeCacheOops = 512,
     Verify_All = -1

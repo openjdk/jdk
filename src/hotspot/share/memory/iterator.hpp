@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -343,6 +343,9 @@ public:
   // for verification that sections of the serialized data are of the
   // correct length.
   virtual void do_tag(int tag) = 0;
+
+  // Read/write the oop
+  virtual void do_oop(oop* o) = 0;
 
   bool writing() {
     return !reading();

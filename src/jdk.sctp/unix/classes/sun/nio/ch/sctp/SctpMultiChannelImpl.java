@@ -58,7 +58,6 @@ import sun.nio.ch.NativeThread;
 import sun.nio.ch.IOStatus;
 import sun.nio.ch.IOUtil;
 import sun.nio.ch.Net;
-import sun.nio.ch.PollArrayWrapper;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
 import sun.nio.ch.Util;
@@ -357,13 +356,13 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
     }
 
     @Override
-    public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
+    public int translateInterestOps(int ops) {
         int newOps = 0;
         if ((ops & SelectionKey.OP_READ) != 0)
             newOps |= Net.POLLIN;
         if ((ops & SelectionKey.OP_WRITE) != 0)
             newOps |= Net.POLLOUT;
-        sk.selector.putEventOps(sk, newOps);
+        return newOps;
     }
 
     @Override

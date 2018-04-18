@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
-#include "runtime/vframe.hpp"
+#include "runtime/vframe.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // setup and cleanup actions
@@ -48,7 +48,7 @@ void BaseFrameStream::setup_magic_on_entry(objArrayHandle frames_array) {
 bool BaseFrameStream::check_magic(objArrayHandle frames_array) {
   oop   m1 = frames_array->obj_at(magic_pos);
   jlong m2 = _anchor;
-  if (m1 == _thread->threadObj() && m2 == address_value())  return true;
+  if (oopDesc::equals(m1, _thread->threadObj()) && m2 == address_value())  return true;
   return false;
 }
 
@@ -64,6 +64,8 @@ JavaFrameStream::JavaFrameStream(JavaThread* thread, int mode)
   _need_method_info = StackWalk::need_method_info(mode);
 }
 
+void JavaFrameStream::next() { _vfst.next();}
+
 // Returns the BaseFrameStream for the current stack being traversed.
 //
 // Parameters:
@@ -77,7 +79,7 @@ BaseFrameStream* BaseFrameStream::from_current(JavaThread* thread, jlong magic,
 {
   assert(thread != NULL && thread->is_Java_thread(), "");
   oop m1 = frames_array->obj_at(magic_pos);
-  if (m1 != thread->threadObj())      return NULL;
+  if (!oopDesc::equals(m1, thread->threadObj())) return NULL;
   if (magic == 0L)                    return NULL;
   BaseFrameStream* stream = (BaseFrameStream*) (intptr_t) magic;
   if (!stream->is_valid_in(thread, frames_array))   return NULL;

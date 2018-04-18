@@ -310,8 +310,6 @@ module:jdk.localedata
 module:jdk.management
 com.sun.management
 module:jdk.management.agent
-module:jdk.management.cmm
-jdk.management.cmm
 module:jdk.management.jfr
 jdk.management.jfr
 module:jdk.management.resource
@@ -334,7 +332,6 @@ com.sun.security.auth.login
 com.sun.security.auth.module
 module:jdk.security.jgss
 com.sun.security.jgss
-module:jdk.snmp
 module:jdk.xml.dom
 org.w3c.dom.css
 org.w3c.dom.html

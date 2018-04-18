@@ -46,7 +46,9 @@ public class AArch64HotSpotDeoptimizeOp extends AArch64BlockEndOp implements Blo
 
     @Override
     public void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
-        AArch64Call.directCall(crb, masm, crb.foreignCalls.lookupForeignCall(UNCOMMON_TRAP_HANDLER), null, info);
+        try (AArch64MacroAssembler.ScratchRegister scratch = masm.getScratchRegister()) {
+            AArch64Call.directCall(crb, masm, crb.foreignCalls.lookupForeignCall(UNCOMMON_TRAP_HANDLER), scratch.getRegister(), info, null);
+        }
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8174805
+ * @bug 8174805 8182765
  * @summary JavacTrees should use Types.skipTypeVars() to get the upper bound of type variables
  * @library ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -40,7 +40,10 @@ public class TestTypeVariableLinks extends JavadocTester {
 
     @Test
     void test1() {
-        javadoc("-d", "out", "-sourcepath", testSrc, "-package", "pkg1");
+        javadoc("-d", "out",
+                "-sourcepath", testSrc,
+                "-package",
+                "pkg1");
         checkExit(Exit.OK);
 
         checkOutput("pkg1/C.html", true,
@@ -48,8 +51,23 @@ public class TestTypeVariableLinks extends JavadocTester {
         checkOutput("pkg1/C.html", true,
                 "<div class=\"block\">Linking to List.clear() <code>List.clear()</code></div>");
         checkOutput("pkg1/C.html", true,
-                "<div class=\"block\">Linking to Additional.doAction() <a href=\"../pkg1/Additional.html#doAction--\"><code>Additional.doAction()</code></a></div>");
+                "<div class=\"block\">Linking to Additional.doAction() <a href=\"Additional.html#doAction()\"><code>Additional.doAction()</code></a></div>");
         checkOutput("pkg1/C.html", true,
-                "<div class=\"block\">Linking to I.abstractAction() <a href=\"../pkg1/I.html#abstractAction--\"><code>I.abstractAction()</code></a></div>");
+                "<div class=\"block\">Linking to I.abstractAction() <a href=\"I.html#abstractAction()\"><code>I.abstractAction()</code></a></div>");
+    }
+
+    @Test
+    void test1_html4() {
+        javadoc("-d", "out-html4",
+                "-html4",
+                "-sourcepath", testSrc,
+                "-package",
+                "pkg1");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg1/C.html", true,
+                "<div class=\"block\">Linking to Additional.doAction() <a href=\"Additional.html#doAction--\"><code>Additional.doAction()</code></a></div>");
+        checkOutput("pkg1/C.html", true,
+                "<div class=\"block\">Linking to I.abstractAction() <a href=\"I.html#abstractAction--\"><code>I.abstractAction()</code></a></div>");
     }
 }

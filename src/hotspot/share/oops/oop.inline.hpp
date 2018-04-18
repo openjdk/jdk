@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,12 @@
 #define SHARE_VM_OOPS_OOP_INLINE_HPP
 
 #include "gc/shared/ageTable.hpp"
-#include "gc/shared/collectedHeap.inline.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/generation.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/markOop.inline.hpp"
 #include "oops/oop.hpp"
@@ -44,16 +44,44 @@
 // Implementation of all inlined member functions defined in oop.hpp
 // We need a separate file to avoid circular references
 
+markOop  oopDesc::mark()      const {
+  return HeapAccess<MO_VOLATILE>::load_at(as_oop(), mark_offset_in_bytes());
+}
+
+markOop  oopDesc::mark_raw()  const {
+  return _mark;
+}
+
+markOop* oopDesc::mark_addr_raw() const {
+  return (markOop*) &_mark;
+}
+
+void oopDesc::set_mark(volatile markOop m) {
+  HeapAccess<MO_VOLATILE>::store_at(as_oop(), mark_offset_in_bytes(), m);
+}
+
+void oopDesc::set_mark_raw(volatile markOop m) {
+  _mark = m;
+}
+
 void oopDesc::release_set_mark(markOop m) {
-  OrderAccess::release_store(&_mark, m);
+  HeapAccess<MO_RELEASE>::store_at(as_oop(), mark_offset_in_bytes(), m);
 }
 
 markOop oopDesc::cas_set_mark(markOop new_mark, markOop old_mark) {
+  return HeapAccess<>::atomic_cmpxchg_at(new_mark, as_oop(), mark_offset_in_bytes(), old_mark);
+}
+
+markOop oopDesc::cas_set_mark_raw(markOop new_mark, markOop old_mark) {
   return Atomic::cmpxchg(new_mark, &_mark, old_mark);
 }
 
 void oopDesc::init_mark() {
   set_mark(markOopDesc::prototype_for_object(this));
+}
+
+void oopDesc::init_mark_raw() {
+  set_mark_raw(markOopDesc::prototype_for_object(this));
 }
 
 Klass* oopDesc::klass() const {
@@ -136,7 +164,7 @@ void oopDesc::set_klass_to_list_ptr(oop k) {
   // This is only to be used during GC, for from-space objects, so no
   // barrier is needed.
   if (UseCompressedClassPointers) {
-    _metadata._compressed_klass = (narrowKlass)encode_heap_oop(k);  // may be null (parnew overflow handling)
+    _metadata._compressed_klass = (narrowKlass)CompressedOops::encode(k);  // may be null (parnew overflow handling)
   } else {
     _metadata._klass = (Klass*)(address)k;
   }
@@ -145,7 +173,7 @@ void oopDesc::set_klass_to_list_ptr(oop k) {
 oop oopDesc::list_ptr_from_klass() {
   // This is only to be used during GC, for from-space objects.
   if (UseCompressedClassPointers) {
-    return decode_heap_oop((narrowOop)_metadata._compressed_klass);
+    return CompressedOops::decode((narrowOop)_metadata._compressed_klass);
   } else {
     // Special case for GC
     return (oop)(address)_metadata._klass;
@@ -233,100 +261,16 @@ bool oopDesc::is_array()     const { return klass()->is_array_klass();     }
 bool oopDesc::is_objArray()  const { return klass()->is_objArray_klass();  }
 bool oopDesc::is_typeArray() const { return klass()->is_typeArray_klass(); }
 
-void*      oopDesc::field_base(int offset)          const { return (void*)&((char*)this)[offset]; }
+void*    oopDesc::field_addr_raw(int offset)     const { return reinterpret_cast<void*>(cast_from_oop<intptr_t>(as_oop()) + offset); }
+void*    oopDesc::field_addr(int offset)         const { return Access<>::resolve(as_oop())->field_addr_raw(offset); }
 
-jbyte*     oopDesc::byte_field_addr(int offset)     const { return (jbyte*)    field_base(offset); }
-jchar*     oopDesc::char_field_addr(int offset)     const { return (jchar*)    field_base(offset); }
-jboolean*  oopDesc::bool_field_addr(int offset)     const { return (jboolean*) field_base(offset); }
-jint*      oopDesc::int_field_addr(int offset)      const { return (jint*)     field_base(offset); }
-jshort*    oopDesc::short_field_addr(int offset)    const { return (jshort*)   field_base(offset); }
-jlong*     oopDesc::long_field_addr(int offset)     const { return (jlong*)    field_base(offset); }
-jfloat*    oopDesc::float_field_addr(int offset)    const { return (jfloat*)   field_base(offset); }
-jdouble*   oopDesc::double_field_addr(int offset)   const { return (jdouble*)  field_base(offset); }
-Metadata** oopDesc::metadata_field_addr(int offset) const { return (Metadata**)field_base(offset); }
+template <class T>
+T*       oopDesc::obj_field_addr_raw(int offset) const { return (T*) field_addr_raw(offset); }
 
-template <class T> T* oopDesc::obj_field_addr(int offset) const { return (T*)  field_base(offset); }
-address*   oopDesc::address_field_addr(int offset)  const { return (address*)  field_base(offset); }
-
-
-// Functions for getting and setting oops within instance objects.
-// If the oops are compressed, the type passed to these overloaded functions
-// is narrowOop.  All functions are overloaded so they can be called by
-// template functions without conditionals (the compiler instantiates via
-// the right type and inlines the appopriate code).
-
-// Algorithm for encoding and decoding oops from 64 bit pointers to 32 bit
-// offset from the heap base.  Saving the check for null can save instructions
-// in inner GC loops so these are separated.
-
-inline bool check_obj_alignment(oop obj) {
-  return (cast_from_oop<intptr_t>(obj) & MinObjAlignmentInBytesMask) == 0;
-}
-
-oop oopDesc::decode_heap_oop_not_null(narrowOop v) {
-  assert(!is_null(v), "narrow oop value can never be zero");
-  address base = Universe::narrow_oop_base();
-  int    shift = Universe::narrow_oop_shift();
-  oop result = (oop)(void*)((uintptr_t)base + ((uintptr_t)v << shift));
-  assert(check_obj_alignment(result), "address not aligned: " INTPTR_FORMAT, p2i((void*) result));
-  return result;
-}
-
-oop oopDesc::decode_heap_oop(narrowOop v) {
-  return is_null(v) ? (oop)NULL : decode_heap_oop_not_null(v);
-}
-
-narrowOop oopDesc::encode_heap_oop_not_null(oop v) {
-  assert(!is_null(v), "oop value can never be zero");
-  assert(check_obj_alignment(v), "Address not aligned");
-  assert(Universe::heap()->is_in_reserved(v), "Address not in heap");
-  address base = Universe::narrow_oop_base();
-  int    shift = Universe::narrow_oop_shift();
-  uint64_t  pd = (uint64_t)(pointer_delta((void*)v, (void*)base, 1));
-  assert(OopEncodingHeapMax > pd, "change encoding max if new encoding");
-  uint64_t result = pd >> shift;
-  assert((result & CONST64(0xffffffff00000000)) == 0, "narrow oop overflow");
-  assert(decode_heap_oop(result) == v, "reversibility");
-  return (narrowOop)result;
-}
-
-narrowOop oopDesc::encode_heap_oop(oop v) {
-  return (is_null(v)) ? (narrowOop)0 : encode_heap_oop_not_null(v);
-}
-
-narrowOop oopDesc::load_heap_oop(narrowOop* p) { return *p; }
-oop       oopDesc::load_heap_oop(oop* p)       { return *p; }
-
-void oopDesc::store_heap_oop(narrowOop* p, narrowOop v) { *p = v; }
-void oopDesc::store_heap_oop(oop* p, oop v)             { *p = v; }
-
-// Load and decode an oop out of the Java heap into a wide oop.
-oop oopDesc::load_decode_heap_oop_not_null(narrowOop* p) {
-  return decode_heap_oop_not_null(load_heap_oop(p));
-}
-
-// Load and decode an oop out of the heap accepting null
-oop oopDesc::load_decode_heap_oop(narrowOop* p) {
-  return decode_heap_oop(load_heap_oop(p));
-}
-
-oop oopDesc::load_decode_heap_oop_not_null(oop* p) { return *p; }
-oop oopDesc::load_decode_heap_oop(oop* p)          { return *p; }
-
-void oopDesc::encode_store_heap_oop_not_null(oop* p, oop v) { *p = v; }
-void oopDesc::encode_store_heap_oop(oop* p, oop v)          { *p = v; }
-
-// Encode and store a heap oop.
-void oopDesc::encode_store_heap_oop_not_null(narrowOop* p, oop v) {
-  *p = encode_heap_oop_not_null(v);
-}
-
-// Encode and store a heap oop allowing for null.
-void oopDesc::encode_store_heap_oop(narrowOop* p, oop v) {
-  *p = encode_heap_oop(v);
-}
-
+template <DecoratorSet decorators>
+inline oop  oopDesc::obj_field_access(int offset) const             { return HeapAccess<decorators>::oop_load_at(as_oop(), offset); }
 inline oop  oopDesc::obj_field(int offset) const                    { return HeapAccess<>::oop_load_at(as_oop(), offset);  }
+
 inline void oopDesc::obj_field_put(int offset, oop value)           { HeapAccess<>::oop_store_at(as_oop(), offset, value); }
 
 inline jbyte oopDesc::byte_field(int offset) const                  { return HeapAccess<>::load_at(as_oop(), offset);  }
@@ -365,20 +309,20 @@ bool oopDesc::has_bias_pattern() const {
   return mark()->has_bias_pattern();
 }
 
-// Used only for markSweep, scavenging
-bool oopDesc::is_gc_marked() const {
-  return mark()->is_marked();
+bool oopDesc::has_bias_pattern_raw() const {
+  return mark_raw()->has_bias_pattern();
 }
 
-bool oopDesc::is_scavengable() const {
-  return Universe::heap()->is_scavengable(oop(const_cast<oopDesc*>(this)));
+// Used only for markSweep, scavenging
+bool oopDesc::is_gc_marked() const {
+  return mark_raw()->is_marked();
 }
 
 // Used by scavengers
 bool oopDesc::is_forwarded() const {
   // The extra heap check is needed since the obj might be locked, in which case the
   // mark would point to a stack location and have the sentinel bit cleared
-  return mark()->is_marked();
+  return mark_raw()->is_marked();
 }
 
 // Used by scavengers
@@ -392,7 +336,7 @@ void oopDesc::forward_to(oop p) {
          "forwarding archive object");
   markOop m = markOopDesc::encode_pointer_as_mark(p);
   assert(m->decode_pointer() == p, "encoding must be reversable");
-  set_mark(m);
+  set_mark_raw(m);
 }
 
 // Used by parallel scavengers
@@ -403,12 +347,12 @@ bool oopDesc::cas_forward_to(oop p, markOop compare) {
          "forwarding to something not in heap");
   markOop m = markOopDesc::encode_pointer_as_mark(p);
   assert(m->decode_pointer() == p, "encoding must be reversable");
-  return cas_set_mark(m, compare) == compare;
+  return cas_set_mark_raw(m, compare) == compare;
 }
 
 #if INCLUDE_ALL_GCS
 oop oopDesc::forward_to_atomic(oop p) {
-  markOop oldMark = mark();
+  markOop oldMark = mark_raw();
   markOop forwardPtrMark = markOopDesc::encode_pointer_as_mark(p);
   markOop curMark;
 
@@ -416,7 +360,7 @@ oop oopDesc::forward_to_atomic(oop p) {
   assert(sizeof(markOop) == sizeof(intptr_t), "CAS below requires this.");
 
   while (!oldMark->is_marked()) {
-    curMark = Atomic::cmpxchg(forwardPtrMark, &_mark, oldMark);
+    curMark = cas_set_mark_raw(forwardPtrMark, oldMark);
     assert(is_forwarded(), "object should have been forwarded");
     if (curMark == oldMark) {
       return NULL;
@@ -434,25 +378,25 @@ oop oopDesc::forward_to_atomic(oop p) {
 // The forwardee is used when copying during scavenge and mark-sweep.
 // It does need to clear the low two locking- and GC-related bits.
 oop oopDesc::forwardee() const {
-  return (oop) mark()->decode_pointer();
+  return (oop) mark_raw()->decode_pointer();
 }
 
 // The following method needs to be MT safe.
 uint oopDesc::age() const {
   assert(!is_forwarded(), "Attempt to read age from forwarded mark");
-  if (has_displaced_mark()) {
-    return displaced_mark()->age();
+  if (has_displaced_mark_raw()) {
+    return displaced_mark_raw()->age();
   } else {
-    return mark()->age();
+    return mark_raw()->age();
   }
 }
 
 void oopDesc::incr_age() {
   assert(!is_forwarded(), "Attempt to increment age of forwarded mark");
-  if (has_displaced_mark()) {
-    set_displaced_mark(displaced_mark()->incr_age());
+  if (has_displaced_mark_raw()) {
+    set_displaced_mark_raw(displaced_mark_raw()->incr_age());
   } else {
-    set_mark(mark()->incr_age());
+    set_mark_raw(mark_raw()->incr_age());
   }
 }
 
@@ -536,6 +480,10 @@ inline void oopDesc::oop_iterate_backwards(OopClosureType* blk) {   \
 ALL_OOP_OOP_ITERATE_CLOSURES_1(ALL_OOPDESC_OOP_ITERATE)
 ALL_OOP_OOP_ITERATE_CLOSURES_2(ALL_OOPDESC_OOP_ITERATE)
 
+bool oopDesc::is_instanceof_or_null(oop obj, Klass* klass) {
+  return obj == NULL || obj->klass()->is_subtype_of(klass);
+}
+
 intptr_t oopDesc::identity_hash() {
   // Fast case; if the object is unlocked and the hash value is set, no locking is needed
   // Note: The mark must be read into local variable to avoid concurrent updates.
@@ -549,16 +497,16 @@ intptr_t oopDesc::identity_hash() {
   }
 }
 
-bool oopDesc::has_displaced_mark() const {
-  return mark()->has_displaced_mark_helper();
+bool oopDesc::has_displaced_mark_raw() const {
+  return mark_raw()->has_displaced_mark_helper();
 }
 
-markOop oopDesc::displaced_mark() const {
-  return mark()->displaced_mark_helper();
+markOop oopDesc::displaced_mark_raw() const {
+  return mark_raw()->displaced_mark_helper();
 }
 
-void oopDesc::set_displaced_mark(markOop m) {
-  mark()->set_displaced_mark_helper(m);
+void oopDesc::set_displaced_mark_raw(markOop m) {
+  mark_raw()->set_displaced_mark_helper(m);
 }
 
 #endif // SHARE_VM_OOPS_OOP_INLINE_HPP

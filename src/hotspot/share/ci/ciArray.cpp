@@ -27,10 +27,10 @@
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciConstant.hpp"
 #include "ci/ciKlass.hpp"
-#include "ci/ciUtilities.hpp"
+#include "ci/ciUtilities.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/typeArrayOop.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 
 // ciArray
 //

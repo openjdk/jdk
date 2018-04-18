@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -74,24 +74,13 @@ BOOT_MODULES += \
 # Modules that directly or indirectly requiring upgradeable modules
 # should carefully be considered if it should be upgradeable or not.
 UPGRADEABLE_MODULES += \
-    java.activation \
     java.compiler \
-    java.corba \
-    java.transaction \
-    java.xml.bind \
-    java.xml.ws \
-    java.xml.ws.annotation \
     jdk.internal.vm.compiler \
     #
 
-UPGRADEABLE_TOOL_MODULES += \
-    jdk.xml.bind \
-    jdk.xml.ws \
-    #
 
 AGGREGATOR_MODULES += \
     java.se \
-    java.se.ee \
     #
 
 PLATFORM_MODULES += \
@@ -100,11 +89,13 @@ PLATFORM_MODULES += \
     #
 
 PLATFORM_MODULES += \
+    java.net.http \
     java.scripting \
     java.security.jgss \
     java.smartcardio \
     java.sql \
     java.sql.rowset \
+    java.transaction.xa \
     java.xml.crypto \
     jdk.accessibility \
     jdk.charsets \
@@ -112,7 +103,6 @@ PLATFORM_MODULES += \
     jdk.crypto.ec \
     jdk.dynalink \
     jdk.httpserver \
-    jdk.incubator.httpclient \
     jdk.internal.vm.compiler.management \
     jdk.jsobject \
     jdk.localedata \
@@ -143,7 +133,7 @@ JRE_TOOL_MODULES += \
 # DOCS_MODULES defines the root modules for javadoc generation.
 # All of their `require transitive` modules directly and indirectly will be included.
 DOCS_MODULES += \
-    java.se.ee \
+    java.se \
     java.smartcardio \
     jdk.accessibility \
     jdk.attach \
@@ -155,7 +145,6 @@ DOCS_MODULES += \
     jdk.editpad \
     jdk.hotspot.agent \
     jdk.httpserver \
-    jdk.incubator.httpclient \
     jdk.jartool \
     jdk.javadoc \
     jdk.jcmd \
@@ -194,8 +183,6 @@ LANGTOOLS_MODULES := \
     jdk.jdeps \
     jdk.jshell \
     #
-
-CORBA_MODULES := java.corba
 
 HOTSPOT_MODULES := \
     jdk.aot \
@@ -395,7 +382,7 @@ FindTransitiveIndirectDepsForModules = \
 # Upgradeable modules are those that are either defined as upgradeable or that
 # require an upradeable module.
 FindAllUpgradeableModules = \
-    $(sort $(filter-out $(MODULES_FILTER), $(UPGRADEABLE_MODULES) $(UPGRADEABLE_TOOL_MODULES)))
+    $(sort $(filter-out $(MODULES_FILTER), $(UPGRADEABLE_MODULES)))
 
 
 ################################################################################
@@ -406,12 +393,11 @@ ifneq ($(OPENJDK_TARGET_OS), $(OPENJDK_TARGET_OS_TYPE))
 endif
 LEGAL_SUBDIRS += share/legal
 
-# Find all legal dirs for a particular module
+# Find all legal src dirs for a particular module
 # $1 - Module to find legal dirs for
-FindModuleLegalDirs = \
+FindModuleLegalSrcDirs = \
     $(strip $(wildcard \
-        $(addsuffix /$(strip $1), $(SUPPORT_OUTPUTDIR)/modules_legal \
-            $(IMPORT_MODULES_LEGAL)) \
+        $(addsuffix /$(strip $1), $(IMPORT_MODULES_LEGAL)) \
         $(foreach sub, $(LEGAL_SUBDIRS), $(addsuffix /$(strip $1)/$(sub), $(TOP_SRC_DIRS))) \
     ))
 

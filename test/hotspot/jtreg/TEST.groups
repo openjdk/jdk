@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,10 @@ hotspot_all_no_apps = \
 hotspot_compiler = \
   compiler
 
+hotspot_compiler_xcomp = \
+  :hotspot_compiler \
+  -:tier1_compiler_not_xcomp
+
 hotspot_gc = \
   gc
 
@@ -54,12 +58,21 @@ hotspot_misc = \
 hotspot_native_sanity = \
   native_sanity
 
-hotspot_tier1_common = \
+tier1_common = \
   sanity/BasicVMTest.java \
   gtest/GTestWrapper.java
 
-hotspot_tier1_compiler_1 = \
-  compiler/aot/ \
+tier1_compiler = \
+  :tier1_compiler_1 \
+  :tier1_compiler_2 \
+  :tier1_compiler_3 \
+  :tier1_compiler_not_xcomp
+
+hotspot_not_fast_compiler = \
+  :hotspot_compiler \
+  -:tier1_compiler
+
+tier1_compiler_1 = \
   compiler/arraycopy/ \
   compiler/c1/ \
   compiler/c2/ \
@@ -74,7 +87,7 @@ hotspot_tier1_compiler_1 = \
   -compiler/c2/Test6603011.java \
   -compiler/c2/Test6912517.java \
 
-hotspot_tier1_compiler_2 = \
+tier1_compiler_2 = \
   compiler/classUnloading/ \
   compiler/codecache/ \
   compiler/codegen/ \
@@ -93,7 +106,7 @@ hotspot_tier1_compiler_2 = \
   -compiler/codecache/stress \
   -compiler/gcbarriers/PreserveFPRegistersTest.java
 
-hotspot_tier1_compiler_3 = \
+tier1_compiler_3 = \
   compiler/intrinsics/ \
   compiler/jsr292/ \
   compiler/loopopts/ \
@@ -106,6 +119,7 @@ hotspot_tier1_compiler_3 = \
   compiler/types/ \
   compiler/uncommontrap/ \
   compiler/unsafe/ \
+  compiler/vectorization/ \
   -compiler/intrinsics/bmi \
   -compiler/intrinsics/mathexact \
   -compiler/intrinsics/sha \
@@ -114,16 +128,32 @@ hotspot_tier1_compiler_3 = \
   -compiler/loopopts/Test7052494.java \
   -compiler/runtime/Test6826736.java
 
-hotspot_not_fast_compiler = \
-  :hotspot_compiler \
-  -:hotspot_tier1_compiler_1 \
-  -:hotspot_tier1_compiler_2 \
-  -:hotspot_tier1_compiler_3 \
+tier1_compiler_not_xcomp = \
+  compiler/aot
 
-hotspot_tier1_gc_1 = \
-  gc/g1/
+ctw_1 = \
+  applications/ctw/modules/ \
+  -:ctw_2
 
-hotspot_tier1_gc_2 = \
+ctw_2 = \
+  applications/ctw/modules/java_base.java \
+  applications/ctw/modules/java_desktop.java
+
+tier1_gc = \
+  :tier1_gc_1 \
+  :tier1_gc_2 \
+  :tier1_gc_gcold \
+  :tier1_gc_gcbasher
+
+hotspot_not_fast_gc = \
+  :hotspot_gc \
+  -:tier1_gc
+
+tier1_gc_1 = \
+  gc/g1/ \
+  -gc/g1/ihop/TestIHOPErgo.java
+
+tier1_gc_2 = \
   sanity/ExecuteInternalVMTests.java \
   gc/ \
   -gc/g1/ \
@@ -133,21 +163,21 @@ hotspot_tier1_gc_2 = \
   -gc/cms/TestMBeanCMS.java \
   -gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java
 
-hotspot_tier1_gc_gcold = \
-  gc/stress/gcold/TestGCOldWithG1.java
-  gc/stress/gcold/TestGCOldWithCMS.java
-  gc/stress/gcold/TestGCOldWithSerial.java
+tier1_gc_gcold = \
+  gc/stress/gcold/TestGCOldWithG1.java \
+  gc/stress/gcold/TestGCOldWithCMS.java \
+  gc/stress/gcold/TestGCOldWithSerial.java \
   gc/stress/gcold/TestGCOldWithParallel.java
 
-hotspot_tier1_gc_gcbasher = \
+tier1_gc_gcbasher = \
   gc/stress/gcbasher/TestGCBasherWithG1.java \
   gc/stress/gcbasher/TestGCBasherWithCMS.java \
   gc/stress/gcbasher/TestGCBasherWithSerial.java \
   gc/stress/gcbasher/TestGCBasherWithParallel.java
 
-hotspot_tier1_runtime = \
+tier1_runtime = \
   runtime/ \
- -runtime/6626217/Test6626217.sh \
+ -runtime/6626217/bug_21227.java \
  -runtime/7100935 \
  -runtime/7158988/FieldMonitor.java \
  -runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java \
@@ -190,7 +220,8 @@ hotspot_tier1_runtime = \
  -runtime/containers/ \
   sanity/ \
   testlibrary_tests/TestMutuallyExclusivePlatformPredicates.java \
- -:hotspot_tier1_runtime_appcds_exclude
+ -:tier1_runtime_appcds_exclude \
+ -runtime/signal
 
 hotspot_cds = \
   runtime/SharedArchiveFile/ \
@@ -202,30 +233,28 @@ hotspot_appcds = \
   runtime/appcds/
 
 # A subset of AppCDS tests to be run in JPRT push
-hotspot_tier1_runtime_appcds = \
+tier1_runtime_appcds = \
   runtime/appcds/HelloTest.java \
   runtime/appcds/sharedStrings/SharedStringsBasic.java \
   runtime/appcds/ClassLoaderTest.java
 
-hotspot_tier1_runtime_appcds_exclude = \
+tier1_runtime_appcds_exclude = \
   runtime/appcds/ \
-  -:hotspot_tier1_runtime_appcds
+  -:tier1_runtime_appcds
 
-hotspot_tier1_serviceability = \
+tier1_serviceability = \
   serviceability/dcmd/compiler \
   serviceability/logging \
-  serviceability/sa
+  serviceability/sa \
+  -serviceability/sa/ClhsdbScanOops.java \
+  -serviceability/sa/TestHeapDumpForLargeArray.java
 
-hotspot_tier1 = \
-  :hotspot_tier1_common \
-  :hotspot_tier1_compiler_1 \
-  :hotspot_tier1_compiler_2 \
-  :hotspot_tier1_compiler_3 \
-  :hotspot_tier1_gc_1 \
-  :hotspot_tier1_gc_2 \
-  :hotspot_tier1_gc_gcold \
-  :hotspot_tier1_runtime \
-  :hotspot_tier1_serviceability
+tier1 = \
+  :tier1_common \
+  :tier1_compiler \
+  :tier1_gc \
+  :tier1_runtime \
+  :tier1_serviceability
 
 hotspot_tier2_runtime = \
   runtime/ \
@@ -233,20 +262,22 @@ hotspot_tier2_runtime = \
  -runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java \
  -runtime/Thread/TestThreadDumpMonitorContention.java \
  -runtime/containers/ \
- -:hotspot_tier1_runtime \
- -:hotspot_tier1_serviceability \
- -:hotspot_tier2_runtime_platform_agnostic
+ -:tier1_runtime \
+ -:tier1_serviceability \
+ -:hotspot_tier2_runtime_platform_agnostic \
+ -runtime/signal \
+ -runtime/NMT/MallocStressTest.java
 
 hotspot_tier2_runtime_platform_agnostic = \
   runtime/SelectionResolution \
- -:hotspot_tier1_runtime
+ -:tier1_runtime
 
 hotspot_tier3_runtime = \
   runtime/ \
   serviceability/ \
  -runtime/containers/ \
- -:hotspot_tier1_runtime \
- -:hotspot_tier1_serviceability \
+ -:tier1_runtime \
+ -:tier1_serviceability \
  -:hotspot_tier2_runtime_platform_agnostic \
  -:hotspot_tier2_runtime
 
@@ -255,3 +286,12 @@ hotspot_runtime_minimalvm = \
   runtime/ErrorHandling \
   runtime/logging
 
+hotspot_nmt = \
+  runtime/NMT
+
+hotspot_rest_runtime = \
+  :hotspot_runtime \
+  -:tier1_runtime \
+  -:tier1_runtime_appcds_exclude \
+  -:hotspot_nmt \
+  -:hotspot_tier2_runtime_platform_agnostic

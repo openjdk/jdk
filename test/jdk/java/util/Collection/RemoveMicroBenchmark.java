@@ -27,12 +27,15 @@
  * @run main RemoveMicroBenchmark iterations=1 size=8 warmup=0
  */
 
+import static java.util.stream.Collectors.toCollection;
+
 import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -45,6 +48,7 @@ import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -53,7 +57,7 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
-import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 /**
  * Usage: [iterations=N] [size=N] [filter=REGEXP] [warmup=SECONDS]
@@ -70,25 +74,38 @@ public class RemoveMicroBenchmark {
         public Job(String name) { this.name = name; }
         public String name() { return name; }
         public abstract void work() throws Throwable;
+        public void run() {
+            try { work(); }
+            catch (Throwable ex) {
+                // current job cannot always be deduced from stacktrace.
+                throw new RuntimeException("Job failed: " + name(), ex);
+            }
+        }
     }
 
     final int iterations;
     final int size;             // number of elements in collections
     final double warmupSeconds;
     final long warmupNanos;
-    final Pattern filter;       // select subset of Jobs to run
+    final Pattern nameFilter;   // select subset of Jobs to run
     final boolean reverse;      // reverse order of Jobs
     final boolean shuffle;      // randomize order of Jobs
+
+    final ArrayList<Integer> elements; // contains size random Integers
 
     RemoveMicroBenchmark(String[] args) {
         iterations    = intArg(args, "iterations", 10_000);
         size          = intArg(args, "size", 1000);
         warmupSeconds = doubleArg(args, "warmup", 7.0);
-        filter        = patternArg(args, "filter");
+        nameFilter    = patternArg(args, "filter");
         reverse       = booleanArg(args, "reverse");
         shuffle       = booleanArg(args, "shuffle");
 
         warmupNanos = (long) (warmupSeconds * (1000L * 1000L * 1000L));
+
+        elements = ThreadLocalRandom.current().ints(size)
+            .mapToObj(x -> x)
+            .collect(toCollection(ArrayList::new));
     }
 
     // --------------- GC finalization infrastructure ---------------
@@ -97,6 +114,7 @@ public class RemoveMicroBenchmark {
     static void forceFullGc() {
         CountDownLatch finalizeDone = new CountDownLatch(1);
         WeakReference<?> ref = new WeakReference<Object>(new Object() {
+            @SuppressWarnings("deprecation")
             protected void finalize() { finalizeDone.countDown(); }});
         try {
             for (int i = 0; i < 10; i++) {
@@ -118,7 +136,7 @@ public class RemoveMicroBenchmark {
      * compiling everything worth compiling.
      * Returns array of average times per job per run.
      */
-    long[] time0(List<Job> jobs) throws Throwable {
+    long[] time0(List<Job> jobs) {
         final int size = jobs.size();
         long[] nanoss = new long[size];
         for (int i = 0; i < size; i++) {
@@ -127,7 +145,7 @@ public class RemoveMicroBenchmark {
             long totalTime;
             int runs = 0;
             long startTime = System.nanoTime();
-            do { job.work(); runs++; }
+            do { job.run(); runs++; }
             while ((totalTime = System.nanoTime() - startTime) < warmupNanos);
             nanoss[i] = totalTime/runs;
         }
@@ -201,22 +219,9 @@ public class RemoveMicroBenchmark {
         throw new IllegalArgumentException(val);
     }
 
-    private static List<Job> filter(Pattern filter, List<Job> jobs) {
-        if (filter == null) return jobs;
-        ArrayList<Job> newJobs = new ArrayList<>();
-        for (Job job : jobs)
-            if (filter.matcher(job.name()).find())
-                newJobs.add(job);
-        return newJobs;
-    }
-
     private static void deoptimize(int sum) {
         if (sum == 42)
             System.out.println("the answer");
-    }
-
-    private static <T> List<T> asSubList(List<T> list) {
-        return list.subList(0, list.size());
     }
 
     private static <T> Iterable<T> backwards(final List<T> list) {
@@ -245,67 +250,99 @@ public class RemoveMicroBenchmark {
         new RemoveMicroBenchmark(args).run();
     }
 
-    void run() throws Throwable {
-//         System.out.printf(
-//             "iterations=%d size=%d, warmup=%1g, filter=\"%s\"%n",
-//             iterations, size, warmupSeconds, filter);
+    HashMap<Class<?>, String> goodClassName = new HashMap<>();
 
-        final ArrayList<Integer> al = new ArrayList<>(size);
+    String goodClassName(Class<?> klazz) {
+        return goodClassName.computeIfAbsent(
+            klazz,
+            k -> {
+                String simple = k.getSimpleName();
+                return (simple.equals("SubList")) // too simple!
+                    ? k.getName().replaceFirst(".*\\.", "")
+                    : simple;
+            });
+    }
 
-        // Populate collections with random data
+    static List<Integer> makeSubList(List<Integer> list) {
         final ThreadLocalRandom rnd = ThreadLocalRandom.current();
-        for (int i = 0; i < size; i++)
-            al.add(rnd.nextInt(size));
+        int size = rnd.nextInt(4);
+        for (int i = size; i--> 0; )
+            list.add(rnd.nextInt());
+        int index = rnd.nextInt(size + 1);
+        return list.subList(index, index);
+    }
 
-        ArrayList<Job> jobs = new ArrayList<>();
+    private static <T> List<T> asSubList(List<T> list) {
+        return list.subList(0, list.size());
+    }
 
-        List.<Collection<Integer>>of(
-            new ArrayList<>(),
-            new LinkedList<>(),
-            new Vector<>(),
-            new ArrayDeque<>(),
-            new PriorityQueue<>(),
-            new ArrayBlockingQueue<>(al.size()),
-            new ConcurrentLinkedQueue<>(),
-            new ConcurrentLinkedDeque<>(),
-            new LinkedBlockingQueue<>(),
-            new LinkedBlockingDeque<>(),
-            new LinkedTransferQueue<>(),
-            new PriorityBlockingQueue<>())
-            .stream().forEach(
-                x -> {
-                    String klazz = x.getClass().getSimpleName();
-                    jobs.addAll(collectionJobs(klazz, () -> x, al));
-                    if (x instanceof Queue) {
-                        Queue<Integer> queue = (Queue<Integer>) x;
-                        jobs.addAll(queueJobs(klazz, () -> queue, al));
-                    }
-                    if (x instanceof Deque) {
-                        Deque<Integer> deque = (Deque<Integer>) x;
-                        jobs.addAll(dequeJobs(klazz, () -> deque, al));
-                    }
-                    if (x instanceof BlockingQueue) {
-                        BlockingQueue<Integer> q = (BlockingQueue<Integer>) x;
-                        jobs.addAll(blockingQueueJobs(klazz, () -> q, al));
-                    }
-                    if (x instanceof BlockingDeque) {
-                        BlockingDeque<Integer> q = (BlockingDeque<Integer>) x;
-                        jobs.addAll(blockingDequeJobs(klazz, () -> q, al));
-                    }
-                    if (x instanceof List) {
-                        List<Integer> list = (List<Integer>) x;
-                        jobs.addAll(
-                            collectionJobs(
-                                klazz + " subList",
-                                () -> list.subList(0, x.size()),
-                                al));
-                    }
-                });
+    @SafeVarargs @SuppressWarnings("varargs")
+    private <T> Stream<T> concatStreams(Stream<T> ... streams) {
+        return Stream.of(streams).flatMap(s -> s);
+    }
+
+    Class<?> topLevelClass(Object x) {
+        for (Class<?> k = x.getClass();; ) {
+            Class<?> enclosing = k.getEnclosingClass();
+            if (enclosing == null)
+                return k;
+            k = enclosing;
+        }
+    }
+
+    void run() throws Throwable {
+        ArrayList<Job> jobs = Stream.<Collection<Integer>>of(
+                new ArrayList<>(),
+                makeSubList(new ArrayList<>()),
+                new LinkedList<>(),
+                makeSubList(new LinkedList<>()),
+                new Vector<>(),
+                makeSubList(new Vector<>()),
+                new CopyOnWriteArrayList<>(),
+                makeSubList(new CopyOnWriteArrayList<>()),
+                new ArrayDeque<>(),
+                new PriorityQueue<>(),
+                new ArrayBlockingQueue<>(elements.size()),
+                new ConcurrentLinkedQueue<>(),
+                new ConcurrentLinkedDeque<>(),
+                new LinkedBlockingQueue<>(),
+                new LinkedBlockingDeque<>(),
+                new LinkedTransferQueue<>(),
+                new PriorityBlockingQueue<>())
+            .flatMap(x -> jobs(x))
+            .filter(job ->
+                nameFilter == null || nameFilter.matcher(job.name()).find())
+            .collect(toCollection(ArrayList::new));
 
         if (reverse) Collections.reverse(jobs);
         if (shuffle) Collections.shuffle(jobs);
 
-        time(filter(filter, jobs));
+        time(jobs);
+    }
+
+    Stream<Job> jobs(Collection<Integer> x) {
+        return concatStreams(
+            collectionJobs(x),
+
+            (CopyOnWriteArrayList.class.isAssignableFrom(topLevelClass(x)))
+            ? Stream.empty()
+            : iteratorRemoveJobs(x),
+
+            (x instanceof Queue)
+            ? queueJobs((Queue<Integer>)x)
+            : Stream.empty(),
+
+            (x instanceof Deque)
+            ? dequeJobs((Deque<Integer>)x)
+            : Stream.empty(),
+
+            (x instanceof BlockingQueue)
+            ? blockingQueueJobs((BlockingQueue<Integer>)x)
+            : Stream.empty(),
+
+            (x instanceof BlockingDeque)
+            ? blockingDequeJobs((BlockingDeque<Integer>)x)
+            : Stream.empty());
     }
 
     Collection<Integer> universeRecorder(int[] sum) {
@@ -324,75 +361,81 @@ public class RemoveMicroBenchmark {
             }};
     }
 
-    List<Job> collectionJobs(
-        String description,
-        Supplier<Collection<Integer>> supplier,
-        ArrayList<Integer> al) {
-        return List.of(
-            new Job(description + " removeIf") {
+    Stream<Job> collectionJobs(Collection<Integer> x) {
+        final String klazz = goodClassName(x.getClass());
+        return Stream.of(
+            new Job(klazz + " removeIf") {
                 public void work() throws Throwable {
-                    Collection<Integer> x = supplier.get();
                     int[] sum = new int[1];
                     for (int i = 0; i < iterations; i++) {
                         sum[0] = 0;
-                        x.addAll(al);
+                        x.addAll(elements);
                         x.removeIf(n -> { sum[0] += n; return true; });
                         check.sum(sum[0]);}}},
-            new Job(description + " removeIf rnd-two-pass") {
+            new Job(klazz + " removeIf rnd-two-pass") {
                 public void work() throws Throwable {
                     ThreadLocalRandom rnd = ThreadLocalRandom.current();
-                    Collection<Integer> x = supplier.get();
                     int[] sum = new int[1];
                     for (int i = 0; i < iterations; i++) {
                         sum[0] = 0;
-                        x.addAll(al);
+                        x.addAll(elements);
                         x.removeIf(n -> {
                             boolean b = rnd.nextBoolean();
                             if (b) sum[0] += n;
                             return b; });
                         x.removeIf(n -> { sum[0] += n; return true; });
                         check.sum(sum[0]);}}},
-            new Job(description + " removeAll") {
+            new Job(klazz + " removeAll") {
                 public void work() throws Throwable {
-                    Collection<Integer> x = supplier.get();
                     int[] sum = new int[1];
                     Collection<Integer> universe = universeRecorder(sum);
                     for (int i = 0; i < iterations; i++) {
                         sum[0] = 0;
-                        x.addAll(al);
+                        x.addAll(elements);
                         x.removeAll(universe);
                         check.sum(sum[0]);}}},
-            new Job(description + " retainAll") {
+            new Job(klazz + " retainAll") {
                 public void work() throws Throwable {
-                    Collection<Integer> x = supplier.get();
                     int[] sum = new int[1];
                     Collection<Integer> empty = emptyRecorder(sum);
                     for (int i = 0; i < iterations; i++) {
                         sum[0] = 0;
-                        x.addAll(al);
+                        x.addAll(elements);
                         x.retainAll(empty);
                         check.sum(sum[0]);}}},
-            new Job(description + " Iterator.remove") {
+            new Job(klazz + " clear") {
                 public void work() throws Throwable {
-                    Collection<Integer> x = supplier.get();
                     int[] sum = new int[1];
                     for (int i = 0; i < iterations; i++) {
                         sum[0] = 0;
-                        x.addAll(al);
+                        x.addAll(elements);
+                        x.forEach(e -> sum[0] += e);
+                        x.clear();
+                        check.sum(sum[0]);}}});
+    }
+
+    Stream<Job> iteratorRemoveJobs(Collection<Integer> x) {
+        final String klazz = goodClassName(x.getClass());
+        return Stream.of(
+             new Job(klazz + " Iterator.remove") {
+                public void work() throws Throwable {
+                    int[] sum = new int[1];
+                    for (int i = 0; i < iterations; i++) {
+                        sum[0] = 0;
+                        x.addAll(elements);
                         Iterator<Integer> it = x.iterator();
                         while (it.hasNext()) {
                             sum[0] += it.next();
                             it.remove();
                         }
                         check.sum(sum[0]);}}},
-            new Job(description + " Iterator.remove-rnd-two-pass") {
+            new Job(klazz + " Iterator.remove-rnd-two-pass") {
                 public void work() throws Throwable {
                     ThreadLocalRandom rnd = ThreadLocalRandom.current();
-                    Collection<Integer> x = supplier.get();
                     int[] sum = new int[1];
                     for (int i = 0; i < iterations; i++) {
                         sum[0] = 0;
-                        x.addAll(al);
+                        x.addAll(elements);
                         for (Iterator<Integer> it = x.iterator();
                              it.hasNext(); ) {
                             Integer e = it.next();
@@ -406,129 +449,103 @@ public class RemoveMicroBenchmark {
                             sum[0] += it.next();
                             it.remove();
                         }
-                        check.sum(sum[0]);}}},
-            new Job(description + " clear") {
-                public void work() throws Throwable {
-                    Collection<Integer> x = supplier.get();
-                    int[] sum = new int[1];
-                    for (int i = 0; i < iterations; i++) {
-                        sum[0] = 0;
-                        x.addAll(al);
-                        x.forEach(e -> sum[0] += e);
-                        x.clear();
                         check.sum(sum[0]);}}});
     }
 
-    List<Job> queueJobs(
-        String description,
-        Supplier<Queue<Integer>> supplier,
-        ArrayList<Integer> al) {
-        return List.of(
-            new Job(description + " poll()") {
+    Stream<Job> queueJobs(Queue<Integer> x) {
+        final String klazz = goodClassName(x.getClass());
+        return Stream.of(
+            new Job(klazz + " poll()") {
                 public void work() throws Throwable {
-                    Queue<Integer> x = supplier.get();
                     int[] sum = new int[1];
                     for (int i = 0; i < iterations; i++) {
                         sum[0] = 0;
-                        x.addAll(al);
+                        x.addAll(elements);
                         for (Integer e; (e = x.poll()) != null; )
                             sum[0] += e;
                         check.sum(sum[0]);}}});
     }
 
-    List<Job> dequeJobs(
-        String description,
-        Supplier<Deque<Integer>> supplier,
-        ArrayList<Integer> al) {
-        return List.of(
-            new Job(description + " descendingIterator().remove") {
+    Stream<Job> dequeJobs(Deque<Integer> x) {
+        final String klazz = goodClassName(x.getClass());
+        return Stream.of(
+            new Job(klazz + " descendingIterator().remove") {
                 public void work() throws Throwable {
-                    Deque<Integer> x = supplier.get();
                     int[] sum = new int[1];
                     for (int i = 0; i < iterations; i++) {
                         sum[0] = 0;
-                        x.addAll(al);
+                        x.addAll(elements);
                         Iterator<Integer> it = x.descendingIterator();
                         while (it.hasNext()) {
                             sum[0] += it.next();
                             it.remove();
                         }
                         check.sum(sum[0]);}}},
-            new Job(description + " pollFirst()") {
+            new Job(klazz + " pollFirst()") {
                 public void work() throws Throwable {
-                    Deque<Integer> x = supplier.get();
                     int[] sum = new int[1];
                     for (int i = 0; i < iterations; i++) {
                         sum[0] = 0;
-                        x.addAll(al);
+                        x.addAll(elements);
                         for (Integer e; (e = x.pollFirst()) != null; )
                             sum[0] += e;
                         check.sum(sum[0]);}}},
-            new Job(description + " pollLast()") {
+            new Job(klazz + " pollLast()") {
                 public void work() throws Throwable {
-                    Deque<Integer> x = supplier.get();
                     int[] sum = new int[1];
                     for (int i = 0; i < iterations; i++) {
                         sum[0] = 0;
-                        x.addAll(al);
+                        x.addAll(elements);
                         for (Integer e; (e = x.pollLast()) != null; )
                             sum[0] += e;
                         check.sum(sum[0]);}}});
     }
 
-    List<Job> blockingQueueJobs(
-        String description,
-        Supplier<BlockingQueue<Integer>> supplier,
-        ArrayList<Integer> al) {
-        return List.of(
-            new Job(description + " drainTo(sink)") {
+    Stream<Job> blockingQueueJobs(BlockingQueue<Integer> x) {
+        final String klazz = goodClassName(x.getClass());
+        return Stream.of(
+            new Job(klazz + " drainTo(sink)") {
                 public void work() throws Throwable {
-                    BlockingQueue<Integer> x = supplier.get();
                     ArrayList<Integer> sink = new ArrayList<>();
                     int[] sum = new int[1];
                     for (int i = 0; i < iterations; i++) {
                         sum[0] = 0;
                         sink.clear();
-                        x.addAll(al);
+                        x.addAll(elements);
                         x.drainTo(sink);
                         sink.forEach(e -> sum[0] += e);
                         check.sum(sum[0]);}}},
-            new Job(description + " drainTo(sink, n)") {
+            new Job(klazz + " drainTo(sink, n)") {
                 public void work() throws Throwable {
-                    BlockingQueue<Integer> x = supplier.get();
                     ArrayList<Integer> sink = new ArrayList<>();
                     int[] sum = new int[1];
                     for (int i = 0; i < iterations; i++) {
                         sum[0] = 0;
                         sink.clear();
-                        x.addAll(al);
-                        x.drainTo(sink, al.size());
+                        x.addAll(elements);
+                        x.drainTo(sink, elements.size());
                         sink.forEach(e -> sum[0] += e);
                         check.sum(sum[0]);}}});
     }
 
-    List<Job> blockingDequeJobs(
-        String description,
-        Supplier<BlockingDeque<Integer>> supplier,
-        ArrayList<Integer> al) {
-        return List.of(
-            new Job(description + " timed pollFirst()") {
+    Stream<Job> blockingDequeJobs(BlockingDeque<Integer> x) {
+        final String klazz = goodClassName(x.getClass());
+        return Stream.of(
+            new Job(klazz + " timed pollFirst()") {
                 public void work() throws Throwable {
-                    BlockingDeque<Integer> x = supplier.get();
                     int[] sum = new int[1];
                     for (int i = 0; i < iterations; i++) {
                         sum[0] = 0;
-                        x.addAll(al);
+                        x.addAll(elements);
                         for (Integer e; (e = x.pollFirst(0L, TimeUnit.DAYS)) != null; )
                             sum[0] += e;
                         check.sum(sum[0]);}}},
-            new Job(description + " timed pollLast()") {
+            new Job(klazz + " timed pollLast()") {
                 public void work() throws Throwable {
-                    BlockingDeque<Integer> x = supplier.get();
                     int[] sum = new int[1];
                     for (int i = 0; i < iterations; i++) {
                         sum[0] = 0;
-                        x.addAll(al);
+                        x.addAll(elements);
                         for (Integer e; (e = x.pollLast(0L, TimeUnit.DAYS)) != null; )
                             sum[0] += e;
                         check.sum(sum[0]);}}});

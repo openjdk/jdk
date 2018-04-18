@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,28 @@
 package sun.nio.ch;
 
 import java.io.IOException;
-import java.nio.channels.*;
-import java.nio.channels.spi.*;
-import java.util.Map;
+import java.nio.channels.ClosedSelectorException;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.spi.SelectorProvider;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import static sun.nio.ch.SolarisEventPort.PORT_SOURCE_FD;
+import static sun.nio.ch.SolarisEventPort.PORT_SOURCE_USER;
+import static sun.nio.ch.SolarisEventPort.SIZEOF_PORT_EVENT;
+import static sun.nio.ch.SolarisEventPort.OFFSETOF_EVENTS;
+import static sun.nio.ch.SolarisEventPort.OFFSETOF_SOURCE;
+import static sun.nio.ch.SolarisEventPort.OFFSETOF_OBJECT;
+import static sun.nio.ch.SolarisEventPort.port_create;
+import static sun.nio.ch.SolarisEventPort.port_close;
+import static sun.nio.ch.SolarisEventPort.port_associate;
+import static sun.nio.ch.SolarisEventPort.port_dissociate;
+import static sun.nio.ch.SolarisEventPort.port_getn;
+import static sun.nio.ch.SolarisEventPort.port_send;
 
 /**
  * Selector implementation based on the Solaris event port mechanism.
@@ -39,132 +56,239 @@ import java.util.Iterator;
 class EventPortSelectorImpl
     extends SelectorImpl
 {
-    private final EventPortWrapper pollWrapper;
+    // maximum number of events to retrive in one call to port_getn
+    static final int MAX_EVENTS = Math.min(IOUtil.fdLimit()-1, 1024);
 
-    // Maps from file descriptors to keys
-    private Map<Integer,SelectionKeyImpl> fdToKey;
+    // port file descriptor
+    private final int pfd;
 
-    // True if this Selector has been closed
-    private boolean closed = false;
+    // the poll array (populated by port_getn)
+    private final long pollArrayAddress;
+    private final AllocatedNativeObject pollArray;
 
-    // Lock for interrupt triggering and clearing
+    // maps file descriptor to selection key, synchronize on selector
+    private final Map<Integer, SelectionKeyImpl> fdToKey = new HashMap<>();
+
+    // the last update operation, incremented by processUpdateQueue
+    private int lastUpdate;
+
+    // pending new registrations/updates, queued by setEventOps and
+    // updateSelectedKeys
+    private final Object updateLock = new Object();
+    private final Deque<SelectionKeyImpl> updateKeys = new ArrayDeque<>();
+
+    // interrupt triggering and clearing
     private final Object interruptLock = new Object();
-    private boolean interruptTriggered = false;
+    private boolean interruptTriggered;
 
-    /**
-     * Package private constructor called by factory method in
-     * the abstract superclass Selector.
-     */
     EventPortSelectorImpl(SelectorProvider sp) throws IOException {
         super(sp);
-        pollWrapper = new EventPortWrapper();
-        fdToKey = new HashMap<>();
+
+        this.pfd = port_create();
+
+        int allocationSize = MAX_EVENTS * SIZEOF_PORT_EVENT;
+        this.pollArray = new AllocatedNativeObject(allocationSize, false);
+        this.pollArrayAddress = pollArray.address();
     }
 
-    protected int doSelect(long timeout) throws IOException {
-        if (closed)
+    private void ensureOpen() {
+        if (!isOpen())
             throw new ClosedSelectorException();
-        processDeregisterQueue();
-        int entries;
-        try {
-            begin();
-            entries = pollWrapper.poll(timeout);
-        } finally {
-            end();
-        }
-        processDeregisterQueue();
-        int numKeysUpdated = updateSelectedKeys(entries);
-        if (pollWrapper.interrupted()) {
-            synchronized (interruptLock) {
-                interruptTriggered = false;
-            }
-        }
-        return numKeysUpdated;
     }
 
-    private int updateSelectedKeys(int entries) {
-        int numKeysUpdated = 0;
-        for (int i=0; i<entries; i++) {
-            int nextFD = pollWrapper.getDescriptor(i);
-            SelectionKeyImpl ski = fdToKey.get(Integer.valueOf(nextFD));
-            if (ski != null) {
-                int rOps = pollWrapper.getEventOps(i);
-                if (selectedKeys.contains(ski)) {
-                    if (ski.channel.translateAndSetReadyOps(rOps, ski)) {
-                        numKeysUpdated++;
+    @Override
+    protected int doSelect(long timeout) throws IOException {
+        assert Thread.holdsLock(this);
+
+        long to = timeout;
+        boolean blocking = (to != 0);
+        boolean timedPoll = (to > 0);
+
+        int numEvents;
+        processUpdateQueue();
+        processDeregisterQueue();
+        try {
+            begin(blocking);
+
+            do {
+                long startTime = timedPoll ? System.nanoTime() : 0;
+                numEvents = port_getn(pfd, pollArrayAddress, MAX_EVENTS, to);
+                if (numEvents == IOStatus.INTERRUPTED && timedPoll) {
+                    // timed poll interrupted so need to adjust timeout
+                    long adjust = System.nanoTime() - startTime;
+                    to -= TimeUnit.MILLISECONDS.convert(adjust, TimeUnit.NANOSECONDS);
+                    if (to <= 0) {
+                        // timeout also expired so no retry
+                        numEvents = 0;
                     }
-                } else {
-                    ski.channel.translateAndSetReadyOps(rOps, ski);
-                    if ((ski.nioReadyOps() & ski.nioInterestOps()) != 0) {
-                        selectedKeys.add(ski);
-                        numKeysUpdated++;
+                }
+            } while (numEvents == IOStatus.INTERRUPTED);
+            assert IOStatus.check(numEvents);
+
+        } finally {
+            end(blocking);
+        }
+        processDeregisterQueue();
+        return processPortEvents(numEvents);
+    }
+
+    /**
+     * Process new registrations and changes to the interest ops.
+     */
+    private void processUpdateQueue() throws IOException {
+        assert Thread.holdsLock(this);
+
+        // bump lastUpdate to ensure that the interest ops are changed at most
+        // once per bulk update
+        lastUpdate++;
+
+        synchronized (updateLock) {
+            SelectionKeyImpl ski;
+            while ((ski = updateKeys.pollFirst()) != null) {
+                if (ski.isValid()) {
+                    int fd = ski.getFDVal();
+                    // add to fdToKey if needed
+                    SelectionKeyImpl previous = fdToKey.putIfAbsent(fd, ski);
+                    assert (previous == null) || (previous == ski);
+
+                    int newEvents = ski.translateInterestOps();
+                    if (newEvents != ski.registeredEvents()) {
+                        if (newEvents == 0) {
+                            port_dissociate(pfd, PORT_SOURCE_FD, fd);
+                        } else {
+                            port_associate(pfd, PORT_SOURCE_FD, fd, newEvents);
+                        }
+                        ski.registeredEvents(newEvents);
                     }
                 }
             }
         }
+    }
+
+    /**
+     * Process the port events. This method updates the keys of file descriptors
+     * that were polled. It also re-queues the key so that the file descriptor
+     * is re-associated at the next select operation.
+     *
+     * @return the number of selection keys updated.
+     */
+    private int processPortEvents(int numEvents) throws IOException {
+        assert Thread.holdsLock(this);
+        assert Thread.holdsLock(nioSelectedKeys());
+
+        int numKeysUpdated = 0;
+        boolean interrupted = false;
+
+        synchronized (updateLock) {
+            for (int i = 0; i < numEvents; i++) {
+                short source = getSource(i);
+                if (source == PORT_SOURCE_FD) {
+                    int fd = getDescriptor(i);
+                    SelectionKeyImpl ski = fdToKey.get(fd);
+                    if (ski != null) {
+                        int rOps = getEventOps(i);
+                        if (selectedKeys.contains(ski)) {
+                            if (ski.translateAndUpdateReadyOps(rOps)) {
+                                numKeysUpdated++;
+                            }
+                        } else {
+                            ski.translateAndSetReadyOps(rOps);
+                            if ((ski.nioReadyOps() & ski.nioInterestOps()) != 0) {
+                                selectedKeys.add(ski);
+                                numKeysUpdated++;
+                            }
+                        }
+
+                        // re-queue key so it re-associated at next select
+                        ski.registeredEvents(0);
+                        updateKeys.addLast(ski);
+                    }
+                } else if (source == PORT_SOURCE_USER) {
+                    interrupted = true;
+                } else {
+                    assert false;
+                }
+            }
+        }
+
+        if (interrupted) {
+            clearInterrupt();
+        }
         return numKeysUpdated;
     }
 
+    @Override
     protected void implClose() throws IOException {
-        if (closed)
-            return;
-        closed = true;
+        assert !isOpen();
+        assert Thread.holdsLock(this);
 
         // prevent further wakeup
         synchronized (interruptLock) {
             interruptTriggered = true;
         }
 
-        pollWrapper.close();
-        selectedKeys = null;
+        port_close(pfd);
+        pollArray.free();
+    }
 
-        // Deregister channels
-        Iterator<SelectionKey> i = keys.iterator();
-        while (i.hasNext()) {
-            SelectionKeyImpl ski = (SelectionKeyImpl)i.next();
-            deregister(ski);
-            SelectableChannel selch = ski.channel();
-            if (!selch.isOpen() && !selch.isRegistered())
-                ((SelChImpl)selch).kill();
-            i.remove();
+    @Override
+    protected void implDereg(SelectionKeyImpl ski) throws IOException {
+        assert !ski.isValid();
+        assert Thread.holdsLock(this);
+
+        int fd = ski.getFDVal();
+        if (fdToKey.remove(fd) != null) {
+            if (ski.registeredEvents() != 0) {
+                port_dissociate(pfd, PORT_SOURCE_FD, fd);
+                ski.registeredEvents(0);
+            }
+        } else {
+            assert ski.registeredEvents() == 0;
         }
     }
 
-    protected void implRegister(SelectionKeyImpl ski) {
-        int fd = IOUtil.fdVal(ski.channel.getFD());
-        fdToKey.put(Integer.valueOf(fd), ski);
-        keys.add(ski);
+    @Override
+    public void setEventOps(SelectionKeyImpl ski) {
+        ensureOpen();
+        synchronized (updateLock) {
+            updateKeys.addLast(ski);
+        }
     }
 
-    protected void implDereg(SelectionKeyImpl ski) throws IOException {
-        int i = ski.getIndex();
-        assert (i >= 0);
-        int fd = ski.channel.getFDVal();
-        fdToKey.remove(Integer.valueOf(fd));
-        pollWrapper.release(fd);
-        ski.setIndex(-1);
-        keys.remove(ski);
-        selectedKeys.remove(ski);
-        deregister((AbstractSelectionKey)ski);
-        SelectableChannel selch = ski.channel();
-        if (!selch.isOpen() && !selch.isRegistered())
-            ((SelChImpl)selch).kill();
-    }
-
-    public void putEventOps(SelectionKeyImpl sk, int ops) {
-        if (closed)
-            throw new ClosedSelectorException();
-        int fd = sk.channel.getFDVal();
-        pollWrapper.setInterest(fd, ops);
-    }
-
+    @Override
     public Selector wakeup() {
         synchronized (interruptLock) {
             if (!interruptTriggered) {
-                pollWrapper.interrupt();
+                try {
+                    port_send(pfd, 0);
+                } catch (IOException ioe) {
+                    throw new InternalError(ioe);
+                }
                 interruptTriggered = true;
             }
         }
         return this;
+    }
+
+    private void clearInterrupt() throws IOException {
+        synchronized (interruptLock) {
+            interruptTriggered = false;
+        }
+    }
+
+    private short getSource(int i) {
+        int offset = SIZEOF_PORT_EVENT * i + OFFSETOF_SOURCE;
+        return pollArray.getShort(offset);
+    }
+
+    private int getEventOps(int i) {
+        int offset = SIZEOF_PORT_EVENT * i + OFFSETOF_EVENTS;
+        return pollArray.getInt(offset);
+    }
+
+    private int getDescriptor(int i) {
+        //assert Unsafe.getUnsafe().addressSize() == 8;
+        int offset = SIZEOF_PORT_EVENT * i + OFFSETOF_OBJECT;
+        return (int) pollArray.getLong(offset);
     }
 }

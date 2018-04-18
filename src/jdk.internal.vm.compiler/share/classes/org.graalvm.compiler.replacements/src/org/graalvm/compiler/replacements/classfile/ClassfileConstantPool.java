@@ -112,6 +112,9 @@ class ClassfileConstantPool implements ConstantPool {
             case ClassfileConstant.CONSTANT_MethodType:
                 skipFully(stream, 2); // descriptor_index
                 return new ClassfileConstant.Unsupported(tag, "CONSTANT_MethodType_info");
+            case ClassfileConstant.CONSTANT_Dynamic:
+                skipFully(stream, 4); // bootstrap_method_attr_index, name_and_type_index
+                return new ClassfileConstant.Unsupported(tag, "CONSTANT_Dynamic_info");
             case ClassfileConstant.CONSTANT_InvokeDynamic:
                 skipFully(stream, 4); // bootstrap_method_attr_index, name_and_type_index
                 return new ClassfileConstant.Unsupported(tag, "CONSTANT_InvokeDynamic_info");

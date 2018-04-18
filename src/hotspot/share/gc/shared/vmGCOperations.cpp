@@ -27,7 +27,7 @@
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
 #include "gc/shared/gcId.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/vmGCOperations.hpp"
 #include "interpreter/oopMapCache.hpp"
@@ -35,7 +35,6 @@
 #include "memory/oopFactory.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
-#include "runtime/interfaceSupport.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
@@ -46,7 +45,7 @@
 
 VM_GC_Operation::~VM_GC_Operation() {
   CollectedHeap* ch = Universe::heap();
-  ch->collector_policy()->set_all_soft_refs_clear(false);
+  ch->soft_ref_policy()->set_all_soft_refs_clear(false);
 }
 
 // The same dtrace probe can't be inserted in two different files, so we

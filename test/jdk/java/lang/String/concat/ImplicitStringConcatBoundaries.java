@@ -31,7 +31,7 @@
  * @compile -XDstringConcat=inline ImplicitStringConcatBoundaries.java
  * @run main/othervm -Xverify:all ImplicitStringConcatBoundaries
  *
- * @compile -XDstringConcat=indy -source 1.9 -target 1.9 ImplicitStringConcatBoundaries.java
+ * @compile -XDstringConcat=indy ImplicitStringConcatBoundaries.java
  *
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB                                                              ImplicitStringConcatBoundaries
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED                                                        ImplicitStringConcatBoundaries
@@ -61,7 +61,7 @@
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT      -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatBoundaries
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT  -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatBoundaries
  *
- * @compile -XDstringConcat=indyWithConstants -source 1.9 -target 1.9 ImplicitStringConcatBoundaries.java
+ * @compile -XDstringConcat=indyWithConstants ImplicitStringConcatBoundaries.java
  *
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB                                                              ImplicitStringConcatBoundaries
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED                                                        ImplicitStringConcatBoundaries

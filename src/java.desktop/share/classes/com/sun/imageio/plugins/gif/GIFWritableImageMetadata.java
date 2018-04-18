@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,15 +203,18 @@ class GIFWritableImageMetadata extends GIFImageMetadata {
                                                  -1, true,
                                                  true, 1, 65535);
 
+                // As per the specification (89a), character cell width
+                // and character cell height occupy one byte each
+                // in the Plain Text Extension block.
                 characterCellWidth = getIntAttribute(node,
                                                      "characterCellWidth",
                                                      -1, true,
-                                                     true, 1, 65535);
+                                                     true, 1, 255);
 
                 characterCellHeight = getIntAttribute(node,
                                                       "characterCellHeight",
                                                       -1, true,
-                                                      true, 1, 65535);
+                                                      true, 1, 255);
 
                 textForegroundColor = getIntAttribute(node,
                                                       "textForegroundColor",

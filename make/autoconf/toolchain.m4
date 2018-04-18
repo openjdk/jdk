@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -52,10 +52,13 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 
 # Minimum supported versions, empty means unspecified
 TOOLCHAIN_MINIMUM_VERSION_clang="3.2"
-TOOLCHAIN_MINIMUM_VERSION_gcc="4.7"
+TOOLCHAIN_MINIMUM_VERSION_gcc="4.8"
 TOOLCHAIN_MINIMUM_VERSION_microsoft="16.00.30319.01" # VS2010
 TOOLCHAIN_MINIMUM_VERSION_solstudio="5.13"
 TOOLCHAIN_MINIMUM_VERSION_xlc=""
+
+# Minimum supported linker versions, empty means unspecified
+TOOLCHAIN_MINIMUM_LD_VERSION_gcc="2.18"
 
 # Prepare the system so that TOOLCHAIN_CHECK_COMPILER_VERSION can be called.
 # Must have CC_VERSION_NUMBER and CXX_VERSION_NUMBER.
@@ -106,6 +109,57 @@ BASIC_DEFUN_NAMED([TOOLCHAIN_CHECK_COMPILER_VERSION],
   COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", [$]1, [$]2, [$]3, [$]4) }' <<< "$REFERENCE_VERSION"`
 
   if test [$]ARG_PREFIX[COMPARABLE_ACTUAL_VERSION] -ge $COMPARABLE_REFERENCE_VERSION ; then
+    :
+    ARG_IF_AT_LEAST
+  else
+    :
+    ARG_IF_OLDER_THAN
+  fi
+])
+
+# Prepare the system so that TOOLCHAIN_CHECK_COMPILER_VERSION can be called.
+# Must have LD_VERSION_NUMBER.
+# $1 - optional variable prefix for compiler and version variables (BUILD_)
+# $2 - optional variable prefix for comparable variable (OPENJDK_BUILD_)
+AC_DEFUN([TOOLCHAIN_PREPARE_FOR_LD_VERSION_COMPARISONS],
+[
+  if [ [[ "[$]$1LD_VERSION_NUMBER" =~ (.*\.){4} ]] ]; then
+    AC_MSG_WARN([Linker version number has more than four parts (W.X.Y.Z): [$]$1LD_VERSION_NUMBER. Comparisons might be wrong.])
+  fi
+
+  if [ [[  "[$]$1LD_VERSION_NUMBER" =~ [0-9]{6} ]] ]; then
+    AC_MSG_WARN([Linker version number has a part larger than 99999: [$]$1LD_VERSION_NUMBER. Comparisons might be wrong.])
+  fi
+
+  $2COMPARABLE_ACTUAL_LD_VERSION=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", [$]1, [$]2, [$]3, [$]4) }' <<< "[$]$1LD_VERSION_NUMBER"`
+])
+
+# Check if the configured linker is of a specific version or
+# newer. TOOLCHAIN_PREPARE_FOR_LD_VERSION_COMPARISONS must have been called before.
+#
+# Arguments:
+#   VERSION:   The version string to check against the found version
+#   IF_AT_LEAST:   block to run if the compiler is at least this version (>=)
+#   IF_OLDER_THAN:   block to run if the compiler is older than this version (<)
+#   PREFIX:   Optional variable prefix for compiler to compare version for (OPENJDK_BUILD_)
+BASIC_DEFUN_NAMED([TOOLCHAIN_CHECK_LINKER_VERSION],
+    [*VERSION PREFIX IF_AT_LEAST IF_OLDER_THAN], [$@],
+[
+  # Need to assign to a variable since m4 is blocked from modifying parts in [].
+  REFERENCE_VERSION=ARG_VERSION
+
+  if [ [[ "$REFERENCE_VERSION" =~ (.*\.){4} ]] ]; then
+    AC_MSG_ERROR([Internal error: Cannot compare to ARG_VERSION, only four parts (W.X.Y.Z) is supported])
+  fi
+
+  if [ [[ "$REFERENCE_VERSION" =~ [0-9]{6} ]] ]; then
+    AC_MSG_ERROR([Internal error: Cannot compare to ARG_VERSION, only parts < 99999 is supported])
+  fi
+
+  # Version comparison method inspired by http://stackoverflow.com/a/24067243
+  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", [$]1, [$]2, [$]3, [$]4) }' <<< "$REFERENCE_VERSION"`
+
+  if test [$]ARG_PREFIX[COMPARABLE_ACTUAL_LD_VERSION] -ge $COMPARABLE_REFERENCE_VERSION ; then
     :
     ARG_IF_AT_LEAST
   else
@@ -241,6 +295,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
   TOOLCHAIN_DESCRIPTION=${!toolchain_var_name}
   toolchain_var_name=TOOLCHAIN_MINIMUM_VERSION_$TOOLCHAIN_TYPE
   TOOLCHAIN_MINIMUM_VERSION=${!toolchain_var_name}
+  toolchain_var_name=TOOLCHAIN_MINIMUM_LD_VERSION_$TOOLCHAIN_TYPE
+  TOOLCHAIN_MINIMUM_LD_VERSION=${!toolchain_var_name}
   toolchain_var_name=TOOLCHAIN_CC_BINARY_$TOOLCHAIN_TYPE
   TOOLCHAIN_CC_BINARY=${!toolchain_var_name}
   toolchain_var_name=TOOLCHAIN_CXX_BINARY_$TOOLCHAIN_TYPE
@@ -286,7 +342,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
     if test "x$XCODE_VERSION_OUTPUT" != x; then
       # For Xcode, we set the Xcode version as TOOLCHAIN_VERSION
       TOOLCHAIN_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | $CUT -f 2 -d ' '`
-      TOOLCHAIN_DESCRIPTION="$TOOLCHAIN_DESCRIPTION from Xcode"
+      TOOLCHAIN_DESCRIPTION="$TOOLCHAIN_DESCRIPTION from Xcode $TOOLCHAIN_VERSION"
     else
       # Currently we do not define this for other toolchains. This might change as the need arise.
       TOOLCHAIN_VERSION=
@@ -524,6 +580,77 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
   TOOLCHAIN_EXTRACT_COMPILER_VERSION([$1], [$COMPILER_NAME])
 ])
 
+# Retrieve the linker version number and store it in LD_VERSION_NUMBER
+# (as a dotted number), and
+# the full version string in LD_VERSION_STRING.
+#
+# $1 = linker to test (LD or BUILD_LD)
+# $2 = human readable name of linker (Linker or BuildLinker)
+AC_DEFUN([TOOLCHAIN_EXTRACT_LD_VERSION],
+[
+  LINKER=[$]$1
+  LINKER_NAME=$2
+
+  if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+    # cc -Wl,-V output typically looks like
+    #   ld: Software Generation Utilities - Solaris Link Editors: 5.11-1.2329
+
+    # solstudio cc requires us to have an existing file to pass as argument,
+    # but it need not be a syntactically correct C file, so just use
+    # ourself. :) The intermediate 'cat' is needed to stop ld from leaving
+    # a lingering a.out (!).
+    LINKER_VERSION_STRING=`$LD -Wl,-V $TOPDIR/configure 2>&1 | $CAT | $HEAD -n 1 | $SED -e 's/ld: //'`
+    # Extract version number
+    [ LINKER_VERSION_NUMBER=`$ECHO $LINKER_VERSION_STRING | \
+        $SED -e 's/.* \([0-9][0-9]*\.[0-9][0-9]*\)-\([0-9][0-9]*\.[0-9][0-9]*\)/\1.\2/'` ]
+  elif test  "x$TOOLCHAIN_TYPE" = xxlc; then
+    LINKER_VERSION_STRING="Unknown"
+    LINKER_VERSION_NUMBER="0.0"
+  elif test  "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    # There is no specific version flag, but all output starts with a version string.
+    # First line typically looks something like:
+    #   Microsoft (R) Incremental Linker Version 12.00.31101.0
+    LINKER_VERSION_STRING=`$LD 2>&1 | $HEAD -n 1 | $TR -d '\r'`
+    # Extract version number
+    [ LINKER_VERSION_NUMBER=`$ECHO $LINKER_VERSION_STRING | \
+        $SED -e 's/.* \([0-9][0-9]*\(\.[0-9][0-9]*\)*\).*/\1/'` ]
+  elif test  "x$TOOLCHAIN_TYPE" = xgcc; then
+    # gcc -Wl,-version output typically looks like
+    #   GNU ld (GNU Binutils for Ubuntu) 2.26.1
+    #   Copyright (C) 2015 Free Software Foundation, Inc.
+    #   This program is free software; [...]
+    LINKER_VERSION_STRING=`$LD -Wl,-version 2>&1 | $HEAD -n 1`
+    # Extract version number
+    [ LINKER_VERSION_NUMBER=`$ECHO $LINKER_VERSION_STRING | \
+        $SED -e 's/.* \([0-9][0-9]*\(\.[0-9][0-9]*\)*\).*/\1/'` ]
+  elif test  "x$TOOLCHAIN_TYPE" = xclang; then
+    # clang -Wl,-v output typically looks like
+    #   @(#)PROGRAM:ld  PROJECT:ld64-305
+    #   configured to support archs: armv6 armv7 armv7s arm64 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em (tvOS)
+    #   Library search paths: [...]
+    # or
+    #   GNU ld (GNU Binutils for Ubuntu) 2.26.1
+
+    LINKER_VERSION_STRING=`$LD -Wl,-v 2>&1 | $HEAD -n 1`
+    # Check if we're using the GNU ld
+    $ECHO "$LINKER_VERSION_STRING" | $GREP "GNU" > /dev/null
+    if test $? -eq 0; then
+      # Extract version number
+      [ LINKER_VERSION_NUMBER=`$ECHO $LINKER_VERSION_STRING | \
+          $SED -e 's/.* \([0-9][0-9]*\(\.[0-9][0-9]*\)*\).*/\1/'` ]
+    else
+      # Extract version number
+      [ LINKER_VERSION_NUMBER=`$ECHO $LINKER_VERSION_STRING | \
+          $SED -e 's/.*-\([0-9][0-9]*\)/\1/'` ]
+    fi
+  fi
+
+  $1_VERSION_NUMBER="$LINKER_VERSION_NUMBER"
+  $1_VERSION_STRING="$LINKER_VERSION_STRING"
+
+  AC_MSG_NOTICE([Using $TOOLCHAIN_TYPE $LINKER_NAME version $LINKER_VERSION_NUMBER @<:@$LINKER_VERSION_STRING@:>@])
+])
+
 # Detect the core components of the toolchain, i.e. the compilers (CC and CXX),
 # preprocessor (CPP and CXXCPP), the linker (LD), the assembler (AS) and the
 # archiver (AR). Verify that the compilers are correct according to the
@@ -590,6 +717,17 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   AC_SUBST(LD)
   # FIXME: it should be CXXLD, according to standard (cf CXXCPP)
   AC_SUBST(LDCXX)
+
+  TOOLCHAIN_EXTRACT_LD_VERSION([LD], [linker])
+  TOOLCHAIN_PREPARE_FOR_LD_VERSION_COMPARISONS
+
+  if test "x$TOOLCHAIN_MINIMUM_LD_VERSION" != x; then
+    TOOLCHAIN_CHECK_LINKER_VERSION(VERSION: $TOOLCHAIN_MINIMUM_LD_VERSION,
+        IF_OLDER_THAN: [
+          AC_MSG_WARN([You are using a linker older than $TOOLCHAIN_MINIMUM_LD_VERSION. This is not a supported configuration.])
+        ]
+    )
+  fi
 
   #
   # Setup the assembler (AS)
@@ -726,6 +864,14 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     # bails if argument is missing.
     BASIC_FIXUP_EXECUTABLE(OBJDUMP)
   fi
+
+  case $TOOLCHAIN_TYPE in
+    gcc|clang|solstudio)
+      BASIC_CHECK_TOOLS(CXXFILT, [c++filt])
+      BASIC_CHECK_NONEMPTY(CXXFILT)
+      BASIC_FIXUP_EXECUTABLE(CXXFILT)
+      ;;
+  esac
 ])
 
 # Setup the build tools (i.e, the compiler and linker used to build programs
@@ -783,7 +929,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
         fi
 
         BUILD_SYSROOT="$BUILD_DEVKIT_SYSROOT"
-        FLAGS_SETUP_SYSROOT_FLAGS([BUILD_])
 
          # Fallback default of just /bin if DEVKIT_PATH is not defined
         if test "x$BUILD_DEVKIT_TOOLCHAIN_PATH" = x; then
@@ -819,6 +964,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
     TOOLCHAIN_EXTRACT_COMPILER_VERSION(BUILD_CC, [BuildC])
     TOOLCHAIN_EXTRACT_COMPILER_VERSION(BUILD_CXX, [BuildC++])
     TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS([BUILD_], [OPENJDK_BUILD_])
+    TOOLCHAIN_EXTRACT_LD_VERSION(BUILD_LD, [build linker])
+    TOOLCHAIN_PREPARE_FOR_LD_VERSION_COMPARISONS([BUILD_], [OPENJDK_BUILD_])
   else
     # If we are not cross compiling, use the normal target compilers for
     # building the build platform executables.
@@ -830,11 +977,10 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
     BUILD_AS="$AS"
     BUILD_OBJCOPY="$OBJCOPY"
     BUILD_STRIP="$STRIP"
-    BUILD_SYSROOT_CFLAGS="$SYSROOT_CFLAGS"
-    BUILD_SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS"
     BUILD_AR="$AR"
 
     TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS([], [OPENJDK_BUILD_])
+    TOOLCHAIN_PREPARE_FOR_LD_VERSION_COMPARISONS([BUILD_], [OPENJDK_BUILD_])
   fi
 
   AC_SUBST(BUILD_CC)
@@ -843,8 +989,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
   AC_SUBST(BUILD_LDCXX)
   AC_SUBST(BUILD_NM)
   AC_SUBST(BUILD_AS)
-  AC_SUBST(BUILD_SYSROOT_CFLAGS)
-  AC_SUBST(BUILD_SYSROOT_LDFLAGS)
   AC_SUBST(BUILD_AR)
 ])
 
@@ -876,43 +1020,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
     # If this is a --hash-style=gnu system, use --hash-style=both, why?
     HAS_GNU_HASH=`$CC -dumpspecs 2>/dev/null | $GREP 'hash-style=gnu'`
     # This is later checked when setting flags.
-
-    # "-Og" suppported for GCC 4.8 and later
-    CFLAG_OPTIMIZE_DEBUG_FLAG="-Og"
-    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$CFLAG_OPTIMIZE_DEBUG_FLAG],
-      IF_TRUE: [HAS_CFLAG_OPTIMIZE_DEBUG=true],
-      IF_FALSE: [HAS_CFLAG_OPTIMIZE_DEBUG=false])
-
-    # "-z relro" supported in GNU binutils 2.17 and later
-    LINKER_RELRO_FLAG="-Wl,-z,relro"
-    FLAGS_LINKER_CHECK_ARGUMENTS(ARGUMENT: [$LINKER_RELRO_FLAG],
-      IF_TRUE: [HAS_LINKER_RELRO=true],
-      IF_FALSE: [HAS_LINKER_RELRO=false])
-
-    # "-z now" supported in GNU binutils 2.11 and later
-    LINKER_NOW_FLAG="-Wl,-z,now"
-    FLAGS_LINKER_CHECK_ARGUMENTS(ARGUMENT: [$LINKER_NOW_FLAG],
-      IF_TRUE: [HAS_LINKER_NOW=true],
-      IF_FALSE: [HAS_LINKER_NOW=false])
   fi
-
-  # Check for broken SuSE 'ld' for which 'Only anonymous version tag is allowed
-  # in executable.'
-  USING_BROKEN_SUSE_LD=no
-  if test "x$OPENJDK_TARGET_OS" = xlinux && test "x$TOOLCHAIN_TYPE" = xgcc; then
-    AC_MSG_CHECKING([for broken SuSE 'ld' which only understands anonymous version tags in executables])
-    $ECHO "SUNWprivate_1.1 { local: *; };" > version-script.map
-    $ECHO "int main() { }" > main.c
-    if $CXX -Wl,-version-script=version-script.map main.c 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD; then
-      AC_MSG_RESULT(no)
-      USING_BROKEN_SUSE_LD=no
-    else
-      AC_MSG_RESULT(yes)
-      USING_BROKEN_SUSE_LD=yes
-    fi
-    $RM version-script.map main.c a.out
-  fi
-  AC_SUBST(USING_BROKEN_SUSE_LD)
 
   # Setup hotspot lecagy names for toolchains
   HOTSPOT_TOOLCHAIN_TYPE=$TOOLCHAIN_TYPE

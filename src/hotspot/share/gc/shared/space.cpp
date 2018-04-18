@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
 #include "gc/shared/space.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/java.hpp"
@@ -49,7 +49,7 @@ HeapWord* DirtyCardToOopClosure::get_actual_top(HeapWord* top,
                                                 HeapWord* top_obj) {
   if (top_obj != NULL) {
     if (_sp->block_is_obj(top_obj)) {
-      if (_precision == CardTableModRefBS::ObjHeadPreciseArray) {
+      if (_precision == CardTable::ObjHeadPreciseArray) {
         if (oop(top_obj)->is_objArray() || oop(top_obj)->is_typeArray()) {
           // An arrayOop is starting on the dirty card - since we do exact
           // store checks for objArrays we are done.
@@ -125,11 +125,11 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
   HeapWord* bottom_obj;
   HeapWord* top_obj;
 
-  assert(_precision == CardTableModRefBS::ObjHeadPreciseArray ||
-         _precision == CardTableModRefBS::Precise,
+  assert(_precision == CardTable::ObjHeadPreciseArray ||
+         _precision == CardTable::Precise,
          "Only ones we deal with for now.");
 
-  assert(_precision != CardTableModRefBS::ObjHeadPreciseArray ||
+  assert(_precision != CardTable::ObjHeadPreciseArray ||
          _cl->idempotent() || _last_bottom == NULL ||
          top <= _last_bottom,
          "Not decreasing");
@@ -147,7 +147,7 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
   top = get_actual_top(top, top_obj);
 
   // If the previous call did some part of this region, don't redo.
-  if (_precision == CardTableModRefBS::ObjHeadPreciseArray &&
+  if (_precision == CardTable::ObjHeadPreciseArray &&
       _min_done != NULL &&
       _min_done < top) {
     top = _min_done;
@@ -159,7 +159,7 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
   bottom = MIN2(bottom, top);
   MemRegion extended_mr = MemRegion(bottom, top);
   assert(bottom <= top &&
-         (_precision != CardTableModRefBS::ObjHeadPreciseArray ||
+         (_precision != CardTable::ObjHeadPreciseArray ||
           _min_done == NULL ||
           top <= _min_done),
          "overlap!");
@@ -180,7 +180,7 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
 }
 
 DirtyCardToOopClosure* Space::new_dcto_cl(ExtendedOopClosure* cl,
-                                          CardTableModRefBS::PrecisionStyle precision,
+                                          CardTable::PrecisionStyle precision,
                                           HeapWord* boundary,
                                           bool parallel) {
   return new DirtyCardToOopClosure(this, cl, precision, boundary);
@@ -189,7 +189,7 @@ DirtyCardToOopClosure* Space::new_dcto_cl(ExtendedOopClosure* cl,
 HeapWord* ContiguousSpaceDCTOC::get_actual_top(HeapWord* top,
                                                HeapWord* top_obj) {
   if (top_obj != NULL && top_obj < (_sp->toContiguousSpace())->top()) {
-    if (_precision == CardTableModRefBS::ObjHeadPreciseArray) {
+    if (_precision == CardTable::ObjHeadPreciseArray) {
       if (oop(top_obj)->is_objArray() || oop(top_obj)->is_typeArray()) {
         // An arrayOop is starting on the dirty card - since we do exact
         // store checks for objArrays we are done.
@@ -260,7 +260,7 @@ ContiguousSpaceDCTOC__walk_mem_region_with_cl_DEFN(FilteringClosure)
 
 DirtyCardToOopClosure*
 ContiguousSpace::new_dcto_cl(ExtendedOopClosure* cl,
-                             CardTableModRefBS::PrecisionStyle precision,
+                             CardTable::PrecisionStyle precision,
                              HeapWord* boundary,
                              bool parallel) {
   return new ContiguousSpaceDCTOC(this, cl, precision, boundary);
@@ -397,7 +397,7 @@ HeapWord* CompactibleSpace::forward(oop q, size_t size,
   } else {
     // if the object isn't moving we can just set the mark to the default
     // mark and handle it specially later on.
-    q->init_mark();
+    q->init_mark_raw();
     assert(q->forwardee() == NULL, "should be forwarded to NULL");
   }
 
@@ -695,14 +695,14 @@ void ContiguousSpace::allocate_temporary_filler(int factor) {
     // allocate uninitialized int array
     typeArrayOop t = (typeArrayOop) allocate(size);
     assert(t != NULL, "allocation should succeed");
-    t->set_mark(markOopDesc::prototype());
+    t->set_mark_raw(markOopDesc::prototype());
     t->set_klass(Universe::intArrayKlassObj());
     t->set_length((int)length);
   } else {
     assert(size == CollectedHeap::min_fill_size(),
            "size for smallest fake object doesn't match");
     instanceOop obj = (instanceOop) allocate(size);
-    obj->set_mark(markOopDesc::prototype());
+    obj->set_mark_raw(markOopDesc::prototype());
     obj->set_klass_gap(0);
     obj->set_klass(SystemDictionary::Object_klass());
   }

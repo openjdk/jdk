@@ -242,6 +242,12 @@ public final class LambdaMetafactory {
     private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
     private static final MethodType[] EMPTY_MT_ARRAY = new MethodType[0];
 
+    // LambdaMetafactory bootstrap methods are startup sensitive, and may be
+    // special cased in java.lang.invokeBootstrapMethodInvoker to ensure
+    // methods are invoked with exact type information to avoid generating
+    // code for runtime checks. Take care any changes or additions here are
+    // reflected there as appropriate.
+
     /**
      * Facilitates the creation of simple "function objects" that implement one
      * or more interfaces by delegation to a provided {@link MethodHandle},

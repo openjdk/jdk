@@ -50,7 +50,11 @@ public final class FontUtilities {
 
     public static boolean isMacOSX;
 
+    public static boolean useJDKScaler;
+
     public static boolean useT2K;
+    // useLegacy is a short-term debugging transition aid.
+    public static boolean useLegacy;
 
     public static boolean isWindows;
 
@@ -76,11 +80,34 @@ public final class FontUtilities {
 
                 isMacOSX = osName.contains("OS X"); // TODO: MacOSX
 
-                String t2kStr = System.getProperty("sun.java2d.font.scaler");
-                if (t2kStr != null) {
-                    useT2K = "t2k".equals(t2kStr);
+                /* Support a value of "t2k" as meaning use the JDK internal
+                 * scaler over the platform scaler whether or not t2k is
+                 * actually available.
+                 * This can be considered transitional support for some
+                 * level of compatibility, as in it avoids the native scaler
+                 * as before but cannot guarantee rendering equivalence
+                 * with T2K.
+                 * It will also use t2k instead of freetype if t2k is
+                 * available - this is the same as before.
+                 * The new value of "jdk" means even if t2k is available,
+                 * the decision as to whether to use that or freetype is
+                 * not affected by this setting.
+                 */
+                String scalerStr = System.getProperty("sun.java2d.font.scaler");
+                if (scalerStr != null) {
+                    useT2K = "t2k".equals(scalerStr);
+                    if (useT2K) {
+                        System.out.println("WARNING: t2k will be removed in JDK 11.");
+                    }
+                    useLegacy = "legacy".equals(scalerStr);
+                    if (useLegacy) {
+                        System.out.println("WARNING: legacy behavior will be removed in JDK 11.");
+                    }
+                    useJDKScaler = useT2K || "jdk".equals(scalerStr);
                 } else {
                     useT2K = false;
+                    useLegacy = false;
+                    useJDKScaler = false;
                 }
                 isWindows = osName.startsWith("Windows");
                 String jreLibDirName = System.getProperty("java.home", "")

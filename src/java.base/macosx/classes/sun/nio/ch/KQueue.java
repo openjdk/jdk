@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ class KQueue {
 
     // flags
     static final int EV_ADD     = 0x0001;
+    static final int EV_DELETE  = 0x0002;
     static final int EV_ONESHOT = 0x0010;
     static final int EV_CLEAR   = 0x0020;
 
@@ -83,17 +84,17 @@ class KQueue {
     }
 
     /**
-     * Returns the file descriptor from a kevent (assuming to be in ident field)
+     * Returns the file descriptor from a kevent (assuming it is in the ident field)
      */
     static int getDescriptor(long address) {
         return unsafe.getInt(address + OFFSET_IDENT);
     }
 
-    static int getFilter(long address) {
+    static short getFilter(long address) {
         return unsafe.getShort(address + OFFSET_FILTER);
     }
 
-    static int getFlags(long address) {
+    static short getFlags(long address) {
         return unsafe.getShort(address + OFFSET_FLAGS);
     }
 
@@ -107,11 +108,11 @@ class KQueue {
 
     private static native int flagsOffset();
 
-    static native int kqueue() throws IOException;
+    static native int create() throws IOException;
 
-    static native int keventRegister(int kqpfd, int fd, int filter, int flags);
+    static native int register(int kqfd, int fd, int filter, int flags);
 
-    static native int keventPoll(int kqpfd, long pollAddress, int nevents)
+    static native int poll(int kqfd, long pollAddress, int nevents, long timeout)
         throws IOException;
 
     static {

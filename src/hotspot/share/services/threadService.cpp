@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
+#include "runtime/objectMonitor.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vframe.hpp"
@@ -120,7 +121,7 @@ void ThreadService::add_thread(JavaThread* thread, bool daemon) {
 }
 
 void ThreadService::remove_thread(JavaThread* thread, bool daemon) {
-  Atomic::dec((jint*) &_exiting_threads_count);
+  Atomic::dec(&_exiting_threads_count);
 
   if (thread->is_hidden_from_external_view() ||
       thread->is_jvmti_agent_thread()) {
@@ -131,17 +132,17 @@ void ThreadService::remove_thread(JavaThread* thread, bool daemon) {
 
   if (daemon) {
     _daemon_threads_count->set_value(_daemon_threads_count->get_value() - 1);
-    Atomic::dec((jint*) &_exiting_daemon_threads_count);
+    Atomic::dec(&_exiting_daemon_threads_count);
   }
 }
 
 void ThreadService::current_thread_exiting(JavaThread* jt) {
   assert(jt == JavaThread::current(), "Called by current thread");
-  Atomic::inc((jint*) &_exiting_threads_count);
+  Atomic::inc(&_exiting_threads_count);
 
   oop threadObj = jt->threadObj();
   if (threadObj != NULL && java_lang_Thread::is_daemon(threadObj)) {
-    Atomic::inc((jint*) &_exiting_daemon_threads_count);
+    Atomic::inc(&_exiting_daemon_threads_count);
   }
 }
 
@@ -489,7 +490,7 @@ StackFrameInfo::StackFrameInfo(javaVFrame* jvf, bool with_lock_info) {
       _locked_monitors = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<oop>(length, true);
       for (int i = 0; i < length; i++) {
         MonitorInfo* monitor = list->at(i);
-        assert(monitor->owner(), "This monitor must have an owning object");
+        assert(monitor->owner() != NULL, "This monitor must have an owning object");
         _locked_monitors->append(monitor->owner());
       }
     }
@@ -606,7 +607,7 @@ bool ThreadStackTrace::is_owned_monitor_on_stack(oop object) {
     for (int j = 0; j < len; j++) {
       oop monitor = locked_monitors->at(j);
       assert(monitor != NULL, "must be a Java object");
-      if (monitor == object) {
+      if (oopDesc::equals(monitor, object)) {
         found = true;
         break;
       }

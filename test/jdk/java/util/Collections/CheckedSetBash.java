@@ -30,13 +30,23 @@
  * @key randomness
  */
 
-import java.util.*;
-import java.util.function.Supplier;
-import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
-import static org.testng.Assert.fail;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.Supplier;
+
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 public class CheckedSetBash {
     static final int numItr = 100;

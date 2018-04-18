@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary Initiating and defining classloader test.
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -36,7 +35,7 @@
  * @compile test-classes/ForNameTest.java
  * @compile test-classes/BootClassPathAppendHelper.java
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main ClassLoaderTest
  */
 
@@ -63,15 +62,10 @@ public class ClassLoaderTest {
 
         TestCommon.dump(appJar, appClasses, bootClassPath);
 
-        OutputAnalyzer runtimeOutput = TestCommon.execCommon(
+        TestCommon.run(
             "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
-            "-cp", appJar, bootClassPath, "-Xlog:class+load", "HelloWB");
-
-        if (!TestCommon.isUnableToMap(runtimeOutput)) {
-            runtimeOutput.shouldNotContain(
-                "[class,load] HelloWB source: shared objects file by jdk/internal/misc/ClassLoaders$AppClassLoader");
-            runtimeOutput.shouldContain("[class,load] HelloWB source: shared objects file");
-        }
+            "-cp", appJar, bootClassPath, "HelloWB")
+          .assertNormalExit(output -> output.shouldContain("HelloWB.class.getClassLoader() = null"));
     }
 
     public void testDefiningLoader() throws Exception {
@@ -85,9 +79,11 @@ public class ClassLoaderTest {
         String bootClassPath = "-Xbootclasspath/a:" + helloJar +
             File.pathSeparator + whiteBoxJar;
 
+        // Archive the "Hello" class from the appended bootclasspath
         TestCommon.dump(helloJar, TestCommon.list("Hello"), bootClassPath);
 
-        TestCommon.execCommon("-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
-            "-cp", appJar, bootClassPath, "-XX:+TraceClassPaths", "ForNameTest");
+        TestCommon.run("-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
+            "-cp", appJar, bootClassPath, "-Xlog:class+path=trace", "ForNameTest")
+          .assertNormalExit();
     }
 }

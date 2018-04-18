@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,6 @@ $(eval $(call IncludeCustomExtension, CompileJavaModules.gmk))
 ################################################################################
 # Module specific build settings
 
-java.activation_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
-
-################################################################################
-
 java.base_ADD_JAVAC_FLAGS += -Xdoclint:all/protected,-reference '-Xdoclint/package:java.*,javax.*' -XDstringConcat=inline
 java.base_COPY += .icu .dat .spp content-types.properties hijrah-config-islamic-umalqura.properties
 java.base_CLEAN += intrinsic.properties
@@ -54,14 +50,6 @@ java.base_EXCLUDES += java/lang/doc-files
 # Exclude BreakIterator classes that are just used in compile process to generate
 # data files and shouldn't go in the product
 java.base_EXCLUDE_FILES += sun/text/resources/BreakIteratorRules.java
-
-ifneq ($(filter solaris macosx linux windows,$(OPENJDK_TARGET_OS)), )
-  java.base_EXCLUDE_FILES += \
-      sun/nio/ch/AbstractPollSelectorImpl.java \
-      sun/nio/ch/PollSelectorImpl.java \
-      sun/nio/ch/PollSelectorProvider.java \
-      #
-endif
 
 ifneq ($(OPENJDK_TARGET_OS), solaris)
   java.base_EXCLUDE_FILES += \
@@ -256,7 +244,7 @@ java.prefs_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,
 
 ################################################################################
 
-java.transaction_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+java.transaction.xa_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:javax.*'
 
 ################################################################################
 
@@ -279,27 +267,6 @@ java.rmi_CLEAN_FILES += $(wildcard \
 
 ################################################################################
 
-java.corba_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
-
-java.corba_COPY += .prp
-java.corba_CLEAN += .properties
-
-java.corba_EXCLUDES += \
-    com/sun/corba/se/PortableActivationIDL \
-    com/sun/tools/corba/se/logutil \
-    #
-java.corba_EXCLUDE_FILES += \
-    com/sun/corba/se/impl/presentation/rmi/JNDIStateFactoryImpl.java \
-    com/sun/corba/se/spi/presentation/rmi/StubWrapper.java \
-    com/sun/org/omg/CORBA/IDLTypeOperations.java \
-    com/sun/org/omg/CORBA/IRObjectOperations.java \
-    org/omg/PortableInterceptor/UNKNOWN.java \
-    com/sun/tools/corba/se/idl/ResourceBundleUtil.java \
-    com/sun/corba/se/impl/presentation/rmi/jndi.properties \
-    #
-
-################################################################################
-
 java.xml_ADD_JAVAC_FLAGS += -Xdoclint:all/protected \
     '-Xdoclint/package:$(call CommaList, javax.xml.catalog javax.xml.datatype \
     javax.xml.transform javax.xml.validation javax.xml.xpath)'
@@ -307,29 +274,8 @@ java.xml_CLEAN += .properties
 
 ################################################################################
 
-java.xml.bind_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
-java.xml.bind_CLEAN += .properties
-
-################################################################################
-
-java.xml.soap_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
-java.xml.soap_CLEAN += .properties
-
-################################################################################
-
-java.xml.ws_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
-java.xml.ws_COPY += .xml
-java.xml.ws_CLEAN += .properties
-
-################################################################################
-
 java.naming_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*' -Xlint:-exports
 java.naming_CLEAN += jndiprovider.properties
-
-################################################################################
-
-java.security.saaj_ADD_JAVAC_FLAGS += -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
-java.security.saaj_CLEAN += .properties
 
 ################################################################################
 
@@ -493,6 +439,7 @@ jdk.internal.vm.compiler_ADD_JAVAC_FLAGS += -parameters -XDstringConcat=inline \
     #
 
 jdk.internal.vm.compiler_EXCLUDES += \
+    org.graalvm.collections.test \
     org.graalvm.compiler.core.match.processor \
     org.graalvm.compiler.nodeinfo.processor \
     org.graalvm.compiler.options.processor \
@@ -511,6 +458,7 @@ jdk.internal.vm.compiler_EXCLUDES += \
     org.graalvm.compiler.graph.test \
     org.graalvm.compiler.hotspot.amd64.test \
     org.graalvm.compiler.hotspot.lir.test \
+    org.graalvm.compiler.hotspot.sparc.test \
     org.graalvm.compiler.hotspot.test \
     org.graalvm.compiler.jtt \
     org.graalvm.compiler.lir.jtt \
@@ -550,17 +498,6 @@ jdk.aot_ADD_JAVAC_FLAGS += -parameters -XDstringConcat=inline \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=jdk.internal.vm.compiler,jdk.aot \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.sparc=jdk.internal.vm.compiler,jdk.aot \
     #
-
-################################################################################
-
-jdk.xml.bind_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
-jdk.xml.bind_CLEAN += .properties
-jdk.xml.bind_COPY += .xsd JAXBContextFactory.java ZeroOneBooleanAdapter.java
-
-################################################################################
-
-jdk.xml.ws_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
-jdk.xml.ws_CLEAN += .properties
 
 ################################################################################
 

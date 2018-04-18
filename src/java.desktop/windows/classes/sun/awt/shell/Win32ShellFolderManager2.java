@@ -447,20 +447,25 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
             if (dir instanceof Win32ShellFolder2) {
                 Win32ShellFolder2 sf = (Win32ShellFolder2)dir;
 
-                return (sf.isFileSystem() && sf.parent != null &&
-                        sf.parent.equals(getDrives()));
+                //This includes all the drives under "My PC" or "My Computer.
+                // On windows 10, "External Drives" are listed under "Desktop"
+                // also
+                return  (sf.isFileSystem() && sf.parent != null &&
+                        (sf.parent.equals (getDrives()) ||
+                        (sf.parent.equals (getDesktop()) && isDrive(dir))));
             }
-            String path = dir.getPath();
-
-            if (path.length() != 3 || path.charAt(1) != ':') {
-                return false;
-            }
-
-            File[] roots = Win32ShellFolder2.listRoots();
-
-            return roots != null && Arrays.asList(roots).contains(dir);
+            return isDrive(dir);
         }
         return false;
+    }
+
+    private boolean isDrive(File dir) {
+        String path = dir.getPath();
+        if (path.length() != 3 || path.charAt(1) != ':') {
+            return false;
+        }
+        File[] roots = Win32ShellFolder2.listRoots();
+        return roots != null && Arrays.asList(roots).contains(dir);
     }
 
     private static List<Win32ShellFolder2> topFolderList = null;

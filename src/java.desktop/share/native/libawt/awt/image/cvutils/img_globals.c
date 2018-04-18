@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * by the image conversion package.
  */
 
+#include "jni.h"
 #include "img_globals.h"
 
 #include "java_awt_image_IndexColorModel.h"
@@ -42,7 +43,7 @@
  * a lookup table which returns the next color darker than the error
  * adjusted color used as the index.
  */
-void
+JNIEXPORT void JNICALL
 make_uns_ordered_dither_array(uns_ordered_dither_array oda,
                               int quantum)
 {

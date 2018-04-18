@@ -35,9 +35,6 @@
 
 package java.util.concurrent;
 
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.HashSet;
@@ -264,13 +261,12 @@ import java.util.concurrent.locks.ReentrantLock;
  * assist in storage reclamation when large numbers of queued tasks
  * become cancelled.</dd>
  *
- * <dt>Finalization</dt>
+ * <dt>Reclamation</dt>
  *
  * <dd>A pool that is no longer referenced in a program <em>AND</em>
- * has no remaining threads will be {@code shutdown} automatically. If
- * you would like to ensure that unreferenced pools are reclaimed even
- * if users forget to call {@link #shutdown}, then you must arrange
- * that unused threads eventually die, by setting appropriate
+ * has no remaining threads may be reclaimed (garbage collected)
+ * without being explicitly shutdown. You can configure a pool to
+ * allow all unused threads to eventually die by setting appropriate
  * keep-alive times, using a lower bound of zero core threads and/or
  * setting {@link #allowCoreThreadTimeOut(boolean)}.  </dd>
  *
@@ -361,7 +357,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * time, but need not hit each state. The transitions are:
      *
      * RUNNING -> SHUTDOWN
-     *    On invocation of shutdown(), perhaps implicitly in finalize()
+     *    On invocation of shutdown()
      * (RUNNING or SHUTDOWN) -> STOP
      *    On invocation of shutdownNow()
      * SHUTDOWN -> TIDYING
@@ -580,9 +576,6 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      */
     private static final RuntimePermission shutdownPerm =
         new RuntimePermission("modifyThread");
-
-    /** The context to be used when executing the finalizer, or null. */
-    private final AccessControlContext acc;
 
     /**
      * Class Worker mainly maintains interrupt control state for
@@ -1300,9 +1293,6 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
             throw new IllegalArgumentException();
         if (workQueue == null || threadFactory == null || handler == null)
             throw new NullPointerException();
-        this.acc = (System.getSecurityManager() == null)
-            ? null
-            : AccessController.getContext();
         this.corePoolSize = corePoolSize;
         this.maximumPoolSize = maximumPoolSize;
         this.workQueue = workQueue;
@@ -1469,32 +1459,17 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         }
     }
 
+    // Override without "throws Throwable" for compatibility with subclasses
+    // whose finalize method invokes super.finalize() (as is recommended).
+    // Before JDK 11, finalize() had a non-empty method body.
+
     /**
-     * Invokes {@code shutdown} when this executor is no longer
-     * referenced and it has no threads.
-     *
-     * <p>This method is invoked with privileges that are restricted by
-     * the security context of the caller that invokes the constructor.
-     *
-     * @deprecated The {@code finalize} method has been deprecated.
-     *     Subclasses that override {@code finalize} in order to perform cleanup
-     *     should be modified to use alternative cleanup mechanisms and
-     *     to remove the overriding {@code finalize} method.
-     *     When overriding the {@code finalize} method, its implementation must explicitly
-     *     ensure that {@code super.finalize()} is invoked as described in {@link Object#finalize}.
-     *     See the specification for {@link Object#finalize()} for further
-     *     information about migration options.
+     * @implNote Previous versions of this class had a finalize method
+     * that shut down this executor, but in this version, finalize
+     * does nothing.
      */
     @Deprecated(since="9")
-    protected void finalize() {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null || acc == null) {
-            shutdown();
-        } else {
-            PrivilegedAction<Void> pa = () -> { shutdown(); return null; };
-            AccessController.doPrivileged(pa, acc);
-        }
-    }
+    protected void finalize() {}
 
     /**
      * Sets the thread factory used to create new threads.

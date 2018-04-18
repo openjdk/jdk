@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
 #include "code/codeCache.hpp"
 #include "code/relocInfo.hpp"
 #include "code/relocInfo_ext.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"
 #include "runtime/os.hpp"
@@ -58,9 +59,10 @@ address symbolic_Relocation::symbolic_value(symbolic_Relocation::symbolic_refere
     return (address)Universe::heap()->end_addr();
   }
   case symbolic_Relocation::card_table_reference: {
-    BarrierSet* bs = Universe::heap()->barrier_set();
-    CardTableModRefBS* ct = (CardTableModRefBS*)bs;
-    return (address)ct->byte_map_base;
+    BarrierSet* bs = BarrierSet::barrier_set();
+    CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
+    CardTable* ct = ctbs->card_table();
+    return (address)ct->byte_map_base();
   }
   case symbolic_Relocation::mark_bits_reference: {
     return (address)Universe::verify_mark_bits();

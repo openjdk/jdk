@@ -27,6 +27,8 @@
  * @run testng AddNonComparable
  */
 
+import org.testng.annotations.Test;
+
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.SortedMap;
@@ -39,8 +41,8 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
-import static org.testng.Assert.*;
-import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 public class AddNonComparable {
 

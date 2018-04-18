@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,28 +33,20 @@ else
   LIBPREF_SRC_DIRS := $(TOPDIR)/src/java.prefs/$(OPENJDK_TARGET_OS_TYPE)/native/libprefs
 endif
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBPREFS, \
-    LIBRARY := prefs, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+$(eval $(call SetupJdkLibrary, BUILD_LIBPREFS, \
+    NAME := prefs, \
     SRC := $(LIBPREF_SRC_DIRS), \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(CFLAGS_JDKLIB) $(addprefix -I, $(LIBPREF_SRC_DIRS)) \
         $(LIBJAVA_HEADER_FLAGS), \
-    MAPFILE := $(TOPDIR)/make/mapfiles/libprefs/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljvm, \
     LIBS_linux := -ljava, \
-    LIBS_solaris := -ljava -lc, \
+    LIBS_solaris := -ljava, \
     LIBS_aix := -ljava, \
     LIBS_macosx := -framework CoreFoundation -framework Foundation, \
     LIBS_windows := advapi32.lib jvm.lib $(WIN_JAVA_LIB), \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=prefs.dll" \
-        -D "JDK_INTERNAL_NAME=prefs" \
-        -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libprefs, \
 ))
 
 $(BUILD_LIBPREFS): $(call FindLib, java.base, java)

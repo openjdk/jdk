@@ -42,10 +42,6 @@ template <class Chunk_t, class FreeList_t> class AscendTreeCensusClosure;
 template <class Chunk_t, class FreeList_t> class DescendTreeCensusClosure;
 template <class Chunk_t, class FreeList_t> class DescendTreeSearchClosure;
 
-class FreeChunk;
-template <class> class AdaptiveFreeList;
-typedef BinaryTreeDictionary<FreeChunk, AdaptiveFreeList<FreeChunk> > AFLBinaryTreeDictionary;
-
 template <class Chunk_t, class FreeList_t>
 class TreeList : public FreeList_t {
   friend class TreeChunk<Chunk_t, FreeList_t>;
@@ -177,6 +173,8 @@ size_t TreeChunk<Chunk_t, FreeList_t>::min_size() { return _min_tree_chunk_size;
 template <class Chunk_t, class FreeList_t>
 class BinaryTreeDictionary: public CHeapObj<mtGC> {
   friend class VMStructs;
+
+ protected:
   size_t     _total_size;
   size_t     _total_free_blocks;
   TreeList<Chunk_t, FreeList_t>* _root;
@@ -298,32 +296,9 @@ class BinaryTreeDictionary: public CHeapObj<mtGC> {
 
   Chunk_t* find_chunk_ends_at(HeapWord* target) const;
 
-  // Find the list with size "size" in the binary tree and update
-  // the statistics in the list according to "split" (chunk was
-  // split or coalesce) and "birth" (chunk was added or removed).
-  void       dict_census_update(size_t size, bool split, bool birth);
-  // Return true if the dictionary is overpopulated (more chunks of
-  // this size than desired) for size "size".
-  bool       coal_dict_over_populated(size_t size);
-  // Methods called at the beginning of a sweep to prepare the
-  // statistics for the sweep.
-  void       begin_sweep_dict_census(double coalSurplusPercent,
-                                  float inter_sweep_current,
-                                  float inter_sweep_estimate,
-                                  float intra_sweep_estimate);
-  // Methods called after the end of a sweep to modify the
-  // statistics for the sweep.
-  void       end_sweep_dict_census(double splitSurplusPercent);
   // Return the largest free chunk in the tree.
   Chunk_t* find_largest_dict() const;
-  // Accessors for statistics
-  void       set_tree_surplus(double splitSurplusPercent);
-  void       set_tree_hints(void);
-  // Reset statistics for all the lists in the tree.
-  void       clear_tree_census(void);
-  // Print the statistics for all the lists in the tree.  Also may
-  // print out summaries.
-  void       print_dict_census(outputStream* st) const;
+
   void       print_free_lists(outputStream* st) const;
 
   // For debugging.  Returns the sum of the _returned_bytes for
@@ -341,6 +316,85 @@ class BinaryTreeDictionary: public CHeapObj<mtGC> {
   Mutex*     par_lock()                const PRODUCT_RETURN0;
   void       set_par_lock(Mutex* lock)       PRODUCT_RETURN;
   void       verify_par_locked()       const PRODUCT_RETURN;
+};
+
+
+// Closures for walking the binary tree.
+//   do_list() walks the free list in a node applying the closure
+//     to each free chunk in the list
+//   do_tree() walks the nodes in the binary tree applying do_list()
+//     to each list at each node.
+
+template <class Chunk_t, class FreeList_t>
+class TreeCensusClosure : public StackObj {
+ protected:
+  virtual void do_list(FreeList_t* fl) = 0;
+ public:
+  virtual void do_tree(TreeList<Chunk_t, FreeList_t>* tl) = 0;
+};
+
+template <class Chunk_t, class FreeList_t>
+class AscendTreeCensusClosure : public TreeCensusClosure<Chunk_t, FreeList_t> {
+ public:
+  void do_tree(TreeList<Chunk_t, FreeList_t>* tl) {
+    if (tl != NULL) {
+      do_tree(tl->left());
+      this->do_list(tl);
+      do_tree(tl->right());
+    }
+  }
+};
+
+template <class Chunk_t, class FreeList_t>
+class DescendTreeCensusClosure : public TreeCensusClosure<Chunk_t, FreeList_t> {
+ public:
+  void do_tree(TreeList<Chunk_t, FreeList_t>* tl) {
+    if (tl != NULL) {
+      do_tree(tl->right());
+      this->do_list(tl);
+      do_tree(tl->left());
+    }
+  }
+};
+
+// Used to search the tree until a condition is met.
+// Similar to TreeCensusClosure but searches the
+// tree and returns promptly when found.
+
+template <class Chunk_t, class FreeList_t>
+class TreeSearchClosure : public StackObj {
+ protected:
+  virtual bool do_list(FreeList_t* fl) = 0;
+ public:
+  virtual bool do_tree(TreeList<Chunk_t, FreeList_t>* tl) = 0;
+};
+
+#if 0 //  Don't need this yet but here for symmetry.
+template <class Chunk_t, class FreeList_t>
+class AscendTreeSearchClosure : public TreeSearchClosure<Chunk_t> {
+ public:
+  bool do_tree(TreeList<Chunk_t, FreeList_t>* tl) {
+    if (tl != NULL) {
+      if (do_tree(tl->left())) return true;
+      if (do_list(tl)) return true;
+      if (do_tree(tl->right())) return true;
+    }
+    return false;
+  }
+};
+#endif
+
+template <class Chunk_t, class FreeList_t>
+class DescendTreeSearchClosure : public TreeSearchClosure<Chunk_t, FreeList_t> {
+ public:
+  bool do_tree(TreeList<Chunk_t, FreeList_t>* tl) {
+    if (tl != NULL) {
+      if (do_tree(tl->right())) return true;
+      if (this->do_list(tl)) return true;
+      if (do_tree(tl->left())) return true;
+    }
+    return false;
+  }
 };
 
 #endif // SHARE_VM_MEMORY_BINARYTREEDICTIONARY_HPP

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2017, SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,16 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_ppc.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/icache.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
@@ -42,11 +43,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
-#include "gc/g1/heapRegion.hpp"
-#endif // INCLUDE_ALL_GCS
 #ifdef COMPILER2
 #include "opto/intrinsicnode.hpp"
 #endif
@@ -2336,9 +2332,6 @@ void MacroAssembler::tlab_allocate(
   std(new_top, in_bytes(JavaThread::tlab_top_offset()), R16_thread);
   //verify_tlab(); not implemented
 }
-void MacroAssembler::tlab_refill(Label& retry_tlab, Label& try_eden, Label& slow_case) {
-  unimplemented("tlab_refill");
-}
 void MacroAssembler::incr_allocated_bytes(RegisterOrConstant size_in_bytes, Register t1, Register t2) {
   unimplemented("incr_allocated_bytes");
 }
@@ -2580,7 +2573,6 @@ void MacroAssembler::rtm_retry_lock_on_abort(Register retry_count_Reg, Register 
   if (checkRetry) { bind(*checkRetry); }
   addic_(retry_count_Reg, retry_count_Reg, -1);
   blt(CCR0, doneRetry);
-  smt_yield(); // Can't use wait(). No permission (SIGILL).
   b(retryLabel);
   bind(doneRetry);
 }
@@ -2591,7 +2583,7 @@ void MacroAssembler::rtm_retry_lock_on_abort(Register retry_count_Reg, Register 
 // output: retry_count_Reg decremented by 1
 // CTR is killed
 void MacroAssembler::rtm_retry_lock_on_busy(Register retry_count_Reg, Register owner_addr_Reg, Label& retryLabel) {
-  Label SpinLoop, doneRetry;
+  Label SpinLoop, doneRetry, doRetry;
   addic_(retry_count_Reg, retry_count_Reg, -1);
   blt(CCR0, doneRetry);
 
@@ -2600,15 +2592,25 @@ void MacroAssembler::rtm_retry_lock_on_busy(Register retry_count_Reg, Register o
     mtctr(R0);
   }
 
+  // low thread priority
+  smt_prio_low();
   bind(SpinLoop);
-  smt_yield(); // Can't use waitrsv(). No permission (SIGILL).
 
   if (RTMSpinLoopCount > 1) {
-    bdz(retryLabel);
+    bdz(doRetry);
     ld(R0, 0, owner_addr_Reg);
     cmpdi(CCR0, R0, 0);
     bne(CCR0, SpinLoop);
   }
+
+  bind(doRetry);
+
+  // restore thread priority to default in userspace
+#ifdef LINUX
+  smt_prio_medium_low();
+#else
+  smt_prio_medium();
+#endif
 
   b(retryLabel);
 
@@ -2883,10 +2885,6 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
     //assert(ObjectMonitor::recursions_size_in_bytes() == 8, "unexpected size");
     asm_assert_mem8_is_zero(ObjectMonitor::recursions_offset_in_bytes(), temp,
                             "monitor->_recursions should be 0", -1);
-    // Invariant 2: OwnerIsThread shouldn't be 0.
-    //assert(ObjectMonitor::OwnerIsThread_size_in_bytes() == 4, "unexpected size");
-    //asm_assert_mem4_isnot_zero(ObjectMonitor::OwnerIsThread_offset_in_bytes(), temp,
-    //                           "monitor->OwnerIsThread shouldn't be 0", -1);
 #   endif
 
 #if INCLUDE_RTM_OPT
@@ -3036,211 +3034,10 @@ void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg) {
   bne(CCR0, slow_path);
 }
 
-
-// GC barrier helper macros
-
-// Write the card table byte if needed.
-void MacroAssembler::card_write_barrier_post(Register Rstore_addr, Register Rnew_val, Register Rtmp) {
-  CardTableModRefBS* bs =
-    barrier_set_cast<CardTableModRefBS>(Universe::heap()->barrier_set());
-  assert(bs->kind() == BarrierSet::CardTableForRS ||
-         bs->kind() == BarrierSet::CardTableExtension, "wrong barrier");
-#ifdef ASSERT
-  cmpdi(CCR0, Rnew_val, 0);
-  asm_assert_ne("null oop not allowed", 0x321);
-#endif
-  card_table_write(bs->byte_map_base, Rtmp, Rstore_addr);
-}
-
-// Write the card table byte.
-void MacroAssembler::card_table_write(jbyte* byte_map_base, Register Rtmp, Register Robj) {
-  assert_different_registers(Robj, Rtmp, R0);
-  load_const_optimized(Rtmp, (address)byte_map_base, R0);
-  srdi(Robj, Robj, CardTableModRefBS::card_shift);
-  li(R0, 0); // dirty
-  if (UseConcMarkSweepGC) membar(Assembler::StoreStore);
-  stbx(R0, Rtmp, Robj);
-}
-
-// Kills R31 if value is a volatile register.
 void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp2, bool needs_frame) {
-  Label done;
-  cmpdi(CCR0, value, 0);
-  beq(CCR0, done);         // Use NULL as-is.
-
-  clrrdi(tmp1, value, JNIHandles::weak_tag_size);
-#if INCLUDE_ALL_GCS
-  if (UseG1GC) { andi_(tmp2, value, JNIHandles::weak_tag_mask); }
-#endif
-  ld(value, 0, tmp1);      // Resolve (untagged) jobject.
-
-#if INCLUDE_ALL_GCS
-  if (UseG1GC) {
-    Label not_weak;
-    beq(CCR0, not_weak);   // Test for jweak tag.
-    verify_oop(value);
-    g1_write_barrier_pre(noreg, // obj
-                         noreg, // offset
-                         value, // pre_val
-                         tmp1, tmp2, needs_frame);
-    bind(not_weak);
-  }
-#endif // INCLUDE_ALL_GCS
-  verify_oop(value);
-  bind(done);
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->resolve_jobject(this, value, tmp1, tmp2, needs_frame);
 }
-
-#if INCLUDE_ALL_GCS
-// General G1 pre-barrier generator.
-// Goal: record the previous value if it is not null.
-void MacroAssembler::g1_write_barrier_pre(Register Robj, RegisterOrConstant offset, Register Rpre_val,
-                                          Register Rtmp1, Register Rtmp2, bool needs_frame) {
-  Label runtime, filtered;
-
-  // Is marking active?
-  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-    lwz(Rtmp1, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active()), R16_thread);
-  } else {
-    guarantee(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-    lbz(Rtmp1, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active()), R16_thread);
-  }
-  cmpdi(CCR0, Rtmp1, 0);
-  beq(CCR0, filtered);
-
-  // Do we need to load the previous value?
-  if (Robj != noreg) {
-    // Load the previous value...
-    if (UseCompressedOops) {
-      lwz(Rpre_val, offset, Robj);
-    } else {
-      ld(Rpre_val, offset, Robj);
-    }
-    // Previous value has been loaded into Rpre_val.
-  }
-  assert(Rpre_val != noreg, "must have a real register");
-
-  // Is the previous value null?
-  cmpdi(CCR0, Rpre_val, 0);
-  beq(CCR0, filtered);
-
-  if (Robj != noreg && UseCompressedOops) {
-    decode_heap_oop_not_null(Rpre_val);
-  }
-
-  // OK, it's not filtered, so we'll need to call enqueue. In the normal
-  // case, pre_val will be a scratch G-reg, but there are some cases in
-  // which it's an O-reg. In the first case, do a normal call. In the
-  // latter, do a save here and call the frameless version.
-
-  // Can we store original value in the thread's buffer?
-  // Is index == 0?
-  // (The index field is typed as size_t.)
-  const Register Rbuffer = Rtmp1, Rindex = Rtmp2;
-
-  ld(Rindex, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_index()), R16_thread);
-  cmpdi(CCR0, Rindex, 0);
-  beq(CCR0, runtime); // If index == 0, goto runtime.
-  ld(Rbuffer, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_buf()), R16_thread);
-
-  addi(Rindex, Rindex, -wordSize); // Decrement index.
-  std(Rindex, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_index()), R16_thread);
-
-  // Record the previous value.
-  stdx(Rpre_val, Rbuffer, Rindex);
-  b(filtered);
-
-  bind(runtime);
-
-  // May need to preserve LR. Also needed if current frame is not compatible with C calling convention.
-  if (needs_frame) {
-    save_LR_CR(Rtmp1);
-    push_frame_reg_args(0, Rtmp2);
-  }
-
-  if (Rpre_val->is_volatile() && Robj == noreg) mr(R31, Rpre_val); // Save pre_val across C call if it was preloaded.
-  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), Rpre_val, R16_thread);
-  if (Rpre_val->is_volatile() && Robj == noreg) mr(Rpre_val, R31); // restore
-
-  if (needs_frame) {
-    pop_frame();
-    restore_LR_CR(Rtmp1);
-  }
-
-  bind(filtered);
-}
-
-// General G1 post-barrier generator
-// Store cross-region card.
-void MacroAssembler::g1_write_barrier_post(Register Rstore_addr, Register Rnew_val, Register Rtmp1, Register Rtmp2, Register Rtmp3, Label *filtered_ext) {
-  Label runtime, filtered_int;
-  Label& filtered = (filtered_ext != NULL) ? *filtered_ext : filtered_int;
-  assert_different_registers(Rstore_addr, Rnew_val, Rtmp1, Rtmp2);
-
-  G1SATBCardTableLoggingModRefBS* bs =
-    barrier_set_cast<G1SATBCardTableLoggingModRefBS>(Universe::heap()->barrier_set());
-
-  // Does store cross heap regions?
-  if (G1RSBarrierRegionFilter) {
-    xorr(Rtmp1, Rstore_addr, Rnew_val);
-    srdi_(Rtmp1, Rtmp1, HeapRegion::LogOfHRGrainBytes);
-    beq(CCR0, filtered);
-  }
-
-  // Crosses regions, storing NULL?
-#ifdef ASSERT
-  cmpdi(CCR0, Rnew_val, 0);
-  asm_assert_ne("null oop not allowed (G1)", 0x322); // Checked by caller on PPC64, so following branch is obsolete:
-  //beq(CCR0, filtered);
-#endif
-
-  // Storing region crossing non-NULL, is card already dirty?
-  assert(sizeof(*bs->byte_map_base) == sizeof(jbyte), "adjust this code");
-  const Register Rcard_addr = Rtmp1;
-  Register Rbase = Rtmp2;
-  load_const_optimized(Rbase, (address)bs->byte_map_base, /*temp*/ Rtmp3);
-
-  srdi(Rcard_addr, Rstore_addr, CardTableModRefBS::card_shift);
-
-  // Get the address of the card.
-  lbzx(/*card value*/ Rtmp3, Rbase, Rcard_addr);
-  cmpwi(CCR0, Rtmp3, (int)G1SATBCardTableModRefBS::g1_young_card_val());
-  beq(CCR0, filtered);
-
-  membar(Assembler::StoreLoad);
-  lbzx(/*card value*/ Rtmp3, Rbase, Rcard_addr);  // Reload after membar.
-  cmpwi(CCR0, Rtmp3 /* card value */, CardTableModRefBS::dirty_card_val());
-  beq(CCR0, filtered);
-
-  // Storing a region crossing, non-NULL oop, card is clean.
-  // Dirty card and log.
-  li(Rtmp3, CardTableModRefBS::dirty_card_val());
-  //release(); // G1: oops are allowed to get visible after dirty marking.
-  stbx(Rtmp3, Rbase, Rcard_addr);
-
-  add(Rcard_addr, Rbase, Rcard_addr); // This is the address which needs to get enqueued.
-  Rbase = noreg; // end of lifetime
-
-  const Register Rqueue_index = Rtmp2,
-                 Rqueue_buf   = Rtmp3;
-  ld(Rqueue_index, in_bytes(JavaThread::dirty_card_queue_offset() + DirtyCardQueue::byte_offset_of_index()), R16_thread);
-  cmpdi(CCR0, Rqueue_index, 0);
-  beq(CCR0, runtime); // index == 0 then jump to runtime
-  ld(Rqueue_buf, in_bytes(JavaThread::dirty_card_queue_offset() + DirtyCardQueue::byte_offset_of_buf()), R16_thread);
-
-  addi(Rqueue_index, Rqueue_index, -wordSize); // decrement index
-  std(Rqueue_index, in_bytes(JavaThread::dirty_card_queue_offset() + DirtyCardQueue::byte_offset_of_index()), R16_thread);
-
-  stdx(Rcard_addr, Rqueue_buf, Rqueue_index); // store card
-  b(filtered);
-
-  bind(runtime);
-
-  // Save the live input values.
-  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), Rcard_addr, R16_thread);
-
-  bind(filtered_int);
-}
-#endif // INCLUDE_ALL_GCS
 
 // Values for last_Java_pc, and last_Java_sp must comply to the rules
 // in frame_ppc.hpp.
@@ -4455,561 +4252,304 @@ void MacroAssembler::kernel_crc32_1byte(Register crc, Register buf, Register len
  * @param table           register pointing to CRC table
  * @param constants       register pointing to CRC table for 128-bit aligned memory
  * @param barretConstants register pointing to table for barrett reduction
- * @param t0              volatile register
- * @param t1              volatile register
- * @param t2              volatile register
- * @param t3              volatile register
+ * @param t0-t4           temp registers
  */
-void MacroAssembler::kernel_crc32_1word_vpmsumd(Register crc, Register buf, Register len, Register table,
-                                                Register constants,  Register barretConstants,
-                                                Register t0,  Register t1, Register t2, Register t3, Register t4,
-                                                bool invertCRC) {
+void MacroAssembler::kernel_crc32_1word_vpmsum(Register crc, Register buf, Register len, Register table,
+                                               Register constants, Register barretConstants,
+                                               Register t0, Register t1, Register t2, Register t3, Register t4,
+                                               bool invertCRC) {
   assert_different_registers(crc, buf, len, table);
 
-  Label L_alignedHead, L_tail, L_alignTail, L_start, L_end;
+  Label L_alignedHead, L_tail;
 
-  Register  prealign     = t0;
-  Register  postalign    = t0;
+  BLOCK_COMMENT("kernel_crc32_1word_vpmsum {");
 
-  BLOCK_COMMENT("kernel_crc32_1word_vpmsumb {");
+  // 1. ~c
+  if (invertCRC) {
+    nand(crc, crc, crc);                      // 1s complement of crc
+  }
 
-  // 1. use kernel_crc32_1word for shorter than 384bit
+  // 2. use kernel_crc32_1word for short len
   clrldi(len, len, 32);
-  cmpdi(CCR0, len, 384);
-  bge(CCR0, L_start);
+  cmpdi(CCR0, len, 512);
+  blt(CCR0, L_tail);
 
-    Register tc0 = t4;
-    Register tc1 = constants;
-    Register tc2 = barretConstants;
-    kernel_crc32_1word(crc, buf, len, table,t0, t1, t2, t3, tc0, tc1, tc2, table, invertCRC);
-    b(L_end);
+  // 3. calculate from 0 to first aligned address
+  const int alignment = 16;
+  Register prealign = t0;
 
-  BIND(L_start);
+  andi_(prealign, buf, alignment - 1);
+  beq(CCR0, L_alignedHead);
+  subfic(prealign, prealign, alignment);
 
-    // 2. ~c
-    if (invertCRC) {
-      nand(crc, crc, crc);                      // 1s complement of crc
-    }
+  subf(len, prealign, len);
+  update_byteLoop_crc32(crc, buf, prealign, table, t2, false);
 
-    // 3. calculate from 0 to first 128bit-aligned address
-    clrldi_(prealign, buf, 57);
-    beq(CCR0, L_alignedHead);
+  // 4. calculate from first aligned address as far as possible
+  BIND(L_alignedHead);
+  kernel_crc32_1word_aligned(crc, buf, len, constants, barretConstants, t0, t1, t2, t3, t4);
 
-    subfic(prealign, prealign, 128);
+  // 5. remaining bytes
+  BIND(L_tail);
+  Register tc0 = t4;
+  Register tc1 = constants;
+  Register tc2 = barretConstants;
+  kernel_crc32_1word(crc, buf, len, table, t0, t1, t2, t3, tc0, tc1, tc2, table, false);
 
-    subf(len, prealign, len);
-    update_byteLoop_crc32(crc, buf, prealign, table, t2, false);
+  // 6. ~c
+  if (invertCRC) {
+    nand(crc, crc, crc);                      // 1s complement of crc
+  }
 
-    // 4. calculate from first 128bit-aligned address to last 128bit-aligned address
-    BIND(L_alignedHead);
-
-    clrldi(postalign, len, 57);
-    subf(len, postalign, len);
-
-    // len must be more than 256bit
-    kernel_crc32_1word_aligned(crc, buf, len, constants, barretConstants, t1, t2, t3);
-
-    // 5. calculate remaining
-    cmpdi(CCR0, postalign, 0);
-    beq(CCR0, L_tail);
-
-    update_byteLoop_crc32(crc, buf, postalign, table, t2, false);
-
-    BIND(L_tail);
-
-    // 6. ~c
-    if (invertCRC) {
-      nand(crc, crc, crc);                      // 1s complement of crc
-    }
-
-  BIND(L_end);
-
-  BLOCK_COMMENT("} kernel_crc32_1word_vpmsumb");
+  BLOCK_COMMENT("} kernel_crc32_1word_vpmsum");
 }
 
 /**
  * @param crc             register containing existing CRC (32-bit)
  * @param buf             register pointing to input byte buffer (byte*)
- * @param len             register containing number of bytes
+ * @param len             register containing number of bytes (will get updated to remaining bytes)
  * @param constants       register pointing to CRC table for 128-bit aligned memory
  * @param barretConstants register pointing to table for barrett reduction
- * @param t0              volatile register
- * @param t1              volatile register
- * @param t2              volatile register
+ * @param t0-t4           temp registers
+ * Precondition: len should be >= 512. Otherwise, nothing will be done.
  */
 void MacroAssembler::kernel_crc32_1word_aligned(Register crc, Register buf, Register len,
-    Register constants, Register barretConstants, Register t0, Register t1, Register t2) {
-  Label L_mainLoop, L_tail, L_alignTail, L_barrett_reduction, L_end, L_first_warm_up_done, L_first_cool_down, L_second_cool_down, L_XOR, L_test;
-  Label L_lv0, L_lv1, L_lv2, L_lv3, L_lv4, L_lv5, L_lv6, L_lv7, L_lv8, L_lv9, L_lv10, L_lv11, L_lv12, L_lv13, L_lv14, L_lv15;
-  Label L_1, L_2, L_3, L_4;
-
-  Register  rLoaded      = t0;
-  Register  rTmp1        = t1;
-  Register  rTmp2        = t2;
-  Register  off16        = R22;
-  Register  off32        = R23;
-  Register  off48        = R24;
-  Register  off64        = R25;
-  Register  off80        = R26;
-  Register  off96        = R27;
-  Register  off112       = R28;
-  Register  rIdx         = R29;
-  Register  rMax         = R30;
-  Register  constantsPos = R31;
-
-  VectorRegister mask_32bit = VR24;
-  VectorRegister mask_64bit = VR25;
-  VectorRegister zeroes     = VR26;
-  VectorRegister const1     = VR27;
-  VectorRegister const2     = VR28;
+    Register constants, Register barretConstants,
+    Register t0, Register t1, Register t2, Register t3, Register t4) {
 
   // Save non-volatile vector registers (frameless).
-  Register offset = t1;   int offsetInt = 0;
-  offsetInt -= 16; li(offset, -16);           stvx(VR20, offset, R1_SP);
-  offsetInt -= 16; addi(offset, offset, -16); stvx(VR21, offset, R1_SP);
-  offsetInt -= 16; addi(offset, offset, -16); stvx(VR22, offset, R1_SP);
-  offsetInt -= 16; addi(offset, offset, -16); stvx(VR23, offset, R1_SP);
-  offsetInt -= 16; addi(offset, offset, -16); stvx(VR24, offset, R1_SP);
-  offsetInt -= 16; addi(offset, offset, -16); stvx(VR25, offset, R1_SP);
-  offsetInt -= 16; addi(offset, offset, -16); stvx(VR26, offset, R1_SP);
-  offsetInt -= 16; addi(offset, offset, -16); stvx(VR27, offset, R1_SP);
-  offsetInt -= 16; addi(offset, offset, -16); stvx(VR28, offset, R1_SP);
-  offsetInt -= 8; std(R22, offsetInt, R1_SP);
-  offsetInt -= 8; std(R23, offsetInt, R1_SP);
-  offsetInt -= 8; std(R24, offsetInt, R1_SP);
-  offsetInt -= 8; std(R25, offsetInt, R1_SP);
-  offsetInt -= 8; std(R26, offsetInt, R1_SP);
-  offsetInt -= 8; std(R27, offsetInt, R1_SP);
-  offsetInt -= 8; std(R28, offsetInt, R1_SP);
-  offsetInt -= 8; std(R29, offsetInt, R1_SP);
-  offsetInt -= 8; std(R30, offsetInt, R1_SP);
-  offsetInt -= 8; std(R31, offsetInt, R1_SP);
+  Register offset = t1;
+  int offsetInt = 0;
+  offsetInt -= 16; li(offset, offsetInt); stvx(VR20, offset, R1_SP);
+  offsetInt -= 16; li(offset, offsetInt); stvx(VR21, offset, R1_SP);
+  offsetInt -= 16; li(offset, offsetInt); stvx(VR22, offset, R1_SP);
+  offsetInt -= 16; li(offset, offsetInt); stvx(VR23, offset, R1_SP);
+  offsetInt -= 16; li(offset, offsetInt); stvx(VR24, offset, R1_SP);
+  offsetInt -= 16; li(offset, offsetInt); stvx(VR25, offset, R1_SP);
+#ifndef VM_LITTLE_ENDIAN
+  offsetInt -= 16; li(offset, offsetInt); stvx(VR26, offset, R1_SP);
+#endif
+  offsetInt -= 8; std(R14, offsetInt, R1_SP);
+  offsetInt -= 8; std(R15, offsetInt, R1_SP);
+  offsetInt -= 8; std(R16, offsetInt, R1_SP);
+  offsetInt -= 8; std(R17, offsetInt, R1_SP);
 
-  // Set constants
-  li(off16, 16);
-  li(off32, 32);
-  li(off48, 48);
-  li(off64, 64);
-  li(off80, 80);
-  li(off96, 96);
-  li(off112, 112);
+  // Implementation uses an inner loop which uses between 256 and 16 * unroll_factor
+  // bytes per iteration. The basic scheme is:
+  // lvx: load vector (Big Endian needs reversal)
+  // vpmsumw: carry-less 32 bit multiplications with constant representing a large CRC shift
+  // vxor: xor partial results together to get unroll_factor2 vectors
 
-  clrldi(crc, crc, 32);
+  // Outer loop performs the CRC shifts needed to combine the unroll_factor2 vectors.
 
-  vxor(zeroes, zeroes, zeroes);
-  vspltisw(VR0, -1);
+  // Using 16 * unroll_factor / unroll_factor_2 bytes for constants.
+  const int unroll_factor = 2048;
+  const int unroll_factor2 = 8;
 
-  vsldoi(mask_32bit, zeroes, VR0, 4);
-  vsldoi(mask_64bit, zeroes, VR0, 8);
+  // Support registers.
+  Register offs[] = { noreg, t0, t1, t2, t3, t4, crc /* will live in VCRC */, R14 };
+  Register num_bytes = R15,
+           loop_count = R16,
+           cur_const = R17;
+  // Constant array for outer loop: unroll_factor2 - 1 registers,
+  // Constant array for inner loop: unroll_factor / unroll_factor2 registers.
+  VectorRegister consts0[] = { VR16, VR17, VR18, VR19, VR20, VR21, VR22 },
+                 consts1[] = { VR23, VR24 };
+  // Data register arrays: 2 arrays with unroll_factor2 registers.
+  VectorRegister data0[] = { VR0, VR1, VR2, VR3, VR4, VR5, VR6, VR7 },
+                 data1[] = { VR8, VR9, VR10, VR11, VR12, VR13, VR14, VR15 };
 
-  // Get the initial value into v8
-  vxor(VR8, VR8, VR8);
-  mtvrd(VR8, crc);
-  vsldoi(VR8, zeroes, VR8, 8); // shift into bottom 32 bits
+  VectorRegister VCRC = data0[0];
+  VectorRegister Vc = VR25;
+  VectorRegister swap_bytes = VR26; // Only for Big Endian.
 
-  li (rLoaded, 0);
+  // We have at least 1 iteration (ensured by caller).
+  Label L_outer_loop, L_inner_loop, L_last;
 
-  rldicr(rIdx, len, 0, 56);
-
-  {
-    BIND(L_1);
-    // Checksum in blocks of MAX_SIZE (32768)
-    lis(rMax, 0);
-    ori(rMax, rMax, 32768);
-    mr(rTmp2, rMax);
-    cmpd(CCR0, rIdx, rMax);
-    bgt(CCR0, L_2);
-    mr(rMax, rIdx);
-
-    BIND(L_2);
-    subf(rIdx, rMax, rIdx);
-
-    // our main loop does 128 bytes at a time
-    srdi(rMax, rMax, 7);
-
-    /*
-     * Work out the offset into the constants table to start at. Each
-     * constant is 16 bytes, and it is used against 128 bytes of input
-     * data - 128 / 16 = 8
-     */
-    sldi(rTmp1, rMax, 4);
-    srdi(rTmp2, rTmp2, 3);
-    subf(rTmp1, rTmp1, rTmp2);
-
-    // We reduce our final 128 bytes in a separate step
-    addi(rMax, rMax, -1);
-    mtctr(rMax);
-
-    // Find the start of our constants
-    add(constantsPos, constants, rTmp1);
-
-    // zero VR0-v7 which will contain our checksums
-    vxor(VR0, VR0, VR0);
-    vxor(VR1, VR1, VR1);
-    vxor(VR2, VR2, VR2);
-    vxor(VR3, VR3, VR3);
-    vxor(VR4, VR4, VR4);
-    vxor(VR5, VR5, VR5);
-    vxor(VR6, VR6, VR6);
-    vxor(VR7, VR7, VR7);
-
-    lvx(const1, constantsPos);
-
-    /*
-     * If we are looping back to consume more data we use the values
-     * already in VR16-v23.
-     */
-    cmpdi(CCR0, rLoaded, 1);
-    beq(CCR0, L_3);
-    {
-
-      // First warm up pass
-      lvx(VR16, buf);
-      lvx(VR17, off16, buf);
-      lvx(VR18, off32, buf);
-      lvx(VR19, off48, buf);
-      lvx(VR20, off64, buf);
-      lvx(VR21, off80, buf);
-      lvx(VR22, off96, buf);
-      lvx(VR23, off112, buf);
-      addi(buf, buf, 8*16);
-
-      // xor in initial value
-      vxor(VR16, VR16, VR8);
-    }
-
-    BIND(L_3);
-    bdz(L_first_warm_up_done);
-
-    addi(constantsPos, constantsPos, 16);
-    lvx(const2, constantsPos);
-
-    // Second warm up pass
-    vpmsumd(VR8, VR16, const1);
-    lvx(VR16, buf);
-
-    vpmsumd(VR9, VR17, const1);
-    lvx(VR17, off16, buf);
-
-    vpmsumd(VR10, VR18, const1);
-    lvx(VR18, off32, buf);
-
-    vpmsumd(VR11, VR19, const1);
-    lvx(VR19, off48, buf);
-
-    vpmsumd(VR12, VR20, const1);
-    lvx(VR20, off64, buf);
-
-    vpmsumd(VR13, VR21, const1);
-    lvx(VR21, off80, buf);
-
-    vpmsumd(VR14, VR22, const1);
-    lvx(VR22, off96, buf);
-
-    vpmsumd(VR15, VR23, const1);
-    lvx(VR23, off112, buf);
-
-    addi(buf, buf, 8 * 16);
-
-    bdz(L_first_cool_down);
-
-    /*
-     * main loop. We modulo schedule it such that it takes three iterations
-     * to complete - first iteration load, second iteration vpmsum, third
-     * iteration xor.
-     */
-    {
-      BIND(L_4);
-      lvx(const1, constantsPos); addi(constantsPos, constantsPos, 16);
-
-      vxor(VR0, VR0, VR8);
-      vpmsumd(VR8, VR16, const2);
-      lvx(VR16, buf);
-
-      vxor(VR1, VR1, VR9);
-      vpmsumd(VR9, VR17, const2);
-      lvx(VR17, off16, buf);
-
-      vxor(VR2, VR2, VR10);
-      vpmsumd(VR10, VR18, const2);
-      lvx(VR18, off32, buf);
-
-      vxor(VR3, VR3, VR11);
-      vpmsumd(VR11, VR19, const2);
-      lvx(VR19, off48, buf);
-      lvx(const2, constantsPos);
-
-      vxor(VR4, VR4, VR12);
-      vpmsumd(VR12, VR20, const1);
-      lvx(VR20, off64, buf);
-
-      vxor(VR5, VR5, VR13);
-      vpmsumd(VR13, VR21, const1);
-      lvx(VR21, off80, buf);
-
-      vxor(VR6, VR6, VR14);
-      vpmsumd(VR14, VR22, const1);
-      lvx(VR22, off96, buf);
-
-      vxor(VR7, VR7, VR15);
-      vpmsumd(VR15, VR23, const1);
-      lvx(VR23, off112, buf);
-
-      addi(buf, buf, 8 * 16);
-
-      bdnz(L_4);
-    }
-
-    BIND(L_first_cool_down);
-
-    // First cool down pass
-    lvx(const1, constantsPos);
-    addi(constantsPos, constantsPos, 16);
-
-    vxor(VR0, VR0, VR8);
-    vpmsumd(VR8, VR16, const1);
-
-    vxor(VR1, VR1, VR9);
-    vpmsumd(VR9, VR17, const1);
-
-    vxor(VR2, VR2, VR10);
-    vpmsumd(VR10, VR18, const1);
-
-    vxor(VR3, VR3, VR11);
-    vpmsumd(VR11, VR19, const1);
-
-    vxor(VR4, VR4, VR12);
-    vpmsumd(VR12, VR20, const1);
-
-    vxor(VR5, VR5, VR13);
-    vpmsumd(VR13, VR21, const1);
-
-    vxor(VR6, VR6, VR14);
-    vpmsumd(VR14, VR22, const1);
-
-    vxor(VR7, VR7, VR15);
-    vpmsumd(VR15, VR23, const1);
-
-    BIND(L_second_cool_down);
-    // Second cool down pass
-    vxor(VR0, VR0, VR8);
-    vxor(VR1, VR1, VR9);
-    vxor(VR2, VR2, VR10);
-    vxor(VR3, VR3, VR11);
-    vxor(VR4, VR4, VR12);
-    vxor(VR5, VR5, VR13);
-    vxor(VR6, VR6, VR14);
-    vxor(VR7, VR7, VR15);
-
-    /*
-     * vpmsumd produces a 96 bit result in the least significant bits
-     * of the register. Since we are bit reflected we have to shift it
-     * left 32 bits so it occupies the least significant bits in the
-     * bit reflected domain.
-     */
-    vsldoi(VR0, VR0, zeroes, 4);
-    vsldoi(VR1, VR1, zeroes, 4);
-    vsldoi(VR2, VR2, zeroes, 4);
-    vsldoi(VR3, VR3, zeroes, 4);
-    vsldoi(VR4, VR4, zeroes, 4);
-    vsldoi(VR5, VR5, zeroes, 4);
-    vsldoi(VR6, VR6, zeroes, 4);
-    vsldoi(VR7, VR7, zeroes, 4);
-
-    // xor with last 1024 bits
-    lvx(VR8, buf);
-    lvx(VR9, off16, buf);
-    lvx(VR10, off32, buf);
-    lvx(VR11, off48, buf);
-    lvx(VR12, off64, buf);
-    lvx(VR13, off80, buf);
-    lvx(VR14, off96, buf);
-    lvx(VR15, off112, buf);
-    addi(buf, buf, 8 * 16);
-
-    vxor(VR16, VR0, VR8);
-    vxor(VR17, VR1, VR9);
-    vxor(VR18, VR2, VR10);
-    vxor(VR19, VR3, VR11);
-    vxor(VR20, VR4, VR12);
-    vxor(VR21, VR5, VR13);
-    vxor(VR22, VR6, VR14);
-    vxor(VR23, VR7, VR15);
-
-    li(rLoaded, 1);
-    cmpdi(CCR0, rIdx, 0);
-    addi(rIdx, rIdx, 128);
-    bne(CCR0, L_1);
+  // If supported set DSCR pre-fetch to deepest.
+  if (VM_Version::has_mfdscr()) {
+    load_const_optimized(t0, VM_Version::_dscr_val | 7);
+    mtdscr(t0);
   }
 
-  // Work out how many bytes we have left
-  andi_(len, len, 127);
+  mtvrwz(VCRC, crc); // crc lives lives in VCRC, now
 
-  // Calculate where in the constant table we need to start
-  subfic(rTmp1, len, 128);
-  add(constantsPos, constantsPos, rTmp1);
+  for (int i = 1; i < unroll_factor2; ++i) {
+    li(offs[i], 16 * i);
+  }
 
-  // How many 16 byte chunks are in the tail
-  srdi(rIdx, len, 4);
-  mtctr(rIdx);
+  // Load consts for outer loop
+  lvx(consts0[0], constants);
+  for (int i = 1; i < unroll_factor2 - 1; ++i) {
+    lvx(consts0[i], offs[i], constants);
+  }
+  addi(constants, constants, (unroll_factor2 - 1) * 16);
 
-  /*
-   * Reduce the previously calculated 1024 bits to 64 bits, shifting
-   * 32 bits to include the trailing 32 bits of zeros
-   */
-  lvx(VR0, constantsPos);
-  lvx(VR1, off16, constantsPos);
-  lvx(VR2, off32, constantsPos);
-  lvx(VR3, off48, constantsPos);
-  lvx(VR4, off64, constantsPos);
-  lvx(VR5, off80, constantsPos);
-  lvx(VR6, off96, constantsPos);
-  lvx(VR7, off112, constantsPos);
-  addi(constantsPos, constantsPos, 8 * 16);
+  load_const_optimized(num_bytes, 16 * unroll_factor);
+  load_const_optimized(loop_count, unroll_factor / (2 * unroll_factor2) - 1); // One double-iteration peeled off.
 
-  vpmsumw(VR0, VR16, VR0);
-  vpmsumw(VR1, VR17, VR1);
-  vpmsumw(VR2, VR18, VR2);
-  vpmsumw(VR3, VR19, VR3);
-  vpmsumw(VR4, VR20, VR4);
-  vpmsumw(VR5, VR21, VR5);
-  vpmsumw(VR6, VR22, VR6);
-  vpmsumw(VR7, VR23, VR7);
+  // Reuse data registers outside of the loop.
+  VectorRegister Vtmp = data1[0];
+  VectorRegister Vtmp2 = data1[1];
+  VectorRegister zeroes = data1[2];
 
-  // Now reduce the tail (0 - 112 bytes)
-  cmpdi(CCR0, rIdx, 0);
-  beq(CCR0, L_XOR);
+  vspltisb(Vtmp, 0);
+  vsldoi(VCRC, Vtmp, VCRC, 8); // 96 bit zeroes, 32 bit CRC.
 
-  lvx(VR16, buf); addi(buf, buf, 16);
-  lvx(VR17, constantsPos);
-  vpmsumw(VR16, VR16, VR17);
-  vxor(VR0, VR0, VR16);
-  beq(CCR0, L_XOR);
+  // Load vector for vpermxor (to xor both 64 bit parts together)
+  lvsl(Vtmp, buf);   // 000102030405060708090a0b0c0d0e0f
+  vspltisb(Vc, 4);
+  vsl(Vc, Vtmp, Vc); // 00102030405060708090a0b0c0d0e0f0
+  xxspltd(Vc->to_vsr(), Vc->to_vsr(), 0);
+  vor(Vc, Vtmp, Vc); // 001122334455667708192a3b4c5d6e7f
 
-  lvx(VR16, buf); addi(buf, buf, 16);
-  lvx(VR17, off16, constantsPos);
-  vpmsumw(VR16, VR16, VR17);
-  vxor(VR0, VR0, VR16);
-  beq(CCR0, L_XOR);
+#ifdef VM_LITTLE_ENDIAN
+#define BE_swap_bytes(x)
+#else
+  vspltisb(Vtmp2, 0xf);
+  vxor(swap_bytes, Vtmp, Vtmp2);
+#define BE_swap_bytes(x) vperm(x, x, x, swap_bytes)
+#endif
 
-  lvx(VR16, buf); addi(buf, buf, 16);
-  lvx(VR17, off32, constantsPos);
-  vpmsumw(VR16, VR16, VR17);
-  vxor(VR0, VR0, VR16);
-  beq(CCR0, L_XOR);
+  cmpd(CCR0, len, num_bytes);
+  blt(CCR0, L_last);
 
-  lvx(VR16, buf); addi(buf, buf, 16);
-  lvx(VR17, off48,constantsPos);
-  vpmsumw(VR16, VR16, VR17);
-  vxor(VR0, VR0, VR16);
-  beq(CCR0, L_XOR);
+  // ********** Main loop start **********
+  align(32);
+  bind(L_outer_loop);
 
-  lvx(VR16, buf); addi(buf, buf, 16);
-  lvx(VR17, off64, constantsPos);
-  vpmsumw(VR16, VR16, VR17);
-  vxor(VR0, VR0, VR16);
-  beq(CCR0, L_XOR);
+  // Begin of unrolled first iteration (no xor).
+  lvx(data1[0], buf);
+  mr(cur_const, constants);
+  for (int i = 1; i < unroll_factor2 / 2; ++i) {
+    lvx(data1[i], offs[i], buf);
+  }
+  vpermxor(VCRC, VCRC, VCRC, Vc); // xor both halves to 64 bit result.
+  lvx(consts1[0], cur_const);
+  mtctr(loop_count);
+  for (int i = 0; i < unroll_factor2 / 2; ++i) {
+    BE_swap_bytes(data1[i]);
+    if (i == 0) { vxor(data1[0], data1[0], VCRC); } // xor in previous CRC.
+    lvx(data1[i + unroll_factor2 / 2], offs[i + unroll_factor2 / 2], buf);
+    vpmsumw(data0[i], data1[i], consts1[0]);
+  }
+  addi(buf, buf, 16 * unroll_factor2);
+  subf(len, num_bytes, len);
+  lvx(consts1[1], offs[1], cur_const);
+  addi(cur_const, cur_const, 32);
+  // Begin of unrolled second iteration (head).
+  for (int i = 0; i < unroll_factor2 / 2; ++i) {
+    BE_swap_bytes(data1[i + unroll_factor2 / 2]);
+    if (i == 0) { lvx(data1[0], buf); } else { lvx(data1[i], offs[i], buf); }
+    vpmsumw(data0[i + unroll_factor2 / 2], data1[i + unroll_factor2 / 2], consts1[0]);
+  }
+  for (int i = 0; i < unroll_factor2 / 2; ++i) {
+    BE_swap_bytes(data1[i]);
+    lvx(data1[i + unroll_factor2 / 2], offs[i + unroll_factor2 / 2], buf);
+    vpmsumw(data1[i], data1[i], consts1[1]);
+  }
+  addi(buf, buf, 16 * unroll_factor2);
 
-  lvx(VR16, buf); addi(buf, buf, 16);
-  lvx(VR17, off80, constantsPos);
-  vpmsumw(VR16, VR16, VR17);
-  vxor(VR0, VR0, VR16);
-  beq(CCR0, L_XOR);
+  // Generate most performance relevant code. Loads + half of the vpmsumw have been generated.
+  // Double-iteration allows using the 2 constant registers alternatingly.
+  align(32);
+  bind(L_inner_loop);
+  for (int j = 1; j < 3; ++j) { // j < unroll_factor / unroll_factor2 - 1 for complete unrolling.
+    if (j & 1) {
+      lvx(consts1[0], cur_const);
+    } else {
+      lvx(consts1[1], offs[1], cur_const);
+      addi(cur_const, cur_const, 32);
+    }
+    for (int i = 0; i < unroll_factor2; ++i) {
+      int idx = i + unroll_factor2 / 2, inc = 0; // For modulo-scheduled input.
+      if (idx >= unroll_factor2) { idx -= unroll_factor2; inc = 1; }
+      BE_swap_bytes(data1[idx]);
+      vxor(data0[i], data0[i], data1[i]);
+      if (i == 0) lvx(data1[0], buf); else lvx(data1[i], offs[i], buf);
+      vpmsumw(data1[idx], data1[idx], consts1[(j + inc) & 1]);
+    }
+    addi(buf, buf, 16 * unroll_factor2);
+  }
+  bdnz(L_inner_loop);
 
-  lvx(VR16, buf); addi(buf, buf, 16);
-  lvx(VR17, off96, constantsPos);
-  vpmsumw(VR16, VR16, VR17);
-  vxor(VR0, VR0, VR16);
+  // Tail of last iteration (no loads).
+  for (int i = 0; i < unroll_factor2 / 2; ++i) {
+    BE_swap_bytes(data1[i + unroll_factor2 / 2]);
+    vxor(data0[i], data0[i], data1[i]);
+    vpmsumw(data1[i + unroll_factor2 / 2], data1[i + unroll_factor2 / 2], consts1[1]);
+  }
+  for (int i = 0; i < unroll_factor2 / 2; ++i) {
+    vpmsumw(data0[i], data0[i], consts0[unroll_factor2 - 2 - i]); // First half of fixup shifts.
+    vxor(data0[i + unroll_factor2 / 2], data0[i + unroll_factor2 / 2], data1[i + unroll_factor2 / 2]);
+  }
 
-  // Now xor all the parallel chunks together
-  BIND(L_XOR);
-  vxor(VR0, VR0, VR1);
-  vxor(VR2, VR2, VR3);
-  vxor(VR4, VR4, VR5);
-  vxor(VR6, VR6, VR7);
+  // Last data register is ok, other ones need fixup shift.
+  for (int i = unroll_factor2 / 2; i < unroll_factor2 - 1; ++i) {
+    vpmsumw(data0[i], data0[i], consts0[unroll_factor2 - 2 - i]);
+  }
 
-  vxor(VR0, VR0, VR2);
-  vxor(VR4, VR4, VR6);
+  // Combine to 128 bit result vector VCRC = data0[0].
+  for (int i = 1; i < unroll_factor2; i<<=1) {
+    for (int j = 0; j <= unroll_factor2 - 2*i; j+=2*i) {
+      vxor(data0[j], data0[j], data0[j+i]);
+    }
+  }
+  cmpd(CCR0, len, num_bytes);
+  bge(CCR0, L_outer_loop);
 
-  vxor(VR0, VR0, VR4);
+  // Last chance with lower num_bytes.
+  bind(L_last);
+  srdi(loop_count, len, exact_log2(16 * 2 * unroll_factor2)); // Use double-iterations.
+  add_const_optimized(constants, constants, 16 * (unroll_factor / unroll_factor2)); // Point behind last one.
+  sldi(R0, loop_count, exact_log2(16 * 2)); // Bytes of constants to be used.
+  clrrdi(num_bytes, len, exact_log2(16 * 2 * unroll_factor2));
+  subf(constants, R0, constants); // Point to constant to be used first.
 
-  b(L_barrett_reduction);
+  addic_(loop_count, loop_count, -1); // One double-iteration peeled off.
+  bgt(CCR0, L_outer_loop);
+  // ********** Main loop end **********
+#undef BE_swap_bytes
 
-  BIND(L_first_warm_up_done);
-  lvx(const1, constantsPos);
-  addi(constantsPos, constantsPos, 16);
-  vpmsumd(VR8,  VR16, const1);
-  vpmsumd(VR9,  VR17, const1);
-  vpmsumd(VR10, VR18, const1);
-  vpmsumd(VR11, VR19, const1);
-  vpmsumd(VR12, VR20, const1);
-  vpmsumd(VR13, VR21, const1);
-  vpmsumd(VR14, VR22, const1);
-  vpmsumd(VR15, VR23, const1);
-  b(L_second_cool_down);
+  // Restore DSCR pre-fetch value.
+  if (VM_Version::has_mfdscr()) {
+    load_const_optimized(t0, VM_Version::_dscr_val);
+    mtdscr(t0);
+  }
 
-  BIND(L_barrett_reduction);
+  vspltisb(zeroes, 0);
 
-  lvx(const1, barretConstants);
-  addi(barretConstants, barretConstants, 16);
-  lvx(const2, barretConstants);
+  // Combine to 64 bit result.
+  vpermxor(VCRC, VCRC, VCRC, Vc); // xor both halves to 64 bit result.
 
-  vsldoi(VR1, VR0, VR0, 8);
-  vxor(VR0, VR0, VR1);    // xor two 64 bit results together
+  // Reduce to 32 bit CRC: Remainder by multiply-high.
+  lvx(Vtmp, barretConstants);
+  vsldoi(Vtmp2, zeroes, VCRC, 12);  // Extract high 32 bit.
+  vpmsumd(Vtmp2, Vtmp2, Vtmp);      // Multiply by inverse long poly.
+  vsldoi(Vtmp2, zeroes, Vtmp2, 12); // Extract high 32 bit.
+  vsldoi(Vtmp, zeroes, Vtmp, 8);
+  vpmsumd(Vtmp2, Vtmp2, Vtmp);      // Multiply quotient by long poly.
+  vxor(VCRC, VCRC, Vtmp2);          // Remainder fits into 32 bit.
 
-  // shift left one bit
-  vspltisb(VR1, 1);
-  vsl(VR0, VR0, VR1);
+  // Move result. len is already updated.
+  vsldoi(VCRC, VCRC, zeroes, 8);
+  mfvrd(crc, VCRC);
 
-  vand(VR0, VR0, mask_64bit);
-
-  /*
-   * The reflected version of Barrett reduction. Instead of bit
-   * reflecting our data (which is expensive to do), we bit reflect our
-   * constants and our algorithm, which means the intermediate data in
-   * our vector registers goes from 0-63 instead of 63-0. We can reflect
-   * the algorithm because we don't carry in mod 2 arithmetic.
-   */
-  vand(VR1, VR0, mask_32bit);  // bottom 32 bits of a
-  vpmsumd(VR1, VR1, const1);   // ma
-  vand(VR1, VR1, mask_32bit);  // bottom 32bits of ma
-  vpmsumd(VR1, VR1, const2);   // qn */
-  vxor(VR0, VR0, VR1);         // a - qn, subtraction is xor in GF(2)
-
-  /*
-   * Since we are bit reflected, the result (ie the low 32 bits) is in
-   * the high 32 bits. We just need to shift it left 4 bytes
-   * V0 [ 0 1 X 3 ]
-   * V0 [ 0 X 2 3 ]
-   */
-  vsldoi(VR0, VR0, zeroes, 4);    // shift result into top 64 bits of
-
-  // Get it into r3
-  mfvrd(crc, VR0);
-
-  BIND(L_end);
-
-  offsetInt = 0;
   // Restore non-volatile Vector registers (frameless).
-  offsetInt -= 16; li(offset, -16);           lvx(VR20, offset, R1_SP);
-  offsetInt -= 16; addi(offset, offset, -16); lvx(VR21, offset, R1_SP);
-  offsetInt -= 16; addi(offset, offset, -16); lvx(VR22, offset, R1_SP);
-  offsetInt -= 16; addi(offset, offset, -16); lvx(VR23, offset, R1_SP);
-  offsetInt -= 16; addi(offset, offset, -16); lvx(VR24, offset, R1_SP);
-  offsetInt -= 16; addi(offset, offset, -16); lvx(VR25, offset, R1_SP);
-  offsetInt -= 16; addi(offset, offset, -16); lvx(VR26, offset, R1_SP);
-  offsetInt -= 16; addi(offset, offset, -16); lvx(VR27, offset, R1_SP);
-  offsetInt -= 16; addi(offset, offset, -16); lvx(VR28, offset, R1_SP);
-  offsetInt -= 8;  ld(R22, offsetInt, R1_SP);
-  offsetInt -= 8;  ld(R23, offsetInt, R1_SP);
-  offsetInt -= 8;  ld(R24, offsetInt, R1_SP);
-  offsetInt -= 8;  ld(R25, offsetInt, R1_SP);
-  offsetInt -= 8;  ld(R26, offsetInt, R1_SP);
-  offsetInt -= 8;  ld(R27, offsetInt, R1_SP);
-  offsetInt -= 8;  ld(R28, offsetInt, R1_SP);
-  offsetInt -= 8;  ld(R29, offsetInt, R1_SP);
-  offsetInt -= 8;  ld(R30, offsetInt, R1_SP);
-  offsetInt -= 8;  ld(R31, offsetInt, R1_SP);
+  offsetInt = 0;
+  offsetInt -= 16; li(offset, offsetInt); lvx(VR20, offset, R1_SP);
+  offsetInt -= 16; li(offset, offsetInt); lvx(VR21, offset, R1_SP);
+  offsetInt -= 16; li(offset, offsetInt); lvx(VR22, offset, R1_SP);
+  offsetInt -= 16; li(offset, offsetInt); lvx(VR23, offset, R1_SP);
+  offsetInt -= 16; li(offset, offsetInt); lvx(VR24, offset, R1_SP);
+  offsetInt -= 16; li(offset, offsetInt); lvx(VR25, offset, R1_SP);
+#ifndef VM_LITTLE_ENDIAN
+  offsetInt -= 16; li(offset, offsetInt); lvx(VR26, offset, R1_SP);
+#endif
+  offsetInt -= 8;  ld(R14, offsetInt, R1_SP);
+  offsetInt -= 8;  ld(R15, offsetInt, R1_SP);
+  offsetInt -= 8;  ld(R16, offsetInt, R1_SP);
+  offsetInt -= 8;  ld(R17, offsetInt, R1_SP);
 }
 
 void MacroAssembler::kernel_crc32_singleByte(Register crc, Register buf, Register len, Register table, Register tmp, bool invertCRC) {
@@ -5604,12 +5144,17 @@ void MacroAssembler::zap_from_to(Register low, int before, Register high, int af
 
 #endif // !PRODUCT
 
-SkipIfEqualZero::SkipIfEqualZero(MacroAssembler* masm, Register temp, const bool* flag_addr) : _masm(masm), _label() {
+void SkipIfEqualZero::skip_to_label_if_equal_zero(MacroAssembler* masm, Register temp,
+                                                  const bool* flag_addr, Label& label) {
   int simm16_offset = masm->load_const_optimized(temp, (address)flag_addr, R0, true);
   assert(sizeof(bool) == 1, "PowerPC ABI");
   masm->lbz(temp, simm16_offset, temp);
   masm->cmpwi(CCR0, temp, 0);
-  masm->beq(CCR0, _label);
+  masm->beq(CCR0, label);
+}
+
+SkipIfEqualZero::SkipIfEqualZero(MacroAssembler* masm, Register temp, const bool* flag_addr) : _masm(masm), _label() {
+  skip_to_label_if_equal_zero(masm, temp, flag_addr, _label);
 }
 
 SkipIfEqualZero::~SkipIfEqualZero() {

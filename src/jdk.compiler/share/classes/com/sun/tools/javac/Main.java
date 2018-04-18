@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.io.PrintWriter;
 /**
  * A legacy programmatic interface for the Java Programming Language
  * compiler, javac.
- * See the <a href="{@docRoot}/jdk.compiler-summary.html">{@code jdk.compiler}</a>
+ * See the <a href="{@docRoot}/jdk.compiler/module-summary.html">{@code jdk.compiler}</a>
  * module for details on replacement APIs.
  */
 public class Main {

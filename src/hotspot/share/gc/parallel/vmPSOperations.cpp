@@ -27,7 +27,7 @@
 #include "gc/parallel/psMarkSweep.hpp"
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/vmPSOperations.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "utilities/dtrace.hpp"
 
 // The following methods are used by the parallel scavenge collector

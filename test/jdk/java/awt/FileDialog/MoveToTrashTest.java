@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 8190515 8193468
   @summary java.awt.Desktop.moveToTrash(File) prompts on Windows 7 but not on Mac.
   @run main MoveToTrashTest

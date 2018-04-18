@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @summary a test to demonstrate that an application class in the -cp
  *          will be archived although --patch-module is specified. The class in
  *          the -cp has no dependencies on the class in the --patch-module.
@@ -86,19 +86,17 @@ public class AppClassInCP {
                 "--patch-module=java.naming=" + moduleJar,
                 "-Xlog:class+load",
                 "PatchMain", "javax.naming.spi.NamingManager", "mypackage.Hello");
-        TestCommon.checkDump(output, "Loading classes to share");
+        output.shouldHaveExitValue(1)
+              .shouldContain("Cannot use the following option when dumping the shared archive: --patch-module");
 
         String classPath = appJar + File.pathSeparator + classDir;
         System.out.println("classPath: " + classPath);
-        output = TestCommon.execCommon(
+        TestCommon.run(
             "-XX:+UnlockDiagnosticVMOptions",
             "-cp", classPath,
             "--patch-module=java.naming=" + moduleJar,
             "-Xlog:class+load",
-            "PatchMain", "javax.naming.spi.NamingManager", "mypackage.Hello");
-        TestCommon.checkExec(output,
-            "I pass!",
-            "Hello!",
-            "Hello source: shared objects file");
+            "PatchMain", "javax.naming.spi.NamingManager", "mypackage.Hello")
+            .assertSilentlyDisabledCDS(0, "I pass!", "Hello!");
     }
 }

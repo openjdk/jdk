@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 7112427 8012295 8025633 8026567 8061305 8081854 8150130 8162363
- *      8167967 8172528 8175200 8178830 8182257 8186332
+ *      8167967 8172528 8175200 8178830 8182257 8186332 8182765
  * @summary Test of the JavaFX doclet features.
  * @author jvalenta
  * @library ../lib
@@ -51,9 +51,8 @@ public class TestJavaFX extends JavadocTester {
 
         checkOutput("pkg1/C.html", true,
                 "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
-                + "<dd><a href=\"../pkg1/C.html#getRate--\"><code>getRate()</code></a>, \n"
-                + "<a href=\"../pkg1/C.html#setRate-double-\">"
-                + "<code>setRate(double)</code></a></dd>",
+                + "<dd><a href=\"#getRate()\"><code>getRate()</code></a>, \n"
+                + "<a href=\"#setRate(double)\"><code>setRate(double)</code></a></dd>",
                 "<pre>public final&nbsp;void&nbsp;setRate&#8203;(double&nbsp;value)</pre>\n"
                 + "<div class=\"block\">Sets the value of the property rate.</div>\n"
                 + "<dl>\n"
@@ -62,10 +61,10 @@ public class TestJavaFX extends JavadocTester {
                 + "<div class=\"block\">Gets the value of the property rate.</div>\n"
                 + "<dl>\n"
                 + "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>",
-                "<td class=\"colFirst\"><code><a href=\"../pkg1/C.DoubleProperty.html\" "
+                "<td class=\"colFirst\"><code><a href=\"C.DoubleProperty.html\" "
                 + "title=\"class in pkg1\">C.DoubleProperty</a></code></td>\n"
                 + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
-                + "<a href=\"../pkg1/C.html#rateProperty\">rate</a></span></code></th>\n"
+                + "<a href=\"#rateProperty\">rate</a></span></code></th>\n"
                 + "<td class=\"colLast\">\n"
                 + "<div class=\"block\">Defines the direction/speed at which the "
                 + "<code>Timeline</code> is expected to\n"
@@ -77,14 +76,14 @@ public class TestJavaFX extends JavadocTester {
                 "<p>Gets the value of the property <code>Property</code>",
                 "<span class=\"simpleTagLabel\">Property description:</span>",
                 "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
-                + "<a href=\"../pkg1/C.html#setTestMethodProperty--\">"
+                + "<a href=\"#setTestMethodProperty()\">"
                 + "setTestMethodProperty</a></span>()</code></th>",
                 "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
-                + "<a href=\"../pkg1/C.html#pausedProperty\">paused</a></span></code></th>\n"
+                + "<a href=\"#pausedProperty\">paused</a></span></code></th>\n"
                 + "<td class=\"colLast\">\n"
                 + "<div class=\"block\">Defines if paused.</div>",
                 "<h4>paused</h4>\n"
-                + "<pre>public final&nbsp;<a href=\"../pkg1/C.BooleanProperty.html\" "
+                + "<pre>public final&nbsp;<a href=\"C.BooleanProperty.html\" "
                 + "title=\"class in pkg1\">C.BooleanProperty</a> pausedProperty</pre>\n"
                 + "<div class=\"block\">Defines if paused. The second line.</div>",
                 "<h4>isPaused</h4>\n"
@@ -107,7 +106,7 @@ public class TestJavaFX extends JavadocTester {
                 + "<dt><span class=\"simpleTagLabel\">Default value:</span></dt>\n"
                 + "<dd>false</dd>",
                 "<h4>rate</h4>\n"
-                + "<pre>public final&nbsp;<a href=\"../pkg1/C.DoubleProperty.html\" "
+                + "<pre>public final&nbsp;<a href=\"C.DoubleProperty.html\" "
                 + "title=\"class in pkg1\">C.DoubleProperty</a> rateProperty</pre>\n"
                 + "<div class=\"block\">Defines the direction/speed at which the "
                 + "<code>Timeline</code> is expected to\n"
@@ -135,12 +134,12 @@ public class TestJavaFX extends JavadocTester {
                 + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n"
                 + "<dd>JavaFX 8.0</dd>",
                 "<h3>Property Summary</h3>\n"
-                + "<table class=\"memberSummary\" summary=\"Property Summary table, listing properties, and an explanation\">\n"
+                + "<table class=\"memberSummary\">\n"
                 + "<caption><span>Properties</span><span class=\"tabEnd\">&nbsp;</span></caption>",
                 "<tr class=\"altColor\">\n"
-                + "<td class=\"colFirst\"><code><a href=\"../pkg1/C.BooleanProperty.html\" title=\"class in pkg1\">C.BooleanProperty</a></code></td>\n",
+                + "<td class=\"colFirst\"><code><a href=\"C.BooleanProperty.html\" title=\"class in pkg1\">C.BooleanProperty</a></code></td>\n",
                 "<tr class=\"rowColor\">\n"
-                + "<td class=\"colFirst\"><code><a href=\"../pkg1/C.DoubleProperty.html\" title=\"class in pkg1\">C.DoubleProperty</a></code></td>\n");
+                + "<td class=\"colFirst\"><code><a href=\"C.DoubleProperty.html\" title=\"class in pkg1\">C.DoubleProperty</a></code></td>\n");
 
         checkOutput("pkg1/C.html", false,
                 "A()",
@@ -152,9 +151,9 @@ public class TestJavaFX extends JavadocTester {
                 + "<a href=\"javascript:show(8);\">Concrete Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
                 + "</caption>",
                 "<tr id=\"i0\" class=\"altColor\">\n"
-                + "<td class=\"colFirst\"><code><a href=\"../pkg1/C.BooleanProperty.html\" title=\"class in pkg1\">C.BooleanProperty</a></code></td>\n",
+                + "<td class=\"colFirst\"><code><a href=\"C.BooleanProperty.html\" title=\"class in pkg1\">C.BooleanProperty</a></code></td>\n",
                 "<tr id=\"i1\" class=\"rowColor\">\n"
-                + "<td class=\"colFirst\"><code><a href=\"../pkg1/C.DoubleProperty.html\" title=\"class in pkg1\">C.DoubleProperty</a></code></td>\n");
+                + "<td class=\"colFirst\"><code><a href=\"C.DoubleProperty.html\" title=\"class in pkg1\">C.DoubleProperty</a></code></td>\n");
 
         checkOutput("index-all.html", true,
                 "<div class=\"block\">Gets the value of the property paused.</div>",
@@ -162,12 +161,36 @@ public class TestJavaFX extends JavadocTester {
 
         checkOutput("pkg1/D.html", true,
                 "<h3>Properties inherited from class&nbsp;pkg1."
-                    + "<a href=\"../pkg1/C.html\" title=\"class in pkg1\">C</a></h3>\n"
-                    + "<code><a href=\"../pkg1/C.html#pausedProperty\">"
-                    + "paused</a>, <a href=\"../pkg1/C.html#rateProperty\">rate</a></code></li>");
+                    + "<a href=\"C.html\" title=\"class in pkg1\">C</a></h3>\n"
+                    + "<code><a href=\"C.html#pausedProperty\">"
+                    + "paused</a>, <a href=\"C.html#rateProperty\">rate</a></code></li>");
 
         checkOutput("pkg1/D.html", false, "shouldNotAppear");
     }
+
+    @Test
+    void test1_html4() {
+        javadoc("-d", "out1-html4",
+                "-html4",
+                "-sourcepath", testSrc,
+                "-javafx",
+                "-package",
+                "pkg1");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg1/C.html", true,
+                "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
+                + "<dd><a href=\"#getRate--\"><code>getRate()</code></a>, \n"
+                + "<a href=\"#setRate-double-\">"
+                + "<code>setRate(double)</code></a></dd>",
+                "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
+                + "<a href=\"#setTestMethodProperty--\">"
+                + "setTestMethodProperty</a></span>()</code></th>",
+                "<h3>Property Summary</h3>\n"
+                + "<table class=\"memberSummary\" summary=\"Property Summary table, listing properties, and an explanation\">\n"
+                + "<caption><span>Properties</span><span class=\"tabEnd\">&nbsp;</span></caption>");
+    }
+
     /*
      * Test with -javafx option enabled, to ensure property getters and setters
      * are treated correctly.
@@ -175,6 +198,61 @@ public class TestJavaFX extends JavadocTester {
     @Test
     void test2() {
         javadoc("-d", "out2a",
+                "-sourcepath", testSrc,
+                "-javafx",
+                "-package",
+                "pkg2");
+        checkExit(Exit.OK);
+        checkOutput("pkg2/Test.html", true,
+                "<h3>Property Detail</h3>\n"
+                + "<a id=\"betaProperty\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
+                + "<ul class=\"blockList\">\n"
+                + "<li class=\"blockList\">\n"
+                + "<h4>beta</h4>\n"
+                + "<pre>public&nbsp;java.lang.Object betaProperty</pre>\n"
+                + "</li>\n"
+                + "</ul>\n"
+                + "<a id=\"gammaProperty\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
+                + "<ul class=\"blockList\">\n"
+                + "<li class=\"blockList\">\n"
+                + "<h4>gamma</h4>\n"
+                + "<pre>public final&nbsp;java.util.List&lt;java.lang.String&gt; gammaProperty</pre>\n"
+                + "</li>\n"
+                + "</ul>\n"
+                + "<a id=\"deltaProperty\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
+                + "<ul class=\"blockListLast\">\n"
+                + "<li class=\"blockList\">\n"
+                + "<h4>delta</h4>\n"
+                + "<pre>public final&nbsp;java.util.List&lt;"
+                + "java.util.Set&lt;? super java.lang.Object&gt;&gt; deltaProperty</pre>\n"
+                + "</li>\n"
+                + "</ul>\n"
+                + "</li>\n"
+                + "</ul>",
+                "<h3>Property Summary</h3>\n"
+                + "<table class=\"memberSummary\">\n"
+                + "<caption><span>Properties</span><span class=\"tabEnd\">&nbsp;</span></caption>");
+
+        checkOutput("pkg2/Test.html", false,
+                "<h3>Property Summary</h3>\n"
+                + "<table class=\"memberSummary\" summary=\"Property Summary table, listing properties, and an explanation\">\n"
+                + "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All Methods</span><span class=\"tabEnd\">&nbsp;</span>"
+                + "</span><span id=\"t2\" class=\"tableTab\"><span><a href=\"javascript:show(2);\">Instance Methods</a>"
+                + "</span><span class=\"tabEnd\">&nbsp;</span></span><span id=\"t4\" class=\"tableTab\"><span>"
+                + "<a href=\"javascript:show(8);\">Concrete Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "</caption>");
+    }
+
+    @Test
+    void test2_html4() {
+        javadoc("-d", "out2a-html4",
+                "-html4",
                 "-sourcepath", testSrc,
                 "-javafx",
                 "-package",
@@ -215,15 +293,6 @@ public class TestJavaFX extends JavadocTester {
                 "<h3>Property Summary</h3>\n"
                 + "<table class=\"memberSummary\" summary=\"Property Summary table, listing properties, and an explanation\">\n"
                 + "<caption><span>Properties</span><span class=\"tabEnd\">&nbsp;</span></caption>");
-
-        checkOutput("pkg2/Test.html", false,
-                "<h3>Property Summary</h3>\n"
-                + "<table class=\"memberSummary\" summary=\"Property Summary table, listing properties, and an explanation\">\n"
-                + "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All Methods</span><span class=\"tabEnd\">&nbsp;</span>"
-                + "</span><span id=\"t2\" class=\"tableTab\"><span><a href=\"javascript:show(2);\">Instance Methods</a>"
-                + "</span><span class=\"tabEnd\">&nbsp;</span></span><span id=\"t4\" class=\"tableTab\"><span>"
-                + "<a href=\"javascript:show(8);\">Concrete Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
-                + "</caption>");
     }
 
     /*
@@ -246,27 +315,68 @@ public class TestJavaFX extends JavadocTester {
                 + "<tr id=\"i0\" class=\"altColor\">\n"
                 + "<td class=\"colFirst\"><code>&lt;T&gt;&nbsp;java.lang.Object</code></td>\n"
                 + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
-                + "<a href=\"../pkg2/Test.html#alphaProperty-java.util.List-\">alphaProperty</a>"
+                + "<a href=\"#alphaProperty(java.util.List)\">alphaProperty</a>"
                 + "</span>&#8203;(java.util.List&lt;T&gt;&nbsp;foo)</code></th>\n"
                 + "<td class=\"colLast\">&nbsp;</td>\n"
                 + "</tr>\n"
                 + "<tr id=\"i1\" class=\"rowColor\">\n"
                 + "<td class=\"colFirst\"><code>java.lang.Object</code></td>\n"
                 + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
-                + "<a href=\"../pkg2/Test.html#betaProperty--\">betaProperty</a></span>()</code></th>\n"
+                + "<a href=\"#betaProperty()\">betaProperty</a></span>()</code></th>\n"
                 + "<td class=\"colLast\">&nbsp;</td>\n"
                 + "</tr>\n"
                 + "<tr id=\"i2\" class=\"altColor\">\n"
                 + "<td class=\"colFirst\"><code>java.util.List&lt;java.util.Set&lt;? super java.lang.Object&gt;&gt;"
                 + "</code></td>\n"
                 + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
-                + "<a href=\"../pkg2/Test.html#deltaProperty--\">deltaProperty</a></span>()</code></th>\n"
+                + "<a href=\"#deltaProperty()\">deltaProperty</a></span>()</code></th>\n"
                 + "<td class=\"colLast\">&nbsp;</td>\n"
                 + "</tr>\n"
                 + "<tr id=\"i3\" class=\"rowColor\">\n"
                 + "<td class=\"colFirst\"><code>java.util.List&lt;java.lang.String&gt;</code></td>\n"
                 + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
-                + "<a href=\"../pkg2/Test.html#gammaProperty--\">gammaProperty</a></span>()</code></th>\n"
+                + "<a href=\"#gammaProperty()\">gammaProperty</a></span>()</code></th>\n"
+                + "<td class=\"colLast\">&nbsp;</td>"
+        );
+    }
+
+    @Test
+    void test3_html4() {
+        javadoc("-d", "out2b-html4",
+                "-html4",
+                "-sourcepath", testSrc,
+                "-package",
+                "pkg2");
+        checkExit(Exit.OK);
+        checkOutput("pkg2/Test.html", true,
+                "<th class=\"colFirst\" scope=\"col\">Modifier and Type</th>\n"
+                + "<th class=\"colSecond\" scope=\"col\">Method</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
+                + "</tr>\n"
+                + "<tr id=\"i0\" class=\"altColor\">\n"
+                + "<td class=\"colFirst\"><code>&lt;T&gt;&nbsp;java.lang.Object</code></td>\n"
+                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
+                + "<a href=\"#alphaProperty-java.util.List-\">alphaProperty</a>"
+                + "</span>&#8203;(java.util.List&lt;T&gt;&nbsp;foo)</code></th>\n"
+                + "<td class=\"colLast\">&nbsp;</td>\n"
+                + "</tr>\n"
+                + "<tr id=\"i1\" class=\"rowColor\">\n"
+                + "<td class=\"colFirst\"><code>java.lang.Object</code></td>\n"
+                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
+                + "<a href=\"#betaProperty--\">betaProperty</a></span>()</code></th>\n"
+                + "<td class=\"colLast\">&nbsp;</td>\n"
+                + "</tr>\n"
+                + "<tr id=\"i2\" class=\"altColor\">\n"
+                + "<td class=\"colFirst\"><code>java.util.List&lt;java.util.Set&lt;? super java.lang.Object&gt;&gt;"
+                + "</code></td>\n"
+                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
+                + "<a href=\"#deltaProperty--\">deltaProperty</a></span>()</code></th>\n"
+                + "<td class=\"colLast\">&nbsp;</td>\n"
+                + "</tr>\n"
+                + "<tr id=\"i3\" class=\"rowColor\">\n"
+                + "<td class=\"colFirst\"><code>java.util.List&lt;java.lang.String&gt;</code></td>\n"
+                + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\">"
+                + "<a href=\"#gammaProperty--\">gammaProperty</a></span>()</code></th>\n"
                 + "<td class=\"colLast\">&nbsp;</td>"
         );
     }

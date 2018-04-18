@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,26 +131,28 @@ ParMarkBitMap::live_words_in_range_helper(HeapWord* beg_addr, oop end_obj) const
 }
 
 size_t
-ParMarkBitMap::live_words_in_range_use_cache(ParCompactionManager* cm, HeapWord* beg_addr, oop end_obj) const
+ParMarkBitMap::live_words_in_range_use_cache(ParCompactionManager* cm, HeapWord* beg_addr, oop end_oop) const
 {
   HeapWord* last_beg = cm->last_query_begin();
-  oop last_obj = cm->last_query_object();
+  HeapWord* last_obj = (HeapWord*)cm->last_query_object();
+  HeapWord* end_obj  = (HeapWord*)end_oop;
+
   size_t last_ret = cm->last_query_return();
   if (end_obj > last_obj) {
-    last_ret = last_ret + live_words_in_range_helper((HeapWord*)last_obj, end_obj);
+    last_ret = last_ret + live_words_in_range_helper(last_obj, end_oop);
     last_obj = end_obj;
   } else if (end_obj < last_obj) {
     // The cached value is for an object that is to the left (lower address) of the current
     // end_obj. Calculate back from that cached value.
-    if (pointer_delta((HeapWord*)end_obj, (HeapWord*)beg_addr) > pointer_delta((HeapWord*)last_obj, (HeapWord*)end_obj)) {
-      last_ret = last_ret - live_words_in_range_helper((HeapWord*)end_obj, last_obj);
+    if (pointer_delta(end_obj, beg_addr) > pointer_delta(last_obj, end_obj)) {
+      last_ret = last_ret - live_words_in_range_helper(end_obj, (oop)last_obj);
     } else {
-      last_ret = live_words_in_range_helper(beg_addr, end_obj);
+      last_ret = live_words_in_range_helper(beg_addr, end_oop);
     }
     last_obj = end_obj;
   }
 
-  update_live_words_in_range_cache(cm, last_beg, last_obj, last_ret);
+  update_live_words_in_range_cache(cm, last_beg, (oop)last_obj, last_ret);
   return last_ret;
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,11 @@ package java.net;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.security.AccessController;
-import sun.net.ResourceManager;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
+import sun.net.ResourceManager;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -115,6 +115,7 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
         fd = new FileDescriptor();
         try {
             datagramSocketCreate();
+            SocketCleanable.register(fd);
         } catch (SocketException ioe) {
             ResourceManager.afterUdpClose();
             fd = null;
@@ -265,6 +266,7 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
      */
     protected void close() {
         if (fd != null) {
+            SocketCleanable.unregister(fd);
             datagramSocketClose();
             ResourceManager.afterUdpClose();
             fd = null;
@@ -273,11 +275,6 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
 
     protected boolean isClosed() {
         return (fd == null) ? true : false;
-    }
-
-    @SuppressWarnings("deprecation")
-    protected void finalize() {
-        close();
     }
 
     /**

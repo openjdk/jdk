@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,8 @@
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectorPolicy.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/vmGCOperations.hpp"
@@ -50,9 +49,7 @@ CollectorPolicy::CollectorPolicy() :
     _heap_alignment(0),
     _initial_heap_byte_size(InitialHeapSize),
     _max_heap_byte_size(MaxHeapSize),
-    _min_heap_byte_size(Arguments::min_heap_size()),
-    _should_clear_all_soft_refs(false),
-    _all_soft_refs_clear(false)
+    _min_heap_byte_size(Arguments::min_heap_size())
 {}
 
 #ifdef ASSERT
@@ -145,20 +142,6 @@ void CollectorPolicy::initialize_size_info() {
   DEBUG_ONLY(CollectorPolicy::assert_size_info();)
 }
 
-bool CollectorPolicy::use_should_clear_all_soft_refs(bool v) {
-  bool result = _should_clear_all_soft_refs;
-  set_should_clear_all_soft_refs(false);
-  return result;
-}
-
-CardTableRS* CollectorPolicy::create_rem_set(MemRegion whole_heap) {
-  return new CardTableRS(whole_heap);
-}
-
-void CollectorPolicy::cleared_all_soft_refs() {
-  _all_soft_refs_clear = true;
-}
-
 size_t CollectorPolicy::compute_heap_alignment() {
   // The card marking array and the offset arrays for old generations are
   // committed in os pages as well. Make sure they are entirely full (to
@@ -186,10 +169,7 @@ GenCollectorPolicy::GenCollectorPolicy() :
     _min_old_size(0),
     _initial_old_size(0),
     _max_old_size(0),
-    _gen_alignment(0),
-    _young_gen_spec(NULL),
-    _old_gen_spec(NULL),
-    _size_policy(NULL)
+    _gen_alignment(0)
 {}
 
 size_t GenCollectorPolicy::scale_by_NewRatio_aligned(size_t base_size) {
@@ -200,29 +180,6 @@ size_t GenCollectorPolicy::bound_minus_alignment(size_t desired_size,
                                                  size_t maximum_size) {
   size_t max_minus = maximum_size - _gen_alignment;
   return desired_size < max_minus ? desired_size : max_minus;
-}
-
-
-void GenCollectorPolicy::initialize_size_policy(size_t init_eden_size,
-                                                size_t init_promo_size,
-                                                size_t init_survivor_size) {
-  const double max_gc_pause_sec = ((double) MaxGCPauseMillis) / 1000.0;
-  _size_policy = new AdaptiveSizePolicy(init_eden_size,
-                                        init_promo_size,
-                                        init_survivor_size,
-                                        max_gc_pause_sec,
-                                        GCTimeRatio);
-}
-
-void GenCollectorPolicy::cleared_all_soft_refs() {
-  // If near gc overhear limit, continue to clear SoftRefs.  SoftRefs may
-  // have been cleared in the last collection but if the gc overhear
-  // limit continues to be near, SoftRefs should still be cleared.
-  if (size_policy() != NULL) {
-    _should_clear_all_soft_refs = size_policy()->gc_overhead_limit_near();
-  }
-
-  CollectorPolicy::cleared_all_soft_refs();
 }
 
 size_t GenCollectorPolicy::young_gen_size_lower_bound() {
@@ -580,322 +537,6 @@ void GenCollectorPolicy::initialize_size_info() {
   DEBUG_ONLY(GenCollectorPolicy::assert_size_info();)
 }
 
-HeapWord* GenCollectorPolicy::mem_allocate_work(size_t size,
-                                        bool is_tlab,
-                                        bool* gc_overhead_limit_was_exceeded) {
-  GenCollectedHeap *gch = GenCollectedHeap::heap();
-
-  debug_only(gch->check_for_valid_allocation_state());
-  assert(gch->no_gc_in_progress(), "Allocation during gc not allowed");
-
-  // In general gc_overhead_limit_was_exceeded should be false so
-  // set it so here and reset it to true only if the gc time
-  // limit is being exceeded as checked below.
-  *gc_overhead_limit_was_exceeded = false;
-
-  HeapWord* result = NULL;
-
-  // Loop until the allocation is satisfied, or unsatisfied after GC.
-  for (uint try_count = 1, gclocker_stalled_count = 0; /* return or throw */; try_count += 1) {
-    HandleMark hm; // Discard any handles allocated in each iteration.
-
-    // First allocation attempt is lock-free.
-    Generation *young = gch->young_gen();
-    assert(young->supports_inline_contig_alloc(),
-      "Otherwise, must do alloc within heap lock");
-    if (young->should_allocate(size, is_tlab)) {
-      result = young->par_allocate(size, is_tlab);
-      if (result != NULL) {
-        assert(gch->is_in_reserved(result), "result not in heap");
-        return result;
-      }
-    }
-    uint gc_count_before;  // Read inside the Heap_lock locked region.
-    {
-      MutexLocker ml(Heap_lock);
-      log_trace(gc, alloc)("GenCollectorPolicy::mem_allocate_work: attempting locked slow path allocation");
-      // Note that only large objects get a shot at being
-      // allocated in later generations.
-      bool first_only = ! should_try_older_generation_allocation(size);
-
-      result = gch->attempt_allocation(size, is_tlab, first_only);
-      if (result != NULL) {
-        assert(gch->is_in_reserved(result), "result not in heap");
-        return result;
-      }
-
-      if (GCLocker::is_active_and_needs_gc()) {
-        if (is_tlab) {
-          return NULL;  // Caller will retry allocating individual object.
-        }
-        if (!gch->is_maximal_no_gc()) {
-          // Try and expand heap to satisfy request.
-          result = expand_heap_and_allocate(size, is_tlab);
-          // Result could be null if we are out of space.
-          if (result != NULL) {
-            return result;
-          }
-        }
-
-        if (gclocker_stalled_count > GCLockerRetryAllocationCount) {
-          return NULL; // We didn't get to do a GC and we didn't get any memory.
-        }
-
-        // If this thread is not in a jni critical section, we stall
-        // the requestor until the critical section has cleared and
-        // GC allowed. When the critical section clears, a GC is
-        // initiated by the last thread exiting the critical section; so
-        // we retry the allocation sequence from the beginning of the loop,
-        // rather than causing more, now probably unnecessary, GC attempts.
-        JavaThread* jthr = JavaThread::current();
-        if (!jthr->in_critical()) {
-          MutexUnlocker mul(Heap_lock);
-          // Wait for JNI critical section to be exited
-          GCLocker::stall_until_clear();
-          gclocker_stalled_count += 1;
-          continue;
-        } else {
-          if (CheckJNICalls) {
-            fatal("Possible deadlock due to allocating while"
-                  " in jni critical section");
-          }
-          return NULL;
-        }
-      }
-
-      // Read the gc count while the heap lock is held.
-      gc_count_before = gch->total_collections();
-    }
-
-    VM_GenCollectForAllocation op(size, is_tlab, gc_count_before);
-    VMThread::execute(&op);
-    if (op.prologue_succeeded()) {
-      result = op.result();
-      if (op.gc_locked()) {
-         assert(result == NULL, "must be NULL if gc_locked() is true");
-         continue;  // Retry and/or stall as necessary.
-      }
-
-      // Allocation has failed and a collection
-      // has been done.  If the gc time limit was exceeded the
-      // this time, return NULL so that an out-of-memory
-      // will be thrown.  Clear gc_overhead_limit_exceeded
-      // so that the overhead exceeded does not persist.
-
-      const bool limit_exceeded = size_policy()->gc_overhead_limit_exceeded();
-      const bool softrefs_clear = all_soft_refs_clear();
-
-      if (limit_exceeded && softrefs_clear) {
-        *gc_overhead_limit_was_exceeded = true;
-        size_policy()->set_gc_overhead_limit_exceeded(false);
-        if (op.result() != NULL) {
-          CollectedHeap::fill_with_object(op.result(), size);
-        }
-        return NULL;
-      }
-      assert(result == NULL || gch->is_in_reserved(result),
-             "result not in heap");
-      return result;
-    }
-
-    // Give a warning if we seem to be looping forever.
-    if ((QueuedAllocationWarningCount > 0) &&
-        (try_count % QueuedAllocationWarningCount == 0)) {
-          log_warning(gc, ergo)("GenCollectorPolicy::mem_allocate_work retries %d times,"
-                                " size=" SIZE_FORMAT " %s", try_count, size, is_tlab ? "(TLAB)" : "");
-    }
-  }
-}
-
-HeapWord* GenCollectorPolicy::expand_heap_and_allocate(size_t size,
-                                                       bool   is_tlab) {
-  GenCollectedHeap *gch = GenCollectedHeap::heap();
-  HeapWord* result = NULL;
-  Generation *old = gch->old_gen();
-  if (old->should_allocate(size, is_tlab)) {
-    result = old->expand_and_allocate(size, is_tlab);
-  }
-  if (result == NULL) {
-    Generation *young = gch->young_gen();
-    if (young->should_allocate(size, is_tlab)) {
-      result = young->expand_and_allocate(size, is_tlab);
-    }
-  }
-  assert(result == NULL || gch->is_in_reserved(result), "result not in heap");
-  return result;
-}
-
-HeapWord* GenCollectorPolicy::satisfy_failed_allocation(size_t size,
-                                                        bool   is_tlab) {
-  GenCollectedHeap *gch = GenCollectedHeap::heap();
-  GCCauseSetter x(gch, GCCause::_allocation_failure);
-  HeapWord* result = NULL;
-
-  assert(size != 0, "Precondition violated");
-  if (GCLocker::is_active_and_needs_gc()) {
-    // GC locker is active; instead of a collection we will attempt
-    // to expand the heap, if there's room for expansion.
-    if (!gch->is_maximal_no_gc()) {
-      result = expand_heap_and_allocate(size, is_tlab);
-    }
-    return result;   // Could be null if we are out of space.
-  } else if (!gch->incremental_collection_will_fail(false /* don't consult_young */)) {
-    // Do an incremental collection.
-    gch->do_collection(false,                     // full
-                       false,                     // clear_all_soft_refs
-                       size,                      // size
-                       is_tlab,                   // is_tlab
-                       GenCollectedHeap::OldGen); // max_generation
-  } else {
-    log_trace(gc)(" :: Trying full because partial may fail :: ");
-    // Try a full collection; see delta for bug id 6266275
-    // for the original code and why this has been simplified
-    // with from-space allocation criteria modified and
-    // such allocation moved out of the safepoint path.
-    gch->do_collection(true,                      // full
-                       false,                     // clear_all_soft_refs
-                       size,                      // size
-                       is_tlab,                   // is_tlab
-                       GenCollectedHeap::OldGen); // max_generation
-  }
-
-  result = gch->attempt_allocation(size, is_tlab, false /*first_only*/);
-
-  if (result != NULL) {
-    assert(gch->is_in_reserved(result), "result not in heap");
-    return result;
-  }
-
-  // OK, collection failed, try expansion.
-  result = expand_heap_and_allocate(size, is_tlab);
-  if (result != NULL) {
-    return result;
-  }
-
-  // If we reach this point, we're really out of memory. Try every trick
-  // we can to reclaim memory. Force collection of soft references. Force
-  // a complete compaction of the heap. Any additional methods for finding
-  // free memory should be here, especially if they are expensive. If this
-  // attempt fails, an OOM exception will be thrown.
-  {
-    UIntFlagSetting flag_change(MarkSweepAlwaysCompactCount, 1); // Make sure the heap is fully compacted
-
-    gch->do_collection(true,                      // full
-                       true,                      // clear_all_soft_refs
-                       size,                      // size
-                       is_tlab,                   // is_tlab
-                       GenCollectedHeap::OldGen); // max_generation
-  }
-
-  result = gch->attempt_allocation(size, is_tlab, false /* first_only */);
-  if (result != NULL) {
-    assert(gch->is_in_reserved(result), "result not in heap");
-    return result;
-  }
-
-  assert(!should_clear_all_soft_refs(),
-    "Flag should have been handled and cleared prior to this point");
-
-  // What else?  We might try synchronous finalization later.  If the total
-  // space available is large enough for the allocation, then a more
-  // complete compaction phase than we've tried so far might be
-  // appropriate.
-  return NULL;
-}
-
-MetaWord* CollectorPolicy::satisfy_failed_metadata_allocation(
-                                                 ClassLoaderData* loader_data,
-                                                 size_t word_size,
-                                                 Metaspace::MetadataType mdtype) {
-  uint loop_count = 0;
-  uint gc_count = 0;
-  uint full_gc_count = 0;
-
-  assert(!Heap_lock->owned_by_self(), "Should not be holding the Heap_lock");
-
-  do {
-    MetaWord* result = loader_data->metaspace_non_null()->allocate(word_size, mdtype);
-    if (result != NULL) {
-      return result;
-    }
-
-    if (GCLocker::is_active_and_needs_gc()) {
-      // If the GCLocker is active, just expand and allocate.
-      // If that does not succeed, wait if this thread is not
-      // in a critical section itself.
-      result =
-        loader_data->metaspace_non_null()->expand_and_allocate(word_size,
-                                                               mdtype);
-      if (result != NULL) {
-        return result;
-      }
-      JavaThread* jthr = JavaThread::current();
-      if (!jthr->in_critical()) {
-        // Wait for JNI critical section to be exited
-        GCLocker::stall_until_clear();
-        // The GC invoked by the last thread leaving the critical
-        // section will be a young collection and a full collection
-        // is (currently) needed for unloading classes so continue
-        // to the next iteration to get a full GC.
-        continue;
-      } else {
-        if (CheckJNICalls) {
-          fatal("Possible deadlock due to allocating while"
-                " in jni critical section");
-        }
-        return NULL;
-      }
-    }
-
-    {  // Need lock to get self consistent gc_count's
-      MutexLocker ml(Heap_lock);
-      gc_count      = Universe::heap()->total_collections();
-      full_gc_count = Universe::heap()->total_full_collections();
-    }
-
-    // Generate a VM operation
-    VM_CollectForMetadataAllocation op(loader_data,
-                                       word_size,
-                                       mdtype,
-                                       gc_count,
-                                       full_gc_count,
-                                       GCCause::_metadata_GC_threshold);
-    VMThread::execute(&op);
-
-    // If GC was locked out, try again. Check before checking success because the
-    // prologue could have succeeded and the GC still have been locked out.
-    if (op.gc_locked()) {
-      continue;
-    }
-
-    if (op.prologue_succeeded()) {
-      return op.result();
-    }
-    loop_count++;
-    if ((QueuedAllocationWarningCount > 0) &&
-        (loop_count % QueuedAllocationWarningCount == 0)) {
-      log_warning(gc, ergo)("satisfy_failed_metadata_allocation() retries %d times,"
-                            " size=" SIZE_FORMAT, loop_count, word_size);
-    }
-  } while (true);  // Until a GC is done
-}
-
-// Return true if any of the following is true:
-// . the allocation won't fit into the current young gen heap
-// . gc locker is occupied (jni critical section)
-// . heap memory is tight -- the most recent previous collection
-//   was a full collection because a partial collection (would
-//   have) failed and is likely to fail again
-bool GenCollectorPolicy::should_try_older_generation_allocation(
-        size_t word_size) const {
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  size_t young_capacity = gch->young_gen()->capacity_before_gc();
-  return    (word_size > heap_word_size(young_capacity))
-         || GCLocker::is_active_and_needs_gc()
-         || gch->incremental_collection_failed();
-}
-
-
 //
 // MarkSweepPolicy methods
 //
@@ -904,14 +545,3 @@ void MarkSweepPolicy::initialize_alignments() {
   _space_alignment = _gen_alignment = (size_t)Generation::GenGrain;
   _heap_alignment = compute_heap_alignment();
 }
-
-void MarkSweepPolicy::initialize_generations() {
-  _young_gen_spec = new GenerationSpec(Generation::DefNew, _initial_young_size, _max_young_size, _gen_alignment);
-  _old_gen_spec   = new GenerationSpec(Generation::MarkSweepCompact, _initial_old_size, _max_old_size, _gen_alignment);
-}
-
-void MarkSweepPolicy::initialize_gc_policy_counters() {
-  // Initialize the policy counters - 2 collectors, 2 generations.
-  _gc_policy_counters = new GCPolicyCounters("Copy:MSC", 2, 2);
-}
-

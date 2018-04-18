@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 #ifndef SHARE_VM_GC_G1_G1CODECACHEREMSET_HPP
 #define SHARE_VM_GC_G1_G1CODECACHEREMSET_HPP
 
-#include "memory/allocation.hpp"
-
 class CodeBlobClosure;
 class G1CodeRootSetTable;
 class HeapRegion;
@@ -34,7 +32,7 @@ class nmethod;
 
 // Implements storage for a set of code roots.
 // All methods that modify the set are not thread-safe except if otherwise noted.
-class G1CodeRootSet VALUE_OBJ_CLASS_SPEC {
+class G1CodeRootSet {
   friend class G1CodeRootSetTest;
  private:
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 
 #include "asm/assembler.hpp"
 #include "code/vmreg.hpp"
-#include "memory/allocation.hpp"
 
 // A Location describes a concrete machine variable location
 // (such as integer or floating point register or a stack-held
@@ -40,7 +39,7 @@
 //  Where:  [4]
 //  Offset: [31..5]
 
-class Location VALUE_OBJ_CLASS_SPEC {
+class Location {
   friend class VMStructs;
  public:
   enum Where {

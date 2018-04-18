@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,15 +31,15 @@
 #ifdef AMD64
   static void setup_fpu() {}
 #else
-  static jint  (*atomic_xchg_func)        (jint,  volatile jint*);
-  static jint  (*atomic_cmpxchg_func)     (jint,  volatile jint*,  jint);
-  static jlong (*atomic_cmpxchg_long_func)(jlong, volatile jlong*, jlong);
-  static jint  (*atomic_add_func)         (jint,  volatile jint*);
+  static int32_t  (*atomic_xchg_func)        (int32_t,  volatile int32_t*);
+  static int32_t  (*atomic_cmpxchg_func)     (int32_t,  volatile int32_t*, int32_t);
+  static int64_t  (*atomic_cmpxchg_long_func)(int64_t,  volatile int64_t*, int64_t);
+  static int32_t  (*atomic_add_func)         (int32_t,  volatile int32_t*);
 
-  static jint  atomic_xchg_bootstrap        (jint,  volatile jint*);
-  static jint  atomic_cmpxchg_bootstrap     (jint,  volatile jint*,  jint);
-  static jlong atomic_cmpxchg_long_bootstrap(jlong, volatile jlong*, jlong);
-  static jint  atomic_add_bootstrap         (jint,  volatile jint*);
+  static int32_t  atomic_xchg_bootstrap        (int32_t,  volatile int32_t*);
+  static int32_t  atomic_cmpxchg_bootstrap     (int32_t,  volatile int32_t*, int32_t);
+  static int64_t  atomic_cmpxchg_long_bootstrap(int64_t,  volatile int64_t*, int64_t);
+  static int32_t  atomic_add_bootstrap         (int32_t,  volatile int32_t*);
 
   static void setup_fpu();
 #endif // AMD64

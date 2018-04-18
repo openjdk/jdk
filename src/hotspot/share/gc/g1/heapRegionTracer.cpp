@@ -30,8 +30,7 @@ void HeapRegionTracer::send_region_type_change(uint index,
                                                G1HeapRegionTraceType::Type from,
                                                G1HeapRegionTraceType::Type to,
                                                uintptr_t start,
-                                               size_t used,
-                                               uint allocationContext) {
+                                               size_t used) {
   EventG1HeapRegionTypeChange e;
   if (e.should_commit()) {
     e.set_index(index);
@@ -39,7 +38,6 @@ void HeapRegionTracer::send_region_type_change(uint index,
     e.set_to(to);
     e.set_start(start);
     e.set_used(used);
-    e.set_allocationContext(allocationContext);
     e.commit();
   }
 }

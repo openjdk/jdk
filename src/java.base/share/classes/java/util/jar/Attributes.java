@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,24 @@
 
 package java.util.jar;
 
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.Collection;
-import java.util.AbstractSet;
-import java.util.Iterator;
-import java.util.Locale;
+
 import sun.util.logging.PlatformLogger;
-import java.util.Comparator;
 
 /**
  * The Attributes class maps Manifest attribute names to associated string
  * values. Valid attribute names are case-insensitive, are restricted to
  * the ASCII characters in the set [0-9a-zA-Z_-], and cannot exceed 70
- * characters in length. Attribute values can contain any characters and
+ * characters in length. There must be a colon and a SPACE after the name;
+ * the combined length will not exceed 72 characters.
+ * Attribute values can contain any characters and
  * will be UTF8-encoded when written to the output stream.  See the
  * <a href="{@docRoot}/../specs/jar/jar.html">JAR File Specification</a>
  * for more information about valid attribute names and values.
@@ -312,8 +312,8 @@ public class Attributes implements Map<Object,Object>, Cloneable {
              }
              buffer.append(value);
 
-             buffer.append("\r\n");
              Manifest.make72Safe(buffer);
+             buffer.append("\r\n");
              os.writeBytes(buffer.toString());
          }
         os.writeBytes("\r\n");
@@ -357,8 +357,8 @@ public class Attributes implements Map<Object,Object>, Cloneable {
                 }
                 buffer.append(value);
 
-                buffer.append("\r\n");
                 Manifest.make72Safe(buffer);
+                buffer.append("\r\n");
                 out.writeBytes(buffer.toString());
             }
         }

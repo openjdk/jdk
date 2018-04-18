@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -37,45 +37,6 @@ USE_JTREG_ASSERT := false
 LIMIT_JTREG_VM_MEMORY := false
 
 IGNORE_MARKED_TESTS := true
-
-# Get OS name from uname (Cygwin inexplicably adds _NT-5.1)
-UNAME_S := $(shell uname -s | cut -f1 -d_)
-
-ifeq ($(UNAME_S), SunOS)
-  NUM_CORES := $(shell LC_MESSAGES=C /usr/sbin/psrinfo -v | grep -c on-line)
-endif
-ifeq ($(UNAME_S), Linux)
-  NUM_CORES := $(shell cat /proc/cpuinfo  | grep -c processor)
-endif
-ifeq ($(UNAME_S), Darwin)
-  NUM_CORES := $(shell /usr/sbin/sysctl -n hw.ncpu)
-endif
-ifeq ($(findstring CYGWIN,$(UNAME_S)), CYGWIN)
-  ifneq ($(NUMBER_OF_PROCESSORS), )
-    NUM_CORES := $(NUMBER_OF_PROCESSORS)
-  else
-    ifneq ($(HOTSPOT_BUILD_JOBS), )
-      NUM_CORES := $(HOTSPOT_BUILD_JOBS)
-    else
-      NUM_CORES := 1 # fallback
-    endif
-  endif
-endif
-
-ifndef CONCURRENCY_FACTOR
-  CONCURRENCY_FACTOR = 1
-endif
-
-# Concurrency based on min(cores / 2, 12)
-CONCURRENCY := $(shell awk 'BEGIN { printf "%.0f", $(NUM_CORES) / 2 * $(CONCURRENCY_FACTOR) }')
-ifeq ($(CONCURRENCY), 0)
-  CONCURRENCY := 1
-else ifeq ($(shell expr $(CONCURRENCY) \> 12), 1)
-  CONCURRENCY := 12
-endif
-
-# Make sure MaxRAMPercentage is high enough to not cause OOM or swapping since we may end up with a lot of JVM's
-JTREG_BASIC_OPTIONS += -vmoption:-XX:MaxRAMPercentage=$(shell expr 25 / $(CONCURRENCY))
 
 # Include the common base file with most of the logic
 include ../../TestCommon.gmk

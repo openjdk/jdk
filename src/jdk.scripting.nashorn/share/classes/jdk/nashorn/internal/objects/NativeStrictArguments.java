@@ -79,9 +79,8 @@ public final class NativeStrictArguments extends ScriptObject {
         final ScriptFunction func = Global.instance().getTypeErrorThrower();
         // We have to fill user accessor functions late as these are stored
         // in this object rather than in the PropertyMap of this object.
-        final int flags = Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE;
-        initUserAccessors("caller", flags, func, func);
-        initUserAccessors("callee", flags, func, func);
+        initUserAccessors("caller", func, func);
+        initUserAccessors("callee", func, func);
 
         setArray(ArrayData.allocate(values));
         this.length = values.length;

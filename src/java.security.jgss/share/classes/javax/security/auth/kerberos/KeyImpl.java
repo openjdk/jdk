@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,6 +137,12 @@ class KeyImpl implements SecretKey, Destroyable, Serializable {
 
         case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96:
             return "aes256-cts-hmac-sha1-96";
+
+        case EncryptedData.ETYPE_AES128_CTS_HMAC_SHA256_128:
+            return "aes128-cts-hmac-sha256-128";
+
+        case EncryptedData.ETYPE_AES256_CTS_HMAC_SHA384_192:
+            return "aes256-cts-hmac-sha384-192";
 
         case EncryptedData.ETYPE_NULL:
             return "none";

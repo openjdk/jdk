@@ -34,7 +34,7 @@ G1HeapTransition::Data::Data(G1CollectedHeap* g1_heap) {
   _survivor_length = g1_heap->survivor_regions_count();
   _old_length = g1_heap->old_regions_count();
   _humongous_length = g1_heap->humongous_regions_count();
-  _metaspace_used_bytes = MetaspaceAux::used_bytes();
+  _metaspace_used_bytes = MetaspaceUtils::used_bytes();
 }
 
 G1HeapTransition::G1HeapTransition(G1CollectedHeap* g1_heap) : _g1_heap(g1_heap), _before(g1_heap) { }
@@ -58,7 +58,7 @@ struct DetailedUsage : public StackObj {
 class DetailedUsageClosure: public HeapRegionClosure {
 public:
   DetailedUsage _usage;
-  bool doHeapRegion(HeapRegion* r) {
+  bool do_heap_region(HeapRegion* r) {
     if (r->is_old()) {
       _usage._old_used += r->used();
       _usage._old_region_count++;
@@ -117,5 +117,5 @@ void G1HeapTransition::print() {
   log_trace(gc, heap)(" Used: " SIZE_FORMAT "K, Waste: " SIZE_FORMAT "K",
       usage._humongous_used / K, ((after._humongous_length * HeapRegion::GrainBytes) - usage._humongous_used) / K);
 
-  MetaspaceAux::print_metaspace_change(_before._metaspace_used_bytes);
+  MetaspaceUtils::print_metaspace_change(_before._metaspace_used_bytes);
 }

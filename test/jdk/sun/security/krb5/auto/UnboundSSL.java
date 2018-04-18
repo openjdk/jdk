@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,15 @@ import javax.security.auth.login.LoginException;
 
 /*
  * @test
- * @bug 8025123
+ * @bug 8025123 8194486
  * @summary Checks if an unbound server can handle connections
  *          only for allowed service principals
- * @run main/othervm/policy=unbound.ssl.policy UnboundSSL
- *                              unbound.ssl.jaas.conf server_star
- * @run main/othervm/policy=unbound.ssl.policy UnboundSSL
- *                              unbound.ssl.jaas.conf server_multiple_principals
+ * @library /test/lib
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm/policy=unbound.ssl.policy -Djdk.net.hosts.file=TestHosts
+ *      UnboundSSL unbound.ssl.jaas.conf server_star
+ * @run main/othervm/policy=unbound.ssl.policy -Djdk.net.hosts.file=TestHosts
+ *      UnboundSSL unbound.ssl.jaas.conf server_multiple_principals
  */
 public class UnboundSSL {
 

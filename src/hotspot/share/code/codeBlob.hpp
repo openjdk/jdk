@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ struct CodeBlobType {
 //  RuntimeBlob          : Non-compiled method code; generated glue code
 //   BufferBlob          : Used for non-relocatable code such as interpreter, stubroutines, etc.
 //    AdapterBlob        : Used to hold C2I/I2C adapters
+//    VtableBlob         : Used for holding vtable chunks
 //    MethodHandlesAdapterBlob : Used to hold MethodHandles adapters
 //   RuntimeStub         : Call to VM runtime methods
 //   SingletonBlob       : Super-class for all blobs that exist in only one instance
@@ -82,7 +83,7 @@ struct CodeBlobType {
 
 class CodeBlobLayout;
 
-class CodeBlob VALUE_OBJ_CLASS_SPEC {
+class CodeBlob {
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class CodeCacheDumper;
@@ -132,6 +133,7 @@ public:
   virtual bool is_exception_stub() const              { return false; }
   virtual bool is_safepoint_stub() const              { return false; }
   virtual bool is_adapter_blob() const                { return false; }
+  virtual bool is_vtable_blob() const                 { return false; }
   virtual bool is_method_handles_adapter_blob() const { return false; }
   virtual bool is_aot() const                         { return false; }
   virtual bool is_compiled() const                    { return false; }
@@ -380,6 +382,7 @@ class WhiteBox;
 class BufferBlob: public RuntimeBlob {
   friend class VMStructs;
   friend class AdapterBlob;
+  friend class VtableBlob;
   friend class MethodHandlesAdapterBlob;
   friend class WhiteBox;
 
@@ -425,6 +428,18 @@ public:
   virtual bool is_adapter_blob() const { return true; }
 };
 
+//---------------------------------------------------------------------------------------------------
+class VtableBlob: public BufferBlob {
+private:
+  VtableBlob(const char*, int);
+
+public:
+  // Creation
+  static VtableBlob* create(const char* name, int buffer_size);
+
+  // Typing
+  virtual bool is_vtable_blob() const { return true; }
+};
 
 //----------------------------------------------------------------------------------------------------
 // MethodHandlesAdapterBlob: used to hold MethodHandles adapters

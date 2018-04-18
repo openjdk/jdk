@@ -1223,6 +1223,10 @@ const bool Matcher::match_rule_supported(int opcode) {
       if (!UsePopCountInstruction)
         ret_value = false;
       break;
+    case Op_PopCountVI:
+      if (!UsePopCountInstruction || !VM_Version::supports_vpopcntdq())
+        ret_value = false;
+      break;
     case Op_MulVI:
       if ((UseSSE < 4) && (UseAVX < 1)) // only with SSE4_1 or AVX
         ret_value = false;
@@ -10785,6 +10789,52 @@ instruct vfma16F_mem(vecZ a, memory b, vecZ c) %{
   ins_encode %{
     int vector_len = 2;
     __ vfmaf($c$$XMMRegister, $a$$XMMRegister, $b$$Address, $c$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// --------------------------------- PopCount --------------------------------------
+
+instruct vpopcount2I(vecD dst, vecD src) %{
+  predicate(VM_Version::supports_vpopcntdq() && UsePopCountInstruction && n->as_Vector()->length() == 2);
+  match(Set dst (PopCountVI src));
+  format %{ "vpopcntd  $dst,$src\t! vector popcount packed2I" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpopcntd($dst$$XMMRegister, $src$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vpopcount4I(vecX dst, vecX src) %{
+  predicate(VM_Version::supports_vpopcntdq() && UsePopCountInstruction && n->as_Vector()->length() == 4);
+  match(Set dst (PopCountVI src));
+  format %{ "vpopcntd  $dst,$src\t! vector popcount packed4I" %}
+  ins_encode %{
+    int vector_len = 0;
+    __ vpopcntd($dst$$XMMRegister, $src$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vpopcount8I(vecY dst, vecY src) %{
+  predicate(VM_Version::supports_vpopcntdq() && UsePopCountInstruction && n->as_Vector()->length() == 8);
+  match(Set dst (PopCountVI src));
+  format %{ "vpopcntd  $dst,$src\t! vector popcount packed8I" %}
+  ins_encode %{
+    int vector_len = 1;
+    __ vpopcntd($dst$$XMMRegister, $src$$XMMRegister, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vpopcount16I(vecZ dst, vecZ src) %{
+  predicate(VM_Version::supports_vpopcntdq() && UsePopCountInstruction && n->as_Vector()->length() == 16);
+  match(Set dst (PopCountVI src));
+  format %{ "vpopcntd  $dst,$src\t! vector popcount packed16I" %}
+  ins_encode %{
+    int vector_len = 2;
+    __ vpopcntd($dst$$XMMRegister, $src$$XMMRegister, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}

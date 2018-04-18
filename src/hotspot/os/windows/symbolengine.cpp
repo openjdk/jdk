@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "symbolengine.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/ostream.hpp"
 #include "windbghelp.hpp"
 
 #include <windows.h>
@@ -374,10 +375,10 @@ static bool recalc_search_path_locked(bool* p_search_path_was_updated) {
     const int len_returned = (int)::GetModuleFileName(hMod, filebuffer, (DWORD)file_buffer_capacity);
     DEBUG_ONLY(g_buffers.dir_name.check();)
     if (len_returned == 0) {
-      // Error. This is suspicious - this may happen if a module has just been
-      // unloaded concurrently after our call to EnumProcessModules and
-      // GetModuleFileName, but probably just indicates a coding error.
-      assert(false, "GetModuleFileName failed (%u)", ::GetLastError());
+      // This may happen when a module gets unloaded after our call to EnumProcessModules.
+      // It should be rare but may sporadically happen. Just ignore and continue with the
+      // next module.
+      continue;
     } else if (len_returned == file_buffer_capacity) {
       // Truncation. Just skip this module and continue with the next module.
       continue;

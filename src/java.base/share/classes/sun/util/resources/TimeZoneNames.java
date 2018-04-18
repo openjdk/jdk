@@ -445,7 +445,7 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
                                               "Western Greenland Summer Time", "WGST",
                                               "Western Greenland Time", "WGT"}},
             {"America/Goose_Bay", AST},
-            {"America/Grand_Turk", AST},
+            {"America/Grand_Turk", EST},
             {"America/Grenada", AST},
             {"America/Guadeloupe", AST},
             {"America/Guatemala", CST},

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,12 @@
 #include "ci/ciReplay.hpp"
 #include "ci/ciSymbol.hpp"
 #include "ci/ciKlass.hpp"
-#include "ci/ciUtilities.hpp"
+#include "ci/ciUtilities.inline.hpp"
 #include "compiler/compileBroker.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
@@ -721,6 +722,7 @@ class CompileReplay : public StackObj {
         case JVM_CONSTANT_Float:
         case JVM_CONSTANT_MethodHandle:
         case JVM_CONSTANT_MethodType:
+        case JVM_CONSTANT_Dynamic:
         case JVM_CONSTANT_InvokeDynamic:
           if (tag != cp->tag_at(i).value()) {
             report_error("tag mismatch: wrong class files?");

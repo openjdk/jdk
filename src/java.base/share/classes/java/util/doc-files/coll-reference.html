@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
- Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -177,7 +177,7 @@ interface.</li>
 interface. An insertion-ordered <code>Map</code> implementation that
 runs nearly as fast as <code>HashMap</code>. Also useful for building
 caches (see <a href=
-"../LinkedHashMap.html#removeEldestEntry-java.util.Map.Entry-">
+"../LinkedHashMap.html#removeEldestEntry(java.util.Map.Entry)">
 removeEldestEntry(Map.Entry)</a> ).</li>
 </ul>
 </li>
@@ -186,13 +186,13 @@ Functionality-enhancing implementations for use with other
 implementations. Accessed solely through static factory methods.
 <ul>
 <li><a href=
-"../Collections.html#unmodifiableCollection-java.util.Collection-">
+"../Collections.html#unmodifiableCollection(java.util.Collection)">
 <strong>Collections.unmodifiable<i>Interface</i></strong></a> -
 Returns an unmodifiable view of a specified collection that throws
 an <code>UnsupportedOperationException</code> if the user attempts to
 modify it.</li>
 <li><a href=
-"../Collections.html#synchronizedCollection-java.util.Collection-"
+"../Collections.html#synchronizedCollection(java.util.Collection)"
 id=
 "synchWrappers"><strong>Collections.synchronized<i>Interface</i></strong></a>
 - Returns a synchronized collection that is backed by the specified
@@ -200,7 +200,7 @@ id=
 the backing collection are through the returned collection, thread
 safety is guaranteed.</li>
 <li><a href=
-"../Collections.html#checkedCollection-java.util.Collection-java.lang.Class-">
+"../Collections.html#checkedCollection(java.util.Collection,java.lang.Class)">
 <strong>Collections.checked<i>Interface</i></strong></a> - Returns
 a dynamically type-safe view of the specified collection, which
 throws a <code>ClassCastException</code> if a client attempts to add an
@@ -214,12 +214,12 @@ possibility.</li>
 adapt one collections interface to another:
 <ul>
 <li><strong><a href=
-"../Collections.html#newSetFromMap-java.util.Map-">
+"../Collections.html#newSetFromMap(java.util.Map)">
 newSetFromMap(Map)</a></strong> - Creates a general-purpose
 <code>Set</code> implementation from a general-purpose <code>Map</code>
 implementation.</li>
 <li><strong><a href=
-"../Collections.html#asLifoQueue-java.util.Deque-">
+"../Collections.html#asLifoQueue(java.util.Deque)">
 asLifoQueue(Deque)</a></strong> - Returns a view of a
 <code>Deque</code> as a Last In First Out (LIFO) <code>Queue</code>.</li>
 </ul>
@@ -228,25 +228,25 @@ asLifoQueue(Deque)</a></strong> - Returns a view of a
 "mini-implementations" of the collection interfaces.
 <ul>
 <li><a href=
-"../Arrays.html#asList-T...-"><strong>Arrays.asList</strong></a>
+"../Arrays.html#asList(T...)"><strong>Arrays.asList</strong></a>
 - Enables an array to be viewed as a list.</li>
 <li><strong><a href=
-"../Collections.html#emptySet--">emptySet</a>,
+"../Collections.html#emptySet()">emptySet</a>,
 <a href=
-"../Collections.html#emptyList--">emptyList</a>
+"../Collections.html#emptyList()">emptyList</a>
 and <a href=
-"../Collections.html#emptyMap--">emptyMap</a></strong>
+"../Collections.html#emptyMap()">emptyMap</a></strong>
 - Return an immutable empty set, list, or map.</li>
 <li><strong><a href=
-"../Collections.html#singleton-java.lang.Object-">
+"../Collections.html#singleton(java.lang.Object)">
 singleton</a>, <a href=
-"../Collections.html#singletonList-java.lang.Object-">
+"../Collections.html#singletonList(java.lang.Object)">
 singletonList</a>, and <a href=
-"../Collections.html#singletonMap-K-V-">singletonMap</a></strong>
+"../Collections.html#singletonMap(K,V)">singletonMap</a></strong>
 - Return an immutable singleton set, list, or map, containing only
 the specified object (or key-value mapping).</li>
 <li><a href=
-"../Collections.html#nCopies-int-T-"><strong>
+"../Collections.html#nCopies(int,T)"><strong>
 nCopies</strong></a> - Returns an immutable list consisting of n
 copies of a specified object.</li>
 </ul>
@@ -410,71 +410,71 @@ access data store (such as a linked list).</li>
 class contains these useful static methods.
 <ul>
 <li><strong><a href=
-"../Collections.html#sort-java.util.List-">sort(List)</a></strong>
+"../Collections.html#sort(java.util.List)">sort(List)</a></strong>
 - Sorts a list using a merge sort algorithm, which provides average
 case performance comparable to a high quality quicksort, guaranteed
 O(n*log n) performance (unlike quicksort), and <em>stability</em>
 (unlike quicksort). A stable sort is one that does not reorder
 equal elements.</li>
 <li><strong><a href=
-"../Collections.html#binarySearch-java.util.List-T-">
+"../Collections.html#binarySearch(java.util.List,T)">
 binarySearch(List, Object)</a></strong> - Searches for an element
 in an ordered list using the binary search algorithm.</li>
 <li><strong><a href=
-"../Collections.html#reverse-java.util.List-">reverse(List)</a></strong>
+"../Collections.html#reverse(java.util.List)">reverse(List)</a></strong>
 - Reverses the order of the elements in a list.</li>
 <li><strong><a href=
-"../Collections.html#shuffle-java.util.List-">shuffle(List)</a></strong>
+"../Collections.html#shuffle(java.util.List)">shuffle(List)</a></strong>
 - Randomly changes the order of the elements in a list.</li>
 <li><strong><a href=
-"../Collections.html#fill-java.util.List-T-">
+"../Collections.html#fill(java.util.List,T)">
 fill(List, Object)</a></strong> - Overwrites every element in a
 list with the specified value.</li>
 <li><strong><a href=
-"../Collections.html#copy-java.util.List-java.util.List-">
+"../Collections.html#copy-java.util.List(java.util.List)">
 copy(List dest, List src)</a></strong> - Copies the source list
 into the destination list.</li>
 <li><strong><a href=
-"../Collections.html#min-java.util.Collection-">
+"../Collections.html#min(java.util.Collection)">
 min(Collection)</a></strong> - Returns the minimum element in a
 collection.</li>
 <li><strong><a href=
-"../Collections.html#max-java.util.Collection-">
+"../Collections.html#max(java.util.Collection)">
 max(Collection)</a></strong> - Returns the maximum element in a
 collection.</li>
 <li><strong><a href=
-"../Collections.html#rotate-java.util.List-int-">
+"../Collections.html#rotate(java.util.List,int)">
 rotate(List list, int distance)</a></strong> - Rotates all of the
 elements in the list by the specified distance.</li>
 <li><strong><a href=
-"../Collections.html#replaceAll-java.util.List-T-T-">
+"../Collections.html#replaceAll(java.util.List,T,T)">
 replaceAll(List list, Object oldVal, Object newVal)</a></strong> -
 Replaces all occurrences of one specified value with another.</li>
 <li><strong><a href=
-"../Collections.html#indexOfSubList-java.util.List-java.util.List-">
+"../Collections.html#indexOfSubList(java.util.List,java.util.List)">
 indexOfSubList(List source, List target)</a></strong> - Returns the
 index of the first sublist of source that is equal to target.</li>
 <li><strong><a href=
-"../Collections.html#lastIndexOfSubList-java.util.List-java.util.List-">
+"../Collections.html#lastIndexOfSubList(java.util.List,java.util.List)">
 lastIndexOfSubList(List source, List target)</a></strong> - Returns
 the index of the last sublist of source that is equal to
 target.</li>
 <li><strong><a href=
-"../Collections.html#swap-java.util.List-int-int-">
+"../Collections.html#swap(java.util.List,int,int)">
 swap(List, int, int)</a></strong> - Swaps the elements at the
 specified positions in the specified list.</li>
 <li><strong><a href=
-"../Collections.html#frequency-java.util.Collection-java.lang.Object-">
+"../Collections.html#frequency(java.util.Collection,java.lang.Object)">
 frequency(Collection, Object)</a></strong> - Counts the number of
 times the specified element occurs in the specified
 collection.</li>
 <li><strong><a href=
-"../Collections.html#disjoint-java.util.Collection-java.util.Collection-">
+"../Collections.html#disjoint(java.util.Collection,java.util.Collection)">
 disjoint(Collection, Collection)</a></strong> - Determines whether
 two collections are disjoint, in other words, whether they contain
 no elements in common.</li>
 <li><strong><a href=
-"../Collections.html#addAll-java.util.Collection-T...-">
+"../Collections.html#addAll(java.util.Collection,T...)">
 addAll(Collection&lt;? super T&gt;, T...)</a></strong> - Adds all
 of the elements in the specified array to the specified
 collection.</li>

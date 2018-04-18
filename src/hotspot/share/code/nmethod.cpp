@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "jvm.h"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
+#include "code/compiledMethod.inline.hpp"
 #include "code/dependencies.hpp"
 #include "code/nativeInst.hpp"
 #include "code/nmethod.hpp"
@@ -39,15 +40,22 @@
 #include "interpreter/bytecode.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sweeper.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
@@ -376,6 +384,10 @@ int nmethod::total_size() const {
     scopes_pcs_size()    +
     handler_table_size() +
     nul_chk_table_size();
+}
+
+address* nmethod::orig_pc_addr(const frame* fr) {
+  return (address*) ((address)fr->unextended_sp() + _orig_pc_offset);
 }
 
 const char* nmethod::compile_kind() const {
@@ -955,6 +967,7 @@ void nmethod::verify_clean_inline_caches() {
         CompiledIC *ic = CompiledIC_at(&iter);
         // Ok, to lookup references to zombies here
         CodeBlob *cb = CodeCache::find_blob_unsafe(ic->ic_destination());
+        assert(cb != NULL, "destination not in CodeBlob?");
         nmethod* nm = cb->as_nmethod_or_null();
         if( nm != NULL ) {
           // Verify that inline caches pointing to both zombie and not_entrant methods are clean
@@ -967,6 +980,7 @@ void nmethod::verify_clean_inline_caches() {
       case relocInfo::static_call_type: {
         CompiledStaticCall *csc = compiledStaticCall_at(iter.reloc());
         CodeBlob *cb = CodeCache::find_blob_unsafe(csc->destination());
+        assert(cb != NULL, "destination not in CodeBlob?");
         nmethod* nm = cb->as_nmethod_or_null();
         if( nm != NULL ) {
           // Verify that inline caches pointing to both zombie and not_entrant methods are clean
@@ -1485,15 +1499,17 @@ bool nmethod::do_unloading_scopes(BoolObjectClosure* is_alive, bool unloading_oc
 
 bool nmethod::do_unloading_oops(address low_boundary, BoolObjectClosure* is_alive, bool unloading_occurred) {
   // Compiled code
-  {
-  RelocIterator iter(this, low_boundary);
-  while (iter.next()) {
-    if (iter.type() == relocInfo::oop_type) {
-      if (unload_if_dead_at(&iter, is_alive, unloading_occurred)) {
-        return true;
+
+  // Prevent extra code cache walk for platforms that don't have immediate oops.
+  if (relocInfo::mustIterateImmediateOopsInCode()) {
+    RelocIterator iter(this, low_boundary);
+    while (iter.next()) {
+      if (iter.type() == relocInfo::oop_type) {
+        if (unload_if_dead_at(&iter, is_alive, unloading_occurred)) {
+          return true;
+        }
       }
     }
-  }
   }
 
   return do_unloading_scopes(is_alive, unloading_occurred);
@@ -1584,18 +1600,21 @@ void nmethod::oops_do(OopClosure* f, bool allow_zombie) {
     // (See comment above.)
   }
 
-  RelocIterator iter(this, low_boundary);
+  // Prevent extra code cache walk for platforms that don't have immediate oops.
+  if (relocInfo::mustIterateImmediateOopsInCode()) {
+    RelocIterator iter(this, low_boundary);
 
-  while (iter.next()) {
-    if (iter.type() == relocInfo::oop_type ) {
-      oop_Relocation* r = iter.oop_reloc();
-      // In this loop, we must only follow those oops directly embedded in
-      // the code.  Other oops (oop_index>0) are seen as part of scopes_oops.
-      assert(1 == (r->oop_is_immediate()) +
-                   (r->oop_addr() >= oops_begin() && r->oop_addr() < oops_end()),
-             "oop must be found in exactly one place");
-      if (r->oop_is_immediate() && r->oop_value() != NULL) {
-        f->do_oop(r->oop_addr());
+    while (iter.next()) {
+      if (iter.type() == relocInfo::oop_type ) {
+        oop_Relocation* r = iter.oop_reloc();
+        // In this loop, we must only follow those oops directly embedded in
+        // the code.  Other oops (oop_index>0) are seen as part of scopes_oops.
+        assert(1 == (r->oop_is_immediate()) +
+               (r->oop_addr() >= oops_begin() && r->oop_addr() < oops_end()),
+               "oop must be found in exactly one place");
+        if (r->oop_is_immediate() && r->oop_value() != NULL) {
+          f->do_oop(r->oop_addr());
+        }
       }
     }
   }
@@ -1620,7 +1639,7 @@ bool nmethod::test_set_oops_do_mark() {
   assert(nmethod::oops_do_marking_is_active(), "oops_do_marking_prologue must be called");
   if (_oops_do_mark_link == NULL) {
     // Claim this nmethod for this thread to mark.
-    if (Atomic::cmpxchg(NMETHOD_SENTINEL, &_oops_do_mark_link, (nmethod*)NULL) == NULL) {
+    if (Atomic::replace_if_null(NMETHOD_SENTINEL, &_oops_do_mark_link)) {
       // Atomically append this nmethod (now claimed) to the head of the list:
       nmethod* observed_mark_nmethods = _oops_do_mark_nmethods;
       for (;;) {
@@ -1673,7 +1692,7 @@ public:
   { NOT_PRODUCT(_print_nm = NULL); }
   bool detected_scavenge_root() { return _detected_scavenge_root; }
   virtual void do_oop(oop* p) {
-    if ((*p) != NULL && (*p)->is_scavengable()) {
+    if ((*p) != NULL && Universe::heap()->is_scavengable(*p)) {
       NOT_PRODUCT(maybe_print(p));
       _detected_scavenge_root = true;
     }
@@ -2168,7 +2187,7 @@ public:
   DebugScavengeRoot(nmethod* nm) : _nm(nm), _ok(true) { }
   bool ok() { return _ok; }
   virtual void do_oop(oop* p) {
-    if ((*p) == NULL || !(*p)->is_scavengable())  return;
+    if ((*p) == NULL || !Universe::heap()->is_scavengable(*p))  return;
     if (_ok) {
       _nm->print_nmethod(true);
       _ok = false;
@@ -2727,7 +2746,7 @@ public:
 
   virtual void verify_resolve_call(address dest) const {
     CodeBlob* db = CodeCache::find_blob_unsafe(dest);
-    assert(!db->is_adapter_blob(), "must use stub!");
+    assert(db != NULL && !db->is_adapter_blob(), "must use stub!");
   }
 
   virtual bool is_call_to_interpreted(address dest) const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,6 +143,7 @@ bool LIRGenerator::can_inline_as_constant(LIR_Const* c) const {
 
 
 LIR_Opr LIRGenerator::safepoint_poll_register() {
+  NOT_LP64( if (SafepointMechanism::uses_thread_local_poll()) { return new_register(T_ADDRESS); } )
   return LIR_OprFact::illegalOpr;
 }
 
@@ -225,11 +226,6 @@ void LIRGenerator::cmp_mem_int(LIR_Condition condition, LIR_Opr base, int disp, 
 
 
 void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr base, int disp, BasicType type, CodeEmitInfo* info) {
-  __ cmp_reg_mem(condition, reg, new LIR_Address(base, disp, type), info);
-}
-
-
-void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr base, LIR_Opr disp, BasicType type, CodeEmitInfo* info) {
   __ cmp_reg_mem(condition, reg, new LIR_Address(base, disp, type), info);
 }
 
@@ -572,6 +568,8 @@ void LIRGenerator::do_ArithmeticOp_Int(ArithmeticOp* x) {
     if (!ImplicitDiv0Checks) {
       __ cmp(lir_cond_equal, right.result(), LIR_OprFact::intConst(0));
       __ branch(lir_cond_equal, T_INT, new DivByZeroStub(info));
+      // Idiv/irem cannot trap (passing info would generate an assertion).
+      info = NULL;
     }
     LIR_Opr tmp = FrameMap::rdx_opr; // idiv and irem use rdx in their implementation
     if (x->op() == Bytecodes::_irem) {
@@ -1513,7 +1511,7 @@ void LIRGenerator::do_If(If* x) {
   if (x->is_safepoint()) {
     // increment backedge counter if needed
     increment_backedge_counter(state_for(x, x->state_before()), x->profiled_bci());
-    __ safepoint(LIR_OprFact::illegalOpr, state_for(x, x->state_before()));
+    __ safepoint(safepoint_poll_register(), state_for(x, x->state_before()));
   }
   set_no_result(x);
 

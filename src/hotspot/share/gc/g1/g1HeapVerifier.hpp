@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,17 +28,16 @@
 #include "gc/g1/heapRegionSet.hpp"
 #include "memory/allocation.hpp"
 #include "memory/universe.hpp"
+#include "utilities/macros.hpp"
 
 class G1CollectedHeap;
 
 class G1HeapVerifier : public CHeapObj<mtGC> {
 private:
-  G1CollectedHeap* _g1h;
-  int _enabled_verification_types;
+  static int _enabled_verification_types;
 
-  // verify_region_sets() performs verification over the region
-  // lists. It will be compiled in the product code to be used when
-  // necessary (i.e., during heap verification).
+  G1CollectedHeap* _g1h;
+
   void verify_region_sets();
 
 public:
@@ -52,11 +51,10 @@ public:
     G1VerifyAll         = -1
   };
 
-  G1HeapVerifier(G1CollectedHeap* heap) : _g1h(heap), _enabled_verification_types(G1VerifyAll) { }
+  G1HeapVerifier(G1CollectedHeap* heap) : _g1h(heap) {}
 
-  void parse_verification_type(const char* type);
-  void enable_verification_type(G1VerifyType type);
-  bool should_verify(G1VerifyType type);
+  static void enable_verification_type(G1VerifyType type);
+  static bool should_verify(G1VerifyType type);
 
   // Perform verification.
 
@@ -76,15 +74,8 @@ public:
   void verify(VerifyOption vo);
 
   // verify_region_sets_optional() is planted in the code for
-  // list verification in non-product builds (and it can be enabled in
-  // product builds by defining HEAP_REGION_SET_FORCE_VERIFY to be 1).
-#if HEAP_REGION_SET_FORCE_VERIFY
-  void verify_region_sets_optional() {
-    verify_region_sets();
-  }
-#else // HEAP_REGION_SET_FORCE_VERIFY
-  void verify_region_sets_optional() { }
-#endif // HEAP_REGION_SET_FORCE_VERIFY
+  // list verification in debug builds.
+  void verify_region_sets_optional() { DEBUG_ONLY(verify_region_sets();) }
 
   void prepare_for_verify();
   double verify(G1VerifyType type, VerifyOption vo, const char* msg);

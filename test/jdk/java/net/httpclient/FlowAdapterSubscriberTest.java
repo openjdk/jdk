@@ -26,11 +26,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.function.Function;
@@ -40,11 +42,12 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
-import jdk.incubator.http.HttpClient;
-import jdk.incubator.http.HttpRequest;
-import jdk.incubator.http.HttpResponse;
-import jdk.incubator.http.HttpResponse.BodyHandler;
-import jdk.incubator.http.HttpResponse.BodySubscriber;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.net.http.HttpResponse.BodySubscribers;
 import jdk.testlibrary.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -52,7 +55,6 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import javax.net.ssl.SSLContext;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static jdk.incubator.http.HttpRequest.BodyPublisher.fromString;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
@@ -61,15 +63,15 @@ import static org.testng.Assert.assertTrue;
  * @test
  * @summary Basic tests for Flow adapter Subscribers
  * @modules java.base/sun.net.www.http
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.common
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.frame
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.hpack
+ *          java.net.http/jdk.internal.net.http.common
+ *          java.net.http/jdk.internal.net.http.frame
+ *          java.net.http/jdk.internal.net.http.hpack
  *          java.logging
  *          jdk.httpserver
  * @library /lib/testlibrary http2/server
  * @build Http2TestServer
  * @build jdk.testlibrary.SimpleSSLContext
- * @run testng/othervm FlowAdapterSubscriberTest
+ * @run testng/othervm -Djdk.internal.httpclient.debug=true FlowAdapterSubscriberTest
  */
 
 public class FlowAdapterSubscriberTest {
@@ -83,6 +85,14 @@ public class FlowAdapterSubscriberTest {
     String httpsURI;
     String http2URI;
     String https2URI;
+    static final long start = System.nanoTime();
+    public static String now() {
+        long now = System.nanoTime() - start;
+        long secs = now / 1000_000_000;
+        long mill = (now % 1000_000_000) / 1000_000;
+        long nan = now % 1000_000;
+        return String.format("[%d s, %d ms, %d ns] ", secs, mill, nan);
+    }
 
     @DataProvider(name = "uris")
     public Object[][] variants() {
@@ -98,17 +108,18 @@ public class FlowAdapterSubscriberTest {
 
     @Test
     public void testNull() {
-        assertThrows(NPE, () -> BodyHandler.fromSubscriber(null));
-        assertThrows(NPE, () -> BodyHandler.fromSubscriber(null, Function.identity()));
-        assertThrows(NPE, () -> BodyHandler.fromSubscriber(new ListSubscriber(), null));
-        assertThrows(NPE, () -> BodyHandler.fromSubscriber(null, null));
+        System.out.printf(now() + "testNull() starting%n");
+        assertThrows(NPE, () -> BodyHandlers.fromSubscriber(null));
+        assertThrows(NPE, () -> BodyHandlers.fromSubscriber(null, Function.identity()));
+        assertThrows(NPE, () -> BodyHandlers.fromSubscriber(new ListSubscriber(), null));
+        assertThrows(NPE, () -> BodyHandlers.fromSubscriber(null, null));
 
-        assertThrows(NPE, () -> BodySubscriber.fromSubscriber(null));
-        assertThrows(NPE, () -> BodySubscriber.fromSubscriber(null, Function.identity()));
-        assertThrows(NPE, () -> BodySubscriber.fromSubscriber(new ListSubscriber(), null));
-        assertThrows(NPE, () -> BodySubscriber.fromSubscriber(null, null));
+        assertThrows(NPE, () -> BodySubscribers.fromSubscriber(null));
+        assertThrows(NPE, () -> BodySubscribers.fromSubscriber(null, Function.identity()));
+        assertThrows(NPE, () -> BodySubscribers.fromSubscriber(new ListSubscriber(), null));
+        assertThrows(NPE, () -> BodySubscribers.fromSubscriber(null, null));
 
-        Subscriber subscriber = BodySubscriber.fromSubscriber(new ListSubscriber());
+        Subscriber subscriber = BodySubscribers.fromSubscriber(new ListSubscriber());
         assertThrows(NPE, () -> subscriber.onSubscribe(null));
         assertThrows(NPE, () -> subscriber.onNext(null));
         assertThrows(NPE, () -> subscriber.onError(null));
@@ -118,13 +129,14 @@ public class FlowAdapterSubscriberTest {
 
     @Test(dataProvider = "uris")
     void testListWithFinisher(String url) {
+        System.out.printf(now() + "testListWithFinisher(%s) starting%n", url);
         HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .POST(fromString("May the luck of the Irish be with you!")).build();
+                .POST(BodyPublishers.ofString("May the luck of the Irish be with you!")).build();
 
         ListSubscriber subscriber = new ListSubscriber();
         HttpResponse<String> response = client.sendAsync(request,
-                BodyHandler.fromSubscriber(subscriber, Supplier::get)).join();
+                BodyHandlers.fromSubscriber(subscriber, Supplier::get)).join();
         String text = response.body();
         System.out.println(text);
         assertEquals(response.statusCode(), 200);
@@ -133,13 +145,14 @@ public class FlowAdapterSubscriberTest {
 
     @Test(dataProvider = "uris")
     void testListWithoutFinisher(String url) {
+        System.out.printf(now() + "testListWithoutFinisher(%s) starting%n", url);
         HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .POST(fromString("May the luck of the Irish be with you!")).build();
+                .POST(BodyPublishers.ofString("May the luck of the Irish be with you!")).build();
 
         ListSubscriber subscriber = new ListSubscriber();
         HttpResponse<Void> response = client.sendAsync(request,
-                BodyHandler.fromSubscriber(subscriber)).join();
+                BodyHandlers.fromSubscriber(subscriber)).join();
         String text = subscriber.get();
         System.out.println(text);
         assertEquals(response.statusCode(), 200);
@@ -148,13 +161,14 @@ public class FlowAdapterSubscriberTest {
 
     @Test(dataProvider = "uris")
     void testListWithFinisherBlocking(String url) throws Exception {
+        System.out.printf(now() + "testListWithFinisherBlocking(%s) starting%n", url);
         HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .POST(fromString("May the luck of the Irish be with you!")).build();
+                .POST(BodyPublishers.ofString("May the luck of the Irish be with you!")).build();
 
         ListSubscriber subscriber = new ListSubscriber();
         HttpResponse<String> response = client.send(request,
-                BodyHandler.fromSubscriber(subscriber, Supplier::get));
+                BodyHandlers.fromSubscriber(subscriber, Supplier::get));
         String text = response.body();
         System.out.println(text);
         assertEquals(response.statusCode(), 200);
@@ -163,13 +177,14 @@ public class FlowAdapterSubscriberTest {
 
     @Test(dataProvider = "uris")
     void testListWithoutFinisherBlocking(String url) throws Exception {
+        System.out.printf(now() + "testListWithoutFinisherBlocking(%s) starting%n", url);
         HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .POST(fromString("May the luck of the Irish be with you!")).build();
+                .POST(BodyPublishers.ofString("May the luck of the Irish be with you!")).build();
 
         ListSubscriber subscriber = new ListSubscriber();
         HttpResponse<Void> response = client.send(request,
-                BodyHandler.fromSubscriber(subscriber));
+                BodyHandlers.fromSubscriber(subscriber));
         String text = subscriber.get();
         System.out.println(text);
         assertEquals(response.statusCode(), 200);
@@ -180,13 +195,14 @@ public class FlowAdapterSubscriberTest {
 
     @Test(dataProvider = "uris")
     void testCollectionWithFinisher(String url) {
+        System.out.printf(now() + "testCollectionWithFinisher(%s) starting%n", url);
         HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .POST(fromString("What's the craic?")).build();
+                .POST(BodyPublishers.ofString("What's the craic?")).build();
 
         CollectionSubscriber subscriber = new CollectionSubscriber();
         HttpResponse<String> response = client.sendAsync(request,
-                BodyHandler.fromSubscriber(subscriber, CollectionSubscriber::get)).join();
+                BodyHandlers.fromSubscriber(subscriber, CollectionSubscriber::get)).join();
         String text = response.body();
         System.out.println(text);
         assertEquals(response.statusCode(), 200);
@@ -195,13 +211,14 @@ public class FlowAdapterSubscriberTest {
 
     @Test(dataProvider = "uris")
     void testCollectionWithoutFinisher(String url) {
+        System.out.printf(now() + "testCollectionWithoutFinisher(%s) starting%n", url);
         HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .POST(fromString("What's the craic?")).build();
+                .POST(BodyPublishers.ofString("What's the craic?")).build();
 
         CollectionSubscriber subscriber = new CollectionSubscriber();
         HttpResponse<Void> response = client.sendAsync(request,
-                BodyHandler.fromSubscriber(subscriber)).join();
+                BodyHandlers.fromSubscriber(subscriber)).join();
         String text = subscriber.get();
         System.out.println(text);
         assertEquals(response.statusCode(), 200);
@@ -210,13 +227,14 @@ public class FlowAdapterSubscriberTest {
 
     @Test(dataProvider = "uris")
     void testCollectionWithFinisherBlocking(String url) throws Exception {
+        System.out.printf(now() + "testCollectionWithFinisherBlocking(%s) starting%n", url);
         HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .POST(fromString("What's the craic?")).build();
+                .POST(BodyPublishers.ofString("What's the craic?")).build();
 
         CollectionSubscriber subscriber = new CollectionSubscriber();
         HttpResponse<String> response = client.send(request,
-                BodyHandler.fromSubscriber(subscriber, CollectionSubscriber::get));
+                BodyHandlers.fromSubscriber(subscriber, CollectionSubscriber::get));
         String text = response.body();
         System.out.println(text);
         assertEquals(response.statusCode(), 200);
@@ -225,13 +243,14 @@ public class FlowAdapterSubscriberTest {
 
     @Test(dataProvider = "uris")
     void testCollectionWithoutFinisheBlocking(String url) throws Exception {
+        System.out.printf(now() + "testCollectionWithoutFinisheBlocking(%s) starting%n", url);
         HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .POST(fromString("What's the craic?")).build();
+                .POST(BodyPublishers.ofString("What's the craic?")).build();
 
         CollectionSubscriber subscriber = new CollectionSubscriber();
         HttpResponse<Void> response = client.send(request,
-                BodyHandler.fromSubscriber(subscriber));
+                BodyHandlers.fromSubscriber(subscriber));
         String text = subscriber.get();
         System.out.println(text);
         assertEquals(response.statusCode(), 200);
@@ -242,13 +261,14 @@ public class FlowAdapterSubscriberTest {
 
     @Test(dataProvider = "uris")
     void testIterableWithFinisher(String url) {
+        System.out.printf(now() + "testIterableWithFinisher(%s) starting%n", url);
         HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .POST(fromString("We're sucking diesel now!")).build();
+                .POST(BodyPublishers.ofString("We're sucking diesel now!")).build();
 
         IterableSubscriber subscriber = new IterableSubscriber();
         HttpResponse<String> response = client.sendAsync(request,
-                BodyHandler.fromSubscriber(subscriber, Supplier::get)).join();
+                BodyHandlers.fromSubscriber(subscriber, Supplier::get)).join();
         String text = response.body();
         System.out.println(text);
         assertEquals(response.statusCode(), 200);
@@ -257,13 +277,14 @@ public class FlowAdapterSubscriberTest {
 
     @Test(dataProvider = "uris")
     void testIterableWithoutFinisher(String url) {
+        System.out.printf(now() + "testIterableWithoutFinisher(%s) starting%n", url);
         HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .POST(fromString("We're sucking diesel now!")).build();
+                .POST(BodyPublishers.ofString("We're sucking diesel now!")).build();
 
         IterableSubscriber subscriber = new IterableSubscriber();
         HttpResponse<Void> response = client.sendAsync(request,
-                BodyHandler.fromSubscriber(subscriber)).join();
+                BodyHandlers.fromSubscriber(subscriber)).join();
         String text = subscriber.get();
         System.out.println(text);
         assertEquals(response.statusCode(), 200);
@@ -272,13 +293,14 @@ public class FlowAdapterSubscriberTest {
 
     @Test(dataProvider = "uris")
     void testIterableWithFinisherBlocking(String url) throws Exception {
+        System.out.printf(now() + "testIterableWithFinisherBlocking(%s) starting%n", url);
         HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .POST(fromString("We're sucking diesel now!")).build();
+                .POST(BodyPublishers.ofString("We're sucking diesel now!")).build();
 
         IterableSubscriber subscriber = new IterableSubscriber();
         HttpResponse<String> response = client.send(request,
-                BodyHandler.fromSubscriber(subscriber, Supplier::get));
+                BodyHandlers.fromSubscriber(subscriber, Supplier::get));
         String text = response.body();
         System.out.println(text);
         assertEquals(response.statusCode(), 200);
@@ -286,14 +308,15 @@ public class FlowAdapterSubscriberTest {
     }
 
     @Test(dataProvider = "uris")
-    void testIterableWithoutFinisherBlocking(String url) throws Exception{
+    void testIterableWithoutFinisherBlocking(String url) throws Exception {
+        System.out.printf(now() + "testIterableWithoutFinisherBlocking(%s) starting%n", url);
         HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .POST(fromString("We're sucking diesel now!")).build();
+                .POST(BodyPublishers.ofString("We're sucking diesel now!")).build();
 
         IterableSubscriber subscriber = new IterableSubscriber();
         HttpResponse<Void> response = client.send(request,
-                BodyHandler.fromSubscriber(subscriber));
+                BodyHandlers.fromSubscriber(subscriber));
         String text = subscriber.get();
         System.out.println(text);
         assertEquals(response.statusCode(), 200);
@@ -304,13 +327,14 @@ public class FlowAdapterSubscriberTest {
 
     @Test(dataProvider = "uris")
     void testObjectWithFinisher(String url) {
+        System.out.printf(now() + "testObjectWithFinisher(%s) starting%n", url);
         HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .POST(fromString("May the wind always be at your back.")).build();
+                .POST(BodyPublishers.ofString("May the wind always be at your back.")).build();
 
         ObjectSubscriber subscriber = new ObjectSubscriber();
         HttpResponse<String> response = client.sendAsync(request,
-                BodyHandler.fromSubscriber(subscriber, ObjectSubscriber::get)).join();
+                BodyHandlers.fromSubscriber(subscriber, ObjectSubscriber::get)).join();
         String text = response.body();
         System.out.println(text);
         assertEquals(response.statusCode(), 200);
@@ -319,13 +343,14 @@ public class FlowAdapterSubscriberTest {
 
     @Test(dataProvider = "uris")
     void testObjectWithoutFinisher(String url) {
+        System.out.printf(now() + "testObjectWithoutFinisher(%s) starting%n", url);
         HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .POST(fromString("May the wind always be at your back.")).build();
+                .POST(BodyPublishers.ofString("May the wind always be at your back.")).build();
 
         ObjectSubscriber subscriber = new ObjectSubscriber();
         HttpResponse<Void> response = client.sendAsync(request,
-                BodyHandler.fromSubscriber(subscriber)).join();
+                BodyHandlers.fromSubscriber(subscriber)).join();
         String text = subscriber.get();
         System.out.println(text);
         assertEquals(response.statusCode(), 200);
@@ -334,13 +359,14 @@ public class FlowAdapterSubscriberTest {
 
     @Test(dataProvider = "uris")
     void testObjectWithFinisherBlocking(String url) throws Exception {
+        System.out.printf(now() + "testObjectWithFinisherBlocking(%s) starting%n", url);
         HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .POST(fromString("May the wind always be at your back.")).build();
+                .POST(BodyPublishers.ofString("May the wind always be at your back.")).build();
 
         ObjectSubscriber subscriber = new ObjectSubscriber();
         HttpResponse<String> response = client.send(request,
-                BodyHandler.fromSubscriber(subscriber, ObjectSubscriber::get));
+                BodyHandlers.fromSubscriber(subscriber, ObjectSubscriber::get));
         String text = response.body();
         System.out.println(text);
         assertEquals(response.statusCode(), 200);
@@ -349,17 +375,53 @@ public class FlowAdapterSubscriberTest {
 
     @Test(dataProvider = "uris")
     void testObjectWithoutFinisherBlocking(String url) throws Exception {
+        System.out.printf(now() + "testObjectWithoutFinisherBlocking(%s) starting%n", url);
         HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .POST(fromString("May the wind always be at your back.")).build();
+                .POST(BodyPublishers.ofString("May the wind always be at your back.")).build();
 
         ObjectSubscriber subscriber = new ObjectSubscriber();
         HttpResponse<Void> response = client.send(request,
-                BodyHandler.fromSubscriber(subscriber));
+                BodyHandlers.fromSubscriber(subscriber));
         String text = subscriber.get();
         System.out.println(text);
         assertEquals(response.statusCode(), 200);
         assertTrue(text.length() != 0);  // what else can be asserted!
+    }
+
+
+    // -- mapping using convenience handlers
+
+    @Test(dataProvider = "uris")
+    void mappingFromByteArray(String url) throws Exception {
+        System.out.printf(now() + "mappingFromByteArray(%s) starting%n", url);
+        HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
+        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+                .POST(BodyPublishers.ofString("We're sucking diesel now!")).build();
+
+        client.sendAsync(request, BodyHandlers.fromSubscriber(BodySubscribers.ofByteArray(),
+                    bas -> new String(bas.getBody().toCompletableFuture().join(), UTF_8)))
+                .thenApply(FlowAdapterSubscriberTest::assert200ResponseCode)
+                .thenApply(HttpResponse::body)
+                .thenAccept(body -> assertEquals(body, "We're sucking diesel now!"))
+                .join();
+    }
+
+    @Test(dataProvider = "uris")
+    void mappingFromInputStream(String url) throws Exception {
+        System.out.printf(now() + "mappingFromInputStream(%s) starting%n", url);
+        HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
+        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+                .POST(BodyPublishers.ofString("May the wind always be at your back.")).build();
+
+        client.sendAsync(request, BodyHandlers.fromSubscriber(BodySubscribers.ofInputStream(),
+                    ins -> {
+                        InputStream is = ins.getBody().toCompletableFuture().join();
+                        return new String(uncheckedReadAllBytes(is), UTF_8); } ))
+                .thenApply(FlowAdapterSubscriberTest::assert200ResponseCode)
+                .thenApply(HttpResponse::body)
+                .thenAccept(body -> assertEquals(body, "May the wind always be at your back."))
+                .join();
     }
 
     /** An abstract Subscriber that converts all received data into a String. */
@@ -434,31 +496,47 @@ public class FlowAdapterSubscriberTest {
         }
     }
 
+    static byte[] uncheckedReadAllBytes(InputStream is) {
+        try {
+            return is.readAllBytes();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    static final <T> HttpResponse<T> assert200ResponseCode(HttpResponse<T> response) {
+        assertEquals(response.statusCode(), 200);
+        return response;
+    }
+
+    static String serverAuthority(HttpServer server) {
+        return InetAddress.getLoopbackAddress().getHostName() + ":"
+                + server.getAddress().getPort();
+    }
+
     @BeforeTest
     public void setup() throws Exception {
         sslContext = new SimpleSSLContext().get();
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
 
-        InetSocketAddress sa = new InetSocketAddress("localhost", 0);
+        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         httpTestServer = HttpServer.create(sa, 0);
         httpTestServer.createContext("/http1/echo", new Http1EchoHandler());
-        httpURI = "http://127.0.0.1:" + httpTestServer.getAddress().getPort() + "/http1/echo";
+        httpURI = "http://" + serverAuthority(httpTestServer) + "/http1/echo";
 
         httpsTestServer = HttpsServer.create(sa, 0);
         httpsTestServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
         httpsTestServer.createContext("/https1/echo", new Http1EchoHandler());
-        httpsURI = "https://127.0.0.1:" + httpsTestServer.getAddress().getPort() + "/https1/echo";
+        httpsURI = "https://" + serverAuthority(httpsTestServer) + "/https1/echo";
 
-        http2TestServer = new Http2TestServer("127.0.0.1", false, 0);
+        http2TestServer = new Http2TestServer("localhost", false, 0);
         http2TestServer.addHandler(new Http2EchoHandler(), "/http2/echo");
-        int port = http2TestServer.getAddress().getPort();
-        http2URI = "http://127.0.0.1:" + port + "/http2/echo";
+        http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/echo";
 
-        https2TestServer = new Http2TestServer("127.0.0.1", true, 0);
+        https2TestServer = new Http2TestServer("localhost", true, 0);
         https2TestServer.addHandler(new Http2EchoHandler(), "/https2/echo");
-        port = https2TestServer.getAddress().getPort();
-        https2URI = "https://127.0.0.1:" + port + "/https2/echo";
+        https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/echo";
 
         httpTestServer.start();
         httpsTestServer.start();

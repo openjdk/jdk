@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2017, SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/abstractInterpreter.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
@@ -458,7 +459,8 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
   __ save_return_pc();       // Save Z_R14.
   __ push_frame_abi160(0);   // Without new frame the RT call could overwrite the saved Z_R14.
 
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError), Z_thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodErrorWithMethod),
+                  Z_thread, Z_method);
 
   __ pop_frame();
   __ restore_return_pc();    // Restore Z_R14.
@@ -478,73 +480,55 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
 }
 
 address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
-#if INCLUDE_ALL_GCS
-  if (UseG1GC) {
-    // Inputs:
-    //  Z_ARG1 - receiver
-    //
-    // What we do:
-    //  - Load the referent field address.
-    //  - Load the value in the referent field.
-    //  - Pass that value to the pre-barrier.
-    //
-    // In the case of G1 this will record the value of the
-    // referent in an SATB buffer if marking is active.
-    // This will cause concurrent marking to mark the referent
-    // field as live.
+  // Inputs:
+  //  Z_ARG1 - receiver
+  //
+  // What we do:
+  //  - Load the referent field address.
+  //  - Load the value in the referent field.
+  //  - Pass that value to the pre-barrier.
+  //
+  // In the case of G1 this will record the value of the
+  // referent in an SATB buffer if marking is active.
+  // This will cause concurrent marking to mark the referent
+  // field as live.
 
-    Register  scratch1 = Z_tmp_2;
-    Register  scratch2 = Z_tmp_3;
-    Register  pre_val  = Z_RET;   // return value
-    // Z_esp is callers operand stack pointer, i.e. it points to the parameters.
-    Register  Rargp    = Z_esp;
+  Register  scratch1 = Z_tmp_2;
+  Register  scratch2 = Z_tmp_3;
+  Register  pre_val  = Z_RET;   // return value
+  // Z_esp is callers operand stack pointer, i.e. it points to the parameters.
+  Register  Rargp    = Z_esp;
 
-    Label     slow_path;
-    address   entry = __ pc();
+  Label     slow_path;
+  address   entry = __ pc();
 
-    const int referent_offset = java_lang_ref_Reference::referent_offset;
-    guarantee(referent_offset > 0, "referent offset not initialized");
+  const int referent_offset = java_lang_ref_Reference::referent_offset;
+  guarantee(referent_offset > 0, "referent offset not initialized");
 
-    BLOCK_COMMENT("Reference_get {");
+  BLOCK_COMMENT("Reference_get {");
 
-    //  If the receiver is null then it is OK to jump to the slow path.
-    __ load_and_test_long(pre_val, Address(Rargp, Interpreter::stackElementSize)); // Get receiver.
-    __ z_bre(slow_path);
+  //  If the receiver is null then it is OK to jump to the slow path.
+  __ load_and_test_long(pre_val, Address(Rargp, Interpreter::stackElementSize)); // Get receiver.
+  __ z_bre(slow_path);
 
-    //  Load the value of the referent field.
-    __ load_heap_oop(pre_val, referent_offset, pre_val);
+  //  Load the value of the referent field.
+ BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+ bs->load_at(_masm, IN_HEAP | ON_WEAK_OOP_REF, T_OBJECT,
+                   Address(pre_val, referent_offset), pre_val, scratch1, scratch2);
 
-    // Restore caller sp for c2i case.
-    __ resize_frame_absolute(Z_R10, Z_R0, true); // Cut the stack back to where the caller started.
+  // Restore caller sp for c2i case.
+  __ resize_frame_absolute(Z_R10, Z_R0, true); // Cut the stack back to where the caller started.
+  __ z_br(Z_R14);
 
-    // Generate the G1 pre-barrier code to log the value of
-    // the referent field in an SATB buffer.
-    // Note:
-    //   With these parameters the write_barrier_pre does not
-    //   generate instructions to load the previous value.
-    __ g1_write_barrier_pre(noreg,      // obj
-                            noreg,      // offset
-                            pre_val,    // pre_val
-                            noreg,      // no new val to preserve
-                            scratch1,   // tmp
-                            scratch2,   // tmp
-                            true);      // pre_val_needed
+  // Branch to previously generated regular method entry.
+  __ bind(slow_path);
 
-    __ z_br(Z_R14);
+  address meth_entry = Interpreter::entry_for_kind(Interpreter::zerolocals);
+  __ jump_to_entry(meth_entry, Z_R1);
 
-    // Branch to previously generated regular method entry.
-    __ bind(slow_path);
+  BLOCK_COMMENT("} Reference_get");
 
-    address meth_entry = Interpreter::entry_for_kind(Interpreter::zerolocals);
-    __ jump_to_entry(meth_entry, Z_R1);
-
-    BLOCK_COMMENT("} Reference_get");
-
-    return entry;
-  }
-#endif // INCLUDE_ALL_GCS
-
-  return NULL;
+  return entry;
 }
 
 address TemplateInterpreterGenerator::generate_StackOverflowError_handler() {
@@ -686,7 +670,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for (TosState state,
   return entry;
 }
 
-address TemplateInterpreterGenerator::generate_deopt_entry_for (TosState state,
+address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
                                                                int step,
                                                                address continuation) {
   address entry = __ pc();

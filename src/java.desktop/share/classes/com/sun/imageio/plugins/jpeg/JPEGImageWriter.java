@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -303,6 +303,14 @@ public class JPEGImageWriter extends ImageWriter {
                                          ImageWriteParam param,
                                          IIOMetadata streamMetadata,
                                          IIOMetadata imageMetadata) {
+        // Check whether sufficient data is available.
+        if (imageType == null && imageMetadata == null) {
+            // The method has been invoked with insufficient data. Henceforth
+            // we return -1 as recommended by ImageWriter specification.
+            return -1;
+        }
+
+        // Check if the image type and metadata are JFIF compatible.
         if (jfifOK(imageType, param, streamMetadata, imageMetadata)) {
             return Integer.MAX_VALUE;
         }

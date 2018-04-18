@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include <string.h>
 
 #include "net_util.h"
+#include "java_net_SocketCleanable.h"
 
 JNIEXPORT jboolean JNICALL
 Java_java_net_AbstractPlainSocketImpl_isReusePortAvailable0(JNIEnv* env, jclass c1)
@@ -45,3 +46,15 @@ Java_jdk_net_Sockets_isReusePortAvailable0(JNIEnv* env, jclass c1)
 {
     return (reuseport_available()) ? JNI_TRUE : JNI_FALSE;
 }
+
+/*
+ * Class:     java_net_SocketCleanable
+ * Method:    cleanupClose0
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL
+Java_java_net_SocketCleanable_cleanupClose0(JNIEnv *env, jclass c1, jint fd)
+{
+    NET_SocketClose(fd);
+}
+

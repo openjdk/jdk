@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,28 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/barrierSet.inline.hpp"
-#include "gc/shared/collectedHeap.hpp"
-#include "memory/universe.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/macros.hpp"
 
-BarrierSet* BarrierSet::_bs = NULL;
+BarrierSet* BarrierSet::_barrier_set = NULL;
 
-// count is number of array elements being written
-void BarrierSet::static_write_ref_array_pre(HeapWord* start, size_t count) {
-  assert(count <= (size_t)max_intx, "count too large");
-  if (UseCompressedOops) {
-    Universe::heap()->barrier_set()->write_ref_array_pre((narrowOop*)start, (int)count, false);
-  } else {
-    Universe::heap()->barrier_set()->write_ref_array_pre(      (oop*)start, (int)count, false);
-  }
+void BarrierSet::set_barrier_set(BarrierSet* barrier_set) {
+  assert(_barrier_set == NULL, "Already initialized");
+  _barrier_set = barrier_set;
+
+  // The barrier set was not initialized when the this thread (the main thread)
+  // was created, so the call to BarrierSet::on_thread_create() had to be deferred
+  // until we have a barrier set. Now we have a barrier set, so we make the call.
+  _barrier_set->on_thread_create(Thread::current());
 }
 
-// count is number of array elements being written
-void BarrierSet::static_write_ref_array_post(HeapWord* start, size_t count) {
-  // simply delegate to instance method
-  Universe::heap()->barrier_set()->write_ref_array(start, count);
+// Called from init.cpp
+void gc_barrier_stubs_init() {
+  BarrierSet* bs = BarrierSet::barrier_set();
+#ifndef ZERO
+  BarrierSetAssembler* bs_assembler = bs->barrier_set_assembler();
+  bs_assembler->barrier_stubs_init();
+#endif
 }

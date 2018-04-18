@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @summary a simple test to ensure that a directory in the --patch-module
  *          option does not affect dump process
  * @library ../..
@@ -67,7 +67,7 @@ public class PatchDir {
             "--patch-module=java.naming=" + moduleJar,
             "-Xlog:class+load",
             "PatchMain", "javax.naming.spi.NamingManager")
-            .shouldContain("Loading classes to share")
-            .shouldHaveExitValue(0);
+            .shouldContain("Cannot use the following option when dumping the shared archive: --patch-module")
+            .shouldHaveExitValue(1);
     }
 }

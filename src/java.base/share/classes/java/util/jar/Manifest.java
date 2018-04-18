@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,7 +148,7 @@ public class Manifest implements Cloneable {
         DataOutputStream dos = new DataOutputStream(out);
         // Write out the main attributes for the manifest
         attr.writeMain(dos);
-        // Now write out the pre-entry attributes
+        // Now write out the per-entry attributes
         for (Map.Entry<String, Attributes> e : entries.entrySet()) {
             StringBuffer buffer = new StringBuffer("Name: ");
             String value = e.getKey();
@@ -157,8 +157,8 @@ public class Manifest implements Cloneable {
                 value = new String(vb, 0, 0, vb.length);
             }
             buffer.append(value);
-            buffer.append("\r\n");
             make72Safe(buffer);
+            buffer.append("\r\n");
             dos.writeBytes(buffer.toString());
             e.getValue().write(dos);
         }
@@ -170,13 +170,11 @@ public class Manifest implements Cloneable {
      */
     static void make72Safe(StringBuffer line) {
         int length = line.length();
-        if (length > 72) {
-            int index = 70;
-            while (index < length - 2) {
-                line.insert(index, "\r\n ");
-                index += 72;
-                length += 3;
-            }
+        int index = 72;
+        while (index < length) {
+            line.insert(index, "\r\n ");
+            index += 74; // + line width + line break ("\r\n")
+            length += 3; // + line break ("\r\n") and space
         }
         return;
     }

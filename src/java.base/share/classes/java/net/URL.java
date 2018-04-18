@@ -1411,7 +1411,7 @@ public final class URL implements java.io.Serializable {
                 // Check with factory if another thread set a
                 // factory since our last check
                 if (!checkedWithFactory && (fac = factory) != null) {
-                    handler2 =  fac.createURLStreamHandler(protocol);
+                    handler2 = fac.createURLStreamHandler(protocol);
                 }
 
                 if (handler2 != null) {

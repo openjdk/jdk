@@ -257,7 +257,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
         fd.attach(this);
         path = name;
         open(name, imode);
-        fd.registerCleanup();       // open sets the fd, register the cleanup
+        FileCleanable.register(fd);   // open sets the fd, register the cleanup
     }
 
     /**

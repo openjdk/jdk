@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,8 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
@@ -106,6 +107,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     final String methodUseTableSummary;
     final String constructorUseTableSummary;
     final String packageUseTableSummary;
+    private final Navigation navBar;
 
     /**
      * The HTML tree for main tag.
@@ -178,6 +180,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                 resources.getText("doclet.constructors"));
         packageUseTableSummary = MessageFormat.format(useTableSummary,
                 resources.getText("doclet.packages"));
+        this.navBar = new Navigation(typeElement, configuration, fixedNavDiv, PageMode.USE, path);
     }
 
     /**
@@ -233,9 +236,9 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     public static void generate(HtmlConfiguration configuration, ClassUseMapper mapper,
                                 TypeElement typeElement) throws DocFileIOException {
         ClassUseWriter clsgen;
-        DocPath path = DocPath.forPackage(configuration.utils, typeElement)
+        DocPath path = configuration.docPaths.forPackage(typeElement)
                               .resolve(DocPaths.CLASS_USE)
-                              .resolve(DocPath.forName(configuration.utils, typeElement));
+                              .resolve(configuration.docPaths.forName( typeElement));
         clsgen = new ClassUseWriter(configuration, mapper, path, typeElement);
         clsgen.generateClassUseFile();
     }
@@ -264,7 +267,8 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         HtmlTree htmlTree = (configuration.allowTag(HtmlTag.FOOTER))
                 ? HtmlTree.FOOTER()
                 : body;
-        addNavLinks(false, htmlTree);
+        navBar.setUserFooter(getUserHeaderFooter(false));
+        htmlTree.addContent(navBar.getContent(false));
         addBottom(htmlTree);
         if (configuration.allowTag(HtmlTag.FOOTER)) {
             body.addContent(htmlTree);
@@ -476,7 +480,15 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                 ? HtmlTree.HEADER()
                 : bodyTree;
         addTop(htmlTree);
-        addNavLinks(true, htmlTree);
+        Content mdleLinkContent = getModuleLink(utils.elementUtils.getModuleOf(typeElement),
+                contents.moduleLabel);
+        navBar.setNavLinkModule(mdleLinkContent);
+        Content classLinkContent = getLink(new LinkInfoImpl(
+                configuration, LinkInfoImpl.Kind.CLASS_USE_HEADER, typeElement)
+                .label(configuration.getText("doclet.Class")));
+        navBar.setNavLinkClass(classLinkContent);
+        navBar.setUserHeader(getUserHeaderFooter(true));
+        htmlTree.addContent(navBar.getContent(true));
         if (configuration.allowTag(HtmlTag.HEADER)) {
             bodyTree.addContent(htmlTree);
         }
@@ -493,66 +505,5 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             bodyTree.addContent(div);
         }
         return bodyTree;
-    }
-
-    /**
-     * Get the module link.
-     *
-     * @return a content tree for the module link
-     */
-    @Override
-    protected Content getNavLinkModule() {
-        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(typeElement),
-                contents.moduleLabel);
-        Content li = HtmlTree.LI(linkContent);
-        return li;
-    }
-
-    /**
-     * Get this package link.
-     *
-     * @return a content tree for the package link
-     */
-    protected Content getNavLinkPackage() {
-        Content linkContent =
-                Links.createLink(DocPath.parent.resolve(DocPaths.PACKAGE_SUMMARY), contents.packageLabel);
-        Content li = HtmlTree.LI(linkContent);
-        return li;
-    }
-
-    /**
-     * Get class page link.
-     *
-     * @return a content tree for the class page link
-     */
-    protected Content getNavLinkClass() {
-        Content linkContent = getLink(new LinkInfoImpl(
-                configuration, LinkInfoImpl.Kind.CLASS_USE_HEADER, typeElement)
-                .label(configuration.getText("doclet.Class")));
-        Content li = HtmlTree.LI(linkContent);
-        return li;
-    }
-
-    /**
-     * Get the use link.
-     *
-     * @return a content tree for the use link
-     */
-    protected Content getNavLinkClassUse() {
-        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, contents.useLabel);
-        return li;
-    }
-
-    /**
-     * Get the tree link.
-     *
-     * @return a content tree for the tree link
-     */
-    protected Content getNavLinkTree() {
-        Content linkContent = utils.isEnclosingPackageIncluded(typeElement)
-                ? Links.createLink(DocPath.parent.resolve(DocPaths.PACKAGE_TREE), contents.treeLabel)
-                : Links.createLink(pathToRoot.resolve(DocPaths.OVERVIEW_TREE), contents.treeLabel);
-        Content li = HtmlTree.LI(linkContent);
-        return li;
     }
 }

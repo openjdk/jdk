@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,55 +23,58 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "logging/logConfiguration.hpp"
+#include "logging/logTestFixture.hpp"
 #include "unittest.hpp"
 
-TEST(G1HeapVerifier, parse) {
-  G1HeapVerifier verifier(NULL);
+class G1HeapVerifierTest : public LogTestFixture {
+};
 
+TEST_F(G1HeapVerifierTest, parse) {
   LogConfiguration::configure_stdout(LogLevel::Off, true, LOG_TAGS(gc, verify));
 
   // Default is to verify everything.
-  ASSERT_TRUE(verifier.should_verify(G1HeapVerifier::G1VerifyAll));
-  ASSERT_TRUE(verifier.should_verify(G1HeapVerifier::G1VerifyYoungOnly));
-  ASSERT_TRUE(verifier.should_verify(G1HeapVerifier::G1VerifyInitialMark));
-  ASSERT_TRUE(verifier.should_verify(G1HeapVerifier::G1VerifyMixed));
-  ASSERT_TRUE(verifier.should_verify(G1HeapVerifier::G1VerifyRemark));
-  ASSERT_TRUE(verifier.should_verify(G1HeapVerifier::G1VerifyCleanup));
-  ASSERT_TRUE(verifier.should_verify(G1HeapVerifier::G1VerifyFull));
+  ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyAll));
+  ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyYoungOnly));
+  ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyInitialMark));
+  ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyMixed));
+  ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyRemark));
+  ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyCleanup));
+  ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyFull));
 
   // Setting one will disable all other.
-  verifier.parse_verification_type("full");
-  ASSERT_FALSE(verifier.should_verify(G1HeapVerifier::G1VerifyAll));
-  ASSERT_FALSE(verifier.should_verify(G1HeapVerifier::G1VerifyYoungOnly));
-  ASSERT_FALSE(verifier.should_verify(G1HeapVerifier::G1VerifyInitialMark));
-  ASSERT_FALSE(verifier.should_verify(G1HeapVerifier::G1VerifyMixed));
-  ASSERT_FALSE(verifier.should_verify(G1HeapVerifier::G1VerifyRemark));
-  ASSERT_FALSE(verifier.should_verify(G1HeapVerifier::G1VerifyCleanup));
-  ASSERT_TRUE(verifier.should_verify(G1HeapVerifier::G1VerifyFull));
+  G1Arguments::parse_verification_type("full");
+  ASSERT_FALSE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyAll));
+  ASSERT_FALSE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyYoungOnly));
+  ASSERT_FALSE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyInitialMark));
+  ASSERT_FALSE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyMixed));
+  ASSERT_FALSE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyRemark));
+  ASSERT_FALSE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyCleanup));
+  ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyFull));
 
   // Verify case sensitivity.
-  verifier.parse_verification_type("YOUNG-ONLY");
-  ASSERT_FALSE(verifier.should_verify(G1HeapVerifier::G1VerifyYoungOnly));
-  verifier.parse_verification_type("young-only");
-  ASSERT_TRUE(verifier.should_verify(G1HeapVerifier::G1VerifyYoungOnly));
+  G1Arguments::parse_verification_type("YOUNG-ONLY");
+  ASSERT_FALSE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyYoungOnly));
+  G1Arguments::parse_verification_type("young-only");
+  ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyYoungOnly));
 
   // Verify perfect match
-  verifier.parse_verification_type("mixedgc");
-  ASSERT_FALSE(verifier.should_verify(G1HeapVerifier::G1VerifyMixed));
-  verifier.parse_verification_type("mixe");
-  ASSERT_FALSE(verifier.should_verify(G1HeapVerifier::G1VerifyMixed));
-  verifier.parse_verification_type("mixed");
-  ASSERT_TRUE(verifier.should_verify(G1HeapVerifier::G1VerifyMixed));
+  G1Arguments::parse_verification_type("mixedgc");
+  ASSERT_FALSE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyMixed));
+  G1Arguments::parse_verification_type("mixe");
+  ASSERT_FALSE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyMixed));
+  G1Arguments::parse_verification_type("mixed");
+  ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyMixed));
 
   // Verify the last three
-  verifier.parse_verification_type("initial-mark");
-  verifier.parse_verification_type("remark");
-  verifier.parse_verification_type("cleanup");
-  ASSERT_TRUE(verifier.should_verify(G1HeapVerifier::G1VerifyRemark));
-  ASSERT_TRUE(verifier.should_verify(G1HeapVerifier::G1VerifyCleanup));
+  G1Arguments::parse_verification_type("initial-mark");
+  G1Arguments::parse_verification_type("remark");
+  G1Arguments::parse_verification_type("cleanup");
+  ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyRemark));
+  ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyCleanup));
 
   // Enabling all is not the same as G1VerifyAll
-  ASSERT_FALSE(verifier.should_verify(G1HeapVerifier::G1VerifyAll));
+  ASSERT_FALSE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyAll));
 }

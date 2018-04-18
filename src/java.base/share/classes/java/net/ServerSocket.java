@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -549,6 +549,7 @@ class ServerSocket implements java.io.Closeable {
             si.address = new InetAddress();
             si.fd = new FileDescriptor();
             getImpl().accept(si);
+            SocketCleanable.register(si.fd);   // raw fd has been set
 
             SecurityManager security = System.getSecurityManager();
             if (security != null) {

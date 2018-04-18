@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/extendedPC.hpp"
 #include "runtime/frame.inline.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -51,6 +51,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 
@@ -121,6 +122,10 @@ void os::Linux::ucontext_set_pc(ucontext_t * uc, address pc) {
   uc->uc_mcontext.regs->nip = (unsigned long)pc;
 }
 
+static address ucontext_get_lr(const ucontext_t * uc) {
+  return (address)uc->uc_mcontext.regs->link;
+}
+
 intptr_t* os::Linux::ucontext_get_sp(const ucontext_t * uc) {
   return (intptr_t*)uc->uc_mcontext.regs->gpr[1/*REG_SP*/];
 }
@@ -178,9 +183,9 @@ bool os::Linux::get_frame_at_stack_banging_point(JavaThread* thread, ucontext_t*
       // the frame is complete.
       return false;
     } else {
-      intptr_t* fp = os::Linux::ucontext_get_fp(uc);
       intptr_t* sp = os::Linux::ucontext_get_sp(uc);
-      *fr = frame(sp, (address)*sp);
+      address lr = ucontext_get_lr(uc);
+      *fr = frame(sp, lr);
       if (!fr->is_java_frame()) {
         assert(fr->safe_for_sender(thread), "Safety check");
         assert(!fr->is_first_frame(), "Safety check");
@@ -261,6 +266,13 @@ JVM_handle_linux_signal(int sig,
       return true;
     }
   }
+
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  if ((sig == SIGSEGV || sig == SIGBUS) && info != NULL && info->si_addr == g_assert_poison) {
+    handle_assert_poison_fault(ucVoid, info->si_addr);
+    return 1;
+  }
+#endif
 
   JavaThread* thread = NULL;
   VMThread* vmthread = NULL;

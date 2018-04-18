@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,34 @@
 #ifndef SHARE_VM_GC_SHARED_MODREFBARRIERSET_INLINE_HPP
 #define SHARE_VM_GC_SHARED_MODREFBARRIERSET_INLINE_HPP
 
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/modRefBarrierSet.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.hpp"
+
+// count is number of array elements being written
+void ModRefBarrierSet::write_ref_array(HeapWord* start, size_t count) {
+  HeapWord* end = (HeapWord*)((char*)start + (count*heapOopSize));
+  // In the case of compressed oops, start and end may potentially be misaligned;
+  // so we need to conservatively align the first downward (this is not
+  // strictly necessary for current uses, but a case of good hygiene and,
+  // if you will, aesthetics) and the second upward (this is essential for
+  // current uses) to a HeapWord boundary, so we mark all cards overlapping
+  // this write. If this evolves in the future to calling a
+  // logging barrier of narrow oop granularity, like the pre-barrier for G1
+  // (mentioned here merely by way of example), we will need to change this
+  // interface, so it is "exactly precise" (if i may be allowed the adverbial
+  // redundancy for emphasis) and does not include narrow oop slots not
+  // included in the original write interval.
+  HeapWord* aligned_start = align_down(start, HeapWordSize);
+  HeapWord* aligned_end   = align_up  (end,   HeapWordSize);
+  // If compressed oops were not being used, these should already be aligned
+  assert(UseCompressedOops || (aligned_start == start && aligned_end == end),
+         "Expected heap word alignment of start and end");
+  write_ref_array_work(MemRegion(aligned_start, aligned_end));
+}
 
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
@@ -72,8 +96,8 @@ oop_arraycopy_in_heap(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t
 
   if (!HasDecorator<decorators, ARRAYCOPY_CHECKCAST>::value) {
     // Optimized covariant case
-    bs->write_ref_array_pre(dst, (int)length,
-                            HasDecorator<decorators, ARRAYCOPY_DEST_NOT_INITIALIZED>::value);
+    bs->write_ref_array_pre(dst, length,
+                            HasDecorator<decorators, AS_DEST_NOT_INITIALIZED>::value);
     Raw::oop_arraycopy(src_obj, dst_obj, src, dst, length);
     bs->write_ref_array((HeapWord*)dst, length);
   } else {
@@ -82,7 +106,7 @@ oop_arraycopy_in_heap(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t
     T* end = from + length;
     for (T* p = dst; from < end; from++, p++) {
       T element = *from;
-      if (bound->is_instanceof_or_null(element)) {
+      if (oopDesc::is_instanceof_or_null(CompressedOops::decode(element), bound)) {
         bs->template write_ref_field_pre<decorators>(p);
         *p = element;
       } else {

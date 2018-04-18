@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import java.util.Arrays;
 
 public class TestUtil {
 
+    static final Path CWD = Paths.get(".");
     final static String fileContent = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"; // repeated
 
     public static Path getAFile(int size) throws IOException {
@@ -44,8 +45,7 @@ public class TestUtil {
 
     public static Path tempFile() {
         try {
-            Path p = Files.createTempFile("foo", "test");
-            p.toFile().deleteOnExit();
+            Path p = Files.createTempFile(CWD, "TestUtil_tmp_", "_HTTPClient");
             return p;
         } catch (IOException e) {
             throw new UncheckedIOException(e);

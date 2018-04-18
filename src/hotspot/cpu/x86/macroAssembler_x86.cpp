@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,17 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "compiler/disassembler.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/access.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/biasedLocking.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
@@ -44,11 +46,6 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
-#include "gc/g1/heapRegion.hpp"
-#endif // INCLUDE_ALL_GCS
 #include "crc32c.h"
 #ifdef COMPILER2
 #include "opto/intrinsicnode.hpp"
@@ -836,7 +833,8 @@ void MacroAssembler::warn(const char* msg) {
   andq(rsp, -16);     // align stack as required by push_CPU_state and call
   push_CPU_state();   // keeps alignment at 16 bytes
   lea(c_rarg0, ExternalAddress((address) msg));
-  call_VM_leaf(CAST_FROM_FN_PTR(address, warning), c_rarg0);
+  lea(rax, ExternalAddress(CAST_FROM_FN_PTR(address, warning)));
+  call(rax);
   pop_CPU_state();
   mov(rsp, rbp);
   pop(rbp);
@@ -3659,9 +3657,14 @@ void MacroAssembler::os_breakpoint() {
 }
 
 void MacroAssembler::unimplemented(const char* what) {
-  char* b = new char[1024];
-  jio_snprintf(b, 1024, "unimplemented: %s", what);
-  stop(b);
+  const char* buf = NULL;
+  {
+    ResourceMark rm;
+    stringStream ss;
+    ss.print("unimplemented: %s", what);
+    buf = code_string(ss.as_string());
+  }
+  stop(buf);
 }
 
 #ifdef _LP64
@@ -3761,10 +3764,17 @@ void MacroAssembler::serialize_memory(Register thread, Register tmp) {
   movl(as_Address(ArrayAddress(page, index)), tmp);
 }
 
-#ifdef _LP64
 void MacroAssembler::safepoint_poll(Label& slow_path, Register thread_reg, Register temp_reg) {
   if (SafepointMechanism::uses_thread_local_poll()) {
-    testb(Address(r15_thread, Thread::polling_page_offset()), SafepointMechanism::poll_bit());
+#ifdef _LP64
+    assert(thread_reg == r15_thread, "should be");
+#else
+    if (thread_reg == noreg) {
+      thread_reg = temp_reg;
+      get_thread(thread_reg);
+    }
+#endif
+    testb(Address(thread_reg, Thread::polling_page_offset()), SafepointMechanism::poll_bit());
     jcc(Assembler::notZero, slow_path); // handshake bit set implies poll
   } else {
     cmp32(ExternalAddress(SafepointSynchronize::address_of_state()),
@@ -3772,13 +3782,6 @@ void MacroAssembler::safepoint_poll(Label& slow_path, Register thread_reg, Regis
     jcc(Assembler::notEqual, slow_path);
   }
 }
-#else
-void MacroAssembler::safepoint_poll(Label& slow_path) {
-  cmp32(ExternalAddress(SafepointSynchronize::address_of_state()),
-      SafepointSynchronize::_not_synchronized);
-  jcc(Assembler::notEqual, slow_path);
-}
-#endif
 
 // Calls to C land
 //
@@ -5232,6 +5235,12 @@ void MacroAssembler::vxorps(XMMRegister dst, XMMRegister nds, AddressLiteral src
   }
 }
 
+void MacroAssembler::clear_jweak_tag(Register possibly_jweak) {
+  const int32_t inverted_jweak_mask = ~static_cast<int32_t>(JNIHandles::weak_tag_mask);
+  STATIC_ASSERT(inverted_jweak_mask == -2); // otherwise check this code
+  // The inverted mask is sign-extended
+  andptr(possibly_jweak, inverted_jweak_mask);
+}
 
 void MacroAssembler::resolve_jobject(Register value,
                                      Register thread,
@@ -5243,293 +5252,16 @@ void MacroAssembler::resolve_jobject(Register value,
   testptr(value, JNIHandles::weak_tag_mask); // Test for jweak tag.
   jcc(Assembler::zero, not_weak);
   // Resolve jweak.
-  movptr(value, Address(value, -JNIHandles::weak_tag_value));
+  access_load_at(T_OBJECT, IN_ROOT | ON_PHANTOM_OOP_REF,
+                 value, Address(value, -JNIHandles::weak_tag_value), tmp, thread);
   verify_oop(value);
-#if INCLUDE_ALL_GCS
-  if (UseG1GC) {
-    g1_write_barrier_pre(noreg /* obj */,
-                         value /* pre_val */,
-                         thread /* thread */,
-                         tmp /* tmp */,
-                         true /* tosca_live */,
-                         true /* expand_call */);
-  }
-#endif // INCLUDE_ALL_GCS
   jmp(done);
   bind(not_weak);
   // Resolve (untagged) jobject.
-  movptr(value, Address(value, 0));
+  access_load_at(T_OBJECT, IN_ROOT | IN_CONCURRENT_ROOT,
+                 value, Address(value, 0), tmp, thread);
   verify_oop(value);
   bind(done);
-}
-
-void MacroAssembler::clear_jweak_tag(Register possibly_jweak) {
-  const int32_t inverted_jweak_mask = ~static_cast<int32_t>(JNIHandles::weak_tag_mask);
-  STATIC_ASSERT(inverted_jweak_mask == -2); // otherwise check this code
-  // The inverted mask is sign-extended
-  andptr(possibly_jweak, inverted_jweak_mask);
-}
-
-//////////////////////////////////////////////////////////////////////////////////
-#if INCLUDE_ALL_GCS
-
-void MacroAssembler::g1_write_barrier_pre(Register obj,
-                                          Register pre_val,
-                                          Register thread,
-                                          Register tmp,
-                                          bool tosca_live,
-                                          bool expand_call) {
-
-  // If expand_call is true then we expand the call_VM_leaf macro
-  // directly to skip generating the check by
-  // InterpreterMacroAssembler::call_VM_leaf_base that checks _last_sp.
-
-#ifdef _LP64
-  assert(thread == r15_thread, "must be");
-#endif // _LP64
-
-  Label done;
-  Label runtime;
-
-  assert(pre_val != noreg, "check this code");
-
-  if (obj != noreg) {
-    assert_different_registers(obj, pre_val, tmp);
-    assert(pre_val != rax, "check this code");
-  }
-
-  Address in_progress(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                       SATBMarkQueue::byte_offset_of_active()));
-  Address index(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                       SATBMarkQueue::byte_offset_of_index()));
-  Address buffer(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                       SATBMarkQueue::byte_offset_of_buf()));
-
-
-  // Is marking active?
-  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-    cmpl(in_progress, 0);
-  } else {
-    assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-    cmpb(in_progress, 0);
-  }
-  jcc(Assembler::equal, done);
-
-  // Do we need to load the previous value?
-  if (obj != noreg) {
-    load_heap_oop(pre_val, Address(obj, 0));
-  }
-
-  // Is the previous value null?
-  cmpptr(pre_val, (int32_t) NULL_WORD);
-  jcc(Assembler::equal, done);
-
-  // Can we store original value in the thread's buffer?
-  // Is index == 0?
-  // (The index field is typed as size_t.)
-
-  movptr(tmp, index);                   // tmp := *index_adr
-  cmpptr(tmp, 0);                       // tmp == 0?
-  jcc(Assembler::equal, runtime);       // If yes, goto runtime
-
-  subptr(tmp, wordSize);                // tmp := tmp - wordSize
-  movptr(index, tmp);                   // *index_adr := tmp
-  addptr(tmp, buffer);                  // tmp := tmp + *buffer_adr
-
-  // Record the previous value
-  movptr(Address(tmp, 0), pre_val);
-  jmp(done);
-
-  bind(runtime);
-  // save the live input values
-  if(tosca_live) push(rax);
-
-  if (obj != noreg && obj != rax)
-    push(obj);
-
-  if (pre_val != rax)
-    push(pre_val);
-
-  // Calling the runtime using the regular call_VM_leaf mechanism generates
-  // code (generated by InterpreterMacroAssember::call_VM_leaf_base)
-  // that checks that the *(ebp+frame::interpreter_frame_last_sp) == NULL.
-  //
-  // If we care generating the pre-barrier without a frame (e.g. in the
-  // intrinsified Reference.get() routine) then ebp might be pointing to
-  // the caller frame and so this check will most likely fail at runtime.
-  //
-  // Expanding the call directly bypasses the generation of the check.
-  // So when we do not have have a full interpreter frame on the stack
-  // expand_call should be passed true.
-
-  NOT_LP64( push(thread); )
-
-  if (expand_call) {
-    LP64_ONLY( assert(pre_val != c_rarg1, "smashed arg"); )
-    pass_arg1(this, thread);
-    pass_arg0(this, pre_val);
-    MacroAssembler::call_VM_leaf_base(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), 2);
-  } else {
-    call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), pre_val, thread);
-  }
-
-  NOT_LP64( pop(thread); )
-
-  // save the live input values
-  if (pre_val != rax)
-    pop(pre_val);
-
-  if (obj != noreg && obj != rax)
-    pop(obj);
-
-  if(tosca_live) pop(rax);
-
-  bind(done);
-}
-
-void MacroAssembler::g1_write_barrier_post(Register store_addr,
-                                           Register new_val,
-                                           Register thread,
-                                           Register tmp,
-                                           Register tmp2) {
-#ifdef _LP64
-  assert(thread == r15_thread, "must be");
-#endif // _LP64
-
-  Address queue_index(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
-                                       DirtyCardQueue::byte_offset_of_index()));
-  Address buffer(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
-                                       DirtyCardQueue::byte_offset_of_buf()));
-
-  CardTableModRefBS* ct =
-    barrier_set_cast<CardTableModRefBS>(Universe::heap()->barrier_set());
-  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
-
-  Label done;
-  Label runtime;
-
-  // Does store cross heap regions?
-
-  movptr(tmp, store_addr);
-  xorptr(tmp, new_val);
-  shrptr(tmp, HeapRegion::LogOfHRGrainBytes);
-  jcc(Assembler::equal, done);
-
-  // crosses regions, storing NULL?
-
-  cmpptr(new_val, (int32_t) NULL_WORD);
-  jcc(Assembler::equal, done);
-
-  // storing region crossing non-NULL, is card already dirty?
-
-  const Register card_addr = tmp;
-  const Register cardtable = tmp2;
-
-  movptr(card_addr, store_addr);
-  shrptr(card_addr, CardTableModRefBS::card_shift);
-  // Do not use ExternalAddress to load 'byte_map_base', since 'byte_map_base' is NOT
-  // a valid address and therefore is not properly handled by the relocation code.
-  movptr(cardtable, (intptr_t)ct->byte_map_base);
-  addptr(card_addr, cardtable);
-
-  cmpb(Address(card_addr, 0), (int)G1SATBCardTableModRefBS::g1_young_card_val());
-  jcc(Assembler::equal, done);
-
-  membar(Assembler::Membar_mask_bits(Assembler::StoreLoad));
-  cmpb(Address(card_addr, 0), (int)CardTableModRefBS::dirty_card_val());
-  jcc(Assembler::equal, done);
-
-
-  // storing a region crossing, non-NULL oop, card is clean.
-  // dirty card and log.
-
-  movb(Address(card_addr, 0), (int)CardTableModRefBS::dirty_card_val());
-
-  cmpl(queue_index, 0);
-  jcc(Assembler::equal, runtime);
-  subl(queue_index, wordSize);
-  movptr(tmp2, buffer);
-#ifdef _LP64
-  movslq(rscratch1, queue_index);
-  addq(tmp2, rscratch1);
-  movq(Address(tmp2, 0), card_addr);
-#else
-  addl(tmp2, queue_index);
-  movl(Address(tmp2, 0), card_addr);
-#endif
-  jmp(done);
-
-  bind(runtime);
-  // save the live input values
-  push(store_addr);
-  push(new_val);
-#ifdef _LP64
-  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), card_addr, r15_thread);
-#else
-  push(thread);
-  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), card_addr, thread);
-  pop(thread);
-#endif
-  pop(new_val);
-  pop(store_addr);
-
-  bind(done);
-}
-
-#endif // INCLUDE_ALL_GCS
-//////////////////////////////////////////////////////////////////////////////////
-
-
-void MacroAssembler::store_check(Register obj, Address dst) {
-  store_check(obj);
-}
-
-void MacroAssembler::store_check(Register obj) {
-  // Does a store check for the oop in register obj. The content of
-  // register obj is destroyed afterwards.
-  BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->kind() == BarrierSet::CardTableForRS ||
-         bs->kind() == BarrierSet::CardTableExtension,
-         "Wrong barrier set kind");
-
-  CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(bs);
-  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
-
-  shrptr(obj, CardTableModRefBS::card_shift);
-
-  Address card_addr;
-
-  // The calculation for byte_map_base is as follows:
-  // byte_map_base = _byte_map - (uintptr_t(low_bound) >> card_shift);
-  // So this essentially converts an address to a displacement and it will
-  // never need to be relocated. On 64bit however the value may be too
-  // large for a 32bit displacement.
-  intptr_t disp = (intptr_t) ct->byte_map_base;
-  if (is_simm32(disp)) {
-    card_addr = Address(noreg, obj, Address::times_1, disp);
-  } else {
-    // By doing it as an ExternalAddress 'disp' could be converted to a rip-relative
-    // displacement and done in a single instruction given favorable mapping and a
-    // smarter version of as_Address. However, 'ExternalAddress' generates a relocation
-    // entry and that entry is not properly handled by the relocation code.
-    AddressLiteral cardtable((address)ct->byte_map_base, relocInfo::none);
-    Address index(noreg, obj, Address::times_1);
-    card_addr = as_Address(ArrayAddress(cardtable, index));
-  }
-
-  int dirty = CardTableModRefBS::dirty_card_val();
-  if (UseCondCardMark) {
-    Label L_already_dirty;
-    if (UseConcMarkSweepGC) {
-      membar(Assembler::StoreLoad);
-    }
-    cmpb(card_addr, dirty);
-    jcc(Assembler::equal, L_already_dirty);
-    movb(card_addr, dirty);
-    bind(L_already_dirty);
-  } else {
-    movb(card_addr, dirty);
-  }
 }
 
 void MacroAssembler::subptr(Register dst, int32_t imm32) {
@@ -5596,121 +5328,6 @@ void MacroAssembler::tlab_allocate(Register obj,
     subptr(var_size_in_bytes, obj);
   }
   verify_tlab();
-}
-
-// Preserves rbx, and rdx.
-Register MacroAssembler::tlab_refill(Label& retry,
-                                     Label& try_eden,
-                                     Label& slow_case) {
-  Register top = rax;
-  Register t1  = rcx; // object size
-  Register t2  = rsi;
-  Register thread_reg = NOT_LP64(rdi) LP64_ONLY(r15_thread);
-  assert_different_registers(top, thread_reg, t1, t2, /* preserve: */ rbx, rdx);
-  Label do_refill, discard_tlab;
-
-  if (!Universe::heap()->supports_inline_contig_alloc()) {
-    // No allocation in the shared eden.
-    jmp(slow_case);
-  }
-
-  NOT_LP64(get_thread(thread_reg));
-
-  movptr(top, Address(thread_reg, in_bytes(JavaThread::tlab_top_offset())));
-  movptr(t1,  Address(thread_reg, in_bytes(JavaThread::tlab_end_offset())));
-
-  // calculate amount of free space
-  subptr(t1, top);
-  shrptr(t1, LogHeapWordSize);
-
-  // Retain tlab and allocate object in shared space if
-  // the amount free in the tlab is too large to discard.
-  cmpptr(t1, Address(thread_reg, in_bytes(JavaThread::tlab_refill_waste_limit_offset())));
-  jcc(Assembler::lessEqual, discard_tlab);
-
-  // Retain
-  // %%% yuck as movptr...
-  movptr(t2, (int32_t) ThreadLocalAllocBuffer::refill_waste_limit_increment());
-  addptr(Address(thread_reg, in_bytes(JavaThread::tlab_refill_waste_limit_offset())), t2);
-  if (TLABStats) {
-    // increment number of slow_allocations
-    addl(Address(thread_reg, in_bytes(JavaThread::tlab_slow_allocations_offset())), 1);
-  }
-  jmp(try_eden);
-
-  bind(discard_tlab);
-  if (TLABStats) {
-    // increment number of refills
-    addl(Address(thread_reg, in_bytes(JavaThread::tlab_number_of_refills_offset())), 1);
-    // accumulate wastage -- t1 is amount free in tlab
-    addl(Address(thread_reg, in_bytes(JavaThread::tlab_fast_refill_waste_offset())), t1);
-  }
-
-  // if tlab is currently allocated (top or end != null) then
-  // fill [top, end + alignment_reserve) with array object
-  testptr(top, top);
-  jcc(Assembler::zero, do_refill);
-
-  // set up the mark word
-  movptr(Address(top, oopDesc::mark_offset_in_bytes()), (intptr_t)markOopDesc::prototype()->copy_set_hash(0x2));
-  // set the length to the remaining space
-  subptr(t1, typeArrayOopDesc::header_size(T_INT));
-  addptr(t1, (int32_t)ThreadLocalAllocBuffer::alignment_reserve());
-  shlptr(t1, log2_intptr(HeapWordSize/sizeof(jint)));
-  movl(Address(top, arrayOopDesc::length_offset_in_bytes()), t1);
-  // set klass to intArrayKlass
-  // dubious reloc why not an oop reloc?
-  movptr(t1, ExternalAddress((address)Universe::intArrayKlassObj_addr()));
-  // store klass last.  concurrent gcs assumes klass length is valid if
-  // klass field is not null.
-  store_klass(top, t1);
-
-  movptr(t1, top);
-  subptr(t1, Address(thread_reg, in_bytes(JavaThread::tlab_start_offset())));
-  incr_allocated_bytes(thread_reg, t1, 0);
-
-  // refill the tlab with an eden allocation
-  bind(do_refill);
-  movptr(t1, Address(thread_reg, in_bytes(JavaThread::tlab_size_offset())));
-  shlptr(t1, LogHeapWordSize);
-  // allocate new tlab, address returned in top
-  eden_allocate(top, t1, 0, t2, slow_case);
-
-  // Check that t1 was preserved in eden_allocate.
-#ifdef ASSERT
-  if (UseTLAB) {
-    Label ok;
-    Register tsize = rsi;
-    assert_different_registers(tsize, thread_reg, t1);
-    push(tsize);
-    movptr(tsize, Address(thread_reg, in_bytes(JavaThread::tlab_size_offset())));
-    shlptr(tsize, LogHeapWordSize);
-    cmpptr(t1, tsize);
-    jcc(Assembler::equal, ok);
-    STOP("assert(t1 != tlab size)");
-    should_not_reach_here();
-
-    bind(ok);
-    pop(tsize);
-  }
-#endif
-  movptr(Address(thread_reg, in_bytes(JavaThread::tlab_start_offset())), top);
-  movptr(Address(thread_reg, in_bytes(JavaThread::tlab_top_offset())), top);
-  addptr(top, t1);
-  subptr(top, (int32_t)ThreadLocalAllocBuffer::alignment_reserve_in_bytes());
-  movptr(Address(thread_reg, in_bytes(JavaThread::tlab_end_offset())), top);
-
-  if (ZeroTLAB) {
-    // This is a fast TLAB refill, therefore the GC is not notified of it.
-    // So compiled code must fill the new TLAB with zeroes.
-    movptr(top, Address(thread_reg, in_bytes(JavaThread::tlab_start_offset())));
-    zero_memory(top, t1, 0, t2);
-  }
-
-  verify_tlab();
-  jmp(retry);
-
-  return thread_reg; // for use by caller
 }
 
 // Preserves the contents of address, destroys the contents length_in_bytes and temp.
@@ -6697,69 +6314,47 @@ void MacroAssembler::store_klass(Register dst, Register src) {
     movptr(Address(dst, oopDesc::klass_offset_in_bytes()), src);
 }
 
-void MacroAssembler::load_heap_oop(Register dst, Address src) {
-#ifdef _LP64
-  // FIXME: Must change all places where we try to load the klass.
-  if (UseCompressedOops) {
-    movl(dst, src);
-    decode_heap_oop(dst);
-  } else
-#endif
-    movptr(dst, src);
+void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
+                                    Register tmp1, Register thread_tmp) {
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bool as_raw = (decorators & AS_RAW) != 0;
+  if (as_raw) {
+    bs->BarrierSetAssembler::load_at(this, decorators, type, dst, src, tmp1, thread_tmp);
+  } else {
+    bs->load_at(this, decorators, type, dst, src, tmp1, thread_tmp);
+  }
+}
+
+void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register src,
+                                     Register tmp1, Register tmp2) {
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bool as_raw = (decorators & AS_RAW) != 0;
+  if (as_raw) {
+    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, src, tmp1, tmp2);
+  } else {
+    bs->store_at(this, decorators, type, dst, src, tmp1, tmp2);
+  }
+}
+
+void MacroAssembler::load_heap_oop(Register dst, Address src, Register tmp1,
+                                   Register thread_tmp, DecoratorSet decorators) {
+  access_load_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, thread_tmp);
 }
 
 // Doesn't do verfication, generates fixed size code
-void MacroAssembler::load_heap_oop_not_null(Register dst, Address src) {
-#ifdef _LP64
-  if (UseCompressedOops) {
-    movl(dst, src);
-    decode_heap_oop_not_null(dst);
-  } else
-#endif
-    movptr(dst, src);
+void MacroAssembler::load_heap_oop_not_null(Register dst, Address src, Register tmp1,
+                                            Register thread_tmp, DecoratorSet decorators) {
+  access_load_at(T_OBJECT, IN_HEAP | OOP_NOT_NULL | decorators, dst, src, tmp1, thread_tmp);
 }
 
-void MacroAssembler::store_heap_oop(Address dst, Register src) {
-#ifdef _LP64
-  if (UseCompressedOops) {
-    assert(!dst.uses(src), "not enough registers");
-    encode_heap_oop(src);
-    movl(dst, src);
-  } else
-#endif
-    movptr(dst, src);
-}
-
-void MacroAssembler::cmp_heap_oop(Register src1, Address src2, Register tmp) {
-  assert_different_registers(src1, tmp);
-#ifdef _LP64
-  if (UseCompressedOops) {
-    bool did_push = false;
-    if (tmp == noreg) {
-      tmp = rax;
-      push(tmp);
-      did_push = true;
-      assert(!src2.uses(rsp), "can't push");
-    }
-    load_heap_oop(tmp, src2);
-    cmpptr(src1, tmp);
-    if (did_push)  pop(tmp);
-  } else
-#endif
-    cmpptr(src1, src2);
+void MacroAssembler::store_heap_oop(Address dst, Register src, Register tmp1,
+                                    Register tmp2, DecoratorSet decorators) {
+  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, tmp2);
 }
 
 // Used for storing NULLs.
 void MacroAssembler::store_heap_oop_null(Address dst) {
-#ifdef _LP64
-  if (UseCompressedOops) {
-    movl(dst, (int32_t)NULL_WORD);
-  } else {
-    movslq(dst, (int32_t)NULL_WORD);
-  }
-#else
-  movl(dst, (int32_t)NULL_WORD);
-#endif
+  access_store_at(T_OBJECT, IN_HEAP, dst, noreg, noreg, noreg);
 }
 
 #ifdef _LP64
@@ -10226,6 +9821,16 @@ void MacroAssembler::update_byte_crc32(Register crc, Register val, Register tabl
 }
 
 /**
+* Fold four 128-bit data chunks
+*/
+void MacroAssembler::fold_128bit_crc32_avx512(XMMRegister xcrc, XMMRegister xK, XMMRegister xtmp, Register buf, int offset) {
+  evpclmulhdq(xtmp, xK, xcrc, Assembler::AVX_512bit); // [123:64]
+  evpclmulldq(xcrc, xK, xcrc, Assembler::AVX_512bit); // [63:0]
+  evpxorq(xcrc, xcrc, Address(buf, offset), Assembler::AVX_512bit /* vector_len */);
+  evpxorq(xcrc, xcrc, xtmp, Assembler::AVX_512bit /* vector_len */);
+}
+
+/**
  * Fold 128-bit data chunk
  */
 void MacroAssembler::fold_128bit_crc32(XMMRegister xcrc, XMMRegister xK, XMMRegister xtmp, Register buf, int offset) {
@@ -10330,6 +9935,34 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Regi
   shrl(len, 4);
   jcc(Assembler::zero, L_tail_restore);
 
+  // Fold total 512 bits of polynomial on each iteration
+  if (VM_Version::supports_vpclmulqdq()) {
+    Label Parallel_loop, L_No_Parallel;
+
+    cmpl(len, 8);
+    jccb(Assembler::less, L_No_Parallel);
+
+    movdqu(xmm0, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr() + 32));
+    evmovdquq(xmm1, Address(buf, 0), Assembler::AVX_512bit);
+    movdl(xmm5, crc);
+    evpxorq(xmm1, xmm1, xmm5, Assembler::AVX_512bit);
+    addptr(buf, 64);
+    subl(len, 7);
+    evshufi64x2(xmm0, xmm0, xmm0, 0x00, Assembler::AVX_512bit); //propagate the mask from 128 bits to 512 bits
+
+    BIND(Parallel_loop);
+    fold_128bit_crc32_avx512(xmm1, xmm0, xmm5, buf, 0);
+    addptr(buf, 64);
+    subl(len, 4);
+    jcc(Assembler::greater, Parallel_loop);
+
+    vextracti64x2(xmm2, xmm1, 0x01);
+    vextracti64x2(xmm3, xmm1, 0x02);
+    vextracti64x2(xmm4, xmm1, 0x03);
+    jmp(L_fold_512b);
+
+    BIND(L_No_Parallel);
+  }
   // Fold crc into first bytes of vector
   movdqa(xmm1, Address(buf, 0));
   movdl(rax, xmm1);

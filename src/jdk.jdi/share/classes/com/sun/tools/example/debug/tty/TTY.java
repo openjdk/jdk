@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -791,7 +791,7 @@ public class TTY implements EventNotifier {
     private static void usage() {
         MessageOutput.println("zz usage text", new Object [] {progname,
                                                      File.pathSeparator});
-        System.exit(1);
+        System.exit(0);
     }
 
     static void usageError(String messageKey) {
@@ -1007,7 +1007,11 @@ public class TTY implements EventNotifier {
                     return;
                 }
                 connectSpec = argv[++i];
-            } else if (token.equals("-help")) {
+            } else if (token.equals("-?") ||
+                       token.equals("-h") ||
+                       token.equals("--help") ||
+                       // -help: legacy.
+                       token.equals("-help")) {
                 usage();
             } else if (token.equals("-version")) {
                 Commands evaluator = new Commands();

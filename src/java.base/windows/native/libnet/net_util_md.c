@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -525,7 +525,7 @@ NET_SocketClose(int fd) {
     int len = sizeof (l);
     if (getsockopt(fd, SOL_SOCKET, SO_LINGER, (char *)&l, &len) == 0) {
         if (l.l_onoff == 0) {
-            WSASendDisconnect(fd, NULL);
+            shutdown(fd, SD_SEND);
         }
     }
     ret = closesocket (fd);
@@ -967,7 +967,7 @@ NET_IsEqual(jbyte* caddr1, jbyte* caddr2) {
  * It returns the time left from the timeout, or -1 if it expired.
  */
 
-jint
+JNIEXPORT jint JNICALL
 NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
 {
     jlong prevTime = JVM_CurrentTimeMillis(env, 0);

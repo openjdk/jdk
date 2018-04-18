@@ -1607,7 +1607,7 @@ void AwtFrame::_NotifyModalBlocked(void *param)
             DWORD fThread = ::GetWindowThreadProcessId(fHWnd, NULL);
             if (fThread != AwtToolkit::GetInstance().MainThread()) {
                 // check if this thread has been already blocked
-                BlockedThreadStruct *blockedThread = (BlockedThreadStruct *)sm_BlockedThreads.get((void *)fThread);
+                BlockedThreadStruct *blockedThread = (BlockedThreadStruct *)sm_BlockedThreads.get((void *)((intptr_t)fThread));
                 if (blocked) {
                     if (blockedThread == NULL) {
                         blockedThread = new BlockedThreadStruct;
@@ -1616,7 +1616,7 @@ void AwtFrame::_NotifyModalBlocked(void *param)
                                                                       0, fThread);
                         blockedThread->mouseHook = ::SetWindowsHookEx(WH_MOUSE, (HOOKPROC)AwtDialog::MouseHookProc_NonTT,
                                                                       0, fThread);
-                        sm_BlockedThreads.put((void *)fThread, blockedThread);
+                        sm_BlockedThreads.put((void *)((intptr_t)fThread), blockedThread);
                     } else {
                         blockedThread->framesCount++;
                     }
@@ -1628,7 +1628,7 @@ void AwtFrame::_NotifyModalBlocked(void *param)
                         if ((blockedThread->framesCount) == 1) {
                             ::UnhookWindowsHookEx(blockedThread->modalHook);
                             ::UnhookWindowsHookEx(blockedThread->mouseHook);
-                            sm_BlockedThreads.remove((void *)fThread);
+                            sm_BlockedThreads.remove((void *)((intptr_t)fThread));
                             delete blockedThread;
                         } else {
                             blockedThread->framesCount--;

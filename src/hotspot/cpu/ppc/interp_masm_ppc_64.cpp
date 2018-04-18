@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,18 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "interp_masm_ppc.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
+
+// Implementation of InterpreterMacroAssembler.
+
+// This file specializes the assembler with interpreter-specific macros.
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) // nothing
@@ -487,7 +494,8 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
 #endif
   // Add in the index.
   add(result, tmp, result);
-  load_heap_oop(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result, is_null);
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->load_at(this, IN_HEAP, T_OBJECT, result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result, tmp, R0, false, is_null);
 }
 
 // load cpool->resolved_klass_at(index)
@@ -2439,4 +2447,3 @@ void InterpreterMacroAssembler::notify_method_exit(bool is_native_method, TosSta
 
   // Dtrace support not implemented.
 }
-

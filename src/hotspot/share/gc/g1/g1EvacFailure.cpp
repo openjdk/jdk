@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,16 +34,19 @@
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "oops/access.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
+#include "oops/oop.inline.hpp"
 
 class UpdateRSetDeferred : public ExtendedOopClosure {
 private:
   G1CollectedHeap* _g1;
-  DirtyCardQueue *_dcq;
-  G1SATBCardTableModRefBS* _ct_bs;
+  DirtyCardQueue* _dcq;
+  G1CardTable*    _ct;
 
 public:
   UpdateRSetDeferred(DirtyCardQueue* dcq) :
-    _g1(G1CollectedHeap::heap()), _ct_bs(_g1->g1_barrier_set()), _dcq(dcq) {}
+    _g1(G1CollectedHeap::heap()), _ct(_g1->card_table()), _dcq(dcq) {}
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(      oop* p) { do_oop_work(p); }
@@ -51,17 +54,17 @@ public:
     assert(_g1->heap_region_containing(p)->is_in_reserved(p), "paranoia");
     assert(!_g1->heap_region_containing(p)->is_survivor(), "Unexpected evac failure in survivor region");
 
-    T const o = oopDesc::load_heap_oop(p);
-    if (oopDesc::is_null(o)) {
+    T const o = RawAccess<>::oop_load(p);
+    if (CompressedOops::is_null(o)) {
       return;
     }
 
-    if (HeapRegion::is_in_same_region(p, oopDesc::decode_heap_oop(o))) {
+    if (HeapRegion::is_in_same_region(p, CompressedOops::decode(o))) {
       return;
     }
-    size_t card_index = _ct_bs->index_for(p);
-    if (_ct_bs->mark_card_deferred(card_index)) {
-      _dcq->enqueue((jbyte*)_ct_bs->byte_for_index(card_index));
+    size_t card_index = _ct->index_for(p);
+    if (_ct->mark_card_deferred(card_index)) {
+      _dcq->enqueue((jbyte*)_ct->byte_for_index(card_index));
     }
   }
 };
@@ -124,7 +127,7 @@ public:
         // explicitly and all objects in the CSet are considered
         // (implicitly) live. So, we won't mark them explicitly and
         // we'll leave them over NTAMS.
-        _cm->mark_in_next_bitmap(_hr, obj);
+        _cm->mark_in_next_bitmap(_worker_id, obj);
       }
       size_t obj_size = obj->size();
 
@@ -220,14 +223,14 @@ public:
     return rspc.marked_bytes();
   }
 
-  bool doHeapRegion(HeapRegion *hr) {
+  bool do_heap_region(HeapRegion *hr) {
     assert(!hr->is_pinned(), "Unexpected pinned region at index %u", hr->hrm_index());
     assert(hr->in_collection_set(), "bad CS");
 
     if (_hrclaimer->claim_region(hr->hrm_index())) {
       if (hr->evacuation_failed()) {
-        bool during_initial_mark = _g1h->collector_state()->during_initial_mark_pause();
-        bool during_conc_mark = _g1h->collector_state()->mark_in_progress();
+        bool during_initial_mark = _g1h->collector_state()->in_initial_mark_gc();
+        bool during_conc_mark = _g1h->collector_state()->mark_or_rebuild_in_progress();
 
         hr->note_self_forwarding_removal_start(during_initial_mark,
                                                during_conc_mark);
@@ -238,6 +241,7 @@ public:
         size_t live_bytes = remove_self_forward_ptr_by_walking_hr(hr, during_initial_mark);
 
         hr->rem_set()->clean_strong_code_roots(hr);
+        hr->rem_set()->clear_locked(true);
 
         hr->note_self_forwarding_removal_end(live_bytes);
       }

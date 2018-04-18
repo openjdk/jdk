@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,6 +228,38 @@ class VM_Version : public Abstract_VM_Version {
     } bits;
   };
 
+  union SefCpuid7Ecx {
+    uint32_t value;
+    struct {
+      uint32_t prefetchwt1 : 1,
+               avx512_vbmi : 1,
+                      umip : 1,
+                       pku : 1,
+                     ospke : 1,
+                           : 1,
+              avx512_vbmi2 : 1,
+                           : 1,
+                      gfni : 1,
+                      vaes : 1,
+                vpclmulqdq : 1,
+               avx512_vnni : 1,
+             avx512_bitalg : 1,
+                           : 1,
+          avx512_vpopcntdq : 1,
+                           : 17;
+    } bits;
+  };
+
+  union SefCpuid7Edx {
+    uint32_t value;
+    struct {
+      uint32_t             : 2,
+             avx512_4vnniw : 1,
+             avx512_4fmaps : 1,
+                           : 28;
+    } bits;
+  };
+
   union ExtCpuid1EEbx {
     uint32_t value;
     struct {
@@ -300,11 +332,16 @@ protected:
 #define CPU_AVX512VL ((uint64_t)UCONST64(0x200000000)) // EVEX instructions with smaller vector length
 #define CPU_SHA ((uint64_t)UCONST64(0x400000000))      // SHA instructions
 #define CPU_FMA ((uint64_t)UCONST64(0x800000000))      // FMA instructions
-#define CPU_VZEROUPPER ((uint64_t)UCONST64(0x1000000000))      // Vzeroupper instruction
+#define CPU_VZEROUPPER ((uint64_t)UCONST64(0x1000000000))       // Vzeroupper instruction
+#define CPU_AVX512_VPOPCNTDQ ((uint64_t)UCONST64(0x2000000000)) // Vector popcount
+#define CPU_VPCLMULQDQ ((uint64_t)UCONST64(0x4000000000)) //Vector carryless multiplication
 
   enum Extended_Family {
     // AMD
     CPU_FAMILY_AMD_11H       = 0x11,
+    // ZX
+    CPU_FAMILY_ZX_CORE_F6    = 6,
+    CPU_FAMILY_ZX_CORE_F7    = 7,
     // Intel
     CPU_FAMILY_INTEL_CORE    = 6,
     CPU_MODEL_NEHALEM        = 0x1e,
@@ -350,8 +387,8 @@ protected:
     // cpuid function 7 (structured extended features)
     SefCpuid7Eax sef_cpuid7_eax;
     SefCpuid7Ebx sef_cpuid7_ebx;
-    uint32_t     sef_cpuid7_ecx; // unused currently
-    uint32_t     sef_cpuid7_edx; // unused currently
+    SefCpuid7Ecx sef_cpuid7_ecx;
+    SefCpuid7Edx sef_cpuid7_edx;
 
     // cpuid function 0xB (processor topology)
     // ecx = 0
@@ -504,6 +541,10 @@ protected:
           result |= CPU_AVX512BW;
         if (_cpuid_info.sef_cpuid7_ebx.bits.avx512vl != 0)
           result |= CPU_AVX512VL;
+        if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_vpopcntdq != 0)
+          result |= CPU_AVX512_VPOPCNTDQ;
+        if (_cpuid_info.sef_cpuid7_ecx.bits.vpclmulqdq != 0)
+          result |= CPU_VPCLMULQDQ;
       }
     }
     if(_cpuid_info.sef_cpuid7_ebx.bits.bmi1 != 0)
@@ -544,6 +585,16 @@ protected:
       if(_cpuid_info.ext_cpuid1_ecx.bits.lzcnt_intel != 0)
         result |= CPU_LZCNT;
       // for Intel, ecx.bits.misalignsse bit (bit 8) indicates support for prefetchw
+      if (_cpuid_info.ext_cpuid1_ecx.bits.misalignsse != 0) {
+        result |= CPU_3DNOW_PREFETCH;
+      }
+    }
+
+    // ZX features.
+    if (is_zx()) {
+      if (_cpuid_info.ext_cpuid1_ecx.bits.lzcnt_intel != 0)
+        result |= CPU_LZCNT;
+      // for ZX, ecx.bits.misalignsse bit (bit 8) indicates support for prefetchw
       if (_cpuid_info.ext_cpuid1_ecx.bits.misalignsse != 0) {
         result |= CPU_3DNOW_PREFETCH;
       }
@@ -657,6 +708,7 @@ public:
   static bool is_P6()             { return cpu_family() >= 6; }
   static bool is_amd()            { assert_is_initialized(); return _cpuid_info.std_vendor_name_0 == 0x68747541; } // 'htuA'
   static bool is_intel()          { assert_is_initialized(); return _cpuid_info.std_vendor_name_0 == 0x756e6547; } // 'uneG'
+  static bool is_zx()             { assert_is_initialized(); return (_cpuid_info.std_vendor_name_0 == 0x746e6543) || (_cpuid_info.std_vendor_name_0 == 0x68532020); } // 'tneC'||'hS  '
   static bool is_atom_family()    { return ((cpu_family() == 0x06) && ((extended_cpu_model() == 0x36) || (extended_cpu_model() == 0x37) || (extended_cpu_model() == 0x4D))); } //Silvermont and Centerton
   static bool is_knights_family() { return ((cpu_family() == 0x06) && ((extended_cpu_model() == 0x57) || (extended_cpu_model() == 0x85))); } // Xeon Phi 3200/5200/7200 and Future Xeon Phi
 
@@ -680,6 +732,15 @@ public:
       }
     } else if (is_amd()) {
       result = (_cpuid_info.ext_cpuid8_ecx.bits.cores_per_cpu + 1);
+    } else if (is_zx()) {
+      bool supports_topology = supports_processor_topology();
+      if (supports_topology) {
+        result = _cpuid_info.tpl_cpuidB1_ebx.bits.logical_cpus /
+                 _cpuid_info.tpl_cpuidB0_ebx.bits.logical_cpus;
+      }
+      if (!supports_topology || result == 0) {
+        result = (_cpuid_info.dcp_cpuid4_eax.bits.cores_per_cpu + 1);
+      }
     }
     return result;
   }
@@ -687,6 +748,8 @@ public:
   static uint threads_per_core()  {
     uint result = 1;
     if (is_intel() && supports_processor_topology()) {
+      result = _cpuid_info.tpl_cpuidB0_ebx.bits.logical_cpus;
+    } else if (is_zx() && supports_processor_topology()) {
       result = _cpuid_info.tpl_cpuidB0_ebx.bits.logical_cpus;
     } else if (_cpuid_info.std_cpuid1_edx.bits.ht != 0) {
       if (cpu_family() >= 0x17) {
@@ -705,6 +768,8 @@ public:
       result = (_cpuid_info.dcp_cpuid4_ebx.bits.L1_line_size + 1);
     } else if (is_amd()) {
       result = _cpuid_info.ext_cpuid5_ecx.bits.L1_line_size;
+    } else if (is_zx()) {
+      result = (_cpuid_info.dcp_cpuid4_ebx.bits.L1_line_size + 1);
     }
     if (result < 32) // not defined ?
       result = 32;   // 32 bytes by default on x86 and other x64
@@ -756,6 +821,8 @@ public:
   static bool supports_sha()        { return (_features & CPU_SHA) != 0; }
   static bool supports_fma()        { return (_features & CPU_FMA) != 0 && supports_avx(); }
   static bool supports_vzeroupper() { return (_features & CPU_VZEROUPPER) != 0; }
+  static bool supports_vpopcntdq()  { return (_features & CPU_AVX512_VPOPCNTDQ) != 0; }
+  static bool supports_vpclmulqdq() { return (_features & CPU_VPCLMULQDQ) != 0; }
 
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&

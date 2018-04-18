@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,6 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.Table;
 
-import java.util.Arrays;
-import java.util.List;
-
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -40,7 +37,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeRequiredMemberWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -301,32 +298,6 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     protected Content getDeprecatedLink(Element member) {
         String name = utils.getFullyQualifiedName(member) + "." + member.getSimpleName();
         return writer.getDocLink(LinkInfoImpl.Kind.MEMBER, member, name);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    protected Content getNavSummaryLink(TypeElement typeElement, boolean link) {
-        if (link) {
-            return Links.createLink(
-                    SectionName.ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY,
-                    contents.navAnnotationTypeRequiredMember);
-        } else {
-            return contents.navAnnotationTypeRequiredMember;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    protected void addNavDetailLink(boolean link, Content liNav) {
-        if (link) {
-            liNav.addContent(Links.createLink(
-                    SectionName.ANNOTATION_TYPE_ELEMENT_DETAIL,
-                    contents.navAnnotationTypeMember));
-        } else {
-            liNav.addContent(contents.navAnnotationTypeMember);
-        }
     }
 
     private TypeMirror getType(Element member) {

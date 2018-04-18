@@ -151,8 +151,8 @@ class ConsoleIOContext extends IOContext {
     }
 
     @Override
-    public Iterable<String> currentSessionHistory() {
-        return history.currentSessionEntries();
+    public Iterable<String> history(boolean currentSession) {
+        return history.entries(currentSession);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,18 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/templateTable.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
@@ -49,75 +52,31 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
                          int offset,
                          Register val,
                          Register tmp,
-                         BarrierSet::Name barrier,
-                         bool precise) {
+                         DecoratorSet decorators = 0) {
   assert(tmp != val && tmp != base && tmp != index, "register collision");
   assert(index == noreg || offset == 0, "only one offset");
-  switch (barrier) {
-#if INCLUDE_ALL_GCS
-    case BarrierSet::G1SATBCTLogging:
-      {
-        // Load and record the previous value.
-        __ g1_write_barrier_pre(base, index, offset,
-                                noreg /* pre_val */,
-                                tmp, true /*preserve_o_regs*/);
+  if (index == noreg) {
+    __ store_heap_oop(val, base, offset, tmp, decorators);
+  } else {
+    __ store_heap_oop(val, base, index, tmp, decorators);
+  }
+}
 
-        // G1 barrier needs uncompressed oop for region cross check.
-        Register new_val = val;
-        if (UseCompressedOops && val != G0) {
-          new_val = tmp;
-          __ mov(val, new_val);
-        }
-
-        if (index == noreg ) {
-          assert(Assembler::is_simm13(offset), "fix this code");
-          __ store_heap_oop(val, base, offset);
-        } else {
-          __ store_heap_oop(val, base, index);
-        }
-
-        // No need for post barrier if storing NULL
-        if (val != G0) {
-          if (precise) {
-            if (index == noreg) {
-              __ add(base, offset, base);
-            } else {
-              __ add(base, index, base);
-            }
-          }
-          __ g1_write_barrier_post(base, new_val, tmp);
-        }
-      }
-      break;
-#endif // INCLUDE_ALL_GCS
-    case BarrierSet::CardTableForRS:
-    case BarrierSet::CardTableExtension:
-      {
-        if (index == noreg ) {
-          assert(Assembler::is_simm13(offset), "fix this code");
-          __ store_heap_oop(val, base, offset);
-        } else {
-          __ store_heap_oop(val, base, index);
-        }
-        // No need for post barrier if storing NULL
-        if (val != G0) {
-          if (precise) {
-            if (index == noreg) {
-              __ add(base, offset, base);
-            } else {
-              __ add(base, index, base);
-            }
-          }
-          __ card_write_barrier_post(base, val, tmp);
-        }
-      }
-      break;
-    case BarrierSet::ModRef:
-      ShouldNotReachHere();
-      break;
-    default      :
-      ShouldNotReachHere();
-
+// Do an oop load like val = *(base + index + offset)
+// index can be noreg.
+static void do_oop_load(InterpreterMacroAssembler* _masm,
+                        Register base,
+                        Register index,
+                        int offset,
+                        Register dst,
+                        Register tmp,
+                        DecoratorSet decorators = 0) {
+  assert(tmp != dst && tmp != base && tmp != index, "register collision");
+  assert(index == noreg || offset == 0, "only one offset");
+  if (index == noreg) {
+    __ load_heap_oop(base, offset, dst, tmp, decorators);
+  } else {
+    __ load_heap_oop(base, index, dst, tmp, decorators);
   }
 }
 
@@ -586,7 +545,13 @@ void TemplateTable::aaload() {
   // Otos_i: index
   // tos: array
   __ index_check(O2, Otos_i, UseCompressedOops ? 2 : LogBytesPerWord, G3_scratch, O3);
-  __ load_heap_oop(O3, arrayOopDesc::base_offset_in_bytes(T_OBJECT), Otos_i);
+  do_oop_load(_masm,
+              O3,
+              noreg,
+              arrayOopDesc::base_offset_in_bytes(T_OBJECT),
+              Otos_i,
+              G3_scratch,
+              IN_HEAP_ARRAY);
   __ verify_oop(Otos_i);
 }
 
@@ -886,13 +851,13 @@ void TemplateTable::aastore() {
 
   // Store is OK.
   __ bind(store_ok);
-  do_oop_store(_masm, O1, noreg, arrayOopDesc::base_offset_in_bytes(T_OBJECT), Otos_i, G3_scratch, _bs->kind(), true);
+  do_oop_store(_masm, O1, noreg, arrayOopDesc::base_offset_in_bytes(T_OBJECT), Otos_i, G3_scratch, IN_HEAP_ARRAY);
 
   __ ba(done);
   __ delayed()->inc(Lesp, 3* Interpreter::stackElementSize); // adj sp (pops array, index and value)
 
   __ bind(is_null);
-  do_oop_store(_masm, O1, noreg, arrayOopDesc::base_offset_in_bytes(T_OBJECT), G0, G4_scratch, _bs->kind(), true);
+  do_oop_store(_masm, O1, noreg, arrayOopDesc::base_offset_in_bytes(T_OBJECT), G0, G4_scratch, IN_HEAP_ARRAY);
 
   __ profile_null_seen(G3_scratch);
   __ inc(Lesp, 3* Interpreter::stackElementSize);     // adj sp (pops array, index and value)
@@ -2154,7 +2119,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ delayed() ->cmp(Rflags, itos);
 
   // atos
-  __ load_heap_oop(Rclass, Roffset, Otos_i);
+  do_oop_load(_masm, Rclass, Roffset, 0, Otos_i, noreg);
   __ verify_oop(Otos_i);
   __ push(atos);
   if (!is_static && rc == may_rewrite) {
@@ -2353,7 +2318,7 @@ void TemplateTable::fast_accessfield(TosState state) {
       __ ldf(FloatRegisterImpl::D, Otos_i, Roffset, Ftos_d);
       break;
     case Bytecodes::_fast_agetfield:
-      __ load_heap_oop(Otos_i, Roffset, Otos_i);
+      do_oop_load(_masm, Otos_i, Roffset, 0, Otos_i, noreg);
       break;
     default:
       ShouldNotReachHere();
@@ -2536,7 +2501,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
     {
       __ pop_ptr();
       __ verify_oop(Otos_i);
-      do_oop_store(_masm, Rclass, Roffset, 0, Otos_i, G1_scratch, _bs->kind(), false);
+      do_oop_store(_masm, Rclass, Roffset, 0, Otos_i, G1_scratch);
       __ ba(checkVolatile);
       __ delayed()->tst(Lscratch);
     }
@@ -2581,7 +2546,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
       __ pop_ptr();
       pop_and_check_object(Rclass);
       __ verify_oop(Otos_i);
-      do_oop_store(_masm, Rclass, Roffset, 0, Otos_i, G1_scratch, _bs->kind(), false);
+      do_oop_store(_masm, Rclass, Roffset, 0, Otos_i, G1_scratch);
       if (rc == may_rewrite) patch_bytecode(Bytecodes::_fast_aputfield, G3_scratch, G4_scratch, true, byte_no);
       __ ba(checkVolatile);
       __ delayed()->tst(Lscratch);
@@ -2762,7 +2727,7 @@ void TemplateTable::fast_storefield(TosState state) {
       __ stf(FloatRegisterImpl::D, Ftos_d, Rclass, Roffset);
       break;
     case Bytecodes::_fast_aputfield:
-      do_oop_store(_masm, Rclass, Roffset, 0, Otos_i, G1_scratch, _bs->kind(), false);
+      do_oop_store(_masm, Rclass, Roffset, 0, Otos_i, G1_scratch);
       break;
     default:
       ShouldNotReachHere();
@@ -2804,7 +2769,7 @@ void TemplateTable::fast_xaccess(TosState state) {
   __ verify_oop(Rreceiver);
   __ null_check(Rreceiver);
   if (state == atos) {
-    __ load_heap_oop(Rreceiver, Roffset, Otos_i);
+    do_oop_load(_masm, Rreceiver, Roffset, 0, Otos_i, noreg);
   } else if (state == itos) {
     __ ld (Rreceiver, Roffset, Otos_i) ;
   } else if (state == ftos) {
@@ -3138,8 +3103,10 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ sub(Rindex, Method::itable_index_max, Rindex);
   __ neg(Rindex);
 
+  // Preserve O2_Klass for throw_AbstractMethodErrorVerbose
+  __ mov(O2_Klass, O4);
   __ lookup_interface_method(// inputs: rec. class, interface, itable index
-                             O2_Klass, Rinterface, Rindex,
+                             O4, Rinterface, Rindex,
                              // outputs: method, scan temp reg, temp reg
                              G5_method, Rscratch, Rtemp,
                              L_no_such_interface);
@@ -3148,7 +3115,9 @@ void TemplateTable::invokeinterface(int byte_no) {
   {
     Label ok;
     __ br_notnull_short(G5_method, Assembler::pt, ok);
-    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError));
+    // Pass arguments for generating a verbose error message.
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodErrorVerbose),
+            O2_Klass, Rmethod);
     __ should_not_reach_here();
     __ bind(ok);
   }
@@ -3161,7 +3130,9 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ call_from_interpreter(Rcall, Gargs, Rret);
 
   __ bind(L_no_such_interface);
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_IncompatibleClassChangeError));
+  // Pass arguments for generating a verbose error message.
+  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose),
+          O2_Klass, Rinterface);
   __ should_not_reach_here();
 }
 
@@ -3259,11 +3230,19 @@ void TemplateTable::_new() {
   __ br(Assembler::notZero, false, Assembler::pn, slow_case);
   __ delayed()->nop();
 
-  // allocate the instance
-  // 1) Try to allocate in the TLAB
-  // 2) if fail, and the TLAB is not full enough to discard, allocate in the shared Eden
-  // 3) if the above fails (or is not applicable), go to a slow case
-  // (creates a new TLAB, etc.)
+  // Allocate the instance:
+  //  If TLAB is enabled:
+  //    Try to allocate in the TLAB.
+  //    If fails, go to the slow path.
+  //  Else If inline contiguous allocations are enabled:
+  //    Try to allocate in eden.
+  //    If fails due to heap end, go to slow path.
+  //
+  //  If TLAB is enabled OR inline contiguous is enabled:
+  //    Initialize the allocation.
+  //    Exit.
+  //
+  //  Go to slow path.
 
   const bool allow_shared_alloc =
     Universe::heap()->supports_inline_contig_alloc();
@@ -3291,61 +3270,43 @@ void TemplateTable::_new() {
     }
     __ delayed()->st_ptr(RnewTopValue, G2_thread, in_bytes(JavaThread::tlab_top_offset()));
 
+    // Allocation does not fit in the TLAB.
+    __ ba_short(slow_case);
+  } else {
+    // Allocation in the shared Eden
     if (allow_shared_alloc) {
-      // Check if tlab should be discarded (refill_waste_limit >= free)
-      __ ld_ptr(G2_thread, in_bytes(JavaThread::tlab_refill_waste_limit_offset()), RtlabWasteLimitValue);
-      __ sub(RendValue, RoldTopValue, RfreeValue);
-      __ srlx(RfreeValue, LogHeapWordSize, RfreeValue);
-      __ cmp_and_brx_short(RtlabWasteLimitValue, RfreeValue, Assembler::greaterEqualUnsigned, Assembler::pt, slow_case); // tlab waste is small
+      Register RoldTopValue = G1_scratch;
+      Register RtopAddr = G3_scratch;
+      Register RnewTopValue = RallocatedObject;
+      Register RendValue = Rscratch;
 
-      // increment waste limit to prevent getting stuck on this slow path
-      if (Assembler::is_simm13(ThreadLocalAllocBuffer::refill_waste_limit_increment())) {
-        __ add(RtlabWasteLimitValue, ThreadLocalAllocBuffer::refill_waste_limit_increment(), RtlabWasteLimitValue);
-      } else {
-        // set64 does not use the temp register if the given constant is 32 bit. So
-        // we can just use any register; using G0 results in ignoring of the upper 32 bit
-        // of that value.
-        __ set64(ThreadLocalAllocBuffer::refill_waste_limit_increment(), G4_scratch, G0);
-        __ add(RtlabWasteLimitValue, G4_scratch, RtlabWasteLimitValue);
-      }
-      __ st_ptr(RtlabWasteLimitValue, G2_thread, in_bytes(JavaThread::tlab_refill_waste_limit_offset()));
-    } else {
-      // No allocation in the shared eden.
-      __ ba_short(slow_case);
+      __ set((intptr_t)Universe::heap()->top_addr(), RtopAddr);
+
+      Label retry;
+      __ bind(retry);
+      __ set((intptr_t)Universe::heap()->end_addr(), RendValue);
+      __ ld_ptr(RendValue, 0, RendValue);
+      __ ld_ptr(RtopAddr, 0, RoldTopValue);
+      __ add(RoldTopValue, Roffset, RnewTopValue);
+
+      // RnewTopValue contains the top address after the new object
+      // has been allocated.
+      __ cmp_and_brx_short(RnewTopValue, RendValue, Assembler::greaterUnsigned, Assembler::pn, slow_case);
+
+      __ cas_ptr(RtopAddr, RoldTopValue, RnewTopValue);
+
+      // if someone beat us on the allocation, try again, otherwise continue
+      __ cmp_and_brx_short(RoldTopValue, RnewTopValue, Assembler::notEqual, Assembler::pn, retry);
+
+      // bump total bytes allocated by this thread
+      // RoldTopValue and RtopAddr are dead, so can use G1 and G3
+      __ incr_allocated_bytes(Roffset, G1_scratch, G3_scratch);
     }
   }
 
-  // Allocation in the shared Eden
-  if (allow_shared_alloc) {
-    Register RoldTopValue = G1_scratch;
-    Register RtopAddr = G3_scratch;
-    Register RnewTopValue = RallocatedObject;
-    Register RendValue = Rscratch;
-
-    __ set((intptr_t)Universe::heap()->top_addr(), RtopAddr);
-
-    Label retry;
-    __ bind(retry);
-    __ set((intptr_t)Universe::heap()->end_addr(), RendValue);
-    __ ld_ptr(RendValue, 0, RendValue);
-    __ ld_ptr(RtopAddr, 0, RoldTopValue);
-    __ add(RoldTopValue, Roffset, RnewTopValue);
-
-    // RnewTopValue contains the top address after the new object
-    // has been allocated.
-    __ cmp_and_brx_short(RnewTopValue, RendValue, Assembler::greaterUnsigned, Assembler::pn, slow_case);
-
-    __ cas_ptr(RtopAddr, RoldTopValue, RnewTopValue);
-
-    // if someone beat us on the allocation, try again, otherwise continue
-    __ cmp_and_brx_short(RoldTopValue, RnewTopValue, Assembler::notEqual, Assembler::pn, retry);
-
-    // bump total bytes allocated by this thread
-    // RoldTopValue and RtopAddr are dead, so can use G1 and G3
-    __ incr_allocated_bytes(Roffset, G1_scratch, G3_scratch);
-  }
-
-  if (UseTLAB || Universe::heap()->supports_inline_contig_alloc()) {
+  // If UseTLAB or allow_shared_alloc are true, the object is created above and
+  // there is an initialize need. Otherwise, skip and go to the slow path.
+  if (UseTLAB || allow_shared_alloc) {
     // clear object fields
     __ bind(initialize_object);
     __ deccc(Roffset, sizeof(oopDesc));
@@ -3547,7 +3508,7 @@ void TemplateTable::instanceof() {
 void TemplateTable::_breakpoint() {
 
    // Note: We get here even if we are single stepping..
-   // jbug inists on setting breakpoints at every bytecode
+   // jbug insists on setting breakpoints at every bytecode
    // even if we are in single step mode.
 
    transition(vtos, vtos);

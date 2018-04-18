@@ -593,8 +593,7 @@ public class Proxy implements java.io.Serializable {
                                   module.getName(), cn, loader);
             }
             if (isDebug("debug")) {
-                interfaces.stream()
-                          .forEach(c -> System.out.println(toDetails(c)));
+                interfaces.forEach(c -> System.out.println(toDetails(c)));
             }
         }
 
@@ -708,24 +707,32 @@ public class Proxy implements java.io.Serializable {
          */
         private static Set<Class<?>> referencedTypes(ClassLoader loader,
                                                      List<Class<?>> interfaces) {
-            return interfaces.stream()
-                 .flatMap(intf -> Stream.of(intf.getMethods())
-                                        .filter(m -> !Modifier.isStatic(m.getModifiers()))
-                                        .flatMap(ProxyBuilder::methodRefTypes)
-                                        .map(ProxyBuilder::getElementType)
-                                        .filter(t -> !t.isPrimitive()))
-                 .collect(Collectors.toSet());
+            var types = new HashSet<Class<?>>();
+            for (var intf : interfaces) {
+                for (Method m : intf.getMethods()) {
+                    if (!Modifier.isStatic(m.getModifiers())) {
+                        addElementType(types, m.getReturnType());
+                        addElementTypes(types, m.getSharedParameterTypes());
+                        addElementTypes(types, m.getSharedExceptionTypes());
+                    }
+                }
+            }
+            return types;
         }
 
-        /*
-         * Extracts all types referenced on a method signature including
-         * its return type, parameter types, and exception types.
-         */
-        private static Stream<Class<?>> methodRefTypes(Method m) {
-            return Stream.of(new Class<?>[] { m.getReturnType() },
-                             m.getParameterTypes(),
-                             m.getExceptionTypes())
-                         .flatMap(Stream::of);
+        private static void addElementTypes(HashSet<Class<?>> types,
+                                            Class<?> ... classes) {
+            for (var cls : classes) {
+                addElementType(types, cls);
+            }
+        }
+
+        private static void addElementType(HashSet<Class<?>> types,
+                                           Class<?> cls) {
+            var type = getElementType(cls);
+            if (!type.isPrimitive()) {
+                types.add(type);
+            }
         }
 
         /**

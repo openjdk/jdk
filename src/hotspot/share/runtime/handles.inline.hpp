@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,17 @@ inline Handle::Handle(Thread* thread, oop obj) {
     _handle = thread->handle_area()->allocate_handle(obj);
   }
 }
+
+// Inline constructors for Specific Handles for different oop types
+#define DEF_HANDLE_CONSTR(type, is_a)                   \
+inline type##Handle::type##Handle (Thread* thread, type##Oop obj) : Handle(thread, (oop)obj) { \
+  assert(is_null() || ((oop)obj)->is_a(), "illegal type");                \
+}
+
+DEF_HANDLE_CONSTR(instance , is_instance_noinline )
+DEF_HANDLE_CONSTR(array    , is_array_noinline    )
+DEF_HANDLE_CONSTR(objArray , is_objArray_noinline )
+DEF_HANDLE_CONSTR(typeArray, is_typeArray_noinline)
 
 // Constructor for metadata handles
 #define DEF_METADATA_HANDLE_FN(name, type) \
@@ -91,6 +102,15 @@ inline void HandleMark::pop_and_restore() {
   area->_hwm = _hwm;
   area->_max = _max;
   debug_only(area->_handle_mark_nesting--);
+}
+
+inline HandleMarkCleaner::HandleMarkCleaner(Thread* thread) {
+  _thread = thread;
+  _thread->last_handle_mark()->push();
+}
+
+inline HandleMarkCleaner::~HandleMarkCleaner() {
+  _thread->last_handle_mark()->pop_and_restore();
 }
 
 #endif // SHARE_VM_RUNTIME_HANDLES_INLINE_HPP

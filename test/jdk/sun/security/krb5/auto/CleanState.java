@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
 
 /*
  * @test
- * @bug 6716534
- * @compile -XDignore.symbol.file CleanState.java
- * @run main/othervm CleanState
+ * @bug 6716534 8194486
  * @summary Krb5LoginModule has not cleaned temp info between authentication attempts
+ * @library /test/lib
+ * @compile -XDignore.symbol.file CleanState.java
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts CleanState
  */
 import com.sun.security.auth.module.Krb5LoginModule;
 import java.util.HashMap;

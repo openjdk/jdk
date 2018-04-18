@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,7 +214,7 @@ public final class RC2Parameters extends AlgorithmParametersSpi {
      * Returns a formatted string describing the parameters.
      */
     protected String engineToString() {
-        String LINE_SEP = System.getProperty("line.separator");
+        String LINE_SEP = System.lineSeparator();
         HexDumpEncoder encoder = new HexDumpEncoder();
         StringBuilder sb
             = new StringBuilder(LINE_SEP + "    iv:" + LINE_SEP + "["

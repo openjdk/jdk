@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,19 @@
 #include "aot/aotLoader.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
+#include "code/codeHeapState.hpp"
 #include "code/compiledIC.hpp"
 #include "code/dependencies.hpp"
 #include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
 #include "compiler/compileBroker.hpp"
-#include "gc/shared/gcLocker.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
@@ -47,7 +49,9 @@
 #include "runtime/icache.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/sweeper.hpp"
+#include "runtime/vmThread.hpp"
 #include "services/memoryService.hpp"
 #include "trace/tracing.hpp"
 #include "utilities/align.hpp"
@@ -1363,8 +1367,17 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
       MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       print_summary(&s);
     }
-    ttyLocker ttyl;
-    tty->print("%s", s.as_string());
+    {
+      ttyLocker ttyl;
+      tty->print("%s", s.as_string());
+    }
+
+    if (heap->full_count() == 0) {
+      LogTarget(Debug, codecache) lt;
+      if (lt.is_enabled()) {
+        CompileBroker::print_heapinfo(tty, "all", "4096"); // details, may be a lot!
+      }
+    }
   }
 
   heap->report_full();
@@ -1639,3 +1652,54 @@ void CodeCache::log_state(outputStream* st) {
             blob_count(), nmethod_count(), adapter_count(),
             unallocated_capacity());
 }
+
+//---<  BEGIN  >--- CodeHeap State Analytics.
+
+void CodeCache::aggregate(outputStream *out, const char* granularity) {
+  FOR_ALL_ALLOCABLE_HEAPS(heap) {
+    CodeHeapState::aggregate(out, (*heap), granularity);
+  }
+}
+
+void CodeCache::discard(outputStream *out) {
+  FOR_ALL_ALLOCABLE_HEAPS(heap) {
+    CodeHeapState::discard(out, (*heap));
+  }
+}
+
+void CodeCache::print_usedSpace(outputStream *out) {
+  FOR_ALL_ALLOCABLE_HEAPS(heap) {
+    CodeHeapState::print_usedSpace(out, (*heap));
+  }
+}
+
+void CodeCache::print_freeSpace(outputStream *out) {
+  FOR_ALL_ALLOCABLE_HEAPS(heap) {
+    CodeHeapState::print_freeSpace(out, (*heap));
+  }
+}
+
+void CodeCache::print_count(outputStream *out) {
+  FOR_ALL_ALLOCABLE_HEAPS(heap) {
+    CodeHeapState::print_count(out, (*heap));
+  }
+}
+
+void CodeCache::print_space(outputStream *out) {
+  FOR_ALL_ALLOCABLE_HEAPS(heap) {
+    CodeHeapState::print_space(out, (*heap));
+  }
+}
+
+void CodeCache::print_age(outputStream *out) {
+  FOR_ALL_ALLOCABLE_HEAPS(heap) {
+    CodeHeapState::print_age(out, (*heap));
+  }
+}
+
+void CodeCache::print_names(outputStream *out) {
+  FOR_ALL_ALLOCABLE_HEAPS(heap) {
+    CodeHeapState::print_names(out, (*heap));
+  }
+}
+//---<  END  >--- CodeHeap State Analytics.

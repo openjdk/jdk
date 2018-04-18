@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,20 @@
  */
 
 /* @test
+ * @bug 8031462 8198406
+ * @requires (os.family == "mac")
  * @summary verify rendering of MORX fonts on OS X.
- * @bug 8031462
  */
 
-import javax.swing.*;
-import javax.swing.border.LineBorder;
-import java.awt.*;
-import java.awt.event.ActionEvent;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
 
-public class TestAATMorxFont extends JComponent {
+import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
+
+public class TestAATMorxFont {
     public static void main(String[] args) {
         String osName = System.getProperty("os.name");
         System.out.println("OS is " + osName);
@@ -40,23 +44,13 @@ public class TestAATMorxFont extends JComponent {
         if (!osName.startsWith("mac")) {
             return;
         }
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                JFrame frame = new JFrame("Test Morx");
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                TestAATMorxFont  panel = new TestAATMorxFont();
-                frame.add(panel);
-                frame.pack();
-                frame.setVisible(true);
-            }
-        });
+        BufferedImage bi = new BufferedImage(1200, 400, TYPE_INT_ARGB);
+        Graphics g = bi.getGraphics();
+        test(g);
+        g.dispose();
     }
 
-    public Dimension getPreferredSize() {
-        return new Dimension(1200, 400);
-    }
-
-    public void paintComponent(Graphics g) {
+    private static void test(Graphics g) {
         Graphics2D g2d = (Graphics2D)g;
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
                              RenderingHints.VALUE_TEXT_ANTIALIAS_ON);

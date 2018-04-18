@@ -1618,19 +1618,30 @@ public class Resolve {
                 if ((m1.flags() & BRIDGE) != (m2.flags() & BRIDGE))
                     return ((m1.flags() & BRIDGE) != 0) ? m2 : m1;
 
+                if (m1.baseSymbol() == m2.baseSymbol()) {
+                    // this is the same imported symbol which has been cloned twice.
+                    // Return the first one (either will do).
+                    return m1;
+                }
+
                 // if one overrides or hides the other, use it
                 TypeSymbol m1Owner = (TypeSymbol)m1.owner;
                 TypeSymbol m2Owner = (TypeSymbol)m2.owner;
-                if (types.asSuper(m1Owner.type, m2Owner) != null &&
-                    ((m1.owner.flags_field & INTERFACE) == 0 ||
-                     (m2.owner.flags_field & INTERFACE) != 0) &&
-                    m1.overrides(m2, m1Owner, types, false))
-                    return m1;
-                if (types.asSuper(m2Owner.type, m1Owner) != null &&
-                    ((m2.owner.flags_field & INTERFACE) == 0 ||
-                     (m1.owner.flags_field & INTERFACE) != 0) &&
-                    m2.overrides(m1, m2Owner, types, false))
-                    return m2;
+                // the two owners can never be the same if the target methods are compiled from source,
+                // but we need to protect against cases where the methods are defined in some classfile
+                // and make sure we issue an ambiguity error accordingly (by skipping the logic below).
+                if (m1Owner != m2Owner) {
+                    if (types.asSuper(m1Owner.type, m2Owner) != null &&
+                        ((m1.owner.flags_field & INTERFACE) == 0 ||
+                         (m2.owner.flags_field & INTERFACE) != 0) &&
+                        m1.overrides(m2, m1Owner, types, false))
+                        return m1;
+                    if (types.asSuper(m2Owner.type, m1Owner) != null &&
+                        ((m2.owner.flags_field & INTERFACE) == 0 ||
+                         (m1.owner.flags_field & INTERFACE) != 0) &&
+                        m2.overrides(m1, m2Owner, types, false))
+                        return m2;
+                }
                 boolean m1Abstract = (m1.flags() & ABSTRACT) != 0;
                 boolean m2Abstract = (m2.flags() & ABSTRACT) != 0;
                 if (m1Abstract && !m2Abstract) return m2;
@@ -2109,6 +2120,7 @@ public class Resolve {
 
         Set<ModuleSymbol> recoverableModules = new HashSet<>(syms.getAllModules());
 
+        recoverableModules.add(syms.unnamedModule);
         recoverableModules.remove(env.toplevel.modle);
 
         for (ModuleSymbol ms : recoverableModules) {
@@ -4167,9 +4179,6 @@ public class Resolve {
                 Name name,
                 List<Type> argtypes,
                 List<Type> typeargtypes) {
-            if (sym.owner.type.hasTag(ERROR))
-                return null;
-
             if (sym.name == names.init && sym.owner != site.tsym) {
                 return new SymbolNotFoundError(ABSENT_MTH).getDiagnostic(dkind,
                         pos, location, site, name, argtypes, typeargtypes);

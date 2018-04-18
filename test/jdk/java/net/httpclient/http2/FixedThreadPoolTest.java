@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,24 +27,21 @@
  * @library /lib/testlibrary server
  * @build jdk.testlibrary.SimpleSSLContext
  * @modules java.base/sun.net.www.http
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.common
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.frame
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.hpack
+ *          java.net.http/jdk.internal.net.http.common
+ *          java.net.http/jdk.internal.net.http.frame
+ *          java.net.http/jdk.internal.net.http.hpack
  * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors FixedThreadPoolTest
  */
 
 import java.net.*;
-import jdk.incubator.http.*;
-import static jdk.incubator.http.HttpClient.Version.HTTP_2;
+import java.net.http.*;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse.BodyHandlers;
 import javax.net.ssl.*;
 import java.nio.file.*;
 import java.util.concurrent.*;
 import jdk.testlibrary.SimpleSSLContext;
-import static jdk.incubator.http.HttpRequest.BodyPublisher.fromFile;
-import static jdk.incubator.http.HttpRequest.BodyPublisher.fromString;
-import static jdk.incubator.http.HttpResponse.BodyHandler.asFile;
-import static jdk.incubator.http.HttpResponse.BodyHandler.asString;
-
+import static java.net.http.HttpClient.Version.HTTP_2;
 import org.testng.annotations.Test;
 
 @Test
@@ -70,8 +67,8 @@ public class FixedThreadPoolTest {
             httpsServer.addHandler(new Http2EchoHandler(), "/");
 
             httpsPort = httpsServer.getAddress().getPort();
-            httpURIString = "http://127.0.0.1:" + httpPort + "/foo/";
-            httpsURIString = "https://127.0.0.1:" + httpsPort + "/bar/";
+            httpURIString = "http://localhost:" + httpPort + "/foo/";
+            httpsURIString = "https://localhost:" + httpsPort + "/bar/";
 
             httpServer.start();
             httpsServer.start();
@@ -164,12 +161,12 @@ public class FixedThreadPoolTest {
         HttpClient client = getClient();
         Path src = TestUtil.getAFile(FILESIZE * 4);
         HttpRequest req = HttpRequest.newBuilder(uri)
-                                     .POST(fromFile(src))
+                                     .POST(BodyPublishers.ofFile(src))
                                      .build();
 
         Path dest = Paths.get("streamtest.txt");
         dest.toFile().delete();
-        CompletableFuture<Path> response = client.sendAsync(req, asFile(dest))
+        CompletableFuture<Path> response = client.sendAsync(req, BodyHandlers.ofFile(dest))
                 .thenApply(resp -> {
                     if (resp.statusCode() != 200)
                         throw new RuntimeException();
@@ -195,10 +192,10 @@ public class FixedThreadPoolTest {
         }), "/");
         server.start();
         int port = server.getAddress().getPort();
-        URI u = new URI("https://127.0.0.1:"+port+"/foo");
+        URI u = new URI("https://localhost:"+port+"/foo");
         HttpClient client = getClient();
         HttpRequest req = HttpRequest.newBuilder(u).build();
-        HttpResponse<String> resp = client.sendAsync(req, asString()).get();
+        HttpResponse<String> resp = client.sendAsync(req, BodyHandlers.ofString()).get();
         int stat = resp.statusCode();
         if (stat != 200) {
             throw new RuntimeException("paramsTest failed "
@@ -214,9 +211,9 @@ public class FixedThreadPoolTest {
 
         HttpClient client = getClient();
         HttpRequest req = HttpRequest.newBuilder(uri)
-                                     .POST(fromString(SIMPLE_STRING))
+                                     .POST(BodyPublishers.ofString(SIMPLE_STRING))
                                      .build();
-        HttpResponse<String> response = client.sendAsync(req, asString()).get();
+        HttpResponse<String> response = client.sendAsync(req, BodyHandlers.ofString()).get();
         HttpHeaders h = response.headers();
 
         checkStatus(200, response.statusCode());
@@ -232,10 +229,10 @@ public class FixedThreadPoolTest {
         CompletableFuture[] responses = new CompletableFuture[LOOPS];
         final Path source = TestUtil.getAFile(FILESIZE);
         HttpRequest request = HttpRequest.newBuilder(uri)
-                                         .POST(fromFile(source))
+                                         .POST(BodyPublishers.ofFile(source))
                                          .build();
         for (int i = 0; i < LOOPS; i++) {
-            responses[i] = client.sendAsync(request, asFile(tempFile()))
+            responses[i] = client.sendAsync(request, BodyHandlers.ofFile(tempFile()))
                 //.thenApply(resp -> compareFiles(resp.body(), source));
                 .thenApply(resp -> {
                     System.out.printf("Resp status %d body size %d\n",

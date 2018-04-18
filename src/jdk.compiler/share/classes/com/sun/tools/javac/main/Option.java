@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.tools.javac.main;
 
 import java.io.FileWriter;
 import java.io.PrintWriter;
+import java.lang.module.ModuleDescriptor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -47,6 +48,8 @@ import java.util.stream.StreamSupport;
 
 import javax.lang.model.SourceVersion;
 
+import jdk.internal.misc.VM;
+
 import com.sun.tools.doclint.DocLint;
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Lint.LintCategory;
@@ -57,7 +60,6 @@ import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.platform.PlatformProvider;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.util.Assert;
-import com.sun.tools.javac.util.JDK9Wrappers;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Log.PrefixKind;
 import com.sun.tools.javac.util.Log.WriterKind;
@@ -132,9 +134,9 @@ public enum Option {
         }
 
         @Override
-        public void process(OptionHelper helper, String option) {
+        public void process(OptionHelper helper, String option, String arg) {
             String prev = helper.get(XDOCLINT_CUSTOM);
-            String next = (prev == null) ? option : (prev + " " + option);
+            String next = (prev == null) ? arg : (prev + " " + arg);
             helper.put(XDOCLINT_CUSTOM.primaryName, next);
         }
     },
@@ -147,9 +149,9 @@ public enum Option {
         }
 
         @Override
-        public void process(OptionHelper helper, String option) {
+        public void process(OptionHelper helper, String option, String arg) {
             String prev = helper.get(XDOCLINT_PACKAGE);
-            String next = (prev == null) ? option : (prev + " " + option);
+            String next = (prev == null) ? arg : (prev + "," + arg);
             helper.put(XDOCLINT_PACKAGE.primaryName, next);
         }
     },
@@ -328,6 +330,8 @@ public enum Option {
         }
     },
 
+    PREVIEW("--enable-preview", "opt.preview", STANDARD, BASIC),
+
     PROFILE("-profile", "opt.arg.profile", "opt.profile", STANDARD, BASIC) {
         @Override
         public void process(OptionHelper helper, String option, String operand) throws InvalidValueException {
@@ -360,7 +364,7 @@ public enum Option {
     },
 
     // Note: -h is already taken for "native header output directory".
-    HELP("--help -help", "opt.help", STANDARD, INFO) {
+    HELP("--help -help -?", "opt.help", STANDARD, INFO) {
         @Override
         public void process(OptionHelper helper, String option) throws InvalidValueException {
             Log log = helper.getLog();
@@ -510,8 +514,7 @@ public enum Option {
 
     PLUGIN("-Xplugin:", "opt.arg.plugin", "opt.plugin", EXTENDED, BASIC) {
         @Override
-        public void process(OptionHelper helper, String option) {
-            String p = option.substring(option.indexOf(':') + 1).trim();
+        public void process(OptionHelper helper, String option, String p) {
             String prev = helper.get(PLUGIN);
             helper.put(PLUGIN.primaryName, (prev == null) ? p : prev + '\0' + p);
         }
@@ -519,24 +522,24 @@ public enum Option {
 
     XDIAGS("-Xdiags:", "opt.diags", EXTENDED, BASIC, ONEOF, "compact", "verbose"),
 
-    DEBUG("--debug:", null, HIDDEN, BASIC) {
+    DEBUG("--debug", null, HIDDEN, BASIC, ArgKind.REQUIRED) {
         @Override
-        public void process(OptionHelper helper, String option) throws InvalidValueException {
-            HiddenGroup.DEBUG.process(helper, option);
+        public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
+            HiddenGroup.DEBUG.process(helper, option, arg);
         }
     },
 
-    SHOULDSTOP("--should-stop:", null, HIDDEN, BASIC) {
+    SHOULDSTOP("--should-stop", null, HIDDEN, BASIC, ArgKind.REQUIRED) {
         @Override
-        public void process(OptionHelper helper, String option) throws InvalidValueException {
-            HiddenGroup.SHOULDSTOP.process(helper, option);
+        public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
+            HiddenGroup.SHOULDSTOP.process(helper, option, arg);
         }
     },
 
-    DIAGS("--diags:", null, HIDDEN, BASIC) {
+    DIAGS("--diags", null, HIDDEN, BASIC, ArgKind.REQUIRED) {
         @Override
-        public void process(OptionHelper helper, String option) throws InvalidValueException {
-            HiddenGroup.DIAGS.process(helper, option);
+        public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
+            HiddenGroup.DIAGS.process(helper, option, arg);
         }
     },
 
@@ -650,21 +653,11 @@ public enum Option {
             if (arg.isEmpty()) {
                 throw helper.newInvalidValueException("err.no.value.for.option", option);
             } else {
+                // use official parser if available
                 try {
-                    Class.forName(JDK9Wrappers.ModuleDescriptor.Version.CLASSNAME);
-                    // use official parser if available
-                    try {
-                        JDK9Wrappers.ModuleDescriptor.Version.parse(arg);
-                    } catch (IllegalArgumentException e) {
-                        throw helper.newInvalidValueException("err.bad.value.for.option", option, arg);
-                    }
-                } catch (ClassNotFoundException ex) {
-                    // fall-back to simplistic rules when running on older platform
-                    if (!(arg.charAt(0) >= '0' && arg.charAt(0) <= '9') ||
-                        arg.endsWith("-") ||
-                        arg.endsWith("+")) {
-                        throw helper.newInvalidValueException("err.bad.value.for.option", option, arg);
-                    }
+                    ModuleDescriptor.Version.parse(arg);
+                } catch (IllegalArgumentException e) {
+                    throw helper.newInvalidValueException("err.bad.value.for.option", option, arg);
                 }
             }
             super.process(helper, option, arg);
@@ -717,41 +710,36 @@ public enum Option {
             HIDDEN, BASIC) {
         @Override
         public void process(OptionHelper helper, String option) throws InvalidValueException {
-            try {
-                Class.forName(JDK9Wrappers.VMHelper.CLASSNAME);
-                String[] runtimeArgs = JDK9Wrappers.VMHelper.getRuntimeArguments();
-                for (String arg : runtimeArgs) {
-                    // Handle any supported runtime options; ignore all others.
-                    // The runtime arguments always use the single token form, e.g. "--name=value".
-                    for (Option o : getSupportedRuntimeOptions()) {
-                        if (o.matches(arg)) {
-                            switch (o) {
-                                case ADD_MODULES:
-                                    int eq = arg.indexOf('=');
-                                    Assert.check(eq > 0, () -> ("invalid runtime option:" + arg));
-                                    // --add-modules=ALL-DEFAULT is not supported at compile-time
-                                    // so remove it from list, and only process the rest
-                                    // if the set is non-empty.
-                                    // Note that --add-modules=ALL-DEFAULT is automatically added
-                                    // by the standard javac launcher.
-                                    String mods = Arrays.stream(arg.substring(eq + 1).split(","))
-                                            .filter(s -> !s.isEmpty() && !s.equals("ALL-DEFAULT"))
-                                            .collect(Collectors.joining(","));
-                                    if (!mods.isEmpty()) {
-                                        String updatedArg = arg.substring(0, eq + 1) + mods;
-                                        o.handleOption(helper, updatedArg, Collections.emptyIterator());
-                                    }
-                                    break;
-                                default:
-                                    o.handleOption(helper, arg, Collections.emptyIterator());
-                                    break;
-                            }
-                            break;
+            String[] runtimeArgs = VM.getRuntimeArguments();
+            for (String arg : runtimeArgs) {
+                // Handle any supported runtime options; ignore all others.
+                // The runtime arguments always use the single token form, e.g. "--name=value".
+                for (Option o : getSupportedRuntimeOptions()) {
+                    if (o.matches(arg)) {
+                        switch (o) {
+                            case ADD_MODULES:
+                                int eq = arg.indexOf('=');
+                                Assert.check(eq > 0, () -> ("invalid runtime option:" + arg));
+                                // --add-modules=ALL-DEFAULT is not supported at compile-time
+                                // so remove it from list, and only process the rest
+                                // if the set is non-empty.
+                                // Note that --add-modules=ALL-DEFAULT is automatically added
+                                // by the standard javac launcher.
+                                String mods = Arrays.stream(arg.substring(eq + 1).split(","))
+                                        .filter(s -> !s.isEmpty() && !s.equals("ALL-DEFAULT"))
+                                        .collect(Collectors.joining(","));
+                                if (!mods.isEmpty()) {
+                                    String updatedArg = arg.substring(0, eq + 1) + mods;
+                                    o.handleOption(helper, updatedArg, Collections.emptyIterator());
+                                }
+                                break;
+                            default:
+                                o.handleOption(helper, arg, Collections.emptyIterator());
+                                break;
                         }
+                        break;
                     }
                 }
-            } catch (ClassNotFoundException | SecurityException e) {
-                throw helper.newInvalidValueException("err.cannot.access.runtime.env");
             }
         }
 
@@ -860,26 +848,18 @@ public enum Option {
         DEBUG("debug"),
         SHOULDSTOP("should-stop");
 
-        static final Set<String> skipSet = new java.util.HashSet<>(
-                Arrays.asList("--diags:", "--debug:", "--should-stop:"));
-
         final String text;
 
         HiddenGroup(String text) {
             this.text = text;
         }
 
-        public void process(OptionHelper helper, String option) throws InvalidValueException {
-            String p = option.substring(option.indexOf(':') + 1).trim();
-            String[] subOptions = p.split(";");
+        public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
+            String[] subOptions = arg.split(";");
             for (String subOption : subOptions) {
                 subOption = text + "." + subOption.trim();
                 XD.process(helper, subOption, subOption);
             }
-        }
-
-        static boolean skip(String name) {
-            return skipSet.contains(name);
         }
     }
 
@@ -971,6 +951,11 @@ public enum Option {
         this(text, null, descrKey, kind, group, null, null, ArgKind.NONE);
     }
 
+    Option(String text, String descrKey,
+            OptionKind kind, OptionGroup group, ArgKind argKind) {
+        this(text, null, descrKey, kind, group, null, null, argKind);
+    }
+
     Option(String text, String argsNameKey, String descrKey,
             OptionKind kind, OptionGroup group) {
         this(text, argsNameKey, descrKey, kind, group, null, null, ArgKind.REQUIRED);
@@ -1039,7 +1024,7 @@ public enum Option {
     }
 
     private boolean matches(String option, String name) {
-        if (name.startsWith("--") && !HiddenGroup.skip(name)) {
+        if (name.startsWith("--")) {
             return option.equals(name)
                     || hasArg() && option.startsWith(name + "=");
         }

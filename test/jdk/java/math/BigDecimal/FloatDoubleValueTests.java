@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 6274390 7082971
  * @summary Verify {float, double}Value methods work with condensed representation
  * @run main FloatDoubleValueTests
- * @run main/othervm -XX:+AggressiveOpts FloatDoubleValueTests
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+EliminateAutoBox -XX:AutoBoxCacheMax=20000 FloatDoubleValueTests
  */
 import java.math.*;
 

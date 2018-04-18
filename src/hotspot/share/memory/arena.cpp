@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/metaspaceShared.hpp"
@@ -299,23 +298,11 @@ void* Arena::operator new (size_t size, const std::nothrow_t&  nothrow_constant)
 
   // dynamic memory type binding
 void* Arena::operator new(size_t size, MEMFLAGS flags) throw() {
-#ifdef ASSERT
-  void* p = (void*)AllocateHeap(size, flags, CALLER_PC);
-  if (PrintMallocFree) trace_heap_malloc(size, "Arena-new", p);
-  return p;
-#else
   return (void *) AllocateHeap(size, flags, CALLER_PC);
-#endif
 }
 
 void* Arena::operator new(size_t size, const std::nothrow_t& nothrow_constant, MEMFLAGS flags) throw() {
-#ifdef ASSERT
-  void* p = os::malloc(size, flags, CALLER_PC);
-  if (PrintMallocFree) trace_heap_malloc(size, "Arena-new", p);
-  return p;
-#else
-  return os::malloc(size, flags, CALLER_PC);
-#endif
+  return (void*)AllocateHeap(size, flags, CALLER_PC, AllocFailStrategy::RETURN_NULL);
 }
 
 void Arena::operator delete(void* p) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,57 +48,105 @@ int compare_reserved_region_base(const ReservedMemoryRegion& r1, const ReservedM
   return r1.compare(r2);
 }
 
+static bool is_mergeable_with(CommittedMemoryRegion* rgn, address addr, size_t size, const NativeCallStack& stack) {
+  return rgn->adjacent_to(addr, size) && rgn->call_stack()->equals(stack);
+}
+
+static bool is_same_as(CommittedMemoryRegion* rgn, address addr, size_t size, const NativeCallStack& stack) {
+  // It would have made sense to use rgn->equals(...), but equals returns true for overlapping regions.
+  return rgn->same_region(addr, size) && rgn->call_stack()->equals(stack);
+}
+
+static LinkedListNode<CommittedMemoryRegion>* find_preceding_node_from(LinkedListNode<CommittedMemoryRegion>* from, address addr) {
+  LinkedListNode<CommittedMemoryRegion>* preceding = NULL;
+
+  for (LinkedListNode<CommittedMemoryRegion>* node = from; node != NULL; node = node->next()) {
+    CommittedMemoryRegion* rgn = node->data();
+
+    // We searched past the region start.
+    if (rgn->end() > addr) {
+      break;
+    }
+
+    preceding = node;
+  }
+
+  return preceding;
+}
+
+static bool try_merge_with(LinkedListNode<CommittedMemoryRegion>* node, address addr, size_t size, const NativeCallStack& stack) {
+  if (node != NULL) {
+    CommittedMemoryRegion* rgn = node->data();
+
+    if (is_mergeable_with(rgn, addr, size, stack)) {
+      rgn->expand_region(addr, size);
+      return true;
+    }
+  }
+
+  return false;
+}
+
+static bool try_merge_with(LinkedListNode<CommittedMemoryRegion>* node, LinkedListNode<CommittedMemoryRegion>* other) {
+  if (other == NULL) {
+    return false;
+  }
+
+  CommittedMemoryRegion* rgn = other->data();
+  return try_merge_with(node, rgn->base(), rgn->size(), *rgn->call_stack());
+}
+
 bool ReservedMemoryRegion::add_committed_region(address addr, size_t size, const NativeCallStack& stack) {
   assert(addr != NULL, "Invalid address");
   assert(size > 0, "Invalid size");
   assert(contain_region(addr, size), "Not contain this region");
 
-  if (all_committed()) return true;
+  // Find the region that fully precedes the [addr, addr + size) region.
+  LinkedListNode<CommittedMemoryRegion>* prev = find_preceding_node_from(_committed_regions.head(), addr);
+  LinkedListNode<CommittedMemoryRegion>* next = (prev != NULL ? prev->next() : _committed_regions.head());
 
-  CommittedMemoryRegion committed_rgn(addr, size, stack);
-  LinkedListNode<CommittedMemoryRegion>* node = _committed_regions.head();
-
-  while (node != NULL) {
-    CommittedMemoryRegion* rgn = node->data();
-    if (rgn->same_region(addr, size)) {
+  if (next != NULL) {
+    // Ignore request if region already exists.
+    if (is_same_as(next->data(), addr, size, stack)) {
       return true;
     }
 
-    if (rgn->adjacent_to(addr, size)) {
-      // special case to expand prior region if there is no next region
-      LinkedListNode<CommittedMemoryRegion>* next = node->next();
-      if (next == NULL && rgn->call_stack()->equals(stack)) {
-        VirtualMemorySummary::record_uncommitted_memory(rgn->size(), flag());
-        // the two adjacent regions have the same call stack, merge them
-        rgn->expand_region(addr, size);
-        VirtualMemorySummary::record_committed_memory(rgn->size(), flag());
-        return true;
-      }
-      }
-
-    if (rgn->overlap_region(addr, size)) {
-      // Clear a space for this region in the case it overlaps with any regions.
+    // The new region is after prev, and either overlaps with the
+    // next region (and maybe more regions), or overlaps with no region.
+    if (next->data()->overlap_region(addr, size)) {
+      // Remove _all_ overlapping regions, and parts of regions,
+      // in preparation for the addition of this new region.
       remove_uncommitted_region(addr, size);
-      break;  // commit below
+
+      // The remove could have split a region into two and created a
+      // new prev region. Need to reset the prev and next pointers.
+      prev = find_preceding_node_from((prev != NULL ? prev : _committed_regions.head()), addr);
+      next = (prev != NULL ? prev->next() : _committed_regions.head());
     }
-    if (rgn->end() >= addr + size){
-      break;
-    }
-    node = node->next();
   }
 
-    // New committed region
-    VirtualMemorySummary::record_committed_memory(size, flag());
-    return add_committed_region(committed_rgn);
+  // At this point the previous overlapping regions have been
+  // cleared, and the full region is guaranteed to be inserted.
+  VirtualMemorySummary::record_committed_memory(size, flag());
+
+  // Try to merge with prev and possibly next.
+  if (try_merge_with(prev, addr, size, stack)) {
+    if (try_merge_with(prev, next)) {
+      // prev was expanded to contain the new region
+      // and next, need to remove next from the list
+      _committed_regions.remove_after(prev);
+    }
+
+    return true;
   }
 
-void ReservedMemoryRegion::set_all_committed(bool b) {
-  if (all_committed() != b) {
-    _all_committed = b;
-    if (b) {
-      VirtualMemorySummary::record_committed_memory(size(), flag());
-    }
+  // Didn't merge with prev, try with next.
+  if (try_merge_with(next, addr, size, stack)) {
+    return true;
   }
+
+  // Couldn't merge with any regions - create a new region.
+  return add_committed_region(CommittedMemoryRegion(addr, size, stack));
 }
 
 bool ReservedMemoryRegion::remove_uncommitted_region(LinkedListNode<CommittedMemoryRegion>* node,
@@ -135,94 +183,57 @@ bool ReservedMemoryRegion::remove_uncommitted_region(LinkedListNode<CommittedMem
 }
 
 bool ReservedMemoryRegion::remove_uncommitted_region(address addr, size_t sz) {
-  // uncommit stack guard pages
-  if (flag() == mtThreadStack && !same_region(addr, sz)) {
-    return true;
-  }
-
   assert(addr != NULL, "Invalid address");
   assert(sz > 0, "Invalid size");
 
-  if (all_committed()) {
-    assert(_committed_regions.is_empty(), "Sanity check");
-    assert(contain_region(addr, sz), "Reserved region does not contain this region");
-    set_all_committed(false);
-    VirtualMemorySummary::record_uncommitted_memory(sz, flag());
-    if (same_region(addr, sz)) {
+  CommittedMemoryRegion del_rgn(addr, sz, *call_stack());
+  address end = addr + sz;
+
+  LinkedListNode<CommittedMemoryRegion>* head = _committed_regions.head();
+  LinkedListNode<CommittedMemoryRegion>* prev = NULL;
+  CommittedMemoryRegion* crgn;
+
+  while (head != NULL) {
+    crgn = head->data();
+
+    if (crgn->same_region(addr, sz)) {
+      VirtualMemorySummary::record_uncommitted_memory(crgn->size(), flag());
+      _committed_regions.remove_after(prev);
       return true;
-    } else {
-      CommittedMemoryRegion rgn(base(), size(), *call_stack());
-      if (rgn.base() == addr || rgn.end() == (addr + sz)) {
-        rgn.exclude_region(addr, sz);
-        return add_committed_region(rgn);
-      } else {
-        // split this region
-        // top of the whole region
-        address top =rgn.end();
-        // use this region for lower part
-        size_t exclude_size = rgn.end() - addr;
-        rgn.exclude_region(addr, exclude_size);
-        if (add_committed_region(rgn)) {
-          // higher part
-          address high_base = addr + sz;
-          size_t  high_size = top - high_base;
-          CommittedMemoryRegion high_rgn(high_base, high_size, NativeCallStack::EMPTY_STACK);
-          return add_committed_region(high_rgn);
-        } else {
-          return false;
-        }
-      }
     }
-  } else {
-    CommittedMemoryRegion del_rgn(addr, sz, *call_stack());
-    address end = addr + sz;
 
-    LinkedListNode<CommittedMemoryRegion>* head = _committed_regions.head();
-    LinkedListNode<CommittedMemoryRegion>* prev = NULL;
-    CommittedMemoryRegion* crgn;
-
-    while (head != NULL) {
-      crgn = head->data();
-
-      if (crgn->same_region(addr, sz)) {
-        VirtualMemorySummary::record_uncommitted_memory(crgn->size(), flag());
-          _committed_regions.remove_after(prev);
-          return true;
-      }
-
-      // del_rgn contains crgn
-      if (del_rgn.contain_region(crgn->base(), crgn->size())) {
-          VirtualMemorySummary::record_uncommitted_memory(crgn->size(), flag());
-          head = head->next();
-          _committed_regions.remove_after(prev);
-        continue;  // don't update head or prev
-        }
-
-      // Found addr in the current crgn. There are 2 subcases:
-      if (crgn->contain_address(addr)) {
-
-        // (1) Found addr+size in current crgn as well. (del_rgn is contained in crgn)
-        if (crgn->contain_address(end - 1)) {
-          VirtualMemorySummary::record_uncommitted_memory(sz, flag());
-          return remove_uncommitted_region(head, addr, sz); // done!
-        } else {
-          // (2) Did not find del_rgn's end in crgn.
-          size_t size = crgn->end() - del_rgn.base();
-          crgn->exclude_region(addr, size);
-          VirtualMemorySummary::record_uncommitted_memory(size, flag());
-      }
-
-      } else if (crgn->contain_address(end - 1)) {
-      // Found del_rgn's end, but not its base addr.
-        size_t size = del_rgn.end() - crgn->base();
-        crgn->exclude_region(crgn->base(), size);
-        VirtualMemorySummary::record_uncommitted_memory(size, flag());
-        return true;  // should be done if the list is sorted properly!
-      }
-
-      prev = head;
+    // del_rgn contains crgn
+    if (del_rgn.contain_region(crgn->base(), crgn->size())) {
+      VirtualMemorySummary::record_uncommitted_memory(crgn->size(), flag());
       head = head->next();
+      _committed_regions.remove_after(prev);
+      continue;  // don't update head or prev
     }
+
+    // Found addr in the current crgn. There are 2 subcases:
+    if (crgn->contain_address(addr)) {
+
+      // (1) Found addr+size in current crgn as well. (del_rgn is contained in crgn)
+      if (crgn->contain_address(end - 1)) {
+        VirtualMemorySummary::record_uncommitted_memory(sz, flag());
+        return remove_uncommitted_region(head, addr, sz); // done!
+      } else {
+        // (2) Did not find del_rgn's end in crgn.
+        size_t size = crgn->end() - del_rgn.base();
+        crgn->exclude_region(addr, size);
+        VirtualMemorySummary::record_uncommitted_memory(size, flag());
+      }
+
+    } else if (crgn->contain_address(end - 1)) {
+      // Found del_rgn's end, but not its base addr.
+      size_t size = del_rgn.end() - crgn->base();
+      crgn->exclude_region(crgn->base(), size);
+      VirtualMemorySummary::record_uncommitted_memory(size, flag());
+      return true;  // should be done if the list is sorted properly!
+    }
+
+    prev = head;
+    head = head->next();
   }
 
   return true;
@@ -256,18 +267,14 @@ void ReservedMemoryRegion::move_committed_regions(address addr, ReservedMemoryRe
 }
 
 size_t ReservedMemoryRegion::committed_size() const {
-  if (all_committed()) {
-    return size();
-  } else {
-    size_t committed = 0;
-    LinkedListNode<CommittedMemoryRegion>* head =
-      _committed_regions.head();
-    while (head != NULL) {
-      committed += head->data()->size();
-      head = head->next();
-    }
-    return committed;
+  size_t committed = 0;
+  LinkedListNode<CommittedMemoryRegion>* head =
+    _committed_regions.head();
+  while (head != NULL) {
+    committed += head->data()->size();
+    head = head->next();
   }
+  return committed;
 }
 
 void ReservedMemoryRegion::set_flag(MEMFLAGS f) {
@@ -296,22 +303,16 @@ bool VirtualMemoryTracker::late_initialize(NMT_TrackingLevel level) {
 }
 
 bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
-   const NativeCallStack& stack, MEMFLAGS flag, bool all_committed) {
+    const NativeCallStack& stack, MEMFLAGS flag) {
   assert(base_addr != NULL, "Invalid address");
   assert(size > 0, "Invalid size");
   assert(_reserved_regions != NULL, "Sanity check");
   ReservedMemoryRegion  rgn(base_addr, size, stack, flag);
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
-  LinkedListNode<ReservedMemoryRegion>* node;
+
   if (reserved_rgn == NULL) {
     VirtualMemorySummary::record_reserved_memory(size, flag);
-    node = _reserved_regions->add(rgn);
-    if (node != NULL) {
-      node->data()->set_all_committed(all_committed);
-      return true;
-    } else {
-      return false;
-    }
+    return _reserved_regions->add(rgn) != NULL;
   } else {
     if (reserved_rgn->same_region(base_addr, size)) {
       reserved_rgn->set_call_stack(stack);
@@ -509,13 +510,13 @@ MetaspaceSnapshot::MetaspaceSnapshot() {
 void MetaspaceSnapshot::snapshot(Metaspace::MetadataType type, MetaspaceSnapshot& mss) {
   assert_valid_metadata_type(type);
 
-  mss._reserved_in_bytes[type]   = MetaspaceAux::reserved_bytes(type);
-  mss._committed_in_bytes[type]  = MetaspaceAux::committed_bytes(type);
-  mss._used_in_bytes[type]       = MetaspaceAux::used_bytes(type);
+  mss._reserved_in_bytes[type]   = MetaspaceUtils::reserved_bytes(type);
+  mss._committed_in_bytes[type]  = MetaspaceUtils::committed_bytes(type);
+  mss._used_in_bytes[type]       = MetaspaceUtils::used_bytes(type);
 
-  size_t free_in_bytes = (MetaspaceAux::capacity_bytes(type) - MetaspaceAux::used_bytes(type))
-                       + MetaspaceAux::free_chunks_total_bytes(type)
-                       + MetaspaceAux::free_bytes(type);
+  size_t free_in_bytes = (MetaspaceUtils::capacity_bytes(type) - MetaspaceUtils::used_bytes(type))
+                       + MetaspaceUtils::free_chunks_total_bytes(type)
+                       + MetaspaceUtils::free_bytes(type);
   mss._free_in_bytes[type] = free_in_bytes;
 }
 

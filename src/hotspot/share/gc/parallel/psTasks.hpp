@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_GC_PARALLEL_PSTASKS_HPP
 #define SHARE_VM_GC_PARALLEL_PSTASKS_HPP
 
-#include "memory/allocation.hpp"
 #include "utilities/growableArray.hpp"
 
 //
@@ -148,7 +147,7 @@ class StealTask : public GCTask {
 // will be covered.  In this example if 4 tasks have been created to cover
 // all the stripes and there are only 3 threads, one of the threads will
 // get the tasks with the 4th stripe.  However, there is a dependence in
-// CardTableExtension::scavenge_contents_parallel() on the number
+// PSCardTable::scavenge_contents_parallel() on the number
 // of tasks created.  In scavenge_contents_parallel the distance
 // to the next stripe is calculated based on the number of tasks.
 // If the stripe width is ssize, a task's next stripe is at

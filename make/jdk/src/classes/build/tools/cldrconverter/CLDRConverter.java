@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,17 @@ package build.tools.cldrconverter;
 import static build.tools.cldrconverter.Bundle.jreTimeZoneNames;
 import build.tools.cldrconverter.BundleGenerator.BundleType;
 import java.io.File;
-import java.nio.file.DirectoryStream;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.*;
+import java.time.*;
 import java.util.*;
 import java.util.ResourceBundle.Control;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.SAXNotRecognizedException;
@@ -56,12 +57,13 @@ public class CLDRConverter {
     static final String BCP47_LDML_DTD_SYSTEM_ID = "http://www.unicode.org/cldr/dtd/2.0/ldmlBCP47.dtd";
 
 
-    private static String CLDR_BASE = "../CLDR/21.0.1/";
+    private static String CLDR_BASE;
     static String LOCAL_LDML_DTD;
     static String LOCAL_SPPL_LDML_DTD;
     static String LOCAL_BCP47_LDML_DTD;
     private static String SOURCE_FILE_DIR;
     private static String SPPL_SOURCE_FILE;
+    private static String SPPL_META_SOURCE_FILE;
     private static String NUMBERING_SOURCE_FILE;
     private static String METAZONES_SOURCE_FILE;
     private static String LIKELYSUBTAGS_SOURCE_FILE;
@@ -85,6 +87,7 @@ public class CLDRConverter {
     static final String PARENT_LOCALE_PREFIX = "parentLocale.";
 
     private static SupplementDataParseHandler handlerSuppl;
+    private static SupplementalMetadataParseHandler handlerSupplMeta;
     private static LikelySubtagsParseHandler handlerLikelySubtags;
     static NumberingSystemsParseHandler handlerNumbering;
     static MetaZonesParseHandler handlerMetaZones;
@@ -99,6 +102,10 @@ public class CLDRConverter {
     private static final Map<String, SortedSet<String>> parentLocalesMap = new HashMap<>();
     private static final ResourceBundle.Control defCon =
         ResourceBundle.Control.getControl(ResourceBundle.Control.FORMAT_DEFAULT);
+
+    private static final String[] AVAILABLE_TZIDS = TimeZone.getAvailableIDs();
+    private static String zoneNameTempFile;
+    private static String tzDataDir;
 
     static enum DraftType {
         UNCONFIRMED,
@@ -195,6 +202,14 @@ public class CLDRConverter {
                         verbose = true;
                         break;
 
+                    case "-zntempfile":
+                        zoneNameTempFile = args[++i];
+                        break;
+
+                    case "-tzdatadir":
+                        tzDataDir = args[++i];
+                        break;
+
                     case "-help":
                         usage();
                         System.exit(0);
@@ -221,6 +236,7 @@ public class CLDRConverter {
         NUMBERING_SOURCE_FILE = CLDR_BASE + "/supplemental/numberingSystems.xml";
         METAZONES_SOURCE_FILE = CLDR_BASE + "/supplemental/metaZones.xml";
         TIMEZONE_SOURCE_FILE = CLDR_BASE + "/bcp47/timezone.xml";
+        SPPL_META_SOURCE_FILE = CLDR_BASE + "/supplemental/supplementalMetadata.xml";
 
         if (BASE_LOCALES.isEmpty()) {
             setupBaseLocales("en-US");
@@ -234,6 +250,11 @@ public class CLDRConverter {
 
         List<Bundle> bundles = readBundleList();
         convertBundles(bundles);
+
+        // Generate java.time.format.ZoneName.java
+        if (isBaseModule) {
+            generateZoneName();
+        }
     }
 
     private static void usage() {
@@ -246,7 +267,8 @@ public class CLDRConverter {
                 + "\t-basemodule    generates bundles that go into java.base module%n"
                 + "\t-baselocales loc(,loc)*      locales that go into the base module%n"
                 + "\t-o dir         output directory (default: ./build/gensrc)%n"
-                + "\t-o dir         output directory (defaut: ./build/gensrc)%n"
+                + "\t-zntempfile    template file for java.time.format.ZoneName.java%n"
+                + "\t-tzdatadir     tzdata directory for java.time.format.ZoneName.java%n"
                 + "\t-utf8          use UTF-8 rather than \\uxxxx (for debug)%n");
     }
 
@@ -401,6 +423,11 @@ public class CLDRConverter {
         // Parse likelySubtags
         handlerLikelySubtags = new LikelySubtagsParseHandler();
         parseLDMLFile(new File(LIKELYSUBTAGS_SOURCE_FILE), handlerLikelySubtags);
+
+        // Parse supplementalMetadata
+        // Currently only interested in deprecated time zone ids.
+        handlerSupplMeta = new SupplementalMetadataParseHandler();
+        parseLDMLFile(new File(SPPL_META_SOURCE_FILE), handlerSupplMeta);
     }
 
     // Parsers for data in "bcp47" directory
@@ -656,13 +683,16 @@ public class CLDRConverter {
             });
         }
 
-        for (String tzid : handlerMetaZones.keySet()) {
-            String tzKey = TIMEZONE_ID_PREFIX + tzid;
-            Object data = map.get(tzKey);
+        Arrays.stream(AVAILABLE_TZIDS).forEach(tzid -> {
+            // If the tzid is deprecated, get the data for the replacement id
+            String tzKey = Optional.ofNullable((String)handlerSupplMeta.get(tzid))
+                                   .orElse(tzid);
+            Object data = map.get(TIMEZONE_ID_PREFIX + tzKey);
+
             if (data instanceof String[]) {
                 names.put(tzid, data);
             } else {
-                String meta = handlerMetaZones.get(tzid);
+                String meta = handlerMetaZones.get(tzKey);
                 if (meta != null) {
                     String metaKey = METAZONE_ID_PREFIX + meta;
                     data = map.get(metaKey);
@@ -673,7 +703,8 @@ public class CLDRConverter {
                     }
                 }
             }
-        }
+        });
+
         return names;
     }
 
@@ -947,5 +978,69 @@ public class CLDRConverter {
         }
 
         return candidates;
+    }
+
+    private static void generateZoneName() throws Exception {
+        Files.createDirectories(Paths.get(DESTINATION_DIR, "java", "time", "format"));
+        Files.write(Paths.get(DESTINATION_DIR, "java", "time", "format", "ZoneName.java"),
+            Files.lines(Paths.get(zoneNameTempFile))
+                .flatMap(l -> {
+                    if (l.equals("%%%%ZIDMAP%%%%")) {
+                        return zidMapEntry();
+                    } else if (l.equals("%%%%MZONEMAP%%%%")) {
+                        return handlerMetaZones.mzoneMapEntry();
+                    } else if (l.equals("%%%%DEPRECATED%%%%")) {
+                        return handlerSupplMeta.deprecatedMap();
+                    } else if (l.equals("%%%%TZDATALINK%%%%")) {
+                        return tzDataLinkEntry();
+                    } else {
+                        return Stream.of(l);
+                    }
+                })
+                .collect(Collectors.toList()),
+            StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+    }
+
+    private static Stream<String> zidMapEntry() {
+        Map<String, String> canonMap = new HashMap<>();
+        handlerTimeZone.getData().entrySet().stream()
+            .forEach(e -> {
+                String[] ids = ((String)e.getValue()).split("\\s");
+                for (int i = 1; i < ids.length; i++) {
+                    canonMap.put(ids[i], ids[0]);
+                }});
+        return ZoneId.getAvailableZoneIds().stream()
+                .map(id -> {
+                    String canonId = canonMap.getOrDefault(id, id);
+                    String meta = handlerMetaZones.get(canonId);
+                    String zone001 = handlerMetaZones.zidMap().get(meta);
+                    return zone001 == null ? "" :
+                            String.format("        \"%s\", \"%s\", \"%s\",",
+                                            id, meta, zone001);
+                })
+                .filter(s -> !s.isEmpty())
+                .sorted();
+    }
+
+    private static Stream<String> tzDataLinkEntry() {
+        try {
+            return Files.walk(Paths.get(tzDataDir), 1)
+                .filter(p -> !Files.isDirectory(p))
+                .flatMap(CLDRConverter::extractLinks)
+                .sorted();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static Stream<String> extractLinks(Path tzFile) {
+        try {
+            return Files.lines(tzFile)
+                .filter(l -> l.startsWith("Link"))
+                .map(l -> l.replaceFirst("^Link[\\s]+(\\S+)\\s+(\\S+).*",
+                                         "        \"$2\", \"$1\","));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }

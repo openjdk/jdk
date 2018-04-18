@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4460354 8014636 8043186
+ * @bug      4460354 8014636 8043186 8195805 8182765
  * @summary  Test to make sure that relative paths are redirected in the
  *           output so that they are not broken.
  * @author   jamieh
@@ -46,7 +46,10 @@ public class TestRelativeLinks extends JavadocTester {
                 "-use",
                 "-sourcepath", testSrc,
                 "pkg", "pkg2");
-        checkExit(Exit.OK);
+        checkExit(Exit.ERROR);
+
+        checkOutput(Output.OUT, true,
+                "attribute not supported in HTML5: name");
 
         // These relative paths should stay relative because they appear
         // in the right places.
@@ -67,7 +70,12 @@ public class TestRelativeLinks extends JavadocTester {
             "<a href=\"./pkg/relative-field-link.html\">relative field link</a>",
             "<a href=\"./pkg/relative-method-link.html\">relative method link</a>",
             "<a href=\"./pkg/relative-package-link.html\">relative package link</a>",
-            " <a href=\"./pkg/relative-multi-line-link.html\">relative-multi-line-link</a>.",
+            " <a href=\"./pkg/relative-multi-line-link.html\">relative-multi-line-link</a>.");
+
+        // This is not a relative path and should not be redirected.
+        checkOutput("index-all.html", true,
+            "<div class=\"block\"><a name=\"masters\"></a>");
+        checkOutput("index-all.html", false,
             "<div class=\"block\"><a name=\"./pkg/masters\"></a>");
 
         // PACKAGE USE
@@ -86,4 +94,14 @@ public class TestRelativeLinks extends JavadocTester {
         checkOutput("overview-summary.html", true,
             "<a href=\"./pkg/relative-package-link.html\">relative package link</a>");
     }
+
+    @Test
+    void test_html4() {
+        javadoc("-d", "out-html4",
+                "-html4",
+                "-use",
+                "-sourcepath", testSrc,
+                "pkg", "pkg2");
+        checkExit(Exit.OK);
+}
 }

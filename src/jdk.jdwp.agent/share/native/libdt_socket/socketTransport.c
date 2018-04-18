@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include "jni.h"
 #include "jdwpTransport.h"
 #include "sysSocket.h"
 
@@ -228,6 +229,7 @@ getLocalHostAddress() {
     // it looks up "localhost" and returns 127.0.0.1 if lookup
     // fails.
     struct addrinfo hints, *res = NULL;
+    uint32_t addr;
     int err;
 
     // Use portable way to initialize the structure
@@ -241,7 +243,9 @@ getLocalHostAddress() {
 
     // getaddrinfo might return more than one address
     // but we are using first one only
-    return ((struct sockaddr_in *)(res->ai_addr))->sin_addr.s_addr;
+    addr = ((struct sockaddr_in *)(res->ai_addr))->sin_addr.s_addr;
+    freeaddrinfo(res);
+    return addr;
 }
 
 static int
@@ -300,7 +304,7 @@ parseAddress(const char *address, struct sockaddr_in *sa) {
         char *buf;
         char *hostname;
         uint32_t addr;
-
+        int ai;
         buf = (*callback->alloc)((int)strlen(address) + 1);
         if (buf == NULL) {
             RETURN_ERROR(JDWPTRANSPORT_ERROR_OUT_OF_MEMORY, "out of memory");
@@ -315,16 +319,25 @@ parseAddress(const char *address, struct sockaddr_in *sa) {
          */
         addr = dbgsysInetAddr(hostname);
         if (addr == 0xffffffff) {
-            struct hostent *hp = dbgsysGetHostByName(hostname);
-            if (hp == NULL) {
+            struct addrinfo hints;
+            struct addrinfo *results = NULL;
+            memset (&hints, 0, sizeof(hints));
+            hints.ai_family = AF_INET;
+            hints.ai_socktype = SOCK_STREAM;
+            hints.ai_protocol = IPPROTO_TCP;
+
+            ai = dbgsysGetAddrInfo(hostname, NULL, &hints, &results);
+
+            if (ai != 0) {
                 /* don't use RETURN_IO_ERROR as unknown host is normal */
-                setLastError(0, "gethostbyname: unknown host");
+                setLastError(0, "getaddrinfo: unknown host");
                 (*callback->free)(buf);
                 return JDWPTRANSPORT_ERROR_IO_ERROR;
             }
 
             /* lookup was successful */
-            memcpy(&(sa->sin_addr), hp->h_addr_list[0], hp->h_length);
+            sa->sin_addr =  ((struct sockaddr_in *)results->ai_addr)->sin_addr;
+            freeaddrinfo(results);
         } else {
             sa->sin_addr.s_addr = addr;
         }
@@ -386,7 +399,7 @@ mask_s2u(const char *instr, uint32_t *mask) {
        return instr;
     }
 
-    *mask = htonl(-1 << (32 - m));
+    *mask = htonl((uint32_t)(~0) << (32 - m));
     return s;
 }
 
@@ -1006,7 +1019,7 @@ socketTransport_setConfiguration(jdwpTransportEnv* env, jdwpTransportConfigurati
     return JDWPTRANSPORT_ERROR_NONE;
 }
 
-jint JNICALL
+JNIEXPORT jint JNICALL
 jdwpTransport_OnLoad(JavaVM *vm, jdwpTransportCallback* cbTablePtr,
                      jint version, jdwpTransportEnv** env)
 {

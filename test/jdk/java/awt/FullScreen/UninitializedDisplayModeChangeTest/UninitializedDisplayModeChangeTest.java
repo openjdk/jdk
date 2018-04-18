@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,13 @@
 
 /**
  * @test
- * @bug 6358034
- * @bug 6568560
+ * @bug 6358034 6568560 8198613 8198335
+ * @key headful
  * @summary Tests that no exception is thrown when display mode is changed
  *          externally
  * @compile UninitializedDisplayModeChangeTest.java DisplayModeChanger.java
  * @run main/othervm UninitializedDisplayModeChangeTest
- * @run main/othervm -Dsun.java2d.opengl=true UninitializedDisplayModeChangeTest
+ * @run main/othervm -Djava.awt.headless=true UninitializedDisplayModeChangeTest
  */
 
 import java.awt.EventQueue;

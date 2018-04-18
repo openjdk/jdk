@@ -101,7 +101,7 @@ import java.util.concurrent.atomic.LongAdder;
  * elements.
  *
  * <p>This class is a member of the
- * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
+ * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @author Doug Lea
@@ -2204,9 +2204,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
             Collection<?> c = (Collection<?>) o;
             try {
                 return containsAll(c) && c.containsAll(this);
-            } catch (ClassCastException unused) {
-                return false;
-            } catch (NullPointerException unused) {
+            } catch (ClassCastException | NullPointerException unused) {
                 return false;
             }
         }
@@ -2331,9 +2329,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
             Collection<?> c = (Collection<?>) o;
             try {
                 return containsAll(c) && c.containsAll(this);
-            } catch (ClassCastException unused) {
-                return false;
-            } catch (NullPointerException unused) {
+            } catch (ClassCastException | NullPointerException unused) {
                 return false;
             }
         }
@@ -2453,9 +2449,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
             if (k == null) // pass by markers and headers
                 return true;
             int c = cpr(cmp, k, hi);
-            if (c > 0 || (c == 0 && !hiInclusive))
-                return false;
-            return true;
+            return c < 0 || (c == 0 && hiInclusive);
         }
 
         /**
@@ -3418,7 +3412,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
             VAL = l.findVarHandle(Node.class, "val", Object.class);
             RIGHT = l.findVarHandle(Index.class, "right", Index.class);
         } catch (ReflectiveOperationException e) {
-            throw new Error(e);
+            throw new ExceptionInInitializerError(e);
         }
     }
 }

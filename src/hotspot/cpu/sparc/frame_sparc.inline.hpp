@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,12 +86,6 @@ inline intptr_t*    frame::sender_sp() const  { return fp(); }
 
 inline intptr_t* frame::real_fp() const { return fp(); }
 
-// Used only in frame::oopmapreg_to_location
-// This return a value in VMRegImpl::slot_size
-inline int frame::pd_oop_map_offset_adjustment() const {
-  return _sp_adjustment_by_callee * VMRegImpl::slots_per_word;
-}
-
 inline intptr_t** frame::interpreter_frame_locals_addr() const {
   return (intptr_t**) sp_addr_at( Llocals->sp_offset_in_saved_window());
 }
@@ -104,8 +98,6 @@ inline intptr_t* frame::interpreter_frame_mdp_addr() const {
   // %%%%% reinterpreting ImethodDataPtr as a mdx
   return (intptr_t*) sp_addr_at( ImethodDataPtr->sp_offset_in_saved_window());
 }
-
-inline jint frame::interpreter_frame_expression_stack_direction() { return -1; }
 
 // bottom(base) of the expression stack (highest address)
 inline intptr_t* frame::interpreter_frame_expression_stack() const {
@@ -190,61 +182,6 @@ inline JavaCallWrapper** frame::entry_frame_call_wrapper_addr() const {
   return (JavaCallWrapper**)&sp()[link.as_in().as_register()->sp_offset_in_saved_window()];
 }
 
-
-inline int frame::local_offset_for_compiler(int local_index, int nof_args, int max_nof_locals, int max_nof_monitors) {
-   // always allocate non-argument locals 0..5 as if they were arguments:
-  int allocated_above_frame = nof_args;
-  if (allocated_above_frame < callee_register_argument_save_area_words)
-    allocated_above_frame = callee_register_argument_save_area_words;
-  if (allocated_above_frame > max_nof_locals)
-    allocated_above_frame = max_nof_locals;
-
-  // Note: monitors (BasicLock blocks) are never allocated in argument slots
-  //assert(local_index >= 0 && local_index < max_nof_locals, "bad local index");
-  if (local_index < allocated_above_frame)
-    return local_index + callee_register_argument_save_area_sp_offset;
-  else
-    return local_index - (max_nof_locals + max_nof_monitors*2) + compiler_frame_vm_locals_fp_offset;
-}
-
-inline int frame::monitor_offset_for_compiler(int local_index, int nof_args, int max_nof_locals, int max_nof_monitors) {
-  assert(local_index >= max_nof_locals && ((local_index - max_nof_locals) & 1) && (local_index - max_nof_locals) < max_nof_monitors*2, "bad monitor index");
-
-  // The compiler uses the __higher__ of two indexes allocated to the monitor.
-  // Increasing local indexes are mapped to increasing memory locations,
-  // so the start of the BasicLock is associated with the __lower__ index.
-
-  int offset = (local_index-1) - (max_nof_locals + max_nof_monitors*2) + compiler_frame_vm_locals_fp_offset;
-
-  // We allocate monitors aligned zero mod 8:
-  assert((offset & 1) == 0, "monitor must be an an even address.");
-  // This works because all monitors are allocated after
-  // all locals, and because the highest address corresponding to any
-  // monitor index is always even.
-  assert((compiler_frame_vm_locals_fp_offset & 1) == 0, "end of monitors must be even address");
-
-  return offset;
-}
-
-inline int frame::min_local_offset_for_compiler(int nof_args, int max_nof_locals, int max_nof_monitors) {
-   // always allocate non-argument locals 0..5 as if they were arguments:
-  int allocated_above_frame = nof_args;
-  if (allocated_above_frame < callee_register_argument_save_area_words)
-    allocated_above_frame = callee_register_argument_save_area_words;
-  if (allocated_above_frame > max_nof_locals)
-    allocated_above_frame = max_nof_locals;
-
-  int allocated_in_frame = (max_nof_locals + max_nof_monitors*2) - allocated_above_frame;
-
-  return compiler_frame_vm_locals_fp_offset - allocated_in_frame;
-}
-
-// On SPARC, the %lN and %iN registers are non-volatile.
-inline bool frame::volatile_across_calls(Register reg) {
-  // This predicate is (presently) applied only to temporary registers,
-  // and so it need not recognize non-volatile globals.
-  return reg->is_out() || reg->is_global();
-}
 
 inline oop  frame::saved_oop_result(RegisterMap* map) const      {
   return *((oop*) map->location(O0->as_VMReg()));

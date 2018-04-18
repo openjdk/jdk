@@ -93,11 +93,14 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Deque;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.PropertyPermission;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -126,7 +129,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import junit.framework.AssertionFailedError;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestResult;
@@ -446,11 +448,10 @@ public class JSR166TestCase extends TestCase {
         for (String testClassName : testClassNames) {
             try {
                 Class<?> testClass = Class.forName(testClassName);
-                Method m = testClass.getDeclaredMethod("suite",
-                                                       new Class<?>[0]);
+                Method m = testClass.getDeclaredMethod("suite");
                 suite.addTest(newTestSuite((Test)m.invoke(null)));
-            } catch (Exception e) {
-                throw new Error("Missing test class", e);
+            } catch (ReflectiveOperationException e) {
+                throw new AssertionError("Missing test class", e);
             }
         }
     }
@@ -472,18 +473,12 @@ public class JSR166TestCase extends TestCase {
         }
     }
 
-    public static boolean atLeastJava6() { return JAVA_CLASS_VERSION >= 50.0; }
-    public static boolean atLeastJava7() { return JAVA_CLASS_VERSION >= 51.0; }
-    public static boolean atLeastJava8() { return JAVA_CLASS_VERSION >= 52.0; }
-    public static boolean atLeastJava9() {
-        return JAVA_CLASS_VERSION >= 53.0
-            // As of 2015-09, java9 still uses 52.0 class file version
-            || JAVA_SPECIFICATION_VERSION.matches("^(1\\.)?(9|[0-9][0-9])$");
-    }
-    public static boolean atLeastJava10() {
-        return JAVA_CLASS_VERSION >= 54.0
-            || JAVA_SPECIFICATION_VERSION.matches("^(1\\.)?[0-9][0-9]$");
-    }
+    public static boolean atLeastJava6()  { return JAVA_CLASS_VERSION >= 50.0; }
+    public static boolean atLeastJava7()  { return JAVA_CLASS_VERSION >= 51.0; }
+    public static boolean atLeastJava8()  { return JAVA_CLASS_VERSION >= 52.0; }
+    public static boolean atLeastJava9()  { return JAVA_CLASS_VERSION >= 53.0; }
+    public static boolean atLeastJava10() { return JAVA_CLASS_VERSION >= 54.0; }
+    public static boolean atLeastJava11() { return JAVA_CLASS_VERSION >= 55.0; }
 
     /**
      * Collects all JSR166 unit tests as one suite.
@@ -634,8 +629,8 @@ public class JSR166TestCase extends TestCase {
             for (String methodName : testMethodNames(testClass))
                 suite.addTest((Test) c.newInstance(data, methodName));
             return suite;
-        } catch (Exception e) {
-            throw new Error(e);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(e);
         }
     }
 
@@ -651,14 +646,14 @@ public class JSR166TestCase extends TestCase {
         if (atLeastJava8()) {
             String name = testClass.getName();
             String name8 = name.replaceAll("Test$", "8Test");
-            if (name.equals(name8)) throw new Error(name);
+            if (name.equals(name8)) throw new AssertionError(name);
             try {
                 return (Test)
                     Class.forName(name8)
-                    .getMethod("testSuite", new Class[] { dataClass })
+                    .getMethod("testSuite", dataClass)
                     .invoke(null, data);
-            } catch (Exception e) {
-                throw new Error(e);
+            } catch (ReflectiveOperationException e) {
+                throw new AssertionError(e);
             }
         } else {
             return new TestSuite();
@@ -767,7 +762,7 @@ public class JSR166TestCase extends TestCase {
         String msg = toString() + ": " + String.format(format, args);
         System.err.println(msg);
         dumpTestThreads();
-        throw new AssertionFailedError(msg);
+        throw new AssertionError(msg);
     }
 
     /**
@@ -788,12 +783,8 @@ public class JSR166TestCase extends TestCase {
                 throw (RuntimeException) t;
             else if (t instanceof Exception)
                 throw (Exception) t;
-            else {
-                AssertionFailedError afe =
-                    new AssertionFailedError(t.toString());
-                afe.initCause(t);
-                throw afe;
-            }
+            else
+                throw new AssertionError(t.toString(), t);
         }
 
         if (Thread.interrupted())
@@ -827,83 +818,83 @@ public class JSR166TestCase extends TestCase {
 
     /**
      * Just like fail(reason), but additionally recording (using
-     * threadRecordFailure) any AssertionFailedError thrown, so that
-     * the current testcase will fail.
+     * threadRecordFailure) any AssertionError thrown, so that the
+     * current testcase will fail.
      */
     public void threadFail(String reason) {
         try {
             fail(reason);
-        } catch (AssertionFailedError t) {
-            threadRecordFailure(t);
-            throw t;
+        } catch (AssertionError fail) {
+            threadRecordFailure(fail);
+            throw fail;
         }
     }
 
     /**
      * Just like assertTrue(b), but additionally recording (using
-     * threadRecordFailure) any AssertionFailedError thrown, so that
-     * the current testcase will fail.
+     * threadRecordFailure) any AssertionError thrown, so that the
+     * current testcase will fail.
      */
     public void threadAssertTrue(boolean b) {
         try {
             assertTrue(b);
-        } catch (AssertionFailedError t) {
-            threadRecordFailure(t);
-            throw t;
+        } catch (AssertionError fail) {
+            threadRecordFailure(fail);
+            throw fail;
         }
     }
 
     /**
      * Just like assertFalse(b), but additionally recording (using
-     * threadRecordFailure) any AssertionFailedError thrown, so that
-     * the current testcase will fail.
+     * threadRecordFailure) any AssertionError thrown, so that the
+     * current testcase will fail.
      */
     public void threadAssertFalse(boolean b) {
         try {
             assertFalse(b);
-        } catch (AssertionFailedError t) {
-            threadRecordFailure(t);
-            throw t;
+        } catch (AssertionError fail) {
+            threadRecordFailure(fail);
+            throw fail;
         }
     }
 
     /**
      * Just like assertNull(x), but additionally recording (using
-     * threadRecordFailure) any AssertionFailedError thrown, so that
-     * the current testcase will fail.
+     * threadRecordFailure) any AssertionError thrown, so that the
+     * current testcase will fail.
      */
     public void threadAssertNull(Object x) {
         try {
             assertNull(x);
-        } catch (AssertionFailedError t) {
-            threadRecordFailure(t);
-            throw t;
+        } catch (AssertionError fail) {
+            threadRecordFailure(fail);
+            throw fail;
         }
     }
 
     /**
      * Just like assertEquals(x, y), but additionally recording (using
-     * threadRecordFailure) any AssertionFailedError thrown, so that
-     * the current testcase will fail.
+     * threadRecordFailure) any AssertionError thrown, so that the
+     * current testcase will fail.
      */
     public void threadAssertEquals(long x, long y) {
         try {
             assertEquals(x, y);
-        } catch (AssertionFailedError t) {
-            threadRecordFailure(t);
-            throw t;
+        } catch (AssertionError fail) {
+            threadRecordFailure(fail);
+            throw fail;
         }
     }
 
     /**
      * Just like assertEquals(x, y), but additionally recording (using
-     * threadRecordFailure) any AssertionFailedError thrown, so that
-     * the current testcase will fail.
+     * threadRecordFailure) any AssertionError thrown, so that the
+     * current testcase will fail.
      */
     public void threadAssertEquals(Object x, Object y) {
         try {
             assertEquals(x, y);
-        } catch (AssertionFailedError fail) {
+        } catch (AssertionError fail) {
             threadRecordFailure(fail);
             throw fail;
         } catch (Throwable fail) {
@@ -913,13 +904,13 @@ public class JSR166TestCase extends TestCase {
 
     /**
      * Just like assertSame(x, y), but additionally recording (using
-     * threadRecordFailure) any AssertionFailedError thrown, so that
-     * the current testcase will fail.
+     * threadRecordFailure) any AssertionError thrown, so that the
+     * current testcase will fail.
      */
     public void threadAssertSame(Object x, Object y) {
         try {
             assertSame(x, y);
-        } catch (AssertionFailedError fail) {
+        } catch (AssertionError fail) {
             threadRecordFailure(fail);
             throw fail;
         }
@@ -941,8 +932,8 @@ public class JSR166TestCase extends TestCase {
 
     /**
      * Records the given exception using {@link #threadRecordFailure},
-     * then rethrows the exception, wrapping it in an
-     * AssertionFailedError if necessary.
+     * then rethrows the exception, wrapping it in an AssertionError
+     * if necessary.
      */
     public void threadUnexpectedException(Throwable t) {
         threadRecordFailure(t);
@@ -951,12 +942,8 @@ public class JSR166TestCase extends TestCase {
             throw (RuntimeException) t;
         else if (t instanceof Error)
             throw (Error) t;
-        else {
-            AssertionFailedError afe =
-                new AssertionFailedError("unexpected exception: " + t);
-            afe.initCause(t);
-            throw afe;
-        }
+        else
+            throw new AssertionError("unexpected exception: " + t, t);
     }
 
     /**
@@ -1132,7 +1119,7 @@ public class JSR166TestCase extends TestCase {
         for (long retries = LONG_DELAY_MS * 3 / 4; retries-->0; ) {
             try { delay(1); }
             catch (InterruptedException fail) {
-                fail("Unexpected InterruptedException");
+                throw new AssertionError("Unexpected InterruptedException", fail);
             }
             Thread.State s = thread.getState();
             if (s == expected)
@@ -1318,16 +1305,13 @@ public class JSR166TestCase extends TestCase {
 
     /**
      * Sleeps until the given time has elapsed.
-     * Throws AssertionFailedError if interrupted.
+     * Throws AssertionError if interrupted.
      */
     static void sleep(long millis) {
         try {
             delay(millis);
         } catch (InterruptedException fail) {
-            AssertionFailedError afe =
-                new AssertionFailedError("Unexpected InterruptedException");
-            afe.initCause(fail);
-            throw afe;
+            throw new AssertionError("Unexpected InterruptedException", fail);
         }
     }
 
@@ -1418,7 +1402,7 @@ public class JSR166TestCase extends TestCase {
 //             r.run();
 //         } catch (Throwable fail) { threadUnexpectedException(fail); }
 //         if (millisElapsedSince(startTime) > timeoutMillis/2)
-//             throw new AssertionFailedError("did not return promptly");
+//             throw new AssertionError("did not return promptly");
 //     }
 
 //     void assertTerminatesPromptly(Runnable r) {
@@ -1435,7 +1419,7 @@ public class JSR166TestCase extends TestCase {
             assertEquals(expectedValue, f.get(timeoutMillis, MILLISECONDS));
         } catch (Throwable fail) { threadUnexpectedException(fail); }
         if (millisElapsedSince(startTime) > timeoutMillis/2)
-            throw new AssertionFailedError("timed get did not return promptly");
+            throw new AssertionError("timed get did not return promptly");
     }
 
     <T> void checkTimedGet(Future<T> f, T expectedValue) {
@@ -1489,26 +1473,6 @@ public class JSR166TestCase extends TestCase {
                 realRun();
             } catch (Throwable fail) {
                 threadUnexpectedException(fail);
-            }
-        }
-    }
-
-    public abstract class RunnableShouldThrow implements Runnable {
-        protected abstract void realRun() throws Throwable;
-
-        final Class<?> exceptionClass;
-
-        <T extends Throwable> RunnableShouldThrow(Class<T> exceptionClass) {
-            this.exceptionClass = exceptionClass;
-        }
-
-        public final void run() {
-            try {
-                realRun();
-                threadShouldThrow(exceptionClass.getSimpleName());
-            } catch (Throwable t) {
-                if (! exceptionClass.isInstance(t))
-                    threadUnexpectedException(t);
             }
         }
     }
@@ -1677,7 +1641,7 @@ public class JSR166TestCase extends TestCase {
 //         long startTime = System.nanoTime();
 //         while (!flag.get()) {
 //             if (millisElapsedSince(startTime) > timeoutMillis)
-//                 throw new AssertionFailedError("timed out");
+//                 throw new AssertionError("timed out");
 //             Thread.yield();
 //         }
 //     }
@@ -1764,7 +1728,7 @@ public class JSR166TestCase extends TestCase {
 
     /**
      * A CyclicBarrier that uses timed await and fails with
-     * AssertionFailedErrors instead of throwing checked exceptions.
+     * AssertionErrors instead of throwing checked exceptions.
      */
     public static class CheckedBarrier extends CyclicBarrier {
         public CheckedBarrier(int parties) { super(parties); }
@@ -1773,12 +1737,9 @@ public class JSR166TestCase extends TestCase {
             try {
                 return super.await(2 * LONG_DELAY_MS, MILLISECONDS);
             } catch (TimeoutException timedOut) {
-                throw new AssertionFailedError("timed out");
+                throw new AssertionError("timed out");
             } catch (Exception fail) {
-                AssertionFailedError afe =
-                    new AssertionFailedError("Unexpected exception: " + fail);
-                afe.initCause(fail);
-                throw afe;
+                throw new AssertionError("Unexpected exception: " + fail, fail);
             }
         }
     }
@@ -1901,14 +1862,11 @@ public class JSR166TestCase extends TestCase {
             try { throwingAction.run(); }
             catch (Throwable t) {
                 threw = true;
-                if (!expectedExceptionClass.isInstance(t)) {
-                    AssertionFailedError afe =
-                        new AssertionFailedError
-                        ("Expected " + expectedExceptionClass.getName() +
-                         ", got " + t.getClass().getName());
-                    afe.initCause(t);
-                    threadUnexpectedException(afe);
-                }
+                if (!expectedExceptionClass.isInstance(t))
+                    throw new AssertionError(
+                            "Expected " + expectedExceptionClass.getName() +
+                            ", got " + t.getClass().getName(),
+                            t);
             }
             if (!threw)
                 shouldThrow(expectedExceptionClass.getName());
@@ -2123,5 +2081,43 @@ public class JSR166TestCase extends TestCase {
         assertEquals(savedTaskCount, p.getTaskCount());
         assertEquals(savedCompletedTaskCount, p.getCompletedTaskCount());
         assertEquals(savedQueueSize, p.getQueue().size());
+    }
+
+    void assertCollectionsEquals(Collection<?> x, Collection<?> y) {
+        assertEquals(x, y);
+        assertEquals(y, x);
+        assertEquals(x.isEmpty(), y.isEmpty());
+        assertEquals(x.size(), y.size());
+        if (x instanceof List) {
+            assertEquals(x.toString(), y.toString());
+        }
+        if (x instanceof List || x instanceof Set) {
+            assertEquals(x.hashCode(), y.hashCode());
+        }
+        if (x instanceof List || x instanceof Deque) {
+            assertTrue(Arrays.equals(x.toArray(), y.toArray()));
+            assertTrue(Arrays.equals(x.toArray(new Object[0]),
+                                     y.toArray(new Object[0])));
+        }
+    }
+
+    /**
+     * A weaker form of assertCollectionsEquals which does not insist
+     * that the two collections satisfy Object#equals(Object), since
+     * they may use identity semantics as Deques do.
+     */
+    void assertCollectionsEquivalent(Collection<?> x, Collection<?> y) {
+        if (x instanceof List || x instanceof Set)
+            assertCollectionsEquals(x, y);
+        else {
+            assertEquals(x.isEmpty(), y.isEmpty());
+            assertEquals(x.size(), y.size());
+            assertEquals(new HashSet(x), new HashSet(y));
+            if (x instanceof Deque) {
+                assertTrue(Arrays.equals(x.toArray(), y.toArray()));
+                assertTrue(Arrays.equals(x.toArray(new Object[0]),
+                                         y.toArray(new Object[0])));
+            }
+        }
     }
 }

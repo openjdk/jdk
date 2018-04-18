@@ -192,7 +192,7 @@ public class PiNode extends FloatingGuardedNode implements LIRLowerable, Virtual
 
         if (guard == null) {
             // Try to merge the pi node with a load node.
-            if (object instanceof ReadNode) {
+            if (object instanceof ReadNode && !object.hasMoreThanOneUsage()) {
                 ReadNode readNode = (ReadNode) object;
                 readNode.setStamp(readNode.stamp(NodeView.DEFAULT).improveWith(stamp));
                 return readNode;

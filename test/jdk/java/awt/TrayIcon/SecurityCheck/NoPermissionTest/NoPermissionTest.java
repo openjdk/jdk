@@ -26,6 +26,7 @@ import java.awt.image.BufferedImage;
 
 /*
  * @test
+ * @key headful
  * @summary Check for SecurityException occurrence if no permissions for system tray granted
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
  * @run main/othervm/policy=tray.policy -Djava.security.manager NoPermissionTest

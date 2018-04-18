@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@
  * records total memory allocation size and number of allocations.
  * The counters are updated atomically.
  */
-class MemoryCounter VALUE_OBJ_CLASS_SPEC {
+class MemoryCounter {
  private:
   volatile size_t   _count;
   volatile size_t   _size;
@@ -66,8 +66,6 @@ class MemoryCounter VALUE_OBJ_CLASS_SPEC {
     assert(_size >= sz, "deallocation > allocated");
     Atomic::dec(&_count);
     if (sz > 0) {
-      // unary minus operator applied to unsigned type, result still unsigned
-      #pragma warning(suppress: 4146)
       Atomic::sub(sz, &_size);
     }
   }
@@ -91,7 +89,7 @@ class MemoryCounter VALUE_OBJ_CLASS_SPEC {
  * It includes the memory acquired through os::malloc()
  * call and arena's backing memory.
  */
-class MallocMemory VALUE_OBJ_CLASS_SPEC {
+class MallocMemory {
  private:
   MemoryCounter _malloc;
   MemoryCounter _arena;
@@ -244,7 +242,7 @@ class MallocMemorySummary : AllStatic {
  * which ensures 8-bytes alignment on 32-bit systems and 16-bytes on 64-bit systems (Product build).
  */
 
-class MallocHeader VALUE_OBJ_CLASS_SPEC {
+class MallocHeader {
 #ifdef _LP64
   size_t           _size      : 64;
   size_t           _flags     : 8;

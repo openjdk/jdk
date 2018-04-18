@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,10 @@
 #include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -224,7 +225,7 @@ bool CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecod
     assert(bytecode == Bytecodes::_invokeinterface, "");
     int itable_index = call_info->itable_index();
     entry = VtableStubs::find_itable_stub(itable_index);
-    if (entry == false) {
+    if (entry == NULL) {
       return false;
     }
 #ifdef ASSERT
@@ -234,7 +235,7 @@ bool CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecod
     assert(k->verify_itable_index(itable_index), "sanity check");
 #endif //ASSERT
     CompiledICHolder* holder = new CompiledICHolder(call_info->resolved_method()->method_holder(),
-                                                    call_info->resolved_klass());
+                                                    call_info->resolved_klass(), false);
     holder->claim();
     InlineCacheBuffer::create_transition_stub(this, holder, entry);
   } else {
@@ -272,7 +273,7 @@ bool CompiledIC::is_megamorphic() const {
   assert(!is_optimized(), "an optimized call cannot be megamorphic");
 
   // Cannot rely on cached_value. It is either an interface or a method.
-  return VtableStubs::is_entry_point(ic_destination());
+  return VtableStubs::entry_point(ic_destination()) != NULL;
 }
 
 bool CompiledIC::is_call_to_compiled() const {
@@ -417,7 +418,7 @@ void CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
     bool static_bound = info.is_optimized() || (info.cached_metadata() == NULL);
 #ifdef ASSERT
     CodeBlob* cb = CodeCache::find_blob_unsafe(info.entry());
-    assert (cb->is_compiled(), "must be compiled!");
+    assert (cb != NULL && cb->is_compiled(), "must be compiled!");
 #endif /* ASSERT */
 
     // This is MT safe if we come from a clean-cache and go through a
@@ -524,9 +525,11 @@ bool CompiledIC::is_icholder_entry(address entry) {
     return true;
   }
   // itable stubs also use CompiledICHolder
-  if (VtableStubs::is_entry_point(entry) && VtableStubs::stub_containing(entry)->is_itable_stub()) {
-    return true;
+  if (cb != NULL && cb->is_vtable_blob()) {
+    VtableStub* s = VtableStubs::entry_point(entry);
+    return (s != NULL) && s->is_itable_stub();
   }
+
   return false;
 }
 

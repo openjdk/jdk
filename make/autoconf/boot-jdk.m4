@@ -77,10 +77,11 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
           BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | $HEAD -n 1`
 
           # Extra M4 quote needed to protect [] in grep expression.
-          [FOUND_CORRECT_VERSION=`$ECHO $BOOT_JDK_VERSION | $EGREP '\"10([\.+-].*)?\"|\"9([\.+-].*)?\"'`]
+          [FOUND_CORRECT_VERSION=`$ECHO $BOOT_JDK_VERSION \
+              | $EGREP "\"(${DEFAULT_ACCEPTABLE_BOOT_VERSIONS// /|})([\.+-].*)?\""`]
           if test "x$FOUND_CORRECT_VERSION" = x; then
             AC_MSG_NOTICE([Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring])
-            AC_MSG_NOTICE([(Your Boot JDK must be version 9 or 10)])
+            AC_MSG_NOTICE([(Your Boot JDK version must be one of: $DEFAULT_ACCEPTABLE_BOOT_VERSIONS)])
             BOOT_JDK_FOUND=no
           else
             # We're done! :-)
@@ -102,8 +103,33 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
 AC_DEFUN([BOOTJDK_CHECK_ARGUMENTS],
 [
   if test "x$with_boot_jdk" != x; then
-    BOOT_JDK=$with_boot_jdk
-    BOOT_JDK_FOUND=maybe
+    if test -d "$with_boot_jdk"; then
+      BOOT_JDK=$with_boot_jdk
+      BOOT_JDK_FOUND=maybe
+    elif test -f "$with_boot_jdk"; then
+      case "$with_boot_jdk" in
+        *.tar.gz )
+            BOOT_JDK_SUPPORT_DIR=$CONFIGURESUPPORT_OUTPUTDIR/boot-jdk
+            $RM -rf $BOOT_JDK_SUPPORT_DIR
+            $MKDIR -p $BOOT_JDK_SUPPORT_DIR
+            $GUNZIP -c $with_boot_jdk | $TAR xf - -C $BOOT_JDK_SUPPORT_DIR
+
+            # Try to find javac to determine BOOT_JDK path
+            BOOT_JDK_JAVAC_PATH=`$FIND $BOOT_JDK_SUPPORT_DIR | $GREP "/bin/javac"`
+            if test "x$BOOT_JDK_JAVAC_PATH" != x; then
+              BOOT_JDK_FOUND=maybe
+              BOOT_JDK=$($DIRNAME $($DIRNAME $BOOT_JDK_JAVAC_PATH))
+            else
+              BOOT_JDK_FOUND=no
+            fi
+          ;;
+        * )
+            BOOT_JDK_FOUND=no
+          ;;
+      esac
+    else
+      BOOT_JDK_FOUND=no
+    fi
     AC_MSG_NOTICE([Found potential Boot JDK using configure arguments])
   fi
 ])
@@ -379,7 +405,7 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
   BOOTCYCLE_JVM_ARGS_BIG=-Xms64M
 
   # Maximum amount of heap memory and stack size.
-  JVM_HEAP_LIMIT_32="1024"
+  JVM_HEAP_LIMIT_32="768"
   # Running a 64 bit JVM allows for and requires a bigger heap
   JVM_HEAP_LIMIT_64="1600"
   STACK_SIZE_32=768
@@ -485,10 +511,10 @@ AC_DEFUN([BOOTJDK_CHECK_BUILD_JDK],
         BUILD_JDK_VERSION=`"$BUILD_JDK/bin/java" -version 2>&1 | $HEAD -n 1`
 
         # Extra M4 quote needed to protect [] in grep expression.
-        [FOUND_CORRECT_VERSION=`echo $BUILD_JDK_VERSION | $EGREP '\"10([\.+-].*)?\"'`]
+        [FOUND_CORRECT_VERSION=`echo $BUILD_JDK_VERSION | $EGREP "\"$VERSION_FEATURE([\.+-].*)?\""`]
         if test "x$FOUND_CORRECT_VERSION" = x; then
           AC_MSG_NOTICE([Potential Build JDK found at $BUILD_JDK is incorrect JDK version ($BUILD_JDK_VERSION); ignoring])
-          AC_MSG_NOTICE([(Your Build JDK must be version 10)])
+          AC_MSG_NOTICE([(Your Build JDK must be version $VERSION_FEATURE)])
           BUILD_JDK_FOUND=no
         else
           # We're done!

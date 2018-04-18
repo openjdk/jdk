@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,17 @@
  */
 
 /*
-  @test
-  @key headful
-  @bug 4397404 4720930
-  @summary tests that images of all supported native image formats are transfered properly
-  @library ../../../../lib/testlibrary
-  @library ../../regtesthelpers/process/
-  @build jdk.testlibrary.OSInfo ProcessResults ProcessCommunicator
-  @author gas@sparc.spb.su area=Clipboard
-  @run main ImageTransferTest
-*/
+ * @test
+ * @key headful
+ * @bug 4397404 4720930 8197926
+ * @summary tests that images of all supported native image formats are
+ * transferred properly
+ * @library ../../../../lib/testlibrary
+ * @library ../../regtesthelpers/process/
+ * @build jdk.testlibrary.OSInfo ProcessResults ProcessCommunicator
+ * @author gas@sparc.spb.su area=Clipboard
+ * @run main/timeout=240 ImageTransferTest
+ */
 
 import test.java.awt.regtesthelpers.process.ProcessCommunicator;
 import test.java.awt.regtesthelpers.process.ProcessResults;
@@ -58,48 +59,59 @@ import java.util.stream.Stream;
 public class ImageTransferTest {
     public static void main(String[] arg) throws Exception {
         ImageDragSource ids = new ImageDragSource();
-        ids.frame.setLocation(100, 100);
-        ids.frame.setVisible(true);
-        Util.sync();
-        String classpath = System.getProperty("java.class.path");
-        String[] args = new String[ids.formats.length + 4];
-        args[0] = "200";
-        args[1] = "100";
-        args[2] = args[3] = "150";
+        try {
+            ids.frame.setUndecorated(true);
+            ids.frame.setLocation(100, 100);
+            ids.frame.setVisible(true);
+            Util.sync();
+            String classpath = System.getProperty("java.class.path");
+            String[] args = new String[ids.formats.length + 4];
+            args[0] = "200";
+            args[1] = "100";
+            args[2] = args[3] = "150";
 
-        System.arraycopy(ids.formats, 0, args, 4, ids.formats.length);
-        ProcessResults pres = ProcessCommunicator.executeChildProcess(ImageDropTarget.class, classpath, args);
+            System.arraycopy(ids.formats, 0, args, 4, ids.formats.length);
+            String scale = System.getProperty("sun.java2d.uiScale");
+            ProcessResults pres = ProcessCommunicator.
+                    executeChildProcess(ImageDropTarget.class, classpath +
+                    " -Dsun.java2d.uiScale=" + scale, args);
 
-        if (pres.getStdErr() != null && pres.getStdErr().length() > 0) {
-            System.err.println("========= Child VM System.err ========");
-            System.err.print(pres.getStdErr());
-            System.err.println("======================================");
-        }
-
-        if (pres.getStdOut() != null && pres.getStdOut().length() > 0) {
-            System.err.println("========= Child VM System.out ========");
-            System.err.print(pres.getStdOut());
-            System.err.println("======================================");
-        }
-
-        boolean failed = false;
-        String passedFormats = "";
-        String failedFormats = "";
-
-        for (int i = 0; i < ids.passedArray.length; i++) {
-            if (ids.passedArray[i]) passedFormats += ids.formats[i] + " ";
-            else {
-                failed = true;
-                failedFormats += ids.formats[i] + " ";
+            if (pres.getStdErr() != null && pres.getStdErr().length() > 0) {
+                System.err.println("========= Child VM System.err ========");
+                System.err.print(pres.getStdErr());
+                System.err.println("======================================");
             }
-        }
 
-        if (failed) {
-            throw new RuntimeException("test failed: images in following " +
-                    "native formats are not transferred properly: " + failedFormats);
-        } else {
-            System.err.println("images in following " +
-                    "native formats are transferred properly: " + passedFormats);
+            if (pres.getStdOut() != null && pres.getStdOut().length() > 0) {
+                System.err.println("========= Child VM System.out ========");
+                System.err.print(pres.getStdOut());
+                System.err.println("======================================");
+            }
+
+            boolean failed = false;
+            String passedFormats = "";
+            String failedFormats = "";
+
+            for (int i = 0; i < ids.passedArray.length; i++) {
+                if (ids.passedArray[i]) passedFormats += ids.formats[i] + " ";
+                else {
+                    failed = true;
+                    failedFormats += ids.formats[i] + " ";
+                }
+            }
+
+            if (failed) {
+                throw new RuntimeException("test failed: images in following " +
+                "native formats are not transferred properly: " +
+                failedFormats);
+            } else {
+                System.err.println("images in following " +
+                "native formats are transferred properly: " + passedFormats);
+            }
+        } finally {
+            if (ids.frame != null) {
+                ids.frame.dispose();
+            }
         }
     }
 }
@@ -148,17 +160,23 @@ abstract class ImageTransferer {
                     alpha = 0;
                     red = 0;
                 }
-                pix[index++] = (alpha << 24) | (red << 16) | (green << 8) | blue;
+                pix[index++] =
+                        (alpha << 24) | (red << 16) | (green << 8) | blue;
             }
         }
-        return Toolkit.getDefaultToolkit().createImage(new MemoryImageSource(w, h, pix, 0, w));
+        return Toolkit.getDefaultToolkit().
+                createImage(new MemoryImageSource(w, h, pix, 0, w));
     }
 
 
     static String[] retrieveFormatsToTest() {
-        SystemFlavorMap sfm = (SystemFlavorMap) SystemFlavorMap.getDefaultFlavorMap();
-        java.util.List<String> ln = sfm.getNativesForFlavor(DataFlavor.imageFlavor);
-        if (OSInfo.OSType.WINDOWS.equals(OSInfo.getOSType()) && !ln.contains("METAFILEPICT")) {
+        SystemFlavorMap sfm =
+                (SystemFlavorMap) SystemFlavorMap.getDefaultFlavorMap();
+        java.util.List<String> ln =
+                sfm.getNativesForFlavor(DataFlavor.imageFlavor);
+        if (OSInfo.OSType.WINDOWS.equals(OSInfo.getOSType()) &&
+            !ln.contains("METAFILEPICT"))
+        {
             // for test failing on JDK without this fix
             ln.add("METAFILEPICT");
         }
@@ -166,15 +184,17 @@ abstract class ImageTransferer {
     }
 
     static void leaveFormat(String format) {
-        SystemFlavorMap sfm = (SystemFlavorMap) SystemFlavorMap.getDefaultFlavorMap();
-        sfm.setFlavorsForNative(format, new DataFlavor[]{DataFlavor.imageFlavor});
+        SystemFlavorMap sfm =
+                (SystemFlavorMap) SystemFlavorMap.getDefaultFlavorMap();
+        sfm.setFlavorsForNative(format,
+                                new DataFlavor[]{DataFlavor.imageFlavor});
         sfm.setNativesForFlavor(DataFlavor.imageFlavor, new String[]{format});
     }
 
 
     boolean areImagesIdentical(Image im1, Image im2) {
         if (formats[fi].equals("JFIF") || formats[fi].equals("image/jpeg") ||
-                formats[fi].equals("GIF") || formats[fi].equals("image/gif")) {
+        formats[fi].equals("GIF") || formats[fi].equals("image/gif")) {
             // JFIF and GIF are lossy formats
             return true;
         }
@@ -186,14 +206,14 @@ abstract class ImageTransferer {
         }
 
         if (formats[fi].equals("PNG") ||
-                formats[fi].equals("image/png") ||
-                formats[fi].equals("image/x-png")) {
+        formats[fi].equals("image/png") ||
+        formats[fi].equals("image/x-png")) {
             // check alpha as well
             for (int i = 0; i < ib1.length; i++) {
                 if (ib1[i] != ib2[i]) {
                     System.err.println("different pixels: " +
-                            Integer.toHexString(ib1[i]) + " " +
-                            Integer.toHexString(ib2[i]));
+                    Integer.toHexString(ib1[i]) + " " +
+                    Integer.toHexString(ib2[i]));
                     return false;
                 }
             }
@@ -201,8 +221,8 @@ abstract class ImageTransferer {
             for (int i = 0; i < ib1.length; i++) {
                 if ((ib1[i] & 0x00FFFFFF) != (ib2[i] & 0x00FFFFFF)) {
                     System.err.println("different pixels: " +
-                            Integer.toHexString(ib1[i]) + " " +
-                            Integer.toHexString(ib2[i]));
+                    Integer.toHexString(ib1[i]) + " " +
+                    Integer.toHexString(ib2[i]));
                     return false;
                 }
             }
@@ -213,7 +233,8 @@ abstract class ImageTransferer {
     private static int[] getImageData(Image image) {
         int width = image.getWidth(null);
         int height = image.getHeight(null);
-        BufferedImage bimage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage bimage =
+                new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = bimage.createGraphics();
         try {
             g2d.drawImage(image, 0, 0, width, height, null);
@@ -247,8 +268,8 @@ class ImageDragSource extends ImageTransferer {
         };
 
         new DragSource().createDefaultDragGestureRecognizer(frame,
-                DnDConstants.ACTION_COPY,
-                dge -> dge.startDrag(null, new ImageSelection(image), dsl));
+        DnDConstants.ACTION_COPY,
+        dge -> dge.startDrag(null, new ImageSelection(image), dsl));
         leaveFormat(formats[fi]);
     }
 
@@ -261,12 +282,15 @@ class ImageDragSource extends ImageTransferer {
 
 class ImageDropTarget extends ImageTransferer {
     private final Robot robot;
+    private static ImageDropTarget idt;
     private static Point startPoint, endPoint = new Point(250, 150);
+    private static int dropCount = 0;
 
     ImageDropTarget() throws AWTException {
         DropTargetAdapter dropTargetAdapter = new DropTargetAdapter() {
             @Override
             public void drop(DropTargetDropEvent dtde) {
+                dropCount++;
                 checkImage(dtde);
                 startImageDrag();
             }
@@ -299,7 +323,8 @@ class ImageDropTarget extends ImageTransferer {
                 dtde.dropComplete(true);
                 notifyTransferSuccess(true);
             } else {
-                System.err.println("transferred image is different from initial image");
+                System.err.println("transferred image is different from" +
+                        " initial image");
                 dtde.dropComplete(false);
                 notifyTransferSuccess(false);
             }
@@ -317,6 +342,9 @@ class ImageDropTarget extends ImageTransferer {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
+                if (idt.frame != null) {
+                    idt.frame.dispose();
+                }
                 e.printStackTrace();
                 // Exit from the child process
                 System.exit(1);
@@ -324,7 +352,9 @@ class ImageDropTarget extends ImageTransferer {
             robot.mouseMove(startPoint.x, startPoint.y);
             robot.mousePress(InputEvent.BUTTON1_MASK);
             for (Point p = new Point(startPoint); !p.equals(endPoint);
-                 p.translate(sign(endPoint.x - p.x), sign(endPoint.y - p.y))) {
+                 p.translate(sign(endPoint.x - p.x),
+                 sign(endPoint.y - p.y)))
+            {
                 robot.mouseMove(p.x, p.y);
                 try {
                     Thread.sleep(50);
@@ -341,6 +371,9 @@ class ImageDropTarget extends ImageTransferer {
         if (status) {
             System.err.println("format passed: " + formats[fi]);
         } else {
+            if (idt.frame != null) {
+                idt.frame.dispose();
+            }
             System.err.println("format failed: " + formats[fi]);
             System.exit(1);
         }
@@ -359,13 +392,15 @@ class ImageDropTarget extends ImageTransferer {
     }
 
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        idt = new ImageDropTarget();
         try {
-            ImageDropTarget idt = new ImageDropTarget();
+            idt.frame.setUndecorated(true);
 
             int x = Integer.parseInt(args[0]);
             int y = Integer.parseInt(args[1]);
-            startPoint = new Point(Integer.parseInt(args[2]), Integer.parseInt(args[3]));
+            startPoint = new Point(Integer.parseInt(args[2]),
+                                   Integer.parseInt(args[3]));
 
             idt.formats = new String[args.length - 4];
             System.arraycopy(args, 4, idt.formats, 0, args.length - 4);
@@ -376,7 +411,23 @@ class ImageDropTarget extends ImageTransferer {
             Util.sync();
 
             idt.startImageDrag();
+            new Thread(() -> {
+                try {
+                    Thread.sleep(120000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                if (dropCount == 0) {
+                    if (idt.frame != null) {
+                        idt.frame.dispose();
+                    }
+                    System.exit(1);
+                }
+            }).start();
         } catch (Throwable e) {
+            if (idt.frame != null) {
+                idt.frame.dispose();
+            }
             e.printStackTrace();
             System.exit(1);
         }
@@ -407,7 +458,9 @@ class ImageSelection implements Transferable {
     }
 
     @Override
-    public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException {
+    public Object getTransferData(DataFlavor flavor)
+            throws UnsupportedFlavorException
+    {
         if (flavor.equals(flavors[IMAGE])) {
             return data;
         } else {
@@ -415,3 +468,4 @@ class ImageSelection implements Transferable {
         }
     }
 }
+

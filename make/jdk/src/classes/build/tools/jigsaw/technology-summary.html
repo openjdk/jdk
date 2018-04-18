@@ -1,11 +1,10 @@
 <html>
 <head>
-<title>JCP Technologies in JDK 9</title>
+<title>JCP Technologies in JDK 11</title>
 <style type="text/css">
 table { border: 1px solid black; border-collapse: collapse; }
 tr.se-base { background-color: yellow; }
 tr.se-misc { background-color: bisque; }
-tr.se-ee   { background-color: sandybrown; }
 tr.se-ext  { background-color: pink; }
 tr.non-se  { background-color: lightsteelblue; }
 td { font-family: monospace; padding: 5px; border: 1px solid; }
@@ -13,19 +12,18 @@ td.agg     { background-color: lightgray; }
 </style>
 </head>
 
-<h1>JCP Technologies in JDK 9</h1>
+<h1>JCP Technologies in JDK 11</h1>
 
-<p><em>Last updated 2017-06-08</em></p>
+<p><em>Last updated 2018-02-07</em></p>
 
-<p><a href="module-summary.html">JDK 9 Module Summary</a> | Technologies in the <a href="https://docs.oracle.com/javase/8/docs/">Java SE 8 Documentation</a></p>
+<p><a href="module-summary.html">JDK 11 Module Summary</a> | Technologies in the <a href="https://docs.oracle.com/javase/9/docs/">Java SE 9 Documentation</a></p>
 
 <table>
 <tr><th>Legend</th></tr>
-<tr class="se-base"><td><a href="https://jcp.org/en/jsr/platform?listBy=2&listByType=platform">JCP technology in the Java SE Platform only -- in java.base</a></td></tr>
-<tr class="se-misc"><td><a href="https://jcp.org/en/jsr/platform?listBy=2&listByType=platform">JCP technology in the Java SE Platform only -- not in java.base</a></td></tr>
-<tr class="se-ee"><td><a href="https://jcp.org/en/jsr/platform?listBy=3&listByType=platform">JCP technology in the Java SE Platform derived from the Java EE Platform</a></a></td></tr>
+<tr class="se-base"><td><a href="https://jcp.org/en/jsr/platform?listBy=2&listByType=platform">JCP technology in the Java SE Platform -- in java.base</a></td></tr>
+<tr class="se-misc"><td><a href="https://jcp.org/en/jsr/platform?listBy=2&listByType=platform">JCP technology in the Java SE Platform -- not in java.base</a></td></tr>
 <tr class="se-ext"><td><a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#endorsed-standards-apis">JCP technology in the Java SE Platform derived from non-JCP standards</a></a></td></tr>
-<tr class="non-se"><td>JCP technology in neither the Java SE or EE Platforms</td></tr>
+<tr class="non-se"><td>JCP technology not included in the Java SE Platform</td></tr>
 </table>
 
 <br/>
@@ -50,7 +48,7 @@ td.agg     { background-color: lightgray; }
 <td>boot</td>
 <td>No</td>
 <td></td>
-<td class="agg" rowspan=37><a href="module-summary.html#java.se"/>java.se</a></td>
+<td class="agg" rowspan=38><a href="module-summary.html#java.se"/>java.se</a></td>
 </tr>
 
 <tr class="se-misc">
@@ -403,6 +401,15 @@ td.agg     { background-color: lightgray; }
 <td>No</td>
 <td></td>
 </tr>
+<tr class="se-misc">
+<td>---</td>
+<td>JTA (XA)</td>
+<td>UJSR for Java SE</td>
+<td><a href="module-summary.html#java.transaction.xa">java.transaction.xa</a></td>
+<td>plat</td>
+<td>No</td>
+<td>Formerly a <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#standalone-technologies">Standalone Technology</a> (unlisted)</td>
+</tr>
 
 <tr class="se-ext">
 <td>(W3C)</td>
@@ -412,102 +419,6 @@ td.agg     { background-color: lightgray; }
 <td>boot</td>
 <td>No</td>
 <td>Formerly an <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#endorsed-standards-apis">Endorsed Standard</a></td>
-</tr>
-
-<tr class="se-ext">
-<td>(OMG)</td>
-<td>RMI-IIOP, IDL</td>
-<td>UJSR for Java SE</td>
-<td><a href="module-summary.html#java.corba"/>java.corba</a></td>
-<td>plat</td>
-<td>Yes</td>
-<td>Formerly an <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#endorsed-standards-apis">Endorsed Standard</a></td>
-<td class="agg" rowspan=7><a href="module-summary.html#java.se.ee"/>java.se.ee</a></td>
-</tr>
-
-<tr class="se-ee">
-<td><a href="https://jcp.org/en/jsr/detail?id=67">67</a></td>
-<td>SAAJ</td>
-<td>Original JSR</td>
-<td><a href="module-summary.html#java.xml.ws">java.xml.ws</a></td>
-<td>plat</td>
-<td>Yes</td>
-<td>Formerly a <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#standalone-technologies">Standalone Technology</a> (f.k.a. JAXM)</td>
-</tr>
-
-<tr class="se-ee">
-<td><a href="https://jcp.org/en/jsr/detail?id=181">181</a></td>
-<td>Web Services Metadata</td>
-<td>Original JSR</td>
-<td><a href="module-summary.html#java.xml.ws">java.xml.ws</a></td>
-<td>plat</td>
-<td>Yes</td>
-<td>Formerly a <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#standalone-technologies">Standalone Technology</a> (unlisted)</td>
-</tr>
-
-<tr class="se-ee">
-<td><a href="https://jcp.org/en/jsr/detail?id=222">222</a></td>
-<td>JAXB</td>
-<td>Original JSR</td>
-<td><a href="module-summary.html#java.xml.bind">java.xml.bind</a></td>
-<td>plat</td>
-<td>Yes</td>
-<td>Formerly a <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#standalone-technologies">Standalone Technology</a></td>
-</tr>
-
-<tr class="se-ee">
-<td><a href="https://jcp.org/en/jsr/detail?id=224">224</a></td>
-<td>JAXWS</td>
-<td>Original JSR</td>
-<td><a href="module-summary.html#java.xml.ws">java.xml.ws</a></td>
-<td>plat</td>
-<td>Yes</td>
-<td>Formerly a <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#standalone-technologies">Standalone Technology</a></td>
-</tr>
-
-<!-- The Java SE Platform incorporates a smaller version of the javax.annotation package than the Java EE Platform. -->
-<tr class="se-ee">
-<td><a href="https://jcp.org/en/jsr/detail?id=250">250</a></td>
-<td>Common Annotations</td>
-<td>Original JSR</td>
-<td><a href="module-summary.html#java.xml.ws.annotation">java.xml.ws.annotation</a></td>
-<td>plat</td>
-<td>Yes</td>
-<td>Formerly a <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#standalone-technologies">Standalone Technology</a> (unlisted)</td>
-</tr>
-
-<!-- The Java SE Platform incorporates a smaller version of the javax.transaction package than the Java EE Platform. -->
-<tr class="se-ee">
-<td><a href="https://jcp.org/en/jsr/detail?id=907">907</a></td>
-<td>JTA (non-XA)</td>
-<td>Original JSR</td>
-<td><a href="module-summary.html#java.transaction">java.transaction</a></td>
-<td>plat</td>
-<td>Yes</td>
-<td>Formerly a <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#standalone-technologies">Standalone Technology</a> (unlisted)</td>
-</tr>
-
-<!-- The Java SE Platform incorporates the same version of the javax.transaction.xa package as the Java EE Platform. -->
-<tr class="se-ee">
-<td><a href="https://jcp.org/en/jsr/detail?id=907">907</a></td>
-<td>JTA (XA)</td>
-<td>Original JSR</td>
-<td><a href="module-summary.html#java.sql"/>java.sql</a></td>
-<td>plat</td>
-<td>No</td>
-<td>Formerly a <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#standalone-technologies">Standalone Technology</a> (unlisted)</td>
-<td class="agg"><a href="module-summary.html#java.se"/>java.se</a></td>
-</tr>
-
-<tr class="se-misc">
-<td><a href="https://jcp.org/en/jsr/detail?id=925">925</a></td>
-<td>JAF</td>
-<td>Original JSR</td>
-<td><a href="module-summary.html#java.activation">java.activation</a></a></td>
-<td>plat</td>
-<td>Yes</td>
-<td>Formerly a <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#standalone-technologies">Standalone Technology</a> (unlisted)</td>
-<td class="agg"><a href="module-summary.html#java.se.ee"/>java.se.ee</a></td>
 </tr>
 
 <tr class="non-se">

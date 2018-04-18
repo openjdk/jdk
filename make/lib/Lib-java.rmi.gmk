@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,23 +27,15 @@ include LibCommon.gmk
 
 ################################################################################
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBRMI, \
-    LIBRARY := rmi, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+$(eval $(call SetupJdkLibrary, BUILD_LIBRMI, \
+    NAME := rmi, \
     SRC := $(TOPDIR)/src/java.rmi/share/native/librmi, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) -I$(SUPPORT_OUTPUTDIR)/headers/java.rmi, \
-    MAPFILE := $(TOPDIR)/make/mapfiles/librmi/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljvm, \
     LIBS_windows := jvm.lib, \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-         -D "JDK_FNAME=rmi.dll" \
-         -D "JDK_INTERNAL_NAME=rmi" \
-         -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/librmi, \
 ))
 
 $(BUILD_LIBRMI): $(call FindLib, java.base, java)

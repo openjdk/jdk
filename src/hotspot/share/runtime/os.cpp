@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "gc/shared/vmGCOperations.hpp"
+#include "logging/log.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -47,11 +48,12 @@
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
@@ -84,12 +86,32 @@ julong os::num_frees = 0;           // # of calls to free
 julong os::free_bytes = 0;          // # of bytes freed
 #endif
 
-static juint cur_malloc_words = 0;  // current size for MallocMaxTestWords
+static size_t cur_malloc_words = 0;  // current size for MallocMaxTestWords
 
 void os_init_globals() {
   // Called from init_globals().
   // See Threads::create_vm() in thread.cpp, and init.cpp.
   os::init_globals();
+}
+
+static time_t get_timezone(const struct tm* time_struct) {
+#if defined(_ALLBSD_SOURCE)
+  return time_struct->tm_gmtoff;
+#elif defined(_WINDOWS)
+  long zone;
+  _get_timezone(&zone);
+  return static_cast<time_t>(zone);
+#else
+  return timezone;
+#endif
+}
+
+int os::snprintf(char* buf, size_t len, const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  int result = os::vsnprintf(buf, len, fmt, args);
+  va_end(args);
+  return result;
 }
 
 // Fill in buffer with current local time as an ISO-8601 string.
@@ -136,11 +158,7 @@ char* os::iso8601_time(char* buffer, size_t buffer_length, bool utc) {
       return NULL;
     }
   }
-#if defined(_ALLBSD_SOURCE)
-  const time_t zone = (time_t) time_struct.tm_gmtoff;
-#else
-  const time_t zone = timezone;
-#endif
+  const time_t zone = get_timezone(&time_struct);
 
   // If daylight savings time is in effect,
   // we are 1 hour East of our time zone
@@ -610,9 +628,12 @@ char* os::strdup_check_oom(const char* str, MEMFLAGS flags) {
 static void verify_memory(void* ptr) {
   GuardedMemory guarded(ptr);
   if (!guarded.verify_guards()) {
-    tty->print_cr("## nof_mallocs = " UINT64_FORMAT ", nof_frees = " UINT64_FORMAT, os::num_mallocs, os::num_frees);
-    tty->print_cr("## memory stomp:");
-    guarded.print_on(tty);
+    LogTarget(Warning, malloc, free) lt;
+    ResourceMark rm;
+    LogStream ls(lt);
+    ls.print_cr("## nof_mallocs = " UINT64_FORMAT ", nof_frees = " UINT64_FORMAT, os::num_mallocs, os::num_frees);
+    ls.print_cr("## memory stomp:");
+    guarded.print_on(&ls);
     fatal("memory stomping error");
   }
 }
@@ -625,12 +646,12 @@ static void verify_memory(void* ptr) {
 //
 static bool has_reached_max_malloc_test_peak(size_t alloc_size) {
   if (MallocMaxTestWords > 0) {
-    jint words = (jint)(alloc_size / BytesPerWord);
+    size_t words = (alloc_size / BytesPerWord);
 
     if ((cur_malloc_words + words) > MallocMaxTestWords) {
       return true;
     }
-    Atomic::add(words, (volatile jint *)&cur_malloc_words);
+    Atomic::add(words, &cur_malloc_words);
   }
   return false;
 }
@@ -684,13 +705,10 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   ptr = guarded.get_user_ptr();
 #endif
   if ((intptr_t)ptr == (intptr_t)MallocCatchPtr) {
-    tty->print_cr("os::malloc caught, " SIZE_FORMAT " bytes --> " PTR_FORMAT, size, p2i(ptr));
+    log_warning(malloc, free)("os::malloc caught, " SIZE_FORMAT " bytes --> " PTR_FORMAT, size, p2i(ptr));
     breakpoint();
   }
   debug_only(if (paranoid) verify_memory(ptr));
-  if (PrintMalloc && tty != NULL) {
-    tty->print_cr("os::malloc " SIZE_FORMAT " bytes --> " PTR_FORMAT, size, p2i(ptr));
-  }
 
   // we do not track guard memory
   return MemTracker::record_malloc((address)ptr, size, memflags, stack, level);
@@ -727,7 +745,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     return os::malloc(size, memflags, stack);
   }
   if ((intptr_t)memblock == (intptr_t)MallocCatchPtr) {
-    tty->print_cr("os::realloc caught " PTR_FORMAT, p2i(memblock));
+    log_warning(malloc, free)("os::realloc caught " PTR_FORMAT, p2i(memblock));
     breakpoint();
   }
   // NMT support
@@ -735,18 +753,15 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
   verify_memory(membase);
   // always move the block
   void* ptr = os::malloc(size, memflags, stack);
-  if (PrintMalloc && tty != NULL) {
-    tty->print_cr("os::realloc " SIZE_FORMAT " bytes, " PTR_FORMAT " --> " PTR_FORMAT, size, p2i(memblock), p2i(ptr));
-  }
   // Copy to new memory if malloc didn't fail
-  if ( ptr != NULL ) {
+  if (ptr != NULL ) {
     GuardedMemory guarded(MemTracker::malloc_base(memblock));
     // Guard's user data contains NMT header
     size_t memblock_size = guarded.get_user_size() - MemTracker::malloc_header_size(memblock);
     memcpy(ptr, memblock, MIN2(size, memblock_size));
     if (paranoid) verify_memory(MemTracker::malloc_base(ptr));
     if ((intptr_t)ptr == (intptr_t)MallocCatchPtr) {
-      tty->print_cr("os::realloc caught, " SIZE_FORMAT " bytes --> " PTR_FORMAT, size, p2i(ptr));
+      log_warning(malloc, free)("os::realloc caught, " SIZE_FORMAT " bytes --> " PTR_FORMAT, size, p2i(ptr));
       breakpoint();
     }
     os::free(memblock);
@@ -761,7 +776,7 @@ void  os::free(void *memblock) {
 #ifdef ASSERT
   if (memblock == NULL) return;
   if ((intptr_t)memblock == (intptr_t)MallocCatchPtr) {
-    if (tty != NULL) tty->print_cr("os::free caught " PTR_FORMAT, p2i(memblock));
+    log_warning(malloc, free)("os::free caught " PTR_FORMAT, p2i(memblock));
     breakpoint();
   }
   void* membase = MemTracker::record_free(memblock);
@@ -771,9 +786,6 @@ void  os::free(void *memblock) {
   size_t size = guarded.get_user_size();
   inc_stat_counter(&free_bytes, size);
   membase = guarded.release_for_freeing();
-  if (PrintMalloc && tty != NULL) {
-      fprintf(stderr, "os::free " SIZE_FORMAT " bytes --> " PTR_FORMAT "\n", size, (uintptr_t)membase);
-  }
   ::free(membase);
 #else
   void* membase = MemTracker::record_free(memblock);
@@ -987,6 +999,11 @@ void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
 // The verbose parameter is only set by the debug code in one case
 void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   address addr = (address)x;
+  // Handle NULL first, so later checks don't need to protect against it.
+  if (addr == NULL) {
+    st->print_cr("0x0 is NULL");
+    return;
+  }
   CodeBlob* b = CodeCache::find_blob_unsafe(addr);
   if (b != NULL) {
     if (b->is_buffer_blob()) {
@@ -1087,7 +1104,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   }
 #ifndef PRODUCT
   // we don't keep the block list in product mode
-  if (JNIHandleBlock::any_contains((jobject) addr)) {
+  if (JNIHandles::is_local_handle((jobject) addr)) {
     st->print_cr(INTPTR_FORMAT " is a local jni handle", p2i(addr));
     return;
   }
@@ -1141,32 +1158,10 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   st->print_cr(INTPTR_FORMAT " is an unknown value", p2i(addr));
 }
 
-// Looks like all platforms except IA64 can use the same function to check
-// if C stack is walkable beyond current frame. The check for fp() is not
+// Looks like all platforms can use the same function to check if C
+// stack is walkable beyond current frame. The check for fp() is not
 // necessary on Sparc, but it's harmless.
 bool os::is_first_C_frame(frame* fr) {
-#if (defined(IA64) && !defined(AIX)) && !defined(_WIN32)
-  // On IA64 we have to check if the callers bsp is still valid
-  // (i.e. within the register stack bounds).
-  // Notice: this only works for threads created by the VM and only if
-  // we walk the current stack!!! If we want to be able to walk
-  // arbitrary other threads, we'll have to somehow store the thread
-  // object in the frame.
-  Thread *thread = Thread::current();
-  if ((address)fr->fp() <=
-      thread->register_stack_base() HPUX_ONLY(+ 0x0) LINUX_ONLY(+ 0x50)) {
-    // This check is a little hacky, because on Linux the first C
-    // frame's ('start_thread') register stack frame starts at
-    // "register_stack_base + 0x48" while on HPUX, the first C frame's
-    // ('__pthread_bound_body') register stack frame seems to really
-    // start at "register_stack_base".
-    return true;
-  } else {
-    return false;
-  }
-#elif defined(IA64) && defined(_WIN32)
-  return true;
-#else
   // Load up sp, fp, sender sp and sender fp, check for reasonable values.
   // Check usp first, because if that's bad the other accessors may fault
   // on some architectures.  Ditto ufp second, etc.
@@ -1196,7 +1191,6 @@ bool os::is_first_C_frame(frame* fr) {
   if (old_fp - ufp > 64 * K) return true;
 
   return false;
-#endif
 }
 
 
@@ -1706,7 +1700,7 @@ char* os::attempt_reserve_memory_at(size_t bytes, char* addr, int file_desc) {
   } else {
     result = pd_attempt_reserve_memory_at(bytes, addr);
     if (result != NULL) {
-      MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC);
+      MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
     }
   }
   return result;
@@ -1749,7 +1743,7 @@ void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
 bool os::uncommit_memory(char* addr, size_t bytes) {
   bool res;
   if (MemTracker::tracking_level() > NMT_minimal) {
-    Tracker tkr = MemTracker::get_virtual_memory_uncommit_tracker();
+    Tracker tkr(Tracker::uncommit);
     res = pd_uncommit_memory(addr, bytes);
     if (res) {
       tkr.record((address)addr, bytes);
@@ -1763,7 +1757,7 @@ bool os::uncommit_memory(char* addr, size_t bytes) {
 bool os::release_memory(char* addr, size_t bytes) {
   bool res;
   if (MemTracker::tracking_level() > NMT_minimal) {
-    Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
+    Tracker tkr(Tracker::release);
     res = pd_release_memory(addr, bytes);
     if (res) {
       tkr.record((address)addr, bytes);
@@ -1800,7 +1794,7 @@ char* os::remap_memory(int fd, const char* file_name, size_t file_offset,
 bool os::unmap_memory(char *addr, size_t bytes) {
   bool result;
   if (MemTracker::tracking_level() > NMT_minimal) {
-    Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
+    Tracker tkr(Tracker::release);
     result = pd_unmap_memory(addr, bytes);
     if (result) {
       tkr.record((address)addr, bytes);
@@ -1826,8 +1820,7 @@ void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 os::SuspendResume::State os::SuspendResume::switch_state(os::SuspendResume::State from,
                                                          os::SuspendResume::State to)
 {
-  os::SuspendResume::State result =
-    (os::SuspendResume::State) Atomic::cmpxchg((jint) to, (jint *) &_state, (jint) from);
+  os::SuspendResume::State result = Atomic::cmpxchg(to, &_state, from);
   if (result == from) {
     // success
     return to;

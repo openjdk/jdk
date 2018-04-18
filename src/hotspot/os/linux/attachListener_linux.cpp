@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,9 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "logging/log.hpp"
+#include "memory/allocation.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.inline.hpp"
 #include "services/attachListener.hpp"
 #include "services/dtraceAttacher.hpp"
@@ -136,6 +138,10 @@ class ArgumentIterator : public StackObj {
   }
   char* next() {
     if (*_pos == '\0') {
+      // advance the iterator if possible (null arguments)
+      if (_pos < _end) {
+        _pos += 1;
+      }
       return NULL;
     }
     char* res = _pos;
@@ -194,6 +200,7 @@ int LinuxAttachListener::init() {
 
   // bind socket
   struct sockaddr_un addr;
+  memset((void *)&addr, 0, sizeof(addr));
   addr.sun_family = AF_UNIX;
   strcpy(addr.sun_path, initial_path);
   ::unlink(initial_path);
@@ -206,10 +213,10 @@ int LinuxAttachListener::init() {
   // put in listen mode, set permissions, and rename into place
   res = ::listen(listener, 5);
   if (res == 0) {
-      RESTARTABLE(::chmod(initial_path, S_IREAD|S_IWRITE), res);
-      if (res == 0) {
-          res = ::rename(initial_path, path);
-      }
+    RESTARTABLE(::chmod(initial_path, S_IREAD|S_IWRITE), res);
+    if (res == 0) {
+      res = ::rename(initial_path, path);
+    }
   }
   if (res == -1) {
     ::close(listener);
@@ -338,10 +345,10 @@ LinuxAttachOperation* LinuxAttachListener::dequeue() {
     }
 
     // get the credentials of the peer and check the effective uid/guid
-    // - check with jeff on this.
     struct ucred cred_info;
     socklen_t optlen = sizeof(cred_info);
     if (::getsockopt(s, SOL_SOCKET, SO_PEERCRED, (void*)&cred_info, &optlen) == -1) {
+      log_debug(attach)("Failed to get socket option SO_PEERCRED");
       ::close(s);
       continue;
     }
@@ -349,6 +356,7 @@ LinuxAttachOperation* LinuxAttachListener::dequeue() {
     gid_t egid = getegid();
 
     if (cred_info.uid != euid || cred_info.gid != egid) {
+      log_debug(attach)("euid/egid check failed (%d/%d vs %d/%d)", cred_info.uid, cred_info.gid, euid, egid);
       ::close(s);
       continue;
     }
@@ -434,7 +442,6 @@ AttachOperation* AttachListener::dequeue() {
   return op;
 }
 
-
 // Performs initialization at vm startup
 // For Linux we remove any stale .java_pid file which could cause
 // an attaching process to think we are ready to receive on the
@@ -490,10 +497,10 @@ bool AttachListener::is_init_trigger() {
   if (init_at_startup() || is_initialized()) {
     return false;               // initialized at startup or already initialized
   }
-  char fn[PATH_MAX+1];
-  sprintf(fn, ".attach_pid%d", os::current_process_id());
+  char fn[PATH_MAX + 1];
   int ret;
   struct stat64 st;
+  sprintf(fn, ".attach_pid%d", os::current_process_id());
   RESTARTABLE(::stat64(fn, &st), ret);
   if (ret == -1) {
     log_trace(attach)("Failed to find attach file: %s, trying alternate", fn);
@@ -509,10 +516,10 @@ bool AttachListener::is_init_trigger() {
     // a bogus user creates the file
     if (st.st_uid == geteuid()) {
       init();
-      log_trace(attach)("Attach trigerred by %s", fn);
+      log_trace(attach)("Attach triggered by %s", fn);
       return true;
     } else {
-      log_debug(attach)("File %s has wrong user id %d (vs %d). Attach is not trigerred", fn, st.st_uid, geteuid());
+      log_debug(attach)("File %s has wrong user id %d (vs %d). Attach is not triggered", fn, st.st_uid, geteuid());
     }
   }
   return false;

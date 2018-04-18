@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -538,7 +538,7 @@ inline void ParallelCompactData::RegionData::decrement_destination_count()
 {
   assert(_dc_and_los < dc_claimed, "already claimed");
   assert(_dc_and_los >= dc_one, "count would go negative");
-  Atomic::add((int)dc_mask, (volatile int*)&_dc_and_los);
+  Atomic::add(dc_mask, &_dc_and_los);
 }
 
 inline HeapWord* ParallelCompactData::RegionData::data_location() const
@@ -578,7 +578,7 @@ inline bool ParallelCompactData::RegionData::claim_unsafe()
 inline void ParallelCompactData::RegionData::add_live_obj(size_t words)
 {
   assert(words <= (size_t)los_mask - live_obj_size(), "overflow");
-  Atomic::add((int) words, (volatile int*) &_dc_and_los);
+  Atomic::add(static_cast<region_sz_t>(words), &_dc_and_los);
 }
 
 inline void ParallelCompactData::RegionData::set_highest_ref(HeapWord* addr)
@@ -950,19 +950,7 @@ class PSParallelCompact : AllStatic {
     ParCompactionManager* _cm;
   };
 
-  class AdjustKlassClosure : public KlassClosure {
-   public:
-    AdjustKlassClosure(ParCompactionManager* cm) {
-      assert(cm != NULL, "associate ParCompactionManage should not be NULL");
-      _cm = cm;
-    }
-    void do_klass(Klass* klass);
-   private:
-    ParCompactionManager* _cm;
-  };
-
   friend class AdjustPointerClosure;
-  friend class AdjustKlassClosure;
   friend class RefProcTaskProxy;
   friend class PSParallelCompactTest;
 

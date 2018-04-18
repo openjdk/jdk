@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 /**
  * @test
- * @bug 6614214
+ * @bug 6614214 8198613
  * @summary Verifies that we enter the fs mode on the correct screen.
  * Here is how to test: start the test on on a multi-screen system.
  * Verify that the display is correctly tracked by dragging the frame back
@@ -40,7 +40,6 @@
  *
  * @run main/manual/othervm DeviceIdentificationTest
  * @run main/manual/othervm -Dsun.java2d.noddraw=true DeviceIdentificationTest
- * @run main/manual/othervm -Dsun.java2d.opengl=True DeviceIdentificationTest
  */
 
 import java.awt.Button;

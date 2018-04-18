@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,7 +37,7 @@
 // secondary complication -- not all code employing C call convention
 // executes as x86 code though -- we generate some of it
 
-class Argument VALUE_OBJ_CLASS_SPEC {
+class Argument {
  public:
   enum {
     n_int_register_parameters_c   = 8,  // r0, r1, ... r7 (c_rarg0, c_rarg1, ...)
@@ -338,7 +338,7 @@ static inline unsigned long uabs(long n) { return uabs((unsigned long)n); }
 static inline unsigned long uabs(int n) { return uabs((unsigned int)n); }
 
 // Addressing modes
-class Address VALUE_OBJ_CLASS_SPEC {
+class Address {
  public:
 
   enum mode { no_mode, base_plus_offset, pre, post, pcrel,
@@ -819,7 +819,7 @@ public:
   void NAME(Register Rd, Register Rn, unsigned immr, unsigned imms) {   \
     starti;                                                             \
     f(opcode, 31, 22), f(immr, 21, 16), f(imms, 15, 10);                \
-    rf(Rn, 5), rf(Rd, 0);                                               \
+    zrf(Rn, 5), rf(Rd, 0);                                              \
   }
 
   INSN(sbfmw, 0b0001001100);
@@ -848,7 +848,7 @@ public:
   // architecture.  In debug mode we shrink it in order to test
   // trampolines, but not so small that branches in the interpreter
   // are out of range.
-  static const unsigned long branch_range = INCLUDE_JVMCI ? 128 * M : NOT_DEBUG(128 * M) DEBUG_ONLY(2 * M);
+  static const unsigned long branch_range = NOT_DEBUG(128 * M) DEBUG_ONLY(2 * M);
 
   static bool reachable_from_branch_at(address branch, address target) {
     return uabs(target - branch) < branch_range;
@@ -2048,21 +2048,21 @@ public:
     starti;
     f(0,31), f((int)T & 1, 30);
     f(op1, 29, 21), f(0, 20, 16), f(op2, 15, 12);
-    f((int)T >> 1, 11, 10), rf(Xn, 5), rf(Vt, 0);
+    f((int)T >> 1, 11, 10), srf(Xn, 5), rf(Vt, 0);
   }
   void ld_st(FloatRegister Vt, SIMD_Arrangement T, Register Xn,
              int imm, int op1, int op2) {
     starti;
     f(0,31), f((int)T & 1, 30);
     f(op1 | 0b100, 29, 21), f(0b11111, 20, 16), f(op2, 15, 12);
-    f((int)T >> 1, 11, 10), rf(Xn, 5), rf(Vt, 0);
+    f((int)T >> 1, 11, 10), srf(Xn, 5), rf(Vt, 0);
   }
   void ld_st(FloatRegister Vt, SIMD_Arrangement T, Register Xn,
              Register Xm, int op1, int op2) {
     starti;
     f(0,31), f((int)T & 1, 30);
     f(op1 | 0b100, 29, 21), rf(Xm, 16), f(op2, 15, 12);
-    f((int)T >> 1, 11, 10), rf(Xn, 5), rf(Vt, 0);
+    f((int)T >> 1, 11, 10), srf(Xn, 5), rf(Vt, 0);
   }
 
  void ld_st(FloatRegister Vt, SIMD_Arrangement T, Address a, int op1, int op2) {
@@ -2295,23 +2295,32 @@ public:
     rf(Vn, 5), rf(Rd, 0);
   }
 
-#define INSN(NAME, opc, opc2)                                           \
+#define INSN(NAME, opc, opc2, isSHR)                                    \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, int shift){ \
     starti;                                                             \
-    /* The encodings for the immh:immb fields (bits 22:16) are          \
-     *   0001 xxx       8B/16B, shift = xxx                             \
-     *   001x xxx       4H/8H,  shift = xxxx                            \
-     *   01xx xxx       2S/4S,  shift = xxxxx                           \
-     *   1xxx xxx       1D/2D,  shift = xxxxxx (1D is RESERVED)         \
+    /* The encodings for the immh:immb fields (bits 22:16) in *SHR are  \
+     *   0001 xxx       8B/16B, shift = 16  - UInt(immh:immb)           \
+     *   001x xxx       4H/8H,  shift = 32  - UInt(immh:immb)           \
+     *   01xx xxx       2S/4S,  shift = 64  - UInt(immh:immb)           \
+     *   1xxx xxx       1D/2D,  shift = 128 - UInt(immh:immb)           \
+     *   (1D is RESERVED)                                               \
+     * for SHL shift is calculated as:                                  \
+     *   0001 xxx       8B/16B, shift = UInt(immh:immb) - 8             \
+     *   001x xxx       4H/8H,  shift = UInt(immh:immb) - 16            \
+     *   01xx xxx       2S/4S,  shift = UInt(immh:immb) - 32            \
+     *   1xxx xxx       1D/2D,  shift = UInt(immh:immb) - 64            \
+     *   (1D is RESERVED)                                               \
      */                                                                 \
     assert((1 << ((T>>1)+3)) > shift, "Invalid Shift value");           \
+    int cVal = (1 << (((T >> 1) + 3) + (isSHR ? 1 : 0)));               \
+    int encodedShift = isSHR ? cVal - shift : cVal + shift;             \
     f(0, 31), f(T & 1, 30), f(opc, 29), f(0b011110, 28, 23),            \
-    f((1 << ((T>>1)+3))|shift, 22, 16); f(opc2, 15, 10), rf(Vn, 5), rf(Vd, 0); \
+    f(encodedShift, 22, 16); f(opc2, 15, 10), rf(Vn, 5), rf(Vd, 0);     \
   }
 
-  INSN(shl,  0, 0b010101);
-  INSN(sshr, 0, 0b000001);
-  INSN(ushr, 1, 0b000001);
+  INSN(shl,  0, 0b010101, /* isSHR = */ false);
+  INSN(sshr, 0, 0b000001, /* isSHR = */ true);
+  INSN(ushr, 1, 0b000001, /* isSHR = */ true);
 
 #undef INSN
 

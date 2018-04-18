@@ -30,6 +30,7 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -367,6 +368,7 @@ void BytecodePrinter::print_field_or_method(int orig_i, int i, outputStream* st)
   case JVM_CONSTANT_Fieldref:
     break;
   case JVM_CONSTANT_NameAndType:
+  case JVM_CONSTANT_Dynamic:
   case JVM_CONSTANT_InvokeDynamic:
     has_klass = false;
     break;
@@ -382,7 +384,7 @@ void BytecodePrinter::print_field_or_method(int orig_i, int i, outputStream* st)
     Symbol* klass = constants->klass_name_at(constants->uncached_klass_ref_index_at(i));
     st->print_cr(" %d <%s.%s%s%s> ", i, klass->as_C_string(), name->as_C_string(), sep, signature->as_C_string());
   } else {
-    if (tag.is_invoke_dynamic()) {
+    if (tag.is_dynamic_constant() || tag.is_invoke_dynamic()) {
       int bsm = constants->invoke_dynamic_bootstrap_method_ref_index_at(i);
       st->print(" bsm=%d", bsm);
     }

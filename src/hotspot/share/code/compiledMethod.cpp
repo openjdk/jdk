@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,12 @@
 #include "code/compiledMethod.inline.hpp"
 #include "code/scopeDesc.hpp"
 #include "code/codeCache.hpp"
-#include "prims/methodHandles.hpp"
-#include "interpreter/bytecode.hpp"
+#include "interpreter/bytecode.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/methodData.hpp"
+#include "oops/method.inline.hpp"
+#include "prims/methodHandles.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 
 CompiledMethod::CompiledMethod(Method* method, const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments)
@@ -439,11 +442,11 @@ void CompiledMethod::increase_unloading_clock() {
 }
 
 void CompiledMethod::set_unloading_clock(unsigned char unloading_clock) {
-  OrderAccess::release_store((volatile jubyte*)&_unloading_clock, unloading_clock);
+  OrderAccess::release_store(&_unloading_clock, unloading_clock);
 }
 
 unsigned char CompiledMethod::unloading_clock() {
-  return (unsigned char)OrderAccess::load_acquire((volatile jubyte*)&_unloading_clock);
+  return OrderAccess::load_acquire(&_unloading_clock);
 }
 
 // Processing of oop references should have been sufficient to keep

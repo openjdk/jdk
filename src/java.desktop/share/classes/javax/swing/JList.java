@@ -2180,24 +2180,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      */
     @Transient
     public int[] getSelectedIndices() {
-        ListSelectionModel sm = getSelectionModel();
-        int iMin = sm.getMinSelectionIndex();
-        int iMax = sm.getMaxSelectionIndex();
-
-        if ((iMin < 0) || (iMax < 0)) {
-            return new int[0];
-        }
-
-        int[] rvTmp = new int[1+ (iMax - iMin)];
-        int n = 0;
-        for(int i = iMin; i <= iMax; i++) {
-            if (sm.isSelectedIndex(i)) {
-                rvTmp[n++] = i;
-            }
-        }
-        int[] rv = new int[n];
-        System.arraycopy(rvTmp, 0, rv, 0, n);
-        return rv;
+        return getSelectionModel().getSelectedIndices();
     }
 
 
@@ -2269,10 +2252,12 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
 
         int iMin = sm.getMinSelectionIndex();
         int iMax = sm.getMaxSelectionIndex();
+        int size = dm.getSize();
 
-        if ((iMin < 0) || (iMax < 0)) {
+        if ((iMin < 0) || (iMax < 0) || (iMin >= size)) {
             return new Object[0];
         }
+        iMax = iMax < size ? iMax : size - 1;
 
         Object[] rvTmp = new Object[1+ (iMax - iMin)];
         int n = 0;
@@ -2299,23 +2284,23 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      */
     @BeanProperty(bound = false)
     public List<E> getSelectedValuesList() {
-        ListSelectionModel sm = getSelectionModel();
         ListModel<E> dm = getModel();
+        int[] selectedIndices = getSelectedIndices();
 
-        int iMin = sm.getMinSelectionIndex();
-        int iMax = sm.getMaxSelectionIndex();
-
-        if ((iMin < 0) || (iMax < 0)) {
-            return Collections.emptyList();
-        }
-
-        List<E> selectedItems = new ArrayList<E>();
-        for(int i = iMin; i <= iMax; i++) {
-            if (sm.isSelectedIndex(i)) {
+        if (selectedIndices.length > 0) {
+            int size = dm.getSize();
+            if (selectedIndices[0] >= size) {
+                return Collections.emptyList();
+            }
+            List<E> selectedItems = new ArrayList<E>();
+            for (int i : selectedIndices) {
+                if (i >= size)
+                    break;
                 selectedItems.add(dm.getElementAt(i));
             }
+            return selectedItems;
         }
-        return selectedItems;
+        return Collections.emptyList();
     }
 
 
@@ -2353,12 +2338,14 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
     @BeanProperty(bound = false)
     public E getSelectedValue() {
         int i = getMinSelectionIndex();
-        return (i == -1) ? null : getModel().getElementAt(i);
+        return ((i == -1) || (i >= getModel().getSize())) ? null :
+                getModel().getElementAt(i);
     }
 
 
     /**
      * Selects the specified object from the list.
+     * If the object passed is {@code null}, the selection is cleared.
      *
      * @param anObject      the object to select
      * @param shouldScroll  {@code true} if the list should scroll to display
@@ -2366,7 +2353,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      */
     public void setSelectedValue(Object anObject,boolean shouldScroll) {
         if(anObject == null)
-            setSelectedIndex(-1);
+            clearSelection();
         else if(!anObject.equals(getSelectedValue())) {
             int i,c;
             ListModel<E> dm = getModel();
@@ -2426,7 +2413,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      * <p>
      * If the model isn't empty, the width is the preferred size's width,
      * typically the width of the widest list element. The height is the
-     * {@code fixedCellHeight} multiplied by the {@code visibleRowCount},
+     * height of the cell with index 0 multiplied by the {@code visibleRowCount},
      * plus the list's vertical insets.
      * <p>
      * <b>{@code VERTICAL_WRAP} or {@code HORIZONTAL_WRAP}:</b>

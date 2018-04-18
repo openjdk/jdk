@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  *  @summary Check that various restricted packages that are supposed to be
  *           restricted by default or are listed in the package.access
  *           property in the java.security file are blocked
- *  @modules java.xml.ws java.corba
  *  @run main/othervm CheckPackageAccess
  */
 
@@ -150,16 +149,6 @@ public class CheckPackageAccess {
         new Test("java.security.jgss", "org.ietf.jgss", null,
                  "sun.security.krb5.internal.crypto", "sun.security.krb5",
                  null, null),
-        // java.xml.ws module loaded by platform loader but needs to be added
-        // and has an openQual pkg that is exported
-        new Test("java.xml.ws", "javax.xml.soap", null,
-                 "com.sun.xml.internal.stream.buffer",
-                 "com.sun.xml.internal.ws.api", null,
-                 "javax.xml.ws.wsaddressing"),
-        // java.xml.ws module loaded by platform loader but needs to be added
-        // and has an openQual pkg
-        new Test("java.corba", "javax.rmi", null, "sun.corba",
-                 "com.sun.corba.se.impl.util", "com.sun.jndi.cosnaming", null),
     };
 
     public static void main(String[] args) throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -881,7 +881,7 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
  * set to the error message text if msg != 0. Otherwise, *msg will be
  * set to NULL. Caller doesn't need to free the error message.
  */
-jzfile * JNICALL
+JNIEXPORT jzfile * JNICALL
 ZIP_Open(const char *name, char **pmsg)
 {
     jzfile *file = ZIP_Open_Generic(name, pmsg, O_RDONLY, 0);
@@ -895,7 +895,7 @@ ZIP_Open(const char *name, char **pmsg)
 /*
  * Closes the specified zip file object.
  */
-void JNICALL
+JNIEXPORT void JNICALL
 ZIP_Close(jzfile *zip)
 {
     MLOCK(zfiles_lock);
@@ -1094,7 +1094,7 @@ newEntry(jzfile *zip, jzcell *zc, AccessHint accessHint)
  * jzentry for each zip.  This optimizes a common access pattern.
  */
 
-void JNICALL
+JNIEXPORT void JNICALL
 ZIP_FreeEntry(jzfile *jz, jzentry *ze)
 {
     jzentry *last;
@@ -1115,7 +1115,7 @@ ZIP_FreeEntry(jzfile *jz, jzentry *ze)
  * Returns the zip entry corresponding to the specified name, or
  * NULL if not found.
  */
-jzentry *
+JNIEXPORT jzentry * JNICALL
 ZIP_GetEntry(jzfile *zip, char *name, jint ulen)
 {
     if (ulen == 0) {
@@ -1238,7 +1238,7 @@ Finally:
  * Returns the n'th (starting at zero) zip file entry, or NULL if the
  * specified index was out of range.
  */
-jzentry * JNICALL
+JNIEXPORT jzentry * JNICALL
 ZIP_GetNextEntry(jzfile *zip, jint n)
 {
     jzentry *result;
@@ -1254,7 +1254,7 @@ ZIP_GetNextEntry(jzfile *zip, jint n)
 /*
  * Locks the specified zip file for reading.
  */
-void
+JNIEXPORT void JNICALL
 ZIP_Lock(jzfile *zip)
 {
     MLOCK(zip->lock);
@@ -1263,7 +1263,7 @@ ZIP_Lock(jzfile *zip)
 /*
  * Unlocks the specified zip file.
  */
-void
+JNIEXPORT void JNICALL
 ZIP_Unlock(jzfile *zip)
 {
     MUNLOCK(zip->lock);
@@ -1310,7 +1310,7 @@ ZIP_GetEntryDataOffset(jzfile *zip, jzentry *entry)
  * The current implementation does not support reading an entry that
  * has the size bigger than 2**32 bytes in ONE invocation.
  */
-jint
+JNIEXPORT jint JNICALL
 ZIP_Read(jzfile *zip, jzentry *entry, jlong pos, void *buf, jint len)
 {
     jlong entry_size;
@@ -1439,7 +1439,7 @@ InflateFully(jzfile *zip, jzentry *entry, void *buf, char **msg)
  * The current implementation does not support reading an entry that
  * has the size bigger than 2**32 bytes in ONE invocation.
  */
-jzentry * JNICALL
+JNIEXPORT jzentry * JNICALL
 ZIP_FindEntry(jzfile *zip, char *name, jint *sizeP, jint *nameLenP)
 {
     jzentry *entry = ZIP_GetEntry(zip, name, 0);
@@ -1456,7 +1456,7 @@ ZIP_FindEntry(jzfile *zip, char *name, jint *sizeP, jint *nameLenP)
  * Note: this is called from the separately delivered VM (hotspot/classic)
  * so we have to be careful to maintain the expected behaviour.
  */
-jboolean JNICALL
+JNIEXPORT jboolean JNICALL
 ZIP_ReadEntry(jzfile *zip, jzentry *entry, unsigned char *buf, char *entryname)
 {
     char *msg;
@@ -1515,7 +1515,7 @@ ZIP_ReadEntry(jzfile *zip, jzentry *entry, unsigned char *buf, char *entryname)
     return JNI_TRUE;
 }
 
-jboolean JNICALL
+JNIEXPORT jboolean JNICALL
 ZIP_InflateFully(void *inBuf, jlong inLen, void *outBuf, jlong outLen, char **pmsg)
 {
     z_stream strm;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,28 +57,12 @@ jvmtiCapabilities JvmtiManageCapabilities::acquired_capabilities;
 
 void JvmtiManageCapabilities::initialize() {
   always_capabilities = init_always_capabilities();
-  if (JvmtiEnv::get_phase() != JVMTI_PHASE_ONLOAD) {
-    recompute_always_capabilities();
-  }
   onload_capabilities = init_onload_capabilities();
   always_solo_capabilities = init_always_solo_capabilities();
   onload_solo_capabilities = init_onload_solo_capabilities();
   always_solo_remaining_capabilities = init_always_solo_capabilities();
   onload_solo_remaining_capabilities = init_onload_solo_capabilities();
   memset(&acquired_capabilities, 0, sizeof(acquired_capabilities));
-}
-
-// if the capability sets are initialized in the onload phase then
-// it happens before class data sharing (CDS) is initialized. If it
-// turns out that CDS gets disabled then we must adjust the always
-// capabilities. To ensure a consistent view of the capabililties
-// anything we add here should already be in the onload set.
-void JvmtiManageCapabilities::recompute_always_capabilities() {
-  if (!UseSharedSpaces) {
-    jvmtiCapabilities jc = always_capabilities;
-    jc.can_generate_all_class_hook_events = 1;
-    always_capabilities = jc;
-  }
 }
 
 
@@ -94,6 +78,7 @@ jvmtiCapabilities JvmtiManageCapabilities::init_always_capabilities() {
   jc.can_get_synthetic_attribute = 1;
   jc.can_get_monitor_info = 1;
   jc.can_get_constant_pool = 1;
+  jc.can_generate_all_class_hook_events = 1;
   jc.can_generate_monitor_events = 1;
   jc.can_generate_garbage_collection_events = 1;
   jc.can_generate_compiled_method_load_events = 1;
@@ -126,7 +111,6 @@ jvmtiCapabilities JvmtiManageCapabilities::init_onload_capabilities() {
   jc.can_get_source_debug_extension = 1;
   jc.can_access_local_variables = 1;
   jc.can_maintain_original_method_order = 1;
-  jc.can_generate_all_class_hook_events = 1;
   jc.can_generate_single_step_events = 1;
   jc.can_generate_exception_events = 1;
   jc.can_generate_frame_pop_events = 1;
@@ -328,7 +312,10 @@ void JvmtiManageCapabilities::update() {
   }
 #endif // ZERO
 
-  if (avail.can_generate_breakpoint_events) {
+  if (avail.can_generate_breakpoint_events
+       || avail.can_generate_field_access_events
+       || avail.can_generate_field_modification_events)
+  {
     RewriteFrequentPairs = false;
   }
 

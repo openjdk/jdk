@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,25 +25,25 @@
 #ifndef SHARE_VM_GC_G1_G1_GLOBALS_HPP
 #define SHARE_VM_GC_G1_G1_GLOBALS_HPP
 
-#include "runtime/globals.hpp"
 #include <float.h> // for DBL_MAX
 //
 // Defines all globals flags used by the garbage-first compiler.
 //
 
-#define G1_FLAGS(develop, \
-                 develop_pd, \
-                 product, \
-                 product_pd, \
-                 diagnostic, \
-                 diagnostic_pd, \
-                 experimental, \
-                 notproduct, \
-                 manageable, \
-                 product_rw, \
-                 range, \
-                 constraint, \
-                 writeable) \
+#define GC_G1_FLAGS(develop,                                                \
+                    develop_pd,                                             \
+                    product,                                                \
+                    product_pd,                                             \
+                    diagnostic,                                             \
+                    diagnostic_pd,                                          \
+                    experimental,                                           \
+                    notproduct,                                             \
+                    manageable,                                             \
+                    product_rw,                                             \
+                    lp64_product,                                           \
+                    range,                                                  \
+                    constraint,                                             \
+                    writeable)                                              \
                                                                             \
   product(bool, G1UseAdaptiveIHOP, true,                                    \
           "Adaptively adjust the initiating heap occupancy from the "       \
@@ -184,9 +184,6 @@
           "-1 means print all.")                                            \
           range(-1, max_jint)                                               \
                                                                             \
-  develop(bool, G1ScrubRemSets, true,                                       \
-          "When true, do RS scrubbing after cleanup.")                      \
-                                                                            \
   product(uintx, G1ReservePercent, 10,                                      \
           "It determines the minimum reserve we should have in the heap "   \
           "to minimize the probability of promotion failure.")              \
@@ -212,16 +209,6 @@
           "Size of a work unit of cards claimed by a worker thread"         \
           "during RSet scanning.")                                          \
           range(1, max_uintx)                                               \
-                                                                            \
-  develop(uintx, G1SecondaryFreeListAppendLength, 5,                        \
-          "The number of regions we will add to the secondary free list "   \
-          "at every append operation")                                      \
-                                                                            \
-  develop(bool, G1StressConcRegionFreeing, false,                           \
-          "It stresses the concurrent region freeing operation")            \
-                                                                            \
-  develop(uintx, G1StressConcRegionFreeingDelayMillis, 0,                   \
-          "Artificial delay during concurrent region freeing")              \
                                                                             \
   develop(uintx, G1DummyRegionsPerGC, 0,                                    \
           "The number of dummy regions G1 will allocate at the end of "     \
@@ -269,6 +256,10 @@
           "Try to reclaim dead large objects that have a few stale "        \
           "references at every young GC.")                                  \
                                                                             \
+  experimental(size_t, G1RebuildRemSetChunkSize, 256 * K,                   \
+          "Chunk size used for rebuilding the remembered set.")             \
+          range(4 * K, 32 * M)                                              \
+                                                                            \
   experimental(uintx, G1OldCSetRegionThresholdPercent, 10,                  \
           "An upper bound for the number of old CSet regions expressed "    \
           "as a percentage of the heap size.")                              \
@@ -311,19 +302,5 @@
                                                                             \
   develop(bool, G1VerifyBitmaps, false,                                     \
           "Verifies the consistency of the marking bitmaps")
-
-G1_FLAGS(DECLARE_DEVELOPER_FLAG, \
-         DECLARE_PD_DEVELOPER_FLAG, \
-         DECLARE_PRODUCT_FLAG, \
-         DECLARE_PD_PRODUCT_FLAG, \
-         DECLARE_DIAGNOSTIC_FLAG, \
-         DECLARE_PD_DIAGNOSTIC_FLAG, \
-         DECLARE_EXPERIMENTAL_FLAG, \
-         DECLARE_NOTPRODUCT_FLAG, \
-         DECLARE_MANAGEABLE_FLAG, \
-         DECLARE_PRODUCT_RW_FLAG, \
-         IGNORE_RANGE, \
-         IGNORE_CONSTRAINT, \
-         IGNORE_WRITEABLE)
 
 #endif // SHARE_VM_GC_G1_G1_GLOBALS_HPP

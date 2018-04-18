@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.nio.channels.Channel;
 import java.io.FileDescriptor;
 import java.io.IOException;
 
-
 /**
  * An interface that allows translation (and more!).
  *
@@ -50,7 +49,7 @@ public interface SelChImpl extends Channel {
      *          contains at least one bit that the previous value did not
      *          contain
      */
-    public boolean translateAndUpdateReadyOps(int ops, SelectionKeyImpl sk);
+    boolean translateAndUpdateReadyOps(int ops, SelectionKeyImpl ski);
 
     /**
      * Sets the specified ops if present in interestOps. The specified
@@ -60,11 +59,12 @@ public interface SelChImpl extends Channel {
      *          contains at least one bit that the previous value did not
      *          contain
      */
-    public boolean translateAndSetReadyOps(int ops, SelectionKeyImpl sk);
+    boolean translateAndSetReadyOps(int ops, SelectionKeyImpl ski);
 
-    void translateAndSetInterestOps(int ops, SelectionKeyImpl sk);
-
-    int validOps();
+    /**
+     * Translates an interest operation set into a native event set
+     */
+    int translateInterestOps(int ops);
 
     void kill() throws IOException;
 

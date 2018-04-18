@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -53,26 +53,18 @@ ifneq ($(findstring $(OPENJDK_TARGET_OS), solaris linux), )
   endif
 endif
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBMANAGEMENT_EXT, \
-    LIBRARY := management_ext, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+$(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT_EXT, \
+    NAME := management_ext, \
     SRC := $(LIBMANAGEMENT_EXT_SRC), \
     LANG := C, \
     OPTIMIZATION := $(LIBMANAGEMENT_EXT_OPTIMIZATION), \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBMANAGEMENT_EXT_CFLAGS), \
-    MAPFILE := $(TOPDIR)/make/mapfiles/libmanagement_ext/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(JDKLIB_LIBS), \
     LIBS_solaris := -lkstat, \
     LIBS_aix := -lperfstat,\
     LIBS_windows := jvm.lib psapi.lib $(WIN_JAVA_LIB) advapi32.lib, \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=management_ext.dll" \
-        -D "JDK_INTERNAL_NAME=management_ext" \
-        -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libmanagement_ext, \
 ))
 
 $(BUILD_LIBMANAGEMENT_EXT): $(call FindLib, java.base, java)
@@ -80,3 +72,7 @@ $(BUILD_LIBMANAGEMENT_EXT): $(call FindLib, java.base, java)
 TARGETS += $(BUILD_LIBMANAGEMENT_EXT)
 
 ################################################################################
+
+# Include custom extension post hook
+$(eval $(call IncludeCustomExtension, lib/Lib-jdk.management-post.gmk))
+

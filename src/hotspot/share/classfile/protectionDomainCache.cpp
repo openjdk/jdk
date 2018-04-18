@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,14 +52,14 @@ void ProtectionDomainCacheTable::unlink(BoolObjectClosure* is_alive) {
     ProtectionDomainCacheEntry** p = bucket_addr(i);
     ProtectionDomainCacheEntry* entry = bucket(i);
     while (entry != NULL) {
-      if (is_alive->do_object_b(entry->literal())) {
+      if (is_alive->do_object_b(entry->object_no_keepalive())) {
         p = entry->next_addr();
       } else {
         LogTarget(Debug, protectiondomain) lt;
         if (lt.is_enabled()) {
           LogStream ls(lt);
           ls.print("protection domain unlinked: ");
-          entry->literal()->print_value_on(&ls);
+          entry->object_no_keepalive()->print_value_on(&ls);
           ls.cr();
         }
         *p = entry->next();
@@ -87,7 +87,7 @@ void ProtectionDomainCacheTable::print_on(outputStream* st) const {
     for (ProtectionDomainCacheEntry* probe = bucket(index);
                                      probe != NULL;
                                      probe = probe->next()) {
-      st->print_cr("%4d: protection_domain: " PTR_FORMAT, index, p2i(probe->literal()));
+      st->print_cr("%4d: protection_domain: " PTR_FORMAT, index, p2i(probe->object_no_keepalive()));
     }
   }
 }
@@ -96,8 +96,27 @@ void ProtectionDomainCacheTable::verify() {
   verify_table<ProtectionDomainCacheEntry>("Protection Domain Table");
 }
 
+oop ProtectionDomainCacheEntry::object() {
+  return RootAccess<ON_PHANTOM_OOP_REF>::oop_load(literal_addr());
+}
+
+oop ProtectionDomainEntry::object() {
+  return _pd_cache->object();
+}
+
+// The object_no_keepalive() call peeks at the phantomly reachable oop without
+// keeping it alive. This is okay to do in the VM thread state if it is not
+// leaked out to become strongly reachable.
+oop ProtectionDomainCacheEntry::object_no_keepalive() {
+  return RootAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(literal_addr());
+}
+
+oop ProtectionDomainEntry::object_no_keepalive() {
+  return _pd_cache->object_no_keepalive();
+}
+
 void ProtectionDomainCacheEntry::verify() {
-  guarantee(oopDesc::is_oop(literal()), "must be an oop");
+  guarantee(oopDesc::is_oop(object_no_keepalive()), "must be an oop");
 }
 
 ProtectionDomainCacheEntry* ProtectionDomainCacheTable::get(Handle protection_domain) {
@@ -113,7 +132,7 @@ ProtectionDomainCacheEntry* ProtectionDomainCacheTable::get(Handle protection_do
 
 ProtectionDomainCacheEntry* ProtectionDomainCacheTable::find_entry(int index, Handle protection_domain) {
   for (ProtectionDomainCacheEntry* e = bucket(index); e != NULL; e = e->next()) {
-    if (e->protection_domain() == protection_domain()) {
+    if (oopDesc::equals(e->object_no_keepalive(), protection_domain())) {
       return e;
     }
   }

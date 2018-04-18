@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,8 @@ import com.sun.imageio.plugins.common.I18N;
  *
  *  This class supports Microsoft Windows Bitmap Version 3-5,
  *  as well as OS/2 Bitmap Version 2.x (for single-image BMP file).
+ *  It also supports undocumented DIB header of type BITMAPV2INFOHEADER
+ *  & BITMAPV3INFOHEADER.
  */
 public class BMPImageReader extends ImageReader implements BMPConstants {
     // BMP Image types
@@ -94,16 +96,25 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
     private static final int VERSION_3_NT_16_BIT = 8;
     private static final int VERSION_3_NT_32_BIT = 9;
 
-    private static final int VERSION_4_1_BIT = 10;
-    private static final int VERSION_4_4_BIT = 11;
-    private static final int VERSION_4_8_BIT = 12;
-    private static final int VERSION_4_16_BIT = 13;
-    private static final int VERSION_4_24_BIT = 14;
-    private static final int VERSION_4_32_BIT = 15;
+    // All VERSION_3_EXT_* are for BITMAPV2INFOHEADER & BITMAPV3INFOHEADER
+    private static final int VERSION_3_EXT_1_BIT = 10;
+    private static final int VERSION_3_EXT_4_BIT = 11;
+    private static final int VERSION_3_EXT_8_BIT = 12;
+    private static final int VERSION_3_EXT_16_BIT = 13;
+    private static final int VERSION_3_EXT_24_BIT = 14;
+    private static final int VERSION_3_EXT_32_BIT = 15;
 
-    private static final int VERSION_3_XP_EMBEDDED = 16;
-    private static final int VERSION_4_XP_EMBEDDED = 17;
-    private static final int VERSION_5_XP_EMBEDDED = 18;
+    private static final int VERSION_4_1_BIT = 16;
+    private static final int VERSION_4_4_BIT = 17;
+    private static final int VERSION_4_8_BIT = 18;
+    private static final int VERSION_4_16_BIT = 19;
+    private static final int VERSION_4_24_BIT = 20;
+    private static final int VERSION_4_32_BIT = 21;
+
+    private static final int VERSION_3_XP_EMBEDDED = 22;
+    private static final int VERSION_3_EXT_EMBEDDED = 23;
+    private static final int VERSION_4_XP_EMBEDDED = 24;
+    private static final int VERSION_5_XP_EMBEDDED = 25;
 
     // BMP variables
     private long bitmapFileSize;
@@ -408,6 +419,63 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                 default:
                     throw new
                         IIOException(I18N.getString("BMPImageReader2"));
+                }
+            } else if (size == 52 || size == 56) {
+                // BITMAPV2INFOHEADER or BITMAPV3INFOHEADER
+                redMask = (int)iis.readUnsignedInt();
+                greenMask = (int)iis.readUnsignedInt();
+                blueMask = (int)iis.readUnsignedInt();
+                if (size == 56) {
+                    alphaMask = (int)iis.readUnsignedInt();
+                }
+
+                metadata.bmpVersion = VERSION_3_EXT;
+                // Read in the palette
+                int numberOfEntries = (int)((bitmapOffset-14-size) / 4);
+                int sizeOfPalette = numberOfEntries*4;
+                palette = new byte[sizeOfPalette];
+                iis.readFully(palette, 0, sizeOfPalette);
+                metadata.palette = palette;
+                metadata.paletteSize = numberOfEntries;
+
+                switch((int)compression) {
+
+                    case BI_JPEG:
+                    case BI_PNG:
+                        imageType = VERSION_3_EXT_EMBEDDED;
+                        break;
+                    default:
+                        if (bitsPerPixel == 1) {
+                            imageType = VERSION_3_EXT_1_BIT;
+                        } else if (bitsPerPixel == 4) {
+                            imageType = VERSION_3_EXT_4_BIT;
+                        } else if (bitsPerPixel == 8) {
+                            imageType = VERSION_3_EXT_8_BIT;
+                        } else if (bitsPerPixel == 16) {
+                            imageType = VERSION_3_EXT_16_BIT;
+                            if ((int)compression == BI_RGB) {
+                                redMask = 0x7C00;
+                                greenMask = 0x3E0;
+                                blueMask = 0x1F;
+                            }
+                        } else if (bitsPerPixel == 24) {
+                            imageType = VERSION_3_EXT_24_BIT;
+                        } else if (bitsPerPixel == 32) {
+                            imageType = VERSION_3_EXT_32_BIT;
+                            if ((int)compression == BI_RGB) {
+                                redMask   = 0x00FF0000;
+                                greenMask = 0x0000FF00;
+                                blueMask  = 0x000000FF;
+                            }
+                        } else {
+                            throw new
+                            IIOException(I18N.getString("BMPImageReader8"));
+                        }
+
+                        metadata.redMask = redMask;
+                        metadata.greenMask = greenMask;
+                        metadata.blueMask = blueMask;
+                        metadata.alphaMask = alphaMask;
                 }
             } else if (size == 108 || size == 124) {
                 // Windows 4.x BMP
@@ -908,15 +976,18 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
             break;
 
         case VERSION_3_XP_EMBEDDED:
+        case VERSION_3_EXT_EMBEDDED:
         case VERSION_4_XP_EMBEDDED:
         case VERSION_5_XP_EMBEDDED:
             bi = readEmbedded((int)compression, bi, param);
             break;
 
+        case VERSION_3_EXT_1_BIT:
         case VERSION_4_1_BIT:
             read1Bit(bdata);
             break;
 
+        case VERSION_3_EXT_4_BIT:
         case VERSION_4_4_BIT:
             switch((int)compression) {
 
@@ -934,6 +1005,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
             }
             break;
 
+        case VERSION_3_EXT_8_BIT:
         case VERSION_4_8_BIT:
             switch((int)compression) {
 
@@ -951,14 +1023,17 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
             }
             break;
 
+        case VERSION_3_EXT_16_BIT:
         case VERSION_4_16_BIT:
             read16Bit(sdata);
             break;
 
+        case VERSION_3_EXT_24_BIT:
         case VERSION_4_24_BIT:
             read24Bit(bdata);
             break;
 
+        case VERSION_3_EXT_32_BIT:
         case VERSION_4_32_BIT:
             read32Bit(idata);
             break;
@@ -2000,3 +2075,4 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
         }
     }
 }
+

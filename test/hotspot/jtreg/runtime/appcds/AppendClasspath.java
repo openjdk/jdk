@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary At run time, it is OK to append new elements to the classpath that was used at dump time.
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -49,39 +48,33 @@ public class AppendClasspath {
     TestCommon.testDump(appJar, TestCommon.list("Hello"));
 
     // PASS: 1) runtime with classpath containing the one used in dump time
-    OutputAnalyzer output = TestCommon.execCommon(
+    TestCommon.run(
         "-cp", appJar + File.pathSeparator + appJar2,
-        "HelloMore");
-    TestCommon.checkExec(output);
+        "HelloMore")
+      .assertNormalExit();
 
     final String errorMessage1 = "Unable to use shared archive";
     final String errorMessage2 = "shared class paths mismatch";
     // FAIL: 2) runtime with classpath different from the one used in dump time
     // (runtime has an extra jar file prepended to the class path)
-    output = TestCommon.execCommon(
+    TestCommon.run(
         "-cp", appJar2 + File.pathSeparator + appJar,
-        "HelloMore");
-    output.shouldContain(errorMessage1);
-    output.shouldContain(errorMessage2);
-    output.shouldHaveExitValue(1);
+        "HelloMore")
+      .assertAbnormalExit(errorMessage1, errorMessage2);
 
     // FAIL: 3) runtime with classpath part of the one used in dump time
     TestCommon.testDump(appJar + File.pathSeparator + appJar2,
                                       TestCommon.list("Hello"));
-    output = TestCommon.execCommon(
+    TestCommon.run(
         "-cp", appJar2,
-        "Hello");
-    output.shouldContain(errorMessage1);
-    output.shouldContain(errorMessage2);
-    output.shouldHaveExitValue(1);
+        "Hello")
+      .assertAbnormalExit(errorMessage1, errorMessage2);
 
     // FAIL: 4) runtime with same set of jar files in the classpath but
     // with different order
-    output = TestCommon.execCommon(
+    TestCommon.run(
         "-cp", appJar2 + File.pathSeparator + appJar,
-        "HelloMore");
-    output.shouldContain(errorMessage1);
-    output.shouldContain(errorMessage2);
-    output.shouldHaveExitValue(1);
+        "HelloMore")
+      .assertAbnormalExit(errorMessage1, errorMessage2);
   }
 }

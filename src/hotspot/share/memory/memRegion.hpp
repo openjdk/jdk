@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,13 +34,13 @@
 
 // Note that MemRegions are passed by value, not by reference.
 // The intent is that they remain very small and contain no
-// objects. _ValueObj should never be allocated in heap but we do
-// create MemRegions (in CardTableModRefBS) in heap so operator
+// objects. These should never be allocated in heap but we do
+// create MemRegions (in CardTableBarrierSet) in heap so operator
 // new and operator new [] added for this special case.
 
 class MetaWord;
 
-class MemRegion VALUE_OBJ_CLASS_SPEC {
+class MemRegion {
   friend class VMStructs;
 private:
   HeapWord* _start;

@@ -26,7 +26,6 @@
 package java.nio.charset;
 
 import jdk.internal.misc.VM;
-import sun.nio.cs.StandardCharsets;
 import sun.nio.cs.ThreadLocalCoders;
 import sun.security.action.GetPropertyAction;
 
@@ -311,7 +310,8 @@ public abstract class Charset
     }
 
     /* The standard set of charsets */
-    private static final CharsetProvider standardProvider = new StandardCharsets();
+    private static final CharsetProvider standardProvider
+        = new sun.nio.cs.StandardCharsets();
 
     private static final String[] zeroAliases = new String[0];
 

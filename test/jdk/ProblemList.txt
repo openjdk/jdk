@@ -111,51 +111,369 @@
 
 # jdk_awt
 
+java/awt/BasicStroke/DashScaleMinWidth.java 8198411 windows-all
+java/awt/BasicStroke/DashZeroWidth.java 8198411 windows-all
 java/awt/event/MouseEvent/MouseClickTest/MouseClickTest.html 8168389 windows-all,macosx-all
-java/awt/Focus/ActualFocusedWindowTest/ActualFocusedWindowBlockingTest.java 8168408 windows-all
+java/awt/Focus/ActualFocusedWindowTest/ActualFocusedWindowBlockingTest.java 8168408 windows-all,macosx-all
 java/awt/Focus/FocusOwnerFrameOnClick/FocusOwnerFrameOnClick.java 8081489 generic-all
 java/awt/Focus/IconifiedFrameFocusChangeTest/IconifiedFrameFocusChangeTest.java 6849364 generic-all
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusToFrontTest.java 6848406 generic-all
-java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusSetVisibleTest.java 6848407 generic-all 
+java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusSetVisibleTest.java 6848407 generic-all
 java/awt/Frame/MaximizedUndecorated/MaximizedUndecorated.java 8022302 generic-all
 
 java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-all
-java/awt/Modal/FileDialog/FileDialogTKModal1Test.java 7186009 windows-all,macosx-all
-java/awt/Modal/FileDialog/FileDialogTKModal2Test.java 7186009 windows-all,macosx-all
-java/awt/Modal/FileDialog/FileDialogTKModal3Test.java 7186009 windows-all,macosx-all
-java/awt/Modal/FileDialog/FileDialogTKModal4Test.java 7186009 windows-all,macosx-all
-java/awt/Modal/FileDialog/FileDialogTKModal5Test.java 7186009 windows-all,macosx-all
-java/awt/Modal/FileDialog/FileDialogTKModal6Test.java 7186009 windows-all,macosx-all
+java/awt/FileDialog/8003399/bug8003399.java 8198334 windows-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion.java 8060176 windows-all,macosx-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_1.java 8060176 windows-all,macosx-all
 java/awt/dnd/BadSerializaionTest/BadSerializationTest.java 8039082 generic-all
-java/awt/Focus/ChoiceFocus/ChoiceFocus.java 8169103 windows-all
+java/awt/dnd/MissingEventsOnModalDialog/MissingEventsOnModalDialogTest.java 8164464 linux-all,macosx-all
+java/awt/dnd/URIListBetweenJVMsTest/URIListBetweenJVMsTest.html 8171510 macosx-all
+java/awt/dnd/7171812/bug7171812.java 8041447 macosx-all
+java/awt/Focus/ChoiceFocus/ChoiceFocus.java 8169103 windows-all,macosx-all
+java/awt/Focus/ClearLwQueueBreakTest/ClearLwQueueBreakTest.java 8198618 macosx-all
+java/awt/Focus/ConsumeNextKeyTypedOnModalShowTest/ConsumeNextKeyTypedOnModalShowTest.java 6986252 macosx-all
+java/awt/Focus/FocusTraversalPolicy/ButtonGroupLayoutTraversal/ButtonGroupLayoutTraversalTest.java 8198619 macosx-all
+java/awt/Focus/KeyEventForBadFocusOwnerTest/KeyEventForBadFocusOwnerTest.java 8198621 macosx-all
+java/awt/Focus/MouseClickRequestFocusRaceTest/MouseClickRequestFocusRaceTest.java 8194753 linux-all,macosx-all
+java/awt/Focus/NoAutotransferToDisabledCompTest/NoAutotransferToDisabledCompTest.java 7152980 macosx-all
+java/awt/Focus/ShowFrameCheckForegroundTest/ShowFrameCheckForegroundTest.java 8028701 macosx-all
+java/awt/Focus/SimpleWindowActivationTest/SimpleWindowActivationTest.java 8159599 macosx-all
+java/awt/Focus/TypeAhead/TestFocusFreeze.java 8198622 macosx-all
+java/awt/Focus/WrongKeyTypedConsumedTest/WrongKeyTypedConsumedTest.java 8169096 macosx-all
 java/awt/event/KeyEvent/CorrectTime/CorrectTime.java 6626492 generic-all
+java/awt/EventQueue/6980209/bug6980209.java 8198615 macosx-all
 java/awt/Frame/MaximizedToUnmaximized/MaximizedToUnmaximized.java 8129569 generic-all
-java/awt/EventQueue/6980209/bug6980209.java 8131670 generic-all
+java/awt/Frame/ExceptionOnSetExtendedStateTest/ExceptionOnSetExtendedStateTest.java 8198237 macosx-all
+java/awt/Frame/ShapeNotSetSometimes/ShapeNotSetSometimes.java 8144030 macosx-all
+java/awt/Frame/UnfocusableMaximizedFrameResizablity/UnfocusableMaximizedFrameResizablity.java 7158623 macosx-all
+java/awt/grab/EmbeddedFrameTest1/EmbeddedFrameTest1.java 7080150 macosx-all
 java/awt/event/InputEvent/EventWhenTest/EventWhenTest.java 8168646 generic-all
+java/awt/KeyboardFocusmanager/TypeAhead/EnqueueWithDialogButtonTest/EnqueueWithDialogButtonTest.java 8198623 macosx-all
+java/awt/KeyboardFocusmanager/TypeAhead/FreezeTest/FreezeTest.java 8198623 macosx-all
+java/awt/KeyboardFocusmanager/TypeAhead/SubMenuShowTest/SubMenuShowTest.html 8198624 macosx-all
+java/awt/KeyboardFocusmanager/TypeAhead/TestDialogTypeAhead.html 8198626 macosx-all
+java/awt/Mixing/AWT_Mixing/HierarchyBoundsListenerMixingTest.java 8049405 macosx-all
 java/awt/Mixing/AWT_Mixing/OpaqueOverlappingChoice.java 8048171 generic-all
+java/awt/Mixing/AWT_Mixing/JMenuBarOverlapping.java 8159451 linux-all,windows-all,macosx-all
+java/awt/Mixing/AWT_Mixing/JSplitPaneOverlapping.java 6986109 windows-all
+java/awt/Mixing/AWT_Mixing/JInternalFrameMoveOverlapping.java 6986109 windows-all
+java/awt/Mixing/AWT_Mixing/JSplitPaneOverlapping.java 8194765 windows-all,macosx-all
+java/awt/Mixing/AWT_Mixing/MixingPanelsResizing.java 8049405 generic-all
+java/awt/Mixing/AWT_Mixing/JComboBoxOverlapping.java 8049405 macosx-all
+java/awt/Mixing/AWT_Mixing/JPopupMenuOverlapping.java 8049405 macosx-all
+java/awt/Mixing/NonOpaqueInternalFrame.java 7124549 macosx-all
 java/awt/Focus/ActualFocusedWindowTest/ActualFocusedWindowRetaining.java 6829264 generic-all
 java/awt/datatransfer/DragImage/MultiResolutionDragImageTest.java 8080982 generic-all
+java/awt/datatransfer/SystemFlavorMap/AddFlavorTest.java 8079268 linux-all
 java/awt/Toolkit/ScreenInsetsTest/ScreenInsetsTest.java 6829250 windows-all
+java/awt/Toolkit/RealSync/Test.java 6849383 macosx-all
 java/awt/LightweightComponent/LightweightEventTest/LightweightEventTest.java 8159252 windows-all
 java/awt/EventDispatchThread/HandleExceptionOnEDT/HandleExceptionOnEDT.java 6990210 generic-all
 java/awt/EventDispatchThread/LoopRobustness/LoopRobustness.html 4931413 windows-all
-java/awt/Focus/8073453/AWTFocusTransitionTest.java 8136517 generic-all
 java/awt/FullScreen/FullScreenInsets/FullScreenInsets.java 7019055 windows-all
-java/awt/Focus/8013611/JDK8013611.java 8175366 windows-all
-java/awt/Focus/6981400/Test1.java 8029675 windows-all
+java/awt/Focus/8013611/JDK8013611.java 8175366 windows-all,macosx-all
+java/awt/Focus/6378278/InputVerifierTest.java 8198616 macosx-all
+java/awt/Focus/6382144/EndlessLoopTest.java 8198617 macosx-all
+java/awt/Focus/6981400/Test1.java 8029675 windows-all,macosx-all
+java/awt/Focus/8073453/AWTFocusTransitionTest.java 8136517 macosx-all
+java/awt/Focus/8073453/SwingFocusTransitionTest.java 8136517 macosx-all
 java/awt/Focus/6981400/Test3.java 8173264 generic-all
-java/awt/Mixing/AWT_Mixing/JSplitPaneOverlapping.java 6986109 windows-all
-java/awt/Mixing/AWT_Mixing/JInternalFrameMoveOverlapping.java 6986109 windows-all
 java/awt/event/KeyEvent/ExtendedKeyCode/ExtendedKeyCodeTest.java 8169476 windows-all
 java/awt/event/KeyEvent/KeyChar/KeyCharTest.java 8169474 windows-all
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter_3.java 6854300 generic-all
 java/awt/event/KeyEvent/ExtendedModifiersTest/ExtendedModifiersTest.java 8129778 generic-all
 java/awt/event/KeyEvent/KeyMaskTest/KeyMaskTest.java 8129778 generic-all
 java/awt/event/MouseEvent/MouseButtonsAndKeyMasksTest/MouseButtonsAndKeyMasksTest.java 8129778 generic-all
-java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFAppModal2Test.java 8058813 windows-all
 
+java/awt/dnd/URIListToFileListBetweenJVMsTest/URIListToFileListBetweenJVMsTest.html 8194947 generic-all
+java/awt/dnd/ImageTransferTest/ImageTransferTest.java 8176556 generic-all
+java/awt/Frame/SetMaximizedBounds/SetMaximizedBounds.java 8196006 windows-all
+java/awt/Frame/FramesGC/FramesGC.java 8079069 macosx-all
+java/awt/FullScreen/AltTabCrashTest/AltTabCrashTest.java 8047218 generic-all
+java/awt/GridLayout/LayoutExtraGaps/LayoutExtraGaps.java 8000171 windows-all
+java/awt/Mouse/GetMousePositionTest/GetMousePositionWithPopup.java 8196017 windows-all
+java/awt/Scrollbar/ScrollbarMouseWheelTest/ScrollbarMouseWheelTest.java 8196018 windows-all
+java/awt/TrayIcon/ActionCommand/ActionCommand.java 8150540 windows-all
+java/awt/TrayIcon/ActionEventMask/ActionEventMask.java 8150540 windows-all
+java/awt/TrayIcon/ActionEventTest/ActionEventTest.java 8150540 windows-all
+java/awt/TrayIcon/ModalityTest/ModalityTest.java 8150540 windows-all,macosx-all
+java/awt/TrayIcon/MouseEventMask/MouseEventMaskTest.java 8150540 windows-all
+java/awt/TrayIcon/MouseEventMask/MouseEventMovedTest.java 8150540 windows-all
+java/awt/TrayIcon/MouseMovedTest/MouseMovedTest.java 8150540 windows-all
+java/awt/TrayIcon/SecurityCheck/FunctionalityCheck/FunctionalityCheck.java 8150540 windows-all
+java/awt/TrayIcon/TrayIconEventModifiers/TrayIconEventModifiersTest.java 8150540 windows-all
+java/awt/TrayIcon/TrayIconEvents/TrayIconEventsTest.java 8150540 windows-all
+java/awt/TrayIcon/TrayIconMouseTest/TrayIconMouseTest.java 8150540 windows-all
+java/awt/TrayIcon/TrayIconPopup/TrayIconPopupClickTest.java 8150540 windows-all,macosx-all
+java/awt/TrayIcon/TrayIconPopup/TrayIconPopupTest.java 8150540 windows-all
+java/awt/TrayIcon/PopupMenuLeakTest/PopupMenuLeakTest.java 8196440 linux-all
+java/awt/Window/Grab/GrabTest.java 8196019 windows-all
+java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucentWindowClick.java 8196020 windows-all
+java/awt/Window/ShapedAndTranslucentWindows/FocusAWTTest.java 8061236 macosx-all
+java/awt/Window/ShapedAndTranslucentWindows/SetShapeAndClick.java 8197936 macosx-all
+java/awt/Window/ShapedAndTranslucentWindows/SetShapeDynamicallyAndClick.java 8013450 macosx-all
+java/awt/Window/ShapedAndTranslucentWindows/Shaped.java 8078999 macosx-all
+java/awt/Window/ShapedAndTranslucentWindows/ShapedByAPI.java 8078999 macosx-all
+java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucent.java 8078999 macosx-all
+java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucentWindowClick.java 8196020 macosx-all
+java/awt/Window/ShapedAndTranslucentWindows/StaticallyShaped.java 8165218 macosx-all
+java/awt/Window/AlwaysOnTop/AutoTestOnTop.java 6847593 macosx-all
+java/awt/Window/GrabSequence/GrabSequence.java 6848409 macosx-all
+java/awt/font/TextLayout/CombiningPerf.java 8192931 generic-all
+java/awt/font/TextLayout/TextLayoutBounds.java 8169188 generic-all
+java/awt/font/MonospacedGlyphWidth/MonospacedGlyphWidthTest.java 8198412 linux-all,solaris-all
+java/awt/font/StyledMetrics/BoldSpace.java 8198422 linux-all
+java/awt/FontMetrics/FontCrash.java 8198336 windows-all
+java/awt/image/DrawImage/IncorrectAlphaSurface2SW.java 8056077 generic-all
+java/awt/image/DrawImage/IncorrectClipXorModeSW2Surface.java 8196025 windows-all
+java/awt/image/DrawImage/IncorrectClipXorModeSurface2Surface.java 8196025 windows-all
+java/awt/image/DrawImage/IncorrectSourceOffset.java 8196086 windows-all
+java/awt/image/DrawImage/IncorrectUnmanagedImageRotatedClip.java 8196087 windows-all
+java/awt/image/MultiResolutionImage/MultiResolutionDrawImageWithTransformTest.java 8198390 generic-all
+java/awt/image/multiresolution/MultiresolutionIconTest.java 8169187 macosx-all
+java/awt/print/Headless/HeadlessPrinterJob.java 8196088 windows-all
+java/awt/print/PrinterJob/TestPgfmtSetMPA.java 8198343 generic-all
+sun/awt/datatransfer/SuplementaryCharactersTransferTest.java 8011371 generic-all
+sun/awt/shell/ShellFolderMemoryLeak.java 8197794 windows-all
+sun/java2d/DirectX/OnScreenRenderingResizeTest/OnScreenRenderingResizeTest.java 8022403 generic-all
+sun/java2d/DirectX/OverriddenInsetsTest/OverriddenInsetsTest.java 8196102 generic-all
+sun/java2d/DirectX/RenderingToCachedGraphicsTest/RenderingToCachedGraphicsTest.java 8196180 windows-all
+sun/java2d/GdiRendering/InsetClipping.java 8196181 windows-all
+sun/java2d/OpenGL/CopyAreaOOB.java 7001973 windows-all,macosx-all
+sun/java2d/SunGraphics2D/EmptyClipRenderingTest.java 8144029 macosx-all
+sun/java2d/SunGraphics2D/DrawImageBilinear.java 8191506 generic-all
+sun/java2d/SunGraphics2D/PolyVertTest.java 6986565 generic-all
+sun/java2d/SunGraphics2D/SimplePrimQuality.java 7992007 generic-all
+sun/java2d/SunGraphics2D/SourceClippingBlitTest/SourceClippingBlitTest.java 8196191 windows-all,macosx-all
+sun/java2d/pipe/InterpolationQualityTest.java 8171303 windows-all,linux-all,macosx-all
+java/awt/FullScreen/DisplayChangeVITest/DisplayChangeVITest.java 8169469 windows-all
+java/awt/Graphics/ClippedCopyAreaTest/ClippedCopyAreaTest.java 8196436 linux-all
+java/awt/Graphics2D/DrawString/DrawRotatedStringUsingRotatedFont.java 8197796 generic-all
+java/awt/TextArea/TextAreaScrolling/TextAreaScrolling.java 8196300 windows-all
+java/awt/print/PrinterJob/Margins.java 8196301 windows-all
+java/awt/print/PrinterJob/PSQuestionMark.java 7003378 generic-all
+java/awt/print/PrinterJob/GlyphPositions.java 7003378 generic-all
+java/awt/Choice/PopupPosTest/PopupPosTest.html 8192930 windows-all
+java/awt/Choice/ChoiceKeyEventReaction/ChoiceKeyEventReaction.html 6849922 macosx-all
+java/awt/Choice/ChoiceMouseWheelTest/ChoiceMouseWheelTest.java 7100044 macosx-all
+java/awt/Component/CreateImage/CreateImage.java 8198334  windows-all
+java/awt/Component/GetScreenLocTest.java 4753654 windows-all
+java/awt/Choice/SelectCurrentItemTest/SelectCurrentItemTest.html 8192929 windows-all
+java/awt/Clipboard/HTMLTransferTest/HTMLTransferTest.html 8017454 macosx-all
+java/awt/Dialog/SiblingChildOrder/SiblingChildOrderTest.java 8193940 windows-all
+java/awt/Focus/NonFocusableWindowTest/NoEventsTest.java 8000171 windows-all
+java/awt/Frame/MiscUndecorated/RepaintTest.java 8079267 windows-all
+java/awt/Robot/ModifierRobotKey/ModifierRobotKeyTest.java 8157173 windows-all
+java/awt/Modal/FileDialog/FileDialogAppModal1Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogAppModal2Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogAppModal3Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogAppModal4Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogAppModal5Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogAppModal6Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogDocModal1Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogDocModal2Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogDocModal3Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogDocModal4Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogDocModal5Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogDocModal6Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogDocModal7Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogModal1Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogModal2Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogModal3Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogModal4Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogModal5Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogModal6Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogNonModal1Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogNonModal2Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogNonModal3Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogNonModal4Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogNonModal5Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogNonModal6Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogNonModal7Test.java 8198664 macosx-all
+java/awt/Modal/FileDialog/FileDialogTKModal1Test.java 8196430 generic-all
+java/awt/Modal/FileDialog/FileDialogTKModal2Test.java 8196430 generic-all
+java/awt/Modal/FileDialog/FileDialogTKModal3Test.java 8196430 generic-all
+java/awt/Modal/FileDialog/FileDialogTKModal4Test.java 8196430 generic-all
+java/awt/Modal/FileDialog/FileDialogTKModal5Test.java 8196430 generic-all
+java/awt/Modal/FileDialog/FileDialogTKModal6Test.java 8196430 generic-all
+java/awt/Modal/FileDialog/FileDialogTKModal7Test.java 8196430 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingDDAppModalTest.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingDDDocModalTest.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingDDModelessTest.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingDDNonModalTest.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingDDSetModalTest.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingDDToolkitModalTest.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingDFAppModalTest.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingDFSetModalTest.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingDFToolkitModalTest.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingDFWModeless1Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingDFWModeless2Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingDFWNonModal1Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingDFWNonModal2Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingDocModalTest.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingFDModelessTest.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingFDNonModalTest.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingFDWDocModal1Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingFDWDocModal2Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingFDWDocModal3Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingFDWDocModal4Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingFDWModeless1Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingFDWModeless2Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingFDWModeless3Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingFDWModeless4Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingFDWNonModal1Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingFDWNonModal2Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingFDWNonModal3Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingFDWNonModal4Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingWindowsAppModal1Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingWindowsAppModal2Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingWindowsAppModal3Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingWindowsAppModal4Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingWindowsAppModal5Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingWindowsAppModal6Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingWindowsDocModal1Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingWindowsDocModal2Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingWindowsSetModal1Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingWindowsSetModal2Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingWindowsSetModal3Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingWindowsSetModal4Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingWindowsSetModal5Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingWindowsSetModal6Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingWindowsToolkitModal1Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingWindowsToolkitModal2Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingWindowsToolkitModal3Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingWindowsToolkitModal4Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingWindowsToolkitModal5Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/BlockingWindowsToolkitModal6Test.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/UnblockedDialogAppModalTest.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/UnblockedDialogDocModalTest.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/UnblockedDialogModelessTest.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/UnblockedDialogNonModalTest.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/UnblockedDialogSetModalTest.java 8198665 macosx-all
+java/awt/Modal/ModalBlockingTests/UnblockedDialogToolkitModalTest.java 8198665 macosx-all
+java/awt/Modal/ModalDialogOrderingTest/ModalDialogOrderingTest.java 8066259 macosx-all
+java/awt/Modal/ModalExclusionTests/ApplicationExcludeFrameFileTest.java 8047179 macosx-all
+java/awt/Modal/ModalExclusionTests/ApplicationExcludeDialogFileTest.java 8047179 macosx-all
+java/awt/Modal/ModalExclusionTests/ApplicationExcludeDialogPageSetupTest.java 8196431 linux-all,macosx-all
+java/awt/Modal/ModalExclusionTests/ApplicationExcludeDialogPrintSetupTest.java 8196431 linux-all,macosx-all
+java/awt/Modal/ModalExclusionTests/ApplicationExcludeFramePageSetupTest.java 8196431 linux-all,macosx-all
+java/awt/Modal/ModalExclusionTests/ApplicationExcludeFramePrintSetupTest.java 8196431 linux-all,macosx-all
+java/awt/Modal/ModalExclusionTests/ToolkitExcludeFrameFileTest.java 8047179 macosx-all
+java/awt/Modal/ModalExclusionTests/ToolkitExcludeDialogFileTest.java 8196431 macosx-all
+java/awt/Modal/ModalExclusionTests/ToolkitExcludeDialogPageSetupTest.java 8196431 linux-all,macosx-all
+java/awt/Modal/ModalExclusionTests/ToolkitExcludeDialogPrintSetupTest.java 8196431 linux-all,macosx-all
+java/awt/Modal/ModalExclusionTests/ToolkitExcludeFramePageSetupTest.java 8196431 linux-all,macosx-all
+java/awt/Modal/ModalExclusionTests/ToolkitExcludeFramePrintSetupTest.java 8196431 linux-all,macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFAppModal2Test.java 8058813 windows-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFModeless2Test.java 8196191 windows-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferDWFDocModalTest.java 8196432 linux-all,macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferDWFModelessTest.java 8196432 linux-all,macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferDWFNonModalTest.java 8196432 linux-all,macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferDialogsModelessTest.java 8196432 linux-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferDialogsNonModalTest.java 8196432 linux-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFDWDocModalTest.java 8196432 linux-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFDWModelessTest.java 8196432 linux-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFDWNonModalTest.java 8196432 linux-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDAppModal1Test.java 8196432 linux-all,macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDAppModal2Test.java 8196432 linux-all,macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDAppModal3Test.java 8196432 linux-all,macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDAppModal4Test.java 8196432 linux-all,macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDDocModal1Test.java 8196432 linux-all,macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDDocModal2Test.java 8196432 linux-all,macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDDocModal3Test.java 8196432 linux-all,macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDDocModal4Test.java 8196432 linux-all,macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDModeless1Test.java 8196432 linux-all,macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDModeless2Test.java 8196432 linux-all,macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDModeless3Test.java 8196432 linux-all,macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDModeless4Test.java 8196432 linux-all,macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDNonModal1Test.java 8196432 linux-all,macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDNonModal2Test.java 8196432 linux-all,macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDNonModal3Test.java 8196432 linux-all,macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferFWDNonModal4Test.java 8196432 linux-all,macosx-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFDocModal2Test.java 8196432 linux-all
+java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFNonModal2Test.java 8196432 linux-all
+java/awt/Modal/MultipleDialogs/MultipleDialogs1Test.java 8198665 macosx-all
+java/awt/Modal/MultipleDialogs/MultipleDialogs2Test.java 8198665 macosx-all
+java/awt/Modal/MultipleDialogs/MultipleDialogs3Test.java 8198665 macosx-all
+java/awt/Modal/MultipleDialogs/MultipleDialogs4Test.java 8198665 macosx-all
+java/awt/Modal/MultipleDialogs/MultipleDialogs5Test.java 8198665 macosx-all
+java/awt/Mouse/EnterExitEvents/DragWindowOutOfFrameTest.java 8177326 macosx-all
+java/awt/Mouse/EnterExitEvents/DragWindowTest.java 8023562 macosx-all
+java/awt/Mouse/EnterExitEvents/ResizingFrameTest.java 8005021 macosx-all
+java/awt/Mouse/EnterExitEvents/FullscreenEnterEventTest.java 8051455 macosx-all
+java/awt/Mouse/MouseModifiersUnitTest/MouseModifiersUnitTest_Standard.java 7124407 macosx-all
+java/awt/Mouse/RemovedComponentMouseListener/RemovedComponentMouseListener.java 8157170 macosx-all
+java/awt/Focus/ForwardingFocusToProxyMotifTest/ForwardingFocusToProxyMotifTest.java 8196436 linux-all
+java/awt/Window/OverrideRedirectRemoved/ChildWindowProblem.java 8196438 linux-all
+java/awt/Modal/ToBack/ToBackAppModal1Test.java 8196441 linux-all,macosx-all
+java/awt/Modal/ToBack/ToBackAppModal2Test.java 8196441 linux-all,macosx-all
+java/awt/Modal/ToBack/ToBackAppModal3Test.java 8196441 linux-all,macosx-all
+java/awt/Modal/ToBack/ToBackAppModal4Test.java 8196441 linux-all,macosx-all
+java/awt/Modal/ToBack/ToBackAppModal5Test.java 8196441 macosx-all
+java/awt/Modal/ToBack/ToBackModal1Test.java 8196441 linux-all,macosx-all
+java/awt/Modal/ToBack/ToBackModal2Test.java 8196441 linux-all,macosx-all
+java/awt/Modal/ToBack/ToBackModal3Test.java 8196441 linux-all,macosx-all
+java/awt/Modal/ToBack/ToBackModal4Test.java 8196441 linux-all,macosx-all
+java/awt/Modal/ToBack/ToBackTKModal1Test.java 8196441 linux-all,macosx-all
+java/awt/Modal/ToBack/ToBackTKModal2Test.java 8196441 linux-all,macosx-all
+java/awt/Modal/ToBack/ToBackTKModal3Test.java 8196441 linux-all,macosx-all
+java/awt/Modal/ToBack/ToBackTKModal4Test.java 8196441 linux-all,macosx-all
+java/awt/Modal/ToBack/ToBackTKModal5Test.java 8196441 macosx-all
+java/awt/Modal/ToBack/ToBackDocModal1Test.java 8196441 linux-all,macosx-all
+java/awt/Modal/ToBack/ToBackDocModal2Test.java 8196441 linux-all,macosx-all
+java/awt/Modal/ToBack/ToBackDocModal3Test.java 8196441 linux-all,macosx-all
+java/awt/Modal/ToBack/ToBackDocModal4Test.java 8196441 linux-all,macosx-all
+java/awt/Modal/ToBack/ToBackDocModal5Test.java 8196441 linux-all,macosx-all
+java/awt/Modal/ToBack/ToBackModeless1Test.java 8196441 macosx-all
+java/awt/Modal/ToBack/ToBackModeless2Test.java 8196441 macosx-all
+java/awt/Modal/ToBack/ToBackModeless3Test.java 8196441 macosx-all
+java/awt/Modal/ToBack/ToBackModeless4Test.java 8196441 macosx-all
+java/awt/Modal/ToBack/ToBackModeless5Test.java 8196441 macosx-all
+java/awt/Modal/ToBack/ToBackNonModal1Test.java 8196441 macosx-all
+java/awt/Modal/ToBack/ToBackNonModal2Test.java 8196441 macosx-all
+java/awt/Modal/ToBack/ToBackNonModal3Test.java 8196441 macosx-all
+java/awt/Modal/ToBack/ToBackNonModal4Test.java 8196441 macosx-all
+java/awt/Modal/ToBack/ToBackNonModal5Test.java 8196441 macosx-all
+java/awt/Modal/OnTop/OnTopAppModal1Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopAppModal2Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopAppModal3Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopAppModal4Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopAppModal5Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopAppModal6Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopDocModal1Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopDocModal2Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopDocModal3Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopDocModal4Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopDocModal5Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopDocModal6Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopModal1Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopModal2Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopModal3Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopModal4Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopModal5Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopModal6Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopModal6Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopModeless1Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopModeless2Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopModeless3Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopModeless4Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopModeless5Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopModeless6Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopTKModal1Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopTKModal2Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopTKModal3Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopTKModal4Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopTKModal5Test.java 8198666 macosx-all
+java/awt/Modal/OnTop/OnTopTKModal6Test.java 8198666 macosx-all
+java/awt/List/SingleModeDeselect/SingleModeDeselect.java 8196301 windows-all
+java/awt/SplashScreen/MultiResolutionSplash/MultiResolutionSplashTest.java 8061235 macosx-all
+javax/print/PrintSEUmlauts/PrintSEUmlauts.java 8135174 generic-all
+java/awt/font/GlyphVector/TestLayoutFlags.java 8176510 generic-all
+java/awt/font/TextLayout/LigatureCaretTest.java 8197821 generic-all
+java/awt/Graphics2D/DrawString/RotTransText.java 8197797 generic-all
+java/awt/image/VolatileImage/CustomCompositeTest.java 8199002 windows-all,linux-all
+java/awt/image/VolatileImage/GradientPaints.java 8199003 linux-all
+java/awt/JAWT/JAWT.sh 8197798 windows-all
 
 ############################################################################
 
@@ -163,6 +481,8 @@ java/awt/Modal/ModalFocusTransferTests/FocusTransferWDFAppModal2Test.java 805881
 
 java/beans/Introspector/8132566/OverridePropertyInfoTest.java   8132565 generic-all
 java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java 8132565 generic-all
+
+java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 
 ############################################################################
 
@@ -183,6 +503,8 @@ java/lang/instrument/BootClassPath/BootClassPathTest.sh         8072130 macosx-a
 
 java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
+
+java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8081652 generic-all
 
 ############################################################################
 
@@ -221,12 +543,15 @@ java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-a
 
 # jdk_nio
 
+java/nio/Buffer/EqualsCompareTest.java                          8193917 solaris-all
+
 java/nio/channels/Selector/Wakeup.java                          6963118 windows-all
 
 java/nio/channels/DatagramChannel/ChangingAddress.java          7141822 macosx-all
 
 java/nio/file/WatchService/Basic.java                           7158947 solaris-all Solaris 11
 java/nio/file/WatchService/MayFlies.java                        7158947 solaris-all Solaris 11
+java/nio/file/WatchService/LotsOfCancels.java                   8188039 solaris-all Solaris 11
 java/nio/file/WatchService/LotsOfEvents.java                    7158947 solaris-all Solaris 11
 
 ############################################################################
@@ -252,7 +577,8 @@ java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-
 # jdk_security
 
 sun/security/pkcs11/ec/TestKeyFactory.java                      8026976 generic-all
-sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                 8186098 linux-all
+sun/security/pkcs11/Secmod/AddTrustedCert.java                  8180837 generic-all
+sun/security/pkcs11/tls/TestKeyMaterial.java                    8180837 generic-all
 
 sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
 
@@ -263,7 +589,6 @@ javax/net/ssl/DTLS/RespondToRetransmit.java                     8169086 macosx-x
 
 sun/security/krb5/auto/UnboundSSL.java                          8180265 windows-all
 sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all
-sun/security/ssl/X509KeyManager/PreferredKey.java               8190333 generic-all
 
 ############################################################################
 
@@ -284,18 +609,108 @@ javax/sound/sampled/Mixers/DisabledAssertionCrash.java 7067310 generic-all
 
 # jdk_swing
 
+com/sun/java/swing/plaf/windows/Test8173145.java 8198334 windows-all
+
+javax/swing/border/Test6981576.java 8198339 generic-all
 javax/swing/JComponent/7154030/bug7154030.java 7190978 generic-all
-javax/swing/JInternalFrame/8160248/JInternalFrameDraggingTest.java 8186513 generic-all
 javax/swing/JComboBox/ConsumedKeyTest/ConsumedKeyTest.java 8067986 generic-all
 javax/swing/JComponent/6683775/bug6683775.java 8172337 generic-all
-javax/swing/JComboBox/6236162/bug6236162.java 8028707 windows-all
+javax/swing/JComboBox/6236162/bug6236162.java 8028707 windows-all,macosx-all
 javax/swing/text/html/parser/Test8017492.java 8022535 generic-all
-javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentCanvas.java 8081476 windows-all
+javax/swing/JButton/8151303/PressedIconTest.java 8198689 macosx-all
+javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentCanvas.java 8081476 windows-all,macosx-all
+javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentSwing.java 8194128 macosx-all
+javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedPerPixelTranslucentGradient.java 8198667 macosx-all
+javax/swing/JWindow/ShapedAndTranslucentWindows/SetShapeAndClickSwing.java 8013450 macosx-all
+javax/swing/JWindow/ShapedAndTranslucentWindows/TranslucentJComboBox.java 8024627 macosx-all
 # The next test below is an intermittent failure
 javax/swing/JComboBox/8033069/bug8033069ScrollBar.java 8163367 generic-all
-javax/swing/JColorChooser/Test6541987.java 8143021 linux-all
+javax/swing/JColorChooser/Test6541987.java 8143021 windows-all,linux-all,macosx-all
+javax/swing/JColorChooser/Test7194184.java 8194126 linux-all,macosx-all
 javax/swing/JTable/7124218/SelectEditTableCell.java 8148958 linux-all
+javax/swing/JTable/4235420/bug4235420.java     8079127 generic-all
+javax/swing/JSplitPane/4201995/bug4201995.java 8079127 generic-all
 javax/swing/JTree/DnD/LastNodeLowerHalfDrop.java 8159131 linux-all
+javax/swing/JTree/4633594/JTreeFocusTest.java 8173125 macosx-all
+javax/swing/JTree/8003400/Test8003400.java 8011259 macosx-all
+javax/swing/JFileChooser/8041694/bug8041694.java 8196302 windows-all
+javax/swing/AbstractButton/6711682/bug6711682.java 8060765 windows-all,macosx-all
+javax/swing/Action/8133039/bug8133039.java 8196089 windows-all,macosx-all
+javax/swing/JComboBox/6559152/bug6559152.java 8196090 windows-all,macosx-all
+javax/swing/JComboBox/6607130/bug6607130.java 8196091 windows-all
+javax/swing/JComboBox/8032878/bug8032878.java 8196092 windows-all,macosx-all
+javax/swing/JComboBox/8057893/bug8057893.java 8169953 windows-all,macosx-all
+javax/swing/JComboBox/8072767/bug8072767.java 8196093 windows-all,macosx-all
+javax/swing/JComponent/4337267/bug4337267.java 8146451 windows-all
+javax/swing/JEditorPane/5076514/bug5076514.java 8198321 generic-all
+javax/swing/JFileChooser/4524490/bug4524490.java 8042380 generic-all
+javax/swing/JFileChooser/8002077/bug8002077.java 8196094 windows-all
+javax/swing/JFileChooser/DeserializedJFileChooser/DeserializedJFileChooserTest.java 8196095 generic-all
+javax/swing/JFileChooser/6396844/TwentyThousandTest.java 8058231 macosx-all
+javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8193942 generic-all
+javax/swing/JList/6462008/bug6462008.java 7156347 generic-all
+javax/swing/JPopupMenu/6580930/bug6580930.java 8196096 windows-all,macosx-all
+javax/swing/JPopupMenu/6800513/bug6800513.java 7184956 macosx-all
+javax/swing/JPopupMenu/6675802/bug6675802.java 8196097 windows-all
+javax/swing/JTabbedPane/8007563/Test8007563.java 8051591 generic-all
+javax/swing/JTabbedPane/4624207/bug4624207.java 8064922 macosx-all
+javax/swing/JTabbedPane/7024235/Test7024235.java 8028281 macosx-all
+javax/swing/SwingUtilities/TestBadBreak/TestBadBreak.java 8160720 generic-all
+javax/swing/plaf/basic/BasicTextUI/8001470/bug8001470.java 8196098 windows-all
+javax/swing/plaf/basic/Test6984643.java 8198340 windows-all
+javax/swing/text/CSSBorder/6796710/bug6796710.java 8196099 windows-all
+javax/swing/text/DefaultCaret/HidingSelection/HidingSelectionTest.java 8194048 windows-all
+javax/swing/text/JTextComponent/5074573/bug5074573.java 8196100 windows-all
+javax/swing/JFileChooser/6798062/bug6798062.java 8146446 windows-all
+javax/swing/plaf/basic/BasicGraphicsUtils/8132119/bug8132119.java 8196434 linux-all,solaris-all
+javax/swing/JComboBox/8032878/bug8032878.java 8196439 linux-all
+javax/swing/JComboBox/8182031/ComboPopupTest.java 8196465 linux-all,macosx-all
+javax/swing/JFileChooser/6738668/bug6738668.java 8194946 generic-all
+javax/swing/JFileChooser/8021253/bug8021253.java 8169954 windows-all,linux-all,macosx-all
+javax/swing/JFileChooser/8062561/bug8062561.java 8196466 linux-all,macosx-all
+javax/swing/JFileChooser/FileSystemView/FileSystemViewListenerLeak.java 8198342 generic-all
+javax/swing/JInternalFrame/Test6325652.java 8196467 linux-all,macosx-all
+javax/swing/JInternalFrame/8145896/TestJInternalFrameMaximize.java 8194944 macosx-all
+javax/swing/JLabel/6596966/bug6596966.java 8040914 macosx-all
+javax/swing/JPopupMenu/4870644/bug4870644.java 8194130 macosx-all
+javax/swing/JPopupMenu/4966112/bug4966112.java 8064915 macosx-all
+javax/swing/MultiUIDefaults/Test6860438.java 8198391 generic-all
+javax/swing/MultiUIDefaults/4300666/bug4300666.java 7105119 macosx-all
+javax/swing/UITest/UITest.java 8198392 generic-all
+javax/swing/plaf/basic/BasicComboBoxEditor/Test8015336.java 8198394 generic-all
+javax/swing/plaf/metal/MetalLookAndFeel/Test8039750.java 8198395 generic-all
+javax/swing/text/DevanagariEditor.java 8198397 generic-all
+javax/swing/JColorChooser/Test6199676.java 8198398 generic-all
+javax/swing/JTable/6735286/bug6735286.java 8198398 generic-all
+javax/swing/SpringLayout/4726194/bug4726194.java 8198399 generic-all
+javax/swing/SwingUtilities/6797139/bug6797139.java 8198400 generic-all
+javax/swing/text/html/parser/Parser/6836089/bug6836089.java 8198401 generic-all
+javax/swing/JTable/8133919/DrawGridLinesTest.java 8198407 generic-all
+javax/swing/text/html/StyleSheet/BackgroundImage/BackgroundImagePosition.java 8198409 generic-all
+javax/swing/text/AbstractDocument/DocumentInsert/DocumentInsertAtWrongPositionTest.java 8198396 generic-all
+javax/swing/JFileChooser/6868611/bug6868611.java 7059834 windows-all
+javax/swing/SwingWorker/6493680/bug6493680.java 8198410 windows-all
+javax/swing/plaf/basic/BasicMenuUI/4983388/bug4983388.java 8042383 macosx-all
+javax/swing/PopupFactory/6276087/NonOpaquePopupMenuTest.java 8065099 macosx-all
+javax/swing/DataTransfer/8059739/bug8059739.java 8199074 generic-all
+javax/swing/GroupLayout/6613904/bug6613904.java 8199072 generic-all
+javax/swing/JCheckBox/8032667/bug8032667_image_diff.java 8199063 macosx-all
+javax/swing/JComboBox/7031551/bug7031551.java 8199056 generic-all
+javax/swing/JScrollBar/6924059/bug6924059.java 8199078 generic-all
+javax/swing/JTree/8003830/bug8003830.java 8199057 generic-all
+javax/swing/plaf/nimbus/ColorCustomizationTest.java 8199080 generic-all
+javax/swing/SwingWorker/6432565/bug6432565.java 8199077 generic-all
+javax/swing/SwingWorker/6880336/NestedWorkers.java 8199049 windows-all
+javax/swing/text/DefaultCaret/6938583/bug6938583.java 8199058 generic-all
+javax/swing/text/html/parser/Parser/6990651/bug6990651.java 8199060 generic-all
+javax/swing/text/html/parser/Parser/HtmlCommentTagParseTest/HtmlCommentTagParseTest.java 8199073 generic-all
+javax/swing/text/StyledEditorKit/8016833/bug8016833.java 8199055 generic-all
+javax/swing/text/Utilities/8134721/bug8134721.java 8199062 generic-all
+javax/swing/tree/DefaultTreeCellRenderer/7142955/bug7142955.java 8199076 generic-all
+javax/swing/UIDefaults/6302464/bug6302464.java 8199079 generic-all
+javax/swing/UIDefaults/8133926/InternalFrameIcon.java 8199075 generic-all
+javax/swing/UIDefaults/8149879/InternalResourceBundle.java 8199054 windows-all
+javax/swing/text/html/parser/Parser/8078268/bug8078268.java 8199092 generic-all
 
 ############################################################################
 
@@ -314,9 +729,8 @@ tools/pack200/CommandLineTests.java                             8059906 generic-
 
 tools/launcher/FXLauncherTest.java                              8068049 linux-all,macosx-all
 
-tools/jimage/JImageExtractTest.java                             8170120 generic-all
-tools/jimage/JImageListTest.java                                8170120 generic-all
-tools/jimage/JImageVerifyTest.java                              8170120 generic-all
+tools/jimage/JImageExtractTest.java                             8198405,8198819 generic-all
+tools/jimage/JImageListTest.java                                8198405 windows-all
 
 ############################################################################
 
@@ -331,6 +745,8 @@ com/sun/jdi/RepStep.java                                        8043571 generic-
 com/sun/jdi/GetLocalVariables4Test.sh                           8067354 windows-all
 
 com/sun/jdi/sde/SourceDebugExtensionTest.java                   8158066 windows-all
+
+com/sun/jdi/NashornPopFrameTest.java                            8187143 generic-all
 
 ############################################################################
 
@@ -348,11 +764,8 @@ com/sun/jdi/sde/SourceDebugExtensionTest.java                   8158066 windows-
 
 # svc_tools
 
-sun/tools/jcmd/TestJcmdSanity.java                              8031482 windows-all
-
 sun/tools/jstat/jstatClassloadOutput1.sh                        8173942 generic-all
 
-sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java    8057732 generic-all
 
 ############################################################################
 
@@ -362,12 +775,12 @@ com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8169942 linux-i5
 
 com/sun/jndi/ldap/LdapTimeoutTest.java                          8151678 linux-all
 
-javax/rmi/PortableRemoteObject/8146975/RmiIiopReturnValueTest.java 8194663 generic-all
- 
-org/omg/CORBA/OrbPropertiesTest.java			        8194663 generic-all
-
-javax/rmi/PortableRemoteObject/ConcurrentHashMapTest.java       8194663 generic-all
-
-javax/rmi/ssl/SSLSocketParametersTest.sh                        8194663 generic-all
+javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-all
 
 ############################################################################
+
+###########################################################################
+#
+# Java EE Module Removal
+#
+com/sun/jdi/RedefineCrossEvent.java                          8194308    generic-all  Java EE Module Removal

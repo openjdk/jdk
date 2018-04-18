@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
 #define SHARE_VM_GC_G1_G1REMSET_HPP
 
 #include "gc/g1/dirtyCardQueue.hpp"
-#include "gc/g1/g1CardLiveData.hpp"
+#include "gc/g1/g1CardTable.hpp"
+#include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1RemSetSummary.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "memory/allocation.hpp"
@@ -36,15 +37,15 @@
 // collection set.
 
 class BitMap;
-class CardTableModRefBS;
+class CardTableBarrierSet;
 class G1BlockOffsetTable;
 class CodeBlobClosure;
 class G1CollectedHeap;
+class G1CMBitMap;
 class G1HotCardCache;
 class G1RemSetScanState;
 class G1ParScanThreadState;
 class G1Policy;
-class G1SATBCardTableModRefBS;
 class G1ScanObjsDuringScanRSClosure;
 class G1ScanObjsDuringUpdateRSClosure;
 class HeapRegionClaimer;
@@ -55,7 +56,6 @@ class HeapRegionClaimer;
 class G1RemSet: public CHeapObj<mtGC> {
 private:
   G1RemSetScanState* _scan_state;
-  G1CardLiveData _card_live_data;
 
   G1RemSetSummary _prev_period_summary;
 
@@ -72,7 +72,7 @@ private:
   G1CollectedHeap* _g1;
   size_t _num_conc_refined_cards; // Number of cards refined concurrently to the mutator.
 
-  CardTableModRefBS*     _ct_bs;
+  G1CardTable*           _ct;
   G1Policy*              _g1p;
   G1HotCardCache*        _hot_card_cache;
 
@@ -93,7 +93,7 @@ public:
   void cleanupHRRS();
 
   G1RemSet(G1CollectedHeap* g1,
-           CardTableModRefBS* ct_bs,
+           G1CardTable* ct,
            G1HotCardCache* hot_card_cache);
   ~G1RemSet();
 
@@ -114,9 +114,6 @@ public:
 
   G1RemSetScanState* scan_state() const { return _scan_state; }
 
-  // Eliminates any remembered set entries that correspond to dead heap ranges.
-  void scrub(uint worker_num, HeapRegionClaimer* hrclaimer);
-
   // Refine the card corresponding to "card_ptr". Safe to be called concurrently
   // to the mutator.
   void refine_card_concurrently(jbyte* card_ptr,
@@ -135,18 +132,9 @@ public:
 
   size_t num_conc_refined_cards() const { return _num_conc_refined_cards; }
 
-  void create_card_live_data(WorkGang* workers, G1CMBitMap* mark_bitmap);
-  void finalize_card_live_data(WorkGang* workers, G1CMBitMap* mark_bitmap);
-
-  // Verify that the liveness count data created concurrently matches one created
-  // during this safepoint.
-  void verify_card_live_data(WorkGang* workers, G1CMBitMap* actual_bitmap);
-
-  void clear_card_live_data(WorkGang* workers);
-
-#ifdef ASSERT
-  void verify_card_live_data_is_clear();
-#endif
+  // Rebuilds the remembered set by scanning from bottom to TARS for all regions
+  // using the given work gang.
+  void rebuild_rem_set(G1ConcurrentMark* cm, WorkGang* workers, uint worker_id_offset);
 };
 
 class G1ScanRSForRegionClosure : public HeapRegionClosure {
@@ -162,7 +150,7 @@ class G1ScanRSForRegionClosure : public HeapRegionClosure {
   CodeBlobClosure* _code_root_cl;
 
   G1BlockOffsetTable* _bot;
-  G1SATBCardTableModRefBS *_ct_bs;
+  G1CardTable *_ct;
 
   double _strong_code_root_scan_time_sec;
   uint   _worker_i;
@@ -176,7 +164,7 @@ public:
                            CodeBlobClosure* code_root_cl,
                            uint worker_i);
 
-  bool doHeapRegion(HeapRegion* r);
+  bool do_heap_region(HeapRegion* r);
 
   double strong_code_root_scan_time_sec() {
     return _strong_code_root_scan_time_sec;

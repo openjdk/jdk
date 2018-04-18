@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ void PSYoungGen::initialize_work() {
 
   MemRegion cmr((HeapWord*)virtual_space()->low(),
                 (HeapWord*)virtual_space()->high());
-  ParallelScavengeHeap::heap()->barrier_set()->resize_covered_region(cmr);
+  ParallelScavengeHeap::heap()->card_table()->resize_covered_region(cmr);
 
   if (ZapUnusedHeapArea) {
     // Mangle newly committed space immediately because it
@@ -870,7 +870,7 @@ void PSYoungGen::post_resize() {
 
   MemRegion cmr((HeapWord*)virtual_space()->low(),
                 (HeapWord*)virtual_space()->high());
-  ParallelScavengeHeap::heap()->barrier_set()->resize_covered_region(cmr);
+  ParallelScavengeHeap::heap()->card_table()->resize_covered_region(cmr);
   space_invariants();
 }
 

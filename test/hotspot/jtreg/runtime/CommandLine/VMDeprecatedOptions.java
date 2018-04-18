@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,16 +41,17 @@ public class VMDeprecatedOptions {
     public static final String[][] DEPRECATED_OPTIONS = {
         // deprecated non-alias flags:
         {"MaxGCMinorPauseMillis",     "1032"},
-        {"MustCallLoadClassInternal", "false"},
         {"MaxRAMFraction",            "8"},
         {"MinRAMFraction",            "2"},
         {"InitialRAMFraction",        "64"},
         {"AssumeMP",                  "false"},
         {"UseMembar",                 "true"},
-        {"FastTLABRefill",            "false"},
-        {"DeferPollingPageLoopCount", "-1"},
-        {"SafepointSpinBeforeYield",  "2000"},
-        {"DeferThrSuspendLoopCount",  "4000"},
+        {"CompilerThreadHintNoPreempt", "true"},
+        {"VMThreadHintNoPreempt",       "false"},
+        {"PrintSafepointStatistics",    "false"},
+        {"PrintSafepointStatisticsCount", "3"},
+        {"PrintSafepointStatisticsTimeout", "3"},
+        {"AggressiveOpts", "true"},
 
         // deprecated alias flags (see also aliased_jvm_flags):
         {"DefaultMaxRAMFraction", "4"},
@@ -108,8 +109,6 @@ public class VMDeprecatedOptions {
 
     public static void main(String[] args) throws Throwable {
         testDeprecated(DEPRECATED_OPTIONS);  // Make sure that each deprecated option is mentioned in the output.
-        testDeprecatedDiagnostic("UnsyncloadClass", "false");
         testDeprecatedDiagnostic("IgnoreUnverifiableClassesDuringDump", "false");
-        testDeprecatedExperimental("UseCGroupMemoryLimitForHeap", "true");
     }
 }

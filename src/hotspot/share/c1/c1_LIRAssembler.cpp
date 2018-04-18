@@ -30,6 +30,7 @@
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciInstance.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "runtime/os.hpp"
 
 void LIR_Assembler::patching_epilog(PatchingStub* patch, LIR_PatchCode patch_code, Register obj, CodeEmitInfo* info) {
@@ -99,7 +100,7 @@ PatchingStub::PatchID LIR_Assembler::patching_id(CodeEmitInfo* info) {
 LIR_Assembler::LIR_Assembler(Compilation* c):
    _compilation(c)
  , _masm(c->masm())
- , _bs(Universe::heap()->barrier_set())
+ , _bs(BarrierSet::barrier_set())
  , _frame_map(c->frame_map())
  , _current_block(NULL)
  , _pending_non_safepoint(NULL)

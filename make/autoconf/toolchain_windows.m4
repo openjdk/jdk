@@ -25,7 +25,7 @@
 
 ################################################################################
 # The order of these defines the priority by which we try to find them.
-VALID_VS_VERSIONS="2013 2012 2010"
+VALID_VS_VERSIONS="2013 2012 2010 2015 2017"
 
 VS_DESCRIPTION_2010="Microsoft Visual Studio 2010"
 VS_VERSION_INTERNAL_2010=100
@@ -58,6 +58,30 @@ VS_SDK_INSTALLDIR_2013=
 VS_VS_PLATFORM_NAME_2013="v120"
 VS_SDK_PLATFORM_NAME_2013=
 
+VS_DESCRIPTION_2015="Microsoft Visual Studio 2015 - CURRENTLY NOT WORKING"
+VS_VERSION_INTERNAL_2015=140
+VS_MSVCR_2015=vcruntime140.dll
+VS_MSVCP_2015=msvcp140.dll
+VS_ENVVAR_2015="VS140COMNTOOLS"
+VS_VS_INSTALLDIR_2015="Microsoft Visual Studio 14.0"
+VS_SDK_INSTALLDIR_2015=
+VS_VS_PLATFORM_NAME_2015="v140"
+VS_SDK_PLATFORM_NAME_2015=
+# The vcvars of 2015 breaks if 2017 is also installed. Work around this by
+# explicitly specifying Windows Kit 8.1 to be used.
+VS_ENV_ARGS_2015="8.1"
+
+VS_DESCRIPTION_2017="Microsoft Visual Studio 2017 - CURRENTLY NOT WORKING"
+VS_VERSION_INTERNAL_2017=141
+VS_MSVCR_2017=vcruntime140.dll
+VS_MSVCP_2017=msvcp140.dll
+VS_ENVVAR_2017="VS150COMNTOOLS"
+VS_VS_INSTALLDIR_2017="Microsoft Visual Studio/2017"
+VS_EDITIONS_2017="BuildTools Community Professional Enterprise"
+VS_SDK_INSTALLDIR_2017=
+VS_VS_PLATFORM_NAME_2017="v141"
+VS_SDK_PLATFORM_NAME_2017=
+
 ################################################################################
 
 AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
@@ -67,23 +91,41 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
     VS_BASE="$2"
     METHOD="$3"
 
-    if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-      VCVARSFILE="vc/bin/vcvars32.bat"
-    else
-      VCVARSFILE="vc/bin/amd64/vcvars64.bat"
+    BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(VS_BASE)
+    # In VS 2017, the default installation is in a subdir named after the edition.
+    # Find the first one present and use that.
+    if test "x$VS_EDITIONS" != x; then
+      for edition in $VS_EDITIONS; do
+        if test -d "$VS_BASE/$edition"; then
+          VS_BASE="$VS_BASE/$edition"
+          break
+        fi
+      done
     fi
 
-    BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(VS_BASE)
     if test -d "$VS_BASE"; then
-      if test -f "$VS_BASE/$VCVARSFILE"; then
-        AC_MSG_NOTICE([Found Visual Studio installation at $VS_BASE using $METHOD])
-        VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
-        # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
-        # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
-        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
+      AC_MSG_NOTICE([Found Visual Studio installation at $VS_BASE using $METHOD])
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        VCVARSFILES="vc/bin/vcvars32.bat vc/auxiliary/build/vcvars32.bat"
       else
-        AC_MSG_NOTICE([Found Visual Studio installation at $VS_BASE using $METHOD])
-        AC_MSG_NOTICE([Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring])
+        VCVARSFILES="vc/bin/amd64/vcvars64.bat vc/bin/x86_amd64/vcvarsx86_amd64.bat \
+            vc/auxiliary/build/vcvarsx86_amd64.bat vc/auxiliary/build/vcvars64.bat"
+      fi
+
+      for VCVARSFILE in $VCVARSFILES; do
+        if test -f "$VS_BASE/$VCVARSFILE"; then
+          VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
+          break
+        fi
+      done
+
+      if test "x$VS_ENV_CMD" = x; then
+        AC_MSG_NOTICE([Warning: None of $VCVARSFILES were found, Visual Studio installation not recognized. Ignoring])
+      else
+        # PLATFORM_TOOLSET is used during the compilation of the freetype sources
+        # (see 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100',
+        # 'v110' or 'v120' for VS 2010, 2012 or VS2013
+        eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
       fi
     fi
   fi
@@ -133,7 +175,9 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
   eval VS_COMNTOOLS_VAR="\${VS_ENVVAR_${VS_VERSION}}"
   eval VS_COMNTOOLS="\$${VS_COMNTOOLS_VAR}"
   eval VS_INSTALL_DIR="\${VS_VS_INSTALLDIR_${VS_VERSION}}"
+  eval VS_EDITIONS="\${VS_EDITIONS_${VS_VERSION}}"
   eval SDK_INSTALL_DIR="\${VS_SDK_INSTALLDIR_${VS_VERSION}}"
+  eval VS_ENV_ARGS="\${VS_ENV_ARGS_${VS_VERSION}}"
 
   # When using --with-tools-dir, assume it points to the correct and default
   # version of Visual Studio or that --with-toolchain-version was also set.
@@ -153,7 +197,6 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
   fi
 
   VS_ENV_CMD=""
-  VS_ENV_ARGS=""
 
   if test "x$VS_COMNTOOLS" != x; then
     TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT([${VS_VERSION}],
@@ -213,7 +256,11 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO],
   elif test "x$DEVKIT_VS_VERSION" != x; then
     VS_VERSION=$DEVKIT_VS_VERSION
     TOOLCHAIN_VERSION=$VS_VERSION
-    eval VS_DESCRIPTION="\${VS_DESCRIPTION_${VS_VERSION}}"
+    # If the devkit has a name, use that as description
+    VS_DESCRIPTION="$DEVKIT_NAME"
+    if test "x$VS_DESCRIPTION" = x; then
+      eval VS_DESCRIPTION="\${VS_DESCRIPTION_${VS_VERSION}}"
+    fi
     eval VS_VERSION_INTERNAL="\${VS_VERSION_INTERNAL_${VS_VERSION}}"
     eval MSVCR_NAME="\${VS_MSVCR_${VS_VERSION}}"
     eval MSVCP_NAME="\${VS_MSVCP_${VS_VERSION}}"
@@ -267,6 +314,11 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO],
       break
     fi
   done
+
+  TOOLCHAIN_DESCRIPTION="$VS_DESCRIPTION"
+  if test "$TOOLCHAIN_VERSION" -gt 2013; then
+    UNSUPPORTED_TOOLCHAIN_VERSION=yes
+  fi
 ])
 
 ################################################################################
@@ -320,6 +372,9 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       # This will end up something like:
       # call C:/progra~2/micros~2.0/vc/bin/amd64/vcvars64.bat
       $ECHO "call $WINPATH_VS_ENV_CMD $VS_ENV_ARGS" >> $EXTRACT_VC_ENV_BAT_FILE
+      # In some cases, the VS_ENV_CMD will change directory, change back so
+      # the set-vs-env.sh ends up in the right place.
+      $ECHO 'cd %~dp0' >> $EXTRACT_VC_ENV_BAT_FILE
       # These will end up something like:
       # C:/CygWin/bin/bash -c 'echo VS_PATH=\"$PATH\" > localdevenv.sh
       # The trailing space for everyone except PATH is no typo, but is needed due
@@ -467,7 +522,6 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL],
     if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
       AC_MSG_RESULT([ok])
       MSVC_DLL="$POSSIBLE_MSVC_DLL"
-      BASIC_FIXUP_PATH(MSVC_DLL)
       AC_MSG_CHECKING([for $DLL_NAME])
       AC_MSG_RESULT([$MSVC_DLL])
     else
@@ -483,18 +537,30 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
   MSVC_DLL=
 
   if test "x$MSVC_DLL" = x; then
-    # Probe: Using well-known location from Visual Studio 10.0
     if test "x$VCINSTALLDIR" != x; then
       CYGWIN_VC_INSTALL_DIR="$VCINSTALLDIR"
       BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(CYGWIN_VC_INSTALL_DIR)
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
+      if test "$VS_VERSION" -lt 2017; then
+        # Probe: Using well-known location from Visual Studio 12.0 and older
+        if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+          POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
+        else
+          POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
+        fi
       else
-        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
+        # Probe: Using well-known location from VS 2017
+        if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+          POSSIBLE_MSVC_DLL="`ls $CYGWIN_VC_INSTALL_DIR/Redist/MSVC/*/x64/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME`"
+        else
+          POSSIBLE_MSVC_DLL="`ls $CYGWIN_VC_INSTALL_DIR/Redist/MSVC/*/x86/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME`"
+        fi
       fi
-      $ECHO "POSSIBLE_MSVC_DLL $POSSIBLEMSVC_DLL"
-      TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$POSSIBLE_MSVC_DLL],
-          [well-known location in VCINSTALLDIR])
+      # In case any of the above finds more than one file, loop over them.
+      for possible_msvc_dll in $POSSIBLE_MSVC_DLL; do
+        $ECHO "POSSIBLE_MSVC_DLL $possible_msvc_dll"
+        TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$possible_msvc_dll],
+            [well-known location in VCINSTALLDIR])
+      done
     fi
   fi
 
@@ -576,7 +642,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
     TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL($MSVCR_NAME, [$DEVKIT_MSVCR_DLL], [devkit])
     if test "x$MSVC_DLL" = x; then
       AC_MSG_ERROR([Could not find a proper $MSVCR_NAME as specified by devkit])
-    fi  
+    fi
     MSVCR_DLL="$MSVC_DLL"
   else
     TOOLCHAIN_SETUP_MSVC_DLL([${MSVCR_NAME}])
@@ -599,7 +665,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
       TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL($MSVCP_NAME, [$DEVKIT_MSVCP_DLL], [devkit])
       if test "x$MSVC_DLL" = x; then
         AC_MSG_ERROR([Could not find a proper $MSVCP_NAME as specified by devkit])
-      fi  
+      fi
       MSVCP_DLL="$MSVC_DLL"
     else
       TOOLCHAIN_SETUP_MSVC_DLL([${MSVCP_NAME}])

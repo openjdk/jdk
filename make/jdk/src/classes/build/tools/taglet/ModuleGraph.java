@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public class ModuleGraph implements Taglet {
         }
 
         String moduleName = ((ModuleElement) element).getQualifiedName().toString();
-        String imageFile = moduleName + "-graph.png";
+        String imageFile = "module-graph.png";
         int thumbnailHeight = -1;
         String hoverImage = "";
         if (!moduleName.equals("java.base")) {

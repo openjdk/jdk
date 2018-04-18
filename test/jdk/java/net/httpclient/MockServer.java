@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,16 @@
  * questions.
  */
 
+import com.sun.net.httpserver.HttpServer;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLServerSocket;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
@@ -37,6 +41,7 @@ import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 /**
  * A cut-down Http/1 Server for testing various error situations
@@ -60,7 +65,7 @@ public class MockServer extends Thread implements Closeable {
     // to the test client.
    final String root;
 
-    // waits up to 20 seconds for something to happen
+    // waits up to 2000 seconds for something to happen
     // dont use this unless certain activity coming.
     public Connection activity() {
         for (int i = 0; i < 80 * 100; i++) {
@@ -160,7 +165,7 @@ public class MockServer extends Thread implements Closeable {
                         cleanup();
                         return;
                     }
-                    String s0 = new String(buf, 0, n, StandardCharsets.ISO_8859_1);
+                    String s0 = new String(buf, 0, n, ISO_8859_1);
                     s = s + s0;
                     int i;
                     while ((i=s.indexOf(CRLF)) != -1) {
@@ -195,7 +200,7 @@ public class MockServer extends Thread implements Closeable {
             for (int i=0; i<headers.length; i+=2) {
                 r1 += headers[i] + ": " + headers[i+1] + CRLF;
             }
-            int clen = body == null ? 0 : body.length();
+            int clen = body == null ? 0 : body.getBytes(ISO_8859_1).length;
             r1 += "Content-Length: " + Integer.toString(clen) + CRLF;
             r1 += CRLF;
             if (body != null) {
@@ -208,7 +213,7 @@ public class MockServer extends Thread implements Closeable {
         public void sendIncompleteHttpResponseBody(int code) throws IOException {
             String body = "Hello World Helloworld Goodbye World";
             String r1 = "HTTP/1.1 " + Integer.toString(code) + " status" + CRLF;
-            int clen = body.length() + 10;
+            int clen = body.getBytes(ISO_8859_1).length + 10;
             r1 += "Content-Length: " + Integer.toString(clen) + CRLF;
             r1 += CRLF;
             if (body != null) {
@@ -225,7 +230,18 @@ public class MockServer extends Thread implements Closeable {
         }
 
         public void send(String r) throws IOException {
-            os.write(r.getBytes(StandardCharsets.ISO_8859_1));
+            try {
+                os.write(r.getBytes(ISO_8859_1));
+            } catch (IOException x) {
+                IOException suppressed =
+                        new IOException("MockServer["
+                            + ss.getLocalPort()
+                            +"] Failed while writing bytes: "
+                            +  x.getMessage());
+                x.addSuppressed(suppressed);
+                System.err.println("WARNING: " + suppressed);
+                throw x;
+            }
         }
 
         public synchronized void close() {
@@ -275,7 +291,9 @@ public class MockServer extends Thread implements Closeable {
     }
 
     MockServer(int port, ServerSocketFactory factory, String root) throws IOException {
-        ss = factory.createServerSocket(port);
+        ss = factory.createServerSocket();
+        ss.setReuseAddress(false);
+        ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
         this.root = root; // if specified, any request which don't have this value
                           // in their statusLine will be rejected.
         sockets = Collections.synchronizedList(new LinkedList<>());
@@ -301,11 +319,15 @@ public class MockServer extends Thread implements Closeable {
         return ss.getLocalPort();
     }
 
+    String serverAuthority() {
+        return InetAddress.getLoopbackAddress().getHostName() + ":" + port();
+    }
+
     public String getURL() {
         if (ss instanceof SSLServerSocket) {
-            return "https://127.0.0.1:" + port() + "/foo/";
+            return "https://" + serverAuthority() + "/foo/";
         } else {
-            return "http://127.0.0.1:" + port() + "/foo/";
+            return "http://" + serverAuthority() + "/foo/";
         }
     }
 

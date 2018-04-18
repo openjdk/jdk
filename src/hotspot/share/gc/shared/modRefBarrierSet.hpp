@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,10 @@ class Klass;
 
 class ModRefBarrierSet: public BarrierSet {
 protected:
-  ModRefBarrierSet(const BarrierSet::FakeRtti& fake_rtti)
-    : BarrierSet(fake_rtti.add_tag(BarrierSet::ModRef)) { }
+  ModRefBarrierSet(BarrierSetAssembler* barrier_set_assembler,
+                   const BarrierSet::FakeRtti& fake_rtti)
+    : BarrierSet(barrier_set_assembler,
+                 fake_rtti.add_tag(BarrierSet::ModRef)) { }
   ~ModRefBarrierSet() { }
 
 public:
@@ -45,11 +47,24 @@ public:
 
   // Causes all refs in "mr" to be assumed to be modified.
   virtual void invalidate(MemRegion mr) = 0;
+  virtual void write_region(MemRegion mr) = 0;
 
-  // The caller guarantees that "mr" contains no references.  (Perhaps it's
-  // objects have been moved elsewhere.)
-  virtual void clear(MemRegion mr) = 0;
+  // Operations on arrays, or general regions (e.g., for "clone") may be
+  // optimized by some barriers.
 
+  // Below length is the # array elements being written
+  virtual void write_ref_array_pre(oop* dst, size_t length,
+                                   bool dest_uninitialized = false) {}
+  virtual void write_ref_array_pre(narrowOop* dst, size_t length,
+                                   bool dest_uninitialized = false) {}
+  // Below count is the # array elements being written, starting
+  // at the address "start", which may not necessarily be HeapWord-aligned
+  inline void write_ref_array(HeapWord* start, size_t count);
+
+ protected:
+  virtual void write_ref_array_work(MemRegion mr) = 0;
+
+ public:
   // The ModRef abstraction introduces pre and post barriers
   template <DecoratorSet decorators, typename BarrierSetT>
   class AccessBarrier: public BarrierSet::AccessBarrier<decorators, BarrierSetT> {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,17 +52,14 @@ public class BadExtendedKeyUsageTest extends Test {
 
         // create a certificate whose signer certificate's
         // ExtendedKeyUsage extension doesn't allow code signing
-        keytool(
-                "-genkey",
-                "-alias", KEY_ALIAS,
-                "-keyalg", KEY_ALG,
-                "-keysize", Integer.toString(KEY_SIZE),
-                "-keystore", KEYSTORE,
-                "-storepass", PASSWORD,
-                "-keypass", PASSWORD,
-                "-dname", "CN=Test",
+        // create key pair for jar signing
+        createAlias(CA_KEY_ALIAS);
+        createAlias(KEY_ALIAS);
+
+        issueCert(
+                KEY_ALIAS,
                 "-ext", "ExtendedkeyUsage=serverAuth",
-                "-validity", Integer.toString(VALIDITY)).shouldHaveExitValue(0);
+                "-validity", Integer.toString(VALIDITY));
 
         // sign jar
         OutputAnalyzer analyzer = jarsigner(

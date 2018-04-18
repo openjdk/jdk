@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2647,7 +2647,7 @@ public final class String
     /**
      * Returns a stream of {@code int} zero-extending the {@code char} values
      * from this sequence.  Any char which maps to a <a
-     * href="{@docRoot}/java/lang/Character.html#unicode">surrogate code
+     * href="{@docRoot}/java.base/java/lang/Character.html#unicode">surrogate code
      * point</a> is passed through uninterpreted.
      *
      * @return an IntStream of char values from this sequence
@@ -2963,6 +2963,55 @@ public final class String
      */
     public native String intern();
 
+    /**
+     * Returns a string whose value is the concatenation of this
+     * string repeated {@code count} times.
+     * <p>
+     * If this string is empty or count is zero then the empty
+     * string is returned.
+     *
+     * @param   count number of times to repeat
+     *
+     * @return  A string composed of this string repeated
+     *          {@code count} times or the empty string if this
+     *          string is empty or count is zero
+     *
+     * @throws  IllegalArgumentException if the {@code count} is
+     *          negative.
+     *
+     * @since 11
+     */
+    public String repeat(int count) {
+        if (count < 0) {
+            throw new IllegalArgumentException("count is negative: " + count);
+        }
+        if (count == 1) {
+            return this;
+        }
+        final int len = value.length;
+        if (len == 0 || count == 0) {
+            return "";
+        }
+        if (len == 1) {
+            final byte[] single = new byte[count];
+            Arrays.fill(single, value[0]);
+            return new String(single, coder);
+        }
+        if (Integer.MAX_VALUE / count < len) {
+            throw new OutOfMemoryError("Repeating " + len + " bytes String " + count +
+                    " times will produce a String exceeding maximum size.");
+        }
+        final int limit = len * count;
+        final byte[] multiple = new byte[limit];
+        System.arraycopy(value, 0, multiple, 0, len);
+        int copied = len;
+        for (; copied < limit - copied; copied <<= 1) {
+            System.arraycopy(multiple, 0, multiple, copied, copied);
+        }
+        System.arraycopy(multiple, 0, multiple, copied, limit - copied);
+        return new String(multiple, coder);
+    }
+
     ////////////////////////////////////////////////////////////////
 
     /**
@@ -3107,5 +3156,29 @@ public final class String
             throw new StringIndexOutOfBoundsException(
                 "begin " + begin + ", end " + end + ", length " + length);
         }
+    }
+
+    /**
+     * Returns the string representation of the {@code codePoint}
+     * argument.
+     *
+     * @param   codePoint a {@code codePoint}.
+     * @return  a string of length {@code 1} or {@code 2} containing
+     *          as its single character the argument {@code codePoint}.
+     * @throws IllegalArgumentException if the specified
+     *          {@code codePoint} is not a {@linkplain Character#isValidCodePoint
+     *          valid Unicode code point}.
+     */
+    static String valueOfCodePoint(int codePoint) {
+        if (COMPACT_STRINGS && StringLatin1.canEncode(codePoint)) {
+            return new String(StringLatin1.toBytes((char)codePoint), LATIN1);
+        } else if (Character.isBmpCodePoint(codePoint)) {
+            return new String(StringUTF16.toBytes((char)codePoint), UTF16);
+        } else if (Character.isSupplementaryCodePoint(codePoint)) {
+            return new String(StringUTF16.toBytesSupplementary(codePoint), UTF16);
+        }
+
+        throw new IllegalArgumentException(
+            format("Not a valid Unicode code point: 0x%X", codePoint));
     }
 }

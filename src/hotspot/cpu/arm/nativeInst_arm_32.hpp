@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 
 #include "asm/macroAssembler.hpp"
 #include "code/codeCache.hpp"
-#include "memory/allocation.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
@@ -47,7 +46,7 @@
 // back-end extensions or the actual instructions size.
 class NativeInstruction;
 
-class RawNativeInstruction VALUE_OBJ_CLASS_SPEC {
+class RawNativeInstruction {
  public:
 
   enum ARM_specific {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,10 +142,9 @@ public class GenGraphs {
 
             ranks.add(Set.of("java.logging", "java.scripting", "java.xml"));
             ranks.add(Set.of("java.sql"));
+            ranks.add(Set.of("java.transaction.xa"));
             ranks.add(Set.of("java.compiler", "java.instrument"));
             ranks.add(Set.of("java.desktop", "java.management"));
-            ranks.add(Set.of("java.corba", "java.xml.ws"));
-            ranks.add(Set.of("java.xml.bind", "java.xml.ws.annotation"));
 
             this.attrs = attrs;
         }

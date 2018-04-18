@@ -22,9 +22,12 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/serial/serial_specialized_oop_closures.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
-#include "gc/shared/specialized_oop_closures.hpp"
 #include "memory/iterator.inline.hpp"
+
+void FilteringClosure::do_oop(oop* p)       { do_oop_nv(p); }
+void FilteringClosure::do_oop(narrowOop* p) { do_oop_nv(p); }
 
 // Generate Serial GC specialized oop_oop_iterate functions.
 SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_S(ALL_KLASS_OOP_OOP_ITERATE_DEFN)

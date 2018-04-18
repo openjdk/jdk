@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,7 +31,7 @@
 // Address is an abstraction used to represent a memory location
 // as used in assembler instructions.
 // PPC instructions grok either baseReg + indexReg or baseReg + disp.
-class Address VALUE_OBJ_CLASS_SPEC {
+class Address {
  private:
   Register _base;         // Base register.
   Register _index;        // Index register.
@@ -64,7 +64,7 @@ class Address VALUE_OBJ_CLASS_SPEC {
   bool     is_const() const { return _base == noreg && _index == noreg; }
 };
 
-class AddressLiteral VALUE_OBJ_CLASS_SPEC {
+class AddressLiteral {
  private:
   address          _address;
   RelocationHolder _rspec;
@@ -117,7 +117,7 @@ class AddressLiteral VALUE_OBJ_CLASS_SPEC {
 // with the PPC Application Binary Interface, or ABI. This is
 // often referred to as the native or C calling convention.
 
-class Argument VALUE_OBJ_CLASS_SPEC {
+class Argument {
  private:
   int _number;  // The number of the argument.
  public:
@@ -153,7 +153,7 @@ class Argument VALUE_OBJ_CLASS_SPEC {
 
 #if !defined(ABI_ELFv2)
 // A ppc64 function descriptor.
-struct FunctionDescriptor VALUE_OBJ_CLASS_SPEC {
+struct FunctionDescriptor {
  private:
   address _entry;
   address _toc;
@@ -518,6 +518,7 @@ class Assembler : public AbstractAssembler {
     XXMRGHW_OPCODE = (60u << OPCODE_SHIFT |   18u << 3),
     XXMRGLW_OPCODE = (60u << OPCODE_SHIFT |   50u << 3),
     XXSPLTW_OPCODE = (60u << OPCODE_SHIFT |  164u << 2),
+    XXLOR_OPCODE   = (60u << OPCODE_SHIFT |  146u << 3),
     XXLXOR_OPCODE  = (60u << OPCODE_SHIFT |  154u << 3),
     XXLEQV_OPCODE  = (60u << OPCODE_SHIFT |  186u << 3),
 
@@ -2162,6 +2163,7 @@ class Assembler : public AbstractAssembler {
   inline void mtvsrd(   VectorSRegister d, Register a);
   inline void mtvsrwz(  VectorSRegister d, Register a);
   inline void xxspltw(  VectorSRegister d, VectorSRegister b, int ui2);
+  inline void xxlor(    VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xxlxor(   VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xxleqv(   VectorSRegister d, VectorSRegister a, VectorSRegister b);
 

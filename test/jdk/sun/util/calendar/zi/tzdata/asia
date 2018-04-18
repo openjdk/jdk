@@ -92,13 +92,13 @@
 Rule	EUAsia	1981	max	-	Mar	lastSun	 1:00u	1:00	S
 Rule	EUAsia	1979	1995	-	Sep	lastSun	 1:00u	0	-
 Rule	EUAsia	1996	max	-	Oct	lastSun	 1:00u	0	-
-Rule E-EurAsia	1981	max	-	Mar	lastSun	 0:00	1:00	S
+Rule E-EurAsia	1981	max	-	Mar	lastSun	 0:00	1:00	-
 Rule E-EurAsia	1979	1995	-	Sep	lastSun	 0:00	0	-
 Rule E-EurAsia	1996	max	-	Oct	lastSun	 0:00	0	-
-Rule RussiaAsia	1981	1984	-	Apr	1	 0:00	1:00	S
+Rule RussiaAsia	1981	1984	-	Apr	1	 0:00	1:00	-
 Rule RussiaAsia	1981	1983	-	Oct	1	 0:00	0	-
 Rule RussiaAsia	1984	1995	-	Sep	lastSun	 2:00s	0	-
-Rule RussiaAsia	1985	2010	-	Mar	lastSun	 2:00s	1:00	S
+Rule RussiaAsia	1985	2010	-	Mar	lastSun	 2:00s	1:00	-
 Rule RussiaAsia	1996	2010	-	Oct	lastSun	 2:00s	0	-
 
 # Afghanistan
@@ -133,7 +133,7 @@ Zone	Asia/Kabul	4:36:48 -	LMT	1890
 # (brief)
 # http://www.worldtimezone.com/dst_news/dst_news_armenia03.html
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule Armenia	2011	only	-	Mar	lastSun	 2:00s	1:00	S
+Rule Armenia	2011	only	-	Mar	lastSun	 2:00s	1:00	-
 Rule Armenia	2011	only	-	Oct	lastSun	 2:00s	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Yerevan	2:58:00 -	LMT	1924 May  2
@@ -159,7 +159,7 @@ Zone	Asia/Yerevan	2:58:00 -	LMT	1924 May  2
 # http://en.apa.az/xeber_azerbaijan_abolishes_daylight_savings_ti_240862.html
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Azer	1997	2015	-	Mar	lastSun	 4:00	1:00	S
+Rule	Azer	1997	2015	-	Mar	lastSun	 4:00	1:00	-
 Rule	Azer	1997	2015	-	Oct	lastSun	 5:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Baku	3:19:24 -	LMT	1924 May  2
@@ -246,7 +246,7 @@ Zone	Asia/Baku	3:19:24 -	LMT	1924 May  2
 # http://www.worldtimezone.com/dst_news/dst_news_bangladesh06.html
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Dhaka	2009	only	-	Jun	19	23:00	1:00	S
+Rule	Dhaka	2009	only	-	Jun	19	23:00	1:00	-
 Rule	Dhaka	2009	only	-	Dec	31	24:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -787,8 +787,9 @@ Rule	Macau	1974	1977	-	Oct	Sun>=15	3:30	0	S
 Rule	Macau	1975	1977	-	Apr	Sun>=15	3:30	1:00	D
 Rule	Macau	1978	1980	-	Apr	Sun>=15	0:00	1:00	D
 Rule	Macau	1978	1980	-	Oct	Sun>=15	0:00	0	S
+# See Europe/Lisbon for info about the 1912 transition.
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Asia/Macau	7:34:20 -	LMT	1912 Jan  1
+Zone	Asia/Macau	7:34:20 -	LMT	1911 Dec 31 16:00u
 			8:00	Macau	C%sT
 
 
@@ -1129,61 +1130,61 @@ Zone Asia/Jayapura	9:22:48 -	LMT	1932 Nov
 # thirtieth day of Shahrivar.
 #
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Iran	1978	1980	-	Mar	21	0:00	1:00	D
-Rule	Iran	1978	only	-	Oct	21	0:00	0	S
-Rule	Iran	1979	only	-	Sep	19	0:00	0	S
-Rule	Iran	1980	only	-	Sep	23	0:00	0	S
-Rule	Iran	1991	only	-	May	 3	0:00	1:00	D
-Rule	Iran	1992	1995	-	Mar	22	0:00	1:00	D
-Rule	Iran	1991	1995	-	Sep	22	0:00	0	S
-Rule	Iran	1996	only	-	Mar	21	0:00	1:00	D
-Rule	Iran	1996	only	-	Sep	21	0:00	0	S
-Rule	Iran	1997	1999	-	Mar	22	0:00	1:00	D
-Rule	Iran	1997	1999	-	Sep	22	0:00	0	S
-Rule	Iran	2000	only	-	Mar	21	0:00	1:00	D
-Rule	Iran	2000	only	-	Sep	21	0:00	0	S
-Rule	Iran	2001	2003	-	Mar	22	0:00	1:00	D
-Rule	Iran	2001	2003	-	Sep	22	0:00	0	S
-Rule	Iran	2004	only	-	Mar	21	0:00	1:00	D
-Rule	Iran	2004	only	-	Sep	21	0:00	0	S
-Rule	Iran	2005	only	-	Mar	22	0:00	1:00	D
-Rule	Iran	2005	only	-	Sep	22	0:00	0	S
-Rule	Iran	2008	only	-	Mar	21	0:00	1:00	D
-Rule	Iran	2008	only	-	Sep	21	0:00	0	S
-Rule	Iran	2009	2011	-	Mar	22	0:00	1:00	D
-Rule	Iran	2009	2011	-	Sep	22	0:00	0	S
-Rule	Iran	2012	only	-	Mar	21	0:00	1:00	D
-Rule	Iran	2012	only	-	Sep	21	0:00	0	S
-Rule	Iran	2013	2015	-	Mar	22	0:00	1:00	D
-Rule	Iran	2013	2015	-	Sep	22	0:00	0	S
-Rule	Iran	2016	only	-	Mar	21	0:00	1:00	D
-Rule	Iran	2016	only	-	Sep	21	0:00	0	S
-Rule	Iran	2017	2019	-	Mar	22	0:00	1:00	D
-Rule	Iran	2017	2019	-	Sep	22	0:00	0	S
-Rule	Iran	2020	only	-	Mar	21	0:00	1:00	D
-Rule	Iran	2020	only	-	Sep	21	0:00	0	S
-Rule	Iran	2021	2023	-	Mar	22	0:00	1:00	D
-Rule	Iran	2021	2023	-	Sep	22	0:00	0	S
-Rule	Iran	2024	only	-	Mar	21	0:00	1:00	D
-Rule	Iran	2024	only	-	Sep	21	0:00	0	S
-Rule	Iran	2025	2027	-	Mar	22	0:00	1:00	D
-Rule	Iran	2025	2027	-	Sep	22	0:00	0	S
-Rule	Iran	2028	2029	-	Mar	21	0:00	1:00	D
-Rule	Iran	2028	2029	-	Sep	21	0:00	0	S
-Rule	Iran	2030	2031	-	Mar	22	0:00	1:00	D
-Rule	Iran	2030	2031	-	Sep	22	0:00	0	S
-Rule	Iran	2032	2033	-	Mar	21	0:00	1:00	D
-Rule	Iran	2032	2033	-	Sep	21	0:00	0	S
-Rule	Iran	2034	2035	-	Mar	22	0:00	1:00	D
-Rule	Iran	2034	2035	-	Sep	22	0:00	0	S
+Rule	Iran	1978	1980	-	Mar	21	0:00	1:00	-
+Rule	Iran	1978	only	-	Oct	21	0:00	0	-
+Rule	Iran	1979	only	-	Sep	19	0:00	0	-
+Rule	Iran	1980	only	-	Sep	23	0:00	0	-
+Rule	Iran	1991	only	-	May	 3	0:00	1:00	-
+Rule	Iran	1992	1995	-	Mar	22	0:00	1:00	-
+Rule	Iran	1991	1995	-	Sep	22	0:00	0	-
+Rule	Iran	1996	only	-	Mar	21	0:00	1:00	-
+Rule	Iran	1996	only	-	Sep	21	0:00	0	-
+Rule	Iran	1997	1999	-	Mar	22	0:00	1:00	-
+Rule	Iran	1997	1999	-	Sep	22	0:00	0	-
+Rule	Iran	2000	only	-	Mar	21	0:00	1:00	-
+Rule	Iran	2000	only	-	Sep	21	0:00	0	-
+Rule	Iran	2001	2003	-	Mar	22	0:00	1:00	-
+Rule	Iran	2001	2003	-	Sep	22	0:00	0	-
+Rule	Iran	2004	only	-	Mar	21	0:00	1:00	-
+Rule	Iran	2004	only	-	Sep	21	0:00	0	-
+Rule	Iran	2005	only	-	Mar	22	0:00	1:00	-
+Rule	Iran	2005	only	-	Sep	22	0:00	0	-
+Rule	Iran	2008	only	-	Mar	21	0:00	1:00	-
+Rule	Iran	2008	only	-	Sep	21	0:00	0	-
+Rule	Iran	2009	2011	-	Mar	22	0:00	1:00	-
+Rule	Iran	2009	2011	-	Sep	22	0:00	0	-
+Rule	Iran	2012	only	-	Mar	21	0:00	1:00	-
+Rule	Iran	2012	only	-	Sep	21	0:00	0	-
+Rule	Iran	2013	2015	-	Mar	22	0:00	1:00	-
+Rule	Iran	2013	2015	-	Sep	22	0:00	0	-
+Rule	Iran	2016	only	-	Mar	21	0:00	1:00	-
+Rule	Iran	2016	only	-	Sep	21	0:00	0	-
+Rule	Iran	2017	2019	-	Mar	22	0:00	1:00	-
+Rule	Iran	2017	2019	-	Sep	22	0:00	0	-
+Rule	Iran	2020	only	-	Mar	21	0:00	1:00	-
+Rule	Iran	2020	only	-	Sep	21	0:00	0	-
+Rule	Iran	2021	2023	-	Mar	22	0:00	1:00	-
+Rule	Iran	2021	2023	-	Sep	22	0:00	0	-
+Rule	Iran	2024	only	-	Mar	21	0:00	1:00	-
+Rule	Iran	2024	only	-	Sep	21	0:00	0	-
+Rule	Iran	2025	2027	-	Mar	22	0:00	1:00	-
+Rule	Iran	2025	2027	-	Sep	22	0:00	0	-
+Rule	Iran	2028	2029	-	Mar	21	0:00	1:00	-
+Rule	Iran	2028	2029	-	Sep	21	0:00	0	-
+Rule	Iran	2030	2031	-	Mar	22	0:00	1:00	-
+Rule	Iran	2030	2031	-	Sep	22	0:00	0	-
+Rule	Iran	2032	2033	-	Mar	21	0:00	1:00	-
+Rule	Iran	2032	2033	-	Sep	21	0:00	0	-
+Rule	Iran	2034	2035	-	Mar	22	0:00	1:00	-
+Rule	Iran	2034	2035	-	Sep	22	0:00	0	-
 #
 # The following rules are approximations starting in the year 2038.
 # These are the best post-2037 approximations available, given the
 # restrictions of a single rule using a Gregorian-based data format.
 # At some point this table will need to be extended, though quite
 # possibly Iran will change the rules first.
-Rule	Iran	2036	max	-	Mar	21	0:00	1:00	D
-Rule	Iran	2036	max	-	Sep	21	0:00	0	S
+Rule	Iran	2036	max	-	Mar	21	0:00	1:00	-
+Rule	Iran	2036	max	-	Sep	21	0:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Tehran	3:25:44	-	LMT	1916
@@ -1219,17 +1220,17 @@ Zone	Asia/Tehran	3:25:44	-	LMT	1916
 # https://www.timeanddate.com/news/time/iraq-dumps-daylight-saving.html
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Iraq	1982	only	-	May	1	0:00	1:00	D
-Rule	Iraq	1982	1984	-	Oct	1	0:00	0	S
-Rule	Iraq	1983	only	-	Mar	31	0:00	1:00	D
-Rule	Iraq	1984	1985	-	Apr	1	0:00	1:00	D
-Rule	Iraq	1985	1990	-	Sep	lastSun	1:00s	0	S
-Rule	Iraq	1986	1990	-	Mar	lastSun	1:00s	1:00	D
+Rule	Iraq	1982	only	-	May	1	0:00	1:00	-
+Rule	Iraq	1982	1984	-	Oct	1	0:00	0	-
+Rule	Iraq	1983	only	-	Mar	31	0:00	1:00	-
+Rule	Iraq	1984	1985	-	Apr	1	0:00	1:00	-
+Rule	Iraq	1985	1990	-	Sep	lastSun	1:00s	0	-
+Rule	Iraq	1986	1990	-	Mar	lastSun	1:00s	1:00	-
 # IATA SSIM (1991/1996) says Apr 1 12:01am UTC; guess the ':01' is a typo.
 # Shanks & Pottenger say Iraq did not observe DST 1992/1997; ignore this.
 #
-Rule	Iraq	1991	2007	-	Apr	 1	3:00s	1:00	D
-Rule	Iraq	1991	2007	-	Oct	 1	3:00s	0	S
+Rule	Iraq	1991	2007	-	Apr	 1	3:00s	1:00	-
+Rule	Iraq	1991	2007	-	Oct	 1	3:00s	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Baghdad	2:57:40	-	LMT	1890
 			2:57:36	-	BMT	1918     # Baghdad Mean Time?
@@ -1501,8 +1502,7 @@ Rule	Japan	1950	1951	-	May	Sat>=1	24:00	1:00	D
 
 # From Hideyuki Suzuki (1998-11-09):
 # 'Tokyo' usually stands for the former location of Tokyo Astronomical
-# Observatory: 139 degrees 44' 40.90" E (9h 18m 58.727s),
-# 35 degrees 39' 16.0" N.
+# Observatory: 139° 44' 40.90" E (9h 18m 58.727s), 35° 39' 16.0" N.
 # This data is from 'Rika Nenpyou (Chronological Scientific Tables) 1996'
 # edited by National Astronomical Observatory of Japan....
 # JST (Japan Standard Time) has been used since 1888-01-01 00:00 (JST).
@@ -1510,10 +1510,10 @@ Rule	Japan	1950	1951	-	May	Sat>=1	24:00	1:00	D
 
 # From Hideyuki Suzuki (1998-11-16):
 # The ordinance No. 51 (1886) established "standard time" in Japan,
-# which stands for the time on 135 degrees E.
+# which stands for the time on 135° E.
 # In the ordinance No. 167 (1895), "standard time" was renamed to "central
 # standard time".  And the same ordinance also established "western standard
-# time", which stands for the time on 120 degrees E....  But "western standard
+# time", which stands for the time on 120° E....  But "western standard
 # time" was abolished in the ordinance No. 529 (1937).  In the ordinance No.
 # 167, there is no mention regarding for what place western standard time is
 # standard....
@@ -1926,9 +1926,9 @@ Zone	Asia/Oral	3:25:24	-	LMT	1924 May  2 # or Ural'sk
 # From 2005-08-12 our GMT-offset is +6, w/o any daylight saving.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Kyrgyz	1992	1996	-	Apr	Sun>=7	0:00s	1:00	S
+Rule	Kyrgyz	1992	1996	-	Apr	Sun>=7	0:00s	1:00	-
 Rule	Kyrgyz	1992	1996	-	Sep	lastSun	0:00	0	-
-Rule	Kyrgyz	1997	2005	-	Mar	lastSun	2:30	1:00	S
+Rule	Kyrgyz	1997	2005	-	Mar	lastSun	2:30	1:00	-
 Rule	Kyrgyz	1997	2004	-	Oct	lastSun	2:30	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Bishkek	4:58:24 -	LMT	1924 May  2
@@ -2060,7 +2060,7 @@ Zone	Asia/Beirut	2:22:00 -	LMT	1880
 
 # Malaysia
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	NBorneo	1935	1941	-	Sep	14	0:00	0:20	TS # one-Third Summer
+Rule	NBorneo	1935	1941	-	Sep	14	0:00	0:20	-
 Rule	NBorneo	1935	1941	-	Dec	14	0:00	0	-
 #
 # peninsular Malaysia
@@ -2205,7 +2205,7 @@ Zone	Indian/Maldives	4:54:00 -	LMT	1880 # Malé
 # http://zasag.mn/news/view/8969
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Mongol	1983	1984	-	Apr	1	0:00	1:00	S
+Rule	Mongol	1983	1984	-	Apr	1	0:00	1:00	-
 Rule	Mongol	1983	only	-	Oct	1	0:00	0	-
 # Shanks & Pottenger and IATA SSIM say 1990s switches occurred at 00:00,
 # but McDow says the 2001 switches occurred at 02:00.  Also, IATA SSIM
@@ -2222,13 +2222,13 @@ Rule	Mongol	1983	only	-	Oct	1	0:00	0	-
 # Mongolian Government meeting has concluded today to cancel daylight
 # saving time adoption in Mongolia.  Source: http://zasag.mn/news/view/16192
 
-Rule	Mongol	1985	1998	-	Mar	lastSun	0:00	1:00	S
+Rule	Mongol	1985	1998	-	Mar	lastSun	0:00	1:00	-
 Rule	Mongol	1984	1998	-	Sep	lastSun	0:00	0	-
 # IATA SSIM (1999-09) says Mongolia no longer observes DST.
-Rule	Mongol	2001	only	-	Apr	lastSat	2:00	1:00	S
+Rule	Mongol	2001	only	-	Apr	lastSat	2:00	1:00	-
 Rule	Mongol	2001	2006	-	Sep	lastSat	2:00	0	-
-Rule	Mongol	2002	2006	-	Mar	lastSat	2:00	1:00	S
-Rule	Mongol	2015	2016	-	Mar	lastSat	2:00	1:00	S
+Rule	Mongol	2002	2006	-	Mar	lastSat	2:00	1:00	-
+Rule	Mongol	2015	2016	-	Mar	lastSat	2:00	1:00	-
 Rule	Mongol	2015	2016	-	Sep	lastSat	0:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -2662,9 +2662,6 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # [Google translation]: "The Council also decided to start daylight
 # saving in Palestine as of one o'clock on Saturday morning,
 # 2016-03-26, to provide the clock 60 minutes ahead."
-#
-# From Paul Eggert (2016-03-12):
-# Predict spring transitions on March's last Saturday at 01:00 from now on.
 
 # From Sharef Mustafa (2016-10-19):
 # [T]he Palestinian cabinet decision (Mar 8th 2016) published on
@@ -2680,6 +2677,16 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # It's also consistent with predictions in the following URLs today:
 # https://www.timeanddate.com/time/change/gaza-strip/gaza
 # https://www.timeanddate.com/time/change/west-bank/hebron
+
+# From Sharef Mustafa (2018-03-16):
+# Palestine summer time will start on Mar 24th 2018 by advancing the
+# clock by 60 minutes as per Palestinian cabinet decision published on
+# the offical website, though the decree did not specify the exact
+# time of the time shift.
+# http://www.palestinecabinet.gov.ps/Website/AR/NDecrees/ViewFile.ashx?ID=e7a42ab7-ee23-435a-b9c8-a4f7e81f3817
+#
+# From Paul Eggert (2018-03-16):
+# For 2016 on, predict spring transitions on March's fourth Saturday at 01:00.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule EgyptAsia	1957	only	-	May	10	0:00	1:00	S
@@ -2710,7 +2717,7 @@ Rule Palestine	2012	only	-	Sep	21	1:00	0	-
 Rule Palestine	2013	only	-	Sep	Fri>=21	0:00	0	-
 Rule Palestine	2014	2015	-	Oct	Fri>=21	0:00	0	-
 Rule Palestine	2015	only	-	Mar	lastFri	24:00	1:00	S
-Rule Palestine	2016	max	-	Mar	lastSat	1:00	1:00	S
+Rule Palestine	2016	max	-	Mar	Sat>=22	1:00	1:00	S
 Rule Palestine	2016	max	-	Oct	lastSat	1:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -2760,11 +2767,11 @@ Zone	Asia/Hebron	2:20:23	-	LMT	1900 Oct
 # http://www.philstar.com/headlines/2014/08/05/1354152/pnoy-urged-declare-use-daylight-saving-time
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Phil	1936	only	-	Nov	1	0:00	1:00	S
+Rule	Phil	1936	only	-	Nov	1	0:00	1:00	-
 Rule	Phil	1937	only	-	Feb	1	0:00	0	-
-Rule	Phil	1954	only	-	Apr	12	0:00	1:00	S
+Rule	Phil	1954	only	-	Apr	12	0:00	1:00	-
 Rule	Phil	1954	only	-	Jul	1	0:00	0	-
-Rule	Phil	1978	only	-	Mar	22	0:00	1:00	S
+Rule	Phil	1978	only	-	Mar	22	0:00	1:00	-
 Rule	Phil	1978	only	-	Sep	21	0:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Manila	-15:56:00 -	LMT	1844 Dec 31
@@ -3120,9 +3127,9 @@ Zone	Asia/Tashkent	4:37:11 -	LMT	1924 May  2
 # and is the basis for the information below.
 #
 # The 1906 transition was effective July 1 and standardized Indochina to
-# Phù Liễn Observatory, legally 104 deg. 17'17" east of Paris.
+# Phù Liễn Observatory, legally 104° 17' 17" east of Paris.
 # It's unclear whether this meant legal Paris Mean Time (00:09:21) or
-# the Paris Meridian (2 deg. 20'14.03" E); the former yields 07:06:30.1333...
+# the Paris Meridian (2° 20' 14.03" E); the former yields 07:06:30.1333...
 # and the latter 07:06:29.333... so either way it rounds to 07:06:30,
 # which is used below even though the modern-day Phù Liễn Observatory
 # is closer to 07:06:31.  Abbreviate Phù Liễn Mean Time as PLMT.

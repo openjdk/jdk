@@ -382,8 +382,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             styleBits = SET(styleBits, RESIZABLE, resizable);
             if (!resizable) {
                 styleBits = SET(styleBits, ZOOMABLE, false);
-            } else {
-                setCanFullscreen(true);
             }
         }
 
@@ -677,6 +675,15 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
         // Manage the extended state when showing
         if (visible) {
+            /* Frame or Dialog should be set property WINDOW_FULLSCREENABLE to true if the
+            Frame or Dialog is resizable.
+            **/
+            final boolean resizable = (target instanceof Frame) ? ((Frame)target).isResizable() :
+            ((target instanceof Dialog) ? ((Dialog)target).isResizable() : false);
+            if (resizable) {
+                setCanFullscreen(true);
+            }
+
             // Apply the extended state as expected in shared code
             if (target instanceof Frame) {
                 if (!wasMaximized && isMaximized()) {
@@ -852,7 +859,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     @Override
     public void updateFocusableWindowState() {
         final boolean isFocusable = isNativelyFocusableWindow();
-        setStyleBits(SHOULD_BECOME_KEY | SHOULD_BECOME_MAIN, isFocusable); // set both bits at once
+        setStyleBits(SHOULD_BECOME_KEY | SHOULD_BECOME_MAIN | RESIZABLE, isFocusable); // set bits at once
     }
 
     @Override

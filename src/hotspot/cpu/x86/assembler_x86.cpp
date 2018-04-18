@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,19 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/biasedLocking.hpp"
-#include "runtime/interfaceSupport.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/heapRegion.hpp"
 #endif // INCLUDE_ALL_GCS
 
@@ -1510,11 +1508,11 @@ void Assembler::call(Address adr) {
 }
 
 void Assembler::call_literal(address entry, RelocationHolder const& rspec) {
-  assert(entry != NULL, "call most probably wrong");
   InstructionMark im(this);
   emit_int8((unsigned char)0xE8);
   intptr_t disp = entry - (pc() + sizeof(int32_t));
-  assert(is_simm32(disp), "must be 32bit offset (call2)");
+  // Entry is NULL in case of a scratch emit.
+  assert(entry == NULL || is_simm32(disp), "disp=" INTPTR_FORMAT " must be 32bit offset (call2)", disp);
   // Technically, should use call32_operand, but this format is
   // implied by the fact that we're emitting a call instruction.
 
@@ -3167,6 +3165,89 @@ void Assembler::nop(int i) {
     return;
   }
 
+  if (UseAddressNop && VM_Version::is_zx()) {
+    //
+    // Using multi-bytes nops "0x0F 0x1F [address]" for ZX
+    //  1: 0x90
+    //  2: 0x66 0x90
+    //  3: 0x66 0x66 0x90 (don't use "0x0F 0x1F 0x00" - need patching safe padding)
+    //  4: 0x0F 0x1F 0x40 0x00
+    //  5: 0x0F 0x1F 0x44 0x00 0x00
+    //  6: 0x66 0x0F 0x1F 0x44 0x00 0x00
+    //  7: 0x0F 0x1F 0x80 0x00 0x00 0x00 0x00
+    //  8: 0x0F 0x1F 0x84 0x00 0x00 0x00 0x00 0x00
+    //  9: 0x66 0x0F 0x1F 0x84 0x00 0x00 0x00 0x00 0x00
+    // 10: 0x66 0x66 0x0F 0x1F 0x84 0x00 0x00 0x00 0x00 0x00
+    // 11: 0x66 0x66 0x66 0x0F 0x1F 0x84 0x00 0x00 0x00 0x00 0x00
+
+    // The rest coding is ZX specific - don't use consecutive address nops
+
+    // 12: 0x0F 0x1F 0x84 0x00 0x00 0x00 0x00 0x00 0x66 0x66 0x66 0x90
+    // 13: 0x66 0x0F 0x1F 0x84 0x00 0x00 0x00 0x00 0x00 0x66 0x66 0x66 0x90
+    // 14: 0x66 0x66 0x0F 0x1F 0x84 0x00 0x00 0x00 0x00 0x00 0x66 0x66 0x66 0x90
+    // 15: 0x66 0x66 0x66 0x0F 0x1F 0x84 0x00 0x00 0x00 0x00 0x00 0x66 0x66 0x66 0x90
+
+    while (i >= 15) {
+      // For ZX don't generate consecutive addess nops (mix with regular nops)
+      i -= 15;
+      emit_int8(0x66);   // size prefix
+      emit_int8(0x66);   // size prefix
+      emit_int8(0x66);   // size prefix
+      addr_nop_8();
+      emit_int8(0x66);   // size prefix
+      emit_int8(0x66);   // size prefix
+      emit_int8(0x66);   // size prefix
+      emit_int8((unsigned char)0x90);
+                         // nop
+    }
+    switch (i) {
+      case 14:
+        emit_int8(0x66); // size prefix
+      case 13:
+        emit_int8(0x66); // size prefix
+      case 12:
+        addr_nop_8();
+        emit_int8(0x66); // size prefix
+        emit_int8(0x66); // size prefix
+        emit_int8(0x66); // size prefix
+        emit_int8((unsigned char)0x90);
+                         // nop
+        break;
+      case 11:
+        emit_int8(0x66); // size prefix
+      case 10:
+        emit_int8(0x66); // size prefix
+      case 9:
+        emit_int8(0x66); // size prefix
+      case 8:
+        addr_nop_8();
+        break;
+      case 7:
+        addr_nop_7();
+        break;
+      case 6:
+        emit_int8(0x66); // size prefix
+      case 5:
+        addr_nop_5();
+        break;
+      case 4:
+        addr_nop_4();
+        break;
+      case 3:
+        // Don't use "0x0F 0x1F 0x00" - need patching safe padding
+        emit_int8(0x66); // size prefix
+      case 2:
+        emit_int8(0x66); // size prefix
+      case 1:
+        emit_int8((unsigned char)0x90);
+                         // nop
+        break;
+      default:
+        assert(i == 0, " ");
+    }
+    return;
+  }
+
   // Using nops with size prefixes "0x66 0x90".
   // From AMD Optimization Guide:
   //  1: 0x90
@@ -3832,6 +3913,15 @@ void Assembler::popcntl(Register dst, Register src) {
   emit_int8((unsigned char)(0xC0 | encode));
 }
 
+void Assembler::vpopcntd(XMMRegister dst, XMMRegister src, int vector_len) {
+  assert(VM_Version::supports_vpopcntdq(), "must support vpopcntdq feature");
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
+  attributes.set_is_evex_instruction();
+  int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int8(0x55);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
 void Assembler::popf() {
   emit_int8((unsigned char)0x9D);
 }
@@ -3988,6 +4078,16 @@ void Assembler::pshuflw(XMMRegister dst, Address src, int mode) {
   emit_int8(0x70);
   emit_operand(dst, src);
   emit_int8(mode & 0xFF);
+}
+void Assembler::evshufi64x2(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8, int vector_len) {
+  assert(VM_Version::supports_evex(), "requires EVEX support");
+  assert(vector_len == Assembler::AVX_256bit || vector_len == Assembler::AVX_512bit, "");
+  InstructionAttr attributes(vector_len, /* vex_w */ VM_Version::supports_evex(), /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_is_evex_instruction();
+  int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
+  emit_int8(0x43);
+  emit_int8((unsigned char)(0xC0 | encode));
+  emit_int8(imm8 & 0xFF);
 }
 
 void Assembler::psrldq(XMMRegister dst, int shift) {
@@ -6110,6 +6210,27 @@ void Assembler::vpxor(XMMRegister dst, XMMRegister nds, Address src, int vector_
   emit_operand(dst, src);
 }
 
+void Assembler::evpxorq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+  assert(VM_Version::supports_evex(), "requires EVEX support");
+  InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_is_evex_instruction();
+  int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
+  emit_int8((unsigned char)0xEF);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::evpxorq(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
+  assert(VM_Version::supports_evex(), "requires EVEX support");
+  assert(dst != xnoreg, "sanity");
+  InstructionMark im(this);
+  InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_is_evex_instruction();
+  attributes.set_address_attributes(/* tuple_type */ EVEX_FV, /* input_size_in_bits */ EVEX_64bit);
+  vex_prefix(src, nds->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
+  emit_int8((unsigned char)0xEF);
+  emit_operand(dst, src);
+}
+
 
 // vinserti forms
 
@@ -6689,6 +6810,16 @@ void Assembler::pclmulqdq(XMMRegister dst, XMMRegister src, int mask) {
 void Assembler::vpclmulqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int mask) {
   assert(VM_Version::supports_avx() && VM_Version::supports_clmul(), "");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ false);
+  int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
+  emit_int8(0x44);
+  emit_int8((unsigned char)(0xC0 | encode));
+  emit_int8((unsigned char)mask);
+}
+
+void Assembler::evpclmulqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int mask, int vector_len) {
+  assert(VM_Version::supports_vpclmulqdq(), "Requires vector carryless multiplication support");
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_is_evex_instruction();
   int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
   emit_int8(0x44);
   emit_int8((unsigned char)(0xC0 | encode));

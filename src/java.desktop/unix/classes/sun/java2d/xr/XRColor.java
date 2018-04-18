@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class XRColor {
         XRColor c = new XRColor();
 
         for (int i = 0; i < pixels.length; i++) {
-            c.setColorValues(pixels[i], true);
+            c.setColorValues(pixels[i]);
             colorValues[i * 4 + 0] = c.alpha;
             colorValues[i * 4 + 1] = c.red;
             colorValues[i * 4 + 2] = c.green;
@@ -83,7 +83,7 @@ public class XRColor {
         return colorValues;
     }
 
-    public void setColorValues(int pixel, boolean pre) {
+    public void setColorValues(int pixel) {
         long pix = XRUtils.intToULong(pixel);
         alpha = (int) (((pix & 0xFF000000) >> 16) + 255);
         red = (int) (((pix & 0x00FF0000) >> 8) + 255);
@@ -92,13 +92,6 @@ public class XRColor {
 
         if (alpha == 255) {
             alpha = 0;
-        }
-
-        if (!pre) {
-            double alphaMult = XRUtils.XFixedToDouble(alpha);
-            this.red = (int) (red * alphaMult);
-            this.green = (int) (green * alphaMult);
-            this.blue = (int) (blue * alphaMult);
         }
     }
 

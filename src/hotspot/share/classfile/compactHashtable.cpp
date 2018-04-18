@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "logging/logMessage.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/numberSeq.hpp"
 #include <sys/stat.h>
@@ -146,27 +147,23 @@ void CompactHashtableWriter::dump(SimpleCompactHashtable *cht, const char* table
   cht->init(base_address,  _num_entries, _num_buckets,
             _compact_buckets->data(), _compact_entries->data());
 
-  if (log_is_enabled(Info, cds, hashtables)) {
-    ResourceMark rm;
-    LogMessage(cds, hashtables) msg;
-    stringStream info_stream;
-
+  LogMessage(cds, hashtables) msg;
+  if (msg.is_info()) {
     double avg_cost = 0.0;
     if (_num_entries > 0) {
       avg_cost = double(table_bytes)/double(_num_entries);
     }
-    info_stream.print_cr("Shared %s table stats -------- base: " PTR_FORMAT,
+    msg.info("Shared %s table stats -------- base: " PTR_FORMAT,
                          table_name, (intptr_t)base_address);
-    info_stream.print_cr("Number of entries       : %9d", _num_entries);
-    info_stream.print_cr("Total bytes used        : %9d", table_bytes);
-    info_stream.print_cr("Average bytes per entry : %9.3f", avg_cost);
-    info_stream.print_cr("Average bucket size     : %9.3f", summary.avg());
-    info_stream.print_cr("Variance of bucket size : %9.3f", summary.variance());
-    info_stream.print_cr("Std. dev. of bucket size: %9.3f", summary.sd());
-    info_stream.print_cr("Empty buckets           : %9d", _num_empty_buckets);
-    info_stream.print_cr("Value_Only buckets      : %9d", _num_value_only_buckets);
-    info_stream.print_cr("Other buckets           : %9d", _num_other_buckets);
-    msg.info("%s", info_stream.as_string());
+    msg.info("Number of entries       : %9d", _num_entries);
+    msg.info("Total bytes used        : %9d", table_bytes);
+    msg.info("Average bytes per entry : %9.3f", avg_cost);
+    msg.info("Average bucket size     : %9.3f", summary.avg());
+    msg.info("Variance of bucket size : %9.3f", summary.variance());
+    msg.info("Std. dev. of bucket size: %9.3f", summary.sd());
+    msg.info("Empty buckets           : %9d", _num_empty_buckets);
+    msg.info("Value_Only buckets      : %9d", _num_value_only_buckets);
+    msg.info("Other buckets           : %9d", _num_other_buckets);
   }
 }
 
@@ -186,7 +183,7 @@ void CompactSymbolTableWriter::add(unsigned int hash, Symbol *symbol) {
 }
 
 void CompactStringTableWriter::add(unsigned int hash, oop string) {
-  CompactHashtableWriter::add(hash, oopDesc::encode_heap_oop(string));
+  CompactHashtableWriter::add(hash, CompressedOops::encode(string));
 }
 
 void CompactSymbolTableWriter::dump(CompactHashtable<Symbol*, char> *cht) {

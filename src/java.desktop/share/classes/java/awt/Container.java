@@ -35,11 +35,13 @@ import java.awt.peer.LightweightPeer;
 import java.beans.PropertyChangeListener;
 
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.Serializable;
 
 import java.lang.ref.WeakReference;
 import java.security.AccessController;
@@ -3719,8 +3721,15 @@ public class Container extends Component {
         throws ClassNotFoundException, IOException
     {
         ObjectInputStream.GetField f = s.readFields();
-        Component [] tmpComponent = (Component[])f.get("component", EMPTY_ARRAY);
+        // array of components may not be present in the stream or may be null
+        Component [] tmpComponent = (Component[])f.get("component", null);
+        if (tmpComponent == null) {
+            tmpComponent = EMPTY_ARRAY;
+        }
         int ncomponents = (Integer) f.get("ncomponents", 0);
+        if (ncomponents < 0 || ncomponents > tmpComponent.length) {
+            throw new InvalidObjectException("Incorrect number of components");
+        }
         component = new java.util.ArrayList<Component>(ncomponents);
         for (int i = 0; i < ncomponents; ++i) {
             component.add(tmpComponent[i]);
@@ -3849,7 +3858,9 @@ public class Container extends Component {
          * @since 1.3
          */
         protected class AccessibleContainerHandler
-            implements ContainerListener {
+            implements ContainerListener, Serializable {
+            private static final long serialVersionUID = -480855353991814677L;
+
             public void componentAdded(ContainerEvent e) {
                 Component c = e.getChild();
                 if (c != null && c instanceof Accessible) {

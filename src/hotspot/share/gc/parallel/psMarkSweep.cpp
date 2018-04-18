@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcId.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
@@ -51,6 +51,7 @@
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/biasedLocking.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/management.hpp"
@@ -98,7 +99,7 @@ void PSMarkSweep::invoke(bool maximum_heap_compaction) {
   }
 
   const bool clear_all_soft_refs =
-    heap->collector_policy()->should_clear_all_soft_refs();
+    heap->soft_ref_policy()->should_clear_all_soft_refs();
 
   uint count = maximum_heap_compaction ? 1 : MarkSweepAlwaysCompactCount;
   UIntFlagSetting flag_setting(MarkSweepAlwaysCompactCount, count);
@@ -126,7 +127,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 
   // The scope of casr should end after code that can change
   // CollectorPolicy::_should_clear_all_soft_refs.
-  ClearedAllSoftRefs casr(clear_all_softrefs, heap->collector_policy());
+  ClearedAllSoftRefs casr(clear_all_softrefs, heap->soft_ref_policy());
 
   PSYoungGen* young_gen = heap->young_gen();
   PSOldGen* old_gen = heap->old_gen();
@@ -185,7 +186,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     BiasedLocking::preserve_marks();
 
     // Capture metadata size before collection for sizing.
-    size_t metadata_prev_used = MetaspaceAux::used_bytes();
+    size_t metadata_prev_used = MetaspaceUtils::used_bytes();
 
     size_t old_gen_prev_used = old_gen->used_in_bytes();
     size_t young_gen_prev_used = young_gen->used_in_bytes();
@@ -236,17 +237,17 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
                       young_gen->to_space()->is_empty();
     young_gen_empty = eden_empty && survivors_empty;
 
-    ModRefBarrierSet* modBS = barrier_set_cast<ModRefBarrierSet>(heap->barrier_set());
+    PSCardTable* card_table = heap->card_table();
     MemRegion old_mr = heap->old_gen()->reserved();
     if (young_gen_empty) {
-      modBS->clear(MemRegion(old_mr.start(), old_mr.end()));
+      card_table->clear(MemRegion(old_mr.start(), old_mr.end()));
     } else {
-      modBS->invalidate(MemRegion(old_mr.start(), old_mr.end()));
+      card_table->invalidate(MemRegion(old_mr.start(), old_mr.end()));
     }
 
     // Delete metaspaces for unloaded class loaders and clean up loader_data graph
     ClassLoaderDataGraph::purge();
-    MetaspaceAux::verify_metrics();
+    MetaspaceUtils::verify_metrics();
 
     BiasedLocking::restore_marks();
     CodeCache::gc_epilogue();
@@ -320,7 +321,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
                                              max_eden_size,
                                              true /* full gc*/,
                                              gc_cause,
-                                             heap->collector_policy());
+                                             heap->soft_ref_policy());
 
         size_policy->decay_supplemental_growth(true /* full gc*/);
 
@@ -351,7 +352,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 
     young_gen->print_used_change(young_gen_prev_used);
     old_gen->print_used_change(old_gen_prev_used);
-    MetaspaceAux::print_metaspace_change(metadata_prev_used);
+    MetaspaceUtils::print_metaspace_change(metadata_prev_used);
 
     // Track memory usage and detect low memory
     MemoryService::track_memory_usage();

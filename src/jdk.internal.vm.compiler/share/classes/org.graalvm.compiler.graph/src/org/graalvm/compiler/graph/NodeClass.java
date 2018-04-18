@@ -42,6 +42,8 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.Equivalence;
 import org.graalvm.compiler.core.common.FieldIntrospection;
 import org.graalvm.compiler.core.common.Fields;
 import org.graalvm.compiler.core.common.FieldsScanner;
@@ -65,8 +67,6 @@ import org.graalvm.compiler.nodeinfo.NodeCycles;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodeinfo.NodeSize;
 import org.graalvm.compiler.nodeinfo.Verbosity;
-import org.graalvm.util.EconomicMap;
-import org.graalvm.util.Equivalence;
 
 /**
  * Metadata for every {@link Node} type. The metadata includes:
@@ -104,7 +104,7 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
      * Gets the {@link NodeClass} associated with a given {@link Class}.
      */
     public static <T> NodeClass<T> create(Class<T> c) {
-        assert get(c) == null;
+        assert getUnchecked(c) == null;
         Class<? super T> superclass = c.getSuperclass();
         NodeClass<? super T> nodeSuperclass = null;
         if (superclass != NODE_CLASS) {
@@ -114,14 +114,22 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> NodeClass<T> get(Class<T> superclass) {
+    private static <T> NodeClass<T> getUnchecked(Class<T> clazz) {
         try {
-            Field field = superclass.getDeclaredField("TYPE");
+            Field field = clazz.getDeclaredField("TYPE");
             field.setAccessible(true);
             return (NodeClass<T>) field.get(null);
         } catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static <T> NodeClass<T> get(Class<T> clazz) {
+        NodeClass<T> result = getUnchecked(clazz);
+        if (result == null && clazz != NODE_CLASS) {
+            throw GraalError.shouldNotReachHere("TYPE field not initialized for class " + clazz.getTypeName());
+        }
+        return result;
     }
 
     private static final Class<?> NODE_CLASS = Node.class;

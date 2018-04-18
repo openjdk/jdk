@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
 
 /*
  * @test
- * @bug 8004488
+ * @bug 8004488 8194486
  * @summary wrong permissions checked in krb5
+ * @library /test/lib
  * @compile -XDignore.symbol.file KeyPermissions.java
- * @run main/othervm KeyPermissions
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts KeyPermissions
  */
 
 import java.security.AccessControlException;

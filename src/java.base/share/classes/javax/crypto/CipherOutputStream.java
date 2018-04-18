@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,15 @@ import java.io.*;
  * java.io.OutputStream and java.io.FilterOutputStream.  This class
  * has exactly those methods specified in its ancestor classes, and
  * overrides them all.  Moreover, this class catches all exceptions
- * that are not thrown by its ancestor classes.
+ * that are not thrown by its ancestor classes. In particular, this
+ * class catches BadPaddingException and other exceptions thrown by
+ * failed integrity checks during decryption. These exceptions are not
+ * re-thrown, so the client will not be informed that integrity checks
+ * failed. Because of this behavior, this class may not be suitable
+ * for use with decryption in an authenticated mode of operation (e.g. GCM)
+ * if the application requires explicit notification when authentication
+ * fails. Such an application can use the Cipher API directly as an
+ * alternative to using this class.
  *
  * <p> It is crucial for a programmer using this class not to use
  * methods that are not defined or overriden in this class (such as a

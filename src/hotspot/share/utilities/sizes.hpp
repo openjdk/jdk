@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_UTILITIES_SIZES_HPP
 #define SHARE_VM_UTILITIES_SIZES_HPP
 
-#include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // The following two classes are used to represent 'sizes' and 'offsets' in the VM;
@@ -60,7 +59,7 @@
 
 #ifdef ASSERT
 
-class ByteSize VALUE_OBJ_CLASS_SPEC {
+class ByteSize {
  private:
   int _size;
 
@@ -92,7 +91,7 @@ inline ByteSize in_ByteSize(int size) { return ByteSize(size); }
 inline int      in_bytes(ByteSize x)  { return x._size; }
 
 
-class WordSize VALUE_OBJ_CLASS_SPEC {
+class WordSize {
  private:
   int _size;
 

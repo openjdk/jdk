@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ public class AddLimitMods extends ModuleTestBase {
         //real test
         new JavacTask(tb)
                 .options("--module-path", modulePath.toString(),
-                         "--should-stop:ifNoError=FLOW",
+                         "--should-stop=ifNoError=FLOW",
                          "--limit-modules", "java.base")
                 .outdir(modulePath)
                 .files(findJavaFiles(m1))
@@ -129,7 +129,7 @@ public class AddLimitMods extends ModuleTestBase {
 
         new JavacTask(tb)
                 .options("--module-path", modulePath.toString(),
-                         "--should-stop:ifNoError=FLOW",
+                         "--should-stop=ifNoError=FLOW",
                          "--limit-modules", "java.base",
                          "--add-modules", "m2x")
                 .outdir(modulePath)
@@ -139,7 +139,7 @@ public class AddLimitMods extends ModuleTestBase {
 
         new JavacTask(tb)
                 .options("--module-path", modulePath.toString(),
-                         "--should-stop:ifNoError=FLOW",
+                         "--should-stop=ifNoError=FLOW",
                          "--limit-modules", "java.base",
                          "--add-modules", "m2x,m3x")
                 .outdir(modulePath)
@@ -149,7 +149,7 @@ public class AddLimitMods extends ModuleTestBase {
 
         new JavacTask(tb)
                 .options("--module-path", modulePath.toString(),
-                         "--should-stop:ifNoError=FLOW",
+                         "--should-stop=ifNoError=FLOW",
                          "--limit-modules", "m2x")
                 .outdir(modulePath)
                 .files(findJavaFiles(m1))
@@ -158,7 +158,7 @@ public class AddLimitMods extends ModuleTestBase {
 
         new JavacTask(tb)
                 .options("--module-path", modulePath.toString(),
-                         "--should-stop:ifNoError=FLOW",
+                         "--should-stop=ifNoError=FLOW",
                          "--limit-modules", "m3x")
                 .outdir(modulePath)
                 .files(findJavaFiles(m1))
@@ -167,7 +167,7 @@ public class AddLimitMods extends ModuleTestBase {
 
         new JavacTask(tb)
                 .options("--module-path", modulePath.toString(),
-                         "--should-stop:ifNoError=FLOW",
+                         "--should-stop=ifNoError=FLOW",
                          "--limit-modules", "m3x",
                          "--add-modules", "m2x")
                 .outdir(modulePath)
@@ -175,58 +175,6 @@ public class AddLimitMods extends ModuleTestBase {
                 .run()
                 .writeAll();
     }
-
-    @Test
-    public void testObservableForUnnamed(Path base) throws Exception {
-        Path src = base.resolve("src");
-
-        tb.writeJavaFiles(src,
-                          "package test;\n" +
-                          "@javax.annotation.Generated(\"test\")\n" +
-                          "public class Test {\n" +
-                          "    com.sun.tools.javac.Main m;\n" +
-                          "    javax.xml.bind.JAXBException e;\n" +
-                          "}\n");
-
-        Path out = base.resolve("out");
-
-        Files.createDirectories(out);
-
-        for (Entry<String[], String> variant : variants) {
-            System.err.println("running variant: options=" + Arrays.asList(variant.getKey()) + ", expected log: " + variant.getValue());
-
-            List<String> options = new ArrayList<>();
-            options.add("-XDrawDiagnostics");
-            options.addAll(Arrays.asList(variant.getKey()));
-
-            String log = new JavacTask(tb)
-                    .options(options.toArray(new String[0]))
-                    .outdir(out)
-                    .files(findJavaFiles(src))
-                    .run(variant.getValue() == null ? Task.Expect.SUCCESS : Task.Expect.FAIL)
-                    .writeAll()
-                    .getOutput(Task.OutputKind.DIRECT);
-
-            log = log.replace(System.getProperty("line.separator"), "\n");
-
-            if (variant.getValue() != null && !log.equals(variant.getValue())) {
-                throw new AssertionError();
-            }
-        }
-    }
-
-    private static final List<Entry<String[], String>> variants = Arrays.asList(
-            new SimpleEntry<String[], String>(new String[] {},
-                                              "Test.java:2:7: compiler.err.package.not.visible: javax.annotation, (compiler.misc.not.def.access.does.not.read.from.unnamed: javax.annotation, java.xml.ws.annotation)\n"
-                                            + "Test.java:5:14: compiler.err.package.not.visible: javax.xml.bind, (compiler.misc.not.def.access.does.not.read.from.unnamed: javax.xml.bind, java.xml.bind)\n"
-                                            + "2 errors\n"),
-            new SimpleEntry<String[], String>(new String[] {"--add-modules", "java.xml.ws.annotation,java.xml.bind"},
-                                              null),
-            new SimpleEntry<String[], String>(new String[] {"--limit-modules", "java.xml.ws,jdk.compiler"},
-                                              null),
-            new SimpleEntry<String[], String>(new String[] {"--add-modules", "ALL-SYSTEM"},
-                                              null)
-    );
 
     @Test
     public void testAllModulePath(Path base) throws Exception {
@@ -482,7 +430,7 @@ public class AddLimitMods extends ModuleTestBase {
                                            auxOptions,
                                            "--module-path", modulePath.toString(),
                                            "--class-path", classpathOut.toString(),
-                                           "--should-stop:ifNoError=FLOW"))
+                                           "--should-stop=ifNoError=FLOW"))
                    .outdir(modulePath)
                    .files(findJavaFiles(m2))
                    .run(success ? Task.Expect.SUCCESS : Task.Expect.FAIL)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/annotations.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -201,6 +201,12 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
   }
   // Print a hint as to the underlying integer representation. This can be wrong for
   // pointers on an LP64 machine
+#ifdef _LP64
+  if ((ft == T_OBJECT || ft == T_ARRAY) && UseCompressedOops) {
+    st->print(" (%x)", obj->int_field(offset()));
+  }
+  else // <- intended
+#endif
   if (ft == T_LONG || ft == T_DOUBLE LP64_ONLY(|| !is_java_primitive(ft)) ) {
     st->print(" (%x %x)", obj->int_field(offset()), obj->int_field(offset()+sizeof(jint)));
   } else if (as_int < 0 || as_int > 9) {

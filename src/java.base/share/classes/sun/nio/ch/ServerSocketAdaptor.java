@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,19 @@
 
 package sun.nio.ch;
 
-import java.io.*;
-import java.net.*;
-import java.nio.channels.*;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.net.StandardSocketOptions;
+import java.nio.channels.IllegalBlockingModeException;
+import java.nio.channels.NotYetBoundException;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 
 
 // Make a server-socket channel look like a server socket.
@@ -37,10 +47,9 @@ import java.nio.channels.*;
 // class.
 //
 
-public class ServerSocketAdaptor                        // package-private
+class ServerSocketAdaptor                        // package-private
     extends ServerSocket
 {
-
     // The channel being adapted
     private final ServerSocketChannelImpl ssc;
 
@@ -56,12 +65,9 @@ public class ServerSocketAdaptor                        // package-private
     }
 
     // ## super will create a useless impl
-    private ServerSocketAdaptor(ServerSocketChannelImpl ssc)
-        throws IOException
-    {
+    private ServerSocketAdaptor(ServerSocketChannelImpl ssc) throws IOException {
         this.ssc = ssc;
     }
-
 
     public void bind(SocketAddress local) throws IOException {
         bind(local, 50);
@@ -78,51 +84,48 @@ public class ServerSocketAdaptor                        // package-private
     }
 
     public InetAddress getInetAddress() {
-        if (!ssc.isBound())
+        InetSocketAddress local = ssc.localAddress();
+        if (local == null) {
             return null;
-        return Net.getRevealedLocalAddress(ssc.localAddress()).getAddress();
-
+        } else {
+            return Net.getRevealedLocalAddress(local).getAddress();
+        }
     }
 
     public int getLocalPort() {
-        if (!ssc.isBound())
+        InetSocketAddress local = ssc.localAddress();
+        if (local == null) {
             return -1;
-        return Net.asInetSocketAddress(ssc.localAddress()).getPort();
+        } else {
+            return local.getPort();
+        }
     }
-
 
     public Socket accept() throws IOException {
         synchronized (ssc.blockingLock()) {
             try {
                 if (!ssc.isBound())
                     throw new NotYetBoundException();
-                if (timeout == 0) {
+
+                long to = this.timeout;
+                if (to == 0) {
+                    // for compatibility reasons: accept connection if available
+                    // when configured non-blocking
                     SocketChannel sc = ssc.accept();
                     if (sc == null && !ssc.isBlocking())
                         throw new IllegalBlockingModeException();
                     return sc.socket();
                 }
 
-                ssc.configureBlocking(false);
-                try {
-                    SocketChannel sc;
-                    if ((sc = ssc.accept()) != null)
-                        return sc.socket();
-                    long to = timeout;
-                    for (;;) {
-                        if (!ssc.isOpen())
-                            throw new ClosedChannelException();
-                        long st = System.currentTimeMillis();
-                        int result = ssc.poll(Net.POLLIN, to);
-                        if (result > 0 && ((sc = ssc.accept()) != null))
-                            return sc.socket();
-                        to -= System.currentTimeMillis() - st;
-                        if (to <= 0)
-                            throw new SocketTimeoutException();
-                    }
-                } finally {
-                    if (ssc.isOpen())
-                        ssc.configureBlocking(true);
+                if (!ssc.isBlocking())
+                    throw new IllegalBlockingModeException();
+                for (;;) {
+                    long st = System.currentTimeMillis();
+                    if (ssc.pollAccept(to))
+                        return ssc.accept().socket();
+                    to -= System.currentTimeMillis() - st;
+                    if (to <= 0)
+                        throw new SocketTimeoutException();
                 }
 
             } catch (Exception x) {
@@ -178,8 +181,7 @@ public class ServerSocketAdaptor                        // package-private
         if (!isBound())
             return "ServerSocket[unbound]";
         return "ServerSocket[addr=" + getInetAddress() +
-            //          ",port=" + getPort() +
-                ",localport=" + getLocalPort()  + "]";
+               ",localport=" + getLocalPort()  + "]";
     }
 
     public void setReceiveBufferSize(int size) throws SocketException {
@@ -201,5 +203,4 @@ public class ServerSocketAdaptor                        // package-private
             return -1;          // Never happens
         }
     }
-
 }

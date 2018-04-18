@@ -27,7 +27,9 @@
  * @summary Test Collections.binarySearch() with a null comparator
  */
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class BinarySearchNullComparator {
     public static void main(String[] args) throws Exception {

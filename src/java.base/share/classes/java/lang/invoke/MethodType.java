@@ -1206,33 +1206,24 @@ s.writeObject(this.parameterArray());
      * @param s the stream to read the object from
      * @throws java.io.IOException if there is a problem reading the object
      * @throws ClassNotFoundException if one of the component classes cannot be resolved
-     * @see #MethodType()
      * @see #readResolve
      * @see #writeObject
      */
     private void readObject(java.io.ObjectInputStream s) throws java.io.IOException, ClassNotFoundException {
+        // Assign temporary defaults in case this object escapes
+        MethodType_init(void.class, NO_PTYPES);
+
         s.defaultReadObject();  // requires serialPersistentFields to be an empty array
 
         Class<?>   returnType     = (Class<?>)   s.readObject();
         Class<?>[] parameterArray = (Class<?>[]) s.readObject();
-
-        // Probably this object will never escape, but let's check
-        // the field values now, just to be sure.
-        checkRtype(returnType);
-        checkPtypes(parameterArray);
-
         parameterArray = parameterArray.clone();  // make sure it is unshared
+
+        // Assign deserialized values
         MethodType_init(returnType, parameterArray);
     }
 
-    /**
-     * For serialization only.
-     * Sets the final fields to null, pending {@code Unsafe.putObject}.
-     */
-    private MethodType() {
-        this.rtype = null;
-        this.ptypes = null;
-    }
+    // Initialization of state for deserialization only
     private void MethodType_init(Class<?> rtype, Class<?>[] ptypes) {
         // In order to communicate these values to readResolve, we must
         // store them into the implementation-specific final fields.
@@ -1259,9 +1250,14 @@ s.writeObject(this.parameterArray());
      */
     private Object readResolve() {
         // Do not use a trusted path for deserialization:
-        //return makeImpl(rtype, ptypes, true);
+        //    return makeImpl(rtype, ptypes, true);
         // Verify all operands, and make sure ptypes is unshared:
-        return methodType(rtype, ptypes);
+        try {
+            return methodType(rtype, ptypes);
+        } finally {
+            // Re-assign defaults in case this object escapes
+            MethodType_init(void.class, NO_PTYPES);
+        }
     }
 
     /**

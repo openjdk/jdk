@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ class G1CollectedHeap;
 // and a lock will need to be taken when the active region needs to be
 // replaced.
 
-class G1AllocRegion VALUE_OBJ_CLASS_SPEC {
+class G1AllocRegion {
 
 private:
   // The active allocating region we are currently allocating out
@@ -52,9 +52,6 @@ private:
   // satisfy allocation requests (it was done this way to force the
   // correct use of init() and release()).
   HeapRegion* volatile _alloc_region;
-
-  // Allocation context associated with this alloc region.
-  AllocationContext_t _allocation_context;
 
   // It keeps track of the distinct number of regions that are used
   // for allocation in the active interval of this object, i.e.,
@@ -139,9 +136,6 @@ public:
     // Make sure that the dummy region does not escape this class.
     return (hr == _dummy_region) ? NULL : hr;
   }
-
-  void set_allocation_context(AllocationContext_t context) { _allocation_context = context; }
-  AllocationContext_t  allocation_context() { return _allocation_context; }
 
   uint count() { return _count; }
 

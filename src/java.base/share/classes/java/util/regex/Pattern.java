@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -782,12 +782,9 @@ public final class Pattern
      * arguments, they can also be passed as inline modifiers.
      * For example, the following statements have the same effect.
      * <pre>
-     * RegExp r1 = RegExp.compile("abc", Pattern.I|Pattern.M);
-     * RegExp r2 = RegExp.compile("(?im)abc", 0);
+     * Pattern p1 = Pattern.compile("abc", Pattern.CASE_INSENSITIVE|Pattern.MULTILINE);
+     * Pattern p2 = Pattern.compile("(?im)abc", 0);
      * </pre>
-     *
-     * The flags are duplicated so that the familiar Perl match flag
-     * names are available.
      */
 
     /**
@@ -952,6 +949,12 @@ public final class Pattern
      * @serial
      */
     private int flags;
+
+    /**
+     * The temporary pattern flags used during compiling. The flags might be turn
+     * on and off by embedded flag.
+     */
+    private transient int flags0;
 
     /**
      * Boolean indicating this Pattern is compiled; this is necessary in order
@@ -1137,7 +1140,7 @@ public final class Pattern
      * @return  The match flags specified when this pattern was compiled
      */
     public int flags() {
-        return flags;
+        return flags0;
     }
 
     /**
@@ -1369,6 +1372,9 @@ public final class Pattern
         // Read in all fields
         s.defaultReadObject();
 
+        // reset the flags
+        flags0 = flags;
+
         // Initialize counts
         capturingGroupCount = 1;
         localCount = 0;
@@ -1399,6 +1405,9 @@ public final class Pattern
         // to use UNICODE_CASE if UNICODE_CHARACTER_CLASS present
         if ((flags & UNICODE_CHARACTER_CLASS) != 0)
             flags |= UNICODE_CASE;
+
+        // 'flags' for compiling
+        flags0 = flags;
 
         // Reset group index count
         capturingGroupCount = 1;
@@ -1841,7 +1850,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
      * Indicates whether a particular flag is set or not.
      */
     private boolean has(int f) {
-        return (flags & f) != 0;
+        return (flags0 & f) != 0;
     }
 
     /**
@@ -2515,7 +2524,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 throw error("\\k is not followed by '<' for named capturing group");
             String name = groupname(read());
             if (!namedGroups().containsKey(name))
-                throw error("(named capturing group <"+ name+"> does not exit");
+                throw error("named capturing group <" + name + "> does not exist");
             if (create) {
                 hasGroupRef = true;
                 if (has(CASE_INSENSITIVE))
@@ -2718,7 +2727,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                ch == 0x53 || ch == 0x73 ||    //S and s
                ch == 0x4b || ch == 0x6b ||    //K and k
                ch == 0xc5 || ch == 0xe5))) {  //A+ring
-            bits.add(ch, flags());
+            bits.add(ch, flags0);
             return null;
         }
         return single(ch);
@@ -2910,13 +2919,11 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
      */
     private String groupname(int ch) {
         StringBuilder sb = new StringBuilder();
-        sb.append(Character.toChars(ch));
-        while (ASCII.isLower(ch=read()) || ASCII.isUpper(ch) ||
-               ASCII.isDigit(ch)) {
-            sb.append(Character.toChars(ch));
-        }
-        if (sb.length() == 0)
-            throw error("named capturing group has 0 length name");
+        if (!ASCII.isAlpha(ch))
+            throw error("capturing group name does not start with a Latin letter");
+        do {
+            sb.append((char) ch);
+        } while (ASCII.isAlnum(ch=read()));
         if (ch != '>')
             throw error("named capturing group is missing trailing '>'");
         return sb.toString();
@@ -2931,7 +2938,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         boolean capturingGroup = false;
         Node head = null;
         Node tail = null;
-        int save = flags;
+        int save = flags0;
         int saveTCNCount = topClosureNodes.size();
         root = null;
         int ch = next();
@@ -2962,7 +2969,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 break;
             case '<':   // (?<xxx)  look behind
                 ch = read();
-                if (ASCII.isLower(ch) || ASCII.isUpper(ch)) {
+                if (ch != '=' && ch != '!') {
                     // named captured group
                     String name = groupname(ch);
                     if (namedGroups().containsKey(name))
@@ -2993,14 +3000,12 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                                                info.minLength) :
                                    new Behind(head, info.maxLength,
                                               info.minLength));
-                } else if (ch == '!') {
+                } else { // if (ch == '!')
                     head = tail = (hasSupplementary ?
                                    new NotBehindS(head, info.maxLength,
                                                   info.minLength) :
                                    new NotBehind(head, info.maxLength,
                                                  info.minLength));
-                } else {
-                    throw error("Unknown look-behind group");
                 }
                 // clear all top-closure-nodes inside lookbehind
                 if (saveTCNCount < topClosureNodes.size())
@@ -3032,7 +3037,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         }
 
         accept(')', "Unclosed group");
-        flags = save;
+        flags0 = save;
 
         // Check for quantifiers
         Node node = closure(head);
@@ -3135,28 +3140,28 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         for (;;) {
             switch (ch) {
             case 'i':
-                flags |= CASE_INSENSITIVE;
+                flags0 |= CASE_INSENSITIVE;
                 break;
             case 'm':
-                flags |= MULTILINE;
+                flags0 |= MULTILINE;
                 break;
             case 's':
-                flags |= DOTALL;
+                flags0 |= DOTALL;
                 break;
             case 'd':
-                flags |= UNIX_LINES;
+                flags0 |= UNIX_LINES;
                 break;
             case 'u':
-                flags |= UNICODE_CASE;
+                flags0 |= UNICODE_CASE;
                 break;
             case 'c':
-                flags |= CANON_EQ;
+                flags0 |= CANON_EQ;
                 break;
             case 'x':
-                flags |= COMMENTS;
+                flags0 |= COMMENTS;
                 break;
             case 'U':
-                flags |= (UNICODE_CHARACTER_CLASS | UNICODE_CASE);
+                flags0 |= (UNICODE_CHARACTER_CLASS | UNICODE_CASE);
                 break;
             case '-': // subFlag then fall through
                 ch = next();
@@ -3178,28 +3183,28 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         for (;;) {
             switch (ch) {
             case 'i':
-                flags &= ~CASE_INSENSITIVE;
+                flags0 &= ~CASE_INSENSITIVE;
                 break;
             case 'm':
-                flags &= ~MULTILINE;
+                flags0 &= ~MULTILINE;
                 break;
             case 's':
-                flags &= ~DOTALL;
+                flags0 &= ~DOTALL;
                 break;
             case 'd':
-                flags &= ~UNIX_LINES;
+                flags0 &= ~UNIX_LINES;
                 break;
             case 'u':
-                flags &= ~UNICODE_CASE;
+                flags0 &= ~UNICODE_CASE;
                 break;
             case 'c':
-                flags &= ~CANON_EQ;
+                flags0 &= ~CANON_EQ;
                 break;
             case 'x':
-                flags &= ~COMMENTS;
+                flags0 &= ~COMMENTS;
                 break;
             case 'U':
-                flags &= ~(UNICODE_CHARACTER_CLASS | UNICODE_CASE);
+                flags0 &= ~(UNICODE_CHARACTER_CLASS | UNICODE_CASE);
                 break;
             default:
                 return;
@@ -5804,13 +5809,44 @@ NEXT:       while (i <= last) {
     static final Node lastAccept = new LastNode();
 
     /**
-     * Creates a predicate which can be used to match a string.
+     * Creates a predicate that tests if this pattern is found in a given input
+     * string.
      *
-     * @return  The predicate which can be used for matching on a string
+     * @apiNote
+     * This method creates a predicate that behaves as if it creates a matcher
+     * from the input sequence and then calls {@code find}, for example a
+     * predicate of the form:
+     * <pre>{@code
+     *   s -> matcher(s).find();
+     * }</pre>
+     *
+     * @return  The predicate which can be used for finding a match on a
+     *          subsequence of a string
      * @since   1.8
+     * @see     Matcher#find
      */
     public Predicate<String> asPredicate() {
         return s -> matcher(s).find();
+    }
+
+    /**
+     * Creates a predicate that tests if this pattern matches a given input string.
+     *
+     * @apiNote
+     * This method creates a predicate that behaves as if it creates a matcher
+     * from the input sequence and then calls {@code matches}, for example a
+     * predicate of the form:
+     * <pre>{@code
+     *   s -> matcher(s).matches();
+     * }</pre>
+     *
+     * @return  The predicate which can be used for matching an input string
+     *          against this pattern.
+     * @since   11
+     * @see     Matcher#matches
+     */
+    public Predicate<String> asMatchPredicate() {
+        return s -> matcher(s).matches();
     }
 
     /**

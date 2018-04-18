@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,9 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "gc/shared/barrierSet.inline.hpp"
-#include "gc/shared/cardTableModRefBS.inline.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/cardTableBarrierSet.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interp_masm_arm.hpp"
 #include "interpreter/interpreter.hpp"
@@ -39,11 +40,11 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/biasedLocking.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 
 #if INCLUDE_ALL_GCS
-#include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/heapRegion.hpp"
 #endif // INCLUDE_ALL_GCS
 
@@ -409,13 +410,13 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
 // Sets card_table_base register.
 void InterpreterMacroAssembler::store_check_part1(Register card_table_base) {
   // Check barrier set type (should be card table) and element size
-  BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->kind() == BarrierSet::CardTableForRS ||
-         bs->kind() == BarrierSet::CardTableExtension,
+  BarrierSet* bs = BarrierSet::barrier_set();
+  assert(bs->kind() == BarrierSet::CardTableBarrierSet,
          "Wrong barrier set kind");
 
-  CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(bs);
-  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "Adjust store check code");
+  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
+  CardTable* ct = ctbs->card_table();
+  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "Adjust store check code");
 
   // Load card table base address.
 
@@ -433,25 +434,27 @@ void InterpreterMacroAssembler::store_check_part1(Register card_table_base) {
      rarely accessed area of thread descriptor).
   */
   // TODO-AARCH64 Investigate if mov_slow is faster than ldr from Rthread on AArch64
-  mov_address(card_table_base, (address)ct->byte_map_base, symbolic_Relocation::card_table_reference);
+  mov_address(card_table_base, (address)ct->byte_map_base(), symbolic_Relocation::card_table_reference);
 }
 
 // The 2nd part of the store check.
 void InterpreterMacroAssembler::store_check_part2(Register obj, Register card_table_base, Register tmp) {
   assert_different_registers(obj, card_table_base, tmp);
 
-  assert(CardTableModRefBS::dirty_card_val() == 0, "Dirty card value must be 0 due to optimizations.");
+  assert(CardTable::dirty_card_val() == 0, "Dirty card value must be 0 due to optimizations.");
 #ifdef AARCH64
-  add(card_table_base, card_table_base, AsmOperand(obj, lsr, CardTableModRefBS::card_shift));
+  add(card_table_base, card_table_base, AsmOperand(obj, lsr, CardTable::card_shift));
   Address card_table_addr(card_table_base);
 #else
-  Address card_table_addr(card_table_base, obj, lsr, CardTableModRefBS::card_shift);
+  Address card_table_addr(card_table_base, obj, lsr, CardTable::card_shift);
 #endif
 
   if (UseCondCardMark) {
+#if INCLUDE_ALL_GCS
     if (UseConcMarkSweepGC) {
       membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreLoad), noreg);
     }
+#endif
     Label already_dirty;
 
     ldrb(tmp, card_table_addr);
@@ -461,9 +464,11 @@ void InterpreterMacroAssembler::store_check_part2(Register obj, Register card_ta
     bind(already_dirty);
 
   } else {
+#if INCLUDE_ALL_GCS
     if (UseConcMarkSweepGC && CMSPrecleaningEnabled) {
       membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreStore), noreg);
     }
+#endif
     set_card(card_table_base, card_table_addr, tmp);
   }
 }
@@ -472,8 +477,9 @@ void InterpreterMacroAssembler::set_card(Register card_table_base, Address card_
 #ifdef AARCH64
   strb(ZR, card_table_addr);
 #else
-  CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(Universe::heap()->barrier_set());
-  if ((((uintptr_t)ct->byte_map_base & 0xff) == 0)) {
+  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
+  CardTable* ct = ctbs->card_table();
+  if ((((uintptr_t)ct->byte_map_base() & 0xff) == 0)) {
     // Card table is aligned so the lowest byte of the table address base is zero.
     // This works only if the code is not saved for later use, possibly
     // in a context where the base would no longer be aligned.

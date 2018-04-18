@@ -128,6 +128,6 @@ public class NTSystem {
 
 
     private void loadNative() {
-        System.loadLibrary("jaas_nt");
+        System.loadLibrary("jaas");
     }
 }

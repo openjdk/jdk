@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class Arguments {
     private VmIdentifier vmId;
 
     public static void printUsage(PrintStream ps) {
-        ps.println("Usage: jstat -help|-options");
+        ps.println("Usage: jstat --help|-options");
         ps.println("       jstat -<option> [-t] [-h<lines>] <vmid> [<interval> [<count>]]");
         ps.println();
         ps.println("Definitions:");
@@ -93,6 +93,8 @@ public class Arguments {
         ps.println("                milliseconds(\"ms\") or seconds(\"s\"). The default units are \"ms\".");
         ps.println("  <count>       Number of samples to take before terminating.");
         ps.println("  -J<flag>      Pass <flag> directly to the runtime system.");
+        ps.println("  -? -h --help  Prints this help message.");
+        ps.println("  -help         Prints this help message.");
 
         // undocumented options:
         //   -list [<vmid>]  - list counter names
@@ -103,6 +105,7 @@ public class Arguments {
         //   -v              - verbose output  (-snap)
         //   -constants      - output constants with -name output
         //   -strings        - output strings with -name output
+        //   -help           - same as -? ...
     }
 
     private static int toMillis(String s) throws IllegalArgumentException {
@@ -147,6 +150,9 @@ public class Arguments {
         }
 
         if ((args[0].compareTo("-?") == 0)
+                || (args[0].compareTo("-h") == 0)
+                || (args[0].compareTo("--help") == 0)
+                // -help: legacy.
                 || (args[0].compareTo("-help") == 0)) {
             help = true;
             return;

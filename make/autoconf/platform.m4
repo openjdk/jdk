@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,12 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_CPU],
     aarch64)
       VAR_CPU=aarch64
       VAR_CPU_ARCH=aarch64
+      VAR_CPU_BITS=64
+      VAR_CPU_ENDIAN=little
+      ;;
+    ia64)
+      VAR_CPU=ia64
+      VAR_CPU_ARCH=ia64
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=little
       ;;
@@ -256,9 +262,12 @@ AC_DEFUN([PLATFORM_EXTRACT_TARGET_AND_BUILD],
   OPENJDK_TARGET_CPU_ARCH="$VAR_CPU_ARCH"
   OPENJDK_TARGET_CPU_BITS="$VAR_CPU_BITS"
   OPENJDK_TARGET_CPU_ENDIAN="$VAR_CPU_ENDIAN"
+  OPENJDK_TARGET_OS_UPPERCASE=`$ECHO $OPENJDK_TARGET_OS | $TR 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
+
   AC_SUBST(OPENJDK_TARGET_OS)
   AC_SUBST(OPENJDK_TARGET_OS_TYPE)
   AC_SUBST(OPENJDK_TARGET_OS_ENV)
+  AC_SUBST(OPENJDK_TARGET_OS_UPPERCASE)
   AC_SUBST(OPENJDK_TARGET_CPU)
   AC_SUBST(OPENJDK_TARGET_CPU_ARCH)
   AC_SUBST(OPENJDK_TARGET_CPU_BITS)
@@ -403,15 +412,6 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS_HELPER],
   OPENJDK_$1_BUNDLE_PLATFORM="${OPENJDK_$1_OS_BUNDLE}-${OPENJDK_$1_CPU_BUNDLE}"
   AC_SUBST(OPENJDK_$1_BUNDLE_PLATFORM)
 
-  if test "x$OPENJDK_$1_CPU_BITS" = x64; then
-    # -D_LP64=1 is only set on linux and mac. Setting on windows causes diff in
-    # unpack200.exe. This variable is used in
-    # FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK_HELPER.
-    if test "x$OPENJDK_$1_OS" = xlinux || test "x$OPENJDK_$1_OS" = xmacosx; then
-      OPENJDK_$1_ADD_LP64="-D_LP64=1"
-    fi
-  fi
-
   if test "x$COMPILE_TYPE" = "xcross"; then
     # FIXME: ... or should this include reduced builds..?
     DEFINE_CROSS_COMPILE_ARCH="CROSS_COMPILE_ARCH:=$OPENJDK_$1_CPU_LEGACY"
@@ -478,6 +478,14 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS_HELPER],
   fi
   AC_SUBST(HOTSPOT_$1_CPU_DEFINE)
 
+  # For historical reasons, the OS include directories have odd names.
+  OPENJDK_$1_OS_INCLUDE_SUBDIR="$OPENJDK_TARGET_OS"
+  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+    OPENJDK_$1_OS_INCLUDE_SUBDIR="win32"
+  elif test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
+    OPENJDK_$1_OS_INCLUDE_SUBDIR="darwin"
+  fi
+  AC_SUBST(OPENJDK_$1_OS_INCLUDE_SUBDIR)
 ])
 
 AC_DEFUN([PLATFORM_SET_RELEASE_FILE_OS_VALUES],
@@ -555,31 +563,6 @@ AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_BUILD_OS_VERSION],
   AC_SUBST(OS_VERSION_MICRO)
 ])
 
-# Support macro for PLATFORM_SETUP_OPENJDK_TARGET_BITS.
-# Add -mX to various FLAGS variables.
-AC_DEFUN([PLATFORM_SET_COMPILER_TARGET_BITS_FLAGS],
-[
-  # When we add flags to the "official" CFLAGS etc, we need to
-  # keep track of these additions in ADDED_CFLAGS etc. These
-  # will later be checked to make sure only controlled additions
-  # have been made to CFLAGS etc.
-  ADDED_CFLAGS=" ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
-  ADDED_CXXFLAGS=" ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
-  ADDED_LDFLAGS=" ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
-
-  CFLAGS="${CFLAGS}${ADDED_CFLAGS}"
-  CXXFLAGS="${CXXFLAGS}${ADDED_CXXFLAGS}"
-  LDFLAGS="${LDFLAGS}${ADDED_LDFLAGS}"
-
-  CFLAGS_JDK="${CFLAGS_JDK}${ADDED_CFLAGS}"
-  CXXFLAGS_JDK="${CXXFLAGS_JDK}${ADDED_CXXFLAGS}"
-  LDFLAGS_JDK="${LDFLAGS_JDK}${ADDED_LDFLAGS}"
-
-  JVM_CFLAGS="$JVM_CFLAGS $ADDED_CFLAGS"
-  JVM_LDFLAGS="$JVM_LDFLAGS $ADDED_LDFLAGS"
-  JVM_ASFLAGS="$JVM_ASFLAGS $ADDED_CFLAGS"
-])
-
 AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_TARGET_BITS],
 [
   ###############################################################################
@@ -588,22 +571,6 @@ AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_TARGET_BITS],
   # (The JVM can use 32 or 64 bit Java pointers but that decision
   # is made at runtime.)
   #
-
-  if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xaix; then
-    # Always specify -m flag on Solaris
-    # And -q on AIX because otherwise the compiler produces 32-bit objects by default
-    PLATFORM_SET_COMPILER_TARGET_BITS_FLAGS
-  elif test "x$COMPILE_TYPE" = xreduced; then
-    if test "x$OPENJDK_TARGET_OS_TYPE" = xunix; then
-      # Specify -m if running reduced on unix platforms
-      PLATFORM_SET_COMPILER_TARGET_BITS_FLAGS
-    fi
-  fi
-  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    JVM_CFLAGS="$JVM_CFLAGS ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
-    JVM_LDFLAGS="$JVM_LDFLAGS ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
-    JVM_ASFLAGS="$JVM_ASFLAGS ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
-  fi
 
   # Make compilation sanity check
   AC_CHECK_HEADERS([stdio.h], , [
@@ -627,33 +594,14 @@ AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_TARGET_BITS],
     TESTED_TARGET_CPU_BITS=`expr 8 \* $ac_cv_sizeof_int_p`
 
     if test "x$TESTED_TARGET_CPU_BITS" != "x$OPENJDK_TARGET_CPU_BITS"; then
-      # This situation may happen on 64-bit platforms where the compiler by default only generates 32-bit objects
-      # Let's try to implicitely set the compilers target architecture and retry the test
-      AC_MSG_NOTICE([The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS).])
-      AC_MSG_NOTICE([Retrying with platforms compiler target bits flag to ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}])
-      PLATFORM_SET_COMPILER_TARGET_BITS_FLAGS
-
-      # We have to unset 'ac_cv_sizeof_int_p' first, otherwise AC_CHECK_SIZEOF will use the previously cached value!
-      unset ac_cv_sizeof_int_p
-      # And we have to undef the definition of SIZEOF_INT_P in confdefs.h by the previous invocation of AC_CHECK_SIZEOF
-      cat >>confdefs.h <<_ACEOF
-#undef SIZEOF_INT_P
-_ACEOF
-
-      AC_CHECK_SIZEOF([int *], [1111])
-
-      TESTED_TARGET_CPU_BITS=`expr 8 \* $ac_cv_sizeof_int_p`
-
-      if test "x$TESTED_TARGET_CPU_BITS" != "x$OPENJDK_TARGET_CPU_BITS"; then
-        AC_MSG_NOTICE([The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)])
-        if test "x$COMPILE_TYPE" = xreduced; then
-          HELP_MSG_MISSING_DEPENDENCY([reduced])
-          AC_MSG_NOTICE([You are doing a reduced build. Check that you have 32-bit libraries installed. $HELP_MSG])
-        elif test "x$COMPILE_TYPE" = xcross; then
-          AC_MSG_NOTICE([You are doing a cross-compilation. Check that you have all target platform libraries installed.])
-        fi
-        AC_MSG_ERROR([Cannot continue.])
+      AC_MSG_NOTICE([The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)])
+      if test "x$COMPILE_TYPE" = xreduced; then
+        HELP_MSG_MISSING_DEPENDENCY([reduced])
+        AC_MSG_NOTICE([You are doing a reduced build. Check that you have 32-bit libraries installed. $HELP_MSG])
+      elif test "x$COMPILE_TYPE" = xcross; then
+        AC_MSG_NOTICE([You are doing a cross-compilation. Check that you have all target platform libraries installed.])
       fi
+      AC_MSG_ERROR([Cannot continue.])
     fi
   fi
 

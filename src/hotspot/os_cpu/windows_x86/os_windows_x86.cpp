@@ -40,7 +40,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/extendedPC.hpp"
 #include "runtime/frame.inline.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -218,17 +218,17 @@ void os::initialize_thread(Thread* thr) {
 
 // Atomics and Stub Functions
 
-typedef jint      xchg_func_t            (jint,     volatile jint*);
-typedef intptr_t  xchg_long_func_t       (jlong,    volatile jlong*);
-typedef jint      cmpxchg_func_t         (jint,     volatile jint*,  jint);
-typedef jbyte     cmpxchg_byte_func_t    (jbyte,    volatile jbyte*, jbyte);
-typedef jlong     cmpxchg_long_func_t    (jlong,    volatile jlong*, jlong);
-typedef jint      add_func_t             (jint,     volatile jint*);
-typedef intptr_t  add_ptr_func_t         (intptr_t, volatile intptr_t*);
+typedef int32_t   xchg_func_t            (int32_t,  volatile int32_t*);
+typedef int64_t   xchg_long_func_t       (int64_t,  volatile int64_t*);
+typedef int32_t   cmpxchg_func_t         (int32_t,  volatile int32_t*, int32_t);
+typedef int8_t    cmpxchg_byte_func_t    (int8_t,   volatile int8_t*,  int8_t);
+typedef int64_t   cmpxchg_long_func_t    (int64_t,  volatile int64_t*, int64_t);
+typedef int32_t   add_func_t             (int32_t,  volatile int32_t*);
+typedef int64_t   add_long_func_t        (int64_t,  volatile int64_t*);
 
 #ifdef AMD64
 
-jint os::atomic_xchg_bootstrap(jint exchange_value, volatile jint* dest) {
+int32_t os::atomic_xchg_bootstrap(int32_t exchange_value, volatile int32_t* dest) {
   // try to use the stub:
   xchg_func_t* func = CAST_TO_FN_PTR(xchg_func_t*, StubRoutines::atomic_xchg_entry());
 
@@ -238,12 +238,12 @@ jint os::atomic_xchg_bootstrap(jint exchange_value, volatile jint* dest) {
   }
   assert(Threads::number_of_threads() == 0, "for bootstrap only");
 
-  jint old_value = *dest;
+  int32_t old_value = *dest;
   *dest = exchange_value;
   return old_value;
 }
 
-intptr_t os::atomic_xchg_long_bootstrap(jlong exchange_value, volatile jlong* dest) {
+int64_t os::atomic_xchg_long_bootstrap(int64_t exchange_value, volatile int64_t* dest) {
   // try to use the stub:
   xchg_long_func_t* func = CAST_TO_FN_PTR(xchg_long_func_t*, StubRoutines::atomic_xchg_long_entry());
 
@@ -253,13 +253,13 @@ intptr_t os::atomic_xchg_long_bootstrap(jlong exchange_value, volatile jlong* de
   }
   assert(Threads::number_of_threads() == 0, "for bootstrap only");
 
-  intptr_t old_value = *dest;
+  int64_t old_value = *dest;
   *dest = exchange_value;
   return old_value;
 }
 
 
-jint os::atomic_cmpxchg_bootstrap(jint exchange_value, volatile jint* dest, jint compare_value) {
+int32_t os::atomic_cmpxchg_bootstrap(int32_t exchange_value, volatile int32_t* dest, int32_t compare_value) {
   // try to use the stub:
   cmpxchg_func_t* func = CAST_TO_FN_PTR(cmpxchg_func_t*, StubRoutines::atomic_cmpxchg_entry());
 
@@ -269,13 +269,13 @@ jint os::atomic_cmpxchg_bootstrap(jint exchange_value, volatile jint* dest, jint
   }
   assert(Threads::number_of_threads() == 0, "for bootstrap only");
 
-  jint old_value = *dest;
+  int32_t old_value = *dest;
   if (old_value == compare_value)
     *dest = exchange_value;
   return old_value;
 }
 
-jbyte os::atomic_cmpxchg_byte_bootstrap(jbyte exchange_value, volatile jbyte* dest, jbyte compare_value) {
+int8_t os::atomic_cmpxchg_byte_bootstrap(int8_t exchange_value, volatile int8_t* dest, int8_t compare_value) {
   // try to use the stub:
   cmpxchg_byte_func_t* func = CAST_TO_FN_PTR(cmpxchg_byte_func_t*, StubRoutines::atomic_cmpxchg_byte_entry());
 
@@ -285,7 +285,7 @@ jbyte os::atomic_cmpxchg_byte_bootstrap(jbyte exchange_value, volatile jbyte* de
   }
   assert(Threads::number_of_threads() == 0, "for bootstrap only");
 
-  jbyte old_value = *dest;
+  int8_t old_value = *dest;
   if (old_value == compare_value)
     *dest = exchange_value;
   return old_value;
@@ -293,7 +293,7 @@ jbyte os::atomic_cmpxchg_byte_bootstrap(jbyte exchange_value, volatile jbyte* de
 
 #endif // AMD64
 
-jlong os::atomic_cmpxchg_long_bootstrap(jlong exchange_value, volatile jlong* dest, jlong compare_value) {
+int64_t os::atomic_cmpxchg_long_bootstrap(int64_t exchange_value, volatile int64_t* dest, int64_t compare_value) {
   // try to use the stub:
   cmpxchg_long_func_t* func = CAST_TO_FN_PTR(cmpxchg_long_func_t*, StubRoutines::atomic_cmpxchg_long_entry());
 
@@ -303,7 +303,7 @@ jlong os::atomic_cmpxchg_long_bootstrap(jlong exchange_value, volatile jlong* de
   }
   assert(Threads::number_of_threads() == 0, "for bootstrap only");
 
-  jlong old_value = *dest;
+  int64_t old_value = *dest;
   if (old_value == compare_value)
     *dest = exchange_value;
   return old_value;
@@ -311,7 +311,7 @@ jlong os::atomic_cmpxchg_long_bootstrap(jlong exchange_value, volatile jlong* de
 
 #ifdef AMD64
 
-jint os::atomic_add_bootstrap(jint add_value, volatile jint* dest) {
+int32_t os::atomic_add_bootstrap(int32_t add_value, volatile int32_t* dest) {
   // try to use the stub:
   add_func_t* func = CAST_TO_FN_PTR(add_func_t*, StubRoutines::atomic_add_entry());
 
@@ -324,12 +324,12 @@ jint os::atomic_add_bootstrap(jint add_value, volatile jint* dest) {
   return (*dest) += add_value;
 }
 
-intptr_t os::atomic_add_ptr_bootstrap(intptr_t add_value, volatile intptr_t* dest) {
+int64_t os::atomic_add_long_bootstrap(int64_t add_value, volatile int64_t* dest) {
   // try to use the stub:
-  add_ptr_func_t* func = CAST_TO_FN_PTR(add_ptr_func_t*, StubRoutines::atomic_add_ptr_entry());
+  add_long_func_t* func = CAST_TO_FN_PTR(add_long_func_t*, StubRoutines::atomic_add_long_entry());
 
   if (func != NULL) {
-    os::atomic_add_ptr_func = func;
+    os::atomic_add_long_func = func;
     return (*func)(add_value, dest);
   }
   assert(Threads::number_of_threads() == 0, "for bootstrap only");
@@ -342,7 +342,7 @@ xchg_long_func_t*    os::atomic_xchg_long_func    = os::atomic_xchg_long_bootstr
 cmpxchg_func_t*      os::atomic_cmpxchg_func      = os::atomic_cmpxchg_bootstrap;
 cmpxchg_byte_func_t* os::atomic_cmpxchg_byte_func = os::atomic_cmpxchg_byte_bootstrap;
 add_func_t*          os::atomic_add_func          = os::atomic_add_bootstrap;
-add_ptr_func_t*      os::atomic_add_ptr_func      = os::atomic_add_ptr_bootstrap;
+add_long_func_t*     os::atomic_add_long_func     = os::atomic_add_long_bootstrap;
 
 #endif // AMD64
 

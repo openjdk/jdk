@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,30 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 7106773 8180570
+ * @summary 512 bits RSA key cannot work with SHA384 and SHA512
+ * @requires os.family == "windows"
+ * @modules java.base/sun.security.util
+ *          java.base/sun.security.tools.keytool
+ *          java.base/sun.security.x509
+ * @run main ShortRSAKeyWithinTLS 1024
+ * @run main ShortRSAKeyWithinTLS 768
+ * @run main ShortRSAKeyWithinTLS 512
+ */
 import java.io.*;
 import java.net.*;
+import java.security.cert.Certificate;
 import java.util.*;
 import java.security.*;
 import java.security.cert.*;
 import javax.net.*;
 import javax.net.ssl.*;
 
+import sun.security.tools.keytool.CertAndKeyGen;
 import sun.security.util.KeyUtil;
+import sun.security.x509.X500Name;
 
 public class ShortRSAKeyWithinTLS {
 
@@ -217,28 +232,37 @@ public class ShortRSAKeyWithinTLS {
     private static String clientProtocol = null;
     private static String clientCiperSuite = null;
 
-    private static void parseArguments(String[] args) {
-        keyAlias = args[0];
-        keySize = Integer.parseInt(args[1]);
-
-        if (args.length > 2) {
-            clientProtocol = args[2];
-        }
-
-        if (args.length > 3) {
-            clientCiperSuite = args[3];
-        }
-    }
-
     public static void main(String[] args) throws Exception {
         if (debug) {
             System.setProperty("javax.net.debug", "all");
         }
 
-        // Get the customized arguments.
-        parseArguments(args);
+        keyAlias = "7106773." + args[0];
+        keySize = Integer.parseInt(args[0]);
 
-        new ShortRSAKeyWithinTLS();
+        KeyStore ks = KeyStore.getInstance("Windows-MY");
+        ks.load(null, null);
+        if (ks.containsAlias(keyAlias)) {
+            ks.deleteEntry(keyAlias);
+        }
+
+        CertAndKeyGen gen = new CertAndKeyGen("RSA", "SHA256withRSA");
+        gen.generate(keySize);
+
+        ks.setKeyEntry(keyAlias, gen.getPrivateKey(), null,
+                new Certificate[] {
+                    gen.getSelfCertificate(new X500Name("cn=localhost,c=US"), 100)
+                });
+
+        clientProtocol = "TLSv1.2";
+        clientCiperSuite = "TLS_DHE_RSA_WITH_AES_128_CBC_SHA";
+
+        try {
+            new ShortRSAKeyWithinTLS();
+        } finally {
+            ks.deleteEntry(keyAlias);
+            ks.store(null, null);
+        }
     }
 
     Thread clientThread = null;

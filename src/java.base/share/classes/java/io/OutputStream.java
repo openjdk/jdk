@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,51 @@ import java.util.Objects;
  * @since   1.0
  */
 public abstract class OutputStream implements Closeable, Flushable {
+    /**
+     * Returns a new {@code OutputStream} which discards all bytes.  The
+     * returned stream is initially open.  The stream is closed by calling
+     * the {@code close()} method.  Subsequent calls to {@code close()} have
+     * no effect.
+     *
+     * <p> While the stream is open, the {@code write(int)}, {@code
+     * write(byte[])}, and {@code write(byte[], int, int)} methods do nothing.
+     * After the stream has been closed, these methods all throw {@code
+     * IOException}.
+     *
+     * <p> The {@code flush()} method does nothing.
+     *
+     * @return an {@code OutputStream} which discards all bytes
+     *
+     * @since 11
+     */
+    public static OutputStream nullOutputStream() {
+        return new OutputStream() {
+            private volatile boolean closed;
+
+            private void ensureOpen() throws IOException {
+                if (closed) {
+                    throw new IOException("Stream closed");
+                }
+            }
+
+            @Override
+            public void write(int b) throws IOException {
+                ensureOpen();
+            }
+
+            @Override
+            public void write(byte b[], int off, int len) throws IOException {
+                Objects.checkFromIndexSize(off, len, b.length);
+                ensureOpen();
+            }
+
+            @Override
+            public void close() {
+                closed = true;
+            }
+        };
+    }
+
     /**
      * Writes the specified byte to this output stream. The general
      * contract for <code>write</code> is that one byte is written
@@ -106,7 +151,6 @@ public abstract class OutputStream implements Closeable, Flushable {
      *             stream is closed.
      */
     public void write(byte b[], int off, int len) throws IOException {
-        Objects.requireNonNull(b);
         Objects.checkFromIndexSize(off, len, b.length);
         // len == 0 condition implicitly handled by loop bounds
         for (int i = 0 ; i < len ; i++) {

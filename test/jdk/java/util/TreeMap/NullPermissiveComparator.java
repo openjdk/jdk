@@ -28,10 +28,9 @@
  * @author Martin Buchholz
  */
 
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
-import java.lang.reflect.*;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.TreeMap;
 
 @SuppressWarnings("unchecked")
 public class NullPermissiveComparator {

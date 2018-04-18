@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,8 @@ import sun.jvm.hotspot.classfile.ClassLoaderDataGraph;
 import sun.jvm.hotspot.memory.SymbolTable;
 import sun.jvm.hotspot.memory.SystemDictionary;
 import sun.jvm.hotspot.memory.Universe;
+import sun.jvm.hotspot.gc.shared.CollectedHeap;
+import sun.jvm.hotspot.gc.g1.G1CollectedHeap;
 import sun.jvm.hotspot.oops.DefaultHeapVisitor;
 import sun.jvm.hotspot.oops.HeapVisitor;
 import sun.jvm.hotspot.oops.InstanceKlass;
@@ -1607,7 +1609,9 @@ public class CommandProcessor {
                             if (!all) return;
                         }
                     }
-                    out.println("Couldn't find thread " + name);
+                    if (!all) {
+                        out.println("Couldn't find thread " + name);
+                    }
                 }
             }
         },
@@ -1651,6 +1655,21 @@ public class CommandProcessor {
                             e.printStackTrace();
                         }
                     }
+                }
+            }
+        },
+        new Command("g1regiondetails", false) {
+            public void doit(Tokens t) {
+                if (t.countTokens() != 0) {
+                    usage();
+                } else {
+                    CollectedHeap heap = VM.getVM().getUniverse().heap();
+                    if (!(heap instanceof G1CollectedHeap)) {
+                        out.println("This command is valid only for G1GC.");
+                        return;
+                    }
+                    out.println("Region Details:");
+                    ((G1CollectedHeap)heap).printRegionDetails(out);
                 }
             }
         },

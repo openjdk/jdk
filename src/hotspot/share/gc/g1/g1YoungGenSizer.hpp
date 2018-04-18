@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_GC_G1_G1YOUNGGENSIZER_HPP
 #define SHARE_VM_GC_G1_G1YOUNGGENSIZER_HPP
 
-#include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // There are three command line options related to the young gen size:
 // NewSize, MaxNewSize and NewRatio (There is also -Xmn, but that is
@@ -63,7 +63,7 @@
 //
 // NewSize and MaxNewSize override NewRatio. So, NewRatio is ignored if it is
 // combined with either NewSize or MaxNewSize. (A warning message is printed.)
-class G1YoungGenSizer VALUE_OBJ_CLASS_SPEC {
+class G1YoungGenSizer {
 private:
   enum SizerKind {
     SizerDefaults,

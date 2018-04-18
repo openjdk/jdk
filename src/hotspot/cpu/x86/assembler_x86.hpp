@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ class BiasedLockingCounters;
 // Contains all the definitions needed for x86 assembly code generation.
 
 // Calling convention
-class Argument VALUE_OBJ_CLASS_SPEC {
+class Argument {
  public:
   enum {
 #ifdef _LP64
@@ -155,7 +155,7 @@ REGISTER_DECLARATION(Register, rbp_mh_SP_save, noreg);
 
 class ArrayAddress;
 
-class Address VALUE_OBJ_CLASS_SPEC {
+class Address {
  public:
   enum ScaleFactor {
     no_scale = -1,
@@ -333,7 +333,7 @@ class Address VALUE_OBJ_CLASS_SPEC {
 // on the instruction and the platform. As small step on the way to merging i486/amd64
 // directories.
 //
-class AddressLiteral VALUE_OBJ_CLASS_SPEC {
+class AddressLiteral {
   friend class ArrayAddress;
   RelocationHolder _rspec;
   // Typically we use AddressLiterals we want to use their rval
@@ -423,7 +423,7 @@ class InternalAddress: public AddressLiteral {
 // address amd64 can't. We create a class that expresses the concept but does extra
 // magic on amd64 to get the final result
 
-class ArrayAddress VALUE_OBJ_CLASS_SPEC {
+class ArrayAddress {
   private:
 
   AddressLiteral _base;
@@ -1633,6 +1633,8 @@ private:
   void popcntl(Register dst, Address src);
   void popcntl(Register dst, Register src);
 
+  void vpopcntd(XMMRegister dst, XMMRegister src, int vector_len);
+
 #ifdef _LP64
   void popcntq(Register dst, Address src);
   void popcntq(Register dst, Register src);
@@ -1660,6 +1662,9 @@ private:
   // Shuffle Packed Low Words
   void pshuflw(XMMRegister dst, XMMRegister src, int mode);
   void pshuflw(XMMRegister dst, Address src,     int mode);
+
+  // Shuffle packed values at 128 bit granularity
+  void evshufi64x2(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8, int vector_len);
 
   // Shift Right by bytes Logical DoubleQuadword Immediate
   void psrldq(XMMRegister dst, int shift);
@@ -2044,6 +2049,9 @@ private:
   void pxor(XMMRegister dst, XMMRegister src);
   void vpxor(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpxor(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evpxorq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpxorq(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+
 
   // vinserti forms
   void vinserti128(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
@@ -2106,7 +2114,7 @@ private:
   // Carry-Less Multiplication Quadword
   void pclmulqdq(XMMRegister dst, XMMRegister src, int mask);
   void vpclmulqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int mask);
-
+  void evpclmulqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int mask, int vector_len);
   // AVX instruction which is used to clear upper 128 bits of YMM registers and
   // to avoid transaction penalty between AVX and SSE states. There is no
   // penalty if legacy SSE instructions are encoded using VEX prefix because

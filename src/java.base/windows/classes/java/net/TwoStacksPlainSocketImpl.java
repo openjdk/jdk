@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,54 +27,26 @@ package java.net;
 import java.io.IOException;
 import java.io.FileDescriptor;
 import sun.net.ResourceManager;
+import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.JavaIOFileDescriptorAccess;
 
 /*
- * This class defines the plain SocketImpl that is used for all
- * Windows version lower than Vista. It adds support for IPv6 on
- * these platforms where available.
- *
- * For backward compatibility Windows platforms that do not have IPv6
- * support also use this implementation, and fd1 gets set to null
- * during socket creation.
+ * This class defines the plain SocketImpl that is used when
+ * the System property java.net.preferIPv4Stack is set to true.
  *
  * @author Chris Hegarty
  */
 
-class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
-{
-    /* second fd, used for ipv6 on windows only.
-     * fd1 is used for listeners and for client sockets at initialization
-     * until the socket is connected. Up to this point fd always refers
-     * to the ipv4 socket and fd1 to the ipv6 socket. After the socket
-     * becomes connected, fd always refers to the connected socket
-     * (either v4 or v6) and fd1 is closed.
-     *
-     * For ServerSockets, fd always refers to the v4 listener and
-     * fd1 the v6 listener.
-     */
-    private FileDescriptor fd1;
+class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl {
 
-    /*
-     * Needed for ipv6 on windows because we need to know
-     * if the socket is bound to ::0 or 0.0.0.0, when a caller
-     * asks for it. Otherwise we don't know which socket to ask.
-     */
-    private InetAddress anyLocalBoundAddr = null;
-
-    /* to prevent starvation when listening on two sockets, this is
-     * is used to hold the id of the last socket we accepted on.
-     */
-    private int lastfd = -1;
+    private static final JavaIOFileDescriptorAccess fdAccess =
+        SharedSecrets.getJavaIOFileDescriptorAccess();
 
     // true if this socket is exclusively bound
     private final boolean exclusiveBind;
 
     // emulates SO_REUSEADDR when exclusiveBind is true
     private boolean isReuseAddress;
-
-    static {
-        initProto();
-    }
 
     public TwoStacksPlainSocketImpl(boolean exclBind) {
         exclusiveBind = exclBind;
@@ -85,166 +57,268 @@ class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
         exclusiveBind = exclBind;
     }
 
-    /**
-     * Creates a socket with a boolean that specifies whether this
-     * is a stream socket (true) or an unconnected UDP socket (false).
-     */
-    protected synchronized void create(boolean stream) throws IOException {
-        fd1 = new FileDescriptor();
-        try {
-            super.create(stream);
-        } catch (IOException e) {
-            fd1 = null;
-            throw e;
-        }
+    void socketCreate(boolean stream) throws IOException {
+        if (fd == null)
+            throw new SocketException("Socket closed");
+
+        int newfd = socket0(stream, false /*v6 Only*/);
+
+        fdAccess.set(fd, newfd);
     }
 
-     /**
-     * Binds the socket to the specified address of the specified local port.
-     * @param address the address
-     * @param port the port
-     */
-    protected synchronized void bind(InetAddress address, int lport)
-        throws IOException
-    {
-        super.bind(address, lport);
-        if (address.isAnyLocalAddress()) {
-            anyLocalBoundAddr = address;
-        }
-    }
+    @Override
+    void socketConnect(InetAddress address, int port, int timeout)
+        throws IOException {
+        int nativefd = checkAndReturnNativeFD();
 
-    public Object getOption(int opt) throws SocketException {
-        if (isClosedOrPending()) {
-            throw new SocketException("Socket Closed");
-        }
-        if (opt == SO_BINDADDR) {
-            if (fd != null && fd1 != null ) {
-                /* must be unbound or else bound to anyLocal */
-                return anyLocalBoundAddr;
+        if (address == null)
+            throw new NullPointerException("inet address argument is null.");
+
+        int connectResult;
+        if (timeout <= 0) {
+            connectResult = connect0(nativefd, address, port);
+        } else {
+            configureBlocking(nativefd, false);
+            try {
+                connectResult = connect0(nativefd, address, port);
+                if (connectResult == WOULDBLOCK) {
+                    waitForConnect(nativefd, timeout);
+                }
+            } finally {
+                configureBlocking(nativefd, true);
             }
-            InetAddressContainer in = new InetAddressContainer();
-            socketGetOption(opt, in);
-            return in.addr;
-        } else if (opt == SO_REUSEADDR && exclusiveBind) {
-            // SO_REUSEADDR emulated when using exclusive bind
-            return isReuseAddress;
-        } else if (opt == SO_REUSEPORT) {
-            // SO_REUSEPORT is not supported on Windows.
-            throw new UnsupportedOperationException("unsupported option");
-        } else
-            return super.getOption(opt);
+        }
+        /*
+         * We need to set the local port field. If bind was called
+         * previous to the connect (by the client) then localport field
+         * will already be set.
+         */
+        if (localport == 0)
+            localport = localPort0(nativefd);
     }
 
     @Override
     void socketBind(InetAddress address, int port) throws IOException {
-        socketBind(address, port, exclusiveBind);
+        int nativefd = checkAndReturnNativeFD();
+
+        if (address == null)
+            throw new NullPointerException("inet address argument is null.");
+
+        bind0(nativefd, address, port, exclusiveBind);
+        if (port == 0) {
+            localport = localPort0(nativefd);
+        } else {
+            localport = port;
+        }
+
+        this.address = address;
     }
 
+    @Override
+    void socketListen(int backlog) throws IOException {
+        int nativefd = checkAndReturnNativeFD();
+
+        listen0(nativefd, backlog);
+    }
+
+    @Override
+    void socketAccept(SocketImpl s) throws IOException {
+        int nativefd = checkAndReturnNativeFD();
+
+        if (s == null)
+            throw new NullPointerException("socket is null");
+
+        int newfd = -1;
+        InetSocketAddress[] isaa = new InetSocketAddress[1];
+        if (timeout <= 0) {
+            newfd = accept0(nativefd, isaa);
+        } else {
+            configureBlocking(nativefd, false);
+            try {
+                waitForNewConnection(nativefd, timeout);
+                newfd = accept0(nativefd, isaa);
+                if (newfd != -1) {
+                    configureBlocking(newfd, true);
+                }
+            } finally {
+                configureBlocking(nativefd, true);
+            }
+        }
+        /* Update (SocketImpl)s' fd */
+        fdAccess.set(s.fd, newfd);
+        /* Update socketImpls remote port, address and localport */
+        InetSocketAddress isa = isaa[0];
+        s.port = isa.getPort();
+        s.address = isa.getAddress();
+        s.localport = localport;
+    }
+
+    @Override
+    int socketAvailable() throws IOException {
+        int nativefd = checkAndReturnNativeFD();
+        return available0(nativefd);
+    }
+
+    @Override
+    void socketClose0(boolean useDeferredClose/*unused*/) throws IOException {
+        if (fd == null)
+            throw new SocketException("Socket closed");
+
+        if (!fd.valid())
+            return;
+
+        final int nativefd = fdAccess.get(fd);
+        fdAccess.set(fd, -1);
+        close0(nativefd);
+    }
+
+    @Override
+    void socketShutdown(int howto) throws IOException {
+        int nativefd = checkAndReturnNativeFD();
+        shutdown0(nativefd, howto);
+    }
+
+    // Intentional fallthrough after SO_REUSEADDR
+    @SuppressWarnings("fallthrough")
     @Override
     void socketSetOption(int opt, boolean on, Object value)
-        throws SocketException
-    {
-        // SO_REUSEADDR emulated when using exclusive bind
-        if (opt == SO_REUSEADDR && exclusiveBind)
-            isReuseAddress = on;
-        else if (opt == SO_REUSEPORT) {
-            // SO_REUSEPORT is not supported on Windows.
+        throws SocketException {
+        int nativefd = checkAndReturnNativeFD();
+
+        if (opt == SO_TIMEOUT) {
+            // Don't enable the socket option on ServerSocket as it's
+            // meaningless (we don't receive on a ServerSocket).
+            if (serverSocket == null) {
+                setSoTimeout0(nativefd, ((Integer)value).intValue());
+            }
+            return;
+        }
+        // SO_REUSEPORT is not supported on Windows.
+        if (opt == SO_REUSEPORT) {
             throw new UnsupportedOperationException("unsupported option");
         }
-        else
-            socketNativeSetOption(opt, on, value);
-    }
 
-    /**
-     * Closes the socket.
-     */
-    @Override
-    protected void close() throws IOException {
-        synchronized(fdLock) {
-            if (fd != null || fd1 != null) {
-                if (!stream) {
-                    ResourceManager.afterUdpClose();
-                }
-                if (fdUseCount == 0) {
-                    if (closePending) {
-                        return;
-                    }
-                    closePending = true;
-                    socketClose();
-                    fd = null;
-                    fd1 = null;
+        int optionValue = 0;
+
+        switch(opt) {
+            case SO_REUSEADDR :
+                if (exclusiveBind) {
+                    // SO_REUSEADDR emulated when using exclusive bind
+                    isReuseAddress = on;
                     return;
-                } else {
-                    /*
-                     * If a thread has acquired the fd and a close
-                     * isn't pending then use a deferred close.
-                     * Also decrement fdUseCount to signal the last
-                     * thread that releases the fd to close it.
-                     */
-                    if (!closePending) {
-                        closePending = true;
-                        fdUseCount--;
-                        socketClose();
-                    }
                 }
-            }
+                // intentional fallthrough
+            case TCP_NODELAY :
+            case SO_OOBINLINE :
+            case SO_KEEPALIVE :
+                optionValue = on ? 1 : 0;
+                break;
+            case SO_SNDBUF :
+            case SO_RCVBUF :
+            case IP_TOS :
+                optionValue = ((Integer)value).intValue();
+                break;
+            case SO_LINGER :
+                if (on) {
+                    optionValue =  ((Integer)value).intValue();
+                } else {
+                    optionValue = -1;
+                }
+                break;
+            default :/* shouldn't get here */
+                throw new SocketException("Option not supported");
         }
+
+        setIntOption(nativefd, opt, optionValue);
     }
 
     @Override
-    void reset() throws IOException {
-        if (fd != null || fd1 != null) {
-            socketClose();
+    int socketGetOption(int opt, Object iaContainerObj) throws SocketException {
+        int nativefd = checkAndReturnNativeFD();
+
+        // SO_BINDADDR is not a socket option.
+        if (opt == SO_BINDADDR) {
+            localAddress(nativefd, (InetAddressContainer)iaContainerObj);
+            return 0;  // return value doesn't matter.
         }
-        fd = null;
-        fd1 = null;
-        super.reset();
+        // SO_REUSEPORT is not supported on Windows.
+        if (opt == SO_REUSEPORT) {
+            throw new UnsupportedOperationException("unsupported option");
+        }
+
+        // SO_REUSEADDR emulated when using exclusive bind
+        if (opt == SO_REUSEADDR && exclusiveBind)
+            return isReuseAddress? 1 : -1;
+
+        int value = getIntOption(nativefd, opt);
+
+        switch (opt) {
+            case TCP_NODELAY :
+            case SO_OOBINLINE :
+            case SO_KEEPALIVE :
+            case SO_REUSEADDR :
+                return (value == 0) ? -1 : 1;
+        }
+        return value;
     }
 
-    /*
-     * Return true if already closed or close is pending
-     */
     @Override
-    public boolean isClosedOrPending() {
-        /*
-         * Lock on fdLock to ensure that we wait if a
-         * close is in progress.
-         */
-        synchronized (fdLock) {
-            if (closePending || (fd == null && fd1 == null)) {
-                return true;
-            } else {
-                return false;
-            }
-        }
+    void socketSendUrgentData(int data) throws IOException {
+        int nativefd = checkAndReturnNativeFD();
+        sendOOB(nativefd, data);
+    }
+
+    private int checkAndReturnNativeFD() throws SocketException {
+        if (fd == null || !fd.valid())
+            throw new SocketException("Socket closed");
+
+        return fdAccess.get(fd);
+    }
+
+    static final int WOULDBLOCK = -2;       // Nothing available (non-blocking)
+
+    static {
+        initIDs();
     }
 
     /* Native methods */
 
-    static native void initProto();
+    static native void initIDs();
 
-    native void socketCreate(boolean isServer) throws IOException;
+    static native int socket0(boolean stream, boolean v6Only) throws IOException;
 
-    native void socketConnect(InetAddress address, int port, int timeout)
+    static native void bind0(int fd, InetAddress localAddress, int localport,
+                             boolean exclBind)
         throws IOException;
 
-    native void socketBind(InetAddress address, int port, boolean exclBind)
+    static native int connect0(int fd, InetAddress remote, int remotePort)
         throws IOException;
 
-    native void socketListen(int count) throws IOException;
+    static native void waitForConnect(int fd, int timeout) throws IOException;
 
-    native void socketAccept(SocketImpl s) throws IOException;
+    static native int localPort0(int fd) throws IOException;
 
-    native int socketAvailable() throws IOException;
+    static native void localAddress(int fd, InetAddressContainer in) throws SocketException;
 
-    native void socketClose0(boolean useDeferredClose) throws IOException;
+    static native void listen0(int fd, int backlog) throws IOException;
 
-    native void socketShutdown(int howto) throws IOException;
+    static native int accept0(int fd, InetSocketAddress[] isaa) throws IOException;
 
-    native void socketNativeSetOption(int cmd, boolean on, Object value)
-        throws SocketException;
+    static native void waitForNewConnection(int fd, int timeout) throws IOException;
 
-    native int socketGetOption(int opt, Object iaContainerObj) throws SocketException;
+    static native int available0(int fd) throws IOException;
 
-    native void socketSendUrgentData(int data) throws IOException;
+    static native void close0(int fd) throws IOException;
+
+    static native void shutdown0(int fd, int howto) throws IOException;
+
+    static native void setIntOption(int fd, int cmd, int optionValue) throws SocketException;
+
+    static native void setSoTimeout0(int fd, int timeout) throws SocketException;
+
+    static native int getIntOption(int fd, int cmd) throws SocketException;
+
+    static native void sendOOB(int fd, int data) throws IOException;
+
+    static native void configureBlocking(int fd, boolean blocking) throws IOException;
 }

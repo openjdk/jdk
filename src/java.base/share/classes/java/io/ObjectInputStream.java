@@ -52,6 +52,14 @@ import sun.reflect.misc.ReflectUtil;
  * An ObjectInputStream deserializes primitive data and objects previously
  * written using an ObjectOutputStream.
  *
+ * <p><strong>Warning: Deserialization of untrusted data is inherently dangerous
+ * and should be avoided. Untrusted data should be carefully validated according to the
+ * "Serialization and Deserialization" section of the
+ * {@extLink secure_coding_guidelines_javase Secure Coding Guidelines for Java SE}.
+ * {@extLink serialization_filter_guide Serialization Filtering} describes best
+ * practices for defensive use of serial filters.
+ * </strong></p>
+ *
  * <p>ObjectOutputStream and ObjectInputStream can provide an application with
  * persistent storage for graphs of objects when used with a FileOutputStream
  * and FileInputStream respectively.  ObjectInputStream is used to recover
@@ -1296,7 +1304,6 @@ public class ObjectInputStream
      * @throws InvalidClassException if the filter rejects creation
      */
     private void checkArray(Class<?> arrayType, int arrayLength) throws InvalidClassException {
-        Objects.requireNonNull(arrayType);
         if (! arrayType.isArray()) {
             throw new IllegalArgumentException("not an array type");
         }

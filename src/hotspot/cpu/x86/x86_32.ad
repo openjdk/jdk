@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 //----------REGISTER DEFINITION BLOCK------------------------------------------
 // This information is used by the matcher and the register allocator to
 // describe individual registers and classes of registers within the target
-// archtecture.
+// architecture.
 
 register %{
 //----------Architecture Description Register Definitions----------------------
@@ -317,7 +317,7 @@ int MachCallRuntimeNode::ret_addr_offset() {
 // Indicate if the safepoint node needs the polling page as an input.
 // Since x86 does have absolute addressing, it doesn't.
 bool SafePointNode::needs_polling_address_input() {
-  return false;
+  return SafepointMechanism::uses_thread_local_poll();
 }
 
 //
@@ -391,7 +391,7 @@ void emit_d32_reloc(CodeBuffer &cbuf, int d32, RelocationHolder const& rspec,
         int format) {
 #ifdef ASSERT
   if (rspec.reloc()->type() == relocInfo::oop_type && d32 != 0 && d32 != (int)Universe::non_oop_word()) {
-    assert(oopDesc::is_oop(cast_to_oop(d32)) && (ScavengeRootsInCode || !cast_to_oop(d32)->is_scavengable()), "cannot embed scavengable oops in code");
+    assert(oopDesc::is_oop(cast_to_oop(d32)) && (ScavengeRootsInCode || !Universe::heap()->is_scavengable(cast_to_oop(d32))), "cannot embed scavengable oops in code");
   }
 #endif
   cbuf.relocate(cbuf.insts_mark(), rspec, format);
@@ -706,34 +706,25 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   }
 
   if (do_polling() && C->is_method_compilation()) {
-    cbuf.relocate(cbuf.insts_end(), relocInfo::poll_return_type, 0);
-    emit_opcode(cbuf,0x85);
-    emit_rm(cbuf, 0x0, EAX_enc, 0x5); // EAX
-    emit_d32(cbuf, (intptr_t)os::get_polling_page());
+    if (SafepointMechanism::uses_thread_local_poll()) {
+      Register pollReg = as_Register(EBX_enc);
+      MacroAssembler masm(&cbuf);
+      masm.get_thread(pollReg);
+      masm.movl(pollReg, Address(pollReg, in_bytes(Thread::polling_page_offset())));
+      masm.relocate(relocInfo::poll_return_type);
+      masm.testl(rax, Address(pollReg, 0));
+    } else {
+      cbuf.relocate(cbuf.insts_end(), relocInfo::poll_return_type, 0);
+      emit_opcode(cbuf,0x85);
+      emit_rm(cbuf, 0x0, EAX_enc, 0x5); // EAX
+      emit_d32(cbuf, (intptr_t)os::get_polling_page());
+    }
   }
 }
 
 uint MachEpilogNode::size(PhaseRegAlloc *ra_) const {
-  Compile *C = ra_->C;
-  // If method set FPU control word, restore to standard control word
-  int size = C->in_24_bit_fp_mode() ? 6 : 0;
-  if (C->max_vector_size() > 16) size += 3; // vzeroupper
-  if (do_polling() && C->is_method_compilation()) size += 6;
-
-  int framesize = C->frame_size_in_bytes();
-  assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
-  // Remove two words for return addr and rbp,
-  framesize -= 2*wordSize;
-
-  size++; // popl rbp,
-
-  if (framesize >= 128) {
-    size += 6;
-  } else {
-    size += framesize ? 3 : 0;
-  }
-  size += 64; // added to support ReservedStackAccess
-  return size;
+  return MachNode::size(ra_); // too many variables; just compute it
+                              // the hard way
 }
 
 int MachEpilogNode::reloc() const {
@@ -795,7 +786,7 @@ static int impl_x_helper( CodeBuffer *cbuf, bool do_size, bool is_load,
   }
   if (cbuf) {
     MacroAssembler _masm(cbuf);
-    // EVEX spills remain EVEX: Compressed displacemement is better than AVX on spill mem operations, 
+    // EVEX spills remain EVEX: Compressed displacemement is better than AVX on spill mem operations,
     //                          it maps more cases to single byte displacement
     _masm.set_managed();
     if (reg_lo+1 == reg_hi) { // double move?
@@ -985,7 +976,7 @@ static int vec_stack_to_stack_helper(CodeBuffer *cbuf, bool do_size, int src_off
     dst_offset_size = (tmp_dst_offset == 0) ? 0 : ((tmp_dst_offset < 0x80) ? 1 : 4);
     calc_size += 3+src_offset_size + 3+dst_offset_size;
     break;
-  }   
+  }
   case Op_VecX:
   case Op_VecY:
   case Op_VecZ:
@@ -13336,6 +13327,7 @@ instruct cmpFastUnlock(eFlagsReg cr, eRegP object, eAXRegP box, eRegP tmp ) %{
 // ============================================================================
 // Safepoint Instruction
 instruct safePoint_poll(eFlagsReg cr) %{
+  predicate(SafepointMechanism::uses_global_page_poll());
   match(SafePoint);
   effect(KILL cr);
 
@@ -13352,6 +13344,25 @@ instruct safePoint_poll(eFlagsReg cr) %{
   size(6) ;
   ins_encode( Safepoint_Poll() );
   ins_pipe( ialu_reg_mem );
+%}
+
+instruct safePoint_poll_tls(eFlagsReg cr, eRegP_no_EBP poll) %{
+  predicate(SafepointMechanism::uses_thread_local_poll());
+  match(SafePoint poll);
+  effect(KILL cr, USE poll);
+
+  format %{ "TSTL   #EAX,[$poll]\t! Safepoint: poll for GC" %}
+  ins_cost(125);
+  // EBP would need size(3)
+  size(2); /* setting an explicit size will cause debug builds to assert if size is incorrect */
+  ins_encode %{
+    __ relocate(relocInfo::poll_type);
+    address pre_pc = __ pc();
+    __ testl(rax, Address($poll$$Register, 0));
+    address post_pc = __ pc();
+    guarantee(pre_pc[0] == 0x85, "must emit test-ax [reg]");
+  %}
+  ins_pipe(ialu_reg_mem);
 %}
 
 

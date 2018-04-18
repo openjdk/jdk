@@ -8,16 +8,27 @@
 // ${java.home}/conf/security/java.policy.
 //
 
-grant codeBase "jrt:/java.activation" {
-    permission java.security.AllPermission;
-};
 
 grant codeBase "jrt:/java.compiler" {
     permission java.security.AllPermission;
 };
 
-grant codeBase "jrt:/java.corba" {
-    permission java.security.AllPermission;
+
+grant codeBase "jrt:/java.net.http" {
+    permission java.lang.RuntimePermission "accessClassInPackage.sun.net";
+    permission java.lang.RuntimePermission "accessClassInPackage.sun.net.util";
+    permission java.lang.RuntimePermission "accessClassInPackage.sun.net.www";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.misc";
+    permission java.net.SocketPermission "*","connect,resolve";
+    permission java.net.URLPermission "http:*","*:*";
+    permission java.net.URLPermission "https:*","*:*";
+    permission java.net.URLPermission "ws:*","*:*";
+    permission java.net.URLPermission "wss:*","*:*";
+    permission java.net.URLPermission "socket:*","CONNECT";  // proxy
+    // For request/response body processors, fromFile, asFile
+    permission java.io.FilePermission "<<ALL FILES>>","read,write,delete";
+    permission java.util.PropertyPermission "*","read";
+    permission java.net.NetPermission "getProxySelector";
 };
 
 grant codeBase "jrt:/java.scripting" {
@@ -65,9 +76,6 @@ grant codeBase "jrt:/java.sql.rowset" {
     permission java.security.AllPermission;
 };
 
-grant codeBase "jrt:/java.xml.bind" {
-    permission java.security.AllPermission;
-};
 
 grant codeBase "jrt:/java.xml.crypto" {
     permission java.lang.RuntimePermission
@@ -90,9 +98,6 @@ grant codeBase "jrt:/java.xml.crypto" {
                    "accessClassInPackage.com.sun.org.apache.xpath.internal.*";
 };
 
-grant codeBase "jrt:/java.xml.ws" {
-    permission java.security.AllPermission;
-};
 
 grant codeBase "jrt:/jdk.accessibility" {
     permission java.lang.RuntimePermission "accessClassInPackage.sun.awt";

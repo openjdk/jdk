@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_VM_RUNTIME_THREAD_HPP
 
 #include "jni.h"
+#include "gc/shared/gcThreadLocalData.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
@@ -41,17 +42,12 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/threadLocalStorage.hpp"
-#include "runtime/thread_ext.hpp"
 #include "runtime/unhandledOops.hpp"
 #include "trace/traceBackend.hpp"
 #include "trace/traceMacros.hpp"
 #include "utilities/align.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/dirtyCardQueue.hpp"
-#include "gc/g1/satbMarkQueue.hpp"
-#endif // INCLUDE_ALL_GCS
 #ifdef ZERO
 # include "stack_zero.hpp"
 #endif
@@ -112,6 +108,22 @@ class Thread: public ThreadShadow {
   // Current thread is maintained as a thread-local variable
   static THREAD_LOCAL_DECL Thread* _thr_current;
 #endif
+
+ private:
+  // Thread local data area available to the GC. The internal
+  // structure and contents of this data area is GC-specific.
+  // Only GC and GC barrier code should access this data area.
+  GCThreadLocalData _gc_data;
+
+ public:
+  static ByteSize gc_data_offset() {
+    return byte_offset_of(Thread, _gc_data);
+  }
+
+  template <typename T> T* gc_data() {
+    STATIC_ASSERT(sizeof(T) <= sizeof(_gc_data));
+    return reinterpret_cast<T*>(&_gc_data);
+  }
 
   // Exception handling
   // (Note: _pending_exception and friends are in ThreadShadow)
@@ -326,8 +338,6 @@ class Thread: public ThreadShadow {
 
   mutable TRACE_DATA _trace_data;               // Thread-local data for tracing
 
-  ThreadExt _ext;
-
   int   _vm_operation_started_count;            // VM_Operation support
   int   _vm_operation_completed_count;          // VM_Operation support
 
@@ -507,9 +517,6 @@ class Thread: public ThreadShadow {
   TRACE_DEFINE_THREAD_TRACE_DATA_OFFSET;
   TRACE_DATA* trace_data() const        { return &_trace_data; }
   bool is_trace_suspend()               { return (_suspend_flags & _trace_flag) != 0; }
-
-  const ThreadExt& ext() const          { return _ext; }
-  ThreadExt& ext()                      { return _ext; }
 
   // VM operation support
   int vm_operation_ticket()                      { return ++_vm_operation_started_count; }
@@ -1065,20 +1072,6 @@ class JavaThread: public Thread {
   }   _jmp_ring[jump_ring_buffer_size];
 #endif // PRODUCT
 
-#if INCLUDE_ALL_GCS
-  // Support for G1 barriers
-
-  SATBMarkQueue _satb_mark_queue;        // Thread-local log for SATB barrier.
-  // Set of all such queues.
-  static SATBMarkQueueSet _satb_mark_queue_set;
-
-  DirtyCardQueue _dirty_card_queue;      // Thread-local log for dirty cards.
-  // Set of all such queues.
-  static DirtyCardQueueSet _dirty_card_queue_set;
-
-  void flush_barrier_queues();
-#endif // INCLUDE_ALL_GCS
-
   friend class VMThread;
   friend class ThreadWaitTransition;
   friend class VM_Exit;
@@ -1139,7 +1132,6 @@ class JavaThread: public Thread {
   // not specified, use the priority of the thread object. Threads_lock
   // must be held while this function is called.
   void prepare(jobject jni_thread, ThreadPriority prio=NoPriority);
-  void prepare_ext();
 
   void set_saved_exception_pc(address pc)        { _saved_exception_pc = pc; }
   address saved_exception_pc()                   { return _saved_exception_pc; }
@@ -1679,11 +1671,6 @@ class JavaThread: public Thread {
     return byte_offset_of(JavaThread, _should_post_on_exceptions_flag);
   }
 
-#if INCLUDE_ALL_GCS
-  static ByteSize satb_mark_queue_offset()       { return byte_offset_of(JavaThread, _satb_mark_queue); }
-  static ByteSize dirty_card_queue_offset()      { return byte_offset_of(JavaThread, _dirty_card_queue); }
-#endif // INCLUDE_ALL_GCS
-
   // Returns the jni environment for this thread
   JNIEnv* jni_environment()                      { return &_jni_environment; }
 
@@ -1954,43 +1941,6 @@ class JavaThread: public Thread {
     _stack_size_at_create = value;
   }
 
-#if INCLUDE_ALL_GCS
-  // SATB marking queue support
-  SATBMarkQueue& satb_mark_queue() { return _satb_mark_queue; }
-  static SATBMarkQueueSet& satb_mark_queue_set() {
-    return _satb_mark_queue_set;
-  }
-
-  // Dirty card queue support
-  DirtyCardQueue& dirty_card_queue() { return _dirty_card_queue; }
-  static DirtyCardQueueSet& dirty_card_queue_set() {
-    return _dirty_card_queue_set;
-  }
-#endif // INCLUDE_ALL_GCS
-
-  // This method initializes the SATB and dirty card queues before a
-  // JavaThread is added to the Java thread list. Right now, we don't
-  // have to do anything to the dirty card queue (it should have been
-  // activated when the thread was created), but we have to activate
-  // the SATB queue if the thread is created while a marking cycle is
-  // in progress. The activation / de-activation of the SATB queues at
-  // the beginning / end of a marking cycle is done during safepoints
-  // so we have to make sure this method is called outside one to be
-  // able to safely read the active field of the SATB queue set. Right
-  // now, it is called just before the thread is added to the Java
-  // thread list in the Threads::add() method. That method is holding
-  // the Threads_lock which ensures we are outside a safepoint. We
-  // cannot do the obvious and set the active field of the SATB queue
-  // when the thread is created given that, in some cases, safepoints
-  // might happen between the JavaThread constructor being called and the
-  // thread being added to the Java thread list (an example of this is
-  // when the structure for the DestroyJavaVM thread is created).
-#if INCLUDE_ALL_GCS
-  void initialize_queues();
-#else  // INCLUDE_ALL_GCS
-  void initialize_queues() { }
-#endif // INCLUDE_ALL_GCS
-
   // Machine dependent stuff
 #include OS_CPU_HEADER(thread)
 
@@ -2146,6 +2096,7 @@ class Threads: AllStatic {
   // thread to the thread list before allocating its thread object
   static void add(JavaThread* p, bool force_daemon = false);
   static void remove(JavaThread* p);
+  static void non_java_threads_do(ThreadClosure* tc);
   static void threads_do(ThreadClosure* tc);
   static void possibly_parallel_threads_do(bool is_par, ThreadClosure* tc);
 

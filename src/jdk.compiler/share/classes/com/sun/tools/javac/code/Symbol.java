@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +47,8 @@ import javax.lang.model.element.VariableElement;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 
-import com.sun.tools.javac.code.ClassFinder.BadEnclosingMethodAttr;
-import com.sun.tools.javac.code.Directive.RequiresFlag;
 import com.sun.tools.javac.code.Kinds.Kind;
 import com.sun.tools.javac.comp.Annotate.AnnotationTypeMetadata;
-import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
@@ -68,6 +65,7 @@ import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
+import com.sun.tools.javac.code.Scope.WriteableScope;
 import static com.sun.tools.javac.code.Symbol.OperatorSymbol.AccessCode.FIRSTASGOP;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.code.TypeTag.FORALL;
@@ -568,14 +566,14 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         return hiddenSym;
     }
 
-    /** Is this symbol inherited into a given class?
+    /** Is this symbol accessible in a given class?
      *  PRE: If symbol's owner is a interface,
      *       it is already assumed that the interface is a superinterface
-     *       of given class.
+     *       the given class.
      *  @param clazz  The class for which we want to establish membership.
      *                This must be a subclass of the member's owner.
      */
-    public boolean isInheritedIn(Symbol clazz, Types types) {
+    public final boolean isAccessibleIn(Symbol clazz, Types types) {
         switch ((int)(flags_field & Flags.AccessFlags)) {
         default: // error recovery
         case PUBLIC:
@@ -601,6 +599,17 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             }
             return (clazz.flags() & INTERFACE) == 0;
         }
+    }
+
+    /** Is this symbol inherited into a given class?
+     *  PRE: If symbol's owner is a interface,
+     *       it is already assumed that the interface is a superinterface
+     *       of the given class.
+     *  @param clazz  The class for which we want to establish membership.
+     *                This must be a subclass of the member's owner.
+     */
+    public boolean isInheritedIn(Symbol clazz, Types types) {
+        return isAccessibleIn(clazz, types);
     }
 
     /** The (variable or method) symbol seen as a member of given
@@ -634,6 +643,14 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         }
     }
 
+    public void apiComplete() throws CompletionFailure {
+        try {
+            complete();
+        } catch (CompletionFailure cf) {
+            cf.dcfh.handleAPICompletionFailure(cf);
+        }
+    }
+
     /** True if the symbol represents an entity that exists.
      */
     public boolean exists() {
@@ -657,6 +674,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
     @DefinedBy(Api.LANGUAGE_MODEL)
     public Set<Modifier> getModifiers() {
+        apiComplete();
         return Flags.asModifierSet(flags());
     }
 
@@ -671,6 +689,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
      */
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public List<Attribute.Compound> getAnnotationMirrors() {
+        apiComplete();
         return getRawAttributes();
     }
 
@@ -795,13 +814,11 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             if (kind == TYP && type.hasTag(TYPEVAR)) {
                 return list;
             }
+            apiComplete();
             for (Symbol sym : members().getSymbols(NON_RECURSIVE)) {
-                try {
-                    if (sym != null && (sym.flags() & SYNTHETIC) == 0 && sym.owner == this) {
-                        list = list.prepend(sym);
-                    }
-                } catch (BadEnclosingMethodAttr badEnclosingMethod) {
-                    // ignore the exception
+                sym.apiComplete();
+                if ((sym.flags() & SYNTHETIC) == 0 && sym.owner == this && sym.kind != ERR) {
+                    list = list.prepend(sym);
                 }
             }
             return list;
@@ -980,7 +997,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public java.util.List<Directive> getDirectives() {
-            complete();
+            apiComplete();
             completeUsesProvides();
             return Collections.unmodifiableList(directives);
         }
@@ -1304,9 +1321,11 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         /** Complete the elaboration of this symbol's definition.
          */
         public void complete() throws CompletionFailure {
+            Completer origCompleter = completer;
             try {
                 super.complete();
             } catch (CompletionFailure ex) {
+                ex.dcfh.classSymbolCompleteFailed(this, origCompleter);
                 // quiet error recovery
                 flags_field |= (PUBLIC|STATIC);
                 this.type = new ErrorType(this, Type.noType);
@@ -1316,7 +1335,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
         @DefinedBy(Api.LANGUAGE_MODEL)
         public List<Type> getInterfaces() {
-            complete();
+            apiComplete();
             if (type instanceof ClassType) {
                 ClassType t = (ClassType)type;
                 if (t.interfaces_field == null) // FIXME: shouldn't be null
@@ -1331,7 +1350,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
         @DefinedBy(Api.LANGUAGE_MODEL)
         public Type getSuperclass() {
-            complete();
+            apiComplete();
             if (type instanceof ClassType) {
                 ClassType t = (ClassType)type;
                 if (t.supertype_field == null) // FIXME: shouldn't be null
@@ -1372,6 +1391,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
         @DefinedBy(Api.LANGUAGE_MODEL)
         public ElementKind getKind() {
+            apiComplete();
             long flags = flags();
             if ((flags & ANNOTATION) != 0)
                 return ElementKind.ANNOTATION_TYPE;
@@ -1385,13 +1405,14 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public Set<Modifier> getModifiers() {
+            apiComplete();
             long flags = flags();
             return Flags.asModifierSet(flags & ~DEFAULT);
         }
 
         @DefinedBy(Api.LANGUAGE_MODEL)
         public NestingKind getNestingKind() {
-            complete();
+            apiComplete();
             if (owner.kind == PCK)
                 return NestingKind.TOP_LEVEL;
             else if (name.isEmpty())
@@ -1627,9 +1648,6 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
         /** The parameters of the method. */
         public List<VarSymbol> params = null;
-
-        /** The names of the parameters */
-        public List<Name> savedParameterNames;
 
         /** For an annotation type element, its default value if any.
          *  The value is null if none appeared in the method
@@ -1886,57 +1904,18 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         public List<VarSymbol> params() {
             owner.complete();
             if (params == null) {
-                // If ClassReader.saveParameterNames has been set true, then
-                // savedParameterNames will be set to a list of names that
-                // matches the types in type.getParameterTypes().  If any names
-                // were not found in the class file, those names in the list will
-                // be set to the empty name.
-                // If ClassReader.saveParameterNames has been set false, then
-                // savedParameterNames will be null.
-                List<Name> paramNames = savedParameterNames;
-                savedParameterNames = null;
-                // discard the provided names if the list of names is the wrong size.
-                if (paramNames == null || paramNames.size() != type.getParameterTypes().size()) {
-                    paramNames = List.nil();
-                }
-                ListBuffer<VarSymbol> buf = new ListBuffer<>();
-                List<Name> remaining = paramNames;
-                // assert: remaining and paramNames are both empty or both
-                // have same cardinality as type.getParameterTypes()
+                ListBuffer<VarSymbol> newParams = new ListBuffer<>();
                 int i = 0;
                 for (Type t : type.getParameterTypes()) {
-                    Name paramName;
-                    if (remaining.isEmpty()) {
-                        // no names for any parameters available
-                        paramName = createArgName(i, paramNames);
-                    } else {
-                        paramName = remaining.head;
-                        remaining = remaining.tail;
-                        if (paramName.isEmpty()) {
-                            // no name for this specific parameter
-                            paramName = createArgName(i, paramNames);
-                        }
-                    }
-                    buf.append(new VarSymbol(PARAMETER, paramName, t, this));
+                    Name paramName = name.table.fromString("arg" + i);
+                    VarSymbol param = new VarSymbol(PARAMETER, paramName, t, this);
+                    newParams.append(param);
                     i++;
                 }
-                params = buf.toList();
+                params = newParams.toList();
             }
+            Assert.checkNonNull(params);
             return params;
-        }
-
-        // Create a name for the argument at position 'index' that is not in
-        // the exclude list. In normal use, either no names will have been
-        // provided, in which case the exclude list is empty, or all the names
-        // will have been provided, in which case this method will not be called.
-        private Name createArgName(int index, List<Name> exclude) {
-            String prefix = "arg";
-            while (true) {
-                Name argName = name.table.fromString(prefix + index);
-                if (!exclude.contains(argName))
-                    return argName;
-                prefix += "$";
-            }
         }
 
         public Symbol asMemberOf(Type site, Types types) {
@@ -2147,13 +2126,15 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
     public static class CompletionFailure extends RuntimeException {
         private static final long serialVersionUID = 0;
+        public final DeferredCompletionFailureHandler dcfh;
         public Symbol sym;
 
         /** A diagnostic object describing the failure
          */
         public JCDiagnostic diag;
 
-        public CompletionFailure(Symbol sym, JCDiagnostic diag) {
+        public CompletionFailure(Symbol sym, JCDiagnostic diag, DeferredCompletionFailureHandler dcfh) {
+            this.dcfh = dcfh;
             this.sym = sym;
             this.diag = diag;
 //          this.printStackTrace();//DEBUG

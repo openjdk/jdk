@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
  * @bug 6807702
  * @summary Basic test for Integer.valueOf
  * @run main ValueOf
- * @run main/othervm -esa -XX:+AggressiveOpts ValueOf
+ * @run main/othervm -esa -XX:+IgnoreUnrecognizedVMOptions -XX:+EliminateAutoBox
+ *                   -XX:AutoBoxCacheMax=20000 ValueOf
  */
 
 public class ValueOf {

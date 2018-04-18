@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/allocation.inline.hpp"
 #include "prims/jvmtiRawMonitor.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
@@ -127,7 +128,7 @@ JvmtiRawMonitor::is_valid() {
 
 int JvmtiRawMonitor::SimpleEnter (Thread * Self) {
   for (;;) {
-    if (Atomic::cmpxchg(Self, &_owner, (void*)NULL) == NULL) {
+    if (Atomic::replace_if_null(Self, &_owner)) {
        return OS_OK ;
     }
 
@@ -139,7 +140,7 @@ int JvmtiRawMonitor::SimpleEnter (Thread * Self) {
     Node._next  = _EntryList ;
     _EntryList  = &Node ;
     OrderAccess::fence() ;
-    if (_owner == NULL && Atomic::cmpxchg(Self, &_owner, (void*)NULL) == NULL) {
+    if (_owner == NULL && Atomic::replace_if_null(Self, &_owner)) {
         _EntryList = Node._next ;
         RawMonitor_lock->unlock() ;
         return OS_OK ;
@@ -421,4 +422,3 @@ int JvmtiRawMonitor::raw_notifyAll(TRAPS) {
   SimpleNotify (THREAD, true) ;
   return OM_OK;
 }
-

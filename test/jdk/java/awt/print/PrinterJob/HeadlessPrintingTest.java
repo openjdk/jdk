@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4936867
+ * @key printer
  * @summary Printing crashes in headless mode.
  * @run main/othervm HeadlessPrintingTest
  */

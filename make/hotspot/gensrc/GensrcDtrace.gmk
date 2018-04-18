@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -46,12 +46,64 @@ ifeq ($(call check-jvm-feature, dtrace), true)
 	$(call LogInfo, Generating dtrace header file $(@F))
 	$(call MakeDir, $(@D) $(DTRACE_SUPPORT_DIR))
 	$(call ExecuteWithLog, $(DTRACE_SUPPORT_DIR)/$(@F).d, \
-	    ( $(CC) -E $(DTRACE_CPP_FLAGS) $< > $(DTRACE_SUPPORT_DIR)/$(@F).d ) )
+	    ($(CPP) $(DTRACE_CPP_FLAGS) $< > $(DTRACE_SUPPORT_DIR)/$(@F).d))
 	$(call ExecuteWithLog, $@, $(DTRACE) $(DTRACE_FLAGS) -h -o $@ -s $(DTRACE_SUPPORT_DIR)/$(@F).d)
 
   # Process all .d files in DTRACE_SOURCE_DIR. They are:
   # hotspot_jni.d hotspot.d hs_private.d
   TARGETS += $(patsubst $(DTRACE_SOURCE_DIR)/%.d, \
       $(DTRACE_GENSRC_DIR)/%.h, $(wildcard $(DTRACE_SOURCE_DIR)/*.d))
+
+  ifeq ($(OPENJDK_TARGET_OS), solaris)
+    ############################################################################
+    # First we need to generate the dtraceGenOffsets tool. When run, this will
+    # produce two header files and a C++ file. Note that generateJvmOffsets.cpp
+    # is using the same JVM_CFLAGS as libjvm.so.
+
+    # Include support files that will setup JVM compiler flags.
+    include lib/JvmFeatures.gmk
+    include lib/JvmFlags.gmk
+
+    # We cannot compile until the JVMTI gensrc has finished
+    JVMTI_H := $(JVM_VARIANT_OUTPUTDIR)/gensrc/jvmtifiles/jvmti.h
+
+    $(eval $(call SetupNativeCompilation, BUILD_DTRACE_GEN_OFFSETS, \
+        NAME := dtraceGenOffsets, \
+        TYPE := EXECUTABLE, \
+        SRC := $(TOPDIR)/make/hotspot/src/native/dtrace, \
+        TOOLCHAIN := $(TOOLCHAIN_BUILD), \
+        LDFLAGS := -m64, \
+        CFLAGS := -m64 $(JVM_CFLAGS), \
+        EXTRA_DEPS := $(JVMTI_H), \
+        OBJECT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/dtrace-gen-offsets/objs, \
+        OUTPUT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/dtrace-gen-offsets, \
+    ))
+
+    DTRACE_GEN_OFFSETS_TOOL := $(BUILD_DTRACE_GEN_OFFSETS_TARGET)
+
+    # Argument 1: Output filename
+    # Argument 2: dtrace-gen-offset tool command line option
+    define SetupDtraceOffsetsGeneration
+      $1: $$(BUILD_DTRACE_GEN_OFFSETS)
+	$$(call LogInfo, Generating dtrace $2 file $$(@F))
+	$$(call MakeDir, $$(@D))
+	$$(call ExecuteWithLog, $$@, ( $$(DTRACE_GEN_OFFSETS_TOOL) -$$(strip $2) > $$@ ) )
+
+      TARGETS += $1
+    endef
+
+    JVM_OFFSETS_H := $(DTRACE_GENSRC_DIR)/JvmOffsets.h
+    JVM_OFFSETS_CPP := $(DTRACE_GENSRC_DIR)/JvmOffsets.cpp
+    JVM_OFFSETS_INDEX_H := $(DTRACE_GENSRC_DIR)/JvmOffsetsIndex.h
+
+    ############################################################################
+    # Run the dtrace-gen-offset tool to generate these three files.
+    # The generated JvmOffsets.cpp is compiled with the rest of libjvm.
+    # The header files are used by libjvm_db and jhelper.d, respectively.
+
+    $(eval $(call SetupDtraceOffsetsGeneration, $(JVM_OFFSETS_H), header))
+    $(eval $(call SetupDtraceOffsetsGeneration, $(JVM_OFFSETS_INDEX_H), index))
+    $(eval $(call SetupDtraceOffsetsGeneration, $(JVM_OFFSETS_CPP), table))
+  endif
 
 endif

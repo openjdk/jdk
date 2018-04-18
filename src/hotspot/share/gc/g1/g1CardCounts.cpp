@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1CardCounts.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/copy.hpp"
 
@@ -40,12 +40,12 @@ void G1CardCountsMappingChangedListener::on_commit(uint start_idx, size_t num_re
 size_t G1CardCounts::compute_size(size_t mem_region_size_in_words) {
   // We keep card counts for every card, so the size of the card counts table must
   // be the same as the card table.
-  return G1SATBCardTableLoggingModRefBS::compute_size(mem_region_size_in_words);
+  return G1CardTable::compute_size(mem_region_size_in_words);
 }
 
 size_t G1CardCounts::heap_map_factor() {
   // See G1CardCounts::compute_size() why we reuse the card table value.
-  return G1SATBCardTableLoggingModRefBS::heap_map_factor();
+  return G1CardTable::heap_map_factor();
 }
 
 void G1CardCounts::clear_range(size_t from_card_num, size_t to_card_num) {
@@ -72,8 +72,8 @@ void G1CardCounts::initialize(G1RegionToSpaceMapper* mapper) {
     // threshold limit is no more than this.
     guarantee(G1ConcRSHotCardLimit <= max_jubyte, "sanity");
 
-    _ct_bs = _g1h->g1_barrier_set();
-    _ct_bot = _ct_bs->byte_for_const(_g1h->reserved_region().start());
+    _ct = _g1h->card_table();
+    _ct_bot = _ct->byte_for_const(_g1h->reserved_region().start());
 
     _card_counts = (jubyte*) mapper->reserved().start();
     _reserved_max_card_num = mapper->reserved().byte_size();
@@ -116,17 +116,17 @@ void G1CardCounts::clear_region(HeapRegion* hr) {
 
 void G1CardCounts::clear_range(MemRegion mr) {
   if (has_count_table()) {
-    const jbyte* from_card_ptr = _ct_bs->byte_for_const(mr.start());
+    const jbyte* from_card_ptr = _ct->byte_for_const(mr.start());
     // We use the last address in the range as the range could represent the
     // last region in the heap. In which case trying to find the card will be an
     // OOB access to the card table.
-    const jbyte* last_card_ptr = _ct_bs->byte_for_const(mr.last());
+    const jbyte* last_card_ptr = _ct->byte_for_const(mr.last());
 
 #ifdef ASSERT
-    HeapWord* start_addr = _ct_bs->addr_for(from_card_ptr);
+    HeapWord* start_addr = _ct->addr_for(from_card_ptr);
     assert(start_addr == mr.start(), "MemRegion start must be aligned to a card.");
-    HeapWord* last_addr = _ct_bs->addr_for(last_card_ptr);
-    assert((last_addr + CardTableModRefBS::card_size_in_words) == mr.end(), "MemRegion end must be aligned to a card.");
+    HeapWord* last_addr = _ct->addr_for(last_card_ptr);
+    assert((last_addr + G1CardTable::card_size_in_words) == mr.end(), "MemRegion end must be aligned to a card.");
 #endif // ASSERT
 
     // Clear the counts for the (exclusive) card range.
@@ -144,7 +144,7 @@ class G1CardCountsClearClosure : public HeapRegionClosure {
     HeapRegionClosure(), _card_counts(card_counts) { }
 
 
-  virtual bool doHeapRegion(HeapRegion* r) {
+  virtual bool do_heap_region(HeapRegion* r) {
     _card_counts->clear_region(r);
     return false;
   }

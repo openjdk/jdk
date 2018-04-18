@@ -1425,8 +1425,8 @@ public final class BasisLibrary {
      * This method should only be invoked if the name attribute is an AVT
      */
     public static void checkAttribQName(String name) {
-        final int firstOccur = name.indexOf(":");
-        final int lastOccur = name.lastIndexOf(":");
+        final int firstOccur = name.indexOf(':');
+        final int lastOccur = name.lastIndexOf(':');
         final String localName = name.substring(lastOccur + 1);
 
         if (firstOccur > 0) {

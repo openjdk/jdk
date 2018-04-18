@@ -32,7 +32,7 @@ import java.util.Deque;
 
 /**
  * This class represents a string composed of two parts which may themselves be
- * instances of <tt>ConsString</tt> or {@link String}. Copying of characters to
+ * instances of <code>ConsString</code> or {@link String}. Copying of characters to
  * a proper string is delayed until it becomes necessary.
  */
 public final class ConsString implements CharSequence {

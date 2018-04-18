@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -373,11 +373,12 @@ public abstract class JVMOption {
      * @throws Exception if java process can not be started
      */
     private boolean runJavaWithParam(String optionValue, boolean valid) throws Exception {
-        int exitCode;
+        int exitCode = 0;
         boolean result = true;
         String errorMessage = null;
+        String explicitGC = null;
         List<String> runJava = new ArrayList<>();
-        OutputAnalyzer out;
+        OutputAnalyzer out = null;
 
         if (VMType != null) {
             runJava.add(VMType);
@@ -388,7 +389,11 @@ public abstract class JVMOption {
               prepend.contains("-XX:+UseSerialGC") ||
               prepend.contains("-XX:+UseParallelGC") ||
               prepend.contains("-XX:+UseG1GC"))) {
-            runJava.add(GCType);
+            explicitGC = GCType;
+        }
+
+        if (explicitGC != null) {
+            runJava.add(explicitGC);
         }
 
         runJava.addAll(prepend);
@@ -398,15 +403,22 @@ public abstract class JVMOption {
         out = new OutputAnalyzer(ProcessTools.createJavaProcessBuilder(runJava.toArray(new String[0])).start());
 
         exitCode = out.getExitValue();
+        String exitCodeString = null;
+        if (exitCode != 0) {
+            exitCodeString = exitCode + " [0x" + Integer.toHexString(exitCode).toUpperCase() + "]";
+        }
 
         if (out.getOutput().contains("A fatal error has been detected by the Java Runtime Environment")) {
             /* Always consider "fatal error" in output as fail */
-            errorMessage = "JVM output reports a fatal error. JVM exited with code " + exitCode + "!";
+            errorMessage = "JVM output reports a fatal error. JVM exited with code " + exitCodeString + "!";
+        } else if (out.getStderr().contains("Ignoring option " + name)) {
+            // Watch for newly obsoleted, but not yet removed, flags
+            System.out.println("SKIPPED: Ignoring test result for obsolete flag " + name);
         } else if (valid == true) {
             if (!allowedExitCodes.contains(exitCode)) {
-                errorMessage = "JVM exited with unexpected error code = " + exitCode;
+                errorMessage = "JVM exited with unexpected error code = " + exitCodeString;
             } else if ((exitCode != 0) && (out.getOutput().isEmpty() == true)) {
-                errorMessage = "JVM exited with error(exitcode == " + exitCode + "), but with empty stdout and stderr. " +
+                errorMessage = "JVM exited with error(exitcode == " + exitCodeString + "), but with empty stdout and stderr. " +
                        "Description of error is needed!";
             } else if (out.getOutput().contains("is outside the allowed range")) {
                 errorMessage = "JVM output contains \"is outside the allowed range\"";
@@ -418,7 +430,7 @@ public abstract class JVMOption {
             if (exitCode == 0) {
                 errorMessage = "JVM successfully exit";
             } else if (exitCode != 1) {
-                errorMessage = "JVM exited with code " + exitCode + " which not equal to 1";
+                errorMessage = "JVM exited with code " + exitCodeString + " which does not equal to 1";
             } else if (!out.getOutput().contains(errorMessageCommandLineValue)) {
                 errorMessage = "JVM output does not contain expected output \"" + errorMessageCommandLineValue + "\"";
             }
@@ -426,7 +438,7 @@ public abstract class JVMOption {
 
         if (errorMessage != null) {
             String fullOptionString = String.format("%s %s %s %s",
-                    VMType == null ? "" : VMType, GCType == null ? "" : GCType, prependString.toString(), optionValue).trim().replaceAll("  +", " ");
+                    VMType == null ? "" : VMType, explicitGC == null ? "" : explicitGC, prependString.toString(), optionValue).trim().replaceAll("  +", " ");
             failedMessage(name, fullOptionString, valid, errorMessage);
             printOutputContent(out);
             result = false;

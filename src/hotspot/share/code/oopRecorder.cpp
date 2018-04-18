@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
 #include "code/oopRecorder.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/jniHandles.inline.hpp"
+#include "utilities/copy.hpp"
 
 #ifdef ASSERT
 template <class T> int ValueRecorder<T>::_find_index_calls = 0;
@@ -172,9 +174,8 @@ void ObjectLookup::maybe_resort() {
 }
 
 int ObjectLookup::sort_by_address(oop a, oop b) {
-  if (b > a) return 1;
-  if (a > b) return -1;
-  return 0;
+  // oopDesc::compare returns the opposite of what this function returned
+  return -(oopDesc::compare(a, b));
 }
 
 int ObjectLookup::sort_by_address(ObjectEntry* a, ObjectEntry* b) {
@@ -201,4 +202,3 @@ int ObjectLookup::find_index(jobject handle, OopRecorder* oop_recorder) {
   }
   return _values.at(location).index();
 }
-

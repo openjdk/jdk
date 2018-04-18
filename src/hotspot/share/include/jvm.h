@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,6 +118,9 @@ JVM_InitProperties(JNIEnv *env, jobject p);
 /*
  * java.lang.Runtime
  */
+JNIEXPORT void JNICALL
+JVM_BeforeHalt();
+
 JNIEXPORT void JNICALL
 JVM_Halt(jint code);
 
@@ -317,23 +320,18 @@ JVM_NewArray(JNIEnv *env, jclass eltClass, jint length);
 JNIEXPORT jobject JNICALL
 JVM_NewMultiArray(JNIEnv *env, jclass eltClass, jintArray dim);
 
-/*
- * java.lang.Class and java.lang.ClassLoader
- */
-
-#define JVM_CALLER_DEPTH -1
 
 /*
  * Returns the immediate caller class of the native method invoking
  * JVM_GetCallerClass.  The Method.invoke and other frames due to
  * reflection machinery are skipped.
  *
- * The depth parameter must be -1 (JVM_DEPTH). The caller is expected
- * to be marked with sun.reflect.CallerSensitive.  The JVM will throw
- * an error if it is not marked propertly.
+ * The caller is expected to be marked with
+ * jdk.internal.reflect.CallerSensitive. The JVM will throw an
+ * error if it is not marked properly.
  */
 JNIEXPORT jclass JNICALL
-JVM_GetCallerClass(JNIEnv *env, int depth);
+JVM_GetCallerClass(JNIEnv *env);
 
 
 /*

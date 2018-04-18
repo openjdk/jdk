@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,7 @@
  * @test
  * @summary Test combinations of jigsaw options that affect the use of AppCDS
  *
- * AppCDS does not support uncompressed oops
- * @requires ((vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)) & !vm.graal.enabled
+ * @requires vm.cds & !vm.graal.enabled
  * @library /test/lib ..
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -70,8 +69,7 @@ public class JigsawOptionsCombo {
     private ArrayList<TestCase> testCaseTable = new ArrayList<TestCase>();
 
     public static String infoDuringDump(String option) {
-        return "Info: the " + option +
-            " option is ignored when dumping the shared archive";
+        return "Cannot use the following option when dumping the shared archive: " + option;
     }
 
     public void runTests() throws Exception {
@@ -79,7 +77,7 @@ public class JigsawOptionsCombo {
         testCaseTable.add(new TestCase(
             "basic: Basic dump and execute, to verify the test plumbing works",
             "", "", 0,
-            "", "", 0) );
+            "", "", 0, true) );
 
         String bcpArg = "-Xbootclasspath/a:" +
         TestCommon.getTestJar("hello_more.jar");
@@ -87,51 +85,50 @@ public class JigsawOptionsCombo {
         testCaseTable.add(new TestCase(
             "Xbootclasspath/a: is OK for both dump and run time",
             bcpArg, "", 0,
-            bcpArg, "", 0) );
+            bcpArg, "", 0, true) );
 
         testCaseTable.add(new TestCase(
             "module-path-01: --module-path is ignored for dump time",
-            "--module-path mods",
-            infoDuringDump("--module-path"), 0,
-            null, null, 0) );
+            "--module-path mods", "", 0,
+            null, null, 0, true) );
 
         testCaseTable.add(new TestCase(
             "module-path-02: --module-path is ok for run time",
             "", "", 0,
-            "--module-path mods", "", 0) );
+            "--module-path mods", "", 0, true) );
 
         testCaseTable.add(new TestCase(
             "add-modules-01: --add-modules is ok at dump time",
             "--add-modules java.management",
             "", 0,
-            null, null, 0) );
+            null, null, 0, true) );
 
         testCaseTable.add(new TestCase(
             "add-modules-02: --add-modules is ok at run time",
             "", "", 0,
-            "--add-modules java.management", "", 0) );
+            "--add-modules java.management", "", 0, true) );
 
         testCaseTable.add(new TestCase(
             "limit-modules-01: --limit-modules is ignored at dump time",
             "--limit-modules java.base",
-            infoDuringDump("--limit-modules"), 0,
-            null, null, 0) );
+            infoDuringDump("--limit-modules"), 1,
+            null, null, 0, true) );
 
         testCaseTable.add(new TestCase(
             "limit-modules-02: --limit-modules is ok at run time",
             "", "", 0,
-            "--limit-modules java.base", "", 0) );
+            "--limit-modules java.base", "", 0, false) );
 
         testCaseTable.add(new TestCase(
             "upgrade-module-path-01: --upgrade-module-path is ignored at dump time",
             "--upgrade-module-path mods",
-            infoDuringDump("--upgrade-module-path"), 0,
-            null, null, 0) );
+            infoDuringDump("--upgrade-module-path"), 1,
+            null, null, 0, true) );
 
         testCaseTable.add(new TestCase(
             "-upgrade-module-path-module-path-02: --upgrade-module-path is ok at run time",
             "", "", 0,
-            "--upgrade-module-path mods", "", 0) );
+            "--upgrade-module-path mods", "", 0, false) );
 
         for (TestCase tc : testCaseTable) tc.execute();
     }
@@ -146,6 +143,7 @@ public class JigsawOptionsCombo {
         String runTimeArgs;
         String runTimeExpectedOutput;
         int    runTimeExpectedExitValue;
+        boolean sharingOn;
 
         private String appJar = TestCommon.getTestJar("hello.jar");
         private String appClasses[] = {"Hello"};
@@ -153,7 +151,8 @@ public class JigsawOptionsCombo {
 
         public TestCase(String description,
             String dumpTimeArgs, String dumpTimeExpectedOutput, int dumpTimeExpectedExitValue,
-            String runTimeArgs, String runTimeExpectedOutput, int runTimeExpectedExitValue) {
+            String runTimeArgs, String runTimeExpectedOutput, int runTimeExpectedExitValue,
+            boolean sharingOn) {
 
             this.description = description;
             this.dumpTimeArgs = dumpTimeArgs;
@@ -162,6 +161,7 @@ public class JigsawOptionsCombo {
             this.runTimeArgs = runTimeArgs;
             this.runTimeExpectedOutput = runTimeExpectedOutput;
             this.runTimeExpectedExitValue = runTimeExpectedExitValue;
+            this.sharingOn = sharingOn;
         }
 
 
@@ -184,7 +184,13 @@ public class JigsawOptionsCombo {
                 OutputAnalyzer execOutput = TestCommon.exec(appJar, getRunOptions());
 
                 if (runTimeExpectedExitValue == 0) {
-                    TestCommon.checkExec(execOutput, runTimeExpectedOutput, "Hello World");
+                    if (sharingOn) {
+                        TestCommon.checkExec(execOutput, runTimeExpectedOutput, "Hello World");
+                    } else {
+                        execOutput.shouldHaveExitValue(0)
+                                  .shouldContain(runTimeExpectedOutput)
+                                  .shouldContain("Hello World");
+                    }
                 } else {
                     execOutput.shouldMatch(dumpTimeExpectedOutput);
                     execOutput.shouldHaveExitValue(dumpTimeExpectedExitValue);

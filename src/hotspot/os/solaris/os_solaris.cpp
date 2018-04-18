@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/extendedPC.hpp"
 #include "runtime/globals.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -2062,7 +2062,7 @@ void* os::user_handler() {
   return CAST_FROM_FN_PTR(void*, UserHandler);
 }
 
-struct timespec PosixSemaphore::create_timespec(unsigned int sec, int nsec) {
+static struct timespec create_semaphore_timespec(unsigned int sec, int nsec) {
   struct timespec ts;
   unpackTime(&ts, false, (sec * NANOSECS_PER_SEC) + nsec);
 
@@ -2100,9 +2100,7 @@ static int Sigexit = 0;
 static jint *pending_signals = NULL;
 static int *preinstalled_sigs = NULL;
 static struct sigaction *chainedsigactions = NULL;
-static sema_t sig_sem;
-typedef int (*version_getting_t)();
-version_getting_t os::Solaris::get_libjsig_version = NULL;
+static Semaphore* sig_sem = NULL;
 
 int os::sigexitnum_pd() {
   assert(Sigexit > 0, "signal memory not yet initialized");
@@ -2115,6 +2113,7 @@ void os::Solaris::init_signal_mem() {
   Sigexit = Maxsignum+1;
   assert(Maxsignum >0, "Unable to obtain max signal number");
 
+  // Initialize signal structures
   // pending_signals has one int per signal
   // The additional signal is for SIGEXIT - exit signal to signal_thread
   pending_signals = (jint *)os::malloc(sizeof(jint) * (Sigexit+1), mtInternal);
@@ -2132,21 +2131,22 @@ void os::Solaris::init_signal_mem() {
 }
 
 void os::signal_init_pd() {
-  int ret;
-
-  ret = ::sema_init(&sig_sem, 0, NULL, NULL);
-  assert(ret == 0, "sema_init() failed");
+  // Initialize signal semaphore
+  sig_sem = new Semaphore();
 }
 
-void os::signal_notify(int signal_number) {
-  int ret;
-
-  Atomic::inc(&pending_signals[signal_number]);
-  ret = ::sema_post(&sig_sem);
-  assert(ret == 0, "sema_post() failed");
+void os::signal_notify(int sig) {
+  if (sig_sem != NULL) {
+    Atomic::inc(&pending_signals[sig]);
+    sig_sem->signal();
+  } else {
+    // Signal thread is not created with ReduceSignalUsage and signal_init_pd
+    // initialization isn't called.
+    assert(ReduceSignalUsage, "signal semaphore should be created");
+  }
 }
 
-static int check_pending_signals(bool wait_for_signal) {
+static int check_pending_signals() {
   int ret;
   while (true) {
     for (int i = 0; i < Sigexit + 1; i++) {
@@ -2155,19 +2155,13 @@ static int check_pending_signals(bool wait_for_signal) {
         return i;
       }
     }
-    if (!wait_for_signal) {
-      return -1;
-    }
     JavaThread *thread = JavaThread::current();
     ThreadBlockInVM tbivm(thread);
 
     bool threadIsSuspended;
     do {
       thread->set_suspend_equivalent();
-      // cleared by handle_special_suspend_equivalent_condition() or java_suspend_self()
-      while ((ret = ::sema_wait(&sig_sem)) == EINTR)
-        ;
-      assert(ret == 0, "sema_wait() failed");
+      sig_sem->wait();
 
       // were we externally suspended while we were waiting?
       threadIsSuspended = thread->handle_special_suspend_equivalent_condition();
@@ -2176,8 +2170,7 @@ static int check_pending_signals(bool wait_for_signal) {
         // another thread suspended us. We don't want to continue running
         // while suspended because that would surprise the thread that
         // suspended us.
-        ret = ::sema_post(&sig_sem);
-        assert(ret == 0, "sema_post() failed");
+        sig_sem->signal();
 
         thread->java_suspend_self();
       }
@@ -2185,12 +2178,8 @@ static int check_pending_signals(bool wait_for_signal) {
   }
 }
 
-int os::signal_lookup() {
-  return check_pending_signals(false);
-}
-
 int os::signal_wait() {
-  return check_pending_signals(true);
+  return check_pending_signals();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3599,7 +3588,7 @@ static bool do_suspend(OSThread* osthread) {
 
   // managed to send the signal and switch to SUSPEND_REQUEST, now wait for SUSPENDED
   while (true) {
-    if (sr_semaphore.timedwait(0, 2000 * NANOSECS_PER_MILLISEC)) {
+    if (sr_semaphore.timedwait(create_semaphore_timespec(0, 2000 * NANOSECS_PER_MILLISEC))) {
       break;
     } else {
       // timeout
@@ -3633,7 +3622,7 @@ static void do_resume(OSThread* osthread) {
 
   while (true) {
     if (sr_notify(osthread) == 0) {
-      if (sr_semaphore.timedwait(0, 2 * NANOSECS_PER_MILLISEC)) {
+      if (sr_semaphore.timedwait(create_semaphore_timespec(0, 2 * NANOSECS_PER_MILLISEC))) {
         if (osthread->sr.is_running()) {
           return;
         }
@@ -3977,13 +3966,7 @@ void os::Solaris::install_signal_handlers() {
                                         dlsym(RTLD_DEFAULT, "JVM_end_signal_setting"));
     get_signal_action = CAST_TO_FN_PTR(get_signal_t,
                                        dlsym(RTLD_DEFAULT, "JVM_get_signal_action"));
-    get_libjsig_version = CAST_TO_FN_PTR(version_getting_t,
-                                         dlsym(RTLD_DEFAULT, "JVM_get_libjsig_version"));
     libjsig_is_loaded = true;
-    if (os::Solaris::get_libjsig_version != NULL) {
-      int libjsigversion =  (*os::Solaris::get_libjsig_version)();
-      assert(libjsigversion == JSIG_VERSION_1_4_1, "libjsig version mismatch");
-    }
     assert(UseSignalChaining, "should enable signal-chaining");
   }
   if (libjsig_is_loaded) {
@@ -5373,54 +5356,6 @@ int os::fork_and_exec(char* cmd) {
       return status;
     }
   }
-}
-
-// is_headless_jre()
-//
-// Test for the existence of xawt/libmawt.so or libawt_xawt.so
-// in order to report if we are running in a headless jre
-//
-// Since JDK8 xawt/libmawt.so was moved into the same directory
-// as libawt.so, and renamed libawt_xawt.so
-//
-bool os::is_headless_jre() {
-  struct stat statbuf;
-  char buf[MAXPATHLEN];
-  char libmawtpath[MAXPATHLEN];
-  const char *xawtstr  = "/xawt/libmawt.so";
-  const char *new_xawtstr = "/libawt_xawt.so";
-  char *p;
-
-  // Get path to libjvm.so
-  os::jvm_path(buf, sizeof(buf));
-
-  // Get rid of libjvm.so
-  p = strrchr(buf, '/');
-  if (p == NULL) {
-    return false;
-  } else {
-    *p = '\0';
-  }
-
-  // Get rid of client or server
-  p = strrchr(buf, '/');
-  if (p == NULL) {
-    return false;
-  } else {
-    *p = '\0';
-  }
-
-  // check xawt/libmawt.so
-  strcpy(libmawtpath, buf);
-  strcat(libmawtpath, xawtstr);
-  if (::stat(libmawtpath, &statbuf) == 0) return false;
-
-  // check libawt_xawt.so
-  strcpy(libmawtpath, buf);
-  strcat(libmawtpath, new_xawtstr);
-  if (::stat(libmawtpath, &statbuf) == 0) return false;
-
-  return true;
 }
 
 size_t os::write(int fd, const void *buf, unsigned int nBytes) {

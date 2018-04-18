@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,16 @@
 #include "jvmci/jvmciJavaClasses.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciRuntime.hpp"
+#include "memory/allocation.inline.hpp"
+#include "oops/arrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 
 // frequently used constants
@@ -95,6 +101,32 @@ VMReg getVMRegFromLocation(Handle location, int total_frame_size, TRAPS) {
   }
 }
 
+objArrayOop CodeInstaller::sites() {
+  return (objArrayOop) JNIHandles::resolve(_sites_handle);
+}
+
+arrayOop CodeInstaller::code() {
+  return (arrayOop) JNIHandles::resolve(_code_handle);
+}
+
+arrayOop CodeInstaller::data_section() {
+  return (arrayOop) JNIHandles::resolve(_data_section_handle);
+}
+
+objArrayOop CodeInstaller::data_section_patches() {
+  return (objArrayOop) JNIHandles::resolve(_data_section_patches_handle);
+}
+
+#ifndef PRODUCT
+objArrayOop CodeInstaller::comments() {
+  return (objArrayOop) JNIHandles::resolve(_comments_handle);
+}
+#endif
+
+oop CodeInstaller::word_kind() {
+  return JNIHandles::resolve(_word_kind_handle);
+}
+
 // creates a HotSpot oop map out of the byte arrays provided by DebugInfo
 OopMap* CodeInstaller::create_oop_map(Handle debug_info, TRAPS) {
   Handle reference_map(THREAD, DebugInfo::referenceMap(debug_info));
@@ -104,7 +136,10 @@ OopMap* CodeInstaller::create_oop_map(Handle debug_info, TRAPS) {
   if (!reference_map->is_a(HotSpotReferenceMap::klass())) {
     JVMCI_ERROR_NULL("unknown reference map: %s", reference_map->klass()->signature_name());
   }
-  if (HotSpotReferenceMap::maxRegisterSize(reference_map) > 16) {
+  if (!_has_wide_vector && SharedRuntime::is_wide_vector(HotSpotReferenceMap::maxRegisterSize(reference_map))) {
+    if (SharedRuntime::polling_page_vectors_safepoint_handler_blob() == NULL) {
+      JVMCI_ERROR_NULL("JVMCI is producing code using vectors larger than the runtime supports");
+    }
     _has_wide_vector = true;
   }
   OopMap* map = new OopMap(_total_frame_size, _parameter_count);
@@ -600,7 +635,7 @@ JVMCIEnv::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler, Hand
 
   if (!compiled_code->is_a(HotSpotCompiledNmethod::klass())) {
     oop stubName = HotSpotCompiledCode::name(compiled_code_obj);
-    if (oopDesc::is_null(stubName)) {
+    if (stubName == NULL) {
       JVMCI_ERROR_OK("stub should have a name");
     }
     char* name = strdup(java_lang_String::as_utf8_string(stubName));
@@ -699,6 +734,7 @@ int CodeInstaller::estimate_stubs_size(TRAPS) {
   // Estimate the number of static and aot call stubs that might be emitted.
   int static_call_stubs = 0;
   int aot_call_stubs = 0;
+  int trampoline_stubs = 0;
   objArrayOop sites = this->sites();
   for (int i = 0; i < sites->length(); i++) {
     oop site = sites->obj_at(i);
@@ -710,8 +746,18 @@ int CodeInstaller::estimate_stubs_size(TRAPS) {
             JVMCI_ERROR_0("expected Integer id, got %s", id_obj->klass()->signature_name());
           }
           jint id = id_obj->int_field(java_lang_boxing_object::value_offset_in_bytes(T_INT));
-          if (id == INVOKESTATIC || id == INVOKESPECIAL) {
+          switch (id) {
+          case INVOKEINTERFACE:
+          case INVOKEVIRTUAL:
+            trampoline_stubs++;
+            break;
+          case INVOKESTATIC:
+          case INVOKESPECIAL:
             static_call_stubs++;
+            trampoline_stubs++;
+            break;
+          default:
+            break;
           }
         }
       }
@@ -726,6 +772,7 @@ int CodeInstaller::estimate_stubs_size(TRAPS) {
     }
   }
   int size = static_call_stubs * CompiledStaticCall::to_interp_stub_size();
+  size += trampoline_stubs * CompiledStaticCall::to_trampoline_stub_size();
 #if INCLUDE_AOT
   size += aot_call_stubs * CompiledStaticCall::to_aot_stub_size();
 #endif
@@ -1171,7 +1218,7 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, jint pc_offset, Handle site, T
     }
 
     TRACE_jvmci_3("method call");
-    CodeInstaller::pd_relocate_JavaMethod(hotspot_method, pc_offset, CHECK);
+    CodeInstaller::pd_relocate_JavaMethod(buffer, hotspot_method, pc_offset, CHECK);
     if (_next_call_type == INVOKESTATIC || _next_call_type == INVOKESPECIAL) {
       // Need a static call stub for transitions from compiled to interpreted.
       CompiledStaticCall::emit_to_interp_stub(buffer, _instructions->start() + pc_offset);
@@ -1282,4 +1329,3 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, Handle site, T
     }
   }
 }
-

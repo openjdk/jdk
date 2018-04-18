@@ -33,8 +33,7 @@ import javax.swing.JRootPane;
  * Registration utility class to add {@link GestureListener}s to Swing components.
  *
  * This class manages the relationship between {@link JComponent}s and the {@link GestureListener}s
- * attached to them. It's design is similar to the Java SE 6u10 {@code com.sun.awt.AWTUtilities}
- * class which adds additional functionality to AWT Windows, without adding new API to the
+ * attached to them. It adds additional functionality to AWT Windows, without adding new API to the
  * {@link java.awt.Window} class.
  *
  * To add a {@link GestureListener} to a top-level Swing window, use the {@link JRootPane} of the

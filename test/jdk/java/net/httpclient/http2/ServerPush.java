@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,92 +27,280 @@
  * @library /lib/testlibrary server
  * @build jdk.testlibrary.SimpleSSLContext
  * @modules java.base/sun.net.www.http
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.common
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.frame
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.hpack
- * @run testng/othervm -Djdk.internal.httpclient.hpack.debug=true -Djdk.internal.httpclient.debug=true -Djdk.httpclient.HttpClient.log=errors,requests,responses ServerPush
+ *          java.net.http/jdk.internal.net.http.common
+ *          java.net.http/jdk.internal.net.http.frame
+ *          java.net.http/jdk.internal.net.http.hpack
+ * @run testng/othervm
+ *      -Djdk.httpclient.HttpClient.log=errors,requests,responses
+ *      ServerPush
  */
 
 import java.io.*;
 import java.net.*;
+import java.nio.ByteBuffer;
 import java.nio.file.*;
-import java.nio.file.attribute.*;
-import jdk.incubator.http.*;
-import jdk.incubator.http.HttpResponse.MultiSubscriber;
-import jdk.incubator.http.HttpResponse.BodyHandler;
+import java.net.http.*;
+import java.net.http.HttpResponse.BodyHandler;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.net.http.HttpResponse.BodySubscribers;
+import java.net.http.HttpResponse.PushPromiseHandler;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.Consumer;
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.testng.Assert.*;
+
 
 public class ServerPush {
-
-    static ExecutorService e = Executors.newCachedThreadPool();
 
     static final int LOOPS = 13;
     static final int FILE_SIZE = 512 * 1024 + 343;
 
     static Path tempFile;
 
+    Http2TestServer server;
+    URI uri;
+
+    @BeforeTest
+    public void setup() throws Exception {
+        tempFile = TestUtil.getAFile(FILE_SIZE);
+        server = new Http2TestServer(false, 0);
+        server.addHandler(new PushHandler(tempFile, LOOPS), "/");
+        System.out.println("Using temp file:" + tempFile);
+
+        System.err.println("Server listening on port " + server.getAddress().getPort());
+        server.start();
+        int port = server.getAddress().getPort();
+        uri = new URI("http://localhost:" + port + "/foo/a/b/c");
+    }
+
+    @AfterTest
+    public void teardown() {
+        server.stop();
+    }
+
+    // Test 1 - custom written push promise handler, everything as a String
     @Test
-    public static void test() throws Exception {
-        Http2TestServer server = null;
-        final Path dir = Files.createTempDirectory("serverPush");
-        try {
-            server = new Http2TestServer(false, 0);
-            server.addHandler(new PushHandler(FILE_SIZE, LOOPS), "/");
-            tempFile = TestUtil.getAFile(FILE_SIZE);
+    public void testTypeString() throws Exception {
+        String tempFileAsString = new String(Files.readAllBytes(tempFile), UTF_8);
+        ConcurrentMap<HttpRequest, CompletableFuture<HttpResponse<String>>>
+                resultMap = new ConcurrentHashMap<>();
 
-            System.err.println("Server listening on port " + server.getAddress().getPort());
-            server.start();
-            int port = server.getAddress().getPort();
+        PushPromiseHandler<String> pph = (initial, pushRequest, acceptor) -> {
+            BodyHandler<String> s = BodyHandlers.ofString(UTF_8);
+            CompletableFuture<HttpResponse<String>> cf = acceptor.apply(s);
+            resultMap.put(pushRequest, cf);
+        };
 
-            // use multi-level path
-            URI uri = new URI("http://127.0.0.1:" + port + "/foo/a/b/c");
-            HttpRequest request = HttpRequest.newBuilder(uri).GET().build();
-
-            CompletableFuture<MultiMapResult<Path>> cf =
-                HttpClient.newBuilder().version(HttpClient.Version.HTTP_2)
-                    .executor(e).build().sendAsync(
-                        request, MultiSubscriber.asMap((req) -> {
-                            URI u = req.uri();
-                            Path path = Paths.get(dir.toString(), u.getPath());
-                            try {
-                                Files.createDirectories(path.getParent());
-                            } catch (IOException ee) {
-                                throw new UncheckedIOException(ee);
-                            }
-                            return Optional.of(BodyHandler.asFile(path));
-                        }
-                    ));
-            MultiMapResult<Path> results = cf.get();
-
-            //HttpResponse resp = request.response();
-            System.err.println(results.size());
-            Set<HttpRequest> requests = results.keySet();
-
-            for (HttpRequest r : requests) {
-                URI u = r.uri();
-                Path result = results.get(r).get().body();
-                System.err.printf("%s -> %s\n", u.toString(), result.toString());
-                TestUtil.compareFiles(result, tempFile);
-            }
-            if (requests.size() != LOOPS + 1)
-                throw new RuntimeException("some results missing");
-            System.out.println("TEST OK: sleeping for 5 sec");
-            Thread.sleep (5 * 1000);
-        } finally {
-            e.shutdownNow();
-            server.stop();
-            Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
-                public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
-                    dir.toFile().delete();
-                    return FileVisitResult.CONTINUE;
-                }
-                public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) {
-                    path.toFile().delete();
-                    return FileVisitResult.CONTINUE;
-                }
-            });
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder(uri).GET().build();
+        CompletableFuture<HttpResponse<String>> cf =
+                client.sendAsync(request, BodyHandlers.ofString(UTF_8), pph);
+        cf.join();
+        resultMap.put(request, cf);
+        System.err.println("results.size: " + resultMap.size());
+        for (HttpRequest r : resultMap.keySet()) {
+            HttpResponse<String> response = resultMap.get(r).join();
+            assertEquals(response.statusCode(), 200);
+            assertEquals(response.body(), tempFileAsString);
         }
+        assertEquals(resultMap.size(), LOOPS + 1);
+    }
+
+    // Test 2 - of(...) populating the given Map, everything as a String
+    @Test
+    public void testTypeStringOfMap() throws Exception {
+        String tempFileAsString = new String(Files.readAllBytes(tempFile), UTF_8);
+        ConcurrentMap<HttpRequest, CompletableFuture<HttpResponse<String>>>
+                resultMap = new ConcurrentHashMap<>();
+
+        PushPromiseHandler<String> pph =
+                PushPromiseHandler.of(pushPromise -> BodyHandlers.ofString(UTF_8),
+                                      resultMap);
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder(uri).GET().build();
+        CompletableFuture<HttpResponse<String>> cf =
+                client.sendAsync(request, BodyHandlers.ofString(UTF_8), pph);
+        cf.join();
+        resultMap.put(request, cf);
+        System.err.println("results.size: " + resultMap.size());
+        for (HttpRequest r : resultMap.keySet()) {
+            HttpResponse<String> response = resultMap.get(r).join();
+            assertEquals(response.statusCode(), 200);
+            assertEquals(response.body(), tempFileAsString);
+        }
+        assertEquals(resultMap.size(), LOOPS + 1);
+    }
+
+    // --- Path ---
+
+    static final Path dir = Paths.get(".", "serverPush");
+    static BodyHandler<Path> requestToPath(HttpRequest req) {
+        URI u = req.uri();
+        Path path = Paths.get(dir.toString(), u.getPath());
+        try {
+            Files.createDirectories(path.getParent());
+        } catch (IOException ee) {
+            throw new UncheckedIOException(ee);
+        }
+        return BodyHandlers.ofFile(path);
+    }
+
+    // Test 3 - custom written push promise handler, everything as a Path
+    @Test
+    public void testTypePath() throws Exception {
+        String tempFileAsString = new String(Files.readAllBytes(tempFile), UTF_8);
+        ConcurrentMap<HttpRequest, CompletableFuture<HttpResponse<Path>>> resultsMap
+                = new ConcurrentHashMap<>();
+
+        PushPromiseHandler<Path> pushPromiseHandler = (initial, pushRequest, acceptor) -> {
+            BodyHandler<Path> pp = requestToPath(pushRequest);
+            CompletableFuture<HttpResponse<Path>> cf = acceptor.apply(pp);
+            resultsMap.put(pushRequest, cf);
+        };
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder(uri).GET().build();
+        CompletableFuture<HttpResponse<Path>> cf =
+                client.sendAsync(request, requestToPath(request), pushPromiseHandler);
+        cf.join();
+        resultsMap.put(request, cf);
+
+        for (HttpRequest r : resultsMap.keySet()) {
+            HttpResponse<Path> response = resultsMap.get(r).join();
+            assertEquals(response.statusCode(), 200);
+            String fileAsString = new String(Files.readAllBytes(response.body()), UTF_8);
+            assertEquals(fileAsString, tempFileAsString);
+        }
+        assertEquals(resultsMap.size(),  LOOPS + 1);
+    }
+
+    // Test 4 - of(...) populating the given Map, everything as a Path
+    @Test
+    public void testTypePathOfMap() throws Exception {
+        String tempFileAsString = new String(Files.readAllBytes(tempFile), UTF_8);
+        ConcurrentMap<HttpRequest, CompletableFuture<HttpResponse<Path>>> resultsMap
+                = new ConcurrentHashMap<>();
+
+        PushPromiseHandler<Path> pushPromiseHandler =
+                PushPromiseHandler.of(pushRequest -> requestToPath(pushRequest),
+                        resultsMap);
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder(uri).GET().build();
+        CompletableFuture<HttpResponse<Path>> cf =
+                client.sendAsync(request, requestToPath(request), pushPromiseHandler);
+        cf.join();
+        resultsMap.put(request, cf);
+
+        for (HttpRequest r : resultsMap.keySet()) {
+            HttpResponse<Path> response = resultsMap.get(r).join();
+            assertEquals(response.statusCode(), 200);
+            String fileAsString = new String(Files.readAllBytes(response.body()), UTF_8);
+            assertEquals(fileAsString, tempFileAsString);
+        }
+        assertEquals(resultsMap.size(),  LOOPS + 1);
+    }
+
+    // ---  Consumer<byte[]> ---
+
+    static class ByteArrayConsumer implements Consumer<Optional<byte[]>> {
+        volatile List<byte[]> listByteArrays = new ArrayList<>();
+        volatile byte[] accumulatedBytes;
+
+        public byte[] getAccumulatedBytes() { return accumulatedBytes; }
+
+        @Override
+        public void accept(Optional<byte[]> optionalBytes) {
+            assert accumulatedBytes == null;
+            if (!optionalBytes.isPresent()) {
+                int size = listByteArrays.stream().mapToInt(ba -> ba.length).sum();
+                ByteBuffer bb = ByteBuffer.allocate(size);
+                listByteArrays.stream().forEach(ba -> bb.put(ba));
+                accumulatedBytes = bb.array();
+            } else {
+                listByteArrays.add(optionalBytes.get());
+            }
+        }
+    }
+
+    // Test 5 - custom written handler, everything as a consumer of optional byte[]
+    @Test
+    public void testTypeByteArrayConsumer() throws Exception {
+        String tempFileAsString = new String(Files.readAllBytes(tempFile), UTF_8);
+        ConcurrentMap<HttpRequest, CompletableFuture<HttpResponse<Void>>> resultsMap
+                = new ConcurrentHashMap<>();
+        Map<HttpRequest,ByteArrayConsumer> byteArrayConsumerMap
+                = new ConcurrentHashMap<>();
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder(uri).GET().build();
+        ByteArrayConsumer bac = new ByteArrayConsumer();
+        byteArrayConsumerMap.put(request, bac);
+
+        PushPromiseHandler<Void> pushPromiseHandler = (initial, pushRequest, acceptor) -> {
+            CompletableFuture<HttpResponse<Void>> cf = acceptor.apply(
+                    (info) -> {
+                        ByteArrayConsumer bc = new ByteArrayConsumer();
+                        byteArrayConsumerMap.put(pushRequest, bc);
+                        return BodySubscribers.ofByteArrayConsumer(bc); } );
+            resultsMap.put(pushRequest, cf);
+        };
+
+        CompletableFuture<HttpResponse<Void>> cf =
+                client.sendAsync(request, BodyHandlers.ofByteArrayConsumer(bac), pushPromiseHandler);
+        cf.join();
+        resultsMap.put(request, cf);
+
+        for (HttpRequest r : resultsMap.keySet()) {
+            HttpResponse<Void> response = resultsMap.get(r).join();
+            assertEquals(response.statusCode(), 200);
+            byte[] ba = byteArrayConsumerMap.get(r).getAccumulatedBytes();
+            String result = new String(ba, UTF_8);
+            assertEquals(result, tempFileAsString);
+        }
+        assertEquals(resultsMap.size(), LOOPS + 1);
+    }
+
+    // Test 6 - of(...) populating the given Map, everything as a consumer of optional byte[]
+    @Test
+    public void testTypeByteArrayConsumerOfMap() throws Exception {
+        String tempFileAsString = new String(Files.readAllBytes(tempFile), UTF_8);
+        ConcurrentMap<HttpRequest, CompletableFuture<HttpResponse<Void>>> resultsMap
+                = new ConcurrentHashMap<>();
+        Map<HttpRequest,ByteArrayConsumer> byteArrayConsumerMap
+                = new ConcurrentHashMap<>();
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder(uri).GET().build();
+        ByteArrayConsumer bac = new ByteArrayConsumer();
+        byteArrayConsumerMap.put(request, bac);
+
+        PushPromiseHandler<Void> pushPromiseHandler =
+                PushPromiseHandler.of(
+                        pushRequest -> {
+                            ByteArrayConsumer bc = new ByteArrayConsumer();
+                            byteArrayConsumerMap.put(pushRequest, bc);
+                            return BodyHandlers.ofByteArrayConsumer(bc);
+                        },
+                        resultsMap);
+
+        CompletableFuture<HttpResponse<Void>> cf =
+                client.sendAsync(request, BodyHandlers.ofByteArrayConsumer(bac), pushPromiseHandler);
+        cf.join();
+        resultsMap.put(request, cf);
+
+        for (HttpRequest r : resultsMap.keySet()) {
+            HttpResponse<Void> response = resultsMap.get(r).join();
+            assertEquals(response.statusCode(), 200);
+            byte[] ba = byteArrayConsumerMap.get(r).getAccumulatedBytes();
+            String result = new String(ba, UTF_8);
+            assertEquals(result, tempFileAsString);
+        }
+        assertEquals(resultsMap.size(), LOOPS + 1);
     }
 }

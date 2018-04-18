@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2016 Marti Maria Saguer
+//  Copyright (c) 1998-2017 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -347,7 +347,7 @@ typedef struct {
 
 // Parametric curves. A negative type means same function but analytically inverted. Max. number of params is 10
 
-// Evaluator callback for user-suplied parametric curves. May implement more than one type
+// Evaluator callback for user-supplied parametric curves. May implement more than one type
 typedef  cmsFloat64Number (* cmsParametricCurveEvaluator)(cmsInt32Number Type, const cmsFloat64Number Params[10], cmsFloat64Number R);
 
 // Plug-in may implement an arbitrary number of parametric curves
@@ -457,7 +457,7 @@ typedef struct {
     cmsUInt32Number     nSupportedTypes;    // In how many types this tag can come (MAX_TYPES_IN_LCMS_PLUGIN maximum)
     cmsTagTypeSignature SupportedTypes[MAX_TYPES_IN_LCMS_PLUGIN];
 
-    // For writting
+    // For writing
     cmsTagTypeSignature (* DecideType)(cmsFloat64Number ICCVersion, const void *Data);
 
 } cmsTagDescriptor;

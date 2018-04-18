@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
+#include "code/compiledMethod.inline.hpp"
 #include "code/compiledIC.hpp"
 #include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
@@ -34,11 +35,10 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/oopMap.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -61,8 +61,9 @@
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
@@ -194,23 +195,6 @@ const char* OptoRuntime::stub_name(address entry) {
 // We failed the fast-path allocation.  Now we need to do a scavenge or GC
 // and try allocation again.
 
-void OptoRuntime::new_store_pre_barrier(JavaThread* thread) {
-  // After any safepoint, just before going back to compiled code,
-  // we inform the GC that we will be doing initializing writes to
-  // this object in the future without emitting card-marks, so
-  // GC may take any compensating steps.
-  // NOTE: Keep this code consistent with GraphKit::store_barrier.
-
-  oop new_obj = thread->vm_result();
-  if (new_obj == NULL)  return;
-
-  assert(Universe::heap()->can_elide_tlab_store_barriers(),
-         "compiler must check this first");
-  // GC may decide to give back a safer copy of new_obj.
-  new_obj = Universe::heap()->new_store_pre_barrier(thread, new_obj);
-  thread->set_vm_result(new_obj);
-}
-
 // object allocation
 JRT_BLOCK_ENTRY(void, OptoRuntime::new_instance_C(Klass* klass, JavaThread* thread))
   JRT_BLOCK;
@@ -244,10 +228,8 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_instance_C(Klass* klass, JavaThread* thre
   deoptimize_caller_frame(thread, HAS_PENDING_EXCEPTION);
   JRT_BLOCK_END;
 
-  if (GraphKit::use_ReduceInitialCardMarks()) {
-    // inform GC that we won't do card marks for initializing writes.
-    new_store_pre_barrier(thread);
-  }
+  // inform GC that we won't do card marks for initializing writes.
+  SharedRuntime::on_slowpath_allocation_exit(thread);
 JRT_END
 
 
@@ -284,10 +266,8 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, JavaT
   thread->set_vm_result(result);
   JRT_BLOCK_END;
 
-  if (GraphKit::use_ReduceInitialCardMarks()) {
-    // inform GC that we won't do card marks for initializing writes.
-    new_store_pre_barrier(thread);
-  }
+  // inform GC that we won't do card marks for initializing writes.
+  SharedRuntime::on_slowpath_allocation_exit(thread);
 JRT_END
 
 // array allocation without zeroing
@@ -314,10 +294,9 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(Klass* array_type, int len
   thread->set_vm_result(result);
   JRT_BLOCK_END;
 
-  if (GraphKit::use_ReduceInitialCardMarks()) {
-    // inform GC that we won't do card marks for initializing writes.
-    new_store_pre_barrier(thread);
-  }
+
+  // inform GC that we won't do card marks for initializing writes.
+  SharedRuntime::on_slowpath_allocation_exit(thread);
 
   oop result = thread->vm_result();
   if ((len > 0) && (result != NULL) &&

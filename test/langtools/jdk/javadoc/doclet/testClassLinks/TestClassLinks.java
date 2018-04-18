@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8163800 8175200 8186332
+ * @bug 8163800 8175200 8186332 8182765
  * @summary The fix for JDK-8072052 shows up other minor incorrect use of styles
  * @library ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -50,39 +50,58 @@ public class TestClassLinks extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("p/C1.html", true,
-                "<code><a href=\"../p/C2.html\" title=\"class in p\">C2</a></code>",
-                "<code><span class=\"memberNameLink\"><a href=\"../p/C1.html#C1--\">C1</a></span>()</code>");
+                "<code><a href=\"C2.html\" title=\"class in p\">C2</a></code>",
+                "<code><span class=\"memberNameLink\"><a href=\"#%3Cinit%3E()\">C1</a></span>()</code>");
 
         checkOutput("p/C2.html", true,
-                "<code><a href=\"../p/C3.html\" title=\"class in p\">C3</a></code>",
-                "<code><span class=\"memberNameLink\"><a href=\"../p/C2.html#C2--\">C2</a></span>()</code>");
+                "<code><a href=\"C3.html\" title=\"class in p\">C3</a></code>",
+                "<code><span class=\"memberNameLink\"><a href=\"#%3Cinit%3E()\">C2</a></span>()</code>");
 
         checkOutput("p/C3.html", true,
-                "<code><a href=\"../p/I1.html\" title=\"interface in p\">I1</a></code>, "
-                + "<code><a href=\"../p/I12.html\" title=\"interface in p\">I12</a></code>, "
-                + "<code><a href=\"../p/I2.html\" title=\"interface in p\">I2</a></code>, "
-                + "<code><a href=\"../p/IT1.html\" title=\"interface in p\">IT1</a>&lt;T&gt;</code>, "
-                + "<code><a href=\"../p/IT2.html\" title=\"interface in p\">IT2</a>&lt;java.lang.String&gt;</code>",
-                "<code><span class=\"memberNameLink\"><a href=\"../p/C3.html#C3--\">C3</a></span>()</code>");
+                "<code><a href=\"I1.html\" title=\"interface in p\">I1</a></code>, "
+                + "<code><a href=\"I12.html\" title=\"interface in p\">I12</a></code>, "
+                + "<code><a href=\"I2.html\" title=\"interface in p\">I2</a></code>, "
+                + "<code><a href=\"IT1.html\" title=\"interface in p\">IT1</a>&lt;T&gt;</code>, "
+                + "<code><a href=\"IT2.html\" title=\"interface in p\">IT2</a>&lt;java.lang.String&gt;</code>",
+                "<code><span class=\"memberNameLink\"><a href=\"#%3Cinit%3E()\">C3</a></span>()</code>");
 
         checkOutput("p/I1.html", true,
-                "<code><a href=\"../p/C3.html\" title=\"class in p\">C3</a></code>",
-                "<code><a href=\"../p/I12.html\" title=\"interface in p\">I12</a></code>");
+                "<code><a href=\"C3.html\" title=\"class in p\">C3</a></code>",
+                "<code><a href=\"I12.html\" title=\"interface in p\">I12</a></code>");
 
         checkOutput("p/I2.html", true,
-                "<code><a href=\"../p/C3.html\" title=\"class in p\">C3</a></code>",
-                "<code><a href=\"../p/I12.html\" title=\"interface in p\">I12</a></code>");
+                "<code><a href=\"C3.html\" title=\"class in p\">C3</a></code>",
+                "<code><a href=\"I12.html\" title=\"interface in p\">I12</a></code>");
 
         checkOutput("p/I12.html", true,
-                "<code><a href=\"../p/C3.html\" title=\"class in p\">C3</a></code>",
-                "<code><a href=\"../p/I1.html\" title=\"interface in p\">I1</a></code>, <code><a href=\"../p/I2.html\" title=\"interface in p\">I2</a></code>");
+                "<code><a href=\"C3.html\" title=\"class in p\">C3</a></code>",
+                "<code><a href=\"I1.html\" title=\"interface in p\">I1</a></code>, <code><a href=\"I2.html\" title=\"interface in p\">I2</a></code>");
 
         checkOutput("p/IT1.html", true,
-                "<code><a href=\"../p/C3.html\" title=\"class in p\">C3</a></code>");
+                "<code><a href=\"C3.html\" title=\"class in p\">C3</a></code>");
 
         checkOutput("p/IT2.html", true,
-                "code><a href=\"../p/C3.html\" title=\"class in p\">C3</a></code>");
-
+                "code><a href=\"C3.html\" title=\"class in p\">C3</a></code>");
     }
 
+    @Test
+    void test_html4() {
+
+        javadoc("-d", "out-html4",
+                "-html4",
+                "-Xdoclint:none",
+                "-sourcepath", testSrc,
+                "-package",
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("p/C1.html", true,
+                "<code><span class=\"memberNameLink\"><a href=\"#C1--\">C1</a></span>()</code>");
+
+        checkOutput("p/C2.html", true,
+                "<code><span class=\"memberNameLink\"><a href=\"#C2--\">C2</a></span>()</code>");
+
+        checkOutput("p/C3.html", true,
+                "<code><span class=\"memberNameLink\"><a href=\"#C3--\">C3</a></span>()</code>");
+}
 }

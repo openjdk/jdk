@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,11 @@
 /**
  * @test
  * @bug 7009359
- * @summary HS with -XX:+AggressiveOpts optimize new StringBuffer(null) so it does not throw NPE as expected
+ * @summary HS optimizes new StringBuffer(null) so it does not throw NPE as expected
  *
  * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+OptimizeStringConcat
- *      -XX:CompileCommand=dontinline,compiler.c2.Test7009359::stringmakerBUG
- *      compiler.c2.Test7009359
+ *                   -XX:CompileCommand=dontinline,compiler.c2.Test7009359::stringmakerBUG
+ *                   compiler.c2.Test7009359
  */
 
 package compiler.c2;

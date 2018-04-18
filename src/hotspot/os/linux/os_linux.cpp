@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/extendedPC.hpp"
 #include "runtime/globals.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -95,7 +95,6 @@
 # include <sys/wait.h>
 # include <pwd.h>
 # include <poll.h>
-# include <semaphore.h>
 # include <fcntl.h>
 # include <string.h>
 # include <syscall.h>
@@ -153,6 +152,13 @@ static jlong initial_time_count=0;
 
 static int clock_tics_per_sec = 100;
 
+// If the VM might have been created on the primordial thread, we need to resolve the
+// primordial thread stack bounds and check if the current thread might be the
+// primordial thread in places. If we know that the primordial thread is never used,
+// such as when the VM was created by one of the standard java launchers, we can
+// avoid this
+static bool suppress_primordial_thread_resolution = false;
+
 // For diagnostics to print a message once. see run_periodic_checks
 static sigset_t check_signal_done;
 static bool check_signals = true;
@@ -178,20 +184,17 @@ julong os::Linux::available_memory() {
 
   if (OSContainer::is_containerized()) {
     jlong mem_limit, mem_usage;
-    if ((mem_limit = OSContainer::memory_limit_in_bytes()) > 0) {
-      if ((mem_usage = OSContainer::memory_usage_in_bytes()) > 0) {
-        if (mem_limit > mem_usage) {
-          avail_mem = (julong)mem_limit - (julong)mem_usage;
-        } else {
-          avail_mem = 0;
-        }
-        log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
-        return avail_mem;
-      } else {
-        log_debug(os,container)("container memory usage call failed: " JLONG_FORMAT, mem_usage);
-      }
-    } else {
-      log_debug(os,container)("container memory unlimited or failed: " JLONG_FORMAT, mem_limit);
+    if ((mem_limit = OSContainer::memory_limit_in_bytes()) < 1) {
+      log_debug(os, container)("container memory limit %s: " JLONG_FORMAT ", using host value",
+                             mem_limit == OSCONTAINER_ERROR ? "failed" : "unlimited", mem_limit);
+    }
+    if (mem_limit > 0 && (mem_usage = OSContainer::memory_usage_in_bytes()) < 1) {
+      log_debug(os, container)("container memory usage failed: " JLONG_FORMAT ", using host value", mem_usage);
+    }
+    if (mem_limit > 0 && mem_usage > 0 ) {
+      avail_mem = mem_limit > mem_usage ? (julong)mem_limit - (julong)mem_usage : 0;
+      log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
+      return avail_mem;
     }
   }
 
@@ -202,22 +205,18 @@ julong os::Linux::available_memory() {
 }
 
 julong os::physical_memory() {
+  jlong phys_mem = 0;
   if (OSContainer::is_containerized()) {
     jlong mem_limit;
     if ((mem_limit = OSContainer::memory_limit_in_bytes()) > 0) {
       log_trace(os)("total container memory: " JLONG_FORMAT, mem_limit);
-      return (julong)mem_limit;
-    } else {
-      if (mem_limit == OSCONTAINER_ERROR) {
-        log_debug(os,container)("container memory limit call failed");
-      }
-      if (mem_limit == -1) {
-        log_debug(os,container)("container memory unlimited, using host value");
-      }
+      return mem_limit;
     }
+    log_debug(os, container)("container memory limit %s: " JLONG_FORMAT ", using host value",
+                            mem_limit == OSCONTAINER_ERROR ? "failed" : "unlimited", mem_limit);
   }
 
-  jlong phys_mem = Linux::physical_memory();
+  phys_mem = Linux::physical_memory();
   log_trace(os)("total system memory: " JLONG_FORMAT, phys_mem);
   return phys_mem;
 }
@@ -637,6 +636,10 @@ static void NOINLINE _expand_stack_to(address bottom) {
   }
 }
 
+void os::Linux::expand_stack_to(address bottom) {
+  _expand_stack_to(bottom);
+}
+
 bool os::Linux::manually_expand_stack(JavaThread * t, address addr) {
   assert(t!=NULL, "just checking");
   assert(t->osthread()->expanding_stack(), "expand should be set");
@@ -921,6 +924,9 @@ void os::free_thread(OSThread* osthread) {
 
 // Check if current thread is the primordial thread, similar to Solaris thr_main.
 bool os::is_primordial_thread(void) {
+  if (suppress_primordial_thread_resolution) {
+    return false;
+  }
   char dummy;
   // If called before init complete, thread stack bottom will be null.
   // Can be called if fatal error occurs before initialization.
@@ -1648,10 +1654,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
         //
         // Dynamic loader will make all stacks executable after
         // this function returns, and will not do that again.
-#ifdef ASSERT
-        ThreadsListHandle tlh;
-        assert(tlh.length() == 0, "no Java threads should exist yet.");
-#endif
+        assert(Threads::number_of_threads() == 0, "no Java threads should exist yet.");
       } else {
         warning("You have loaded library %s which might have disabled stack guard. "
                 "The VM will try to fix the stack guard now.\n"
@@ -2136,63 +2139,54 @@ void os::Linux::print_full_memory_info(outputStream* st) {
 }
 
 void os::Linux::print_container_info(outputStream* st) {
-  if (OSContainer::is_containerized()) {
-    st->print("container (cgroup) information:\n");
-
-    char *p = OSContainer::container_type();
-    if (p == NULL)
-      st->print("container_type() failed\n");
-    else {
-      st->print("container_type: %s\n", p);
-    }
-
-    p = OSContainer::cpu_cpuset_cpus();
-    if (p == NULL)
-      st->print("cpu_cpuset_cpus() failed\n");
-    else {
-      st->print("cpu_cpuset_cpus: %s\n", p);
-      free(p);
-    }
-
-    p = OSContainer::cpu_cpuset_memory_nodes();
-    if (p < 0)
-      st->print("cpu_memory_nodes() failed\n");
-    else {
-      st->print("cpu_memory_nodes: %s\n", p);
-      free(p);
-    }
-
-    int i = OSContainer::active_processor_count();
-    if (i < 0)
-      st->print("active_processor_count() failed\n");
-    else
-      st->print("active_processor_count: %d\n", i);
-
-    i = OSContainer::cpu_quota();
-    st->print("cpu_quota: %d\n", i);
-
-    i = OSContainer::cpu_period();
-    st->print("cpu_period: %d\n", i);
-
-    i = OSContainer::cpu_shares();
-    st->print("cpu_shares: %d\n", i);
-
-    jlong j = OSContainer::memory_limit_in_bytes();
-    st->print("memory_limit_in_bytes: " JLONG_FORMAT "\n", j);
-
-    j = OSContainer::memory_and_swap_limit_in_bytes();
-    st->print("memory_and_swap_limit_in_bytes: " JLONG_FORMAT "\n", j);
-
-    j = OSContainer::memory_soft_limit_in_bytes();
-    st->print("memory_soft_limit_in_bytes: " JLONG_FORMAT "\n", j);
-
-    j = OSContainer::OSContainer::memory_usage_in_bytes();
-    st->print("memory_usage_in_bytes: " JLONG_FORMAT "\n", j);
-
-    j = OSContainer::OSContainer::memory_max_usage_in_bytes();
-    st->print("memory_max_usage_in_bytes: " JLONG_FORMAT "\n", j);
-    st->cr();
+  if (!OSContainer::is_containerized()) {
+    return;
   }
+
+  st->print("container (cgroup) information:\n");
+
+  const char *p_ct = OSContainer::container_type();
+  st->print("container_type: %s\n", p_ct != NULL ? p_ct : "failed");
+
+  char *p = OSContainer::cpu_cpuset_cpus();
+  st->print("cpu_cpuset_cpus: %s\n", p != NULL ? p : "failed");
+  free(p);
+
+  p = OSContainer::cpu_cpuset_memory_nodes();
+  st->print("cpu_memory_nodes: %s\n", p != NULL ? p : "failed");
+  free(p);
+
+  int i = OSContainer::active_processor_count();
+  if (i > 0) {
+    st->print("active_processor_count: %d\n", i);
+  } else {
+    st->print("active_processor_count: failed\n");
+  }
+
+  i = OSContainer::cpu_quota();
+  st->print("cpu_quota: %d\n", i);
+
+  i = OSContainer::cpu_period();
+  st->print("cpu_period: %d\n", i);
+
+  i = OSContainer::cpu_shares();
+  st->print("cpu_shares: %d\n", i);
+
+  jlong j = OSContainer::memory_limit_in_bytes();
+  st->print("memory_limit_in_bytes: " JLONG_FORMAT "\n", j);
+
+  j = OSContainer::memory_and_swap_limit_in_bytes();
+  st->print("memory_and_swap_limit_in_bytes: " JLONG_FORMAT "\n", j);
+
+  j = OSContainer::memory_soft_limit_in_bytes();
+  st->print("memory_soft_limit_in_bytes: " JLONG_FORMAT "\n", j);
+
+  j = OSContainer::OSContainer::memory_usage_in_bytes();
+  st->print("memory_usage_in_bytes: " JLONG_FORMAT "\n", j);
+
+  j = OSContainer::OSContainer::memory_max_usage_in_bytes();
+  st->print("memory_max_usage_in_bytes: " JLONG_FORMAT "\n", j);
+  st->cr();
 }
 
 void os::print_memory_info(outputStream* st) {
@@ -2479,11 +2473,11 @@ void* os::user_handler() {
   return CAST_FROM_FN_PTR(void*, UserHandler);
 }
 
-struct timespec PosixSemaphore::create_timespec(unsigned int sec, int nsec) {
+static struct timespec create_semaphore_timespec(unsigned int sec, int nsec) {
   struct timespec ts;
   // Semaphore's are always associated with CLOCK_REALTIME
   os::Linux::clock_gettime(CLOCK_REALTIME, &ts);
-  // see unpackTime for discussion on overflow checking
+  // see os_posix.cpp for discussion on overflow checking
   if (sec >= MAX_SECS) {
     ts.tv_sec += MAX_SECS;
     ts.tv_nsec = 0;
@@ -2535,7 +2529,7 @@ int os::sigexitnum_pd() {
 static volatile jint pending_signals[NSIG+1] = { 0 };
 
 // Linux(POSIX) specific hand shaking semaphore.
-static sem_t sig_sem;
+static Semaphore* sig_sem = NULL;
 static PosixSemaphore sr_semaphore;
 
 void os::signal_init_pd() {
@@ -2543,15 +2537,21 @@ void os::signal_init_pd() {
   ::memset((void*)pending_signals, 0, sizeof(pending_signals));
 
   // Initialize signal semaphore
-  ::sem_init(&sig_sem, 0, 0);
+  sig_sem = new Semaphore();
 }
 
 void os::signal_notify(int sig) {
-  Atomic::inc(&pending_signals[sig]);
-  ::sem_post(&sig_sem);
+  if (sig_sem != NULL) {
+    Atomic::inc(&pending_signals[sig]);
+    sig_sem->signal();
+  } else {
+    // Signal thread is not created with ReduceSignalUsage and signal_init_pd
+    // initialization isn't called.
+    assert(ReduceSignalUsage, "signal semaphore should be created");
+  }
 }
 
-static int check_pending_signals(bool wait) {
+static int check_pending_signals() {
   Atomic::store(0, &sigint_count);
   for (;;) {
     for (int i = 0; i < NSIG + 1; i++) {
@@ -2560,9 +2560,6 @@ static int check_pending_signals(bool wait) {
         return i;
       }
     }
-    if (!wait) {
-      return -1;
-    }
     JavaThread *thread = JavaThread::current();
     ThreadBlockInVM tbivm(thread);
 
@@ -2570,7 +2567,7 @@ static int check_pending_signals(bool wait) {
     do {
       thread->set_suspend_equivalent();
       // cleared by handle_special_suspend_equivalent_condition() or java_suspend_self()
-      ::sem_wait(&sig_sem);
+      sig_sem->wait();
 
       // were we externally suspended while we were waiting?
       threadIsSuspended = thread->handle_special_suspend_equivalent_condition();
@@ -2579,7 +2576,7 @@ static int check_pending_signals(bool wait) {
         // another thread suspended us. We don't want to continue running
         // while suspended because that would surprise the thread that
         // suspended us.
-        ::sem_post(&sig_sem);
+        sig_sem->signal();
 
         thread->java_suspend_self();
       }
@@ -2587,12 +2584,8 @@ static int check_pending_signals(bool wait) {
   }
 }
 
-int os::signal_lookup() {
-  return check_pending_signals(false);
-}
-
 int os::signal_wait() {
-  return check_pending_signals(true);
+  return check_pending_signals();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3864,7 +3857,7 @@ bool os::Linux::release_memory_special_huge_tlbfs(char* base, size_t bytes) {
 bool os::release_memory_special(char* base, size_t bytes) {
   bool res;
   if (MemTracker::tracking_level() > NMT_minimal) {
-    Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
+    Tracker tkr(Tracker::release);
     res = os::Linux::release_memory_special_impl(base, bytes);
     if (res) {
       tkr.record((address)base, bytes);
@@ -4317,7 +4310,7 @@ static bool do_suspend(OSThread* osthread) {
 
   // managed to send the signal and switch to SUSPEND_REQUEST, now wait for SUSPENDED
   while (true) {
-    if (sr_semaphore.timedwait(0, 2 * NANOSECS_PER_MILLISEC)) {
+    if (sr_semaphore.timedwait(create_semaphore_timespec(0, 2 * NANOSECS_PER_MILLISEC))) {
       break;
     } else {
       // timeout
@@ -4351,7 +4344,7 @@ static void do_resume(OSThread* osthread) {
 
   while (true) {
     if (sr_notify(osthread) == 0) {
-      if (sr_semaphore.timedwait(0, 2 * NANOSECS_PER_MILLISEC)) {
+      if (sr_semaphore.timedwait(create_semaphore_timespec(0, 2 * NANOSECS_PER_MILLISEC))) {
         if (osthread->sr.is_running()) {
           return;
         }
@@ -4950,7 +4943,11 @@ jint os::init_2(void) {
   if (Posix::set_minimum_stack_sizes() == JNI_ERR) {
     return JNI_ERR;
   }
-  Linux::capture_initial_stack(JavaThread::stack_size_at_create());
+
+  suppress_primordial_thread_resolution = Arguments::created_by_java_launcher();
+  if (!suppress_primordial_thread_resolution) {
+    Linux::capture_initial_stack(JavaThread::stack_size_at_create());
+  }
 
 #if defined(IA32)
   workaround_expand_exec_shield_cs_limit();
@@ -5690,54 +5687,6 @@ int os::fork_and_exec(char* cmd) {
       return status;
     }
   }
-}
-
-// is_headless_jre()
-//
-// Test for the existence of xawt/libmawt.so or libawt_xawt.so
-// in order to report if we are running in a headless jre
-//
-// Since JDK8 xawt/libmawt.so was moved into the same directory
-// as libawt.so, and renamed libawt_xawt.so
-//
-bool os::is_headless_jre() {
-  struct stat statbuf;
-  char buf[MAXPATHLEN];
-  char libmawtpath[MAXPATHLEN];
-  const char *xawtstr  = "/xawt/libmawt.so";
-  const char *new_xawtstr = "/libawt_xawt.so";
-  char *p;
-
-  // Get path to libjvm.so
-  os::jvm_path(buf, sizeof(buf));
-
-  // Get rid of libjvm.so
-  p = strrchr(buf, '/');
-  if (p == NULL) {
-    return false;
-  } else {
-    *p = '\0';
-  }
-
-  // Get rid of client or server
-  p = strrchr(buf, '/');
-  if (p == NULL) {
-    return false;
-  } else {
-    *p = '\0';
-  }
-
-  // check xawt/libmawt.so
-  strcpy(libmawtpath, buf);
-  strcat(libmawtpath, xawtstr);
-  if (::stat(libmawtpath, &statbuf) == 0) return false;
-
-  // check libawt_xawt.so
-  strcpy(libmawtpath, buf);
-  strcat(libmawtpath, new_xawtstr);
-  if (::stat(libmawtpath, &statbuf) == 0) return false;
-
-  return true;
 }
 
 // Get the default path to the core file

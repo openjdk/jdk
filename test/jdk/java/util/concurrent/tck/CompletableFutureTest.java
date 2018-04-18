@@ -68,7 +68,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import junit.framework.AssertionFailedError;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -319,7 +318,7 @@ public class CompletableFutureTest extends JSR166TestCase {
         }
 
         f = new CompletableFuture<>();
-        f.completeExceptionally(ex = new CFException());
+        f.completeExceptionally(new CFException());
         f.obtrudeValue(v1);
         checkCompletedNormally(f, v1);
         f.obtrudeException(ex = new CFException());
@@ -357,7 +356,7 @@ public class CompletableFutureTest extends JSR166TestCase {
      * toString indicates current completion state
      */
     public void testToString_incomplete() {
-        CompletableFuture<String> f = new CompletableFuture<String>();
+        CompletableFuture<String> f = new CompletableFuture<>();
         assertTrue(f.toString().matches(".*\\[.*Not completed.*\\]"));
         if (testImplementationDetails)
             assertEquals(identityString(f) + "[Not completed]",
@@ -365,7 +364,7 @@ public class CompletableFutureTest extends JSR166TestCase {
     }
 
     public void testToString_normal() {
-        CompletableFuture<String> f = new CompletableFuture<String>();
+        CompletableFuture<String> f = new CompletableFuture<>();
         assertTrue(f.complete("foo"));
         assertTrue(f.toString().matches(".*\\[.*Completed normally.*\\]"));
         if (testImplementationDetails)
@@ -374,7 +373,7 @@ public class CompletableFutureTest extends JSR166TestCase {
     }
 
     public void testToString_exception() {
-        CompletableFuture<String> f = new CompletableFuture<String>();
+        CompletableFuture<String> f = new CompletableFuture<>();
         assertTrue(f.completeExceptionally(new IndexOutOfBoundsException()));
         assertTrue(f.toString().matches(".*\\[.*Completed exceptionally.*\\]"));
         if (testImplementationDetails)
@@ -384,7 +383,7 @@ public class CompletableFutureTest extends JSR166TestCase {
 
     public void testToString_cancelled() {
         for (boolean mayInterruptIfRunning : new boolean[] { true, false }) {
-            CompletableFuture<String> f = new CompletableFuture<String>();
+            CompletableFuture<String> f = new CompletableFuture<>();
             assertTrue(f.cancel(mayInterruptIfRunning));
             assertTrue(f.toString().matches(".*\\[.*Completed exceptionally.*\\]"));
             if (testImplementationDetails)
@@ -4217,7 +4216,7 @@ public class CompletableFutureTest extends JSR166TestCase {
         static void assertZero(CompletableFuture<?> f) {
             try {
                 f.getNow(null);
-                throw new AssertionFailedError("should throw");
+                throw new AssertionError("should throw");
             } catch (CompletionException success) {
                 assertTrue(success.getCause() instanceof ZeroException);
             }

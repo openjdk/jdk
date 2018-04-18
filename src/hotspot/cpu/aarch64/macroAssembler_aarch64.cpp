@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,25 +29,29 @@
 #include "jvm.h"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "interpreter/interpreter.hpp"
-
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_aarch64.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
-#include "oops/oop.inline.hpp"
+#include "oops/oop.hpp"
 #include "opto/compile.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/node.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/icache.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.hpp"
-
 #if INCLUDE_ALL_GCS
-#include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc/g1/g1BarrierSet.hpp"
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/heapRegion.hpp"
 #endif
 
@@ -170,7 +174,7 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
   // instruction.
   if (Instruction_aarch64::extract(insn, 31, 21) == 0b11010010101) {
     // Move narrow OOP
-    narrowOop n = oopDesc::encode_heap_oop((oop)o);
+    narrowOop n = CompressedOops::encode((oop)o);
     Instruction_aarch64::patch(insn_addr, 20, 5, n >> 16);
     Instruction_aarch64::patch(insn_addr+4, 20, 5, n & 0xffff);
     instructions = 2;
@@ -801,7 +805,7 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
   assert(is_NativeCallTrampolineStub_at(stub_start_addr), "doesn't look like a trampoline");
 
   end_a_stub();
-  return stub;
+  return stub_start_addr;
 }
 
 address MacroAssembler::ic_call(address entry, jint method_index) {
@@ -1794,15 +1798,60 @@ int MacroAssembler::corrected_idivq(Register result, Register ra, Register rb,
 
 void MacroAssembler::membar(Membar_mask_bits order_constraint) {
   address prev = pc() - NativeMembar::instruction_size;
-  if (prev == code()->last_membar()) {
+  address last = code()->last_insn();
+  if (last != NULL && nativeInstruction_at(last)->is_Membar() && prev == last) {
     NativeMembar *bar = NativeMembar_at(prev);
     // We are merging two memory barrier instructions.  On AArch64 we
     // can do this simply by ORing them together.
     bar->set_kind(bar->get_kind() | order_constraint);
     BLOCK_COMMENT("merged membar");
   } else {
-    code()->set_last_membar(pc());
+    code()->set_last_insn(pc());
     dmb(Assembler::barrier(order_constraint));
+  }
+}
+
+bool MacroAssembler::try_merge_ldst(Register rt, const Address &adr, size_t size_in_bytes, bool is_store) {
+  if (ldst_can_merge(rt, adr, size_in_bytes, is_store)) {
+    merge_ldst(rt, adr, size_in_bytes, is_store);
+    code()->clear_last_insn();
+    return true;
+  } else {
+    assert(size_in_bytes == 8 || size_in_bytes == 4, "only 8 bytes or 4 bytes load/store is supported.");
+    const unsigned mask = size_in_bytes - 1;
+    if (adr.getMode() == Address::base_plus_offset &&
+        (adr.offset() & mask) == 0) { // only supports base_plus_offset.
+      code()->set_last_insn(pc());
+    }
+    return false;
+  }
+}
+
+void MacroAssembler::ldr(Register Rx, const Address &adr) {
+  // We always try to merge two adjacent loads into one ldp.
+  if (!try_merge_ldst(Rx, adr, 8, false)) {
+    Assembler::ldr(Rx, adr);
+  }
+}
+
+void MacroAssembler::ldrw(Register Rw, const Address &adr) {
+  // We always try to merge two adjacent loads into one ldp.
+  if (!try_merge_ldst(Rw, adr, 4, false)) {
+    Assembler::ldrw(Rw, adr);
+  }
+}
+
+void MacroAssembler::str(Register Rx, const Address &adr) {
+  // We always try to merge two adjacent stores into one stp.
+  if (!try_merge_ldst(Rx, adr, 8, true)) {
+    Assembler::str(Rx, adr);
+  }
+}
+
+void MacroAssembler::strw(Register Rw, const Address &adr) {
+  // We always try to merge two adjacent stores into one stp.
+  if (!try_merge_ldst(Rw, adr, 4, true)) {
+    Assembler::strw(Rw, adr);
   }
 }
 
@@ -2043,6 +2092,28 @@ void MacroAssembler::verify_heapbase(const char* msg) {
 }
 #endif
 
+void MacroAssembler::resolve_jobject(Register value, Register thread, Register tmp) {
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  Label done, not_weak;
+  cbz(value, done);           // Use NULL as-is.
+
+  STATIC_ASSERT(JNIHandles::weak_tag_mask == 1u);
+  tbz(r0, 0, not_weak);    // Test for jweak tag.
+
+  // Resolve jweak.
+  bs->load_at(this, IN_ROOT | ON_PHANTOM_OOP_REF, T_OBJECT,
+                    value, Address(value, -JNIHandles::weak_tag_value), tmp, thread);
+  verify_oop(value);
+  b(done);
+
+  bind(not_weak);
+  // Resolve (untagged) jobject.
+  bs->load_at(this, IN_ROOT | ON_STRONG_OOP_REF, T_OBJECT,
+                    value, Address(value, 0), tmp, thread);
+  verify_oop(value);
+  bind(done);
+}
+
 void MacroAssembler::stop(const char* msg) {
   address ip = pc();
   pusha();
@@ -2056,9 +2127,14 @@ void MacroAssembler::stop(const char* msg) {
 }
 
 void MacroAssembler::unimplemented(const char* what) {
-  char* b = new char[1024];
-  jio_snprintf(b, 1024, "unimplemented: %s", what);
-  stop(b);
+  const char* buf = NULL;
+  {
+    ResourceMark rm;
+    stringStream ss;
+    ss.print("unimplemented: %s", what);
+    buf = code_string(ss.as_string());
+  }
+  stop(buf);
 }
 
 // If a constant does not fit in an immediate field, generate some
@@ -2569,6 +2645,143 @@ Address MacroAssembler::spill_address(int size, int offset, Register tmp)
   }
 
   return Address(base, offset);
+}
+
+// Checks whether offset is aligned.
+// Returns true if it is, else false.
+bool MacroAssembler::merge_alignment_check(Register base,
+                                           size_t size,
+                                           long cur_offset,
+                                           long prev_offset) const {
+  if (AvoidUnalignedAccesses) {
+    if (base == sp) {
+      // Checks whether low offset if aligned to pair of registers.
+      long pair_mask = size * 2 - 1;
+      long offset = prev_offset > cur_offset ? cur_offset : prev_offset;
+      return (offset & pair_mask) == 0;
+    } else { // If base is not sp, we can't guarantee the access is aligned.
+      return false;
+    }
+  } else {
+    long mask = size - 1;
+    // Load/store pair instruction only supports element size aligned offset.
+    return (cur_offset & mask) == 0 && (prev_offset & mask) == 0;
+  }
+}
+
+// Checks whether current and previous loads/stores can be merged.
+// Returns true if it can be merged, else false.
+bool MacroAssembler::ldst_can_merge(Register rt,
+                                    const Address &adr,
+                                    size_t cur_size_in_bytes,
+                                    bool is_store) const {
+  address prev = pc() - NativeInstruction::instruction_size;
+  address last = code()->last_insn();
+
+  if (last == NULL || !nativeInstruction_at(last)->is_Imm_LdSt()) {
+    return false;
+  }
+
+  if (adr.getMode() != Address::base_plus_offset || prev != last) {
+    return false;
+  }
+
+  NativeLdSt* prev_ldst = NativeLdSt_at(prev);
+  size_t prev_size_in_bytes = prev_ldst->size_in_bytes();
+
+  assert(prev_size_in_bytes == 4 || prev_size_in_bytes == 8, "only supports 64/32bit merging.");
+  assert(cur_size_in_bytes == 4 || cur_size_in_bytes == 8, "only supports 64/32bit merging.");
+
+  if (cur_size_in_bytes != prev_size_in_bytes || is_store != prev_ldst->is_store()) {
+    return false;
+  }
+
+  long max_offset = 63 * prev_size_in_bytes;
+  long min_offset = -64 * prev_size_in_bytes;
+
+  assert(prev_ldst->is_not_pre_post_index(), "pre-index or post-index is not supported to be merged.");
+
+  // Only same base can be merged.
+  if (adr.base() != prev_ldst->base()) {
+    return false;
+  }
+
+  long cur_offset = adr.offset();
+  long prev_offset = prev_ldst->offset();
+  size_t diff = abs(cur_offset - prev_offset);
+  if (diff != prev_size_in_bytes) {
+    return false;
+  }
+
+  // Following cases can not be merged:
+  // ldr x2, [x2, #8]
+  // ldr x3, [x2, #16]
+  // or:
+  // ldr x2, [x3, #8]
+  // ldr x2, [x3, #16]
+  // If t1 and t2 is the same in "ldp t1, t2, [xn, #imm]", we'll get SIGILL.
+  if (!is_store && (adr.base() == prev_ldst->target() || rt == prev_ldst->target())) {
+    return false;
+  }
+
+  long low_offset = prev_offset > cur_offset ? cur_offset : prev_offset;
+  // Offset range must be in ldp/stp instruction's range.
+  if (low_offset > max_offset || low_offset < min_offset) {
+    return false;
+  }
+
+  if (merge_alignment_check(adr.base(), prev_size_in_bytes, cur_offset, prev_offset)) {
+    return true;
+  }
+
+  return false;
+}
+
+// Merge current load/store with previous load/store into ldp/stp.
+void MacroAssembler::merge_ldst(Register rt,
+                                const Address &adr,
+                                size_t cur_size_in_bytes,
+                                bool is_store) {
+
+  assert(ldst_can_merge(rt, adr, cur_size_in_bytes, is_store) == true, "cur and prev must be able to be merged.");
+
+  Register rt_low, rt_high;
+  address prev = pc() - NativeInstruction::instruction_size;
+  NativeLdSt* prev_ldst = NativeLdSt_at(prev);
+
+  long offset;
+
+  if (adr.offset() < prev_ldst->offset()) {
+    offset = adr.offset();
+    rt_low = rt;
+    rt_high = prev_ldst->target();
+  } else {
+    offset = prev_ldst->offset();
+    rt_low = prev_ldst->target();
+    rt_high = rt;
+  }
+
+  Address adr_p = Address(prev_ldst->base(), offset);
+  // Overwrite previous generated binary.
+  code_section()->set_end(prev);
+
+  const int sz = prev_ldst->size_in_bytes();
+  assert(sz == 8 || sz == 4, "only supports 64/32bit merging.");
+  if (!is_store) {
+    BLOCK_COMMENT("merged ldr pair");
+    if (sz == 8) {
+      ldp(rt_low, rt_high, adr_p);
+    } else {
+      ldpw(rt_low, rt_high, adr_p);
+    }
+  } else {
+    BLOCK_COMMENT("merged str pair");
+    if (sz == 8) {
+      stp(rt_low, rt_high, adr_p);
+    } else {
+      stpw(rt_low, rt_high, adr_p);
+    }
+  }
 }
 
 /**
@@ -3419,43 +3632,6 @@ void MacroAssembler::cmpptr(Register src1, Address src2) {
   cmp(src1, rscratch1);
 }
 
-void MacroAssembler::store_check(Register obj, Address dst) {
-  store_check(obj);
-}
-
-void MacroAssembler::store_check(Register obj) {
-  // Does a store check for the oop in register obj. The content of
-  // register obj is destroyed afterwards.
-
-  BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->kind() == BarrierSet::CardTableForRS ||
-         bs->kind() == BarrierSet::CardTableExtension,
-         "Wrong barrier set kind");
-
-  CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(bs);
-  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
-
-  lsr(obj, obj, CardTableModRefBS::card_shift);
-
-  assert(CardTableModRefBS::dirty_card_val() == 0, "must be");
-
-  load_byte_map_base(rscratch1);
-
-  if (UseCondCardMark) {
-    Label L_already_dirty;
-    membar(StoreLoad);
-    ldrb(rscratch2,  Address(obj, rscratch1));
-    cbz(rscratch2, L_already_dirty);
-    strb(zr, Address(obj, rscratch1));
-    bind(L_already_dirty);
-  } else {
-    if (UseConcMarkSweepGC && CMSPrecleaningEnabled) {
-      membar(StoreStore);
-    }
-    strb(zr, Address(obj, rscratch1));
-  }
-}
-
 void MacroAssembler::load_klass(Register dst, Register src) {
   if (UseCompressedClassPointers) {
     ldrw(dst, Address(src, oopDesc::klass_offset_in_bytes()));
@@ -3522,7 +3698,7 @@ void MacroAssembler::store_klass_gap(Register dst, Register src) {
   }
 }
 
-// Algorithm must match oop.inline.hpp encode_heap_oop.
+// Algorithm must match CompressedOops::encode.
 void MacroAssembler::encode_heap_oop(Register d, Register s) {
 #ifdef ASSERT
   verify_heapbase("MacroAssembler::encode_heap_oop: heap base corrupted?");
@@ -3819,189 +3995,6 @@ void MacroAssembler::store_heap_oop_null(Address dst) {
     str(zr, dst);
 }
 
-#if INCLUDE_ALL_GCS
-/*
- * g1_write_barrier_pre -- G1GC pre-write barrier for store of new_val at
- * store_addr.
- *
- * Allocates rscratch1
- */
-void MacroAssembler::g1_write_barrier_pre(Register obj,
-                                          Register pre_val,
-                                          Register thread,
-                                          Register tmp,
-                                          bool tosca_live,
-                                          bool expand_call) {
-  // If expand_call is true then we expand the call_VM_leaf macro
-  // directly to skip generating the check by
-  // InterpreterMacroAssembler::call_VM_leaf_base that checks _last_sp.
-
-  assert(thread == rthread, "must be");
-
-  Label done;
-  Label runtime;
-
-  assert_different_registers(obj, pre_val, tmp, rscratch1);
-  assert(pre_val != noreg &&  tmp != noreg, "expecting a register");
-
-  Address in_progress(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                       SATBMarkQueue::byte_offset_of_active()));
-  Address index(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                       SATBMarkQueue::byte_offset_of_index()));
-  Address buffer(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                       SATBMarkQueue::byte_offset_of_buf()));
-
-
-  // Is marking active?
-  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-    ldrw(tmp, in_progress);
-  } else {
-    assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-    ldrb(tmp, in_progress);
-  }
-  cbzw(tmp, done);
-
-  // Do we need to load the previous value?
-  if (obj != noreg) {
-    load_heap_oop(pre_val, Address(obj, 0));
-  }
-
-  // Is the previous value null?
-  cbz(pre_val, done);
-
-  // Can we store original value in the thread's buffer?
-  // Is index == 0?
-  // (The index field is typed as size_t.)
-
-  ldr(tmp, index);                      // tmp := *index_adr
-  cbz(tmp, runtime);                    // tmp == 0?
-                                        // If yes, goto runtime
-
-  sub(tmp, tmp, wordSize);              // tmp := tmp - wordSize
-  str(tmp, index);                      // *index_adr := tmp
-  ldr(rscratch1, buffer);
-  add(tmp, tmp, rscratch1);             // tmp := tmp + *buffer_adr
-
-  // Record the previous value
-  str(pre_val, Address(tmp, 0));
-  b(done);
-
-  bind(runtime);
-  // save the live input values
-  push(r0->bit(tosca_live) | obj->bit(obj != noreg) | pre_val->bit(true), sp);
-
-  // Calling the runtime using the regular call_VM_leaf mechanism generates
-  // code (generated by InterpreterMacroAssember::call_VM_leaf_base)
-  // that checks that the *(rfp+frame::interpreter_frame_last_sp) == NULL.
-  //
-  // If we care generating the pre-barrier without a frame (e.g. in the
-  // intrinsified Reference.get() routine) then ebp might be pointing to
-  // the caller frame and so this check will most likely fail at runtime.
-  //
-  // Expanding the call directly bypasses the generation of the check.
-  // So when we do not have have a full interpreter frame on the stack
-  // expand_call should be passed true.
-
-  if (expand_call) {
-    assert(pre_val != c_rarg1, "smashed arg");
-    pass_arg1(this, thread);
-    pass_arg0(this, pre_val);
-    MacroAssembler::call_VM_leaf_base(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), 2);
-  } else {
-    call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), pre_val, thread);
-  }
-
-  pop(r0->bit(tosca_live) | obj->bit(obj != noreg) | pre_val->bit(true), sp);
-
-  bind(done);
-}
-
-/*
- * g1_write_barrier_post -- G1GC post-write barrier for store of new_val at
- * store_addr
- *
- * Allocates rscratch1
- */
-void MacroAssembler::g1_write_barrier_post(Register store_addr,
-                                           Register new_val,
-                                           Register thread,
-                                           Register tmp,
-                                           Register tmp2) {
-  assert(thread == rthread, "must be");
-  assert_different_registers(store_addr, new_val, thread, tmp, tmp2,
-                             rscratch1);
-  assert(store_addr != noreg && new_val != noreg && tmp != noreg
-         && tmp2 != noreg, "expecting a register");
-
-  Address queue_index(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
-                                       DirtyCardQueue::byte_offset_of_index()));
-  Address buffer(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
-                                       DirtyCardQueue::byte_offset_of_buf()));
-
-  BarrierSet* bs = Universe::heap()->barrier_set();
-  CardTableModRefBS* ct = (CardTableModRefBS*)bs;
-  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
-
-  Label done;
-  Label runtime;
-
-  // Does store cross heap regions?
-
-  eor(tmp, store_addr, new_val);
-  lsr(tmp, tmp, HeapRegion::LogOfHRGrainBytes);
-  cbz(tmp, done);
-
-  // crosses regions, storing NULL?
-
-  cbz(new_val, done);
-
-  // storing region crossing non-NULL, is card already dirty?
-
-  ExternalAddress cardtable((address) ct->byte_map_base);
-  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
-  const Register card_addr = tmp;
-
-  lsr(card_addr, store_addr, CardTableModRefBS::card_shift);
-
-  // get the address of the card
-  load_byte_map_base(tmp2);
-  add(card_addr, card_addr, tmp2);
-  ldrb(tmp2, Address(card_addr));
-  cmpw(tmp2, (int)G1SATBCardTableModRefBS::g1_young_card_val());
-  br(Assembler::EQ, done);
-
-  assert((int)CardTableModRefBS::dirty_card_val() == 0, "must be 0");
-
-  membar(Assembler::StoreLoad);
-
-  ldrb(tmp2, Address(card_addr));
-  cbzw(tmp2, done);
-
-  // storing a region crossing, non-NULL oop, card is clean.
-  // dirty card and log.
-
-  strb(zr, Address(card_addr));
-
-  ldr(rscratch1, queue_index);
-  cbz(rscratch1, runtime);
-  sub(rscratch1, rscratch1, wordSize);
-  str(rscratch1, queue_index);
-
-  ldr(tmp2, buffer);
-  str(card_addr, Address(tmp2, rscratch1));
-  b(done);
-
-  bind(runtime);
-  // save the live input values
-  push(store_addr->bit(true) | new_val->bit(true), sp);
-  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), card_addr, thread);
-  pop(store_addr->bit(true) | new_val->bit(true), sp);
-
-  bind(done);
-}
-
-#endif // INCLUDE_ALL_GCS
-
 Address MacroAssembler::allocate_metadata_address(Metadata* obj) {
   assert(oop_recorder() != NULL, "this assembler needs a Recorder");
   int index = oop_recorder()->allocate_metadata_index(obj);
@@ -4091,131 +4084,6 @@ void MacroAssembler::tlab_allocate(Register obj,
   // verify_tlab();
 }
 
-// Preserves r19, and r3.
-Register MacroAssembler::tlab_refill(Label& retry,
-                                     Label& try_eden,
-                                     Label& slow_case) {
-  Register top = r0;
-  Register t1  = r2;
-  Register t2  = r4;
-  assert_different_registers(top, rthread, t1, t2, /* preserve: */ r19, r3);
-  Label do_refill, discard_tlab;
-
-  if (!Universe::heap()->supports_inline_contig_alloc()) {
-    // No allocation in the shared eden.
-    b(slow_case);
-  }
-
-  ldr(top, Address(rthread, in_bytes(JavaThread::tlab_top_offset())));
-  ldr(t1,  Address(rthread, in_bytes(JavaThread::tlab_end_offset())));
-
-  // calculate amount of free space
-  sub(t1, t1, top);
-  lsr(t1, t1, LogHeapWordSize);
-
-  // Retain tlab and allocate object in shared space if
-  // the amount free in the tlab is too large to discard.
-
-  ldr(rscratch1, Address(rthread, in_bytes(JavaThread::tlab_refill_waste_limit_offset())));
-  cmp(t1, rscratch1);
-  br(Assembler::LE, discard_tlab);
-
-  // Retain
-  // ldr(rscratch1, Address(rthread, in_bytes(JavaThread::tlab_refill_waste_limit_offset())));
-  mov(t2, (int32_t) ThreadLocalAllocBuffer::refill_waste_limit_increment());
-  add(rscratch1, rscratch1, t2);
-  str(rscratch1, Address(rthread, in_bytes(JavaThread::tlab_refill_waste_limit_offset())));
-
-  if (TLABStats) {
-    // increment number of slow_allocations
-    addmw(Address(rthread, in_bytes(JavaThread::tlab_slow_allocations_offset())),
-         1, rscratch1);
-  }
-  b(try_eden);
-
-  bind(discard_tlab);
-  if (TLABStats) {
-    // increment number of refills
-    addmw(Address(rthread, in_bytes(JavaThread::tlab_number_of_refills_offset())), 1,
-         rscratch1);
-    // accumulate wastage -- t1 is amount free in tlab
-    addmw(Address(rthread, in_bytes(JavaThread::tlab_fast_refill_waste_offset())), t1,
-         rscratch1);
-  }
-
-  // if tlab is currently allocated (top or end != null) then
-  // fill [top, end + alignment_reserve) with array object
-  cbz(top, do_refill);
-
-  // set up the mark word
-  mov(rscratch1, (intptr_t)markOopDesc::prototype()->copy_set_hash(0x2));
-  str(rscratch1, Address(top, oopDesc::mark_offset_in_bytes()));
-  // set the length to the remaining space
-  sub(t1, t1, typeArrayOopDesc::header_size(T_INT));
-  add(t1, t1, (int32_t)ThreadLocalAllocBuffer::alignment_reserve());
-  lsl(t1, t1, log2_intptr(HeapWordSize/sizeof(jint)));
-  strw(t1, Address(top, arrayOopDesc::length_offset_in_bytes()));
-  // set klass to intArrayKlass
-  {
-    unsigned long offset;
-    // dubious reloc why not an oop reloc?
-    adrp(rscratch1, ExternalAddress((address)Universe::intArrayKlassObj_addr()),
-         offset);
-    ldr(t1, Address(rscratch1, offset));
-  }
-  // store klass last.  concurrent gcs assumes klass length is valid if
-  // klass field is not null.
-  store_klass(top, t1);
-
-  mov(t1, top);
-  ldr(rscratch1, Address(rthread, in_bytes(JavaThread::tlab_start_offset())));
-  sub(t1, t1, rscratch1);
-  incr_allocated_bytes(rthread, t1, 0, rscratch1);
-
-  // refill the tlab with an eden allocation
-  bind(do_refill);
-  ldr(t1, Address(rthread, in_bytes(JavaThread::tlab_size_offset())));
-  lsl(t1, t1, LogHeapWordSize);
-  // allocate new tlab, address returned in top
-  eden_allocate(top, t1, 0, t2, slow_case);
-
-  // Check that t1 was preserved in eden_allocate.
-#ifdef ASSERT
-  if (UseTLAB) {
-    Label ok;
-    Register tsize = r4;
-    assert_different_registers(tsize, rthread, t1);
-    str(tsize, Address(pre(sp, -16)));
-    ldr(tsize, Address(rthread, in_bytes(JavaThread::tlab_size_offset())));
-    lsl(tsize, tsize, LogHeapWordSize);
-    cmp(t1, tsize);
-    br(Assembler::EQ, ok);
-    STOP("assert(t1 != tlab size)");
-    should_not_reach_here();
-
-    bind(ok);
-    ldr(tsize, Address(post(sp, 16)));
-  }
-#endif
-  str(top, Address(rthread, in_bytes(JavaThread::tlab_start_offset())));
-  str(top, Address(rthread, in_bytes(JavaThread::tlab_top_offset())));
-  add(top, top, t1);
-  sub(top, top, (int32_t)ThreadLocalAllocBuffer::alignment_reserve_in_bytes());
-  str(top, Address(rthread, in_bytes(JavaThread::tlab_end_offset())));
-
-  if (ZeroTLAB) {
-    // This is a fast TLAB refill, therefore the GC is not notified of it.
-    // So compiled code must fill the new TLAB with zeroes.
-    ldr(top, Address(rthread, in_bytes(JavaThread::tlab_start_offset())));
-    zero_memory(top,t1,t2);
-  }
-
-  verify_tlab();
-  b(retry);
-
-  return rthread; // for use by caller
-}
-
 // Zero words; len is in bytes
 // Destroys all registers except addr
 // len must be a nonzero multiple of wordSize
@@ -4272,7 +4140,7 @@ void MacroAssembler::zero_memory(Register addr, Register len, Register t1) {
   bind(loop);
   sub(len, len, unroll);
   for (int i = -unroll; i < 0; i++)
-    str(zr, Address(t1, i * wordSize));
+    Assembler::str(zr, Address(t1, i * wordSize));
   bind(entry);
   add(t1, t1, unroll * wordSize);
   cbnz(len, loop);
@@ -4449,7 +4317,7 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, unsigned long &byt
 
 void MacroAssembler::load_byte_map_base(Register reg) {
   jbyte *byte_map_base =
-    ((CardTableModRefBS*)(Universe::heap()->barrier_set()))->byte_map_base;
+    ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base();
 
   if (is_valid_AArch64_address((address)byte_map_base)) {
     // Strictly speaking the byte_map_base isn't an address at all,
@@ -5116,28 +4984,11 @@ void MacroAssembler::has_negatives(Register ary1, Register len, Register result)
   BIND(DONE);
 }
 
-// Compare Strings or char/byte arrays.
-
-// is_string is true iff this is a string comparison.
-
-// For Strings we're passed the address of the first characters in a1
-// and a2 and the length in cnt1.
-
-// For byte and char arrays we're passed the arrays themselves and we
-// have to extract length fields and do null checks here.
-
-// elem_size is the element size in bytes: either 1 or 2.
-
-// There are two implementations.  For arrays >= 8 bytes, all
-// comparisons (including the final one, which may overlap) are
-// performed 8 bytes at a time.  For arrays < 8 bytes, we compare a
-// halfword, then a short, and then a byte.
-
-void MacroAssembler::arrays_equals(Register a1, Register a2,
-                                   Register result, Register cnt1,
-                                   int elem_size, bool is_string)
+void MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
+                                   Register tmp4, Register tmp5, Register result,
+                                   Register cnt1, int elem_size)
 {
-  Label SAME, DONE, SHORT, NEXT_WORD, ONE;
+  Label DONE;
   Register tmp1 = rscratch1;
   Register tmp2 = rscratch2;
   Register cnt2 = tmp2;  // cnt2 only used in array length compare
@@ -5146,6 +4997,7 @@ void MacroAssembler::arrays_equals(Register a1, Register a2,
   int length_offset = arrayOopDesc::length_offset_in_bytes();
   int base_offset
     = arrayOopDesc::base_offset_in_bytes(elem_size == 2 ? T_CHAR : T_BYTE);
+  int stubBytesThreshold = 3 * 64 + (UseSIMDForArrayEquals ? 0 : 16);
 
   assert(elem_size == 1 || elem_size == 2, "must be char or byte");
   assert_different_registers(a1, a2, result, cnt1, rscratch1, rscratch2);
@@ -5154,43 +5006,229 @@ void MacroAssembler::arrays_equals(Register a1, Register a2,
   {
     const char kind = (elem_size == 2) ? 'U' : 'L';
     char comment[64];
-    snprintf(comment, sizeof comment, "%s%c%s {",
-             is_string ? "string_equals" : "array_equals",
-             kind, "{");
+    snprintf(comment, sizeof comment, "array_equals%c{", kind);
+    BLOCK_COMMENT(comment);
+  }
+#endif
+  if (UseSimpleArrayEquals) {
+    Label NEXT_WORD, SHORT, SAME, TAIL03, TAIL01, A_MIGHT_BE_NULL, A_IS_NOT_NULL;
+    // if (a1==a2)
+    //     return true;
+    // if (a==null || a2==null)
+    //     return false;
+    // a1 & a2 == 0 means (some-pointer is null) or
+    // (very-rare-or-even-probably-impossible-pointer-values)
+    // so, we can save one branch in most cases
+    eor(rscratch1, a1, a2);
+    tst(a1, a2);
+    mov(result, false);
+    cbz(rscratch1, SAME);
+    br(EQ, A_MIGHT_BE_NULL);
+    // if (a1.length != a2.length)
+    //      return false;
+    bind(A_IS_NOT_NULL);
+    ldrw(cnt1, Address(a1, length_offset));
+    ldrw(cnt2, Address(a2, length_offset));
+    eorw(tmp5, cnt1, cnt2);
+    cbnzw(tmp5, DONE);
+    lea(a1, Address(a1, base_offset));
+    lea(a2, Address(a2, base_offset));
+    // Check for short strings, i.e. smaller than wordSize.
+    subs(cnt1, cnt1, elem_per_word);
+    br(Assembler::LT, SHORT);
+    // Main 8 byte comparison loop.
+    bind(NEXT_WORD); {
+      ldr(tmp1, Address(post(a1, wordSize)));
+      ldr(tmp2, Address(post(a2, wordSize)));
+      subs(cnt1, cnt1, elem_per_word);
+      eor(tmp5, tmp1, tmp2);
+      cbnz(tmp5, DONE);
+    } br(GT, NEXT_WORD);
+    // Last longword.  In the case where length == 4 we compare the
+    // same longword twice, but that's still faster than another
+    // conditional branch.
+    // cnt1 could be 0, -1, -2, -3, -4 for chars; -4 only happens when
+    // length == 4.
+    if (log_elem_size > 0)
+      lsl(cnt1, cnt1, log_elem_size);
+    ldr(tmp3, Address(a1, cnt1));
+    ldr(tmp4, Address(a2, cnt1));
+    eor(tmp5, tmp3, tmp4);
+    cbnz(tmp5, DONE);
+    b(SAME);
+    bind(A_MIGHT_BE_NULL);
+    // in case both a1 and a2 are not-null, proceed with loads
+    cbz(a1, DONE);
+    cbz(a2, DONE);
+    b(A_IS_NOT_NULL);
+    bind(SHORT);
+
+    tbz(cnt1, 2 - log_elem_size, TAIL03); // 0-7 bytes left.
+    {
+      ldrw(tmp1, Address(post(a1, 4)));
+      ldrw(tmp2, Address(post(a2, 4)));
+      eorw(tmp5, tmp1, tmp2);
+      cbnzw(tmp5, DONE);
+    }
+    bind(TAIL03);
+    tbz(cnt1, 1 - log_elem_size, TAIL01); // 0-3 bytes left.
+    {
+      ldrh(tmp3, Address(post(a1, 2)));
+      ldrh(tmp4, Address(post(a2, 2)));
+      eorw(tmp5, tmp3, tmp4);
+      cbnzw(tmp5, DONE);
+    }
+    bind(TAIL01);
+    if (elem_size == 1) { // Only needed when comparing byte arrays.
+      tbz(cnt1, 0, SAME); // 0-1 bytes left.
+      {
+        ldrb(tmp1, a1);
+        ldrb(tmp2, a2);
+        eorw(tmp5, tmp1, tmp2);
+        cbnzw(tmp5, DONE);
+      }
+    }
+    bind(SAME);
+    mov(result, true);
+  } else {
+    Label NEXT_DWORD, A_IS_NULL, SHORT, TAIL, TAIL2, STUB, EARLY_OUT,
+        CSET_EQ, LAST_CHECK, LEN_IS_ZERO, SAME;
+    cbz(a1, A_IS_NULL);
+    ldrw(cnt1, Address(a1, length_offset));
+    cbz(a2, A_IS_NULL);
+    ldrw(cnt2, Address(a2, length_offset));
+    mov(result, false);
+    // on most CPUs a2 is still "locked"(surprisingly) in ldrw and it's
+    // faster to perform another branch before comparing a1 and a2
+    cmp(cnt1, elem_per_word);
+    br(LE, SHORT); // short or same
+    cmp(a1, a2);
+    br(EQ, SAME);
+    ldr(tmp3, Address(pre(a1, base_offset)));
+    cmp(cnt1, stubBytesThreshold);
+    br(GE, STUB);
+    ldr(tmp4, Address(pre(a2, base_offset)));
+    sub(tmp5, zr, cnt1, LSL, 3 + log_elem_size);
+    cmp(cnt2, cnt1);
+    br(NE, DONE);
+
+    // Main 16 byte comparison loop with 2 exits
+    bind(NEXT_DWORD); {
+      ldr(tmp1, Address(pre(a1, wordSize)));
+      ldr(tmp2, Address(pre(a2, wordSize)));
+      subs(cnt1, cnt1, 2 * elem_per_word);
+      br(LE, TAIL);
+      eor(tmp4, tmp3, tmp4);
+      cbnz(tmp4, DONE);
+      ldr(tmp3, Address(pre(a1, wordSize)));
+      ldr(tmp4, Address(pre(a2, wordSize)));
+      cmp(cnt1, elem_per_word);
+      br(LE, TAIL2);
+      cmp(tmp1, tmp2);
+    } br(EQ, NEXT_DWORD);
+    b(DONE);
+
+    bind(TAIL);
+    eor(tmp4, tmp3, tmp4);
+    eor(tmp2, tmp1, tmp2);
+    lslv(tmp2, tmp2, tmp5);
+    orr(tmp5, tmp4, tmp2);
+    cmp(tmp5, zr);
+    b(CSET_EQ);
+
+    bind(TAIL2);
+    eor(tmp2, tmp1, tmp2);
+    cbnz(tmp2, DONE);
+    b(LAST_CHECK);
+
+    bind(STUB);
+    ldr(tmp4, Address(pre(a2, base_offset)));
+    cmp(cnt2, cnt1);
+    br(NE, DONE);
+    if (elem_size == 2) { // convert to byte counter
+      lsl(cnt1, cnt1, 1);
+    }
+    eor(tmp5, tmp3, tmp4);
+    cbnz(tmp5, DONE);
+    RuntimeAddress stub = RuntimeAddress(StubRoutines::aarch64::large_array_equals());
+    assert(stub.target() != NULL, "array_equals_long stub has not been generated");
+    trampoline_call(stub);
+    b(DONE);
+
+    bind(SAME);
+    mov(result, true);
+    b(DONE);
+    bind(A_IS_NULL);
+    // a1 or a2 is null. if a2 == a2 then return true. else return false
+    cmp(a1, a2);
+    b(CSET_EQ);
+    bind(EARLY_OUT);
+    // (a1 != null && a2 == null) || (a1 != null && a2 != null && a1 == a2)
+    // so, if a2 == null => return false(0), else return true, so we can return a2
+    mov(result, a2);
+    b(DONE);
+    bind(LEN_IS_ZERO);
+    cmp(cnt2, zr);
+    b(CSET_EQ);
+    bind(SHORT);
+    cbz(cnt1, LEN_IS_ZERO);
+    sub(tmp5, zr, cnt1, LSL, 3 + log_elem_size);
+    ldr(tmp3, Address(a1, base_offset));
+    ldr(tmp4, Address(a2, base_offset));
+    bind(LAST_CHECK);
+    eor(tmp4, tmp3, tmp4);
+    lslv(tmp5, tmp4, tmp5);
+    cmp(tmp5, zr);
+    bind(CSET_EQ);
+    cset(result, EQ);
+  }
+
+  // That's it.
+  bind(DONE);
+
+  BLOCK_COMMENT("} array_equals");
+}
+
+// Compare Strings
+
+// For Strings we're passed the address of the first characters in a1
+// and a2 and the length in cnt1.
+// elem_size is the element size in bytes: either 1 or 2.
+// There are two implementations.  For arrays >= 8 bytes, all
+// comparisons (including the final one, which may overlap) are
+// performed 8 bytes at a time.  For strings < 8 bytes, we compare a
+// halfword, then a short, and then a byte.
+
+void MacroAssembler::string_equals(Register a1, Register a2,
+                                   Register result, Register cnt1, int elem_size)
+{
+  Label SAME, DONE, SHORT, NEXT_WORD;
+  Register tmp1 = rscratch1;
+  Register tmp2 = rscratch2;
+  Register cnt2 = tmp2;  // cnt2 only used in array length compare
+
+  assert(elem_size == 1 || elem_size == 2, "must be 2 or 1 byte");
+  assert_different_registers(a1, a2, result, cnt1, rscratch1, rscratch2);
+
+#ifndef PRODUCT
+  {
+    const char kind = (elem_size == 2) ? 'U' : 'L';
+    char comment[64];
+    snprintf(comment, sizeof comment, "{string_equals%c", kind);
     BLOCK_COMMENT(comment);
   }
 #endif
 
   mov(result, false);
 
-  if (!is_string) {
-    // if (a==a2)
-    //     return true;
-    eor(rscratch1, a1, a2);
-    cbz(rscratch1, SAME);
-    // if (a==null || a2==null)
-    //     return false;
-    cbz(a1, DONE);
-    cbz(a2, DONE);
-    // if (a1.length != a2.length)
-    //      return false;
-    ldrw(cnt1, Address(a1, length_offset));
-    ldrw(cnt2, Address(a2, length_offset));
-    eorw(tmp1, cnt1, cnt2);
-    cbnzw(tmp1, DONE);
-
-    lea(a1, Address(a1, base_offset));
-    lea(a2, Address(a2, base_offset));
-  }
-
   // Check for short strings, i.e. smaller than wordSize.
-  subs(cnt1, cnt1, elem_per_word);
+  subs(cnt1, cnt1, wordSize);
   br(Assembler::LT, SHORT);
   // Main 8 byte comparison loop.
   bind(NEXT_WORD); {
     ldr(tmp1, Address(post(a1, wordSize)));
     ldr(tmp2, Address(post(a2, wordSize)));
-    subs(cnt1, cnt1, elem_per_word);
+    subs(cnt1, cnt1, wordSize);
     eor(tmp1, tmp1, tmp2);
     cbnz(tmp1, DONE);
   } br(GT, NEXT_WORD);
@@ -5199,18 +5237,16 @@ void MacroAssembler::arrays_equals(Register a1, Register a2,
   // conditional branch.
   // cnt1 could be 0, -1, -2, -3, -4 for chars; -4 only happens when
   // length == 4.
-  if (log_elem_size > 0)
-    lsl(cnt1, cnt1, log_elem_size);
   ldr(tmp1, Address(a1, cnt1));
   ldr(tmp2, Address(a2, cnt1));
-  eor(tmp1, tmp1, tmp2);
-  cbnz(tmp1, DONE);
+  eor(tmp2, tmp1, tmp2);
+  cbnz(tmp2, DONE);
   b(SAME);
 
   bind(SHORT);
   Label TAIL03, TAIL01;
 
-  tbz(cnt1, 2 - log_elem_size, TAIL03); // 0-7 bytes left.
+  tbz(cnt1, 2, TAIL03); // 0-7 bytes left.
   {
     ldrw(tmp1, Address(post(a1, 4)));
     ldrw(tmp2, Address(post(a2, 4)));
@@ -5218,7 +5254,7 @@ void MacroAssembler::arrays_equals(Register a1, Register a2,
     cbnzw(tmp1, DONE);
   }
   bind(TAIL03);
-  tbz(cnt1, 1 - log_elem_size, TAIL01); // 0-3 bytes left.
+  tbz(cnt1, 1, TAIL01); // 0-3 bytes left.
   {
     ldrh(tmp1, Address(post(a1, 2)));
     ldrh(tmp2, Address(post(a2, 2)));
@@ -5226,7 +5262,7 @@ void MacroAssembler::arrays_equals(Register a1, Register a2,
     cbnzw(tmp1, DONE);
   }
   bind(TAIL01);
-  if (elem_size == 1) { // Only needed when comparing byte arrays.
+  if (elem_size == 1) { // Only needed when comparing 1-byte elements
     tbz(cnt1, 0, SAME); // 0-1 bytes left.
     {
       ldrb(tmp1, a1);
@@ -5241,7 +5277,7 @@ void MacroAssembler::arrays_equals(Register a1, Register a2,
 
   // That's it.
   bind(DONE);
-  BLOCK_COMMENT(is_string ? "} string_equals" : "} array_equals");
+  BLOCK_COMMENT("} string_equals");
 }
 
 

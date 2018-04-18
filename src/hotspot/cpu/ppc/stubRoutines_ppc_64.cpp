@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2017, SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  *
  */
 
+#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 
@@ -33,316 +34,149 @@
 #define __ masm->
 
 // CRC32(C) Intrinsics.
-void StubRoutines::ppc64::generate_load_crc32c_table_addr(MacroAssembler* masm, Register table) {
-  __ load_const_optimized(table, StubRoutines::_crc32c_table_addr, R0);
-}
-
 void StubRoutines::ppc64::generate_load_crc_table_addr(MacroAssembler* masm, Register table) {
   __ load_const_optimized(table, StubRoutines::_crc_table_adr, R0);
 }
 
 void StubRoutines::ppc64::generate_load_crc_constants_addr(MacroAssembler* masm, Register table) {
-  __ load_const_optimized(table, (address)StubRoutines::ppc64::_constants, R0);
+  __ load_const_optimized(table, (address)StubRoutines::ppc64::_crc_constants, R0);
 }
 
 void StubRoutines::ppc64::generate_load_crc_barret_constants_addr(MacroAssembler* masm, Register table) {
-  __ load_const_optimized(table, (address)StubRoutines::ppc64::_barret_constants, R0);
+  __ load_const_optimized(table, (address)StubRoutines::ppc64::_crc_barret_constants, R0);
 }
 
-juint* StubRoutines::ppc64::generate_crc_constants() {
-  juint constants[CRC32_CONSTANTS_SIZE] = {
-      // Reduce 262144 kbits to 1024 bits
-      0x99ea94a8UL, 0x00000000UL, 0x651797d2UL, 0x00000001UL,       // x^261120 mod p(x)` << 1, x^261184 mod p(x)` << 1
-      0x945a8420UL, 0x00000000UL, 0x21e0d56cUL, 0x00000000UL,       // x^260096 mod p(x)` << 1, x^260160 mod p(x)` << 1
-      0x30762706UL, 0x00000000UL, 0x0f95ecaaUL, 0x00000000UL,       // x^259072 mod p(x)` << 1, x^259136 mod p(x)` << 1
-      0xa52fc582UL, 0x00000001UL, 0xebd224acUL, 0x00000001UL,       // x^258048 mod p(x)` << 1, x^258112 mod p(x)` << 1
-      0xa4a7167aUL, 0x00000001UL, 0x0ccb97caUL, 0x00000000UL,       // x^257024 mod p(x)` << 1, x^257088 mod p(x)` << 1
-      0x0c18249aUL, 0x00000000UL, 0x006ec8a8UL, 0x00000001UL,       // x^256000 mod p(x)` << 1, x^256064 mod p(x)` << 1
-      0xa924ae7cUL, 0x00000000UL, 0x4f58f196UL, 0x00000001UL,       // x^254976 mod p(x)` << 1, x^255040 mod p(x)` << 1
-      0xe12ccc12UL, 0x00000001UL, 0xa7192ca6UL, 0x00000001UL,       // x^253952 mod p(x)` << 1, x^254016 mod p(x)` << 1
-      0xa0b9d4acUL, 0x00000000UL, 0x9a64bab2UL, 0x00000001UL,       // x^252928 mod p(x)` << 1, x^252992 mod p(x)` << 1
-      0x95e8ddfeUL, 0x00000000UL, 0x14f4ed2eUL, 0x00000000UL,       // x^251904 mod p(x)` << 1, x^251968 mod p(x)` << 1
-      0x233fddc4UL, 0x00000000UL, 0x1092b6a2UL, 0x00000001UL,       // x^250880 mod p(x)` << 1, x^250944 mod p(x)` << 1
-      0xb4529b62UL, 0x00000001UL, 0xc8a1629cUL, 0x00000000UL,       // x^249856 mod p(x)` << 1, x^249920 mod p(x)` << 1
-      0xa7fa0e64UL, 0x00000001UL, 0x7bf32e8eUL, 0x00000001UL,       // x^248832 mod p(x)` << 1, x^248896 mod p(x)` << 1
-      0xb5334592UL, 0x00000001UL, 0xf8cc6582UL, 0x00000001UL,       // x^247808 mod p(x)` << 1, x^247872 mod p(x)` << 1
-      0x1f8ee1b4UL, 0x00000001UL, 0x8631ddf0UL, 0x00000000UL,       // x^246784 mod p(x)` << 1, x^246848 mod p(x)` << 1
-      0x6252e632UL, 0x00000000UL, 0x7e5a76d0UL, 0x00000000UL,       // x^245760 mod p(x)` << 1, x^245824 mod p(x)` << 1
-      0xab973e84UL, 0x00000000UL, 0x2b09b31cUL, 0x00000000UL,       // x^244736 mod p(x)` << 1, x^244800 mod p(x)` << 1
-      0x7734f5ecUL, 0x00000000UL, 0xb2df1f84UL, 0x00000001UL,       // x^243712 mod p(x)` << 1, x^243776 mod p(x)` << 1
-      0x7c547798UL, 0x00000000UL, 0xd6f56afcUL, 0x00000001UL,       // x^242688 mod p(x)` << 1, x^242752 mod p(x)` << 1
-      0x7ec40210UL, 0x00000000UL, 0xb9b5e70cUL, 0x00000001UL,       // x^241664 mod p(x)` << 1, x^241728 mod p(x)` << 1
-      0xab1695a8UL, 0x00000001UL, 0x34b626d2UL, 0x00000000UL,       // x^240640 mod p(x)` << 1, x^240704 mod p(x)` << 1
-      0x90494bbaUL, 0x00000000UL, 0x4c53479aUL, 0x00000001UL,       // x^239616 mod p(x)` << 1, x^239680 mod p(x)` << 1
-      0x123fb816UL, 0x00000001UL, 0xa6d179a4UL, 0x00000001UL,       // x^238592 mod p(x)` << 1, x^238656 mod p(x)` << 1
-      0xe188c74cUL, 0x00000001UL, 0x5abd16b4UL, 0x00000001UL,       // x^237568 mod p(x)` << 1, x^237632 mod p(x)` << 1
-      0xc2d3451cUL, 0x00000001UL, 0x018f9852UL, 0x00000000UL,       // x^236544 mod p(x)` << 1, x^236608 mod p(x)` << 1
-      0xf55cf1caUL, 0x00000000UL, 0x1fb3084aUL, 0x00000000UL,       // x^235520 mod p(x)` << 1, x^235584 mod p(x)` << 1
-      0xa0531540UL, 0x00000001UL, 0xc53dfb04UL, 0x00000000UL,       // x^234496 mod p(x)` << 1, x^234560 mod p(x)` << 1
-      0x32cd7ebcUL, 0x00000001UL, 0xe10c9ad6UL, 0x00000000UL,       // x^233472 mod p(x)` << 1, x^233536 mod p(x)` << 1
-      0x73ab7f36UL, 0x00000000UL, 0x25aa994aUL, 0x00000000UL,       // x^232448 mod p(x)` << 1, x^232512 mod p(x)` << 1
-      0x41aed1c2UL, 0x00000000UL, 0xfa3a74c4UL, 0x00000000UL,       // x^231424 mod p(x)` << 1, x^231488 mod p(x)` << 1
-      0x36c53800UL, 0x00000001UL, 0x33eb3f40UL, 0x00000000UL,       // x^230400 mod p(x)` << 1, x^230464 mod p(x)` << 1
-      0x26835a30UL, 0x00000001UL, 0x7193f296UL, 0x00000001UL,       // x^229376 mod p(x)` << 1, x^229440 mod p(x)` << 1
-      0x6241b502UL, 0x00000000UL, 0x43f6c86aUL, 0x00000000UL,       // x^228352 mod p(x)` << 1, x^228416 mod p(x)` << 1
-      0xd5196ad4UL, 0x00000000UL, 0x6b513ec6UL, 0x00000001UL,       // x^227328 mod p(x)` << 1, x^227392 mod p(x)` << 1
-      0x9cfa769aUL, 0x00000000UL, 0xc8f25b4eUL, 0x00000000UL,       // x^226304 mod p(x)` << 1, x^226368 mod p(x)` << 1
-      0x920e5df4UL, 0x00000000UL, 0xa45048ecUL, 0x00000001UL,       // x^225280 mod p(x)` << 1, x^225344 mod p(x)` << 1
-      0x69dc310eUL, 0x00000001UL, 0x0c441004UL, 0x00000000UL,       // x^224256 mod p(x)` << 1, x^224320 mod p(x)` << 1
-      0x09fc331cUL, 0x00000000UL, 0x0e17cad6UL, 0x00000000UL,       // x^223232 mod p(x)` << 1, x^223296 mod p(x)` << 1
-      0x0d94a81eUL, 0x00000001UL, 0x253ae964UL, 0x00000001UL,       // x^222208 mod p(x)` << 1, x^222272 mod p(x)` << 1
-      0x27a20ab2UL, 0x00000000UL, 0xd7c88ebcUL, 0x00000001UL,       // x^221184 mod p(x)` << 1, x^221248 mod p(x)` << 1
-      0x14f87504UL, 0x00000001UL, 0xe7ca913aUL, 0x00000001UL,       // x^220160 mod p(x)` << 1, x^220224 mod p(x)` << 1
-      0x4b076d96UL, 0x00000000UL, 0x33ed078aUL, 0x00000000UL,       // x^219136 mod p(x)` << 1, x^219200 mod p(x)` << 1
-      0xda4d1e74UL, 0x00000000UL, 0xe1839c78UL, 0x00000000UL,       // x^218112 mod p(x)` << 1, x^218176 mod p(x)` << 1
-      0x1b81f672UL, 0x00000000UL, 0x322b267eUL, 0x00000001UL,       // x^217088 mod p(x)` << 1, x^217152 mod p(x)` << 1
-      0x9367c988UL, 0x00000000UL, 0x638231b6UL, 0x00000000UL,       // x^216064 mod p(x)` << 1, x^216128 mod p(x)` << 1
-      0x717214caUL, 0x00000001UL, 0xee7f16f4UL, 0x00000001UL,       // x^215040 mod p(x)` << 1, x^215104 mod p(x)` << 1
-      0x9f47d820UL, 0x00000000UL, 0x17d9924aUL, 0x00000001UL,       // x^214016 mod p(x)` << 1, x^214080 mod p(x)` << 1
-      0x0d9a47d2UL, 0x00000001UL, 0xe1a9e0c4UL, 0x00000000UL,       // x^212992 mod p(x)` << 1, x^213056 mod p(x)` << 1
-      0xa696c58cUL, 0x00000000UL, 0x403731dcUL, 0x00000001UL,       // x^211968 mod p(x)` << 1, x^212032 mod p(x)` << 1
-      0x2aa28ec6UL, 0x00000000UL, 0xa5ea9682UL, 0x00000001UL,       // x^210944 mod p(x)` << 1, x^211008 mod p(x)` << 1
-      0xfe18fd9aUL, 0x00000001UL, 0x01c5c578UL, 0x00000001UL,       // x^209920 mod p(x)` << 1, x^209984 mod p(x)` << 1
-      0x9d4fc1aeUL, 0x00000001UL, 0xdddf6494UL, 0x00000000UL,       // x^208896 mod p(x)` << 1, x^208960 mod p(x)` << 1
-      0xba0e3deaUL, 0x00000001UL, 0xf1c3db28UL, 0x00000000UL,       // x^207872 mod p(x)` << 1, x^207936 mod p(x)` << 1
-      0x74b59a5eUL, 0x00000000UL, 0x3112fb9cUL, 0x00000001UL,       // x^206848 mod p(x)` << 1, x^206912 mod p(x)` << 1
-      0xf2b5ea98UL, 0x00000000UL, 0xb680b906UL, 0x00000000UL,       // x^205824 mod p(x)` << 1, x^205888 mod p(x)` << 1
-      0x87132676UL, 0x00000001UL, 0x1a282932UL, 0x00000000UL,       // x^204800 mod p(x)` << 1, x^204864 mod p(x)` << 1
-      0x0a8c6ad4UL, 0x00000001UL, 0x89406e7eUL, 0x00000000UL,       // x^203776 mod p(x)` << 1, x^203840 mod p(x)` << 1
-      0xe21dfe70UL, 0x00000001UL, 0xdef6be8cUL, 0x00000001UL,       // x^202752 mod p(x)` << 1, x^202816 mod p(x)` << 1
-      0xda0050e4UL, 0x00000001UL, 0x75258728UL, 0x00000000UL,       // x^201728 mod p(x)` << 1, x^201792 mod p(x)` << 1
-      0x772172aeUL, 0x00000000UL, 0x9536090aUL, 0x00000001UL,       // x^200704 mod p(x)` << 1, x^200768 mod p(x)` << 1
-      0xe47724aaUL, 0x00000000UL, 0xf2455bfcUL, 0x00000000UL,       // x^199680 mod p(x)` << 1, x^199744 mod p(x)` << 1
-      0x3cd63ac4UL, 0x00000000UL, 0x8c40baf4UL, 0x00000001UL,       // x^198656 mod p(x)` << 1, x^198720 mod p(x)` << 1
-      0xbf47d352UL, 0x00000001UL, 0x4cd390d4UL, 0x00000000UL,       // x^197632 mod p(x)` << 1, x^197696 mod p(x)` << 1
-      0x8dc1d708UL, 0x00000001UL, 0xe4ece95aUL, 0x00000001UL,       // x^196608 mod p(x)` << 1, x^196672 mod p(x)` << 1
-      0x2d4620a4UL, 0x00000000UL, 0x1a3ee918UL, 0x00000000UL,       // x^195584 mod p(x)` << 1, x^195648 mod p(x)` << 1
-      0x58fd1740UL, 0x00000000UL, 0x7c652fb8UL, 0x00000000UL,       // x^194560 mod p(x)` << 1, x^194624 mod p(x)` << 1
-      0xdadd9bfcUL, 0x00000000UL, 0x1c67842cUL, 0x00000001UL,       // x^193536 mod p(x)` << 1, x^193600 mod p(x)` << 1
-      0xea2140beUL, 0x00000001UL, 0x254f759cUL, 0x00000000UL,       // x^192512 mod p(x)` << 1, x^192576 mod p(x)` << 1
-      0x9de128baUL, 0x00000000UL, 0x7ece94caUL, 0x00000000UL,       // x^191488 mod p(x)` << 1, x^191552 mod p(x)` << 1
-      0x3ac3aa8eUL, 0x00000001UL, 0x38f258c2UL, 0x00000000UL,       // x^190464 mod p(x)` << 1, x^190528 mod p(x)` << 1
-      0x99980562UL, 0x00000000UL, 0xcdf17b00UL, 0x00000001UL,       // x^189440 mod p(x)` << 1, x^189504 mod p(x)` << 1
-      0xc1579c86UL, 0x00000001UL, 0x1f882c16UL, 0x00000001UL,       // x^188416 mod p(x)` << 1, x^188480 mod p(x)` << 1
-      0x68dbbf94UL, 0x00000000UL, 0x00093fc8UL, 0x00000001UL,       // x^187392 mod p(x)` << 1, x^187456 mod p(x)` << 1
-      0x4509fb04UL, 0x00000000UL, 0xcd684f16UL, 0x00000001UL,       // x^186368 mod p(x)` << 1, x^186432 mod p(x)` << 1
-      0x202f6398UL, 0x00000001UL, 0x4bc6a70aUL, 0x00000000UL,       // x^185344 mod p(x)` << 1, x^185408 mod p(x)` << 1
-      0x3aea243eUL, 0x00000001UL, 0x4fc7e8e4UL, 0x00000000UL,       // x^184320 mod p(x)` << 1, x^184384 mod p(x)` << 1
-      0xb4052ae6UL, 0x00000001UL, 0x30103f1cUL, 0x00000001UL,       // x^183296 mod p(x)` << 1, x^183360 mod p(x)` << 1
-      0xcd2a0ae8UL, 0x00000001UL, 0x11b0024cUL, 0x00000001UL,       // x^182272 mod p(x)` << 1, x^182336 mod p(x)` << 1
-      0xfe4aa8b4UL, 0x00000001UL, 0x0b3079daUL, 0x00000001UL,       // x^181248 mod p(x)` << 1, x^181312 mod p(x)` << 1
-      0xd1559a42UL, 0x00000001UL, 0x0192bcc2UL, 0x00000001UL,       // x^180224 mod p(x)` << 1, x^180288 mod p(x)` << 1
-      0xf3e05eccUL, 0x00000001UL, 0x74838d50UL, 0x00000000UL,       // x^179200 mod p(x)` << 1, x^179264 mod p(x)` << 1
-      0x04ddd2ccUL, 0x00000001UL, 0x1b20f520UL, 0x00000000UL,       // x^178176 mod p(x)` << 1, x^178240 mod p(x)` << 1
-      0x5393153cUL, 0x00000001UL, 0x50c3590aUL, 0x00000000UL,       // x^177152 mod p(x)` << 1, x^177216 mod p(x)` << 1
-      0x57e942c6UL, 0x00000000UL, 0xb41cac8eUL, 0x00000000UL,       // x^176128 mod p(x)` << 1, x^176192 mod p(x)` << 1
-      0x2c633850UL, 0x00000001UL, 0x0c72cc78UL, 0x00000000UL,       // x^175104 mod p(x)` << 1, x^175168 mod p(x)` << 1
-      0xebcaae4cUL, 0x00000000UL, 0x30cdb032UL, 0x00000000UL,       // x^174080 mod p(x)` << 1, x^174144 mod p(x)` << 1
-      0x3ee532a6UL, 0x00000001UL, 0x3e09fc32UL, 0x00000001UL,       // x^173056 mod p(x)` << 1, x^173120 mod p(x)` << 1
-      0xbf0cbc7eUL, 0x00000001UL, 0x1ed624d2UL, 0x00000000UL,       // x^172032 mod p(x)` << 1, x^172096 mod p(x)` << 1
-      0xd50b7a5aUL, 0x00000000UL, 0x781aee1aUL, 0x00000000UL,       // x^171008 mod p(x)` << 1, x^171072 mod p(x)` << 1
-      0x02fca6e8UL, 0x00000000UL, 0xc4d8348cUL, 0x00000001UL,       // x^169984 mod p(x)` << 1, x^170048 mod p(x)` << 1
-      0x7af40044UL, 0x00000000UL, 0x57a40336UL, 0x00000000UL,       // x^168960 mod p(x)` << 1, x^169024 mod p(x)` << 1
-      0x16178744UL, 0x00000000UL, 0x85544940UL, 0x00000000UL,       // x^167936 mod p(x)` << 1, x^168000 mod p(x)` << 1
-      0x4c177458UL, 0x00000001UL, 0x9cd21e80UL, 0x00000001UL,       // x^166912 mod p(x)` << 1, x^166976 mod p(x)` << 1
-      0x1b6ddf04UL, 0x00000001UL, 0x3eb95bc0UL, 0x00000001UL,       // x^165888 mod p(x)` << 1, x^165952 mod p(x)` << 1
-      0xf3e29cccUL, 0x00000001UL, 0xdfc9fdfcUL, 0x00000001UL,       // x^164864 mod p(x)` << 1, x^164928 mod p(x)` << 1
-      0x35ae7562UL, 0x00000001UL, 0xcd028bc2UL, 0x00000000UL,       // x^163840 mod p(x)` << 1, x^163904 mod p(x)` << 1
-      0x90ef812cUL, 0x00000001UL, 0x90db8c44UL, 0x00000000UL,       // x^162816 mod p(x)` << 1, x^162880 mod p(x)` << 1
-      0x67a2c786UL, 0x00000000UL, 0x0010a4ceUL, 0x00000001UL,       // x^161792 mod p(x)` << 1, x^161856 mod p(x)` << 1
-      0x48b9496cUL, 0x00000000UL, 0xc8f4c72cUL, 0x00000001UL,       // x^160768 mod p(x)` << 1, x^160832 mod p(x)` << 1
-      0x5a422de6UL, 0x00000001UL, 0x1c26170cUL, 0x00000000UL,       // x^159744 mod p(x)` << 1, x^159808 mod p(x)` << 1
-      0xef0e3640UL, 0x00000001UL, 0xe3fccf68UL, 0x00000000UL,       // x^158720 mod p(x)` << 1, x^158784 mod p(x)` << 1
-      0x006d2d26UL, 0x00000001UL, 0xd513ed24UL, 0x00000000UL,       // x^157696 mod p(x)` << 1, x^157760 mod p(x)` << 1
-      0x170d56d6UL, 0x00000001UL, 0x141beadaUL, 0x00000000UL,       // x^156672 mod p(x)` << 1, x^156736 mod p(x)` << 1
-      0xa5fb613cUL, 0x00000000UL, 0x1071aea0UL, 0x00000001UL,       // x^155648 mod p(x)` << 1, x^155712 mod p(x)` << 1
-      0x40bbf7fcUL, 0x00000000UL, 0x2e19080aUL, 0x00000001UL,       // x^154624 mod p(x)` << 1, x^154688 mod p(x)` << 1
-      0x6ac3a5b2UL, 0x00000001UL, 0x00ecf826UL, 0x00000001UL,       // x^153600 mod p(x)` << 1, x^153664 mod p(x)` << 1
-      0xabf16230UL, 0x00000000UL, 0x69b09412UL, 0x00000000UL,       // x^152576 mod p(x)` << 1, x^152640 mod p(x)` << 1
-      0xebe23facUL, 0x00000001UL, 0x22297bacUL, 0x00000001UL,       // x^151552 mod p(x)` << 1, x^151616 mod p(x)` << 1
-      0x8b6a0894UL, 0x00000000UL, 0xe9e4b068UL, 0x00000000UL,       // x^150528 mod p(x)` << 1, x^150592 mod p(x)` << 1
-      0x288ea478UL, 0x00000001UL, 0x4b38651aUL, 0x00000000UL,       // x^149504 mod p(x)` << 1, x^149568 mod p(x)` << 1
-      0x6619c442UL, 0x00000001UL, 0x468360e2UL, 0x00000001UL,       // x^148480 mod p(x)` << 1, x^148544 mod p(x)` << 1
-      0x86230038UL, 0x00000000UL, 0x121c2408UL, 0x00000000UL,       // x^147456 mod p(x)` << 1, x^147520 mod p(x)` << 1
-      0x7746a756UL, 0x00000001UL, 0xda7e7d08UL, 0x00000000UL,       // x^146432 mod p(x)` << 1, x^146496 mod p(x)` << 1
-      0x91b8f8f8UL, 0x00000001UL, 0x058d7652UL, 0x00000001UL,       // x^145408 mod p(x)` << 1, x^145472 mod p(x)` << 1
-      0x8e167708UL, 0x00000000UL, 0x4a098a90UL, 0x00000001UL,       // x^144384 mod p(x)` << 1, x^144448 mod p(x)` << 1
-      0x48b22d54UL, 0x00000001UL, 0x20dbe72eUL, 0x00000000UL,       // x^143360 mod p(x)` << 1, x^143424 mod p(x)` << 1
-      0x44ba2c3cUL, 0x00000000UL, 0x1e7323e8UL, 0x00000001UL,       // x^142336 mod p(x)` << 1, x^142400 mod p(x)` << 1
-      0xb54d2b52UL, 0x00000000UL, 0xd5d4bf94UL, 0x00000000UL,       // x^141312 mod p(x)` << 1, x^141376 mod p(x)` << 1
-      0x05a4fd8aUL, 0x00000000UL, 0x99d8746cUL, 0x00000001UL,       // x^140288 mod p(x)` << 1, x^140352 mod p(x)` << 1
-      0x39f9fc46UL, 0x00000001UL, 0xce9ca8a0UL, 0x00000000UL,       // x^139264 mod p(x)` << 1, x^139328 mod p(x)` << 1
-      0x5a1fa824UL, 0x00000001UL, 0x136edeceUL, 0x00000000UL,       // x^138240 mod p(x)` << 1, x^138304 mod p(x)` << 1
-      0x0a61ae4cUL, 0x00000000UL, 0x9b92a068UL, 0x00000001UL,       // x^137216 mod p(x)` << 1, x^137280 mod p(x)` << 1
-      0x45e9113eUL, 0x00000001UL, 0x71d62206UL, 0x00000000UL,       // x^136192 mod p(x)` << 1, x^136256 mod p(x)` << 1
-      0x6a348448UL, 0x00000000UL, 0xdfc50158UL, 0x00000000UL,       // x^135168 mod p(x)` << 1, x^135232 mod p(x)` << 1
-      0x4d80a08cUL, 0x00000000UL, 0x517626bcUL, 0x00000001UL,       // x^134144 mod p(x)` << 1, x^134208 mod p(x)` << 1
-      0x4b6837a0UL, 0x00000001UL, 0x48d1e4faUL, 0x00000001UL,       // x^133120 mod p(x)` << 1, x^133184 mod p(x)` << 1
-      0x6896a7fcUL, 0x00000001UL, 0x94d8266eUL, 0x00000000UL,       // x^132096 mod p(x)` << 1, x^132160 mod p(x)` << 1
-      0x4f187140UL, 0x00000001UL, 0x606c5e34UL, 0x00000000UL,       // x^131072 mod p(x)` << 1, x^131136 mod p(x)` << 1
-      0x9581b9daUL, 0x00000001UL, 0x9766beaaUL, 0x00000001UL,       // x^130048 mod p(x)` << 1, x^130112 mod p(x)` << 1
-      0x091bc984UL, 0x00000001UL, 0xd80c506cUL, 0x00000001UL,       // x^129024 mod p(x)` << 1, x^129088 mod p(x)` << 1
-      0x1067223cUL, 0x00000000UL, 0x1e73837cUL, 0x00000000UL,       // x^128000 mod p(x)` << 1, x^128064 mod p(x)` << 1
-      0xab16ea02UL, 0x00000001UL, 0x64d587deUL, 0x00000000UL,       // x^126976 mod p(x)` << 1, x^127040 mod p(x)` << 1
-      0x3c4598a8UL, 0x00000001UL, 0xf4a507b0UL, 0x00000000UL,       // x^125952 mod p(x)` << 1, x^126016 mod p(x)` << 1
-      0xb3735430UL, 0x00000000UL, 0x40e342fcUL, 0x00000000UL,       // x^124928 mod p(x)` << 1, x^124992 mod p(x)` << 1
-      0xbb3fc0c0UL, 0x00000001UL, 0xd5ad9c3aUL, 0x00000001UL,       // x^123904 mod p(x)` << 1, x^123968 mod p(x)` << 1
-      0x570ae19cUL, 0x00000001UL, 0x94a691a4UL, 0x00000000UL,       // x^122880 mod p(x)` << 1, x^122944 mod p(x)` << 1
-      0xea910712UL, 0x00000001UL, 0x271ecdfaUL, 0x00000001UL,       // x^121856 mod p(x)` << 1, x^121920 mod p(x)` << 1
-      0x67127128UL, 0x00000001UL, 0x9e54475aUL, 0x00000000UL,       // x^120832 mod p(x)` << 1, x^120896 mod p(x)` << 1
-      0x19e790a2UL, 0x00000000UL, 0xc9c099eeUL, 0x00000000UL,       // x^119808 mod p(x)` << 1, x^119872 mod p(x)` << 1
-      0x3788f710UL, 0x00000000UL, 0x9a2f736cUL, 0x00000000UL,       // x^118784 mod p(x)` << 1, x^118848 mod p(x)` << 1
-      0x682a160eUL, 0x00000001UL, 0xbb9f4996UL, 0x00000000UL,       // x^117760 mod p(x)` << 1, x^117824 mod p(x)` << 1
-      0x7f0ebd2eUL, 0x00000000UL, 0xdb688050UL, 0x00000001UL,       // x^116736 mod p(x)` << 1, x^116800 mod p(x)` << 1
-      0x2b032080UL, 0x00000000UL, 0xe9b10af4UL, 0x00000000UL,       // x^115712 mod p(x)` << 1, x^115776 mod p(x)` << 1
-      0xcfd1664aUL, 0x00000000UL, 0x2d4545e4UL, 0x00000001UL,       // x^114688 mod p(x)` << 1, x^114752 mod p(x)` << 1
-      0xaa1181c2UL, 0x00000000UL, 0x0361139cUL, 0x00000000UL,       // x^113664 mod p(x)` << 1, x^113728 mod p(x)` << 1
-      0xddd08002UL, 0x00000000UL, 0xa5a1a3a8UL, 0x00000001UL,       // x^112640 mod p(x)` << 1, x^112704 mod p(x)` << 1
-      0xe8dd0446UL, 0x00000000UL, 0x6844e0b0UL, 0x00000000UL,       // x^111616 mod p(x)` << 1, x^111680 mod p(x)` << 1
-      0xbbd94a00UL, 0x00000001UL, 0xc3762f28UL, 0x00000000UL,       // x^110592 mod p(x)` << 1, x^110656 mod p(x)` << 1
-      0xab6cd180UL, 0x00000000UL, 0xd26287a2UL, 0x00000001UL,       // x^109568 mod p(x)` << 1, x^109632 mod p(x)` << 1
-      0x31803ce2UL, 0x00000000UL, 0xf6f0bba8UL, 0x00000001UL,       // x^108544 mod p(x)` << 1, x^108608 mod p(x)` << 1
-      0x24f40b0cUL, 0x00000000UL, 0x2ffabd62UL, 0x00000000UL,       // x^107520 mod p(x)` << 1, x^107584 mod p(x)` << 1
-      0xba1d9834UL, 0x00000001UL, 0xfb4516b8UL, 0x00000000UL,       // x^106496 mod p(x)` << 1, x^106560 mod p(x)` << 1
-      0x04de61aaUL, 0x00000001UL, 0x8cfa961cUL, 0x00000001UL,       // x^105472 mod p(x)` << 1, x^105536 mod p(x)` << 1
-      0x13e40d46UL, 0x00000001UL, 0x9e588d52UL, 0x00000001UL,       // x^104448 mod p(x)` << 1, x^104512 mod p(x)` << 1
-      0x415598a0UL, 0x00000001UL, 0x180f0bbcUL, 0x00000001UL,       // x^103424 mod p(x)` << 1, x^103488 mod p(x)` << 1
-      0xbf6c8c90UL, 0x00000000UL, 0xe1d9177aUL, 0x00000000UL,       // x^102400 mod p(x)` << 1, x^102464 mod p(x)` << 1
-      0x788b0504UL, 0x00000001UL, 0x05abc27cUL, 0x00000001UL,       // x^101376 mod p(x)` << 1, x^101440 mod p(x)` << 1
-      0x38385d02UL, 0x00000000UL, 0x972e4a58UL, 0x00000000UL,       // x^100352 mod p(x)` << 1, x^100416 mod p(x)` << 1
-      0xb6c83844UL, 0x00000001UL, 0x83499a5eUL, 0x00000001UL,       // x^99328 mod p(x)` << 1, x^99392 mod p(x)` << 1
-      0x51061a8aUL, 0x00000000UL, 0xc96a8ccaUL, 0x00000001UL,       // x^98304 mod p(x)` << 1, x^98368 mod p(x)` << 1
-      0x7351388aUL, 0x00000001UL, 0xa1a5b60cUL, 0x00000001UL,       // x^97280 mod p(x)` << 1, x^97344 mod p(x)` << 1
-      0x32928f92UL, 0x00000001UL, 0xe4b6ac9cUL, 0x00000000UL,       // x^96256 mod p(x)` << 1, x^96320 mod p(x)` << 1
-      0xe6b4f48aUL, 0x00000000UL, 0x807e7f5aUL, 0x00000001UL,       // x^95232 mod p(x)` << 1, x^95296 mod p(x)` << 1
-      0x39d15e90UL, 0x00000000UL, 0x7a7e3bc8UL, 0x00000001UL,       // x^94208 mod p(x)` << 1, x^94272 mod p(x)` << 1
-      0x312d6074UL, 0x00000000UL, 0xd73975daUL, 0x00000000UL,       // x^93184 mod p(x)` << 1, x^93248 mod p(x)` << 1
-      0x7bbb2cc4UL, 0x00000001UL, 0x7375d038UL, 0x00000001UL,       // x^92160 mod p(x)` << 1, x^92224 mod p(x)` << 1
-      0x6ded3e18UL, 0x00000001UL, 0x193680bcUL, 0x00000000UL,       // x^91136 mod p(x)` << 1, x^91200 mod p(x)` << 1
-      0xf1638b16UL, 0x00000000UL, 0x999b06f6UL, 0x00000000UL,       // x^90112 mod p(x)` << 1, x^90176 mod p(x)` << 1
-      0xd38b9eccUL, 0x00000001UL, 0xf685d2b8UL, 0x00000001UL,       // x^89088 mod p(x)` << 1, x^89152 mod p(x)` << 1
-      0x8b8d09dcUL, 0x00000001UL, 0xf4ecbed2UL, 0x00000001UL,       // x^88064 mod p(x)` << 1, x^88128 mod p(x)` << 1
-      0xe7bc27d2UL, 0x00000000UL, 0xba16f1a0UL, 0x00000000UL,       // x^87040 mod p(x)` << 1, x^87104 mod p(x)` << 1
-      0x275e1e96UL, 0x00000000UL, 0x15aceac4UL, 0x00000001UL,       // x^86016 mod p(x)` << 1, x^86080 mod p(x)` << 1
-      0xe2e3031eUL, 0x00000000UL, 0xaeff6292UL, 0x00000001UL,       // x^84992 mod p(x)` << 1, x^85056 mod p(x)` << 1
-      0x041c84d8UL, 0x00000001UL, 0x9640124cUL, 0x00000000UL,       // x^83968 mod p(x)` << 1, x^84032 mod p(x)` << 1
-      0x706ce672UL, 0x00000000UL, 0x14f41f02UL, 0x00000001UL,       // x^82944 mod p(x)` << 1, x^83008 mod p(x)` << 1
-      0x5d5070daUL, 0x00000001UL, 0x9c5f3586UL, 0x00000000UL,       // x^81920 mod p(x)` << 1, x^81984 mod p(x)` << 1
-      0x38f9493aUL, 0x00000000UL, 0x878275faUL, 0x00000001UL,       // x^80896 mod p(x)` << 1, x^80960 mod p(x)` << 1
-      0xa3348a76UL, 0x00000000UL, 0xddc42ce8UL, 0x00000000UL,       // x^79872 mod p(x)` << 1, x^79936 mod p(x)` << 1
-      0xad0aab92UL, 0x00000001UL, 0x81d2c73aUL, 0x00000001UL,       // x^78848 mod p(x)` << 1, x^78912 mod p(x)` << 1
-      0x9e85f712UL, 0x00000001UL, 0x41c9320aUL, 0x00000001UL,       // x^77824 mod p(x)` << 1, x^77888 mod p(x)` << 1
-      0x5a871e76UL, 0x00000000UL, 0x5235719aUL, 0x00000001UL,       // x^76800 mod p(x)` << 1, x^76864 mod p(x)` << 1
-      0x7249c662UL, 0x00000001UL, 0xbe27d804UL, 0x00000000UL,       // x^75776 mod p(x)` << 1, x^75840 mod p(x)` << 1
-      0x3a084712UL, 0x00000000UL, 0x6242d45aUL, 0x00000000UL,       // x^74752 mod p(x)` << 1, x^74816 mod p(x)` << 1
-      0xed438478UL, 0x00000000UL, 0x9a53638eUL, 0x00000000UL,       // x^73728 mod p(x)` << 1, x^73792 mod p(x)` << 1
-      0xabac34ccUL, 0x00000000UL, 0x001ecfb6UL, 0x00000001UL,       // x^72704 mod p(x)` << 1, x^72768 mod p(x)` << 1
-      0x5f35ef3eUL, 0x00000000UL, 0x6d7c2d64UL, 0x00000001UL,       // x^71680 mod p(x)` << 1, x^71744 mod p(x)` << 1
-      0x47d6608cUL, 0x00000000UL, 0xd0ce46c0UL, 0x00000001UL,       // x^70656 mod p(x)` << 1, x^70720 mod p(x)` << 1
-      0x2d01470eUL, 0x00000000UL, 0x24c907b4UL, 0x00000001UL,       // x^69632 mod p(x)` << 1, x^69696 mod p(x)` << 1
-      0x58bbc7b0UL, 0x00000001UL, 0x18a555caUL, 0x00000000UL,       // x^68608 mod p(x)` << 1, x^68672 mod p(x)` << 1
-      0xc0a23e8eUL, 0x00000000UL, 0x6b0980bcUL, 0x00000000UL,       // x^67584 mod p(x)` << 1, x^67648 mod p(x)` << 1
-      0xebd85c88UL, 0x00000001UL, 0x8bbba964UL, 0x00000000UL,       // x^66560 mod p(x)` << 1, x^66624 mod p(x)` << 1
-      0x9ee20bb2UL, 0x00000001UL, 0x070a5a1eUL, 0x00000001UL,       // x^65536 mod p(x)` << 1, x^65600 mod p(x)` << 1
-      0xacabf2d6UL, 0x00000001UL, 0x2204322aUL, 0x00000000UL,       // x^64512 mod p(x)` << 1, x^64576 mod p(x)` << 1
-      0xb7963d56UL, 0x00000001UL, 0xa27524d0UL, 0x00000000UL,       // x^63488 mod p(x)` << 1, x^63552 mod p(x)` << 1
-      0x7bffa1feUL, 0x00000001UL, 0x20b1e4baUL, 0x00000000UL,       // x^62464 mod p(x)` << 1, x^62528 mod p(x)` << 1
-      0x1f15333eUL, 0x00000000UL, 0x32cc27fcUL, 0x00000000UL,       // x^61440 mod p(x)` << 1, x^61504 mod p(x)` << 1
-      0x8593129eUL, 0x00000001UL, 0x44dd22b8UL, 0x00000000UL,       // x^60416 mod p(x)` << 1, x^60480 mod p(x)` << 1
-      0x9cb32602UL, 0x00000001UL, 0xdffc9e0aUL, 0x00000000UL,       // x^59392 mod p(x)` << 1, x^59456 mod p(x)` << 1
-      0x42b05cc8UL, 0x00000001UL, 0xb7a0ed14UL, 0x00000001UL,       // x^58368 mod p(x)` << 1, x^58432 mod p(x)` << 1
-      0xbe49e7a4UL, 0x00000001UL, 0xc7842488UL, 0x00000000UL,       // x^57344 mod p(x)` << 1, x^57408 mod p(x)` << 1
-      0x08f69d6cUL, 0x00000001UL, 0xc02a4feeUL, 0x00000001UL,       // x^56320 mod p(x)` << 1, x^56384 mod p(x)` << 1
-      0x6c0971f0UL, 0x00000000UL, 0x3c273778UL, 0x00000000UL,       // x^55296 mod p(x)` << 1, x^55360 mod p(x)` << 1
-      0x5b16467aUL, 0x00000000UL, 0xd63f8894UL, 0x00000001UL,       // x^54272 mod p(x)` << 1, x^54336 mod p(x)` << 1
-      0x551a628eUL, 0x00000001UL, 0x6be557d6UL, 0x00000000UL,       // x^53248 mod p(x)` << 1, x^53312 mod p(x)` << 1
-      0x9e42ea92UL, 0x00000001UL, 0x6a7806eaUL, 0x00000000UL,       // x^52224 mod p(x)` << 1, x^52288 mod p(x)` << 1
-      0x2fa83ff2UL, 0x00000001UL, 0x6155aa0cUL, 0x00000001UL,       // x^51200 mod p(x)` << 1, x^51264 mod p(x)` << 1
-      0x1ca9cde0UL, 0x00000001UL, 0x908650acUL, 0x00000000UL,       // x^50176 mod p(x)` << 1, x^50240 mod p(x)` << 1
-      0xc8e5cd74UL, 0x00000000UL, 0xaa5a8084UL, 0x00000000UL,       // x^49152 mod p(x)` << 1, x^49216 mod p(x)` << 1
-      0x96c27f0cUL, 0x00000000UL, 0x91bb500aUL, 0x00000001UL,       // x^48128 mod p(x)` << 1, x^48192 mod p(x)` << 1
-      0x2baed926UL, 0x00000000UL, 0x64e9bed0UL, 0x00000000UL,       // x^47104 mod p(x)` << 1, x^47168 mod p(x)` << 1
-      0x7c8de8d2UL, 0x00000001UL, 0x9444f302UL, 0x00000000UL,       // x^46080 mod p(x)` << 1, x^46144 mod p(x)` << 1
-      0xd43d6068UL, 0x00000000UL, 0x9db07d3cUL, 0x00000001UL,       // x^45056 mod p(x)` << 1, x^45120 mod p(x)` << 1
-      0xcb2c4b26UL, 0x00000000UL, 0x359e3e6eUL, 0x00000001UL,       // x^44032 mod p(x)` << 1, x^44096 mod p(x)` << 1
-      0x45b8da26UL, 0x00000001UL, 0xe4f10dd2UL, 0x00000001UL,       // x^43008 mod p(x)` << 1, x^43072 mod p(x)` << 1
-      0x8fff4b08UL, 0x00000001UL, 0x24f5735eUL, 0x00000001UL,       // x^41984 mod p(x)` << 1, x^42048 mod p(x)` << 1
-      0x50b58ed0UL, 0x00000001UL, 0x24760a4cUL, 0x00000001UL,       // x^40960 mod p(x)` << 1, x^41024 mod p(x)` << 1
-      0x549f39bcUL, 0x00000001UL, 0x0f1fc186UL, 0x00000000UL,       // x^39936 mod p(x)` << 1, x^40000 mod p(x)` << 1
-      0xef4d2f42UL, 0x00000000UL, 0x150e4cc4UL, 0x00000000UL,       // x^38912 mod p(x)` << 1, x^38976 mod p(x)` << 1
-      0xb1468572UL, 0x00000001UL, 0x2a6204e8UL, 0x00000000UL,       // x^37888 mod p(x)` << 1, x^37952 mod p(x)` << 1
-      0x3d7403b2UL, 0x00000001UL, 0xbeb1d432UL, 0x00000000UL,       // x^36864 mod p(x)` << 1, x^36928 mod p(x)` << 1
-      0xa4681842UL, 0x00000001UL, 0x35f3f1f0UL, 0x00000001UL,       // x^35840 mod p(x)` << 1, x^35904 mod p(x)` << 1
-      0x67714492UL, 0x00000001UL, 0x74fe2232UL, 0x00000000UL,       // x^34816 mod p(x)` << 1, x^34880 mod p(x)` << 1
-      0xe599099aUL, 0x00000001UL, 0x1ac6e2baUL, 0x00000000UL,       // x^33792 mod p(x)` << 1, x^33856 mod p(x)` << 1
-      0xfe128194UL, 0x00000000UL, 0x13fca91eUL, 0x00000000UL,       // x^32768 mod p(x)` << 1, x^32832 mod p(x)` << 1
-      0x77e8b990UL, 0x00000000UL, 0x83f4931eUL, 0x00000001UL,       // x^31744 mod p(x)` << 1, x^31808 mod p(x)` << 1
-      0xa267f63aUL, 0x00000001UL, 0xb6d9b4e4UL, 0x00000000UL,       // x^30720 mod p(x)` << 1, x^30784 mod p(x)` << 1
-      0x945c245aUL, 0x00000001UL, 0xb5188656UL, 0x00000000UL,       // x^29696 mod p(x)` << 1, x^29760 mod p(x)` << 1
-      0x49002e76UL, 0x00000001UL, 0x27a81a84UL, 0x00000000UL,       // x^28672 mod p(x)` << 1, x^28736 mod p(x)` << 1
-      0xbb8310a4UL, 0x00000001UL, 0x25699258UL, 0x00000001UL,       // x^27648 mod p(x)` << 1, x^27712 mod p(x)` << 1
-      0x9ec60bccUL, 0x00000001UL, 0xb23de796UL, 0x00000001UL,       // x^26624 mod p(x)` << 1, x^26688 mod p(x)` << 1
-      0x2d8590aeUL, 0x00000001UL, 0xfe4365dcUL, 0x00000000UL,       // x^25600 mod p(x)` << 1, x^25664 mod p(x)` << 1
-      0x65b00684UL, 0x00000000UL, 0xc68f497aUL, 0x00000000UL,       // x^24576 mod p(x)` << 1, x^24640 mod p(x)` << 1
-      0x5e5aeadcUL, 0x00000001UL, 0xfbf521eeUL, 0x00000000UL,       // x^23552 mod p(x)` << 1, x^23616 mod p(x)` << 1
-      0xb77ff2b0UL, 0x00000000UL, 0x5eac3378UL, 0x00000001UL,       // x^22528 mod p(x)` << 1, x^22592 mod p(x)` << 1
-      0x88da2ff6UL, 0x00000001UL, 0x34914b90UL, 0x00000001UL,       // x^21504 mod p(x)` << 1, x^21568 mod p(x)` << 1
-      0x63da929aUL, 0x00000000UL, 0x16335cfeUL, 0x00000000UL,       // x^20480 mod p(x)` << 1, x^20544 mod p(x)` << 1
-      0x389caa80UL, 0x00000001UL, 0x0372d10cUL, 0x00000001UL,       // x^19456 mod p(x)` << 1, x^19520 mod p(x)` << 1
-      0x3db599d2UL, 0x00000001UL, 0x5097b908UL, 0x00000001UL,       // x^18432 mod p(x)` << 1, x^18496 mod p(x)` << 1
-      0x22505a86UL, 0x00000001UL, 0x227a7572UL, 0x00000001UL,       // x^17408 mod p(x)` << 1, x^17472 mod p(x)` << 1
-      0x6bd72746UL, 0x00000001UL, 0x9a8f75c0UL, 0x00000000UL,       // x^16384 mod p(x)` << 1, x^16448 mod p(x)` << 1
-      0xc3faf1d4UL, 0x00000001UL, 0x682c77a2UL, 0x00000000UL,       // x^15360 mod p(x)` << 1, x^15424 mod p(x)` << 1
-      0x111c826cUL, 0x00000001UL, 0x231f091cUL, 0x00000000UL,       // x^14336 mod p(x)` << 1, x^14400 mod p(x)` << 1
-      0x153e9fb2UL, 0x00000000UL, 0x7d4439f2UL, 0x00000000UL,       // x^13312 mod p(x)` << 1, x^13376 mod p(x)` << 1
-      0x2b1f7b60UL, 0x00000000UL, 0x7e221efcUL, 0x00000001UL,       // x^12288 mod p(x)` << 1, x^12352 mod p(x)` << 1
-      0xb1dba570UL, 0x00000000UL, 0x67457c38UL, 0x00000001UL,       // x^11264 mod p(x)` << 1, x^11328 mod p(x)` << 1
-      0xf6397b76UL, 0x00000001UL, 0xbdf081c4UL, 0x00000000UL,       // x^10240 mod p(x)` << 1, x^10304 mod p(x)` << 1
-      0x56335214UL, 0x00000001UL, 0x6286d6b0UL, 0x00000001UL,       // x^9216 mod p(x)` << 1, x^9280 mod p(x)` << 1
-      0xd70e3986UL, 0x00000001UL, 0xc84f001cUL, 0x00000000UL,       // x^8192 mod p(x)` << 1, x^8256 mod p(x)` << 1
-      0x3701a774UL, 0x00000000UL, 0x64efe7c0UL, 0x00000000UL,       // x^7168 mod p(x)` << 1, x^7232 mod p(x)` << 1
-      0xac81ef72UL, 0x00000000UL, 0x0ac2d904UL, 0x00000000UL,       // x^6144 mod p(x)` << 1, x^6208 mod p(x)` << 1
-      0x33212464UL, 0x00000001UL, 0xfd226d14UL, 0x00000000UL,       // x^5120 mod p(x)` << 1, x^5184 mod p(x)` << 1
-      0xe4e45610UL, 0x00000000UL, 0x1cfd42e0UL, 0x00000001UL,       // x^4096 mod p(x)` << 1, x^4160 mod p(x)` << 1
-      0x0c1bd370UL, 0x00000000UL, 0x6e5a5678UL, 0x00000001UL,       // x^3072 mod p(x)` << 1, x^3136 mod p(x)` << 1
-      0xa7b9e7a6UL, 0x00000001UL, 0xd888fe22UL, 0x00000001UL,       // x^2048 mod p(x)` << 1, x^2112 mod p(x)` << 1
-      0x7d657a10UL, 0x00000000UL, 0xaf77fcd4UL, 0x00000001UL,       // x^1024 mod p(x)` << 1, x^1088 mod p(x)` << 1
+void StubRoutines::ppc64::generate_load_crc32c_table_addr(MacroAssembler* masm, Register table) {
+  __ load_const_optimized(table, StubRoutines::_crc32c_table_addr, R0);
+}
 
-      // Reduce final 1024-2048 bits to 64 bits, shifting 32 bits to include the trailing 32 bits of zeros
-      0xec447f11UL, 0x99168a18UL, 0x13e8221eUL, 0xed837b26UL,       // x^2048 mod p(x)`, x^2016 mod p(x)`, x^1984 mod p(x)`, x^1952 mod p(x)`
-      0x8fd2cd3cUL, 0xe23e954eUL, 0x47b9ce5aUL, 0xc8acdd81UL,       // x^1920 mod p(x)`, x^1888 mod p(x)`, x^1856 mod p(x)`, x^1824 mod p(x)`
-      0x6b1d2b53UL, 0x92f8befeUL, 0xd4277e25UL, 0xd9ad6d87UL,       // x^1792 mod p(x)`, x^1760 mod p(x)`, x^1728 mod p(x)`, x^1696 mod p(x)`
-      0x291ea462UL, 0xf38a3556UL, 0x33fbca3bUL, 0xc10ec5e0UL,       // x^1664 mod p(x)`, x^1632 mod p(x)`, x^1600 mod p(x)`, x^1568 mod p(x)`
-      0x62b6ca4bUL, 0x974ac562UL, 0x82e02e2fUL, 0xc0b55b0eUL,       // x^1536 mod p(x)`, x^1504 mod p(x)`, x^1472 mod p(x)`, x^1440 mod p(x)`
-      0x784d2a56UL, 0x855712b3UL, 0xe172334dUL, 0x71aa1df0UL,       // x^1408 mod p(x)`, x^1376 mod p(x)`, x^1344 mod p(x)`, x^1312 mod p(x)`
-      0x0eaee722UL, 0xa5abe9f8UL, 0x3969324dUL, 0xfee3053eUL,       // x^1280 mod p(x)`, x^1248 mod p(x)`, x^1216 mod p(x)`, x^1184 mod p(x)`
-      0xdb54814cUL, 0x1fa0943dUL, 0x3eb2bd08UL, 0xf44779b9UL,       // x^1152 mod p(x)`, x^1120 mod p(x)`, x^1088 mod p(x)`, x^1056 mod p(x)`
-      0xd7bbfe6aUL, 0xa53ff440UL, 0x00cc3374UL, 0xf5449b3fUL,       // x^1024 mod p(x)`, x^992 mod p(x)`,  x^960 mod p(x)`,  x^928 mod p(x)`
-      0x6325605cUL, 0xebe7e356UL, 0xd777606eUL, 0x6f8346e1UL,       // x^896 mod p(x)`,  x^864 mod p(x)`,  x^832 mod p(x)`,  x^800 mod p(x)`
-      0xe5b592b8UL, 0xc65a272cUL, 0xc0b95347UL, 0xe3ab4f2aUL,       // x^768 mod p(x)`,  x^736 mod p(x)`,  x^704 mod p(x)`,  x^672 mod p(x)`
-      0x4721589fUL, 0x5705a9caUL, 0x329ecc11UL, 0xaa2215eaUL,       // x^640 mod p(x)`,  x^608 mod p(x)`,  x^576 mod p(x)`,  x^544 mod p(x)`
-      0x88d14467UL, 0xe3720acbUL, 0xd95efd26UL, 0x1ed8f66eUL,       // x^512 mod p(x)`,  x^480 mod p(x)`,  x^448 mod p(x)`,  x^416 mod p(x)`
-      0x15141c31UL, 0xba1aca03UL, 0xa700e96aUL, 0x78ed02d5UL,       // x^384 mod p(x)`,  x^352 mod p(x)`,  x^320 mod p(x)`,  x^288 mod p(x)`
-      0xed627daeUL, 0xad2a31b3UL, 0x32b39da3UL, 0xba8ccbe8UL,       // x^256 mod p(x)`,  x^224 mod p(x)`,  x^192 mod p(x)`,  x^160 mod p(x)`
-      0xa06a2517UL, 0x6655004fUL, 0xb1e6b092UL, 0xedb88320UL        // x^128 mod p(x)`,  x^96 mod p(x)`,   x^64 mod p(x)`,   x^32 mod p(x)`
-  };
+void StubRoutines::ppc64::generate_load_crc32c_constants_addr(MacroAssembler* masm, Register table) {
+  __ load_const_optimized(table, (address)StubRoutines::ppc64::_crc32c_constants, R0);
+}
 
-  juint* ptr = (juint*) malloc(sizeof(juint) * CRC32_CONSTANTS_SIZE);
+void StubRoutines::ppc64::generate_load_crc32c_barret_constants_addr(MacroAssembler* masm, Register table) {
+  __ load_const_optimized(table, (address)StubRoutines::ppc64::_crc32c_barret_constants, R0);
+}
+
+// CRC constants and compute functions
+#define REVERSE_CRC32_POLY  0xEDB88320
+#define REVERSE_CRC32C_POLY 0x82F63B78
+#define INVERSE_REVERSE_CRC32_POLY  0x1aab14226ull
+#define INVERSE_REVERSE_CRC32C_POLY 0x105fd79bdull
+#define UNROLL_FACTOR 2048
+#define UNROLL_FACTOR2 8
+
+static juint fold_word(juint w, juint reverse_poly) {
+  for (int i = 0; i < 32; i++) {
+    int poly_if_odd = (-(w & 1)) & reverse_poly;
+    w = (w >> 1) ^ poly_if_odd;
+  }
+  return w;
+}
+
+static julong numberOfLeadingZeros(julong p) {
+  julong l = 1ull << 63;
+  for (int i = 0; i < 64; ++i) {
+    if (p & l) return i;
+    l >>= 1;
+  }
+  return 64;
+}
+
+static julong compute_inverse_poly(julong long_poly) {
+  // 2^64 / p
+  julong mod = 0, div = 0;
+  int d = numberOfLeadingZeros(long_poly);
+  int s = d + 1;
+  do {
+    mod ^= (long_poly << s);
+    div |= (1L << s);
+    s = d - numberOfLeadingZeros(mod);
+  } while (s >= 0);
+  return div;
+}
+
+// Constants to fold n words as needed by macroAssembler.
+juint* StubRoutines::ppc64::generate_crc_constants(juint reverse_poly) {
+  juint* ptr = (juint*) malloc(sizeof(juint) * 4 * (UNROLL_FACTOR2 - 1 + UNROLL_FACTOR / UNROLL_FACTOR2));
   guarantee(((intptr_t)ptr & 0xF) == 0, "16-byte alignment needed");
   guarantee(ptr != NULL, "allocation error of a crc table");
-  memcpy((void*)ptr, constants, sizeof(juint) * CRC32_CONSTANTS_SIZE);
+
+  // Generate constants for outer loop
+  juint v0, v1, v2, v3 = 1;
+  for (int i = 0; i < UNROLL_FACTOR2 - 1; ++i) {
+    v0 = fold_word(v3, reverse_poly);
+    v1 = fold_word(v0, reverse_poly);
+    v2 = fold_word(v1, reverse_poly);
+    v3 = fold_word(v2, reverse_poly);
+#ifdef VM_LITTLE_ENDIAN
+    ptr[4*i  ] = v3;
+    ptr[4*i+1] = v2;
+    ptr[4*i+2] = v3;
+    ptr[4*i+3] = v2;
+#else
+    ptr[4*i  ] = v2;
+    ptr[4*i+1] = v3;
+    ptr[4*i+2] = v2;
+    ptr[4*i+3] = v3;
+#endif
+  }
+
+  // Generate constants for inner loop
+  juint* ptr2 = ptr + 4 * (UNROLL_FACTOR2 - 1);
+  v3 = 1; // Restart from scratch.
+  for (int i = 0; i < UNROLL_FACTOR; ++i) {
+    v0 = fold_word(v3, reverse_poly);
+    v1 = fold_word(v0, reverse_poly);
+    v2 = fold_word(v1, reverse_poly);
+    v3 = fold_word(v2, reverse_poly);
+    if (i % UNROLL_FACTOR2 == 0) {
+      int idx = UNROLL_FACTOR / UNROLL_FACTOR2 - 1 - i / UNROLL_FACTOR2;
+      for (int j = 0; j < 4; ++j) {
+#ifdef VM_LITTLE_ENDIAN
+        ptr2[4*idx  ] = v3;
+        ptr2[4*idx+1] = v2;
+        ptr2[4*idx+2] = v1;
+        ptr2[4*idx+3] = v0;
+#else
+        ptr2[4*idx  ] = v0;
+        ptr2[4*idx+1] = v1;
+        ptr2[4*idx+2] = v2;
+        ptr2[4*idx+3] = v3;
+#endif
+      }
+    }
+  }
+
   return ptr;
 }
 
-juint* StubRoutines::ppc64::generate_crc_barret_constants() {
-  juint barret_constants[CRC32_BARRET_CONSTANTS] = {
-      0xf7011641UL, 0x00000001UL, 0x00000000UL, 0x00000000UL,
-      0xdb710641UL, 0x00000001UL, 0x00000000UL, 0x00000000UL
-  };
-  juint* ptr = (juint*) malloc(sizeof(juint) * CRC32_CONSTANTS_SIZE);
+// Constants to reduce 64 to 32 bit as needed by macroAssembler.
+juint* StubRoutines::ppc64::generate_crc_barret_constants(juint reverse_poly) {
+  juint* ptr = (juint*) malloc(sizeof(juint) * CRC32_BARRET_CONSTANTS);
   guarantee(((intptr_t)ptr & 0xF) == 0, "16-byte alignment needed");
   guarantee(ptr != NULL, "allocation error of a crc table");
-  memcpy((void*) ptr, barret_constants, sizeof(juint) * CRC32_BARRET_CONSTANTS);
+
+  julong* c = (julong*)ptr;
+  julong long_poly = (((julong)reverse_poly) << 1) | 1;
+  julong inverse_long_poly = compute_inverse_poly(long_poly);
+#ifdef VM_LITTLE_ENDIAN
+  c[0] = inverse_long_poly;
+  c[1] = long_poly;
+#else
+  c[0] = long_poly;
+  c[1] = inverse_long_poly;
+#endif
+
+#ifdef ASSERT
+  if (reverse_poly == REVERSE_CRC32_POLY) {
+    assert(INVERSE_REVERSE_CRC32_POLY == inverse_long_poly, "sanity");
+  } else if (reverse_poly == REVERSE_CRC32C_POLY) {
+    assert(INVERSE_REVERSE_CRC32C_POLY == inverse_long_poly, "sanity");
+  }
+#endif
+
+  //printf("inv poly: 0x%016llx\n", (long long unsigned int)inverse_long_poly);
   return ptr;
 }
 
@@ -938,6 +772,8 @@ juint StubRoutines::ppc64::_crc32c_table[CRC32_TABLES][CRC32_COLUMN_SIZE] = {
   #endif
   };
 
-juint* StubRoutines::ppc64::_constants = StubRoutines::ppc64::generate_crc_constants();
+juint* StubRoutines::ppc64::_crc_constants    = StubRoutines::ppc64::generate_crc_constants(REVERSE_CRC32_POLY);
+juint* StubRoutines::ppc64::_crc32c_constants = StubRoutines::ppc64::generate_crc_constants(REVERSE_CRC32C_POLY);
 
-juint* StubRoutines::ppc64::_barret_constants = StubRoutines::ppc64::generate_crc_barret_constants();
+juint* StubRoutines::ppc64::_crc_barret_constants    = StubRoutines::ppc64::generate_crc_barret_constants(REVERSE_CRC32_POLY);
+juint* StubRoutines::ppc64::_crc32c_barret_constants = StubRoutines::ppc64::generate_crc_barret_constants(REVERSE_CRC32C_POLY);

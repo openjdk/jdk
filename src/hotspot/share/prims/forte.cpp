@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,13 @@
 #include "code/pcDesc.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/space.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/forte.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/thread.inline.hpp"
-#include "runtime/vframe.hpp"
+#include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
 
 // call frame copied from old .h file and renamed
@@ -133,7 +134,7 @@ void vframeStreamForte::forte_next() {
     // By the time we get here we should never see unsafe but better
     // safe then segv'd
 
-    if (loop_count > loop_max || !_frame.safe_for_sender(_thread)) {
+    if ((loop_max != 0 && loop_count > loop_max) || !_frame.safe_for_sender(_thread)) {
       _mode = at_end_mode;
       return;
     }
@@ -324,7 +325,7 @@ static bool find_initial_Java_frame(JavaThread* thread,
     int loop_max = MaxJavaStackTraceDepth * 2;
     RegisterMap map(thread, false);
 
-    for (loop_count = 0; loop_count < loop_max; loop_count++) {
+    for (loop_count = 0; loop_max == 0 || loop_count < loop_max; loop_count++) {
       if (!candidate.safe_for_sender(thread)) return false;
       candidate = candidate.sender(&map);
       if (candidate.cb() != NULL) break;
@@ -338,7 +339,7 @@ static bool find_initial_Java_frame(JavaThread* thread,
   int loop_max = MaxJavaStackTraceDepth * 2;
   RegisterMap map(thread, false);
 
-  for (loop_count = 0; loop_count < loop_max; loop_count++) {
+  for (loop_count = 0; loop_max == 0 || loop_count < loop_max; loop_count++) {
 
     if (candidate.is_entry_frame()) {
       // jcw is NULL if the java call wrapper couldn't be found

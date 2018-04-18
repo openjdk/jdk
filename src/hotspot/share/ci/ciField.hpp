@@ -29,6 +29,7 @@
 #include "ci/ciConstant.hpp"
 #include "ci/ciFlags.hpp"
 #include "ci/ciInstance.hpp"
+#include "ci/ciUtilities.hpp"
 
 // ciField
 //

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Arrays;
@@ -67,7 +66,7 @@ public class BootLoader {
     // ServiceCatalog for the boot class loader
     private static final ServicesCatalog SERVICES_CATALOG = ServicesCatalog.create();
 
-    // ClassLoaderValue map for boot class loader
+    // ClassLoaderValue map for the boot class loader
     private static final ConcurrentHashMap<?, ?> CLASS_LOADER_VALUE_MAP
         = new ConcurrentHashMap<>();
 
@@ -101,8 +100,8 @@ public class BootLoader {
     }
 
     /**
-     * Register a module with this class loader so that its classes (and
-     * resources) become visible via this class loader.
+     * Registers a module with this class loader so that its classes
+     * (and resources) become visible via this class loader.
      */
     public static void loadModule(ModuleReference mref) {
         ClassLoaders.bootLoader().loadModule(mref);
@@ -243,8 +242,8 @@ public class BootLoader {
                 mn = location.substring(5, location.length());
             } else if (location.startsWith("file:/")) {
                 // named module in exploded image
-                Path path = Paths.get(URI.create(location));
-                Path modulesDir = Paths.get(JAVA_HOME, "modules");
+                Path path = Path.of(URI.create(location));
+                Path modulesDir = Path.of(JAVA_HOME, "modules");
                 if (path.startsWith(modulesDir)) {
                     mn = path.getFileName().toString();
                 }
@@ -267,7 +266,7 @@ public class BootLoader {
         private static URL toFileURL(String location) {
             return AccessController.doPrivileged(new PrivilegedAction<>() {
                 public URL run() {
-                    Path path = Paths.get(location);
+                    Path path = Path.of(location);
                     if (Files.isRegularFile(path)) {
                         try {
                             return path.toUri().toURL();
@@ -285,7 +284,7 @@ public class BootLoader {
         private static Manifest getManifest(String location) {
             return AccessController.doPrivileged(new PrivilegedAction<>() {
                 public Manifest run() {
-                    Path jar = Paths.get(location);
+                    Path jar = Path.of(location);
                     try (InputStream in = Files.newInputStream(jar);
                          JarInputStream jis = new JarInputStream(in, false)) {
                         return jis.getManifest();

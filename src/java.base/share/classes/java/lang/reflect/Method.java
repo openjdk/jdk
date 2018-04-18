@@ -301,6 +301,11 @@ public final class Method extends Executable {
         return parameterTypes;
     }
 
+    @Override
+    Class<?>[] getSharedExceptionTypes() {
+        return exceptionTypes;
+    }
+
     /**
      * {@inheritDoc}
      */

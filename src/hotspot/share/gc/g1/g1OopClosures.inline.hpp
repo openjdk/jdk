@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,10 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "memory/iterator.inline.hpp"
+#include "oops/access.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
 
 template <class T>
@@ -42,15 +46,15 @@ inline void G1ScanClosureBase::prefetch_and_push(T* p, const oop obj) {
   // stall. We'll try to prefetch the object (for write, given that
   // we might need to install the forwarding reference) and we'll
   // get back to it when pop it from the queue
-  Prefetch::write(obj->mark_addr(), 0);
-  Prefetch::read(obj->mark_addr(), (HeapWordSize*2));
+  Prefetch::write(obj->mark_addr_raw(), 0);
+  Prefetch::read(obj->mark_addr_raw(), (HeapWordSize*2));
 
   // slightly paranoid test; I'm trying to catch potential
   // problems before we go into push_on_queue to know where the
   // problem is coming from
-  assert((obj == oopDesc::load_decode_heap_oop(p)) ||
+  assert((obj == RawAccess<>::oop_load(p)) ||
          (obj->is_forwarded() &&
-         obj->forwardee() == oopDesc::load_decode_heap_oop(p)),
+         obj->forwardee() == RawAccess<>::oop_load(p)),
          "p should still be pointing to obj or to its forwardee");
 
   _par_scan_state->push_on_queue(p);
@@ -60,19 +64,17 @@ template <class T>
 inline void G1ScanClosureBase::handle_non_cset_obj_common(InCSetState const state, T* p, oop const obj) {
   if (state.is_humongous()) {
     _g1->set_humongous_is_live(obj);
-  } else if (state.is_ext()) {
-    _par_scan_state->do_oop_ext(p);
   }
 }
 
 template <class T>
 inline void G1ScanEvacuatedObjClosure::do_oop_nv(T* p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
+  T heap_oop = RawAccess<>::oop_load(p);
 
-  if (oopDesc::is_null(heap_oop)) {
+  if (CompressedOops::is_null(heap_oop)) {
     return;
   }
-  oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+  oop obj = CompressedOops::decode_not_null(heap_oop);
   const InCSetState state = _g1->in_cset_state(obj);
   if (state.is_in_cset()) {
     prefetch_and_push(p, obj);
@@ -87,18 +89,17 @@ inline void G1ScanEvacuatedObjClosure::do_oop_nv(T* p) {
 
 template <class T>
 inline void G1CMOopClosure::do_oop_nv(T* p) {
-  oop obj = oopDesc::load_decode_heap_oop(p);
-  _task->deal_with_reference(obj);
+  _task->deal_with_reference(p);
 }
 
 template <class T>
 inline void G1RootRegionScanClosure::do_oop_nv(T* p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (oopDesc::is_null(heap_oop)) {
+  T heap_oop = RawAccess<MO_VOLATILE>::oop_load(p);
+  if (CompressedOops::is_null(heap_oop)) {
     return;
   }
-  oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-  _cm->mark_in_next_bitmap(obj);
+  oop obj = CompressedOops::decode_not_null(heap_oop);
+  _cm->mark_in_next_bitmap(_worker_id, obj);
 }
 
 template <class T>
@@ -124,11 +125,11 @@ inline static void check_obj_during_refinement(T* p, oop const obj) {
 
 template <class T>
 inline void G1ConcurrentRefineOopClosure::do_oop_nv(T* p) {
-  T o = oopDesc::load_heap_oop(p);
-  if (oopDesc::is_null(o)) {
+  T o = RawAccess<MO_VOLATILE>::oop_load(p);
+  if (CompressedOops::is_null(o)) {
     return;
   }
-  oop obj = oopDesc::decode_heap_oop_not_null(o);
+  oop obj = CompressedOops::decode_not_null(o);
 
   check_obj_during_refinement(p, obj);
 
@@ -143,19 +144,21 @@ inline void G1ConcurrentRefineOopClosure::do_oop_nv(T* p) {
     return;
   }
 
-  HeapRegion* to = _g1->heap_region_containing(obj);
+  HeapRegionRemSet* to_rem_set = _g1->heap_region_containing(obj)->rem_set();
 
-  assert(to->rem_set() != NULL, "Need per-region 'into' remsets.");
-  to->rem_set()->add_reference(p, _worker_i);
+  assert(to_rem_set != NULL, "Need per-region 'into' remsets.");
+  if (to_rem_set->is_tracked()) {
+    to_rem_set->add_reference(p, _worker_i);
+  }
 }
 
 template <class T>
 inline void G1ScanObjsDuringUpdateRSClosure::do_oop_nv(T* p) {
-  T o = oopDesc::load_heap_oop(p);
-  if (oopDesc::is_null(o)) {
+  T o = RawAccess<>::oop_load(p);
+  if (CompressedOops::is_null(o)) {
     return;
   }
-  oop obj = oopDesc::decode_heap_oop_not_null(o);
+  oop obj = CompressedOops::decode_not_null(o);
 
   check_obj_during_refinement(p, obj);
 
@@ -177,11 +180,11 @@ inline void G1ScanObjsDuringUpdateRSClosure::do_oop_nv(T* p) {
 
 template <class T>
 inline void G1ScanObjsDuringScanRSClosure::do_oop_nv(T* p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (oopDesc::is_null(heap_oop)) {
+  T heap_oop = RawAccess<>::oop_load(p);
+  if (CompressedOops::is_null(heap_oop)) {
     return;
   }
-  oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+  oop obj = CompressedOops::decode_not_null(heap_oop);
 
   const InCSetState state = _g1->in_cset_state(obj);
   if (state.is_in_cset()) {
@@ -203,7 +206,8 @@ void G1ParCopyHelper::do_cld_barrier(oop new_obj) {
 void G1ParCopyHelper::mark_object(oop obj) {
   assert(!_g1->heap_region_containing(obj)->in_collection_set(), "should not mark objects in the CSet");
 
-  _cm->mark_in_next_bitmap(obj);
+  // We know that the object is not moving so it's safe to read its size.
+  _cm->mark_in_next_bitmap(_worker_id, obj);
 }
 
 void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
@@ -214,33 +218,37 @@ void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
   assert(_g1->heap_region_containing(from_obj)->in_collection_set(), "from obj should be in the CSet");
   assert(!_g1->heap_region_containing(to_obj)->in_collection_set(), "should not mark objects in the CSet");
 
-  _cm->mark_in_next_bitmap(to_obj);
+  // The object might be in the process of being copied by another
+  // worker so we cannot trust that its to-space image is
+  // well-formed. So we have to read its size from its from-space
+  // image which we know should not be changing.
+  _cm->mark_in_next_bitmap(_worker_id, to_obj, from_obj->size());
 }
 
-template <G1Barrier barrier, G1Mark do_mark_object, bool use_ext>
+template <G1Barrier barrier, G1Mark do_mark_object>
 template <class T>
-void G1ParCopyClosure<barrier, do_mark_object, use_ext>::do_oop_work(T* p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
+void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
+  T heap_oop = RawAccess<>::oop_load(p);
 
-  if (oopDesc::is_null(heap_oop)) {
+  if (CompressedOops::is_null(heap_oop)) {
     return;
   }
 
-  oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+  oop obj = CompressedOops::decode_not_null(heap_oop);
 
   assert(_worker_id == _par_scan_state->worker_id(), "sanity");
 
   const InCSetState state = _g1->in_cset_state(obj);
   if (state.is_in_cset()) {
     oop forwardee;
-    markOop m = obj->mark();
+    markOop m = obj->mark_raw();
     if (m->is_marked()) {
       forwardee = (oop) m->decode_pointer();
     } else {
       forwardee = _par_scan_state->copy_to_survivor_space(state, obj, m);
     }
     assert(forwardee != NULL, "forwardee should not be NULL");
-    oopDesc::encode_store_heap_oop(p, forwardee);
+    RawAccess<OOP_NOT_NULL>::oop_store(p, forwardee);
     if (do_mark_object != G1MarkNone && forwardee != obj) {
       // If the object is self-forwarded we don't need to explicitly
       // mark it, the evacuation failure protocol will do so.
@@ -255,9 +263,6 @@ void G1ParCopyClosure<barrier, do_mark_object, use_ext>::do_oop_work(T* p) {
       _g1->set_humongous_is_live(obj);
     }
 
-    if (use_ext && state.is_ext()) {
-      _par_scan_state->do_oop_ext(p);
-    }
     // The object is not in collection set. If we're a root scanning
     // closure during an initial mark pause then attempt to mark the object.
     if (do_mark_object == G1MarkFromRoot) {
@@ -265,4 +270,20 @@ void G1ParCopyClosure<barrier, do_mark_object, use_ext>::do_oop_work(T* p) {
     }
   }
 }
+
+template <class T> void G1RebuildRemSetClosure::do_oop_nv(T* p) {
+  oop const obj = RawAccess<MO_VOLATILE>::oop_load(p);
+  if (obj == NULL) {
+    return;
+  }
+
+  if (HeapRegion::is_in_same_region(p, obj)) {
+    return;
+  }
+
+  HeapRegion* to = _g1->heap_region_containing(obj);
+  HeapRegionRemSet* rem_set = to->rem_set();
+  rem_set->add_reference(p, _worker_id);
+}
+
 #endif // SHARE_VM_GC_G1_G1OOPCLOSURES_INLINE_HPP

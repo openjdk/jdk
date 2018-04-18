@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,13 @@
 #ifndef SHARE_VM_GC_G1_G1CARDCOUNTS_HPP
 #define SHARE_VM_GC_G1_G1CARDCOUNTS_HPP
 
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "memory/allocation.hpp"
 #include "memory/virtualspace.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class CardTableModRefBS;
+class CardTableBarrierSet;
 class G1CardCounts;
 class G1CollectedHeap;
 class G1RegionToSpaceMapper;
@@ -56,6 +57,7 @@ class G1CardCounts: public CHeapObj<mtGC> {
   G1CardCountsMappingChangedListener _listener;
 
   G1CollectedHeap* _g1h;
+  G1CardTable*     _ct;
 
   // The table of counts
   jubyte* _card_counts;
@@ -65,9 +67,6 @@ class G1CardCounts: public CHeapObj<mtGC> {
 
   // CardTable bottom.
   const jbyte* _ct_bot;
-
-  // Barrier set
-  CardTableModRefBS* _ct_bs;
 
   // Returns true if the card counts table has been reserved.
   bool has_reserved_count_table() { return _card_counts != NULL; }

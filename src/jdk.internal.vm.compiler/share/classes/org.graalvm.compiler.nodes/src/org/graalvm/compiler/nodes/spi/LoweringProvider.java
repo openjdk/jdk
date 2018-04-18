@@ -22,6 +22,7 @@
  */
 package org.graalvm.compiler.nodes.spi;
 
+import org.graalvm.compiler.core.common.spi.ArrayOffsetProvider;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
@@ -31,7 +32,7 @@ import jdk.vm.ci.meta.JavaKind;
 /**
  * Provides a capability for replacing a higher node with one or more lower level nodes.
  */
-public interface LoweringProvider {
+public interface LoweringProvider extends ArrayOffsetProvider {
 
     void lower(Node n, LoweringTool tool);
 

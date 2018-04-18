@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -124,10 +124,9 @@ ifneq ($(CREATING_BUILDJDK), true)
   LANGTOOLS_GENSRC_TARGETS := $(filter $(addsuffix -%, $(LANGTOOLS_MODULES)), $(GENSRC_TARGETS))
   INTERIM_LANGTOOLS_GENSRC_TARGETS := $(filter $(addsuffix -%, \
       $(INTERIM_LANGTOOLS_BASE_MODULES)), $(GENSRC_TARGETS))
-  CORBA_GENSRC_TARGETS := $(filter $(addsuffix -%, $(CORBA_MODULES)), $(GENSRC_TARGETS))
   HOTSPOT_GENSRC_TARGETS := $(filter $(addsuffix -%, $(HOTSPOT_MODULES)), $(GENSRC_TARGETS))
   JDK_GENSRC_TARGETS := $(filter-out $(LANGTOOLS_GENSRC_TARGETS) \
-      $(CORBA_GENSRC_TARGETS) $(HOTSPOT_GENSRC_TARGETS), $(GENSRC_TARGETS))
+      $(HOTSPOT_GENSRC_TARGETS), $(GENSRC_TARGETS))
 
   GENSRC_MODULEINFO_MODULES := $(ALL_MODULES)
   GENSRC_MODULEINFO_TARGETS := $(addsuffix -gensrc-moduleinfo, \
@@ -267,14 +266,11 @@ endef
 
 $(foreach v, $(JVM_VARIANTS), $(eval $(call DeclareHotspotLibsRecipe,$v)))
 
-hotspot-jsig:
-	+($(CD) $(TOPDIR)/make/hotspot && $(MAKE) $(MAKE_ARGS) -f lib/CompileLibjsig.gmk)
-
 hotspot-ide-project:
 	+($(CD) $(TOPDIR)/make/hotspot && $(MAKE) $(MAKE_ARGS) -f ide/CreateVSProject.gmk)
 
 ALL_TARGETS += $(HOTSPOT_VARIANT_TARGETS) $(HOTSPOT_VARIANT_GENSRC_TARGETS) \
-    $(HOTSPOT_VARIANT_LIBS_TARGETS) hotspot-jsig hotspot-ide-project
+    $(HOTSPOT_VARIANT_LIBS_TARGETS) hotspot-ide-project
 
 ################################################################################
 # Build demos targets
@@ -400,10 +396,13 @@ docs-zip:
 update-build-docs:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f UpdateBuildDocs.gmk)
 
+update-x11wrappers:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f UpdateX11Wrappers.gmk)
+
 ALL_TARGETS += docs-jdk-api-javadoc docs-jdk-api-modulegraph \
     docs-javase-api-javadoc docs-javase-api-modulegraph \
     docs-reference-api-javadoc docs-reference-api-modulegraph docs-jdk-specs \
-    docs-jdk-index docs-zip update-build-docs
+    docs-jdk-index docs-zip update-build-docs update-x11wrappers
 
 ################################################################################
 # Cross compilation support
@@ -618,8 +617,6 @@ else
 
   buildtools-modules: exploded-image-base
 
-  $(CORBA_GENSRC_TARGETS): interim-langtools
-
   $(HOTSPOT_GENSRC_TARGETS): interim-langtools buildtools-hotspot
 
   $(JDK_GENSRC_TARGETS): interim-langtools buildtools-jdk
@@ -637,15 +634,18 @@ else
   # Declare dependencies between hotspot-<variant>* targets
   $(foreach v, $(JVM_VARIANTS), \
       $(eval hotspot-$v: hotspot-$v-gensrc hotspot-$v-libs) \
-      $(eval hotspot-$v-libs: hotspot-$v-gensrc) \
+      $(eval hotspot-$v-libs: hotspot-$v-gensrc java.base-copy) \
   )
 
   hotspot-ide-project: hotspot exploded-image
 
   generate-exported-symbols: java.base-libs jdk.jdwp.agent-libs
 
+  # If not already set, set the JVM variant target so that the JVM will be built.
+  JVM_MAIN_LIB_TARGETS ?= hotspot-$(JVM_VARIANT_MAIN)-libs
+
   # Building one JVM variant is enough to start building the other libs
-  $(LIBS_TARGETS): hotspot-$(JVM_VARIANT_MAIN)-libs
+  $(LIBS_TARGETS): $(JVM_MAIN_LIB_TARGETS)
 
   $(LAUNCHER_TARGETS): java.base-libs
 
@@ -691,8 +691,9 @@ else
   jdk.jdwp.agent-libs: jdk.jdwp.agent-gensrc
 
   # The swing beans need to have java base properly generated to avoid errors
-  # in javadoc.
-  java.desktop-gensrc-src: java.base-gensrc
+  # in javadoc. The X11 wrappers need the java.base include files to have been
+  # copied and processed.
+  java.desktop-gensrc-src: java.base-gensrc java.base-copy
 
   # The annotation processing for jdk.internal.vm.ci and jdk.internal.vm.compiler
   # needs classes from the current JDK.
@@ -721,8 +722,11 @@ else
     java.base-jmod: jrtfs-jar $(filter-out java.base-jmod, $(JMOD_TARGETS))
   endif
 
-  # Building java.base-jmod requires all of hotspot to be built.
-  java.base-jmod: hotspot
+  # If not already set, set the JVM target so that the JVM will be built.
+  JVM_MAIN_TARGETS ?= hotspot
+
+  # Building java.base-jmod requires all of VM (ie hotspot) to be built.
+  java.base-jmod: $(JVM_MAIN_TARGETS)
 
   # Declare dependencies from <module>-jmod to all other module targets
   # When creating a BUILDJDK, the java compilation has already been done by the
@@ -748,7 +752,7 @@ else
   # in java.base-copy) and tzdb.dat (done in java.base-gendata) to the
   # appropriate location otherwise jimage, jlink and jmod won't start. This
   # also applies when creating the buildjdk.
-  DEFAULT_JMOD_DEPS := java.base-libs java.base-copy java.base-gendata \
+  DEFAULT_JMOD_DEPS += java.base-libs java.base-copy java.base-gendata \
       jdk.jlink-launchers
   # When cross compiling and buildjdk is to be created, depend on creating the
   # buildjdk instead of the default dependencies.
@@ -824,8 +828,11 @@ else
 
   docs-reference-api-modulegraph: exploded-image buildtools-modules
 
+  # If not already set, then set the JVM specific docs targets
+  JVM_DOCS_TARGETS ?= hotspot-$(JVM_VARIANT_MAIN)-gensrc
+
   # The gensrc steps for hotspot and jdk.jdi create html spec files.
-  docs-jdk-specs: hotspot-$(JVM_VARIANT_MAIN)-gensrc jdk.jdi-gensrc \
+  docs-jdk-specs: $(JVM_DOCS_TARGETS) jdk.jdi-gensrc \
       docs-jdk-index
 
   docs-jdk-index: exploded-image buildtools-modules
@@ -887,17 +894,19 @@ else
 
   generate-summary: jmods buildtools-modules
 
+  update-x11wrappers: java.base-copy buildtools-jdk
+
 endif
 
 ################################################################################
 # Virtual targets without recipes
 
+# If not already set, set the JVM specific tools targets
+JVM_TOOLS_TARGETS ?= buildtools-hotspot
 buildtools: buildtools-langtools interim-langtools interim-rmic \
-    buildtools-jdk buildtools-hotspot
+    buildtools-jdk $(JVM_TOOLS_TARGETS)
 
-hotspot: $(HOTSPOT_VARIANT_TARGETS) hotspot-jsig
-
-hotspot-libs: hotspot-jsig
+hotspot: $(HOTSPOT_VARIANT_TARGETS)
 
 # Create targets hotspot-libs and hotspot-gensrc.
 $(foreach v, $(JVM_VARIANTS), \
@@ -936,7 +945,7 @@ $(foreach m, $(LAUNCHER_MODULES), $(eval $m: $m-launchers))
 $(foreach m, $(ALL_COPY_MODULES), $(eval $m: $m-copy))
 
 # Building java.base includes building all of hotspot.
-java.base: hotspot
+java.base: $(JVM_MAIN_TARGETS)
 
 demos: demos-jdk
 
@@ -1003,10 +1012,15 @@ endif
 # This target builds the documentation image
 docs-image: docs-jdk
 
+# If not already set, set the JVM specific targets to build the test image
+JVM_TEST_IMAGE_TARGETS ?= test-image-hotspot-jtreg-native test-image-hotspot-gtest
+
 # This target builds the test image
-test-image: prepare-test-image test-image-hotspot-jtreg-native \
-    test-image-jdk-jtreg-native test-image-failure-handler test-image-hotspot-gtest \
-    test-image-demos-jdk
+test-image: prepare-test-image \
+    test-image-jdk-jtreg-native test-image-failure-handler \
+    test-image-demos-jdk $(JVM_TEST_IMAGE_TARGETS)
+
+################################################################################
 
 # all-images builds all our deliverables as images.
 all-images: product-images test-image docs-image
@@ -1145,6 +1159,8 @@ create-main-targets-include:
 	      $(MAKESUPPORT_OUTPUTDIR)/main-targets.gmk
 
 ################################################################################
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, Main-post.gmk))
 
 .PHONY: $(ALL_TARGETS)
 

@@ -26,6 +26,7 @@
 package java.nio;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.misc.Unsafe;
 
 import java.util.Spliterator;
 
@@ -181,6 +182,8 @@ import java.util.Spliterator;
  */
 
 public abstract class Buffer {
+    // Cached unsafe-access object
+    static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     /**
      * The characteristics of Spliterators that traverse and split elements
@@ -615,6 +618,14 @@ public abstract class Buffer {
 
 
     // -- Package-private methods for bounds checking, etc. --
+
+    /**
+     *
+     * @return the base reference, paired with the address
+     * field, which in combination can be used for unsafe access into a heap
+     * buffer or direct byte buffer (and views of).
+     */
+    abstract Object base();
 
     /**
      * Checks the current position against the limit, throwing a {@link
