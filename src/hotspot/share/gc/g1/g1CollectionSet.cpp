@@ -35,7 +35,7 @@
 #include "utilities/quickSort.hpp"
 
 G1CollectorState* G1CollectionSet::collector_state() {
-  return _g1->collector_state();
+  return _g1h->collector_state();
 }
 
 G1GCPhaseTimes* G1CollectionSet::phase_times() {
@@ -51,7 +51,7 @@ double G1CollectionSet::predict_region_elapsed_time_ms(HeapRegion* hr) {
 }
 
 G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
-  _g1(g1h),
+  _g1h(g1h),
   _policy(policy),
   _cset_chooser(new CollectionSetChooser()),
   _eden_region_length(0),
@@ -109,7 +109,7 @@ void G1CollectionSet::add_old_region(HeapRegion* hr) {
   assert(hr->is_old(), "the region should be old");
 
   assert(!hr->in_collection_set(), "should not already be in the CSet");
-  _g1->register_old_region_with_cset(hr);
+  _g1h->register_old_region_with_cset(hr);
 
   _collection_set_regions[_collection_set_cur_length++] = hr->hrm_index();
   assert(_collection_set_cur_length <= _collection_set_max_length, "Collection set now larger than maximum size.");
@@ -185,7 +185,7 @@ void G1CollectionSet::iterate_from(HeapRegionClosure* cl, uint worker_id, uint t
   size_t cur_pos = start_pos;
 
   do {
-    HeapRegion* r = G1CollectedHeap::heap()->region_at(_collection_set_regions[cur_pos]);
+    HeapRegion* r = _g1h->region_at(_collection_set_regions[cur_pos]);
     bool result = cl->do_heap_region(r);
     if (result) {
       cl->set_incomplete();
@@ -257,7 +257,7 @@ void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
   // by the Young List sampling code.
   // Ignore calls to this due to retirement during full gc.
 
-  if (!G1CollectedHeap::heap()->collector_state()->in_full_gc()) {
+  if (!_g1h->collector_state()->in_full_gc()) {
     size_t rs_length = hr->rem_set()->occupied();
     double region_elapsed_time_ms = predict_region_elapsed_time_ms(hr);
 
@@ -274,7 +274,7 @@ void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
   }
 
   assert(!hr->in_collection_set(), "invariant");
-  _g1->register_young_region_with_cset(hr);
+  _g1h->register_young_region_with_cset(hr);
 }
 
 void G1CollectionSet::add_survivor_regions(HeapRegion* hr) {
@@ -373,7 +373,7 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   //   [Newly Young Regions ++ Survivors from last pause].
 
   uint survivor_region_length = survivors->length();
-  uint eden_region_length = _g1->eden_regions_count();
+  uint eden_region_length = _g1h->eden_regions_count();
   init_region_lengths(eden_region_length, survivor_region_length);
 
   verify_young_cset_indices();
@@ -476,7 +476,7 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
       time_remaining_ms = MAX2(time_remaining_ms - predicted_time_ms, 0.0);
       predicted_old_time_ms += predicted_time_ms;
       cset_chooser()->pop(); // already have region via peek()
-      _g1->old_set_remove(hr);
+      _g1h->old_set_remove(hr);
       add_old_region(hr);
 
       hr = cset_chooser()->peek();

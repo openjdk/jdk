@@ -31,13 +31,14 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-G1HeapSizingPolicy::G1HeapSizingPolicy(const G1CollectedHeap* g1, const G1Analytics* analytics) :
-      _g1(g1),
-      _analytics(analytics),
-      _num_prev_pauses_for_heuristics(analytics->number_of_recorded_pause_times()) {
-    assert(MinOverThresholdForGrowth < _num_prev_pauses_for_heuristics, "Threshold must be less than %u", _num_prev_pauses_for_heuristics);
-    clear_ratio_check_data();
-  }
+G1HeapSizingPolicy::G1HeapSizingPolicy(const G1CollectedHeap* g1h, const G1Analytics* analytics) :
+  _g1h(g1h),
+  _analytics(analytics),
+  _num_prev_pauses_for_heuristics(analytics->number_of_recorded_pause_times()) {
+
+  assert(MinOverThresholdForGrowth < _num_prev_pauses_for_heuristics, "Threshold must be less than %u", _num_prev_pauses_for_heuristics);
+  clear_ratio_check_data();
+}
 
 void G1HeapSizingPolicy::clear_ratio_check_data() {
   _ratio_over_threshold_count = 0;
@@ -59,8 +60,8 @@ size_t G1HeapSizingPolicy::expansion_amount() {
   // If the heap is at less than half its maximum size, scale the threshold down,
   // to a limit of 1. Thus the smaller the heap is, the more likely it is to expand,
   // though the scaling code will likely keep the increase small.
-  if (_g1->capacity() <= _g1->max_capacity() / 2) {
-    threshold *= (double)_g1->capacity() / (double)(_g1->max_capacity() / 2);
+  if (_g1h->capacity() <= _g1h->max_capacity() / 2) {
+    threshold *= (double)_g1h->capacity() / (double)(_g1h->max_capacity() / 2);
     threshold = MAX2(threshold, 1.0);
   }
 
@@ -81,8 +82,8 @@ size_t G1HeapSizingPolicy::expansion_amount() {
   if ((_ratio_over_threshold_count == MinOverThresholdForGrowth) ||
       (filled_history_buffer && (recent_gc_overhead > threshold))) {
     size_t min_expand_bytes = HeapRegion::GrainBytes;
-    size_t reserved_bytes = _g1->max_capacity();
-    size_t committed_bytes = _g1->capacity();
+    size_t reserved_bytes = _g1h->max_capacity();
+    size_t committed_bytes = _g1h->capacity();
     size_t uncommitted_bytes = reserved_bytes - committed_bytes;
     size_t expand_bytes_via_pct =
       uncommitted_bytes * G1ExpandByPercentOfAvailable / 100;

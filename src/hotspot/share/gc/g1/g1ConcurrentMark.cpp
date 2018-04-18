@@ -1196,10 +1196,10 @@ class G1ReclaimEmptyRegionsTask : public AbstractGangTask {
     HRRSCleanupTask* _hrrs_cleanup_task;
 
   public:
-    G1ReclaimEmptyRegionsClosure(G1CollectedHeap* g1,
+    G1ReclaimEmptyRegionsClosure(G1CollectedHeap* g1h,
                                  FreeRegionList* local_cleanup_list,
                                  HRRSCleanupTask* hrrs_cleanup_task) :
-      _g1h(g1),
+      _g1h(g1h),
       _freed_bytes(0),
       _local_cleanup_list(local_cleanup_list),
       _old_regions_removed(0),
@@ -1680,14 +1680,14 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
 // When sampling object counts, we already swapped the mark bitmaps, so we need to use
 // the prev bitmap determining liveness.
 class G1ObjectCountIsAliveClosure: public BoolObjectClosure {
-  G1CollectedHeap* _g1;
- public:
-  G1ObjectCountIsAliveClosure(G1CollectedHeap* g1) : _g1(g1) { }
+  G1CollectedHeap* _g1h;
+public:
+  G1ObjectCountIsAliveClosure(G1CollectedHeap* g1h) : _g1h(g1h) { }
 
   bool do_object_b(oop obj) {
     HeapWord* addr = (HeapWord*)obj;
     return addr != NULL &&
-           (!_g1->is_in_g1_reserved(addr) || !_g1->is_obj_dead(obj));
+           (!_g1h->is_in_g1_reserved(addr) || !_g1h->is_obj_dead(obj));
   }
 };
 

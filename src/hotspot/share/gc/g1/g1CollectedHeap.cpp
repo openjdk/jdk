@@ -3639,9 +3639,7 @@ void G1CollectedHeap::redirty_logged_cards() {
 // of referent objects that are pointed to by reference objects
 // discovered by the CM ref processor.
 class G1AlwaysAliveClosure: public BoolObjectClosure {
-  G1CollectedHeap* _g1;
 public:
-  G1AlwaysAliveClosure(G1CollectedHeap* g1) : _g1(g1) {}
   bool do_object_b(oop p) {
     if (p != NULL) {
       return true;
@@ -3653,20 +3651,20 @@ public:
 bool G1STWIsAliveClosure::do_object_b(oop p) {
   // An object is reachable if it is outside the collection set,
   // or is inside and copied.
-  return !_g1->is_in_cset(p) || p->is_forwarded();
+  return !_g1h->is_in_cset(p) || p->is_forwarded();
 }
 
 // Non Copying Keep Alive closure
 class G1KeepAliveClosure: public OopClosure {
-  G1CollectedHeap* _g1;
+  G1CollectedHeap*_g1h;
 public:
-  G1KeepAliveClosure(G1CollectedHeap* g1) : _g1(g1) {}
+  G1KeepAliveClosure(G1CollectedHeap* g1h) :_g1h(g1h) {}
   void do_oop(narrowOop* p) { guarantee(false, "Not needed"); }
   void do_oop(oop* p) {
     oop obj = *p;
     assert(obj != NULL, "the caller should have filtered out NULL values");
 
-    const InCSetState cset_state = _g1->in_cset_state(obj);
+    const InCSetState cset_state =_g1h->in_cset_state(obj);
     if (!cset_state.is_in_cset_or_humongous()) {
       return;
     }
@@ -3677,7 +3675,7 @@ public:
       assert(!obj->is_forwarded(), "invariant" );
       assert(cset_state.is_humongous(),
              "Only allowed InCSet state is IsHumongous, but is %d", cset_state.value());
-      _g1->set_humongous_is_live(obj);
+     _g1h->set_humongous_is_live(obj);
     }
   }
 };
@@ -3921,7 +3919,7 @@ public:
     assert(pss->queue_is_empty(), "both queue and overflow should be empty");
 
     // Is alive closure
-    G1AlwaysAliveClosure always_alive(_g1h);
+    G1AlwaysAliveClosure always_alive;
 
     // Copying keep alive closure. Applied to referent objects that need
     // to be copied.

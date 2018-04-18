@@ -161,8 +161,6 @@ class G1MonitoringSupport : public CHeapObj<mtGC> {
   size_t _old_committed;
   size_t _old_used;
 
-  G1CollectedHeap* g1h() { return _g1h; }
-
   // It returns x - y if x > y, 0 otherwise.
   // As described in the comment above, some of the inputs to the
   // calculations we have to do are obtained concurrently and hence

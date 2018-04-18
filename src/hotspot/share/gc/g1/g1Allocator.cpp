@@ -271,7 +271,7 @@ bool G1PLABAllocator::may_throw_away_buffer(size_t const allocation_word_sz, siz
 HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(InCSetState dest,
                                                        size_t word_sz,
                                                        bool* plab_refill_failed) {
-  size_t plab_word_size = G1CollectedHeap::heap()->desired_plab_sz(dest);
+  size_t plab_word_size = _g1h->desired_plab_sz(dest);
   size_t required_in_plab = PLAB::size_required_for_allocation(word_sz);
 
   // Only get a new PLAB if the allocation fits and it would not waste more than

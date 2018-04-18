@@ -108,9 +108,9 @@ typedef int CardIdx_t;     // needs to hold [ 0..CardsPerRegion )
 // reference processor. It is also extensively used during
 // reference processing during STW evacuation pauses.
 class G1STWIsAliveClosure: public BoolObjectClosure {
-  G1CollectedHeap* _g1;
+  G1CollectedHeap* _g1h;
 public:
-  G1STWIsAliveClosure(G1CollectedHeap* g1) : _g1(g1) {}
+  G1STWIsAliveClosure(G1CollectedHeap* g1h) : _g1h(g1h) {}
   bool do_object_b(oop p);
 };
 

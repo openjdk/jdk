@@ -108,7 +108,7 @@ typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
 class G1CMIsAliveClosure : public BoolObjectClosure {
   G1CollectedHeap* _g1h;
  public:
-  G1CMIsAliveClosure(G1CollectedHeap* g1) : _g1h(g1) { }
+  G1CMIsAliveClosure(G1CollectedHeap* g1h) : _g1h(g1h) { }
 
   bool do_object_b(oop obj);
 };

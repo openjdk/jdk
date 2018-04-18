@@ -37,7 +37,7 @@ class G1SurvivorRegions;
 class HeapRegion;
 
 class G1CollectionSet {
-  G1CollectedHeap* _g1;
+  G1CollectedHeap* _g1h;
   G1Policy* _policy;
 
   CollectionSetChooser* _cset_chooser;
