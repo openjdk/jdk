@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,19 +98,19 @@ public class PatchModulesTest extends ModuleTestBase {
     @Test
     public void testDuplicates(Path base) throws Exception {
         test(asList("java.base=a", "java.compiler=b", "java.base=c"),
-            false, "--patch-module specified more than once for java.base");
+            false, "error: --patch-module specified more than once for java.base");
     }
 
     @Test
     public void testEmpty(Path base) throws Exception {
         test(asList(""),
-            false, "no value for --patch-module option");
+            false, "error: no value for --patch-module option");
     }
 
     @Test
     public void testInvalid(Path base) throws Exception {
         test(asList("java.base/java.lang=."),
-            false, "bad value for --patch-module option: 'java.base/java.lang=.'");
+            false, "error: bad value for --patch-module option: 'java.base/java.lang=.'");
     }
 
     void test(List<String> patches, String expect) throws Exception {

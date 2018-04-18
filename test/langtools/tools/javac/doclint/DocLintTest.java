@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ public class DocLintTest {
         DL_ERR9(ERROR, "Test.java:9:14: compiler.err.proc.messager: reference not found"),
         DL_WRN12(WARNING, "Test.java:12:9: compiler.warn.proc.messager: no description for @return"),
 
-        OPT_BADARG(ERROR, "invalid flag: -Xdoclint:badarg");
+        OPT_BADARG(ERROR, "error: invalid flag: -Xdoclint:badarg");
 
         final Diagnostic.Kind kind;
         final String text;

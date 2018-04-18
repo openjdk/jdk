@@ -157,3 +157,35 @@ compiler.err.duplicate.module.on.path
 compiler.err.locn.module-info.not.allowed.on.patch.path
 compiler.misc.cant.resolve.modules
 compiler.misc.file.does.not.contain.module
+
+# these keys were in javac.properties and examples are hard to be produced for them
+# basically because in most cases the compilation ends with an exception
+compiler.err.bad.value.for.option
+compiler.err.empty.A.argument
+compiler.err.error.writing.file
+compiler.err.file.not.directory
+compiler.err.file.not.file
+compiler.err.file.not.found
+compiler.err.invalid.A.key
+compiler.err.invalid.flag
+compiler.err.invalid.profile
+compiler.err.invalid.source
+compiler.err.invalid.target
+compiler.err.no.source.files.classes
+compiler.err.no.value.for.option
+compiler.err.option.not.allowed.with.target
+compiler.err.option.too.many
+compiler.err.profile.bootclasspath.conflict
+compiler.err.release.bootclasspath.conflict
+compiler.err.repeated.value.for.patch.module
+compiler.err.req.arg
+compiler.err.sourcepath.modulesourcepath.conflict
+compiler.err.two.class.loaders.1
+compiler.err.two.class.loaders.2
+compiler.err.unmatched.quote
+compiler.err.unsupported.release.version
+compiler.warn.profile.target.conflict
+compiler.warn.source.target.conflict
+compiler.warn.target.default.source.conflict
+compiler.err.preview.not.latest
+compiler.err.preview.without.source.or.release

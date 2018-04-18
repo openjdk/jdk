@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,9 @@ import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.main.CommandLine.UnmatchedQuote;
 import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.processing.AnnotationProcessingError;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticInfo;
 import com.sun.tools.javac.util.Log.PrefixKind;
 import com.sun.tools.javac.util.Log.WriterKind;
 
@@ -138,19 +140,22 @@ public class Main {
 
     /** Report a usage error.
      */
-    void error(String key, Object... args) {
+    void reportDiag(DiagnosticInfo diag) {
         if (apiMode) {
-            String msg = log.localize(PrefixKind.JAVAC, key, args);
+            String msg = log.localize(diag);
             throw new PropagatedException(new IllegalStateException(msg));
         }
-        warning(key, args);
+        reportHelper(diag);
         log.printLines(PrefixKind.JAVAC, "msg.usage", ownName);
     }
 
-    /** Report a warning.
+    /** Report helper.
      */
-    void warning(String key, Object... args) {
-        log.printRawLines(ownName + ": " + log.localize(PrefixKind.JAVAC, key, args));
+    void reportHelper(DiagnosticInfo diag) {
+        String msg = log.localize(diag);
+        String errorPrefix = log.localize(Errors.Error);
+        msg = msg.startsWith(errorPrefix) ? msg : errorPrefix + msg;
+        log.printRawLines(msg);
     }
 
 
@@ -209,10 +214,10 @@ public class Main {
         try {
             argv = CommandLine.parse(ENV_OPT_NAME, argv);
         } catch (UnmatchedQuote ex) {
-            error("err.unmatched.quote", ex.variableName);
+            reportDiag(Errors.UnmatchedQuote(ex.variableName));
             return Result.CMDERR;
         } catch (FileNotFoundException | NoSuchFileException e) {
-            warning("err.file.not.found", e.getMessage());
+            reportHelper(Errors.FileNotFound(e.getMessage()));
             return Result.SYSERR;
         } catch (IOException ex) {
             log.printLines(PrefixKind.JAVAC, "msg.io");
@@ -366,11 +371,10 @@ public class Main {
                     CodeSource otherClassCodeSource = otherClass.getProtectionDomain().getCodeSource();
                     CodeSource javacCodeSource = this.getClass().getProtectionDomain().getCodeSource();
                     if (otherClassCodeSource != null && javacCodeSource != null) {
-                        log.printLines(PrefixKind.JAVAC, "err.two.class.loaders.2",
-                                otherClassCodeSource.getLocation(),
-                                javacCodeSource.getLocation());
+                        log.printLines(Errors.TwoClassLoaders2(otherClassCodeSource.getLocation(),
+                                javacCodeSource.getLocation()));
                     } else {
-                        log.printLines(PrefixKind.JAVAC, "err.two.class.loaders.1");
+                        log.printLines(Errors.TwoClassLoaders1);
                     }
                     return true;
                 }
