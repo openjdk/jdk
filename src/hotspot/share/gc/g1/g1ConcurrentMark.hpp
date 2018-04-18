@@ -373,6 +373,9 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   void reclaim_empty_regions();
 
+  // After reclaiming empty regions, update heap sizes.
+  void compute_new_sizes();
+
   // Clear statistics gathered during the concurrent cycle for the given region after
   // it has been reclaimed.
   void clear_statistics(HeapRegion* r);
