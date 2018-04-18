@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2257,6 +2257,12 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
             }
         }
         return retVal;
+    }
+
+    boolean hasTransparentColor() {
+        return tRNS_present &&
+               (tRNS_colorType == PNGImageReader.PNG_COLOR_RGB ||
+               tRNS_colorType == PNGImageReader.PNG_COLOR_GRAY);
     }
 
     // Reset all instance variables to their initial state
