@@ -996,7 +996,7 @@ void G1ConcurrentMark::verify_during_pause(G1HeapVerifier::G1VerifyType type, Ve
   verifier->verify_region_sets_optional();
 
   if (VerifyDuringGC) {
-    GCTraceTime(Debug, gc, phases) trace(caller, _gc_timer_cm);
+    GCTraceTime(Debug, gc, phases) debug(caller, _gc_timer_cm);
 
     size_t const BufLen = 512;
     char buffer[BufLen];
@@ -1111,7 +1111,7 @@ void G1ConcurrentMark::remark() {
   verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption_G1UsePrevMarking, "Remark before");
 
   {
-    GCTraceTime(Debug, gc, phases) trace("Finalize Marking", _gc_timer_cm);
+    GCTraceTime(Debug, gc, phases) debug("Finalize Marking", _gc_timer_cm);
     finalize_marking();
   }
 
@@ -1129,27 +1129,27 @@ void G1ConcurrentMark::remark() {
                                        true /* expected_active */);
 
     {
-      GCTraceTime(Debug, gc, phases)("Flush Task Caches");
+      GCTraceTime(Debug, gc, phases) debug("Flush Task Caches", _gc_timer_cm);
       flush_all_task_caches();
     }
 
     // Install newly created mark bitmap as "prev".
     swap_mark_bitmaps();
     {
-      GCTraceTime(Debug, gc, phases)("Update Remembered Set Tracking Before Rebuild");
+      GCTraceTime(Debug, gc, phases) debug("Update Remembered Set Tracking Before Rebuild", _gc_timer_cm);
       G1UpdateRemSetTrackingBeforeRebuild cl(_g1h, this);
       _g1h->heap_region_iterate(&cl);
       log_debug(gc, remset, tracking)("Remembered Set Tracking update regions total %u, selected %u",
                                       _g1h->num_regions(), cl.num_selected_for_rebuild());
     }
     {
-      GCTraceTime(Debug, gc, phases)("Reclaim Empty Regions");
+      GCTraceTime(Debug, gc, phases) debug("Reclaim Empty Regions", _gc_timer_cm);
       reclaim_empty_regions();
     }
 
     // Clean out dead classes
     if (ClassUnloadingWithConcurrentMark) {
-      GCTraceTime(Debug, gc, phases)("Purge Metaspace");
+      GCTraceTime(Debug, gc, phases) debug("Purge Metaspace", _gc_timer_cm);
       ClassLoaderDataGraph::purge();
     }
 
@@ -1172,7 +1172,7 @@ void G1ConcurrentMark::remark() {
   }
 
   {
-    GCTraceTime(Debug, gc, phases)("Report Object Count");
+    GCTraceTime(Debug, gc, phases) debug("Report Object Count", _gc_timer_cm);
     report_object_count(mark_finished);
   }
 
@@ -1320,7 +1320,7 @@ void G1ConcurrentMark::cleanup() {
   verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UsePrevMarking, "Cleanup before");
 
   {
-    GCTraceTime(Debug, gc, phases)("Update Remembered Set Tracking After Rebuild");
+    GCTraceTime(Debug, gc, phases) debug("Update Remembered Set Tracking After Rebuild", _gc_timer_cm);
     G1UpdateRemSetTrackingAfterRebuild cl(_g1h);
     _g1h->heap_region_iterate(&cl);
   }
@@ -1342,7 +1342,7 @@ void G1ConcurrentMark::cleanup() {
   _cleanup_times.add(recent_cleanup_time);
 
   {
-    GCTraceTime(Debug, gc, phases)("Finalize Concurrent Mark Cleanup");
+    GCTraceTime(Debug, gc, phases) debug("Finalize Concurrent Mark Cleanup", _gc_timer_cm);
     _g1h->g1_policy()->record_concurrent_mark_cleanup_end();
   }
 }
@@ -1568,7 +1568,7 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
   // Inner scope to exclude the cleaning of the string and symbol
   // tables from the displayed time.
   {
-    GCTraceTime(Debug, gc, phases) trace("Reference Processing", _gc_timer_cm);
+    GCTraceTime(Debug, gc, phases) debug("Reference Processing", _gc_timer_cm);
 
     ReferenceProcessor* rp = _g1h->ref_processor_cm();
 
@@ -1993,7 +1993,7 @@ void G1ConcurrentMark::concurrent_cycle_abort() {
   // Clear all marks in the next bitmap for the next marking cycle. This will allow us to skip the next
   // concurrent bitmap clearing.
   {
-    GCTraceTime(Debug, gc)("Clear Next Bitmap");
+    GCTraceTime(Debug, gc) debug("Clear Next Bitmap");
     clear_bitmap(_next_mark_bitmap, _g1h->workers(), false);
   }
   // Note we cannot clear the previous marking bitmap here
