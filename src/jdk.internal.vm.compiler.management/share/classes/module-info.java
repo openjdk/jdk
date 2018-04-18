@@ -34,8 +34,5 @@ module jdk.internal.vm.compiler.management {
     requires jdk.management;
     requires jdk.internal.vm.ci;
     requires jdk.internal.vm.compiler;
-
-    provides sun.management.spi.PlatformMBeanProvider with
-        org.graalvm.compiler.hotspot.jmx.GraalMBeans;
 }
 
