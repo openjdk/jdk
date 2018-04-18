@@ -26,7 +26,7 @@
 #define SHARE_UTILITIES_GLOBAL_COUNTER_INLINE_HPP
 
 #include "runtime/orderAccess.inline.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/thread.inline.hpp"
 #include "utilities/globalCounter.hpp"
 
 inline void GlobalCounter::critical_section_begin(Thread *thread) {
