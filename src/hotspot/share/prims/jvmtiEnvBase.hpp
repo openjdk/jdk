@@ -639,13 +639,7 @@ class JvmtiModuleClosure : public StackObj {
 private:
   static GrowableArray<OopHandle> *_tbl; // Protected with Module_lock
 
-  static void do_module(ModuleEntry* entry) {
-    assert_locked_or_safepoint(Module_lock);
-    OopHandle module = entry->module_handle();
-    guarantee(module.resolve() != NULL, "module object is NULL");
-    _tbl->push(module);
-  }
-
+  static void do_module(ModuleEntry* entry);
 public:
   jvmtiError get_all_modules(JvmtiEnv* env, jint* module_count_ptr, jobject** modules_ptr);
 };

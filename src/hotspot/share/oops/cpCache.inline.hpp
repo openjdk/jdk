@@ -26,6 +26,7 @@
 #define SHARE_VM_OOPS_CPCACHEOOP_INLINE_HPP
 
 #include "oops/cpCache.hpp"
+#include "oops/oopHandle.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 
 inline int ConstantPoolCacheEntry::indices_ord() const { return OrderAccess::load_acquire(&_indices); }
@@ -95,5 +96,7 @@ inline ConstantPoolCache::ConstantPoolCache(int length,
     assert(entry_at(i)->is_f1_null(), "Failed to clear?");
   }
 }
+
+inline oop ConstantPoolCache::resolved_references() { return _resolved_references.resolve(); }
 
 #endif // SHARE_VM_OOPS_CPCACHEOOP_INLINE_HPP

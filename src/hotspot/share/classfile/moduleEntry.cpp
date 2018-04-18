@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "classfile/moduleEntry.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/oopHandle.inline.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
@@ -39,6 +40,8 @@
 #include "utilities/ostream.hpp"
 
 ModuleEntry* ModuleEntryTable::_javabase_module = NULL;
+
+oop ModuleEntry::module() const { return _module.resolve(); }
 
 void ModuleEntry::set_location(Symbol* location) {
   if (_location != NULL) {

@@ -26,6 +26,7 @@
 #define SHARE_VM_OOPS_CONSTANTPOOL_INLINE_HPP
 
 #include "oops/constantPool.hpp"
+#include "oops/cpCache.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 
 inline CPSlot ConstantPool::slot_at(int which) const {

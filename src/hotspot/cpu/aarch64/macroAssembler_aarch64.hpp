@@ -803,8 +803,8 @@ public:
   void store_klass(Register dst, Register src);
   void cmp_klass(Register oop, Register trial_klass, Register tmp);
 
-  void resolve_oop_handle(Register result);
-  void load_mirror(Register dst, Register method);
+  void resolve_oop_handle(Register result, Register tmp = r5);
+  void load_mirror(Register dst, Register method, Register tmp = r5);
 
   void load_heap_oop(Register dst, Address src);
 

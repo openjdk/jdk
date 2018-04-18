@@ -326,7 +326,7 @@ void TemplateTable::fast_aldc(bool wide) {
   // non-null object (CallSite, etc.)
   assert_different_registers(Otos_i, G3_scratch);
   __ get_cache_index_at_bcp(Otos_i, G3_scratch, 1, index_size);  // load index => G3_scratch
-  __ load_resolved_reference_at_index(Otos_i, G3_scratch);
+  __ load_resolved_reference_at_index(Otos_i, G3_scratch, Lscratch);
   __ tst(Otos_i);
   __ br(Assembler::notEqual, false, Assembler::pt, resolved);
   __ delayed()->set((int)bytecode(), O1);
@@ -2016,7 +2016,7 @@ void TemplateTable::load_field_cp_cache_entry(Register Robj,
                                               Register Roffset,
                                               Register Rflags,
                                               bool is_static) {
-  assert_different_registers(Rcache, Rflags, Roffset);
+  assert_different_registers(Rcache, Rflags, Roffset, Lscratch);
 
   ByteSize cp_base_offset = ConstantPoolCache::base_offset();
 
@@ -2026,7 +2026,7 @@ void TemplateTable::load_field_cp_cache_entry(Register Robj,
     __ ld_ptr(Rcache, cp_base_offset + ConstantPoolCacheEntry::f1_offset(), Robj);
     const int mirror_offset = in_bytes(Klass::java_mirror_offset());
     __ ld_ptr( Robj, mirror_offset, Robj);
-    __ resolve_oop_handle(Robj);
+    __ resolve_oop_handle(Robj, Lscratch);
   }
 }
 
@@ -2847,7 +2847,7 @@ void TemplateTable::prepare_invoke(int byte_no,
     // This must be done before we get the receiver,
     // since the parameter_size includes it.
     assert(ConstantPoolCacheEntry::_indy_resolved_references_appendix_offset == 0, "appendix expected at index+0");
-    __ load_resolved_reference_at_index(temp, index);
+    __ load_resolved_reference_at_index(temp, index, /*tmp*/recv);
     __ verify_oop(temp);
     __ push_ptr(temp);  // push appendix (MethodType, CallSite, etc.)
     __ bind(L_no_push);

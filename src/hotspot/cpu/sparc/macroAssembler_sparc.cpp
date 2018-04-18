@@ -3392,18 +3392,19 @@ void MacroAssembler::reserved_stack_check() {
   bind(no_reserved_zone_enabling);
 }
 // ((OopHandle)result).resolve();
-void MacroAssembler::resolve_oop_handle(Register result) {
+void MacroAssembler::resolve_oop_handle(Register result, Register tmp) {
   // OopHandle::resolve is an indirection.
-  ld_ptr(result, 0, result);
+  access_load_at(T_OBJECT, IN_ROOT | IN_CONCURRENT_ROOT,
+                 Address(result, 0), result, tmp);
 }
 
-void MacroAssembler::load_mirror(Register mirror, Register method) {
+void MacroAssembler::load_mirror(Register mirror, Register method, Register tmp) {
   const int mirror_offset = in_bytes(Klass::java_mirror_offset());
   ld_ptr(method, in_bytes(Method::const_offset()), mirror);
   ld_ptr(mirror, in_bytes(ConstMethod::constants_offset()), mirror);
   ld_ptr(mirror, ConstantPool::pool_holder_offset_in_bytes(), mirror);
   ld_ptr(mirror, mirror_offset, mirror);
-  resolve_oop_handle(mirror);
+  resolve_oop_handle(mirror, tmp);
 }
 
 void MacroAssembler::load_klass(Register src_oop, Register klass) {
