@@ -686,8 +686,14 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t cards_sc
 
     _analytics->report_constant_other_time_ms(constant_other_time_ms(pause_time_ms));
 
-    _analytics->report_pending_cards((double) _pending_cards);
-    _analytics->report_rs_lengths((double) _max_rs_lengths);
+    // Do not update RS lengths and the number of pending cards with information from mixed gc:
+    // these are is wildly different to during young only gc and mess up young gen sizing right
+    // after the mixed gc phase.
+    // During mixed gc we do not use them for young gen sizing.
+    if (this_pause_was_young_only) {
+      _analytics->report_pending_cards((double) _pending_cards);
+      _analytics->report_rs_lengths((double) _max_rs_lengths);
+    }
   }
 
   assert(!(this_pause_included_initial_mark && collector_state()->mark_or_rebuild_in_progress()),
