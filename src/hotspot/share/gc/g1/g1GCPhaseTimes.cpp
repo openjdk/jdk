@@ -131,6 +131,7 @@ void G1GCPhaseTimes::reset() {
   _cur_expand_heap_time_ms = 0.0;
   _cur_ref_proc_time_ms = 0.0;
   _cur_ref_enq_time_ms = 0.0;
+  _cur_weak_ref_proc_time_ms = 0.0;
   _cur_collection_start_sec = 0.0;
   _root_region_scan_wait_time_ms = 0.0;
   _external_accounted_time_ms = 0.0;
@@ -372,6 +373,7 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
                         _cur_collection_code_root_fixup_time_ms +
                         _recorded_preserve_cm_referents_time_ms +
                         _cur_ref_proc_time_ms +
+                        _cur_weak_ref_proc_time_ms +
                         _cur_ref_enq_time_ms +
                         _cur_clear_ct_time_ms +
                         _recorded_merge_pss_time_ms +
@@ -391,6 +393,8 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
 
   debug_time_for_reference("Reference Processing", _cur_ref_proc_time_ms);
   _ref_phase_times.print_all_references(2, false);
+
+  debug_time("Weak Processing", _cur_weak_ref_proc_time_ms);
 
   if (G1StringDedup::is_enabled()) {
     debug_time("String Dedup Fixup", _cur_string_dedup_fixup_time_ms);

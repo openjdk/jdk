@@ -4201,7 +4201,7 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
     WeakProcessor::weak_oops_do(&is_alive, &keep_alive);
 
     double time_ms = (os::elapsedTime() - start) * 1000.0;
-    g1_policy()->phase_times()->record_ref_proc_time(time_ms);
+    g1_policy()->phase_times()->record_weak_ref_proc_time(time_ms);
   }
 
   if (G1StringDedup::is_enabled()) {
