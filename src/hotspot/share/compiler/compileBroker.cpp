@@ -50,6 +50,7 @@
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -116,6 +117,17 @@ volatile jint CompileBroker::_should_compile_new_jobs = run_compilation;
 
 // The installed compiler(s)
 AbstractCompiler* CompileBroker::_compilers[2];
+
+// The maximum numbers of compiler threads to be determined during startup.
+int CompileBroker::_c1_count = 0;
+int CompileBroker::_c2_count = 0;
+
+// An array of compiler names as Java String objects
+jobject* CompileBroker::_compiler1_objects = NULL;
+jobject* CompileBroker::_compiler2_objects = NULL;
+
+CompileLog** CompileBroker::_compiler1_logs = NULL;
+CompileLog** CompileBroker::_compiler2_logs = NULL;
 
 // These counters are used to assign an unique ID to each compilation.
 volatile jint CompileBroker::_compilation_id     = 0;
@@ -287,6 +299,36 @@ CompileTaskWrapper::~CompileTaskWrapper() {
 }
 
 /**
+ * Check if a CompilerThread can be removed and update count if requested.
+ */
+static bool can_remove(CompilerThread *ct, bool do_it) {
+  assert(UseDynamicNumberOfCompilerThreads, "or shouldn't be here");
+  if (!ReduceNumberOfCompilerThreads) return false;
+
+  AbstractCompiler *compiler = ct->compiler();
+  int compiler_count = compiler->num_compiler_threads();
+  bool c1 = compiler->is_c1();
+
+  // Keep at least 1 compiler thread of each type.
+  if (compiler_count < 2) return false;
+
+  // Keep thread alive for at least some time.
+  if (ct->idle_time_millis() < (c1 ? 500 : 100)) return false;
+
+  // We only allow the last compiler thread of each type to get removed.
+  jobject last_compiler = c1 ? CompileBroker::compiler1_object(compiler_count - 1)
+                             : CompileBroker::compiler2_object(compiler_count - 1);
+  if (oopDesc::equals(ct->threadObj(), JNIHandles::resolve_non_null(last_compiler))) {
+    if (do_it) {
+      assert_locked_or_safepoint(CompileThread_lock); // Update must be consistent.
+      compiler->set_num_compiler_threads(compiler_count - 1);
+    }
+    return true;
+  }
+  return false;
+}
+
+/**
  * Add a CompileTask to a CompileQueue.
  */
 void CompileQueue::add(CompileTask* task) {
@@ -383,6 +425,11 @@ CompileTask* CompileQueue::get() {
     // is disabled forever. We use 5 seconds wait time; the exiting of compiler threads
     // is not critical and we do not want idle compiler threads to wake up too often.
     MethodCompileQueue_lock->wait(!Mutex::_no_safepoint_check_flag, 5*1000);
+
+    if (UseDynamicNumberOfCompilerThreads && _first == NULL) {
+      // Still nothing to compile. Give caller a chance to stop this thread.
+      if (can_remove(CompilerThread::current(), false)) return NULL;
+    }
   }
 
   if (CompileBroker::is_compilation_disabled_forever()) {
@@ -532,8 +579,8 @@ void CompileBroker::compilation_init_phase1(TRAPS) {
     return;
   }
   // Set the interface to the current compiler(s).
-  int c1_count = CompilationPolicy::policy()->compiler_count(CompLevel_simple);
-  int c2_count = CompilationPolicy::policy()->compiler_count(CompLevel_full_optimization);
+  _c1_count = CompilationPolicy::policy()->compiler_count(CompLevel_simple);
+  _c2_count = CompilationPolicy::policy()->compiler_count(CompLevel_full_optimization);
 
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {
@@ -545,35 +592,35 @@ void CompileBroker::compilation_init_phase1(TRAPS) {
       if (FLAG_IS_DEFAULT(JVMCIThreads)) {
         if (BootstrapJVMCI) {
           // JVMCI will bootstrap so give it more threads
-          c2_count = MIN2(32, os::active_processor_count());
+          _c2_count = MIN2(32, os::active_processor_count());
         }
       } else {
-        c2_count = JVMCIThreads;
+        _c2_count = JVMCIThreads;
       }
       if (FLAG_IS_DEFAULT(JVMCIHostThreads)) {
       } else {
-        c1_count = JVMCIHostThreads;
+        _c1_count = JVMCIHostThreads;
       }
     }
   }
 #endif // INCLUDE_JVMCI
 
 #ifdef COMPILER1
-  if (c1_count > 0) {
+  if (_c1_count > 0) {
     _compilers[0] = new Compiler();
   }
 #endif // COMPILER1
 
 #ifdef COMPILER2
   if (true JVMCI_ONLY( && !UseJVMCICompiler)) {
-    if (c2_count > 0) {
+    if (_c2_count > 0) {
       _compilers[1] = new C2Compiler();
     }
   }
 #endif // COMPILER2
 
   // Start the compiler thread(s) and the sweeper thread
-  init_compiler_sweeper_threads(c1_count, c2_count);
+  init_compiler_sweeper_threads();
   // totalTime performance counter is always created as it is required
   // by the implementation of java.lang.management.CompilationMBean.
   {
@@ -679,29 +726,38 @@ void CompileBroker::compilation_init_phase2() {
   _initialized = true;
 }
 
-JavaThread* CompileBroker::make_thread(const char* name, CompileQueue* queue, CompilerCounters* counters,
-                                       AbstractCompiler* comp, bool compiler_thread, TRAPS) {
-  JavaThread* thread = NULL;
-  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(), true, CHECK_0);
+Handle CompileBroker::create_thread_oop(const char* name, TRAPS) {
+  Klass* k = SystemDictionary::find(vmSymbols::java_lang_Thread(), Handle(), Handle(), CHECK_NH);
+  assert(k != NULL, "must be initialized");
   InstanceKlass* klass = InstanceKlass::cast(k);
-  instanceHandle thread_oop = klass->allocate_instance_handle(CHECK_0);
-  Handle string = java_lang_String::create_from_str(name, CHECK_0);
+  instanceHandle thread_handle = klass->allocate_instance_handle(CHECK_NH);
+  Handle string = java_lang_String::create_from_str(name, CHECK_NH);
 
   // Initialize thread_oop to put it into the system threadGroup
-  Handle thread_group (THREAD,  Universe::system_thread_group());
+  Handle thread_group(THREAD, Universe::system_thread_group());
   JavaValue result(T_VOID);
-  JavaCalls::call_special(&result, thread_oop,
+  JavaCalls::call_special(&result, thread_handle,
                        klass,
                        vmSymbols::object_initializer_name(),
                        vmSymbols::threadgroup_string_void_signature(),
                        thread_group,
                        string,
-                       CHECK_0);
+                       CHECK_NH);
 
+  return thread_handle;
+}
+
+
+JavaThread* CompileBroker::make_thread(jobject thread_handle, CompileQueue* queue,
+                                       AbstractCompiler* comp, bool compiler_thread, TRAPS) {
+  JavaThread* thread = NULL;
   {
     MutexLocker mu(Threads_lock, THREAD);
     if (compiler_thread) {
-      thread = new CompilerThread(queue, counters);
+      if (!InjectCompilerCreationFailure || comp->num_compiler_threads() == 0) {
+        CompilerCounters* counters = new CompilerCounters();
+        thread = new CompilerThread(queue, counters);
+      }
     } else {
       thread = new CodeCacheSweeperThread();
     }
@@ -720,13 +776,13 @@ JavaThread* CompileBroker::make_thread(const char* name, CompileQueue* queue, Co
 
     if (thread != NULL && thread->osthread() != NULL) {
 
-      java_lang_Thread::set_thread(thread_oop(), thread);
+      java_lang_Thread::set_thread(JNIHandles::resolve_non_null(thread_handle), thread);
 
       // Note that this only sets the JavaThread _priority field, which by
       // definition is limited to Java priorities and not OS priorities.
       // The os-priority is set in the CompilerThread startup code itself
 
-      java_lang_Thread::set_priority(thread_oop(), NearMaxPriority);
+      java_lang_Thread::set_priority(JNIHandles::resolve_non_null(thread_handle), NearMaxPriority);
 
       // Note that we cannot call os::set_priority because it expects Java
       // priorities and we are *explicitly* using OS priorities so that it's
@@ -743,9 +799,9 @@ JavaThread* CompileBroker::make_thread(const char* name, CompileQueue* queue, Co
       }
       os::set_native_priority(thread, native_prio);
 
-      java_lang_Thread::set_daemon(thread_oop());
+      java_lang_Thread::set_daemon(JNIHandles::resolve_non_null(thread_handle));
 
-      thread->set_threadObj(thread_oop());
+      thread->set_threadObj(JNIHandles::resolve_non_null(thread_handle));
       if (compiler_thread) {
         thread->as_CompilerThread()->set_compiler(comp);
       }
@@ -756,6 +812,12 @@ JavaThread* CompileBroker::make_thread(const char* name, CompileQueue* queue, Co
 
   // First release lock before aborting VM.
   if (thread == NULL || thread->osthread() == NULL) {
+    if (UseDynamicNumberOfCompilerThreads && comp->num_compiler_threads() > 0) {
+      if (thread != NULL) {
+        thread->smr_delete();
+      }
+      return NULL;
+    }
     vm_exit_during_initialization("java.lang.OutOfMemoryError",
                                   os::native_thread_creation_failed_msg());
   }
@@ -767,49 +829,121 @@ JavaThread* CompileBroker::make_thread(const char* name, CompileQueue* queue, Co
 }
 
 
-void CompileBroker::init_compiler_sweeper_threads(int c1_compiler_count, int c2_compiler_count) {
+void CompileBroker::init_compiler_sweeper_threads() {
   EXCEPTION_MARK;
 #if !defined(ZERO)
-  assert(c2_compiler_count > 0 || c1_compiler_count > 0, "No compilers?");
+  assert(_c2_count > 0 || _c1_count > 0, "No compilers?");
 #endif // !ZERO
   // Initialize the compilation queue
-  if (c2_compiler_count > 0) {
+  if (_c2_count > 0) {
     const char* name = JVMCI_ONLY(UseJVMCICompiler ? "JVMCI compile queue" :) "C2 compile queue";
     _c2_compile_queue  = new CompileQueue(name);
-    _compilers[1]->set_num_compiler_threads(c2_compiler_count);
+    _compiler2_objects = NEW_C_HEAP_ARRAY(jobject, _c2_count, mtCompiler);
+    _compiler2_logs = NEW_C_HEAP_ARRAY(CompileLog*, _c2_count, mtCompiler);
   }
-  if (c1_compiler_count > 0) {
+  if (_c1_count > 0) {
     _c1_compile_queue  = new CompileQueue("C1 compile queue");
-    _compilers[0]->set_num_compiler_threads(c1_compiler_count);
+    _compiler1_objects = NEW_C_HEAP_ARRAY(jobject, _c1_count, mtCompiler);
+    _compiler1_logs = NEW_C_HEAP_ARRAY(CompileLog*, _c1_count, mtCompiler);
   }
-
-  int compiler_count = c1_compiler_count + c2_compiler_count;
 
   char name_buffer[256];
-  const bool compiler_thread = true;
-  for (int i = 0; i < c2_compiler_count; i++) {
+
+  for (int i = 0; i < _c2_count; i++) {
     // Create a name for our thread.
     sprintf(name_buffer, "%s CompilerThread%d", _compilers[1]->name(), i);
-    CompilerCounters* counters = new CompilerCounters();
-    make_thread(name_buffer, _c2_compile_queue, counters, _compilers[1], compiler_thread, CHECK);
+    jobject thread_handle = JNIHandles::make_global(create_thread_oop(name_buffer, THREAD));
+    _compiler2_objects[i] = thread_handle;
+    _compiler2_logs[i] = NULL;
+
+    if (!UseDynamicNumberOfCompilerThreads || i == 0) {
+      JavaThread *ct = make_thread(thread_handle, _c2_compile_queue, _compilers[1], /* compiler_thread */ true, CHECK);
+      assert(ct != NULL, "should have been handled for initial thread");
+      _compilers[1]->set_num_compiler_threads(i + 1);
+      if (TraceCompilerThreads) {
+        ResourceMark rm;
+        MutexLocker mu(Threads_lock);
+        tty->print_cr("Added initial compiler thread %s", ct->get_thread_name());
+      }
+    }
   }
 
-  for (int i = c2_compiler_count; i < compiler_count; i++) {
+  for (int i = 0; i < _c1_count; i++) {
     // Create a name for our thread.
     sprintf(name_buffer, "C1 CompilerThread%d", i);
-    CompilerCounters* counters = new CompilerCounters();
-    // C1
-    make_thread(name_buffer, _c1_compile_queue, counters, _compilers[0], compiler_thread, CHECK);
+    jobject thread_handle = JNIHandles::make_global(create_thread_oop(name_buffer, THREAD));
+    _compiler1_objects[i] = thread_handle;
+    _compiler1_logs[i] = NULL;
+
+    if (!UseDynamicNumberOfCompilerThreads || i == 0) {
+      JavaThread *ct = make_thread(thread_handle, _c1_compile_queue, _compilers[0], /* compiler_thread */ true, CHECK);
+      assert(ct != NULL, "should have been handled for initial thread");
+      _compilers[0]->set_num_compiler_threads(i + 1);
+      if (TraceCompilerThreads) {
+        ResourceMark rm;
+        MutexLocker mu(Threads_lock);
+        tty->print_cr("Added initial compiler thread %s", ct->get_thread_name());
+      }
+    }
   }
 
   if (UsePerfData) {
-    PerfDataManager::create_constant(SUN_CI, "threads", PerfData::U_Bytes, compiler_count, CHECK);
+    PerfDataManager::create_constant(SUN_CI, "threads", PerfData::U_Bytes, _c1_count + _c2_count, CHECK);
   }
 
   if (MethodFlushing) {
     // Initialize the sweeper thread
-    make_thread("Sweeper thread", NULL, NULL, NULL, false, CHECK);
+    jobject thread_handle = JNIHandles::make_local(THREAD, create_thread_oop("Sweeper thread", THREAD)());
+    make_thread(thread_handle, NULL, NULL, /* compiler_thread */ false, CHECK);
   }
+}
+
+void CompileBroker::possibly_add_compiler_threads() {
+  EXCEPTION_MARK;
+
+  julong available_memory = os::available_memory();
+  // Only do attempt to start additional threads if the lock is free.
+  if (!CompileThread_lock->try_lock()) return;
+
+  if (_c2_compile_queue != NULL) {
+    int old_c2_count = _compilers[1]->num_compiler_threads();
+    int new_c2_count = MIN3(_c2_count,
+        _c2_compile_queue->size() / 2,
+        (int)(available_memory / 200*M));
+
+    for (int i = old_c2_count; i < new_c2_count; i++) {
+      JavaThread *ct = make_thread(compiler2_object(i), _c2_compile_queue, _compilers[1], true, CHECK);
+      if (ct == NULL) break;
+      _compilers[1]->set_num_compiler_threads(i + 1);
+      if (TraceCompilerThreads) {
+        ResourceMark rm;
+        MutexLocker mu(Threads_lock);
+        tty->print_cr("Added compiler thread %s (available memory: %dMB)",
+                      ct->get_thread_name(), (int)(available_memory/M));
+      }
+    }
+  }
+
+  if (_c1_compile_queue != NULL) {
+    int old_c1_count = _compilers[0]->num_compiler_threads();
+    int new_c1_count = MIN3(_c1_count,
+        _c1_compile_queue->size() / 4,
+        (int)(available_memory / 100*M));
+
+    for (int i = old_c1_count; i < new_c1_count; i++) {
+      JavaThread *ct = make_thread(compiler1_object(i), _c1_compile_queue, _compilers[0], true, CHECK);
+      if (ct == NULL) break;
+      _compilers[0]->set_num_compiler_threads(i + 1);
+      if (TraceCompilerThreads) {
+        ResourceMark rm;
+        MutexLocker mu(Threads_lock);
+        tty->print_cr("Added compiler thread %s (available memory: %dMB)",
+                      ct->get_thread_name(), (int)(available_memory/M));
+      }
+    }
+  }
+
+  CompileThread_lock->unlock();
 }
 
 
@@ -1546,6 +1680,49 @@ void CompileBroker::shutdown_compiler_runtime(AbstractCompiler* comp, CompilerTh
   }
 }
 
+/**
+ * Helper function to create new or reuse old CompileLog.
+ */
+CompileLog* CompileBroker::get_log(CompilerThread* ct) {
+  if (!LogCompilation) return NULL;
+
+  AbstractCompiler *compiler = ct->compiler();
+  bool c1 = compiler->is_c1();
+  jobject* compiler_objects = c1 ? _compiler1_objects : _compiler2_objects;
+  assert(compiler_objects != NULL, "must be initialized at this point");
+  CompileLog** logs = c1 ? _compiler1_logs : _compiler2_logs;
+  assert(logs != NULL, "must be initialized at this point");
+  int count = c1 ? _c1_count : _c2_count;
+
+  // Find Compiler number by its threadObj.
+  oop compiler_obj = ct->threadObj();
+  int compiler_number = 0;
+  bool found = false;
+  for (; compiler_number < count; compiler_number++) {
+    if (oopDesc::equals(JNIHandles::resolve_non_null(compiler_objects[compiler_number]), compiler_obj)) {
+      found = true;
+      break;
+    }
+  }
+  assert(found, "Compiler must exist at this point");
+
+  // Determine pointer for this thread's log.
+  CompileLog** log_ptr = &logs[compiler_number];
+
+  // Return old one if it exists.
+  CompileLog* log = *log_ptr;
+  if (log != NULL) {
+    ct->init_log(log);
+    return log;
+  }
+
+  // Create a new one and remember it.
+  init_compiler_thread_log();
+  log = ct->log();
+  *log_ptr = log;
+  return log;
+}
+
 // ------------------------------------------------------------------
 // CompileBroker::compiler_thread_loop
 //
@@ -1568,10 +1745,7 @@ void CompileBroker::compiler_thread_loop() {
   }
 
   // Open a log.
-  if (LogCompilation) {
-    init_compiler_thread_log();
-  }
-  CompileLog* log = thread->log();
+  CompileLog* log = get_log(thread);
   if (log != NULL) {
     log->begin_elem("start_compile_thread name='%s' thread='" UINTX_FORMAT "' process='%d'",
                     thread->name(),
@@ -1586,6 +1760,8 @@ void CompileBroker::compiler_thread_loop() {
     return;
   }
 
+  thread->start_idle_timer();
+
   // Poll for new compilation tasks as long as the JVM runs. Compilation
   // should only be disabled if something went wrong while initializing the
   // compiler runtimes. This, in turn, should not happen. The only known case
@@ -1597,7 +1773,22 @@ void CompileBroker::compiler_thread_loop() {
 
     CompileTask* task = queue->get();
     if (task == NULL) {
+      if (UseDynamicNumberOfCompilerThreads) {
+        // Access compiler_count under lock to enforce consistency.
+        MutexLocker only_one(CompileThread_lock);
+        if (can_remove(thread, true)) {
+          if (TraceCompilerThreads) {
+            tty->print_cr("Removing compiler thread %s after " JLONG_FORMAT " ms idle time",
+                          thread->name(), thread->idle_time_millis());
+          }
+          return; // Stop this thread.
+        }
+      }
       continue;
+    }
+
+    if (UseDynamicNumberOfCompilerThreads) {
+      possibly_add_compiler_threads();
     }
 
     // Give compiler threads an extra quanta.  They tend to be bursty and
@@ -1618,6 +1809,7 @@ void CompileBroker::compiler_thread_loop() {
       // Compile the method.
       if ((UseCompiler || AlwaysCompileLoopMethods) && CompileBroker::should_compile_new_jobs()) {
         invoke_compiler_on_method(task);
+        thread->start_idle_timer();
       } else {
         // After compilation is disabled, remove remaining methods from queue
         method->clear_queued_for_compilation();
