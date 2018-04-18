@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -555,13 +555,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         postEvent(new WindowEvent((Window)target,
                                   WindowEvent.WINDOW_STATE_CHANGED,
                                   oldState, newState));
-    }
-
-    /**
-     * DEPRECATED:  Replaced by getInsets().
-     */
-    public Insets insets() {
-        return getInsets();
     }
 
     boolean isAutoRequestFocus() {

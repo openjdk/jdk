@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,16 +127,6 @@ public class CMenuItem extends CMenuComponent implements MenuItemPeer {
      */
     public final void setToolTipText(final String text) {
         execute(ptr -> nativeSetTooltip(ptr, text));
-    }
-
-//    @Override
-    public void enable() {
-        setEnabled(true);
-    }
-
-//    @Override
-    public void disable() {
-        setEnabled(false);
     }
 
     public final boolean isEnabled() {

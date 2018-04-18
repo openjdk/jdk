@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,6 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
     }
     public void setEnabled(boolean b) {}
     public void paint(Graphics g) {}
-    public void repaint(long tm, int x, int y, int width, int height) {}
     public void print(Graphics g) {}
     public void setBounds(int x, int y, int width, int height, int op) {
         // Unimplemeneted: Check for min/max hints for non-resizable
@@ -268,51 +267,6 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
      * the box, as well as the text label.
      */
     public void        layout() {}
-
-    /**
-     * DEPRECATED:  Replaced by getPreferredSize().
-     */
-    public Dimension            preferredSize() {
-        return getPreferredSize();
-    }
-
-    /**
-     * DEPRECATED:  Replaced by getMinimumSize().
-     */
-    public Dimension            minimumSize() {
-        return getMinimumSize();
-    }
-
-    /**
-     * DEPRECATED:  Replaced by setVisible(boolean).
-     */
-    public void         show() {
-        setVisible(true);
-    }
-
-    /**
-     * DEPRECATED:  Replaced by setVisible(boolean).
-     */
-    public void         hide() {
-        setVisible(false);
-    }
-
-    /**
-     * DEPRECATED:  Replaced by setEnabled(boolean).
-     */
-    public void         enable() {}
-
-    /**
-     * DEPRECATED:  Replaced by setEnabled(boolean).
-     */
-    public void         disable() {}
-
-    /**
-     * DEPRECATED:  Replaced by setBounds(int, int, int, int).
-     */
-    public void reshape(int x, int y, int width, int height) {
-        setBounds(x, y, width, height, SET_BOUNDS);
-    }
 
     Window getTopLevel(Component comp) {
         while (comp != null && !(comp instanceof Window)) {

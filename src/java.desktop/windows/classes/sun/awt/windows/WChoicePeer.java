@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ final class WChoicePeer extends WComponentPeer implements ChoicePeer {
 
     @Override
     public void add(String item, int index) {
-        addItem(item, index);
+        addItems(new String[] {item}, index);
     }
 
     @Override
@@ -73,12 +73,6 @@ final class WChoicePeer extends WComponentPeer implements ChoicePeer {
     @Override
     public native void remove(int index);
 
-    /**
-     * DEPRECATED, but for now, called by add(String, int).
-     */
-    public void addItem(String item, int index) {
-        addItems(new String[] {item}, index);
-    }
     public native void addItems(String[] items, int index);
 
     @Override

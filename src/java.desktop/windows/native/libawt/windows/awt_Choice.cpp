@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,7 +152,7 @@ AwtChoice* AwtChoice::Create(jobject peer, jobject parent) {
             jint height = env->GetIntField(target, AwtComponent::heightID);
 
             jobject dimension = JNU_CallMethodByName(env, NULL, peer,
-                                                     "preferredSize",
+                                                     "getPreferredSize",
                                                      "()Ljava/awt/Dimension;").l;
             DASSERT(!safe_ExceptionOccurred(env));
             if (env->ExceptionCheck()) goto done;
@@ -334,7 +334,7 @@ void AwtChoice::Reshape(int x, int y, int w, int h)
 jobject AwtChoice::PreferredItemSize(JNIEnv *env)
 {
     jobject dimension = JNU_CallMethodByName(env, NULL, GetPeer(env),
-                                             "preferredSize",
+                                             "getPreferredSize",
                                              "()Ljava/awt/Dimension;").l;
     DASSERT(!safe_ExceptionOccurred(env));
     CHECK_NULL_RETURN(dimension, NULL);

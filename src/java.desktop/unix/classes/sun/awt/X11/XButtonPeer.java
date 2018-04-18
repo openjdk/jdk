@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,12 +200,6 @@ public class XButtonPeer extends XComponentPeer implements ButtonPeer {
                              fm.getHeight() + 8);
     }
 
-    /**
-     * DEPRECATED
-     */
-    public Dimension minimumSize() {
-        return getMinimumSize();
-    }
     /**
      * This method is called from Toolkit Thread and so it should not call any
      * client code.
