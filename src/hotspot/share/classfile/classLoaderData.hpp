@@ -114,7 +114,7 @@ class ClassLoaderDataGraph : public AllStatic {
   static void packages_unloading_do(void f(PackageEntry*));
   static void loaded_classes_do(KlassClosure* klass_closure);
   static void classes_unloading_do(void f(Klass* const));
-  static bool do_unloading(BoolObjectClosure* is_alive_closure, bool clean_previous_versions);
+  static bool do_unloading(bool clean_previous_versions);
 
   // dictionary do
   // Iterate over all klasses in dictionary, but
@@ -220,7 +220,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   static ClassLoaderData * _the_null_class_loader_data;
 
-  WeakHandle<vm_class_loader_data> _holder; // The oop that determines lifetime of this class loader
+  ClassLoaderWeakHandle _holder; // The oop that determines lifetime of this class loader
   oop _class_loader;          // The instance of java/lang/ClassLoader associated with
                               // this ClassLoaderData
 

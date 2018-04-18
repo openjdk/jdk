@@ -1237,8 +1237,7 @@ bool ClassLoaderDataGraph::contains_loader_data(ClassLoaderData* loader_data) {
 
 // Move class loader data from main list to the unloaded list for unloading
 // and deallocation later.
-bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure,
-                                        bool clean_previous_versions) {
+bool ClassLoaderDataGraph::do_unloading(bool clean_previous_versions) {
 
   ClassLoaderData* data = _head;
   ClassLoaderData* prev = NULL;
@@ -1296,7 +1295,7 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure,
       // Remove entries in the dictionary of live class loader that have
       // initiated loading classes in a dead class loader.
       if (data->dictionary() != NULL) {
-        data->dictionary()->do_unloading(is_alive_closure);
+        data->dictionary()->do_unloading();
       }
       // Walk a ModuleEntry's reads, and a PackageEntry's exports
       // lists to determine if there are modules on those lists that are now
