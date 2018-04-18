@@ -1012,6 +1012,8 @@ class G1UpdateRemSetTrackingBeforeRebuild : public HeapRegionClosure {
   G1CollectedHeap* _g1h;
   G1ConcurrentMark* _cm;
 
+  G1PrintRegionLivenessInfoClosure _cl;
+
   uint _num_regions_selected_for_rebuild;  // The number of regions actually selected for rebuild.
 
   void update_remset_before_rebuild(HeapRegion * hr) {
@@ -1025,12 +1027,56 @@ class G1UpdateRemSetTrackingBeforeRebuild : public HeapRegionClosure {
     _cm->update_top_at_rebuild_start(hr);
   }
 
+  void distribute_marked_bytes(HeapRegion* hr, size_t marked_words) {
+    uint const region_idx = hr->hrm_index();
+    uint num_regions_in_humongous = (uint)G1CollectedHeap::humongous_obj_size_in_regions(marked_words);
+
+    for (uint i = region_idx; i < (region_idx + num_regions_in_humongous); i++) {
+      HeapRegion* const r = _g1h->region_at(i);
+      size_t const words_to_add = MIN2(HeapRegion::GrainWords, marked_words);
+      assert(words_to_add > 0, "Out of space to distribute before end of humongous object in region %u (starts %u)", i, region_idx);
+
+      log_trace(gc, marking)("Adding " SIZE_FORMAT " words to humongous region %u (%s)",
+                             words_to_add, i, r->get_type_str());
+      r->add_to_marked_bytes(words_to_add * HeapWordSize);
+      marked_words -= words_to_add;
+    }
+    assert(marked_words == 0,
+           SIZE_FORMAT " words left after distributing space across %u regions",
+           marked_words, num_regions_in_humongous);
+  }
+
+  void update_marked_bytes(HeapRegion* hr) {
+    uint const region_idx = hr->hrm_index();
+    size_t marked_words = _cm->liveness(region_idx);
+    // The marking attributes the object's size completely to the humongous starts
+    // region. We need to distribute this value across the entire set of regions a
+    // humongous object spans.
+    if (hr->is_humongous()) {
+      assert(hr->is_starts_humongous() || marked_words == 0,
+             "Should not have marked words " SIZE_FORMAT " in non-starts humongous region %u (%s)",
+             marked_words, region_idx, hr->get_type_str());
+
+      if (marked_words > 0) {
+        distribute_marked_bytes(hr, marked_words);
+      }
+    } else {
+      log_trace(gc, marking)("Adding " SIZE_FORMAT " words to region %u (%s)", marked_words, region_idx, hr->get_type_str());
+      hr->add_to_marked_bytes(marked_words * HeapWordSize);
+    }
+  }
+
 public:
   G1UpdateRemSetTrackingBeforeRebuild(G1CollectedHeap* g1h, G1ConcurrentMark* cm) :
-    _g1h(g1h), _cm(cm), _num_regions_selected_for_rebuild(0) { }
+    _g1h(g1h), _cm(cm), _cl("Post-Marking"), _num_regions_selected_for_rebuild(0) { }
 
   virtual bool do_heap_region(HeapRegion* r) {
     update_remset_before_rebuild(r);
+    update_marked_bytes(r);
+    if (log_is_enabled(Trace, gc, liveness)) {
+      _cl.do_heap_region(r);
+    }
+    r->note_end_of_marking();
     return false;
   }
 
@@ -1087,6 +1133,8 @@ void G1ConcurrentMark::remark() {
       flush_all_task_caches();
     }
 
+    // Install newly created mark bitmap as "prev".
+    swap_mark_bitmaps();
     {
       GCTraceTime(Debug, gc, phases)("Update Remembered Set Tracking Before Rebuild");
       G1UpdateRemSetTrackingBeforeRebuild cl(_g1h, this);
@@ -1095,7 +1143,7 @@ void G1ConcurrentMark::remark() {
                                       _g1h->num_regions(), cl.num_selected_for_rebuild());
     }
 
-    verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption_G1UseNextMarking, "Remark after");
+    verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption_G1UsePrevMarking, "Remark after");
 
     assert(!restart_for_overflow(), "sanity");
     // Completely reset the marking state since marking completed
@@ -1113,7 +1161,7 @@ void G1ConcurrentMark::remark() {
 
   {
     GCTraceTime(Debug, gc, phases)("Report Object Count");
-    report_object_count();
+    report_object_count(mark_finished);
   }
 
   // Statistics
@@ -1151,8 +1199,6 @@ class G1CleanupTask : public AbstractGangTask {
     const uint humongous_regions_removed() { return _humongous_regions_removed; }
 
     bool do_heap_region(HeapRegion *hr) {
-      hr->note_end_of_marking();
-
       if (hr->used() > 0 && hr->max_live_bytes() == 0 && !hr->is_young() && !hr->is_archive()) {
         _freed_bytes += hr->used();
         hr->set_containing_set(NULL);
@@ -1247,7 +1293,7 @@ void G1ConcurrentMark::cleanup() {
 
   double start = os::elapsedTime();
 
-  verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UseNextMarking, "Cleanup before");
+  verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UsePrevMarking, "Cleanup before");
 
   {
     GCTraceTime(Debug, gc, phases)("Update Remembered Set Tracking After Rebuild");
@@ -1260,8 +1306,6 @@ void G1ConcurrentMark::cleanup() {
     _g1h->heap_region_iterate(&cl);
   }
 
-  // Install newly created mark bitmap as "prev".
-  swap_mark_bitmaps();
   {
     GCTraceTime(Debug, gc, phases)("Reclaim Empty Regions");
     reclaim_empty_regions();
@@ -1629,10 +1673,32 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
   }
 }
 
-void G1ConcurrentMark::report_object_count() {
-  G1CMIsAliveClosure is_alive(_g1h);
-  _gc_tracer_cm->report_object_count_after_gc(&is_alive);
+// When sampling object counts, we already swapped the mark bitmaps, so we need to use
+// the prev bitmap determining liveness.
+class G1ObjectCountIsAliveClosure: public BoolObjectClosure {
+  G1CollectedHeap* _g1;
+ public:
+  G1ObjectCountIsAliveClosure(G1CollectedHeap* g1) : _g1(g1) { }
+
+  bool do_object_b(oop obj) {
+    HeapWord* addr = (HeapWord*)obj;
+    return addr != NULL &&
+           (!_g1->is_in_g1_reserved(addr) || !_g1->is_obj_dead(obj));
+  }
+};
+
+void G1ConcurrentMark::report_object_count(bool mark_completed) {
+  // Depending on the completion of the marking liveness needs to be determined
+  // using either the next or prev bitmap.
+  if (mark_completed) {
+    G1ObjectCountIsAliveClosure is_alive(_g1h);
+    _gc_tracer_cm->report_object_count_after_gc(&is_alive);
+  } else {
+    G1CMIsAliveClosure is_alive(_g1h);
+    _gc_tracer_cm->report_object_count_after_gc(&is_alive);
+  }
 }
+
 
 void G1ConcurrentMark::swap_mark_bitmaps() {
   G1CMBitMap* temp = _prev_mark_bitmap;

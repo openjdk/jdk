@@ -844,7 +844,7 @@ class G1RebuildRemSetTask: public AbstractGangTask {
           assert(hr->top() == top_at_mark_start || hr->top() == top_at_rebuild_start,
                  "More than one object in the humongous region?");
           humongous_obj->oop_iterate(&_update_cl, mr);
-          return top_at_mark_start != hr->bottom() ? mr.byte_size() : 0;
+          return top_at_mark_start != hr->bottom() ? mr.intersection(MemRegion((HeapWord*)humongous_obj, humongous_obj->size())).byte_size() : 0;
         } else {
           return 0;
         }
@@ -883,7 +883,7 @@ public:
       size_t total_marked_bytes = 0;
       size_t const chunk_size_in_words = G1RebuildRemSetChunkSize / HeapWordSize;
 
-      HeapWord* const top_at_mark_start = hr->next_top_at_mark_start();
+      HeapWord* const top_at_mark_start = hr->prev_top_at_mark_start();
 
       HeapWord* cur = hr->bottom();
       while (cur < hr->end()) {
@@ -900,7 +900,7 @@ public:
         }
 
         const Ticks start = Ticks::now();
-        size_t marked_bytes = rebuild_rem_set_in_region(_cm->next_mark_bitmap(),
+        size_t marked_bytes = rebuild_rem_set_in_region(_cm->prev_mark_bitmap(),
                                                         top_at_mark_start,
                                                         top_at_rebuild_start,
                                                         hr,
@@ -923,7 +923,6 @@ public:
                                         p2i(top_at_rebuild_start));
 
         if (marked_bytes > 0) {
-          hr->add_to_marked_bytes(marked_bytes);
           total_marked_bytes += marked_bytes;
         }
         cur += chunk_size_in_words;
@@ -937,12 +936,11 @@ public:
       // Simply filter out those regions. We can not just use region type because there
       // might have already been new allocations into these regions.
       DEBUG_ONLY(HeapWord* const top_at_rebuild_start = _cm->top_at_rebuild_start(region_idx);)
-      assert(!hr->is_old() ||
-             top_at_rebuild_start == NULL ||
-             total_marked_bytes == _cm->liveness(region_idx) * HeapWordSize,
-             "Marked bytes " SIZE_FORMAT " for region %u (%s) in [bottom, TAMS) do not match liveness during mark " SIZE_FORMAT " "
+      assert(top_at_rebuild_start == NULL ||
+             total_marked_bytes == hr->marked_bytes(),
+             "Marked bytes " SIZE_FORMAT " for region %u (%s) in [bottom, TAMS) do not match calculated marked bytes " SIZE_FORMAT " "
              "(" PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT ")",
-             total_marked_bytes, hr->hrm_index(), hr->get_type_str(), _cm->liveness(region_idx) * HeapWordSize,
+             total_marked_bytes, hr->hrm_index(), hr->get_type_str(), hr->marked_bytes(),
              p2i(hr->bottom()), p2i(top_at_mark_start), p2i(top_at_rebuild_start));
        // Abort state may have changed after the yield check.
       return _cm->has_aborted();
