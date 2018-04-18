@@ -305,6 +305,14 @@ class Thread: public ThreadShadow {
   // claimed as a task.
   int _oops_do_parity;
 
+  // Support for GlobalCounter
+ private:
+  volatile uintx _rcu_counter;
+ public:
+  volatile uintx* get_rcu_counter() {
+    return &_rcu_counter;
+  }
+
  public:
   void set_last_handle_mark(HandleMark* mark)   { _last_handle_mark = mark; }
   HandleMark* last_handle_mark() const          { return _last_handle_mark; }
@@ -378,7 +386,7 @@ class Thread: public ThreadShadow {
   void initialize_thread_current();
   void clear_thread_current(); // TLS cleanup needed before threads terminate
 
-  public:
+ public:
   // thread entry point
   virtual void run();
 
