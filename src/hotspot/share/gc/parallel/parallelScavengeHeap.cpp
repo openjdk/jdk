@@ -41,6 +41,7 @@
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcWhen.hpp"
 #include "logging/log.hpp"
+#include "memory/metaspaceCounters.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"

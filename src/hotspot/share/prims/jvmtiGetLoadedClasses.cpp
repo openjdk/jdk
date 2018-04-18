@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.inline.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"

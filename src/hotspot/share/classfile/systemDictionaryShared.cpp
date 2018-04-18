@@ -357,6 +357,14 @@ Handle SystemDictionaryShared::init_security_info(Handle class_loader, InstanceK
   return pd;
 }
 
+bool SystemDictionaryShared::is_sharing_possible(ClassLoaderData* loader_data) {
+  oop class_loader = loader_data->class_loader();
+  return (class_loader == NULL ||
+          (UseAppCDS && (SystemDictionary::is_system_class_loader(class_loader) ||
+                         SystemDictionary::is_platform_class_loader(class_loader)))
+          );
+}
+
 // Currently AppCDS only archives classes from the run-time image, the
 // -Xbootclasspath/a path, the class path, and the module path.
 //

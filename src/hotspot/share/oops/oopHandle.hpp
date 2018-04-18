@@ -46,7 +46,7 @@ public:
   inline oop resolve() const;
 
   // Used only for removing handle.
-  oop* ptr_raw() { return _obj; }
+  oop* ptr_raw() const { return _obj; }
 };
 
 #endif // SHARE_VM_OOPS_OOPHANDLE_HPP

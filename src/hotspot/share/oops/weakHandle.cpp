@@ -51,8 +51,8 @@ template <WeakHandleType T>
 void WeakHandle<T>::release() const {
   // Only release if the pointer to the object has been created.
   if (_obj != NULL) {
-    // Clear the WeakHandle.  For class loader data race, the handle may not have
-    // been previously cleared by GC.
+    // Clear the WeakHandle.  For race in creating ClassLoaderData, we can release this
+    // WeakHandle before it is cleared by GC.
     RootAccess<ON_PHANTOM_OOP_REF>::oop_store(_obj, (oop)NULL);
     get_storage()->release(_obj);
   }
