@@ -37,17 +37,18 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
  * Base Selector implementation class.
  */
 
-public abstract class SelectorImpl
+abstract class SelectorImpl
     extends AbstractSelector
 {
     // The set of keys registered with this Selector
-    protected final Set<SelectionKey> keys;
+    private final Set<SelectionKey> keys;
 
     // The set of keys with data ready for an operation
     protected final Set<SelectionKey> selectedKeys;
@@ -58,7 +59,7 @@ public abstract class SelectorImpl
 
     protected SelectorImpl(SelectorProvider sp) {
         super(sp);
-        keys = new HashSet<>();
+        keys = ConcurrentHashMap.newKeySet();
         selectedKeys = new HashSet<>();
         publicKeys = Collections.unmodifiableSet(keys);
         publicSelectedKeys = Util.ungrowableSet(selectedKeys);
@@ -82,11 +83,8 @@ public abstract class SelectorImpl
     }
 
     /**
-     * Returns the public view of the key sets
+     * Returns the public view of the selected-key set
      */
-    protected final Set<SelectionKey> nioKeys() {
-        return publicKeys;
-    }
     protected final Set<SelectionKey> nioSelectedKeys() {
         return publicSelectedKeys;
     }
@@ -116,18 +114,14 @@ public abstract class SelectorImpl
     private int lockAndDoSelect(long timeout) throws IOException {
         synchronized (this) {
             ensureOpen();
-            synchronized (publicKeys) {
-                synchronized (publicSelectedKeys) {
-                    return doSelect(timeout);
-                }
+            synchronized (publicSelectedKeys) {
+                return doSelect(timeout);
             }
         }
     }
 
     @Override
-    public final int select(long timeout)
-        throws IOException
-    {
+    public final int select(long timeout) throws IOException {
         if (timeout < 0)
             throw new IllegalArgumentException("Negative timeout");
         return lockAndDoSelect((timeout == 0) ? -1 : timeout);
@@ -135,7 +129,7 @@ public abstract class SelectorImpl
 
     @Override
     public final int select() throws IOException {
-        return select(0);
+        return lockAndDoSelect(-1);
     }
 
     @Override
@@ -143,31 +137,32 @@ public abstract class SelectorImpl
         return lockAndDoSelect(0);
     }
 
+    /**
+     * Invoked by implCloseSelector to close the selector.
+     */
+    protected abstract void implClose() throws IOException;
+
     @Override
     public final void implCloseSelector() throws IOException {
         wakeup();
         synchronized (this) {
             implClose();
-            synchronized (publicKeys) {
-                synchronized (publicSelectedKeys) {
-                    // Deregister channels
-                    Iterator<SelectionKey> i = keys.iterator();
-                    while (i.hasNext()) {
-                        SelectionKeyImpl ski = (SelectionKeyImpl)i.next();
-                        deregister(ski);
-                        SelectableChannel selch = ski.channel();
-                        if (!selch.isOpen() && !selch.isRegistered())
-                            ((SelChImpl)selch).kill();
-                        selectedKeys.remove(ski);
-                        i.remove();
-                    }
-                    assert selectedKeys.isEmpty() && keys.isEmpty();
+            synchronized (publicSelectedKeys) {
+                // Deregister channels
+                Iterator<SelectionKey> i = keys.iterator();
+                while (i.hasNext()) {
+                    SelectionKeyImpl ski = (SelectionKeyImpl)i.next();
+                    deregister(ski);
+                    SelectableChannel selch = ski.channel();
+                    if (!selch.isOpen() && !selch.isRegistered())
+                        ((SelChImpl)selch).kill();
+                    selectedKeys.remove(ski);
+                    i.remove();
                 }
+                assert selectedKeys.isEmpty() && keys.isEmpty();
             }
         }
     }
-
-    protected abstract void implClose() throws IOException;
 
     @Override
     protected final SelectionKey register(AbstractSelectableChannel ch,
@@ -179,12 +174,21 @@ public abstract class SelectorImpl
         SelectionKeyImpl k = new SelectionKeyImpl((SelChImpl)ch, this);
         k.attach(attachment);
 
-        // register with selector (if needed) before adding to key set
+        // register (if needed) before adding to key set
         implRegister(k);
-        synchronized (publicKeys) {
-            keys.add(k);
+
+        // add to the selector's key set, removing it immediately if the selector
+        // is closed. The key is not in the channel's key set at this point but
+        // it may be observed by a thread iterating over the selector's key set.
+        keys.add(k);
+        try {
+            k.interestOps(ops);
+        } catch (ClosedSelectorException e) {
+            assert ch.keyFor(this) == null;
+            keys.remove(k);
+            k.cancel();
+            throw e;
         }
-        k.interestOps(ops);
         return k;
     }
 
@@ -198,11 +202,16 @@ public abstract class SelectorImpl
         ensureOpen();
     }
 
+    /**
+     * Removes the key from the selector
+     */
     protected abstract void implDereg(SelectionKeyImpl ski) throws IOException;
 
+    /**
+     * Invoked by selection operations to process the cancelled-key set
+     */
     protected final void processDeregisterQueue() throws IOException {
         assert Thread.holdsLock(this);
-        assert Thread.holdsLock(publicKeys);
         assert Thread.holdsLock(publicSelectedKeys);
 
         Set<SelectionKey> cks = cancelledKeys();
@@ -231,7 +240,8 @@ public abstract class SelectorImpl
     }
 
     /**
-     * Change the event set in the selector
+     * Invoked by interestOps to ensure the interest ops are updated at the
+     * next selection operation.
      */
     protected abstract void setEventOps(SelectionKeyImpl ski);
 }
