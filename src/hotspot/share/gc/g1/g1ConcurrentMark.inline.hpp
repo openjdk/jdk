@@ -193,9 +193,9 @@ inline void G1ConcurrentMark::add_to_liveness(uint worker_id, oop const obj, siz
   task(worker_id)->update_liveness(obj, size);
 }
 
-inline void G1CMTask::make_reference_grey(oop obj) {
+inline bool G1CMTask::make_reference_grey(oop obj) {
   if (!_cm->mark_in_next_bitmap(_worker_id, obj)) {
-    return;
+    return false;
   }
 
   // No OrderAccess:store_load() is needed. It is implicit in the
@@ -233,16 +233,17 @@ inline void G1CMTask::make_reference_grey(oop obj) {
       push(entry);
     }
   }
+  return true;
 }
 
 template <class T>
-inline void G1CMTask::deal_with_reference(T* p) {
+inline bool G1CMTask::deal_with_reference(T* p) {
   increment_refs_reached();
   oop const obj = RawAccess<MO_VOLATILE>::oop_load(p);
   if (obj == NULL) {
-    return;
+    return false;
   }
-  make_reference_grey(obj);
+  return make_reference_grey(obj);
 }
 
 inline void G1ConcurrentMark::mark_in_prev_bitmap(oop p) {

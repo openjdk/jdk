@@ -1387,35 +1387,40 @@ public:
   virtual void do_oop(      oop* p) { do_oop_work(p); }
 
   template <class T> void do_oop_work(T* p) {
-    if (!_cm->has_overflown()) {
-      _task->deal_with_reference(p);
-      _ref_counter--;
+    if (_cm->has_overflown()) {
+      return;
+    }
+    if (!_task->deal_with_reference(p)) {
+      // We did not add anything to the mark bitmap (or mark stack), so there is
+      // no point trying to drain it.
+      return;
+    }
+    _ref_counter--;
 
-      if (_ref_counter == 0) {
-        // We have dealt with _ref_counter_limit references, pushing them
-        // and objects reachable from them on to the local stack (and
-        // possibly the global stack). Call G1CMTask::do_marking_step() to
-        // process these entries.
-        //
-        // We call G1CMTask::do_marking_step() in a loop, which we'll exit if
-        // there's nothing more to do (i.e. we're done with the entries that
-        // were pushed as a result of the G1CMTask::deal_with_reference() calls
-        // above) or we overflow.
-        //
-        // Note: G1CMTask::do_marking_step() can set the G1CMTask::has_aborted()
-        // flag while there may still be some work to do. (See the comment at
-        // the beginning of G1CMTask::do_marking_step() for those conditions -
-        // one of which is reaching the specified time target.) It is only
-        // when G1CMTask::do_marking_step() returns without setting the
-        // has_aborted() flag that the marking step has completed.
-        do {
-          double mark_step_duration_ms = G1ConcMarkStepDurationMillis;
-          _task->do_marking_step(mark_step_duration_ms,
-                                 false      /* do_termination */,
-                                 _is_serial);
-        } while (_task->has_aborted() && !_cm->has_overflown());
-        _ref_counter = _ref_counter_limit;
-      }
+    if (_ref_counter == 0) {
+      // We have dealt with _ref_counter_limit references, pushing them
+      // and objects reachable from them on to the local stack (and
+      // possibly the global stack). Call G1CMTask::do_marking_step() to
+      // process these entries.
+      //
+      // We call G1CMTask::do_marking_step() in a loop, which we'll exit if
+      // there's nothing more to do (i.e. we're done with the entries that
+      // were pushed as a result of the G1CMTask::deal_with_reference() calls
+      // above) or we overflow.
+      //
+      // Note: G1CMTask::do_marking_step() can set the G1CMTask::has_aborted()
+      // flag while there may still be some work to do. (See the comment at
+      // the beginning of G1CMTask::do_marking_step() for those conditions -
+      // one of which is reaching the specified time target.) It is only
+      // when G1CMTask::do_marking_step() returns without setting the
+      // has_aborted() flag that the marking step has completed.
+      do {
+        double mark_step_duration_ms = G1ConcMarkStepDurationMillis;
+        _task->do_marking_step(mark_step_duration_ms,
+                               false      /* do_termination */,
+                               _is_serial);
+      } while (_task->has_aborted() && !_cm->has_overflown());
+      _ref_counter = _ref_counter_limit;
     }
   }
 };

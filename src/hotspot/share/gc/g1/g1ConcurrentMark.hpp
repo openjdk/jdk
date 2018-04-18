@@ -107,7 +107,7 @@ typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
 // reference processor as the _is_alive_non_header field
 class G1CMIsAliveClosure : public BoolObjectClosure {
   G1CollectedHeap* _g1h;
- public:
+public:
   G1CMIsAliveClosure(G1CollectedHeap* g1h) : _g1h(g1h) { }
 
   bool do_object_b(oop obj);
@@ -778,15 +778,16 @@ public:
   void increment_refs_reached() { ++_refs_reached; }
 
   // Grey the object by marking it.  If not already marked, push it on
-  // the local queue if below the finger.
-  // obj is below its region's NTAMS.
-  inline void make_reference_grey(oop obj);
+  // the local queue if below the finger. obj is required to be below its region's NTAMS.
+  // Returns whether there has been a mark to the bitmap.
+  inline bool make_reference_grey(oop obj);
 
   // Grey the object (by calling make_grey_reference) if required,
   // e.g. obj is below its containing region's NTAMS.
   // Precondition: obj is a valid heap object.
+  // Returns true if the reference caused a mark to be set in the next bitmap.
   template <class T>
-  inline void deal_with_reference(T* p);
+  inline bool deal_with_reference(T* p);
 
   // Scans an object and visits its children.
   inline void scan_task_entry(G1TaskQueueEntry task_entry);
