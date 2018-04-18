@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import com.sun.tools.javac.main.Main;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticInfo;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 
@@ -597,6 +598,11 @@ public class Log extends AbstractLog {
         printRawLines(noticeWriter, localize(key, args));
     }
 
+    public void printLines(DiagnosticInfo diag) {
+        PrintWriter noticeWriter = writers.get(WriterKind.NOTICE);
+        printRawLines(noticeWriter, localize(diag));
+    }
+
     public void printLines(PrefixKind pk, String key, Object... args) {
         PrintWriter noticeWriter = writers.get(WriterKind.NOTICE);
         printRawLines(noticeWriter, localize(pk, key, args));
@@ -789,7 +795,7 @@ public class Log extends AbstractLog {
         if (useRawMessages) {
             return diagInfo.key();
         } else {
-            return messages.getLocalizedString(diagInfo.key(), diagInfo.args);
+            return messages.getLocalizedString(diagInfo);
         }
     }
 

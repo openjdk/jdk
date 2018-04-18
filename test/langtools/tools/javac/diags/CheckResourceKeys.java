@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,7 +233,6 @@ public class CheckResourceKeys {
         "compiler.misc.non.denotable.type",                 // UNUSED
         "compiler.misc.unnamed.package",                    // should be required, CR 6964147
         "compiler.warn.proc.type.already.exists",           // TODO in JavacFiler
-        "javac.err.invalid.arg",                            // UNUSED ??
         "javac.opt.arg.class",                              // UNUSED ??
         "javac.opt.arg.pathname",                           // UNUSED ??
         "javac.opt.moreinfo",                               // option commented out
