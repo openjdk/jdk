@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_OOPS_KLASS_HPP
 #define SHARE_VM_OOPS_KLASS_HPP
 
+#include "classfile/classLoaderData.hpp"
 #include "gc/shared/specialized_oop_closures.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
@@ -52,7 +53,6 @@
 // Forward declarations.
 template <class T> class Array;
 template <class T> class GrowableArray;
-class ClassLoaderData;
 class fieldDescriptor;
 class KlassSizeStats;
 class klassVtable;
@@ -634,13 +634,12 @@ protected:
   virtual MetaspaceObj::Type type() const { return ClassType; }
 
   // Iff the class loader (or mirror for anonymous classes) is alive the
-  // Klass is considered alive.
-  // The is_alive closure passed in depends on the Garbage Collector used.
-  bool is_loader_alive(BoolObjectClosure* is_alive);
+  // Klass is considered alive.  Has already been marked as unloading.
+  bool is_loader_alive() const { return !class_loader_data()->is_unloading(); }
 
-  static void clean_weak_klass_links(BoolObjectClosure* is_alive, bool clean_alive_klasses = true);
-  static void clean_subklass_tree(BoolObjectClosure* is_alive) {
-    clean_weak_klass_links(is_alive, false /* clean_alive_klasses */);
+  static void clean_weak_klass_links(bool clean_alive_klasses = true);
+  static void clean_subklass_tree() {
+    clean_weak_klass_links(false /* clean_alive_klasses */);
   }
 
   // GC specific object visitors

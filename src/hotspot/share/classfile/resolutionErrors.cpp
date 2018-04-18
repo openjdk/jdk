@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,9 +125,8 @@ void ResolutionErrorTable::purge_resolution_errors() {
       assert(entry->pool() != (ConstantPool*)NULL, "resolution error table is corrupt");
       ConstantPool* pool = entry->pool();
       assert(pool->pool_holder() != NULL, "Constant pool without a class?");
-      ClassLoaderData* loader_data =
-              pool->pool_holder()->class_loader_data();
-      if (!loader_data->is_unloading()) {
+
+      if (pool->pool_holder()->is_loader_alive()) {
         p = entry->next_addr();
       } else {
         *p = entry->next();
