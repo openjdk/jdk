@@ -101,7 +101,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     // for client properties
     public static final String WINDOW_BRUSH_METAL_LOOK = "apple.awt.brushMetalLook";
     public static final String WINDOW_DRAGGABLE_BACKGROUND = "apple.awt.draggableWindowBackground";
-    public static final String WINDOW_DARK_APPEARANCE = "apple.awt.windowDarkAppearance";
 
     public static final String WINDOW_ALPHA = "Window.alpha";
     public static final String WINDOW_SHADOW = "Window.shadow";
@@ -149,7 +148,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     static final int IS_DIALOG = 1 << 25;
     static final int IS_MODAL = 1 << 26;
     static final int IS_POPUP = 1 << 27;
-    static final int DARK_TITLE_BAR = 1 << 28;
 
     static final int _STYLE_PROP_BITMASK = DECORATED | TEXTURED | UNIFIED | UTILITY | HUD | SHEET | CLOSEABLE | MINIMIZABLE | RESIZABLE;
 
@@ -232,10 +230,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
             final String filename = ((java.io.File)value).getAbsolutePath();
             c.execute(ptr->nativeSetNSWindowRepresentedFilename(ptr, filename));
-        }},
-        new Property<CPlatformWindow>(WINDOW_DARK_APPEARANCE) { public void applyProperty(final CPlatformWindow c, final Object value) {
-            c.setStyleBits(DARK_TITLE_BAR, value == null ? true : Boolean.parseBoolean(value.toString()));
-        }},
+        }}
     }) {
         @SuppressWarnings("deprecation")
         public CPlatformWindow convertJComponentToTarget(final JRootPane p) {
@@ -472,11 +467,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             prop = rootpane.getClientProperty(WINDOW_DRAGGABLE_BACKGROUND);
             if (prop != null) {
                 styleBits = SET(styleBits, DRAGGABLE_BACKGROUND, Boolean.parseBoolean(prop.toString()));
-            }
-
-            prop = rootpane.getClientProperty(WINDOW_DARK_APPEARANCE);
-            if (prop != null) {
-               styleBits = SET(styleBits, DARK_TITLE_BAR, Boolean.parseBoolean(prop.toString()));
             }
         }
 
