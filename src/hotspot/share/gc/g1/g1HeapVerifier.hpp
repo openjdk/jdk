@@ -28,6 +28,7 @@
 #include "gc/g1/heapRegionSet.hpp"
 #include "memory/allocation.hpp"
 #include "memory/universe.hpp"
+#include "utilities/macros.hpp"
 
 class G1CollectedHeap;
 
@@ -37,9 +38,6 @@ private:
 
   G1CollectedHeap* _g1h;
 
-  // verify_region_sets() performs verification over the region
-  // lists. It will be compiled in the product code to be used when
-  // necessary (i.e., during heap verification).
   void verify_region_sets();
 
 public:
@@ -76,15 +74,8 @@ public:
   void verify(VerifyOption vo);
 
   // verify_region_sets_optional() is planted in the code for
-  // list verification in non-product builds (and it can be enabled in
-  // product builds by defining HEAP_REGION_SET_FORCE_VERIFY to be 1).
-#if HEAP_REGION_SET_FORCE_VERIFY
-  void verify_region_sets_optional() {
-    verify_region_sets();
-  }
-#else // HEAP_REGION_SET_FORCE_VERIFY
-  void verify_region_sets_optional() { }
-#endif // HEAP_REGION_SET_FORCE_VERIFY
+  // list verification in debug builds.
+  void verify_region_sets_optional() { DEBUG_ONLY(verify_region_sets();) }
 
   void prepare_for_verify();
   double verify(G1VerifyType type, VerifyOption vo, const char* msg);

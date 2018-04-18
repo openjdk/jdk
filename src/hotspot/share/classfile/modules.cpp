@@ -85,7 +85,7 @@ static const char* get_module_version(jstring version) {
   return java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(version));
 }
 
-static ModuleEntryTable* get_module_entry_table(Handle h_loader) {
+ModuleEntryTable* Modules::get_module_entry_table(Handle h_loader) {
   // This code can be called during start-up, before the classLoader's classLoader data got
   // created.  So, call register_loader() to make sure the classLoader data gets created.
   ClassLoaderData *loader_cld = SystemDictionary::register_loader(h_loader);

@@ -28,8 +28,6 @@
 #include "gc/shared/oopStorage.hpp"
 #include "utilities/macros.hpp"
 
-#if INCLUDE_ALL_GCS
-
 //////////////////////////////////////////////////////////////////////////////
 // Support for parallel and optionally concurrent state iteration.
 //
@@ -191,7 +189,5 @@ public:
   template<typename IsAliveClosure, typename Closure>
   void weak_oops_do(IsAliveClosure* is_alive, Closure* cl);
 };
-
-#endif // INCLUDE_ALL_GCS
 
 #endif // SHARE_GC_SHARED_OOPSTORAGEPARSTATE_HPP

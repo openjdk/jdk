@@ -28,15 +28,44 @@
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/cardTableBarrierSetAssembler.hpp"
-#include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interp_masm.hpp"
 
 #define __ masm->
 
+
+void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register obj, Address dst) {
+
+  BarrierSet* bs = BarrierSet::barrier_set();
+  assert(bs->kind() == BarrierSet::CardTableBarrierSet, "Wrong barrier set kind");
+
+  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
+  CardTable* ct = ctbs->card_table();
+  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
+
+  __ lsr(obj, obj, CardTable::card_shift);
+
+  assert(CardTable::dirty_card_val() == 0, "must be");
+
+  __ load_byte_map_base(rscratch1);
+
+  if (UseCondCardMark) {
+    Label L_already_dirty;
+    __ membar(Assembler::StoreLoad);
+    __ ldrb(rscratch2,  Address(obj, rscratch1));
+    __ cbz(rscratch2, L_already_dirty);
+    __ strb(zr, Address(obj, rscratch1));
+    __ bind(L_already_dirty);
+  } else {
+    if (UseConcMarkSweepGC && CMSPrecleaningEnabled) {
+      __ membar(Assembler::StoreStore);
+    }
+    __ strb(zr, Address(obj, rscratch1));
+  }
+}
+
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                                     Register start, Register end, Register scratch, RegSet saved_regs) {
-
-  BarrierSet* bs = Universe::heap()->barrier_set();
+  BarrierSet* bs = BarrierSet::barrier_set();
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
   assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
@@ -57,4 +86,23 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   __ strb(zr, Address(start, count));
   __ subs(count, count, 1);
   __ br(Assembler::GE, L_loop);
+}
+
+void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                                Address dst, Register val, Register tmp1, Register tmp2) {
+  bool on_array = (decorators & IN_HEAP_ARRAY) != 0;
+  bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
+  bool precise = on_array || on_anonymous;
+  if (val == noreg) {
+    __ store_heap_oop_null(dst);
+  } else {
+    __ store_heap_oop(dst, val);
+    // flatten object address if needed
+    if (!precise || (dst.index() == noreg && dst.offset() == 0)) {
+      store_check(masm, dst.base(), dst);
+    } else {
+      __ lea(r3, dst);
+      store_check(masm, r3, dst);
+    }
+  }
 }

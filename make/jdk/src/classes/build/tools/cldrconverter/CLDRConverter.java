@@ -28,6 +28,8 @@ package build.tools.cldrconverter;
 import static build.tools.cldrconverter.Bundle.jreTimeZoneNames;
 import build.tools.cldrconverter.BundleGenerator.BundleType;
 import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.*;
 import java.time.*;
 import java.util.*;
@@ -103,6 +105,7 @@ public class CLDRConverter {
 
     private static final String[] AVAILABLE_TZIDS = TimeZone.getAvailableIDs();
     private static String zoneNameTempFile;
+    private static String tzDataDir;
 
     static enum DraftType {
         UNCONFIRMED,
@@ -203,6 +206,10 @@ public class CLDRConverter {
                         zoneNameTempFile = args[++i];
                         break;
 
+                    case "-tzdatadir":
+                        tzDataDir = args[++i];
+                        break;
+
                     case "-help":
                         usage();
                         System.exit(0);
@@ -261,6 +268,7 @@ public class CLDRConverter {
                 + "\t-baselocales loc(,loc)*      locales that go into the base module%n"
                 + "\t-o dir         output directory (default: ./build/gensrc)%n"
                 + "\t-zntempfile    template file for java.time.format.ZoneName.java%n"
+                + "\t-tzdatadir     tzdata directory for java.time.format.ZoneName.java%n"
                 + "\t-utf8          use UTF-8 rather than \\uxxxx (for debug)%n");
     }
 
@@ -983,6 +991,8 @@ public class CLDRConverter {
                         return handlerMetaZones.mzoneMapEntry();
                     } else if (l.equals("%%%%DEPRECATED%%%%")) {
                         return handlerSupplMeta.deprecatedMap();
+                    } else if (l.equals("%%%%TZDATALINK%%%%")) {
+                        return tzDataLinkEntry();
                     } else {
                         return Stream.of(l);
                     }
@@ -1010,5 +1020,27 @@ public class CLDRConverter {
                 })
                 .filter(s -> !s.isEmpty())
                 .sorted();
+    }
+
+    private static Stream<String> tzDataLinkEntry() {
+        try {
+            return Files.walk(Paths.get(tzDataDir), 1)
+                .filter(p -> !Files.isDirectory(p))
+                .flatMap(CLDRConverter::extractLinks)
+                .sorted();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static Stream<String> extractLinks(Path tzFile) {
+        try {
+            return Files.lines(tzFile)
+                .filter(l -> l.startsWith("Link"))
+                .map(l -> l.replaceFirst("^Link[\\s]+(\\S+)\\s+(\\S+).*",
+                                         "        \"$2\", \"$1\","));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }

@@ -21,9 +21,19 @@
  * questions.
  */
 
-import java.net.*;
-import java.io.*;
-import java.util.*;
+import jdk.test.lib.NetworkConfiguration;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
 
 public class Tests {
 
@@ -174,126 +184,26 @@ public class Tests {
         }
     }
 
-    static int numberInterfaces () {
-        try {
-            Enumeration ifs = NetworkInterface.getNetworkInterfaces();
-            int nifs=0;
-            while (ifs.hasMoreElements()) {
-                nifs++;
-                ifs.nextElement();
-            }
-            return nifs;
-        } catch (SocketException e) {
-            return 0;
-        }
-    }
-
-    public static Enumeration ipv4Addresses() {
-        return new AddrEnum (Inet4Address.class);
-    }
-
     public static Inet4Address getFirstLocalIPv4Address () {
-        Enumeration e = ipv4Addresses();
-        if (!e.hasMoreElements()) {
-            return null;
-        }
-        return (Inet4Address)e.nextElement();
+        return getNetworkConfig().ip4Addresses()
+                                 .filter(a -> !a.isLoopbackAddress())
+                                 .findFirst()
+                                 .orElse(null);
     }
 
     public static Inet6Address getFirstLocalIPv6Address () {
-        Enumeration e = ipv6Addresses();
-        if (!e.hasMoreElements()) {
-            return null;
-        }
-        return (Inet6Address)e.nextElement();
+        return getNetworkConfig().ip6Addresses()
+                                 .filter(a -> !a.isLoopbackAddress())
+                                 .findFirst()
+                                 .orElse(null);
     }
 
-    public static Enumeration ipv6Addresses() {
-        return new AddrEnum (Inet6Address.class);
-    }
-
-    /* enumerates the Inet4Addresses or Inet6Addresses on the system */
-
-    private static class AddrEnum implements Enumeration {
-
-        Enumeration ifs;
-        NetworkInterface currIf = null;
-        InetAddress nextAddr=null;
-        Enumeration addrs=null;
-        Class filter;
-
-        static final byte[] fe80_loopback = new byte [] {
-            (byte)0xfe,(byte)0x80,0,0,0,0,0,0,0,0,0,0,0,0,0,1
-        };
-
-        AddrEnum (Class filter) {
-            this.filter = filter;
-            try {
-                ifs = NetworkInterface.getNetworkInterfaces();
-            } catch (SocketException e) {}
-        }
-
-        public boolean hasMoreElements () {
-            if (nextAddr == null) {
-                nextAddr = getNext();
-            }
-            return (nextAddr != null);
-        }
-
-        public Object nextElement () {
-            if (!hasMoreElements()) {
-                throw new NoSuchElementException ("no more addresses");
-            }
-            Object next = nextAddr;
-            nextAddr = null;
-            return next;
-        }
-
-        private InetAddress getNext() {
-            while (true) {
-                if (currIf == null) {
-                    currIf = getNextIf();
-                    if (currIf == null) {
-                        return null;
-                    }
-                    addrs = currIf.getInetAddresses();
-                }
-                while (addrs.hasMoreElements()) {
-                    InetAddress addr = (InetAddress) addrs.nextElement();
-                    if (filter.isInstance (addr) && !addr.isLoopbackAddress()
-                            && !addr.isAnyLocalAddress()) {
-                        if (Arrays.equals (addr.getAddress(), fe80_loopback)) {
-                            continue;
-                        }
-                        return addr;
-                    }
-                }
-                currIf = null;
-            }
-        }
-
-        private NetworkInterface getNextIf () {
-            if (ifs != null) {
-                while (ifs.hasMoreElements()) {
-                    NetworkInterface nic = (NetworkInterface)ifs.nextElement();
-                    // Skip (Windows)Teredo Tunneling Pseudo-Interface
-                    if (isWindows) {
-                        String dName = nic.getDisplayName();
-                        if (dName != null && dName.contains("Teredo"))
-                            continue;
-                    } else if (isMacOS && nic.getName().contains("awdl")) {
-                        continue;
-                    }
-                    try {
-                        if (nic.isUp() && !nic.isLoopback())
-                            return nic;
-                    } catch (SocketException e) {
-                        // ignore
-                    }
-                }
-            }
-
-            return null;
+    private static NetworkConfiguration getNetworkConfig() {
+        try {
+            return NetworkConfiguration.probe();
+        } catch (IOException e) {
+            System.out.println("Failed to probe NetworkConfiguration");
+            throw new RuntimeException(e);
         }
     }
 

@@ -630,12 +630,12 @@ public:
 
 void HeapRegion::verify(VerifyOption vo,
                         bool* failures) const {
-  G1CollectedHeap* g1 = G1CollectedHeap::heap();
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
   *failures = false;
   HeapWord* p = bottom();
   HeapWord* prev_p = NULL;
-  VerifyLiveClosure vl_cl(g1, vo);
-  VerifyRemSetClosure vr_cl(g1, vo);
+  VerifyLiveClosure vl_cl(g1h, vo);
+  VerifyRemSetClosure vr_cl(g1h, vo);
   bool is_region_humongous = is_humongous();
   size_t object_num = 0;
   while (p < top()) {
@@ -643,7 +643,7 @@ void HeapRegion::verify(VerifyOption vo,
     size_t obj_size = block_size(p);
     object_num += 1;
 
-    if (!g1->is_obj_dead_cond(obj, this, vo)) {
+    if (!g1h->is_obj_dead_cond(obj, this, vo)) {
       if (oopDesc::is_oop(obj)) {
         Klass* klass = obj->klass();
         bool is_metaspace_object = Metaspace::contains(klass);
@@ -659,7 +659,7 @@ void HeapRegion::verify(VerifyOption vo,
           return;
         } else {
           vl_cl.set_containing_obj(obj);
-          if (!g1->collector_state()->in_full_gc() || G1VerifyRSetsDuringFullGC) {
+          if (!g1h->collector_state()->in_full_gc() || G1VerifyRSetsDuringFullGC) {
             // verify liveness and rem_set
             vr_cl.set_containing_obj(obj);
             G1Mux2Closure mux(&vl_cl, &vr_cl);
@@ -778,16 +778,16 @@ void HeapRegion::verify() const {
 }
 
 void HeapRegion::verify_rem_set(VerifyOption vo, bool* failures) const {
-  G1CollectedHeap* g1 = G1CollectedHeap::heap();
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
   *failures = false;
   HeapWord* p = bottom();
   HeapWord* prev_p = NULL;
-  VerifyRemSetClosure vr_cl(g1, vo);
+  VerifyRemSetClosure vr_cl(g1h, vo);
   while (p < top()) {
     oop obj = oop(p);
     size_t obj_size = block_size(p);
 
-    if (!g1->is_obj_dead_cond(obj, this, vo)) {
+    if (!g1h->is_obj_dead_cond(obj, this, vo)) {
       if (oopDesc::is_oop(obj)) {
         vr_cl.set_containing_obj(obj);
         obj->oop_iterate(&vr_cl);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 #include "precompiled.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/serial/markSweep.inline.hpp"
+#include "gc/serial/serial_specialized_oop_closures.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/specialized_oop_closures.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -66,8 +66,8 @@ CLDToOopClosure               MarkSweep::adjust_cld_closure(&adjust_pointer_clos
 inline void MarkSweep::mark_object(oop obj) {
   // some marks may contain information we need to preserve so we store them away
   // and overwrite the mark.  We'll restore it at the end of markSweep.
-  markOop mark = obj->mark();
-  obj->set_mark(markOopDesc::prototype()->set_marked());
+  markOop mark = obj->mark_raw();
+  obj->set_mark_raw(markOopDesc::prototype()->set_marked());
 
   if (mark->must_be_preserved(obj)) {
     preserve_mark(obj, mark);
@@ -78,7 +78,7 @@ template <class T> inline void MarkSweep::mark_and_push(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(heap_oop)) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
-    if (!obj->mark()->is_marked()) {
+    if (!obj->mark_raw()->is_marked()) {
       mark_object(obj);
       _marking_stack.push(obj);
     }
@@ -174,7 +174,7 @@ template <class T> inline void MarkSweep::follow_root(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(heap_oop)) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
-    if (!obj->mark()->is_marked()) {
+    if (!obj->mark_raw()->is_marked()) {
       mark_object(obj);
       follow_object(obj);
     }
@@ -190,7 +190,7 @@ void PreservedMark::adjust_pointer() {
 }
 
 void PreservedMark::restore() {
-  _obj->set_mark(_mark);
+  _obj->set_mark_raw(_mark);
 }
 
 // We preserve the mark which should be replaced at the end and the location
@@ -252,7 +252,7 @@ void MarkSweep::restore_marks() {
   while (!_preserved_oop_stack.is_empty()) {
     oop obj       = _preserved_oop_stack.pop();
     markOop mark  = _preserved_mark_stack.pop();
-    obj->set_mark(mark);
+    obj->set_mark_raw(mark);
   }
 }
 

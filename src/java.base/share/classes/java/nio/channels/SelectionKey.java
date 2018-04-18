@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,15 +86,9 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
  * attached via the {@link #attach attach} method and then later retrieved via
  * the {@link #attachment() attachment} method.
  *
- * <p> Selection keys are safe for use by multiple concurrent threads.  The
- * operations of reading and writing the interest set will, in general, be
- * synchronized with certain operations of the selector.  Exactly how this
- * synchronization is performed is implementation-dependent: In a naive
- * implementation, reading or writing the interest set may block indefinitely
- * if a selection operation is already in progress; in a high-performance
- * implementation, reading or writing the interest set may block briefly, if at
- * all.  In any case, a selection operation will always use the interest-set
- * value that was current at the moment that the operation began.  </p>
+ * <p> Selection keys are safe for use by multiple concurrent threads.  A
+ * selection operation will always use the interest-set value that was current
+ * at the moment that the operation began.  </p>
  *
  *
  * @author Mark Reinhold
@@ -164,10 +158,7 @@ public abstract class SelectionKey {
      * Retrieves this key's interest set.
      *
      * <p> It is guaranteed that the returned set will only contain operation
-     * bits that are valid for this key's channel.
-     *
-     * <p> This method may be invoked at any time.  Whether or not it blocks,
-     * and for how long, is implementation-dependent.  </p>
+     * bits that are valid for this key's channel. </p>
      *
      * @return  This key's interest set
      *
@@ -179,8 +170,10 @@ public abstract class SelectionKey {
     /**
      * Sets this key's interest set to the given value.
      *
-     * <p> This method may be invoked at any time.  Whether or not it blocks,
-     * and for how long, is implementation-dependent.  </p>
+     * <p> This method may be invoked at any time.  If this method is invoked
+     * while a selection operation is in progress then it has no effect upon
+     * that operation; the change to the key's interest set will be seen by the
+     * next selection operation.
      *
      * @param  ops  The new interest set
      *

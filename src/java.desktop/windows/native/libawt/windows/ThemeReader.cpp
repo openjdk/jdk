@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,7 +232,7 @@ BOOL InitThemes() {
     return FALSE;
 }
 
-JNIEXPORT jboolean JNICALL Java_sun_awt_windows_ThemeReader_isThemed
+JNIEXPORT jboolean JNICALL Java_sun_awt_windows_ThemeReader_initThemes
 (JNIEnv *env, jclass klass) {
     static BOOL TryLoadingThemeLib = FALSE;
     static BOOL Themed = FALSE;

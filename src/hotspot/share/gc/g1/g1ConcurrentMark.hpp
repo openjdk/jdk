@@ -107,8 +107,8 @@ typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
 // reference processor as the _is_alive_non_header field
 class G1CMIsAliveClosure : public BoolObjectClosure {
   G1CollectedHeap* _g1h;
- public:
-  G1CMIsAliveClosure(G1CollectedHeap* g1) : _g1h(g1) { }
+public:
+  G1CMIsAliveClosure(G1CollectedHeap* g1h) : _g1h(g1h) { }
 
   bool do_object_b(oop obj);
 };
@@ -367,11 +367,14 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   void weak_refs_work_parallel_part(BoolObjectClosure* is_alive, bool purged_classes);
   void weak_refs_work(bool clear_all_soft_refs);
 
-  void report_object_count();
+  void report_object_count(bool mark_completed);
 
   void swap_mark_bitmaps();
 
   void reclaim_empty_regions();
+
+  // After reclaiming empty regions, update heap sizes.
+  void compute_new_sizes();
 
   // Clear statistics gathered during the concurrent cycle for the given region after
   // it has been reclaimed.
@@ -461,7 +464,7 @@ public:
   void add_to_liveness(uint worker_id, oop const obj, size_t size);
   // Liveness of the given region as determined by concurrent marking, i.e. the amount of
   // live words between bottom and nTAMS.
-  size_t liveness(uint region)  { return _region_mark_stats[region]._live_words; }
+  size_t liveness(uint region) const { return _region_mark_stats[region]._live_words; }
 
   // Sets the internal top_at_region_start for the given region to current top of the region.
   inline void update_top_at_rebuild_start(HeapRegion* r);
@@ -588,6 +591,8 @@ public:
   // needed. This is to be as lazy as possible with accessing the object's size.
   inline bool mark_in_next_bitmap(uint worker_id, HeapRegion* const hr, oop const obj, size_t const obj_size = 0);
   inline bool mark_in_next_bitmap(uint worker_id, oop const obj, size_t const obj_size = 0);
+
+  inline bool is_marked_in_next_bitmap(oop p) const;
 
   // Returns true if initialization was successfully completed.
   bool completed_initialization() const {
@@ -773,15 +778,16 @@ public:
   void increment_refs_reached() { ++_refs_reached; }
 
   // Grey the object by marking it.  If not already marked, push it on
-  // the local queue if below the finger.
-  // obj is below its region's NTAMS.
-  inline void make_reference_grey(oop obj);
+  // the local queue if below the finger. obj is required to be below its region's NTAMS.
+  // Returns whether there has been a mark to the bitmap.
+  inline bool make_reference_grey(oop obj);
 
   // Grey the object (by calling make_grey_reference) if required,
   // e.g. obj is below its containing region's NTAMS.
   // Precondition: obj is a valid heap object.
+  // Returns true if the reference caused a mark to be set in the next bitmap.
   template <class T>
-  inline void deal_with_reference(T* p);
+  inline bool deal_with_reference(T* p);
 
   // Scans an object and visits its children.
   inline void scan_task_entry(G1TaskQueueEntry task_entry);
@@ -834,7 +840,6 @@ public:
 // information. It's currently used at the end of marking and also
 // after we sort the old regions at the end of the cleanup operation.
 class G1PrintRegionLivenessInfoClosure : public HeapRegionClosure {
-private:
   // Accumulators for these values.
   size_t _total_used_bytes;
   size_t _total_capacity_bytes;

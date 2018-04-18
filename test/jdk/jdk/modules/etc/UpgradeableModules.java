@@ -46,6 +46,7 @@ public class UpgradeableModules {
         List.of("java.compiler",
                 "java.jnlp",
                 "jdk.internal.vm.compiler",
+                "jdk.internal.vm.compiler.management",
                 "jdk.deploy",
                 "jdk.javaws",
                 "jdk.plugin",

@@ -167,6 +167,7 @@ public:
 
   // Returns JNI_OK on success
   virtual jint initialize();
+  virtual CardTableRS* create_rem_set(const MemRegion& reserved_region);
 
   void initialize_size_policy(size_t init_eden_size,
                               size_t init_promo_size,

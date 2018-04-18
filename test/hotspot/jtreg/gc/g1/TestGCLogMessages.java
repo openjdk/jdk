@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,6 +144,8 @@ public class TestGCLogMessages {
         // Reference Processing
         new LogMessageWithLevel("Reference Processing", Level.DEBUG),
         new LogMessageWithLevel("Reference Enqueuing", Level.DEBUG),
+        // VM internal reference processing
+        new LogMessageWithLevel("Weak Processing", Level.DEBUG),
 
         new LogMessageWithLevelC2OrJVMCIOnly("DerivedPointerTable Update", Level.DEBUG),
         new LogMessageWithLevel("Start New Collection Set", Level.DEBUG),

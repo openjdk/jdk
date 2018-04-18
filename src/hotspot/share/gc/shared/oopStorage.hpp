@@ -146,11 +146,9 @@ public:
   template<typename IsAliveClosure, typename Closure>
   inline void weak_oops_do(IsAliveClosure* is_alive, Closure* closure);
 
-#if INCLUDE_ALL_GCS
   // Parallel iteration is for the exclusive use of the GC.
   // Other clients must use serial iteration.
   template<bool concurrent, bool is_const> class ParState;
-#endif // INCLUDE_ALL_GCS
 
   // Block cleanup functions are for the exclusive use of the GC.
   // Both stop deleting if there is an in-progress concurrent iteration.
@@ -244,10 +242,8 @@ private:
   template<typename F, typename Storage>
   static bool iterate_impl(F f, Storage* storage);
 
-#if INCLUDE_ALL_GCS
   // Implementation support for parallel iteration
   class BasicParState;
-#endif // INCLUDE_ALL_GCS
 
   // Wrapper for OopClosure-style function, so it can be used with
   // iterate.  Assume p is of type oop*.  Then cl->do_oop(p) must be a

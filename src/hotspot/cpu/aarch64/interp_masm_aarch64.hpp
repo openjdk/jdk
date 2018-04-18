@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -122,7 +122,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void get_method_counters(Register method, Register mcs, Label& skip);
 
   // load cpool->resolved_references(index);
-  void load_resolved_reference_at_index(Register result, Register index);
+  void load_resolved_reference_at_index(Register result, Register index, Register tmp = r5);
 
   // load cpool->resolved_klass_at(index);
   void load_resolved_klass_at_offset(Register cpool, Register index, Register klass, Register temp);

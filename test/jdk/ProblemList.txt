@@ -504,6 +504,8 @@ java/lang/instrument/BootClassPath/BootClassPathTest.sh         8072130 macosx-a
 java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
 
+java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8081652 generic-all
+
 ############################################################################
 
 # jdk_io
@@ -536,8 +538,6 @@ java/net/MulticastSocket/SetLoopbackMode.java                   7122846 macosx-a
 java/net/MulticastSocket/Test.java                              7145658 macosx-all
 
 java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-all
-
-java/net/httpclient/SplitResponseSSL.java                       8194151 windows-all
 
 ############################################################################
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,12 +117,6 @@ public abstract class SelectableChannel
      */
     public abstract int validOps();
 
-    // Internal state:
-    //   keySet, may be empty but is never null, typ. a tiny array
-    //   boolean isRegistered, protected by key set
-    //   regLock, lock object to prevent duplicate registrations
-    //   blocking mode, protected by regLock
-
     /**
      * Tells whether or not this channel is currently registered with any
      * selectors.  A newly-created channel is not registered.
@@ -135,8 +129,6 @@ public abstract class SelectableChannel
      * @return {@code true} if, and only if, this channel is registered
      */
     public abstract boolean isRegistered();
-    //
-    // sync(keySet) { return isRegistered; }
 
     /**
      * Retrieves the key representing the channel's registration with the given
@@ -150,8 +142,6 @@ public abstract class SelectableChannel
      *          currently registered with that selector
      */
     public abstract SelectionKey keyFor(Selector sel);
-    //
-    // sync(keySet) { return findKey(sel); }
 
     /**
      * Registers this channel with the given selector, returning a selection
@@ -171,12 +161,12 @@ public abstract class SelectableChannel
      * will be {@code att}.
      *
      * <p> This method may be invoked at any time.  If this method is invoked
-     * while another invocation of this method or of the {@link
-     * #configureBlocking(boolean) configureBlocking} method is in progress
-     * then it will first block until the other operation is complete.  This
-     * method will then synchronize on the selector's key set and therefore may
-     * block if invoked concurrently with another registration or selection
-     * operation involving the same selector. </p>
+     * while a selection operation is in progress then it has no effect upon
+     * that operation; the new registration or change to the key's interest set
+     * will be seen by the next selection operation.  If this method is invoked
+     * while an invocation of {@link #configureBlocking(boolean) configureBlocking}
+     * is in progress then it will block until the channel's blocking mode has
+     * been adjusted.
      *
      * <p> If this channel is closed while this operation is in progress then
      * the key returned by this method will have been cancelled and will
@@ -218,16 +208,6 @@ public abstract class SelectableChannel
      */
     public abstract SelectionKey register(Selector sel, int ops, Object att)
         throws ClosedChannelException;
-    //
-    // sync(regLock) {
-    //   sync(keySet) { look for selector }
-    //   if (channel found) { set interest ops -- may block in selector;
-    //                        return key; }
-    //   create new key -- may block somewhere in selector;
-    //   sync(keySet) { add key; }
-    //   attach(attachment);
-    //   return key;
-    // }
 
     /**
      * Registers this channel with the given selector, returning a selection
@@ -314,11 +294,6 @@ public abstract class SelectableChannel
      */
     public abstract SelectableChannel configureBlocking(boolean block)
         throws IOException;
-    //
-    // sync(regLock) {
-    //   sync(keySet) { throw IBME if block && isRegistered; }
-    //   change mode;
-    // }
 
     /**
      * Tells whether or not every I/O operation on this channel will block

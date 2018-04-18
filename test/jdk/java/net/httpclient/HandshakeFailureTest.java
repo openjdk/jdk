@@ -28,18 +28,20 @@ import javax.net.ssl.SSLSocket;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import jdk.incubator.http.HttpClient;
-import jdk.incubator.http.HttpClient.Version;
-import jdk.incubator.http.HttpResponse;
-import jdk.incubator.http.HttpRequest;
+import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
+import java.net.http.HttpResponse;
+import java.net.http.HttpRequest;
 import static java.lang.System.out;
-import static jdk.incubator.http.HttpResponse.BodyHandler.discard;
+import static java.net.http.HttpResponse.BodyHandlers.discarding;
 
 /**
  * @test
@@ -63,7 +65,7 @@ public class HandshakeFailureTest {
         for (AbstractServer server : servers) {
             try (server) {
                 out.format("%n%n------ Testing with server:%s ------%n", server);
-                URI uri = new URI("https://127.0.0.1:" + server.getPort() + "/");
+                URI uri = new URI("https://localhost:" + server.getPort() + "/");
 
                 test.testSyncSameClient(uri, Version.HTTP_1_1);
                 test.testSyncSameClient(uri, Version.HTTP_2);
@@ -87,7 +89,7 @@ public class HandshakeFailureTest {
                                              .version(version)
                                              .build();
             try {
-                HttpResponse<Void> response = client.send(request, discard(null));
+                HttpResponse<Void> response = client.send(request, discarding());
                 String msg = String.format("UNEXPECTED response=%s%n", response);
                 throw new RuntimeException(msg);
             } catch (SSLHandshakeException expected) {
@@ -106,7 +108,7 @@ public class HandshakeFailureTest {
                                              .version(version)
                                              .build();
             try {
-                HttpResponse<Void> response = client.send(request, discard(null));
+                HttpResponse<Void> response = client.send(request, discarding());
                 String msg = String.format("UNEXPECTED response=%s%n", response);
                 throw new RuntimeException(msg);
             } catch (SSLHandshakeException expected) {
@@ -124,7 +126,7 @@ public class HandshakeFailureTest {
                                              .version(version)
                                              .build();
             CompletableFuture<HttpResponse<Void>> response =
-                        client.sendAsync(request, discard(null));
+                        client.sendAsync(request, discarding());
             try {
                 response.join();
                 String msg = String.format("UNEXPECTED response=%s%n", response);
@@ -150,7 +152,7 @@ public class HandshakeFailureTest {
                                              .version(version)
                                              .build();
             CompletableFuture<HttpResponse<Void>> response =
-                    client.sendAsync(request, discard(null));
+                    client.sendAsync(request, discarding());
             try {
                 response.join();
                 String msg = String.format("UNEXPECTED response=%s%n", response);
@@ -173,6 +175,8 @@ public class HandshakeFailureTest {
 
         AbstractServer(String name, ServerSocket ss) throws IOException {
             super(name);
+            ss.setReuseAddress(false);
+            ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
             this.ss = ss;
             this.start();
         }
@@ -198,7 +202,7 @@ public class HandshakeFailureTest {
         private volatile int count;
 
         PlainServer() throws IOException {
-            super("PlainServer", new ServerSocket(0));
+            super("PlainServer", new ServerSocket());
         }
 
         @Override
@@ -265,7 +269,7 @@ public class HandshakeFailureTest {
         }
 
         SSLServer() throws IOException {
-            super("SSLServer", factory.createServerSocket(0));
+            super("SSLServer", factory.createServerSocket());
         }
 
         @Override

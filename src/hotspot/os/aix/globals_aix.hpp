@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,10 +50,6 @@
   /* customer scenarios, we may want to be able to run despite that variable. */    \
   product(bool, AllowExtshm, false,                                                 \
           "Allow VM to run with EXTSHM=ON.")                                        \
-                                                                                    \
-  product(intx, AttachListenerTimeout, 1000,                                        \
-          "Timeout in ms the attach listener waits for a request")                  \
-          range(0, 2147483)                                                         \
                                                                                     \
   /*  Maximum expected size of the data segment. That correlates with the      */   \
   /*  to the maximum C Heap consumption we expect.                             */   \

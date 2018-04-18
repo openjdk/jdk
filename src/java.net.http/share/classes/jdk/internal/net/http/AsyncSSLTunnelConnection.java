@@ -1,0 +1,117 @@
+/*
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package jdk.internal.net.http;
+
+import java.net.InetSocketAddress;
+import java.nio.channels.SocketChannel;
+import java.util.concurrent.CompletableFuture;
+import java.net.http.HttpHeaders;
+import jdk.internal.net.http.common.SSLTube;
+import jdk.internal.net.http.common.Utils;
+
+/**
+ * An SSL tunnel built on a Plain (CONNECT) TCP tunnel.
+ */
+class AsyncSSLTunnelConnection extends AbstractAsyncSSLConnection {
+
+    final PlainTunnelingConnection plainConnection;
+    final PlainHttpPublisher writePublisher;
+    volatile SSLTube flow;
+
+    AsyncSSLTunnelConnection(InetSocketAddress addr,
+                             HttpClientImpl client,
+                             String[] alpn,
+                             InetSocketAddress proxy,
+                             HttpHeaders proxyHeaders)
+    {
+        super(addr, client, Utils.getServerName(addr), addr.getPort(), alpn);
+        this.plainConnection = new PlainTunnelingConnection(addr, proxy, client, proxyHeaders);
+        this.writePublisher = new PlainHttpPublisher();
+    }
+
+    @Override
+    public CompletableFuture<Void> connectAsync() {
+        if (debug.on()) debug.log("Connecting plain tunnel connection");
+        // This will connect the PlainHttpConnection flow, so that
+        // its HttpSubscriber and HttpPublisher are subscribed to the
+        // SocketTube
+        return plainConnection
+                .connectAsync()
+                .thenApply( unused -> {
+                    if (debug.on()) debug.log("creating SSLTube");
+                    // create the SSLTube wrapping the SocketTube, with the given engine
+                    flow = new SSLTube(engine,
+                                       client().theExecutor(),
+                                       plainConnection.getConnectionFlow());
+                    return null;} );
+    }
+
+    @Override
+    boolean isTunnel() { return true; }
+
+    @Override
+    boolean connected() {
+        return plainConnection.connected(); // && sslDelegate.connected();
+    }
+
+    @Override
+    HttpPublisher publisher() { return writePublisher; }
+
+    @Override
+    public String toString() {
+        return "AsyncSSLTunnelConnection: " + super.toString();
+    }
+
+    @Override
+    PlainTunnelingConnection plainConnection() {
+        return plainConnection;
+    }
+
+    @Override
+    ConnectionPool.CacheKey cacheKey() {
+        return ConnectionPool.cacheKey(address, plainConnection.proxyAddr);
+    }
+
+    @Override
+    public void close() {
+        plainConnection.close();
+    }
+
+    @Override
+    SocketChannel channel() {
+        return plainConnection.channel();
+    }
+
+    @Override
+    boolean isProxied() {
+        return true;
+    }
+
+    @Override
+    SSLTube getConnectionFlow() {
+       return flow;
+   }
+}

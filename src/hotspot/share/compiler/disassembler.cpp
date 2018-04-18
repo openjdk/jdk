@@ -318,7 +318,7 @@ void decode_env::print_address(address adr) {
       return;
     }
 
-    BarrierSet* bs = Universe::heap()->barrier_set();
+    BarrierSet* bs = BarrierSet::barrier_set();
     if (bs->is_a(BarrierSet::CardTableBarrierSet) &&
         adr == ci_card_table_address_as<address>()) {
       st->print("word_map_base");

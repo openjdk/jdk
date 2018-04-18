@@ -35,7 +35,6 @@ extern "C" {
 static jvmtiEnv *jvmti = NULL;
 
 // valid while a test is executed
-static JNIEnv *javaEnv = NULL;
 static jobject testResultObject = NULL;
 static jclass testResultClass = NULL;
 
@@ -46,7 +45,8 @@ static void reportError(const char *msg, int err) {
 
 
 // logs the notification and updates currentTestResult
-static void handleNotification(jmethodID method,
+static void handleNotification(JNIEnv *jni_env,
+    jmethodID method,
     jfieldID field,
     jclass field_klass,
     int modified,
@@ -92,21 +92,21 @@ static void handleNotification(jmethodID method,
         csig, mname, mgensig, modified ? "modified" : "accessed", name, (int)location);
 
     // set TestResult
-    if (javaEnv != NULL && testResultObject != NULL && testResultClass != NULL) {
+    if (testResultObject != NULL && testResultClass != NULL) {
         jfieldID fieldID;
         // field names in TestResult are "<field_name>_access"/"<field_name>_modify"
         char *fieldName = (char *)malloc(strlen(name) + 16);
         strcpy(fieldName, name);
         strcat(fieldName, modified ? "_modify" : "_access");
 
-        fieldID = (*javaEnv)->GetFieldID(javaEnv, testResultClass, fieldName, "Z");
+        fieldID = (*jni_env)->GetFieldID(jni_env, testResultClass, fieldName, "Z");
         if (fieldID != NULL) {
-            (*javaEnv)->SetBooleanField(javaEnv, testResultObject, fieldID, JNI_TRUE);
+            (*jni_env)->SetBooleanField(jni_env, testResultObject, fieldID, JNI_TRUE);
         } else {
             // the field is not interesting for the test
         }
         // clear any possible exception
-        (*javaEnv)->ExceptionClear(javaEnv);
+        (*jni_env)->ExceptionClear(jni_env);
 
         free(fieldName);
     }
@@ -179,7 +179,7 @@ onFieldAccess(jvmtiEnv *jvmti_env,
             jobject object,
             jfieldID field)
 {
-    handleNotification(method, field, field_klass, 0, location);
+    handleNotification(jni_env, method, field, field_klass, 0, location);
 }
 
 
@@ -195,7 +195,7 @@ onFieldModification(jvmtiEnv *jvmti_env,
             char signature_type,
             jvalue new_value)
 {
-    handleNotification(method, field, field_klass, 1, location);
+    handleNotification(jni_env, method, field, field_klass, 1, location);
 
     if (signature_type == 'L') {
         jobject newObject = new_value.l;
@@ -282,9 +282,8 @@ Java_FieldAccessWatch_initWatchers(JNIEnv *env, jclass thisClass, jclass cls, jo
 JNIEXPORT jboolean JNICALL
 Java_FieldAccessWatch_startTest(JNIEnv *env, jclass thisClass, jobject testResults)
 {
-    javaEnv = env;
-    testResultObject = (*javaEnv)->NewGlobalRef(javaEnv, testResults);
-    testResultClass = (jclass)(*javaEnv)->NewGlobalRef(javaEnv, (*javaEnv)->GetObjectClass(javaEnv, testResultObject));
+    testResultObject = (*env)->NewGlobalRef(env, testResults);
+    testResultClass = (jclass)(*env)->NewGlobalRef(env, (*env)->GetObjectClass(env, testResultObject));
 
     return JNI_TRUE;
 }

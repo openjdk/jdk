@@ -181,7 +181,7 @@ private:
   size_t _bytes_copied_during_gc;
 
   // Stash a pointer to the g1 heap.
-  G1CollectedHeap* _g1;
+  G1CollectedHeap* _g1h;
 
   G1GCPhaseTimes* _phase_times;
 
@@ -382,10 +382,6 @@ public:
   }
 
   bool adaptive_young_list_length() const;
-
-  bool should_process_references() const {
-    return true;
-  }
 
   void transfer_survivors_to_cset(const G1SurvivorRegions* survivors);
 

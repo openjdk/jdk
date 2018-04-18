@@ -60,6 +60,10 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
 
     VarHandle vhArray;
 
+#if[String]
+    VarHandle vhArrayObject;
+#end[String]
+
     @BeforeClass
     public void setup() throws Exception {
         vhFinalField = MethodHandles.lookup().findVarHandle(
@@ -75,6 +79,9 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             VarHandleTestAccess$Type$.class, "static_v", $type$.class);
 
         vhArray = MethodHandles.arrayElementVarHandle($type$[].class);
+#if[String]
+        vhArrayObject = MethodHandles.arrayElementVarHandle(Object[].class);
+#end[String]
     }
 
 
@@ -236,13 +243,21 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
 
         cases.add(new VarHandleAccessTestCase("Array",
                                               vhArray, VarHandleTestAccess$Type$::testArray));
+#if[String]
+        cases.add(new VarHandleAccessTestCase("Array Object[]",
+                                              vhArrayObject, VarHandleTestAccess$Type$::testArray));
+#end[String]
         cases.add(new VarHandleAccessTestCase("Array unsupported",
                                               vhArray, VarHandleTestAccess$Type$::testArrayUnsupported,
                                               false));
         cases.add(new VarHandleAccessTestCase("Array index out of bounds",
                                               vhArray, VarHandleTestAccess$Type$::testArrayIndexOutOfBounds,
                                               false));
-
+#if[String]
+        cases.add(new VarHandleAccessTestCase("Array store exception",
+                                              vhArrayObject, VarHandleTestAccess$Type$::testArrayStoreException,
+                                              false));
+#end[String]
         // Work around issue with jtreg summary reporting which truncates
         // the String result of Object.toString to 30 characters, hence
         // the first dummy argument
@@ -1823,5 +1838,88 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
 #end[Bitwise]
         }
     }
+
+#if[String]
+    static void testArrayStoreException(VarHandle vh) throws Throwable {
+        Object[] array = new $type$[10];
+        Arrays.fill(array, $value1$);
+        Object value = new Object();
+
+        // Set
+        checkASE(() -> {
+            vh.set(array, 0, value);
+        });
+
+        // SetVolatile
+        checkASE(() -> {
+            vh.setVolatile(array, 0, value);
+        });
+
+        // SetOpaque
+        checkASE(() -> {
+            vh.setOpaque(array, 0, value);
+        });
+
+        // SetRelease
+        checkASE(() -> {
+            vh.setRelease(array, 0, value);
+        });
+
+        // CompareAndSet
+        checkASE(() -> { // receiver reference class
+            boolean r = vh.compareAndSet(array, 0, $value1$, value);
+        });
+
+        // WeakCompareAndSet
+        checkASE(() -> { // receiver reference class
+            boolean r = vh.weakCompareAndSetPlain(array, 0, $value1$, value);
+        });
+
+        // WeakCompareAndSetVolatile
+        checkASE(() -> { // receiver reference class
+            boolean r = vh.weakCompareAndSet(array, 0, $value1$, value);
+        });
+
+        // WeakCompareAndSetAcquire
+        checkASE(() -> { // receiver reference class
+            boolean r = vh.weakCompareAndSetAcquire(array, 0, $value1$, value);
+        });
+
+        // WeakCompareAndSetRelease
+        checkASE(() -> { // receiver reference class
+            boolean r = vh.weakCompareAndSetRelease(array, 0, $value1$, value);
+        });
+
+        // CompareAndExchange
+        checkASE(() -> { // receiver reference class
+            $type$ x = ($type$) vh.compareAndExchange(array, 0, $value1$, value);
+        });
+
+        // CompareAndExchangeAcquire
+        checkASE(() -> { // receiver reference class
+            $type$ x = ($type$) vh.compareAndExchangeAcquire(array, 0, $value1$, value);
+        });
+
+        // CompareAndExchangeRelease
+        checkASE(() -> { // receiver reference class
+            $type$ x = ($type$) vh.compareAndExchangeRelease(array, 0, $value1$, value);
+        });
+
+        // GetAndSet
+        checkASE(() -> { // receiver reference class
+            $type$ x = ($type$) vh.getAndSet(array, 0, value);
+        });
+
+        // GetAndSetAcquire
+        checkASE(() -> { // receiver reference class
+            $type$ x = ($type$) vh.getAndSetAcquire(array, 0, value);
+        });
+
+        // GetAndSetRelease
+        checkASE(() -> { // receiver reference class
+            $type$ x = ($type$) vh.getAndSetRelease(array, 0, value);
+        });
+    }
+#end[String]
 }
 

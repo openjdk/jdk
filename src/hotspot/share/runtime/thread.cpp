@@ -33,6 +33,7 @@
 #include "code/scopeDesc.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileTask.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/workgroup.hpp"
@@ -105,7 +106,9 @@
 #include "services/threadService.hpp"
 #include "trace/traceMacros.hpp"
 #include "trace/tracing.hpp"
+#include "trace/tracingExport.hpp"
 #include "utilities/align.hpp"
+#include "utilities/copy.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
@@ -243,6 +246,7 @@ Thread::Thread() {
   _threads_hazard_ptr = NULL;
   _nested_threads_hazard_ptr = NULL;
   _nested_threads_hazard_ptr_cnt = 0;
+  _rcu_counter = 0;
 
   // the handle mark links itself to last_handle_mark
   new HandleMark(this);
@@ -310,6 +314,15 @@ Thread::Thread() {
            "bug in forced alignment of thread objects");
   }
 #endif // ASSERT
+
+  // Notify the barrier set that a thread is being created. Note that the
+  // main thread is created before a barrier set is available. The call to
+  // BarrierSet::on_thread_create() for the main thread is therefore deferred
+  // until it calls BarrierSet::set_barrier_set().
+  BarrierSet* const barrier_set = BarrierSet::barrier_set();
+  if (barrier_set != NULL) {
+    barrier_set->on_thread_create(this);
+  }
 }
 
 void Thread::initialize_thread_current() {
@@ -359,6 +372,13 @@ void Thread::record_stack_base_and_size() {
 
 Thread::~Thread() {
   EVENT_THREAD_DESTRUCT(this);
+
+  // Notify the barrier set that a thread is being destroyed. Note that a barrier
+  // set might not be available if we encountered errors during bootstrapping.
+  BarrierSet* const barrier_set = BarrierSet::barrier_set();
+  if (barrier_set != NULL) {
+    barrier_set->on_thread_destroy(this);
+  }
 
   // stack_base can be NULL if the thread is never started or exited before
   // record_stack_base_and_size called. Although, we would like to ensure
@@ -1588,18 +1608,8 @@ void JavaThread::initialize() {
   pd_initialize();
 }
 
-#if INCLUDE_ALL_GCS
-SATBMarkQueueSet JavaThread::_satb_mark_queue_set;
-DirtyCardQueueSet JavaThread::_dirty_card_queue_set;
-#endif // INCLUDE_ALL_GCS
-
 JavaThread::JavaThread(bool is_attaching_via_jni) :
-                       Thread()
-#if INCLUDE_ALL_GCS
-                       , _satb_mark_queue(&_satb_mark_queue_set),
-                       _dirty_card_queue(&_dirty_card_queue_set)
-#endif // INCLUDE_ALL_GCS
-{
+                       Thread() {
   initialize();
   if (is_attaching_via_jni) {
     _jni_attach_state = _attaching_via_jni;
@@ -1661,12 +1671,7 @@ static void compiler_thread_entry(JavaThread* thread, TRAPS);
 static void sweeper_thread_entry(JavaThread* thread, TRAPS);
 
 JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) :
-                       Thread()
-#if INCLUDE_ALL_GCS
-                       , _satb_mark_queue(&_satb_mark_queue_set),
-                       _dirty_card_queue(&_dirty_card_queue_set)
-#endif // INCLUDE_ALL_GCS
-{
+                       Thread() {
   initialize();
   _jni_attach_state = _not_attaching_via_jni;
   set_entry_point(entry_point);
@@ -3432,17 +3437,14 @@ static inline void *prefetch_and_load_ptr(void **addr, intx prefetch_interval) {
 // All JavaThreads
 #define ALL_JAVA_THREADS(X) DO_JAVA_THREADS(ThreadsSMRSupport::get_java_thread_list(), X)
 
-// All JavaThreads + all non-JavaThreads (i.e., every thread in the system)
-void Threads::threads_do(ThreadClosure* tc) {
-  assert_locked_or_safepoint(Threads_lock);
-  // ALL_JAVA_THREADS iterates through all JavaThreads
-  ALL_JAVA_THREADS(p) {
-    tc->do_thread(p);
-  }
+// All non-JavaThreads (i.e., every non-JavaThread in the system).
+void Threads::non_java_threads_do(ThreadClosure* tc) {
   // Someday we could have a table or list of all non-JavaThreads.
   // For now, just manually iterate through them.
   tc->do_thread(VMThread::vm_thread());
-  Universe::heap()->gc_threads_do(tc);
+  if (Universe::heap() != NULL) {
+    Universe::heap()->gc_threads_do(tc);
+  }
   WatcherThread *wt = WatcherThread::watcher_thread();
   // Strictly speaking, the following NULL check isn't sufficient to make sure
   // the data for WatcherThread is still valid upon being examined. However,
@@ -3455,7 +3457,24 @@ void Threads::threads_do(ThreadClosure* tc) {
     tc->do_thread(wt);
   }
 
+#if INCLUDE_TRACE
+  Thread* sampler_thread = TracingExport::sampler_thread_acquire();
+  if (sampler_thread != NULL) {
+    tc->do_thread(sampler_thread);
+  }
+#endif
+
   // If CompilerThreads ever become non-JavaThreads, add them here
+}
+
+// All JavaThreads + all non-JavaThreads (i.e., every thread in the system).
+void Threads::threads_do(ThreadClosure* tc) {
+  assert_locked_or_safepoint(Threads_lock);
+  // ALL_JAVA_THREADS iterates through all JavaThreads.
+  ALL_JAVA_THREADS(p) {
+    tc->do_thread(p);
+  }
+  non_java_threads_do(tc);
 }
 
 void Threads::possibly_parallel_threads_do(bool is_par, ThreadClosure* tc) {
@@ -3890,6 +3909,13 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // cache the system and platform class loaders
   SystemDictionary::compute_java_loaders(CHECK_JNI_ERR);
+
+#if INCLUDE_CDS
+  if (DumpSharedSpaces) {
+    // capture the module path info from the ModuleEntryTable
+    ClassLoader::initialize_module_path(THREAD);
+  }
+#endif
 
 #if INCLUDE_JVMCI
   if (force_JVMCI_intialization) {

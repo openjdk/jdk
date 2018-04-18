@@ -73,10 +73,11 @@
 // The list of supported parametric curves
 typedef struct _cmsParametricCurvesCollection_st {
 
-    int nFunctions;                                     // Number of supported functions in this chunk
-    int FunctionTypes[MAX_TYPES_IN_LCMS_PLUGIN];        // The identification types
-    int ParameterCount[MAX_TYPES_IN_LCMS_PLUGIN];       // Number of parameters for each function
-    cmsParametricCurveEvaluator    Evaluator;           // The evaluator
+    cmsUInt32Number nFunctions;                                     // Number of supported functions in this chunk
+    cmsInt32Number  FunctionTypes[MAX_TYPES_IN_LCMS_PLUGIN];        // The identification types
+    cmsUInt32Number ParameterCount[MAX_TYPES_IN_LCMS_PLUGIN];       // Number of parameters for each function
+
+    cmsParametricCurveEvaluator Evaluator;                          // The evaluator
 
     struct _cmsParametricCurvesCollection_st* Next; // Next in list
 
@@ -194,7 +195,7 @@ int IsInSet(int Type, _cmsParametricCurvesCollection* c)
 {
     int i;
 
-    for (i=0; i < c ->nFunctions; i++)
+    for (i=0; i < (int) c ->nFunctions; i++)
         if (abs(Type) == c ->FunctionTypes[i]) return i;
 
     return -1;
@@ -238,20 +239,20 @@ _cmsParametricCurvesCollection *GetParametricCurveByType(cmsContext ContextID, i
 // no optimation curve is computed. nSegments may also be zero in the inverse case, where only the
 // optimization curve is given. Both features simultaneously is an error
 static
-cmsToneCurve* AllocateToneCurveStruct(cmsContext ContextID, cmsInt32Number nEntries,
-                                      cmsInt32Number nSegments, const cmsCurveSegment* Segments,
+cmsToneCurve* AllocateToneCurveStruct(cmsContext ContextID, cmsUInt32Number nEntries,
+                                      cmsUInt32Number nSegments, const cmsCurveSegment* Segments,
                                       const cmsUInt16Number* Values)
 {
     cmsToneCurve* p;
-    int i;
+    cmsUInt32Number i;
 
     // We allow huge tables, which are then restricted for smoothing operations
-    if (nEntries > 65530 || nEntries < 0) {
+    if (nEntries > 65530) {
         cmsSignalError(ContextID, cmsERROR_RANGE, "Couldn't create tone curve of more than 65530 entries");
         return NULL;
     }
 
-    if (nEntries <= 0 && nSegments <= 0) {
+    if (nEntries == 0 && nSegments == 0) {
         cmsSignalError(ContextID, cmsERROR_RANGE, "Couldn't create tone curve with zero segments and no table");
         return NULL;
     }
@@ -261,7 +262,7 @@ cmsToneCurve* AllocateToneCurveStruct(cmsContext ContextID, cmsInt32Number nEntr
     if (!p) return NULL;
 
     // In this case, there are no segments
-    if (nSegments <= 0) {
+    if (nSegments == 0) {
         p ->Segments = NULL;
         p ->Evals = NULL;
     }
@@ -277,7 +278,7 @@ cmsToneCurve* AllocateToneCurveStruct(cmsContext ContextID, cmsInt32Number nEntr
 
     // This 16-bit table contains a limited precision representation of the whole curve and is kept for
     // increasing xput on certain operations.
-    if (nEntries <= 0) {
+    if (nEntries == 0) {
         p ->Table16 = NULL;
     }
     else {
@@ -303,7 +304,7 @@ cmsToneCurve* AllocateToneCurveStruct(cmsContext ContextID, cmsInt32Number nEntr
         p ->SegInterp = (cmsInterpParams**) _cmsCalloc(ContextID, nSegments, sizeof(cmsInterpParams*));
         if (p ->SegInterp == NULL) goto Error;
 
-        for (i=0; i< nSegments; i++) {
+        for (i=0; i < nSegments; i++) {
 
             // Type 0 is a special marker for table-based curves
             if (Segments[i].Type == 0)
@@ -359,7 +360,7 @@ cmsFloat64Number DefaultEvalParametricFn(cmsInt32Number Type, const cmsFloat64Nu
 
     // Type 1 Reversed: X = Y ^1/gamma
     case -1:
-         if (R < 0) {
+        if (R < 0) {
 
             if (fabs(Params[0] - 1.0) < MATRIX_DET_TOLERANCE)
                 Val = R;
@@ -367,80 +368,123 @@ cmsFloat64Number DefaultEvalParametricFn(cmsInt32Number Type, const cmsFloat64Nu
                 Val = 0;
         }
         else
-            Val = pow(R, 1/Params[0]);
+        {
+            if (fabs(Params[0]) < MATRIX_DET_TOLERANCE)
+                Val = PLUS_INF;
+            else
+                Val = pow(R, 1 / Params[0]);
+        }
         break;
 
     // CIE 122-1966
     // Y = (aX + b)^Gamma  | X >= -b/a
     // Y = 0               | else
     case 2:
-        disc = -Params[2] / Params[1];
+    {
 
-        if (R >= disc ) {
+        if (fabs(Params[1]) < MATRIX_DET_TOLERANCE)
+        {
+            Val = 0;
+        }
+        else
+        {
+            disc = -Params[2] / Params[1];
 
-            e = Params[1]*R + Params[2];
+            if (R >= disc) {
 
-            if (e > 0)
-                Val = pow(e, Params[0]);
+                e = Params[1] * R + Params[2];
+
+                if (e > 0)
+                    Val = pow(e, Params[0]);
+                else
+                    Val = 0;
+            }
             else
                 Val = 0;
         }
-        else
-            Val = 0;
-        break;
+    }
+    break;
 
      // Type 2 Reversed
      // X = (Y ^1/g  - b) / a
      case -2:
-         if (R < 0)
+     {
+         if (fabs(Params[0]) < MATRIX_DET_TOLERANCE ||
+             fabs(Params[1]) < MATRIX_DET_TOLERANCE)
+         {
              Val = 0;
+         }
          else
-             Val = (pow(R, 1.0/Params[0]) - Params[2]) / Params[1];
+         {
+             if (R < 0)
+                 Val = 0;
+             else
+                 Val = (pow(R, 1.0 / Params[0]) - Params[2]) / Params[1];
 
-         if (Val < 0)
-              Val = 0;
-         break;
+             if (Val < 0)
+                 Val = 0;
+         }
+     }
+     break;
 
 
     // IEC 61966-3
     // Y = (aX + b)^Gamma | X <= -b/a
     // Y = c              | else
     case 3:
-        disc = -Params[2] / Params[1];
-        if (disc < 0)
-            disc = 0;
-
-        if (R >= disc) {
-
-            e = Params[1]*R + Params[2];
-
-            if (e > 0)
-                Val = pow(e, Params[0]) + Params[3];
-            else
-                Val = 0;
+    {
+        if (fabs(Params[1]) < MATRIX_DET_TOLERANCE)
+        {
+            Val = 0;
         }
         else
-            Val = Params[3];
-        break;
+        {
+            disc = -Params[2] / Params[1];
+            if (disc < 0)
+                disc = 0;
+
+            if (R >= disc) {
+
+                e = Params[1] * R + Params[2];
+
+                if (e > 0)
+                    Val = pow(e, Params[0]) + Params[3];
+                else
+                    Val = 0;
+            }
+            else
+                Val = Params[3];
+        }
+    }
+    break;
 
 
     // Type 3 reversed
     // X=((Y-c)^1/g - b)/a      | (Y>=c)
     // X=-b/a                   | (Y<c)
     case -3:
-        if (R >= Params[3])  {
-
-            e = R - Params[3];
-
-            if (e > 0)
-                Val = (pow(e, 1/Params[0]) - Params[2]) / Params[1];
-            else
-                Val = 0;
+    {
+        if (fabs(Params[1]) < MATRIX_DET_TOLERANCE)
+        {
+            Val = 0;
         }
-        else {
-            Val = -Params[2] / Params[1];
+        else
+        {
+            if (R >= Params[3]) {
+
+                e = R - Params[3];
+
+                if (e > 0)
+                    Val = (pow(e, 1 / Params[0]) - Params[2]) / Params[1];
+                else
+                    Val = 0;
+            }
+            else {
+                Val = -Params[2] / Params[1];
+            }
         }
-        break;
+    }
+    break;
 
 
     // IEC 61966-2.1 (sRGB)
@@ -464,20 +508,31 @@ cmsFloat64Number DefaultEvalParametricFn(cmsInt32Number Type, const cmsFloat64Nu
     // X=((Y^1/g-b)/a)    | Y >= (ad+b)^g
     // X=Y/c              | Y< (ad+b)^g
     case -4:
-        e = Params[1] * Params[4] + Params[2];
-        if (e < 0)
-            disc = 0;
+    {
+        if (fabs(Params[0]) < MATRIX_DET_TOLERANCE ||
+            fabs(Params[1]) < MATRIX_DET_TOLERANCE ||
+            fabs(Params[3]) < MATRIX_DET_TOLERANCE)
+        {
+            Val = 0;
+        }
         else
-            disc = pow(e, Params[0]);
+        {
+            e = Params[1] * Params[4] + Params[2];
+            if (e < 0)
+                disc = 0;
+            else
+                disc = pow(e, Params[0]);
 
-        if (R >= disc) {
+            if (R >= disc) {
 
-            Val = (pow(R, 1.0/Params[0]) - Params[2]) / Params[1];
+                Val = (pow(R, 1.0 / Params[0]) - Params[2]) / Params[1];
+            }
+            else {
+                Val = R / Params[3];
+            }
         }
-        else {
-            Val = R / Params[3];
-        }
-        break;
+    }
+    break;
 
 
     // Y = (aX + b)^Gamma + e | X >= d
@@ -501,20 +556,29 @@ cmsFloat64Number DefaultEvalParametricFn(cmsInt32Number Type, const cmsFloat64Nu
     // X=((Y-e)1/g-b)/a   | Y >=(ad+b)^g+e), cd+f
     // X=(Y-f)/c          | else
     case -5:
-
-        disc = Params[3] * Params[4] + Params[6];
-        if (R >= disc) {
-
-            e = R - Params[5];
-            if (e < 0)
-                Val = 0;
-            else
-                Val = (pow(e, 1.0/Params[0]) - Params[2]) / Params[1];
+    {
+        if (fabs(Params[1]) < MATRIX_DET_TOLERANCE ||
+            fabs(Params[3]) < MATRIX_DET_TOLERANCE)
+        {
+            Val = 0;
         }
-        else {
-            Val = (R - Params[6]) / Params[3];
+        else
+        {
+            disc = Params[3] * Params[4] + Params[6];
+            if (R >= disc) {
+
+                e = R - Params[5];
+                if (e < 0)
+                    Val = 0;
+                else
+                    Val = (pow(e, 1.0 / Params[0]) - Params[2]) / Params[1];
+            }
+            else {
+                Val = (R - Params[6]) / Params[3];
+            }
         }
-        break;
+    }
+    break;
 
 
     // Types 6,7,8 comes from segmented curves as described in ICCSpecRevision_02_11_06_Float.pdf
@@ -532,12 +596,21 @@ cmsFloat64Number DefaultEvalParametricFn(cmsInt32Number Type, const cmsFloat64Nu
 
     // ((Y - c) ^1/Gamma - b) / a
     case -6:
-        e = R - Params[3];
-        if (e < 0)
+    {
+        if (fabs(Params[1]) < MATRIX_DET_TOLERANCE)
+        {
             Val = 0;
+        }
         else
-        Val = (pow(e, 1.0/Params[0]) - Params[2]) / Params[1];
-        break;
+        {
+            e = R - Params[3];
+            if (e < 0)
+                Val = 0;
+            else
+                Val = (pow(e, 1.0 / Params[0]) - Params[2]) / Params[1];
+        }
+    }
+    break;
 
 
     // Y = a * log (b * X^Gamma + c) + d
@@ -554,8 +627,19 @@ cmsFloat64Number DefaultEvalParametricFn(cmsInt32Number Type, const cmsFloat64Nu
     // pow(10, (Y-d) / a) = b * X ^Gamma + c
     // pow((pow(10, (Y-d) / a) - c) / b, 1/g) = X
     case -7:
-       Val = pow((pow(10.0, (R-Params[4]) / Params[1]) - Params[3]) / Params[2], 1.0 / Params[0]);
-       break;
+    {
+        if (fabs(Params[0]) < MATRIX_DET_TOLERANCE ||
+            fabs(Params[1]) < MATRIX_DET_TOLERANCE ||
+            fabs(Params[2]) < MATRIX_DET_TOLERANCE)
+        {
+            Val = 0;
+        }
+        else
+        {
+            Val = pow((pow(10.0, (R - Params[4]) / Params[1]) - Params[3]) / Params[2], 1.0 / Params[0]);
+        }
+    }
+    break;
 
 
    //Y = a * b^(c*X+d) + e
@@ -571,12 +655,25 @@ cmsFloat64Number DefaultEvalParametricFn(cmsInt32Number Type, const cmsFloat64Nu
        disc = R - Params[4];
        if (disc < 0) Val = 0;
        else
-           Val = (log(disc / Params[0]) / log(Params[1]) - Params[3]) / Params[2];
+       {
+           if (fabs(Params[0]) < MATRIX_DET_TOLERANCE ||
+               fabs(Params[2]) < MATRIX_DET_TOLERANCE)
+           {
+               Val = 0;
+           }
+           else
+           {
+               Val = (log(disc / Params[0]) / log(Params[1]) - Params[3]) / Params[2];
+           }
+       }
        break;
 
    // S-Shaped: (1 - (1-x)^1/g)^1/g
    case 108:
-      Val = pow(1.0 - pow(1 - R, 1/Params[0]), 1/Params[0]);
+       if (fabs(Params[0]) < MATRIX_DET_TOLERANCE)
+           Val = 0;
+       else
+           Val = pow(1.0 - pow(1 - R, 1/Params[0]), 1/Params[0]);
       break;
 
     // y = (1 - (1-x)^1/g)^1/g
@@ -596,33 +693,45 @@ cmsFloat64Number DefaultEvalParametricFn(cmsInt32Number Type, const cmsFloat64Nu
     return Val;
 }
 
-// Evaluate a segmented function for a single value. Return -1 if no valid segment found .
+// Evaluate a segmented function for a single value. Return -Inf if no valid segment found .
 // If fn type is 0, perform an interpolation on the table
 static
 cmsFloat64Number EvalSegmentedFn(const cmsToneCurve *g, cmsFloat64Number R)
 {
     int i;
+    cmsFloat32Number Out32;
+    cmsFloat64Number Out;
 
-    for (i = g ->nSegments-1; i >= 0 ; --i) {
+    for (i = (int) g->nSegments - 1; i >= 0; --i) {
 
         // Check for domain
-        if ((R > g ->Segments[i].x0) && (R <= g ->Segments[i].x1)) {
+        if ((R > g->Segments[i].x0) && (R <= g->Segments[i].x1)) {
 
             // Type == 0 means segment is sampled
-            if (g ->Segments[i].Type == 0) {
+            if (g->Segments[i].Type == 0) {
 
-                cmsFloat32Number R1 = (cmsFloat32Number) (R - g ->Segments[i].x0) / (g ->Segments[i].x1 - g ->Segments[i].x0);
-                cmsFloat32Number Out;
+                cmsFloat32Number R1 = (cmsFloat32Number)(R - g->Segments[i].x0) / (g->Segments[i].x1 - g->Segments[i].x0);
 
                 // Setup the table (TODO: clean that)
-                g ->SegInterp[i]-> Table = g ->Segments[i].SampledPoints;
+                g->SegInterp[i]->Table = g->Segments[i].SampledPoints;
 
-                g ->SegInterp[i] -> Interpolation.LerpFloat(&R1, &Out, g ->SegInterp[i]);
+                g->SegInterp[i]->Interpolation.LerpFloat(&R1, &Out32, g->SegInterp[i]);
+                Out = (cmsFloat64Number) Out32;
 
-                return Out;
             }
+            else {
+                Out = g->Evals[i](g->Segments[i].Type, g->Segments[i].Params, R);
+            }
+
+            if (isinf(Out))
+                return PLUS_INF;
             else
-                return g ->Evals[i](g->Segments[i].Type, g ->Segments[i].Params, R);
+            {
+                if (isinf(-Out))
+                    return MINUS_INF;
+            }
+
+            return Out;
         }
     }
 
@@ -645,13 +754,13 @@ const cmsUInt16Number* CMSEXPORT cmsGetToneCurveEstimatedTable(const cmsToneCurv
 
 // Create an empty gamma curve, by using tables. This specifies only the limited-precision part, and leaves the
 // floating point description empty.
-cmsToneCurve* CMSEXPORT cmsBuildTabulatedToneCurve16(cmsContext ContextID, cmsInt32Number nEntries, const cmsUInt16Number Values[])
+cmsToneCurve* CMSEXPORT cmsBuildTabulatedToneCurve16(cmsContext ContextID, cmsUInt32Number nEntries, const cmsUInt16Number Values[])
 {
     return AllocateToneCurveStruct(ContextID, nEntries, 0, NULL, Values);
 }
 
 static
-int EntriesByGamma(cmsFloat64Number Gamma)
+cmsUInt32Number EntriesByGamma(cmsFloat64Number Gamma)
 {
     if (fabs(Gamma - 1.0) < 0.001) return 2;
     return 4096;
@@ -660,12 +769,12 @@ int EntriesByGamma(cmsFloat64Number Gamma)
 
 // Create a segmented gamma, fill the table
 cmsToneCurve* CMSEXPORT cmsBuildSegmentedToneCurve(cmsContext ContextID,
-                                                   cmsInt32Number nSegments, const cmsCurveSegment Segments[])
+                                                   cmsUInt32Number nSegments, const cmsCurveSegment Segments[])
 {
-    int i;
+    cmsUInt32Number i;
     cmsFloat64Number R, Val;
     cmsToneCurve* g;
-    int nGridPoints = 4096;
+    cmsUInt32Number nGridPoints = 4096;
 
     _cmsAssert(Segments != NULL);
 
@@ -680,7 +789,7 @@ cmsToneCurve* CMSEXPORT cmsBuildSegmentedToneCurve(cmsContext ContextID,
 
     // Once we have the floating point version, we can approximate a 16 bit table of 4096 entries
     // for performance reasons. This table would normally not be used except on 8/16 bits transforms.
-    for (i=0; i < nGridPoints; i++) {
+    for (i = 0; i < nGridPoints; i++) {
 
         R   = (cmsFloat64Number) i / (nGridPoints-1);
 
@@ -893,7 +1002,7 @@ int GetInterval(cmsFloat64Number In, const cmsUInt16Number LutTable[], const str
     if (LutTable[0] < LutTable[p ->Domain[0]]) {
 
         // Table is overall ascending
-        for (i=p->Domain[0]-1; i >=0; --i) {
+        for (i = (int) p->Domain[0] - 1; i >= 0; --i) {
 
             y0 = LutTable[i];
             y1 = LutTable[i+1];
@@ -928,7 +1037,7 @@ int GetInterval(cmsFloat64Number In, const cmsUInt16Number LutTable[], const str
 }
 
 // Reverse a gamma table
-cmsToneCurve* CMSEXPORT cmsReverseToneCurveEx(cmsInt32Number nResultSamples, const cmsToneCurve* InCurve)
+cmsToneCurve* CMSEXPORT cmsReverseToneCurveEx(cmsUInt32Number nResultSamples, const cmsToneCurve* InCurve)
 {
     cmsToneCurve *out;
     cmsFloat64Number a = 0, b = 0, y, x1, y1, x2, y2;
@@ -957,7 +1066,7 @@ cmsToneCurve* CMSEXPORT cmsReverseToneCurveEx(cmsInt32Number nResultSamples, con
     Ascending = !cmsIsToneCurveDescending(InCurve);
 
     // Iterate across Y axis
-    for (i=0; i <  nResultSamples; i++) {
+    for (i=0; i < (int) nResultSamples; i++) {
 
         y = (cmsFloat64Number) i * 65535.0 / (nResultSamples - 1);
 
@@ -1012,7 +1121,8 @@ cmsToneCurve* CMSEXPORT cmsReverseToneCurve(const cmsToneCurve* InGamma)
 //   Output: smoothed vector (z): vector from 1 to m.
 
 static
-cmsBool smooth2(cmsContext ContextID, cmsFloat32Number w[], cmsFloat32Number y[], cmsFloat32Number z[], cmsFloat32Number lambda, int m)
+cmsBool smooth2(cmsContext ContextID, cmsFloat32Number w[], cmsFloat32Number y[],
+                cmsFloat32Number z[], cmsFloat32Number lambda, int m)
 {
     int i, i1, i2;
     cmsFloat32Number *c, *d, *e;
@@ -1071,73 +1181,121 @@ cmsBool smooth2(cmsContext ContextID, cmsFloat32Number w[], cmsFloat32Number y[]
 // Smooths a curve sampled at regular intervals.
 cmsBool  CMSEXPORT cmsSmoothToneCurve(cmsToneCurve* Tab, cmsFloat64Number lambda)
 {
-    cmsFloat32Number w[MAX_NODES_IN_CURVE], y[MAX_NODES_IN_CURVE], z[MAX_NODES_IN_CURVE];
-    int i, nItems, Zeros, Poles;
+    cmsBool SuccessStatus = TRUE;
+    cmsFloat32Number *w, *y, *z;
+    cmsUInt32Number i, nItems, Zeros, Poles;
 
-    if (Tab == NULL) return FALSE;
-
-    if (cmsIsToneCurveLinear(Tab)) return TRUE; // Nothing to do
-
-    nItems = Tab -> nEntries;
-
-    if (nItems >= MAX_NODES_IN_CURVE) {
-        cmsSignalError(Tab ->InterpParams->ContextID, cmsERROR_RANGE, "cmsSmoothToneCurve: too many points.");
-        return FALSE;
-    }
-
-    memset(w, 0, nItems * sizeof(cmsFloat32Number));
-    memset(y, 0, nItems * sizeof(cmsFloat32Number));
-    memset(z, 0, nItems * sizeof(cmsFloat32Number));
-
-    for (i=0; i < nItems; i++)
+    if (Tab != NULL && Tab->InterpParams != NULL)
     {
-        y[i+1] = (cmsFloat32Number) Tab -> Table16[i];
-        w[i+1] = 1.0;
-    }
+        cmsContext ContextID = Tab->InterpParams->ContextID;
 
-    if (!smooth2(Tab ->InterpParams->ContextID, w, y, z, (cmsFloat32Number) lambda, nItems)) return FALSE;
+        if (!cmsIsToneCurveLinear(Tab)) // Only non-linear curves need smoothing
+        {
+            nItems = Tab->nEntries;
+            if (nItems < MAX_NODES_IN_CURVE)
+            {
+                // Allocate one more item than needed
+                w = (cmsFloat32Number *)_cmsCalloc(ContextID, nItems + 1, sizeof(cmsFloat32Number));
+                y = (cmsFloat32Number *)_cmsCalloc(ContextID, nItems + 1, sizeof(cmsFloat32Number));
+                z = (cmsFloat32Number *)_cmsCalloc(ContextID, nItems + 1, sizeof(cmsFloat32Number));
 
-    // Do some reality - checking...
-    Zeros = Poles = 0;
-    for (i=nItems; i > 1; --i) {
+                if (w != NULL && y != NULL && z != NULL) // Ensure no memory allocation failure
+                {
+                    memset(w, 0, (nItems + 1) * sizeof(cmsFloat32Number));
+                    memset(y, 0, (nItems + 1) * sizeof(cmsFloat32Number));
+                    memset(z, 0, (nItems + 1) * sizeof(cmsFloat32Number));
 
-        if (z[i] == 0.) Zeros++;
-        if (z[i] >= 65535.) Poles++;
-        if (z[i] < z[i-1]) {
-            cmsSignalError(Tab ->InterpParams->ContextID, cmsERROR_RANGE, "cmsSmoothToneCurve: Non-Monotonic.");
-            return FALSE;
+                    for (i = 0; i < nItems; i++)
+                    {
+                        y[i + 1] = (cmsFloat32Number)Tab->Table16[i];
+                        w[i + 1] = 1.0;
+                    }
+
+                    if (smooth2(ContextID, w, y, z, (cmsFloat32Number)lambda, (int)nItems))
+                    {
+                        // Do some reality - checking...
+
+                        Zeros = Poles = 0;
+                        for (i = nItems; i > 1; --i)
+                        {
+                            if (z[i] == 0.) Zeros++;
+                            if (z[i] >= 65535.) Poles++;
+                            if (z[i] < z[i - 1])
+                            {
+                                cmsSignalError(ContextID, cmsERROR_RANGE, "cmsSmoothToneCurve: Non-Monotonic.");
+                                SuccessStatus = FALSE;
+                                break;
+                            }
+                        }
+
+                        if (SuccessStatus && Zeros > (nItems / 3))
+                        {
+                            cmsSignalError(ContextID, cmsERROR_RANGE, "cmsSmoothToneCurve: Degenerated, mostly zeros.");
+                            SuccessStatus = FALSE;
+                        }
+
+                        if (SuccessStatus && Poles > (nItems / 3))
+                        {
+                            cmsSignalError(ContextID, cmsERROR_RANGE, "cmsSmoothToneCurve: Degenerated, mostly poles.");
+                            SuccessStatus = FALSE;
+                        }
+
+                        if (SuccessStatus) // Seems ok
+                        {
+                            for (i = 0; i < nItems; i++)
+                            {
+                                // Clamp to cmsUInt16Number
+                                Tab->Table16[i] = _cmsQuickSaturateWord(z[i + 1]);
+                            }
+                        }
+                    }
+                    else // Could not smooth
+                    {
+                        cmsSignalError(ContextID, cmsERROR_RANGE, "cmsSmoothToneCurve: Function smooth2 failed.");
+                        SuccessStatus = FALSE;
+                    }
+                }
+                else // One or more buffers could not be allocated
+                {
+                    cmsSignalError(ContextID, cmsERROR_RANGE, "cmsSmoothToneCurve: Could not allocate memory.");
+                    SuccessStatus = FALSE;
+                }
+
+                if (z != NULL)
+                    _cmsFree(ContextID, z);
+
+                if (y != NULL)
+                    _cmsFree(ContextID, y);
+
+                if (w != NULL)
+                    _cmsFree(ContextID, w);
+            }
+            else // too many items in the table
+            {
+                cmsSignalError(ContextID, cmsERROR_RANGE, "cmsSmoothToneCurve: Too many points.");
+                SuccessStatus = FALSE;
+            }
         }
     }
-
-    if (Zeros > (nItems / 3)) {
-        cmsSignalError(Tab ->InterpParams->ContextID, cmsERROR_RANGE, "cmsSmoothToneCurve: Degenerated, mostly zeros.");
-        return FALSE;
-    }
-    if (Poles > (nItems / 3)) {
-        cmsSignalError(Tab ->InterpParams->ContextID, cmsERROR_RANGE, "cmsSmoothToneCurve: Degenerated, mostly poles.");
-        return FALSE;
+    else // Tab parameter or Tab->InterpParams is NULL
+    {
+        // Can't signal an error here since the ContextID is not known at this point
+        SuccessStatus = FALSE;
     }
 
-    // Seems ok
-    for (i=0; i < nItems; i++) {
-
-        // Clamp to cmsUInt16Number
-        Tab -> Table16[i] = _cmsQuickSaturateWord(z[i+1]);
-    }
-
-    return TRUE;
+    return SuccessStatus;
 }
 
 // Is a table linear? Do not use parametric since we cannot guarantee some weird parameters resulting
 // in a linear table. This way assures it is linear in 12 bits, which should be enought in most cases.
 cmsBool CMSEXPORT cmsIsToneCurveLinear(const cmsToneCurve* Curve)
 {
-    cmsUInt32Number i;
+    int i;
     int diff;
 
     _cmsAssert(Curve != NULL);
 
-    for (i=0; i < Curve ->nEntries; i++) {
+    for (i=0; i < (int) Curve ->nEntries; i++) {
 
         diff = abs((int) Curve->Table16[i] - (int) _cmsQuantizeVal(i, Curve ->nEntries));
         if (diff > 0x0f)
@@ -1150,7 +1308,7 @@ cmsBool CMSEXPORT cmsIsToneCurveLinear(const cmsToneCurve* Curve)
 // Same, but for monotonicity
 cmsBool  CMSEXPORT cmsIsToneCurveMonotonic(const cmsToneCurve* t)
 {
-    int n;
+    cmsUInt32Number n;
     int i, last;
     cmsBool lDescending;
 
@@ -1167,7 +1325,7 @@ cmsBool  CMSEXPORT cmsIsToneCurveMonotonic(const cmsToneCurve* t)
 
         last = t ->Table16[0];
 
-        for (i = 1; i < n; i++) {
+        for (i = 1; i < (int) n; i++) {
 
             if (t ->Table16[i] - last > 2) // We allow some ripple
                 return FALSE;
@@ -1180,7 +1338,7 @@ cmsBool  CMSEXPORT cmsIsToneCurveMonotonic(const cmsToneCurve* t)
 
         last = t ->Table16[n-1];
 
-        for (i = n-2; i >= 0; --i) {
+        for (i = (int) n - 2; i >= 0; --i) {
 
             if (t ->Table16[i] - last > 2)
                 return FALSE;

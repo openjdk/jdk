@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8156002
+ * @bug 8156002 8201474
  * @summary Unit test for socket-channel adaptors
  * @library .. /test/lib
  * @build jdk.test.lib.Utils TestServers
@@ -37,18 +37,16 @@ import java.util.Arrays;
 
 public class AdaptSocket {
 
-    static java.io.PrintStream out = System.out;
+    static final java.io.PrintStream out = System.out;
 
-    static void test(TestServers.DayTimeServer dayTimeServer,
+    static void test(TestServers.AbstractServer server,
                      int timeout,
                      boolean shouldTimeout)
         throws Exception
     {
         out.println();
 
-        InetSocketAddress isa
-            = new InetSocketAddress(dayTimeServer.getAddress(),
-                                    dayTimeServer.getPort());
+        InetSocketAddress isa = new InetSocketAddress(server.getAddress(), server.getPort());
         SocketChannel sc = SocketChannel.open();
         Socket so = sc.socket();
         out.println("opened: " + so);
@@ -151,6 +149,30 @@ public class AdaptSocket {
         sc.close();
     }
 
+    static void testConnect(TestServers.AbstractServer server,
+                            int timeout,
+                            boolean shouldFail)
+        throws Exception
+    {
+        SocketAddress sa = new InetSocketAddress(server.getAddress(), server.getPort());
+        try (SocketChannel sc = SocketChannel.open()) {
+            Socket s = sc.socket();
+            try {
+                if (timeout > 0) {
+                    s.connect(sa, timeout);
+                } else {
+                    s.connect(sa);
+                }
+                if (shouldFail)
+                    throw new Exception("Connection should not be established");
+            } catch (SocketException se) {
+                if (!shouldFail)
+                    throw se;
+                out.println("connect failed as expected: " + se);
+            }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
 
         try (TestServers.DayTimeServer dayTimeServer
@@ -177,5 +199,9 @@ public class AdaptSocket {
                 = TestServers.NoResponseServer.startNewServer()) {
             testRead(noResponseServer, 10, true);
         }
+
+        TestServers.RefusingServer refuser = TestServers.RefusingServer.newRefusingServer();
+        testConnect(refuser, 0, true);
+        testConnect(refuser, 2000, true);
     }
 }

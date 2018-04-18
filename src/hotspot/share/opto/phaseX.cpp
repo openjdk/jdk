@@ -1628,8 +1628,11 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
       Node* imem = use->as_Initialize()->proj_out_or_null(TypeFunc::Memory);
       if (imem != NULL)  add_users_to_worklist0(imem);
     }
-    // Loading the java mirror from a klass oop requires two loads and the type
+    // Loading the java mirror from a Klass requires two loads and the type
     // of the mirror load depends on the type of 'n'. See LoadNode::Value().
+    // If the code pattern requires a barrier for
+    //   mirror = ((OopHandle)mirror)->resolve();
+    // this won't match.
     if (use_op == Op_LoadP && use->bottom_type()->isa_rawptr()) {
       for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
         Node* u = use->fast_out(i2);
@@ -1774,8 +1777,11 @@ void PhaseCCP::analyze() {
             worklist.push(phi);
           }
         }
-        // Loading the java mirror from a klass oop requires two loads and the type
+        // Loading the java mirror from a Klass requires two loads and the type
         // of the mirror load depends on the type of 'n'. See LoadNode::Value().
+        // If the code pattern requires a barrier for
+        //   mirror = ((OopHandle)mirror)->resolve();
+        // this won't match.
         if (m_op == Op_LoadP && m->bottom_type()->isa_rawptr()) {
           for (DUIterator_Fast i2max, i2 = m->fast_outs(i2max); i2 < i2max; i2++) {
             Node* u = m->fast_out(i2);

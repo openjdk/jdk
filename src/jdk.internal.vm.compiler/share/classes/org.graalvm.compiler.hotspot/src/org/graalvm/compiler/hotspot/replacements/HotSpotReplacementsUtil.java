@@ -631,12 +631,12 @@ public class HotSpotReplacementsUtil {
 
     @Fold
     public static int g1CardQueueIndexOffset(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.g1CardQueueIndexOffset();
+        return config.g1CardQueueIndexOffset;
     }
 
     @Fold
     public static int g1CardQueueBufferOffset(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.g1CardQueueBufferOffset();
+        return config.g1CardQueueBufferOffset;
     }
 
     @Fold
@@ -646,17 +646,17 @@ public class HotSpotReplacementsUtil {
 
     @Fold
     public static int g1SATBQueueMarkingOffset(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.g1SATBQueueMarkingOffset();
+        return config.g1SATBQueueMarkingOffset;
     }
 
     @Fold
     public static int g1SATBQueueIndexOffset(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.g1SATBQueueIndexOffset();
+        return config.g1SATBQueueIndexOffset;
     }
 
     @Fold
     public static int g1SATBQueueBufferOffset(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.g1SATBQueueBufferOffset();
+        return config.g1SATBQueueBufferOffset;
     }
 
     public static final LocationIdentity KLASS_SUPER_CHECK_OFFSET_LOCATION = NamedLocationIdentity.immutable("Klass::_super_check_offset");

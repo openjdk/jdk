@@ -253,18 +253,18 @@ public:
 class ParKnownGarbageTask: public AbstractGangTask {
   CollectionSetChooser* _hrSorted;
   uint _chunk_size;
-  G1CollectedHeap* _g1;
+  G1CollectedHeap* _g1h;
   HeapRegionClaimer _hrclaimer;
 
 public:
   ParKnownGarbageTask(CollectionSetChooser* hrSorted, uint chunk_size, uint n_workers) :
       AbstractGangTask("ParKnownGarbageTask"),
       _hrSorted(hrSorted), _chunk_size(chunk_size),
-      _g1(G1CollectedHeap::heap()), _hrclaimer(n_workers) {}
+      _g1h(G1CollectedHeap::heap()), _hrclaimer(n_workers) {}
 
   void work(uint worker_id) {
     ParKnownGarbageHRClosure par_known_garbage_cl(_hrSorted, _chunk_size);
-    _g1->heap_region_par_iterate_from_worker_offset(&par_known_garbage_cl, &_hrclaimer, worker_id);
+    _g1h->heap_region_par_iterate_from_worker_offset(&par_known_garbage_cl, &_hrclaimer, worker_id);
   }
 };
 

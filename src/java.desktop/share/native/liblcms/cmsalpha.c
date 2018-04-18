@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2016 Marti Maria Saguer
+//  Copyright (c) 1998-2017 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -55,7 +55,6 @@
 
 #include "lcms2_internal.h"
 
-
 // Alpha copy ------------------------------------------------------------------------------------------------------------------
 
 // Floor to byte, taking care of saturation
@@ -71,16 +70,16 @@ cmsINLINE cmsUInt8Number _cmsQuickSaturateByte(cmsFloat64Number d)
 
 // Return the size in bytes of a given formatter
 static
-int trueBytesSize(cmsUInt32Number Format)
+cmsUInt32Number trueBytesSize(cmsUInt32Number Format)
 {
-       int fmt_bytes = T_BYTES(Format);
+    cmsUInt32Number fmt_bytes = T_BYTES(Format);
 
-       // For double, the T_BYTES field returns zero
-       if (fmt_bytes == 0)
-              return sizeof(double);
+    // For double, the T_BYTES field returns zero
+    if (fmt_bytes == 0)
+        return sizeof(double);
 
-       // Otherwise, it is already correct for all formats
-       return fmt_bytes;
+    // Otherwise, it is already correct for all formats
+    return fmt_bytes;
 }
 
 
@@ -119,8 +118,13 @@ void from8toDBL(void* dst, const void* src)
 static
 void from8toHLF(void* dst, const void* src)
 {
+#ifndef CMS_NO_HALF_SUPPORT
        cmsFloat32Number n = (*(cmsUInt8Number*)src) / 255.0f;
        *(cmsUInt16Number*)dst = _cmsFloat2Half(n);
+#else
+    cmsUNUSED_PARAMETER(dst);
+    cmsUNUSED_PARAMETER(src);
+#endif
 }
 
 // From 16
@@ -151,8 +155,13 @@ void from16toDBL(void* dst, const void* src)
 static
 void from16toHLF(void* dst, const void* src)
 {
+#ifndef CMS_NO_HALF_SUPPORT
        cmsFloat32Number n = (*(cmsUInt16Number*)src) / 65535.0f;
        *(cmsUInt16Number*)dst = _cmsFloat2Half(n);
+#else
+    cmsUNUSED_PARAMETER(dst);
+    cmsUNUSED_PARAMETER(src);
+#endif
 }
 
 // From Float
@@ -187,8 +196,13 @@ void fromFLTtoDBL(void* dst, const void* src)
 static
 void fromFLTtoHLF(void* dst, const void* src)
 {
+#ifndef CMS_NO_HALF_SUPPORT
        cmsFloat32Number n = *(cmsFloat32Number*)src;
        *(cmsUInt16Number*)dst = _cmsFloat2Half(n);
+#else
+    cmsUNUSED_PARAMETER(dst);
+    cmsUNUSED_PARAMETER(src);
+#endif
 }
 
 
@@ -197,27 +211,48 @@ void fromFLTtoHLF(void* dst, const void* src)
 static
 void fromHLFto8(void* dst, const void* src)
 {
+#ifndef CMS_NO_HALF_SUPPORT
        cmsFloat32Number n = _cmsHalf2Float(*(cmsUInt16Number*)src);
        *(cmsUInt8Number*)dst = _cmsQuickSaturateByte(n * 255.0f);
+#else
+    cmsUNUSED_PARAMETER(dst);
+    cmsUNUSED_PARAMETER(src);
+#endif
+
 }
 
 static
 void fromHLFto16(void* dst, const void* src)
 {
+#ifndef CMS_NO_HALF_SUPPORT
        cmsFloat32Number n = _cmsHalf2Float(*(cmsUInt16Number*)src);
        *(cmsUInt16Number*)dst = _cmsQuickSaturateWord(n * 65535.0f);
+#else
+    cmsUNUSED_PARAMETER(dst);
+    cmsUNUSED_PARAMETER(src);
+#endif
 }
 
 static
 void fromHLFtoFLT(void* dst, const void* src)
 {
+#ifndef CMS_NO_HALF_SUPPORT
        *(cmsFloat32Number*)dst = _cmsHalf2Float(*(cmsUInt16Number*)src);
+#else
+    cmsUNUSED_PARAMETER(dst);
+    cmsUNUSED_PARAMETER(src);
+#endif
 }
 
 static
 void fromHLFtoDBL(void* dst, const void* src)
 {
+#ifndef CMS_NO_HALF_SUPPORT
        *(cmsFloat64Number*)dst = (cmsFloat64Number)_cmsHalf2Float(*(cmsUInt16Number*)src);
+#else
+    cmsUNUSED_PARAMETER(dst);
+    cmsUNUSED_PARAMETER(src);
+#endif
 }
 
 // From double
@@ -245,8 +280,13 @@ void fromDBLtoFLT(void* dst, const void* src)
 static
 void fromDBLtoHLF(void* dst, const void* src)
 {
+#ifndef CMS_NO_HALF_SUPPORT
        cmsFloat32Number n = (cmsFloat32Number) *(cmsFloat64Number*)src;
        *(cmsUInt16Number*)dst = _cmsFloat2Half(n);
+#else
+    cmsUNUSED_PARAMETER(dst);
+    cmsUNUSED_PARAMETER(src);
+#endif
 }
 
 static
@@ -260,21 +300,22 @@ void copy64(void* dst, const void* src)
 static
 int FormatterPos(cmsUInt32Number frm)
 {
-       int  b = T_BYTES(frm);
+    cmsUInt32Number  b = T_BYTES(frm);
 
-       if (b == 0 && T_FLOAT(frm))
-              return 4; // DBL
-       if (b == 2 && T_FLOAT(frm))
-              return 2; // HLF
-       if (b == 4 && T_FLOAT(frm))
-              return 3; // FLT
-       if (b == 2 && !T_FLOAT(frm))
-              return 1; // 16
-       if (b == 1 && !T_FLOAT(frm))
-              return 0; // 8
+    if (b == 0 && T_FLOAT(frm))
+        return 4; // DBL
+#ifndef CMS_NO_HALF_SUPPORT
+    if (b == 2 && T_FLOAT(frm))
+        return 2; // HLF
+#endif
+    if (b == 4 && T_FLOAT(frm))
+        return 3; // FLT
+    if (b == 2 && !T_FLOAT(frm))
+        return 1; // 16
+    if (b == 1 && !T_FLOAT(frm))
+        return 0; // 8
 
-       return -1; // not recognized
-
+    return -1; // not recognized
 }
 
 // Obtains a alpha-to-alpha funmction formatter
@@ -310,12 +351,12 @@ void ComputeIncrementsForChunky(cmsUInt32Number Format,
                                 cmsUInt32Number ComponentPointerIncrements[])
 {
        cmsUInt32Number channels[cmsMAXCHANNELS];
-       int extra = T_EXTRA(Format);
-       int nchannels = T_CHANNELS(Format);
-       int total_chans = nchannels + extra;
-       int i;
-       int channelSize = trueBytesSize(Format);
-       int pixelSize = channelSize * total_chans;
+       cmsUInt32Number extra = T_EXTRA(Format);
+       cmsUInt32Number nchannels = T_CHANNELS(Format);
+       cmsUInt32Number total_chans = nchannels + extra;
+       cmsUInt32Number i;
+       cmsUInt32Number channelSize = trueBytesSize(Format);
+       cmsUInt32Number pixelSize = channelSize * total_chans;
 
            // Sanity check
            if (total_chans <= 0 || total_chans >= cmsMAXCHANNELS)
@@ -368,11 +409,11 @@ void ComputeIncrementsForPlanar(cmsUInt32Number Format,
                                 cmsUInt32Number ComponentPointerIncrements[])
 {
        cmsUInt32Number channels[cmsMAXCHANNELS];
-       int extra = T_EXTRA(Format);
-       int nchannels = T_CHANNELS(Format);
-       int total_chans = nchannels + extra;
-       int i;
-       int channelSize = trueBytesSize(Format);
+       cmsUInt32Number extra = T_EXTRA(Format);
+       cmsUInt32Number nchannels = T_CHANNELS(Format);
+       cmsUInt32Number total_chans = nchannels + extra;
+       cmsUInt32Number i;
+       cmsUInt32Number channelSize = trueBytesSize(Format);
 
        // Sanity check
        if (total_chans <= 0 || total_chans >= cmsMAXCHANNELS)

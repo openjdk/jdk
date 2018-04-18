@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/cms/cmsCardTable.hpp"
 #include "gc/cms/cmsHeap.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/cardTableRS.hpp"
@@ -36,7 +37,24 @@
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/vmThread.hpp"
 
-void CardTableRS::
+CMSCardTable::CMSCardTable(MemRegion whole_heap) :
+    CardTableRS(whole_heap, CMSPrecleaningEnabled /* scanned_concurrently */) {
+}
+
+// Returns the number of chunks necessary to cover "mr".
+size_t CMSCardTable::chunks_to_cover(MemRegion mr) {
+  return (size_t)(addr_to_chunk_index(mr.last()) -
+                  addr_to_chunk_index(mr.start()) + 1);
+}
+
+// Returns the index of the chunk in a stride which
+// covers the given address.
+uintptr_t CMSCardTable::addr_to_chunk_index(const void* addr) {
+  uintptr_t card = (uintptr_t) byte_for(addr);
+  return card / ParGCCardsPerStrideChunk;
+}
+
+void CMSCardTable::
 non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
                                      OopsInGenClosure* cl,
                                      CardTableRS* ct,
@@ -82,7 +100,7 @@ non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
 }
 
 void
-CardTableRS::
+CMSCardTable::
 process_stride(Space* sp,
                MemRegion used,
                jint stride, int n_strides,
@@ -162,7 +180,7 @@ process_stride(Space* sp,
 }
 
 void
-CardTableRS::
+CMSCardTable::
 process_chunk_boundaries(Space* sp,
                          DirtyCardToOopClosure* dcto_cl,
                          MemRegion chunk_mr,
@@ -371,7 +389,7 @@ process_chunk_boundaries(Space* sp,
 }
 
 void
-CardTableRS::
+CMSCardTable::
 get_LNC_array_for_space(Space* sp,
                         jbyte**& lowest_non_clean,
                         uintptr_t& lowest_non_clean_base_chunk_index,
@@ -430,3 +448,26 @@ get_LNC_array_for_space(Space* sp,
   lowest_non_clean_base_chunk_index = _lowest_non_clean_base_chunk_index[i];
   lowest_non_clean_chunk_size       = _lowest_non_clean_chunk_size[i];
 }
+
+#ifdef ASSERT
+void CMSCardTable::verify_used_region_at_save_marks(Space* sp) const {
+  MemRegion ur    = sp->used_region();
+  MemRegion urasm = sp->used_region_at_save_marks();
+
+  if (!ur.contains(urasm)) {
+    log_warning(gc)("CMS+ParNew: Did you forget to call save_marks()? "
+                    "[" PTR_FORMAT ", " PTR_FORMAT ") is not contained in "
+                    "[" PTR_FORMAT ", " PTR_FORMAT ")",
+                    p2i(urasm.start()), p2i(urasm.end()), p2i(ur.start()), p2i(ur.end()));
+    MemRegion ur2 = sp->used_region();
+    MemRegion urasm2 = sp->used_region_at_save_marks();
+    if (!ur.equals(ur2)) {
+      log_warning(gc)("CMS+ParNew: Flickering used_region()!!");
+    }
+    if (!urasm.equals(urasm2)) {
+      log_warning(gc)("CMS+ParNew: Flickering used_region_at_save_marks()!!");
+    }
+    ShouldNotReachHere();
+  }
+}
+#endif // ASSERT

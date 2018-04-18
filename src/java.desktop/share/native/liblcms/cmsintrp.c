@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2016 Marti Maria Saguer
+//  Copyright (c) 1998-2017 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -57,6 +57,13 @@
 
 // This module incorporates several interpolation routines, for 1 to 8 channels on input and
 // up to 65535 channels on output. The user may change those by using the interpolation plug-in
+
+// Some people may want to compile as C++ with all warnings on, in this case make compiler silent
+#ifdef _MSC_VER
+#    if (_MSC_VER >= 1400)
+#       pragma warning( disable : 4365 )
+#    endif
+#endif
 
 // Interpolation routines by default
 static cmsInterpFunction DefaultInterpolatorsFactory(cmsUInt32Number nInputChannels, cmsUInt32Number nOutputChannels, cmsUInt32Number dwFlags);
@@ -131,12 +138,12 @@ cmsBool _cmsSetInterpolationRoutine(cmsContext ContextID, cmsInterpParams* p)
 // This function precalculates as many parameters as possible to speed up the interpolation.
 cmsInterpParams* _cmsComputeInterpParamsEx(cmsContext ContextID,
                                            const cmsUInt32Number nSamples[],
-                                           int InputChan, int OutputChan,
+                                           cmsUInt32Number InputChan, cmsUInt32Number OutputChan,
                                            const void *Table,
                                            cmsUInt32Number dwFlags)
 {
     cmsInterpParams* p;
-    int i;
+    cmsUInt32Number i;
 
     // Check for maximum inputs
     if (InputChan > MAX_INPUT_DIMENSIONS) {
@@ -180,7 +187,8 @@ cmsInterpParams* _cmsComputeInterpParamsEx(cmsContext ContextID,
 
 
 // This one is a wrapper on the anterior, but assuming all directions have same number of nodes
-cmsInterpParams* _cmsComputeInterpParams(cmsContext ContextID, int nSamples, int InputChan, int OutputChan, const void* Table, cmsUInt32Number dwFlags)
+cmsInterpParams* CMSEXPORT _cmsComputeInterpParams(cmsContext ContextID, cmsUInt32Number nSamples,
+                                                   cmsUInt32Number InputChan, cmsUInt32Number OutputChan, const void* Table, cmsUInt32Number dwFlags)
 {
     int i;
     cmsUInt32Number Samples[MAX_INPUT_DIMENSIONS];
@@ -195,7 +203,7 @@ cmsInterpParams* _cmsComputeInterpParams(cmsContext ContextID, int nSamples, int
 
 
 // Free all associated memory
-void _cmsFreeInterpParams(cmsInterpParams* p)
+void CMSEXPORT _cmsFreeInterpParams(cmsInterpParams* p)
 {
     if (p != NULL) _cmsFree(p ->ContextID, p);
 }
@@ -244,7 +252,7 @@ void LinLerp1D(register const cmsUInt16Number Value[],
 // To prevent out of bounds indexing
 cmsINLINE cmsFloat32Number fclamp(cmsFloat32Number v)
 {
-    return v < 0.0f || v != v ? 0.0f : (v > 1.0f ? 1.0f : v);
+    return ((v < 1.0e-9f) || isnan(v)) ? 0.0f : (v > 1.0f ? 1.0f : v);
 }
 
 // Floating-point version of 1D interpolation
@@ -381,10 +389,10 @@ void BilinearInterpFloat(const cmsFloat32Number Input[],
     y0 = (int) _cmsQuickFloor(py); fy = py - (cmsFloat32Number) y0;
 
     X0 = p -> opta[1] * x0;
-    X1 = X0 + (Input[0] >= 1.0 ? 0 : p->opta[1]);
+    X1 = X0 + (fclamp(Input[0]) >= 1.0 ? 0 : p->opta[1]);
 
     Y0 = p -> opta[0] * y0;
-    Y1 = Y0 + (Input[1] >= 1.0 ? 0 : p->opta[0]);
+    Y1 = Y0 + (fclamp(Input[1]) >= 1.0 ? 0 : p->opta[0]);
 
     for (OutChan = 0; OutChan < TotalOut; OutChan++) {
 
@@ -493,18 +501,18 @@ void TrilinearInterpFloat(const cmsFloat32Number Input[],
     py = fclamp(Input[1]) * p->Domain[1];
     pz = fclamp(Input[2]) * p->Domain[2];
 
-    x0 = (int) _cmsQuickFloor(px); fx = px - (cmsFloat32Number) x0;
-    y0 = (int) _cmsQuickFloor(py); fy = py - (cmsFloat32Number) y0;
-    z0 = (int) _cmsQuickFloor(pz); fz = pz - (cmsFloat32Number) z0;
+    x0 = (int) floor(px); fx = px - (cmsFloat32Number) x0;  // We need full floor funcionality here
+    y0 = (int) floor(py); fy = py - (cmsFloat32Number) y0;
+    z0 = (int) floor(pz); fz = pz - (cmsFloat32Number) z0;
 
     X0 = p -> opta[2] * x0;
-    X1 = X0 + (Input[0] >= 1.0 ? 0 : p->opta[2]);
+    X1 = X0 + (fclamp(Input[0]) >= 1.0 ? 0 : p->opta[2]);
 
     Y0 = p -> opta[1] * y0;
-    Y1 = Y0 + (Input[1] >= 1.0 ? 0 : p->opta[1]);
+    Y1 = Y0 + (fclamp(Input[1]) >= 1.0 ? 0 : p->opta[1]);
 
     Z0 = p -> opta[0] * z0;
-    Z1 = Z0 + (Input[2] >= 1.0 ? 0 : p->opta[0]);
+    Z1 = Z0 + (fclamp(Input[2]) >= 1.0 ? 0 : p->opta[0]);
 
     for (OutChan = 0; OutChan < TotalOut; OutChan++) {
 
@@ -637,19 +645,19 @@ void TetrahedralInterpFloat(const cmsFloat32Number Input[],
     py = fclamp(Input[1]) * p->Domain[1];
     pz = fclamp(Input[2]) * p->Domain[2];
 
-    x0 = (int) _cmsQuickFloor(px); rx = (px - (cmsFloat32Number) x0);
-    y0 = (int) _cmsQuickFloor(py); ry = (py - (cmsFloat32Number) y0);
-    z0 = (int) _cmsQuickFloor(pz); rz = (pz - (cmsFloat32Number) z0);
+    x0 = (int) floor(px); rx = (px - (cmsFloat32Number) x0);  // We need full floor functionality here
+    y0 = (int) floor(py); ry = (py - (cmsFloat32Number) y0);
+    z0 = (int) floor(pz); rz = (pz - (cmsFloat32Number) z0);
 
 
     X0 = p -> opta[2] * x0;
-    X1 = X0 + (Input[0] >= 1.0 ? 0 : p->opta[2]);
+    X1 = X0 + (fclamp(Input[0]) >= 1.0 ? 0 : p->opta[2]);
 
     Y0 = p -> opta[1] * y0;
-    Y1 = Y0 + (Input[1] >= 1.0 ? 0 : p->opta[1]);
+    Y1 = Y0 + (fclamp(Input[1]) >= 1.0 ? 0 : p->opta[1]);
 
     Z0 = p -> opta[0] * z0;
-    Z1 = Z0 + (Input[2] >= 1.0 ? 0 : p->opta[0]);
+    Z1 = Z0 + (fclamp(Input[2]) >= 1.0 ? 0 : p->opta[0]);
 
     for (OutChan=0; OutChan < TotalOut; OutChan++) {
 
@@ -952,13 +960,13 @@ void Eval4Inputs(register const cmsUInt16Number Input[],
                                 c3 = DENS(X0, Y0, Z1) - c0;
 
                             }
-                            else  {
+                            else {
                                 c1 = c2 = c3 = 0;
                             }
 
                             Rest = c1 * rx + c2 * ry + c3 * rz;
 
-                            Tmp1[OutChan] = (cmsUInt16Number) ( c0 + ROUND_FIXED_TO_INT(_cmsToFixedDomain(Rest)));
+                            Tmp1[OutChan] = (cmsUInt16Number)(c0 + ROUND_FIXED_TO_INT(_cmsToFixedDomain(Rest)));
     }
 
 
@@ -1057,7 +1065,7 @@ void Eval4InputsFloat(const cmsFloat32Number Input[],
        rest = pk - (cmsFloat32Number) k0;
 
        K0 = p -> opta[3] * k0;
-       K1 = K0 + (Input[0] >= 1.0 ? 0 : p->opta[3]);
+       K1 = K0 + (fclamp(Input[0]) >= 1.0 ? 0 : p->opta[3]);
 
        p1 = *p;
        memmove(&p1.Domain[0], &p ->Domain[1], 3*sizeof(cmsUInt32Number));
@@ -1144,7 +1152,7 @@ void Eval5InputsFloat(const cmsFloat32Number Input[],
        rest = pk - (cmsFloat32Number) k0;
 
        K0 = p -> opta[4] * k0;
-       K1 = K0 + (Input[0] >= 1.0 ? 0 : p->opta[4]);
+       K1 = K0 + (fclamp(Input[0]) >= 1.0 ? 0 : p->opta[4]);
 
        p1 = *p;
        memmove(&p1.Domain[0], &p ->Domain[1], 4*sizeof(cmsUInt32Number));
@@ -1231,7 +1239,7 @@ void Eval6InputsFloat(const cmsFloat32Number Input[],
        rest = pk - (cmsFloat32Number) k0;
 
        K0 = p -> opta[5] * k0;
-       K1 = K0 + (Input[0] >= 1.0 ? 0 : p->opta[5]);
+       K1 = K0 + (fclamp(Input[0]) >= 1.0 ? 0 : p->opta[5]);
 
        p1 = *p;
        memmove(&p1.Domain[0], &p ->Domain[1], 5*sizeof(cmsUInt32Number));
@@ -1316,7 +1324,7 @@ void Eval7InputsFloat(const cmsFloat32Number Input[],
        rest = pk - (cmsFloat32Number) k0;
 
        K0 = p -> opta[6] * k0;
-       K1 = K0 + (Input[0] >= 1.0 ? 0 : p->opta[6]);
+       K1 = K0 + (fclamp(Input[0]) >= 1.0 ? 0 : p->opta[6]);
 
        p1 = *p;
        memmove(&p1.Domain[0], &p ->Domain[1], 6*sizeof(cmsUInt32Number));
@@ -1401,7 +1409,7 @@ void Eval8InputsFloat(const cmsFloat32Number Input[],
        rest = pk - (cmsFloat32Number) k0;
 
        K0 = p -> opta[7] * k0;
-       K1 = K0 + (Input[0] >= 1.0 ? 0 : p->opta[7]);
+       K1 = K0 + (fclamp(Input[0]) >= 1.0 ? 0 : p->opta[7]);
 
        p1 = *p;
        memmove(&p1.Domain[0], &p ->Domain[1], 7*sizeof(cmsUInt32Number));

@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2016 Marti Maria Saguer
+//  Copyright (c) 1998-2017 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -284,6 +284,8 @@ void FloatXFORM(_cmsTRANSFORM* p,
 
     strideIn = 0;
     strideOut = 0;
+    memset(fIn, 0, sizeof(fIn));
+    memset(fOut, 0, sizeof(fIn));
 
     for (i = 0; i < LineCount; i++) {
 
@@ -348,6 +350,7 @@ void NullFloatXFORM(_cmsTRANSFORM* p,
 
     strideIn = 0;
     strideOut = 0;
+    memset(fIn, 0, sizeof(fIn));
 
     for (i = 0; i < LineCount; i++) {
 
@@ -385,6 +388,7 @@ void NullXFORM(_cmsTRANSFORM* p,
 
     strideIn = 0;
     strideOut = 0;
+    memset(wIn, 0, sizeof(wIn));
 
     for (i = 0; i < LineCount; i++) {
 
@@ -422,6 +426,8 @@ void PrecalculatedXFORM(_cmsTRANSFORM* p,
 
     strideIn = 0;
     strideOut = 0;
+    memset(wIn, 0, sizeof(wIn));
+    memset(wOut, 0, sizeof(wOut));
 
     for (i = 0; i < LineCount; i++) {
 
@@ -483,6 +489,8 @@ void PrecalculatedXFORMGamutCheck(_cmsTRANSFORM* p,
 
     strideIn = 0;
     strideOut = 0;
+    memset(wIn, 0, sizeof(wIn));
+    memset(wOut, 0, sizeof(wOut));
 
     for (i = 0; i < LineCount; i++) {
 
@@ -790,7 +798,10 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
 
        // Allocate needed memory
        _cmsTRANSFORM* p = (_cmsTRANSFORM*)_cmsMallocZero(ContextID, sizeof(_cmsTRANSFORM));
-       if (!p) return NULL;
+       if (!p) {
+              cmsPipelineFree(lut);
+              return NULL;
+       }
 
        // Store the proposed pipeline
        p->Lut = lut;
@@ -823,7 +834,7 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
                             p->FromInputFloat = _cmsGetFormatter(ContextID, *InputFormat, cmsFormatterInput, CMS_PACK_FLAGS_FLOAT).FmtFloat;
                             p->ToOutputFloat = _cmsGetFormatter(ContextID, *OutputFormat, cmsFormatterOutput, CMS_PACK_FLAGS_FLOAT).FmtFloat;
 
-                            // Save the day?
+                            // Save the day? (Ignore the warning)
                             if (Plugin->OldXform) {
                                    p->OldXform = (_cmsTransformFn) p->xform;
                                    p->xform = _cmsTransform2toTransformAdaptor;
@@ -848,7 +859,7 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
         if (p ->FromInputFloat == NULL || p ->ToOutputFloat == NULL) {
 
             cmsSignalError(ContextID, cmsERROR_UNKNOWN_EXTENSION, "Unsupported raster format");
-            _cmsFree(ContextID, p);
+            cmsDeleteTransform(p);
             return NULL;
         }
 
@@ -870,7 +881,7 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
         }
         else {
 
-            int BytesPerPixelInput;
+            cmsUInt32Number BytesPerPixelInput;
 
             p ->FromInput = _cmsGetFormatter(ContextID, *InputFormat,  cmsFormatterInput, CMS_PACK_FLAGS_16BITS).Fmt16;
             p ->ToOutput  = _cmsGetFormatter(ContextID, *OutputFormat, cmsFormatterOutput, CMS_PACK_FLAGS_16BITS).Fmt16;
@@ -878,7 +889,7 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
             if (p ->FromInput == NULL || p ->ToOutput == NULL) {
 
                 cmsSignalError(ContextID, cmsERROR_UNKNOWN_EXTENSION, "Unsupported raster format");
-                _cmsFree(ContextID, p);
+                cmsDeleteTransform(p);
                 return NULL;
             }
 
@@ -920,13 +931,13 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
 }
 
 static
-cmsBool GetXFormColorSpaces(int nProfiles, cmsHPROFILE hProfiles[], cmsColorSpaceSignature* Input, cmsColorSpaceSignature* Output)
+cmsBool GetXFormColorSpaces(cmsUInt32Number nProfiles, cmsHPROFILE hProfiles[], cmsColorSpaceSignature* Input, cmsColorSpaceSignature* Output)
 {
     cmsColorSpaceSignature ColorSpaceIn, ColorSpaceOut;
     cmsColorSpaceSignature PostColorSpace;
-    int i;
+    cmsUInt32Number i;
 
-    if (nProfiles <= 0) return FALSE;
+    if (nProfiles == 0) return FALSE;
     if (hProfiles[0] == NULL) return FALSE;
 
     *Input = PostColorSpace = cmsGetColorSpace(hProfiles[0]);
@@ -975,7 +986,7 @@ cmsBool GetXFormColorSpaces(int nProfiles, cmsHPROFILE hProfiles[], cmsColorSpac
 static
 cmsBool  IsProperColorSpace(cmsColorSpaceSignature Check, cmsUInt32Number dwFormat)
 {
-    int Space1 = T_COLORSPACE(dwFormat);
+    int Space1 = (int) T_COLORSPACE(dwFormat);
     int Space2 = _cmsLCMScolorSpace(Check);
 
     if (Space1 == PT_ANY) return TRUE;
@@ -1231,7 +1242,7 @@ cmsHTRANSFORM CMSEXPORT cmsCreateTransformTHR(cmsContext ContextID,
     hArray[0] = Input;
     hArray[1] = Output;
 
-    return cmsCreateMultiprofileTransformTHR(ContextID, hArray, Output == NULL ? 1 : 2, InputFormat, OutputFormat, Intent, dwFlags);
+    return cmsCreateMultiprofileTransformTHR(ContextID, hArray, Output == NULL ? 1U : 2U, InputFormat, OutputFormat, Intent, dwFlags);
 }
 
 CMSAPI cmsHTRANSFORM CMSEXPORT cmsCreateTransform(cmsHPROFILE Input,

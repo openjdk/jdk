@@ -99,6 +99,8 @@
 // for enumerating dll libraries
 #include <vdmdbg.h>
 #include <psapi.h>
+#include <mmsystem.h>
+#include <winsock2.h>
 
 // for timer info max values which include all bits
 #define ALL_64_BITS CONST64(-1)

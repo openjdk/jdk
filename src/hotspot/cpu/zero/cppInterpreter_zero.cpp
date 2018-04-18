@@ -275,7 +275,7 @@ int CppInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
     markOop disp = lockee->mark()->set_unlocked();
 
     monitor->lock()->set_displaced_header(disp);
-    if (Atomic::cmpxchg((markOop)monitor, lockee->mark_addr(), disp) != disp) {
+    if (lockee->cas_set_mark((markOop)monitor, disp) != disp) {
       if (thread->is_lock_owned((address) disp->clear_lock_bits())) {
         monitor->lock()->set_displaced_header(NULL);
       }

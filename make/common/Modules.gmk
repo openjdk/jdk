@@ -76,6 +76,7 @@ BOOT_MODULES += \
 UPGRADEABLE_MODULES += \
     java.compiler \
     jdk.internal.vm.compiler \
+    jdk.internal.vm.compiler.management \
     #
 
 
@@ -89,6 +90,7 @@ PLATFORM_MODULES += \
     #
 
 PLATFORM_MODULES += \
+    java.net.http \
     java.scripting \
     java.security.jgss \
     java.smartcardio \
@@ -102,8 +104,6 @@ PLATFORM_MODULES += \
     jdk.crypto.ec \
     jdk.dynalink \
     jdk.httpserver \
-    jdk.incubator.httpclient \
-    jdk.internal.vm.compiler.management \
     jdk.jsobject \
     jdk.localedata \
     jdk.naming.dns \
@@ -145,7 +145,6 @@ DOCS_MODULES += \
     jdk.editpad \
     jdk.hotspot.agent \
     jdk.httpserver \
-    jdk.incubator.httpclient \
     jdk.jartool \
     jdk.javadoc \
     jdk.jcmd \
@@ -190,6 +189,7 @@ HOTSPOT_MODULES := \
     jdk.hotspot.agent \
     jdk.internal.vm.ci \
     jdk.internal.vm.compiler \
+    jdk.internal.vm.compiler.management \
     #
 
 ################################################################################

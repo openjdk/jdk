@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package javax.crypto;
+
+import jdk.internal.misc.SharedSecrets;
 
 import java.io.*;
 import java.security.AlgorithmParameters;
@@ -287,17 +289,7 @@ public class SealedObject implements Serializable {
         throws IOException, ClassNotFoundException, IllegalBlockSizeException,
             BadPaddingException
     {
-        /*
-         * Unseal the object
-         */
-        byte[] content = c.doFinal(this.encryptedContent);
-
-        /*
-         * De-serialize it
-         */
-        // creating a stream pipe-line, from b to a
-        ByteArrayInputStream b = new ByteArrayInputStream(content);
-        ObjectInput a = new extObjectInputStream(b);
+        ObjectInput a = getExtObjectInputStream(c);
         try {
             Object obj = a.readObject();
             return obj;
@@ -417,17 +409,7 @@ public class SealedObject implements Serializable {
             throw new RuntimeException(iape.getMessage());
         }
 
-        /*
-         * Unseal the object
-         */
-        byte[] content = c.doFinal(this.encryptedContent);
-
-        /*
-         * De-serialize it
-         */
-        // creating a stream pipe-line, from b to a
-        ByteArrayInputStream b = new ByteArrayInputStream(content);
-        ObjectInput a = new extObjectInputStream(b);
+        ObjectInput a = getExtObjectInputStream(c);
         try {
             Object obj = a.readObject();
             return obj;
@@ -449,6 +431,19 @@ public class SealedObject implements Serializable {
             encryptedContent = encryptedContent.clone();
         if (encodedParams != null)
             encodedParams = encodedParams.clone();
+    }
+
+    // This method is also called inside SealedObjectForKeyProtector.java.
+    private ObjectInputStream getExtObjectInputStream(Cipher c)
+            throws BadPaddingException, IllegalBlockSizeException, IOException {
+
+        byte[] content = c.doFinal(this.encryptedContent);
+        ByteArrayInputStream b = new ByteArrayInputStream(content);
+        return new extObjectInputStream(b);
+    }
+
+    static {
+        SharedSecrets.setJavaxCryptoSealedObjectAccess((obj,c) -> obj.getExtObjectInputStream(c));
     }
 }
 

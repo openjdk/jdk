@@ -36,7 +36,7 @@ class G1HeapSizingPolicy: public CHeapObj<mtGC> {
   // time ratios that exceed GCTimeRatio before a heap expansion will be triggered.
   const static uint MinOverThresholdForGrowth = 4;
 
-  const G1CollectedHeap* _g1;
+  const G1CollectedHeap* _g1h;
   const G1Analytics* _analytics;
 
   const uint _num_prev_pauses_for_heuristics;
@@ -47,7 +47,7 @@ class G1HeapSizingPolicy: public CHeapObj<mtGC> {
 
 
 protected:
-  G1HeapSizingPolicy(const G1CollectedHeap* g1, const G1Analytics* analytics);
+  G1HeapSizingPolicy(const G1CollectedHeap* g1h, const G1Analytics* analytics);
 public:
 
   // If an expansion would be appropriate, because recent GC overhead had
@@ -57,7 +57,7 @@ public:
   // Clear ratio tracking data used by expansion_amount().
   void clear_ratio_check_data();
 
-  static G1HeapSizingPolicy* create(const G1CollectedHeap* g1, const G1Analytics* analytics);
+  static G1HeapSizingPolicy* create(const G1CollectedHeap* g1h, const G1Analytics* analytics);
 };
 
 #endif // SRC_SHARE_VM_GC_G1_G1HEAPSIZINGPOLICY_HPP

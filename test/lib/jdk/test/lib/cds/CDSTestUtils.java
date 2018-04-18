@@ -117,6 +117,7 @@ public class CDSTestUtils {
         private final boolean hasMappingFailure;
         private final boolean hasAbnormalExit;
         private final boolean hasNormalExit;
+        private final String CDS_DISABLED = "warning: CDS is disabled when the";
 
         public Result(CDSOptions opts, OutputAnalyzer out) throws Exception {
             options = opts;
@@ -126,7 +127,9 @@ public class CDSTestUtils {
             hasNormalExit     = (!hasMappingFailure) && (output.getExitValue() == 0);
 
             if (hasNormalExit) {
-                if ("on".equals(options.xShareMode) && output.getStderr().contains("java version")) {
+                if ("on".equals(options.xShareMode) &&
+                    output.getStderr().contains("java version") &&
+                    !output.getStderr().contains(CDS_DISABLED)) {
                     // "-showversion" is always passed in the command-line by the execXXX methods.
                     // During normal exit, we require that the VM to show that sharing was enabled.
                     output.shouldContain("sharing");
@@ -148,6 +151,26 @@ public class CDSTestUtils {
                 output.shouldNotHaveExitValue(0);
             }
             return this;
+        }
+
+        // When {--limit-modules, --patch-module, and/or --upgrade-module-path}
+        // are specified, CDS is silently disabled for both -Xshare:auto and -Xshare:on.
+        public Result assertSilentlyDisabledCDS(Checker checker) throws Exception {
+            if (hasMappingFailure) {
+                throw new RuntimeException("Unexpected mapping failure");
+            }
+            // this comes from a JVM warning message.
+            output.shouldContain(CDS_DISABLED);
+
+            checker.check(output);
+            return this;
+        }
+
+        public Result assertSilentlyDisabledCDS(int exitCode, String... matches) throws Exception {
+            return assertSilentlyDisabledCDS((out) -> {
+                out.shouldHaveExitValue(exitCode);
+                checkMatches(out, matches);
+                   });
         }
 
         public Result ifNormalExit(Checker checker) throws Exception {

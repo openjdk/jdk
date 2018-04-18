@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,11 @@
  */
 
 import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import sun.tools.jar.Main;
 
@@ -145,6 +147,21 @@ public class JarBuilder {
         }
     }
 
+    public static void createModularJar(String jarPath,
+                                      String classesDir,
+                                      String mainClass) throws Exception {
+        ArrayList<String> argList = new ArrayList<String>();
+        argList.add("--create");
+        argList.add("--file=" + jarPath);
+        if (mainClass != null) {
+            argList.add("--main-class=" + mainClass);
+        }
+        argList.add("-C");
+        argList.add(classesDir);
+        argList.add(".");
+        createJar(argList);
+    }
+
     private static void createJar(ArrayList<String> args) {
         if (DEBUG) printIterable("createJar args: ", args);
 
@@ -189,6 +206,23 @@ public class JarBuilder {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
     }
+
+    public static void compileModule(Path src,
+                                     Path dest,
+                                     String modulePathArg // arg to --module-path
+                                     ) throws Exception {
+        boolean compiled = false;
+        if (modulePathArg == null) {
+            compiled = CompilerUtils.compile(src, dest);
+        } else {
+            compiled = CompilerUtils.compile(src, dest,
+                                           "--module-path", modulePathArg);
+        }
+        if (!compiled) {
+            throw new RuntimeException("module did not compile");
+        }
+    }
+
 
     public static void signJar() throws Exception {
         String keyTool = JDKToolFinder.getJDKTool("keytool");

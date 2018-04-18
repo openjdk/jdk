@@ -65,6 +65,7 @@ class aarch64 {
 
   static address _has_negatives;
   static address _has_negatives_long;
+  static address _large_array_equals;
   static bool _completed;
 
  public:
@@ -129,6 +130,10 @@ class aarch64 {
 
   static address has_negatives_long() {
       return _has_negatives_long;
+  }
+
+  static address large_array_equals() {
+      return _large_array_equals;
   }
 
   static bool complete() {
