@@ -24,7 +24,7 @@
 /*
   @test
   @key headful
-  @bug 6829546, 8197808
+  @bug 6829546 8197808
   @summary tests that an always-on-top modal dialog doesn't make any windows always-on-top
   @author artem.ananiev: area=awt.modal
   @library ../../regtesthelpers
