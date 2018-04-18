@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -651,11 +651,11 @@ public final class PNGImageWriter extends ImageWriter {
             int colorType = metadata.IHDR_colorType & 0x3;
             int chunkType = metadata.bKGD_colorType;
 
+            int chunkRed = metadata.bKGD_red;
+            int chunkGreen = metadata.bKGD_green;
+            int chunkBlue = metadata.bKGD_blue;
             // Special case: image is RGB(A) and chunk is Gray
             // Promote chunk contents to RGB
-            int chunkRed = metadata.bKGD_red;
-            int chunkGreen = metadata.bKGD_red;
-            int chunkBlue = metadata.bKGD_red;
             if (colorType == PNGImageReader.PNG_COLOR_RGB &&
                 chunkType == PNGImageReader.PNG_COLOR_GRAY) {
                 // Make a gray bKGD chunk look like RGB
