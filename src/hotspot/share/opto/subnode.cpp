@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -886,7 +886,7 @@ static inline Node* isa_java_mirror_load(PhaseGVN* phase, Node* n) {
   if (!tp || tp->klass() != phase->C->env()->Class_klass()) return NULL;
 
   Node* adr = n->in(MemNode::Address);
-  // First load from OopHandle
+  // First load from OopHandle: ((OopHandle)mirror)->resolve(); may need barrier.
   if (adr->Opcode() != Op_LoadP || !phase->type(adr)->isa_rawptr()) return NULL;
   adr = adr->in(MemNode::Address);
 

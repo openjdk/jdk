@@ -502,7 +502,7 @@ void TemplateInterpreterGenerator::lock_method() {
     __ delayed()->ld_ptr(Llocals, Interpreter::local_offset_in_bytes(0), O0); // get receiver for not-static case
 
     // lock the mirror, not the Klass*
-    __ load_mirror(O0, Lmethod);
+    __ load_mirror(O0, Lmethod, Lscratch);
 
 #ifdef ASSERT
     __ tst(O0);
@@ -810,7 +810,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ mov( G5_method, Lmethod);                 // set Lmethod
   // Get mirror and store it in the frame as GC root for this Method*
   Register mirror = LcpoolCache;
-  __ load_mirror(mirror, Lmethod);
+  __ load_mirror(mirror, Lmethod, Lscratch);
   __ st_ptr(mirror, FP, (frame::interpreter_frame_mirror_offset * wordSize) + STACK_BIAS);
   __ get_constant_pool_cache(LcpoolCache);     // set LcpoolCache
   __ sub(FP, rounded_vm_local_words * BytesPerWord, Lmonitors ); // set Lmonitors
@@ -1280,7 +1280,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // get native function entry point(O0 is a good temp until the very end)
     __ delayed()->ld_ptr(Lmethod, in_bytes(Method::native_function_offset()), O0);
     // for static methods insert the mirror argument
-    __ load_mirror(O1, Lmethod);
+    __ load_mirror(O1, Lmethod, G3_scratch);
 #ifdef ASSERT
     if (!PrintSignatureHandlers)  // do not dirty the output with this
     { Label L;

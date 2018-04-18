@@ -2108,7 +2108,7 @@ void MacroAssembler::resolve_jobject(Register value, Register thread, Register t
 
   bind(not_weak);
   // Resolve (untagged) jobject.
-  bs->load_at(this, IN_ROOT | ON_STRONG_OOP_REF, T_OBJECT,
+  bs->load_at(this, IN_ROOT | IN_CONCURRENT_ROOT, T_OBJECT,
                     value, Address(value, 0), tmp, thread);
   verify_oop(value);
   bind(done);
@@ -3642,18 +3642,20 @@ void MacroAssembler::load_klass(Register dst, Register src) {
 }
 
 // ((OopHandle)result).resolve();
-void MacroAssembler::resolve_oop_handle(Register result) {
+void MacroAssembler::resolve_oop_handle(Register result, Register tmp) {
   // OopHandle::resolve is an indirection.
-  ldr(result, Address(result, 0));
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->load_at(this, IN_ROOT | IN_CONCURRENT_ROOT, T_OBJECT,
+                    result, Address(result, 0), tmp, rthread);
 }
 
-void MacroAssembler::load_mirror(Register dst, Register method) {
+void MacroAssembler::load_mirror(Register dst, Register method, Register tmp) {
   const int mirror_offset = in_bytes(Klass::java_mirror_offset());
   ldr(dst, Address(rmethod, Method::const_offset()));
   ldr(dst, Address(dst, ConstMethod::constants_offset()));
   ldr(dst, Address(dst, ConstantPool::pool_holder_offset_in_bytes()));
   ldr(dst, Address(dst, mirror_offset));
-  resolve_oop_handle(dst);
+  resolve_oop_handle(dst, tmp);
 }
 
 void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp) {

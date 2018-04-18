@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,7 +183,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void get_cache_index_at_bcp(Register temp, Register index, int bcp_offset, size_t index_size = sizeof(u2));
 
   // load cpool->resolved_references(index);
-  void load_resolved_reference_at_index(Register result, Register index);
+  void load_resolved_reference_at_index(Register result, Register index, Register tmp);
 
   // load cpool->resolved_klass_at(index)
   void load_resolved_klass_at_offset(Register Rcpool, Register Roffset, Register Rklass);

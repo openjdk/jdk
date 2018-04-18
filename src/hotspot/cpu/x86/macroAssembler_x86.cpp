@@ -6274,19 +6274,22 @@ void MacroAssembler::restore_cpu_control_state_after_jni() {
 }
 
 // ((OopHandle)result).resolve();
-void MacroAssembler::resolve_oop_handle(Register result) {
-  // OopHandle::resolve is an indirection.
-  movptr(result, Address(result, 0));
+void MacroAssembler::resolve_oop_handle(Register result, Register tmp) {
+  // Only 64 bit platforms support GCs that require a tmp register
+  // Only IN_HEAP loads require a thread_tmp register
+  // OopHandle::resolve is an indirection like jobject.
+  access_load_at(T_OBJECT, IN_ROOT | IN_CONCURRENT_ROOT,
+                 result, Address(result, 0), tmp, /*tmp_thread*/noreg);
 }
 
-void MacroAssembler::load_mirror(Register mirror, Register method) {
+void MacroAssembler::load_mirror(Register mirror, Register method, Register tmp) {
   // get mirror
   const int mirror_offset = in_bytes(Klass::java_mirror_offset());
   movptr(mirror, Address(method, Method::const_offset()));
   movptr(mirror, Address(mirror, ConstMethod::constants_offset()));
   movptr(mirror, Address(mirror, ConstantPool::pool_holder_offset_in_bytes()));
   movptr(mirror, Address(mirror, mirror_offset));
-  resolve_oop_handle(mirror);
+  resolve_oop_handle(mirror, tmp);
 }
 
 void MacroAssembler::load_klass(Register dst, Register src) {
