@@ -76,6 +76,7 @@ BOOT_MODULES += \
 UPGRADEABLE_MODULES += \
     java.compiler \
     jdk.internal.vm.compiler \
+    jdk.internal.vm.compiler.management \
     #
 
 
@@ -103,7 +104,6 @@ PLATFORM_MODULES += \
     jdk.crypto.ec \
     jdk.dynalink \
     jdk.httpserver \
-    jdk.internal.vm.compiler.management \
     jdk.jsobject \
     jdk.localedata \
     jdk.naming.dns \
@@ -189,6 +189,7 @@ HOTSPOT_MODULES := \
     jdk.hotspot.agent \
     jdk.internal.vm.ci \
     jdk.internal.vm.compiler \
+    jdk.internal.vm.compiler.management \
     #
 
 ################################################################################
