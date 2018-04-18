@@ -329,8 +329,8 @@ WB_ENTRY(jboolean, WB_isObjectInOldGen(JNIEnv* env, jobject o, jobject obj))
   oop p = JNIHandles::resolve(obj);
 #if INCLUDE_ALL_GCS
   if (UseG1GC) {
-    G1CollectedHeap* g1 = G1CollectedHeap::heap();
-    const HeapRegion* hr = g1->heap_region_containing(p);
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    const HeapRegion* hr = g1h->heap_region_containing(p);
     if (hr == NULL) {
       return false;
     }
@@ -399,9 +399,9 @@ WB_END
 #if INCLUDE_ALL_GCS
 WB_ENTRY(jboolean, WB_G1IsHumongous(JNIEnv* env, jobject o, jobject obj))
   if (UseG1GC) {
-    G1CollectedHeap* g1 = G1CollectedHeap::heap();
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
     oop result = JNIHandles::resolve(obj);
-    const HeapRegion* hr = g1->heap_region_containing(result);
+    const HeapRegion* hr = g1h->heap_region_containing(result);
     return hr->is_humongous();
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1IsHumongous: G1 GC is not enabled");
@@ -409,8 +409,8 @@ WB_END
 
 WB_ENTRY(jboolean, WB_G1BelongsToHumongousRegion(JNIEnv* env, jobject o, jlong addr))
   if (UseG1GC) {
-    G1CollectedHeap* g1 = G1CollectedHeap::heap();
-    const HeapRegion* hr = g1->heap_region_containing((void*) addr);
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    const HeapRegion* hr = g1h->heap_region_containing((void*) addr);
     return hr->is_humongous();
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1BelongsToHumongousRegion: G1 GC is not enabled");
@@ -418,8 +418,8 @@ WB_END
 
 WB_ENTRY(jboolean, WB_G1BelongsToFreeRegion(JNIEnv* env, jobject o, jlong addr))
   if (UseG1GC) {
-    G1CollectedHeap* g1 = G1CollectedHeap::heap();
-    const HeapRegion* hr = g1->heap_region_containing((void*) addr);
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    const HeapRegion* hr = g1h->heap_region_containing((void*) addr);
     return hr->is_free();
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1BelongsToFreeRegion: G1 GC is not enabled");
@@ -427,8 +427,8 @@ WB_END
 
 WB_ENTRY(jlong, WB_G1NumMaxRegions(JNIEnv* env, jobject o))
   if (UseG1GC) {
-    G1CollectedHeap* g1 = G1CollectedHeap::heap();
-    size_t nr = g1->max_regions();
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    size_t nr = g1h->max_regions();
     return (jlong)nr;
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1NumMaxRegions: G1 GC is not enabled");
@@ -436,8 +436,8 @@ WB_END
 
 WB_ENTRY(jlong, WB_G1NumFreeRegions(JNIEnv* env, jobject o))
   if (UseG1GC) {
-    G1CollectedHeap* g1 = G1CollectedHeap::heap();
-    size_t nr = g1->num_free_regions();
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    size_t nr = g1h->num_free_regions();
     return (jlong)nr;
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1NumFreeRegions: G1 GC is not enabled");

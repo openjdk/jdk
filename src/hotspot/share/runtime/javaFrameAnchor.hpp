@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_RUNTIME_JAVAFRAMEANCHOR_HPP
 #define SHARE_VM_RUNTIME_JAVAFRAMEANCHOR_HPP
 
+#include "runtime/orderAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 

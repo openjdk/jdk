@@ -703,6 +703,9 @@ public:
   // cas_ptr will perform cas for 32 bit VM's and casx for 64 bit VM's
   inline void cas_ptr(  Register s1, Register s2, Register d);
 
+  // Resolve a jobject or jweak
+  void resolve_jobject(Register value, Register tmp);
+
   // Functions for isolating 64 bit shifts for LP64
   inline void sll_ptr( Register s1, Register s2, Register d );
   inline void sll_ptr( Register s1, int imm6a,   Register d );
@@ -965,8 +968,8 @@ public:
   inline void ldbool(const Address& a, Register d);
   inline void movbool( bool boolconst, Register d);
 
-  void resolve_oop_handle(Register result);
-  void load_mirror(Register mirror, Register method);
+  void resolve_oop_handle(Register result, Register tmp);
+  void load_mirror(Register mirror, Register method, Register tmp);
 
   // klass oop manipulations if compressed
   void load_klass(Register src_oop, Register klass);
@@ -974,13 +977,25 @@ public:
   void store_klass_gap(Register s, Register dst_oop);
 
    // oop manipulations
-  void load_heap_oop(const Address& s, Register d);
-  void load_heap_oop(Register s1, Register s2, Register d);
-  void load_heap_oop(Register s1, int simm13a, Register d);
-  void load_heap_oop(Register s1, RegisterOrConstant s2, Register d);
-  void store_heap_oop(Register d, Register s1, Register s2);
-  void store_heap_oop(Register d, Register s1, int simm13a);
-  void store_heap_oop(Register d, const Address& a, int offset = 0);
+  void access_store_at(BasicType type, DecoratorSet decorators,
+                       Register src, Address dst, Register tmp);
+  void access_load_at(BasicType type, DecoratorSet decorators,
+                      Address src, Register dst, Register tmp);
+
+  void load_heap_oop(const Address& s, Register d,
+                     Register tmp = noreg, DecoratorSet decorators = 0);
+  void load_heap_oop(Register s1, Register s2, Register d,
+                     Register tmp = noreg, DecoratorSet decorators = 0);
+  void load_heap_oop(Register s1, int simm13a, Register d,
+                     Register tmp = noreg, DecoratorSet decorators = 0);
+  void load_heap_oop(Register s1, RegisterOrConstant s2, Register d,
+                     Register tmp = noreg, DecoratorSet decorators = 0);
+  void store_heap_oop(Register d, Register s1, Register s2,
+                      Register tmp = noreg, DecoratorSet decorators = 0);
+  void store_heap_oop(Register d, Register s1, int simm13a,
+                      Register tmp = noreg, DecoratorSet decorators = 0);
+  void store_heap_oop(Register d, const Address& a, int offset = 0,
+                      Register tmp = noreg, DecoratorSet decorators = 0);
 
   void encode_heap_oop(Register src, Register dst);
   void encode_heap_oop(Register r) {
@@ -1042,19 +1057,6 @@ public:
   // if call_VM_base was called with check_exceptions=false, then call
   // check_and_forward_exception to handle exceptions when it is safe
   void check_and_forward_exception(Register scratch_reg);
-
-  // Write to card table for - register is destroyed afterwards.
-  void card_table_write(jbyte* byte_map_base, Register tmp, Register obj);
-
-  void card_write_barrier_post(Register store_addr, Register new_val, Register tmp);
-
-#if INCLUDE_ALL_GCS
-  // General G1 pre-barrier generator.
-  void g1_write_barrier_pre(Register obj, Register index, int offset, Register pre_val, Register tmp, bool preserve_o_regs);
-
-  // General G1 post-barrier generator
-  void g1_write_barrier_post(Register store_addr, Register new_val, Register tmp);
-#endif // INCLUDE_ALL_GCS
 
   // pushes double TOS element of FPU stack on CPU stack; pops from FPU stack
   void push_fTOS();

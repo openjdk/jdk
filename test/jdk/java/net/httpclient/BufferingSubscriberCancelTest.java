@@ -31,7 +31,7 @@ import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.SubmissionPublisher;
 import java.util.function.IntSupplier;
 import java.util.stream.IntStream;
-import jdk.incubator.http.HttpResponse.BodySubscriber;
+import java.net.http.HttpResponse.BodySubscriber;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.lang.Long.MAX_VALUE;
@@ -39,7 +39,7 @@ import static java.lang.Long.MIN_VALUE;
 import static java.lang.System.out;
 import static java.nio.ByteBuffer.wrap;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static jdk.incubator.http.HttpResponse.BodySubscriber.buffering;
+import static java.net.http.HttpResponse.BodySubscribers.buffering;
 import static org.testng.Assert.*;
 
 /*

@@ -36,9 +36,9 @@ import sun.security.util.SecurityConstants;
  * handler. The HTTP state management mechanism specifies a way to
  * create a stateful session with HTTP requests and responses.
  *
- * <p>A system-wide CookieHandler that to used by the HTTP protocol
- * handler can be registered by doing a
- * CookieHandler.setDefault(CookieHandler). The currently registered
+ * <p> A system-wide CookieHandler to be used by the {@linkplain
+ * HttpURLConnection HTTP URL stream protocol handler} can be registered by
+ * doing a CookieHandler.setDefault(CookieHandler). The currently registered
  * CookieHandler can be retrieved by calling
  * CookieHandler.getDefault().
  *

@@ -90,7 +90,7 @@ public:
   Symbol*          name() const                        { return literal(); }
   void             set_name(Symbol* n)                 { set_literal(n); }
 
-  oop              module() const                      { return _module.resolve(); }
+  oop              module() const;
   OopHandle        module_handle() const               { return _module; }
   void             set_module(OopHandle j)             { _module = j; }
 

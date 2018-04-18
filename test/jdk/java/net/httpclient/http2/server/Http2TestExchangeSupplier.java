@@ -24,7 +24,7 @@
 import javax.net.ssl.SSLSession;
 import java.io.InputStream;
 import java.net.URI;
-import jdk.incubator.http.internal.common.HttpHeadersImpl;
+import jdk.internal.net.http.common.HttpHeadersImpl;
 
 /**
  * A supplier of Http2TestExchanges. If the default Http2TestExchange impl is

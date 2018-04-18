@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 #define SHARE_VM_OOPS_OOPHANDLE_HPP
 
 #include "oops/oop.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
 
 // Simple class for encapsulating oop pointers stored in metadata.
 // These are different from Handle.  The Handle class stores pointers
@@ -45,7 +43,7 @@ public:
   OopHandle() : _obj(NULL) {}
   OopHandle(oop* w) : _obj(w) {}
 
-  oop resolve() const { return (_obj == NULL) ? (oop)NULL : *_obj; }
+  inline oop resolve() const;
 
   // Used only for removing handle.
   oop* ptr_raw() { return _obj; }

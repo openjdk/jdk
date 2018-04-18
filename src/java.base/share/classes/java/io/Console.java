@@ -311,8 +311,9 @@ public final class Console implements Flushable
         char[] passwd = null;
         synchronized (writeLock) {
             synchronized(readLock) {
+                boolean echoWasOn;
                 try {
-                    echoOff = echo(false);
+                    echoWasOn = echo(false);
                 } catch (IOException x) {
                     throw new IOError(x);
                 }
@@ -325,7 +326,7 @@ public final class Console implements Flushable
                     ioe = new IOError(x);
                 } finally {
                     try {
-                        echoOff = echo(true);
+                        echo(echoWasOn);
                     } catch (IOException x) {
                         if (ioe == null)
                             ioe = new IOError(x);
@@ -372,8 +373,20 @@ public final class Console implements Flushable
     private Charset cs;
     private char[] rcb;
     private static native String encoding();
+    /*
+     * Sets the console echo status to {@code on} and returns the previous
+     * console on/off status.
+     * @param on    the echo status to set to. {@code true} for echo on and
+     *              {@code false} for echo off
+     * @return true if the previous console echo status is on
+     */
     private static native boolean echo(boolean on) throws IOException;
-    private static boolean echoOff;
+    /*
+     * Returns the current console echo on/off status.
+     * @return true if the cosole echo is on
+     */
+    private static native boolean echo0() throws IOException;
+    private static boolean echoOn;
 
     private char[] readline(boolean zeroOut) throws IOException {
         int len = reader.read(rcb, 0, rcb.length);
@@ -527,9 +540,8 @@ public final class Console implements Flushable
                     new Runnable() {
                         public void run() {
                             try {
-                                if (echoOff) {
-                                    echo(true);
-                                }
+                                if (cons != null)
+                                    echo(echoOn);
                             } catch (IOException x) { }
                         }
                     });
@@ -579,5 +591,10 @@ public final class Console implements Flushable
                      readLock,
                      cs));
         rcb = new char[1024];
+        try {
+            echoOn = echo0();
+        } catch (IOException x) {
+            echoOn = true;
+        }
     }
 }

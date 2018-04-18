@@ -38,6 +38,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/bytecode.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/referenceType.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
@@ -629,6 +630,35 @@ JVM_ENTRY(void, JVM_MonitorNotifyAll(JNIEnv* env, jobject handle))
 JVM_END
 
 
+template<DecoratorSet decorators>
+static void fixup_clone_referent(oop src, oop new_obj) {
+  typedef HeapAccess<decorators> RefAccess;
+  const int ref_offset = java_lang_ref_Reference::referent_offset;
+  oop referent = RefAccess::oop_load_at(src, ref_offset);
+  RefAccess::oop_store_at(new_obj, ref_offset, referent);
+}
+
+static void fixup_cloned_reference(ReferenceType ref_type, oop src, oop clone) {
+  // Kludge: After unbarriered clone, re-copy the referent with
+  // correct barriers. This works for current collectors, but won't
+  // work for ZGC and maybe other future collectors or variants of
+  // existing ones (like G1 with concurrent reference processing).
+  if (ref_type == REF_PHANTOM) {
+    fixup_clone_referent<ON_PHANTOM_OOP_REF>(src, clone);
+  } else {
+    fixup_clone_referent<ON_WEAK_OOP_REF>(src, clone);
+  }
+  if ((java_lang_ref_Reference::next(clone) != NULL) ||
+      (java_lang_ref_Reference::queue(clone) == java_lang_ref_ReferenceQueue::ENQUEUED_queue())) {
+    // If the source has been enqueued or is being enqueued, don't
+    // register the clone with a queue.
+    java_lang_ref_Reference::set_queue(clone, java_lang_ref_ReferenceQueue::NULL_queue());
+  }
+  // discovered and next are list links; the clone is not in those lists.
+  java_lang_ref_Reference::set_discovered(clone, NULL);
+  java_lang_ref_Reference::set_next(clone, NULL);
+}
+
 JVM_ENTRY(jobject, JVM_Clone(JNIEnv* env, jobject handle))
   JVMWrapper("JVM_Clone");
   Handle obj(THREAD, JNIHandles::resolve_non_null(handle));
@@ -654,16 +684,27 @@ JVM_ENTRY(jobject, JVM_Clone(JNIEnv* env, jobject handle))
   }
 
   // Make shallow object copy
+  ReferenceType ref_type = REF_NONE;
   const int size = obj->size();
   oop new_obj_oop = NULL;
   if (obj->is_array()) {
     const int length = ((arrayOop)obj())->length();
     new_obj_oop = CollectedHeap::array_allocate(klass, size, length, CHECK_NULL);
   } else {
+    ref_type = InstanceKlass::cast(klass)->reference_type();
+    assert((ref_type == REF_NONE) ==
+           !klass->is_subclass_of(SystemDictionary::Reference_klass()),
+           "invariant");
     new_obj_oop = CollectedHeap::obj_allocate(klass, size, CHECK_NULL);
   }
 
   HeapAccess<>::clone(obj(), new_obj_oop, size);
+
+  // If cloning a Reference, set Reference fields to a safe state.
+  // Fixup must be completed before any safepoint.
+  if (ref_type != REF_NONE) {
+    fixup_cloned_reference(ref_type, obj(), new_obj_oop);
+  }
 
   Handle new_obj(THREAD, new_obj_oop);
   // Caution: this involves a java upcall, so the clone should be
@@ -839,6 +880,11 @@ JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
   Handle h_prot  (THREAD, protection_domain);
   jclass result = find_class_from_class_loader(env, h_name, init, h_loader,
                                                h_prot, true, thread);
+  if (result != NULL) {
+    oop mirror = JNIHandles::resolve_non_null(result);
+    Klass* to_class = java_lang_Class::as_Klass(mirror);
+    ClassLoaderData::class_loader_data(h_loader())->record_dependency(to_class);
+  }
 
   if (log_is_enabled(Debug, class, resolve) && result != NULL) {
     // this function is generally only used for class loading during verification.

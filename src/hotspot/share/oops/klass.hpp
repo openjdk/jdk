@@ -150,7 +150,7 @@ class Klass : public Metadata {
   int _vtable_len;
 
 private:
-  // This is an index into FileMapHeader::_classpath_entry_table[], to
+  // This is an index into FileMapHeader::_shared_path_table[], to
   // associate this class with the JAR file where it's loaded from during
   // dump time. If a class is not loaded from the shared archive, this field is
   // -1.
@@ -166,7 +166,7 @@ private:
 #endif
   // The _archived_mirror is set at CDS dump time pointing to the cached mirror
   // in the open archive heap region when archiving java object is supported.
-  CDS_JAVA_HEAP_ONLY(narrowOop _archived_mirror);
+  CDS_JAVA_HEAP_ONLY(narrowOop _archived_mirror;)
 
   friend class SharedClassUtil;
 protected:

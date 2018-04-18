@@ -1619,7 +1619,6 @@ void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
 void MetaspaceShared::prepare_for_dumping() {
   Arguments::check_unsupported_dumping_properties();
   ClassLoader::initialize_shared_path();
-  FileMapInfo::allocate_classpath_entry_table();
 }
 
 // Preload classes from a list, populate the shared spaces and dump to a
@@ -1732,11 +1731,11 @@ bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
   assert(DumpSharedSpaces, "should only be called during dumping");
   if (ik->init_state() < InstanceKlass::linked) {
     bool saved = BytecodeVerificationLocal;
-    if (!(ik->is_shared_boot_class())) {
+    if (ik->loader_type() == 0 && ik->class_loader() == NULL) {
       // The verification decision is based on BytecodeVerificationRemote
       // for non-system classes. Since we are using the NULL classloader
-      // to load non-system classes during dumping, we need to temporarily
-      // change BytecodeVerificationLocal to be the same as
+      // to load non-system classes for customized class loaders during dumping,
+      // we need to temporarily change BytecodeVerificationLocal to be the same as
       // BytecodeVerificationRemote. Note this can cause the parent system
       // classes also being verified. The extra overhead is acceptable during
       // dumping.
@@ -2001,7 +2000,7 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
       (md_base = mapinfo->map_region(md, &md_top)) != NULL &&
       (od_base = mapinfo->map_region(od, &od_top)) != NULL &&
       (image_alignment == (size_t)os::vm_allocation_granularity()) &&
-      mapinfo->validate_classpath_entry_table()) {
+      mapinfo->validate_shared_path_table()) {
     // Success -- set up MetaspaceObj::_shared_metaspace_{base,top} for
     // fast checking in MetaspaceShared::is_in_shared_metaspace() and
     // MetaspaceObj::is_shared().

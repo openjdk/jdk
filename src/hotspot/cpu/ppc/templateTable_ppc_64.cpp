@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
@@ -53,99 +54,29 @@
 // Kills:
 //   Rbase, Rtmp
 static void do_oop_store(InterpreterMacroAssembler* _masm,
-                         Register           Rbase,
+                         Register           base,
                          RegisterOrConstant offset,
-                         Register           Rval,         // Noreg means always null.
-                         Register           Rtmp1,
-                         Register           Rtmp2,
-                         Register           Rtmp3,
-                         BarrierSet::Name   barrier,
-                         bool               precise,
-                         bool               check_null) {
-  assert_different_registers(Rtmp1, Rtmp2, Rtmp3, Rval, Rbase);
+                         Register           val,         // Noreg means always null.
+                         Register           tmp1,
+                         Register           tmp2,
+                         Register           tmp3,
+                         DecoratorSet       decorators) {
+  assert_different_registers(tmp1, tmp2, tmp3, val, base);
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->store_at(_masm, decorators, T_OBJECT, base, offset, val, tmp1, tmp2, tmp3, false);
+}
 
-  switch (barrier) {
-#if INCLUDE_ALL_GCS
-    case BarrierSet::G1BarrierSet:
-      {
-        // Load and record the previous value.
-        __ g1_write_barrier_pre(Rbase, offset,
-                                Rtmp3, /* holder of pre_val ? */
-                                Rtmp1, Rtmp2, false /* frame */);
-
-        Label Lnull, Ldone;
-        if (Rval != noreg) {
-          if (check_null) {
-            __ cmpdi(CCR0, Rval, 0);
-            __ beq(CCR0, Lnull);
-          }
-          __ store_heap_oop_not_null(Rval, offset, Rbase, /*Rval must stay uncompressed.*/ Rtmp1);
-          // Mark the card.
-          if (!(offset.is_constant() && offset.as_constant() == 0) && precise) {
-            __ add(Rbase, offset, Rbase);
-          }
-          __ g1_write_barrier_post(Rbase, Rval, Rtmp1, Rtmp2, Rtmp3, /*filtered (fast path)*/ &Ldone);
-          if (check_null) { __ b(Ldone); }
-        }
-
-        if (Rval == noreg || check_null) { // Store null oop.
-          Register Rnull = Rval;
-          __ bind(Lnull);
-          if (Rval == noreg) {
-            Rnull = Rtmp1;
-            __ li(Rnull, 0);
-          }
-          if (UseCompressedOops) {
-            __ stw(Rnull, offset, Rbase);
-          } else {
-            __ std(Rnull, offset, Rbase);
-          }
-        }
-        __ bind(Ldone);
-      }
-      break;
-#endif // INCLUDE_ALL_GCS
-    case BarrierSet::CardTableBarrierSet:
-      {
-        Label Lnull, Ldone;
-        if (Rval != noreg) {
-          if (check_null) {
-            __ cmpdi(CCR0, Rval, 0);
-            __ beq(CCR0, Lnull);
-          }
-          __ store_heap_oop_not_null(Rval, offset, Rbase, /*Rval should better stay uncompressed.*/ Rtmp1);
-          // Mark the card.
-          if (!(offset.is_constant() && offset.as_constant() == 0) && precise) {
-            __ add(Rbase, offset, Rbase);
-          }
-          __ card_write_barrier_post(Rbase, Rval, Rtmp1);
-          if (check_null) {
-            __ b(Ldone);
-          }
-        }
-
-        if (Rval == noreg || check_null) { // Store null oop.
-          Register Rnull = Rval;
-          __ bind(Lnull);
-          if (Rval == noreg) {
-            Rnull = Rtmp1;
-            __ li(Rnull, 0);
-          }
-          if (UseCompressedOops) {
-            __ stw(Rnull, offset, Rbase);
-          } else {
-            __ std(Rnull, offset, Rbase);
-          }
-        }
-        __ bind(Ldone);
-      }
-      break;
-    case BarrierSet::ModRef:
-      ShouldNotReachHere();
-      break;
-    default:
-      ShouldNotReachHere();
-  }
+static void do_oop_load(InterpreterMacroAssembler* _masm,
+                        Register base,
+                        RegisterOrConstant offset,
+                        Register dst,
+                        Register tmp1,
+                        Register tmp2,
+                        DecoratorSet decorators) {
+  assert_different_registers(base, tmp1, tmp2);
+  assert_different_registers(dst, tmp1, tmp2);
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->load_at(_masm, decorators, T_OBJECT, base, offset, dst, tmp1, tmp2, false);
 }
 
 // ============================================================================
@@ -755,9 +686,11 @@ void TemplateTable::aaload() {
   // result tos: array
   const Register Rload_addr = R3_ARG1,
                  Rarray     = R4_ARG2,
-                 Rtemp      = R5_ARG3;
+                 Rtemp      = R5_ARG3,
+                 Rtemp2     = R31;
   __ index_check(Rarray, R17_tos /* index */, UseCompressedOops ? 2 : LogBytesPerWord, Rtemp, Rload_addr);
-  __ load_heap_oop(R17_tos, arrayOopDesc::base_offset_in_bytes(T_OBJECT), Rload_addr);
+  do_oop_load(_masm, Rload_addr, arrayOopDesc::base_offset_in_bytes(T_OBJECT), R17_tos, Rtemp, Rtemp2,
+              IN_HEAP | IN_HEAP_ARRAY);
   __ verify_oop(R17_tos);
   //__ dcbt(R17_tos); // prefetch
 }
@@ -1084,14 +1017,14 @@ void TemplateTable::aastore() {
 
   __ bind(Lis_null);
   do_oop_store(_masm, Rstore_addr, arrayOopDesc::base_offset_in_bytes(T_OBJECT), noreg /* 0 */,
-               Rscratch, Rscratch2, Rscratch3, _bs->kind(), true /* precise */, false /* check_null */);
+               Rscratch, Rscratch2, Rscratch3, IN_HEAP | IN_HEAP_ARRAY);
   __ profile_null_seen(Rscratch, Rscratch2);
   __ b(Ldone);
 
   // Store is OK.
   __ bind(Lstore_ok);
   do_oop_store(_masm, Rstore_addr, arrayOopDesc::base_offset_in_bytes(T_OBJECT), R17_tos /* value */,
-               Rscratch, Rscratch2, Rscratch3, _bs->kind(), true /* precise */, false /* check_null */);
+               Rscratch, Rscratch2, Rscratch3, IN_HEAP | IN_HEAP_ARRAY | OOP_NOT_NULL);
 
   __ bind(Ldone);
   // Adjust sp (pops array, index and value).
@@ -2714,7 +2647,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ fence(); // Volatile entry point (one instruction before non-volatile_entry point).
   assert(branch_table[atos] == 0, "can't compute twice");
   branch_table[atos] = __ pc(); // non-volatile_entry point
-  __ load_heap_oop(R17_tos, (RegisterOrConstant)Roffset, Rclass_or_obj);
+  do_oop_load(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, /* nv temp */ Rflags, IN_HEAP);
   __ verify_oop(R17_tos);
   __ push(atos);
   //__ dcbt(R17_tos); // prefetch
@@ -3047,7 +2980,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   branch_table[atos] = __ pc(); // non-volatile_entry point
   __ pop(atos);
   if (!is_static) { pop_and_check_object(Rclass_or_obj); } // kills R11_scratch1
-  do_oop_store(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, Rscratch2, Rscratch3, _bs->kind(), false /* precise */, true /* check null */);
+  do_oop_store(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, Rscratch2, Rscratch3, IN_HEAP);
   if (!is_static && rc == may_rewrite) {
     patch_bytecode(Bytecodes::_fast_aputfield, Rbc, Rscratch, true, byte_no);
   }
@@ -3122,7 +3055,7 @@ void TemplateTable::fast_storefield(TosState state) {
   switch(bytecode()) {
     case Bytecodes::_fast_aputfield:
       // Store into the field.
-      do_oop_store(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, Rscratch2, Rscratch3, _bs->kind(), false /* precise */, true /* check null */);
+      do_oop_store(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, Rscratch2, Rscratch3, IN_HEAP);
       break;
 
     case Bytecodes::_fast_iputfield:
@@ -3196,13 +3129,13 @@ void TemplateTable::fast_accessfield(TosState state) {
   switch(bytecode()) {
     case Bytecodes::_fast_agetfield:
     {
-      __ load_heap_oop(R17_tos, (RegisterOrConstant)Roffset, Rclass_or_obj);
+      do_oop_load(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, /* nv temp */ Rflags, IN_HEAP);
       __ verify_oop(R17_tos);
       __ dispatch_epilog(state, Bytecodes::length_for(bytecode()));
 
       __ bind(LisVolatile);
       if (support_IRIW_for_not_multiple_copy_atomic_cpu) { __ fence(); }
-      __ load_heap_oop(R17_tos, (RegisterOrConstant)Roffset, Rclass_or_obj);
+      do_oop_load(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, /* nv temp */ Rflags, IN_HEAP);
       __ verify_oop(R17_tos);
       __ twi_0(R17_tos);
       __ isync();
@@ -3336,13 +3269,13 @@ void TemplateTable::fast_xaccess(TosState state) {
   switch(state) {
   case atos:
     {
-      __ load_heap_oop(R17_tos, (RegisterOrConstant)Roffset, Rclass_or_obj);
+      do_oop_load(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, /* nv temp */ Rflags, IN_HEAP);
       __ verify_oop(R17_tos);
       __ dispatch_epilog(state, Bytecodes::length_for(bytecode()) - 1); // Undo bcp increment.
 
       __ bind(LisVolatile);
       if (support_IRIW_for_not_multiple_copy_atomic_cpu) { __ fence(); }
-      __ load_heap_oop(R17_tos, (RegisterOrConstant)Roffset, Rclass_or_obj);
+      do_oop_load(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, /* nv temp */ Rflags, IN_HEAP);
       __ verify_oop(R17_tos);
       __ twi_0(R17_tos);
       __ isync();

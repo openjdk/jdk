@@ -26,6 +26,7 @@
 #include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "runtime/atomic.hpp"
@@ -164,7 +165,7 @@ void DirtyCardQueueSet::initialize(Monitor* cbl_mon,
 }
 
 void DirtyCardQueueSet::handle_zero_index_for_thread(JavaThread* t) {
-  t->dirty_card_queue().handle_zero_index();
+  G1ThreadLocalData::dirty_card_queue(t).handle_zero_index();
 }
 
 bool DirtyCardQueueSet::apply_closure_to_buffer(CardTableEntryClosure* cl,
@@ -321,7 +322,7 @@ void DirtyCardQueueSet::abandon_logs() {
   // Since abandon is done only at safepoints, we can safely manipulate
   // these queues.
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    t->dirty_card_queue().reset();
+    G1ThreadLocalData::dirty_card_queue(t).reset();
   }
   shared_dirty_card_queue()->reset();
 }
@@ -340,7 +341,7 @@ void DirtyCardQueueSet::concatenate_logs() {
   _max_completed_queue = max_jint;
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    concatenate_log(t->dirty_card_queue());
+    concatenate_log(G1ThreadLocalData::dirty_card_queue(t));
   }
   concatenate_log(_shared_dirty_card_queue);
   // Restore the completed buffer queue limit.

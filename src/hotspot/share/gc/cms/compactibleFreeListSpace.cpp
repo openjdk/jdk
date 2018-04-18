@@ -35,6 +35,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/binaryTreeDictionary.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
@@ -48,6 +49,244 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
+
+// Specialize for AdaptiveFreeList which tries to avoid
+// splitting a chunk of a size that is under populated in favor of
+// an over populated size.  The general get_better_list() just returns
+// the current list.
+template <>
+TreeList<FreeChunk, AdaptiveFreeList<FreeChunk> >*
+TreeList<FreeChunk, AdaptiveFreeList<FreeChunk> >::get_better_list(
+  BinaryTreeDictionary<FreeChunk, ::AdaptiveFreeList<FreeChunk> >* dictionary) {
+  // A candidate chunk has been found.  If it is already under
+  // populated, get a chunk associated with the hint for this
+  // chunk.
+
+  TreeList<FreeChunk, ::AdaptiveFreeList<FreeChunk> >* curTL = this;
+  if (curTL->surplus() <= 0) {
+    /* Use the hint to find a size with a surplus, and reset the hint. */
+    TreeList<FreeChunk, ::AdaptiveFreeList<FreeChunk> >* hintTL = this;
+    while (hintTL->hint() != 0) {
+      assert(hintTL->hint() > hintTL->size(),
+        "hint points in the wrong direction");
+      hintTL = dictionary->find_list(hintTL->hint());
+      assert(curTL != hintTL, "Infinite loop");
+      if (hintTL == NULL ||
+          hintTL == curTL /* Should not happen but protect against it */ ) {
+        // No useful hint.  Set the hint to NULL and go on.
+        curTL->set_hint(0);
+        break;
+      }
+      assert(hintTL->size() > curTL->size(), "hint is inconsistent");
+      if (hintTL->surplus() > 0) {
+        // The hint led to a list that has a surplus.  Use it.
+        // Set the hint for the candidate to an overpopulated
+        // size.
+        curTL->set_hint(hintTL->size());
+        // Change the candidate.
+        curTL = hintTL;
+        break;
+      }
+    }
+  }
+  return curTL;
+}
+
+void AFLBinaryTreeDictionary::dict_census_update(size_t size, bool split, bool birth) {
+  TreeList<FreeChunk, AdaptiveFreeList<FreeChunk> >* nd = find_list(size);
+  if (nd) {
+    if (split) {
+      if (birth) {
+        nd->increment_split_births();
+        nd->increment_surplus();
+      }  else {
+        nd->increment_split_deaths();
+        nd->decrement_surplus();
+      }
+    } else {
+      if (birth) {
+        nd->increment_coal_births();
+        nd->increment_surplus();
+      } else {
+        nd->increment_coal_deaths();
+        nd->decrement_surplus();
+      }
+    }
+  }
+  // A list for this size may not be found (nd == 0) if
+  //   This is a death where the appropriate list is now
+  //     empty and has been removed from the list.
+  //   This is a birth associated with a LinAB.  The chunk
+  //     for the LinAB is not in the dictionary.
+}
+
+bool AFLBinaryTreeDictionary::coal_dict_over_populated(size_t size) {
+  if (FLSAlwaysCoalesceLarge) return true;
+
+  TreeList<FreeChunk, AdaptiveFreeList<FreeChunk> >* list_of_size = find_list(size);
+  // None of requested size implies overpopulated.
+  return list_of_size == NULL || list_of_size->coal_desired() <= 0 ||
+         list_of_size->count() > list_of_size->coal_desired();
+}
+
+// For each list in the tree, calculate the desired, desired
+// coalesce, count before sweep, and surplus before sweep.
+class BeginSweepClosure : public AscendTreeCensusClosure<FreeChunk, AdaptiveFreeList<FreeChunk> > {
+  double _percentage;
+  float _inter_sweep_current;
+  float _inter_sweep_estimate;
+  float _intra_sweep_estimate;
+
+ public:
+  BeginSweepClosure(double p, float inter_sweep_current,
+                              float inter_sweep_estimate,
+                              float intra_sweep_estimate) :
+   _percentage(p),
+   _inter_sweep_current(inter_sweep_current),
+   _inter_sweep_estimate(inter_sweep_estimate),
+   _intra_sweep_estimate(intra_sweep_estimate) { }
+
+  void do_list(AdaptiveFreeList<FreeChunk>* fl) {
+    double coalSurplusPercent = _percentage;
+    fl->compute_desired(_inter_sweep_current, _inter_sweep_estimate, _intra_sweep_estimate);
+    fl->set_coal_desired((ssize_t)((double)fl->desired() * coalSurplusPercent));
+    fl->set_before_sweep(fl->count());
+    fl->set_bfr_surp(fl->surplus());
+  }
+};
+
+void AFLBinaryTreeDictionary::begin_sweep_dict_census(double coalSurplusPercent,
+  float inter_sweep_current, float inter_sweep_estimate, float intra_sweep_estimate) {
+  BeginSweepClosure bsc(coalSurplusPercent, inter_sweep_current,
+                        inter_sweep_estimate,
+                        intra_sweep_estimate);
+  bsc.do_tree(root());
+}
+
+// Calculate surpluses for the lists in the tree.
+class setTreeSurplusClosure : public AscendTreeCensusClosure<FreeChunk, AdaptiveFreeList<FreeChunk> > {
+  double percentage;
+ public:
+  setTreeSurplusClosure(double v) { percentage = v; }
+
+  void do_list(AdaptiveFreeList<FreeChunk>* fl) {
+    double splitSurplusPercent = percentage;
+    fl->set_surplus(fl->count() -
+                   (ssize_t)((double)fl->desired() * splitSurplusPercent));
+  }
+};
+
+void AFLBinaryTreeDictionary::set_tree_surplus(double splitSurplusPercent) {
+  setTreeSurplusClosure sts(splitSurplusPercent);
+  sts.do_tree(root());
+}
+
+// Set hints for the lists in the tree.
+class setTreeHintsClosure : public DescendTreeCensusClosure<FreeChunk, AdaptiveFreeList<FreeChunk> > {
+  size_t hint;
+ public:
+  setTreeHintsClosure(size_t v) { hint = v; }
+
+  void do_list(AdaptiveFreeList<FreeChunk>* fl) {
+    fl->set_hint(hint);
+    assert(fl->hint() == 0 || fl->hint() > fl->size(),
+      "Current hint is inconsistent");
+    if (fl->surplus() > 0) {
+      hint = fl->size();
+    }
+  }
+};
+
+void AFLBinaryTreeDictionary::set_tree_hints(void) {
+  setTreeHintsClosure sth(0);
+  sth.do_tree(root());
+}
+
+// Save count before previous sweep and splits and coalesces.
+class clearTreeCensusClosure : public AscendTreeCensusClosure<FreeChunk, AdaptiveFreeList<FreeChunk> > {
+  void do_list(AdaptiveFreeList<FreeChunk>* fl) {
+    fl->set_prev_sweep(fl->count());
+    fl->set_coal_births(0);
+    fl->set_coal_deaths(0);
+    fl->set_split_births(0);
+    fl->set_split_deaths(0);
+  }
+};
+
+void AFLBinaryTreeDictionary::clear_tree_census(void) {
+  clearTreeCensusClosure ctc;
+  ctc.do_tree(root());
+}
+
+// Do reporting and post sweep clean up.
+void AFLBinaryTreeDictionary::end_sweep_dict_census(double splitSurplusPercent) {
+  // Does walking the tree 3 times hurt?
+  set_tree_surplus(splitSurplusPercent);
+  set_tree_hints();
+  LogTarget(Trace, gc, freelist, stats) log;
+  if (log.is_enabled()) {
+    LogStream out(log);
+    report_statistics(&out);
+  }
+  clear_tree_census();
+}
+
+// Print census information - counts, births, deaths, etc.
+// for each list in the tree.  Also print some summary
+// information.
+class PrintTreeCensusClosure : public AscendTreeCensusClosure<FreeChunk, AdaptiveFreeList<FreeChunk> > {
+  int _print_line;
+  size_t _total_free;
+  AdaptiveFreeList<FreeChunk> _total;
+
+ public:
+  PrintTreeCensusClosure() {
+    _print_line = 0;
+    _total_free = 0;
+  }
+  AdaptiveFreeList<FreeChunk>* total() { return &_total; }
+  size_t total_free() { return _total_free; }
+
+  void do_list(AdaptiveFreeList<FreeChunk>* fl) {
+    LogStreamHandle(Debug, gc, freelist, census) out;
+
+    if (++_print_line >= 40) {
+      AdaptiveFreeList<FreeChunk>::print_labels_on(&out, "size");
+      _print_line = 0;
+    }
+    fl->print_on(&out);
+    _total_free +=           fl->count()             * fl->size()        ;
+    total()->set_count(      total()->count()        + fl->count()      );
+    total()->set_bfr_surp(   total()->bfr_surp()     + fl->bfr_surp()    );
+    total()->set_surplus(    total()->split_deaths() + fl->surplus()    );
+    total()->set_desired(    total()->desired()      + fl->desired()    );
+    total()->set_prev_sweep(  total()->prev_sweep()   + fl->prev_sweep()  );
+    total()->set_before_sweep(total()->before_sweep() + fl->before_sweep());
+    total()->set_coal_births( total()->coal_births()  + fl->coal_births() );
+    total()->set_coal_deaths( total()->coal_deaths()  + fl->coal_deaths() );
+    total()->set_split_births(total()->split_births() + fl->split_births());
+    total()->set_split_deaths(total()->split_deaths() + fl->split_deaths());
+  }
+};
+
+void AFLBinaryTreeDictionary::print_dict_census(outputStream* st) const {
+
+  st->print_cr("BinaryTree");
+  AdaptiveFreeList<FreeChunk>::print_labels_on(st, "size");
+  PrintTreeCensusClosure ptc;
+  ptc.do_tree(root());
+
+  AdaptiveFreeList<FreeChunk>* total = ptc.total();
+  AdaptiveFreeList<FreeChunk>::print_labels_on(st, " ");
+  total->print_on(st, "TOTAL\t");
+  st->print_cr("total_free(words): " SIZE_FORMAT_W(16) " growth: %8.5f  deficit: %8.5f",
+               ptc.total_free(),
+               (double)(total->split_births() + total->coal_births()
+                      - total->split_deaths() - total->coal_deaths())
+               /(total->prev_sweep() != 0 ? (double)total->prev_sweep() : 1.0),
+              (double)(total->desired() - total->count())
+              /(total->desired() != 0 ? (double)total->desired() : 1.0));
+}
 
 /////////////////////////////////////////////////////////////////////////
 //// CompactibleFreeListSpace
@@ -181,7 +420,7 @@ HeapWord* CompactibleFreeListSpace::forward(oop q, size_t size,
   } else {
     // if the object isn't moving we can just set the mark to the default
     // mark and handle it specially later on.
-    q->init_mark();
+    q->init_mark_raw();
     assert(q->forwardee() == NULL, "should be forwarded to NULL");
   }
 

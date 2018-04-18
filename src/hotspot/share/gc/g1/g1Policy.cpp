@@ -62,7 +62,7 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _bytes_allocated_in_old_since_last_gc(0),
   _initial_mark_to_mixed(),
   _collection_set(NULL),
-  _g1(NULL),
+  _g1h(NULL),
   _phase_times(new G1GCPhaseTimes(gc_timer, ParallelGCThreads)),
   _tenuring_threshold(MaxTenuringThreshold),
   _max_survivor_regions(0),
@@ -74,10 +74,10 @@ G1Policy::~G1Policy() {
   delete _ihop_control;
 }
 
-G1CollectorState* G1Policy::collector_state() const { return _g1->collector_state(); }
+G1CollectorState* G1Policy::collector_state() const { return _g1h->collector_state(); }
 
 void G1Policy::init(G1CollectedHeap* g1h, G1CollectionSet* collection_set) {
-  _g1 = g1h;
+  _g1h = g1h;
   _collection_set = collection_set;
 
   assert(Heap_lock->owned_by_self(), "Locking discipline.");
@@ -85,9 +85,9 @@ void G1Policy::init(G1CollectedHeap* g1h, G1CollectionSet* collection_set) {
   if (!adaptive_young_list_length()) {
     _young_list_fixed_length = _young_gen_sizer.min_desired_young_length();
   }
-  _young_gen_sizer.adjust_max_new_size(_g1->max_regions());
+  _young_gen_sizer.adjust_max_new_size(_g1h->max_regions());
 
-  _free_regions_at_end_of_collection = _g1->num_free_regions();
+  _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
   update_young_list_max_and_target_length();
   // We may immediately start allocating regions and placing them on the
@@ -216,11 +216,11 @@ G1Policy::YoungTargetLengths G1Policy::young_list_target_lengths(size_t rs_lengt
   // Calculate the absolute and desired min bounds first.
 
   // This is how many young regions we already have (currently: the survivors).
-  const uint base_min_length = _g1->survivor_regions_count();
+  const uint base_min_length = _g1h->survivor_regions_count();
   uint desired_min_length = calculate_young_list_desired_min_length(base_min_length);
   // This is the absolute minimum young length. Ensure that we
   // will at least have one eden region available for allocation.
-  uint absolute_min_length = base_min_length + MAX2(_g1->eden_regions_count(), (uint)1);
+  uint absolute_min_length = base_min_length + MAX2(_g1h->eden_regions_count(), (uint)1);
   // If we shrank the young list target it should not shrink below the current size.
   desired_min_length = MAX2(desired_min_length, absolute_min_length);
   // Calculate the absolute and desired max bounds.
@@ -379,7 +379,7 @@ G1Policy::calculate_young_list_target_length(size_t rs_lengths,
 
 double G1Policy::predict_survivor_regions_evac_time() const {
   double survivor_regions_evac_time = 0.0;
-  const GrowableArray<HeapRegion*>* survivor_regions = _g1->survivor()->regions();
+  const GrowableArray<HeapRegion*>* survivor_regions = _g1h->survivor()->regions();
 
   for (GrowableArrayIterator<HeapRegion*> it = survivor_regions->begin();
        it != survivor_regions->end();
@@ -442,7 +442,7 @@ void G1Policy::record_full_collection_end() {
   _short_lived_surv_rate_group->start_adding_regions();
   // also call this on any additional surv rate groups
 
-  _free_regions_at_end_of_collection = _g1->num_free_regions();
+  _free_regions_at_end_of_collection = _g1h->num_free_regions();
   // Reset survivors SurvRateGroup.
   _survivor_surv_rate_group->reset();
   update_young_list_max_and_target_length();
@@ -459,12 +459,12 @@ void G1Policy::record_collection_pause_start(double start_time_sec) {
   // every time we calculate / recalculate the target young length.
   update_survivors_policy();
 
-  assert(_g1->used() == _g1->recalculate_used(),
+  assert(_g1h->used() == _g1h->recalculate_used(),
          "sanity, used: " SIZE_FORMAT " recalculate_used: " SIZE_FORMAT,
-         _g1->used(), _g1->recalculate_used());
+         _g1h->used(), _g1h->recalculate_used());
 
   phase_times()->record_cur_collection_start_sec(start_time_sec);
-  _pending_cards = _g1->pending_card_num();
+  _pending_cards = _g1h->pending_card_num();
 
   _collection_set->reset_bytes_used_before();
   _bytes_copied_during_gc = 0;
@@ -473,7 +473,7 @@ void G1Policy::record_collection_pause_start(double start_time_sec) {
   _short_lived_surv_rate_group->stop_adding_regions();
   _survivors_age_table.clear();
 
-  assert(_g1->collection_set()->verify_young_ages(), "region age verification failed");
+  assert(_g1h->collection_set()->verify_young_ages(), "region age verification failed");
 }
 
 void G1Policy::record_concurrent_mark_init_end(double mark_init_elapsed_time_ms) {
@@ -525,7 +525,7 @@ CollectionSetChooser* G1Policy::cset_chooser() const {
 }
 
 bool G1Policy::about_to_start_mixed_phase() const {
-  return _g1->concurrent_mark()->cm_thread()->during_cycle() || collector_state()->in_young_gc_before_mixed();
+  return _g1h->concurrent_mark()->cm_thread()->during_cycle() || collector_state()->in_young_gc_before_mixed();
 }
 
 bool G1Policy::need_to_start_conc_mark(const char* source, size_t alloc_word_size) {
@@ -535,7 +535,7 @@ bool G1Policy::need_to_start_conc_mark(const char* source, size_t alloc_word_siz
 
   size_t marking_initiating_used_threshold = _ihop_control->get_conc_mark_start_threshold();
 
-  size_t cur_used_bytes = _g1->non_young_capacity_bytes();
+  size_t cur_used_bytes = _g1h->non_young_capacity_bytes();
   size_t alloc_byte_size = alloc_word_size * HeapWordSize;
   size_t marking_request_bytes = cur_used_bytes + alloc_byte_size;
 
@@ -544,7 +544,7 @@ bool G1Policy::need_to_start_conc_mark(const char* source, size_t alloc_word_siz
     result = collector_state()->in_young_only_phase() && !collector_state()->in_young_gc_before_mixed();
     log_debug(gc, ergo, ihop)("%s occupancy: " SIZE_FORMAT "B allocation request: " SIZE_FORMAT "B threshold: " SIZE_FORMAT "B (%1.2f) source: %s",
                               result ? "Request concurrent cycle initiation (occupancy higher than threshold)" : "Do not request concurrent cycle initiation (still doing mixed collections)",
-                              cur_used_bytes, alloc_byte_size, marking_initiating_used_threshold, (double) marking_initiating_used_threshold / _g1->capacity() * 100, source);
+                              cur_used_bytes, alloc_byte_size, marking_initiating_used_threshold, (double) marking_initiating_used_threshold / _g1h->capacity() * 100, source);
   }
 
   return result;
@@ -556,12 +556,12 @@ bool G1Policy::need_to_start_conc_mark(const char* source, size_t alloc_word_siz
 void G1Policy::record_collection_pause_end(double pause_time_ms, size_t cards_scanned, size_t heap_used_bytes_before_gc) {
   double end_time_sec = os::elapsedTime();
 
-  size_t cur_used_bytes = _g1->used();
-  assert(cur_used_bytes == _g1->recalculate_used(), "It should!");
+  size_t cur_used_bytes = _g1h->used();
+  assert(cur_used_bytes == _g1h->recalculate_used(), "It should!");
   bool this_pause_included_initial_mark = false;
   bool this_pause_was_young_only = collector_state()->in_young_only_phase();
 
-  bool update_stats = !_g1->evacuation_failed();
+  bool update_stats = !_g1h->evacuation_failed();
 
   record_pause(young_gc_pause_kind(), end_time_sec - pause_time_ms / 1000.0, end_time_sec);
 
@@ -686,8 +686,14 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t cards_sc
 
     _analytics->report_constant_other_time_ms(constant_other_time_ms(pause_time_ms));
 
-    _analytics->report_pending_cards((double) _pending_cards);
-    _analytics->report_rs_lengths((double) _max_rs_lengths);
+    // Do not update RS lengths and the number of pending cards with information from mixed gc:
+    // these are is wildly different to during young only gc and mess up young gen sizing right
+    // after the mixed gc phase.
+    // During mixed gc we do not use them for young gen sizing.
+    if (this_pause_was_young_only) {
+      _analytics->report_pending_cards((double) _pending_cards);
+      _analytics->report_rs_lengths((double) _max_rs_lengths);
+    }
   }
 
   assert(!(this_pause_included_initial_mark && collector_state()->mark_or_rebuild_in_progress()),
@@ -696,7 +702,7 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t cards_sc
     collector_state()->set_mark_or_rebuild_in_progress(true);
   }
 
-  _free_regions_at_end_of_collection = _g1->num_free_regions();
+  _free_regions_at_end_of_collection = _g1h->num_free_regions();
   // IHOP control wants to know the expected young gen length if it were not
   // restrained by the heap reserve. Using the actual length would make the
   // prediction too small and the limit the young gen every time we get to the
@@ -710,7 +716,7 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t cards_sc
                          this_pause_was_young_only);
   _bytes_allocated_in_old_since_last_gc = 0;
 
-  _ihop_control->send_trace_event(_g1->gc_tracer_stw());
+  _ihop_control->send_trace_event(_g1h->gc_tracer_stw());
 
   // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
   double update_rs_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
@@ -724,7 +730,7 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t cards_sc
   } else {
     update_rs_time_goal_ms -= scan_hcc_time_ms;
   }
-  _g1->concurrent_refine()->adjust(average_time_ms(G1GCPhaseTimes::UpdateRS) - scan_hcc_time_ms,
+  _g1h->concurrent_refine()->adjust(average_time_ms(G1GCPhaseTimes::UpdateRS) - scan_hcc_time_ms,
                                    phase_times()->sum_thread_work_items(G1GCPhaseTimes::UpdateRS),
                                    update_rs_time_goal_ms);
 
@@ -853,13 +859,13 @@ double G1Policy::predict_region_elapsed_time_ms(HeapRegion* hr,
 }
 
 bool G1Policy::should_allocate_mutator_region() const {
-  uint young_list_length = _g1->young_regions_count();
+  uint young_list_length = _g1h->young_regions_count();
   uint young_list_target_length = _young_list_target_length;
   return young_list_length < young_list_target_length;
 }
 
 bool G1Policy::can_expand_young_list() const {
-  uint young_list_length = _g1->young_regions_count();
+  uint young_list_length = _g1h->young_regions_count();
   uint young_list_max_length = _young_list_max_length;
   return young_list_length < young_list_max_length;
 }
@@ -911,7 +917,7 @@ bool G1Policy::force_initial_mark_if_outside_cycle(GCCause::Cause gc_cause) {
   // We actually check whether we are marking here and not if we are in a
   // reclamation phase. This means that we will schedule a concurrent mark
   // even while we are still in the process of reclaiming memory.
-  bool during_cycle = _g1->concurrent_mark()->cm_thread()->during_cycle();
+  bool during_cycle = _g1h->concurrent_mark()->cm_thread()->during_cycle();
   if (!during_cycle) {
     log_debug(gc, ergo)("Request concurrent cycle initiation (requested by GC cause). GC cause: %s", GCCause::to_string(gc_cause));
     collector_state()->set_initiate_conc_mark_if_possible(true);
@@ -946,7 +952,7 @@ void G1Policy::decide_on_conc_mark_initiation() {
       // Initiate a new initial mark if there is no marking or reclamation going on.
       initiate_conc_mark();
       log_debug(gc, ergo)("Initiate concurrent cycle (concurrent cycle initiation requested)");
-    } else if (_g1->is_user_requested_concurrent_full_gc(_g1->gc_cause())) {
+    } else if (_g1h->is_user_requested_concurrent_full_gc(_g1h->gc_cause())) {
       // Initiate a user requested initial mark. An initial mark must be young only
       // GC, so the collector state must be updated to reflect this.
       collector_state()->set_in_young_only_phase(true);
@@ -979,7 +985,7 @@ void G1Policy::decide_on_conc_mark_initiation() {
 }
 
 void G1Policy::record_concurrent_mark_cleanup_end() {
-  cset_chooser()->rebuild(_g1->workers(), _g1->num_regions());
+  cset_chooser()->rebuild(_g1h->workers(), _g1h->num_regions());
 
   bool mixed_gc_pending = next_gc_should_be_mixed("request mixed gcs", "request young-only gcs");
   if (!mixed_gc_pending) {
@@ -998,7 +1004,7 @@ void G1Policy::record_concurrent_mark_cleanup_end() {
 }
 
 double G1Policy::reclaimable_bytes_percent(size_t reclaimable_bytes) const {
-  return percent_of(reclaimable_bytes, _g1->capacity());
+  return percent_of(reclaimable_bytes, _g1h->capacity());
 }
 
 class G1ClearCollectionSetCandidateRemSets : public HeapRegionClosure {

@@ -25,17 +25,13 @@
 #include "precompiled.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
-#include "gc/shared/referenceProcessor.hpp"
+#include "gc/shared/commandLineFlagConstraintsGC.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/commandLineFlagConstraintList.hpp"
 #include "runtime/commandLineFlagConstraintsCompiler.hpp"
-#include "runtime/commandLineFlagConstraintsGC.hpp"
 #include "runtime/commandLineFlagConstraintsRuntime.hpp"
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1_globals.hpp"
-#endif
 #ifdef COMPILER1
 #include "c1/c1_globals.hpp"
 #endif
@@ -280,20 +276,20 @@ CommandLineFlagConstraint::ConstraintType CommandLineFlagConstraintList::_valida
 void CommandLineFlagConstraintList::init(void) {
   _constraints = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<CommandLineFlagConstraint*>(INITIAL_CONSTRAINTS_SIZE, true);
 
-  emit_constraint_no(NULL RUNTIME_FLAGS(EMIT_CONSTRAINT_DEVELOPER_FLAG,
-                                        EMIT_CONSTRAINT_PD_DEVELOPER_FLAG,
-                                        EMIT_CONSTRAINT_PRODUCT_FLAG,
-                                        EMIT_CONSTRAINT_PD_PRODUCT_FLAG,
-                                        EMIT_CONSTRAINT_DIAGNOSTIC_FLAG,
-                                        EMIT_CONSTRAINT_PD_DIAGNOSTIC_FLAG,
-                                        EMIT_CONSTRAINT_EXPERIMENTAL_FLAG,
-                                        EMIT_CONSTRAINT_NOTPRODUCT_FLAG,
-                                        EMIT_CONSTRAINT_MANAGEABLE_FLAG,
-                                        EMIT_CONSTRAINT_PRODUCT_RW_FLAG,
-                                        EMIT_CONSTRAINT_LP64_PRODUCT_FLAG,
-                                        IGNORE_RANGE,
-                                        EMIT_CONSTRAINT_CHECK,
-                                        IGNORE_WRITEABLE));
+  emit_constraint_no(NULL VM_FLAGS(EMIT_CONSTRAINT_DEVELOPER_FLAG,
+                                   EMIT_CONSTRAINT_PD_DEVELOPER_FLAG,
+                                   EMIT_CONSTRAINT_PRODUCT_FLAG,
+                                   EMIT_CONSTRAINT_PD_PRODUCT_FLAG,
+                                   EMIT_CONSTRAINT_DIAGNOSTIC_FLAG,
+                                   EMIT_CONSTRAINT_PD_DIAGNOSTIC_FLAG,
+                                   EMIT_CONSTRAINT_EXPERIMENTAL_FLAG,
+                                   EMIT_CONSTRAINT_NOTPRODUCT_FLAG,
+                                   EMIT_CONSTRAINT_MANAGEABLE_FLAG,
+                                   EMIT_CONSTRAINT_PRODUCT_RW_FLAG,
+                                   EMIT_CONSTRAINT_LP64_PRODUCT_FLAG,
+                                   IGNORE_RANGE,
+                                   EMIT_CONSTRAINT_CHECK,
+                                   IGNORE_WRITEABLE));
 
   EMIT_CONSTRAINTS_FOR_GLOBALS_EXT
 
@@ -333,22 +329,6 @@ void CommandLineFlagConstraintList::init(void) {
                                    EMIT_CONSTRAINT_CHECK,
                                    IGNORE_WRITEABLE));
 #endif // COMPILER2
-
-#if INCLUDE_ALL_GCS
-  emit_constraint_no(NULL G1_FLAGS(EMIT_CONSTRAINT_DEVELOPER_FLAG,
-                                   EMIT_CONSTRAINT_PD_DEVELOPER_FLAG,
-                                   EMIT_CONSTRAINT_PRODUCT_FLAG,
-                                   EMIT_CONSTRAINT_PD_PRODUCT_FLAG,
-                                   EMIT_CONSTRAINT_DIAGNOSTIC_FLAG,
-                                   EMIT_CONSTRAINT_PD_DIAGNOSTIC_FLAG,
-                                   EMIT_CONSTRAINT_EXPERIMENTAL_FLAG,
-                                   EMIT_CONSTRAINT_NOTPRODUCT_FLAG,
-                                   EMIT_CONSTRAINT_MANAGEABLE_FLAG,
-                                   EMIT_CONSTRAINT_PRODUCT_RW_FLAG,
-                                   IGNORE_RANGE,
-                                   EMIT_CONSTRAINT_CHECK,
-                                   IGNORE_WRITEABLE));
-#endif // INCLUDE_ALL_GCS
 }
 
 CommandLineFlagConstraint* CommandLineFlagConstraintList::find(const char* name) {

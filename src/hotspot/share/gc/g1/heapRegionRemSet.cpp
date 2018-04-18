@@ -888,8 +888,7 @@ void HeapRegionRemSet::test() {
   size_t sum = 0;
   size_t card_index;
   while (iter.has_next(card_index)) {
-    HeapWord* card_start =
-      G1CollectedHeap::heap()->bot()->address_for_index(card_index);
+    HeapWord* card_start = g1h->bot()->address_for_index(card_index);
     tty->print_cr("  Card " PTR_FORMAT ".", p2i(card_start));
     sum++;
   }

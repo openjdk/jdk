@@ -856,9 +856,6 @@ TEST_VM_F(OopStorageTestIteration, oops_do) {
   vstate.check();
 }
 
-// Parallel iteration not available unless INCLUDE_ALL_GCS
-#if INCLUDE_ALL_GCS
-
 class OopStorageTestParIteration : public OopStorageTestIteration {
 public:
   WorkGang* workers();
@@ -1016,8 +1013,6 @@ TEST_VM_F(OopStorageTestParIteration, par_state_concurrent_const_oops_do) {
   workers()->run_task(&task);
   vstate.check();
 }
-
-#endif // INCLUDE_ALL_GCS
 
 TEST_VM_F(OopStorageTestWithAllocation, delete_empty_blocks_safepoint) {
   TestAccess::BlockList& active_list = TestAccess::active_list(_storage);
@@ -1384,4 +1379,3 @@ TEST_F(OopStorageBlockListTestWithList, two_lists) {
   }
   EXPECT_EQ(NULL_BLOCK, active_block);
 }
-

@@ -45,7 +45,7 @@ BasicType       Bytecodes::_result_type   [Bytecodes::number_of_codes];
 s_char          Bytecodes::_depth         [Bytecodes::number_of_codes];
 u_char          Bytecodes::_lengths       [Bytecodes::number_of_codes];
 Bytecodes::Code Bytecodes::_java_code     [Bytecodes::number_of_codes];
-u_short         Bytecodes::_flags         [(1<<BitsPerByte)*2];
+unsigned short  Bytecodes::_flags         [(1<<BitsPerByte)*2];
 
 #ifdef ASSERT
 bool Bytecodes::check_method(const Method* method, address bcp) {

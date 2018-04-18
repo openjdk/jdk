@@ -14,6 +14,23 @@ grant codeBase "jrt:/java.compiler" {
 };
 
 
+grant codeBase "jrt:/java.net.http" {
+    permission java.lang.RuntimePermission "accessClassInPackage.sun.net";
+    permission java.lang.RuntimePermission "accessClassInPackage.sun.net.util";
+    permission java.lang.RuntimePermission "accessClassInPackage.sun.net.www";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.misc";
+    permission java.net.SocketPermission "*","connect,resolve";
+    permission java.net.URLPermission "http:*","*:*";
+    permission java.net.URLPermission "https:*","*:*";
+    permission java.net.URLPermission "ws:*","*:*";
+    permission java.net.URLPermission "wss:*","*:*";
+    permission java.net.URLPermission "socket:*","CONNECT";  // proxy
+    // For request/response body processors, fromFile, asFile
+    permission java.io.FilePermission "<<ALL FILES>>","read,write,delete";
+    permission java.util.PropertyPermission "*","read";
+    permission java.net.NetPermission "getProxySelector";
+};
+
 grant codeBase "jrt:/java.scripting" {
     permission java.security.AllPermission;
 };

@@ -69,7 +69,7 @@ private:
   // into the collection set or update the remembered set.
   void update_rem_set(G1ParScanThreadState* pss, uint worker_i);
 
-  G1CollectedHeap* _g1;
+  G1CollectedHeap* _g1h;
   size_t _num_conc_refined_cards; // Number of cards refined concurrently to the mutator.
 
   G1CardTable*           _ct;
@@ -92,7 +92,7 @@ public:
   // scanned.
   void cleanupHRRS();
 
-  G1RemSet(G1CollectedHeap* g1,
+  G1RemSet(G1CollectedHeap* g1h,
            G1CardTable* ct,
            G1HotCardCache* hot_card_cache);
   ~G1RemSet();

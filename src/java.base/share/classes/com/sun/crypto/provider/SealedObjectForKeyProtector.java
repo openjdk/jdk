@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package com.sun.crypto.provider;
 
+import jdk.internal.misc.SharedSecrets;
+
 import java.io.*;
 import java.security.*;
 import javax.crypto.*;
@@ -32,6 +34,16 @@ import javax.crypto.*;
 final class SealedObjectForKeyProtector extends SealedObject {
 
     static final long serialVersionUID = -3650226485480866989L;
+
+    /**
+     * The InputStreamFilter for a Key object inside this SealedObject. It can
+     * be either provided as a {@link Security} property or a system property
+     * (when provided as latter, it shadows the former). If the result of this
+     * filter is {@link java.io.ObjectInputFilter.Status.UNDECIDED}, the system
+     * level filter defined by jdk.serialFilter will be consulted. The value
+     * of this property uses the same format of jdk.serialFilter.
+     */
+    private static final String KEY_SERIAL_FILTER = "jceks.key.serialFilter";
 
     SealedObjectForKeyProtector(Serializable object, Cipher c)
             throws IOException, IllegalBlockSizeException {
@@ -58,5 +70,88 @@ final class SealedObjectForKeyProtector extends SealedObject {
             }
         }
         return params;
+    }
+
+    final Key getKey(Cipher c)
+            throws IOException, ClassNotFoundException, IllegalBlockSizeException,
+            BadPaddingException {
+
+        try (ObjectInputStream ois = SharedSecrets.getJavaxCryptoSealedObjectAccess()
+                .getExtObjectInputStream(this, c)) {
+            AccessController.doPrivileged(
+                    (PrivilegedAction<Void>) () -> {
+                        ois.setObjectInputFilter(DeserializationChecker.ONE_FILTER);
+                        return null;
+                    });
+            try {
+                @SuppressWarnings("unchecked")
+                Key t = (Key) ois.readObject();
+                return t;
+            } catch (InvalidClassException ice) {
+                String msg = ice.getMessage();
+                if (msg.contains("REJECTED")) {
+                    throw new IOException("Rejected by the"
+                            + " jceks.key.serialFilter or jdk.serialFilter"
+                            + " property", ice);
+                } else {
+                    throw ice;
+                }
+            }
+        }
+    }
+
+    /**
+     * The filter for the content of a SealedObjectForKeyProtector.
+     *
+     * First, the jceks.key.serialFilter will be consulted. If the result
+     * is UNDECIDED, the system level jdk.serialFilter will be consulted.
+     */
+    private static class DeserializationChecker implements ObjectInputFilter {
+
+        private static final ObjectInputFilter ONE_FILTER;
+
+        static {
+            String prop = AccessController.doPrivileged(
+                    (PrivilegedAction<String>) () -> {
+                        String tmp = System.getProperty(KEY_SERIAL_FILTER);
+                        if (tmp != null) {
+                            return tmp;
+                        } else {
+                            return Security.getProperty(KEY_SERIAL_FILTER);
+                        }
+                    });
+            ONE_FILTER = new DeserializationChecker(prop == null ? null
+                    : ObjectInputFilter.Config.createFilter(prop));
+        }
+
+        private final ObjectInputFilter base;
+
+        private DeserializationChecker(ObjectInputFilter base) {
+            this.base = base;
+        }
+
+        @Override
+        public ObjectInputFilter.Status checkInput(
+                ObjectInputFilter.FilterInfo info) {
+
+            if (info.serialClass() == Object.class) {
+                return Status.UNDECIDED;
+            }
+
+            if (base != null) {
+                Status result = base.checkInput(info);
+                if (result != Status.UNDECIDED) {
+                    return result;
+                }
+            }
+
+            ObjectInputFilter defaultFilter =
+                    ObjectInputFilter.Config.getSerialFilter();
+            if (defaultFilter != null) {
+                return defaultFilter.checkInput(info);
+            }
+
+            return Status.UNDECIDED;
+        }
     }
 }

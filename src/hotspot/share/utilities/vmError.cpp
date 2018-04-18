@@ -1478,7 +1478,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       out.print_raw   ("/bin/sh -c ");
 #elif defined(SOLARIS)
       out.print_raw   ("/usr/bin/sh -c ");
-#elif defined(WINDOWS)
+#elif defined(_WINDOWS)
       out.print_raw   ("cmd /C ");
 #endif
       out.print_raw   ("\"");

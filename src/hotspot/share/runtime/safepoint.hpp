@@ -28,6 +28,7 @@
 #include "asm/assembler.hpp"
 #include "code/nmethod.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/extendedPC.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"

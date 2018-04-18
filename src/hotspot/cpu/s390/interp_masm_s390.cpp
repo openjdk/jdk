@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "interp_masm_s390.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -42,7 +44,7 @@
 #include "runtime/thread.inline.hpp"
 
 // Implementation of InterpreterMacroAssembler.
-// This file specializes the assember with interpreter-specific macros.
+// This file specializes the assembler with interpreter-specific macros.
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str)
@@ -389,9 +391,8 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
   bind(index_ok);
 #endif
   z_agr(result, index);    // Address of indexed array element.
-  load_heap_oop(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result);
-  // The resulting oop is null if the reference is not yet resolved.
-  // It is Universe::the_null_sentinel() if the reference resolved to NULL via condy.
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->load_at(this, IN_HEAP, T_OBJECT, Address(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT)), result, tmp, noreg);
 }
 
 // load cpool->resolved_klass_at(index)
@@ -2197,4 +2198,3 @@ void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) {
     unimplemented("verfiyFPU");
   }
 }
-

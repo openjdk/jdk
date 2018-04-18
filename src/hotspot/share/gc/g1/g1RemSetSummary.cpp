@@ -53,7 +53,7 @@ public:
 
 void G1RemSetSummary::update() {
   _num_conc_refined_cards = _rem_set->num_conc_refined_cards();
-  DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
+  DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
   _num_processed_buf_mutator = dcqs.processed_buffers_mut();
   _num_processed_buf_rs_threads = dcqs.processed_buffers_rs_thread();
 

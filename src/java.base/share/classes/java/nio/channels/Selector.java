@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,11 +84,10 @@ import java.util.Set;
  * operations.  A key may be removed directly from the selected-key set by
  * invoking the set's {@link java.util.Set#remove(java.lang.Object) remove}
  * method or by invoking the {@link java.util.Iterator#remove() remove} method
- * of an {@link java.util.Iterator iterator} obtained from the
- * set.  Keys are never removed from the selected-key set in any other way;
- * they are not, in particular, removed as a side effect of selection
- * operations.  Keys may not be added directly to the selected-key set. </p>
- *
+ * of an {@link java.util.Iterator iterator} obtained from the set.
+ * All keys may be removed from the selected-key set by invoking the set's
+ * {@link java.util.Set#clear() clear} method.  Keys may not be added directly
+ * to the selected-key set. </p>
  *
  * <a id="selop"></a>
  * <h2>Selection</h2>
@@ -144,12 +143,12 @@ import java.util.Set;
  *
  * <h2>Concurrency</h2>
  *
- * <p> Selectors are themselves safe for use by multiple concurrent threads;
- * their key sets, however, are not.
+ * <p> A Selector and its key set are safe for use by multiple concurrent
+ * threads.  Its selected-key set and cancelled-key set, however, are not.
  *
- * <p> The selection operations synchronize on the selector itself, on the key
- * set, and on the selected-key set, in that order.  They also synchronize on
- * the cancelled-key set during steps (1) and (3) above.
+ * <p> The selection operations synchronize on the selector itself, on the
+ * selected-key set, in that order.  They also synchronize on the cancelled-key
+ * set during steps (1) and (3) above.
  *
  * <p> Changes made to the interest sets of a selector's keys while a
  * selection operation is in progress have no effect upon that operation; they
@@ -180,20 +179,27 @@ import java.util.Set;
  *
  * </ul>
  *
- * <p> The {@link #close close} method synchronizes on the selector and all
- * three key sets in the same order as in a selection operation.
+ * <p> The {@link #close close} method synchronizes on the selector and its
+ * selected-key set in the same order as in a selection operation.
  *
  * <a id="ksc"></a>
+ * <p> A Selector's key set is safe for use by multiple concurrent threads.
+ * Retrieval operations from the key set do not generally block and so may
+ * overlap with new registrations that add to the set, or with the cancellation
+ * steps of selection operations that remove keys from the set.  Iterators and
+ * spliterators return elements reflecting the state of the set at some point at
+ * or since the creation of the iterator/spliterator.  They do not throw
+ * {@link java.util.ConcurrentModificationException ConcurrentModificationException}.
  *
- * <p> A selector's key and selected-key sets are not, in general, safe for use
- * by multiple concurrent threads.  If such a thread might modify one of these
- * sets directly then access should be controlled by synchronizing on the set
- * itself.  The iterators returned by these sets' {@link
- * java.util.Set#iterator() iterator} methods are <i>fail-fast:</i> If the set
- * is modified after the iterator is created, in any way except by invoking the
- * iterator's own {@link java.util.Iterator#remove() remove} method, then a
- * {@link java.util.ConcurrentModificationException} will be thrown. </p>
- *
+ * <a id="sksc"></a>
+ * <p> A selector's selected-key set is not, in general, safe for use by
+ * multiple concurrent threads.  If such a thread might modify the set directly
+ * then access should be controlled by synchronizing on the set itself.  The
+ * iterators returned by the set's {@link java.util.Set#iterator() iterator}
+ * methods are <i>fail-fast:</i> If the set is modified after the iterator is
+ * created, in any way except by invoking the iterator's own {@link
+ * java.util.Iterator#remove() remove} method, then a {@link
+ * java.util.ConcurrentModificationException} will be thrown. </p>
  *
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
@@ -249,7 +255,8 @@ public abstract class Selector implements Closeable {
      * attempt to modify the key set will cause an {@link
      * UnsupportedOperationException} to be thrown.
      *
-     * <p> The key set is <a href="#ksc">not thread-safe</a>. </p>
+     * <p> The set is <a href="#ksc">safe</a> for use by multiple concurrent
+     * threads.  </p>
      *
      * @return  This selector's key set
      *
@@ -265,7 +272,7 @@ public abstract class Selector implements Closeable {
      * selected-key set.  Any attempt to add an object to the key set will
      * cause an {@link UnsupportedOperationException} to be thrown.
      *
-     * <p> The selected-key set is <a href="#ksc">not thread-safe</a>. </p>
+     * <p> The selected-key set is <a href="#sksc">not thread-safe</a>.  </p>
      *
      * @return  This selector's selected-key set
      *
@@ -326,8 +333,7 @@ public abstract class Selector implements Closeable {
      * @throws  IllegalArgumentException
      *          If the value of the timeout argument is negative
      */
-    public abstract int select(long timeout)
-        throws IOException;
+    public abstract int select(long timeout) throws IOException;
 
     /**
      * Selects a set of keys whose corresponding channels are ready for I/O

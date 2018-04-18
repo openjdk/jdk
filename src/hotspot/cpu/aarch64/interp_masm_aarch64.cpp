@@ -24,6 +24,8 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "interp_masm_aarch64.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -263,23 +265,21 @@ void InterpreterMacroAssembler::get_method_counters(Register method,
 
 // Load object from cpool->resolved_references(index)
 void InterpreterMacroAssembler::load_resolved_reference_at_index(
-                                           Register result, Register index) {
+                                           Register result, Register index, Register tmp) {
   assert_different_registers(result, index);
   // convert from field index to resolved_references() index and from
   // word index to byte offset. Since this is a java object, it can be compressed
-  Register tmp = index;  // reuse
-  lslw(tmp, tmp, LogBytesPerHeapOop);
+  lslw(index, index, LogBytesPerHeapOop);
 
   get_constant_pool(result);
   // load pointer for resolved_references[] objArray
   ldr(result, Address(result, ConstantPool::cache_offset_in_bytes()));
   ldr(result, Address(result, ConstantPoolCache::resolved_references_offset_in_bytes()));
-  resolve_oop_handle(result);
+  resolve_oop_handle(result, tmp);
   // Add in the index
-  add(result, result, tmp);
-  load_heap_oop(result, Address(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
-  // The resulting oop is null if the reference is not yet resolved.
-  // It is Universe::the_null_sentinel() if the reference resolved to NULL via condy.
+  add(result, result, index);
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->load_at(this, IN_HEAP, T_OBJECT, result, Address(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT)), tmp, /*tmp_thread*/ noreg);
 }
 
 void InterpreterMacroAssembler::load_resolved_klass_at_offset(

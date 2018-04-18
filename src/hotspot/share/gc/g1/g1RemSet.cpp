@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/dirtyCardQueue.hpp"
+#include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CardTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -276,14 +277,14 @@ public:
   }
 };
 
-G1RemSet::G1RemSet(G1CollectedHeap* g1,
+G1RemSet::G1RemSet(G1CollectedHeap* g1h,
                    G1CardTable* ct,
                    G1HotCardCache* hot_card_cache) :
-  _g1(g1),
+  _g1h(g1h),
   _scan_state(new G1RemSetScanState()),
   _num_conc_refined_cards(0),
   _ct(ct),
-  _g1p(_g1->g1_policy()),
+  _g1p(_g1h->g1_policy()),
   _hot_card_cache(hot_card_cache),
   _prev_period_summary() {
 }
@@ -408,9 +409,9 @@ void G1RemSet::scan_rem_set(G1ParScanThreadState* pss,
                             uint worker_i) {
   double rs_time_start = os::elapsedTime();
 
-  G1ScanObjsDuringScanRSClosure scan_cl(_g1, pss);
+  G1ScanObjsDuringScanRSClosure scan_cl(_g1h, pss);
   G1ScanRSForRegionClosure cl(_scan_state, &scan_cl, heap_region_codeblobs, worker_i);
-  _g1->collection_set_iterate_from(&cl, worker_i);
+  _g1h->collection_set_iterate_from(&cl, worker_i);
 
   double scan_rs_time_sec = (os::elapsedTime() - rs_time_start) -
                              cl.strong_code_root_scan_time_sec();
@@ -459,17 +460,17 @@ public:
 };
 
 void G1RemSet::update_rem_set(G1ParScanThreadState* pss, uint worker_i) {
-  G1ScanObjsDuringUpdateRSClosure update_rs_cl(_g1, pss, worker_i);
-  G1RefineCardClosure refine_card_cl(_g1, &update_rs_cl);
+  G1ScanObjsDuringUpdateRSClosure update_rs_cl(_g1h, pss, worker_i);
+  G1RefineCardClosure refine_card_cl(_g1h, &update_rs_cl);
 
   G1GCParPhaseTimesTracker x(_g1p->phase_times(), G1GCPhaseTimes::UpdateRS, worker_i);
   if (G1HotCardCache::default_use_cache()) {
     // Apply the closure to the entries of the hot card cache.
     G1GCParPhaseTimesTracker y(_g1p->phase_times(), G1GCPhaseTimes::ScanHCC, worker_i);
-    _g1->iterate_hcc_closure(&refine_card_cl, worker_i);
+    _g1h->iterate_hcc_closure(&refine_card_cl, worker_i);
   }
   // Apply the closure to all remaining log entries.
-  _g1->iterate_dirty_card_closure(&refine_card_cl, worker_i);
+  _g1h->iterate_dirty_card_closure(&refine_card_cl, worker_i);
 
   G1GCPhaseTimes* p = _g1p->phase_times();
   p->record_thread_work_item(G1GCPhaseTimes::UpdateRS, worker_i, refine_card_cl.cards_scanned(), G1GCPhaseTimes::UpdateRSScannedCards);
@@ -488,36 +489,36 @@ void G1RemSet::oops_into_collection_set_do(G1ParScanThreadState* pss,
 }
 
 void G1RemSet::prepare_for_oops_into_collection_set_do() {
-  DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
+  DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
   dcqs.concatenate_logs();
 
   _scan_state->reset();
 }
 
 void G1RemSet::cleanup_after_oops_into_collection_set_do() {
-  G1GCPhaseTimes* phase_times = _g1->g1_policy()->phase_times();
+  G1GCPhaseTimes* phase_times = _g1h->g1_policy()->phase_times();
 
   // Set all cards back to clean.
   double start = os::elapsedTime();
-  _scan_state->clear_card_table(_g1->workers());
+  _scan_state->clear_card_table(_g1h->workers());
   phase_times->record_clear_ct_time((os::elapsedTime() - start) * 1000.0);
 }
 
 inline void check_card_ptr(jbyte* card_ptr, G1CardTable* ct) {
 #ifdef ASSERT
-  G1CollectedHeap* g1 = G1CollectedHeap::heap();
-  assert(g1->is_in_exact(ct->addr_for(card_ptr)),
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  assert(g1h->is_in_exact(ct->addr_for(card_ptr)),
          "Card at " PTR_FORMAT " index " SIZE_FORMAT " representing heap at " PTR_FORMAT " (%u) must be in committed heap",
          p2i(card_ptr),
          ct->index_for(ct->addr_for(card_ptr)),
          p2i(ct->addr_for(card_ptr)),
-         g1->addr_to_region(ct->addr_for(card_ptr)));
+         g1h->addr_to_region(ct->addr_for(card_ptr)));
 #endif
 }
 
 void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
                                         uint worker_i) {
-  assert(!_g1->is_gc_active(), "Only call concurrently");
+  assert(!_g1h->is_gc_active(), "Only call concurrently");
 
   check_card_ptr(card_ptr, _ct);
 
@@ -529,7 +530,7 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
   // Construct the region representing the card.
   HeapWord* start = _ct->addr_for(card_ptr);
   // And find the region containing it.
-  HeapRegion* r = _g1->heap_region_containing(start);
+  HeapRegion* r = _g1h->heap_region_containing(start);
 
   // This check is needed for some uncommon cases where we should
   // ignore the card.
@@ -574,7 +575,7 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
     } else if (card_ptr != orig_card_ptr) {
       // Original card was inserted and an old card was evicted.
       start = _ct->addr_for(card_ptr);
-      r = _g1->heap_region_containing(start);
+      r = _g1h->heap_region_containing(start);
 
       // Check whether the region formerly in the cache should be
       // ignored, as discussed earlier for the original card.  The
@@ -623,7 +624,7 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
   MemRegion dirty_region(start, MIN2(scan_limit, end));
   assert(!dirty_region.is_empty(), "sanity");
 
-  G1ConcurrentRefineOopClosure conc_refine_cl(_g1, worker_i);
+  G1ConcurrentRefineOopClosure conc_refine_cl(_g1h, worker_i);
 
   bool card_processed =
     r->oops_on_card_seq_iterate_careful<false>(dirty_region, &conc_refine_cl);
@@ -641,7 +642,7 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
       MutexLockerEx x(Shared_DirtyCardQ_lock,
                       Mutex::_no_safepoint_check_flag);
       DirtyCardQueue* sdcq =
-        JavaThread::dirty_card_queue_set().shared_dirty_card_queue();
+        G1BarrierSet::dirty_card_queue_set().shared_dirty_card_queue();
       sdcq->enqueue(card_ptr);
     }
   } else {
@@ -651,7 +652,7 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
 
 bool G1RemSet::refine_card_during_gc(jbyte* card_ptr,
                                      G1ScanObjsDuringUpdateRSClosure* update_rs_cl) {
-  assert(_g1->is_gc_active(), "Only call during GC");
+  assert(_g1h->is_gc_active(), "Only call during GC");
 
   check_card_ptr(card_ptr, _ct);
 
@@ -668,7 +669,7 @@ bool G1RemSet::refine_card_during_gc(jbyte* card_ptr,
   // Construct the region representing the card.
   HeapWord* card_start = _ct->addr_for(card_ptr);
   // And find the region containing it.
-  uint const card_region_idx = _g1->addr_to_region(card_start);
+  uint const card_region_idx = _g1h->addr_to_region(card_start);
 
   _scan_state->add_dirty_region(card_region_idx);
   HeapWord* scan_limit = _scan_state->scan_top(card_region_idx);
@@ -683,7 +684,7 @@ bool G1RemSet::refine_card_during_gc(jbyte* card_ptr,
   MemRegion dirty_region(card_start, MIN2(scan_limit, card_end));
   assert(!dirty_region.is_empty(), "sanity");
 
-  HeapRegion* const card_region = _g1->region_at(card_region_idx);
+  HeapRegion* const card_region = _g1h->region_at(card_region_idx);
   update_rs_cl->set_region(card_region);
   bool card_processed = card_region->oops_on_card_seq_iterate_careful<true>(dirty_region, update_rs_cl);
   assert(card_processed, "must be");
@@ -843,7 +844,7 @@ class G1RebuildRemSetTask: public AbstractGangTask {
           assert(hr->top() == top_at_mark_start || hr->top() == top_at_rebuild_start,
                  "More than one object in the humongous region?");
           humongous_obj->oop_iterate(&_update_cl, mr);
-          return top_at_mark_start != hr->bottom() ? mr.byte_size() : 0;
+          return top_at_mark_start != hr->bottom() ? mr.intersection(MemRegion((HeapWord*)humongous_obj, humongous_obj->size())).byte_size() : 0;
         } else {
           return 0;
         }
@@ -882,7 +883,7 @@ public:
       size_t total_marked_bytes = 0;
       size_t const chunk_size_in_words = G1RebuildRemSetChunkSize / HeapWordSize;
 
-      HeapWord* const top_at_mark_start = hr->next_top_at_mark_start();
+      HeapWord* const top_at_mark_start = hr->prev_top_at_mark_start();
 
       HeapWord* cur = hr->bottom();
       while (cur < hr->end()) {
@@ -899,7 +900,7 @@ public:
         }
 
         const Ticks start = Ticks::now();
-        size_t marked_bytes = rebuild_rem_set_in_region(_cm->next_mark_bitmap(),
+        size_t marked_bytes = rebuild_rem_set_in_region(_cm->prev_mark_bitmap(),
                                                         top_at_mark_start,
                                                         top_at_rebuild_start,
                                                         hr,
@@ -922,7 +923,6 @@ public:
                                         p2i(top_at_rebuild_start));
 
         if (marked_bytes > 0) {
-          hr->add_to_marked_bytes(marked_bytes);
           total_marked_bytes += marked_bytes;
         }
         cur += chunk_size_in_words;
@@ -936,12 +936,11 @@ public:
       // Simply filter out those regions. We can not just use region type because there
       // might have already been new allocations into these regions.
       DEBUG_ONLY(HeapWord* const top_at_rebuild_start = _cm->top_at_rebuild_start(region_idx);)
-      assert(!hr->is_old() ||
-             top_at_rebuild_start == NULL ||
-             total_marked_bytes == _cm->liveness(region_idx) * HeapWordSize,
-             "Marked bytes " SIZE_FORMAT " for region %u (%s) in [bottom, TAMS) do not match liveness during mark " SIZE_FORMAT " "
+      assert(top_at_rebuild_start == NULL ||
+             total_marked_bytes == hr->marked_bytes(),
+             "Marked bytes " SIZE_FORMAT " for region %u (%s) in [bottom, TAMS) do not match calculated marked bytes " SIZE_FORMAT " "
              "(" PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT ")",
-             total_marked_bytes, hr->hrm_index(), hr->get_type_str(), _cm->liveness(region_idx) * HeapWordSize,
+             total_marked_bytes, hr->hrm_index(), hr->get_type_str(), hr->marked_bytes(),
              p2i(hr->bottom()), p2i(top_at_mark_start), p2i(top_at_rebuild_start));
        // Abort state may have changed after the yield check.
       return _cm->has_aborted();

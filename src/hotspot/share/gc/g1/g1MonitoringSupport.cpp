@@ -178,24 +178,22 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
 }
 
 void G1MonitoringSupport::recalculate_sizes() {
-  G1CollectedHeap* g1 = g1h();
-
   // Recalculate all the sizes from scratch. We assume that this is
   // called at a point where no concurrent updates to the various
   // values we read here are possible (i.e., at a STW phase at the end
   // of a GC).
 
-  uint young_list_length = g1->young_regions_count();
-  uint survivor_list_length = g1->survivor_regions_count();
+  uint young_list_length = _g1h->young_regions_count();
+  uint survivor_list_length = _g1h->survivor_regions_count();
   assert(young_list_length >= survivor_list_length, "invariant");
   uint eden_list_length = young_list_length - survivor_list_length;
   // Max length includes any potential extensions to the young gen
   // we'll do when the GC locker is active.
-  uint young_list_max_length = g1->g1_policy()->young_list_max_length();
+  uint young_list_max_length = _g1h->g1_policy()->young_list_max_length();
   assert(young_list_max_length >= survivor_list_length, "invariant");
   uint eden_list_max_length = young_list_max_length - survivor_list_length;
 
-  _overall_used = g1->used_unlocked();
+  _overall_used = _g1h->used_unlocked();
   _eden_used = (size_t) eden_list_length * HeapRegion::GrainBytes;
   _survivor_used = (size_t) survivor_list_length * HeapRegion::GrainBytes;
   _young_region_num = young_list_length;
@@ -206,7 +204,7 @@ void G1MonitoringSupport::recalculate_sizes() {
   _old_committed = HeapRegion::align_up_to_region_byte_size(_old_used);
 
   // Next, start with the overall committed size.
-  _overall_committed = g1->capacity();
+  _overall_committed = _g1h->capacity();
   size_t committed = _overall_committed;
 
   // Remove the committed size we have calculated so far (for the
@@ -240,12 +238,10 @@ void G1MonitoringSupport::recalculate_sizes() {
 }
 
 void G1MonitoringSupport::recalculate_eden_size() {
-  G1CollectedHeap* g1 = g1h();
-
   // When a new eden region is allocated, only the eden_used size is
   // affected (since we have recalculated everything else at the last GC).
 
-  uint young_region_num = g1h()->young_regions_count();
+  uint young_region_num = _g1h->young_regions_count();
   if (young_region_num > _young_region_num) {
     uint diff = young_region_num - _young_region_num;
     _eden_used += (size_t) diff * HeapRegion::GrainBytes;

@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_S390_GC_G1_BARRIERSETASSEMBLER_S390_HPP
-#define CPU_S390_GC_G1_BARRIERSETASSEMBLER_S390_HPP
+#ifndef CPU_S390_GC_SHARED_BARRIERSETASSEMBLER_S390_HPP
+#define CPU_S390_GC_SHARED_BARRIERSETASSEMBLER_S390_HPP
 
 #include "asm/macroAssembler.hpp"
 #include "memory/allocation.hpp"
@@ -38,6 +38,15 @@ public:
                                   Register src, Register dst, Register count) {}
   virtual void arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                   Register dst, Register count, bool do_return = false);
+
+  virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                       const Address& addr, Register dst, Register tmp1, Register tmp2, Label *is_null = NULL);
+  virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                        const Address& addr, Register val, Register tmp1, Register tmp2, Register tmp3);
+
+  virtual void resolve_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2);
+
+  virtual void barrier_stubs_init() {}
 };
 
-#endif // CPU_S390_GC_G1_BARRIERSETASSEMBLER_S390_HPP
+#endif // CPU_S390_GC_SHARED_BARRIERSETASSEMBLER_S390_HPP

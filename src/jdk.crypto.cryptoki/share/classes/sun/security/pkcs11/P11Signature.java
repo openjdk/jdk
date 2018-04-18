@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -373,14 +373,19 @@ final class P11Signature extends SignatureSpi {
         if (key instanceof P11Key) {
             keySize = ((P11Key) key).length();
         } else {
-            if (keyAlgo.equals("RSA")) {
-                keySize = ((RSAKey) key).getModulus().bitLength();
-            } else if (keyAlgo.equals("DSA")) {
-                keySize = ((DSAKey) key).getParams().getP().bitLength();
-            } else if (keyAlgo.equals("EC")) {
-                keySize = ((ECKey) key).getParams().getCurve().getField().getFieldSize();
-            } else {
-                throw new ProviderException("Error: unsupported algo " + keyAlgo);
+            try {
+                if (keyAlgo.equals("RSA")) {
+                    keySize = ((RSAKey) key).getModulus().bitLength();
+                } else if (keyAlgo.equals("DSA")) {
+                    keySize = ((DSAKey) key).getParams().getP().bitLength();
+                } else if (keyAlgo.equals("EC")) {
+                    keySize = ((ECKey) key).getParams().getCurve().getField().getFieldSize();
+                } else {
+                    throw new ProviderException("Error: unsupported algo " + keyAlgo);
+                }
+            } catch (ClassCastException cce) {
+                throw new InvalidKeyException(keyAlgo +
+                    " key must be the right type", cce);
             }
         }
         if ((minKeySize != -1) && (keySize < minKeySize)) {

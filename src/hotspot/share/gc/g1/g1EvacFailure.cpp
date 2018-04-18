@@ -36,22 +36,23 @@
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/oop.inline.hpp"
 
 class UpdateRSetDeferred : public ExtendedOopClosure {
 private:
-  G1CollectedHeap* _g1;
+  G1CollectedHeap* _g1h;
   DirtyCardQueue* _dcq;
   G1CardTable*    _ct;
 
 public:
   UpdateRSetDeferred(DirtyCardQueue* dcq) :
-    _g1(G1CollectedHeap::heap()), _ct(_g1->card_table()), _dcq(dcq) {}
+    _g1h(G1CollectedHeap::heap()), _ct(_g1h->card_table()), _dcq(dcq) {}
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(      oop* p) { do_oop_work(p); }
   template <class T> void do_oop_work(T* p) {
-    assert(_g1->heap_region_containing(p)->is_in_reserved(p), "paranoia");
-    assert(!_g1->heap_region_containing(p)->is_survivor(), "Unexpected evac failure in survivor region");
+    assert(_g1h->heap_region_containing(p)->is_in_reserved(p), "paranoia");
+    assert(!_g1h->heap_region_containing(p)->is_survivor(), "Unexpected evac failure in survivor region");
 
     T const o = RawAccess<>::oop_load(p);
     if (CompressedOops::is_null(o)) {
@@ -69,8 +70,7 @@ public:
 };
 
 class RemoveSelfForwardPtrObjClosure: public ObjectClosure {
-private:
-  G1CollectedHeap* _g1;
+  G1CollectedHeap* _g1h;
   G1ConcurrentMark* _cm;
   HeapRegion* _hr;
   size_t _marked_bytes;
@@ -84,8 +84,8 @@ public:
                                  UpdateRSetDeferred* update_rset_cl,
                                  bool during_initial_mark,
                                  uint worker_id) :
-    _g1(G1CollectedHeap::heap()),
-    _cm(_g1->concurrent_mark()),
+    _g1h(G1CollectedHeap::heap()),
+    _cm(_g1h->concurrent_mark()),
     _hr(hr),
     _marked_bytes(0),
     _update_rset_cl(update_rset_cl),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.crypto.provider;
 
 import java.security.InvalidKeyException;
+import java.security.InvalidAlgorithmParameterException;
 import javax.crypto.*;
 
 /**
@@ -99,7 +100,8 @@ abstract class FeedbackCipher {
      * initializing this cipher
      */
     abstract void init(boolean decrypting, String algorithm, byte[] key,
-                       byte[] iv) throws InvalidKeyException;
+                       byte[] iv) throws InvalidKeyException,
+                                         InvalidAlgorithmParameterException;
 
    /**
      * Gets the initialization vector.

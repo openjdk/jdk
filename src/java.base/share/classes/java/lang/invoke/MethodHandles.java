@@ -5893,6 +5893,19 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * In rare cases where exceptions must be converted in that way, first wrap
      * the target with {@link #catchException(MethodHandle, Class, MethodHandle)}
      * to capture an outgoing exception, and then wrap with {@code tryFinally}.
+     * <p>
+     * It is recommended that the first parameter type of {@code cleanup} be
+     * declared {@code Throwable} rather than a narrower subtype.  This ensures
+     * {@code cleanup} will always be invoked with whatever exception that
+     * {@code target} throws.  Declaring a narrower type may result in a
+     * {@code ClassCastException} being thrown by the {@code try-finally}
+     * handle if the type of the exception thrown by {@code target} is not
+     * assignable to the first parameter type of {@code cleanup}.  Note that
+     * various exception types of {@code VirtualMachineError},
+     * {@code LinkageError}, and {@code RuntimeException} can in principle be
+     * thrown by almost any kind of Java code, and a finally clause that
+     * catches (say) only {@code IOException} would mask any of the others
+     * behind a {@code ClassCastException}.
      *
      * @param target the handle whose execution is to be wrapped in a {@code try} block.
      * @param cleanup the handle that is invoked in the finally block.
@@ -5909,7 +5922,6 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      */
     public static MethodHandle tryFinally(MethodHandle target, MethodHandle cleanup) {
         List<Class<?>> targetParamTypes = target.type().parameterList();
-        List<Class<?>> cleanupParamTypes = cleanup.type().parameterList();
         Class<?> rtype = target.type().returnType();
 
         tryFinallyChecks(target, cleanup);
@@ -5918,6 +5930,10 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         // The cleanup parameter list (minus the leading Throwable and result parameters) must be a sublist of the
         // target parameter list.
         cleanup = dropArgumentsToMatch(cleanup, (rtype == void.class ? 1 : 2), targetParamTypes, 0);
+
+        // Ensure that the intrinsic type checks the instance thrown by the
+        // target against the first parameter of cleanup
+        cleanup = cleanup.asType(cleanup.type().changeParameterType(0, Throwable.class));
 
         // Use asFixedArity() to avoid unnecessary boxing of last argument for VarargsCollector case.
         return MethodHandleImpl.makeTryFinally(target.asFixedArity(), cleanup.asFixedArity(), rtype, targetParamTypes);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,28 @@
  * questions.
  */
 
-import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.URI;
-import jdk.incubator.http.HttpClient;
-import jdk.incubator.http.HttpRequest;
-import jdk.incubator.http.HttpResponse;
-import jdk.incubator.http.HttpTimeoutException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import static java.lang.System.out;
-import static jdk.incubator.http.HttpResponse.BodyHandler.discard;
 
 /**
  * @test
  * @bug 8178147
+ * @modules java.net.http/jdk.internal.net.http.common
  * @summary Ensures that small timeouts do not cause hangs due to race conditions
- * @run main/othervm -Djdk.incubator.http.internal.common.DEBUG=true SmallTimeout
+ * @run main/othervm -Djdk.internal.httpclient.debug=true SmallTimeout
  */
 
 // To enable logging use. Not enabled by default as it changes the dynamics
@@ -76,10 +78,14 @@ public class SmallTimeout {
 
     public static void main(String[] args) throws Exception {
         HttpClient client = HttpClient.newHttpClient();
+        ReferenceTracker.INSTANCE.track(client);
 
-        try (ServerSocket ss = new ServerSocket(0, 20)) {
+        Throwable failed = null;
+        try (ServerSocket ss = new ServerSocket()) {
+            ss.setReuseAddress(false);
+            ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
             int port = ss.getLocalPort();
-            URI uri = new URI("http://127.0.0.1:" + port + "/");
+            URI uri = new URI("http://localhost:" + port + "/");
 
             HttpRequest[] requests = new HttpRequest[TIMEOUTS.length];
 
@@ -92,7 +98,7 @@ public class SmallTimeout {
 
                 final HttpRequest req = requests[i];
                 CompletableFuture<HttpResponse<Object>> response = client
-                    .sendAsync(req, discard(null))
+                    .sendAsync(req, BodyHandlers.replacing(null))
                     .whenComplete((HttpResponse<Object> r, Throwable t) -> {
                         Throwable cause = null;
                         if (r != null) {
@@ -142,7 +148,7 @@ public class SmallTimeout {
                 executor.execute(() -> {
                     Throwable cause = null;
                     try {
-                        client.send(req, discard(null));
+                        client.send(req, BodyHandlers.replacing(null));
                     } catch (HttpTimeoutException e) {
                         out.println("Caught expected timeout: " + e);
                     } catch (Throwable ee) {
@@ -164,6 +170,24 @@ public class SmallTimeout {
             if (error)
                 throw new RuntimeException("Failed. Check output");
 
+        } catch (Throwable t) {
+            failed = t;
+            throw t;
+        } finally {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException t) {
+                // ignore;
+            }
+            AssertionError trackFailed = ReferenceTracker.INSTANCE.check(500);
+            if (trackFailed != null) {
+                if (failed != null) {
+                    failed.addSuppressed(trackFailed);
+                    if (failed instanceof Exception) throw (Exception) failed;
+                    if (failed instanceof Error) throw (Exception) failed;
+                }
+                throw trackFailed;
+            }
         }
     }
 

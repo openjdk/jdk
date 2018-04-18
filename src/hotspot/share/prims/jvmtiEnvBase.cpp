@@ -29,6 +29,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.inline.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiExtensions.hpp"
@@ -1477,6 +1478,13 @@ JvmtiMonitorClosure::do_monitor(ObjectMonitor* mon) {
 }
 
 GrowableArray<OopHandle>* JvmtiModuleClosure::_tbl = NULL;
+
+void JvmtiModuleClosure::do_module(ModuleEntry* entry) {
+  assert_locked_or_safepoint(Module_lock);
+  OopHandle module = entry->module_handle();
+  guarantee(module.resolve() != NULL, "module object is NULL");
+  _tbl->push(module);
+}
 
 jvmtiError
 JvmtiModuleClosure::get_all_modules(JvmtiEnv* env, jint* module_count_ptr, jobject** modules_ptr) {

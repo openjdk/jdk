@@ -405,7 +405,7 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
   BOOTCYCLE_JVM_ARGS_BIG=-Xms64M
 
   # Maximum amount of heap memory and stack size.
-  JVM_HEAP_LIMIT_32="1024"
+  JVM_HEAP_LIMIT_32="768"
   # Running a 64 bit JVM allows for and requires a bigger heap
   JVM_HEAP_LIMIT_64="1600"
   STACK_SIZE_32=768

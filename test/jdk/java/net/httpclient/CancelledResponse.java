@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,11 @@
  * questions.
  */
 
-import jdk.incubator.http.HttpClient;
-import jdk.incubator.http.HttpClient.Version;
-import jdk.incubator.http.HttpHeaders;
-import jdk.incubator.http.HttpRequest;
-import jdk.incubator.http.HttpResponse;
-import jdk.jshell.spi.ExecutionControl;
+import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import jdk.testlibrary.SimpleSSLContext;
 
 import javax.net.ServerSocketFactory;
@@ -46,18 +45,20 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jdk.incubator.http.HttpResponse.BodyHandler;
-import jdk.incubator.http.HttpResponse.BodySubscriber;
+import java.net.http.HttpResponse.BodyHandler;
+import java.net.http.HttpResponse.BodySubscriber;
 
 import static java.lang.String.format;
 import static java.lang.System.out;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 /**
  * @test
  * @bug 8087112
  * @library /lib/testlibrary
+ * @modules java.net.http/jdk.internal.net.http.common
  * @build jdk.testlibrary.SimpleSSLContext
- * @build MockServer
+ * @build MockServer ReferenceTracker
  * @run main/othervm  CancelledResponse
  * @run main/othervm  CancelledResponse SSL
  */
@@ -74,7 +75,9 @@ public class CancelledResponse {
         if (!serverKeepalive)
             sb.append("Connection: Close\r\n");
 
-        sb.append("Content-length: ").append(body.length()).append("\r\n");
+        sb.append("Content-length: ")
+                .append(body.getBytes(ISO_8859_1).length)
+                .append("\r\n");
         sb.append("\r\n");
         sb.append(body);
         return sb.toString();
@@ -86,6 +89,7 @@ public class CancelledResponse {
         "aliquip ex ea commodo consequat."
     };
 
+    static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
     final ServerSocketFactory factory;
     final SSLContext context;
     final boolean useSSL;
@@ -106,7 +110,7 @@ public class CancelledResponse {
         } else {
             client = HttpClient.newHttpClient();
         }
-        return client;
+        return TRACKER.track(client);
     }
 
     public static void main(String[] args) throws Exception {
@@ -116,14 +120,31 @@ public class CancelledResponse {
         }
         CancelledResponse sp = new CancelledResponse(useSSL);
 
-        for (Version version : Version.values()) {
-            for (boolean serverKeepalive : new boolean[]{ true, false }) {
-                // Note: the mock server doesn't support Keep-Alive, but
-                // pretending that it might exercises code paths in and out of
-                // the connection pool, and retry logic
-                for (boolean async : new boolean[]{ true, false }) {
-                    sp.test(version, serverKeepalive, async);
+        Throwable failed = null;
+        try {
+            for (Version version : Version.values()) {
+                for (boolean serverKeepalive : new boolean[]{true, false}) {
+                    // Note: the mock server doesn't support Keep-Alive, but
+                    // pretending that it might exercises code paths in and out of
+                    // the connection pool, and retry logic
+                    for (boolean async : new boolean[]{true, false}) {
+                        sp.test(version, serverKeepalive, async);
+                    }
                 }
+            }
+        } catch (Exception | Error t) {
+            failed = t;
+            throw t;
+        } finally {
+            Thread.sleep(100);
+            AssertionError trackFailed = TRACKER.check(500);
+            if (trackFailed != null) {
+                if (failed != null) {
+                    failed.addSuppressed(trackFailed);
+                    if (failed instanceof Error) throw (Error) failed;
+                    if (failed instanceof Exception) throw (Exception) failed;
+                }
+                throw trackFailed;
             }
         }
     }
@@ -158,11 +179,11 @@ public class CancelledResponse {
                 try {
                     if (async) {
                         out.println("send async: " + request);
-                        cf1 = client.sendAsync(request, asString(body, cancelled));
+                        cf1 = client.sendAsync(request, ofString(body, cancelled));
                         r = cf1.get();
                     } else { // sync
                         out.println("send sync: " + request);
-                        r = client.send(request, asString(body, cancelled));
+                        r = client.send(request, ofString(body, cancelled));
                     }
                 } catch (CancelException c1) {
                     System.out.println("Got expected exception: " + c1);
@@ -286,13 +307,13 @@ public class CancelledResponse {
             this.cancelled = cancelled;
         }
         @Override
-        public BodySubscriber<String> apply(int statusCode, HttpHeaders responseHeaders) {
+        public BodySubscriber<String> apply(HttpResponse.ResponseInfo rinfo) {
             assert !cancelled.get();
             return new CancellingSubscriber(expected, cancelled);
         }
     }
 
-    BodyHandler<String> asString(String expected, AtomicBoolean cancelled) {
+    BodyHandler<String> ofString(String expected, AtomicBoolean cancelled) {
         return new CancellingHandler(expected, cancelled);
     }
 

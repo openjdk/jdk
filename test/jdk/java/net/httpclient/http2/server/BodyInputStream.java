@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-import jdk.incubator.http.internal.common.Utils;
-import jdk.incubator.http.internal.frame.DataFrame;
-import jdk.incubator.http.internal.frame.Http2Frame;
-import jdk.incubator.http.internal.frame.ResetFrame;
+import jdk.internal.net.http.common.Utils;
+import jdk.internal.net.http.frame.DataFrame;
+import jdk.internal.net.http.frame.Http2Frame;
+import jdk.internal.net.http.frame.ResetFrame;
 
 /**
  * InputStream reads frames off stream q and supplies read demand from any
@@ -62,6 +62,7 @@ class BodyInputStream extends InputStream {
         Http2Frame frame;
         do {
             frame = q.take();
+            if (frame == null) return null; // closed/eof before receiving data.
             // ignoring others for now Wupdates handled elsewhere
             if (frame.type() != DataFrame.TYPE) {
                 System.out.println("Ignoring " + frame.toString() + " CHECK THIS");
@@ -122,7 +123,7 @@ class BodyInputStream extends InputStream {
         if (c == -1) {
             return -1;
         }
-        return one[0];
+        return one[0] & 0xFF;
     }
 
     @Override
