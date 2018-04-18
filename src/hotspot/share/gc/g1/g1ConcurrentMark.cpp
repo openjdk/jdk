@@ -1142,6 +1142,18 @@ void G1ConcurrentMark::remark() {
       log_debug(gc, remset, tracking)("Remembered Set Tracking update regions total %u, selected %u",
                                       _g1h->num_regions(), cl.num_selected_for_rebuild());
     }
+    {
+      GCTraceTime(Debug, gc, phases)("Reclaim Empty Regions");
+      reclaim_empty_regions();
+    }
+
+    // Clean out dead classes
+    if (ClassUnloadingWithConcurrentMark) {
+      GCTraceTime(Debug, gc, phases)("Purge Metaspace");
+      ClassLoaderDataGraph::purge();
+    }
+
+    compute_new_sizes();
 
     verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption_G1UsePrevMarking, "Remark after");
 
@@ -1173,9 +1185,9 @@ void G1ConcurrentMark::remark() {
   g1p->record_concurrent_mark_remark_end();
 }
 
-class G1CleanupTask : public AbstractGangTask {
+class G1ReclaimEmptyRegionsTask : public AbstractGangTask {
   // Per-region work during the Cleanup pause.
-  class G1CleanupRegionsClosure : public HeapRegionClosure {
+  class G1ReclaimEmptyRegionsClosure : public HeapRegionClosure {
     G1CollectedHeap* _g1h;
     size_t _freed_bytes;
     FreeRegionList* _local_cleanup_list;
@@ -1184,9 +1196,9 @@ class G1CleanupTask : public AbstractGangTask {
     HRRSCleanupTask* _hrrs_cleanup_task;
 
   public:
-    G1CleanupRegionsClosure(G1CollectedHeap* g1,
-                            FreeRegionList* local_cleanup_list,
-                            HRRSCleanupTask* hrrs_cleanup_task) :
+    G1ReclaimEmptyRegionsClosure(G1CollectedHeap* g1,
+                                 FreeRegionList* local_cleanup_list,
+                                 HRRSCleanupTask* hrrs_cleanup_task) :
       _g1h(g1),
       _freed_bytes(0),
       _local_cleanup_list(local_cleanup_list),
@@ -1225,7 +1237,7 @@ class G1CleanupTask : public AbstractGangTask {
   HeapRegionClaimer _hrclaimer;
 
 public:
-  G1CleanupTask(G1CollectedHeap* g1h, FreeRegionList* cleanup_list, uint n_workers) :
+  G1ReclaimEmptyRegionsTask(G1CollectedHeap* g1h, FreeRegionList* cleanup_list, uint n_workers) :
     AbstractGangTask("G1 Cleanup"),
     _g1h(g1h),
     _cleanup_list(cleanup_list),
@@ -1237,9 +1249,9 @@ public:
   void work(uint worker_id) {
     FreeRegionList local_cleanup_list("Local Cleanup List");
     HRRSCleanupTask hrrs_cleanup_task;
-    G1CleanupRegionsClosure cl(_g1h,
-                               &local_cleanup_list,
-                               &hrrs_cleanup_task);
+    G1ReclaimEmptyRegionsClosure cl(_g1h,
+                                    &local_cleanup_list,
+                                    &hrrs_cleanup_task);
     _g1h->heap_region_par_iterate_from_worker_offset(&cl, &_hrclaimer, worker_id);
     assert(cl.is_complete(), "Shouldn't have aborted!");
 
@@ -1261,7 +1273,7 @@ void G1ConcurrentMark::reclaim_empty_regions() {
   WorkGang* workers = _g1h->workers();
   FreeRegionList empty_regions_list("Empty Regions After Mark List");
 
-  G1CleanupTask cl(_g1h, &empty_regions_list, workers->active_workers());
+  G1ReclaimEmptyRegionsTask cl(_g1h, &empty_regions_list, workers->active_workers());
   workers->run_task(&cl);
 
   if (!empty_regions_list.is_empty()) {
@@ -1278,6 +1290,18 @@ void G1ConcurrentMark::reclaim_empty_regions() {
     // And actually make them available.
     _g1h->prepend_to_freelist(&empty_regions_list);
   }
+}
+
+void G1ConcurrentMark::compute_new_sizes() {
+  MetaspaceGC::compute_new_size();
+
+  // Cleanup will have freed any regions completely full of garbage.
+  // Update the soft reference policy with the new heap occupancy.
+  Universe::update_heap_info_at_gc();
+
+  // We reclaimed old regions so we should calculate the sizes to make
+  // sure we update the old gen/space data.
+  _g1h->g1mm()->update_sizes();
 }
 
 void G1ConcurrentMark::cleanup() {
@@ -1305,26 +1329,6 @@ void G1ConcurrentMark::cleanup() {
     G1PrintRegionLivenessInfoClosure cl("Post-Cleanup");
     _g1h->heap_region_iterate(&cl);
   }
-
-  {
-    GCTraceTime(Debug, gc, phases)("Reclaim Empty Regions");
-    reclaim_empty_regions();
-  }
-
-  // Cleanup will have freed any regions completely full of garbage.
-  // Update the soft reference policy with the new heap occupancy.
-  Universe::update_heap_info_at_gc();
-
-  // Clean out dead classes and update Metaspace sizes.
-  if (ClassUnloadingWithConcurrentMark) {
-    GCTraceTime(Debug, gc, phases)("Purge Metaspace");
-    ClassLoaderDataGraph::purge();
-  }
-  MetaspaceGC::compute_new_size();
-
-  // We reclaimed old regions so we should calculate the sizes to make
-  // sure we update the old gen/space data.
-  _g1h->g1mm()->update_sizes();
 
   verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UsePrevMarking, "Cleanup after");
 
