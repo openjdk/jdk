@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
+#include "code/codeHeapState.hpp"
 #include "code/dependencyContext.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
@@ -39,7 +40,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/nativeLookup.hpp"
 #include "prims/whitebox.hpp"
@@ -47,12 +48,14 @@
 #include "runtime/atomic.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/init.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/timerTrace.hpp"
+#include "runtime/vframe.inline.hpp"
 #include "trace/tracing.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/dtrace.hpp"
@@ -521,7 +524,7 @@ CompilerCounters::CompilerCounters() {
 // CompileBroker::compilation_init
 //
 // Initialize the Compilation object
-void CompileBroker::compilation_init(TRAPS) {
+void CompileBroker::compilation_init_phase1(TRAPS) {
   _last_method_compiled[0] = '\0';
 
   // No need to initialize compilation system if we do not use it.
@@ -668,10 +671,13 @@ void CompileBroker::compilation_init(TRAPS) {
                                           (jlong)CompileBroker::no_compile,
                                           CHECK);
   }
-
-  _initialized = true;
 }
 
+// Completes compiler initialization. Compilation requests submitted
+// prior to this will be silently ignored.
+void CompileBroker::compilation_init_phase2() {
+  _initialized = true;
+}
 
 JavaThread* CompileBroker::make_thread(const char* name, CompileQueue* queue, CompilerCounters* counters,
                                        AbstractCompiler* comp, bool compiler_thread, TRAPS) {
@@ -1344,11 +1350,11 @@ CompileTask* CompileBroker::create_compile_task(CompileQueue*       queue,
 #if INCLUDE_JVMCI
 // The number of milliseconds to wait before checking if
 // JVMCI compilation has made progress.
-static const long JVMCI_COMPILATION_PROGRESS_WAIT_TIMESLICE = 500;
+static const long JVMCI_COMPILATION_PROGRESS_WAIT_TIMESLICE = 1000;
 
 // The number of JVMCI compilation progress checks that must fail
 // before unblocking a thread waiting for a blocking compilation.
-static const int JVMCI_COMPILATION_PROGRESS_WAIT_ATTEMPTS = 5;
+static const int JVMCI_COMPILATION_PROGRESS_WAIT_ATTEMPTS = 10;
 
 /**
  * Waits for a JVMCI compiler to complete a given task. This thread
@@ -2421,4 +2427,112 @@ void CompileBroker::print_last_compile() {
                     _compilation_id, _last_compile_level, _last_method_compiled);
     }
   }
+}
+
+// Print general/accumulated JIT information.
+void CompileBroker::print_info(outputStream *out) {
+  if (out == NULL) out = tty;
+  out->cr();
+  out->print_cr("======================");
+  out->print_cr("   General JIT info   ");
+  out->print_cr("======================");
+  out->cr();
+  out->print_cr("            JIT is : %7s",     should_compile_new_jobs() ? "on" : "off");
+  out->print_cr("  Compiler threads : %7d",     (int)CICompilerCount);
+  out->cr();
+  out->print_cr("CodeCache overview");
+  out->print_cr("--------------------------------------------------------");
+  out->cr();
+  out->print_cr("         Reserved size : " SIZE_FORMAT_W(7) " KB", CodeCache::max_capacity() / K);
+  out->print_cr("        Committed size : " SIZE_FORMAT_W(7) " KB", CodeCache::capacity() / K);
+  out->print_cr("  Unallocated capacity : " SIZE_FORMAT_W(7) " KB", CodeCache::unallocated_capacity() / K);
+  out->cr();
+
+  out->cr();
+  out->print_cr("CodeCache cleaning overview");
+  out->print_cr("--------------------------------------------------------");
+  out->cr();
+  NMethodSweeper::print(out);
+  out->print_cr("--------------------------------------------------------");
+  out->cr();
+}
+
+// Note: tty_lock must not be held upon entry to this function.
+//       Print functions called from herein do "micro-locking" on tty_lock.
+//       That's a tradeoff which keeps together important blocks of output.
+//       At the same time, continuous tty_lock hold time is kept in check,
+//       preventing concurrently printing threads from stalling a long time.
+void CompileBroker::print_heapinfo(outputStream* out, const char* function, const char* granularity) {
+  TimeStamp ts_total;
+  TimeStamp ts;
+
+  bool allFun = !strcmp(function, "all");
+  bool aggregate = !strcmp(function, "aggregate") || !strcmp(function, "analyze") || allFun;
+  bool usedSpace = !strcmp(function, "UsedSpace") || allFun;
+  bool freeSpace = !strcmp(function, "FreeSpace") || allFun;
+  bool methodCount = !strcmp(function, "MethodCount") || allFun;
+  bool methodSpace = !strcmp(function, "MethodSpace") || allFun;
+  bool methodAge = !strcmp(function, "MethodAge") || allFun;
+  bool methodNames = !strcmp(function, "MethodNames") || allFun;
+  bool discard = !strcmp(function, "discard") || allFun;
+
+  if (out == NULL) {
+    out = tty;
+  }
+
+  if (!(aggregate || usedSpace || freeSpace || methodCount || methodSpace || methodAge || methodNames || discard)) {
+    out->print_cr("\n__ CodeHeapStateAnalytics: Function %s is not supported", function);
+    out->cr();
+    return;
+  }
+
+  ts_total.update(); // record starting point
+
+  if (aggregate) {
+    print_info(out);
+  }
+
+  // We hold the CodeHeapStateAnalytics_lock all the time, from here until we leave this function.
+  // That helps us getting a consistent view on the CodeHeap, at least for the "all" function.
+  // When we request individual parts of the analysis via the jcmd interface, it is possible
+  // that in between another thread (another jcmd user or the vm running into CodeCache OOM)
+  // updated the aggregated data. That's a tolerable tradeoff because we can't hold a lock
+  // across user interaction.
+  ts.update(); // record starting point
+  MutexLockerEx mu1(CodeHeapStateAnalytics_lock, Mutex::_no_safepoint_check_flag);
+  out->cr();
+  out->print_cr("__ CodeHeapStateAnalytics lock wait took %10.3f seconds _________", ts.seconds());
+  out->cr();
+
+  if (aggregate) {
+    // It is sufficient to hold the CodeCache_lock only for the aggregate step.
+    // All other functions operate on aggregated data - except MethodNames, but that should be safe.
+    // The separate CodeHeapStateAnalytics_lock protects the printing functions against
+    // concurrent aggregate steps. Acquire this lock before acquiring the CodeCache_lock.
+    // CodeHeapStateAnalytics_lock could be held by a concurrent thread for a long time,
+    // leading to an unnecessarily long hold time of the CodeCache_lock.
+    ts.update(); // record starting point
+    MutexLockerEx mu2(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    out->cr();
+    out->print_cr("__ CodeCache lock wait took %10.3f seconds _________", ts.seconds());
+    out->cr();
+
+    ts.update(); // record starting point
+    CodeCache::aggregate(out, granularity);
+    out->cr();
+    out->print_cr("__ CodeCache lock hold took %10.3f seconds _________", ts.seconds());
+    out->cr();
+  }
+
+  if (usedSpace) CodeCache::print_usedSpace(out);
+  if (freeSpace) CodeCache::print_freeSpace(out);
+  if (methodCount) CodeCache::print_count(out);
+  if (methodSpace) CodeCache::print_space(out);
+  if (methodAge) CodeCache::print_age(out);
+  if (methodNames) CodeCache::print_names(out);
+  if (discard) CodeCache::discard(out);
+
+  out->cr();
+  out->print_cr("__ CodeHeapStateAnalytics total duration %10.3f seconds _________", ts_total.seconds());
+  out->cr();
 }

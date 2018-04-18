@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,9 +77,9 @@ class SerialOldTracer;
 // methods are used). This is essentially a wrapper around the BitMap class,
 // with one bit per (1<<_shifter) HeapWords. (i.e. for the marking bit map,
 // we have _shifter == 0. and for the mod union table we have
-// shifter == CardTableModRefBS::card_shift - LogHeapWordSize.)
+// shifter == CardTable::card_shift - LogHeapWordSize.)
 // XXX 64-bit issues in BitMap?
-class CMSBitMap VALUE_OBJ_CLASS_SPEC {
+class CMSBitMap {
   friend class VMStructs;
 
   HeapWord*    _bmStartWord;   // base address of range covered by map
@@ -246,11 +246,11 @@ class CMSMarkStack: public CHeapObj<mtGC>  {
 
   // Compute the least valued stack element.
   oop least_value(HeapWord* low) {
-     oop least = (oop)low;
-     for (size_t i = 0; i < _index; i++) {
-       least = MIN2(least, _base[i]);
-     }
-     return least;
+    HeapWord* least = low;
+    for (size_t i = 0; i < _index; i++) {
+      least = MIN2(least, (HeapWord*)_base[i]);
+    }
+    return (oop)least;
   }
 
   // Exposed here to allow stack expansion in || case.
@@ -331,7 +331,7 @@ class ChunkArray: public CHeapObj<mtGC> {
 // Timing, allocation and promotion statistics for gc scheduling and incremental
 // mode pacing.  Most statistics are exponential averages.
 //
-class CMSStats VALUE_OBJ_CLASS_SPEC {
+class CMSStats {
  private:
   ConcurrentMarkSweepGeneration* const _cms_gen;   // The cms (old) gen.
 
@@ -553,6 +553,7 @@ class CMSCollector: public CHeapObj<mtGC> {
 
   // Performance Counters
   CollectorCounters* _gc_counters;
+  CollectorCounters* _cgc_counters;
 
   // Initialization Errors
   bool _completed_initialization;
@@ -927,7 +928,8 @@ class CMSCollector: public CHeapObj<mtGC> {
   NOT_PRODUCT(bool is_cms_reachable(HeapWord* addr);)
 
   // Performance Counter Support
-  CollectorCounters* counters()    { return _gc_counters; }
+  CollectorCounters* counters()     { return _gc_counters; }
+  CollectorCounters* cgc_counters() { return _cgc_counters; }
 
   // Timer stuff
   void    startTimer() { assert(!_timer.is_active(), "Error"); _timer.start();   }
@@ -1317,10 +1319,8 @@ class PushAndMarkVerifyClosure: public MetadataAwareOopClosure {
   CMSMarkStack*    _mark_stack;
  protected:
   void do_oop(oop p);
-  template <class T> inline void do_oop_work(T *p) {
-    oop obj = oopDesc::load_decode_heap_oop(p);
-    do_oop(obj);
-  }
+  template <class T> void do_oop_work(T *p);
+
  public:
   PushAndMarkVerifyClosure(CMSCollector* cms_collector,
                            MemRegion span,

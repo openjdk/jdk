@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "opto/addnode.hpp"
 #include "opto/castnode.hpp"
@@ -1483,8 +1483,9 @@ void Parse::do_one_bytecode() {
     // If the constant is unresolved, run this BC once in the interpreter.
     {
       ciConstant constant = iter().get_constant();
-      if (constant.basic_type() == T_OBJECT &&
-          !constant.as_object()->is_loaded()) {
+      if (!constant.is_valid() ||
+          (constant.basic_type() == T_OBJECT &&
+           !constant.as_object()->is_loaded())) {
         int index = iter().get_constant_pool_index();
         constantTag tag = iter().get_constant_pool_tag(index);
         uncommon_trap(Deoptimization::make_trap_request
@@ -2263,7 +2264,7 @@ void Parse::do_one_bytecode() {
     ciMethodData* methodData = method()->method_data();
     if (!methodData->is_mature())  break;
     ciProfileData* data = methodData->bci_to_data(bci());
-    assert( data->is_JumpData(), "" );
+    assert(data != NULL && data->is_JumpData(), "need JumpData for taken branch");
     int taken = ((ciJumpData*)data)->taken();
     taken = method()->scale_count(taken);
     target_block->set_count(taken);

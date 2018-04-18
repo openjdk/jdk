@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 
-public class GenCollectedHeap extends CollectedHeap {
+abstract public class GenCollectedHeap extends CollectedHeap {
   private static AddressField youngGenField;
   private static AddressField oldGenField;
 
@@ -54,12 +54,10 @@ public class GenCollectedHeap extends CollectedHeap {
 
     youngGenField = type.getAddressField("_young_gen");
     oldGenField = type.getAddressField("_old_gen");
+    youngGenSpecField = type.getAddressField("_young_gen_spec");
+    oldGenSpecField = type.getAddressField("_old_gen_spec");
 
     genFactory = new GenerationFactory();
-
-    Type collectorPolicyType = db.lookupType("GenCollectorPolicy");
-    youngGenSpecField = collectorPolicyType.getAddressField("_young_gen_spec");
-    oldGenSpecField = collectorPolicyType.getAddressField("_old_gen_spec");
   }
 
   public GenCollectedHeap(Address addr) {
@@ -134,10 +132,6 @@ public class GenCollectedHeap extends CollectedHeap {
               VMObjectFactory.newObject(GenerationSpec.class,
                       oldGenSpecField.getAddress());
     }
-  }
-
-  public CollectedHeapName kind() {
-    return CollectedHeapName.GEN_COLLECTED_HEAP;
   }
 
   public void printOn(PrintStream tty) {

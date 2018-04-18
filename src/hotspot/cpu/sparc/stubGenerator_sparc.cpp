@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_sparc.hpp"
 #include "oops/instanceOop.hpp"
@@ -821,110 +823,6 @@ class StubGenerator: public StubCodeGenerator {
       __ delayed()->nop();
   }
 
-  //
-  //  Generate pre-write barrier for array.
-  //
-  //  Input:
-  //     addr     - register containing starting address
-  //     count    - register containing element count
-  //     tmp      - scratch register
-  //
-  //  The input registers are overwritten.
-  //
-  void gen_write_ref_array_pre_barrier(Register addr, Register count, bool dest_uninitialized) {
-    BarrierSet* bs = Universe::heap()->barrier_set();
-    switch (bs->kind()) {
-      case BarrierSet::G1SATBCTLogging:
-        // With G1, don't generate the call if we statically know that the target in uninitialized
-        if (!dest_uninitialized) {
-          __ save_frame(0);
-          // Save the necessary global regs... will be used after.
-          if (addr->is_global()) {
-            __ mov(addr, L0);
-          }
-          if (count->is_global()) {
-            __ mov(count, L1);
-          }
-          __ mov(addr->after_save(), O0);
-          // Get the count into O1
-          __ call(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre));
-          __ delayed()->mov(count->after_save(), O1);
-          if (addr->is_global()) {
-            __ mov(L0, addr);
-          }
-          if (count->is_global()) {
-            __ mov(L1, count);
-          }
-          __ restore();
-        }
-        break;
-      case BarrierSet::CardTableForRS:
-      case BarrierSet::CardTableExtension:
-      case BarrierSet::ModRef:
-        break;
-      default:
-        ShouldNotReachHere();
-    }
-  }
-  //
-  //  Generate post-write barrier for array.
-  //
-  //  Input:
-  //     addr     - register containing starting address
-  //     count    - register containing element count
-  //     tmp      - scratch register
-  //
-  //  The input registers are overwritten.
-  //
-  void gen_write_ref_array_post_barrier(Register addr, Register count,
-                                        Register tmp) {
-    BarrierSet* bs = Universe::heap()->barrier_set();
-
-    switch (bs->kind()) {
-      case BarrierSet::G1SATBCTLogging:
-        {
-          // Get some new fresh output registers.
-          __ save_frame(0);
-          __ mov(addr->after_save(), O0);
-          __ call(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post));
-          __ delayed()->mov(count->after_save(), O1);
-          __ restore();
-        }
-        break;
-      case BarrierSet::CardTableForRS:
-      case BarrierSet::CardTableExtension:
-        {
-          CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(bs);
-          assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
-          assert_different_registers(addr, count, tmp);
-
-          Label L_loop, L_done;
-
-          __ cmp_and_br_short(count, 0, Assembler::equal, Assembler::pt, L_done); // zero count - nothing to do
-
-          __ sll_ptr(count, LogBytesPerHeapOop, count);
-          __ sub(count, BytesPerHeapOop, count);
-          __ add(count, addr, count);
-          // Use two shifts to clear out those low order two bits! (Cannot opt. into 1.)
-          __ srl_ptr(addr, CardTableModRefBS::card_shift, addr);
-          __ srl_ptr(count, CardTableModRefBS::card_shift, count);
-          __ sub(count, addr, count);
-          AddressLiteral rs(ct->byte_map_base);
-          __ set(rs, tmp);
-        __ BIND(L_loop);
-          __ stb(G0, tmp, addr);
-          __ subcc(count, 1, count);
-          __ brx(Assembler::greaterEqual, false, Assembler::pt, L_loop);
-          __ delayed()->add(addr, 1, addr);
-        __ BIND(L_done);
-        }
-        break;
-      case BarrierSet::ModRef:
-        break;
-      default:
-        ShouldNotReachHere();
-    }
-  }
 
   //
   // Generate main code for disjoint arraycopy
@@ -2371,18 +2269,25 @@ class StubGenerator: public StubCodeGenerator {
       BLOCK_COMMENT("Entry:");
     }
 
-    // save arguments for barrier generation
-    __ mov(to, G1);
-    __ mov(count, G5);
-    gen_write_ref_array_pre_barrier(G1, G5, dest_uninitialized);
+    DecoratorSet decorators = ARRAYCOPY_DISJOINT;
+    if (dest_uninitialized) {
+      decorators |= AS_DEST_NOT_INITIALIZED;
+    }
+    if (aligned) {
+      decorators |= ARRAYCOPY_ALIGNED;
+    }
+
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->arraycopy_prologue(_masm, decorators, T_OBJECT, from, to, count);
+
     assert_clean_int(count, O3);     // Make sure 'count' is clean int.
     if (UseCompressedOops) {
       generate_disjoint_int_copy_core(aligned);
     } else {
       generate_disjoint_long_copy_core(aligned);
     }
-    // O0 is used as temp register
-    gen_write_ref_array_post_barrier(G1, G5, O0);
+
+    bs->arraycopy_epilogue(_masm, decorators, T_OBJECT, from, to, count);
 
     // O3, O4 are used as temp registers
     inc_counter_np(SharedRuntime::_oop_array_copy_ctr, O3, O4);
@@ -2421,10 +2326,16 @@ class StubGenerator: public StubCodeGenerator {
 
     array_overlap_test(nooverlap_target, LogBytesPerHeapOop);
 
-    // save arguments for barrier generation
-    __ mov(to, G1);
-    __ mov(count, G5);
-    gen_write_ref_array_pre_barrier(G1, G5, dest_uninitialized);
+    DecoratorSet decorators = 0;
+    if (dest_uninitialized) {
+      decorators |= AS_DEST_NOT_INITIALIZED;
+    }
+    if (aligned) {
+      decorators |= ARRAYCOPY_ALIGNED;
+    }
+
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->arraycopy_prologue(_masm, decorators, T_OBJECT, from, to, count);
 
     if (UseCompressedOops) {
       generate_conjoint_int_copy_core(aligned);
@@ -2432,8 +2343,7 @@ class StubGenerator: public StubCodeGenerator {
       generate_conjoint_long_copy_core(aligned);
     }
 
-    // O0 is used as temp register
-    gen_write_ref_array_post_barrier(G1, G5, O0);
+    bs->arraycopy_epilogue(_masm, decorators, T_OBJECT, from, to, count);
 
     // O3, O4 are used as temp registers
     inc_counter_np(SharedRuntime::_oop_array_copy_ctr, O3, O4);
@@ -2535,9 +2445,16 @@ class StubGenerator: public StubCodeGenerator {
       // caller can pass a 64-bit byte count here (from generic stub)
       BLOCK_COMMENT("Entry:");
     }
-    gen_write_ref_array_pre_barrier(O1_to, O2_count, dest_uninitialized);
 
-    Label load_element, store_element, do_card_marks, fail, done;
+    DecoratorSet decorators = ARRAYCOPY_CHECKCAST;
+    if (dest_uninitialized) {
+      decorators |= AS_DEST_NOT_INITIALIZED;
+    }
+
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->arraycopy_prologue(_masm, decorators, T_OBJECT, O0_from, O1_to, O2_count);
+
+    Label load_element, store_element, do_epilogue, fail, done;
     __ addcc(O2_count, 0, G1_remain);   // initialize loop index, and test it
     __ brx(Assembler::notZero, false, Assembler::pt, load_element);
     __ delayed()->mov(G0, O5_offset);   // offset from start of arrays
@@ -2557,14 +2474,14 @@ class StubGenerator: public StubCodeGenerator {
 
     __ BIND(store_element);
     __ deccc(G1_remain);                // decrement the count
-    __ store_heap_oop(G3_oop, O1_to, O5_offset); // store the oop
+    __ store_heap_oop(G3_oop, O1_to, O5_offset, noreg, AS_RAW); // store the oop
     __ inc(O5_offset, heapOopSize);     // step to next offset
-    __ brx(Assembler::zero, true, Assembler::pt, do_card_marks);
+    __ brx(Assembler::zero, true, Assembler::pt, do_epilogue);
     __ delayed()->set(0, O0);           // return -1 on success
 
     // ======== loop entry is here ========
     __ BIND(load_element);
-    __ load_heap_oop(O0_from, O5_offset, G3_oop);  // load the oop
+    __ load_heap_oop(O0_from, O5_offset, G3_oop, noreg, AS_RAW);  // load the oop
     __ br_null_short(G3_oop, Assembler::pt, store_element);
 
     __ load_klass(G3_oop, G4_klass); // query the object klass
@@ -2583,8 +2500,8 @@ class StubGenerator: public StubCodeGenerator {
     __ brx(Assembler::zero, false, Assembler::pt, done);
     __ delayed()->not1(O2_count, O0);   // report (-1^K) to caller
 
-    __ BIND(do_card_marks);
-    gen_write_ref_array_post_barrier(O1_to, O2_count, O3);   // store check on O1[0..O2]
+    __ BIND(do_epilogue);
+    bs->arraycopy_epilogue(_masm, decorators, T_OBJECT, O0_from, O1_to, O2_count);
 
     __ BIND(done);
     inc_counter_np(SharedRuntime::_checkcast_array_copy_ctr, O3, O4);

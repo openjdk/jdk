@@ -152,7 +152,7 @@ public final class ModuleLayer {
     private static final ModuleLayer EMPTY_LAYER
         = new ModuleLayer(Configuration.empty(), List.of(), null);
 
-    // the configuration from which this ;ayer was created
+    // the configuration from which this layer was created
     private final Configuration cf;
 
     // parent layers, empty in the case of the empty layer
@@ -498,7 +498,7 @@ public final class ModuleLayer {
         try {
             Loader loader = new Loader(cf.modules(), parentLoader);
             loader.initRemotePackageMap(cf, parents);
-            ModuleLayer layer =  new ModuleLayer(cf, parents, mn -> loader);
+            ModuleLayer layer = new ModuleLayer(cf, parents, mn -> loader);
             return new Controller(layer);
         } catch (IllegalArgumentException | IllegalStateException e) {
             throw new LayerInstantiationException(e.getMessage());

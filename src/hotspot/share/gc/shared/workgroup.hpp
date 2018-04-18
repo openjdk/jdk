@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,19 +54,14 @@ class WorkGang;
 
 // An abstract task to be worked on by a gang.
 // You subclass this to supply your own work() method
-class AbstractGangTask VALUE_OBJ_CLASS_SPEC {
+class AbstractGangTask {
   const char* _name;
   const uint _gc_id;
 
  public:
-  AbstractGangTask(const char* name) :
+  explicit AbstractGangTask(const char* name) :
     _name(name),
-    _gc_id(GCId::current_raw())
-  {}
-
-  AbstractGangTask(const char* name, const uint gc_id) :
-    _name(name),
-    _gc_id(gc_id)
+    _gc_id(GCId::current_or_undefined())
   {}
 
   // The abstract work method.

@@ -98,12 +98,6 @@ public class MethodHandles {
      * <p>
      * This method is caller sensitive, which means that it may return different
      * values to different callers.
-     * <p>
-     * For any given caller class {@code C}, the lookup object returned by this call
-     * has equivalent capabilities to any lookup object
-     * supplied by the JVM to the bootstrap method of an
-     * <a href="package-summary.html#indyinsn">invokedynamic instruction</a>
-     * executing in the same caller class {@code C}.
      * @return a lookup object for the caller of this method, with private access
      */
     @CallerSensitive
@@ -2041,11 +2035,26 @@ return mh1;
                                             ReflectiveOperationException.class);
         }
 
+        MemberName resolveOrNull(byte refKind, MemberName member) {
+            // do this before attempting to resolve
+            if (!isClassAccessible(member.getDeclaringClass())) {
+                return null;
+            }
+            Objects.requireNonNull(member.getName());
+            Objects.requireNonNull(member.getType());
+            return IMPL_NAMES.resolveOrNull(refKind, member, lookupClassOrNull());
+        }
+
         void checkSymbolicClass(Class<?> refc) throws IllegalAccessException {
+            if (!isClassAccessible(refc)) {
+                throw new MemberName(refc).makeAccessException("symbolic reference class is not accessible", this);
+            }
+        }
+
+        boolean isClassAccessible(Class<?> refc) {
             Objects.requireNonNull(refc);
             Class<?> caller = lookupClassOrNull();
-            if (caller != null && !VerifyAccess.isClassAccessible(refc, caller, allowedModes))
-                throw new MemberName(refc).makeAccessException("symbolic reference class is not accessible", this);
+            return caller == null || VerifyAccess.isClassAccessible(refc, caller, allowedModes);
         }
 
         /** Check name for an illegal leading "&lt;" character. */
@@ -2488,10 +2497,13 @@ return mh1;
                 }
             }
             try {
-                MemberName resolved2 = publicLookup().resolveOrFail(refKind,
+                MemberName resolved2 = publicLookup().resolveOrNull(refKind,
                     new MemberName(refKind, defc, member.getName(), member.getType()));
+                if (resolved2 == null) {
+                    return false;
+                }
                 checkSecurityManager(defc, resolved2);
-            } catch (ReflectiveOperationException | SecurityException ex) {
+            } catch (SecurityException ex) {
                 return false;
             }
             return true;
@@ -3766,6 +3778,7 @@ assertEquals("xy", h3.invoke("x", "y", 1, "a", "b", "c"));
      * specified in the elements of the {@code filters} array.
      * The first element of the filter array corresponds to the {@code pos}
      * argument of the target, and so on in sequence.
+     * The filter functions are invoked in left to right order.
      * <p>
      * Null arguments in the array are treated as identity functions,
      * and the corresponding arguments left unchanged.
@@ -3836,11 +3849,12 @@ assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
     MethodHandle filterArguments(MethodHandle target, int pos, MethodHandle... filters) {
         filterArgumentsCheckArity(target, pos, filters);
         MethodHandle adapter = target;
-        int curPos = pos-1;  // pre-incremented
-        for (MethodHandle filter : filters) {
-            curPos += 1;
+        // process filters in reverse order so that the invocation of
+        // the resulting adapter will invoke the filters in left-to-right order
+        for (int i = filters.length - 1; i >= 0; --i) {
+            MethodHandle filter = filters[i];
             if (filter == null)  continue;  // ignore null elements of filters
-            adapter = filterArgument(adapter, curPos, filter);
+            adapter = filterArgument(adapter, pos + i, filter);
         }
         return adapter;
     }
@@ -5879,6 +5893,19 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * In rare cases where exceptions must be converted in that way, first wrap
      * the target with {@link #catchException(MethodHandle, Class, MethodHandle)}
      * to capture an outgoing exception, and then wrap with {@code tryFinally}.
+     * <p>
+     * It is recommended that the first parameter type of {@code cleanup} be
+     * declared {@code Throwable} rather than a narrower subtype.  This ensures
+     * {@code cleanup} will always be invoked with whatever exception that
+     * {@code target} throws.  Declaring a narrower type may result in a
+     * {@code ClassCastException} being thrown by the {@code try-finally}
+     * handle if the type of the exception thrown by {@code target} is not
+     * assignable to the first parameter type of {@code cleanup}.  Note that
+     * various exception types of {@code VirtualMachineError},
+     * {@code LinkageError}, and {@code RuntimeException} can in principle be
+     * thrown by almost any kind of Java code, and a finally clause that
+     * catches (say) only {@code IOException} would mask any of the others
+     * behind a {@code ClassCastException}.
      *
      * @param target the handle whose execution is to be wrapped in a {@code try} block.
      * @param cleanup the handle that is invoked in the finally block.
@@ -5895,7 +5922,6 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      */
     public static MethodHandle tryFinally(MethodHandle target, MethodHandle cleanup) {
         List<Class<?>> targetParamTypes = target.type().parameterList();
-        List<Class<?>> cleanupParamTypes = cleanup.type().parameterList();
         Class<?> rtype = target.type().returnType();
 
         tryFinallyChecks(target, cleanup);
@@ -5904,6 +5930,10 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         // The cleanup parameter list (minus the leading Throwable and result parameters) must be a sublist of the
         // target parameter list.
         cleanup = dropArgumentsToMatch(cleanup, (rtype == void.class ? 1 : 2), targetParamTypes, 0);
+
+        // Ensure that the intrinsic type checks the instance thrown by the
+        // target against the first parameter of cleanup
+        cleanup = cleanup.asType(cleanup.type().changeParameterType(0, Throwable.class));
 
         // Use asFixedArity() to avoid unnecessary boxing of last argument for VarargsCollector case.
         return MethodHandleImpl.makeTryFinally(target.asFixedArity(), cleanup.asFixedArity(), rtype, targetParamTypes);

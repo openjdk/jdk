@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary addClassFilter("Foo") acts like "Foo*"
  * @author Robert Field/Jim Holmlund
  *
- * @run build JDIScaffold VMConnection
+ * @run build TestScaffold VMConnection
  * @run compile -g HelloWorld.java
  * @run driver FilterNoMatch
  */
@@ -44,119 +44,108 @@ import com.sun.jdi.*;
 import com.sun.jdi.event.*;
 import com.sun.jdi.request.*;
 
-public class FilterNoMatch extends JDIScaffold {
+public class FilterNoMatch extends TestScaffold {
 
-    static boolean listenCalled;
+    EventSet eventSet = null;
+    boolean stepCompleted = false;
 
     public static void main(String args[]) throws Exception {
-        new FilterNoMatch().startTests();
+        new FilterNoMatch(args).startTests();
     }
 
-    public FilterNoMatch() {
-        super();
-    }
-
-    private void listen() {
-        TargetAdapter adapter = new TargetAdapter() {
-            EventSet set = null;
-
-            public boolean eventSetReceived(EventSet set) {
-                this.set = set;
-                return false;
-            }
-
-            // This gets called if no patterns match.  If any
-            // pattern is erroneously matched, then this method
-            // will not get called.
-            public boolean stepCompleted(StepEvent event) {
-                listenCalled = true;
-                System.out.println("listen: line#=" + event.location().lineNumber()
-                                   + " event=" + event);
-                // disable the step and then run to completion
-                StepRequest str= (StepRequest)event.request();
-                str.disable();
-                set.resume();
-                return false;
-            }
-        };
-        listenCalled = false;
-        addListener(adapter);
+    public FilterNoMatch(String args[]) {
+        super(args);
     }
 
     protected void runTests() throws Exception {
-        String[] args = new String[2];
-        args[0] = "-connect";
-        args[1] = "com.sun.jdi.CommandLineLaunch:main=HelloWorld";
-
-        connect(args);
-        waitForVMStart();
-
+        /*
+         * Get to the top of HelloWorld main() to determine referenceType and mainThread
+         */
+        BreakpointEvent bpe = startToMain("HelloWorld");
+        ReferenceType referenceType = (ClassType)bpe.location().declaringType();
+        mainThread = bpe.thread();
         // VM has started, but hasn't started running the test program yet.
         EventRequestManager requestManager = vm().eventRequestManager();
-        ReferenceType referenceType = resumeToPrepareOf("HelloWorld").referenceType();
 
-        // The debuggee is stopped
-        // I don't think we really have to set a bkpt and then do a step,
-        // we should just be able to do a step.  Problem is the
-        // createStepRequest call needs a thread and I don't know
-        // yet where to get one other than from the bkpt handling :-(
         Location location = findLocation(referenceType, 3);
-        BreakpointRequest request
-            = requestManager.createBreakpointRequest(location);
+        BreakpointRequest bpRequest = requestManager.createBreakpointRequest(location);
 
-        request.enable();
+        try {
+            addListener(this);
+        } catch (Exception ex){
+            ex.printStackTrace();
+            failure("failure: Could not add listener");
+            throw new Exception("FilterNoMatch: failed");
+        }
 
-        // This does a resume, so we shouldn't come back to it until
-        // the debuggee has run and hit the bkpt.
-        BreakpointEvent event = (BreakpointEvent)waitForRequestedEvent(request);
+        bpRequest.enable();
 
-        // The bkpt was hit; remove it.
-        requestManager.deleteEventRequest(request);
-
-        StepRequest request1 = requestManager.createStepRequest(event.thread(),
+        StepRequest stepRequest = requestManager.createStepRequest(mainThread,
                                   StepRequest.STEP_LINE,StepRequest.STEP_OVER);
-
 
         // We have to filter out all these so that they don't cause the
         // listener to be called.
-        request1.addClassExclusionFilter("java.*");
-        request1.addClassExclusionFilter("javax.*");
-        request1.addClassExclusionFilter("sun.*");
-        request1.addClassExclusionFilter("com.sun.*");
-        request1.addClassExclusionFilter("com.oracle.*");
-        request1.addClassExclusionFilter("oracle.*");
-        request1.addClassExclusionFilter("jdk.internal.*");
+        stepRequest.addClassExclusionFilter("java.*");
+        stepRequest.addClassExclusionFilter("javax.*");
+        stepRequest.addClassExclusionFilter("sun.*");
+        stepRequest.addClassExclusionFilter("com.sun.*");
+        stepRequest.addClassExclusionFilter("com.oracle.*");
+        stepRequest.addClassExclusionFilter("oracle.*");
+        stepRequest.addClassExclusionFilter("jdk.internal.*");
 
         // We want our listener to be called if a pattern does not match.
         // So, here we want patterns that do not match HelloWorld.
         // If any pattern here erroneously matches, then our listener
         // will not get called and the test will fail.
-        request1.addClassExclusionFilter("H");
-        request1.addClassExclusionFilter("HelloWorl");
-        request1.addClassExclusionFilter("HelloWorldx");
-        request1.addClassExclusionFilter("xHelloWorld");
+        stepRequest.addClassExclusionFilter("H");
+        stepRequest.addClassExclusionFilter("HelloWorl");
+        stepRequest.addClassExclusionFilter("HelloWorldx");
+        stepRequest.addClassExclusionFilter("xHelloWorld");
 
-        request1.addClassExclusionFilter("*elloWorldx");
-        request1.addClassExclusionFilter("*elloWorl");
-        request1.addClassExclusionFilter("*xHelloWorld");
-        request1.addClassExclusionFilter("elloWorld*");
-        request1.addClassExclusionFilter("HelloWorldx*");
-        request1.addClassExclusionFilter("xHelloWorld*");
+        stepRequest.addClassExclusionFilter("*elloWorldx");
+        stepRequest.addClassExclusionFilter("*elloWorl");
+        stepRequest.addClassExclusionFilter("*xHelloWorld");
+        stepRequest.addClassExclusionFilter("elloWorld*");
+        stepRequest.addClassExclusionFilter("HelloWorldx*");
+        stepRequest.addClassExclusionFilter("xHelloWorld*");
 
         // As a test, uncomment this line and this test should fail.
-        //request1.addClassExclusionFilter("*elloWorld");
+        //stepRequest.addClassExclusionFilter("*elloWorld");
 
-
-        request1.enable();
-        listen();
+        stepRequest.enable();
 
         vm().resume();
 
-        waitForVMDeath();
+        waitForVMDisconnect();
 
-        if ( !listenCalled){
+        if (!stepCompleted) {
             throw new Exception( "Failed: .");
         }
         System.out.println( "Passed: ");
+    }
+
+    // ****************  event handlers **************
+
+    public void eventSetReceived(EventSet set) {
+        this.eventSet = set;
+    }
+
+    // This gets called if no patterns match.  If any
+    // pattern is erroneously matched, then this method
+    // will not get called.
+    public void stepCompleted(StepEvent event) {
+        stepCompleted = true;
+        System.out.println("StepEvent at" + event.location());
+        // disable the step and then run to completion
+        StepRequest str = (StepRequest)event.request();
+        str.disable();
+        eventSet.resume();
+    }
+
+    public void breakpointReached(BreakpointEvent event) {
+        System.out.println("BreakpointEvent at" + event.location());
+        BreakpointRequest bpr = (BreakpointRequest)event.request();
+        // The bkpt was hit; disable it.
+        bpr.disable();
     }
 }

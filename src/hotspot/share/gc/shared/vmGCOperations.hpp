@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,7 +227,7 @@ class SvcGCMarker : public StackObj {
  private:
   JvmtiGCMarker _jgcm;
  public:
-  typedef enum { MINOR, FULL, OTHER } reason_type;
+  typedef enum { MINOR, FULL, CONCURRENT, OTHER } reason_type;
 
   SvcGCMarker(reason_type reason ) {
     VM_GC_Operation::notify_gc_begin(reason == FULL);

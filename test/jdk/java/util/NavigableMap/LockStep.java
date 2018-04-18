@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,41 @@
  * @bug     6420753 6242436 6691185
  * @summary Compare NavigableMap implementations for identical behavior
  * @run main LockStep
- * @run main/othervm -XX:+AggressiveOpts LockStep
- * @run main/othervm -XX:+AggressiveOpts -Dthorough=true LockStep
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+EliminateAutoBox -XX:AutoBoxCacheMax=20000 LockStep
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+EliminateAutoBox -XX:AutoBoxCacheMax=20000 -Dthorough=true LockStep
  * @author  Martin Buchholz
  * @key randomness
  */
 
-import java.io.*;
-import java.util.*;
-import java.util.concurrent.*;
-import static java.util.Collections.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.NotSerializableException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.NavigableSet;
+import java.util.NoSuchElementException;
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentSkipListSet;
+
+import static java.util.Collections.reverseOrder;
+import static java.util.Collections.singleton;
+import static java.util.Collections.singletonMap;
 
 @SuppressWarnings("unchecked")
 public class LockStep {

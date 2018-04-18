@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/extendedPC.hpp"
 #include "runtime/frame.inline.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -111,6 +111,10 @@ void os::Aix::ucontext_set_pc(ucontext_t* uc, address new_pc) {
   uc->uc_mcontext.jmp_context.iar = (uint64_t) new_pc;
 }
 
+static address ucontext_get_lr(const ucontext_t * uc) {
+  return (address)uc->uc_mcontext.jmp_context.lr;
+}
+
 ExtendedPC os::fetch_frame_from_context(const void* ucVoid,
                                         intptr_t** ret_sp, intptr_t** ret_fp) {
 
@@ -167,7 +171,8 @@ bool os::Aix::get_frame_at_stack_banging_point(JavaThread* thread, ucontext_t* u
       return false;
     } else {
       intptr_t* sp = os::Aix::ucontext_get_sp(uc);
-      *fr = frame(sp, (address)*sp);
+      address lr = ucontext_get_lr(uc);
+      *fr = frame(sp, lr);
       if (!fr->is_java_frame()) {
         assert(fr->safe_for_sender(thread), "Safety check");
         assert(!fr->is_first_frame(), "Safety check");

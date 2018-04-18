@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/osThread.hpp"
 
 #include <signal.h>
@@ -50,6 +50,12 @@ JVM_ENTRY_NO_ENV(void*, JVM_RegisterSignal(jint sig, void* handler))
     case SIGFPE:
     case SIGILL:
     case SIGSEGV:
+
+#if defined(__APPLE__)
+    /* On Darwin, memory access errors commonly results in SIGBUS instead
+     * of SIGSEGV. */
+    case SIGBUS:
+#endif
 
     /* The following signal is used by the VM to dump thread stacks unless
        ReduceSignalUsage is set, in which case the user is allowed to set

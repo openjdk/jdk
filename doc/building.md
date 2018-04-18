@@ -7,13 +7,14 @@ the time. They assume that you have installed Mercurial (and Cygwin if running
 on Windows) and cloned the top-level OpenJDK repository that you want to build.
 
  1. [Get the complete source code](#getting-the-source-code): \
-    `hg clone http://hg.openjdk.java.net/jdk10/master`
+    `hg clone http://hg.openjdk.java.net/jdk/jdk`
 
  2. [Run configure](#running-configure): \
     `bash configure`
 
     If `configure` fails due to missing dependencies (to either the
-    [toolchain](#native-compiler-toolchain-requirements), [external libraries](
+    [toolchain](#native-compiler-toolchain-requirements), [build tools](
+    #build-tools-requirements), [external libraries](
     #external-library-requirements) or the [boot JDK](#boot-jdk-requirements)),
     most of the time it prints a suggestion on how to resolve the situation on
     your platform. Follow the instructions, and try running `bash configure`
@@ -172,8 +173,8 @@ require a community effort to implement.)
 Internally in the build system, all paths are represented as Unix-style paths,
 e.g. `/cygdrive/c/hg/jdk9/Makefile` rather than `C:\hg\jdk9\Makefile`. This
 rule also applies to input to the build system, e.g. in arguments to
-`configure`. So, use `--with-freetype=/cygdrive/c/freetype` rather than
-`--with-freetype=c:\freetype`. For details on this conversion, see the section
+`configure`. So, use `--with-msvcr-dll=/cygdrive/c/msvcr100.dll` rather than
+`--with-msvcr-dll=c:\msvcr100.dll`. For details on this conversion, see the section
 on [Fixpath](#fixpath).
 
 #### Cygwin
@@ -195,13 +196,14 @@ problem, since Cygwin currently only distributes GNU Make at a version above
 Apart from the basic Cygwin installation, the following packages must also be
 installed:
 
+  * `autoconf`
   * `make`
   * `zip`
   * `unzip`
 
 Often, you can install these packages using the following command line:
 ```
-<path to Cygwin setup>/setup-x86_64 -q -P make -P unzip -P zip
+<path to Cygwin setup>/setup-x86_64 -q -P autoconf -P make -P unzip -P zip
 ```
 
 Unfortunately, Cygwin can be unreliable in certain circumstances. If you
@@ -399,43 +401,31 @@ porting OpenJDK to a new platform, chances are that there already exists
 another JDK for that platform that is usable as boot JDK.
 
 The rule of thumb is that the boot JDK for building JDK major version *N*
-should be an JDK of major version *N-1*, so for building JDK 9 a JDK 8 would be
+should be a JDK of major version *N-1*, so for building JDK 9 a JDK 8 would be
 suitable as boot JDK. However, OpenJDK should be able to "build itself", so an
 up-to-date build of the current OpenJDK source is an acceptable alternative. If
-you are following the *N-1* rule, make sure you got the latest update version,
-since JDK 8 GA might not be able to build JDK 9 on all platforms.
+you are following the *N-1* rule, make sure you've got the latest update
+version, since JDK 8 GA might not be able to build JDK 9 on all platforms.
+
+Early in the release cycle, version *N-1* may not yet have been released. In
+that case, the preferred boot JDK will be version *N-2* until version *N-1*
+is available.
 
 If the Boot JDK is not automatically detected, or the wrong JDK is picked, use
 `--with-boot-jdk` to point to the JDK to use.
 
-### JDK 8 on Linux
+### Getting JDK binaries
 
-On apt-based distros (like Debian and Ubuntu), `sudo apt-get install
-openjdk-8-jdk` is typically enough to install OpenJDK 8. On rpm-based distros
-(like Fedora and Red Hat), try `sudo yum install java-1.8.0-openjdk-devel`.
+OpenJDK binaries for Linux, Windows and macOS can be downloaded from
+[jdk.java.net](http://jdk.java.net). An alternative is to download the
+[Oracle JDK](http://www.oracle.com/technetwork/java/javase/downloads). Another
+is the [Adopt OpenJDK Project](https://adoptopenjdk.net/), which publishes
+experimental prebuilt binaries for various platforms.
 
-### JDK 8 on Windows
-
-No pre-compiled binaries of OpenJDK 8 are readily available for Windows at the
-time of writing. An alternative is to download the [Oracle JDK](
-http://www.oracle.com/technetwork/java/javase/downloads). Another is the [Adopt
-OpenJDK Project](https://adoptopenjdk.net/), which publishes experimental
-prebuilt binaries for Windows.
-
-### JDK 8 on macOS
-
-No pre-compiled binaries of OpenJDK 8 are readily available for macOS at the
-time of writing. An alternative is to download the [Oracle JDK](
-http://www.oracle.com/technetwork/java/javase/downloads), or to install it
-using `brew cask install java`. Another option is the [Adopt OpenJDK Project](
-https://adoptopenjdk.net/), which publishes experimental prebuilt binaries for
-macOS.
-
-### JDK 8 on AIX
-
-No pre-compiled binaries of OpenJDK 8 are readily available for AIX at the
-time of writing. A starting point for working with OpenJDK on AIX is
-the [PowerPC/AIX Port Project](http://openjdk.java.net/projects/ppc-aix-port/).
+On Linux you can also get OpenJDK from the Linux distribution. On apt-based
+distros (like Debian and Ubuntu), `sudo apt-get install openjdk-<VERSION>-jdk`
+is typically enough to install OpenJDK \<VERSION\>. On rpm-based distros (like
+Fedora and Red Hat), try `sudo yum install java-<VERSION>-openjdk-devel`.
 
 ## External Library Requirements
 
@@ -454,43 +444,19 @@ and the lib directory separately.
 
 ### FreeType
 
-FreeType2 from [The FreeType Project](http://www.freetype.org/) is required on
-all platforms. At least version 2.3 is required.
+FreeType2 from [The FreeType Project](http://www.freetype.org/) is not required
+on any platform. The exception is on Unix-based platforms when configuring such
+that the build artifacts will reference a system installed library,
+rather than bundling OpenJDK's own copy.
 
   * To install on an apt-based Linux, try running `sudo apt-get install
-    libcups2-dev`.
+    libfreetype6-dev`.
   * To install on an rpm-based Linux, try running `sudo yum install
-    cups-devel`.
+    freetype-devel`.
   * To install on Solaris, try running `pkg install system/library/freetype-2`.
-  * To install on macOS, try running `brew install freetype`.
-  * To install on Windows, see [below](#building-freetype-on-windows).
 
-Use `--with-freetype=<path>` if `configure` does not properly locate your
-FreeType files.
-
-#### Building FreeType on Windows
-
-On Windows, there is no readily available compiled version of FreeType. OpenJDK
-can help you compile FreeType from source. Download the FreeType sources and
-unpack them into an arbitrary directory:
-
-```
-wget http://download.savannah.gnu.org/releases/freetype/freetype-2.5.3.tar.gz
-tar -xzf freetype-2.5.3.tar.gz
-```
-
-Then run `configure` with `--with-freetype-src=<freetype_src>`. This will
-automatically build the freetype library into `<freetype_src>/lib64` for 64-bit
-builds or into `<freetype_src>/lib32` for 32-bit builds. Afterwards you can
-always use `--with-freetype-include=<freetype_src>/include` and
-`--with-freetype-lib=<freetype_src>/lib[32|64]` for other builds.
-
-Alternatively you can unpack the sources like this to use the default
-directory:
-
-```
-tar --one-top-level=$HOME/freetype --strip-components=1 -xzf freetype-2.5.3.tar.gz
-```
+Use `--with-freetype-include=<path>` and `--with-freetype-lib=<path>`
+if `configure` does not automatically locate the platform FreeType files.
 
 ### CUPS
 
@@ -552,7 +518,27 @@ Hotspot.
 Use `--with-libffi=<path>` if `configure` does not properly locate your libffi
 files.
 
-## Other Tooling Requirements
+## Build Tools Requirements
+
+### Autoconf
+
+OpenJDK requires [Autoconf](http://www.gnu.org/software/autoconf) on all
+platforms. At least version 2.69 is required.
+
+  * To install on an apt-based Linux, try running `sudo apt-get install
+    autoconf`.
+  * To install on an rpm-based Linux, try running `sudo yum install
+    autoconf`.
+  * To install on macOS, try running `brew install autoconf`.
+  * To install on Windows, try running `<path to Cygwin setup>/setup-x86_64 -q
+    -P autoconf`.
+
+If `configure` has problems locating your installation of autoconf, you can
+specify it using the `AUTOCONF` environment variable, like this:
+
+```
+AUTOCONF=<path to autoconf> configure ...
+```
 
 ### GNU Make
 
@@ -584,19 +570,6 @@ OpenJDK requires [GNU Bash](http://www.gnu.org/software/bash). No other shells
 are supported.
 
 At least version 3.2 of GNU Bash must be used.
-
-### Autoconf
-
-If you want to modify the build system itself, you need to install [Autoconf](
-http://www.gnu.org/software/autoconf).
-
-However, if you only need to build OpenJDK or if you only edit the actual
-OpenJDK source files, there is no dependency on autoconf, since the source
-distribution includes a pre-generated `configure` shell script.
-
-See the section on [Autoconf Details](#autoconf-details) for details on how
-OpenJDK uses autoconf. This is especially important if you plan to contribute
-changes to OpenJDK that modifies the build system.
 
 ## Running Configure
 
@@ -1660,32 +1633,19 @@ The `configure` script is based on the autoconf framework, but in some details
 deviate from a normal autoconf `configure` script.
 
 The `configure` script in the top level directory of OpenJDK is just a thin
-wrapper that calls `make/autoconf/configure`. This in turn provides
-functionality that is not easily expressed in the normal Autoconf framework,
-and then calls into the core of the `configure` script, which is the
-`make/autoconf/generated-configure.sh` file.
-
-As the name implies, this file is generated by Autoconf. It is checked in after
-regeneration, to alleviate the common user to have to install Autoconf.
+wrapper that calls `make/autoconf/configure`. This in turn will run `autoconf`
+to create the runnable (generated) configure script, as
+`.build/generated-configure.sh`. Apart from being responsible for the
+generation of the runnable script, the `configure` script also provides
+functionality that is not easily expressed in the normal Autoconf framework. As
+part of this functionality, the generated script is called.
 
 The build system will detect if the Autoconf source files have changed, and
-will trigger a regeneration of `make/autoconf/generated-configure.sh` if
-needed. You can also manually request such an update by `bash
-make/autoconf/autogen.sh`.
+will trigger a regeneration of the generated script if needed. You can also
+manually request such an update by `bash configure autogen`.
 
-If you make changes to the build system that requires a re-generation, note the
-following:
-
-  * You must use *exactly* version 2.69 of autoconf for your patch to be
-    accepted. This is to avoid spurious changes in the generated file. Note
-    that Ubuntu 16.04 ships a patched version of autoconf which claims to be
-    2.69, but is not.
-
-  * You do not need to include the generated file in reviews.
-
-  * If the generated file needs updating, the Oracle JDK closed counter-part
-    will also need to be updated. It is very much appreciated if you ask for an
-    Oracle engineer to sponsor your push so this can be made in tandem.
+In previous versions of the OpenJDK, the generated script was checked in at
+`make/autoconf/generated-configure.sh`. This is no longer the case.
 
 ### Developing the Build System Itself
 
@@ -1736,8 +1696,7 @@ Use `JOBS=1` to avoid parallelism.
 
 Please check that you adhere to the [Code Conventions for the Build System](
 http://openjdk.java.net/groups/build/doc/code-conventions.html) before
-submitting patches. Also see the section in [Autoconf Details](
-#autoconf-details) about the generated configure script.
+submitting patches.
 
 ## Contributing to OpenJDK
 

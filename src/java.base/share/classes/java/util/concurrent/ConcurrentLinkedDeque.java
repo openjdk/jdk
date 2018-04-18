@@ -85,7 +85,7 @@ import java.util.function.Predicate;
  * the {@code ConcurrentLinkedDeque} in another thread.
  *
  * <p>This class is a member of the
- * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
+ * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @since 1.7
@@ -1671,7 +1671,7 @@ public class ConcurrentLinkedDeque<E>
             NEXT = l.findVarHandle(Node.class, "next", Node.class);
             ITEM = l.findVarHandle(Node.class, "item", Object.class);
         } catch (ReflectiveOperationException e) {
-            throw new Error(e);
+            throw new ExceptionInInitializerError(e);
         }
     }
 }

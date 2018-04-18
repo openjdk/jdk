@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.awt.BasicStroke;
 import java.awt.geom.PathIterator;
 import java.awt.geom.AffineTransform;
 
-import java.security.PrivilegedAction;
 import java.security.AccessController;
 import sun.security.action.GetPropertyAction;
 

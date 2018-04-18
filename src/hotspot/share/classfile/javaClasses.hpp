@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ class java_lang_String : AllStatic {
   };
 
   static void compute_offsets();
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
 
   // Instance creation
   static Handle create_from_unicode(jchar* unicode, int len, TRAPS);
@@ -102,6 +103,7 @@ class java_lang_String : AllStatic {
 
   // Accessors
   static inline typeArrayOop value(oop java_string);
+  static inline typeArrayOop value_no_keepalive(oop java_string);
   static inline unsigned int hash(oop java_string);
   static inline bool is_latin1(oop java_string);
   static inline int length(oop java_string);
@@ -221,6 +223,15 @@ class java_lang_Class : AllStatic {
   static void fixup_mirror(Klass* k, TRAPS);
   static oop  create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS);
 
+  // Archiving
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
+  static void archive_basic_type_mirrors(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
+  static oop  archive_mirror(Klass* k, TRAPS) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  static oop  process_archived_mirror(Klass* k, oop mirror, oop archived_mirror, Thread *THREAD)
+                                      NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  static void restore_archived_mirror(Klass *k, Handle mirror, Handle class_loader, Handle module,
+                                      Handle protection_domain, TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
+
   static void fixup_module_field(Klass* k, Handle module);
 
   // Conversion
@@ -305,6 +316,8 @@ class java_lang_Thread : AllStatic {
   static void compute_offsets();
 
  public:
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
+
   // Instance creation
   static oop create();
   // Returns the JavaThread associated with the thread obj
@@ -405,6 +418,8 @@ class java_lang_ThreadGroup : AllStatic {
   static void compute_offsets();
 
  public:
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
+
   // parent ThreadGroup
   static oop  parent(oop java_thread_group);
   // name
@@ -443,9 +458,6 @@ class java_lang_Throwable: AllStatic {
     hc_detailMessage_offset =  1,
     hc_cause_offset         =  2,  // New since 1.4
     hc_stackTrace_offset    =  3   // New since 1.4
-  };
-  enum {
-      hc_static_unassigned_stacktrace_offset = 0  // New since 1.7
   };
   // Trace constants
   enum {
@@ -487,6 +499,7 @@ class java_lang_Throwable: AllStatic {
   static void print_stack_usage(Handle stream);
 
   static void compute_offsets();
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
 
   // Allocate space for backtrace (created but stack trace not filled in)
   static void allocate_backtrace(Handle throwable, TRAPS);
@@ -517,6 +530,8 @@ class java_lang_reflect_AccessibleObject: AllStatic {
   static void compute_offsets();
 
  public:
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
+
   // Accessors
   static jboolean override(oop reflect);
   static void set_override(oop reflect, jboolean value);
@@ -548,6 +563,8 @@ class java_lang_reflect_Method : public java_lang_reflect_AccessibleObject {
   static void compute_offsets();
 
  public:
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
+
   // Allocation
   static Handle create(TRAPS);
 
@@ -617,6 +634,8 @@ class java_lang_reflect_Constructor : public java_lang_reflect_AccessibleObject 
   static void compute_offsets();
 
  public:
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
+
   // Allocation
   static Handle create(TRAPS);
 
@@ -675,6 +694,8 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
   static void compute_offsets();
 
  public:
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
+
   // Allocation
   static Handle create(TRAPS);
 
@@ -730,6 +751,8 @@ class java_lang_reflect_Parameter {
   static void compute_offsets();
 
  public:
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
+
   // Allocation
   static Handle create(TRAPS);
 
@@ -760,6 +783,8 @@ class java_lang_Module {
     static void compute_offsets();
 
   public:
+    static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
+
     // Allocation
     static Handle create(Handle loader, Handle module_name, TRAPS);
 
@@ -773,7 +798,7 @@ class java_lang_Module {
     static oop name(oop module);
     static void set_name(oop module, oop value);
 
-    static ModuleEntry* module_entry(oop module, TRAPS);
+    static ModuleEntry* module_entry(oop module);
     static void set_module_entry(oop module, ModuleEntry* module_entry);
 
   friend class JavaClasses;
@@ -789,6 +814,8 @@ class reflect_ConstantPool {
   static void compute_offsets();
 
  public:
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
+
   // Allocation
   static Handle create(TRAPS);
 
@@ -811,6 +838,8 @@ class reflect_UnsafeStaticFieldAccessorImpl {
   static void compute_offsets();
 
  public:
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
+
   static int base_offset() {
     return _base_offset;
   }
@@ -878,21 +907,22 @@ class java_lang_ref_Reference: AllStatic {
   static int queue_offset;
   static int next_offset;
   static int discovered_offset;
-  static int number_of_fake_oop_fields;
 
   // Accessors
   static inline oop referent(oop ref);
   static inline void set_referent(oop ref, oop value);
   static inline void set_referent_raw(oop ref, oop value);
-  static inline HeapWord* referent_addr(oop ref);
+  static inline HeapWord* referent_addr_raw(oop ref);
   static inline oop next(oop ref);
   static inline void set_next(oop ref, oop value);
   static inline void set_next_raw(oop ref, oop value);
-  static inline HeapWord* next_addr(oop ref);
+  static inline HeapWord* next_addr_raw(oop ref);
   static inline oop discovered(oop ref);
   static inline void set_discovered(oop ref, oop value);
   static inline void set_discovered_raw(oop ref, oop value);
-  static inline HeapWord* discovered_addr(oop ref);
+  static inline HeapWord* discovered_addr_raw(oop ref);
+  static inline oop queue(oop ref);
+  static inline void set_queue(oop ref, oop value);
   static bool is_referent_field(oop obj, ptrdiff_t offset);
   static inline bool is_phantom(oop ref);
 };
@@ -902,14 +932,6 @@ class java_lang_ref_Reference: AllStatic {
 
 class java_lang_ref_SoftReference: public java_lang_ref_Reference {
  public:
-  enum {
-   // The timestamp is a long field and may need to be adjusted for alignment.
-   hc_timestamp_offset  = hc_discovered_offset + 1
-  };
-  enum {
-   hc_static_clock_offset = 0
-  };
-
   static int timestamp_offset;
   static int static_clock_offset;
 
@@ -919,6 +941,23 @@ class java_lang_ref_SoftReference: public java_lang_ref_Reference {
   // Accessors for statics
   static jlong clock();
   static void set_clock(jlong value);
+
+  static void compute_offsets();
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
+};
+
+// Interface to java.lang.ref.ReferenceQueue objects
+
+class java_lang_ref_ReferenceQueue: public AllStatic {
+public:
+  static int static_NULL_queue_offset;
+  static int static_ENQUEUED_queue_offset;
+
+  // Accessors
+  static oop NULL_queue();
+  static oop ENQUEUED_queue();
+
+  static void compute_offsets();
 };
 
 // Interface to java.lang.invoke.MethodHandle objects
@@ -935,6 +974,8 @@ class java_lang_invoke_MethodHandle: AllStatic {
   static void compute_offsets();
 
  public:
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
+
   // Accessors
   static oop            type(oop mh);
   static void       set_type(oop mh, oop mtype);
@@ -964,6 +1005,8 @@ class java_lang_invoke_DirectMethodHandle: AllStatic {
   static void compute_offsets();
 
  public:
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
+
   // Accessors
   static oop  member(oop mh);
 
@@ -989,6 +1032,8 @@ class java_lang_invoke_LambdaForm: AllStatic {
   static void compute_offsets();
 
  public:
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
+
   // Accessors
   static oop            vmentry(oop lform);
   static void       set_vmentry(oop lform, oop invoker);
@@ -1020,6 +1065,8 @@ class java_lang_invoke_ResolvedMethodName : AllStatic {
 
   static void compute_offsets();
  public:
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
+
   static int vmtarget_offset_in_bytes() { return _vmtarget_offset; }
 
   static Method* vmtarget(oop resolved_method);
@@ -1057,6 +1104,7 @@ class java_lang_invoke_MemberName: AllStatic {
   static void compute_offsets();
 
  public:
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
   // Accessors
   static oop            clazz(oop mname);
   static void       set_clazz(oop mname, oop clazz);
@@ -1121,6 +1169,7 @@ class java_lang_invoke_MethodType: AllStatic {
   static void compute_offsets();
 
  public:
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
   // Accessors
   static oop            rtype(oop mt);
   static objArrayOop    ptypes(oop mt);
@@ -1156,6 +1205,7 @@ private:
   static void compute_offsets();
 
 public:
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
   // Accessors
   static oop              target(          oop site);
   static void         set_target(          oop site, oop target);
@@ -1189,6 +1239,7 @@ private:
   static void compute_offsets();
 
 public:
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
   // Accessors
   static DependencyContext vmdependencies(oop context);
 
@@ -1212,6 +1263,7 @@ class java_security_AccessControlContext: AllStatic {
 
   static void compute_offsets();
  public:
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
   static oop create(objArrayHandle context, bool isPrivileged, Handle privileged_context, TRAPS);
 
   static bool is_authorized(Handle context);
@@ -1228,10 +1280,6 @@ class java_security_AccessControlContext: AllStatic {
 
 class java_lang_ClassLoader : AllStatic {
  private:
-  // The fake offsets are added by the class loader when java.lang.Class is loaded
-  enum {
-   hc_parent_offset = 0
-  };
   static int _loader_data_offset;
   static bool offsets_computed;
   static int parent_offset;
@@ -1241,9 +1289,10 @@ class java_lang_ClassLoader : AllStatic {
 
  public:
   static void compute_offsets();
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
 
-  static ClassLoaderData** loader_data_addr(oop loader);
   static ClassLoaderData* loader_data(oop loader);
+  static ClassLoaderData* cmpxchg_loader_data(ClassLoaderData* new_data, oop loader, ClassLoaderData* expected_data);
 
   static oop parent(oop loader);
   static oop name(oop loader);
@@ -1279,13 +1328,6 @@ class java_lang_ClassLoader : AllStatic {
 
 class java_lang_System : AllStatic {
  private:
-  enum {
-   hc_static_in_offset  = 0,
-   hc_static_out_offset = 1,
-   hc_static_err_offset = 2,
-   hc_static_security_offset = 3
-  };
-
   static int  static_in_offset;
   static int static_out_offset;
   static int static_err_offset;
@@ -1298,6 +1340,9 @@ class java_lang_System : AllStatic {
 
   static bool has_security_manager();
 
+  static void compute_offsets();
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
+
   // Debugging
   friend class JavaClasses;
 };
@@ -1307,17 +1352,6 @@ class java_lang_System : AllStatic {
 
 class java_lang_StackTraceElement: AllStatic {
  private:
-  enum {
-    hc_declaringClassObject_offset    = 0,
-    hc_classLoaderName_offset      = 1,
-    hc_moduleName_offset           = 2,
-    hc_moduleVersion_offset        = 3,
-    hc_declaringClass_offset       = 4,
-    hc_methodName_offset           = 5,
-    hc_fileName_offset             = 6,
-    hc_lineNumber_offset           = 7
-  };
-
   static int declaringClassObject_offset;
   static int classLoaderName_offset;
   static int moduleName_offset;
@@ -1343,6 +1377,9 @@ class java_lang_StackTraceElement: AllStatic {
 
   static void fill_in(Handle element, InstanceKlass* holder, const methodHandle& method,
                       int version, int bci, Symbol* name, TRAPS);
+
+  static void compute_offsets();
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
 
   // Debugging
   friend class JavaClasses;
@@ -1386,6 +1423,7 @@ public:
   static void set_version(oop info, short value);
 
   static void compute_offsets();
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
 
   static void to_stack_trace_element(Handle stackFrame, Handle stack_trace_element, TRAPS);
 
@@ -1407,6 +1445,7 @@ class java_lang_LiveStackFrameInfo: AllStatic {
   static void set_mode(oop info, int value);
 
   static void compute_offsets();
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
 
   // Debugging
   friend class JavaClasses;
@@ -1416,14 +1455,6 @@ class java_lang_LiveStackFrameInfo: AllStatic {
 
 class java_lang_AssertionStatusDirectives: AllStatic {
  private:
-  enum {
-    hc_classes_offset,
-    hc_classEnabled_offset,
-    hc_packages_offset,
-    hc_packageEnabled_offset,
-    hc_deflt_offset
-  };
-
   static int classes_offset;
   static int classEnabled_offset;
   static int packages_offset;
@@ -1437,6 +1468,10 @@ class java_lang_AssertionStatusDirectives: AllStatic {
   static void set_packages(oop obj, oop val);
   static void set_packageEnabled(oop obj, oop val);
   static void set_deflt(oop obj, bool val);
+
+  static void compute_offsets();
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
+
   // Debugging
   friend class JavaClasses;
 };
@@ -1449,6 +1484,7 @@ class java_nio_Buffer: AllStatic {
  public:
   static int  limit_offset();
   static void compute_offsets();
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
 };
 
 class java_util_concurrent_locks_AbstractOwnableSynchronizer : AllStatic {
@@ -1508,9 +1544,6 @@ class JavaClasses : AllStatic {
   static InjectedField _injected_fields[];
 
   static bool check_offset(const char *klass_name, int offset, const char *field_name, const char* field_sig) PRODUCT_RETURN0;
-  static bool check_static_offset(const char *klass_name, int hardcoded_offset, const char *field_name, const char* field_sig) PRODUCT_RETURN0;
-  static bool check_constant(const char *klass_name, int constant, const char *field_name, const char* field_sig) PRODUCT_RETURN0;
-
  public:
   enum InjectedFieldID {
     ALL_INJECTED_FIELDS(DECLARE_INJECTED_FIELD_ENUM)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "memory/universe.hpp"
 #include "oops/method.hpp"
-#include "runtime/frame.inline.hpp"
+#include "runtime/frame.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/macros.hpp"
@@ -42,52 +42,6 @@ class InterpreterRuntime: AllStatic {
   friend class PrintingClosure; // for method and bcp
 
  private:
-  // Helper class to access current interpreter state
-  class LastFrameAccessor : public StackObj {
-    frame _last_frame;
-  public:
-    LastFrameAccessor(JavaThread* thread) {
-      assert(thread == Thread::current(), "sanity");
-      _last_frame = thread->last_frame();
-    }
-    bool is_interpreted_frame() const              { return _last_frame.is_interpreted_frame(); }
-    Method*   method() const                       { return _last_frame.interpreter_frame_method(); }
-    address   bcp() const                          { return _last_frame.interpreter_frame_bcp(); }
-    int       bci() const                          { return _last_frame.interpreter_frame_bci(); }
-    address   mdp() const                          { return _last_frame.interpreter_frame_mdp(); }
-
-    void      set_bcp(address bcp)                 { _last_frame.interpreter_frame_set_bcp(bcp); }
-    void      set_mdp(address dp)                  { _last_frame.interpreter_frame_set_mdp(dp); }
-
-    // pass method to avoid calling unsafe bcp_to_method (partial fix 4926272)
-    Bytecodes::Code code() const                   { return Bytecodes::code_at(method(), bcp()); }
-
-    Bytecode  bytecode() const                     { return Bytecode(method(), bcp()); }
-    int get_index_u1(Bytecodes::Code bc) const     { return bytecode().get_index_u1(bc); }
-    int get_index_u2(Bytecodes::Code bc) const     { return bytecode().get_index_u2(bc); }
-    int get_index_u2_cpcache(Bytecodes::Code bc) const
-                                                   { return bytecode().get_index_u2_cpcache(bc); }
-    int get_index_u4(Bytecodes::Code bc) const     { return bytecode().get_index_u4(bc); }
-    int number_of_dimensions() const               { return bcp()[3]; }
-    ConstantPoolCacheEntry* cache_entry_at(int i) const
-                                                   { return method()->constants()->cache()->entry_at(i); }
-    ConstantPoolCacheEntry* cache_entry() const    { return cache_entry_at(Bytes::get_native_u2(bcp() + 1)); }
-
-    oop callee_receiver(Symbol* signature) {
-      return _last_frame.interpreter_callee_receiver(signature);
-    }
-    BasicObjectLock* monitor_begin() const {
-      return _last_frame.interpreter_frame_monitor_begin();
-    }
-    BasicObjectLock* monitor_end() const {
-      return _last_frame.interpreter_frame_monitor_end();
-    }
-    BasicObjectLock* next_monitor(BasicObjectLock* current) const {
-      return _last_frame.next_monitor_in_interpreter_frame(current);
-    }
-
-    frame& get_frame()                             { return _last_frame; }
-  };
 
   static void      set_bcp_and_mdp(address bcp, JavaThread*thread);
   static void      note_trap_inner(JavaThread* thread, int reason,
@@ -118,7 +72,15 @@ class InterpreterRuntime: AllStatic {
 
   // Exceptions thrown by the interpreter
   static void    throw_AbstractMethodError(JavaThread* thread);
+  static void    throw_AbstractMethodErrorWithMethod(JavaThread* thread, Method* oop);
+  static void    throw_AbstractMethodErrorVerbose(JavaThread* thread,
+                                                  Klass* recvKlass,
+                                                  Method* missingMethod);
+
   static void    throw_IncompatibleClassChangeError(JavaThread* thread);
+  static void    throw_IncompatibleClassChangeErrorVerbose(JavaThread* thread,
+                                                           Klass* resc,
+                                                           Klass* interfaceKlass);
   static void    throw_StackOverflowError(JavaThread* thread);
   static void    throw_delayed_StackOverflowError(JavaThread* thread);
   static void    throw_ArrayIndexOutOfBoundsException(JavaThread* thread, char* name, jint index);
@@ -164,7 +126,7 @@ class InterpreterRuntime: AllStatic {
   static void _breakpoint(JavaThread* thread, Method* method, address bcp);
   static Bytecodes::Code get_original_bytecode_at(JavaThread* thread, Method* method, address bcp);
   static void            set_original_bytecode_at(JavaThread* thread, Method* method, address bcp, Bytecodes::Code new_code);
-  static bool is_breakpoint(JavaThread *thread) { return Bytecodes::code_or_bp_at(LastFrameAccessor(thread).bcp()) == Bytecodes::_breakpoint; }
+  static bool is_breakpoint(JavaThread *thread);
 
   // Safepoints
   static void    at_safepoint(JavaThread* thread);

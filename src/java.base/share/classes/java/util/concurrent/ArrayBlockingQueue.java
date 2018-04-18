@@ -76,7 +76,7 @@ import java.util.function.Predicate;
  * methods of the {@link Collection} and {@link Iterator} interfaces.
  *
  * <p>This class is a member of the
- * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
+ * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @since 1.5
@@ -1584,34 +1584,40 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
     void checkInvariants() {
         // meta-assertions
         // assert lock.isHeldByCurrentThread();
-        try {
-            // Unlike ArrayDeque, we have a count field but no spare slot.
-            // We prefer ArrayDeque's strategy (and the names of its fields!),
-            // but our field layout is baked into the serial form, and so is
-            // too annoying to change.
-            //
-            // putIndex == takeIndex must be disambiguated by checking count.
-            int capacity = items.length;
-            // assert capacity > 0;
-            // assert takeIndex >= 0 && takeIndex < capacity;
-            // assert putIndex >= 0 && putIndex < capacity;
-            // assert count <= capacity;
-            // assert takeIndex == putIndex || items[takeIndex] != null;
-            // assert count == capacity || items[putIndex] == null;
-            // assert takeIndex == putIndex || items[dec(putIndex, capacity)] != null;
-        } catch (Throwable t) {
-            System.err.printf("takeIndex=%d putIndex=%d count=%d capacity=%d%n",
-                              takeIndex, putIndex, count, items.length);
-            System.err.printf("items=%s%n",
-                              Arrays.toString(items));
-            throw t;
+        if (!invariantsSatisfied()) {
+            String detail = String.format(
+                "takeIndex=%d putIndex=%d count=%d capacity=%d items=%s",
+                takeIndex, putIndex, count, items.length,
+                Arrays.toString(items));
+            System.err.println(detail);
+            throw new AssertionError(detail);
         }
     }
 
+    private boolean invariantsSatisfied() {
+        // Unlike ArrayDeque, we have a count field but no spare slot.
+        // We prefer ArrayDeque's strategy (and the names of its fields!),
+        // but our field layout is baked into the serial form, and so is
+        // too annoying to change.
+        //
+        // putIndex == takeIndex must be disambiguated by checking count.
+        int capacity = items.length;
+        return capacity > 0
+            && items.getClass() == Object[].class
+            && (takeIndex | putIndex | count) >= 0
+            && takeIndex <  capacity
+            && putIndex  <  capacity
+            && count     <= capacity
+            && (putIndex - takeIndex - count) % capacity == 0
+            && (count == 0 || items[takeIndex] != null)
+            && (count == capacity || items[putIndex] == null)
+            && (count == 0 || items[dec(putIndex, capacity)] != null);
+    }
+
     /**
-     * Deserializes this queue and then checks some invariants.
+     * Reconstitutes this queue from a stream (that is, deserializes it).
      *
-     * @param s the input stream
+     * @param s the stream
      * @throws ClassNotFoundException if the class of a serialized object
      *         could not be found
      * @throws java.io.InvalidObjectException if invariants are violated
@@ -1623,15 +1629,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         // Read in items array and various fields
         s.defaultReadObject();
 
-        // Check invariants over count and index fields. Note that
-        // if putIndex==takeIndex, count can be either 0 or items.length.
-        if (items.length == 0 ||
-            takeIndex < 0 || takeIndex >= items.length ||
-            putIndex  < 0 || putIndex  >= items.length ||
-            count < 0     || count     >  items.length ||
-            Math.floorMod(putIndex - takeIndex, items.length) !=
-            Math.floorMod(count, items.length)) {
+        if (!invariantsSatisfied())
             throw new java.io.InvalidObjectException("invariants violated");
-        }
     }
 }

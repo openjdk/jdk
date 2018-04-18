@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,26 +41,21 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
     # Parameter 1 Suffix
     # Parameter 2 ACCESSBRIDGE_ARCH_ suffix
 
-    $(call SetupNativeCompilation,BUILD_JAVAACCESSBRIDGE$1, \
-        LIBRARY = javaaccessbridge$1, \
-        OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+    $(call SetupJdkLibrary, BUILD_JAVAACCESSBRIDGE$1, \
+        NAME := javaaccessbridge$1, \
         SRC := $(JAVA_AB_SRCDIR), \
         OPTIMIZATION := LOW, \
+        DISABLED_WARNINGS_microsoft := 4311 4302 4312, \
         CFLAGS := $(CFLAGS_JDKLIB) $(ACCESSBRIDGE_CFLAGS) \
             $(addprefix -I,$(JAVA_AB_SRCDIR)) \
             -I$(ROOT_SRCDIR)/include/bridge \
             -DACCESSBRIDGE_ARCH_$2, \
-        LDFLAGS := $(LDFLAGS_JDKLIB) -subsystem:windows, \
+        LDFLAGS := $(LDFLAGS_JDKLIB), \
         LIBS := kernel32.lib user32.lib gdi32.lib \
             winspool.lib comdlg32.lib advapi32.lib shell32.lib \
             $(SUPPORT_OUTPUTDIR)/native/java.desktop/libjawt/jawt.lib \
             ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib, \
         VERSIONINFO_RESOURCE := $(ROOT_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
-        RC_FLAGS := $(RC_FLAGS) \
-            -D "JDK_FNAME=javaaccessbridge$1.dll" \
-            -D "JDK_INTERNAL_NAME=javaaccessbridge$1" \
-            -D "JDK_FTYPE=0x02L", \
-        OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjavaaccessbridge$1, \
     )
 
     $$(BUILD_JAVAACCESSBRIDGE$1): $(SUPPORT_OUTPUTDIR)/native/java.desktop/libjawt/jawt.lib
@@ -71,26 +66,21 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   define SetupWinDLL
     # Parameter 1 Suffix
     # Parameter 2 ACCESSBRIDGE_ARCH_ suffix
-    $(call SetupNativeCompilation,BUILD_WINDOWSACCESSBRIDGE$1, \
-        LIBRARY = windowsaccessbridge$1, \
-        OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+    $(call SetupJdkLibrary, BUILD_WINDOWSACCESSBRIDGE$1, \
+        NAME := windowsaccessbridge$1, \
         SRC := $(WIN_AB_SRCDIR), \
         OPTIMIZATION := LOW, \
+        DISABLED_WARNINGS_microsoft := 4311 4302 4312, \
         CFLAGS := $(filter-out -MD, $(CFLAGS_JDKLIB)) -MT $(ACCESSBRIDGE_CFLAGS) \
             $(addprefix -I,$(WIN_AB_SRCDIR)) \
             -I$(ROOT_SRCDIR)/include/bridge \
             -DACCESSBRIDGE_ARCH_$2, \
-        LDFLAGS := $(LDFLAGS_JDKLIB) -subsystem:windows \
+        LDFLAGS := $(LDFLAGS_JDKLIB) \
             -def:$(ROOT_SRCDIR)/libwindowsaccessbridge/WinAccessBridge.DEF, \
         LIBS := kernel32.lib user32.lib gdi32.lib \
             winspool.lib comdlg32.lib advapi32.lib shell32.lib \
             ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib, \
         VERSIONINFO_RESOURCE := $(ROOT_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
-        RC_FLAGS := $(RC_FLAGS) \
-            -D "JDK_FNAME=windowsaccessbridge$1.dll" \
-            -D "JDK_INTERNAL_NAME=windowsaccessbridge$1" \
-            -D "JDK_FTYPE=0x02L", \
-        OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libwindowsaccessbridge$1, \
     )
 
     TARGETS += $$(BUILD_WINDOWSACCESSBRIDGE$1)
@@ -99,20 +89,13 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 
   define SetupAccessBridgeSysInfo
 
-    $(call SetupNativeCompilation,BUILD_ACCESSBRIDGESYSINFO, \
-        LIBRARY = jabsysinfo, \
-        OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+    $(call SetupJdkLibrary, BUILD_ACCESSBRIDGESYSINFO, \
+        NAME := jabsysinfo, \
         SRC := $(SYSINFO_SRCDIR), \
         OPTIMIZATION := LOW, \
         CFLAGS := $(CFLAGS_JDKLIB) $(ACCESSBRIDGE_CFLAGS), \
-        LDFLAGS := $(LDFLAGS_JDKLIB) \
-            -subsystem:windows -machine:I386, \
+        LDFLAGS := $(LDFLAGS_JDKLIB), \
         VERSIONINFO_RESOURCE := $(ROOT_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
-        RC_FLAGS := $(RC_FLAGS) \
-            -D "JDK_FNAME=jabsysinfo.dll" \
-            -D "JDK_INTERNAL_NAME=jabsysinfo" \
-            -D "JDK_FTYPE=0x02L", \
-        OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/lib/libjabsysinfo, \
     )
 
     TARGETS += $$(BUILD_ACCESSBRIDGESYSINFO)

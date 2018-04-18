@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -34,28 +34,19 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   LIBATTACH_CFLAGS := -DPSAPI_VERSION=1
 endif
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBATTACH, \
-    LIBRARY := attach, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+$(eval $(call SetupJdkLibrary, BUILD_LIBATTACH, \
+    NAME := attach, \
     SRC := $(call FindSrcDirsForLib, jdk.attach, attach), \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         -I$(SUPPORT_OUTPUTDIR)/headers/jdk.attach \
         $(LIBJAVA_HEADER_FLAGS) $(LIBATTACH_CFLAGS), \
     CFLAGS_windows := /Gy, \
-    MAPFILE := $(TOPDIR)/make/mapfiles/libattach/mapfile-$(OPENJDK_TARGET_OS), \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=attach.dll" \
-        -D "JDK_INTERNAL_NAME=attach" \
-        -D "JDK_FTYPE=0x2L", \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_windows := -order:@$(TOPDIR)/make/mapfiles/libattach/reorder-windows-$(OPENJDK_TARGET_CPU), \
     LIBS := $(JDKLIB_LIBS), \
     LIBS_solaris := -ldoor, \
     LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib psapi.lib, \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libattach, \
 ))
 
 $(BUILD_LIBATTACH): $(call FindLib, java.base, java)

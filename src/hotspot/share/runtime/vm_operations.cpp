@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,8 @@
 #include "oops/symbol.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.inline.hpp"
@@ -234,7 +235,7 @@ void VM_PrintJNI::doit() {
 }
 
 void VM_PrintMetadata::doit() {
-  MetaspaceAux::print_metadata_for_nmt(_out, _scale);
+  MetaspaceUtils::print_metadata_for_nmt(_out, _scale);
 }
 
 VM_FindDeadlocks::~VM_FindDeadlocks() {
@@ -416,7 +417,7 @@ ThreadSnapshot* VM_ThreadDump::snapshot_thread(JavaThread* java_thread, ThreadCo
 }
 
 volatile bool VM_Exit::_vm_exited = false;
-Thread * VM_Exit::_shutdown_thread = NULL;
+Thread * volatile VM_Exit::_shutdown_thread = NULL;
 
 int VM_Exit::set_vm_exited() {
 

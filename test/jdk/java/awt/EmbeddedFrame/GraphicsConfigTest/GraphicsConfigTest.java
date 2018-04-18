@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6356322
+ * @key headful
  * @summary Tests that embedded frame's graphics configuration is updated
  *          correctly when it is moved to another screen in multiscreen system,
  *          XToolkit

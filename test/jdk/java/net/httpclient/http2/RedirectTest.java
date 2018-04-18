@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,23 +27,28 @@
  * @library /lib/testlibrary server
  * @build jdk.testlibrary.SimpleSSLContext
  * @modules java.base/sun.net.www.http
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.common
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.frame
- *          jdk.incubator.httpclient/jdk.incubator.http.internal.hpack
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=frames,ssl,requests,responses,errors RedirectTest
+ *          java.net.http/jdk.internal.net.http.common
+ *          java.net.http/jdk.internal.net.http.frame
+ *          java.net.http/jdk.internal.net.http.hpack
+ * @run testng/othervm
+ *      -Djdk.httpclient.HttpClient.log=frames,ssl,requests,responses,errors
+ *      -Djdk.internal.httpclient.debug=true
+ *      RedirectTest
  */
 
-import java.net.*;
-import jdk.incubator.http.*;
-import java.util.Optional;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.util.concurrent.*;
 import java.util.function.*;
 import java.util.Arrays;
 import java.util.Iterator;
 import org.testng.annotations.Test;
-import static jdk.incubator.http.HttpClient.Version.HTTP_2;
-import static jdk.incubator.http.HttpRequest.BodyPublisher.fromString;
-import static jdk.incubator.http.HttpResponse.BodyHandler.asString;
+import static java.net.http.HttpClient.Version.HTTP_2;
 
 public class RedirectTest {
     static int httpPort;
@@ -96,11 +101,11 @@ public class RedirectTest {
             // urls are accessed in sequence below. The first two are on
             // different servers. Third on same server as second. So, the
             // client should use the same http connection.
-            httpURIString = "http://127.0.0.1:" + httpPort + "/foo/";
+            httpURIString = "http://localhost:" + httpPort + "/foo/";
             httpURI = URI.create(httpURIString);
-            altURIString1 = "http://127.0.0.1:" + httpPort + "/redir";
+            altURIString1 = "http://localhost:" + httpPort + "/redir";
             altURI1 = URI.create(altURIString1);
-            altURIString2 = "http://127.0.0.1:" + httpPort + "/redir_again";
+            altURIString2 = "http://localhost:" + httpPort + "/redir_again";
             altURI2 = URI.create(altURIString2);
 
             Redirector r = new Redirector(sup(altURIString1, altURIString2));
@@ -182,9 +187,9 @@ public class RedirectTest {
 
         HttpClient client = getClient();
         HttpRequest req = HttpRequest.newBuilder(uri)
-                                     .POST(fromString(SIMPLE_STRING))
+                                     .POST(BodyPublishers.ofString(SIMPLE_STRING))
                                      .build();
-        CompletableFuture<HttpResponse<String>> cf = client.sendAsync(req, asString());
+        CompletableFuture<HttpResponse<String>> cf = client.sendAsync(req, BodyHandlers.ofString());
         HttpResponse<String> response = cf.join();
 
         checkStatus(200, response.statusCode());

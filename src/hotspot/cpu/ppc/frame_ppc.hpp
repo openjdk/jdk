@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -384,7 +384,7 @@
 
   // Constructors
   inline frame(intptr_t* sp);
-  frame(intptr_t* sp, address pc);
+  inline frame(intptr_t* sp, address pc);
   inline frame(intptr_t* sp, address pc, intptr_t* unextended_sp);
 
  private:
@@ -424,5 +424,7 @@
     // normal return address is 1 bundle past PC
     pc_return_offset = 0
   };
+
+  static jint interpreter_frame_expression_stack_direction() { return -1; }
 
 #endif // CPU_PPC_VM_FRAME_PPC_HPP

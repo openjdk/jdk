@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@
 #include "net_util_md.h"
 #include "nio_util.h"
 #include "nio.h"
-#include "sun_nio_ch_PollArrayWrapper.h"
 
 #ifdef _AIX
 #include <sys/utsname.h>
@@ -293,8 +292,7 @@ Java_sun_nio_ch_Net_connect0(JNIEnv *env, jclass clazz, jboolean preferIPv6,
     int sa_len = 0;
     int rv;
 
-    if (NET_InetAddressToSockaddr(env, iao, port, &sa, &sa_len,
-                                  preferIPv6) != 0) {
+    if (NET_InetAddressToSockaddr(env, iao, port, &sa, &sa_len, preferIPv6) != 0) {
         return IOS_THROWN;
     }
 
@@ -702,7 +700,8 @@ Java_sun_nio_ch_Net_poll(JNIEnv* env, jclass this, jobject fdo, jint events, jlo
     if (rv >= 0) {
         return pfd.revents;
     } else if (errno == EINTR) {
-        return IOS_INTERRUPTED;
+        // interrupted, no events to return
+        return 0;
     } else {
         handleSocketError(env, errno);
         return IOS_THROWN;
@@ -748,7 +747,7 @@ Java_sun_nio_ch_Net_pollconnValue(JNIEnv *env, jclass this)
 
 /* Declared in nio_util.h */
 
-jint
+JNIEXPORT jint JNICALL
 handleSocketError(JNIEnv *env, jint errorValue)
 {
     char *xn;
@@ -761,11 +760,11 @@ handleSocketError(JNIEnv *env, jint errorValue)
             break;
 #endif
         case ECONNREFUSED:
-            xn = JNU_JAVANETPKG "ConnectException";
-            break;
         case ETIMEDOUT:
+        case ENOTCONN:
             xn = JNU_JAVANETPKG "ConnectException";
             break;
+
         case EHOSTUNREACH:
             xn = JNU_JAVANETPKG "NoRouteToHostException";
             break;

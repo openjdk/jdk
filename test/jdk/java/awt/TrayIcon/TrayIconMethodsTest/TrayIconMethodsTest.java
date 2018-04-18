@@ -27,6 +27,7 @@ import java.awt.image.BufferedImage;
 
 /*
  * @test
+ * @key headful
  * @summary Check various methods of the TrayIcon - whether the methods
  *          return the proper values, throws the proper exceptions etc
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)

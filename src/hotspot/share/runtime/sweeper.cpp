@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,16 +30,19 @@
 #include "compiler/compileBroker.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/compilationPolicy.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vm_operations.hpp"
+#include "runtime/vmThread.hpp"
 #include "trace/tracing.hpp"
 #include "utilities/events.hpp"
 #include "utilities/ticks.inline.hpp"
@@ -821,12 +824,13 @@ void NMethodSweeper::log_sweep(const char* msg, const char* format, ...) {
   }
 }
 
-void NMethodSweeper::print() {
+void NMethodSweeper::print(outputStream* out) {
   ttyLocker ttyl;
-  tty->print_cr("Code cache sweeper statistics:");
-  tty->print_cr("  Total sweep time:                %1.0lfms", (double)_total_time_sweeping.value()/1000000);
-  tty->print_cr("  Total number of full sweeps:     %ld", _total_nof_code_cache_sweeps);
-  tty->print_cr("  Total number of flushed methods: %ld(%ld C2 methods)", _total_nof_methods_reclaimed,
+  out = (out == NULL) ? tty : out;
+  out->print_cr("Code cache sweeper statistics:");
+  out->print_cr("  Total sweep time:                %1.0lf ms", (double)_total_time_sweeping.value()/1000000);
+  out->print_cr("  Total number of full sweeps:     %ld", _total_nof_code_cache_sweeps);
+  out->print_cr("  Total number of flushed methods: %ld (thereof %ld C2 methods)", _total_nof_methods_reclaimed,
                                                     _total_nof_c2_methods_reclaimed);
-  tty->print_cr("  Total size of flushed methods:   " SIZE_FORMAT "kB", _total_flushed_size/K);
+  out->print_cr("  Total size of flushed methods:   " SIZE_FORMAT " kB", _total_flushed_size/K);
 }

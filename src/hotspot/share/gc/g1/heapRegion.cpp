@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,8 @@
 #include "logging/logStream.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/access.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.inline.hpp"
@@ -100,7 +102,7 @@ void HeapRegion::setup_heap_region_size(size_t initial_heap_size, size_t max_hea
   guarantee((size_t) 1 << LogOfHRGrainWords == GrainWords, "sanity");
 
   guarantee(CardsPerRegion == 0, "we should only set it once");
-  CardsPerRegion = GrainBytes >> CardTableModRefBS::card_shift;
+  CardsPerRegion = GrainBytes >> G1CardTable::card_shift;
 
   if (G1HeapRegionSize != GrainBytes) {
     FLAG_SET_ERGO(size_t, G1HeapRegionSize, GrainBytes);
@@ -113,7 +115,6 @@ void HeapRegion::hr_clear(bool keep_remset, bool clear_space, bool locked) {
   assert(!in_collection_set(),
          "Should not clear heap region %u in the collection set", hrm_index());
 
-  set_allocation_context(AllocationContext::system());
   set_young_index_in_cset(-1);
   uninstall_surv_rate_group();
   set_free();
@@ -130,18 +131,12 @@ void HeapRegion::hr_clear(bool keep_remset, bool clear_space, bool locked) {
   zero_marked_bytes();
 
   init_top_at_mark_start();
-  _gc_time_stamp = G1CollectedHeap::heap()->get_gc_time_stamp();
   if (clear_space) clear(SpaceDecorator::Mangle);
 }
 
-void HeapRegion::par_clear() {
-  assert(used() == 0, "the region should have been already cleared");
-  assert(capacity() == HeapRegion::GrainBytes, "should be back to normal");
-  HeapRegionRemSet* hrrs = rem_set();
-  hrrs->clear();
-  CardTableModRefBS* ct_bs =
-    barrier_set_cast<CardTableModRefBS>(G1CollectedHeap::heap()->barrier_set());
-  ct_bs->clear(MemRegion(bottom(), end()));
+void HeapRegion::clear_cardtable() {
+  G1CardTable* ct = G1CollectedHeap::heap()->card_table();
+  ct->clear(MemRegion(bottom(), end()));
 }
 
 void HeapRegion::calc_gc_efficiency() {
@@ -236,7 +231,6 @@ HeapRegion::HeapRegion(uint hrm_index,
                        MemRegion mr) :
     G1ContiguousSpace(bot),
     _hrm_index(hrm_index),
-    _allocation_context(AllocationContext::system()),
     _humongous_start_region(NULL),
     _evacuation_failed(false),
     _prev_marked_bytes(0), _next_marked_bytes(0), _gc_efficiency(0.0),
@@ -259,7 +253,6 @@ void HeapRegion::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
 
   hr_clear(false /*par*/, false /*clear_space*/);
   set_top(bottom());
-  record_timestamp();
 }
 
 void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
@@ -267,8 +260,7 @@ void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
                                             get_trace_type(),
                                             to,
                                             (uintptr_t)bottom(),
-                                            used(),
-                                            (uint)allocation_context());
+                                            used());
 }
 
 void HeapRegion::note_self_forwarding_removal_start(bool during_initial_mark,
@@ -329,9 +321,9 @@ class VerifyStrongCodeRootOopClosure: public OopClosure {
   bool _has_oops_in_region;
 
   template <class T> void do_oop_work(T* p) {
-    T heap_oop = oopDesc::load_heap_oop(p);
-    if (!oopDesc::is_null(heap_oop)) {
-      oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+    T heap_oop = RawAccess<>::oop_load(p);
+    if (!CompressedOops::is_null(heap_oop)) {
+      oop obj = CompressedOops::decode_not_null(heap_oop);
 
       // Note: not all the oops embedded in the nmethod are in the
       // current region. We only look at those which are.
@@ -454,16 +446,14 @@ void HeapRegion::print_on(outputStream* st) const {
   } else {
     st->print("|  ");
   }
-  st->print("|TS%3u", _gc_time_stamp);
-  st->print("|AC%3u", allocation_context());
-  st->print_cr("|TAMS " PTR_FORMAT ", " PTR_FORMAT "|",
-               p2i(prev_top_at_mark_start()), p2i(next_top_at_mark_start()));
+  st->print_cr("|TAMS " PTR_FORMAT ", " PTR_FORMAT "| %s ",
+               p2i(prev_top_at_mark_start()), p2i(next_top_at_mark_start()), rem_set()->get_state_str());
 }
 
-class G1VerificationClosure : public OopClosure {
+class G1VerificationClosure : public ExtendedOopClosure {
 protected:
   G1CollectedHeap* _g1h;
-  CardTableModRefBS* _bs;
+  G1CardTable *_ct;
   oop _containing_obj;
   bool _failures;
   int _n_failures;
@@ -473,7 +463,7 @@ public:
   // _vo == UseNextMarking -> use "next" marking information,
   // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS.
   G1VerificationClosure(G1CollectedHeap* g1h, VerifyOption vo) :
-    _g1h(g1h), _bs(barrier_set_cast<CardTableModRefBS>(g1h->barrier_set())),
+    _g1h(g1h), _ct(g1h->card_table()),
     _containing_obj(NULL), _failures(false), _n_failures(0), _vo(vo) {
   }
 
@@ -493,6 +483,9 @@ public:
     obj->print_on(out);
 #endif // PRODUCT
   }
+
+  // This closure provides its own oop verification code.
+  debug_only(virtual bool should_verify_oops() { return false; })
 };
 
 class VerifyLiveClosure : public G1VerificationClosure {
@@ -511,10 +504,10 @@ public:
 
   template <class T>
   void verify_liveness(T* p) {
-    T heap_oop = oopDesc::load_heap_oop(p);
+    T heap_oop = RawAccess<>::oop_load(p);
     Log(gc, verify) log;
-    if (!oopDesc::is_null(heap_oop)) {
-      oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+    if (!CompressedOops::is_null(heap_oop)) {
+      oop obj = CompressedOops::decode_not_null(heap_oop);
       bool failed = false;
       if (!_g1h->is_in_closed_subset(obj) || _g1h->is_obj_dead_cond(obj, _vo)) {
         MutexLockerEx x(ParGCRareEvent_lock,
@@ -530,7 +523,8 @@ public:
             p2i(p), p2i(_containing_obj), p2i(from->bottom()), p2i(from->end()));
           LogStream ls(log.error());
           print_object(&ls, _containing_obj);
-          log.error("points to obj " PTR_FORMAT " not in the heap", p2i(obj));
+          HeapRegion* const to = _g1h->heap_region_containing(obj);
+          log.error("points to obj " PTR_FORMAT " in region " HR_FORMAT " remset %s", p2i(obj), HR_FORMAT_PARAMS(to), to->rem_set()->get_state_str());
         } else {
           HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
           HeapRegion* to = _g1h->heap_region_containing((HeapWord*)obj);
@@ -567,18 +561,19 @@ public:
 
   template <class T>
   void verify_remembered_set(T* p) {
-    T heap_oop = oopDesc::load_heap_oop(p);
+    T heap_oop = RawAccess<>::oop_load(p);
     Log(gc, verify) log;
-    if (!oopDesc::is_null(heap_oop)) {
-      oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+    if (!CompressedOops::is_null(heap_oop)) {
+      oop obj = CompressedOops::decode_not_null(heap_oop);
       HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
       HeapRegion* to = _g1h->heap_region_containing(obj);
       if (from != NULL && to != NULL &&
         from != to &&
-        !to->is_pinned()) {
-        jbyte cv_obj = *_bs->byte_for_const(_containing_obj);
-        jbyte cv_field = *_bs->byte_for_const(p);
-        const jbyte dirty = CardTableModRefBS::dirty_card_val();
+        !to->is_pinned() &&
+        to->rem_set()->is_complete()) {
+        jbyte cv_obj = *_ct->byte_for_const(_containing_obj);
+        jbyte cv_field = *_ct->byte_for_const(p);
+        const jbyte dirty = G1CardTable::dirty_card_val();
 
         bool is_bad = !(from->is_young()
           || to->rem_set()->contains_reference(p)
@@ -598,7 +593,7 @@ public:
           ResourceMark rm;
           LogStream ls(log.error());
           _containing_obj->print_on(&ls);
-          log.error("points to obj " PTR_FORMAT " in region " HR_FORMAT, p2i(obj), HR_FORMAT_PARAMS(to));
+          log.error("points to obj " PTR_FORMAT " in region " HR_FORMAT " remset %s", p2i(obj), HR_FORMAT_PARAMS(to), to->rem_set()->get_state_str());
           if (oopDesc::is_oop(obj)) {
             obj->print_on(&ls);
           }
@@ -613,7 +608,7 @@ public:
 };
 
 // Closure that applies the given two closures in sequence.
-class G1Mux2Closure : public OopClosure {
+class G1Mux2Closure : public ExtendedOopClosure {
   OopClosure* _c1;
   OopClosure* _c2;
 public:
@@ -625,6 +620,9 @@ public:
   }
   virtual inline void do_oop(oop* p) { do_oop_work(p); }
   virtual inline void do_oop(narrowOop* p) { do_oop_work(p); }
+
+  // This closure provides its own oop verification code.
+  debug_only(virtual bool should_verify_oops() { return false; })
 };
 
 // This really ought to be commoned up into OffsetTableContigSpace somehow.
@@ -648,9 +646,7 @@ void HeapRegion::verify(VerifyOption vo,
     if (!g1->is_obj_dead_cond(obj, this, vo)) {
       if (oopDesc::is_oop(obj)) {
         Klass* klass = obj->klass();
-        bool is_metaspace_object = Metaspace::contains(klass) ||
-                                   (vo == VerifyOption_G1UsePrevMarking &&
-                                   ClassLoaderDataGraph::unload_list_contains(klass));
+        bool is_metaspace_object = Metaspace::contains(klass);
         if (!is_metaspace_object) {
           log_error(gc, verify)("klass " PTR_FORMAT " of object " PTR_FORMAT " "
                                 "not metadata", p2i(klass), p2i(obj));
@@ -663,11 +659,11 @@ void HeapRegion::verify(VerifyOption vo,
           return;
         } else {
           vl_cl.set_containing_obj(obj);
-          if (!g1->collector_state()->full_collection() || G1VerifyRSetsDuringFullGC) {
+          if (!g1->collector_state()->in_full_gc() || G1VerifyRSetsDuringFullGC) {
             // verify liveness and rem_set
             vr_cl.set_containing_obj(obj);
             G1Mux2Closure mux(&vl_cl, &vr_cl);
-            obj->oop_iterate_no_header(&mux);
+            obj->oop_iterate(&mux);
 
             if (vr_cl.failures()) {
               *failures = true;
@@ -678,7 +674,7 @@ void HeapRegion::verify(VerifyOption vo,
             }
           } else {
             // verify only liveness
-            obj->oop_iterate_no_header(&vl_cl);
+            obj->oop_iterate(&vl_cl);
           }
           if (vl_cl.failures()) {
             *failures = true;
@@ -794,7 +790,7 @@ void HeapRegion::verify_rem_set(VerifyOption vo, bool* failures) const {
     if (!g1->is_obj_dead_cond(obj, this, vo)) {
       if (oopDesc::is_oop(obj)) {
         vr_cl.set_containing_obj(obj);
-        obj->oop_iterate_no_header(&vr_cl);
+        obj->oop_iterate(&vr_cl);
 
         if (vr_cl.failures()) {
           *failures = true;
@@ -834,7 +830,6 @@ void G1ContiguousSpace::clear(bool mangle_space) {
   CompactibleSpace::clear(mangle_space);
   reset_bot();
 }
-
 #ifndef PRODUCT
 void G1ContiguousSpace::mangle_unused_area() {
   mangle_unused_area_complete();
@@ -862,15 +857,6 @@ HeapWord* G1ContiguousSpace::cross_threshold(HeapWord* start,
   return _bot_part.threshold();
 }
 
-void G1ContiguousSpace::record_timestamp() {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  uint curr_gc_time_stamp = g1h->get_gc_time_stamp();
-
-  if (_gc_time_stamp < curr_gc_time_stamp) {
-    _gc_time_stamp = curr_gc_time_stamp;
-  }
-}
-
 void G1ContiguousSpace::safe_object_iterate(ObjectClosure* blk) {
   object_iterate(blk);
 }
@@ -887,8 +873,7 @@ void G1ContiguousSpace::object_iterate(ObjectClosure* blk) {
 
 G1ContiguousSpace::G1ContiguousSpace(G1BlockOffsetTable* bot) :
   _bot_part(bot, this),
-  _par_alloc_lock(Mutex::leaf, "OffsetTableContigSpace par alloc lock", true),
-  _gc_time_stamp(0)
+  _par_alloc_lock(Mutex::leaf, "OffsetTableContigSpace par alloc lock", true)
 {
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary Ensure that classes found in jimage takes precedence over classes found in -Xbootclasspath/a.
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules java.activation
  *          jdk.jartool/sun.tools.jar
@@ -34,7 +33,7 @@
  * @compile ../../test-classes/java/net/HttpCookie.jasm
  * @compile ../../test-classes/javax/activation/MimeType.jasm
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main DummyClassesInBootClassPath
  */
 
@@ -46,6 +45,16 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class DummyClassesInBootClassPath {
     private static final String METHOD_NAME = "thisClassIsDummy()";
 
+    static void checkOutput(OutputAnalyzer output, String[] classNames) throws Exception {
+        for (int i = 0; i < classNames.length; i++) {
+            String cn = classNames[i].replace('/', '.');
+            TestCommon.checkExec(output,
+                "java.lang.NoSuchMethodException: " + cn + "." +
+                METHOD_NAME);
+            output.shouldNotContain(cn + ".class should be in shared space.");
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         String classNames[] = { "java/net/HttpCookie",
                                 "javax/activation/MimeType"};
@@ -53,36 +62,33 @@ public class DummyClassesInBootClassPath {
 
         String appJar = TestCommon.getTestJar("dummyClasses.jar");
         OutputAnalyzer dumpOutput = TestCommon.dump(
-            appJar, classNames, "-Xbootclasspath/a:" + appJar);
-
+            appJar, classNames, "-Xbootclasspath/a:" + appJar,
+            "--add-modules", "java.activation");
         List<String> argsList = new ArrayList<String>();
         for (int i = 0; i < classNames.length; i++) {
             argsList.add(classNames[i].replace('/', '.'));
         }
         String[] arguments = new String[argsList.size()];
         arguments = argsList.toArray(arguments);
-        OutputAnalyzer execOutput = TestCommon.execCommon(
-            "-cp", TestCommon.getTestDir("."), "-verbose:class",
-            "--add-modules", "java.activation",
-            "-Xbootclasspath/a:" + appJar, "DummyClassHelper",
-            arguments[0], arguments[1]);
-        for (int i = 0; i < arguments.length; i++) {
-            TestCommon.checkExec(execOutput,
-                "java.lang.NoSuchMethodException: " + arguments[i] + "." +
-                METHOD_NAME);
-        }
+        Testcommon.run(
+            "--add-modules", "java.activation", "-Xbootclasspath/a:" + appJar,
+            "DummyClassHelper", arguments[0], arguments[1])
+          .assertNormalExit(output -> checkOutput(output, classNames));
 
         JarBuilder.build(true, "WhiteBox", "sun/hotspot/WhiteBox");
         String whiteBoxJar = TestCommon.getTestJar("WhiteBox.jar");
         String bootClassPath = "-Xbootclasspath/a:" + appJar +
             File.pathSeparator + whiteBoxJar;
+        dumpOutput = TestCommon.dump(
+            appJar, classNames, bootClassPath, "--add-modules", "java.activation");
         argsList.add("testWithWhiteBox");
         arguments = new String[argsList.size()];
         arguments = argsList.toArray(arguments);
         String[] opts = {"-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
-            bootClassPath, "-XX:+TraceClassPaths", "DummyClassHelper",
-            arguments[0], arguments[1], arguments[2]};
-        OutputAnalyzer output = TestCommon.execCommon(opts);
+            "--add-modules", "java.activation", bootClassPath, "-Xlog:class+path=trace",
+            "DummyClassHelper", arguments[0], arguments[1], arguments[2]};
+        Testcommon.run(opts)
+          .assertNormalExit(output -> checkOutput(output, classNames));
     }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,10 @@
 
 #include "precompiled.hpp"
 #include "ci/ciObject.hpp"
-#include "ci/ciUtilities.hpp"
+#include "ci/ciUtilities.inline.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/jniHandles.inline.hpp"
 
 // ciObject
 //
@@ -95,6 +96,14 @@ ciObject::ciObject() {
   ASSERT_IN_VM;
   _handle = NULL;
   _klass = NULL;
+}
+
+// ------------------------------------------------------------------
+// ciObject::get_oop
+//
+// Get the oop of this ciObject.
+oop ciObject::get_oop() const {
+  return JNIHandles::resolve_non_null(_handle);
 }
 
 // ------------------------------------------------------------------
@@ -198,7 +207,7 @@ void ciObject::init_flags_from(oop x) {
   int flags = 0;
   if (x != NULL) {
     assert(Universe::heap()->is_in_reserved(x), "must be");
-    if (x->is_scavengable())
+    if (Universe::heap()->is_scavengable(x))
       flags |= SCAVENGABLE_FLAG;
   }
   _ident |= flags;

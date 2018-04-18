@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,13 @@ package com.sun.javadoc;
  *   in the package {@code jdk.javadoc.doclet}.
  *   For more information, see the <i>Migration Guide</i> in the documentation for that package.
  */
-@Deprecated
+@Deprecated(since="9", forRemoval=true)
+@SuppressWarnings("removal")
 public interface PackageDoc extends Doc {
 
     /**
      * Get all classes and interfaces in the package, filtered to the specified
-     * <a href="{@docRoot}/com/sun/javadoc/package-summary.html#included">access
+     * <a href="{@docRoot}/jdk.javadoc/com/sun/javadoc/package-summary.html#included">access
      * modifier option</a>.
      *
      * @return       filtered classes and interfaces in this package
@@ -61,7 +62,7 @@ public interface PackageDoc extends Doc {
 
     /**
      * Get all
-     * <a href="{@docRoot}/com/sun/javadoc/package-summary.html#included">included</a>
+     * <a href="{@docRoot}/jdk.javadoc/com/sun/javadoc/package-summary.html#included">included</a>
      * classes and interfaces in the package.  Same as allClasses(true).
      *
      * @return all included classes and interfaces in this package.
@@ -70,7 +71,7 @@ public interface PackageDoc extends Doc {
 
     /**
      * Get included
-     * <a href="{@docRoot}/com/sun/javadoc/package-summary.html#class">ordinary</a>
+     * <a href="{@docRoot}/jdk.javadoc/com/sun/javadoc/package-summary.html#class">ordinary</a>
      * classes (that is, exclude exceptions, errors, enums, interfaces, and
      * annotation types)
      * in this package.

@@ -36,9 +36,9 @@ import static java.lang.System.lineSeparator;
 public class ResourceVariable {
 
     @TADescription(annotation = "TA", type = RESOURCE_VARIABLE,
-            lvarOffset = {10}, lvarLength = {106}, lvarIndex = {1})
+            lvarOffset = {10}, lvarLength = {37}, lvarIndex = {1})
     @TADescription(annotation = "TB", type = RESOURCE_VARIABLE,
-            lvarOffset = {22}, lvarLength = {31}, lvarIndex = {3})
+            lvarOffset = {20}, lvarLength = {4}, lvarIndex = {2})
     public String testResourceVariable() {
         return
                 "public void f() throws IOException {" + lineSeparator() +
@@ -49,7 +49,7 @@ public class ResourceVariable {
     }
 
     @TADescription(annotation = "RTAs", type = RESOURCE_VARIABLE,
-            lvarOffset = {10}, lvarLength = {26}, lvarIndex = {1})
+            lvarOffset = {10}, lvarLength = {4}, lvarIndex = {1})
     public String testRepeatedAnnotation1() {
         return
                 "public void f() throws IOException {" + lineSeparator() +
@@ -58,7 +58,7 @@ public class ResourceVariable {
     }
 
     @TADescription(annotation = "RTAs", type = RESOURCE_VARIABLE,
-            lvarOffset = {10}, lvarLength = {26}, lvarIndex = {1})
+            lvarOffset = {10}, lvarLength = {4}, lvarIndex = {1})
     public String testRepeatedAnnotation2() {
         return
                 "public void f() throws IOException {" + lineSeparator() +
@@ -67,9 +67,9 @@ public class ResourceVariable {
     }
 
     @TADescription(annotation = "TA", type = RESOURCE_VARIABLE,
-            lvarOffset = {10}, lvarLength = {106}, lvarIndex = {1})
+            lvarOffset = {10}, lvarLength = {37}, lvarIndex = {1})
     @TADescription(annotation = "TB", type = RESOURCE_VARIABLE,
-            lvarOffset = {22}, lvarLength = {31}, lvarIndex = {3})
+            lvarOffset = {20}, lvarLength = {4}, lvarIndex = {2})
     public String testSeveralVariablesInTryWithResources() {
         return
                 "public void f() throws IOException {" + lineSeparator() +

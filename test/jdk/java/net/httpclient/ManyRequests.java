@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8087112 8180044
- * @modules jdk.incubator.httpclient
+ * @modules java.net.http
  *          java.logging
  *          jdk.httpserver
  * @library /lib/testlibrary/ /
@@ -47,10 +47,13 @@ import com.sun.net.httpserver.HttpExchange;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import jdk.incubator.http.HttpClient;
-import jdk.incubator.http.HttpRequest;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Arrays;
 import java.util.Formatter;
 import java.util.HashMap;
@@ -61,8 +64,6 @@ import java.util.logging.Level;
 import java.util.concurrent.CompletableFuture;
 import javax.net.ssl.SSLContext;
 import jdk.testlibrary.SimpleSSLContext;
-import static jdk.incubator.http.HttpRequest.BodyPublisher.fromByteArray;
-import static jdk.incubator.http.HttpResponse.BodyHandler.asByteArray;
 
 public class ManyRequests {
 
@@ -78,7 +79,7 @@ public class ManyRequests {
                          + ", XFixed=" + XFIXED);
         SSLContext ctx = new SimpleSSLContext().get();
 
-        InetSocketAddress addr = new InetSocketAddress(0);
+        InetSocketAddress addr = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         HttpsServer server = HttpsServer.create(addr, 0);
         server.setHttpsConfigurator(new Configurator(ctx));
 
@@ -129,7 +130,7 @@ public class ManyRequests {
 
     static void test(HttpsServer server, HttpClient client) throws Exception {
         int port = server.getAddress().getPort();
-        URI baseURI = new URI("https://127.0.0.1:" + port + "/foo/x");
+        URI baseURI = new URI("https://localhost:" + port + "/foo/x");
         server.createContext("/foo", new TestEchoHandler());
         server.start();
 
@@ -144,7 +145,7 @@ public class ManyRequests {
             URI uri = new URI(baseURI.toString() + String.valueOf(i+1));
             HttpRequest r = HttpRequest.newBuilder(uri)
                                        .header("XFixed", "true")
-                                       .POST(fromByteArray(buf))
+                                       .POST(BodyPublishers.ofByteArray(buf))
                                        .build();
             bodies.put(r, buf);
 
@@ -152,7 +153,7 @@ public class ManyRequests {
                 limiter.whenOkToSend()
                        .thenCompose((v) -> {
                            System.out.println("Client: sendAsync: " + r.uri());
-                           return client.sendAsync(r, asByteArray());
+                           return client.sendAsync(r, BodyHandlers.ofByteArray());
                        })
                        .thenCompose((resp) -> {
                            limiter.requestComplete();

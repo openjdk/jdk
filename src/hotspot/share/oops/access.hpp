@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,16 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_ACCESS_HPP
-#define SHARE_VM_RUNTIME_ACCESS_HPP
+#ifndef SHARE_OOPS_ACCESS_HPP
+#define SHARE_OOPS_ACCESS_HPP
 
 #include "memory/allocation.hpp"
-#include "metaprogramming/decay.hpp"
-#include "metaprogramming/integralConstant.hpp"
+#include "oops/accessBackend.hpp"
+#include "oops/accessDecorators.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+
 
 // = GENERAL =
 // Access is an API for performing accesses with declarative semantics. Each access can have a number of "decorators".
@@ -39,11 +40,12 @@
 // e.g. strength of references, strength of GC barriers, or whether compression should be applied or not.
 // Some decorators are set at buildtime, such as whether primitives require GC barriers or not, others
 // at callsites such as whether an access is in the heap or not, and others are resolved at runtime
-// such as GC-specific barriers and encoding/decoding compressed oops.
+// such as GC-specific barriers and encoding/decoding compressed oops. For more information about what
+// decorators are available, cf. oops/accessDecorators.hpp.
 // By pipelining handling of these decorators, the design of the Access API allows separation of concern
 // over the different orthogonal concerns of decorators, while providing a powerful way of
 // expressing these orthogonal semantic properties in a unified way.
-
+//
 // == OPERATIONS ==
 // * load: Load a value from an address.
 // * load_at: Load a value from an internal pointer relative to a base object.
@@ -55,279 +57,40 @@
 // * atomic_xchg_at: Atomically swap a new value at an internal pointer address if previous value matched the compared value.
 // * arraycopy: Copy data from one heap array to another heap array.
 // * clone: Clone the contents of an object to a newly allocated object.
-
-typedef uint64_t DecoratorSet;
-
-// == Internal Decorators - do not use ==
-// * INTERNAL_EMPTY: This is the name for the empty decorator set (in absence of other decorators).
-// * INTERNAL_CONVERT_COMPRESSED_OOPS: This is an oop access that will require converting an oop
-//   to a narrowOop or vice versa, if UseCompressedOops is known to be set.
-// * INTERNAL_VALUE_IS_OOP: Remember that the involved access is on oop rather than primitive.
-const DecoratorSet INTERNAL_EMPTY                    = UCONST64(0);
-const DecoratorSet INTERNAL_CONVERT_COMPRESSED_OOP   = UCONST64(1) << 1;
-const DecoratorSet INTERNAL_VALUE_IS_OOP             = UCONST64(1) << 2;
-
-// == Internal build-time Decorators ==
-// * INTERNAL_BT_BARRIER_ON_PRIMITIVES: This is set in the barrierSetConfig.hpp file.
-const DecoratorSet INTERNAL_BT_BARRIER_ON_PRIMITIVES = UCONST64(1) << 3;
-
-// == Internal run-time Decorators ==
-// * INTERNAL_RT_USE_COMPRESSED_OOPS: This decorator will be set in runtime resolved
-//   access backends iff UseCompressedOops is true.
-const DecoratorSet INTERNAL_RT_USE_COMPRESSED_OOPS   = UCONST64(1) << 4;
-
-const DecoratorSet INTERNAL_DECORATOR_MASK           = INTERNAL_CONVERT_COMPRESSED_OOP | INTERNAL_VALUE_IS_OOP |
-                                                       INTERNAL_BT_BARRIER_ON_PRIMITIVES | INTERNAL_RT_USE_COMPRESSED_OOPS;
-
-// == Memory Ordering Decorators ==
-// The memory ordering decorators can be described in the following way:
-// === Decorator Rules ===
-// The different types of memory ordering guarantees have a strict order of strength.
-// Explicitly specifying the stronger ordering implies that the guarantees of the weaker
-// property holds too. The names come from the C++11 atomic operations, and typically
-// have a JMM equivalent property.
-// The equivalence may be viewed like this:
-// MO_UNORDERED is equivalent to JMM plain.
-// MO_VOLATILE has no equivalence in JMM, because it's a C++ thing.
-// MO_RELAXED is equivalent to JMM opaque.
-// MO_ACQUIRE is equivalent to JMM acquire.
-// MO_RELEASE is equivalent to JMM release.
-// MO_SEQ_CST is equivalent to JMM volatile.
+// * resolve: Resolve a stable to-space invariant oop that is guaranteed not to relocate its payload until a subsequent thread transition.
+// * equals: Object equality, e.g. when different copies of the same objects are in use (from-space vs. to-space)
 //
-// === Stores ===
-//  * MO_UNORDERED (Default): No guarantees.
-//    - The compiler and hardware are free to reorder aggressively. And they will.
-//  * MO_VOLATILE: Volatile stores (in the C++ sense).
-//    - The stores are not reordered by the compiler (but possibly the HW) w.r.t. other
-//      volatile accesses in program order (but possibly non-volatile accesses).
-//  * MO_RELAXED: Relaxed atomic stores.
-//    - The stores are atomic.
-//    - Guarantees from volatile stores hold.
-//  * MO_RELEASE: Releasing stores.
-//    - The releasing store will make its preceding memory accesses observable to memory accesses
-//      subsequent to an acquiring load observing this releasing store.
-//    - Guarantees from relaxed stores hold.
-//  * MO_SEQ_CST: Sequentially consistent stores.
-//    - The stores are observed in the same order by MO_SEQ_CST loads on other processors
-//    - Preceding loads and stores in program order are not reordered with subsequent loads and stores in program order.
-//    - Guarantees from releasing stores hold.
-// === Loads ===
-//  * MO_UNORDERED (Default): No guarantees
-//    - The compiler and hardware are free to reorder aggressively. And they will.
-//  * MO_VOLATILE: Volatile loads (in the C++ sense).
-//    - The loads are not reordered by the compiler (but possibly the HW) w.r.t. other
-//      volatile accesses in program order (but possibly non-volatile accesses).
-//  * MO_RELAXED: Relaxed atomic loads.
-//    - The stores are atomic.
-//    - Guarantees from volatile loads hold.
-//  * MO_ACQUIRE: Acquiring loads.
-//    - An acquiring load will make subsequent memory accesses observe the memory accesses
-//      preceding the releasing store that the acquiring load observed.
-//    - Guarantees from relaxed loads hold.
-//  * MO_SEQ_CST: Sequentially consistent loads.
-//    - These loads observe MO_SEQ_CST stores in the same order on other processors
-//    - Preceding loads and stores in program order are not reordered with subsequent loads and stores in program order.
-//    - Guarantees from acquiring loads hold.
-// === Atomic Cmpxchg ===
-//  * MO_RELAXED: Atomic but relaxed cmpxchg.
-//    - Guarantees from MO_RELAXED loads and MO_RELAXED stores hold unconditionally.
-//  * MO_SEQ_CST: Sequentially consistent cmpxchg.
-//    - Guarantees from MO_SEQ_CST loads and MO_SEQ_CST stores hold unconditionally.
-// === Atomic Xchg ===
-//  * MO_RELAXED: Atomic but relaxed atomic xchg.
-//    - Guarantees from MO_RELAXED loads and MO_RELAXED stores hold.
-//  * MO_SEQ_CST: Sequentially consistent xchg.
-//    - Guarantees from MO_SEQ_CST loads and MO_SEQ_CST stores hold.
-const DecoratorSet MO_UNORDERED      = UCONST64(1) << 5;
-const DecoratorSet MO_VOLATILE       = UCONST64(1) << 6;
-const DecoratorSet MO_RELAXED        = UCONST64(1) << 7;
-const DecoratorSet MO_ACQUIRE        = UCONST64(1) << 8;
-const DecoratorSet MO_RELEASE        = UCONST64(1) << 9;
-const DecoratorSet MO_SEQ_CST        = UCONST64(1) << 10;
-const DecoratorSet MO_DECORATOR_MASK = MO_UNORDERED | MO_VOLATILE | MO_RELAXED |
-                                       MO_ACQUIRE | MO_RELEASE | MO_SEQ_CST;
-
-// === Barrier Strength Decorators ===
-// * AS_RAW: The access will translate into a raw memory access, hence ignoring all semantic concerns
-//   except memory ordering and compressed oops. This will bypass runtime function pointer dispatching
-//   in the pipeline and hardwire to raw accesses without going trough the GC access barriers.
-//  - Accesses on oop* translate to raw memory accesses without runtime checks
-//  - Accesses on narrowOop* translate to encoded/decoded memory accesses without runtime checks
-//  - Accesses on HeapWord* translate to a runtime check choosing one of the above
-//  - Accesses on other types translate to raw memory accesses without runtime checks
-// * AS_NO_KEEPALIVE: The barrier is used only on oop references and will not keep any involved objects
-//   alive, regardless of the type of reference being accessed. It will however perform the memory access
-//   in a consistent way w.r.t. e.g. concurrent compaction, so that the right field is being accessed,
-//   or maintain, e.g. intergenerational or interregional pointers if applicable. This should be used with
-//   extreme caution in isolated scopes.
-// * AS_NORMAL: The accesses will be resolved to an accessor on the BarrierSet class, giving the
-//   responsibility of performing the access and what barriers to be performed to the GC. This is the default.
-//   Note that primitive accesses will only be resolved on the barrier set if the appropriate build-time
-//   decorator for enabling primitive barriers is enabled for the build.
-const DecoratorSet AS_RAW            = UCONST64(1) << 11;
-const DecoratorSet AS_NO_KEEPALIVE   = UCONST64(1) << 12;
-const DecoratorSet AS_NORMAL         = UCONST64(1) << 13;
-const DecoratorSet AS_DECORATOR_MASK = AS_RAW | AS_NO_KEEPALIVE | AS_NORMAL;
-
-// === Reference Strength Decorators ===
-// These decorators only apply to accesses on oop-like types (oop/narrowOop).
-// * ON_STRONG_OOP_REF: Memory access is performed on a strongly reachable reference.
-// * ON_WEAK_OOP_REF: The memory access is performed on a weakly reachable reference.
-// * ON_PHANTOM_OOP_REF: The memory access is performed on a phantomly reachable reference.
-//   This is the same ring of strength as jweak and weak oops in the VM.
-// * ON_UNKNOWN_OOP_REF: The memory access is performed on a reference of unknown strength.
-//   This could for example come from the unsafe API.
-// * Default (no explicit reference strength specified): ON_STRONG_OOP_REF
-const DecoratorSet ON_STRONG_OOP_REF  = UCONST64(1) << 14;
-const DecoratorSet ON_WEAK_OOP_REF    = UCONST64(1) << 15;
-const DecoratorSet ON_PHANTOM_OOP_REF = UCONST64(1) << 16;
-const DecoratorSet ON_UNKNOWN_OOP_REF = UCONST64(1) << 17;
-const DecoratorSet ON_DECORATOR_MASK  = ON_STRONG_OOP_REF | ON_WEAK_OOP_REF |
-                                        ON_PHANTOM_OOP_REF | ON_UNKNOWN_OOP_REF;
-
-// === Access Location ===
-// Accesses can take place in, e.g. the heap, old or young generation and different native roots.
-// The location is important to the GC as it may imply different actions. The following decorators are used:
-// * IN_HEAP: The access is performed in the heap. Many barriers such as card marking will
-//   be omitted if this decorator is not set.
-// * IN_HEAP_ARRAY: The access is performed on a heap allocated array. This is sometimes a special case
-//   for some GCs, and implies that it is an IN_HEAP.
-// * IN_ROOT: The access is performed in an off-heap data structure pointing into the Java heap.
-// * IN_CONCURRENT_ROOT: The access is performed in an off-heap data structure pointing into the Java heap,
-//   but is notably not scanned during safepoints. This is sometimes a special case for some GCs and
-//   implies that it is also an IN_ROOT.
-const DecoratorSet IN_HEAP            = UCONST64(1) << 18;
-const DecoratorSet IN_HEAP_ARRAY      = UCONST64(1) << 19;
-const DecoratorSet IN_ROOT            = UCONST64(1) << 20;
-const DecoratorSet IN_CONCURRENT_ROOT = UCONST64(1) << 21;
-const DecoratorSet IN_DECORATOR_MASK  = IN_HEAP | IN_HEAP_ARRAY |
-                                        IN_ROOT | IN_CONCURRENT_ROOT;
-
-// == Value Decorators ==
-// * OOP_NOT_NULL: This property can make certain barriers faster such as compressing oops.
-const DecoratorSet OOP_NOT_NULL       = UCONST64(1) << 22;
-const DecoratorSet OOP_DECORATOR_MASK = OOP_NOT_NULL;
-
-// == Arraycopy Decorators ==
-// * ARRAYCOPY_DEST_NOT_INITIALIZED: This property can be important to e.g. SATB barriers by
-//   marking that the previous value uninitialized nonsense rather than a real value.
-// * ARRAYCOPY_CHECKCAST: This property means that the class of the objects in source
-//   are not guaranteed to be subclasses of the class of the destination array. This requires
-//   a check-cast barrier during the copying operation. If this is not set, it is assumed
-//   that the array is covariant: (the source array type is-a destination array type)
-// * ARRAYCOPY_DISJOINT: This property means that it is known that the two array ranges
-//   are disjoint.
-// * ARRAYCOPY_ARRAYOF: The copy is in the arrayof form.
-// * ARRAYCOPY_ATOMIC: The accesses have to be atomic over the size of its elements.
-// * ARRAYCOPY_ALIGNED: The accesses have to be aligned on a HeapWord.
-const DecoratorSet ARRAYCOPY_DEST_NOT_INITIALIZED = UCONST64(1) << 24;
-const DecoratorSet ARRAYCOPY_CHECKCAST            = UCONST64(1) << 25;
-const DecoratorSet ARRAYCOPY_DISJOINT             = UCONST64(1) << 26;
-const DecoratorSet ARRAYCOPY_ARRAYOF              = UCONST64(1) << 27;
-const DecoratorSet ARRAYCOPY_ATOMIC               = UCONST64(1) << 28;
-const DecoratorSet ARRAYCOPY_ALIGNED              = UCONST64(1) << 29;
-const DecoratorSet ARRAYCOPY_DECORATOR_MASK       = ARRAYCOPY_DEST_NOT_INITIALIZED |
-                                                    ARRAYCOPY_CHECKCAST | ARRAYCOPY_DISJOINT |
-                                                    ARRAYCOPY_DISJOINT | ARRAYCOPY_ARRAYOF |
-                                                    ARRAYCOPY_ATOMIC | ARRAYCOPY_ALIGNED;
-
-// The HasDecorator trait can help at compile-time determining whether a decorator set
-// has an intersection with a certain other decorator set
-template <DecoratorSet decorators, DecoratorSet decorator>
-struct HasDecorator: public IntegralConstant<bool, (decorators & decorator) != 0> {};
-
-namespace AccessInternal {
-  template <typename T>
-  struct OopOrNarrowOopInternal: AllStatic {
-    typedef oop type;
-  };
-
-  template <>
-  struct OopOrNarrowOopInternal<narrowOop>: AllStatic {
-    typedef narrowOop type;
-  };
-
-  // This metafunction returns a canonicalized oop/narrowOop type for a passed
-  // in oop-like types passed in from oop_* overloads where the user has sworn
-  // that the passed in values should be oop-like (e.g. oop, oopDesc*, arrayOop,
-  // narrowOoop, instanceOopDesc*, and random other things).
-  // In the oop_* overloads, it must hold that if the passed in type T is not
-  // narrowOop, then it by contract has to be one of many oop-like types implicitly
-  // convertible to oop, and hence returns oop as the canonical oop type.
-  // If it turns out it was not, then the implicit conversion to oop will fail
-  // to compile, as desired.
-  template <typename T>
-  struct OopOrNarrowOop: AllStatic {
-    typedef typename OopOrNarrowOopInternal<typename Decay<T>::type>::type type;
-  };
-
-  inline void* field_addr(oop base, ptrdiff_t byte_offset) {
-    return reinterpret_cast<void*>(reinterpret_cast<intptr_t>((void*)base) + byte_offset);
-  }
-
-  template <DecoratorSet decorators, typename T>
-  void store_at(oop base, ptrdiff_t offset, T value);
-
-  template <DecoratorSet decorators, typename T>
-  T load_at(oop base, ptrdiff_t offset);
-
-  template <DecoratorSet decorators, typename T>
-  T atomic_cmpxchg_at(T new_value, oop base, ptrdiff_t offset, T compare_value);
-
-  template <DecoratorSet decorators, typename T>
-  T atomic_xchg_at(T new_value, oop base, ptrdiff_t offset);
-
-  template <DecoratorSet decorators, typename P, typename T>
-  void store(P* addr, T value);
-
-  template <DecoratorSet decorators, typename P, typename T>
-  T load(P* addr);
-
-  template <DecoratorSet decorators, typename P, typename T>
-  T atomic_cmpxchg(T new_value, P* addr, T compare_value);
-
-  template <DecoratorSet decorators, typename P, typename T>
-  T atomic_xchg(T new_value, P* addr);
-
-  template <DecoratorSet decorators, typename T>
-  bool arraycopy(arrayOop src_obj, arrayOop dst_obj, T *src, T *dst, size_t length);
-
-  template <DecoratorSet decorators>
-  void clone(oop src, oop dst, size_t size);
-
-  // Infer the type that should be returned from a load.
-  template <typename P, DecoratorSet decorators>
-  class LoadProxy: public StackObj {
-  private:
-    P *const _addr;
-  public:
-    LoadProxy(P* addr) : _addr(addr) {}
-
-    template <typename T>
-    inline operator T() {
-      return load<decorators, P, T>(_addr);
-    }
-
-    inline operator P() {
-      return load<decorators, P, P>(_addr);
-    }
-  };
-
-  // Infer the type that should be returned from a load_at.
-  template <DecoratorSet decorators>
-  class LoadAtProxy: public StackObj {
-  private:
-    const oop _base;
-    const ptrdiff_t _offset;
-  public:
-    LoadAtProxy(oop base, ptrdiff_t offset) : _base(base), _offset(offset) {}
-
-    template <typename T>
-    inline operator T() const {
-      return load_at<decorators, T>(_base, _offset);
-    }
-  };
-}
+// == IMPLEMENTATION ==
+// Each access goes through the following steps in a template pipeline.
+// There are essentially 5 steps for each access:
+// * Step 1:   Set default decorators and decay types. This step gets rid of CV qualifiers
+//             and sets default decorators to sensible values.
+// * Step 2:   Reduce types. This step makes sure there is only a single T type and not
+//             multiple types. The P type of the address and T type of the value must
+//             match.
+// * Step 3:   Pre-runtime dispatch. This step checks whether a runtime call can be
+//             avoided, and in that case avoids it (calling raw accesses or
+//             primitive accesses in a build that does not require primitive GC barriers)
+// * Step 4:   Runtime-dispatch. This step performs a runtime dispatch to the corresponding
+//             BarrierSet::AccessBarrier accessor that attaches GC-required barriers
+//             to the access.
+// * Step 5.a: Barrier resolution. This step is invoked the first time a runtime-dispatch
+//             happens for an access. The appropriate BarrierSet::AccessBarrier accessor
+//             is resolved, then the function pointer is updated to that accessor for
+//             future invocations.
+// * Step 5.b: Post-runtime dispatch. This step now casts previously unknown types such
+//             as the address type of an oop on the heap (is it oop* or narrowOop*) to
+//             the appropriate type. It also splits sufficiently orthogonal accesses into
+//             different functions, such as whether the access involves oops or primitives
+//             and whether the access is performed on the heap or outside. Then the
+//             appropriate BarrierSet::AccessBarrier is called to perform the access.
+//
+// The implementation of step 1-4 resides in in accessBackend.hpp, to allow selected
+// accesses to be accessible from only access.hpp, as opposed to access.inline.hpp.
+// Steps 5.a and 5.b require knowledge about the GC backends, and therefore needs to
+// include the various GC backend .inline.hpp headers. Their implementation resides in
+// access.inline.hpp. The accesses that are allowed through the access.hpp file
+// must be instantiated in access.cpp using the INSTANTIATE_HPP_ACCESS macro.
 
 template <DecoratorSet decorators = INTERNAL_EMPTY>
 class Access: public AllStatic {
@@ -341,8 +104,8 @@ class Access: public AllStatic {
 
   template <DecoratorSet expected_mo_decorators>
   static void verify_primitive_decorators() {
-    const DecoratorSet primitive_decorators = (AS_DECORATOR_MASK ^ AS_NO_KEEPALIVE) | IN_HEAP |
-                                               IN_HEAP_ARRAY | MO_DECORATOR_MASK;
+    const DecoratorSet primitive_decorators = (AS_DECORATOR_MASK ^ AS_NO_KEEPALIVE ^ AS_DEST_NOT_INITIALIZED) |
+                                              IN_HEAP | IN_HEAP_ARRAY;
     verify_decorators<expected_mo_decorators | primitive_decorators>();
   }
 
@@ -350,7 +113,7 @@ class Access: public AllStatic {
   static void verify_oop_decorators() {
     const DecoratorSet oop_decorators = AS_DECORATOR_MASK | IN_DECORATOR_MASK |
                                         (ON_DECORATOR_MASK ^ ON_UNKNOWN_OOP_REF) | // no unknown oop refs outside of the heap
-                                        OOP_DECORATOR_MASK | MO_DECORATOR_MASK;
+                                        OOP_DECORATOR_MASK;
     verify_decorators<expected_mo_decorators | oop_decorators>();
   }
 
@@ -358,8 +121,7 @@ class Access: public AllStatic {
   static void verify_heap_oop_decorators() {
     const DecoratorSet heap_oop_decorators = AS_DECORATOR_MASK | ON_DECORATOR_MASK |
                                              OOP_DECORATOR_MASK | (IN_DECORATOR_MASK ^
-                                                                  (IN_ROOT ^ IN_CONCURRENT_ROOT)) | // no root accesses in the heap
-                                             MO_DECORATOR_MASK;
+                                                                   (IN_ROOT | IN_CONCURRENT_ROOT)); // no root accesses in the heap
     verify_decorators<expected_mo_decorators | heap_oop_decorators>();
   }
 
@@ -394,16 +156,16 @@ public:
   }
 
   template <typename T>
-  static inline bool arraycopy(arrayOop src_obj, arrayOop dst_obj, T *src, T *dst, size_t length) {
+  static inline void arraycopy(arrayOop src_obj, arrayOop dst_obj, T *src, T *dst, size_t length) {
     verify_decorators<ARRAYCOPY_DECORATOR_MASK | IN_HEAP |
                       AS_DECORATOR_MASK>();
-    return AccessInternal::arraycopy<decorators>(src_obj, dst_obj, src, dst, length);
+    AccessInternal::arraycopy<decorators>(src_obj, dst_obj, src, dst, length);
   }
 
   // Oop heap accesses
-  static inline AccessInternal::LoadAtProxy<decorators | INTERNAL_VALUE_IS_OOP> oop_load_at(oop base, ptrdiff_t offset) {
+  static inline AccessInternal::OopLoadAtProxy<decorators> oop_load_at(oop base, ptrdiff_t offset) {
     verify_heap_oop_decorators<load_mo_decorators>();
-    return AccessInternal::LoadAtProxy<decorators | INTERNAL_VALUE_IS_OOP>(base, offset);
+    return AccessInternal::OopLoadAtProxy<decorators>(base, offset);
   }
 
   template <typename T>
@@ -470,9 +232,9 @@ public:
 
   // Oop accesses
   template <typename P>
-  static inline AccessInternal::LoadProxy<P, decorators | INTERNAL_VALUE_IS_OOP> oop_load(P* addr) {
+  static inline AccessInternal::OopLoadProxy<P, decorators> oop_load(P* addr) {
     verify_oop_decorators<load_mo_decorators>();
-    return AccessInternal::LoadProxy<P, decorators | INTERNAL_VALUE_IS_OOP>(addr);
+    return AccessInternal::OopLoadProxy<P, decorators>(addr);
   }
 
   template <typename P, typename T>
@@ -499,6 +261,16 @@ public:
     OopType new_oop_value = new_value;
     return AccessInternal::atomic_xchg<decorators | INTERNAL_VALUE_IS_OOP>(new_oop_value, addr);
   }
+
+  static oop resolve(oop obj) {
+    verify_decorators<INTERNAL_EMPTY>();
+    return AccessInternal::resolve<decorators>(obj);
+  }
+
+  static bool equals(oop o1, oop o2) {
+    verify_decorators<INTERNAL_EMPTY>();
+    return AccessInternal::equals<decorators>(o1, o2);
+  }
 };
 
 // Helper for performing raw accesses (knows only of memory ordering
@@ -516,4 +288,41 @@ class HeapAccess: public Access<IN_HEAP | decorators> {};
 template <DecoratorSet decorators = INTERNAL_EMPTY>
 class RootAccess: public Access<IN_ROOT | decorators> {};
 
-#endif // SHARE_VM_RUNTIME_ACCESS_HPP
+template <DecoratorSet decorators>
+template <DecoratorSet expected_decorators>
+void Access<decorators>::verify_decorators() {
+  STATIC_ASSERT((~expected_decorators & decorators) == 0); // unexpected decorator used
+  const DecoratorSet barrier_strength_decorators = decorators & AS_DECORATOR_MASK;
+  STATIC_ASSERT(barrier_strength_decorators == 0 || ( // make sure barrier strength decorators are disjoint if set
+    (barrier_strength_decorators ^ AS_NO_KEEPALIVE) == 0 ||
+    (barrier_strength_decorators ^ AS_DEST_NOT_INITIALIZED) == 0 ||
+    (barrier_strength_decorators ^ AS_RAW) == 0 ||
+    (barrier_strength_decorators ^ AS_NORMAL) == 0
+  ));
+  const DecoratorSet ref_strength_decorators = decorators & ON_DECORATOR_MASK;
+  STATIC_ASSERT(ref_strength_decorators == 0 || ( // make sure ref strength decorators are disjoint if set
+    (ref_strength_decorators ^ ON_STRONG_OOP_REF) == 0 ||
+    (ref_strength_decorators ^ ON_WEAK_OOP_REF) == 0 ||
+    (ref_strength_decorators ^ ON_PHANTOM_OOP_REF) == 0 ||
+    (ref_strength_decorators ^ ON_UNKNOWN_OOP_REF) == 0
+  ));
+  const DecoratorSet memory_ordering_decorators = decorators & MO_DECORATOR_MASK;
+  STATIC_ASSERT(memory_ordering_decorators == 0 || ( // make sure memory ordering decorators are disjoint if set
+    (memory_ordering_decorators ^ MO_UNORDERED) == 0 ||
+    (memory_ordering_decorators ^ MO_VOLATILE) == 0 ||
+    (memory_ordering_decorators ^ MO_RELAXED) == 0 ||
+    (memory_ordering_decorators ^ MO_ACQUIRE) == 0 ||
+    (memory_ordering_decorators ^ MO_RELEASE) == 0 ||
+    (memory_ordering_decorators ^ MO_SEQ_CST) == 0
+  ));
+  const DecoratorSet location_decorators = decorators & IN_DECORATOR_MASK;
+  STATIC_ASSERT(location_decorators == 0 || ( // make sure location decorators are disjoint if set
+    (location_decorators ^ IN_ROOT) == 0 ||
+    (location_decorators ^ IN_HEAP) == 0 ||
+    (location_decorators ^ (IN_HEAP | IN_HEAP_ARRAY)) == 0 ||
+    (location_decorators ^ (IN_ROOT | IN_CONCURRENT_ROOT)) == 0 ||
+    (location_decorators ^ (IN_ROOT | IN_ARCHIVE_ROOT)) == 0
+  ));
+}
+
+#endif // SHARE_OOPS_ACCESS_HPP

@@ -34,6 +34,7 @@ import sun.java2d.SunGraphicsEnvironment;
 /**
  * @test
  * @bug 8041654
+ * @key headful
  * @modules java.desktop/sun.java2d
  * @run main/othervm -Xmx80m DisplayListenerLeak
  */

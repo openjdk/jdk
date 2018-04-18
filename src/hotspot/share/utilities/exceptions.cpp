@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,11 @@
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "utilities/events.hpp"
@@ -239,8 +241,7 @@ void Exceptions::fthrow(Thread* thread, const char* file, int line, Symbol* h_na
   va_list ap;
   va_start(ap, format);
   char msg[max_msg_size];
-  vsnprintf(msg, max_msg_size, format, ap);
-  msg[max_msg_size-1] = '\0';
+  os::vsnprintf(msg, max_msg_size, format, ap);
   va_end(ap);
   _throw_msg(thread, file, line, h_name, msg);
 }
@@ -403,6 +404,37 @@ Handle Exceptions::new_exception(Thread* thread, Symbol* name,
                                    h_prot, to_utf8_safe);
 }
 
+// invokedynamic uses wrap_dynamic_exception for:
+//    - bootstrap method resolution
+//    - post call to MethodHandleNatives::linkCallSite
+// dynamically computed constant uses wrap_dynamic_exception for:
+//    - bootstrap method resolution
+//    - post call to MethodHandleNatives::linkDynamicConstant
+void Exceptions::wrap_dynamic_exception(Thread* THREAD) {
+  if (THREAD->has_pending_exception()) {
+    oop exception = THREAD->pending_exception();
+    // See the "Linking Exceptions" section for the invokedynamic instruction
+    // in JVMS 6.5.
+    if (exception->is_a(SystemDictionary::Error_klass())) {
+      // Pass through an Error, including BootstrapMethodError, any other form
+      // of linkage error, or say ThreadDeath/OutOfMemoryError
+      if (TraceMethodHandles) {
+        tty->print_cr("[constant/invoke]dynamic passes through an Error for " INTPTR_FORMAT, p2i((void *)exception));
+        exception->print();
+      }
+      return;
+    }
+
+    // Otherwise wrap the exception in a BootstrapMethodError
+    if (TraceMethodHandles) {
+      tty->print_cr("[constant/invoke]dynamic throws BSME for " INTPTR_FORMAT, p2i((void *)exception));
+      exception->print();
+    }
+    Handle nested_exception(THREAD, exception);
+    THREAD->clear_pending_exception();
+    THROW_CAUSE(vmSymbols::java_lang_BootstrapMethodError(), nested_exception)
+  }
+}
 
 // Exception counting for hs_err file
 volatile int Exceptions::_stack_overflow_errors = 0;
@@ -411,9 +443,9 @@ volatile int Exceptions::_out_of_memory_error_metaspace_errors = 0;
 volatile int Exceptions::_out_of_memory_error_class_metaspace_errors = 0;
 
 void Exceptions::count_out_of_memory_exceptions(Handle exception) {
-  if (exception() == Universe::out_of_memory_error_metaspace()) {
+  if (oopDesc::equals(exception(), Universe::out_of_memory_error_metaspace())) {
      Atomic::inc(&_out_of_memory_error_metaspace_errors);
-  } else if (exception() == Universe::out_of_memory_error_class_metaspace()) {
+  } else if (oopDesc::equals(exception(), Universe::out_of_memory_error_class_metaspace())) {
      Atomic::inc(&_out_of_memory_error_class_metaspace_errors);
   } else {
      // everything else reported as java heap OOM

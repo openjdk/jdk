@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ include NativeCompilation.gmk
 #   TYPE Must be either PROGRAM or LIBRARY.
 #   SOURCE_DIRS A list of source directories to search
 #   OUTPUT_DIR Where to put the resulting files
+#   EXCLUDE A list of filenames to exclude from compilation
 SetupTestFilesCompilation = $(NamedParamsMacroTemplate)
 define SetupTestFilesCompilationBody
 
@@ -59,13 +60,15 @@ define SetupTestFilesCompilationBody
   ifeq ($$($1_TYPE), LIBRARY)
     $1_PREFIX = lib
     $1_OUTPUT_SUBDIR := lib
-    $1_CFLAGS := $(CFLAGS_TESTLIB) $(CFLAGS_WARNINGS_ARE_ERRORS)
+    $1_CFLAGS := $(CFLAGS_TESTLIB)
     $1_LDFLAGS := $(LDFLAGS_TESTLIB) $(call SET_SHARED_LIBRARY_ORIGIN)
+    $1_COMPILATION_TYPE := LIBRARY
   else ifeq ($$($1_TYPE), PROGRAM)
     $1_PREFIX = exe
     $1_OUTPUT_SUBDIR := bin
-    $1_CFLAGS := $(CFLAGS_TESTEXE) $(CFLAGS_WARNINGS_ARE_ERRORS)
+    $1_CFLAGS := $(CFLAGS_TESTEXE)
     $1_LDFLAGS := $(LDFLAGS_TESTEXE)
+    $1_COMPILATION_TYPE := EXECUTABLE
   else
     $$(error Unknown type: $$($1_TYPE))
   endif
@@ -74,19 +77,23 @@ define SetupTestFilesCompilationBody
   $1_FILE_LIST := \
       $$(shell $$(FIND) $$($1_SOURCE_DIRS) -type f -name "$$($1_PREFIX)*.c")
 
+  $1_EXCLUDE_PATTERN := $$(addprefix %/, $$($1_EXCLUDE))
+  $1_FILTERED_FILE_LIST := $$(filter-out $$($1_EXCLUDE_PATTERN), $$($1_FILE_LIST))
+
   # Setup a compilation for each and every one of them
-  $$(foreach file, $$($1_FILE_LIST),\
-    $$(eval name := $$(strip $$(patsubst $$($1_PREFIX)%, %, $$(basename $$(notdir $$(file)))))) \
+  $$(foreach file, $$($1_FILTERED_FILE_LIST),\
+    $$(eval name := $$(strip $$(basename $$(notdir $$(file))))) \
+    $$(eval unprefixed_name := $$(patsubst $$($1_PREFIX)%, %, $$(name))) \
     $$(eval $$(call SetupNativeCompilation, BUILD_TEST_$$(name), \
-        $$($1_TYPE) := $$(name), \
+        NAME := $$(unprefixed_name), \
+        TYPE := $$($1_COMPILATION_TYPE), \
         SRC := $$(patsubst %/,%,$$(dir $$(file))), \
         INCLUDE_FILES := $$(notdir $$(file)), \
-        OBJECT_DIR := $$($1_OUTPUT_DIR)/support/$$($1_PREFIX)$$(name), \
+        OBJECT_DIR := $$($1_OUTPUT_DIR)/support/$$(name), \
         OUTPUT_DIR := $$($1_OUTPUT_DIR)/$$($1_OUTPUT_SUBDIR), \
-        LANG := C, \
-        CFLAGS := $$($1_CFLAGS) $$($1_CFLAGS_$$($1_PREFIX)$$(name)), \
-        LDFLAGS := $$($1_LDFLAGS) $$($1_LDFLAGS_$$($1_PREFIX)$$(name)), \
-        LIBS := $$($1_LIBS_$$($1_PREFIX)$$(name)), \
+        CFLAGS := $$($1_CFLAGS) $$($1_CFLAGS_$$(name)), \
+        LDFLAGS := $$($1_LDFLAGS) $$($1_LDFLAGS_$$(name)), \
+        LIBS := $$($1_LIBS_$$(name)), \
         OPTIMIZATION := LOW, \
         COPY_DEBUG_SYMBOLS := false, \
         STRIP_SYMBOLS := false, \

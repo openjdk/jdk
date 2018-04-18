@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_INTERPRETER_INVOCATIONCOUNTER_HPP
 #define SHARE_VM_INTERPRETER_INVOCATIONCOUNTER_HPP
 
-#include "memory/allocation.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/exceptions.hpp"
 
@@ -38,7 +37,7 @@
 // more significant bits. The counter is incremented before a method is activated and an
 // action is triggered when count() > limit().
 
-class InvocationCounter VALUE_OBJ_CLASS_SPEC {
+class InvocationCounter {
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class ciReplay;

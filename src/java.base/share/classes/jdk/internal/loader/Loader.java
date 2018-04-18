@@ -63,7 +63,6 @@ import java.util.stream.Stream;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.module.Resources;
 
-
 /**
  * A class loader that loads classes and resources from a collection of
  * modules, or from a single module where the class loader is a member
@@ -91,7 +90,7 @@ public final class Loader extends SecureClassLoader {
         ClassLoader.registerAsParallelCapable();
     }
 
-    // the loader pool is in a pool, can be null
+    // the pool this loader is a member of; can be null
     private final LoaderPool pool;
 
     // parent ClassLoader, can be null
@@ -111,7 +110,7 @@ public final class Loader extends SecureClassLoader {
     private final Map<ModuleReference, ModuleReader> moduleToReader
         = new ConcurrentHashMap<>();
 
-    // ACC used when loading classes and resources */
+    // ACC used when loading classes and resources
     private final AccessControlContext acc;
 
     /**
@@ -488,7 +487,7 @@ public final class Loader extends SecureClassLoader {
     }
 
     /**
-     * Finds the class with the specified binary name in a given module.
+     * Finds the class with the specified binary name in the given module.
      * This method returns {@code null} if the class cannot be found.
      */
     @Override

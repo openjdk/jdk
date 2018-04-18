@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,15 @@
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/compilationPolicy.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/reflection.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/exceptions.hpp"
@@ -302,7 +306,7 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
 
   Handle resolved_method = info.resolved_method_name();
   assert(java_lang_invoke_ResolvedMethodName::vmtarget(resolved_method()) == m(),
-         "Should not change after link resolultion");
+         "Should not change after link resolution");
 
   oop mname_oop = mname();
   java_lang_invoke_MemberName::set_flags  (mname_oop, flags);
@@ -678,7 +682,8 @@ oop MethodHandles::field_signature_type_or_null(Symbol* s) {
 // An unresolved member name is a mere symbolic reference.
 // Resolving it plants a vmtarget/vmindex in it,
 // which refers directly to JVM internals.
-Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, TRAPS) {
+Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller,
+                                         bool speculative_resolve, TRAPS) {
   Handle empty;
   assert(java_lang_invoke_MemberName::is_instance(mname()), "");
 
@@ -777,6 +782,9 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, TRAPS) {
           assert(false, "ref_kind=%d", ref_kind);
         }
         if (HAS_PENDING_EXCEPTION) {
+          if (speculative_resolve) {
+            CLEAR_PENDING_EXCEPTION;
+          }
           return empty;
         }
       }
@@ -802,6 +810,9 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, TRAPS) {
           break;                // will throw after end of switch
         }
         if (HAS_PENDING_EXCEPTION) {
+          if (speculative_resolve) {
+            CLEAR_PENDING_EXCEPTION;
+          }
           return empty;
         }
       }
@@ -818,6 +829,9 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, TRAPS) {
         LinkInfo link_info(defc, name, type, caller, LinkInfo::skip_access_check);
         LinkResolver::resolve_field(result, link_info, Bytecodes::_nop, false, THREAD);
         if (HAS_PENDING_EXCEPTION) {
+          if (speculative_resolve) {
+            CLEAR_PENDING_EXCEPTION;
+          }
           return empty;
         }
       }
@@ -958,7 +972,7 @@ int MethodHandles::find_MemberNames(Klass* k,
         if (!java_lang_invoke_MemberName::is_instance(result()))
           return -99;  // caller bug!
         oop saved = MethodHandles::init_field_MemberName(result, st.field_descriptor());
-        if (saved != result())
+        if (!oopDesc::equals(saved, result()))
           results->obj_at_put(rfill-1, saved);  // show saved instance to user
       } else if (++overflow >= overflow_limit) {
         match_flags = 0; break; // got tired of looking at overflow
@@ -1010,7 +1024,7 @@ int MethodHandles::find_MemberNames(Klass* k,
           return -99;  // caller bug!
         CallInfo info(m, NULL, CHECK_0);
         oop saved = MethodHandles::init_method_MemberName(result, info);
-        if (saved != result())
+        if (!oopDesc::equals(saved, result()))
           results->obj_at_put(rfill-1, saved);  // show saved instance to user
       } else if (++overflow >= overflow_limit) {
         match_flags = 0; break; // got tired of looking at overflow
@@ -1183,7 +1197,8 @@ JVM_ENTRY(void, MHN_expand_Mem(JNIEnv *env, jobject igcls, jobject mname_jh)) {
 JVM_END
 
 // void resolve(MemberName self, Class<?> caller)
-JVM_ENTRY(jobject, MHN_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh, jclass caller_jh)) {
+JVM_ENTRY(jobject, MHN_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh, jclass caller_jh,
+    jboolean speculative_resolve)) {
   if (mname_jh == NULL) { THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "mname is null"); }
   Handle mname(THREAD, JNIHandles::resolve_non_null(mname_jh));
 
@@ -1211,13 +1226,18 @@ JVM_ENTRY(jobject, MHN_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh,
 
   Klass* caller = caller_jh == NULL ? NULL :
                      java_lang_Class::as_Klass(JNIHandles::resolve_non_null(caller_jh));
-  Handle resolved = MethodHandles::resolve_MemberName(mname, caller, CHECK_NULL);
+  Handle resolved = MethodHandles::resolve_MemberName(mname, caller, speculative_resolve == JNI_TRUE,
+                                                      CHECK_NULL);
 
   if (resolved.is_null()) {
     int flags = java_lang_invoke_MemberName::flags(mname());
     int ref_kind = (flags >> REFERENCE_KIND_SHIFT) & REFERENCE_KIND_MASK;
     if (!MethodHandles::ref_kind_is_valid(ref_kind)) {
       THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "obsolete MemberName format");
+    }
+    if (speculative_resolve) {
+      assert(!HAS_PENDING_EXCEPTION, "No exceptions expected when resolving speculatively");
+      return NULL;
     }
     if ((flags & ALL_KINDS) == IS_FIELD) {
       THROW_MSG_NULL(vmSymbols::java_lang_NoSuchFieldError(), "field resolution failed");
@@ -1359,6 +1379,87 @@ JVM_ENTRY(void, MHN_setCallSiteTargetVolatile(JNIEnv* env, jobject igcls, jobjec
 }
 JVM_END
 
+JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
+                                              jobject caller_jh, jintArray index_info_jh,
+                                              jint start, jint end,
+                                              jobjectArray buf_jh, jint pos,
+                                              jboolean resolve, jobject ifna_jh)) {
+  Klass* caller_k = java_lang_Class::as_Klass(JNIHandles::resolve(caller_jh));
+  if (caller_k == NULL || !caller_k->is_instance_klass()) {
+      THROW_MSG(vmSymbols::java_lang_InternalError(), "bad caller");
+  }
+  InstanceKlass* caller = InstanceKlass::cast(caller_k);
+  typeArrayOop index_info_oop = (typeArrayOop) JNIHandles::resolve(index_info_jh);
+  if (index_info_oop == NULL ||
+      index_info_oop->klass() != Universe::intArrayKlassObj() ||
+      typeArrayOop(index_info_oop)->length() < 2) {
+      THROW_MSG(vmSymbols::java_lang_InternalError(), "bad index info (0)");
+  }
+  typeArrayHandle index_info(THREAD, index_info_oop);
+  int bss_index_in_pool = index_info->int_at(1);
+  // While we are here, take a quick look at the index info:
+  if (bss_index_in_pool <= 0 ||
+      bss_index_in_pool >= caller->constants()->length() ||
+      index_info->int_at(0)
+      != caller->constants()->invoke_dynamic_argument_count_at(bss_index_in_pool)) {
+      THROW_MSG(vmSymbols::java_lang_InternalError(), "bad index info (1)");
+  }
+  objArrayHandle buf(THREAD, (objArrayOop) JNIHandles::resolve(buf_jh));
+  if (start < 0) {
+    for (int pseudo_index = -4; pseudo_index < 0; pseudo_index++) {
+      if (start == pseudo_index) {
+        if (start >= end || 0 > pos || pos >= buf->length())  break;
+        oop pseudo_arg = NULL;
+        switch (pseudo_index) {
+        case -4:  // bootstrap method
+          {
+            int bsm_index = caller->constants()->invoke_dynamic_bootstrap_method_ref_index_at(bss_index_in_pool);
+            pseudo_arg = caller->constants()->resolve_possibly_cached_constant_at(bsm_index, CHECK);
+            break;
+          }
+        case -3:  // name
+          {
+            Symbol* name = caller->constants()->name_ref_at(bss_index_in_pool);
+            Handle str = java_lang_String::create_from_symbol(name, CHECK);
+            pseudo_arg = str();
+            break;
+          }
+        case -2:  // type
+          {
+            Symbol* type = caller->constants()->signature_ref_at(bss_index_in_pool);
+            Handle th;
+            if (type->byte_at(0) == '(') {
+              th = SystemDictionary::find_method_handle_type(type, caller, CHECK);
+            } else {
+              th = SystemDictionary::find_java_mirror_for_type(type, caller, SignatureStream::NCDFError, CHECK);
+            }
+            pseudo_arg = th();
+            break;
+          }
+        case -1:  // argument count
+          {
+            int argc = caller->constants()->invoke_dynamic_argument_count_at(bss_index_in_pool);
+            jvalue argc_value; argc_value.i = (jint)argc;
+            pseudo_arg = java_lang_boxing_object::create(T_INT, &argc_value, CHECK);
+            break;
+          }
+        }
+
+        // Store the pseudo-argument, and advance the pointers.
+        buf->obj_at_put(pos++, pseudo_arg);
+        ++start;
+      }
+    }
+    // When we are done with this there may be regular arguments to process too.
+  }
+  Handle ifna(THREAD, JNIHandles::resolve(ifna_jh));
+  caller->constants()->
+    copy_bootstrap_arguments_at(bss_index_in_pool,
+                                start, end, buf, pos,
+                                (resolve == JNI_TRUE), ifna, CHECK);
+}
+JVM_END
+
 // It is called by a Cleaner object which ensures that dropped CallSites properly
 // deallocate their dependency information.
 JVM_ENTRY(void, MHN_clearCallSiteContext(JNIEnv* env, jobject igcls, jobject context_jh)) {
@@ -1429,7 +1530,7 @@ JVM_END
 static JNINativeMethod MHN_methods[] = {
   {CC "init",                      CC "(" MEM "" OBJ ")V",                   FN_PTR(MHN_init_Mem)},
   {CC "expand",                    CC "(" MEM ")V",                          FN_PTR(MHN_expand_Mem)},
-  {CC "resolve",                   CC "(" MEM "" CLS ")" MEM,                FN_PTR(MHN_resolve_Mem)},
+  {CC "resolve",                   CC "(" MEM "" CLS "Z)" MEM,               FN_PTR(MHN_resolve_Mem)},
   //  static native int getNamedCon(int which, Object[] name)
   {CC "getNamedCon",               CC "(I[" OBJ ")I",                        FN_PTR(MHN_getNamedCon)},
   //  static native int getMembers(Class<?> defc, String matchName, String matchSig,
@@ -1438,6 +1539,7 @@ static JNINativeMethod MHN_methods[] = {
   {CC "objectFieldOffset",         CC "(" MEM ")J",                          FN_PTR(MHN_objectFieldOffset)},
   {CC "setCallSiteTargetNormal",   CC "(" CS "" MH ")V",                     FN_PTR(MHN_setCallSiteTargetNormal)},
   {CC "setCallSiteTargetVolatile", CC "(" CS "" MH ")V",                     FN_PTR(MHN_setCallSiteTargetVolatile)},
+  {CC "copyOutBootstrapArguments", CC "(" CLS "[III[" OBJ "IZ" OBJ ")V",     FN_PTR(MHN_copyOutBootstrapArguments)},
   {CC "clearCallSiteContext",      CC "(" CTX ")V",                          FN_PTR(MHN_clearCallSiteContext)},
   {CC "staticFieldOffset",         CC "(" MEM ")J",                          FN_PTR(MHN_staticFieldOffset)},
   {CC "staticFieldBase",           CC "(" MEM ")" OBJ,                        FN_PTR(MHN_staticFieldBase)},

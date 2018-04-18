@@ -2480,7 +2480,7 @@
               <in>jvmtiClassFileReconstituter.hpp</in>
               <in>jvmtiCodeBlobEvents.cpp</in>
               <in>jvmtiCodeBlobEvents.hpp</in>
-              <in>jvmtiEnter.hpp</in>
+              <in>jvmtiEnter.inline.hpp</in>
               <in>jvmtiEnv.cpp</in>
               <in>jvmtiEnvBase.cpp</in>
               <in>jvmtiEnvBase.hpp</in>
@@ -13398,7 +13398,7 @@
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../src/hotspot/share/prims/jvmtiEnter.hpp"
+      <item path="../../src/hotspot/share/prims/jvmtiEnter.inline.hpp"
             ex="false"
             tool="3"
             flavor2="0">
@@ -27175,7 +27175,7 @@
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../src/hotspot/share/prims/jvmtiEnter.hpp"
+      <item path="../../src/hotspot/share/prims/jvmtiEnter.inline.hpp"
             ex="false"
             tool="3"
             flavor2="0">

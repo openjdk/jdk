@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,19 +29,26 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/access.inline.hpp"
+#include "oops/arrayOop.inline.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/biasedLocking.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
-#include "runtime/jniHandles.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/reflectionUtils.hpp"
@@ -50,12 +57,7 @@
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
-#include "services/serviceUtil.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
-#include "gc/parallel/parallelScavengeHeap.hpp"
-#endif // INCLUDE_ALL_GCS
 
 // JvmtiTagHashmapEntry
 //
@@ -78,22 +80,31 @@ class JvmtiTagHashmapEntry : public CHeapObj<mtInternal> {
   }
 
   // constructor
-  JvmtiTagHashmapEntry(oop object, jlong tag)         { init(object, tag); }
+  JvmtiTagHashmapEntry(oop object, jlong tag) { init(object, tag); }
 
  public:
 
   // accessor methods
-  inline oop object() const                           { return _object; }
-  inline oop* object_addr()                           { return &_object; }
-  inline jlong tag() const                            { return _tag; }
+  inline oop* object_addr() { return &_object; }
+  inline oop object()       { return RootAccess<ON_PHANTOM_OOP_REF>::oop_load(object_addr()); }
+  // Peek at the object without keeping it alive. The returned object must be
+  // kept alive using a normal access if it leaks out of a thread transition from VM.
+  inline oop object_peek()  {
+    return RootAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(object_addr());
+  }
+  inline jlong tag() const  { return _tag; }
 
   inline void set_tag(jlong tag) {
     assert(tag != 0, "can't be zero");
     _tag = tag;
   }
 
-  inline JvmtiTagHashmapEntry* next() const             { return _next; }
-  inline void set_next(JvmtiTagHashmapEntry* next)      { _next = next; }
+  inline bool equals(oop object) {
+    return object == object_peek();
+  }
+
+  inline JvmtiTagHashmapEntry* next() const        { return _next; }
+  inline void set_next(JvmtiTagHashmapEntry* next) { _next = next; }
 };
 
 
@@ -211,7 +222,7 @@ class JvmtiTagHashmap : public CHeapObj<mtInternal> {
       JvmtiTagHashmapEntry* entry = _table[i];
       while (entry != NULL) {
         JvmtiTagHashmapEntry* next = entry->next();
-        oop key = entry->object();
+        oop key = entry->object_peek();
         assert(key != NULL, "jni weak reference cleared!!");
         unsigned int h = hash(key, new_size);
         JvmtiTagHashmapEntry* anchor = new_table[h];
@@ -304,7 +315,7 @@ class JvmtiTagHashmap : public CHeapObj<mtInternal> {
     unsigned int h = hash(key);
     JvmtiTagHashmapEntry* entry = _table[h];
     while (entry != NULL) {
-      if (entry->object() == key) {
+      if (entry->equals(key)) {
          return entry;
       }
       entry = entry->next();
@@ -345,7 +356,7 @@ class JvmtiTagHashmap : public CHeapObj<mtInternal> {
     JvmtiTagHashmapEntry* entry = _table[h];
     JvmtiTagHashmapEntry* prev = NULL;
     while (entry != NULL) {
-      if (key == entry->object()) {
+      if (entry->equals(key)) {
         break;
       }
       prev = entry;
@@ -1314,9 +1325,6 @@ void IterateOverHeapObjectClosure::do_object(oop o) {
   // check if iteration has been halted
   if (is_iteration_aborted()) return;
 
-  // ignore any objects that aren't visible to profiler
-  if (!ServiceUtil::visible_oop(o)) return;
-
   // instanceof check when filtering by klass
   if (klass() != NULL && !o->is_a(klass())) {
     return;
@@ -1396,9 +1404,6 @@ class IterateThroughHeapObjectClosure: public ObjectClosure {
 void IterateThroughHeapObjectClosure::do_object(oop obj) {
   // check if iteration has been halted
   if (is_iteration_aborted()) return;
-
-  // ignore any objects that aren't visible to profiler
-  if (!ServiceUtil::visible_oop(obj)) return;
 
   // apply class filter
   if (is_filtered_by_klass_filter(obj, klass())) return;
@@ -1535,16 +1540,12 @@ class TagObjectCollector : public JvmtiTagHashmapEntryClosure {
   void do_entry(JvmtiTagHashmapEntry* entry) {
     for (int i=0; i<_tag_count; i++) {
       if (_tags[i] == entry->tag()) {
+        // The reference in this tag map could be the only (implicitly weak)
+        // reference to that object. If we hand it out, we need to keep it live wrt
+        // SATB marking similar to other j.l.ref.Reference referents. This is
+        // achieved by using a phantom load in the object() accessor.
         oop o = entry->object();
         assert(o != NULL && Universe::heap()->is_in_reserved(o), "sanity check");
-#if INCLUDE_ALL_GCS
-        if (UseG1GC) {
-          // The reference in this tag map could be the only (implicitly weak)
-          // reference to that object. If we hand it out, we need to keep it live wrt
-          // SATB marking similar to other j.l.ref.Reference referents.
-          G1SATBCardTableModRefBS::enqueue(o);
-        }
-#endif
         jobject ref = JNIHandles::make_local(JavaThread::current(), o);
         _object_results->append(ref);
         _tag_results->append((uint64_t)entry->tag());
@@ -1756,7 +1757,7 @@ static jvmtiHeapRootKind toJvmtiHeapRootKind(jvmtiHeapReferenceKind kind) {
 
 // Base class for all heap walk contexts. The base class maintains a flag
 // to indicate if the context is valid or not.
-class HeapWalkContext VALUE_OBJ_CLASS_SPEC {
+class HeapWalkContext {
  private:
   bool _valid;
  public:
@@ -1981,8 +1982,6 @@ void CallbackInvoker::initialize_for_advanced_heap_walk(JvmtiTagMap* tag_map,
 
 // invoke basic style heap root callback
 inline bool CallbackInvoker::invoke_basic_heap_root_callback(jvmtiHeapRootKind root_kind, oop obj) {
-  assert(ServiceUtil::visible_oop(obj), "checking");
-
   // if we heap roots should be reported
   jvmtiHeapRootCallback cb = basic_context()->heap_root_callback();
   if (cb == NULL) {
@@ -2010,8 +2009,6 @@ inline bool CallbackInvoker::invoke_basic_stack_ref_callback(jvmtiHeapRootKind r
                                                              jmethodID method,
                                                              int slot,
                                                              oop obj) {
-  assert(ServiceUtil::visible_oop(obj), "checking");
-
   // if we stack refs should be reported
   jvmtiStackReferenceCallback cb = basic_context()->stack_ref_callback();
   if (cb == NULL) {
@@ -2041,9 +2038,6 @@ inline bool CallbackInvoker::invoke_basic_object_reference_callback(jvmtiObjectR
                                                                     oop referrer,
                                                                     oop referree,
                                                                     jint index) {
-
-  assert(ServiceUtil::visible_oop(referrer), "checking");
-  assert(ServiceUtil::visible_oop(referree), "checking");
 
   BasicHeapWalkContext* context = basic_context();
 
@@ -2086,8 +2080,6 @@ inline bool CallbackInvoker::invoke_basic_object_reference_callback(jvmtiObjectR
 // invoke advanced style heap root callback
 inline bool CallbackInvoker::invoke_advanced_heap_root_callback(jvmtiHeapReferenceKind ref_kind,
                                                                 oop obj) {
-  assert(ServiceUtil::visible_oop(obj), "checking");
-
   AdvancedHeapWalkContext* context = advanced_context();
 
   // check that callback is provided
@@ -2142,8 +2134,6 @@ inline bool CallbackInvoker::invoke_advanced_stack_ref_callback(jvmtiHeapReferen
                                                                 jlocation bci,
                                                                 jint slot,
                                                                 oop obj) {
-  assert(ServiceUtil::visible_oop(obj), "checking");
-
   AdvancedHeapWalkContext* context = advanced_context();
 
   // check that callback is provider
@@ -2217,9 +2207,6 @@ inline bool CallbackInvoker::invoke_advanced_object_reference_callback(jvmtiHeap
   // field index is only valid field in reference_info
   static jvmtiHeapReferenceInfo reference_info = { 0 };
 
-  assert(ServiceUtil::visible_oop(referrer), "checking");
-  assert(ServiceUtil::visible_oop(obj), "checking");
-
   AdvancedHeapWalkContext* context = advanced_context();
 
   // check that callback is provider
@@ -2273,7 +2260,6 @@ inline bool CallbackInvoker::invoke_advanced_object_reference_callback(jvmtiHeap
 inline bool CallbackInvoker::report_simple_root(jvmtiHeapReferenceKind kind, oop obj) {
   assert(kind != JVMTI_HEAP_REFERENCE_STACK_LOCAL &&
          kind != JVMTI_HEAP_REFERENCE_JNI_LOCAL, "not a simple root");
-  assert(ServiceUtil::visible_oop(obj), "checking");
 
   if (is_basic_heap_walk()) {
     // map to old style root kind
@@ -2580,9 +2566,9 @@ class SimpleRootsClosure : public OopClosure {
       return;
     }
 
-    // ignore null or deleted handles
     oop o = *obj_p;
-    if (o == NULL || o == JNIHandles::deleted_handle()) {
+    // ignore null
+    if (o == NULL) {
       return;
     }
 
@@ -2596,13 +2582,6 @@ class SimpleRootsClosure : public OopClosure {
       if (!o->is_instance() || !InstanceKlass::cast(o->klass())->is_mirror_instance_klass()) {
         kind = JVMTI_HEAP_REFERENCE_OTHER;
       }
-    }
-
-    // some objects are ignored - in the case of simple
-    // roots it's mostly Symbol*s that we are skipping
-    // here.
-    if (!ServiceUtil::visible_oop(o)) {
-      return;
     }
 
     // invoke the callback
@@ -2639,13 +2618,9 @@ class JNILocalRootsClosure : public OopClosure {
       return;
     }
 
-    // ignore null or deleted handles
     oop o = *obj_p;
-    if (o == NULL || o == JNIHandles::deleted_handle()) {
-      return;
-    }
-
-    if (!ServiceUtil::visible_oop(o)) {
+    // ignore null
+    if (o == NULL) {
       return;
     }
 
@@ -2976,7 +2951,7 @@ inline bool VM_HeapWalkOperation::iterate_over_object(oop o) {
     if (!is_primitive_field_type(type)) {
       oop fld_o = o->obj_field(field->field_offset());
       // ignore any objects that aren't visible to profiler
-      if (fld_o != NULL && ServiceUtil::visible_oop(fld_o)) {
+      if (fld_o != NULL) {
         assert(Universe::heap()->is_in_reserved(fld_o), "unsafe code should not "
                "have references to Klass* anymore");
         int slot = field->field_index();
@@ -3363,10 +3338,8 @@ void JvmtiTagMap::do_weak_oops(BoolObjectClosure* is_alive, OopClosure* f) {
     while (entry != NULL) {
       JvmtiTagHashmapEntry* next = entry->next();
 
-      oop* obj = entry->object_addr();
-
       // has object been GC'ed
-      if (!is_alive->do_object_b(entry->object())) {
+      if (!is_alive->do_object_b(entry->object_peek())) {
         // grab the tag
         jlong tag = entry->tag();
         guarantee(tag != 0, "checking");
@@ -3384,7 +3357,7 @@ void JvmtiTagMap::do_weak_oops(BoolObjectClosure* is_alive, OopClosure* f) {
         ++freed;
       } else {
         f->do_oop(entry->object_addr());
-        oop new_oop = entry->object();
+        oop new_oop = entry->object_peek();
 
         // if the object has moved then re-hash it and move its
         // entry to its new location.
@@ -3418,7 +3391,7 @@ void JvmtiTagMap::do_weak_oops(BoolObjectClosure* is_alive, OopClosure* f) {
   // Re-add all the entries which were kept aside
   while (delayed_add != NULL) {
     JvmtiTagHashmapEntry* next = delayed_add->next();
-    unsigned int pos = JvmtiTagHashmap::hash(delayed_add->object(), size);
+    unsigned int pos = JvmtiTagHashmap::hash(delayed_add->object_peek(), size);
     delayed_add->set_next(table[pos]);
     table[pos] = delayed_add;
     delayed_add = next;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,13 +55,10 @@ handleSocketError(JNIEnv *env, int errorValue)
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_SocketChannelImpl_checkConnect(JNIEnv *env, jobject this,
-                                               jobject fdo, jboolean block,
-                                               jboolean ready)
+                                               jobject fdo, jboolean block)
 {
     int optError = 0;
-    int lastError = 0;
-    int result = 0;
-    int retry = 0;
+    int result;
     int n = sizeof(int);
     jint fd = fdval(env, fdo);
     fd_set wr, ex;
@@ -74,64 +71,33 @@ Java_sun_nio_ch_SocketChannelImpl_checkConnect(JNIEnv *env, jobject this,
 
     result = select(fd+1, 0, &wr, &ex, block ? NULL : &t);
 
-    /* save last winsock error */
-    if (result == SOCKET_ERROR) {
-        lastError = WSAGetLastError();
-    }
-
-    if (block) { /* must configure socket back to blocking state */
-        u_long argp = 0;
-        int r = ioctlsocket(fd, FIONBIO, &argp);
-        if (r == SOCKET_ERROR) {
-            handleSocketError(env, WSAGetLastError());
-        }
-    }
-
     if (result == 0) {  /* timeout */
         return block ? 0 : IOS_UNAVAILABLE;
     } else {
-        if (result == SOCKET_ERROR)     { /* select failed */
-            handleSocketError(env, lastError);
+        if (result == SOCKET_ERROR) { /* select failed */
+            handleSocketError(env, WSAGetLastError());
             return IOS_THROWN;
         }
     }
 
-    /*
-     * Socket is writable or error occurred. On some Windows editions
-     * the socket will appear writable when the connect fails so we
-     * check for error rather than writable.
-     */
-    if (!FD_ISSET(fd, &ex)) {
-        return 1;               /* connection established */
+    // connection established if writable and no error to check
+    if (FD_ISSET(fd, &wr) && !FD_ISSET(fd, &ex)) {
+        return 1;
     }
 
-    /*
-     * A getsockopt( SO_ERROR ) may indicate success on NT4 even
-     * though the connection has failed. The workaround is to allow
-     * winsock to be scheduled and this is done via by yielding.
-     * As the yield approach is problematic in heavy load situations
-     * we attempt up to 3 times to get the failure reason.
-     */
-    for (retry=0; retry<3; retry++) {
-        result = getsockopt((SOCKET)fd,
-                            SOL_SOCKET,
-                            SO_ERROR,
-                            (char *)&optError,
-                            &n);
-        if (result == SOCKET_ERROR) {
-            int lastError = WSAGetLastError();
-            if (lastError == WSAEINPROGRESS) {
-                return IOS_UNAVAILABLE;
-            }
-            NET_ThrowNew(env, lastError, "getsockopt");
-            return IOS_THROWN;
+    result = getsockopt((SOCKET)fd,
+                        SOL_SOCKET,
+                        SO_ERROR,
+                        (char *)&optError,
+                        &n);
+    if (result == SOCKET_ERROR) {
+        int lastError = WSAGetLastError();
+        if (lastError == WSAEINPROGRESS) {
+            return IOS_UNAVAILABLE;
         }
-        if (optError) {
-            break;
-        }
-        Sleep(0);
+        NET_ThrowNew(env, lastError, "getsockopt");
+        return IOS_THROWN;
     }
-
     if (optError != NO_ERROR) {
         handleSocketError(env, optError);
         return IOS_THROWN;

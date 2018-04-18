@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/jniHandles.inline.hpp"
 
 class JVMCIJavaClasses : AllStatic {
  public:
@@ -287,6 +288,7 @@ class JVMCIJavaClasses : AllStatic {
   end_class                                                                                                                                                    \
   start_class(HotSpotStackFrameReference)                                                                                                                      \
     oop_field(HotSpotStackFrameReference, compilerToVM, "Ljdk/vm/ci/hotspot/CompilerToVM;")                                                                    \
+    boolean_field(HotSpotStackFrameReference, objectsMaterialized)                                                                                             \
     long_field(HotSpotStackFrameReference, stackPointer)                                                                                                       \
     int_field(HotSpotStackFrameReference, frameNumber)                                                                                                         \
     int_field(HotSpotStackFrameReference, bci)                                                                                                                 \
@@ -351,30 +353,30 @@ class name : AllStatic {                                                        
     static type name() {                                                                                       \
       assert(klassName::klass() != NULL && klassName::klass()->is_linked(), "Class not yet linked: " #klassName); \
       InstanceKlass* ik = klassName::klass();                                                                  \
-      address addr = ik->static_field_addr(_##name##_offset - InstanceMirrorKlass::offset_of_static_fields()); \
-      oop result = HeapAccess<>::oop_load((HeapWord*)addr);                                                    \
+      oop base = ik->static_field_base_raw();                                                                  \
+      oop result = HeapAccess<>::oop_load_at(base, _##name##_offset);                                          \
       return type(result);                                                                                     \
     }                                                                                                          \
     static void set_##name(type x) {                                                                           \
       assert(klassName::klass() != NULL && klassName::klass()->is_linked(), "Class not yet linked: " #klassName); \
       assert(klassName::klass() != NULL, "Class not yet loaded: " #klassName);                                 \
       InstanceKlass* ik = klassName::klass();                                                                  \
-      address addr = ik->static_field_addr(_##name##_offset - InstanceMirrorKlass::offset_of_static_fields()); \
-      HeapAccess<>::oop_store((HeapWord*)addr, x);                                                             \
+      oop base = ik->static_field_base_raw();                                                                  \
+      HeapAccess<>::oop_store_at(base, _##name##_offset, x);                                                   \
     }
 #define STATIC_PRIMITIVE_FIELD(klassName, name, jtypename)                                                     \
     static int _##name##_offset;                                                                               \
     static jtypename name() {                                                                                  \
       assert(klassName::klass() != NULL && klassName::klass()->is_linked(), "Class not yet linked: " #klassName); \
       InstanceKlass* ik = klassName::klass();                                                                  \
-      address addr = ik->static_field_addr(_##name##_offset - InstanceMirrorKlass::offset_of_static_fields()); \
-      return HeapAccess<>::load((jtypename*)addr);                                                             \
+      oop base = ik->static_field_base_raw();                                                                  \
+      return HeapAccess<>::load_at(base, _##name##_offset);                                                    \
     }                                                                                                          \
     static void set_##name(jtypename x) {                                                                      \
       assert(klassName::klass() != NULL && klassName::klass()->is_linked(), "Class not yet linked: " #klassName); \
       InstanceKlass* ik = klassName::klass();                                                                  \
-      address addr = ik->static_field_addr(_##name##_offset - InstanceMirrorKlass::offset_of_static_fields()); \
-      HeapAccess<>::store((jtypename*)addr, x);                                                                \
+      oop base = ik->static_field_base_raw();                                                                  \
+      HeapAccess<>::store_at(base, _##name##_offset, x);                                                       \
     }
 
 #define STATIC_INT_FIELD(klassName, name) STATIC_PRIMITIVE_FIELD(klassName, name, jint)

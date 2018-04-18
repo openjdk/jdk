@@ -1557,7 +1557,7 @@ public class ForkJoinPool8Test extends JSR166TestCase {
      * timeout elapsed
      */
     public void testAwaitQuiescence2() throws Exception {
-        /**
+        /*
          * """It is possible to disable or limit the use of threads in the
          * common pool by setting the parallelism property to zero. However
          * doing so may cause unjoined tasks to never be executed."""

@@ -99,7 +99,7 @@ import java.util.function.Predicate;
  * the {@code ConcurrentLinkedQueue} in another thread.
  *
  * <p>This class is a member of the
- * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
+ * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @since 1.5
@@ -1069,7 +1069,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
             ITEM = l.findVarHandle(Node.class, "item", Object.class);
             NEXT = l.findVarHandle(Node.class, "next", Node.class);
         } catch (ReflectiveOperationException e) {
-            throw new Error(e);
+            throw new ExceptionInInitializerError(e);
         }
     }
 }

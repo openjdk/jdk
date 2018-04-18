@@ -25,7 +25,6 @@
 
 package java.io;
 
-import java.lang.reflect.Method;
 import java.nio.channels.FileChannel;
 import sun.nio.ch.FileChannelImpl;
 
@@ -158,7 +157,7 @@ class FileInputStream extends InputStream
         open(name);
         altFinalizer = AltFinalizer.get(this);
         if (altFinalizer == null) {
-            fd.registerCleanup();         // open set the fd, register the cleanup
+            FileCleanable.register(fd);       // open set the fd, register the cleanup
         }
     }
 

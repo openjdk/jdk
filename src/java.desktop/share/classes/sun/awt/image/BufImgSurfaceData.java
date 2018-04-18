@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.awt.image;
 
-import java.awt.Color;
 import java.awt.Rectangle;
 import java.awt.GraphicsConfiguration;
 import java.awt.image.ColorModel;
@@ -38,9 +37,6 @@ import java.awt.image.DataBuffer;
 
 import sun.java2d.SurfaceData;
 import sun.java2d.SunGraphics2D;
-import sun.java2d.StateTrackable;
-import sun.java2d.StateTrackable.*;
-import sun.java2d.StateTracker;
 import sun.java2d.loops.SurfaceType;
 import sun.java2d.loops.CompositeType;
 import sun.java2d.loops.RenderLoops;
@@ -446,8 +442,6 @@ public class BufImgSurfaceData extends SurfaceData {
         // their pixels are immediately retrievable anyway.
     }
 
-    private static native void freeNativeICMData(long pData);
-
     /**
      * Returns destination Image associated with this SurfaceData.
      */
@@ -470,14 +464,6 @@ public class BufImgSurfaceData extends SurfaceData {
 
         private ICMColorData(long pData) {
             this.pData = pData;
-        }
-
-        @SuppressWarnings("deprecation")
-        public void finalize() {
-            if (pData != 0L) {
-                BufImgSurfaceData.freeNativeICMData(pData);
-                pData = 0L;
-            }
         }
     }
 }

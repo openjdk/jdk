@@ -44,8 +44,7 @@ void InternalVMTests::run() {
   run_unit_test(TestReservedSpace_test);
   run_unit_test(TestReserveMemorySpecial_test);
   run_unit_test(TestVirtualSpace_test);
-  run_unit_test(TestMetaspaceAux_test);
-  run_unit_test(TestVirtualSpaceNode_test);
+  run_unit_test(TestMetaspaceUtils_test);
   run_unit_test(GCTimer_test);
   run_unit_test(ObjectMonitor_test);
   run_unit_test(DirectivesParser_test);

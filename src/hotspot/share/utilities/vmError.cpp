@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/logConfiguration.hpp"
+#include "memory/resourceArea.hpp"
 #include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -243,11 +244,12 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, char* bu
           RegisterMap map((JavaThread*)t, false); // No update
           fr = fr.sender(&map);
         } else {
+          // is_first_C_frame() does only simple checks for frame pointer,
+          // it will pass if java compiled code has a pointer in EBP.
+          if (os::is_first_C_frame(&fr)) break;
           fr = os::get_sender_for_C_frame(&fr);
         }
       } else {
-        // is_first_C_frame() does only simple checks for frame pointer,
-        // it will pass if java compiled code has a pointer in EBP.
         if (os::is_first_C_frame(&fr)) break;
         fr = os::get_sender_for_C_frame(&fr);
       }
@@ -479,7 +481,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   STEP("printing type of error")
 
-     switch(_id) {
+     switch(static_cast<unsigned int>(_id)) {
        case OOM_MALLOC_ERROR:
        case OOM_MMAP_ERROR:
          if (_size) {
@@ -772,7 +774,10 @@ void VMError::report(outputStream* st, bool _verbose) {
            if (desc != NULL) {
              desc->print_on(st);
              Disassembler::decode(desc->begin(), desc->end(), st);
-           } else {
+           } else if (_thread != NULL) {
+             // Disassembling nmethod will incur resource memory allocation,
+             // only do so when thread is valid.
+             ResourceMark rm(_thread);
              Disassembler::decode(cb, st);
              st->cr();
            }
@@ -1233,10 +1238,10 @@ void VMError::report_and_die(const char* message)
   report_and_die(message, "%s", "");
 }
 
-void VMError::report_and_die(Thread* thread, const char* filename, int lineno, const char* message,
+void VMError::report_and_die(Thread* thread, void* context, const char* filename, int lineno, const char* message,
                              const char* detail_fmt, va_list detail_args)
 {
-  report_and_die(INTERNAL_ERROR, message, detail_fmt, detail_args, thread, NULL, NULL, NULL, filename, lineno, 0);
+  report_and_die(INTERNAL_ERROR, message, detail_fmt, detail_args, thread, NULL, NULL, context, filename, lineno, 0);
 }
 
 void VMError::report_and_die(Thread* thread, const char* filename, int lineno, size_t size,
@@ -1303,6 +1308,12 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     // reset signal handlers or exception filter; make sure recursive crashes
     // are handled properly.
     reset_signal_handlers();
+
+    EventShutdown e;
+    if (e.should_commit()) {
+      e.set_reason("VM Error");
+      e.commit();
+    }
 
     TRACE_VM_ERROR();
 
@@ -1467,7 +1478,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       out.print_raw   ("/bin/sh -c ");
 #elif defined(SOLARIS)
       out.print_raw   ("/usr/bin/sh -c ");
-#elif defined(WINDOWS)
+#elif defined(_WINDOWS)
       out.print_raw   ("cmd /C ");
 #endif
       out.print_raw   ("\"");
@@ -1663,24 +1674,24 @@ void VMError::controlled_crash(int how) {
   // Case 16 is tested by test/hotspot/jtreg/runtime/ErrorHandling/ThreadsListHandleInErrorHandlingTest.java.
   // Case 17 is tested by test/hotspot/jtreg/runtime/ErrorHandling/NestedThreadsListHandleInErrorHandlingTest.java.
   switch (how) {
-    case  1: vmassert(str == NULL, "expected null");
+    case  1: vmassert(str == NULL, "expected null"); break;
     case  2: vmassert(num == 1023 && *str == 'X',
-                      "num=" SIZE_FORMAT " str=\"%s\"", num, str);
-    case  3: guarantee(str == NULL, "expected null");
+                      "num=" SIZE_FORMAT " str=\"%s\"", num, str); break;
+    case  3: guarantee(str == NULL, "expected null"); break;
     case  4: guarantee(num == 1023 && *str == 'X',
-                       "num=" SIZE_FORMAT " str=\"%s\"", num, str);
-    case  5: fatal("expected null");
-    case  6: fatal("num=" SIZE_FORMAT " str=\"%s\"", num, str);
+                       "num=" SIZE_FORMAT " str=\"%s\"", num, str); break;
+    case  5: fatal("expected null"); break;
+    case  6: fatal("num=" SIZE_FORMAT " str=\"%s\"", num, str); break;
     case  7: fatal("%s%s#    %s%s#    %s%s#    %s%s#    %s%s#    "
                    "%s%s#    %s%s#    %s%s#    %s%s#    %s%s#    "
                    "%s%s#    %s%s#    %s%s#    %s%s#    %s",
                    msg, eol, msg, eol, msg, eol, msg, eol, msg, eol,
                    msg, eol, msg, eol, msg, eol, msg, eol, msg, eol,
-                   msg, eol, msg, eol, msg, eol, msg, eol, msg);
-    case  8: vm_exit_out_of_memory(num, OOM_MALLOC_ERROR, "ChunkPool::allocate");
-    case  9: ShouldNotCallThis();
-    case 10: ShouldNotReachHere();
-    case 11: Unimplemented();
+                   msg, eol, msg, eol, msg, eol, msg, eol, msg); break;
+    case  8: vm_exit_out_of_memory(num, OOM_MALLOC_ERROR, "ChunkPool::allocate"); break;
+    case  9: ShouldNotCallThis(); break;
+    case 10: ShouldNotReachHere(); break;
+    case 11: Unimplemented(); break;
     // There's no guarantee the bad data pointer will crash us
     // so "break" out to the ShouldNotReachHere().
     case 12: *dataPtr = '\0'; break;
@@ -1703,6 +1714,7 @@ void VMError::controlled_crash(int how) {
 
     default: tty->print_cr("ERROR: %d: unexpected test_num value.", how);
   }
+  tty->print_cr("VMError::controlled_crash: survived intentional crash. Did you suppress the assert?");
   ShouldNotReachHere();
 }
 #endif // !PRODUCT

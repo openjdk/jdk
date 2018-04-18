@@ -236,7 +236,7 @@ public class TrueTypeFont extends FileFont {
             return useNatives;
         }
         if (!FontUtilities.isSolaris || useJavaRasterizer ||
-            FontUtilities.useT2K || nativeNames == null ||
+            FontUtilities.useJDKScaler || nativeNames == null ||
             getDirectoryEntry(EBLCTag) != null ||
             GraphicsEnvironment.isHeadless()) {
             checkedNatives = true;

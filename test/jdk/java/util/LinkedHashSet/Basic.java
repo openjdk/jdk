@@ -27,8 +27,15 @@
  * @summary Basic test for LinkedHashSet.  (Based on SetBash)
  */
 
-import java.util.*;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Random;
+import java.util.Set;
 
 public class Basic {
     static Random rnd = new Random(666);

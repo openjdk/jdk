@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1574,13 +1574,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      * @since 1.5
      */
     public static int highestOneBit(int i) {
-        // HD, Figure 3-1
-        i |= (i >>  1);
-        i |= (i >>  2);
-        i |= (i >>  4);
-        i |= (i >>  8);
-        i |= (i >> 16);
-        return i - (i >>> 1);
+        return i & (MIN_VALUE >>> numberOfLeadingZeros(i));
     }
 
     /**
@@ -1625,8 +1619,8 @@ public final class Integer extends Number implements Comparable<Integer> {
     @HotSpotIntrinsicCandidate
     public static int numberOfLeadingZeros(int i) {
         // HD, Figure 5-6
-        if (i == 0)
-            return 32;
+        if (i <= 0)
+            return i == 0 ? 32 : 0;
         int n = 1;
         if (i >>> 16 == 0) { n += 16; i <<= 16; }
         if (i >>> 24 == 0) { n +=  8; i <<=  8; }

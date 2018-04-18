@@ -137,8 +137,8 @@ public class ScriptFunction extends ScriptObject {
         final int flags = Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE;
         PropertyMap newMap = map;
         // Need to add properties directly to map since slots are assigned speculatively by newUserAccessors.
-        newMap = newMap.addPropertyNoHistory(map.newUserAccessors("arguments", flags));
-        newMap = newMap.addPropertyNoHistory(map.newUserAccessors("caller", flags));
+        newMap = newMap.addPropertyNoHistory(newMap.newUserAccessors("arguments", flags));
+        newMap = newMap.addPropertyNoHistory(newMap.newUserAccessors("caller", flags));
         return newMap;
     }
 
@@ -215,8 +215,8 @@ public class ScriptFunction extends ScriptObject {
         assert objectSpill == null;
         if (isStrict() || isBoundFunction()) {
             final ScriptFunction typeErrorThrower = global.getTypeErrorThrower();
-            initUserAccessors("arguments", Property.NOT_CONFIGURABLE | Property.NOT_ENUMERABLE, typeErrorThrower, typeErrorThrower);
-            initUserAccessors("caller", Property.NOT_CONFIGURABLE | Property.NOT_ENUMERABLE, typeErrorThrower, typeErrorThrower);
+            initUserAccessors("arguments", typeErrorThrower, typeErrorThrower);
+            initUserAccessors("caller", typeErrorThrower, typeErrorThrower);
         }
     }
 

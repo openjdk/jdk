@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,9 @@
 #include "prims/jvmtiEnvThreadState.hpp"
 #include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiThreadState.hpp"
-#include "prims/jvmtiThreadState.inline.hpp"
 #include "oops/oopHandle.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/frame.hpp"
-#include "runtime/handles.inline.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vm_operations.hpp"
 #include "utilities/growableArray.hpp"
@@ -214,29 +212,20 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   unsigned char* jvmtiMalloc(jlong size);  // don't use this - call allocate
 
   // method to create a local handle
-  jobject jni_reference(Handle hndl) {
-    return JNIHandles::make_local(hndl());
-  }
+  jobject jni_reference(Handle hndl);
 
   // method to create a local handle.
   // This function allows caller to specify which
   // threads local handle table to use.
-  jobject jni_reference(JavaThread *thread, Handle hndl) {
-    return JNIHandles::make_local(thread, hndl());
-  }
+  jobject jni_reference(JavaThread *thread, Handle hndl);
 
   // method to destroy a local handle
-  void destroy_jni_reference(jobject jobj) {
-    JNIHandles::destroy_local(jobj);
-  }
+  void destroy_jni_reference(jobject jobj);
 
   // method to destroy a local handle.
   // This function allows caller to specify which
-  // threads local handle table to use although currently it is
-  // not used.
-  void destroy_jni_reference(JavaThread *thread, jobject jobj) {
-    destroy_jni_reference(jobj);
-  }
+  // threads local handle table to use.
+  void destroy_jni_reference(JavaThread *thread, jobject jobj);
 
   jvmtiEnv* jvmti_external() { return &_jvmti_external; };
 

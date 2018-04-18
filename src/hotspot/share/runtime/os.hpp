@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,11 @@
 
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
+#include "metaprogramming/isRegisteredEnum.hpp"
+#include "metaprogramming/integralConstant.hpp"
 #include "runtime/extendedPC.hpp"
-#include "runtime/handles.hpp"
+#include "utilities/exceptions.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/macros.hpp"
 #ifndef _WINDOWS
 # include <setjmp.h>
@@ -52,6 +55,7 @@ class Event;
 class DLL;
 class FileHandle;
 class NativeCallStack;
+class methodHandle;
 
 template<class E> class GrowableArray;
 
@@ -637,8 +641,10 @@ class os: AllStatic {
   static void *find_agent_function(AgentLibrary *agent_lib, bool check_lib,
                                    const char *syms[], size_t syms_len);
 
-  // Write to stream
-  static int log_vsnprintf(char* buf, size_t len, const char* fmt, va_list args) ATTRIBUTE_PRINTF(3, 0);
+  // Provide C99 compliant versions of these functions, since some versions
+  // of some platforms don't.
+  static int vsnprintf(char* buf, size_t len, const char* fmt, va_list args) ATTRIBUTE_PRINTF(3, 0);
+  static int snprintf(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
 
   // Get host name in buffer provided
   static bool get_host_name(char* buf, size_t buflen);
@@ -717,9 +723,6 @@ class os: AllStatic {
   // Fills in path to jvm.dll/libjvm.so (used by the Disassembler)
   static void     jvm_path(char *buf, jint buflen);
 
-  // Returns true if we are running in a headless jre.
-  static bool     is_headless_jre();
-
   // JNI names
   static void     print_jni_name_prefix_on(outputStream* st, int args_size);
   static void     print_jni_name_suffix_on(outputStream* st, int args_size);
@@ -778,7 +781,6 @@ class os: AllStatic {
   static void* signal(int signal_number, void* handler);
   static void  signal_raise(int signal_number);
   static int   signal_wait();
-  static int   signal_lookup();
   static void* user_handler();
   static void  terminate_signal_thread();
   static int   sigexitnum_pd();
@@ -911,11 +913,11 @@ class os: AllStatic {
   class SuspendedThreadTask {
   public:
     SuspendedThreadTask(Thread* thread) : _thread(thread), _done(false) {}
-    virtual ~SuspendedThreadTask() {}
     void run();
     bool is_done() { return _done; }
     virtual void do_task(const SuspendedThreadTaskContext& context) = 0;
   protected:
+    ~SuspendedThreadTask() {}
   private:
     void internal_do_task();
     Thread* _thread;
@@ -1009,6 +1011,10 @@ class os: AllStatic {
   static bool set_boot_path(char fileSep, char pathSep);
 
 };
+
+#ifndef _WINDOWS
+template<> struct IsRegisteredEnum<os::SuspendResume::State> : public TrueType {};
+#endif // !_WINDOWS
 
 // Note that "PAUSE" is almost always used with synchronization
 // so arguably we should provide Atomic::SpinPause() instead

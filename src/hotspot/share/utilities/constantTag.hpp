@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_VM_UTILITIES_CONSTANTTAG_HPP
 
 #include "jvm.h"
-#include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // constant tags in Java .class files
 
@@ -43,11 +43,12 @@ enum {
   JVM_CONSTANT_UnresolvedClassInError   = 103,  // Error tag due to resolution error
   JVM_CONSTANT_MethodHandleInError      = 104,  // Error tag due to resolution error
   JVM_CONSTANT_MethodTypeInError        = 105,  // Error tag due to resolution error
-  JVM_CONSTANT_InternalMax              = 105   // Last implementation tag
+  JVM_CONSTANT_DynamicInError           = 106,  // Error tag due to resolution error
+  JVM_CONSTANT_InternalMax              = 106   // Last implementation tag
 };
 
 
-class constantTag VALUE_OBJ_CLASS_SPEC {
+class constantTag {
  private:
   jbyte _tag;
  public:
@@ -80,6 +81,10 @@ class constantTag VALUE_OBJ_CLASS_SPEC {
     return _tag == JVM_CONSTANT_MethodTypeInError;
   }
 
+  bool is_dynamic_constant_in_error() const {
+    return _tag == JVM_CONSTANT_DynamicInError;
+  }
+
   bool is_klass_index() const       { return _tag == JVM_CONSTANT_ClassIndex; }
   bool is_string_index() const      { return _tag == JVM_CONSTANT_StringIndex; }
 
@@ -88,13 +93,14 @@ class constantTag VALUE_OBJ_CLASS_SPEC {
   bool is_field_or_method() const   { return is_field() || is_method() || is_interface_method(); }
   bool is_symbol() const            { return is_utf8(); }
 
-  bool is_method_type() const              { return _tag == JVM_CONSTANT_MethodType; }
-  bool is_method_handle() const            { return _tag == JVM_CONSTANT_MethodHandle; }
-  bool is_invoke_dynamic() const           { return _tag == JVM_CONSTANT_InvokeDynamic; }
+  bool is_method_type() const       { return _tag == JVM_CONSTANT_MethodType; }
+  bool is_method_handle() const     { return _tag == JVM_CONSTANT_MethodHandle; }
+  bool is_dynamic_constant() const  { return _tag == JVM_CONSTANT_Dynamic; }
+  bool is_invoke_dynamic() const    { return _tag == JVM_CONSTANT_InvokeDynamic; }
 
   bool is_loadable_constant() const {
     return ((_tag >= JVM_CONSTANT_Integer && _tag <= JVM_CONSTANT_String) ||
-            is_method_type() || is_method_handle() ||
+            is_method_type() || is_method_handle() || is_dynamic_constant() ||
             is_unresolved_klass());
   }
 
@@ -106,6 +112,20 @@ class constantTag VALUE_OBJ_CLASS_SPEC {
            (tag >= JVM_CONSTANT_MethodHandle && tag <= JVM_CONSTANT_InvokeDynamic) ||
            (tag >= JVM_CONSTANT_InternalMin && tag <= JVM_CONSTANT_InternalMax), "Invalid constant tag");
     _tag = tag;
+  }
+
+  static constantTag ofBasicType(BasicType bt) {
+    if (is_subword_type(bt))  bt = T_INT;
+    switch (bt) {
+      case T_OBJECT: return constantTag(JVM_CONSTANT_String);
+      case T_INT:    return constantTag(JVM_CONSTANT_Integer);
+      case T_LONG:   return constantTag(JVM_CONSTANT_Long);
+      case T_FLOAT:  return constantTag(JVM_CONSTANT_Float);
+      case T_DOUBLE: return constantTag(JVM_CONSTANT_Double);
+      default:       break;
+    }
+    assert(false, "bad basic type for tag");
+    return constantTag();
   }
 
   jbyte value() const                { return _tag; }

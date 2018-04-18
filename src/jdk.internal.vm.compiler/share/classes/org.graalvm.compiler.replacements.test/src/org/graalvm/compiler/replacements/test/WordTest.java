@@ -44,7 +44,7 @@ public class WordTest extends SnippetsTest {
     protected StructuredGraph parse(Builder builder, PhaseSuite<HighTierContext> graphBuilderSuite) {
         // create a copy to assign a valid compilation id
         DebugContext debug = getDebugContext();
-        StructuredGraph originalGraph = installer.makeGraph(debug, bytecodeProvider, builder.getMethod(), null, null);
+        StructuredGraph originalGraph = installer.makeGraph(debug, bytecodeProvider, builder.getMethod(), null, null, false, null);
         return originalGraph.copyWithIdentifier(builder.getCompilationId(), debug);
     }
 

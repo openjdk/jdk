@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,7 @@
  * @test
  * @bug 8130072
  * @summary Check that Shared Dictionary is printed out with jcmd
- * Feature support: compressed oops/kptrs, 64-bit os, not on windows
  * @requires vm.cds
- * @requires (sun.arch.data.model != "32") & (os.family != "windows")
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @run main DumpSharedDictionary
@@ -47,7 +44,6 @@ public class DumpSharedDictionary {
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:SharedArchiveFile=./DumpSharedDictionary.jsa",
-                "-XX:+UseCompressedOops",
                 "-Xshare:dump");
 
             OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "dump");
@@ -58,7 +54,6 @@ public class DumpSharedDictionary {
             pb = ProcessTools.createJavaProcessBuilder(
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:SharedArchiveFile=./DumpSharedDictionary.jsa",
-                    "-XX:+UseCompressedOops",
                     "-Dtest.jdk=" + testjdkPath,
                     "-Xshare:on", "DumpSharedDictionary", "test");
 
@@ -86,7 +81,7 @@ public class DumpSharedDictionary {
             output = CDSTestUtils.executeAndLog(pb, "jcmd-systemdictionary-verbose");
             try {
                 output.shouldContain("Shared Dictionary");
-                output.shouldContain("Dictionary for class loader 0x");
+                output.shouldContain("Dictionary for loader data: 0x");
                 output.shouldContain("^java.lang.String");
             } catch (RuntimeException e) {
                 output.shouldContain("Unknown diagnostic command");

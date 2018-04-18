@@ -58,7 +58,7 @@ public interface DisassemblerProvider {
     }
 
     /**
-     * Gets the name denoting the format of the disassmembly return by this object.
+     * Gets the name denoting the format of the disassembly returned by this object.
      */
     String getName();
 }

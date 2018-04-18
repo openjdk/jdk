@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -79,8 +79,8 @@ class MacroAssembler: public Assembler {
 
   void call_VM_helper(Register oop_result, address entry_point, int number_of_arguments, bool check_exceptions = true);
 
-  // Maximum size of class area in Metaspace when compressed
-  uint64_t use_XOR_for_compressed_class_base;
+  // True if an XOR can be used to expand narrow klass references.
+  bool use_XOR_for_compressed_class_base;
 
  public:
   MacroAssembler(CodeBuffer* code) : Assembler(code) {
@@ -88,7 +88,7 @@ class MacroAssembler: public Assembler {
       = (operand_valid_for_logical_immediate(false /*is32*/,
                                              (uint64_t)Universe::narrow_klass_base())
          && ((uint64_t)Universe::narrow_klass_base()
-             > (1u << log2_intptr(CompressedClassSpaceSize))));
+             > (1UL << log2_intptr(Universe::narrow_klass_range()))));
   }
 
  // These routines should emit JVMTI PopFrame and ForceEarlyReturn handling code.
@@ -150,10 +150,18 @@ class MacroAssembler: public Assembler {
 
   void bind(Label& L) {
     Assembler::bind(L);
-    code()->clear_last_membar();
+    code()->clear_last_insn();
   }
 
   void membar(Membar_mask_bits order_constraint);
+
+  using Assembler::ldr;
+  using Assembler::str;
+
+  void ldr(Register Rx, const Address &adr);
+  void ldrw(Register Rw, const Address &adr);
+  void str(Register Rx, const Address &adr);
+  void strw(Register Rx, const Address &adr);
 
   // Frame creation and destruction shared between JITs.
   void build_frame(int framesize);
@@ -771,6 +779,8 @@ public:
   void store_check(Register obj);                // store check for obj - register is destroyed afterwards
   void store_check(Register obj, Address dst);   // same as above, dst is exact store location (reg. is destroyed)
 
+  void resolve_jobject(Register value, Register thread, Register tmp);
+
 #if INCLUDE_ALL_GCS
 
   void g1_write_barrier_pre(Register obj,
@@ -861,7 +871,6 @@ public:
     Register t2,                       // temp register
     Label&   slow_case                 // continuation point if fast allocation fails
   );
-  Register tlab_refill(Label& retry_tlab, Label& try_eden, Label& slow_case); // returns TLS address
   void zero_memory(Register addr, Register len, Register t1);
   void verify_tlab();
 
@@ -1218,9 +1227,11 @@ public:
 
   void has_negatives(Register ary1, Register len, Register result);
 
-  void arrays_equals(Register a1, Register a2,
-                     Register result, Register cnt1,
-                     int elem_size, bool is_string);
+  void arrays_equals(Register a1, Register a2, Register result, Register cnt1,
+                     Register tmp1, Register tmp2, Register tmp3, int elem_size);
+
+  void string_equals(Register a1, Register a2, Register result, Register cnt1,
+                     int elem_size);
 
   void fill_words(Register base, Register cnt, Register value);
   void zero_words(Register base, u_int64_t cnt);
@@ -1290,6 +1301,17 @@ private:
   // Returns an address on the stack which is reachable with a ldr/str of size
   // Uses rscratch2 if the address is not directly reachable
   Address spill_address(int size, int offset, Register tmp=rscratch2);
+
+  bool merge_alignment_check(Register base, size_t size, long cur_offset, long prev_offset) const;
+
+  // Check whether two loads/stores can be merged into ldp/stp.
+  bool ldst_can_merge(Register rx, const Address &adr, size_t cur_size_in_bytes, bool is_store) const;
+
+  // Merge current load/store with previous load/store into ldp/stp.
+  void merge_ldst(Register rx, const Address &adr, size_t cur_size_in_bytes, bool is_store);
+
+  // Try to merge two loads/stores into ldp/stp. If success, returns true else false.
+  bool try_merge_ldst(Register rt, const Address &adr, size_t cur_size_in_bytes, bool is_store);
 
 public:
   void spill(Register Rx, bool is64, int offset) {

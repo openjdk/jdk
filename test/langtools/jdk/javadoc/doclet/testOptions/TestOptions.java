@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4749567 8071982 8175200 8186332 8185371
+ * @bug      4749567 8071982 8175200 8186332 8185371 8182765
  * @summary  Test the output for -header, -footer, -nooverview, -nodeprecatedlist, -nonavbar, -notree,
  *           -stylesheetfile, --main-stylesheet, --add-stylesheet options.
  * @author   Bhavesh Patel
@@ -198,7 +198,7 @@ public class TestOptions extends JavadocTester {
 
         checkOutput("src-html/linksource/AnnotationTypeField.html", true,
                 "<title>Source code</title>",
-                "<span class=\"sourceLineNo\">031</span><a name=\"line.31\">"
+                "<span class=\"sourceLineNo\">031</span><a id=\"line.31\">"
                 + "@Documented public @interface AnnotationTypeField {</a>");
 
         checkOutput("linksource/Properties.html", true,
@@ -211,7 +211,7 @@ public class TestOptions extends JavadocTester {
 
         checkOutput("src-html/linksource/Properties.html", true,
                 "<title>Source code</title>",
-                "<span class=\"sourceLineNo\">031</span><a name=\"line.31\">    "
+                "<span class=\"sourceLineNo\">031</span><a id=\"line.31\">    "
                 + "public Object someProperty() {</a>");
 
         checkOutput("linksource/SomeClass.html", true,
@@ -226,6 +226,48 @@ public class TestOptions extends JavadocTester {
 
         checkOutput("src-html/linksource/SomeClass.html", true,
                 "<title>Source code</title>",
+                "<span class=\"sourceLineNo\">029</span><a id=\"line.29\">"
+                + "public class SomeClass {</a>",
+                "<span class=\"sourceLineNo\">031</span><a id=\"line.31\">    "
+                + "public int field;</a>",
+                "<span class=\"sourceLineNo\">033</span><a id=\"line.33\">    "
+                + "public SomeClass() {</a>",
+                "<span class=\"sourceLineNo\">036</span><a id=\"line.36\">    "
+                + "public int method() {</a>");
+
+        checkOutput("linksource/SomeEnum.html", true,
+                "<pre>public static final&nbsp;<a href=\"SomeEnum.html\" "
+                + "title=\"enum in linksource\">SomeEnum</a> <a href="
+                + "\"../src-html/linksource/SomeEnum.html#line.29\">VALUE1</a></pre>",
+                "<pre>public static final&nbsp;<a href=\"SomeEnum.html\" "
+                + "title=\"enum in linksource\">SomeEnum</a> <a href="
+                + "\"../src-html/linksource/SomeEnum.html#line.30\">VALUE2</a></pre>");
+
+        checkOutput("src-html/linksource/SomeEnum.html", true,
+                "<span class=\"sourceLineNo\">029</span><a id=\"line.29\">    VALUE1,</a>",
+                "<span class=\"sourceLineNo\">030</span><a id=\"line.30\">    VALUE2</a>");
+    }
+
+    @Test
+    void testLinkSource_html4() {
+        javadoc("-d", "out-9-html4",
+                "-html4",
+                "-linksource",
+                "-javafx",
+                "-sourcepath", testSrc,
+                "-package",
+                "linksource");
+        checkExit(Exit.OK);
+
+        checkOutput("src-html/linksource/AnnotationTypeField.html", true,
+                "<span class=\"sourceLineNo\">031</span><a name=\"line.31\">"
+                + "@Documented public @interface AnnotationTypeField {</a>");
+
+        checkOutput("src-html/linksource/Properties.html", true,
+                "<span class=\"sourceLineNo\">031</span><a name=\"line.31\">    "
+                + "public Object someProperty() {</a>");
+
+        checkOutput("src-html/linksource/SomeClass.html", true,
                 "<span class=\"sourceLineNo\">029</span><a name=\"line.29\">"
                 + "public class SomeClass {</a>",
                 "<span class=\"sourceLineNo\">031</span><a name=\"line.31\">    "
@@ -234,14 +276,6 @@ public class TestOptions extends JavadocTester {
                 + "public SomeClass() {</a>",
                 "<span class=\"sourceLineNo\">036</span><a name=\"line.36\">    "
                 + "public int method() {</a>");
-
-        checkOutput("linksource/SomeEnum.html", true,
-                "<pre>public static final&nbsp;<a href=\"../linksource/SomeEnum.html\" "
-                + "title=\"enum in linksource\">SomeEnum</a> <a href="
-                + "\"../src-html/linksource/SomeEnum.html#line.29\">VALUE1</a></pre>",
-                "<pre>public static final&nbsp;<a href=\"../linksource/SomeEnum.html\" "
-                + "title=\"enum in linksource\">SomeEnum</a> <a href="
-                + "\"../src-html/linksource/SomeEnum.html#line.30\">VALUE2</a></pre>");
 
         checkOutput("src-html/linksource/SomeEnum.html", true,
                 "<span class=\"sourceLineNo\">029</span><a name=\"line.29\">    VALUE1,</a>",

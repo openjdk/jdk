@@ -274,7 +274,16 @@ class LinkResolver: AllStatic {
                                       const constantPoolHandle& pool, int index, TRAPS);
  public:
   // constant pool resolving
-  static void check_klass_accessability(Klass* ref_klass, Klass* sel_klass, TRAPS);
+  static void check_klass_accessability(Klass* ref_klass, Klass* sel_klass,
+                                        bool fold_type_to_class, TRAPS);
+  // The optional 'fold_type_to_class' means that a derived type (array)
+  // is first converted to the class it is derived from (element type).
+  // If this element type is not a class, then the check passes quietly.
+  // This is usually what is needed, but a few existing uses might break
+  // if this flag were always turned on.  FIXME: See if it can be, always.
+  static void check_klass_accessability(Klass* ref_klass, Klass* sel_klass, TRAPS) {
+    return check_klass_accessability(ref_klass, sel_klass, false, THREAD);
+  }
 
   // static resolving calls (will not run any Java code);
   // used only from Bytecode_invoke::static_target
@@ -306,7 +315,7 @@ class LinkResolver: AllStatic {
                                      bool check_null_and_abstract, TRAPS);
   static void resolve_handle_call   (CallInfo& result,
                                      const LinkInfo& link_info, TRAPS);
-  static void resolve_dynamic_call  (CallInfo& result, Handle bootstrap_specifier,
+  static void resolve_dynamic_call  (CallInfo& result, int pool_index, Handle bootstrap_specifier,
                                      Symbol* method_name, Symbol* method_signature,
                                      Klass* current_klass, TRAPS);
 
@@ -338,5 +347,19 @@ class LinkResolver: AllStatic {
   static void resolve_invoke(CallInfo& result, Handle& recv,
                              const methodHandle& attached_method,
                              Bytecodes::Code byte, TRAPS);
+
+ public:
+  // Only resolved method known.
+  static void throw_abstract_method_error(const methodHandle& resolved_method, TRAPS) {
+    throw_abstract_method_error(resolved_method, NULL, NULL, CHECK);
+  }
+  // Resolved method and receiver klass know.
+  static void throw_abstract_method_error(const methodHandle& resolved_method, Klass *recv_klass, TRAPS) {
+    throw_abstract_method_error(resolved_method, NULL, recv_klass, CHECK);
+  }
+  // Selected method is abstract.
+  static void throw_abstract_method_error(const methodHandle& resolved_method,
+                                          const methodHandle& selected_method,
+                                          Klass *recv_klass, TRAPS);
 };
 #endif // SHARE_VM_INTERPRETER_LINKRESOLVER_HPP

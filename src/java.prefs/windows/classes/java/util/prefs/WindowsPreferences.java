@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,22 +172,22 @@ class WindowsPreferences extends AbstractPreferences {
     /**
      * Java wrapper for Windows registry API RegOpenKey()
      */
-    private static native int[] WindowsRegOpenKey(int hKey, byte[] subKey,
-                                                  int securityMask);
+    private static native long[] WindowsRegOpenKey(long hKey, byte[] subKey,
+                                                   int securityMask);
     /**
      * Retries RegOpenKey() MAX_ATTEMPTS times before giving up.
      */
-    private static int[] WindowsRegOpenKey1(int hKey, byte[] subKey,
-                                            int securityMask) {
-        int[] result = WindowsRegOpenKey(hKey, subKey, securityMask);
+    private static long[] WindowsRegOpenKey1(long hKey, byte[] subKey,
+                                             int securityMask) {
+        long[] result = WindowsRegOpenKey(hKey, subKey, securityMask);
         if (result[ERROR_CODE] == ERROR_SUCCESS) {
             return result;
         } else if (result[ERROR_CODE] == ERROR_FILE_NOT_FOUND) {
             logger().warning("Trying to recreate Windows registry node " +
             byteArrayToString(subKey) + " at root 0x" +
-            Integer.toHexString(hKey) + ".");
+            Long.toHexString(hKey) + ".");
             // Try recreation
-            int handle = WindowsRegCreateKeyEx(hKey, subKey)[NATIVE_HANDLE];
+            long handle = WindowsRegCreateKeyEx(hKey, subKey)[NATIVE_HANDLE];
             WindowsRegCloseKey(handle);
             return WindowsRegOpenKey(hKey, subKey, securityMask);
         } else if (result[ERROR_CODE] != ERROR_ACCESS_DENIED) {
@@ -211,18 +211,18 @@ class WindowsPreferences extends AbstractPreferences {
      /**
      * Java wrapper for Windows registry API RegCloseKey()
      */
-    private static native int WindowsRegCloseKey(int hKey);
+    private static native int WindowsRegCloseKey(long hKey);
 
     /**
      * Java wrapper for Windows registry API RegCreateKeyEx()
      */
-    private static native int[] WindowsRegCreateKeyEx(int hKey, byte[] subKey);
+    private static native long[] WindowsRegCreateKeyEx(long hKey, byte[] subKey);
 
     /**
      * Retries RegCreateKeyEx() MAX_ATTEMPTS times before giving up.
      */
-    private static int[] WindowsRegCreateKeyEx1(int hKey, byte[] subKey) {
-        int[] result = WindowsRegCreateKeyEx(hKey, subKey);
+    private static long[] WindowsRegCreateKeyEx1(long hKey, byte[] subKey) {
+        long[] result = WindowsRegCreateKeyEx(hKey, subKey);
         if (result[ERROR_CODE] == ERROR_SUCCESS) {
             return result;
         } else {
@@ -245,17 +245,17 @@ class WindowsPreferences extends AbstractPreferences {
     /**
      * Java wrapper for Windows registry API RegDeleteKey()
      */
-    private static native int WindowsRegDeleteKey(int hKey, byte[] subKey);
+    private static native int WindowsRegDeleteKey(long hKey, byte[] subKey);
 
     /**
      * Java wrapper for Windows registry API RegFlushKey()
      */
-    private static native int WindowsRegFlushKey(int hKey);
+    private static native int WindowsRegFlushKey(long hKey);
 
     /**
      * Retries RegFlushKey() MAX_ATTEMPTS times before giving up.
      */
-    private static int WindowsRegFlushKey1(int hKey) {
+    private static int WindowsRegFlushKey1(long hKey) {
         int result = WindowsRegFlushKey(hKey);
         if (result == ERROR_SUCCESS) {
             return result;
@@ -280,17 +280,17 @@ class WindowsPreferences extends AbstractPreferences {
     /**
      * Java wrapper for Windows registry API RegQueryValueEx()
      */
-    private static native byte[] WindowsRegQueryValueEx(int hKey,
+    private static native byte[] WindowsRegQueryValueEx(long hKey,
                                                         byte[] valueName);
     /**
      * Java wrapper for Windows registry API RegSetValueEx()
      */
-    private static native int WindowsRegSetValueEx(int hKey, byte[] valueName,
+    private static native int WindowsRegSetValueEx(long hKey, byte[] valueName,
                                                    byte[] value);
     /**
      * Retries RegSetValueEx() MAX_ATTEMPTS times before giving up.
      */
-    private static int WindowsRegSetValueEx1(int hKey, byte[] valueName,
+    private static int WindowsRegSetValueEx1(long hKey, byte[] valueName,
                                              byte[] value) {
         int result = WindowsRegSetValueEx(hKey, valueName, value);
         if (result == ERROR_SUCCESS) {
@@ -316,18 +316,18 @@ class WindowsPreferences extends AbstractPreferences {
     /**
      * Java wrapper for Windows registry API RegDeleteValue()
      */
-    private static native int WindowsRegDeleteValue(int hKey, byte[] valueName);
+    private static native int WindowsRegDeleteValue(long hKey, byte[] valueName);
 
     /**
      * Java wrapper for Windows registry API RegQueryInfoKey()
      */
-    private static native int[] WindowsRegQueryInfoKey(int hKey);
+    private static native long[] WindowsRegQueryInfoKey(long hKey);
 
     /**
      * Retries RegQueryInfoKey() MAX_ATTEMPTS times before giving up.
      */
-    private static int[] WindowsRegQueryInfoKey1(int hKey) {
-        int[] result = WindowsRegQueryInfoKey(hKey);
+    private static long[] WindowsRegQueryInfoKey1(long hKey) {
+        long[] result = WindowsRegQueryInfoKey(hKey);
         if (result[ERROR_CODE] == ERROR_SUCCESS) {
             return result;
         } else {
@@ -351,13 +351,13 @@ class WindowsPreferences extends AbstractPreferences {
     /**
      * Java wrapper for Windows registry API RegEnumKeyEx()
      */
-    private static native byte[] WindowsRegEnumKeyEx(int hKey, int subKeyIndex,
+    private static native byte[] WindowsRegEnumKeyEx(long hKey, int subKeyIndex,
                                                      int maxKeyLength);
 
     /**
      * Retries RegEnumKeyEx() MAX_ATTEMPTS times before giving up.
      */
-    private static byte[] WindowsRegEnumKeyEx1(int hKey, int subKeyIndex,
+    private static byte[] WindowsRegEnumKeyEx1(long hKey, int subKeyIndex,
                                                int maxKeyLength) {
         byte[] result = WindowsRegEnumKeyEx(hKey, subKeyIndex, maxKeyLength);
         if (result != null) {
@@ -383,12 +383,12 @@ class WindowsPreferences extends AbstractPreferences {
     /**
      * Java wrapper for Windows registry API RegEnumValue()
      */
-    private static native byte[] WindowsRegEnumValue(int hKey, int valueIndex,
+    private static native byte[] WindowsRegEnumValue(long hKey, int valueIndex,
                                                      int maxValueNameLength);
     /**
      * Retries RegEnumValueEx() MAX_ATTEMPTS times before giving up.
      */
-    private static byte[] WindowsRegEnumValue1(int hKey, int valueIndex,
+    private static byte[] WindowsRegEnumValue1(long hKey, int valueIndex,
                                                int maxValueNameLength) {
         byte[] result = WindowsRegEnumValue(hKey, valueIndex,
                                             maxValueNameLength);
@@ -421,18 +421,18 @@ class WindowsPreferences extends AbstractPreferences {
      */
     private WindowsPreferences(WindowsPreferences parent, String name) {
         super(parent, name);
-        int parentNativeHandle = parent.openKey(KEY_CREATE_SUB_KEY, KEY_READ);
+        long parentNativeHandle = parent.openKey(KEY_CREATE_SUB_KEY, KEY_READ);
         if (parentNativeHandle == NULL_NATIVE_HANDLE) {
             // if here, openKey failed and logged
             isBackingStoreAvailable = false;
             return;
         }
-        int[] result =
+        long[] result =
                WindowsRegCreateKeyEx1(parentNativeHandle, toWindowsName(name));
         if (result[ERROR_CODE] != ERROR_SUCCESS) {
             logger().warning("Could not create windows registry node " +
                     byteArrayToString(windowsAbsolutePath()) +
-                    " at root 0x" + Integer.toHexString(rootNativeHandle()) +
+                    " at root 0x" + Long.toHexString(rootNativeHandle()) +
                     ". Windows RegCreateKeyEx(...) returned error code " +
                     result[ERROR_CODE] + ".");
             isBackingStoreAvailable = false;
@@ -451,14 +451,14 @@ class WindowsPreferences extends AbstractPreferences {
      * @param rootNativeHandle Native handle to one of Windows top level keys.
      * @param rootDirectory Path to root directory, as a byte-encoded string.
      */
-    private  WindowsPreferences(int rootNativeHandle, byte[] rootDirectory) {
+    private  WindowsPreferences(long rootNativeHandle, byte[] rootDirectory) {
         super(null, "");
-        int[] result =
+        long[] result =
                 WindowsRegCreateKeyEx1(rootNativeHandle, rootDirectory);
         if (result[ERROR_CODE] != ERROR_SUCCESS) {
             logger().warning("Could not open/create prefs root node " +
                     byteArrayToString(windowsAbsolutePath()) +
-                    " at root 0x" + Integer.toHexString(rootNativeHandle()) +
+                    " at root 0x" + Long.toHexString(rootNativeHandle()) +
                     ". Windows RegCreateKeyEx(...) returned error code " +
                     result[ERROR_CODE] + ".");
             isBackingStoreAvailable = false;
@@ -497,7 +497,7 @@ class WindowsPreferences extends AbstractPreferences {
      * @see #openKey(int, byte[], int)
      * @see #closeKey(int)
      */
-    private int openKey(int securityMask) {
+    private long openKey(int securityMask) {
         return openKey(securityMask, securityMask);
     }
 
@@ -511,7 +511,7 @@ class WindowsPreferences extends AbstractPreferences {
      * @see #openKey(int, byte[], int)
      * @see #closeKey(int)
      */
-    private int openKey(int mask1, int mask2) {
+    private long openKey(int mask1, int mask2) {
         return openKey(windowsAbsolutePath(), mask1,  mask2);
     }
 
@@ -527,12 +527,12 @@ class WindowsPreferences extends AbstractPreferences {
      * @see #openKey(int, byte[],int)
      * @see #closeKey(int)
      */
-    private int openKey(byte[] windowsAbsolutePath, int mask1, int mask2) {
+    private long openKey(byte[] windowsAbsolutePath, int mask1, int mask2) {
         /*  Check if key's path is short enough be opened at once
             otherwise use a path-splitting procedure */
         if (windowsAbsolutePath.length <= MAX_WINDOWS_PATH_LENGTH + 1) {
-            int[] result = WindowsRegOpenKey1(rootNativeHandle(),
-                                              windowsAbsolutePath, mask1);
+            long[] result = WindowsRegOpenKey1(rootNativeHandle(),
+                                               windowsAbsolutePath, mask1);
             if (result[ERROR_CODE] == ERROR_ACCESS_DENIED && mask2 != mask1)
                 result = WindowsRegOpenKey1(rootNativeHandle(),
                                             windowsAbsolutePath, mask2);
@@ -541,7 +541,7 @@ class WindowsPreferences extends AbstractPreferences {
                 logger().warning("Could not open windows registry node " +
                         byteArrayToString(windowsAbsolutePath()) +
                         " at root 0x" +
-                        Integer.toHexString(rootNativeHandle()) +
+                        Long.toHexString(rootNativeHandle()) +
                         ". Windows RegOpenKey(...) returned error code " +
                         result[ERROR_CODE] + ".");
                 result[NATIVE_HANDLE] = NULL_NATIVE_HANDLE;
@@ -550,7 +550,7 @@ class WindowsPreferences extends AbstractPreferences {
                             "Could not open windows registry node " +
                             byteArrayToString(windowsAbsolutePath()) +
                             " at root 0x" +
-                            Integer.toHexString(rootNativeHandle()) +
+                            Long.toHexString(rootNativeHandle()) +
                             ": Access denied");
                 }
             }
@@ -573,12 +573,12 @@ class WindowsPreferences extends AbstractPreferences {
      * @see #openKey(byte[],int)
      * @see #closeKey(int)
      */
-    private int openKey(int nativeHandle, byte[] windowsRelativePath,
-                        int mask1, int mask2) {
+    private long openKey(long nativeHandle, byte[] windowsRelativePath,
+                         int mask1, int mask2) {
     /* If the path is short enough open at once. Otherwise split the path */
         if (windowsRelativePath.length <= MAX_WINDOWS_PATH_LENGTH + 1 ) {
-            int[] result = WindowsRegOpenKey1(nativeHandle,
-                                              windowsRelativePath, mask1);
+            long[] result = WindowsRegOpenKey1(nativeHandle,
+                                               windowsRelativePath, mask1);
             if (result[ERROR_CODE] == ERROR_ACCESS_DENIED && mask2 != mask1)
                 result = WindowsRegOpenKey1(nativeHandle,
                                             windowsRelativePath, mask2);
@@ -586,7 +586,7 @@ class WindowsPreferences extends AbstractPreferences {
             if (result[ERROR_CODE] != ERROR_SUCCESS) {
                 logger().warning("Could not open windows registry node " +
                         byteArrayToString(windowsAbsolutePath()) +
-                        " at root 0x" + Integer.toHexString(nativeHandle) +
+                        " at root 0x" + Long.toHexString(nativeHandle) +
                         ". Windows RegOpenKey(...) returned error code " +
                         result[ERROR_CODE] + ".");
                 result[NATIVE_HANDLE] = NULL_NATIVE_HANDLE;
@@ -610,13 +610,13 @@ class WindowsPreferences extends AbstractPreferences {
                                       separatorPosition - 1];
             System.arraycopy(windowsRelativePath, separatorPosition+1,
                              nextRelativePath, 0, nextRelativePath.length);
-            int nextNativeHandle = openKey(nativeHandle, nextRelativeRoot,
+            long nextNativeHandle = openKey(nativeHandle, nextRelativeRoot,
                                            mask1, mask2);
             if (nextNativeHandle == NULL_NATIVE_HANDLE) {
                 return NULL_NATIVE_HANDLE;
             }
-            int result = openKey(nextNativeHandle, nextRelativePath,
-                                 mask1,mask2);
+            long result = openKey(nextNativeHandle, nextRelativePath,
+                                  mask1,mask2);
             closeKey(nextNativeHandle);
             return result;
         }
@@ -630,13 +630,13 @@ class WindowsPreferences extends AbstractPreferences {
      * @see #openKey(byte[],int)
      * @see #openKey(int, byte[],int)
     */
-    private void closeKey(int nativeHandle) {
+    private void closeKey(long nativeHandle) {
         int result = WindowsRegCloseKey(nativeHandle);
         if (result != ERROR_SUCCESS) {
             logger().warning("Could not close windows registry node " +
                     byteArrayToString(windowsAbsolutePath()) +
                     " at root 0x" +
-                    Integer.toHexString(rootNativeHandle()) +
+                    Long.toHexString(rootNativeHandle()) +
                     ". Windows RegCloseKey(...) returned error code " +
                     result + ".");
         }
@@ -649,7 +649,7 @@ class WindowsPreferences extends AbstractPreferences {
      * @see #getSpi(String)
      */
     protected void putSpi(String javaName, String value) {
-        int nativeHandle = openKey(KEY_SET_VALUE);
+        long nativeHandle = openKey(KEY_SET_VALUE);
         if (nativeHandle == NULL_NATIVE_HANDLE) {
             isBackingStoreAvailable = false;
             return;
@@ -662,7 +662,7 @@ class WindowsPreferences extends AbstractPreferences {
                     " at Windows registry node " +
                     byteArrayToString(windowsAbsolutePath()) +
                     " at root 0x" +
-                    Integer.toHexString(rootNativeHandle()) +
+                    Long.toHexString(rootNativeHandle()) +
                     ". Windows RegSetValueEx(...) returned error code " +
                     result + ".");
             isBackingStoreAvailable = false;
@@ -677,7 +677,7 @@ class WindowsPreferences extends AbstractPreferences {
      * @see #putSpi(String, String)
      */
     protected String getSpi(String javaName) {
-        int nativeHandle = openKey(KEY_QUERY_VALUE);
+        long nativeHandle = openKey(KEY_QUERY_VALUE);
         if (nativeHandle == NULL_NATIVE_HANDLE) {
             return null;
         }
@@ -699,7 +699,7 @@ class WindowsPreferences extends AbstractPreferences {
      * been deleted.
      */
     protected void removeSpi(String key) {
-        int nativeHandle = openKey(KEY_SET_VALUE);
+        long nativeHandle = openKey(KEY_SET_VALUE);
         if (nativeHandle == NULL_NATIVE_HANDLE) {
         return;
         }
@@ -709,7 +709,7 @@ class WindowsPreferences extends AbstractPreferences {
             logger().warning("Could not delete windows registry value " +
                     byteArrayToString(windowsAbsolutePath()) + "\\" +
                     toWindowsName(key) + " at root 0x" +
-                    Integer.toHexString(rootNativeHandle()) +
+                    Long.toHexString(rootNativeHandle()) +
                     ". Windows RegDeleteValue(...) returned error code " +
                     result + ".");
             isBackingStoreAvailable = false;
@@ -725,27 +725,27 @@ class WindowsPreferences extends AbstractPreferences {
      */
     protected String[] keysSpi() throws BackingStoreException{
         // Find out the number of values
-        int nativeHandle = openKey(KEY_QUERY_VALUE);
+        long nativeHandle = openKey(KEY_QUERY_VALUE);
         if (nativeHandle == NULL_NATIVE_HANDLE) {
             throw new BackingStoreException(
                     "Could not open windows registry node " +
                     byteArrayToString(windowsAbsolutePath()) +
                     " at root 0x" +
-                    Integer.toHexString(rootNativeHandle()) + ".");
+                    Long.toHexString(rootNativeHandle()) + ".");
         }
-        int[] result =  WindowsRegQueryInfoKey1(nativeHandle);
+        long[] result =  WindowsRegQueryInfoKey1(nativeHandle);
         if (result[ERROR_CODE] != ERROR_SUCCESS) {
             String info = "Could not query windows registry node " +
                     byteArrayToString(windowsAbsolutePath()) +
                     " at root 0x" +
-                    Integer.toHexString(rootNativeHandle()) +
+                    Long.toHexString(rootNativeHandle()) +
                     ". Windows RegQueryInfoKeyEx(...) returned error code " +
                     result[ERROR_CODE] + ".";
             logger().warning(info);
             throw new BackingStoreException(info);
         }
-        int maxValueNameLength = result[MAX_VALUE_NAME_LENGTH];
-        int valuesNumber = result[VALUES_NUMBER];
+        int maxValueNameLength = (int)result[MAX_VALUE_NAME_LENGTH];
+        int valuesNumber = (int)result[VALUES_NUMBER];
         if (valuesNumber == 0) {
             closeKey(nativeHandle);
             return new String[0];
@@ -759,7 +759,7 @@ class WindowsPreferences extends AbstractPreferences {
                 String info =
                     "Could not enumerate value #" + i + "  of windows node " +
                     byteArrayToString(windowsAbsolutePath()) + " at root 0x" +
-                    Integer.toHexString(rootNativeHandle()) + ".";
+                    Long.toHexString(rootNativeHandle()) + ".";
                 logger().warning(info);
                 throw new BackingStoreException(info);
             }
@@ -777,27 +777,27 @@ class WindowsPreferences extends AbstractPreferences {
      */
     protected String[] childrenNamesSpi() throws BackingStoreException {
         // Open key
-        int nativeHandle = openKey(KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE);
+        long nativeHandle = openKey(KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE);
         if (nativeHandle == NULL_NATIVE_HANDLE) {
             throw new BackingStoreException(
                     "Could not open windows registry node " +
                     byteArrayToString(windowsAbsolutePath()) +
                     " at root 0x" +
-                    Integer.toHexString(rootNativeHandle()) + ".");
+                    Long.toHexString(rootNativeHandle()) + ".");
         }
         // Get number of children
-        int[] result =  WindowsRegQueryInfoKey1(nativeHandle);
+        long[] result =  WindowsRegQueryInfoKey1(nativeHandle);
         if (result[ERROR_CODE] != ERROR_SUCCESS) {
             String info = "Could not query windows registry node " +
                     byteArrayToString(windowsAbsolutePath()) +
-                    " at root 0x" + Integer.toHexString(rootNativeHandle()) +
+                    " at root 0x" + Long.toHexString(rootNativeHandle()) +
                     ". Windows RegQueryInfoKeyEx(...) returned error code " +
                     result[ERROR_CODE] + ".";
             logger().warning(info);
             throw new BackingStoreException(info);
         }
-        int maxKeyLength = result[MAX_KEY_LENGTH];
-        int subKeysNumber = result[SUBKEYS_NUMBER];
+        int maxKeyLength = (int)result[MAX_KEY_LENGTH];
+        int subKeysNumber = (int)result[SUBKEYS_NUMBER];
         if (subKeysNumber == 0) {
             closeKey(nativeHandle);
             return new String[0];
@@ -812,7 +812,7 @@ class WindowsPreferences extends AbstractPreferences {
                 String info =
                     "Could not enumerate key #" + i + "  of windows node " +
                     byteArrayToString(windowsAbsolutePath()) + " at root 0x" +
-                    Integer.toHexString(rootNativeHandle()) + ". ";
+                    Long.toHexString(rootNativeHandle()) + ". ";
                 logger().warning(info);
                 throw new BackingStoreException(info);
             }
@@ -839,20 +839,20 @@ class WindowsPreferences extends AbstractPreferences {
             throw new BackingStoreException(
                     "flush(): Backing store not available.");
         }
-        int nativeHandle = openKey(KEY_READ);
+        long nativeHandle = openKey(KEY_READ);
         if (nativeHandle == NULL_NATIVE_HANDLE) {
             throw new BackingStoreException(
                     "Could not open windows registry node " +
                     byteArrayToString(windowsAbsolutePath()) +
                     " at root 0x" +
-                    Integer.toHexString(rootNativeHandle()) + ".");
+                    Long.toHexString(rootNativeHandle()) + ".");
         }
         int result = WindowsRegFlushKey1(nativeHandle);
         if (result != ERROR_SUCCESS) {
             String info = "Could not flush windows registry node " +
                     byteArrayToString(windowsAbsolutePath()) +
                     " at root 0x" +
-                    Integer.toHexString(rootNativeHandle()) +
+                    Long.toHexString(rootNativeHandle()) +
                     ". Windows RegFlushKey(...) returned error code " +
                     result + ".";
             logger().warning(info);
@@ -891,21 +891,21 @@ class WindowsPreferences extends AbstractPreferences {
      * is not available.
      */
     public void removeNodeSpi() throws BackingStoreException {
-        int parentNativeHandle =
+        long parentNativeHandle =
                 ((WindowsPreferences)parent()).openKey(DELETE);
         if (parentNativeHandle == NULL_NATIVE_HANDLE) {
             throw new BackingStoreException(
                     "Could not open parent windows registry node of " +
                     byteArrayToString(windowsAbsolutePath()) +
                     " at root 0x" +
-                    Integer.toHexString(rootNativeHandle()) + ".");
+                    Long.toHexString(rootNativeHandle()) + ".");
         }
         int result =
                 WindowsRegDeleteKey(parentNativeHandle, toWindowsName(name()));
         if (result != ERROR_SUCCESS) {
             String info = "Could not delete windows registry node " +
                     byteArrayToString(windowsAbsolutePath()) +
-                    " at root 0x" + Integer.toHexString(rootNativeHandle()) +
+                    " at root 0x" + Long.toHexString(rootNativeHandle()) +
                     ". Windows RegDeleteKeyEx(...) returned error code " +
                     result + ".";
             logger().warning(info);
@@ -1089,7 +1089,7 @@ class WindowsPreferences extends AbstractPreferences {
             if ((ch < 0x0020) || (ch > 0x007f)){
                 // write \udddd
                 windowsName.append("/u");
-                String hex = Integer.toHexString(javaName.charAt(i));
+                String hex = Long.toHexString(javaName.charAt(i));
                 StringBuilder hex4 = new StringBuilder(hex);
                 hex4.reverse();
                 int len = 4 - hex4.length();
@@ -1115,7 +1115,7 @@ class WindowsPreferences extends AbstractPreferences {
     /**
      * Returns native handle for the top Windows node for this node.
      */
-    private int rootNativeHandle() {
+    private long rootNativeHandle() {
         return (isUserNode()
                 ? USER_ROOT_NATIVE_HANDLE
                 : SYSTEM_ROOT_NATIVE_HANDLE);

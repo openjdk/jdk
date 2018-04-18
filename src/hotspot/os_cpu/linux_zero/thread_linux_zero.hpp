@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -86,10 +86,7 @@
   }
 
  private:
-  frame pd_last_frame() {
-    assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
-    return frame(last_Java_fp(), last_Java_sp());
-  }
+  frame pd_last_frame();
 
  public:
   static ByteSize last_Java_fp_offset() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,9 @@ public final class MarlinCache implements MarlinConst {
     // values are stored as int [x|alpha] where alpha is 8 bits
     static final int RLE_MAX_WIDTH = 1 << (24 - 1);
 
-    // 2048 (pixelSize) alpha values (width) x 32 rows (tile) = 64K bytes
+    // 4096 (pixels) alpha values (width) x 64 rows / 4 (tile) = 64K bytes
     // x1 instead of 4 bytes (RLE) ie 1/4 capacity or average good RLE compression
-    static final long INITIAL_CHUNK_ARRAY = TILE_H * INITIAL_PIXEL_DIM; // 64K
+    static final long INITIAL_CHUNK_ARRAY = TILE_H * INITIAL_PIXEL_WIDTH >> 2; // 64K
 
     // The alpha map used by this object (taken out of our map cache) to convert
     // pixel coverage counts gotten from MarlinCache (which are in the range
@@ -292,11 +292,11 @@ public final class MarlinCache implements MarlinConst {
             // ensure values are in [0; MAX_AA_ALPHA] range
             if (DO_AA_RANGE_CHECK) {
                 if (val < 0) {
-                    System.out.println("Invalid coverage = " + val);
+                    MarlinUtils.logInfo("Invalid coverage = " + val);
                     val = 0;
                 }
                 if (val > MAX_AA_ALPHA) {
-                    System.out.println("Invalid coverage = " + val);
+                    MarlinUtils.logInfo("Invalid coverage = " + val);
                     val = MAX_AA_ALPHA;
                 }
             }
@@ -460,11 +460,11 @@ public final class MarlinCache implements MarlinConst {
                         // ensure values are in [0; MAX_AA_ALPHA] range
                         if (DO_AA_RANGE_CHECK) {
                             if (val < 0) {
-                                System.out.println("Invalid coverage = " + val);
+                                MarlinUtils.logInfo("Invalid coverage = " + val);
                                 val = 0;
                             }
                             if (val > MAX_AA_ALPHA) {
-                                System.out.println("Invalid coverage = " + val);
+                                MarlinUtils.logInfo("Invalid coverage = " + val);
                                 val = MAX_AA_ALPHA;
                             }
                         }
@@ -630,8 +630,6 @@ public final class MarlinCache implements MarlinConst {
         final int halfmaxalpha = maxalpha >> 2;
         for (int i = 0; i <= maxalpha; i++) {
             alMap[i] = (byte) ((i * 255 + halfmaxalpha) / maxalpha);
-//            System.out.println("alphaMap[" + i + "] = "
-//                               + Byte.toUnsignedInt(alMap[i]));
         }
         return alMap;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,7 @@
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_SocketChannelImpl_checkConnect(JNIEnv *env, jobject this,
-                                               jobject fdo, jboolean block,
-                                               jboolean ready)
+                                               jobject fdo, jboolean block)
 {
     int error = 0;
     socklen_t n = sizeof(int);
@@ -56,30 +55,33 @@ Java_sun_nio_ch_SocketChannelImpl_checkConnect(JNIEnv *env, jobject this,
     int result = 0;
     struct pollfd poller;
 
-    poller.revents = 1;
-    if (!ready) {
-        poller.fd = fd;
-        poller.events = POLLOUT;
-        poller.revents = 0;
-        result = poll(&poller, 1, block ? -1 : 0);
-        if (result < 0) {
-            JNU_ThrowIOExceptionWithLastError(env, "Poll failed");
+    poller.fd = fd;
+    poller.events = POLLOUT;
+    poller.revents = 0;
+    result = poll(&poller, 1, block ? -1 : 0);
+
+    if (result < 0) {
+        if (errno == EINTR) {
+            return IOS_INTERRUPTED;
+        } else {
+            JNU_ThrowIOExceptionWithLastError(env, "poll failed");
             return IOS_THROWN;
         }
-        if (!block && (result == 0))
-            return IOS_UNAVAILABLE;
     }
+    if (!block && (result == 0))
+        return IOS_UNAVAILABLE;
 
-    if (poller.revents) {
+    if (result > 0) {
         errno = 0;
         result = getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &n);
         if (result < 0) {
-            handleSocketError(env, errno);
-            return JNI_FALSE;
+            return handleSocketError(env, errno);
         } else if (error) {
-            handleSocketError(env, error);
-            return JNI_FALSE;
+            return handleSocketError(env, error);
+        } else if ((poller.revents & POLLHUP) != 0) {
+            return handleSocketError(env, ENOTCONN);
         }
+        // connected
         return 1;
     }
     return 0;

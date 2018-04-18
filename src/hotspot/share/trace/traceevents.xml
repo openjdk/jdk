@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
- Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -512,7 +512,6 @@ Declares a structure type that can be used in other events.
     <value type="G1HEAPREGIONTYPE" field="to" label="To" />
     <value type="ADDRESS" field="start" label="Start" />
     <value type="BYTES64" field="used" label="Used" />
-    <value type="UINT" field="allocationContext" label="Allocation Context" />
   </event>
 
   <!-- Compiler events -->
@@ -626,6 +625,11 @@ Declares a structure type that can be used in other events.
     <value type="BOOLEAN" field="blocking" label="Caller Blocked" description="If the calling thread was blocked until the operation was complete"/>
     <value type="THREAD" field="caller" label="Caller" transition="FROM" description="Thread requesting operation. If non-blocking, will be set to 0 indicating thread is unknown"/>
     <value type="INTEGER" field="safepointId" label="Safepoint Identifier" description="The safepoint (if any) under which this operation was completed" relation="SafepointId"/>
+  </event>
+
+  <event id="Shutdown" path="vm/runtime/shutdown" label="VM Shutdown"
+         description="VM shutting down" has_thread="true" has_stacktrace="true" is_instant="true">
+    <value type="STRING" field="reason" label="Reason" description="Reason for VM shutdown"/>
   </event>
 
   <!-- Allocation events -->

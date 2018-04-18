@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,10 @@
 package sun.nio.ch;
 
 import java.io.IOException;
-import java.net.SocketException;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.IllegalSelectorException;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
@@ -47,16 +46,15 @@ import java.util.Set;
 public abstract class SelectorImpl
     extends AbstractSelector
 {
+    // The set of keys registered with this Selector
+    protected final Set<SelectionKey> keys;
 
     // The set of keys with data ready for an operation
-    protected Set<SelectionKey> selectedKeys;
-
-    // The set of keys registered with this Selector
-    protected HashSet<SelectionKey> keys;
+    protected final Set<SelectionKey> selectedKeys;
 
     // Public views of the key sets
-    private Set<SelectionKey> publicKeys;             // Immutable
-    private Set<SelectionKey> publicSelectedKeys;     // Removal allowed, but not addition
+    private final Set<SelectionKey> publicKeys;             // Immutable
+    private final Set<SelectionKey> publicSelectedKeys;     // Removal allowed, but not addition
 
     protected SelectorImpl(SelectorProvider sp) {
         super(sp);
@@ -66,24 +64,58 @@ public abstract class SelectorImpl
         publicSelectedKeys = Util.ungrowableSet(selectedKeys);
     }
 
-    public Set<SelectionKey> keys() {
+    private void ensureOpen() {
         if (!isOpen())
             throw new ClosedSelectorException();
+    }
+
+    @Override
+    public final Set<SelectionKey> keys() {
+        ensureOpen();
         return publicKeys;
     }
 
-    public Set<SelectionKey> selectedKeys() {
-        if (!isOpen())
-            throw new ClosedSelectorException();
+    @Override
+    public final Set<SelectionKey> selectedKeys() {
+        ensureOpen();
         return publicSelectedKeys;
     }
 
+    /**
+     * Returns the public view of the key sets
+     */
+    protected final Set<SelectionKey> nioKeys() {
+        return publicKeys;
+    }
+    protected final Set<SelectionKey> nioSelectedKeys() {
+        return publicSelectedKeys;
+    }
+
+    /**
+     * Marks the beginning of a select operation that might block
+     */
+    protected final void begin(boolean blocking) {
+        if (blocking) begin();
+    }
+
+    /**
+     * Marks the end of a select operation that may have blocked
+     */
+    protected final void end(boolean blocking) {
+        if (blocking) end();
+    }
+
+    /**
+     * Selects the keys for channels that are ready for I/O operations.
+     *
+     * @param timeout timeout in milliseconds to wait, 0 to not wait, -1 to
+     *                wait indefinitely
+     */
     protected abstract int doSelect(long timeout) throws IOException;
 
     private int lockAndDoSelect(long timeout) throws IOException {
         synchronized (this) {
-            if (!isOpen())
-                throw new ClosedSelectorException();
+            ensureOpen();
             synchronized (publicKeys) {
                 synchronized (publicSelectedKeys) {
                     return doSelect(timeout);
@@ -92,7 +124,8 @@ public abstract class SelectorImpl
         }
     }
 
-    public int select(long timeout)
+    @Override
+    public final int select(long timeout)
         throws IOException
     {
         if (timeout < 0)
@@ -100,20 +133,35 @@ public abstract class SelectorImpl
         return lockAndDoSelect((timeout == 0) ? -1 : timeout);
     }
 
-    public int select() throws IOException {
+    @Override
+    public final int select() throws IOException {
         return select(0);
     }
 
-    public int selectNow() throws IOException {
+    @Override
+    public final int selectNow() throws IOException {
         return lockAndDoSelect(0);
     }
 
-    public void implCloseSelector() throws IOException {
+    @Override
+    public final void implCloseSelector() throws IOException {
         wakeup();
         synchronized (this) {
+            implClose();
             synchronized (publicKeys) {
                 synchronized (publicSelectedKeys) {
-                    implClose();
+                    // Deregister channels
+                    Iterator<SelectionKey> i = keys.iterator();
+                    while (i.hasNext()) {
+                        SelectionKeyImpl ski = (SelectionKeyImpl)i.next();
+                        deregister(ski);
+                        SelectableChannel selch = ski.channel();
+                        if (!selch.isOpen() && !selch.isRegistered())
+                            ((SelChImpl)selch).kill();
+                        selectedKeys.remove(ski);
+                        i.remove();
+                    }
+                    assert selectedKeys.isEmpty() && keys.isEmpty();
                 }
             }
         }
@@ -121,8 +169,7 @@ public abstract class SelectorImpl
 
     protected abstract void implClose() throws IOException;
 
-    public void putEventOps(SelectionKeyImpl sk, int ops) { }
-
+    @Override
     protected final SelectionKey register(AbstractSelectableChannel ch,
                                           int ops,
                                           Object attachment)
@@ -131,37 +178,60 @@ public abstract class SelectorImpl
             throw new IllegalSelectorException();
         SelectionKeyImpl k = new SelectionKeyImpl((SelChImpl)ch, this);
         k.attach(attachment);
+
+        // register with selector (if needed) before adding to key set
+        implRegister(k);
         synchronized (publicKeys) {
-            implRegister(k);
+            keys.add(k);
         }
         k.interestOps(ops);
         return k;
     }
 
-    protected abstract void implRegister(SelectionKeyImpl ski);
+    /**
+     * Register the key in the selector.
+     *
+     * The default implementation checks if the selector is open. It should
+     * be overridden by selector implementations as needed.
+     */
+    protected void implRegister(SelectionKeyImpl ski) {
+        ensureOpen();
+    }
 
-    void processDeregisterQueue() throws IOException {
-        // Precondition: Synchronized on this, keys, and selectedKeys
+    protected abstract void implDereg(SelectionKeyImpl ski) throws IOException;
+
+    protected final void processDeregisterQueue() throws IOException {
+        assert Thread.holdsLock(this);
+        assert Thread.holdsLock(publicKeys);
+        assert Thread.holdsLock(publicSelectedKeys);
+
         Set<SelectionKey> cks = cancelledKeys();
         synchronized (cks) {
             if (!cks.isEmpty()) {
                 Iterator<SelectionKey> i = cks.iterator();
                 while (i.hasNext()) {
                     SelectionKeyImpl ski = (SelectionKeyImpl)i.next();
-                    try {
-                        implDereg(ski);
-                    } catch (SocketException se) {
-                        throw new IOException("Error deregistering key", se);
-                    } finally {
-                        i.remove();
-                    }
+                    i.remove();
+
+                    // remove the key from the selector
+                    implDereg(ski);
+
+                    selectedKeys.remove(ski);
+                    keys.remove(ski);
+
+                    // remove from channel's key set
+                    deregister(ski);
+
+                    SelectableChannel ch = ski.channel();
+                    if (!ch.isOpen() && !ch.isRegistered())
+                        ((SelChImpl)ch).kill();
                 }
             }
         }
     }
 
-    protected abstract void implDereg(SelectionKeyImpl ski) throws IOException;
-
-    public abstract Selector wakeup();
-
+    /**
+     * Change the event set in the selector
+     */
+    protected abstract void setEventOps(SelectionKeyImpl ski);
 }

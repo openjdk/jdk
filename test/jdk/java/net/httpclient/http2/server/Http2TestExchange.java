@@ -29,7 +29,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import javax.net.ssl.SSLSession;
-import jdk.incubator.http.internal.common.HttpHeadersImpl;
+import jdk.internal.net.http.common.HttpHeadersImpl;
 
 public interface Http2TestExchange {
 

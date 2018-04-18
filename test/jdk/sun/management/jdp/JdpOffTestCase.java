@@ -54,6 +54,14 @@ public class JdpOffTestCase extends JdpTestCase {
         testPassed = true;
     }
 
+    /**
+     * The socket did not timeout and no valid JDP packets were received.
+     */
+    @Override
+    protected void shutdown() throws Exception {
+        log.fine("Test timed out. Test passed!");
+        testPassed = true;
+    }
 
     /**
      * This method is executed after a correct Jdp packet, coming from this VM has been received.

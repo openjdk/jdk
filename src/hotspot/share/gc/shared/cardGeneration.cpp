@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/shared/cardGeneration.inline.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/gcLocker.hpp"
+#include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/space.inline.hpp"
@@ -79,7 +80,7 @@ bool CardGeneration::grow_by(size_t bytes) {
        heap_word_size(_virtual_space.committed_size());
     MemRegion mr(space()->bottom(), new_word_size);
     // Expand card table
-    GenCollectedHeap::heap()->barrier_set()->resize_covered_region(mr);
+    GenCollectedHeap::heap()->rem_set()->resize_covered_region(mr);
     // Expand shared block offset array
     _bts->resize(new_word_size);
 
@@ -166,7 +167,7 @@ void CardGeneration::shrink(size_t bytes) {
   _bts->resize(new_word_size);
   MemRegion mr(space()->bottom(), new_word_size);
   // Shrink the card table
-  GenCollectedHeap::heap()->barrier_set()->resize_covered_region(mr);
+  GenCollectedHeap::heap()->rem_set()->resize_covered_region(mr);
 
   size_t new_mem_size = _virtual_space.committed_size();
   size_t old_mem_size = new_mem_size + size;

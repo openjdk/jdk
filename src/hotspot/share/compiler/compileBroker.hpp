@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -282,7 +282,8 @@ public:
     CompileQueue *q = compile_queue(comp_level);
     return q != NULL ? q->size() : 0;
   }
-  static void compilation_init(TRAPS);
+  static void compilation_init_phase1(TRAPS);
+  static void compilation_init_phase2();
   static void init_compiler_thread_log();
   static nmethod* compile_method(const methodHandle& method,
                                  int osr_bci,
@@ -381,6 +382,10 @@ public:
 
   // Log that compilation profiling is skipped because metaspace is full.
   static void log_metaspace_failure();
+
+  // CodeHeap State Analytics.
+  static void print_info(outputStream *out);
+  static void print_heapinfo(outputStream *out, const char* function, const char* granularity );
 };
 
 #endif // SHARE_VM_COMPILER_COMPILEBROKER_HPP

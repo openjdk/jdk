@@ -27,7 +27,7 @@
  * @summary Test for illegal argument exception
  */
 
-import java.util.*;
+import java.util.Vector;
 
 /**
  * This is a simple test class created to check for

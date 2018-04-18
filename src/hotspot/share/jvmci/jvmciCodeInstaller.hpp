@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,18 +185,18 @@ private:
   void pd_patch_MetaspaceConstant(int pc_offset, Handle constant, TRAPS);
   void pd_patch_DataSectionReference(int pc_offset, int data_offset, TRAPS);
   void pd_relocate_ForeignCall(NativeInstruction* inst, jlong foreign_call_destination, TRAPS);
-  void pd_relocate_JavaMethod(Handle method, jint pc_offset, TRAPS);
+  void pd_relocate_JavaMethod(CodeBuffer &cbuf, Handle method, jint pc_offset, TRAPS);
   void pd_relocate_poll(address pc, jint mark, TRAPS);
 
-  objArrayOop sites() { return (objArrayOop) JNIHandles::resolve(_sites_handle); }
-  arrayOop code() { return (arrayOop) JNIHandles::resolve(_code_handle); }
-  arrayOop data_section() { return (arrayOop) JNIHandles::resolve(_data_section_handle); }
-  objArrayOop data_section_patches() { return (objArrayOop) JNIHandles::resolve(_data_section_patches_handle); }
+  objArrayOop sites();
+  arrayOop code();
+  arrayOop data_section();
+  objArrayOop data_section_patches();
 #ifndef PRODUCT
-  objArrayOop comments() { return (objArrayOop) JNIHandles::resolve(_comments_handle); }
+  objArrayOop comments();
 #endif
 
-  oop word_kind() { return (oop) JNIHandles::resolve(_word_kind_handle); }
+  oop word_kind();
 
 public:
 

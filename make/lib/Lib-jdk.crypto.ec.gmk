@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,8 @@ ifeq ($(ENABLE_INTREE_EC), true)
     ECC_JNI_SOLSPARC_FILTER := -xregs=no%appl
   endif
 
-  $(eval $(call SetupNativeCompilation,BUILD_LIBSUNEC, \
-      LIBRARY := sunec, \
-      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+  $(eval $(call SetupJdkLibrary, BUILD_LIBSUNEC, \
+      NAME := sunec, \
       SRC := $(LIBSUNEC_SRC), \
       TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
       OPTIMIZATION := LOW, \
@@ -54,20 +53,11 @@ ifeq ($(ENABLE_INTREE_EC), true)
           -DMP_API_COMPATIBLE -DNSS_ECC_MORE_THAN_SUITE_B, \
       CXXFLAGS := $(filter-out $(ECC_JNI_SOLSPARC_FILTER), $(CXXFLAGS_JDKLIB)) \
           $(BUILD_LIBSUNEC_FLAGS), \
-      DISABLED_WARNINGS_gcc := sign-compare, \
+      DISABLED_WARNINGS_gcc := sign-compare implicit-fallthrough, \
       DISABLED_WARNINGS_microsoft := 4101 4244 4146 4018, \
-      MAPFILE := $(TOPDIR)/make/mapfiles/libsunec/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK), \
       LDFLAGS_macosx := $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := $(LIBCXX), \
-      LIBS_linux := -lc, \
-      LIBS_solaris := -lc, \
-      VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-      RC_FLAGS := $(RC_FLAGS) \
-          -D "JDK_FNAME=sunec.dll" \
-          -D "JDK_INTERNAL_NAME=sunec" \
-          -D "JDK_FTYPE=0x2L", \
-      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libsunec, \
   ))
 
   TARGETS += $(BUILD_LIBSUNEC)

@@ -29,7 +29,8 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  *     /test/hotspot/jtreg/runtime/appcds/test-classes /test/hotspot/jtreg/runtime/appcds/jvmti
  *     /test/hotspot/jtreg/testlibrary/jvmti
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
+ * @requires !vm.graal.enabled
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jartool/sun.tools.jar

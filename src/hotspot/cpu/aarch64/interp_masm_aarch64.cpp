@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,6 +24,8 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "interp_masm_aarch64.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -36,6 +38,7 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/biasedLocking.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.inline.hpp"
@@ -276,7 +279,8 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   resolve_oop_handle(result);
   // Add in the index
   add(result, result, tmp);
-  load_heap_oop(result, Address(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->load_at(this, IN_HEAP, T_OBJECT, result, Address(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT)), /*tmp1*/ noreg, /*tmp_thread*/ noreg);
 }
 
 void InterpreterMacroAssembler::load_resolved_klass_at_offset(
@@ -399,6 +403,13 @@ void InterpreterMacroAssembler::store_ptr(int n, Register val) {
   str(val, Address(esp, Interpreter::expr_offset_in_bytes(n)));
 }
 
+void InterpreterMacroAssembler::load_float(Address src) {
+  ldrs(v0, src);
+}
+
+void InterpreterMacroAssembler::load_double(Address src) {
+  ldrd(v0, src);
+}
 
 void InterpreterMacroAssembler::prepare_to_jump_from_interpreted() {
   // set sender sp

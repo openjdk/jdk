@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug       8048887 8164937
   @summary   Tests SortingFTP for an exception caused by the tim-sort algo.
   @author    anton.tarasov: area=awt.focus

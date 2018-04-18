@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +26,8 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_aarch64.hpp"
 #include "oops/instanceOop.hpp"
@@ -617,113 +619,6 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void array_overlap_test(Label& L_no_overlap, Address::sxtw sf) { __ b(L_no_overlap); }
-
-  // Generate code for an array write pre barrier
-  //
-  //     addr       - starting address
-  //     count      - element count
-  //     tmp        - scratch register
-  //     saved_regs - registers to be saved before calling static_write_ref_array_pre
-  //
-  //     Callers must specify which registers to preserve in saved_regs.
-  //     Clobbers: r0-r18, v0-v7, v16-v31, except saved_regs.
-  //
-  void gen_write_ref_array_pre_barrier(Register addr, Register count, bool dest_uninitialized, RegSet saved_regs) {
-    BarrierSet* bs = Universe::heap()->barrier_set();
-    switch (bs->kind()) {
-    case BarrierSet::G1SATBCTLogging:
-      // With G1, don't generate the call if we statically know that the target in uninitialized
-      if (!dest_uninitialized) {
-        __ push(saved_regs, sp);
-        if (count == c_rarg0) {
-          if (addr == c_rarg1) {
-            // exactly backwards!!
-            __ mov(rscratch1, c_rarg0);
-            __ mov(c_rarg0, c_rarg1);
-            __ mov(c_rarg1, rscratch1);
-          } else {
-            __ mov(c_rarg1, count);
-            __ mov(c_rarg0, addr);
-          }
-        } else {
-          __ mov(c_rarg0, addr);
-          __ mov(c_rarg1, count);
-        }
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre), 2);
-        __ pop(saved_regs, sp);
-        break;
-      case BarrierSet::CardTableForRS:
-      case BarrierSet::CardTableExtension:
-      case BarrierSet::ModRef:
-        break;
-      default:
-        ShouldNotReachHere();
-
-      }
-    }
-  }
-
-  //
-  // Generate code for an array write post barrier
-  //
-  //  Input:
-  //     start      - register containing starting address of destination array
-  //     end        - register containing ending address of destination array
-  //     scratch    - scratch register
-  //     saved_regs - registers to be saved before calling static_write_ref_array_post
-  //
-  //  The input registers are overwritten.
-  //  The ending address is inclusive.
-  //  Callers must specify which registers to preserve in saved_regs.
-  //  Clobbers: r0-r18, v0-v7, v16-v31, except saved_regs.
-  void gen_write_ref_array_post_barrier(Register start, Register end, Register scratch, RegSet saved_regs) {
-    assert_different_registers(start, end, scratch);
-    BarrierSet* bs = Universe::heap()->barrier_set();
-    switch (bs->kind()) {
-      case BarrierSet::G1SATBCTLogging:
-
-        {
-          __ push(saved_regs, sp);
-          // must compute element count unless barrier set interface is changed (other platforms supply count)
-          assert_different_registers(start, end, scratch);
-          __ lea(scratch, Address(end, BytesPerHeapOop));
-          __ sub(scratch, scratch, start);               // subtract start to get #bytes
-          __ lsr(scratch, scratch, LogBytesPerHeapOop);  // convert to element count
-          __ mov(c_rarg0, start);
-          __ mov(c_rarg1, scratch);
-          __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post), 2);
-          __ pop(saved_regs, sp);
-        }
-        break;
-      case BarrierSet::CardTableForRS:
-      case BarrierSet::CardTableExtension:
-        {
-          CardTableModRefBS* ct = (CardTableModRefBS*)bs;
-          assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
-
-          Label L_loop;
-
-           __ lsr(start, start, CardTableModRefBS::card_shift);
-           __ lsr(end, end, CardTableModRefBS::card_shift);
-           __ sub(end, end, start); // number of bytes to copy
-
-          const Register count = end; // 'end' register contains bytes count now
-          __ load_byte_map_base(scratch);
-          __ add(start, start, scratch);
-          if (UseConcMarkSweepGC) {
-            __ membar(__ StoreStore);
-          }
-          __ BIND(L_loop);
-          __ strb(zr, Address(start, count));
-          __ subs(count, count, 1);
-          __ br(Assembler::GE, L_loop);
-        }
-        break;
-      default:
-        ShouldNotReachHere();
-
-    }
-  }
 
   // The inner part of zero_words().  This is the bulk operation,
   // zeroing words in blocks, possibly using DC ZVA to do it.  The
@@ -1456,20 +1351,33 @@ class StubGenerator: public StubCodeGenerator {
       BLOCK_COMMENT("Entry:");
     }
 
+    DecoratorSet decorators = ARRAYCOPY_DISJOINT;
+    if (dest_uninitialized) {
+      decorators |= AS_DEST_NOT_INITIALIZED;
+    }
+    if (aligned) {
+      decorators |= ARRAYCOPY_ALIGNED;
+    }
+
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->arraycopy_prologue(_masm, decorators, is_oop, d, count, saved_reg);
+
     if (is_oop) {
-      gen_write_ref_array_pre_barrier(d, count, dest_uninitialized, saved_reg);
       // save regs before copy_memory
       __ push(RegSet::of(d, count), sp);
     }
     copy_memory(aligned, s, d, count, rscratch1, size);
+
     if (is_oop) {
       __ pop(RegSet::of(d, count), sp);
       if (VerifyOops)
         verify_oop_array(size, d, count, r16);
       __ sub(count, count, 1); // make an inclusive end pointer
       __ lea(count, Address(d, count, Address::lsl(exact_log2(size))));
-      gen_write_ref_array_post_barrier(d, count, rscratch1, RegSet());
     }
+
+    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, rscratch1, RegSet());
+
     __ leave();
     __ mov(r0, zr); // return 0
     __ ret(lr);
@@ -1517,8 +1425,18 @@ class StubGenerator: public StubCodeGenerator {
     __ cmp(rscratch1, count, Assembler::LSL, exact_log2(size));
     __ br(Assembler::HS, nooverlap_target);
 
+    DecoratorSet decorators = 0;
+    if (dest_uninitialized) {
+      decorators |= AS_DEST_NOT_INITIALIZED;
+    }
+    if (aligned) {
+      decorators |= ARRAYCOPY_ALIGNED;
+    }
+
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->arraycopy_prologue(_masm, decorators, is_oop, d, count, saved_regs);
+
     if (is_oop) {
-      gen_write_ref_array_pre_barrier(d, count, dest_uninitialized, saved_regs);
       // save regs before copy_memory
       __ push(RegSet::of(d, count), sp);
     }
@@ -1529,8 +1447,8 @@ class StubGenerator: public StubCodeGenerator {
         verify_oop_array(size, d, count, r16);
       __ sub(count, count, 1); // make an inclusive end pointer
       __ lea(count, Address(d, count, Address::lsl(exact_log2(size))));
-      gen_write_ref_array_post_barrier(d, count, rscratch1, RegSet());
     }
+    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, rscratch1, RegSet());
     __ leave();
     __ mov(r0, zr); // return 0
     __ ret(lr);
@@ -1871,7 +1789,14 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif //ASSERT
 
-    gen_write_ref_array_pre_barrier(to, count, dest_uninitialized, wb_pre_saved_regs);
+    DecoratorSet decorators = ARRAYCOPY_CHECKCAST;
+    bool is_oop = true;
+    if (dest_uninitialized) {
+      decorators |= AS_DEST_NOT_INITIALIZED;
+    }
+
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->arraycopy_prologue(_masm, decorators, is_oop, to, count, wb_pre_saved_regs);
 
     // save the original count
     __ mov(count_save, count);
@@ -1915,7 +1840,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ BIND(L_do_card_marks);
     __ add(to, to, -heapOopSize);         // make an inclusive end pointer
-    gen_write_ref_array_post_barrier(start_to, to, rscratch1, wb_post_saved_regs);
+    bs->arraycopy_epilogue(_masm, decorators, is_oop, start_to, to, rscratch1, wb_post_saved_regs);
 
     __ bind(L_done_pop);
     __ pop(RegSet::of(r18, r19, r20, r21), sp);
@@ -3888,6 +3813,182 @@ class StubGenerator: public StubCodeGenerator {
     __ ret(lr);
     return entry;
   }
+
+  void generate_large_array_equals_loop_nonsimd(int loopThreshold,
+        bool usePrefetch, Label &NOT_EQUAL) {
+    Register a1 = r1, a2 = r2, result = r0, cnt1 = r10, tmp1 = rscratch1,
+        tmp2 = rscratch2, tmp3 = r3, tmp4 = r4, tmp5 = r5, tmp6 = r11,
+        tmp7 = r12, tmp8 = r13;
+    Label LOOP;
+
+    __ ldp(tmp1, tmp3, Address(__ post(a1, 2 * wordSize)));
+    __ ldp(tmp2, tmp4, Address(__ post(a2, 2 * wordSize)));
+    __ bind(LOOP);
+    if (usePrefetch) {
+      __ prfm(Address(a1, SoftwarePrefetchHintDistance));
+      __ prfm(Address(a2, SoftwarePrefetchHintDistance));
+    }
+    __ ldp(tmp5, tmp7, Address(__ post(a1, 2 * wordSize)));
+    __ eor(tmp1, tmp1, tmp2);
+    __ eor(tmp3, tmp3, tmp4);
+    __ ldp(tmp6, tmp8, Address(__ post(a2, 2 * wordSize)));
+    __ orr(tmp1, tmp1, tmp3);
+    __ cbnz(tmp1, NOT_EQUAL);
+    __ ldp(tmp1, tmp3, Address(__ post(a1, 2 * wordSize)));
+    __ eor(tmp5, tmp5, tmp6);
+    __ eor(tmp7, tmp7, tmp8);
+    __ ldp(tmp2, tmp4, Address(__ post(a2, 2 * wordSize)));
+    __ orr(tmp5, tmp5, tmp7);
+    __ cbnz(tmp5, NOT_EQUAL);
+    __ ldp(tmp5, tmp7, Address(__ post(a1, 2 * wordSize)));
+    __ eor(tmp1, tmp1, tmp2);
+    __ eor(tmp3, tmp3, tmp4);
+    __ ldp(tmp6, tmp8, Address(__ post(a2, 2 * wordSize)));
+    __ orr(tmp1, tmp1, tmp3);
+    __ cbnz(tmp1, NOT_EQUAL);
+    __ ldp(tmp1, tmp3, Address(__ post(a1, 2 * wordSize)));
+    __ eor(tmp5, tmp5, tmp6);
+    __ sub(cnt1, cnt1, 8 * wordSize);
+    __ eor(tmp7, tmp7, tmp8);
+    __ ldp(tmp2, tmp4, Address(__ post(a2, 2 * wordSize)));
+    __ cmp(cnt1, loopThreshold);
+    __ orr(tmp5, tmp5, tmp7);
+    __ cbnz(tmp5, NOT_EQUAL);
+    __ br(__ GE, LOOP);
+    // post-loop
+    __ eor(tmp1, tmp1, tmp2);
+    __ eor(tmp3, tmp3, tmp4);
+    __ orr(tmp1, tmp1, tmp3);
+    __ sub(cnt1, cnt1, 2 * wordSize);
+    __ cbnz(tmp1, NOT_EQUAL);
+  }
+
+  void generate_large_array_equals_loop_simd(int loopThreshold,
+        bool usePrefetch, Label &NOT_EQUAL) {
+    Register a1 = r1, a2 = r2, result = r0, cnt1 = r10, tmp1 = rscratch1,
+        tmp2 = rscratch2;
+    Label LOOP;
+
+    __ bind(LOOP);
+    if (usePrefetch) {
+      __ prfm(Address(a1, SoftwarePrefetchHintDistance));
+      __ prfm(Address(a2, SoftwarePrefetchHintDistance));
+    }
+    __ ld1(v0, v1, v2, v3, __ T2D, Address(__ post(a1, 4 * 2 * wordSize)));
+    __ sub(cnt1, cnt1, 8 * wordSize);
+    __ ld1(v4, v5, v6, v7, __ T2D, Address(__ post(a2, 4 * 2 * wordSize)));
+    __ cmp(cnt1, loopThreshold);
+    __ eor(v0, __ T16B, v0, v4);
+    __ eor(v1, __ T16B, v1, v5);
+    __ eor(v2, __ T16B, v2, v6);
+    __ eor(v3, __ T16B, v3, v7);
+    __ orr(v0, __ T16B, v0, v1);
+    __ orr(v1, __ T16B, v2, v3);
+    __ orr(v0, __ T16B, v0, v1);
+    __ umov(tmp1, v0, __ D, 0);
+    __ umov(tmp2, v0, __ D, 1);
+    __ orr(tmp1, tmp1, tmp2);
+    __ cbnz(tmp1, NOT_EQUAL);
+    __ br(__ GE, LOOP);
+  }
+
+  // a1 = r1 - array1 address
+  // a2 = r2 - array2 address
+  // result = r0 - return value. Already contains "false"
+  // cnt1 = r10 - amount of elements left to check, reduced by wordSize
+  // r3-r5 are reserved temporary registers
+  address generate_large_array_equals() {
+    StubCodeMark mark(this, "StubRoutines", "large_array_equals");
+    Register a1 = r1, a2 = r2, result = r0, cnt1 = r10, tmp1 = rscratch1,
+        tmp2 = rscratch2, tmp3 = r3, tmp4 = r4, tmp5 = r5, tmp6 = r11,
+        tmp7 = r12, tmp8 = r13;
+    Label TAIL, NOT_EQUAL, EQUAL, NOT_EQUAL_NO_POP, NO_PREFETCH_LARGE_LOOP,
+        SMALL_LOOP, POST_LOOP;
+    const int PRE_LOOP_SIZE = UseSIMDForArrayEquals ? 0 : 16;
+    // calculate if at least 32 prefetched bytes are used
+    int prefetchLoopThreshold = SoftwarePrefetchHintDistance + 32;
+    int nonPrefetchLoopThreshold = (64 + PRE_LOOP_SIZE);
+    RegSet spilled_regs = RegSet::range(tmp6, tmp8);
+    assert_different_registers(a1, a2, result, cnt1, tmp1, tmp2, tmp3, tmp4,
+        tmp5, tmp6, tmp7, tmp8);
+
+    __ align(CodeEntryAlignment);
+    address entry = __ pc();
+    __ enter();
+    __ sub(cnt1, cnt1, wordSize);  // first 8 bytes were loaded outside of stub
+    // also advance pointers to use post-increment instead of pre-increment
+    __ add(a1, a1, wordSize);
+    __ add(a2, a2, wordSize);
+    if (AvoidUnalignedAccesses) {
+      // both implementations (SIMD/nonSIMD) are using relatively large load
+      // instructions (ld1/ldp), which has huge penalty (up to x2 exec time)
+      // on some CPUs in case of address is not at least 16-byte aligned.
+      // Arrays are 8-byte aligned currently, so, we can make additional 8-byte
+      // load if needed at least for 1st address and make if 16-byte aligned.
+      Label ALIGNED16;
+      __ tbz(a1, 3, ALIGNED16);
+      __ ldr(tmp1, Address(__ post(a1, wordSize)));
+      __ ldr(tmp2, Address(__ post(a2, wordSize)));
+      __ sub(cnt1, cnt1, wordSize);
+      __ eor(tmp1, tmp1, tmp2);
+      __ cbnz(tmp1, NOT_EQUAL_NO_POP);
+      __ bind(ALIGNED16);
+    }
+    if (UseSIMDForArrayEquals) {
+      if (SoftwarePrefetchHintDistance >= 0) {
+        __ cmp(cnt1, prefetchLoopThreshold);
+        __ br(__ LE, NO_PREFETCH_LARGE_LOOP);
+        generate_large_array_equals_loop_simd(prefetchLoopThreshold,
+            /* prfm = */ true, NOT_EQUAL);
+        __ cmp(cnt1, nonPrefetchLoopThreshold);
+        __ br(__ LT, TAIL);
+      }
+      __ bind(NO_PREFETCH_LARGE_LOOP);
+      generate_large_array_equals_loop_simd(nonPrefetchLoopThreshold,
+          /* prfm = */ false, NOT_EQUAL);
+    } else {
+      __ push(spilled_regs, sp);
+      if (SoftwarePrefetchHintDistance >= 0) {
+        __ cmp(cnt1, prefetchLoopThreshold);
+        __ br(__ LE, NO_PREFETCH_LARGE_LOOP);
+        generate_large_array_equals_loop_nonsimd(prefetchLoopThreshold,
+            /* prfm = */ true, NOT_EQUAL);
+        __ cmp(cnt1, nonPrefetchLoopThreshold);
+        __ br(__ LT, TAIL);
+      }
+      __ bind(NO_PREFETCH_LARGE_LOOP);
+      generate_large_array_equals_loop_nonsimd(nonPrefetchLoopThreshold,
+          /* prfm = */ false, NOT_EQUAL);
+    }
+    __ bind(TAIL);
+      __ cbz(cnt1, EQUAL);
+      __ subs(cnt1, cnt1, wordSize);
+      __ br(__ LE, POST_LOOP);
+    __ bind(SMALL_LOOP);
+      __ ldr(tmp1, Address(__ post(a1, wordSize)));
+      __ ldr(tmp2, Address(__ post(a2, wordSize)));
+      __ subs(cnt1, cnt1, wordSize);
+      __ eor(tmp1, tmp1, tmp2);
+      __ cbnz(tmp1, NOT_EQUAL);
+      __ br(__ GT, SMALL_LOOP);
+    __ bind(POST_LOOP);
+      __ ldr(tmp1, Address(a1, cnt1));
+      __ ldr(tmp2, Address(a2, cnt1));
+      __ eor(tmp1, tmp1, tmp2);
+      __ cbnz(tmp1, NOT_EQUAL);
+    __ bind(EQUAL);
+      __ mov(result, true);
+    __ bind(NOT_EQUAL);
+      if (!UseSIMDForArrayEquals) {
+        __ pop(spilled_regs, sp);
+      }
+    __ bind(NOT_EQUAL_NO_POP);
+    __ leave();
+    __ ret(lr);
+    return entry;
+  }
+
+
   /**
    *  Arguments:
    *
@@ -4969,6 +5070,11 @@ class StubGenerator: public StubCodeGenerator {
 
     // has negatives stub for large arrays.
     StubRoutines::aarch64::_has_negatives = generate_has_negatives(StubRoutines::aarch64::_has_negatives_long);
+
+    // array equals stub for large arrays.
+    if (!UseSimpleArrayEquals) {
+      StubRoutines::aarch64::_large_array_equals = generate_large_array_equals();
+    }
 
     if (UseMultiplyToLenIntrinsic) {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();

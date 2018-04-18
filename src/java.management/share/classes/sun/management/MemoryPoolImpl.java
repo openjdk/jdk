@@ -55,10 +55,10 @@ class MemoryPoolImpl implements MemoryPoolMXBean {
     private long  usageThreshold;
     private long  collectionThreshold;
 
-    private boolean usageSensorRegistered;
-    private boolean gcSensorRegistered;
-    private Sensor  usageSensor;
-    private Sensor  gcSensor;
+    private boolean usageSensorRegistered; // VM-initialized to false
+    private boolean gcSensorRegistered;    // VM-initialized to false
+    private final Sensor usageSensor;
+    private final Sensor gcSensor;
 
     MemoryPoolImpl(String name, boolean isHeap, long usageThreshold,
                    long gcThreshold) {
@@ -72,8 +72,6 @@ class MemoryPoolImpl implements MemoryPoolMXBean {
         this.collectionThresholdSupported = (gcThreshold >= 0);
         this.usageSensor = new PoolSensor(this, name + " usage sensor");
         this.gcSensor = new CollectionSensor(this, name + " collection sensor");
-        this.usageSensorRegistered = false;
-        this.gcSensorRegistered = false;
     }
 
     public String getName() {
@@ -290,7 +288,7 @@ class MemoryPoolImpl implements MemoryPoolMXBean {
      * unless the memory usage has returned below the threshold.
      */
     class PoolSensor extends Sensor {
-        MemoryPoolImpl pool;
+        final MemoryPoolImpl pool;
 
         PoolSensor(MemoryPoolImpl pool, String name) {
             super(name);
@@ -316,10 +314,10 @@ class MemoryPoolImpl implements MemoryPoolMXBean {
      * when the memory usage of a memory pool after GC is crossing
      * the collection threshold.
      * The VM will trigger this sensor in subsequent crossing
-     * regardless if the memory usage has changed siince the previous GC.
+     * regardless if the memory usage has changed since the previous GC.
      */
     class CollectionSensor extends Sensor {
-        MemoryPoolImpl pool;
+        final MemoryPoolImpl pool;
         CollectionSensor(MemoryPoolImpl pool, String name) {
             super(name);
             this.pool = pool;

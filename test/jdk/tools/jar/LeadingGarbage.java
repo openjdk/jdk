@@ -30,23 +30,28 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
 
-import jdk.testlibrary.OutputAnalyzer;
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.Utils;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 import org.testng.annotations.Test;
 
 /**
  * @test
- * @bug 8058520
+ * @bug 8058520 8196748
  * @summary jar tf and jar xf should work on zip files with leading garbage
- * @library /lib/testlibrary
+ * @library /test/lib
  * @run testng LeadingGarbage
  */
 @Test
 public class LeadingGarbage {
-    final String jar =
-        Paths.get(System.getProperty("java.home"), "bin", "jar").toString();
+
     final File[] files = { new File("a"), new File("b") };
     final File normalZip = new File("normal.zip");
     final File leadingGarbageZip = new File("leadingGarbage.zip");
@@ -74,12 +79,10 @@ public class LeadingGarbage {
 
     void createNormalZip() throws Throwable {
         createFiles();
-        String[] cmd = { jar, "c0Mf", "normal.zip", "a", "b" };
-        ProcessBuilder pb = new ProcessBuilder(cmd);
-        OutputAnalyzer a = ProcessTools.executeProcess(pb);
+        OutputAnalyzer a = jar("c0Mf", "normal.zip", "a", "b");
         a.shouldHaveExitValue(0);
         a.stdoutShouldMatch("\\A\\Z");
-        a.stderrShouldMatch("\\A\\Z");
+        a.stderrShouldMatchIgnoreVMWarnings("\\A\\Z");
         deleteFiles();
     }
 
@@ -104,15 +107,13 @@ public class LeadingGarbage {
     }
 
     void assertCanList(String zipFileName) throws Throwable {
-        String[] cmd = { jar, "tf", zipFileName };
-        ProcessBuilder pb = new ProcessBuilder(cmd);
-        OutputAnalyzer a = ProcessTools.executeProcess(pb);
+        OutputAnalyzer a = jar("tf", zipFileName);
         a.shouldHaveExitValue(0);
         StringBuilder expected = new StringBuilder();
         for (File file : files)
             expected.append(file.getName()).append(System.lineSeparator());
         a.stdoutShouldMatch(expected.toString());
-        a.stderrShouldMatch("\\A\\Z");
+        a.stderrShouldMatchIgnoreVMWarnings("\\A\\Z");
     }
 
     public void test_canExtract() throws Throwable {
@@ -126,13 +127,20 @@ public class LeadingGarbage {
     }
 
     void assertCanExtract(String zipFileName) throws Throwable {
-        String[] cmd = { jar, "xf", zipFileName };
-        ProcessBuilder pb = new ProcessBuilder(cmd);
-        OutputAnalyzer a = ProcessTools.executeProcess(pb);
+        OutputAnalyzer a = jar("xf", zipFileName);
         a.shouldHaveExitValue(0);
         a.stdoutShouldMatch("\\A\\Z");
-        a.stderrShouldMatch("\\A\\Z");
+        a.stderrShouldMatchIgnoreVMWarnings("\\A\\Z");
         assertFilesExist();
     }
 
+    OutputAnalyzer jar(String... args) throws Throwable {
+        String jar = JDKToolFinder.getJDKTool("jar");
+        List<String> cmds = new ArrayList<>();
+        cmds.add(jar);
+        cmds.addAll(Utils.getForwardVmOptions());
+        Stream.of(args).forEach(x -> cmds.add(x));
+        ProcessBuilder p = new ProcessBuilder(cmds);
+        return ProcessTools.executeCommand(p);
+    }
 }

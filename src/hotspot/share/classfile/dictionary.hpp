@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
 #include "classfile/systemDictionary.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.hpp"
-#include "runtime/orderAccess.hpp"
 #include "utilities/hashtable.hpp"
 #include "utilities/ostream.hpp"
 
@@ -52,6 +51,8 @@ class Dictionary : public Hashtable<InstanceKlass*, mtClass> {
   ClassLoaderData* loader_data() const { return _loader_data; }
 
   DictionaryEntry* get_entry(int index, unsigned int hash, Symbol* name);
+
+  void clean_cached_protection_domains(BoolObjectClosure* is_alive, DictionaryEntry* probe);
 
 protected:
   static size_t entry_size();
@@ -84,7 +85,7 @@ public:
   void remove_classes_in_error_state();
 
   // Unload classes whose defining loaders are unloaded
-  void do_unloading();
+  void do_unloading(BoolObjectClosure* is_alive);
 
   // Protection domains
   InstanceKlass* find(unsigned int hash, Symbol* name, Handle protection_domain);
@@ -168,12 +169,8 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
   ProtectionDomainEntry* pd_set() const            { return _pd_set; }
   void set_pd_set(ProtectionDomainEntry* new_head) {  _pd_set = new_head; }
 
-  ProtectionDomainEntry* pd_set_acquire() const    {
-    return OrderAccess::load_acquire(&_pd_set);
-  }
-  void release_set_pd_set(ProtectionDomainEntry* new_head) {
-    OrderAccess::release_store(&_pd_set, new_head);
-  }
+  ProtectionDomainEntry* pd_set_acquire() const;
+  void release_set_pd_set(ProtectionDomainEntry* new_head);
 
   // Tells whether the initiating class' protection domain can access the klass in this entry
   bool is_valid_protection_domain(Handle protection_domain) {
@@ -189,7 +186,7 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
     for (ProtectionDomainEntry* current = pd_set(); // accessed at a safepoint
                                 current != NULL;
                                 current = current->_next) {
-      current->_pd_cache->protection_domain()->verify();
+      current->_pd_cache->object_no_keepalive()->verify();
     }
   }
 

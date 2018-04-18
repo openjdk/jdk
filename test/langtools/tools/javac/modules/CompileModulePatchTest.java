@@ -252,7 +252,7 @@ public class CompileModulePatchTest extends ModuleTestBase {
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expectedOut = Arrays.asList(
-                "Extra.java:1:76: compiler.err.doesnt.exist: p",
+                "Extra.java:1:75: compiler.err.package.not.visible: p, (compiler.misc.not.def.access.does.not.read.unnamed: p, java.compiler)",
                 "1 error"
         );
 

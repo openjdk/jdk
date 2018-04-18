@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,7 +272,7 @@ Java_sun_nio_ch_SocketDispatcher_preClose0(JNIEnv *env, jclass clazz,
     int len = sizeof(l);
     if (getsockopt(fd, SOL_SOCKET, SO_LINGER, (char *)&l, &len) == 0) {
         if (l.l_onoff == 0) {
-            WSASendDisconnect(fd, NULL);
+            shutdown(fd, SD_SEND);
         }
     }
 }

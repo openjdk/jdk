@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,106 +23,30 @@
 # questions.
 #
 
-# This file is responsible for extracting the x11 native struct offsets to
-# the xawt Java library. The tool needs to be run on the os/arch that
-# will host the final jvm, thus the tool cannot be used when cross compiling.
+# Generate java sources using the X11 offsets that are precalculated in files
+# make/data/x11wrappergen/sizes-<address size>.txt.
 
-# To enable cross compiling, the two versions of the generated offset file,
-# sizes.32 and sizes.64 are committed into the source code repository.
-# These are the ones used.
+GENSRC_X11WRAPPERS_OUTPUT_TOP := $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop
 
-# However when not cross compiling, the offset generator tool is built and
-# run, to verify that it still generates the same sizes.32 and sizes.64.
+GENSRC_X11WRAPPERS_MARKER := $(GENSRC_X11WRAPPERS_OUTPUT_TOP)/_x11wrappers.marker
 
-GENSRC_X11WRAPPERS :=
-# Put temporary c-code and executable to calculate offsets here.
-# Also put verification offset file here as well.
-GENSRC_X11WRAPPERS_TMP := $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop/_x11wrappers
 # Put the generated Java classes used to interface X11 from awt here.
-GENSRC_X11WRAPPERS_DST := $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop/sun/awt/X11
+GENSRC_X11WRAPPERS_OUTPUTDIR := $(GENSRC_X11WRAPPERS_OUTPUT_TOP)/sun/awt/X11
 
 # The pre-calculated offset file are stored here:
-GENSRC_SIZER_DIR := $(TOPDIR)/make/data/x11wrappergen
+GENSRC_X11WRAPPERS_DATADIR := $(TOPDIR)/make/data/x11wrappergen
+GENSRC_X11WRAPPERS_DATA := $(GENSRC_X11WRAPPERS_DATADIR)/sizes-$(OPENJDK_TARGET_CPU_BITS).txt
 
-# Normal case is to generate only according to target bits
-GENSRC_X11_VERSION := $(OPENJDK_TARGET_CPU_BITS)
-ifeq ($(OPENJDK_TARGET_CPU_BITS), 64)
-  ifneq ($(OPENJDK_TARGET_OS), linux)
-    # On all 64-bit systems except Linux, generate both 32 and 64 bit versions
-    GENSRC_X11_VERSION := 32 64
-  endif
-else
-  ifeq ($(OPENJDK_TARGET_OS), solaris)
-    # As a special case, solaris 32-bit also generates the 64-bit version
-    GENSRC_X11_VERSION := 32 64
-  endif
-endif
-
-GENSRC_X11_SIZES_USED := $(addprefix $(GENSRC_X11WRAPPERS_TMP)/sizes., $(GENSRC_X11_VERSION))
-
-# Copy only the sizes.* files that are actually needed. WrapperGenerator picks up any it finds from the
-# file prefix it is given so those not needed need to be hidden.
-$(GENSRC_X11WRAPPERS_TMP)/sizes.%: $(GENSRC_SIZER_DIR)/sizes.%
-	$(call MakeDir, $(@D))
-	$(RM) '$@'
-	$(SORT) $< > $@
-
-# Run the tool on the offset files copied from the source repository to generate several Java classes
-# used in awt.
-$(SUPPORT_OUTPUTDIR)/gensrc/java.desktop/_the.generated.x11: $(GENSRC_X11_SIZES_USED) $(BUILD_TOOLS_JDK)
-	$(call MakeDir, $(GENSRC_X11WRAPPERS_DST))
-	$(TOOL_WRAPPERGENERATOR) $(GENSRC_X11WRAPPERS_DST) $(GENSRC_SIZER_DIR)/xlibtypes.txt "gen" $(GENSRC_X11WRAPPERS_TMP)/sizes
+# Run the tool on the offset files to generate several Java classes used in awt.
+$(GENSRC_X11WRAPPERS_MARKER): $(BUILD_TOOLS_JDK) $(GENSRC_X11WRAPPERS_DATA) \
+    $(GENSRC_X11WRAPPERS_DATADIR)/xlibtypes.txt
+	$(call MakeDir, $(GENSRC_X11WRAPPERS_OUTPUTDIR))
+	$(call LogInfo, Generating X11 wrapper source files)
+	$(call ExecuteWithLog, $@, \
+	    $(TOOL_WRAPPERGENERATOR) gen_java $(GENSRC_X11WRAPPERS_OUTPUTDIR) \
+	        $(GENSRC_X11WRAPPERS_DATADIR)/xlibtypes.txt $(GENSRC_X11WRAPPERS_DATA) \
+	        $(OPENJDK_TARGET_CPU_BITS))
 	$(TOUCH) $@
 
-GENSRC_X11WRAPPERS += $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop/_the.generated.x11
 
-ifneq ($(COMPILE_TYPE), cross)
-  # This is not a cross compile, regenerate the offset file, so that we
-  # can compare it with the version in the source code repository.
-
-  # Generate the C code for the program that will output the offset file.
-  $(GENSRC_X11WRAPPERS_TMP)/sizer.%.c: $(GENSRC_SIZER_DIR)/xlibtypes.txt $(BUILD_TOOLS_JDK)
-	$(call LogInfo, Generating X11 wrapper ($*-bit version))
-	$(call MakeDir, $(@D))
-	$(TOOL_WRAPPERGENERATOR) $(@D) $(GENSRC_SIZER_DIR)/xlibtypes.txt "sizer" $*
-
-  # use -m32/-m64 only if the compiler supports it
-  ifeq ($(COMPILER_SUPPORTS_TARGET_BITS_FLAG), true)
-    MEMORY_MODEL_FLAG="$(COMPILER_TARGET_BITS_FLAG)$*"
-  endif
-
-  SIZER_CFLAGS := \
-      -I${TOPDIR}/src/hotspot/share/include \
-      -I${TOPDIR}/src/hotspot/os/$(HOTSPOT_TARGET_OS_TYPE)/include \
-      -I$(TOPDIR)/src/java.base/share/native/include \
-      -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/include \
-      -I$(TOPDIR)/src/java.base/share/native/libjava \
-      -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjava \
-      -I$(TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/common/awt \
-      -I$(TOPDIR)/src/java.desktop/share/native/common/awt/debug \
-      -I$(TOPDIR)/src/java.desktop/share/native/libawt/awt/image/cvutils \
-      #
-
-  # Compile the C code into an executable.
-  $(GENSRC_X11WRAPPERS_TMP)/sizer.%.exe: $(GENSRC_X11WRAPPERS_TMP)/sizer.%.c
-	$(call MakeDir, $(@D))
-	(cd $(@D) && $(CC) $(MEMORY_MODEL_FLAG) -o $@ $< \
-	    $(X_CFLAGS) \
-	    $(X_LIBS) \
-	    $(SIZER_CFLAGS) -lc)
-
-  .PRECIOUS: $(GENSRC_X11WRAPPERS_TMP)/sizer.%.exe $(GENSRC_X11WRAPPERS_TMP)/sizer.%.c
-
-  # Run the executable create the offset file and check that it is identical
-  # to the offset file in the source code repository.
-  $(GENSRC_X11WRAPPERS_TMP)/sizes.%.verification: $(GENSRC_X11WRAPPERS_TMP)/sizer.%.exe
-	$(call LogInfo, Verifying X11 wrapper sizes)
-	$(call MakeDir, $(@D))
-	$(GENSRC_X11WRAPPERS_TMP)/sizer.$*.exe | $(SORT) > $@.tmp
-	$(DIFF) $(GENSRC_X11WRAPPERS_TMP)/sizes.$*.verification.tmp $(GENSRC_X11WRAPPERS_TMP)/sizes.$*
-	mv $@.tmp $@
-
-  GENSRC_X11WRAPPERS += $(GENSRC_X11WRAPPERS_TMP)/sizes.$(OPENJDK_TARGET_CPU_BITS).verification
-endif
-
-GENSRC_JAVA_DESKTOP += $(GENSRC_X11WRAPPERS)
+GENSRC_JAVA_DESKTOP += $(GENSRC_X11WRAPPERS_MARKER)

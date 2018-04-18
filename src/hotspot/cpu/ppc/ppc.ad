@@ -1274,12 +1274,12 @@ EmitCallOffsets emit_call_with_trampoline_stub(MacroAssembler &_masm, address en
     return offsets;
   }
   const int     entry_point_toc_offset = __ offset_to_method_toc(entry_point_toc_addr);
-  
+
   // Emit the trampoline stub which will be related to the branch-and-link below.
   CallStubImpl::emit_trampoline_stub(_masm, entry_point_toc_offset, offsets.insts_call_instruction_offset);
   if (ciEnv::current()->failing()) { return offsets; } // Code cache may be full.
   __ relocate(rtype);
-  
+
   // Note: At this point we do not have the address of the trampoline
   // stub, and the entry point might be too far away for bl, so __ pc()
   // serves as dummy and the bl will be patched later.
@@ -1526,7 +1526,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     // Save return pc.
     ___(std) std(return_pc, _abi(lr), callers_sp);
   }
-  
+
   C->set_frame_complete(cbuf.insts_size());
 }
 #undef ___
@@ -1656,9 +1656,9 @@ const RegMask &MachLoadPollAddrLateNode::out_RegMask() const {
 
 // =============================================================================
 
-// Figure out which register class each belongs in: rc_int, rc_float or
+// Figure out which register class each belongs in: rc_int, rc_float, rc_vs or
 // rc_stack.
-enum RC { rc_bad, rc_int, rc_float, rc_stack };
+enum RC { rc_bad, rc_int, rc_float, rc_vs, rc_stack };
 
 static enum RC rc_class(OptoReg::Name reg) {
   // Return the register class for the given register. The given register
@@ -1672,6 +1672,9 @@ static enum RC rc_class(OptoReg::Name reg) {
 
   // We have 64 floating-point register halves, starting at index 64.
   if (reg < 64+64) return rc_float;
+
+  // We have 64 vector-scalar registers, starting at index 128.
+  if (reg < 64+64+64) return rc_vs;
 
   // Between float regs & stack are the flags regs.
   assert(OptoReg::is_stack(reg) || reg < 64+64+64, "blow up if spilling flags");
@@ -1734,6 +1737,58 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
 
   if (src_lo == dst_lo && src_hi == dst_hi)
     return size;            // Self copy, no move.
+
+  if (bottom_type()->isa_vect() != NULL && ideal_reg() == Op_VecX) {
+    // Memory->Memory Spill.
+    if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
+      int src_offset = ra_->reg2offset(src_lo);
+      int dst_offset = ra_->reg2offset(dst_lo);
+      if (cbuf) {
+        MacroAssembler _masm(cbuf);
+        __ ld(R0, src_offset, R1_SP);
+        __ std(R0, dst_offset, R1_SP);
+        __ ld(R0, src_offset+8, R1_SP);
+        __ std(R0, dst_offset+8, R1_SP);
+      }
+      size += 16;
+    }
+    // VectorSRegister->Memory Spill.
+    else if (src_lo_rc == rc_vs && dst_lo_rc == rc_stack) {
+      VectorSRegister Rsrc = as_VectorSRegister(Matcher::_regEncode[src_lo]);
+      int dst_offset = ra_->reg2offset(dst_lo);
+      if (cbuf) {
+        MacroAssembler _masm(cbuf);
+        __ addi(R0, R1_SP, dst_offset);
+        __ stxvd2x(Rsrc, R0);
+      }
+      size += 8;
+    }
+    // Memory->VectorSRegister Spill.
+    else if (src_lo_rc == rc_stack && dst_lo_rc == rc_vs) {
+      VectorSRegister Rdst = as_VectorSRegister(Matcher::_regEncode[dst_lo]);
+      int src_offset = ra_->reg2offset(src_lo);
+      if (cbuf) {
+        MacroAssembler _masm(cbuf);
+        __ addi(R0, R1_SP, src_offset);
+        __ lxvd2x(Rdst, R0);
+      }
+      size += 8;
+    }
+    // VectorSRegister->VectorSRegister.
+    else if (src_lo_rc == rc_vs && dst_lo_rc == rc_vs) {
+      VectorSRegister Rsrc = as_VectorSRegister(Matcher::_regEncode[src_lo]);
+      VectorSRegister Rdst = as_VectorSRegister(Matcher::_regEncode[dst_lo]);
+      if (cbuf) {
+        MacroAssembler _masm(cbuf);
+        __ xxlor(Rdst, Rsrc, Rsrc);
+      }
+      size += 4;
+    }
+    else {
+      ShouldNotReachHere(); // No VSR spill.
+    }
+    return size;
+  }
 
   // --------------------------------------
   // Memory->Memory Spill. Use R0 to hold the value.
@@ -2640,13 +2695,13 @@ encode %{
       ciEnv::current()->record_out_of_memory_failure();
       return;
     }
-    
+
     // Get the constant's TOC offset.
     toc_offset = __ offset_to_method_toc(const_toc_addr);
-    
+
     // Keep the current instruction offset in mind.
     ((loadConLNode*)this)->_cbuf_insts_offset = __ offset();
-  
+
     __ ld($dst$$Register, toc_offset, $toc$$Register);
   %}
 
@@ -2764,7 +2819,7 @@ typedef struct {
   MachNode        *_last;
 } loadConLReplicatedNodesTuple;
 
-loadConLReplicatedNodesTuple loadConLReplicatedNodesTuple_create(Compile *C, PhaseRegAlloc *ra_, Node *toc, immLOper *immSrc, 
+loadConLReplicatedNodesTuple loadConLReplicatedNodesTuple_create(Compile *C, PhaseRegAlloc *ra_, Node *toc, immLOper *immSrc,
                                                  vecXOper *dst, immI_0Oper *zero,
                                                  OptoReg::Name reg_second, OptoReg::Name reg_first,
                                                  OptoReg::Name reg_vec_second, OptoReg::Name reg_vec_first) {
@@ -3103,7 +3158,7 @@ encode %{
     Label skip_storestore;
 
 #if 0 // TODO: PPC port
-    // Check CMSCollectorCardTableModRefBSExt::_requires_release and do the
+    // Check CMSCollectorCardTableBarrierSetBSExt::_requires_release and do the
     // StoreStore barrier conditionally.
     __ lwz(R0, 0, $releaseFieldAddr$$Register);
     __ cmpwi($crx$$CondRegister, R0, 0);
@@ -3524,7 +3579,7 @@ encode %{
     assert(loadConLNodes._last->bottom_type()->isa_long(), "must be long");
   %}
 
-  enc_class postalloc_expand_load_replF_constant_vsx(vecX dst, immF src, iRegLdst toc) %{
+  enc_class postalloc_expand_load_replF_constant_vsx(vecX dst, immF src, iRegLdst toc, iRegLdst tmp) %{
     // Create new nodes.
 
     // Make an operand with the bit pattern to load as float.
@@ -3533,8 +3588,8 @@ encode %{
 
     loadConLReplicatedNodesTuple loadConLNodes =
       loadConLReplicatedNodesTuple_create(C, ra_, n_toc, op_repl, op_dst, op_zero,
-                                OptoReg::Name(R20_H_num), OptoReg::Name(R20_num),
-                                OptoReg::Name(VSR11_num), OptoReg::Name(VSR10_num));
+                                ra_->get_reg_second(n_tmp), ra_->get_reg_first(n_tmp),
+                                ra_->get_reg_second(this), ra_->get_reg_first(this));
 
     // Push new nodes.
     if (loadConLNodes._large_hi) { nodes->push(loadConLNodes._large_hi); }
@@ -6797,7 +6852,7 @@ instruct storeD(memory mem, regD src) %{
 // Card-mark for CMS garbage collection.
 // This cardmark does an optimization so that it must not always
 // do a releasing store. For this, it gets the address of
-// CMSCollectorCardTableModRefBSExt::_requires_release as input.
+// CMSCollectorCardTableBarrierSetBSExt::_requires_release as input.
 // (Using releaseFieldAddr in the match rule is a hack.)
 instruct storeCM_CMS(memory mem, iRegLdst releaseFieldAddr, flagsReg crx) %{
   match(Set mem (StoreCM mem releaseFieldAddr));
@@ -6816,7 +6871,7 @@ instruct storeCM_CMS(memory mem, iRegLdst releaseFieldAddr, flagsReg crx) %{
 // Card-mark for CMS garbage collection.
 // This cardmark does an optimization so that it must not always
 // do a releasing store. For this, it needs the constant address of
-// CMSCollectorCardTableModRefBSExt::_requires_release.
+// CMSCollectorCardTableBarrierSetBSExt::_requires_release.
 // This constant address is split off here by expand so we can use
 // adlc / matcher functionality to load it from the constant section.
 instruct storeCM_CMS_ExEx(memory mem, immI_0 zero) %{
@@ -6824,7 +6879,7 @@ instruct storeCM_CMS_ExEx(memory mem, immI_0 zero) %{
   predicate(UseConcMarkSweepGC);
 
   expand %{
-    immL baseImm %{ 0 /* TODO: PPC port (jlong)CMSCollectorCardTableModRefBSExt::requires_release_address() */ %}
+    immL baseImm %{ 0 /* TODO: PPC port (jlong)CMSCollectorCardTableBarrierSetBSExt::requires_release_address() */ %}
     iRegLdst releaseFieldAddress;
     flagsReg crx;
     loadConL_Ex(releaseFieldAddress, baseImm);
@@ -13610,7 +13665,7 @@ instruct storeS_reversed(iRegIsrc src, indirect mem) %{
 
 instruct mtvsrwz(vecX temp1, iRegIsrc src) %{
   effect(DEF temp1, USE src);
-  
+
   size(4);
   ins_encode %{
     __ mtvsrwz($temp1$$VectorSRegister, $src$$Register);
@@ -13623,7 +13678,7 @@ instruct xxspltw(vecX dst, vecX src, immI8 imm1) %{
 
   size(4);
   ins_encode %{
-    __ xxspltw($dst$$VectorSRegister, $src$$VectorSRegister, $imm1$$constant); 
+    __ xxspltw($dst$$VectorSRegister, $src$$VectorSRegister, $imm1$$constant);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -13788,7 +13843,7 @@ instruct repl8S_reg_Ex(vecX dst, iRegIsrc src) %{
   expand %{
     iRegLdst tmpL;
     vecX tmpV;
-    immI8  zero %{ (int)  0 %} 
+    immI8  zero %{ (int)  0 %}
     moveReg(tmpL, src);
     repl48(tmpL);
     repl32(tmpL);
@@ -13860,10 +13915,10 @@ instruct repl4I_reg_Ex(vecX dst, iRegIsrc src) %{
   predicate(n->as_Vector()->length() == 4);
   ins_cost(2 * DEFAULT_COST);
 
-  expand %{ 
+  expand %{
     iRegLdst tmpL;
     vecX tmpV;
-    immI8  zero %{ (int)  0 %} 
+    immI8  zero %{ (int)  0 %}
     moveReg(tmpL, src);
     repl32(tmpL);
     mtvsrd(tmpV, tmpL);
@@ -14002,7 +14057,7 @@ instruct repl4F_reg_Ex(vecX dst, regF src) %{
     iRegIdst tmpI;
     iRegLdst tmpL;
     vecX tmpV;
-    immI8  zero %{ (int)  0 %} 
+    immI8  zero %{ (int)  0 %}
 
     moveF2I_reg_stack(tmpS, src);   // Move float to stack.
     moveF2I_stack_reg(tmpI, tmpS);  // Move stack to int reg.
@@ -14013,12 +14068,13 @@ instruct repl4F_reg_Ex(vecX dst, regF src) %{
   %}
 %}
 
-instruct repl4F_immF_Ex(vecX dst, immF src) %{
+instruct repl4F_immF_Ex(vecX dst, immF src, iRegLdst tmp) %{
   match(Set dst (ReplicateF src));
   predicate(n->as_Vector()->length() == 4);
+  effect(TEMP tmp);
   ins_cost(10 * DEFAULT_COST);
 
-  postalloc_expand( postalloc_expand_load_replF_constant_vsx(dst, src, constanttablebase) );
+  postalloc_expand( postalloc_expand_load_replF_constant_vsx(dst, src, constanttablebase, tmp) );
 %}
 
 instruct repl4F_immF0(vecX dst, immF_0 zero) %{
@@ -14040,7 +14096,7 @@ instruct repl2D_reg_Ex(vecX dst, regD src) %{
     iRegLdst tmpL;
     iRegLdst tmp;
     vecX tmpV;
-    immI8  zero %{ (int)  0 %} 
+    immI8  zero %{ (int)  0 %}
     moveD2L_reg_stack(tmpS, src);
     moveD2L_stack_reg(tmpL, tmpS);
     mtvsrd(tmpV, tmpL);
@@ -14076,7 +14132,7 @@ instruct mtvsrd(vecX dst, iRegLsrc src) %{
   predicate(false);
   effect(DEF dst, USE src);
 
-  format %{ "MTVSRD      $dst, $src \t// Move to 16-byte register"%} 
+  format %{ "MTVSRD      $dst, $src \t// Move to 16-byte register"%}
   size(4);
   ins_encode %{
     __ mtvsrd($dst$$VectorSRegister, $src$$Register);
@@ -14091,7 +14147,7 @@ instruct xxspltd(vecX dst, vecX src, immI8 zero) %{
   size(4);
   ins_encode %{
     __ xxpermdi($dst$$VectorSRegister, $src$$VectorSRegister, $src$$VectorSRegister, $zero$$constant);
-  %} 
+  %}
   ins_pipe(pipe_class_default);
 %}
 
@@ -14102,7 +14158,7 @@ instruct xxpermdi(vecX dst, vecX src1, vecX src2, immI8 zero) %{
   size(4);
   ins_encode %{
     __ xxpermdi($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister, $zero$$constant);
-  %} 
+  %}
   ins_pipe(pipe_class_default);
 %}
 
@@ -14111,8 +14167,8 @@ instruct repl2L_reg_Ex(vecX dst, iRegLsrc src) %{
   predicate(n->as_Vector()->length() == 2);
   expand %{
     vecX tmpV;
-    immI8  zero %{ (int)  0 %} 
-    mtvsrd(tmpV, src); 
+    immI8  zero %{ (int)  0 %}
+    mtvsrd(tmpV, src);
     xxpermdi(dst, tmpV, tmpV, zero);
   %}
 %}

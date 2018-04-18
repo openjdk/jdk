@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_VM_CLASSFILE_JAVACLASSES_INLINE_HPP
 
 #include "classfile/javaClasses.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 
@@ -53,6 +54,11 @@ typeArrayOop java_lang_String::value(oop java_string) {
   assert(is_instance(java_string), "must be java_string");
   return (typeArrayOop) java_string->obj_field(value_offset);
 }
+typeArrayOop java_lang_String::value_no_keepalive(oop java_string) {
+  assert(initialized && (value_offset > 0), "Must be initialized");
+  assert(is_instance(java_string), "must be java_string");
+  return (typeArrayOop) java_string->obj_field_access<AS_NO_KEEPALIVE>(value_offset);
+}
 unsigned int java_lang_String::hash(oop java_string) {
   assert(initialized && (hash_offset > 0), "Must be initialized");
   assert(is_instance(java_string), "must be java_string");
@@ -68,11 +74,11 @@ bool java_lang_String::is_latin1(oop java_string) {
 int java_lang_String::length(oop java_string) {
   assert(initialized, "Must be initialized");
   assert(is_instance(java_string), "must be java_string");
-  typeArrayOop value_array = ((typeArrayOop)java_string->obj_field(value_offset));
-  if (value_array == NULL) {
+  typeArrayOop value = java_lang_String::value_no_keepalive(java_string);
+  if (value == NULL) {
     return 0;
   }
-  int arr_length = value_array->length();
+  int arr_length = value->length();
   if (!is_latin1(java_string)) {
     assert((arr_length & 1) == 0, "should be even for UTF16 string");
     arr_length >>= 1; // convert number of bytes to number of elements
@@ -94,8 +100,8 @@ void java_lang_ref_Reference::set_referent(oop ref, oop value) {
 void java_lang_ref_Reference::set_referent_raw(oop ref, oop value) {
   ref->obj_field_put_raw(referent_offset, value);
 }
-HeapWord* java_lang_ref_Reference::referent_addr(oop ref) {
-  return ref->obj_field_addr<HeapWord>(referent_offset);
+HeapWord* java_lang_ref_Reference::referent_addr_raw(oop ref) {
+  return ref->obj_field_addr_raw<HeapWord>(referent_offset);
 }
 oop java_lang_ref_Reference::next(oop ref) {
   return ref->obj_field(next_offset);
@@ -106,8 +112,8 @@ void java_lang_ref_Reference::set_next(oop ref, oop value) {
 void java_lang_ref_Reference::set_next_raw(oop ref, oop value) {
   ref->obj_field_put_raw(next_offset, value);
 }
-HeapWord* java_lang_ref_Reference::next_addr(oop ref) {
-  return ref->obj_field_addr<HeapWord>(next_offset);
+HeapWord* java_lang_ref_Reference::next_addr_raw(oop ref) {
+  return ref->obj_field_addr_raw<HeapWord>(next_offset);
 }
 oop java_lang_ref_Reference::discovered(oop ref) {
   return ref->obj_field(discovered_offset);
@@ -118,8 +124,14 @@ void java_lang_ref_Reference::set_discovered(oop ref, oop value) {
 void java_lang_ref_Reference::set_discovered_raw(oop ref, oop value) {
   ref->obj_field_put_raw(discovered_offset, value);
 }
-HeapWord* java_lang_ref_Reference::discovered_addr(oop ref) {
-  return ref->obj_field_addr<HeapWord>(discovered_offset);
+HeapWord* java_lang_ref_Reference::discovered_addr_raw(oop ref) {
+  return ref->obj_field_addr_raw<HeapWord>(discovered_offset);
+}
+oop java_lang_ref_Reference::queue(oop ref) {
+  return ref->obj_field(queue_offset);
+}
+void java_lang_ref_Reference::set_queue(oop ref, oop value) {
+  return ref->obj_field_put(queue_offset, value);
 }
 bool java_lang_ref_Reference::is_phantom(oop ref) {
   return InstanceKlass::cast(ref->klass())->reference_type() == REF_PHANTOM;

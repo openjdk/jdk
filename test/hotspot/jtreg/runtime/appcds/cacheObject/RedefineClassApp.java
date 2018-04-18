@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,16 @@ public class RedefineClassApp {
         doTest(group, new Foo(), jar);
     }
 
+    static void checkArchivedMirrorObject(Class klass) {
+        if (wb.areOpenArchiveHeapObjectsMapped()) {
+            if (!wb.isShared(klass)) {
+                failed ++;
+                System.out.println("FAILED. " + klass + " mirror object is not archived");
+                return;
+            }
+        }
+    }
+
     static void doTest(String group, Intf object, File jar) throws Throwable {
         numTests ++;
 
@@ -100,6 +110,9 @@ public class RedefineClassApp {
         System.out.println("Testing with class       = " + klass);
         System.out.println("Test is shared           = " + wb.isSharedClass(klass));
         System.out.println("++++++++++++++++++++++++++");
+
+        // Check archived mirror object before redefine
+        checkArchivedMirrorObject(klass);
 
         // Call get() before redefine. All strings in archived classes are shared.
         String res = object.get();
@@ -143,6 +156,9 @@ public class RedefineClassApp {
         System.gc();
         System.gc();
         System.gc();
+
+        // Check archived mirror object after redefine and GC
+        checkArchivedMirrorObject(klass);
 
         System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++ (done)\n\n");
     }

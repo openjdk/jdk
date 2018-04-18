@@ -26,9 +26,6 @@ import static jdk.vm.ci.aarch64.AArch64.zr;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.asm.aarch64.AArch64Address;
 import org.graalvm.compiler.asm.aarch64.AArch64Assembler.ConditionFlag;
@@ -43,7 +40,6 @@ import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
-import sun.misc.Unsafe;
 
 /**
  * Emits code which compares two arrays of the same length. If the CPU supports any vector
@@ -72,9 +68,8 @@ public final class AArch64ArrayEqualsOp extends AArch64LIRInstruction {
         assert !kind.isNumericFloat() : "Float arrays comparison (bitwise_equal || both_NaN) isn't supported";
         this.kind = kind;
 
-        Class<?> arrayClass = Array.newInstance(kind.toJavaClass(), 0).getClass();
-        this.arrayBaseOffset = UNSAFE.arrayBaseOffset(arrayClass);
-        this.arrayIndexScale = UNSAFE.arrayIndexScale(arrayClass);
+        this.arrayBaseOffset = tool.getProviders().getArrayOffsetProvider().arrayBaseOffset(kind);
+        this.arrayIndexScale = tool.getProviders().getArrayOffsetProvider().arrayScalingFactor(kind);
 
         this.resultValue = result;
         this.array1Value = array1;
@@ -217,21 +212,5 @@ public final class AArch64ArrayEqualsOp extends AArch64LIRInstruction {
         }
         masm.bind(end);
         masm.mov(64, rscratch1, zr);
-    }
-
-    private static final Unsafe UNSAFE = initUnsafe();
-
-    private static Unsafe initUnsafe() {
-        try {
-            return Unsafe.getUnsafe();
-        } catch (SecurityException se) {
-            try {
-                Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-                theUnsafe.setAccessible(true);
-                return (Unsafe) theUnsafe.get(Unsafe.class);
-            } catch (Exception e) {
-                throw new RuntimeException("exception while trying to get Unsafe", e);
-            }
-        }
     }
 }

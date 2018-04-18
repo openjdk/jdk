@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
 
 /*
  * @test
- * @bug 6960894
+ * @bug 6960894 8194486
  * @summary Better AS-REQ creation and processing
- * @run main/othervm NewSalt
- * @run main/othervm -Dnopreauth NewSalt
- * @run main/othervm -Donlyonepreauth NewSalt
+ * @library /test/lib
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts NewSalt
+ * @run main/othervm -Dnopreauth -Djdk.net.hosts.file=TestHosts NewSalt
+ * @run main/othervm -Donlyonepreauth -Djdk.net.hosts.file=TestHosts NewSalt
  */
 
 import java.util.Locale;

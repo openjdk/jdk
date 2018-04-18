@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "asm/codeBuffer.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "code/codeCache.hpp"
+#include "code/compiledMethod.inline.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "jvmci/jvmciRuntime.hpp"
@@ -34,18 +35,24 @@
 #include "jvmci/jvmciJavaClasses.hpp"
 #include "jvmci/jvmciEnv.hpp"
 #include "logging/log.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "runtime/biasedLocking.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/threadSMR.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc/g1/g1ThreadLocalData.hpp"
+#endif // INCLUDE_ALL_GCS
 
 #if defined(_MSC_VER)
 #define strtoll _strtoi64
@@ -116,10 +123,7 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_instance(JavaThread* thread, Klass* klas
   oop obj = ik->allocate_instance(CHECK);
   thread->set_vm_result(obj);
   JRT_BLOCK_END;
-
-  if (ReduceInitialCardMarks) {
-    new_store_pre_barrier(thread);
-  }
+  SharedRuntime::on_slowpath_allocation_exit(thread);
 JRT_END
 
 JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_array(JavaThread* thread, Klass* array_klass, jint length))
@@ -151,28 +155,8 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_array(JavaThread* thread, Klass* array_k
     }
   }
   JRT_BLOCK_END;
-
-  if (ReduceInitialCardMarks) {
-    new_store_pre_barrier(thread);
-  }
+  SharedRuntime::on_slowpath_allocation_exit(thread);
 JRT_END
-
-void JVMCIRuntime::new_store_pre_barrier(JavaThread* thread) {
-  // After any safepoint, just before going back to compiled code,
-  // we inform the GC that we will be doing initializing writes to
-  // this object in the future without emitting card-marks, so
-  // GC may take any compensating steps.
-  // NOTE: Keep this code consistent with GraphKit::store_barrier.
-
-  oop new_obj = thread->vm_result();
-  if (new_obj == NULL)  return;
-
-  assert(Universe::heap()->can_elide_tlab_store_barriers(),
-         "compiler must check this first");
-  // GC may decide to give back a safer copy of new_obj.
-  new_obj = Universe::heap()->new_store_pre_barrier(thread, new_obj);
-  thread->set_vm_result(new_obj);
-}
 
 JRT_ENTRY(void, JVMCIRuntime::new_multi_array(JavaThread* thread, Klass* klass, int rank, jint* dims))
   assert(klass->is_klass(), "not a class");
@@ -473,11 +457,15 @@ JRT_LEAF(void, JVMCIRuntime::log_object(JavaThread* thread, oopDesc* obj, bool a
 JRT_END
 
 JRT_LEAF(void, JVMCIRuntime::write_barrier_pre(JavaThread* thread, oopDesc* obj))
-  thread->satb_mark_queue().enqueue(obj);
+#if INCLUDE_ALL_GCS
+  G1ThreadLocalData::satb_mark_queue(thread).enqueue(obj);
+#endif // INCLUDE_ALL_GCS
 JRT_END
 
 JRT_LEAF(void, JVMCIRuntime::write_barrier_post(JavaThread* thread, void* card_addr))
-  thread->dirty_card_queue().enqueue(card_addr);
+#if INCLUDE_ALL_GCS
+  G1ThreadLocalData::dirty_card_queue(thread).enqueue(card_addr);
+#endif // INCLUDE_ALL_GCS
 JRT_END
 
 JRT_LEAF(jboolean, JVMCIRuntime::validate_object(JavaThread* thread, oopDesc* parent, oopDesc* child))
@@ -651,6 +639,11 @@ Handle JVMCIRuntime::callStatic(const char* className, const char* methodName, c
     JavaCalls::call_static(&result, klass, runtime, sig, args, CHECK_(Handle()));
   }
   return Handle(THREAD, (oop)result.get_jobject());
+}
+
+Handle JVMCIRuntime::get_HotSpotJVMCIRuntime(TRAPS) {
+  initialize_JVMCI(CHECK_(Handle()));
+  return Handle(THREAD, JNIHandles::resolve_non_null(_HotSpotJVMCIRuntime_instance));
 }
 
 void JVMCIRuntime::initialize_HotSpotJVMCIRuntime(TRAPS) {

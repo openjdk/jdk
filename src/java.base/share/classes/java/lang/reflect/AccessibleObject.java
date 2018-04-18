@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.lang.reflect;
 
 import java.lang.annotation.Annotation;
+import java.lang.invoke.MethodHandle;
 import java.security.AccessController;
 
 import jdk.internal.misc.VM;
@@ -180,6 +181,7 @@ public class AccessibleObject implements AnnotatedElement {
      * @revised 9
      * @spec JPMS
      */
+    @CallerSensitive   // overrides in Method/Field/Constructor are @CS
     public void setAccessible(boolean flag) {
         AccessibleObject.checkPermission();
         setAccessible0(flag);
@@ -276,14 +278,17 @@ public class AccessibleObject implements AnnotatedElement {
         // do nothing, needs to be overridden by Constructor, Method, Field
     }
 
-
-    void checkCanSetAccessible(Class<?> caller, Class<?> declaringClass) {
+    final void checkCanSetAccessible(Class<?> caller, Class<?> declaringClass) {
         checkCanSetAccessible(caller, declaringClass, true);
     }
 
     private boolean checkCanSetAccessible(Class<?> caller,
                                           Class<?> declaringClass,
                                           boolean throwExceptionIfDenied) {
+        if (caller == MethodHandle.class) {
+            throw new IllegalCallerException();   // should not happen
+        }
+
         Module callerModule = caller.getModule();
         Module declaringModule = declaringClass.getModule();
 

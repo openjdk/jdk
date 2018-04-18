@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,8 @@
 /*
  * @test
  * @summary Test resolved_references
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires vm.cds.custom.loaders
- * @requires (vm.gc=="null")
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules java.base/jdk.internal.misc
  * @modules java.management
@@ -35,9 +34,9 @@
  * @build sun.hotspot.WhiteBox
  * @compile CheckCachedResolvedReferencesApp.java
  * @compile ../test-classes/Hello.java
- * @run main ClassFileInstaller -jar app.jar CheckCachedResolvedReferencesApp
- * @run main ClassFileInstaller -jar hello.jar Hello
- * @run main ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller -jar app.jar CheckCachedResolvedReferencesApp
+ * @run driver ClassFileInstaller -jar hello.jar Hello
+ * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
  * @run main CheckCachedResolvedReferences
  */
 

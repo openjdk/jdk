@@ -28,7 +28,10 @@
  * @author  Josh Bloch
  */
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 public class Frequency {
     static final int N = 100;

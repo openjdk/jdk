@@ -304,7 +304,7 @@ public class Analyzer {
 
         @Override
         List<JCLambda> rewrite(JCNewClass oldTree){
-            JCMethodDecl md = (JCMethodDecl)decls(oldTree.def).head;
+            JCMethodDecl md = (JCMethodDecl)copier.copy(decls(oldTree.def).head);
             List<JCVariableDecl> params = md.params;
             JCBlock body = md.body;
             JCLambda newTree = make.at(oldTree).Lambda(params, body);
@@ -358,6 +358,10 @@ public class Analyzer {
             super(AnalyzerMode.LOCAL, tag);
         }
 
+        boolean isImplicitlyTyped(JCVariableDecl decl) {
+            return decl.vartype.pos == Position.NOPOS;
+        }
+
         /**
          * Map a variable tree into a new declaration using implicit type.
          */
@@ -390,7 +394,7 @@ public class Analyzer {
 
         boolean match(JCVariableDecl tree){
             return tree.sym.owner.kind == Kind.MTH &&
-                    tree.init != null && !tree.isImplicitlyTyped() &&
+                    tree.init != null && !isImplicitlyTyped(tree) &&
                     attr.canInferLocalVarType(tree) == null;
         }
         @Override
@@ -414,7 +418,7 @@ public class Analyzer {
 
         @Override
         boolean match(JCEnhancedForLoop tree){
-            return !tree.var.isImplicitlyTyped();
+            return !isImplicitlyTyped(tree.var);
         }
         @Override
         List<JCEnhancedForLoop> rewrite(JCEnhancedForLoop oldTree) {

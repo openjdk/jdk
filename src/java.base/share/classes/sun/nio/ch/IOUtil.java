@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,7 @@ public class IOUtil {
         throws IOException
     {
         if (src instanceof DirectBuffer) {
-            return writeFromNativeBuffer(fd, src, position,
-                                         directIO, alignment, nd);
+            return writeFromNativeBuffer(fd, src, position, directIO, alignment, nd);
         }
 
         // Substitute a native buffer
@@ -77,8 +76,7 @@ public class IOUtil {
             // Do not update src until we see how many bytes were written
             src.position(pos);
 
-            int n = writeFromNativeBuffer(fd, bb, position,
-                    directIO, alignment, nd);
+            int n = writeFromNativeBuffer(fd, bb, position, directIO, alignment, nd);
             if (n > 0) {
                 // now update src
                 src.position(pos + n);
@@ -161,8 +159,7 @@ public class IOUtil {
                     if (!(buf instanceof DirectBuffer)) {
                         ByteBuffer shadow;
                         if (directIO)
-                            shadow = Util.getTemporaryAlignedDirectBuffer(rem,
-                                    alignment);
+                            shadow = Util.getTemporaryAlignedDirectBuffer(rem, alignment);
                         else
                             shadow = Util.getTemporaryDirectBuffer(rem);
                         shadow.put(buf);
@@ -233,22 +230,19 @@ public class IOUtil {
         if (dst.isReadOnly())
             throw new IllegalArgumentException("Read-only buffer");
         if (dst instanceof DirectBuffer)
-            return readIntoNativeBuffer(fd, dst, position,
-                    directIO, alignment, nd);
+            return readIntoNativeBuffer(fd, dst, position, directIO, alignment, nd);
 
         // Substitute a native buffer
         ByteBuffer bb;
         int rem = dst.remaining();
         if (directIO) {
             Util.checkRemainingBufferSizeAligned(rem, alignment);
-            bb = Util.getTemporaryAlignedDirectBuffer(rem,
-                                                      alignment);
+            bb = Util.getTemporaryAlignedDirectBuffer(rem, alignment);
         } else {
             bb = Util.getTemporaryDirectBuffer(rem);
         }
         try {
-            int n = readIntoNativeBuffer(fd, bb, position,
-                    directIO, alignment,nd);
+            int n = readIntoNativeBuffer(fd, bb, position, directIO, alignment,nd);
             bb.flip();
             if (n > 0)
                 dst.put(bb);
@@ -277,8 +271,7 @@ public class IOUtil {
             return 0;
         int n = 0;
         if (position != -1) {
-            n = nd.pread(fd, ((DirectBuffer)bb).address() + pos,
-                         rem, position);
+            n = nd.pread(fd, ((DirectBuffer)bb).address() + pos, rem, position);
         } else {
             n = nd.read(fd, ((DirectBuffer)bb).address() + pos, rem);
         }
@@ -332,8 +325,7 @@ public class IOUtil {
                     if (!(buf instanceof DirectBuffer)) {
                         ByteBuffer shadow;
                         if (directIO) {
-                            shadow = Util.getTemporaryAlignedDirectBuffer(rem,
-                                    alignment);
+                            shadow = Util.getTemporaryAlignedDirectBuffer(rem, alignment);
                         } else {
                             shadow = Util.getTemporaryDirectBuffer(rem);
                         }
@@ -405,9 +397,20 @@ public class IOUtil {
      * The read end of the pipe is returned in the high 32 bits,
      * while the write end is returned in the low 32 bits.
      */
-    static native long makePipe(boolean blocking);
+    static native long makePipe(boolean blocking) throws IOException;
 
+    static native int write1(int fd, byte b) throws IOException;
+
+    /**
+     * Read and discard all bytes.
+     */
     static native boolean drain(int fd) throws IOException;
+
+    /**
+     * Read and discard at most one byte
+     * @return the number of bytes read or IOS_INTERRUPTED
+     */
+    static native int drain1(int fd) throws IOException;
 
     public static native void configureBlocking(FileDescriptor fd,
                                                 boolean blocking)

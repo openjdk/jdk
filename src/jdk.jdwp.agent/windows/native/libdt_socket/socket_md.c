@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 #include <windows.h>
 #include <winsock2.h>
+#include <ws2tcpip.h>
 
 #include "sysSocket.h"
 #include "socketTransport.h"
@@ -197,9 +198,11 @@ dbgsysSend(int fd, char *buf, size_t nBytes, int flags) {
     return send(fd, buf, (int)nBytes, flags);
 }
 
-struct hostent *
-dbgsysGetHostByName(char *hostname) {
-    return gethostbyname(hostname);
+int
+dbgsysGetAddrInfo(char *hostname, char *service,
+                  struct addrinfo *hints,
+                  struct addrinfo **result) {
+  return getaddrinfo(hostname, service, hints, result);
 }
 
 unsigned short
@@ -223,7 +226,7 @@ dbgsysSocketClose(int fd) {
 
     if (getsockopt(fd, SOL_SOCKET, SO_LINGER, (char *)&l, &len) == 0) {
         if (l.l_onoff == 0) {
-            WSASendDisconnect(fd, NULL);
+            shutdown(fd, SD_SEND);
         }
     }
     return closesocket(fd);
@@ -239,7 +242,11 @@ dbgsysBind(int fd, struct sockaddr *name, socklen_t namelen) {
 
 uint32_t
 dbgsysInetAddr(const char* cp) {
-    return (uint32_t)inet_addr(cp);
+    uint32_t addr;
+    if (inet_pton(AF_INET, cp, &addr) < 1) {
+      return -1;
+    }
+    return addr;
 }
 
 uint32_t

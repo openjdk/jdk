@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ package java.util;
  * </ul>
  *
  * <p>This interface is a member of the
- * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
+ * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @param <E> the type of elements maintained by this set
@@ -449,7 +449,7 @@ public interface Set<E> extends Collection<E> {
      * @since 9
      */
     static <E> Set<E> of() {
-        return ImmutableCollections.Set0.instance();
+        return ImmutableCollections.emptySet();
     }
 
     /**
@@ -464,7 +464,7 @@ public interface Set<E> extends Collection<E> {
      * @since 9
      */
     static <E> Set<E> of(E e1) {
-        return new ImmutableCollections.Set1<>(e1);
+        return new ImmutableCollections.Set12<>(e1);
     }
 
     /**
@@ -481,7 +481,7 @@ public interface Set<E> extends Collection<E> {
      * @since 9
      */
     static <E> Set<E> of(E e1, E e2) {
-        return new ImmutableCollections.Set2<>(e1, e2);
+        return new ImmutableCollections.Set12<>(e1, e2);
     }
 
     /**
@@ -692,11 +692,11 @@ public interface Set<E> extends Collection<E> {
     static <E> Set<E> of(E... elements) {
         switch (elements.length) { // implicit null check of elements
             case 0:
-                return ImmutableCollections.Set0.instance();
+                return ImmutableCollections.emptySet();
             case 1:
-                return new ImmutableCollections.Set1<>(elements[0]);
+                return new ImmutableCollections.Set12<>(elements[0]);
             case 2:
-                return new ImmutableCollections.Set2<>(elements[0], elements[1]);
+                return new ImmutableCollections.Set12<>(elements[0], elements[1]);
             default:
                 return new ImmutableCollections.SetN<>(elements);
         }

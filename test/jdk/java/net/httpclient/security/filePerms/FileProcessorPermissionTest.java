@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,10 @@
 /*
  * @test
  * @summary Basic checks for SecurityException from body processors APIs
- * @run testng/othervm/java.security.policy=httpclient.policy FileProcessorPermissionTest
+ * @run testng/othervm/java.security.policy=allpermissions.policy FileProcessorPermissionTest
  */
 
+import java.io.File;
 import java.io.FilePermission;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,8 +39,10 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.ProtectionDomain;
 import java.util.List;
-import jdk.incubator.http.HttpRequest;
-import jdk.incubator.http.HttpResponse;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import org.testng.annotations.Test;
 import static java.nio.file.StandardOpenOption.*;
 import static org.testng.Assert.*;
@@ -68,26 +71,18 @@ public class FileProcessorPermissionTest {
     @Test
     public void test() throws Exception {
         List<PrivilegedExceptionAction<?>> list = List.of(
-                () -> HttpRequest.BodyPublisher.fromFile(fromFilePath),
+                () -> HttpRequest.BodyPublishers.ofFile(fromFilePath),
 
-                () -> HttpResponse.BodyHandler.asFile(asFilePath),
-                () -> HttpResponse.BodyHandler.asFile(asFilePath, CREATE),
-                () -> HttpResponse.BodyHandler.asFile(asFilePath, CREATE, WRITE),
-                () -> HttpResponse.BodyHandler.asFile(asFilePath, CREATE, WRITE, READ),
-                () -> HttpResponse.BodyHandler.asFile(asFilePath, CREATE, WRITE, READ, DELETE_ON_CLOSE),
+                () -> BodyHandlers.ofFile(asFilePath),
+                () -> BodyHandlers.ofFile(asFilePath, CREATE),
+                () -> BodyHandlers.ofFile(asFilePath, CREATE, WRITE),
 
-                () -> HttpResponse.BodyHandler.asFileDownload(CWD),
-                () -> HttpResponse.BodyHandler.asFileDownload(CWD, CREATE),
-                () -> HttpResponse.BodyHandler.asFileDownload(CWD, CREATE, WRITE),
-                () -> HttpResponse.BodyHandler.asFileDownload(CWD, CREATE, WRITE, READ),
-                () -> HttpResponse.BodyHandler.asFileDownload(CWD, CREATE, WRITE, READ, DELETE_ON_CLOSE),
-
-                // TODO: what do these even mean by themselves, maybe ok means nothing?
-                () -> HttpResponse.BodyHandler.asFile(asFilePath, DELETE_ON_CLOSE),
-                () -> HttpResponse.BodyHandler.asFile(asFilePath, READ)
+                () -> BodyHandlers.ofFileDownload(CWD),
+                () -> BodyHandlers.ofFileDownload(CWD, CREATE),
+                () -> BodyHandlers.ofFileDownload(CWD, CREATE, WRITE)
         );
 
-        // sanity, just run http ( no security manager )
+        // TEST 1 - sanity, just run ( no security manager )
         System.setSecurityManager(null);
         try {
             for (PrivilegedExceptionAction pa : list) {
@@ -108,11 +103,27 @@ public class FileProcessorPermissionTest {
             }
         }
 
-        // Run with limited permissions, i.e. just what is required
+        // TEST 2 - with all file permissions
+        AccessControlContext allFilesACC = withPermissions(
+                new FilePermission("<<ALL FILES>>" , "read,write")
+        );
+        for (PrivilegedExceptionAction pa : list) {
+            try {
+                assert System.getSecurityManager() != null;
+                AccessController.doPrivileged(pa, allFilesACC);
+            } catch (PrivilegedActionException pae) {
+                fail("UNEXPECTED Exception:" + pae);
+                pae.printStackTrace();
+            }
+        }
+
+        // TEST 3 - with limited permissions, i.e. just what is required
         AccessControlContext minimalACC = withPermissions(
                 new FilePermission(fromFilePath.toString() , "read"),
-                new FilePermission(asFilePath.toString(), "read,write,delete"),
-                new FilePermission(CWD.toString(), "read,write,delete")
+                new FilePermission(asFilePath.toString(), "write"),
+                // ofFileDownload requires read and write to the dir
+                new FilePermission(CWD.toString(), "read,write"),
+                new FilePermission(CWD.toString() + File.separator + "*", "read,write")
         );
         for (PrivilegedExceptionAction pa : list) {
             try {
@@ -124,7 +135,7 @@ public class FileProcessorPermissionTest {
             }
         }
 
-        // Run with NO permissions, i.e. expect SecurityException
+        // TEST 4 - with NO permissions, i.e. expect SecurityException
         for (PrivilegedExceptionAction pa : list) {
             try {
                 assert System.getSecurityManager() != null;

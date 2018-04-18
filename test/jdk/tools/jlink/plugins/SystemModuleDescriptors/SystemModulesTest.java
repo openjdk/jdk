@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public class SystemModulesTest {
     private static final String OS_ARCH = System.getProperty("os.arch");
     //  system modules containing no package
     private static final Set<String> EMPTY_MODULES =
-        Set.of("java.se", "java.se.ee", "jdk.jdwp.agent", "jdk.pack");
+        Set.of("java.se", "jdk.jdwp.agent", "jdk.pack");
 
     @Test
     public void testSystemModules() {

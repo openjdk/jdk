@@ -26,11 +26,11 @@ package applications.jcstress;
 import jdk.test.lib.Utils;
 import jdk.test.lib.artifacts.Artifact;
 import jdk.test.lib.artifacts.ArtifactResolver;
+import jdk.test.lib.artifacts.ArtifactResolverException;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -51,7 +51,7 @@ public class JcstressRunner {
         Map<String, Path> artifacts;
         try {
             artifacts = ArtifactResolver.resolve(JcstressRunner.class);
-        } catch (FileNotFoundException e) {
+        } catch (ArtifactResolverException e) {
             throw new Error("TESTBUG: Can not resolve artifacts for "
                             + JcstressRunner.class.getName(), e);
         }

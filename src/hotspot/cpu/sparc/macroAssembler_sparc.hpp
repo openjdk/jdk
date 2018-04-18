@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,47 +199,12 @@ REGISTER_DECLARATION(Register, ImethodDataPtr   , I2); // Pointer to the current
 REGISTER_DECLARATION(Register, Oexception  , O0); // exception being thrown
 REGISTER_DECLARATION(Register, Oissuing_pc , O1); // where the exception is coming from
 
-
-// These must occur after the declarations above
-#ifndef DONT_USE_REGISTER_DEFINES
-
-#define Gthread             AS_REGISTER(Register, Gthread)
-#define Gmethod             AS_REGISTER(Register, Gmethod)
-#define Gmegamorphic_method AS_REGISTER(Register, Gmegamorphic_method)
-#define Ginline_cache_reg   AS_REGISTER(Register, Ginline_cache_reg)
-#define Gargs               AS_REGISTER(Register, Gargs)
-#define Lthread_cache       AS_REGISTER(Register, Lthread_cache)
-#define Gframe_size         AS_REGISTER(Register, Gframe_size)
-#define Gtemp               AS_REGISTER(Register, Gtemp)
-
-#define Lesp                AS_REGISTER(Register, Lesp)
-#define Lbcp                AS_REGISTER(Register, Lbcp)
-#define Lmethod             AS_REGISTER(Register, Lmethod)
-#define Llocals             AS_REGISTER(Register, Llocals)
-#define Lmonitors           AS_REGISTER(Register, Lmonitors)
-#define Lbyte_code          AS_REGISTER(Register, Lbyte_code)
-#define Lscratch            AS_REGISTER(Register, Lscratch)
-#define Lscratch2           AS_REGISTER(Register, Lscratch2)
-#define LcpoolCache         AS_REGISTER(Register, LcpoolCache)
-
-#define Lentry_args         AS_REGISTER(Register, Lentry_args)
-#define I5_savedSP          AS_REGISTER(Register, I5_savedSP)
-#define O5_savedSP          AS_REGISTER(Register, O5_savedSP)
-#define IdispatchAddress    AS_REGISTER(Register, IdispatchAddress)
-#define ImethodDataPtr      AS_REGISTER(Register, ImethodDataPtr)
-
-#define Oexception          AS_REGISTER(Register, Oexception)
-#define Oissuing_pc         AS_REGISTER(Register, Oissuing_pc)
-
-#endif
-
-
 // Address is an abstraction used to represent a memory location.
 //
 // Note: A register location is represented via a Register, not
 //       via an address for efficiency & simplicity reasons.
 
-class Address VALUE_OBJ_CLASS_SPEC {
+class Address {
  private:
   Register           _base;           // Base register.
   RegisterOrConstant _index_or_disp;  // Index register or constant displacement.
@@ -320,7 +285,7 @@ class Address VALUE_OBJ_CLASS_SPEC {
 };
 
 
-class AddressLiteral VALUE_OBJ_CLASS_SPEC {
+class AddressLiteral {
  private:
   address          _address;
   RelocationHolder _rspec;
@@ -452,7 +417,7 @@ inline Address RegisterImpl::address_in_saved_window() const {
 // with the SPARC Application Binary Interface, or ABI.  This is
 // often referred to as the native or C calling convention.
 
-class Argument VALUE_OBJ_CLASS_SPEC {
+class Argument {
  private:
   int _number;
   bool _is_in;
@@ -738,6 +703,9 @@ public:
   // cas_ptr will perform cas for 32 bit VM's and casx for 64 bit VM's
   inline void cas_ptr(  Register s1, Register s2, Register d);
 
+  // Resolve a jobject or jweak
+  void resolve_jobject(Register value, Register tmp);
+
   // Functions for isolating 64 bit shifts for LP64
   inline void sll_ptr( Register s1, Register s2, Register d );
   inline void sll_ptr( Register s1, int imm6a,   Register d );
@@ -1009,13 +977,25 @@ public:
   void store_klass_gap(Register s, Register dst_oop);
 
    // oop manipulations
-  void load_heap_oop(const Address& s, Register d);
-  void load_heap_oop(Register s1, Register s2, Register d);
-  void load_heap_oop(Register s1, int simm13a, Register d);
-  void load_heap_oop(Register s1, RegisterOrConstant s2, Register d);
-  void store_heap_oop(Register d, Register s1, Register s2);
-  void store_heap_oop(Register d, Register s1, int simm13a);
-  void store_heap_oop(Register d, const Address& a, int offset = 0);
+  void access_store_at(BasicType type, DecoratorSet decorators,
+                       Register src, Address dst, Register tmp);
+  void access_load_at(BasicType type, DecoratorSet decorators,
+                      Address src, Register dst, Register tmp);
+
+  void load_heap_oop(const Address& s, Register d,
+                     Register tmp = noreg, DecoratorSet decorators = 0);
+  void load_heap_oop(Register s1, Register s2, Register d,
+                     Register tmp = noreg, DecoratorSet decorators = 0);
+  void load_heap_oop(Register s1, int simm13a, Register d,
+                     Register tmp = noreg, DecoratorSet decorators = 0);
+  void load_heap_oop(Register s1, RegisterOrConstant s2, Register d,
+                     Register tmp = noreg, DecoratorSet decorators = 0);
+  void store_heap_oop(Register d, Register s1, Register s2,
+                      Register tmp = noreg, DecoratorSet decorators = 0);
+  void store_heap_oop(Register d, Register s1, int simm13a,
+                      Register tmp = noreg, DecoratorSet decorators = 0);
+  void store_heap_oop(Register d, const Address& a, int offset = 0,
+                      Register tmp = noreg, DecoratorSet decorators = 0);
 
   void encode_heap_oop(Register src, Register dst);
   void encode_heap_oop(Register r) {
@@ -1077,19 +1057,6 @@ public:
   // if call_VM_base was called with check_exceptions=false, then call
   // check_and_forward_exception to handle exceptions when it is safe
   void check_and_forward_exception(Register scratch_reg);
-
-  // Write to card table for - register is destroyed afterwards.
-  void card_table_write(jbyte* byte_map_base, Register tmp, Register obj);
-
-  void card_write_barrier_post(Register store_addr, Register new_val, Register tmp);
-
-#if INCLUDE_ALL_GCS
-  // General G1 pre-barrier generator.
-  void g1_write_barrier_pre(Register obj, Register index, int offset, Register pre_val, Register tmp, bool preserve_o_regs);
-
-  // General G1 post-barrier generator
-  void g1_write_barrier_post(Register store_addr, Register new_val, Register tmp);
-#endif // INCLUDE_ALL_GCS
 
   // pushes double TOS element of FPU stack on CPU stack; pops from FPU stack
   void push_fTOS();
@@ -1266,7 +1233,6 @@ public:
     Register t1,                       // temp register
     Label&   slow_case                 // continuation point if fast allocation fails
   );
-  void tlab_refill(Label& retry_tlab, Label& try_eden, Label& slow_case);
   void zero_memory(Register base, Register index);
   void incr_allocated_bytes(RegisterOrConstant size_in_bytes,
                             Register t1, Register t2);

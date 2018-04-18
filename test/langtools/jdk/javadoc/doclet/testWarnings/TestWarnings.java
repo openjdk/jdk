@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4515705 4804296 4702454 4697036 8025633
+ * @bug      4515705 4804296 4702454 4697036 8025633 8182765
  * @summary  Make sure that first sentence warning only appears once.
  *           Make sure that only warnings/errors are printed when quiet is used.
  *           Make sure that links to private/unincluded methods do not cause
@@ -78,8 +78,22 @@ public class TestWarnings extends JavadocTester {
         checkExit(Exit.ERROR);
 
         checkOutput("pkg/X.html", true,
-            "<a href=\"../pkg/X.html#m--\"><code>m()</code></a><br/>",
-            "<a href=\"../pkg/X.html#X--\"><code>X()</code></a><br/>",
-            "<a href=\"../pkg/X.html#f\"><code>f</code></a><br/>");
+            "<a href=\"#m()\"><code>m()</code></a><br/>",
+            "<a href=\"#%3Cinit%3E()\"><code>X()</code></a><br/>",
+            "<a href=\"#f\"><code>f</code></a><br/>");
     }
+
+    @Test
+    void testPrivate_html4() {
+        javadoc("-d", "out-private-html4",
+                "-html4",
+                "-private",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.ERROR);
+
+        checkOutput("pkg/X.html", true,
+            "<a href=\"#m--\"><code>m()</code></a><br/>",
+            "<a href=\"#X--\"><code>X()</code></a><br/>");
+}
 }

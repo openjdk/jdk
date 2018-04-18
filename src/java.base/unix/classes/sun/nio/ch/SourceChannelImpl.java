@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,32 +25,31 @@
 
 package sun.nio.ch;
 
-import java.io.*;
+import java.io.FileDescriptor;
+import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.*;
-import java.nio.channels.spi.*;
-
+import java.nio.channels.AsynchronousCloseException;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.NotYetConnectedException;
+import java.nio.channels.Pipe;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.spi.SelectorProvider;
+import java.util.Objects;
+import java.util.concurrent.locks.ReentrantLock;
 
 class SourceChannelImpl
     extends Pipe.SourceChannel
     implements SelChImpl
 {
-
     // Used to make native read and write calls
     private static final NativeDispatcher nd = new FileDispatcherImpl();
 
     // The file descriptor associated with this channel
-    FileDescriptor fd;
-
-    // fd value needed for dev/poll. This value will remain valid
-    // even after the value in the file descriptor object has been set to -1
-    int fdVal;
-
-    // ID of native thread doing read, for signalling
-    private volatile long thread;
+    private final FileDescriptor fd;
+    private final int fdVal;
 
     // Lock held by current reading thread
-    private final Object lock = new Object();
+    private final ReentrantLock readLock = new ReentrantLock();
 
     // Lock held by any thread that modifies the state fields declared below
     // DO NOT invoke a blocking I/O operation while holding this lock!
@@ -59,10 +58,14 @@ class SourceChannelImpl
     // -- The following fields are protected by stateLock
 
     // Channel state
-    private static final int ST_UNINITIALIZED = -1;
     private static final int ST_INUSE = 0;
-    private static final int ST_KILLED = 1;
-    private volatile int state = ST_UNINITIALIZED;
+    private static final int ST_CLOSING = 1;
+    private static final int ST_KILLPENDING = 2;
+    private static final int ST_KILLED = 3;
+    private int state;
+
+    // ID of native thread doing read, for signalling
+    private long thread;
 
     // -- End of fields protected by stateLock
 
@@ -79,43 +82,91 @@ class SourceChannelImpl
         super(sp);
         this.fd = fd;
         this.fdVal = IOUtil.fdVal(fd);
-        this.state = ST_INUSE;
     }
 
+    /**
+     * Invoked by implCloseChannel to close the channel.
+     */
+    @Override
     protected void implCloseSelectableChannel() throws IOException {
+        assert !isOpen();
+
+        boolean interrupted = false;
+        boolean blocking;
+
+        // set state to ST_CLOSING
         synchronized (stateLock) {
-            if (state != ST_KILLED)
-                nd.preClose(fd);
-            long th = thread;
-            if (th != 0)
-                NativeThread.signal(th);
-            if (!isRegistered())
-                kill();
+            assert state < ST_CLOSING;
+            state = ST_CLOSING;
+            blocking = isBlocking();
         }
+
+        // wait for any outstanding read to complete
+        if (blocking) {
+            synchronized (stateLock) {
+                assert state == ST_CLOSING;
+                long th = thread;
+                if (th != 0) {
+                    nd.preClose(fd);
+                    NativeThread.signal(th);
+
+                    // wait for read operation to end
+                    while (thread != 0) {
+                        try {
+                            stateLock.wait();
+                        } catch (InterruptedException e) {
+                            interrupted = true;
+                        }
+                    }
+                }
+            }
+        } else {
+            // non-blocking mode: wait for read to complete
+            readLock.lock();
+            readLock.unlock();
+        }
+
+        // set state to ST_KILLPENDING
+        synchronized (stateLock) {
+            assert state == ST_CLOSING;
+            state = ST_KILLPENDING;
+        }
+
+        // close socket if not registered with Selector
+        if (!isRegistered())
+            kill();
+
+        // restore interrupt status
+        if (interrupted)
+            Thread.currentThread().interrupt();
     }
 
+    @Override
     public void kill() throws IOException {
         synchronized (stateLock) {
-            if (state == ST_KILLED)
-                return;
-            if (state == ST_UNINITIALIZED) {
+            assert thread == 0;
+            if (state == ST_KILLPENDING) {
                 state = ST_KILLED;
-                return;
+                nd.close(fd);
             }
-            assert !isOpen() && !isRegistered();
-            nd.close(fd);
-            state = ST_KILLED;
         }
     }
 
+    @Override
     protected void implConfigureBlocking(boolean block) throws IOException {
-        IOUtil.configureBlocking(fd, block);
+        readLock.lock();
+        try {
+            synchronized (stateLock) {
+                IOUtil.configureBlocking(fd, block);
+            }
+        } finally {
+            readLock.unlock();
+        }
     }
 
-    public boolean translateReadyOps(int ops, int initialOps,
-                                     SelectionKeyImpl sk) {
-        int intOps = sk.nioInterestOps(); // Do this just once, it synchronizes
-        int oldOps = sk.nioReadyOps();
+    public boolean translateReadyOps(int ops, int initialOps, SelectionKeyImpl ski) {
+        int intOps = ski.nioInterestOps();
+        int oldOps = ski.nioReadyOps();
         int newOps = initialOps;
 
         if ((ops & Net.POLLNVAL) != 0)
@@ -123,7 +174,7 @@ class SourceChannelImpl
 
         if ((ops & (Net.POLLERR | Net.POLLHUP)) != 0) {
             newOps = intOps;
-            sk.nioReadyOps(newOps);
+            ski.nioReadyOps(newOps);
             return (newOps & ~oldOps) != 0;
         }
 
@@ -131,78 +182,114 @@ class SourceChannelImpl
             ((intOps & SelectionKey.OP_READ) != 0))
             newOps |= SelectionKey.OP_READ;
 
-        sk.nioReadyOps(newOps);
+        ski.nioReadyOps(newOps);
         return (newOps & ~oldOps) != 0;
     }
 
-    public boolean translateAndUpdateReadyOps(int ops, SelectionKeyImpl sk) {
-        return translateReadyOps(ops, sk.nioReadyOps(), sk);
+    public boolean translateAndUpdateReadyOps(int ops, SelectionKeyImpl ski) {
+        return translateReadyOps(ops, ski.nioReadyOps(), ski);
     }
 
-    public boolean translateAndSetReadyOps(int ops, SelectionKeyImpl sk) {
-        return translateReadyOps(ops, 0, sk);
+    public boolean translateAndSetReadyOps(int ops, SelectionKeyImpl ski) {
+        return translateReadyOps(ops, 0, ski);
     }
 
-    public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk) {
+    public int translateInterestOps(int ops) {
+        int newOps = 0;
         if (ops == SelectionKey.OP_READ)
-            ops = Net.POLLIN;
-        sk.selector.putEventOps(sk, ops);
+            newOps |= Net.POLLIN;
+        return newOps;
     }
 
-    private void ensureOpen() throws IOException {
-        if (!isOpen())
-            throw new ClosedChannelException();
+    /**
+     * Marks the beginning of a read operation that might block.
+     *
+     * @throws ClosedChannelException if the channel is closed
+     * @throws NotYetConnectedException if the channel is not yet connected
+     */
+    private void beginRead(boolean blocking) throws ClosedChannelException {
+        if (blocking) {
+            // set hook for Thread.interrupt
+            begin();
+        }
+        synchronized (stateLock) {
+            if (!isOpen())
+                throw new ClosedChannelException();
+            if (blocking)
+                thread = NativeThread.current();
+        }
     }
 
+    /**
+     * Marks the end of a read operation that may have blocked.
+     *
+     * @throws AsynchronousCloseException if the channel was closed due to this
+     * thread being interrupted on a blocking read operation.
+     */
+    private void endRead(boolean blocking, boolean completed)
+        throws AsynchronousCloseException
+    {
+        if (blocking) {
+            synchronized (stateLock) {
+                thread = 0;
+                // notify any thread waiting in implCloseSelectableChannel
+                if (state == ST_CLOSING) {
+                    stateLock.notifyAll();
+                }
+            }
+            // remove hook for Thread.interrupt
+            end(completed);
+        }
+    }
+
+    @Override
     public int read(ByteBuffer dst) throws IOException {
-        ensureOpen();
-        synchronized (lock) {
+        Objects.requireNonNull(dst);
+
+        readLock.lock();
+        try {
+            boolean blocking = isBlocking();
             int n = 0;
             try {
-                begin();
-                if (!isOpen())
-                    return 0;
-                thread = NativeThread.current();
+                beginRead(blocking);
                 do {
                     n = IOUtil.read(fd, dst, -1, nd);
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
-                return IOStatus.normalize(n);
             } finally {
-                thread = 0;
-                end((n > 0) || (n == IOStatus.UNAVAILABLE));
+                endRead(blocking, n > 0);
                 assert IOStatus.check(n);
             }
+            return IOStatus.normalize(n);
+        } finally {
+            readLock.unlock();
         }
     }
 
-    public long read(ByteBuffer[] dsts, int offset, int length)
-        throws IOException
-    {
-        if ((offset < 0) || (length < 0) || (offset > dsts.length - length))
-           throw new IndexOutOfBoundsException();
-        return read(Util.subsequence(dsts, offset, length));
-    }
+    @Override
+    public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
+        Objects.checkFromIndexSize(offset, length, dsts.length);
 
-    public long read(ByteBuffer[] dsts) throws IOException {
-        if (dsts == null)
-            throw new NullPointerException();
-        ensureOpen();
-        synchronized (lock) {
+        readLock.lock();
+        try {
+            boolean blocking = isBlocking();
             long n = 0;
             try {
-                begin();
-                if (!isOpen())
-                    return 0;
-                thread = NativeThread.current();
+                beginRead(blocking);
                 do {
-                    n = IOUtil.read(fd, dsts, nd);
+                    n = IOUtil.read(fd, dsts, offset, length, nd);
                 } while ((n == IOStatus.INTERRUPTED) && isOpen());
-                return IOStatus.normalize(n);
             } finally {
-                thread = 0;
-                end((n > 0) || (n == IOStatus.UNAVAILABLE));
+                endRead(blocking, n > 0);
                 assert IOStatus.check(n);
             }
+            return IOStatus.normalize(n);
+        } finally {
+            readLock.unlock();
         }
+    }
+
+    @Override
+    public long read(ByteBuffer[] dsts) throws IOException {
+        return read(dsts, 0, dsts.length);
     }
 }

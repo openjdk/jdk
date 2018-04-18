@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,8 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/access.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -679,8 +681,7 @@ template <class T>
 void /*ParNewGeneration::*/ParKeepAliveClosure::do_oop_work(T* p) {
 #ifdef ASSERT
   {
-    assert(!oopDesc::is_null(*p), "expected non-null ref");
-    oop obj = oopDesc::load_decode_heap_oop_not_null(p);
+    oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);
     // We never expect to see a null reference being processed
     // as a weak reference.
     assert(oopDesc::is_oop(obj), "expected an oop while scanning weak refs");
@@ -690,7 +691,7 @@ void /*ParNewGeneration::*/ParKeepAliveClosure::do_oop_work(T* p) {
   _par_cl->do_oop_nv(p);
 
   if (CMSHeap::heap()->is_in_reserved(p)) {
-    oop obj = oopDesc::load_decode_heap_oop_not_null(p);
+    oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);;
     _rs->write_ref_field_gc_par(p, obj);
   }
 }
@@ -706,8 +707,7 @@ template <class T>
 void /*ParNewGeneration::*/KeepAliveClosure::do_oop_work(T* p) {
 #ifdef ASSERT
   {
-    assert(!oopDesc::is_null(*p), "expected non-null ref");
-    oop obj = oopDesc::load_decode_heap_oop_not_null(p);
+    oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);
     // We never expect to see a null reference being processed
     // as a weak reference.
     assert(oopDesc::is_oop(obj), "expected an oop while scanning weak refs");
@@ -717,7 +717,7 @@ void /*ParNewGeneration::*/KeepAliveClosure::do_oop_work(T* p) {
   _cl->do_oop_nv(p);
 
   if (CMSHeap::heap()->is_in_reserved(p)) {
-    oop obj = oopDesc::load_decode_heap_oop_not_null(p);
+    oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);
     _rs->write_ref_field_gc_par(p, obj);
   }
 }
@@ -726,15 +726,15 @@ void /*ParNewGeneration::*/KeepAliveClosure::do_oop(oop* p)       { KeepAliveClo
 void /*ParNewGeneration::*/KeepAliveClosure::do_oop(narrowOop* p) { KeepAliveClosure::do_oop_work(p); }
 
 template <class T> void ScanClosureWithParBarrier::do_oop_work(T* p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (!oopDesc::is_null(heap_oop)) {
-    oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+  T heap_oop = RawAccess<>::oop_load(p);
+  if (!CompressedOops::is_null(heap_oop)) {
+    oop obj = CompressedOops::decode_not_null(heap_oop);
     if ((HeapWord*)obj < _boundary) {
       assert(!_g->to()->is_in_reserved(obj), "Scanning field twice?");
       oop new_obj = obj->is_forwarded()
                       ? obj->forwardee()
                       : _g->DefNewGeneration::copy_to_survivor_space(obj);
-      oopDesc::encode_store_heap_oop_not_null(p, new_obj);
+      RawAccess<OOP_NOT_NULL>::oop_store(p, new_obj);
     }
     if (_gc_barrier) {
       // If p points to a younger generation, mark the card.
@@ -889,7 +889,7 @@ void ParNewGeneration::collect(bool   full,
 
   _gc_timer->register_gc_start();
 
-  AdaptiveSizePolicy* size_policy = gch->gen_policy()->size_policy();
+  AdaptiveSizePolicy* size_policy = gch->size_policy();
   WorkGang* workers = gch->workers();
   assert(workers != NULL, "Need workgang for parallel work");
   uint active_workers =
@@ -1133,7 +1133,7 @@ oop ParNewGeneration::copy_to_survivor_space(ParScanThreadState* par_scan_state,
   // a forwarding pointer by a parallel thread.  So we must save the mark
   // word in a local and then analyze it.
   oopDesc dummyOld;
-  dummyOld.set_mark(m);
+  dummyOld.set_mark_raw(m);
   assert(!dummyOld.is_forwarded(),
          "should not be called with forwarding pointer mark word.");
 
@@ -1181,7 +1181,7 @@ oop ParNewGeneration::copy_to_survivor_space(ParScanThreadState* par_scan_state,
     assert(CMSHeap::heap()->is_in_reserved(new_obj), "illegal forwarding pointer value.");
     forward_ptr = old->forward_to_atomic(new_obj);
     // Restore the mark word copied above.
-    new_obj->set_mark(m);
+    new_obj->set_mark_raw(m);
     // Increment age if obj still in new generation
     new_obj->incr_age();
     par_scan_state->age_table()->add(new_obj, sz);
@@ -1490,4 +1490,3 @@ void ParNewGeneration::restore_preserved_marks() {
   SharedRestorePreservedMarksTaskExecutor task_executor(CMSHeap::heap()->workers());
   _preserved_marks_set.restore(&task_executor);
 }
-

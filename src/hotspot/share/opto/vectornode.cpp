@@ -122,6 +122,13 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_SqrtD:
     assert(bt == T_DOUBLE, "must be");
     return Op_SqrtVD;
+  case Op_PopCountI:
+    if (bt == T_INT) {
+      return Op_PopCountVI;
+    }
+    // Unimplemented for subword types since bit count changes
+    // depending on size of lane (and sign bit).
+    return 0;
   case Op_LShiftI:
     switch (bt) {
     case T_BOOLEAN:
@@ -324,6 +331,8 @@ VectorNode* VectorNode::make(int opc, Node* n1, Node* n2, uint vlen, BasicType b
 
   case Op_SqrtVF: return new SqrtVFNode(n1, vt);
   case Op_SqrtVD: return new SqrtVDNode(n1, vt);
+
+  case Op_PopCountVI: return new PopCountVINode(n1, vt);
 
   case Op_LShiftVB: return new LShiftVBNode(n1, n2, vt);
   case Op_LShiftVS: return new LShiftVSNode(n1, n2, vt);

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,23 +33,15 @@ LIBMANAGEMENT_AGENT_CFLAGS := $(addprefix -I,$(LIBMANAGEMENT_AGENT_SRC)) \
     $(LIBJAVA_HEADER_FLAGS) \
     #
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBMANAGEMENT_AGENT, \
-    LIBRARY := management_agent, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+$(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT_AGENT, \
+    NAME := management_agent, \
     SRC := $(LIBMANAGEMENT_AGENT_SRC), \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBMANAGEMENT_AGENT_CFLAGS), \
-    MAPFILE := $(TOPDIR)/make/mapfiles/libmanagement_agent/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(JDKLIB_LIBS), \
     LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib, \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=management_agent.dll" \
-        -D "JDK_INTERNAL_NAME=management_agent" \
-        -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libmanagement_agent, \
 ))
 
 $(BUILD_LIBMANAGEMENT_AGENT): $(call FindLib, java.base, java)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,8 @@ import java.util.Locale;
  *   in the package {@code jdk.javadoc.doclet}.
  *   For more information, see the <i>Migration Guide</i> in the documentation for that package.
  */
-@Deprecated
+@Deprecated(since="9", forRemoval=true)
+@SuppressWarnings("removal")
 public interface Doc extends Comparable<Object> {
 
     /**
@@ -240,7 +241,7 @@ public interface Doc extends Comparable<Object> {
 
     /**
      * Is this Doc item an
-     * <a href="{@docRoot}/com/sun/javadoc/package-summary.html#class">ordinary
+     * <a href="{@docRoot}/jdk.javadoc/com/sun/javadoc/package-summary.html#class">ordinary
      * class</a>?
      * (i.e. not an interface, annotation type, enum, exception, or error)?
      *
@@ -250,7 +251,7 @@ public interface Doc extends Comparable<Object> {
 
     /**
      * Is this Doc item a
-     * <a href="{@docRoot}/com/sun/javadoc/package-summary.html#class">class</a>
+     * <a href="{@docRoot}/jdk.javadoc/com/sun/javadoc/package-summary.html#class">class</a>
      * (and not an interface or annotation type)?
      * This includes ordinary classes, enums, errors and exceptions.
      *
@@ -260,11 +261,11 @@ public interface Doc extends Comparable<Object> {
 
     /**
      * Return true if this Doc item is
-     * <a href="{@docRoot}/com/sun/javadoc/package-summary.html#included">included</a>
+     * <a href="{@docRoot}/jdk.javadoc/com/sun/javadoc/package-summary.html#included">included</a>
      * in the result set.
      *
      * @return true if this Doc item is
-     *         <a href="{@docRoot}/com/sun/javadoc/package-summary.html#included">included</a>
+     *         <a href="{@docRoot}/jdk.javadoc/com/sun/javadoc/package-summary.html#included">included</a>
      *         in the result set.
      */
     boolean isIncluded();

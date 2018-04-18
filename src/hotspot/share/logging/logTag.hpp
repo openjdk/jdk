@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,12 +60,14 @@
   LOG_TAG(cset) \
   LOG_TAG(data) \
   LOG_TAG(datacreation) \
+  LOG_TAG(decoder) \
   LOG_TAG(defaultmethods) \
   LOG_TAG(dump) \
   LOG_TAG(ergo) \
   LOG_TAG(exceptions) \
   LOG_TAG(exit) \
   LOG_TAG(fingerprint) \
+  LOG_TAG(free) \
   LOG_TAG(freelist) \
   LOG_TAG(gc) \
   LOG_TAG(handshake) \
@@ -85,6 +87,7 @@
   LOG_TAG(load) /* Trace all classes loaded */ \
   LOG_TAG(loader) \
   LOG_TAG(logging) \
+  LOG_TAG(malloc) \
   LOG_TAG(mark) \
   LOG_TAG(marking) \
   LOG_TAG(membername) \
@@ -101,6 +104,7 @@
   LOG_TAG(objecttagging) \
   LOG_TAG(obsolete) \
   LOG_TAG(oopmap) \
+  LOG_TAG(oopstorage) \
   LOG_TAG(os) \
   LOG_TAG(pagesize) \
   LOG_TAG(patch) \
@@ -108,6 +112,7 @@
   LOG_TAG(perf) \
   LOG_TAG(phases) \
   LOG_TAG(plab) \
+  LOG_TAG(preview)   /* Trace loading of preview feature types */ \
   LOG_TAG(promotion) \
   LOG_TAG(preorder) /* Trace all classes loaded in order referenced (not loaded) */ \
   LOG_TAG(protectiondomain) /* "Trace protection domain verification" */ \
@@ -120,7 +125,6 @@
   LOG_TAG(resolve) \
   LOG_TAG(safepoint) \
   LOG_TAG(scavenge) \
-  LOG_TAG(scrub) \
   LOG_TAG(smr) \
   LOG_TAG(stacktrace) \
   LOG_TAG(stackwalk) \
@@ -141,9 +145,11 @@
   LOG_TAG(tlab) \
   LOG_TAG(time) \
   LOG_TAG(timer) \
+  LOG_TAG(tracking) \
   LOG_TAG(update) \
   LOG_TAG(unload) /* Trace unloading of classes */ \
   LOG_TAG(unshareable) \
+  LOG_TAG(mirror) \
   LOG_TAG(verification) \
   LOG_TAG(verify) \
   LOG_TAG(vmoperation) \
@@ -188,6 +194,8 @@ class LogTag : public AllStatic {
   }
 
   static LogTag::type from_string(const char *str);
+  static LogTag::type fuzzy_match(const char *tag);
+  static void list_tags(outputStream* out);
 
  private:
   static const char* _name[];

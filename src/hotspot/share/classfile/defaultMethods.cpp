@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "classfile/bytecodeAssembler.hpp"
 #include "classfile/defaultMethods.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
@@ -683,10 +684,11 @@ class FindMethodsByErasedSig : public HierarchyVisitor<FindMethodsByErasedSig> {
   Symbol* _method_name;
   Symbol* _method_signature;
   StatefulMethodFamily*  _family;
+  bool _cur_class_is_interface;
 
  public:
-  FindMethodsByErasedSig(Symbol* name, Symbol* signature) :
-      _method_name(name), _method_signature(signature),
+  FindMethodsByErasedSig(Symbol* name, Symbol* signature, bool is_interf) :
+      _method_name(name), _method_signature(signature), _cur_class_is_interface(is_interf),
       _family(NULL) {}
 
   void get_discovered_family(MethodFamily** family) {
@@ -709,14 +711,17 @@ class FindMethodsByErasedSig : public HierarchyVisitor<FindMethodsByErasedSig> {
     InstanceKlass* iklass = current_class();
 
     Method* m = iklass->find_method(_method_name, _method_signature);
-    // private interface methods are not candidates for default methods
-    // invokespecial to private interface methods doesn't use default method logic
-    // private class methods are not candidates for default methods,
-    // private methods do not override default methods, so need to perform
-    // default method inheritance without including private methods
-    // The overpasses are your supertypes' errors, we do not include them
-    // future: take access controls into account for superclass methods
-    if (m != NULL && !m->is_static() && !m->is_overpass() && !m->is_private()) {
+    // Private interface methods are not candidates for default methods.
+    // invokespecial to private interface methods doesn't use default method logic.
+    // Private class methods are not candidates for default methods.
+    // Private methods do not override default methods, so need to perform
+    // default method inheritance without including private methods.
+    // The overpasses are your supertypes' errors, we do not include them.
+    // Non-public methods in java.lang.Object are not candidates for default
+    // methods.
+    // Future: take access controls into account for superclass methods
+    if (m != NULL && !m->is_static() && !m->is_overpass() && !m->is_private() &&
+     (!_cur_class_is_interface || !SystemDictionary::is_nonpublic_Object_method(m))) {
       if (_family == NULL) {
         _family = new StatefulMethodFamily();
       }
@@ -726,8 +731,8 @@ class FindMethodsByErasedSig : public HierarchyVisitor<FindMethodsByErasedSig> {
         scope->add_mark(restorer);
       } else {
         // This is the rule that methods in classes "win" (bad word) over
-        // methods in interfaces. This works because of single inheritance
-        // private methods in classes do not "win", they will be found
+        // methods in interfaces. This works because of single inheritance.
+        // Private methods in classes do not "win", they will be found
         // first on searching, but overriding for invokevirtual needs
         // to find default method candidates for the same signature
         _family->set_target_if_empty(m);
@@ -745,10 +750,10 @@ static void create_defaults_and_exceptions(
 
 static void generate_erased_defaults(
      InstanceKlass* klass, GrowableArray<EmptyVtableSlot*>* empty_slots,
-     EmptyVtableSlot* slot, TRAPS) {
+     EmptyVtableSlot* slot, bool is_intf, TRAPS) {
 
   // sets up a set of methods with the same exact erased signature
-  FindMethodsByErasedSig visitor(slot->name(), slot->signature());
+  FindMethodsByErasedSig visitor(slot->name(), slot->signature(), is_intf);
   visitor.run(klass);
 
   MethodFamily* family;
@@ -817,7 +822,7 @@ void DefaultMethods::generate_default_methods(
       slot->print_on(&ls);
       ls.cr();
     }
-    generate_erased_defaults(klass, empty_slots, slot, CHECK);
+    generate_erased_defaults(klass, empty_slots, slot, klass->is_interface(), CHECK);
   }
   log_debug(defaultmethods)("Creating defaults and overpasses...");
   create_defaults_and_exceptions(empty_slots, klass, CHECK);
@@ -879,6 +884,10 @@ static void switchover_constant_pool(BytecodeConstantPool* bpool,
   if (new_methods->length() > 0) {
     ConstantPool* cp = bpool->create_constant_pool(CHECK);
     if (cp != klass->constants()) {
+      // Copy resolved anonymous class into new constant pool.
+      if (klass->is_anonymous()) {
+        cp->klass_at_put(klass->this_class_index(), klass);
+      }
       klass->class_loader_data()->add_to_deallocate_list(klass->constants());
       klass->set_constants(cp);
       cp->set_pool_holder(klass);

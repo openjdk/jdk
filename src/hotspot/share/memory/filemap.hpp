@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@
 
 static const int JVM_IDENT_MAX = 256;
 
-class SharedClassPathEntry VALUE_OBJ_CLASS_SPEC {
+class SharedClassPathEntry {
 protected:
   bool   _is_dir;
   time_t _timestamp;          // jar/jimage timestamp,  0 if is directory or other
@@ -53,7 +53,7 @@ protected:
 public:
   void init(const char* name, TRAPS);
   void metaspace_pointers_do(MetaspaceClosure* it);
-  bool validate();
+  bool validate(bool is_class_path = true);
 
   // The _timestamp only gets set for jar files and "modules" jimage.
   bool is_jar_or_bootimage() {
@@ -85,10 +85,10 @@ private:
   size_t  _file_offset;
 
 private:
-  static Array<u8>*            _classpath_entry_table;
-  static int                   _classpath_entry_table_size;
-  static size_t                _classpath_entry_size;
-  static bool                  _validating_classpath_entry_table;
+  static Array<u8>*            _shared_path_table;
+  static int                   _shared_path_table_size;
+  static size_t                _shared_path_entry_size;
+  static bool                  _validating_shared_path_table;
 
   // FileMapHeader describes the shared space data in the file to be
   // mapped.  This structure gets written to a file.  It is not a class, so
@@ -125,14 +125,13 @@ public:
     size_t  _cds_i2i_entry_code_buffers_size;
     size_t  _core_spaces_size;        // number of bytes allocated by the core spaces
                                       // (mc, md, ro, rw and od).
-
     struct space_info {
       int    _crc;           // crc checksum of the current space
       size_t _file_offset;   // sizeof(this) rounded to vm page size
       union {
         char*  _base;        // copy-on-write base address
         intx   _offset;      // offset from the compressed oop encoding base, only used
-                             // by string space
+                             // by archive heap space
       } _addr;
       size_t _used;          // for setting space top on read
       bool   _read_only;     // read only space?
@@ -154,7 +153,7 @@ public:
     // checking the validity of the archive and is deallocated after the archive is loaded.
     //
     // Note that the _paths_misc_info does NOT include information for JAR files
-    // that existed during dump time. Their information is stored in _classpath_entry_table.
+    // that existed during dump time. Their information is stored in _shared_path_table.
     int _paths_misc_info_size;
 
     // The following is a table of all the class path entries that were used
@@ -168,9 +167,9 @@ public:
     // FIXME -- if JAR files in the tail of the list were specified but not used during dumping,
     // they should be removed from this table, to save space and to avoid spurious
     // loading failures during runtime.
-    int _classpath_entry_table_size;
-    size_t _classpath_entry_size;
-    Array<u8>* _classpath_entry_table;
+    int _shared_path_table_size;
+    size_t _shared_path_entry_size;
+    Array<u8>* _shared_path_table;
 
     char* region_addr(int idx);
 
@@ -248,7 +247,7 @@ public:
                                     int first_region_id, int max_num_regions);
   void  write_bytes(const void* buffer, int count);
   void  write_bytes_aligned(const void* buffer, int count);
-  char* map_region(int i);
+  char* map_region(int i, char** top_ret);
   void  map_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
   void  fixup_mapped_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
   void  unmap_region(int i);
@@ -265,33 +264,32 @@ public:
   static void fail_stop(const char *msg, ...) ATTRIBUTE_PRINTF(1, 2);
   static void fail_continue(const char *msg, ...) ATTRIBUTE_PRINTF(1, 2);
 
-  // Return true if given address is in the mapped shared space.
-  bool is_in_shared_space(const void* p) NOT_CDS_RETURN_(false);
   bool is_in_shared_region(const void* p, int idx) NOT_CDS_RETURN_(false);
   void print_shared_spaces() NOT_CDS_RETURN;
 
   // Stop CDS sharing and unmap CDS regions.
   static void stop_sharing_and_unmap(const char* msg);
 
-  static void allocate_classpath_entry_table();
-  bool validate_classpath_entry_table();
+  static void allocate_shared_path_table();
+  bool validate_shared_path_table();
 
-  static SharedClassPathEntry* shared_classpath(int index) {
+  static SharedClassPathEntry* shared_path(int index) {
     if (index < 0) {
       return NULL;
     }
-    assert(index < _classpath_entry_table_size, "sanity");
-    char* p = (char*)_classpath_entry_table->data();
-    p += _classpath_entry_size * index;
+    assert(index < _shared_path_table_size, "sanity");
+    char* p = (char*)_shared_path_table->data();
+    p += _shared_path_entry_size * index;
     return (SharedClassPathEntry*)p;
   }
-  static const char* shared_classpath_name(int index) {
+
+  static const char* shared_path_name(int index) {
     assert(index >= 0, "Sanity");
-    return shared_classpath(index)->name();
+    return shared_path(index)->name();
   }
 
-  static int get_number_of_share_classpaths() {
-    return _classpath_entry_table_size;
+  static int get_number_of_shared_paths() {
+    return _shared_path_table_size;
   }
 
  private:

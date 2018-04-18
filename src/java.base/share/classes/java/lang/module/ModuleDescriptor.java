@@ -1742,7 +1742,7 @@ public class ModuleDescriptor
                 throw new IllegalArgumentException("Empty target set");
             if (strict) {
                 requirePackageName(e.source());
-                targets.stream().forEach(Checks::requireModuleName);
+                targets.forEach(Checks::requireModuleName);
             }
             return exports(e);
         }
@@ -1878,7 +1878,7 @@ public class ModuleDescriptor
                 throw new IllegalArgumentException("Empty target set");
             if (strict) {
                 requirePackageName(opens.source());
-                targets.stream().forEach(Checks::requireModuleName);
+                targets.forEach(Checks::requireModuleName);
             }
             return opens(opens);
         }
@@ -2521,7 +2521,7 @@ public class ModuleDescriptor
      * the {@code packageFinder} throws an {@link UncheckedIOException} then
      * {@link IOException} cause will be re-thrown. </p>
      *
-     * <p> The module descriptor is read from the buffer stating at index
+     * <p> The module descriptor is read from the buffer starting at index
      * {@code p}, where {@code p} is the buffer's {@link ByteBuffer#position()
      * position} when this method is invoked. Upon return the buffer's position
      * will be equal to {@code p + n} where {@code n} is the number of bytes

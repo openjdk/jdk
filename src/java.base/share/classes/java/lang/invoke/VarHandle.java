@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1788,10 +1788,12 @@ public abstract class VarHandle {
 
         static final Map<String, AccessMode> methodNameToAccessMode;
         static {
-            // Initial capacity of # values is sufficient to avoid resizes
-            // for the smallest table size (32)
-            methodNameToAccessMode = new HashMap<>(AccessMode.values().length);
-            for (AccessMode am : AccessMode.values()) {
+            AccessMode[] values = AccessMode.values();
+            // Initial capacity of # values divided by the load factor is sufficient
+            // to avoid resizes for the smallest table size (64)
+            int initialCapacity = (int)(values.length / 0.75f) + 1;
+            methodNameToAccessMode = new HashMap<>(initialCapacity);
+            for (AccessMode am : values) {
                 methodNameToAccessMode.put(am.methodName, am);
             }
         }

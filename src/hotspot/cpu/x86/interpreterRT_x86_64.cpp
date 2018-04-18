@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,36 @@
  */
 
 #include "precompiled.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/icache.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/signature.hpp"
 
 #define __ _masm->
 
 // Implementation of SignatureHandlerGenerator
+
+InterpreterRuntime::SignatureHandlerGenerator::SignatureHandlerGenerator(const methodHandle& method, CodeBuffer* buffer) :
+    NativeSignatureIterator(method) {
+  _masm = new MacroAssembler(buffer);
+#ifdef AMD64
+#ifdef _WIN64
+  _num_args = (method->is_static() ? 1 : 0);
+  _stack_offset = (Argument::n_int_register_parameters_c+1)* wordSize; // don't overwrite return address
+#else
+  _num_int_args = (method->is_static() ? 1 : 0);
+  _num_fp_args = 0;
+  _stack_offset = wordSize; // don't overwrite return address
+#endif // _WIN64
+#endif // AMD64
+}
 
 Register InterpreterRuntime::SignatureHandlerGenerator::from() { return r14; }
 Register InterpreterRuntime::SignatureHandlerGenerator::to()   { return rsp; }
@@ -346,8 +362,9 @@ class SlowSignatureHandler
     _from -= Interpreter::stackElementSize;
 
     if (_num_args < Argument::n_float_register_parameters_c-1) {
+      assert((_num_args*2) < BitsPerWord, "_num_args*2 is out of range");
       *_reg_args++ = from_obj;
-      *_fp_identifiers |= (intptr_t)(0x01 << (_num_args*2)); // mark as float
+      *_fp_identifiers |= ((intptr_t)0x01 << (_num_args*2)); // mark as float
       _num_args++;
     } else {
       *_to++ = from_obj;
@@ -360,8 +377,9 @@ class SlowSignatureHandler
     _from -= 2*Interpreter::stackElementSize;
 
     if (_num_args < Argument::n_float_register_parameters_c-1) {
+      assert((_num_args*2) < BitsPerWord, "_num_args*2 is out of range");
       *_reg_args++ = from_obj;
-      *_fp_identifiers |= (intptr_t)(0x3 << (_num_args*2)); // mark as double
+      *_fp_identifiers |= ((intptr_t)0x3 << (_num_args*2)); // mark as double
       _num_args++;
     } else {
       *_to++ = from_obj;

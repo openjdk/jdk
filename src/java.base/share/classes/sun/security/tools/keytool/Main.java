@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package sun.security.tools.keytool;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.security.CodeSigner;
 import java.security.CryptoPrimitive;
 import java.security.KeyStore;
@@ -523,9 +523,11 @@ public final class Main {
 
             if (c != null) {
                 command = c;
-            } else if (collator.compare(flags, "-help") == 0 ||
-                    collator.compare(flags, "-h") == 0 ||
-                    collator.compare(flags, "-?") == 0) {
+            } else if (collator.compare(flags, "--help") == 0 ||
+                       collator.compare(flags, "-h") == 0 ||
+                       collator.compare(flags, "-?") == 0 ||
+                       // -help: legacy.
+                       collator.compare(flags, "-help") == 0) {
                 help = true;
             } else if (collator.compare(flags, "-conf") == 0) {
                 i++;
@@ -2187,7 +2189,7 @@ public final class Main {
                 inplaceBackupName = srcksfname + ".old" + (n == 1 ? "" : n);
                 File bkFile = new File(inplaceBackupName);
                 if (!bkFile.exists()) {
-                    Files.copy(Paths.get(srcksfname), bkFile.toPath());
+                    Files.copy(Path.of(srcksfname), bkFile.toPath());
                     break;
                 }
             }
@@ -4608,6 +4610,8 @@ public final class Main {
                 System.err.printf(" %-20s%s\n", c, rb.getString(c.description));
             }
             System.err.println();
+            System.err.println(rb.getString(
+                    "Use.keytool.help.for.all.available.commands"));
             System.err.println(rb.getString(
                     "Use.keytool.command.name.help.for.usage.of.command.name"));
         }

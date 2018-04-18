@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodes.hpp"
+#include "runtime/handles.inline.hpp"
 
 Bytecodes::Code RawBytecodeStream::raw_next_special(Bytecodes::Code code) {
   assert(!is_last_bytecode(), "should have been checked");
@@ -51,6 +52,11 @@ Bytecodes::Code RawBytecodeStream::raw_next_special(Bytecodes::Code code) {
   }
   _raw_code = code;
   return code;
+}
+
+BaseBytecodeStream::BaseBytecodeStream(const methodHandle& method) : _method(method) {
+  set_interval(0, _method->code_size());
+  _is_raw = false;
 }
 
 #ifdef ASSERT

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/heapRegion.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/align.hpp"
@@ -186,8 +186,8 @@ public:
   void print();
 };
 
-// ValueObj because will be embedded in HRRS iterator.
-class RSHashTableIter VALUE_OBJ_CLASS_SPEC {
+// This is embedded in HRRS iterator.
+class RSHashTableIter {
   // Return value indicating "invalid/no card".
   static const int NoCardFound = -1;
 
@@ -222,7 +222,7 @@ public:
 class SparsePRTIter;
 class SparsePRTCleanupTask;
 
-class SparsePRT VALUE_OBJ_CLASS_SPEC {
+class SparsePRT {
   friend class SparsePRTCleanupTask;
 
   //  Iterations are done on the _cur hash table, since they only need to
@@ -334,7 +334,7 @@ public:
 // to be processed at the beginning of the next GC pause. This lists
 // are concatenated into the single expanded list at the end of the
 // cleanup pause.
-class SparsePRTCleanupTask VALUE_OBJ_CLASS_SPEC {
+class SparsePRTCleanupTask {
 private:
   SparsePRT* _head;
   SparsePRT* _tail;

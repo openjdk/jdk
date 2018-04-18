@@ -24,19 +24,27 @@ package org.graalvm.compiler.hotspot;
 
 import static jdk.vm.ci.common.InitTimer.timer;
 
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.graalvm.collections.EconomicMap;
 import org.graalvm.compiler.debug.GraalError;
+import org.graalvm.compiler.debug.TTY;
+import org.graalvm.compiler.lir.phases.LIRPhase;
+import org.graalvm.compiler.lir.phases.LIRPhaseSuite;
+import org.graalvm.compiler.options.EnumOptionKey;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.phases.BasePhase;
+import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.tiers.CompilerConfiguration;
 import org.graalvm.compiler.serviceprovider.GraalServices;
-import org.graalvm.util.EconomicMap;
 
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.common.InitTimer;
@@ -48,12 +56,20 @@ import jdk.vm.ci.common.InitTimer;
  */
 public abstract class CompilerConfigurationFactory implements Comparable<CompilerConfigurationFactory> {
 
+    enum ShowConfigurationLevel {
+        none,
+        info,
+        verbose
+    }
+
     static class Options {
         // @formatter:off
         @Option(help = "Names the Graal compiler configuration to use. If ommitted, the compiler configuration " +
                        "with the highest auto-selection priority is used. To see the set of available configurations, " +
                        "supply the value 'help' to this option.", type = OptionType.Expert)
         public static final OptionKey<String> CompilerConfiguration = new OptionKey<>(null);
+        @Option(help = "Writes to the VM log information about the Graal compiler configuration selected.", type = OptionType.User)
+        public static final OptionKey<ShowConfigurationLevel> ShowConfiguration = new EnumOptionKey<>(ShowConfigurationLevel.none);
         // @formatter:on
     }
 
@@ -192,6 +208,52 @@ public abstract class CompilerConfigurationFactory implements Comparable<Compile
                 factory = candidates.get(0);
             }
         }
+        ShowConfigurationLevel level = Options.ShowConfiguration.getValue(options);
+        if (level != ShowConfigurationLevel.none) {
+            switch (level) {
+                case info: {
+                    printConfigInfo(factory);
+                    break;
+                }
+                case verbose: {
+                    printConfigInfo(factory);
+                    CompilerConfiguration config = factory.createCompilerConfiguration();
+                    TTY.println("High tier: " + phaseNames(config.createHighTier(options)));
+                    TTY.println("Mid tier: " + phaseNames(config.createMidTier(options)));
+                    TTY.println("Low tier: " + phaseNames(config.createLowTier(options)));
+                    TTY.println("Pre regalloc stage: " + phaseNames(config.createPreAllocationOptimizationStage(options)));
+                    TTY.println("Regalloc stage: " + phaseNames(config.createAllocationStage(options)));
+                    TTY.println("Post regalloc stage: " + phaseNames(config.createPostAllocationOptimizationStage(options)));
+                    config.createAllocationStage(options);
+                    break;
+                }
+            }
+        }
         return factory;
+    }
+
+    private static void printConfigInfo(CompilerConfigurationFactory factory) {
+        URL location = factory.getClass().getResource(factory.getClass().getSimpleName() + ".class");
+        TTY.printf("Using Graal compiler configuration '%s' provided by %s loaded from %s%n", factory.name, factory.getClass().getName(), location);
+    }
+
+    private static <C> List<String> phaseNames(PhaseSuite<C> suite) {
+        Collection<BasePhase<? super C>> phases = suite.getPhases();
+        List<String> res = new ArrayList<>(phases.size());
+        for (BasePhase<?> phase : phases) {
+            res.add(phase.contractorName());
+        }
+        Collections.sort(res);
+        return res;
+    }
+
+    private static <C> List<String> phaseNames(LIRPhaseSuite<C> suite) {
+        List<LIRPhase<C>> phases = suite.getPhases();
+        List<String> res = new ArrayList<>(phases.size());
+        for (LIRPhase<?> phase : phases) {
+            res.add(phase.getClass().getName());
+        }
+        Collections.sort(res);
+        return res;
     }
 }

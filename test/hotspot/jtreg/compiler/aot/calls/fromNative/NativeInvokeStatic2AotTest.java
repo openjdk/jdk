@@ -28,9 +28,9 @@
  * @modules java.base/jdk.internal.misc
  * @build compiler.calls.common.InvokeStatic
  *        compiler.aot.AotCompiler
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *      sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main compiler.aot.AotCompiler -libname NativeInvokeStatic2AotTest.so
+ * @run driver compiler.aot.AotCompiler -libname NativeInvokeStatic2AotTest.so
  *      -class compiler.calls.common.InvokeStatic
  *      -compile compiler.calls.common.InvokeStatic.callee.*
  * @run main/othervm/native -XX:+UseAOT

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.inline.hpp"
 #include "logging/log.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -363,12 +363,12 @@ void ReferenceProcessor::enqueue_discovered_reflists(AbstractRefProcTaskExecutor
 }
 
 void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
-  _discovered_addr = java_lang_ref_Reference::discovered_addr(_ref);
+  _discovered_addr = java_lang_ref_Reference::discovered_addr_raw(_ref);
   oop discovered = java_lang_ref_Reference::discovered(_ref);
   assert(_discovered_addr && oopDesc::is_oop_or_null(discovered),
          "Expected an oop or NULL for discovered field at " PTR_FORMAT, p2i(discovered));
   _next = discovered;
-  _referent_addr = java_lang_ref_Reference::referent_addr(_ref);
+  _referent_addr = java_lang_ref_Reference::referent_addr_raw(_ref);
   _referent = java_lang_ref_Reference::referent(_ref);
   assert(Universe::heap()->is_in_reserved_or_null(_referent),
          "Wrong oop found in java.lang.Reference object");
@@ -494,7 +494,7 @@ ReferenceProcessor::pp2_work_concurrent_discovery(DiscoveredList&    refs_list,
   DiscoveredListIterator iter(refs_list, keep_alive, is_alive);
   while (iter.has_next()) {
     iter.load_ptrs(DEBUG_ONLY(true /* allow_null_referent */));
-    HeapWord* next_addr = java_lang_ref_Reference::next_addr(iter.obj());
+    HeapWord* next_addr = java_lang_ref_Reference::next_addr_raw(iter.obj());
     oop next = java_lang_ref_Reference::next(iter.obj());
     if ((iter.referent() == NULL || iter.is_referent_alive() ||
          next != NULL)) {
@@ -1019,7 +1019,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
 
   ResourceMark rm;      // Needed for tracing.
 
-  HeapWord* const discovered_addr = java_lang_ref_Reference::discovered_addr(obj);
+  HeapWord* const discovered_addr = java_lang_ref_Reference::discovered_addr_raw(obj);
   const oop  discovered = java_lang_ref_Reference::discovered(obj);
   assert(oopDesc::is_oop_or_null(discovered), "Expected an oop or NULL for discovered field at " PTR_FORMAT, p2i(discovered));
   if (discovered != NULL) {
@@ -1186,10 +1186,10 @@ ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,
       // Keep alive its cohort.
       iter.make_referent_alive();
       if (UseCompressedOops) {
-        narrowOop* next_addr = (narrowOop*)java_lang_ref_Reference::next_addr(obj);
+        narrowOop* next_addr = (narrowOop*)java_lang_ref_Reference::next_addr_raw(obj);
         keep_alive->do_oop(next_addr);
       } else {
-        oop* next_addr = (oop*)java_lang_ref_Reference::next_addr(obj);
+        oop* next_addr = (oop*)java_lang_ref_Reference::next_addr_raw(obj);
         keep_alive->do_oop(next_addr);
       }
       iter.move_to_next();

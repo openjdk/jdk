@@ -97,7 +97,7 @@ public class RawLoadNode extends UnsafeAccessNode implements Lowerable, Virtuali
             ValueNode offsetValue = tool.getAlias(offset());
             if (offsetValue.isConstant()) {
                 long off = offsetValue.asJavaConstant().asLong();
-                int entryIndex = virtual.entryIndexForOffset(off, accessKind());
+                int entryIndex = virtual.entryIndexForOffset(tool.getArrayOffsetProvider(), off, accessKind());
 
                 if (entryIndex != -1) {
                     ValueNode entry = tool.getEntry(virtual, entryIndex);

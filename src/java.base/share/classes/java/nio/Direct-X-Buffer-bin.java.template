@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,24 +32,40 @@ class XXX {
 #if[rw]
 
     private $type$ get$Type$(long a) {
-        $memtype$ x = unsafe.get$Memtype$Unaligned(null, a, bigEndian);
-        return $fromBits$(x);
+        try {
+            $memtype$ x = UNSAFE.get$Memtype$Unaligned(null, a, bigEndian);
+            return $fromBits$(x);
+        } finally {
+            Reference.reachabilityFence(this);
+        }
     }
 
     public $type$ get$Type$() {
-        return get$Type$(ix(nextGetIndex($BYTES_PER_VALUE$)));
+        try {
+            return get$Type$(ix(nextGetIndex($BYTES_PER_VALUE$)));
+        } finally {
+            Reference.reachabilityFence(this);
+        }
     }
 
     public $type$ get$Type$(int i) {
-        return get$Type$(ix(checkIndex(i, $BYTES_PER_VALUE$)));
+        try {
+            return get$Type$(ix(checkIndex(i, $BYTES_PER_VALUE$)));
+        } finally {
+            Reference.reachabilityFence(this);
+        }
     }
 
 #end[rw]
 
     private ByteBuffer put$Type$(long a, $type$ x) {
 #if[rw]
-        $memtype$ y = $toBits$(x);
-        unsafe.put$Memtype$Unaligned(null, a, y, bigEndian);
+        try {
+            $memtype$ y = $toBits$(x);
+            UNSAFE.put$Memtype$Unaligned(null, a, y, bigEndian);
+        } finally {
+            Reference.reachabilityFence(this);
+        }
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -81,7 +97,7 @@ class XXX {
         int rem = (off <= lim ? lim - off : 0);
 
         int size = rem >> $LG_BYTES_PER_VALUE$;
-        if (!unaligned && ((address + off) % $BYTES_PER_VALUE$ != 0)) {
+        if (!UNALIGNED && ((address + off) % $BYTES_PER_VALUE$ != 0)) {
             return (bigEndian
                     ? ($Type$Buffer)(new ByteBufferAs$Type$Buffer$RW$B(this,
                                                                        -1,

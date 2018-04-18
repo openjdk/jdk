@@ -30,6 +30,7 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/space.hpp"
+#include "oops/access.inline.hpp"
 
 // Methods of protected closure types
 
@@ -39,8 +40,7 @@ inline void DefNewGeneration::KeepAliveClosure::do_oop_work(T* p) {
   {
     // We never expect to see a null reference being processed
     // as a weak reference.
-    assert (!oopDesc::is_null(*p), "expected non-null ref");
-    oop obj = oopDesc::load_decode_heap_oop_not_null(p);
+    oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);
     assert (oopDesc::is_oop(obj), "expected an oop while scanning weak refs");
   }
 #endif // ASSERT
@@ -61,7 +61,7 @@ inline void DefNewGeneration::KeepAliveClosure::do_oop_work(T* p) {
   // dirty cards in the young gen are never scanned, so the
   // extra check probably isn't worthwhile.
   if (GenCollectedHeap::heap()->is_in_reserved(p)) {
-    oop obj = oopDesc::load_decode_heap_oop_not_null(p);
+    oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);
     _rs->inline_write_ref_field_gc(p, obj);
   }
 }
@@ -72,8 +72,7 @@ inline void DefNewGeneration::FastKeepAliveClosure::do_oop_work(T* p) {
   {
     // We never expect to see a null reference being processed
     // as a weak reference.
-    assert (!oopDesc::is_null(*p), "expected non-null ref");
-    oop obj = oopDesc::load_decode_heap_oop_not_null(p);
+    oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);
     assert (oopDesc::is_oop(obj), "expected an oop while scanning weak refs");
   }
 #endif // ASSERT
@@ -83,7 +82,7 @@ inline void DefNewGeneration::FastKeepAliveClosure::do_oop_work(T* p) {
   // Optimized for Defnew generation if it's the youngest generation:
   // we set a younger_gen card if we have an older->youngest
   // generation pointer.
-  oop obj = oopDesc::load_decode_heap_oop_not_null(p);
+  oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);
   if (((HeapWord*)obj < _boundary) && GenCollectedHeap::heap()->is_in_reserved(p)) {
     _rs->inline_write_ref_field_gc(p, obj);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,183 @@ import jdk.test.lib.process.ProcessTools;
 
 // This class contains common test utilities for testing CDS
 public class CDSTestUtils {
+    public interface Checker {
+        public void check(OutputAnalyzer output) throws Exception;
+    }
+
+    /*
+     * INTRODUCTION
+     *
+     * When testing various CDS functionalities, we need to launch JVM processes
+     * using a "launch method" (such as TestCommon.run), and analyze the results of these
+     * processes.
+     *
+     * While typical jtreg tests would use OutputAnalyzer in such cases, due to the
+     * complexity of CDS failure modes, we have added the CDSTestUtils.Result class
+     * to make the analysis more convenient and less error prone.
+     *
+     * A Java process can end in one of the following 4 states:
+     *
+     *    1: Unexpected error - such as JVM crashing. In this case, the "launch method"
+     *                          will throw a RuntimeException.
+     *    2: Mapping Failure  - this happens when the OS (intermittently) fails to map the
+     *                          CDS archive, normally caused by Address Space Layout Randomization.
+     *                          We usually treat this as "pass".
+     *    3: Normal Exit      - the JVM process has finished without crashing, and the exit code is 0.
+     *    4: Abnormal Exit    - the JVM process has finished without crashing, and the exit code is not 0.
+     *
+     * In most test cases, we need to check the JVM process's output in cases 3 and 4. However, we need
+     * to make sure that our test code is not confused by case 2.
+     *
+     * For example, a JVM process is expected to print the string "Hi" and exit with 0. With the old
+     * CDSTestUtils.runWithArchive API, the test may be written as this:
+     *
+     *     OutputAnalyzer out = CDSTestUtils.runWithArchive(args);
+     *     out.shouldContain("Hi");
+     *
+     * However, if the JVM process fails with mapping failure, the string "Hi" will not be in the output,
+     * and your test case will fail intermittently.
+     *
+     * Instead, the test case should be written as
+     *
+     *      CCDSTestUtils.run(args).assertNormalExit("Hi");
+     *
+     * EXAMPLES/HOWTO
+     *
+     * 1. For simple substring matching:
+     *
+     *      CCDSTestUtils.run(args).assertNormalExit("Hi");
+     *      CCDSTestUtils.run(args).assertNormalExit("a", "b", "x");
+     *      CCDSTestUtils.run(args).assertAbnormalExit("failure 1", "failure2");
+     *
+     * 2. For more complex output matching: using Lambda expressions
+     *
+     *      CCDSTestUtils.run(args)
+     *         .assertNormalExit(output -> output.shouldNotContain("this should not be printed");
+     *      CCDSTestUtils.run(args)
+     *         .assertAbnormalExit(output -> {
+     *             output.shouldNotContain("this should not be printed");
+     *             output.shouldHaveExitValue(123);
+     *           });
+     *
+     * 3. Chaining several checks:
+     *
+     *      CCDSTestUtils.run(args)
+     *         .assertNormalExit(output -> output.shouldNotContain("this should not be printed")
+     *         .assertNormalExit("should have this", "should have that");
+     *
+     * 4. [Rare use case] if a test sometimes exit normally, and sometimes abnormally:
+     *
+     *      CCDSTestUtils.run(args)
+     *         .ifNormalExit("ths string is printed when exiting with 0")
+     *         .ifAbNormalExit("ths string is printed when exiting with 1");
+     *
+     *    NOTE: you usually don't want to write your test case like this -- it should always
+     *    exit with the same exit code. (But I kept this API because some existing test cases
+     *    behave this way -- need to revisit).
+     */
+    public static class Result {
+        private final OutputAnalyzer output;
+        private final CDSOptions options;
+        private final boolean hasMappingFailure;
+        private final boolean hasAbnormalExit;
+        private final boolean hasNormalExit;
+        private final String CDS_DISABLED = "warning: CDS is disabled when the";
+
+        public Result(CDSOptions opts, OutputAnalyzer out) throws Exception {
+            options = opts;
+            output = out;
+            hasMappingFailure = CDSTestUtils.checkCommonExecExceptions(output);
+            hasAbnormalExit   = (!hasMappingFailure) && (output.getExitValue() != 0);
+            hasNormalExit     = (!hasMappingFailure) && (output.getExitValue() == 0);
+
+            if (hasNormalExit) {
+                if ("on".equals(options.xShareMode) &&
+                    output.getStderr().contains("java version") &&
+                    !output.getStderr().contains(CDS_DISABLED)) {
+                    // "-showversion" is always passed in the command-line by the execXXX methods.
+                    // During normal exit, we require that the VM to show that sharing was enabled.
+                    output.shouldContain("sharing");
+                }
+            }
+        }
+
+        public Result assertNormalExit(Checker checker) throws Exception {
+            if (!hasMappingFailure) {
+                checker.check(output);
+                output.shouldHaveExitValue(0);
+            }
+            return this;
+        }
+
+        public Result assertAbnormalExit(Checker checker) throws Exception {
+            if (!hasMappingFailure) {
+                checker.check(output);
+                output.shouldNotHaveExitValue(0);
+            }
+            return this;
+        }
+
+        // When {--limit-modules, --patch-module, and/or --upgrade-module-path}
+        // are specified, CDS is silently disabled for both -Xshare:auto and -Xshare:on.
+        public Result assertSilentlyDisabledCDS(Checker checker) throws Exception {
+            if (hasMappingFailure) {
+                throw new RuntimeException("Unexpected mapping failure");
+            }
+            // this comes from a JVM warning message.
+            output.shouldContain(CDS_DISABLED);
+
+            checker.check(output);
+            return this;
+        }
+
+        public Result assertSilentlyDisabledCDS(int exitCode, String... matches) throws Exception {
+            return assertSilentlyDisabledCDS((out) -> {
+                out.shouldHaveExitValue(exitCode);
+                checkMatches(out, matches);
+                   });
+        }
+
+        public Result ifNormalExit(Checker checker) throws Exception {
+            if (hasNormalExit) {
+                checker.check(output);
+            }
+            return this;
+        }
+
+        public Result ifAbnormalExit(Checker checker) throws Exception {
+            if (hasAbnormalExit) {
+                checker.check(output);
+            }
+            return this;
+        }
+
+        public Result ifNoMappingFailure(Checker checker) throws Exception {
+            if (!hasMappingFailure) {
+                checker.check(output);
+            }
+            return this;
+        }
+
+
+        public Result assertNormalExit(String... matches) throws Exception {
+            if (!hasMappingFailure) {
+                checkMatches(output, matches);
+                output.shouldHaveExitValue(0);
+            }
+            return this;
+        }
+
+        public Result assertAbnormalExit(String... matches) throws Exception {
+            if (!hasMappingFailure) {
+                checkMatches(output, matches);
+                output.shouldNotHaveExitValue(0);
+            }
+
+            return this;
+        }
+    }
+
     // Specify this property to copy sdandard output of the child test process to
     // the parent/main stdout of the test.
     // By default such output is logged into a file, and is copied into the main stdout.
@@ -119,7 +296,7 @@ public class CDSTestUtils {
     // of exceptions and common errors.
     // Exception e argument - an exception to be re-thrown if none of the common
     // exceptions match. Pass null if you wish not to re-throw any exception.
-    public static void checkCommonExecExceptions(OutputAnalyzer output, Exception e)
+    public static boolean checkCommonExecExceptions(OutputAnalyzer output, Exception e)
         throws Exception {
         if (output.getStdout().contains("http://bugreport.java.com/bugreport/crash.jsp")) {
             throw new RuntimeException("Hotspot crashed");
@@ -128,7 +305,7 @@ public class CDSTestUtils {
             throw new RuntimeException("Test Failed");
         }
         if (output.getOutput().contains("shared class paths mismatch")) {
-            throw new RuntimeException("shared class paths mismatch");
+//            throw new RuntimeException("shared class paths mismatch");
         }
         if (output.getOutput().contains("Unable to unmap shared space")) {
             throw new RuntimeException("Unable to unmap shared space");
@@ -139,11 +316,17 @@ public class CDSTestUtils {
         // and can be random (see ASLR).
         if (isUnableToMap(output)) {
             System.out.println(UnableToMapMsg);
-            return;
+            return true;
         }
 
-        if (e != null)
+        if (e != null) {
             throw e;
+        }
+        return false;
+    }
+
+    public static boolean checkCommonExecExceptions(OutputAnalyzer output) throws Exception {
+        return checkCommonExecExceptions(output, null);
     }
 
 
@@ -176,6 +359,12 @@ public class CDSTestUtils {
         return false;
     }
 
+    public static Result run(String... cliPrefix) throws Exception {
+        CDSOptions opts = new CDSOptions();
+        opts.setArchiveName(getDefaultArchiveName());
+        opts.addPrefix(cliPrefix);
+        return new Result(opts, runWithArchive(opts));
+    }
 
     // Execute JVM with CDS archive, specify command line args suffix
     public static OutputAnalyzer runWithArchive(String... cliPrefix)
@@ -246,7 +435,7 @@ public class CDSTestUtils {
             return output;
         }
 
-        checkExtraMatches(output, extraMatches);
+        checkMatches(output, extraMatches);
         return output;
     }
 
@@ -260,13 +449,13 @@ public class CDSTestUtils {
         }
 
         output.shouldHaveExitValue(expectedExitValue);
-        checkExtraMatches(output, extraMatches);
+        checkMatches(output, extraMatches);
         return output;
     }
 
-    public static OutputAnalyzer checkExtraMatches(OutputAnalyzer output,
-                                                    String... extraMatches) throws Exception {
-        for (String match : extraMatches) {
+    public static OutputAnalyzer checkMatches(OutputAnalyzer output,
+                                              String... matches) throws Exception {
+        for (String match : matches) {
             output.shouldContain(match);
         }
         return output;

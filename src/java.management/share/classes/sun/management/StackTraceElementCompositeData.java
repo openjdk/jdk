@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
 
 package sun.management;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Predicate;
 import javax.management.openmbean.CompositeType;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.OpenDataException;
+import javax.management.openmbean.OpenType;
+import java.util.Arrays;
+import java.util.stream.Stream;
 
 /**
  * A CompositeData for StackTraceElement for the local management support.
@@ -52,12 +52,7 @@ public class StackTraceElementCompositeData extends LazyCompositeData {
     public static StackTraceElement from(CompositeData cd) {
         validateCompositeData(cd);
 
-        if (stackTraceElementV6CompositeType.equals(cd.getCompositeType())) {
-            return new StackTraceElement(getString(cd, CLASS_NAME),
-                                         getString(cd, METHOD_NAME),
-                                         getString(cd, FILE_NAME),
-                                         getInt(cd, LINE_NUMBER));
-        } else {
+        if (STACK_TRACE_ELEMENT_COMPOSITE_TYPE.equals(cd.getCompositeType())) {
             return new StackTraceElement(getString(cd, CLASS_LOADER_NAME),
                                          getString(cd, MODULE_NAME),
                                          getString(cd, MODULE_VERSION),
@@ -65,6 +60,12 @@ public class StackTraceElementCompositeData extends LazyCompositeData {
                                          getString(cd, METHOD_NAME),
                                          getString(cd, FILE_NAME),
                                          getInt(cd, LINE_NUMBER));
+        } else {
+            return new StackTraceElement(getString(cd, CLASS_NAME),
+                                         getString(cd, METHOD_NAME),
+                                         getString(cd, FILE_NAME),
+                                         getInt(cd, LINE_NUMBER));
+
         }
     }
 
@@ -75,7 +76,7 @@ public class StackTraceElementCompositeData extends LazyCompositeData {
 
     protected CompositeData getCompositeData() {
         // CONTENTS OF THIS ARRAY MUST BE SYNCHRONIZED WITH
-        // stackTraceElementItemNames!
+        // STACK_TRACE_ELEMENT_ATTRIBUTES!
         final Object[] stackTraceElementItemValues = {
             ste.getClassLoaderName(),
             ste.getModuleName(),
@@ -87,8 +88,8 @@ public class StackTraceElementCompositeData extends LazyCompositeData {
             ste.isNativeMethod(),
         };
         try {
-            return new CompositeDataSupport(stackTraceElementCompositeType,
-                                            stackTraceElementItemNames,
+            return new CompositeDataSupport(STACK_TRACE_ELEMENT_COMPOSITE_TYPE,
+                                            STACK_TRACE_ELEMENT_ATTRIBUTES,
                                             stackTraceElementItemValues);
         } catch (OpenDataException e) {
             // Should never reach here
@@ -106,11 +107,7 @@ public class StackTraceElementCompositeData extends LazyCompositeData {
     private static final String LINE_NUMBER       = "lineNumber";
     private static final String NATIVE_METHOD     = "nativeMethod";
 
-
-    private static final String[] stackTraceElementItemNames = {
-        CLASS_LOADER_NAME,
-        MODULE_NAME,
-        MODULE_VERSION,
+    private static final String[] V5_ATTRIBUTES = {
         CLASS_NAME,
         METHOD_NAME,
         FILE_NAME,
@@ -118,30 +115,48 @@ public class StackTraceElementCompositeData extends LazyCompositeData {
         NATIVE_METHOD,
     };
 
-    private static final String[] stackTraceElementV9ItemNames = {
+    private static final String[] V9_ATTRIBUTES = {
         CLASS_LOADER_NAME,
         MODULE_NAME,
         MODULE_VERSION,
     };
 
-    private static final CompositeType stackTraceElementCompositeType;
-    private static final CompositeType stackTraceElementV6CompositeType;
+    private static final String[] STACK_TRACE_ELEMENT_ATTRIBUTES =
+        Stream.of(V5_ATTRIBUTES, V9_ATTRIBUTES).flatMap(Arrays::stream)
+              .toArray(String[]::new);
+
+    private static final CompositeType STACK_TRACE_ELEMENT_COMPOSITE_TYPE;
+    private static final CompositeType V5_COMPOSITE_TYPE;
     static {
         try {
-            stackTraceElementCompositeType = (CompositeType)
+            STACK_TRACE_ELEMENT_COMPOSITE_TYPE = (CompositeType)
                 MappedMXBeanType.toOpenType(StackTraceElement.class);
-            stackTraceElementV6CompositeType =
-                TypeVersionMapper.getInstance().getVersionedCompositeType(
-                    stackTraceElementCompositeType,
-                    TypeVersionMapper.V6
-                );
+
+            OpenType<?>[] types = new OpenType<?>[V5_ATTRIBUTES.length];
+            for (int i=0; i < V5_ATTRIBUTES.length; i++) {
+                String name = V5_ATTRIBUTES[i];
+                types[i] = STACK_TRACE_ELEMENT_COMPOSITE_TYPE.getType(name);
+            }
+            V5_COMPOSITE_TYPE = new CompositeType("StackTraceElement",
+                                                  "JDK 5 StackTraceElement",
+                                                  V5_ATTRIBUTES,
+                                                  V5_ATTRIBUTES,
+                                                  types);
         } catch (OpenDataException e) {
             // Should never reach here
             throw new AssertionError(e);
         }
     }
 
-    /** Validate if the input CompositeData has the expected
+    static CompositeType v5CompositeType() {
+        return V5_COMPOSITE_TYPE;
+    }
+    static CompositeType compositeType() {
+        return STACK_TRACE_ELEMENT_COMPOSITE_TYPE;
+    }
+
+    /**
+     * Validate if the input CompositeData has the expected
      * CompositeType (i.e. contain all attributes with expected
      * names and types).
      */
@@ -151,22 +166,11 @@ public class StackTraceElementCompositeData extends LazyCompositeData {
         }
 
         CompositeType ct = cd.getCompositeType();
-        if (!isTypeMatched(stackTraceElementCompositeType, ct)) {
-            if (!isTypeMatched(stackTraceElementV6CompositeType, ct)) {
-                throw new IllegalArgumentException(
-                    "Unexpected composite type for StackTraceElement");
-            }
+        if (!isTypeMatched(STACK_TRACE_ELEMENT_COMPOSITE_TYPE, ct) &&
+            !isTypeMatched(V5_COMPOSITE_TYPE, ct)) {
+            throw new IllegalArgumentException(
+                "Unexpected composite type for StackTraceElement");
         }
     }
-
-    static boolean isV6Attribute(String name) {
-        for(String attrName : stackTraceElementV9ItemNames) {
-            if (name.equals(attrName)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     private static final long serialVersionUID = -2704607706598396827L;
 }

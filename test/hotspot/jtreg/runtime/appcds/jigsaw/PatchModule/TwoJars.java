@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @summary a patched class found in --patch-module should be used at runtime
  * @library ../..
  * @library /test/hotspot/jtreg/testlibrary
@@ -87,14 +87,15 @@ public class TwoJars {
                 "-Xlog:class+load",
                 "-Xlog:class+path=info",
                 "PatchMain", "javax.naming.spi.NamingManager");
-        TestCommon.checkDump(output, "Loading classes to share");
+        output.shouldHaveExitValue(1)
+              .shouldContain("Cannot use the following option when dumping the shared archive: --patch-module");
 
-        output = TestCommon.execCommon(
+        TestCommon.run(
             "-XX:+UnlockDiagnosticVMOptions",
             "--patch-module=java.naming=" + moduleJar2 + File.pathSeparator + moduleJar,
             "-Xlog:class+load",
             "-Xlog:class+path=info",
-            "PatchMain", "javax.naming.spi.NamingManager");
-        TestCommon.checkExec(output, "I pass");
+            "PatchMain", "javax.naming.spi.NamingManager")
+            .assertSilentlyDisabledCDS(0, "I pass!");
     }
 }

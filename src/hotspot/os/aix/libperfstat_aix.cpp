@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #include "misc_aix.hpp"
 
 #include <dlfcn.h>
-#include <sys/systemcfg.h>
 
 // Handle to the libperfstat.
 static void* g_libhandle = NULL;
@@ -158,17 +157,6 @@ cid_t libperfstat::wpar_getcid() {
 
 //////////////////// convenience functions, release-independent /////////////////////////////
 
-// Excerpts from systemcfg.h definitions newer than AIX 5.3 (our oldest build platform)
-
-#define PV_6 0x100000          /* Power PC 6 */
-#define PV_6_1 0x100001        /* Power PC 6 DD1.x */
-#define PV_7 0x200000          /* Power PC 7 */
-#define PV_5_Compat 0x0F8000   /* Power PC 5 */
-#define PV_6_Compat 0x108000   /* Power PC 6 */
-#define PV_7_Compat 0x208000   /* Power PC 7 */
-#define PV_8 0x300000          /* Power PC 8 */
-#define PV_8_Compat 0x308000   /* Power PC 8 */
-
 
 // Retrieve global cpu information.
 bool libperfstat::get_cpuinfo(cpuinfo_t* pci) {
@@ -191,7 +179,7 @@ bool libperfstat::get_cpuinfo(cpuinfo_t* pci) {
   }
 
   // Global cpu information.
-  strcpy (pci->description, psct.description);
+  strcpy(pci->description, psct.description);
   pci->processorHZ = psct.processorHZ;
   pci->ncpus = psct.ncpus;
   for (int i = 0; i < 3; i++) {
@@ -202,45 +190,6 @@ bool libperfstat::get_cpuinfo(cpuinfo_t* pci) {
   pci->sys_clock_ticks  = psct.sys;
   pci->idle_clock_ticks = psct.idle;
   pci->wait_clock_ticks = psct.wait;
-
-  // Get the processor version from _system_configuration.
-  switch (_system_configuration.version) {
-  case PV_8:
-    strcpy(pci->version, "Power PC 8");
-    break;
-  case PV_7:
-    strcpy(pci->version, "Power PC 7");
-    break;
-  case PV_6_1:
-    strcpy(pci->version, "Power PC 6 DD1.x");
-    break;
-  case PV_6:
-    strcpy(pci->version, "Power PC 6");
-    break;
-  case PV_5:
-    strcpy(pci->version, "Power PC 5");
-    break;
-  case PV_5_2:
-    strcpy(pci->version, "Power PC 5_2");
-    break;
-  case PV_5_3:
-    strcpy(pci->version, "Power PC 5_3");
-    break;
-  case PV_5_Compat:
-    strcpy(pci->version, "PV_5_Compat");
-    break;
-  case PV_6_Compat:
-    strcpy(pci->version, "PV_6_Compat");
-    break;
-  case PV_7_Compat:
-    strcpy(pci->version, "PV_7_Compat");
-    break;
-  case PV_8_Compat:
-    strcpy(pci->version, "PV_8_Compat");
-    break;
-  default:
-    strcpy(pci->version, "unknown");
-  }
 
   return true;
 }

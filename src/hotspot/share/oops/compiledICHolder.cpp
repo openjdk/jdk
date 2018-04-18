@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,14 @@
 
 #include "precompiled.hpp"
 #include "oops/compiledICHolder.hpp"
-#include "oops/klass.hpp"
-#include "oops/method.hpp"
 #include "runtime/atomic.hpp"
 
 volatile int CompiledICHolder::_live_count;
 volatile int CompiledICHolder::_live_not_claimed_count;
 
 
-CompiledICHolder::CompiledICHolder(Metadata* metadata, Klass* klass)
-  : _holder_metadata(metadata), _holder_klass(klass) {
+CompiledICHolder::CompiledICHolder(Metadata* metadata, Klass* klass, bool is_method)
+  : _holder_metadata(metadata), _holder_klass(klass), _is_metadata_method(is_method) {
 #ifdef ASSERT
   Atomic::inc(&_live_count);
   Atomic::inc(&_live_not_claimed_count);
@@ -46,22 +44,6 @@ CompiledICHolder::~CompiledICHolder() {
   Atomic::dec(&_live_count);
 }
 #endif // ASSERT
-
-bool CompiledICHolder::is_loader_alive(BoolObjectClosure* is_alive) {
-  if (_holder_metadata->is_method()) {
-    if (!((Method*)_holder_metadata)->method_holder()->is_loader_alive(is_alive)) {
-      return false;
-    }
-  } else if (_holder_metadata->is_klass()) {
-    if (!((Klass*)_holder_metadata)->is_loader_alive(is_alive)) {
-      return false;
-    }
-  }
-  if (!_holder_klass->is_loader_alive(is_alive)) {
-    return false;
-  }
-  return true;
-}
 
 // Printing
 

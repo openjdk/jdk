@@ -244,7 +244,10 @@ public class GraphPrinterDumpHandler implements DebugDumpHandler {
                     lastMethodOrGraph = o;
                 }
             }
-
+            if (result.size() == 2 && result.get(1).startsWith("TruffleGraal")) {
+                result.clear();
+                result.add("Graal Graphs");
+            }
             if (result.isEmpty()) {
                 result.add(graph.toString());
                 graphSeen = true;

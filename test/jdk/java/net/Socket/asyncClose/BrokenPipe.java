@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,12 @@
  */
 
 /*
- * @test 1.1 01/09/19
+ * @test
  * @bug 4511404
  * @summary Check that a broken pipe error doesn't throw an exception
  *          indicating the socket is closed.
+ * @run main BrokenPipe
+ * @run main/othervm -Djava.net.preferIPv4Stack=true BrokenPipe
  */
 import java.io.*;
 import java.net.*;

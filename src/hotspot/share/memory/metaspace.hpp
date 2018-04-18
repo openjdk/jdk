@@ -66,6 +66,7 @@ class outputStream;
 class PrintCLDMetaspaceInfoClosure;
 class SpaceManager;
 class VirtualSpaceList;
+class CollectedHeap;
 
 // Metaspaces each have a  SpaceManager and allocations
 // are done by the SpaceManager.  Allocations are done
@@ -80,15 +81,11 @@ class VirtualSpaceList;
 // allocate() method returns a block for use as a
 // quantum of metadata.
 
-class Metaspace : public CHeapObj<mtClass> {
-  friend class VMStructs;
-  friend class SpaceManager;
-  friend class VM_CollectForMetadataAllocation;
-  friend class MetaspaceGC;
-  friend class MetaspaceAux;
+// Namespace for important central static functions
+// (auxiliary stuff goes into MetaspaceUtils)
+class Metaspace : public AllStatic {
+
   friend class MetaspaceShared;
-  friend class CollectorPolicy;
-  friend class PrintCLDMetaspaceInfoClosure;
 
  public:
   enum MetadataType {
@@ -104,15 +101,6 @@ class Metaspace : public CHeapObj<mtClass> {
   };
 
  private:
-  static void verify_global_initialization();
-
-  void initialize(Mutex* lock, MetaspaceType type);
-
-  // Initialize the first chunk for a Metaspace.  Used for
-  // special cases such as the boot class loader, reflection
-  // class loader and anonymous class loader.
-  void initialize_first_chunk(MetaspaceType type, MetadataType mdtype);
-  Metachunk* get_initialization_chunk(MetaspaceType type, MetadataType mdtype);
 
   // Align up the word size to the allocation word size
   static size_t align_word_size_up(size_t);
@@ -134,23 +122,6 @@ class Metaspace : public CHeapObj<mtClass> {
   static size_t _commit_alignment;
   static size_t _reserve_alignment;
   DEBUG_ONLY(static bool   _frozen;)
-
-  SpaceManager* _vsm;
-  SpaceManager* vsm() const { return _vsm; }
-
-  SpaceManager* _class_vsm;
-  SpaceManager* class_vsm() const { return _class_vsm; }
-  SpaceManager* get_space_manager(MetadataType mdtype) {
-    assert(mdtype != MetadataTypeCount, "MetadaTypeCount can't be used as mdtype");
-    return mdtype == ClassType ? class_vsm() : vsm();
-  }
-
-  // Allocate space for metadata of type mdtype. This is space
-  // within a Metachunk and is used by
-  //   allocate(ClassLoaderData*, size_t, bool, MetadataType, TRAPS)
-  MetaWord* allocate(size_t word_size, MetadataType mdtype);
-
-  MetaWord* expand_and_allocate(size_t size, MetadataType mdtype);
 
   // Virtual Space lists for both classes and other metadata
   static VirtualSpaceList* _space_list;
@@ -176,10 +147,18 @@ class Metaspace : public CHeapObj<mtClass> {
     return mdtype == ClassType ? chunk_manager_class() : chunk_manager_metadata();
   }
 
+  // convenience function
+  static ChunkManager* get_chunk_manager(bool is_class) {
+    return is_class ? chunk_manager_class() : chunk_manager_metadata();
+  }
+
   static const MetaspaceTracer* tracer() { return _tracer; }
   static void freeze() {
     assert(DumpSharedSpaces, "sanity");
     DEBUG_ONLY(_frozen = true;)
+  }
+  static void assert_not_frozen() {
+    assert(!_frozen, "sanity");
   }
 #ifdef _LP64
   static void allocate_metaspace_compressed_klass_ptrs(char* requested_addr, address cds_base);
@@ -195,16 +174,14 @@ class Metaspace : public CHeapObj<mtClass> {
 
   static void initialize_class_space(ReservedSpace rs);
 #endif
-  size_t class_chunk_size(size_t word_size);
 
  public:
-
-  Metaspace(Mutex* lock, MetaspaceType type);
-  ~Metaspace();
 
   static void ergo_initialize();
   static void global_initialize();
   static void post_initialize();
+
+  static void verify_global_initialization();
 
   static size_t first_chunk_word_size() { return _first_chunk_word_size; }
   static size_t first_class_chunk_word_size() { return _first_class_chunk_word_size; }
@@ -214,24 +191,12 @@ class Metaspace : public CHeapObj<mtClass> {
   static size_t commit_alignment()        { return _commit_alignment; }
   static size_t commit_alignment_words()  { return _commit_alignment / BytesPerWord; }
 
-  size_t used_words_slow(MetadataType mdtype) const;
-  size_t free_words_slow(MetadataType mdtype) const;
-  size_t capacity_words_slow(MetadataType mdtype) const;
-
-  size_t used_bytes_slow(MetadataType mdtype) const;
-  size_t capacity_bytes_slow(MetadataType mdtype) const;
-
-  size_t allocated_blocks_bytes() const;
-  size_t allocated_chunks_bytes() const;
-
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
                             MetaspaceObj::Type type, TRAPS);
   void deallocate(MetaWord* ptr, size_t byte_size, bool is_class);
 
   static bool contains(const void* ptr);
   static bool contains_non_shared(const void* ptr);
-
-  void dump(outputStream* const out) const;
 
   // Free empty virtualspaces
   static void purge(MetadataType mdtype);
@@ -241,10 +206,6 @@ class Metaspace : public CHeapObj<mtClass> {
                                    MetaspaceObj::Type type, MetadataType mdtype, TRAPS);
 
   static const char* metadata_type_name(Metaspace::MetadataType mdtype);
-
-  void print_on(outputStream* st) const;
-  // Debugging support
-  void verify();
 
   static void print_compressed_class_space(outputStream* st, const char* requested_addr = 0) NOT_LP64({});
 
@@ -259,7 +220,70 @@ class Metaspace : public CHeapObj<mtClass> {
 
 };
 
-class MetaspaceAux : AllStatic {
+// Manages the metaspace portion belonging to a class loader
+class ClassLoaderMetaspace : public CHeapObj<mtClass> {
+  friend class CollectedHeap; // For expand_and_allocate()
+  friend class Metaspace;
+  friend class MetaspaceUtils;
+  friend class PrintCLDMetaspaceInfoClosure;
+  friend class VM_CollectForMetadataAllocation; // For expand_and_allocate()
+
+ private:
+
+  void initialize(Mutex* lock, Metaspace::MetaspaceType type);
+
+  // Initialize the first chunk for a Metaspace.  Used for
+  // special cases such as the boot class loader, reflection
+  // class loader and anonymous class loader.
+  void initialize_first_chunk(Metaspace::MetaspaceType type, Metaspace::MetadataType mdtype);
+  Metachunk* get_initialization_chunk(Metaspace::MetaspaceType type, Metaspace::MetadataType mdtype);
+
+  SpaceManager* _vsm;
+  SpaceManager* vsm() const { return _vsm; }
+
+  SpaceManager* _class_vsm;
+  SpaceManager* class_vsm() const { return _class_vsm; }
+  SpaceManager* get_space_manager(Metaspace::MetadataType mdtype) {
+    assert(mdtype != Metaspace::MetadataTypeCount, "MetadaTypeCount can't be used as mdtype");
+    return mdtype == Metaspace::ClassType ? class_vsm() : vsm();
+  }
+
+  MetaWord* expand_and_allocate(size_t size, Metaspace::MetadataType mdtype);
+
+  size_t class_chunk_size(size_t word_size);
+
+ public:
+
+  ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType type);
+  ~ClassLoaderMetaspace();
+
+  // Allocate space for metadata of type mdtype. This is space
+  // within a Metachunk and is used by
+  //   allocate(ClassLoaderData*, size_t, bool, MetadataType, TRAPS)
+  MetaWord* allocate(size_t word_size, Metaspace::MetadataType mdtype);
+
+  size_t used_words_slow(Metaspace::MetadataType mdtype) const;
+  size_t free_words_slow(Metaspace::MetadataType mdtype) const;
+  size_t capacity_words_slow(Metaspace::MetadataType mdtype) const;
+
+  size_t used_bytes_slow(Metaspace::MetadataType mdtype) const;
+  size_t capacity_bytes_slow(Metaspace::MetadataType mdtype) const;
+
+  size_t allocated_blocks_bytes() const;
+  size_t allocated_chunks_bytes() const;
+
+  void deallocate(MetaWord* ptr, size_t byte_size, bool is_class);
+
+  void dump(outputStream* const out) const;
+
+  void print_on(outputStream* st) const;
+  // Debugging support
+  void verify();
+
+}; // ClassLoaderMetaspace
+
+
+class MetaspaceUtils : AllStatic {
   static size_t free_chunks_total_words(Metaspace::MetadataType mdtype);
 
   // These methods iterate over the classloader data graph

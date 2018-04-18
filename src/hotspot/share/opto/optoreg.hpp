@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@
 // if the value is outside the enumeration's valid range. OptoReg::Name is
 // typedef'ed as int, because it needs to be able to represent spill-slots.
 //
-class OptoReg VALUE_OBJ_CLASS_SPEC {
+class OptoReg {
 
  friend class C2Compiler;
  public:

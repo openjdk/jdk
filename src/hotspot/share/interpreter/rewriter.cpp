@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,14 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/gcLocker.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/rewriter.hpp"
 #include "memory/metadataFactory.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/generateOopMap.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/handles.inline.hpp"
 
 // Computes a CPC map (new_index -> original_index) for constant pool entries
 // that are referred to by the interpreter at runtime via the constant pool cache.
@@ -49,7 +48,11 @@ void Rewriter::compute_index_maps() {
       case JVM_CONSTANT_Methodref         : // fall through
         add_cp_cache_entry(i);
         break;
-      case JVM_CONSTANT_String:
+      case JVM_CONSTANT_Dynamic:
+        assert(_pool->has_dynamic_constant(), "constant pool's _has_dynamic_constant flag not set");
+        add_resolved_references_entry(i);
+        break;
+      case JVM_CONSTANT_String            : // fall through
       case JVM_CONSTANT_MethodHandle      : // fall through
       case JVM_CONSTANT_MethodType        : // fall through
         add_resolved_references_entry(i);
@@ -108,12 +111,12 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
   if (HAS_PENDING_EXCEPTION) {
     MetadataFactory::free_metadata(loader_data, cache);
     _pool->set_cache(NULL);  // so the verifier isn't confused
+  } else {
+    DEBUG_ONLY(
+    if (DumpSharedSpaces) {
+      cache->verify_just_initialized();
+    })
   }
-
-  DEBUG_ONLY(
-  if (DumpSharedSpaces) {
-    cache->verify_just_initialized();
-  })
 }
 
 
@@ -322,7 +325,14 @@ void Rewriter::maybe_rewrite_ldc(address bcp, int offset, bool is_wide,
     address p = bcp + offset;
     int cp_index = is_wide ? Bytes::get_Java_u2(p) : (u1)(*p);
     constantTag tag = _pool->tag_at(cp_index).value();
-    if (tag.is_method_handle() || tag.is_method_type() || tag.is_string()) {
+
+    if (tag.is_method_handle() ||
+        tag.is_method_type() ||
+        tag.is_string() ||
+        (tag.is_dynamic_constant() &&
+         // keep regular ldc interpreter logic for condy primitives
+         is_reference_type(FieldType::basic_type(_pool->uncached_signature_ref_at(cp_index))))
+        ) {
       int ref_index = cp_entry_to_resolved_references(cp_index);
       if (is_wide) {
         (*bcp) = Bytecodes::_fast_aldc_w;
@@ -556,7 +566,7 @@ void Rewriter::rewrite_bytecodes(TRAPS) {
 
 void Rewriter::rewrite(InstanceKlass* klass, TRAPS) {
   if (!DumpSharedSpaces) {
-    assert(!MetaspaceShared::is_in_shared_space(klass), "archive methods must not be rewritten at run time");
+    assert(!klass->is_shared(), "archive methods must not be rewritten at run time");
   }
   ResourceMark rm(THREAD);
   Rewriter     rw(klass, klass->constants(), klass->methods(), CHECK);

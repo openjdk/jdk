@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,13 +67,11 @@
   template(CGC_Operation)                         \
   template(CMS_Initial_Mark)                      \
   template(CMS_Final_Remark)                      \
-  template(G1CollectFull)                         \
   template(G1CollectForAllocation)                \
-  template(G1IncCollectionPause)                  \
+  template(G1CollectFull)                         \
   template(HandshakeOneThread)                    \
   template(HandshakeAllThreads)                   \
   template(HandshakeFallback)                     \
-  template(DestroyAllocationContext)              \
   template(EnableBiasedLocking)                   \
   template(RevokeBias)                            \
   template(BulkRevokeBias)                        \
@@ -116,6 +114,7 @@
   template(ICBufferFull)                          \
   template(ScavengeMonitors)                      \
   template(PrintMetadata)                         \
+  template(GTestExecuteAtSafepoint)               \
 
 class VM_Operation: public CHeapObj<mtInternal> {
  public:
@@ -287,6 +286,17 @@ class VM_ScavengeMonitors: public VM_ForceSafepoint {
   bool is_cheap_allocated() const                { return true; }
 };
 
+// Base class for invoking parts of a gtest in a safepoint.
+// Derived classes provide the doit method.
+// Typically also need to transition the gtest thread from native to VM.
+class VM_GTestExecuteAtSafepoint: public VM_Operation {
+ public:
+  VMOp_Type type() const                         { return VMOp_GTestExecuteAtSafepoint; }
+
+ protected:
+  VM_GTestExecuteAtSafepoint() {}
+};
+
 class VM_Deoptimize: public VM_Operation {
  public:
   VM_Deoptimize() {}
@@ -449,7 +459,7 @@ class VM_Exit: public VM_Operation {
  private:
   int  _exit_code;
   static volatile bool _vm_exited;
-  static Thread * _shutdown_thread;
+  static Thread * volatile _shutdown_thread;
   static void wait_if_vm_exited();
  public:
   VM_Exit(int exit_code) {
@@ -458,6 +468,7 @@ class VM_Exit: public VM_Operation {
   static int wait_for_threads_in_native_to_block();
   static int set_vm_exited();
   static bool vm_exited()                      { return _vm_exited; }
+  static Thread * shutdown_thread()            { return _shutdown_thread; }
   static void block_if_vm_exited() {
     if (_vm_exited) {
       wait_if_vm_exited();

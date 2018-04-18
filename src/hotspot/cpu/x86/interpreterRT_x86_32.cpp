@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,16 @@
  */
 
 #include "precompiled.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/icache.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/signature.hpp"
 
 
@@ -39,6 +40,21 @@
 
 
 // Implementation of SignatureHandlerGenerator
+InterpreterRuntime::SignatureHandlerGenerator::SignatureHandlerGenerator(const methodHandle& method, CodeBuffer* buffer) :
+    NativeSignatureIterator(method) {
+  _masm = new MacroAssembler(buffer);
+#ifdef AMD64
+#ifdef _WIN64
+  _num_args = (method->is_static() ? 1 : 0);
+  _stack_offset = (Argument::n_int_register_parameters_c+1)* wordSize; // don't overwrite return address
+#else
+  _num_int_args = (method->is_static() ? 1 : 0);
+  _num_fp_args = 0;
+  _stack_offset = wordSize; // don't overwrite return address
+#endif // _WIN64
+#endif // AMD64
+}
+
 void InterpreterRuntime::SignatureHandlerGenerator::pass_int() {
   move(offset(), jni_offset() + 1);
 }

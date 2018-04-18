@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,18 @@
 
 package java.net;
 
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.FileDescriptor;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import sun.net.ConnectionResetException;
 import sun.net.NetHooks;
 import sun.net.ResourceManager;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Collections;
 
 /**
  * Default Socket Implementation. This implementation does
@@ -44,8 +45,7 @@ import java.util.Collections;
  *
  * @author  Steven B. Byrne
  */
-abstract class AbstractPlainSocketImpl extends SocketImpl
-{
+abstract class AbstractPlainSocketImpl extends SocketImpl {
     /* instance variable for SO_TIMEOUT */
     int timeout;   // timeout in millisec
     // traffic class
@@ -67,11 +67,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
     protected boolean closePending = false;
 
     /* indicates connection reset state */
-    private int CONNECTION_NOT_RESET = 0;
-    private int CONNECTION_RESET_PENDING = 1;
-    private int CONNECTION_RESET = 2;
-    private int resetState;
-    private final Object resetLock = new Object();
+    private volatile boolean connectionReset;
 
    /* whether this Socket is a stream (TCP) socket or not (UDP)
     */
@@ -136,6 +132,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
             fd = new FileDescriptor();
             try {
                 socketCreate(false);
+                SocketCleanable.register(fd);
             } catch (IOException ioe) {
                 ResourceManager.afterUdpClose();
                 fd = null;
@@ -144,6 +141,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
         } else {
             fd = new FileDescriptor();
             socketCreate(true);
+            SocketCleanable.register(fd);
         }
         if (socket != null)
             socket.setCreated();
@@ -538,18 +536,8 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
         int n = 0;
         try {
             n = socketAvailable();
-            if (n == 0 && isConnectionResetPending()) {
-                setConnectionReset();
-            }
         } catch (ConnectionResetException exc1) {
-            setConnectionResetPending();
-            try {
-                n = socketAvailable();
-                if (n == 0) {
-                    setConnectionReset();
-                }
-            } catch (ConnectionResetException exc2) {
-            }
+            setConnectionReset();
         }
         return n;
     }
@@ -643,14 +631,6 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
         socketSendUrgentData (data);
     }
 
-    /**
-     * Cleans up if the user forgets to close it.
-     */
-    @SuppressWarnings("deprecation")
-    protected void finalize() throws IOException {
-        close();
-    }
-
     /*
      * "Acquires" and returns the FileDescriptor for this impl
      *
@@ -685,31 +665,12 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
         }
     }
 
-    public boolean isConnectionReset() {
-        synchronized (resetLock) {
-            return (resetState == CONNECTION_RESET);
-        }
+    boolean isConnectionReset() {
+        return connectionReset;
     }
 
-    public boolean isConnectionResetPending() {
-        synchronized (resetLock) {
-            return (resetState == CONNECTION_RESET_PENDING);
-        }
-    }
-
-    public void setConnectionReset() {
-        synchronized (resetLock) {
-            resetState = CONNECTION_RESET;
-        }
-    }
-
-    public void setConnectionResetPending() {
-        synchronized (resetLock) {
-            if (resetState == CONNECTION_NOT_RESET) {
-                resetState = CONNECTION_RESET_PENDING;
-            }
-        }
-
+    void setConnectionReset() {
+        connectionReset = true;
     }
 
     /*
@@ -748,6 +709,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
      * Close the socket (and release the file descriptor).
      */
     protected void socketClose() throws IOException {
+        SocketCleanable.unregister(fd);
         socketClose0(false);
     }
 

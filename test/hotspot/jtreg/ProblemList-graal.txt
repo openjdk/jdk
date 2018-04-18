@@ -1,0 +1,75 @@
+#
+# Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+#############################################################################
+#
+# List of quarantined tests for testing in Graal JIT mode.
+#
+#############################################################################
+
+compiler/c2/cr7200264/TestSSE2IntVect.java                      8194958   generic-all
+compiler/c2/cr7200264/TestSSE4IntVect.java                      8194958   generic-all
+
+compiler/ciReplay/TestServerVM.java                             8181747   generic-all
+compiler/ciReplay/TestVMNoCompLevel.java                        8181747   generic-all
+
+compiler/compilercontrol/commandfile/LogTest.java               8181753   generic-all
+compiler/compilercontrol/commands/LogTest.java                  8181753   generic-all
+compiler/compilercontrol/directives/ExcludeTest.java            8181753   generic-all
+compiler/compilercontrol/jcmd/AddExcludeTest.java               8181753   generic-all
+compiler/compilercontrol/jcmd/AddLogTest.java                   8181753   generic-all
+compiler/compilercontrol/mixed/RandomValidCommandsTest.java     8181753   generic-all
+
+compiler/intrinsics/mathexact/LongMulOverflowTest.java          8196568   generic-all
+
+compiler/jvmci/SecurityRestrictionsTest.java                    8181837   generic-all
+
+compiler/jvmci/TestValidateModules.java                         8194942   generic-all
+gc/arguments/TestVerifyBeforeAndAfterGCFlags.java               8194942   generic-all
+
+compiler/unsafe/UnsafeGetConstantField.java                     8181833   generic-all
+compiler/unsafe/UnsafeGetStableArrayElement.java                8181833   generic-all
+compiler/unsafe/UnsafeOffHeapBooleanTest.java                   8181833   generic-all
+compiler/unsafe/UnsafeOnHeapBooleanTest.java                    8181833   generic-all
+
+compiler/whitebox/ClearMethodStateTest.java                     8181831   generic-all
+compiler/whitebox/EnqueueMethodForCompilationTest.java          8181831   generic-all
+compiler/whitebox/MakeMethodNotCompilableTest.java              8181831   generic-all
+
+gc/arguments/TestNewSizeFlags.java                              8196611   generic-all
+gc/g1/TestConcurrentSystemGC.java                               8196611   generic-all
+
+gc/g1/ihop/TestIHOPErgo.java                                    8191048   generic-all
+gc/g1/plab/TestPLABEvacuationFailure.java                       8191048   generic-all
+gc/g1/plab/TestPLABPromotion.java                               8191048   generic-all
+gc/g1/plab/TestPLABResize.java                                  8191048   generic-all
+
+gc/TestNUMAPageSize.java                                        8194949   generic-all
+
+runtime/ReservedStack/ReservedStackTestCompiler.java            8181855   generic-all
+
+serviceability/jvmti/GetModulesInfo/JvmtiGetAllModulesTest.java 8195156   generic-all
+
+compiler/compilercontrol/directives/LogTest.java                8181753   generic-all
+
+gc/g1/ihop/TestIHOPStatic.java                                  8199486   generic-all

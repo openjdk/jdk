@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,9 +33,10 @@
 #include "ci/ciInstance.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/barrierSet.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "nativeInst_s390.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "vmreg_s390.inline.hpp"
@@ -631,7 +632,7 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
   };
 
   // Index register is normally not supported, but for
-  // LIRGenerator::CardTableModRef_post_barrier we make an exception.
+  // LIRGenerator::CardTableBarrierSet_post_barrier we make an exception.
   if (type == T_BYTE && dest->as_address_ptr()->index()->is_valid()) {
     __ load_const_optimized(Z_R0_scratch, (int8_t)(c->as_jint()));
     store_offset = __ offset();
@@ -1895,6 +1896,15 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
   // If we don't know anything, just go through the generic arraycopy.
   if (default_type == NULL) {
+    address copyfunc_addr = StubRoutines::generic_arraycopy();
+
+    if (copyfunc_addr == NULL) {
+      // Take a slow path for generic arraycopy.
+      __ branch_optimized(Assembler::bcondAlways, *stub->entry());
+      __ bind(*stub->continuation());
+      return;
+    }
+
     Label done;
     // Save outgoing arguments in callee saved registers (C convention) in case
     // a call to System.arraycopy is needed.
@@ -1915,10 +1925,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     __ z_lgfr(dst_pos, dst_pos);
     __ z_lgfr(length, length);
 
-    address C_entry = CAST_FROM_FN_PTR(address, Runtime1::arraycopy);
-
-    address copyfunc_addr = StubRoutines::generic_arraycopy();
-
     // Pass arguments: may push as this is not a safepoint; SP must be fix at each safepoint.
 
     // The arguments are in the corresponding registers.
@@ -1927,25 +1933,19 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     assert(Z_ARG3 == dst,     "assumption");
     assert(Z_ARG4 == dst_pos, "assumption");
     assert(Z_ARG5 == length,  "assumption");
-    if (copyfunc_addr == NULL) { // Use C version if stub was not generated.
-      emit_call_c(C_entry);
-    } else {
 #ifndef PRODUCT
-      if (PrintC1Statistics) {
-        __ load_const_optimized(Z_R1_scratch, (address)&Runtime1::_generic_arraycopystub_cnt);
-        __ add2mem_32(Address(Z_R1_scratch), 1, Z_R0_scratch);
-      }
-#endif
-      emit_call_c(copyfunc_addr);
+    if (PrintC1Statistics) {
+      __ load_const_optimized(Z_R1_scratch, (address)&Runtime1::_generic_arraycopystub_cnt);
+      __ add2mem_32(Address(Z_R1_scratch), 1, Z_R0_scratch);
     }
+#endif
+    emit_call_c(copyfunc_addr);
     CHECK_BAILOUT();
 
     __ compare32_and_branch(Z_RET, (intptr_t)0, Assembler::bcondEqual, *stub->continuation());
 
-    if (copyfunc_addr != NULL) {
-      __ z_lgr(tmp, Z_RET);
-      __ z_xilf(tmp, -1);
-    }
+    __ z_lgr(tmp, Z_RET);
+    __ z_xilf(tmp, -1);
 
     // Restore values from callee saved registers so they are where the stub
     // expects them.
@@ -1955,11 +1955,9 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     __ lgr_if_needed(dst_pos, callee_saved_dst_pos);
     __ lgr_if_needed(length, callee_saved_length);
 
-    if (copyfunc_addr != NULL) {
-      __ z_sr(length, tmp);
-      __ z_ar(src_pos, tmp);
-      __ z_ar(dst_pos, tmp);
-    }
+    __ z_sr(length, tmp);
+    __ z_ar(src_pos, tmp);
+    __ z_ar(dst_pos, tmp);
     __ branch_optimized(Assembler::bcondAlways, *stub->entry());
 
     __ bind(*stub->continuation());
@@ -2715,7 +2713,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ciMethodData* md = method->method_data_or_null();
   assert(md != NULL, "Sanity");
   ciProfileData* data = md->bci_to_data(bci);
-  assert(data->is_CounterData(), "need CounterData for calls");
+  assert(data != NULL && data->is_CounterData(), "need CounterData for calls");
   assert(op->mdo()->is_single_cpu(),  "mdo must be allocated");
   Register mdo  = op->mdo()->as_register();
   assert(op->tmp1()->is_double_cpu(), "tmp1 must be allocated");

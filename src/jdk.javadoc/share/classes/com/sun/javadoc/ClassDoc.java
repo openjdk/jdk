@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,8 @@ package com.sun.javadoc;
  *   in the package {@code jdk.javadoc.doclet}.
  *   For more information, see the <i>Migration Guide</i> in the documentation for that package.
  */
-@Deprecated
+@Deprecated(since="9", forRemoval=true)
+@SuppressWarnings("removal")
 public interface ClassDoc extends ProgramElementDoc, Type {
 
     /**
@@ -200,7 +201,7 @@ public interface ClassDoc extends ProgramElementDoc, Type {
 
     /**
      * Return
-     * <a href="{@docRoot}/com/sun/javadoc/package-summary.html#included">included</a>
+     * <a href="{@docRoot}/jdk.javadoc/com/sun/javadoc/package-summary.html#included">included</a>
      * fields in this class or interface.
      * Excludes enum constants if this is an enum type.
      *
@@ -211,7 +212,7 @@ public interface ClassDoc extends ProgramElementDoc, Type {
 
     /**
      * Return fields in this class or interface, filtered to the specified
-     * <a href="{@docRoot}/com/sun/javadoc/package-summary.html#included">access
+     * <a href="{@docRoot}/jdk.javadoc/com/sun/javadoc/package-summary.html#included">access
      * modifier option</a>.
      * Excludes enum constants if this is an enum type.
      *
@@ -235,7 +236,7 @@ public interface ClassDoc extends ProgramElementDoc, Type {
 
     /**
      * Return
-     * <a href="{@docRoot}/com/sun/javadoc/package-summary.html#included">included</a>
+     * <a href="{@docRoot}/jdk.javadoc/com/sun/javadoc/package-summary.html#included">included</a>
      * methods in this class or interface.
      * Same as {@code methods(true)}.
      *
@@ -247,7 +248,7 @@ public interface ClassDoc extends ProgramElementDoc, Type {
 
     /**
      * Return methods in this class or interface, filtered to the specified
-     * <a href="{@docRoot}/com/sun/javadoc/package-summary.html#included">access
+     * <a href="{@docRoot}/jdk.javadoc/com/sun/javadoc/package-summary.html#included">access
      * modifier option</a>.  Does not include constructors or annotation
      *          type elements.
      *
@@ -263,7 +264,7 @@ public interface ClassDoc extends ProgramElementDoc, Type {
 
     /**
      * Return
-     * <a href="{@docRoot}/com/sun/javadoc/package-summary.html#included">included</a>
+     * <a href="{@docRoot}/jdk.javadoc/com/sun/javadoc/package-summary.html#included">included</a>
      * constructors in this class.  An array containing the default
      * no-arg constructor is returned if no other constructors exist.
      * Return empty array if this is an interface.
@@ -275,7 +276,7 @@ public interface ClassDoc extends ProgramElementDoc, Type {
 
     /**
      * Return constructors in this class, filtered to the specified
-     * <a href="{@docRoot}/com/sun/javadoc/package-summary.html#included">access
+     * <a href="{@docRoot}/jdk.javadoc/com/sun/javadoc/package-summary.html#included">access
      * modifier option</a>.  Return an array containing the default
      * no-arg constructor if no other constructors exist.
      *
@@ -291,7 +292,7 @@ public interface ClassDoc extends ProgramElementDoc, Type {
 
     /**
      * Return
-     * <a href="{@docRoot}/com/sun/javadoc/package-summary.html#included">included</a>
+     * <a href="{@docRoot}/jdk.javadoc/com/sun/javadoc/package-summary.html#included">included</a>
      * nested classes and interfaces within this class or interface.
      * This includes both static and non-static nested classes.
      * (This method should have been named {@code nestedClasses()},
@@ -306,7 +307,7 @@ public interface ClassDoc extends ProgramElementDoc, Type {
     /**
      * Return nested classes and interfaces within this class or interface
      * filtered to the specified
-     * <a href="{@docRoot}/com/sun/javadoc/package-summary.html#included">access
+     * <a href="{@docRoot}/jdk.javadoc/com/sun/javadoc/package-summary.html#included">access
      * modifier option</a>.
      * This includes both static and non-static nested classes.
      * Anonymous and local classes are not included.
@@ -341,7 +342,7 @@ public interface ClassDoc extends ProgramElementDoc, Type {
      *          should not be exposed here.  In addition, not all imported
      *          classes are imported through single-type-import declarations.
      */
-    @Deprecated
+    @Deprecated(since="9", forRemoval=true)
     ClassDoc[] importedClasses();
 
     /**
@@ -356,6 +357,6 @@ public interface ClassDoc extends ProgramElementDoc, Type {
      *          return type does not allow for all type-import-on-demand
      *          declarations to be returned.
      */
-    @Deprecated
+    @Deprecated(since="9", forRemoval=true)
     PackageDoc[] importedPackages();
 }

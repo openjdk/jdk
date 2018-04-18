@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,19 @@
  */
 
 /**
- * @see PublicKeyInterop.sh
+ * @test
+ * @bug 6888925 8180570
+ * @summary SunMSCAPI's Cipher can't use RSA public keys obtained from other sources.
+ * @requires os.family == "windows"
+ * @library /test/lib
+ * @modules java.base/sun.security.util
  */
 
 import java.security.*;
 import java.util.*;
 import javax.crypto.*;
 
+import jdk.test.lib.SecurityTools;
 import sun.security.util.HexDumpEncoder;
 
 /*
@@ -38,12 +44,31 @@ import sun.security.util.HexDumpEncoder;
 public class PublicKeyInterop {
 
     public static void main(String[] arg) throws Exception {
+
+        SecurityTools.keytool("-genkeypair",
+                "-storetype", "Windows-My",
+                "-keyalg", "RSA",
+                "-alias", "6888925",
+                "-dname", "cn=6888925,c=US",
+                "-noprompt").shouldHaveExitValue(0);
+
+        try {
+            run();
+        } finally {
+            KeyStore ks = KeyStore.getInstance("Windows-MY");
+            ks.load(null, null);
+            ks.deleteEntry("6888925");
+            ks.store(null, null);
+        }
+    }
+
+    static void run() throws Exception {
+
         KeyStore ks = KeyStore.getInstance("Windows-MY");
         ks.load(null, null);
         System.out.println("Loaded keystore: Windows-MY");
 
-        PublicKey myPuKey =
-            (PublicKey) ks.getCertificate("6888925").getPublicKey();
+        PublicKey myPuKey = ks.getCertificate("6888925").getPublicKey();
         System.out.println("Public key is a " + myPuKey.getClass().getName());
         PrivateKey myPrKey = (PrivateKey) ks.getKey("6888925", null);
         System.out.println("Private key is a " + myPrKey.getClass().getName());

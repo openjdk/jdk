@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,12 +106,6 @@ public:
   bool operator!=(const volatile oop o) const  { return obj() != o.obj(); }
   bool operator!=(void *p) const      { return obj() != p; }
 
-  bool operator<(oop o) const         { return obj() < o.obj(); }
-  bool operator>(oop o) const         { return obj() > o.obj(); }
-  bool operator<=(oop o) const        { return obj() <= o.obj(); }
-  bool operator>=(oop o) const        { return obj() >= o.obj(); }
-  bool operator!() const              { return !obj(); }
-
   // Assignment
   oop& operator=(const oop& o)                            { _o = o.obj(); return *this; }
   volatile oop& operator=(const oop& o) volatile          { _o = o.obj(); return *this; }
@@ -131,13 +125,6 @@ public:
 
   // from javaCalls.cpp
   operator jobject () const           { return (jobject)obj(); }
-  // from javaClasses.cpp
-  operator JavaThread* () const       { return (JavaThread*)obj(); }
-
-#ifndef _LP64
-  // from jvm.cpp
-  operator jlong* () const            { return (jlong*)obj(); }
-#endif
 
   // from parNewGeneration and other things that want to get to the end of
   // an oop for stuff (like ObjArrayKlass.cpp)
@@ -203,6 +190,10 @@ template <class T> inline oop cast_to_oop(T value) {
 }
 template <class T> inline T cast_from_oop(oop o) {
   return (T)(CHECK_UNHANDLED_OOPS_ONLY((void*))o);
+}
+
+inline bool check_obj_alignment(oop obj) {
+  return (cast_from_oop<intptr_t>(obj) & MinObjAlignmentInBytesMask) == 0;
 }
 
 // The metadata hierarchy is separate from the oop hierarchy

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class XRSolidSrcPict {
 
     public XRSurfaceData prepareSrcPict(int pixelVal) {
         if(pixelVal != curPixVal) {
-            xrCol.setColorValues(pixelVal, false);
+            xrCol.setColorValues(pixelVal);
             con.renderRectangle(srcPict.picture, XRUtils.PictOpSrc, xrCol, 0, 0, 1, 1);
             this.curPixVal = pixelVal;
         }

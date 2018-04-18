@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public:
   SerialHeap(GenCollectorPolicy* policy);
 
   virtual Name kind() const {
-    return CollectedHeap::SerialHeap;
+    return CollectedHeap::Serial;
   }
 
   virtual const char* name() const {
@@ -60,10 +60,6 @@ public:
   // override
   virtual bool is_in_closed_subset(const void* p) const {
     return is_in(p);
-  }
-
-  virtual bool card_mark_must_follow_store() const {
-    return false;
   }
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,32 +29,38 @@
 
 #if INCLUDE_ALL_GCS
 #define FOR_EACH_CONCRETE_INCLUDE_ALL_GC_BARRIER_SET_DO(f) \
-  f(CardTableExtension)                                    \
-  f(G1SATBCTLogging)
+  f(G1BarrierSet)
 #else
 #define FOR_EACH_CONCRETE_INCLUDE_ALL_GC_BARRIER_SET_DO(f)
 #endif
 
 // Do something for each concrete barrier set part of the build.
 #define FOR_EACH_CONCRETE_BARRIER_SET_DO(f)          \
-  f(CardTableForRS)                                  \
+  f(CardTableBarrierSet)                             \
   FOR_EACH_CONCRETE_INCLUDE_ALL_GC_BARRIER_SET_DO(f)
+
+#define FOR_EACH_ABSTRACT_BARRIER_SET_DO(f)          \
+  f(ModRef)
 
 // Do something for each known barrier set.
 #define FOR_EACH_BARRIER_SET_DO(f)    \
-  f(ModRef)                           \
-  f(CardTableModRef)                  \
-  f(CardTableForRS)                   \
-  f(CardTableExtension)               \
-  f(G1SATBCT)                         \
-  f(G1SATBCTLogging)
+  FOR_EACH_ABSTRACT_BARRIER_SET_DO(f) \
+  FOR_EACH_CONCRETE_BARRIER_SET_DO(f)
 
 // To enable runtime-resolution of GC barriers on primitives, please
 // define SUPPORT_BARRIER_ON_PRIMITIVES.
 #ifdef SUPPORT_BARRIER_ON_PRIMITIVES
-#define BT_BUILDTIME_DECORATORS INTERNAL_BT_BARRIER_ON_PRIMITIVES
+#define ACCESS_PRIMITIVE_SUPPORT INTERNAL_BT_BARRIER_ON_PRIMITIVES
 #else
-#define BT_BUILDTIME_DECORATORS INTERNAL_EMPTY
+#define ACCESS_PRIMITIVE_SUPPORT INTERNAL_EMPTY
 #endif
+
+#ifdef SUPPORT_NOT_TO_SPACE_INVARIANT
+#define ACCESS_TO_SPACE_INVARIANT_SUPPORT INTERNAL_EMPTY
+#else
+#define ACCESS_TO_SPACE_INVARIANT_SUPPORT INTERNAL_BT_TO_SPACE_INVARIANT
+#endif
+
+#define BT_BUILDTIME_DECORATORS (ACCESS_PRIMITIVE_SUPPORT | ACCESS_TO_SPACE_INVARIANT_SUPPORT)
 
 #endif // SHARE_VM_GC_SHARED_BARRIERSETCONFIG_HPP

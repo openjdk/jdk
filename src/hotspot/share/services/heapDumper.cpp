@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,20 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "gc/shared/vmGCOperations.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
@@ -48,9 +51,6 @@
 #include "services/threadService.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/parallel/parallelScavengeHeap.hpp"
-#endif // INCLUDE_ALL_GCS
 
 /*
  * HPROF binary format - description copied from:
@@ -649,7 +649,7 @@ class DumperSupport : AllStatic {
   // dump a jdouble
   static void dump_double(DumpWriter* writer, jdouble d);
   // dumps the raw value of the given field
-  static void dump_field_value(DumpWriter* writer, char type, address addr);
+  static void dump_field_value(DumpWriter* writer, char type, oop obj, int offset);
   // dumps static fields of the given class
   static void dump_static_fields(DumpWriter* writer, Klass* k);
   // dump the raw values of the instance fields of the given object
@@ -753,64 +753,59 @@ void DumperSupport::dump_double(DumpWriter* writer, jdouble d) {
 }
 
 // dumps the raw value of the given field
-void DumperSupport::dump_field_value(DumpWriter* writer, char type, address addr) {
+void DumperSupport::dump_field_value(DumpWriter* writer, char type, oop obj, int offset) {
   switch (type) {
     case JVM_SIGNATURE_CLASS :
     case JVM_SIGNATURE_ARRAY : {
-      oop o;
-      if (UseCompressedOops) {
-        o = oopDesc::load_decode_heap_oop((narrowOop*)addr);
-      } else {
-        o = oopDesc::load_decode_heap_oop((oop*)addr);
-      }
-
-      // reflection and Unsafe classes may have a reference to a
-      // Klass* so filter it out.
+      oop o = obj->obj_field_access<ON_UNKNOWN_OOP_REF>(offset);
       assert(oopDesc::is_oop_or_null(o), "Expected an oop or NULL at " PTR_FORMAT, p2i(o));
       writer->write_objectID(o);
       break;
     }
-    case JVM_SIGNATURE_BYTE     : {
-      jbyte* b = (jbyte*)addr;
-      writer->write_u1((u1)*b);
+    case JVM_SIGNATURE_BYTE : {
+      jbyte b = obj->byte_field(offset);
+      writer->write_u1((u1)b);
       break;
     }
-    case JVM_SIGNATURE_CHAR     : {
-      jchar* c = (jchar*)addr;
-      writer->write_u2((u2)*c);
+    case JVM_SIGNATURE_CHAR : {
+      jchar c = obj->char_field(offset);
+      writer->write_u2((u2)c);
       break;
     }
     case JVM_SIGNATURE_SHORT : {
-      jshort* s = (jshort*)addr;
-      writer->write_u2((u2)*s);
+      jshort s = obj->short_field(offset);
+      writer->write_u2((u2)s);
       break;
     }
     case JVM_SIGNATURE_FLOAT : {
-      jfloat* f = (jfloat*)addr;
-      dump_float(writer, *f);
+      jfloat f = obj->float_field(offset);
+      dump_float(writer, f);
       break;
     }
     case JVM_SIGNATURE_DOUBLE : {
-      jdouble* f = (jdouble*)addr;
-      dump_double(writer, *f);
+      jdouble d = obj->double_field(offset);
+      dump_double(writer, d);
       break;
     }
     case JVM_SIGNATURE_INT : {
-      jint* i = (jint*)addr;
-      writer->write_u4((u4)*i);
+      jint i = obj->int_field(offset);
+      writer->write_u4((u4)i);
       break;
     }
-    case JVM_SIGNATURE_LONG     : {
-      jlong* l = (jlong*)addr;
-      writer->write_u8((u8)*l);
+    case JVM_SIGNATURE_LONG : {
+      jlong l = obj->long_field(offset);
+      writer->write_u8((u8)l);
       break;
     }
     case JVM_SIGNATURE_BOOLEAN : {
-      jboolean* b = (jboolean*)addr;
-      writer->write_u1((u1)*b);
+      jboolean b = obj->bool_field(offset);
+      writer->write_u1((u1)b);
       break;
     }
-    default : ShouldNotReachHere();
+    default : {
+      ShouldNotReachHere();
+      break;
+    }
   }
 }
 
@@ -892,10 +887,7 @@ void DumperSupport::dump_static_fields(DumpWriter* writer, Klass* k) {
       writer->write_u1(sig2tag(sig));       // type
 
       // value
-      int offset = fld.offset();
-      address addr = (address)ik->java_mirror() + offset;
-
-      dump_field_value(writer, sig->byte_at(0), addr);
+      dump_field_value(writer, sig->byte_at(0), ik->java_mirror(), fld.offset());
     }
   }
 
@@ -931,9 +923,7 @@ void DumperSupport::dump_instance_fields(DumpWriter* writer, oop o) {
   for (FieldStream fld(ik, false, false); !fld.eos(); fld.next()) {
     if (!fld.access_flags().is_static()) {
       Symbol* sig = fld.signature();
-      address addr = (address)o + fld.offset();
-
-      dump_field_value(writer, sig->byte_at(0), addr);
+      dump_field_value(writer, sig->byte_at(0), o, fld.offset());
     }
   }
 }
@@ -1317,9 +1307,9 @@ class JNILocalsDumper : public OopClosure {
 
 
 void JNILocalsDumper::do_oop(oop* obj_p) {
-  // ignore null or deleted handles
+  // ignore null handles
   oop o = *obj_p;
-  if (o != NULL && o != JNIHandles::deleted_handle()) {
+  if (o != NULL) {
     writer()->write_u1(HPROF_GC_ROOT_JNI_LOCAL);
     writer()->write_objectID(o);
     writer()->write_u4(_thread_serial_num);
@@ -1347,7 +1337,7 @@ void JNIGlobalsDumper::do_oop(oop* obj_p) {
   oop o = *obj_p;
 
   // ignore these
-  if (o == NULL || o == JNIHandles::deleted_handle()) return;
+  if (o == NULL) return;
 
   // we ignore global ref to symbols and other internal objects
   if (o->is_instance() || o->is_objArray() || o->is_typeArray()) {
@@ -1422,9 +1412,6 @@ class HeapObjectDumper : public ObjectClosure {
 };
 
 void HeapObjectDumper::do_object(oop o) {
-  // hide the sentinel for deleted handles
-  if (o == JNIHandles::deleted_handle()) return;
-
   // skip classes as these emitted as HPROF_GC_CLASS_DUMP records
   if (o->klass() == SystemDictionary::Class_klass()) {
     if (!java_lang_Class::is_primitive(o)) {

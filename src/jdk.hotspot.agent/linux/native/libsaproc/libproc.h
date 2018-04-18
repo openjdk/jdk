@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,6 @@
 #include <unistd.h>
 #include <stdint.h>
 #include "proc_service.h"
-
-#ifdef ALT_SASRCDIR
-#include "libproc_md.h"
-#endif
 
 #include <sys/ptrace.h>
 
@@ -93,19 +89,23 @@ typedef int bool;
 struct ps_prochandle;
 
 // attach to a process
-struct ps_prochandle* Pgrab(pid_t pid, char* err_buf, size_t err_buf_len);
+JNIEXPORT struct ps_prochandle* JNICALL
+Pgrab(pid_t pid, char* err_buf, size_t err_buf_len);
 
 // attach to a core dump
-struct ps_prochandle* Pgrab_core(const char* execfile, const char* corefile);
+JNIEXPORT struct ps_prochandle* JNICALL
+Pgrab_core(const char* execfile, const char* corefile);
 
 // release a process or core
-void Prelease(struct ps_prochandle* ph);
+JNIEXPORT void JNICALL
+Prelease(struct ps_prochandle* ph);
 
 // functions not directly available in Solaris libproc
 
 // initialize libproc (call this only once per app)
 // pass true to make library verbose
-bool init_libproc(bool verbose);
+JNIEXPORT bool JNICALL
+init_libproc(bool verbose);
 
 // get number of threads
 int get_num_threads(struct ps_prochandle* ph);

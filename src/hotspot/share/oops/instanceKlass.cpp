@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
 #include "logging/logStream.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/metadataFactory.hpp"
@@ -124,8 +125,6 @@
 
 #endif //  ndef DTRACE_ENABLED
 
-volatile int InstanceKlass::_total_instanceKlass_count = 0;
-
 static inline bool is_class_loader(const Symbol* class_name,
                                    const ClassFileParser& parser) {
   assert(class_name != NULL, "invariant");
@@ -185,15 +184,6 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
   if (HAS_PENDING_EXCEPTION) {
     return NULL;
   }
-
-  assert(ik != NULL, "invariant");
-
-  const bool publicize = !parser.is_internal();
-
-  // Add all classes to our internal class loader list here,
-  // including classes in the bootstrap (NULL) class loader.
-  loader_data->add_class(ik, publicize);
-  Atomic::inc(&_total_instanceKlass_count);
 
   return ik;
 }
@@ -1022,6 +1012,10 @@ instanceOop InstanceKlass::allocate_instance(TRAPS) {
     i = register_finalizer(i, CHECK_NULL);
   }
   return i;
+}
+
+instanceHandle InstanceKlass::allocate_instance_handle(TRAPS) {
+  return instanceHandle(THREAD, allocate_instance(THREAD));
 }
 
 void InstanceKlass::check_valid_for_instantiation(bool throwError, TRAPS) {
@@ -1907,7 +1901,7 @@ void InstanceKlass::clean_weak_instanceklass_links(BoolObjectClosure* is_alive) 
 }
 
 void InstanceKlass::clean_implementors_list(BoolObjectClosure* is_alive) {
-  assert(class_loader_data()->is_alive(is_alive), "this klass should be live");
+  assert(class_loader_data()->is_alive(), "this klass should be live");
   if (is_interface()) {
     if (ClassUnloading) {
       Klass* impl = implementor();
@@ -2229,7 +2223,7 @@ void InstanceKlass::release_C_heap_structures() {
   }
 
   // deallocate the cached class file
-  if (_cached_class_file != NULL && !MetaspaceShared::is_in_shared_space(_cached_class_file)) {
+  if (_cached_class_file != NULL && !MetaspaceShared::is_in_shared_metaspace(_cached_class_file)) {
     os::free(_cached_class_file);
     _cached_class_file = NULL;
   }
@@ -2241,9 +2235,6 @@ void InstanceKlass::release_C_heap_structures() {
   // class can't be referenced anymore).
   if (_array_name != NULL)  _array_name->decrement_refcount();
   if (_source_debug_extension != NULL) FREE_C_HEAP_ARRAY(char, _source_debug_extension);
-
-  assert(_total_instanceKlass_count >= 1, "Sanity check");
-  Atomic::dec(&_total_instanceKlass_count);
 }
 
 void InstanceKlass::set_source_debug_extension(const char* array, int length) {
@@ -2263,11 +2254,6 @@ void InstanceKlass::set_source_debug_extension(const char* array, int length) {
     _source_debug_extension = sde;
   }
 }
-
-address InstanceKlass::static_field_addr(int offset) {
-  return (address)(offset + InstanceMirrorKlass::offset_of_static_fields() + cast_from_oop<intptr_t>(java_mirror()));
-}
-
 
 const char* InstanceKlass::signature_name() const {
   int hash_len = 0;
@@ -2415,7 +2401,7 @@ bool InstanceKlass::is_same_class_package(const Klass* class2) const {
   // and package entries. Both must be the same. This rule
   // applies even to classes that are defined in the unnamed
   // package, they still must have the same class loader.
-  if ((classloader1 == classloader2) && (classpkg1 == classpkg2)) {
+  if (oopDesc::equals(classloader1, classloader2) && (classpkg1 == classpkg2)) {
     return true;
   }
 
@@ -2426,7 +2412,7 @@ bool InstanceKlass::is_same_class_package(const Klass* class2) const {
 // and classname information is enough to determine a class's package
 bool InstanceKlass::is_same_class_package(oop other_class_loader,
                                           const Symbol* other_class_name) const {
-  if (class_loader() != other_class_loader) {
+  if (!oopDesc::equals(class_loader(), other_class_loader)) {
     return false;
   }
   if (name()->fast_compare(other_class_name) == 0) {
@@ -3224,7 +3210,7 @@ void InstanceKlass::collect_statistics(KlassSizeStats *sz) const {
 class VerifyFieldClosure: public OopClosure {
  protected:
   template <class T> void do_oop_work(T* p) {
-    oop obj = oopDesc::load_decode_heap_oop(p);
+    oop obj = RawAccess<>::oop_load(p);
     if (!oopDesc::is_oop_or_null(obj)) {
       tty->print_cr("Failed: " PTR_FORMAT " -> " PTR_FORMAT, p2i(p), p2i(obj));
       Universe::print_on(tty);
@@ -3421,6 +3407,9 @@ void JNIid::verify(Klass* holder) {
   }
 }
 
+oop InstanceKlass::holder_phantom() const {
+  return class_loader_data()->holder_phantom();
+}
 
 #ifdef ASSERT
 void InstanceKlass::set_init_state(ClassState state) {
@@ -3722,7 +3711,7 @@ Method* InstanceKlass::method_with_orig_idnum(int idnum, int version) {
 
 #if INCLUDE_JVMTI
 JvmtiCachedClassFileData* InstanceKlass::get_cached_class_file() {
-  if (MetaspaceShared::is_in_shared_space(_cached_class_file)) {
+  if (MetaspaceShared::is_in_shared_metaspace(_cached_class_file)) {
     // Ignore the archived class stream data
     return NULL;
   } else {
@@ -3744,7 +3733,7 @@ JvmtiCachedClassFileData* InstanceKlass::get_archived_class_data() {
     return _cached_class_file;
   } else {
     assert(this->is_shared(), "class should be shared");
-    if (MetaspaceShared::is_in_shared_space(_cached_class_file)) {
+    if (MetaspaceShared::is_in_shared_metaspace(_cached_class_file)) {
       return _cached_class_file;
     } else {
       return NULL;

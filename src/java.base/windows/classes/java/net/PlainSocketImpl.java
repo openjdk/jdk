@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,7 @@ import sun.security.action.GetPropertyAction;
  * @author Chris Hegarty
  */
 
-class PlainSocketImpl extends AbstractPlainSocketImpl
-{
+class PlainSocketImpl extends AbstractPlainSocketImpl {
     private AbstractPlainSocketImpl impl;
 
     /* java.net.preferIPv4Stack */
@@ -254,20 +253,12 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
         impl.releaseFD();
     }
 
-    public boolean isConnectionReset() {
+    boolean isConnectionReset() {
         return impl.isConnectionReset();
     }
 
-    public boolean isConnectionResetPending() {
-        return impl.isConnectionResetPending();
-    }
-
-    public void setConnectionReset() {
+    void setConnectionReset() {
         impl.setConnectionReset();
-    }
-
-    public void setConnectionResetPending() {
-        impl.setConnectionResetPending();
     }
 
     public boolean isClosedOrPending() {

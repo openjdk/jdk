@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -76,7 +75,7 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
      * @param mdle the module being documented
      */
     public static void generate(HtmlConfiguration configuration, ModuleElement mdle) throws DocFileIOException {
-        DocPath filename = DocPaths.moduleFrame(mdle);
+        DocPath filename = configuration.docPaths.moduleFrame(mdle);
         ModulePackageIndexFrameWriter modpackgen = new ModulePackageIndexFrameWriter(configuration, filename);
         modpackgen.buildModulePackagesIndexFile("doclet.Window_Overview", false, mdle);
     }
@@ -143,12 +142,12 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
         Content pkgLabel;
         if (!pkg.isUnnamed()) {
             pkgLabel = getPackageLabel(utils.getPackageName(pkg));
-            packageLinkContent = Links.createLink(pathString(pkg,
+            packageLinkContent = links.createLink(pathString(pkg,
                      DocPaths.PACKAGE_FRAME), pkgLabel, "",
                     "packageFrame");
         } else {
             pkgLabel = new StringContent("<unnamed package>");
-            packageLinkContent = Links.createLink(DocPaths.PACKAGE_FRAME,
+            packageLinkContent = links.createLink(DocPaths.PACKAGE_FRAME,
                     pkgLabel, "", "packageFrame");
         }
         Content li = HtmlTree.LI(packageLinkContent);
@@ -189,7 +188,10 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
      * @param ul the Content object to which the all classes link should be added
      */
     protected void addAllClassesLink(Content ul) {
-        Content linkContent = Links.createLink(DocPaths.ALLCLASSES_FRAME,
+        DocPath allClassesFrame = configuration.useModuleDirectories
+                ? DocPaths.DOT_DOT.resolve(DocPaths.ALLCLASSES_FRAME)
+                : DocPaths.ALLCLASSES_FRAME;
+        Content linkContent = links.createLink(allClassesFrame,
                 contents.allClassesLabel, "", "packageFrame");
         Content li = HtmlTree.LI(linkContent);
         ul.addContent(li);
@@ -202,7 +204,10 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
      * @param ul the Content object to which the all packages link should be added
      */
     protected void addAllPackagesLink(Content ul) {
-        Content linkContent = Links.createLink(DocPaths.OVERVIEW_FRAME,
+        DocPath overviewFrame = configuration.useModuleDirectories
+                ? DocPaths.DOT_DOT.resolve(DocPaths.OVERVIEW_FRAME)
+                : DocPaths.OVERVIEW_FRAME;
+        Content linkContent = links.createLink(overviewFrame,
                 contents.allPackagesLabel, "", "packageListFrame");
         Content li = HtmlTree.LI(linkContent);
         ul.addContent(li);
@@ -215,7 +220,10 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
      * @param ul the Content object to which the all modules link should be added
      */
     protected void addAllModulesLink(Content ul) {
-        Content linkContent = Links.createLink(DocPaths.MODULE_OVERVIEW_FRAME,
+        DocPath moduleOverviewFrame = configuration.useModuleDirectories
+                ? DocPaths.DOT_DOT.resolve(DocPaths.MODULE_OVERVIEW_FRAME)
+                : DocPaths.MODULE_OVERVIEW_FRAME;
+        Content linkContent = links.createLink(moduleOverviewFrame,
                 contents.allModulesLabel, "", "packageListFrame");
         Content li = HtmlTree.LI(linkContent);
         ul.addContent(li);

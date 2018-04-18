@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,7 +188,7 @@ import java.util.stream.StreamSupport;
  * unmodifiable view, the view can be considered effectively immutable.
  *
  * <p>This interface is a member of the
- * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
+ * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @implSpec
@@ -247,10 +247,10 @@ public interface Collection<E> extends Iterable<E> {
      *         element
      * @throws ClassCastException if the type of the specified element
      *         is incompatible with this collection
-     *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
+     *         (<a href="{@docRoot}/java.base/java/util/Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified element is null and this
      *         collection does not permit null elements
-     *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
+     *         (<a href="{@docRoot}/java.base/java/util/Collection.html#optional-restrictions">optional</a>)
      */
     boolean contains(Object o);
 
@@ -379,10 +379,10 @@ public interface Collection<E> extends Iterable<E> {
      * @return {@code true} if an element was removed as a result of this call
      * @throws ClassCastException if the type of the specified element
      *         is incompatible with this collection
-     *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
+     *         (<a href="{@docRoot}/java.base/java/util/Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified element is null and this
      *         collection does not permit null elements
-     *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
+     *         (<a href="{@docRoot}/java.base/java/util/Collection.html#optional-restrictions">optional</a>)
      * @throws UnsupportedOperationException if the {@code remove} operation
      *         is not supported by this collection
      */
@@ -401,11 +401,11 @@ public interface Collection<E> extends Iterable<E> {
      * @throws ClassCastException if the types of one or more elements
      *         in the specified collection are incompatible with this
      *         collection
-     *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
+     *         (<a href="{@docRoot}/java.base/java/util/Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified collection contains one
      *         or more null elements and this collection does not permit null
      *         elements
-     *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>),
+     *         (<a href="{@docRoot}/java.base/java/util/Collection.html#optional-restrictions">optional</a>),
      *         or if the specified collection is null.
      * @see    #contains(Object)
      */
@@ -451,11 +451,11 @@ public interface Collection<E> extends Iterable<E> {
      * @throws ClassCastException if the types of one or more elements
      *         in this collection are incompatible with the specified
      *         collection
-     *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
+     *         (<a href="{@docRoot}/java.base/java/util/Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if this collection contains one or more
      *         null elements and the specified collection does not support
      *         null elements
-     *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>),
+     *         (<a href="{@docRoot}/java.base/java/util/Collection.html#optional-restrictions">optional</a>),
      *         or if the specified collection is null
      * @see #remove(Object)
      * @see #contains(Object)
@@ -510,11 +510,11 @@ public interface Collection<E> extends Iterable<E> {
      * @throws ClassCastException if the types of one or more elements
      *         in this collection are incompatible with the specified
      *         collection
-     *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
+     *         (<a href="{@docRoot}/java.base/java/util/Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if this collection contains one or more
      *         null elements and the specified collection does not permit null
      *         elements
-     *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>),
+     *         (<a href="{@docRoot}/java.base/java/util/Collection.html#optional-restrictions">optional</a>),
      *         or if the specified collection is null
      * @see #remove(Object)
      * @see #contains(Object)

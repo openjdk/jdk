@@ -77,7 +77,7 @@ public class ModulesAndClassPathTest extends ModuleTestBase {
                                 .writeAll()
                                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        List<String> expected = Arrays.asList("Impl.java:1:38: compiler.err.doesnt.exist: api",
+        List<String> expected = Arrays.asList("Impl.java:1:35: compiler.err.package.not.visible: api, (compiler.misc.not.def.access.does.not.read.unnamed: api, m)",
                                               "1 error");
 
         if (!expected.equals(modLog)) {
@@ -129,7 +129,7 @@ public class ModulesAndClassPathTest extends ModuleTestBase {
                                 .writeAll()
                                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        List<String> expected = Arrays.asList("Impl.java:1:38: compiler.err.doesnt.exist: api",
+        List<String> expected = Arrays.asList("Impl.java:1:35: compiler.err.package.not.visible: api, (compiler.misc.not.def.access.does.not.read.unnamed: api, m)",
                                               "1 error");
 
         if (!expected.equals(modLog)) {
@@ -170,7 +170,7 @@ public class ModulesAndClassPathTest extends ModuleTestBase {
                                 .writeAll()
                                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        List<String> expected = Arrays.asList("Impl.java:1:38: compiler.err.doesnt.exist: api",
+        List<String> expected = Arrays.asList("Impl.java:1:35: compiler.err.package.not.visible: api, (compiler.misc.not.def.access.does.not.read.unnamed: api, m)",
                                               "1 error");
 
         if (!expected.equals(modLog)) {

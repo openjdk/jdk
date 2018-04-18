@@ -61,7 +61,7 @@ import sun.swing.SwingUtilities2;
  * <p>
  * <b>NOTE:</b>We have implemented a faster scrolling algorithm that
  * does not require a buffer to draw in. The algorithm works as follows:
- * <ol><li>The view and parent view and checked to see if they are
+ * <ol><li>The view and parent view are checked to see if they are
  * <code>JComponents</code>,
  * if they aren't, stop and repaint the whole viewport.
  * <li>If the viewport is obscured by an ancestor, stop and repaint the whole

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_OOPS_KLASSVTABLE_HPP
 #define SHARE_VM_OOPS_KLASSVTABLE_HPP
 
-#include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/growableArray.hpp"
@@ -41,7 +40,7 @@
 
 class vtableEntry;
 
-class klassVtable VALUE_OBJ_CLASS_SPEC {
+class klassVtable {
   Klass*       _klass;            // my klass
   int          _tableOffset;      // offset of start of vtable data within klass
   int          _length;           // length of vtable (number of entries)
@@ -144,21 +143,24 @@ class klassVtable VALUE_OBJ_CLASS_SPEC {
   bool is_miranda_entry_at(int i);
   int fill_in_mirandas(int initialized);
   static bool is_miranda(Method* m, Array<Method*>* class_methods,
-                         Array<Method*>* default_methods, const Klass* super);
+                         Array<Method*>* default_methods, const Klass* super,
+                         bool is_interface);
   static void add_new_mirandas_to_lists(
       GrowableArray<Method*>* new_mirandas,
       GrowableArray<Method*>* all_mirandas,
       Array<Method*>* current_interface_methods,
       Array<Method*>* class_methods,
       Array<Method*>* default_methods,
-      const Klass* super);
+      const Klass* super,
+      bool is_interface);
   static void get_mirandas(
       GrowableArray<Method*>* new_mirandas,
       GrowableArray<Method*>* all_mirandas,
       const Klass* super,
       Array<Method*>* class_methods,
       Array<Method*>* default_methods,
-      Array<Klass*>* local_interfaces);
+      Array<Klass*>* local_interfaces,
+      bool is_interface);
   void verify_against(outputStream* st, klassVtable* vt, int index);
   inline InstanceKlass* ik() const;
   // When loading a class from CDS archive at run time, and no class redefintion
@@ -185,7 +187,7 @@ class klassVtable VALUE_OBJ_CLASS_SPEC {
 //    destination is compiled:
 //      from_compiled_code_entry_point -> nmethod entry point
 //      from_interpreter_entry_point   -> i2cadapter
-class vtableEntry VALUE_OBJ_CLASS_SPEC {
+class vtableEntry {
   friend class VMStructs;
   friend class JVMCIVMStructs;
 
@@ -231,7 +233,7 @@ inline Method** klassVtable::adr_method_at(int i) const {
 class klassItable;
 class itableMethodEntry;
 
-class itableOffsetEntry VALUE_OBJ_CLASS_SPEC {
+class itableOffsetEntry {
  private:
   Klass* _interface;
   int      _offset;
@@ -254,7 +256,7 @@ class itableOffsetEntry VALUE_OBJ_CLASS_SPEC {
 };
 
 
-class itableMethodEntry VALUE_OBJ_CLASS_SPEC {
+class itableMethodEntry {
  private:
   Method* _method;
 
@@ -291,7 +293,7 @@ class itableMethodEntry VALUE_OBJ_CLASS_SPEC {
 //    -- vtable for interface 2 ---
 //    ...
 //
-class klassItable VALUE_OBJ_CLASS_SPEC {
+class klassItable {
  private:
   InstanceKlass*       _klass;             // my klass
   int                  _table_offset;      // offset of start of itable data within klass (in words)

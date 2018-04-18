@@ -33,6 +33,7 @@ import java.awt.geom.AffineTransform;
 /*
  * @test
  * @bug 8069361
+ * @key headful
  * @summary SunGraphics2D.getDefaultTransform() does not include scale factor
  * @author Alexander Scherbatiy
  * @run main ScaledTransform

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @requires vm.compMode != "Xcomp"
  * @modules java.base/jdk.internal.misc
  *          java.base/sun.security.x509
- *          java.activation
  * @library /test/lib /lib/testlibrary modules
  * @build IllegalAccessTest TryAccess JarUtils
  *        jdk.test.lib.compiler.CompilerUtils
@@ -267,24 +266,6 @@ public class IllegalAccessTest {
         run(action, expectedResult, "--illegal-access=debug");
     }
 
-    /**
-     * Test accessing internals of upgradeable module
-     */
-    public void testWithUpgradedModule() throws Exception {
-        // upgradeable module loaded from run-time image
-        run("setAccessibleNotPublicMemberUpgradeableModule", successWithWarning(),
-                "--add-modules=java.activation");
-
-        // upgradeable module loaded from upgrade module path
-        Path upgradesrc = Paths.get(TEST_SRC, "upgradesrc");
-        Path upgrademods = Files.createDirectory(Paths.get("upgrademods"));
-        Path output = upgrademods.resolve("java.activation");
-        assertTrue(CompilerUtils.compile(upgradesrc, output));
-        run("setAccessibleNotPublicMemberUpgradeableModule",
-                fail("InaccessibleObjectException"),
-                "--upgrade-module-path=" + upgrademods,
-                "--add-modules=java.activation");
-    }
 
     /**
      * Specify --add-exports to export a package

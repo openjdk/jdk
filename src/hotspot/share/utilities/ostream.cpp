@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "compiler/compileLog.hpp"
+#include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
@@ -96,19 +97,14 @@ const char* outputStream::do_vsnprintf(char* buffer, size_t buflen,
     result_len = strlen(result);
     if (add_cr && result_len >= buflen)  result_len = buflen-1;  // truncate
   } else {
-    // Handle truncation:
-    // posix: upon truncation, vsnprintf returns number of bytes which
-    //   would have been written (excluding terminating zero) had the buffer
-    //   been large enough
-    // windows: upon truncation, vsnprintf returns -1
-    const int written = vsnprintf(buffer, buflen, format, ap);
+    int written = os::vsnprintf(buffer, buflen, format, ap);
+    assert(written >= 0, "vsnprintf encoding error");
     result = buffer;
-    if (written < (int) buflen && written >= 0) {
+    if ((size_t)written < buflen) {
       result_len = written;
     } else {
       DEBUG_ONLY(warning("increase O_BUFLEN in ostream.hpp -- output truncated");)
       result_len = buflen - 1;
-      buffer[result_len] = 0;
     }
   }
   if (add_cr) {
@@ -947,18 +943,11 @@ void ostream_exit() {
     delete classlist_file;
   }
 #endif
-  {
-      // we temporaly disable PrintMallocFree here
-      // as otherwise it'll lead to using of almost deleted
-      // tty or defaultStream::instance in logging facility
-      // of HeapFree(), see 6391258
-      DEBUG_ONLY(FlagSetting fs(PrintMallocFree, false);)
-      if (tty != defaultStream::instance) {
-          delete tty;
-      }
-      if (defaultStream::instance != NULL) {
-          delete defaultStream::instance;
-      }
+  if (tty != defaultStream::instance) {
+    delete tty;
+  }
+  if (defaultStream::instance != NULL) {
+    delete defaultStream::instance;
   }
   tty = NULL;
   xtty = NULL;
@@ -1038,6 +1027,8 @@ bufferedStream::~bufferedStream() {
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#elif defined(_WINDOWS)
+#include <winsock2.h>
 #endif
 
 // Network access

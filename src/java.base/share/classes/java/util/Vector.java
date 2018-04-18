@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package java.util;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.StreamCorruptedException;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
@@ -70,7 +73,7 @@ import java.util.function.UnaryOperator;
  *
  * <p>As of the Java 2 platform v1.2, this class was retrofitted to
  * implement the {@link List} interface, making it a member of the
- * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
+ * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.  Unlike the new collection
  * implementations, {@code Vector} is synchronized.  If a thread-safe
  * implementation is not needed, it is recommended to use {@link
@@ -1023,7 +1026,6 @@ public class Vector<E>
                     setBit(deathRow, i - beg);
             if (modCount != expectedModCount)
                 throw new ConcurrentModificationException();
-            expectedModCount++;
             modCount++;
             int w = beg;
             for (i = beg; i < end; i++)
@@ -1167,6 +1169,29 @@ public class Vector<E>
         System.arraycopy(es, hi, es, lo, elementCount - hi);
         for (int to = elementCount, i = (elementCount -= hi - lo); i < to; i++)
             es[i] = null;
+    }
+
+    /**
+     * Loads a {@code Vector} instance from a stream
+     * (that is, deserializes it).
+     * This method performs checks to ensure the consistency
+     * of the fields.
+     *
+     * @param in the stream
+     * @throws java.io.IOException if an I/O error occurs
+     * @throws ClassNotFoundException if the stream contains data
+     *         of a non-existing class
+     */
+    private void readObject(ObjectInputStream in)
+            throws IOException, ClassNotFoundException {
+        ObjectInputStream.GetField gfields = in.readFields();
+        int count = gfields.get("elementCount", 0);
+        Object[] data = (Object[])gfields.get("elementData", null);
+        if (count < 0 || data == null || count > data.length) {
+            throw new StreamCorruptedException("Inconsistent vector internals");
+        }
+        elementCount = count;
+        elementData = data.clone();
     }
 
     /**

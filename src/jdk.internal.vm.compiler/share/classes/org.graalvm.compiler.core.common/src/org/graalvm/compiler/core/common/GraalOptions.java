@@ -233,6 +233,9 @@ public final class GraalOptions {
     public static final OptionKey<Boolean> OptScheduleOutOfLoops = new OptionKey<>(true);
 
     @Option(help = "", type = OptionType.Debug)
+    public static final OptionKey<Boolean> GuardPriorities = new OptionKey<>(true);
+
+    @Option(help = "", type = OptionType.Debug)
     public static final OptionKey<Boolean> OptEliminateGuards = new OptionKey<>(true);
 
     @Option(help = "", type = OptionType.Debug)
@@ -256,6 +259,9 @@ public final class GraalOptions {
     @Option(help = "", type = OptionType.Debug)
     public static final OptionKey<Boolean> OptDevirtualizeInvokesOptimistically = new OptionKey<>(true);
 
+    @Option(help = "Track the NodeSourcePosition.", type = OptionType.Debug)
+    public static final OptionKey<Boolean> TrackNodeSourcePosition = new OptionKey<>(false);
+
     @Option(help = "Allow backend to match complex expressions.", type = OptionType.Debug)
     public static final OptionKey<Boolean> MatchExpressions = new OptionKey<>(true);
 
@@ -270,5 +276,7 @@ public final class GraalOptions {
 
     @Option(help = "Enable experimental Trace Register Allocation.", type = OptionType.Debug)
     public static final OptionKey<Boolean> TraceRA = new OptionKey<>(false);
+    @Option(help = "Enable tracing of inlining decision.", type = OptionType.Debug)
+    public static final OptionKey<Boolean> TraceInlining = new OptionKey<>(false);
 
 }

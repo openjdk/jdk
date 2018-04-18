@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @summary the class in the -cp is a subclass of the class in --patch-module. The
  *          patched class should be used at runtime.
  * @library ../..
@@ -88,18 +88,17 @@ public class SubClassOfPatchedClass {
                 "--patch-module=java.naming=" + moduleJar,
                 "-Xlog:class+load",
                 "PatchMain", "javax.naming.Reference", "mypackage.MyReference");
-        TestCommon.checkDump(output, "Loading classes to share");
+        output.shouldHaveExitValue(1)
+              .shouldContain("Cannot use the following option when dumping the shared archive: --patch-module");
 
         String classPath = appJar + File.pathSeparator + classDir;
         System.out.println("classPath: " + classPath);
-        output = TestCommon.execCommon(
+        TestCommon.run(
             "-XX:+UnlockDiagnosticVMOptions",
             "-cp", classPath,
             "--patch-module=java.naming=" + moduleJar,
             "-Xlog:class+load",
-            "PatchMain", "javax.naming.Reference", "mypackage.MyReference");
-        TestCommon.checkExec(output,
-            "I pass!",
-            "MyReference source: file:");
+            "PatchMain", "javax.naming.Reference", "mypackage.MyReference")
+            .assertSilentlyDisabledCDS(0, "MyReference source: file:", "I pass!");
     }
 }

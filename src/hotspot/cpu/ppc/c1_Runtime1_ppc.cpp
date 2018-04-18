@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,9 @@
 #include "c1/c1_Defs.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
+#include "ci/ciUtilities.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_ppc.hpp"
 #include "oops/compiledICHolder.hpp"
@@ -40,7 +43,9 @@
 #include "utilities/macros.hpp"
 #include "vmreg_ppc.inline.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc/g1/g1BarrierSet.hpp"
+#include "gc/g1/g1CardTable.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #endif
 
 // Implementation of StubAssembler
@@ -413,34 +418,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           assert(id == fast_new_instance_init_check_id, "bad StubID");
           __ set_info("fast new_instance init check", dont_gc_arguments);
         }
+
         // We don't support eden allocation.
-//        if ((id == fast_new_instance_id || id == fast_new_instance_init_check_id) &&
-//            UseTLAB && FastTLABRefill) {
-//          if (id == fast_new_instance_init_check_id) {
-//            // make sure the klass is initialized
-//            __ lbz(R0, in_bytes(InstanceKlass::init_state_offset()), R3_ARG1);
-//            __ cmpwi(CCR0, R0, InstanceKlass::fully_initialized);
-//            __ bne(CCR0, slow_path);
-//          }
-//#ifdef ASSERT
-//          // assert object can be fast path allocated
-//          {
-//            Label ok, not_ok;
-//          __ lwz(R0, in_bytes(Klass::layout_helper_offset()), R3_ARG1);
-//          // make sure it's an instance (LH > 0)
-//          __ cmpwi(CCR0, R0, 0);
-//          __ ble(CCR0, not_ok);
-//          __ testbitdi(CCR0, R0, R0, Klass::_lh_instance_slow_path_bit);
-//          __ beq(CCR0, ok);
-//
-//          __ bind(not_ok);
-//          __ stop("assert(can be fast path allocated)");
-//          __ bind(ok);
-//          }
-//#endif // ASSERT
-//          // We don't support eden allocation.
-//          __ bind(slow_path);
-//        }
+
         oop_maps = generate_stub_call(sasm, R3_RET, CAST_FROM_FN_PTR(address, new_instance), R4_ARG2);
       }
       break;
@@ -731,8 +711,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 #if INCLUDE_ALL_GCS
     case g1_pre_barrier_slow_id:
       {
-        BarrierSet* bs = Universe::heap()->barrier_set();
-        if (bs->kind() != BarrierSet::G1SATBCTLogging) {
+        BarrierSet* bs = BarrierSet::barrier_set();
+        if (bs->kind() != BarrierSet::G1BarrierSet) {
           goto unimplemented_entry;
         }
 
@@ -745,15 +725,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Register tmp2 = R15;
 
         Label refill, restart, marking_not_active;
-        int satb_q_active_byte_offset =
-          in_bytes(JavaThread::satb_mark_queue_offset() +
-                   SATBMarkQueue::byte_offset_of_active());
-        int satb_q_index_byte_offset =
-          in_bytes(JavaThread::satb_mark_queue_offset() +
-                   SATBMarkQueue::byte_offset_of_index());
-        int satb_q_buf_byte_offset =
-          in_bytes(JavaThread::satb_mark_queue_offset() +
-                   SATBMarkQueue::byte_offset_of_buf());
+        int satb_q_active_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset());
+        int satb_q_index_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset());
+        int satb_q_buf_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset());
 
         // Spill
         __ std(tmp, -16, R1_SP);
@@ -808,8 +782,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
   case g1_post_barrier_slow_id:
     {
-        BarrierSet* bs = Universe::heap()->barrier_set();
-        if (bs->kind() != BarrierSet::G1SATBCTLogging) {
+        BarrierSet* bs = BarrierSet::barrier_set();
+        if (bs->kind() != BarrierSet::G1BarrierSet) {
           goto unimplemented_entry;
         }
 
@@ -820,7 +794,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Register tmp = R0;
         Register addr = R14;
         Register tmp2 = R15;
-        jbyte* byte_map_base = ((CardTableModRefBS*)bs)->byte_map_base;
+        jbyte* byte_map_base = ci_card_table_address();
 
         Label restart, refill, ret;
 
@@ -828,34 +802,30 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ std(addr, -8, R1_SP);
         __ std(tmp2, -16, R1_SP);
 
-        __ srdi(addr, R0, CardTableModRefBS::card_shift); // Addr is passed in R0.
+        __ srdi(addr, R0, CardTable::card_shift); // Addr is passed in R0.
         __ load_const_optimized(/*cardtable*/ tmp2, byte_map_base, tmp);
         __ add(addr, tmp2, addr);
         __ lbz(tmp, 0, addr); // tmp := [addr + cardtable]
 
         // Return if young card.
-        __ cmpwi(CCR0, tmp, G1SATBCardTableModRefBS::g1_young_card_val());
+        __ cmpwi(CCR0, tmp, G1CardTable::g1_young_card_val());
         __ beq(CCR0, ret);
 
         // Return if sequential consistent value is already dirty.
         __ membar(Assembler::StoreLoad);
         __ lbz(tmp, 0, addr); // tmp := [addr + cardtable]
 
-        __ cmpwi(CCR0, tmp, G1SATBCardTableModRefBS::dirty_card_val());
+        __ cmpwi(CCR0, tmp, G1CardTable::dirty_card_val());
         __ beq(CCR0, ret);
 
         // Not dirty.
 
         // First, dirty it.
-        __ li(tmp, G1SATBCardTableModRefBS::dirty_card_val());
+        __ li(tmp, G1CardTable::dirty_card_val());
         __ stb(tmp, 0, addr);
 
-        int dirty_card_q_index_byte_offset =
-          in_bytes(JavaThread::dirty_card_queue_offset() +
-                   DirtyCardQueue::byte_offset_of_index());
-        int dirty_card_q_buf_byte_offset =
-          in_bytes(JavaThread::dirty_card_queue_offset() +
-                   DirtyCardQueue::byte_offset_of_buf());
+        int dirty_card_q_index_byte_offset = in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset());
+        int dirty_card_q_buf_byte_offset = in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset());
 
         __ bind(restart);
 

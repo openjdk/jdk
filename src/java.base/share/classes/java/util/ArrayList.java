@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ import jdk.internal.misc.SharedSecrets;
  * should be used only to detect bugs.</i>
  *
  * <p>This class is a member of the
- * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
+ * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @param <E> the type of elements in this list
@@ -1143,6 +1143,23 @@ public class ArrayList<E> extends AbstractList<E>
             return modified;
         }
 
+        public Object[] toArray() {
+            checkForComodification();
+            return Arrays.copyOfRange(root.elementData, offset, offset + size);
+        }
+
+        @SuppressWarnings("unchecked")
+        public <T> T[] toArray(T[] a) {
+            checkForComodification();
+            if (a.length < size)
+                return (T[]) Arrays.copyOfRange(
+                        root.elementData, offset, offset + size, a.getClass());
+            System.arraycopy(root.elementData, offset, a, 0, size);
+            if (a.length > size)
+                a[size] = null;
+            return a;
+        }
+
         public Iterator<E> iterator() {
             return listIterator();
         }
@@ -1550,7 +1567,6 @@ public class ArrayList<E> extends AbstractList<E>
                     setBit(deathRow, i - beg);
             if (modCount != expectedModCount)
                 throw new ConcurrentModificationException();
-            expectedModCount++;
             modCount++;
             int w = beg;
             for (i = beg; i < end; i++)

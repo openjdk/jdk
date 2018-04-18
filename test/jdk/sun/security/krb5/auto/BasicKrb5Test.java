@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,44 +23,62 @@
 
 /*
  * @test
- * @bug 6706974
+ * @bug 6706974 8014628 8194486
  * @summary Add krb5 test infrastructure
+ * @library /test/lib
  * @compile -XDignore.symbol.file BasicKrb5Test.java
- * @run main/othervm BasicKrb5Test
- * @run main/othervm BasicKrb5Test des-cbc-crc
- * @run main/othervm BasicKrb5Test des-cbc-md5
- * @run main/othervm BasicKrb5Test des3-cbc-sha1
- * @run main/othervm BasicKrb5Test aes128-cts
- * @run main/othervm BasicKrb5Test aes256-cts
- * @run main/othervm BasicKrb5Test rc4-hmac
- * @run main/othervm BasicKrb5Test -s
- * @run main/othervm BasicKrb5Test des-cbc-crc -s
- * @run main/othervm BasicKrb5Test des-cbc-md5 -s
- * @run main/othervm BasicKrb5Test des3-cbc-sha1 -s
- * @run main/othervm BasicKrb5Test aes128-cts -s
- * @run main/othervm BasicKrb5Test aes256-cts -s
- * @run main/othervm BasicKrb5Test rc4-hmac -s
- * @run main/othervm BasicKrb5Test -C
- * @run main/othervm BasicKrb5Test des-cbc-crc -C
- * @run main/othervm BasicKrb5Test des-cbc-md5 -C
- * @run main/othervm BasicKrb5Test des3-cbc-sha1 -C
- * @run main/othervm BasicKrb5Test aes128-cts -C
- * @run main/othervm BasicKrb5Test aes256-cts -C
- * @run main/othervm BasicKrb5Test rc4-hmac -C
- * @run main/othervm BasicKrb5Test -s -C
- * @run main/othervm BasicKrb5Test des-cbc-crc -s -C
- * @run main/othervm BasicKrb5Test des-cbc-md5 -s -C
- * @run main/othervm BasicKrb5Test des3-cbc-sha1 -s -C
- * @run main/othervm BasicKrb5Test aes128-cts -s -C
- * @run main/othervm BasicKrb5Test aes256-cts -s -C
- * @run main/othervm BasicKrb5Test rc4-hmac -s -C
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test des-cbc-crc
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test des-cbc-md5
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test des3-cbc-sha1
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test aes128-sha1
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test aes256-sha1
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test aes128-sha2
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test aes256-sha2
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test rc4-hmac
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test -s
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test des-cbc-crc -s
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test des-cbc-md5 -s
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test
+ *                   des3-cbc-sha1 -s
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test aes128-sha1 -s
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test aes256-sha1 -s
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test aes128-sha2 -s
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test aes256-sha2 -s
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test rc4-hmac -s
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test -C
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test des-cbc-crc -C
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test des-cbc-md5 -C
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test
+ *                   des3-cbc-sha1 -C
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test aes128-sha1 -C
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test aes256-sha1 -C
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test aes128-sha2 -C
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test aes256-sha2 -C
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test rc4-hmac -C
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test -s -C
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test
+ *                   des-cbc-crc -s -C
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test
+ *                   des-cbc-md5 -s -C
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test
+ *                   des3-cbc-sha1 -s -C
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test
+ *                   aes128-sha1 -s -C
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test
+ *                   aes256-sha1 -s -C
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test
+ *                   aes128-sha2 -s -C
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test
+ *                   aes256-sha2 -s -C
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicKrb5Test
+ *                   rc4-hmac -s -C
  */
 
 import org.ietf.jgss.GSSName;
 import sun.security.jgss.GSSUtil;
-import sun.security.krb5.Config;
 import sun.security.krb5.KrbException;
-import sun.security.krb5.internal.crypto.EType;
 
 /**
  * Basic JGSS/krb5 test with 3 parties: client, server, backend server. Each

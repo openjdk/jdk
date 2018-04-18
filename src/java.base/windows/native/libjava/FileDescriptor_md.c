@@ -56,11 +56,6 @@ Java_java_io_FileDescriptor_initIDs(JNIEnv *env, jclass fdClass) {
     CHECK_NULL(IO_append_fdID = (*env)->GetFieldID(env, fdClass, "append", "Z"));
 }
 
-JNIEXPORT jlong JNICALL
-Java_java_io_FileDescriptor_getHandle(JNIEnv *env, jclass fdClass, jint fd) {
-    SET_HANDLE(fd);
-}
-
 /**************************************************************
  * File Descriptor
  */
@@ -73,17 +68,27 @@ Java_java_io_FileDescriptor_sync(JNIEnv *env, jobject this) {
     }
 }
 
-JNIEXPORT void JNICALL
-Java_java_io_FileDescriptor_cleanupClose0(JNIEnv *env, jclass fdClass, jlong handle) {
-    if (handle != -1) {
-        if (CloseHandle((HANDLE)handle) == -1) {
-            JNU_ThrowIOExceptionWithLastError(env, "close failed");
-        }
-    }
+JNIEXPORT jlong JNICALL
+Java_java_io_FileDescriptor_getHandle(JNIEnv *env, jclass fdClass, jint fd) {
+    SET_HANDLE(fd);
+}
+
+JNIEXPORT jboolean JNICALL
+Java_java_io_FileDescriptor_getAppend(JNIEnv *env, jclass fdClass, jint fd) {
+    return JNI_FALSE;
 }
 
 // instance method close0 for FileDescriptor
 JNIEXPORT void JNICALL
 Java_java_io_FileDescriptor_close0(JNIEnv *env, jobject this) {
     fileDescriptorClose(env, this);
+}
+
+JNIEXPORT void JNICALL
+Java_java_io_FileCleanable_cleanupClose0(JNIEnv *env, jclass fdClass, jint unused, jlong handle) {
+    if (handle != -1) {
+        if (CloseHandle((HANDLE)handle) == -1) {
+            JNU_ThrowIOExceptionWithLastError(env, "close failed");
+        }
+    }
 }

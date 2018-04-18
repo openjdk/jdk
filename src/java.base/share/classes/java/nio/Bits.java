@@ -63,38 +63,26 @@ class Bits {                            // package-private
 
     // -- Unsafe access --
 
-    private static final Unsafe unsafe = Unsafe.getUnsafe();
-
-    static Unsafe unsafe() {
-        return unsafe;
-    }
-
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     // -- Processor and memory-system properties --
 
-    private static final ByteOrder byteOrder
-        = unsafe.isBigEndian() ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
-
-    static ByteOrder byteOrder() {
-        return byteOrder;
-    }
-
-    private static int pageSize = -1;
+    private static int PAGE_SIZE = -1;
 
     static int pageSize() {
-        if (pageSize == -1)
-            pageSize = unsafe().pageSize();
-        return pageSize;
+        if (PAGE_SIZE == -1)
+            PAGE_SIZE = UNSAFE.pageSize();
+        return PAGE_SIZE;
     }
 
     static int pageCount(long size) {
         return (int)(size + (long)pageSize() - 1L) / pageSize();
     }
 
-    private static boolean unaligned = unsafe.unalignedAccess();
+    private static boolean UNALIGNED = UNSAFE.unalignedAccess();
 
     static boolean unaligned() {
-        return unaligned;
+        return UNALIGNED;
     }
 
 
@@ -103,11 +91,11 @@ class Bits {                            // package-private
     // A user-settable upper limit on the maximum amount of allocatable
     // direct buffer memory.  This value may be changed during VM
     // initialization if it is launched with "-XX:MaxDirectMemorySize=<size>".
-    private static volatile long maxMemory = VM.maxDirectMemory();
-    private static final AtomicLong reservedMemory = new AtomicLong();
-    private static final AtomicLong totalCapacity = new AtomicLong();
-    private static final AtomicLong count = new AtomicLong();
-    private static volatile boolean memoryLimitSet;
+    private static volatile long MAX_MEMORY = VM.maxDirectMemory();
+    private static final AtomicLong RESERVED_MEMORY = new AtomicLong();
+    private static final AtomicLong TOTAL_CAPACITY = new AtomicLong();
+    private static final AtomicLong COUNT = new AtomicLong();
+    private static volatile boolean MEMORY_LIMIT_SET;
 
     // max. number of sleeps during try-reserving with exponentially
     // increasing delay before throwing OutOfMemoryError:
@@ -120,9 +108,9 @@ class Bits {                            // package-private
     // which a process may access.  All sizes are specified in bytes.
     static void reserveMemory(long size, int cap) {
 
-        if (!memoryLimitSet && VM.initLevel() >= 1) {
-            maxMemory = VM.maxDirectMemory();
-            memoryLimitSet = true;
+        if (!MEMORY_LIMIT_SET && VM.initLevel() >= 1) {
+            MAX_MEMORY = VM.maxDirectMemory();
+            MEMORY_LIMIT_SET = true;
         }
 
         // optimist!
@@ -200,10 +188,10 @@ class Bits {                            // package-private
         // actual memory usage, which will differ when buffers are page
         // aligned.
         long totalCap;
-        while (cap <= maxMemory - (totalCap = totalCapacity.get())) {
-            if (totalCapacity.compareAndSet(totalCap, totalCap + cap)) {
-                reservedMemory.addAndGet(size);
-                count.incrementAndGet();
+        while (cap <= MAX_MEMORY - (totalCap = TOTAL_CAPACITY.get())) {
+            if (TOTAL_CAPACITY.compareAndSet(totalCap, totalCap + cap)) {
+                RESERVED_MEMORY.addAndGet(size);
+                COUNT.incrementAndGet();
                 return true;
             }
         }
@@ -213,9 +201,9 @@ class Bits {                            // package-private
 
 
     static void unreserveMemory(long size, int cap) {
-        long cnt = count.decrementAndGet();
-        long reservedMem = reservedMemory.addAndGet(-size);
-        long totalCap = totalCapacity.addAndGet(-cap);
+        long cnt = COUNT.decrementAndGet();
+        long reservedMem = RESERVED_MEMORY.addAndGet(-size);
+        long totalCap = TOTAL_CAPACITY.addAndGet(-cap);
         assert cnt >= 0 && reservedMem >= 0 && totalCap >= 0;
     }
 
@@ -234,15 +222,15 @@ class Bits {                            // package-private
                         }
                         @Override
                         public long getCount() {
-                            return Bits.count.get();
+                            return Bits.COUNT.get();
                         }
                         @Override
                         public long getTotalCapacity() {
-                            return Bits.totalCapacity.get();
+                            return Bits.TOTAL_CAPACITY.get();
                         }
                         @Override
                         public long getMemoryUsed() {
-                            return Bits.reservedMemory.get();
+                            return Bits.RESERVED_MEMORY.get();
                         }
                     };
                 }

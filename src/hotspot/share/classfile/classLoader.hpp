@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 
 #include "jimage.hpp"
 #include "runtime/handles.hpp"
-#include "runtime/orderAccess.hpp"
 #include "runtime/perfData.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
@@ -49,13 +48,9 @@ class ClassPathEntry : public CHeapObj<mtClass> {
 private:
   ClassPathEntry* volatile _next;
 public:
-  // Next entry in class path
-  ClassPathEntry* next() const { return OrderAccess::load_acquire(&_next); }
+  ClassPathEntry* next() const;
   virtual ~ClassPathEntry() {}
-  void set_next(ClassPathEntry* next) {
-    // may have unlocked readers, so ensure visibility.
-    OrderAccess::release_store(&_next, next);
-  }
+  void set_next(ClassPathEntry* next);
   virtual bool is_modules_image() const = 0;
   virtual bool is_jar_file() const = 0;
   virtual const char* name() const = 0;
@@ -207,7 +202,6 @@ class ClassLoader: AllStatic {
   static PerfCounter* _sync_JNIDefineClassLockFreeCounter;
 
   static PerfCounter* _unsafe_defineClassCallCounter;
-  static PerfCounter* _isUnsyncloadClass;
   static PerfCounter* _load_instance_class_failCounter;
 
   // The boot class path consists of 3 ordered pieces:
@@ -239,23 +233,23 @@ class ClassLoader: AllStatic {
   // Last entry in linked list of appended ClassPathEntry instances
   static ClassPathEntry* _last_append_entry;
 
-  // Array of module names associated with the boot class loader
-  CDS_ONLY(static GrowableArray<char*>* _boot_modules_array;)
-
-  // Array of module names associated with the platform class loader
-  CDS_ONLY(static GrowableArray<char*>* _platform_modules_array;)
-
   // Info used by CDS
   CDS_ONLY(static SharedPathsMiscInfo * _shared_paths_misc_info;)
 
   CDS_ONLY(static ClassPathEntry* _app_classpath_entries;)
   CDS_ONLY(static ClassPathEntry* _last_app_classpath_entry;)
-  CDS_ONLY(static void setup_app_search_path(const char *class_path);)
+  CDS_ONLY(static ClassPathEntry* _module_path_entries;)
+  CDS_ONLY(static ClassPathEntry* _last_module_path_entry;)
+  CDS_ONLY(static void setup_app_search_path(const char* class_path);)
+  CDS_ONLY(static void setup_module_search_path(const char* path, TRAPS);)
   static void add_to_app_classpath_entries(const char* path,
                                            ClassPathEntry* entry,
                                            bool check_for_duplicates);
+  CDS_ONLY(static void add_to_module_path_entries(const char* path,
+                                           ClassPathEntry* entry);)
  public:
   CDS_ONLY(static ClassPathEntry* app_classpath_entries() {return _app_classpath_entries;})
+  CDS_ONLY(static ClassPathEntry* module_path_entries() {return _module_path_entries;})
 
  protected:
   // Initialization:
@@ -298,6 +292,7 @@ class ClassLoader: AllStatic {
                                            bool check_for_duplicates,
                                            bool is_boot_append,
                                            bool throw_exception=true);
+  CDS_ONLY(static void update_module_path_entry_list(const char *path, TRAPS);)
   static void print_bootclasspath();
 
   // Timing
@@ -394,28 +389,11 @@ class ClassLoader: AllStatic {
   static void initialize();
   static void classLoader_init2(TRAPS);
   CDS_ONLY(static void initialize_shared_path();)
+  CDS_ONLY(static void initialize_module_path(TRAPS);)
 
   static int compute_Object_vtable();
 
-  static ClassPathEntry* classpath_entry(int n) {
-    assert(n >= 0, "sanity");
-    if (n == 0) {
-      assert(has_jrt_entry(), "No class path entry at 0 for exploded module builds");
-      return ClassLoader::_jrt_entry;
-    } else {
-      // The java runtime image is always the first entry
-      // in the FileMapInfo::_classpath_entry_table. Even though
-      // the _jrt_entry is not included in the _first_append_entry
-      // linked list, it must be accounted for when comparing the
-      // class path vs. the shared archive class path.
-      ClassPathEntry* e = ClassLoader::_first_append_entry;
-      while (--n >= 1) {
-        assert(e != NULL, "Not that many classpath entries.");
-        e = e->next();
-      }
-      return e;
-    }
-  }
+  static ClassPathEntry* classpath_entry(int n);
 
   static bool is_in_patch_mod_entries(Symbol* module_name);
 
@@ -424,47 +402,36 @@ class ClassLoader: AllStatic {
 
   // Helper function used by CDS code to get the number of boot classpath
   // entries during shared classpath setup time.
-  static int num_boot_classpath_entries() {
-    assert(DumpSharedSpaces, "Should only be called at CDS dump time");
-    assert(has_jrt_entry(), "must have a java runtime image");
-    int num_entries = 1; // count the runtime image
-    ClassPathEntry* e = ClassLoader::_first_append_entry;
-    while (e != NULL) {
-      num_entries ++;
-      e = e->next();
-    }
-    return num_entries;
-  }
+  static int num_boot_classpath_entries();
 
-  static ClassPathEntry* get_next_boot_classpath_entry(ClassPathEntry* e) {
-    if (e == ClassLoader::_jrt_entry) {
-      return ClassLoader::_first_append_entry;
-    } else {
-      return e->next();
-    }
-  }
+  static ClassPathEntry* get_next_boot_classpath_entry(ClassPathEntry* e);
 
   // Helper function used by CDS code to get the number of app classpath
   // entries during shared classpath setup time.
-  static int num_app_classpath_entries() {
+  static int num_app_classpath_entries();
+
+  // Helper function used by CDS code to get the number of module path
+  // entries during shared classpath setup time.
+  static int num_module_path_entries() {
     assert(DumpSharedSpaces, "Should only be called at CDS dump time");
     int num_entries = 0;
-    ClassPathEntry* e= ClassLoader::_app_classpath_entries;
+    ClassPathEntry* e= ClassLoader::_module_path_entries;
     while (e != NULL) {
       num_entries ++;
       e = e->next();
     }
     return num_entries;
   }
-
   static void  check_shared_classpath(const char *path);
   static void  finalize_shared_paths_misc_info();
   static int   get_shared_paths_misc_info_size();
   static void* get_shared_paths_misc_info();
   static bool  check_shared_paths_misc_info(void* info, int size);
+  static int   get_module_paths_misc_info_size();
+  static void* get_module_paths_misc_info();
   static void  exit_with_path_failure(const char* error, const char* message);
-
-  static void record_result(InstanceKlass* ik, const ClassFileStream* stream);
+  static char* skip_uri_protocol(char* source);
+  static void  record_result(InstanceKlass* ik, const ClassFileStream* stream, TRAPS);
 #endif
   static JImageLocationRef jimage_find_resource(JImageFile* jf, const char* module_name,
                                                 const char* file_name, jlong &size);

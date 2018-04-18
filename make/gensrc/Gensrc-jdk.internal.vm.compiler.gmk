@@ -123,7 +123,7 @@ TARGETS += $(GENSRC_DIR)/_gensrc_proc_done
 $(GENSRC_DIR)/module-info.java.extra: $(GENSRC_DIR)/_gensrc_proc_done
 	($(CD) $(GENSRC_DIR)/META-INF/providers && \
 	    p=""; \
-	    for i in $$($(LS)); do \
+	    for i in $$($(LS) | $(SORT)); do \
 	      c=$$($(CAT) $$i | $(TR) -d '\n\r'); \
 	      if test x$$p != x$$c; then \
                 if test x$$p != x; then \
@@ -137,7 +137,7 @@ $(GENSRC_DIR)/module-info.java.extra: $(GENSRC_DIR)/_gensrc_proc_done
             $(ECHO) "    ;" >> $@; \
 	$(ECHO) "uses org.graalvm.compiler.options.OptionDescriptors;" >> $@; \
 	$(ECHO) "provides org.graalvm.compiler.options.OptionDescriptors with" >> $@; \
-	for i in $$($(FIND) $(GENSRC_DIR) -name '*_OptionDescriptors.java'); do \
+	for i in $$($(FIND) $(GENSRC_DIR) -name '*_OptionDescriptors.java' | $(SORT)); do \
 	    c=$$($(ECHO) $$i | $(SED) 's:.*/jdk\.internal\.vm\.compiler/\(.*\)\.java:\1:' | $(TR) '/' '.'); \
 	    $(ECHO) "    $$c," >> $@; \
 	done; \

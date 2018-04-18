@@ -48,6 +48,7 @@ $(INTERIM_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
 	$(RM) -r $(INTERIM_IMAGE_DIR)
 	$(JLINK_TOOL) \
 	    --output $(INTERIM_IMAGE_DIR) \
+	    --disable-plugin generate-jli-classes \
 	    --add-modules $(INTERIM_MODULES_LIST)
 	$(TOUCH) $@
 

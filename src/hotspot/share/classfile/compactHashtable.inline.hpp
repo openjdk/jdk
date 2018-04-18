@@ -26,8 +26,10 @@
 #define SHARE_VM_CLASSFILE_COMPACTHASHTABLE_INLINE_HPP
 
 #include "classfile/compactHashtable.hpp"
+#include "classfile/javaClasses.hpp"
 #include "memory/allocation.inline.hpp"
-#include "oops/oop.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
+#include "oops/oop.hpp"
 
 template <class T, class N>
 inline Symbol* CompactHashtable<T, N>::decode_entry(CompactHashtable<Symbol*, char>* const t,
@@ -45,7 +47,7 @@ template <class T, class N>
 inline oop CompactHashtable<T, N>::decode_entry(CompactHashtable<oop, char>* const t,
                                                 u4 offset, const char* name, int len) {
   narrowOop obj = (narrowOop)offset;
-  oop string = oopDesc::decode_heap_oop(obj);
+  oop string = CompressedOops::decode(obj);
   if (java_lang_String::equals(string, (jchar*)name, len)) {
     return string;
   }

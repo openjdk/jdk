@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_VM_GC_G1_G1CONCURRENTMARKBITMAP_HPP
 
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
-#include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/bitMap.hpp"
@@ -39,8 +38,7 @@ class G1ConcurrentMark;
 class HeapRegion;
 
 // Closure for iteration over bitmaps
-class G1CMBitMapClosure VALUE_OBJ_CLASS_SPEC {
-private:
+class G1CMBitMapClosure {
   G1ConcurrentMark* const _cm;
   G1CMTask* const _task;
 public:
@@ -50,9 +48,8 @@ public:
 };
 
 class G1CMBitMapMappingChangedListener : public G1MappingChangedListener {
- private:
   G1CMBitMap* _bm;
- public:
+public:
   G1CMBitMapMappingChangedListener() : _bm(NULL) {}
 
   void set_bitmap(G1CMBitMap* bm) { _bm = bm; }
@@ -62,8 +59,7 @@ class G1CMBitMapMappingChangedListener : public G1MappingChangedListener {
 
 // A generic mark bitmap for concurrent marking.  This is essentially a wrapper
 // around the BitMap class that is based on HeapWords, with one bit per (1 << _shifter) HeapWords.
-class G1CMBitMap VALUE_OBJ_CLASS_SPEC {
-private:
+class G1CMBitMap {
   MemRegion _covered;    // The heap area covered by this bitmap.
 
   const int _shifter;    // Shift amount from heap index to bit index in the bitmap.
@@ -114,9 +110,6 @@ public:
   // such bit, returns "limit" if that is non-NULL, or else "endWord()".
   inline HeapWord* get_next_marked_addr(const HeapWord* addr,
                                         const HeapWord* limit) const;
-
-  // The argument addr should be the start address of a valid object
-  inline HeapWord* addr_after_obj(HeapWord* addr);
 
   void print_on_error(outputStream* st, const char* prefix) const;
 

@@ -26,7 +26,7 @@
  * @summary StringConcatFactory MH_INLINE_SIZED_EXACT strategy does not work with -XX:-CompactStrings
  * @bug 8148869
  *
- * @compile -XDstringConcat=indy -source 1.9 -target 1.9 CompactStringsInitialCoder.java
+ * @compile -XDstringConcat=indy CompactStringsInitialCoder.java
  *
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB                           -XX:+CompactStrings   CompactStringsInitialCoder
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED                     -XX:+CompactStrings   CompactStringsInitialCoder
@@ -35,7 +35,7 @@
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT               -XX:+CompactStrings   CompactStringsInitialCoder
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT           -XX:+CompactStrings   CompactStringsInitialCoder
  *
- * @compile -XDstringConcat=indyWithConstants -source 1.9 -target 1.9 CompactStringsInitialCoder.java
+ * @compile -XDstringConcat=indyWithConstants CompactStringsInitialCoder.java
  *
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB                           -XX:+CompactStrings   CompactStringsInitialCoder
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED                     -XX:+CompactStrings   CompactStringsInitialCoder
@@ -44,7 +44,7 @@
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT               -XX:+CompactStrings   CompactStringsInitialCoder
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT           -XX:+CompactStrings   CompactStringsInitialCoder
  *
- * @compile -XDstringConcat=indy -source 1.9 -target 1.9 CompactStringsInitialCoder.java
+ * @compile -XDstringConcat=indy CompactStringsInitialCoder.java
  *
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB                           -XX:-CompactStrings   CompactStringsInitialCoder
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED                     -XX:-CompactStrings   CompactStringsInitialCoder
@@ -53,7 +53,7 @@
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT               -XX:-CompactStrings   CompactStringsInitialCoder
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT           -XX:-CompactStrings   CompactStringsInitialCoder
  *
- * @compile -XDstringConcat=indyWithConstants -source 1.9 -target 1.9 CompactStringsInitialCoder.java
+ * @compile -XDstringConcat=indyWithConstants CompactStringsInitialCoder.java
  *
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB                           -XX:-CompactStrings   CompactStringsInitialCoder
  * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED                     -XX:-CompactStrings   CompactStringsInitialCoder

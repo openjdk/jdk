@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -491,6 +491,14 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
         return UNSAFE.getInt(getMetaspaceConstantPool() + config().constantPoolLengthOffset);
     }
 
+    public boolean hasDynamicConstant() {
+        return (flags() & config().constantPoolHasDynamicConstant) != 0;
+    }
+
+    private int flags() {
+        return UNSAFE.getInt(getMetaspaceConstantPool() + config().constantPoolFlagsOffset);
+    }
+
     @Override
     public Object lookupConstant(int cpi) {
         assert cpi != 0;
@@ -655,8 +663,12 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
     }
 
     @Override
-    @SuppressWarnings("fallthrough")
     public void loadReferencedType(int cpi, int opcode) {
+        loadReferencedType(cpi, opcode, true /* initialize */);
+    }
+
+    @SuppressWarnings("fallthrough")
+    public void loadReferencedType(int cpi, int opcode, boolean initialize) {
         int index;
         switch (opcode) {
             case Bytecodes.CHECKCAST:
@@ -710,9 +722,11 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
             case UnresolvedClass:
             case UnresolvedClassInError:
                 final HotSpotResolvedObjectTypeImpl type = compilerToVM().resolveTypeInPool(this, index);
-                Class<?> klass = type.mirror();
-                if (!klass.isPrimitive() && !klass.isArray()) {
-                    UNSAFE.ensureClassInitialized(klass);
+                if (initialize) {
+                    Class<?> klass = type.mirror();
+                    if (!klass.isPrimitive() && !klass.isArray()) {
+                        UNSAFE.ensureClassInitialized(klass);
+                    }
                 }
                 if (tag == JVM_CONSTANT.MethodRef) {
                     if (Bytecodes.isInvokeHandleAlias(opcode) && isSignaturePolymorphicHolder(type)) {

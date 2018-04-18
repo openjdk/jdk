@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 
 /*
  * @test
- * @summary a simple test for loading a class using the ext class loader in AppCDS
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @summary a simple test for loading a class using the platform class loader
+ *          (which used to be called the "extension loader) in AppCDS
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -34,7 +34,7 @@
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @compile test-classes/HelloExt.java
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main HelloExtTest
  */
 
@@ -54,19 +54,20 @@ public class HelloExtTest {
         TestCommon.list("org/omg/CORBA/ORB", "[Ljava/lang/Comparable;"),
         bootClassPath, "-verbose:class", "--add-modules", "java.corba");
 
-    OutputAnalyzer output = TestCommon.execCommon("-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
-        "-cp", appJar, bootClassPath, "-verbose:class", "--add-modules", "java.corba", "HelloExt");
-
     String prefix = ".class.load. ";
     String class_pattern = ".*LambdaForm[$]MH[/][0123456789].*";
     String suffix = ".*source: shared objects file.*";
     String pattern = prefix + class_pattern + suffix;
-    output.shouldNotMatch(pattern);
 
-    output = TestCommon.execCommon("-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
-        "-cp", appJar, bootClassPath, "-verbose:class",
-        "-XX:+PrintSharedArchiveAndExit", "-XX:+PrintSharedDictionary",
-        "--add-modules", "java.corba", "HelloExt");
-    output.shouldNotMatch(class_pattern);
+    TestCommon.run("-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
+            "-cp", appJar, bootClassPath, "-verbose:class", "--add-modules", "java.corba", "HelloExt")
+        .assertNormalExit(output -> output.shouldNotMatch(pattern));
+
+
+    TestCommon.run("-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
+            "-cp", appJar, bootClassPath, "-verbose:class",
+            "-XX:+PrintSharedArchiveAndExit", "-XX:+PrintSharedDictionary",
+            "--add-modules", "java.corba", "HelloExt")
+        .assertNormalExit(output ->  output.shouldNotMatch(class_pattern));
   }
 }

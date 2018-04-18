@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
- Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -346,19 +346,6 @@ deprecated. If it were implemented, it would be deadlock-prone in
 the manner of <code>Thread.suspend</code>. (In fact, it is roughly
 equivalent to <code>Thread.suspend</code> without the possibility
 of a subsequent <code>Thread.resume</code>.)
-<hr>
-<h3>Why is <code>Runtime.runFinalizersOnExit</code>
-deprecated?</h3>
-Because it is inherently unsafe. It may result in finalizers being
-called on live objects while other threads are concurrently
-manipulating those objects, resulting in erratic behavior or
-deadlock. While this problem could be prevented if the class whose
-objects are being finalized were coded to "defend against" this
-call, most programmers do <i>not</i> defend against it. They assume
-that an object is dead at the time that its finalizer is called.
-<p>Further, the call is not "thread-safe" in the sense that it sets
-a VM-global flag. This forces <i>every</i> class with a finalizer
-to defend against the finalization of live objects!</p>
 <p><!-- Body text ends here --></p>
 </body>
 </html>

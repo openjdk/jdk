@@ -84,6 +84,7 @@ public class ClassFile {
     public final static int CONSTANT_NameandType = 12;
     public final static int CONSTANT_MethodHandle = 15;
     public final static int CONSTANT_MethodType = 16;
+    public final static int CONSTANT_Dynamic = 17;
     public final static int CONSTANT_InvokeDynamic = 18;
     public final static int CONSTANT_Module = 19;
     public final static int CONSTANT_Package = 20;
@@ -104,6 +105,8 @@ public class ClassFile {
     public final static int MAX_LOCALS = 0xffff;
     public final static int MAX_STACK = 0xffff;
 
+    public final static int PREVIEW_MINOR_VERSION = 0xffff;
+
     public enum Version {
         V45_3(45, 3), // base level for all attributes
         V49(49, 0),   // JDK 1.5: enum, generics, annotations
@@ -111,7 +114,8 @@ public class ClassFile {
         V51(51, 0),   // JDK 1.7
         V52(52, 0),   // JDK 1.8: lambda, type annos, param names
         V53(53, 0),   // JDK 1.9: modules, indy string concat
-        V54(54, 0);   // JDK 10
+        V54(54, 0),   // JDK 10
+        V55(55, 0);   // JDK 11: constant dynamic
         Version(int major, int minor) {
             this.major = major;
             this.minor = minor;

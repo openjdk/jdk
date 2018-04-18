@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 #define SHARE_VM_RUNTIME_FIELDDESCRIPTOR_HPP
 
 #include "oops/constantPool.hpp"
+#include "oops/fieldInfo.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/fieldType.hpp"
 #include "utilities/accessFlags.hpp"
@@ -35,7 +37,7 @@
 // It needs the class constant pool to work (because it only holds indices into the pool
 // rather than the actual info).
 
-class fieldDescriptor VALUE_OBJ_CLASS_SPEC {
+class fieldDescriptor {
  private:
   AccessFlags         _access_flags;
   int                 _index; // the field index

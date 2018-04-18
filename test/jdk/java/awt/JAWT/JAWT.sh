@@ -22,6 +22,7 @@
 # questions.
 
 # @test JAWT.sh
+# @key headful
 # @bug 7190587
 # @summary Tests Java AWT native interface library
 # @author kshefov
@@ -111,7 +112,7 @@ case "$OS" in
     else
         ARCH="i386"
     fi
-	SYST="cygwin"	
+	SYST="cygwin"
 	MAKE="make"
     ;;
   Darwin )

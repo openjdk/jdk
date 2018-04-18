@@ -43,7 +43,7 @@ public class InlineAccessors {
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:+IgnoreUnrecognizedVMOptions", "-showversion",
-                "-server", "-XX:-TieredCompilation", "-Xbatch", "-Xcomp",
+                "-server", "-XX:-TieredCompilation", "-Xbatch",
                 "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
                     Launcher.class.getName());
 

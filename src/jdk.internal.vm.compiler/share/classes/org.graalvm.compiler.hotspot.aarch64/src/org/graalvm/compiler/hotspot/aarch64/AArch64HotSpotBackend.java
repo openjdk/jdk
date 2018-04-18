@@ -22,7 +22,6 @@
  */
 package org.graalvm.compiler.hotspot.aarch64;
 
-import static org.graalvm.compiler.core.common.GraalOptions.ZapStackOnMethodEntry;
 import static java.lang.reflect.Modifier.isStatic;
 import static jdk.vm.ci.aarch64.AArch64.lr;
 import static jdk.vm.ci.aarch64.AArch64.r10;
@@ -30,7 +29,9 @@ import static jdk.vm.ci.aarch64.AArch64.sp;
 import static jdk.vm.ci.aarch64.AArch64.zr;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.hotspot.aarch64.AArch64HotSpotRegisterConfig.fp;
+import static org.graalvm.compiler.core.common.GraalOptions.ZapStackOnMethodEntry;
 
+import org.graalvm.collections.EconomicSet;
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.asm.aarch64.AArch64Address;
@@ -42,11 +43,11 @@ import org.graalvm.compiler.core.aarch64.AArch64NodeMatchRules;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
+import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotDataBuilder;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 import org.graalvm.compiler.hotspot.HotSpotHostBackend;
 import org.graalvm.compiler.hotspot.HotSpotLIRGenerationResult;
-import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.stubs.Stub;
@@ -64,7 +65,6 @@ import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
-import org.graalvm.util.EconomicSet;
 
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.Register;
@@ -288,33 +288,37 @@ public class AArch64HotSpotBackend extends HotSpotHostBackend {
     }
 
     private static void emitCodeBody(CompilationResultBuilder crb, LIR lir, AArch64MacroAssembler masm) {
-        /*
-         * Insert a nop at the start of the prolog so we can patch in a branch if we need to
-         * invalidate the method later.
-         */
+        emitInvalidatePlaceholder(crb, masm);
+        crb.emit(lir);
+    }
+
+    /**
+     * Insert a nop at the start of the prolog so we can patch in a branch if we need to invalidate
+     * the method later.
+     *
+     * @see "http://mail.openjdk.java.net/pipermail/aarch64-port-dev/2013-September/000273.html"
+     */
+    public static void emitInvalidatePlaceholder(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
         crb.blockComment("[nop for method invalidation]");
         masm.nop();
-
-        crb.emit(lir);
     }
 
     private void emitCodeSuffix(CompilationResultBuilder crb, AArch64MacroAssembler masm, FrameMap frameMap) {
         HotSpotProviders providers = getProviders();
         HotSpotFrameContext frameContext = (HotSpotFrameContext) crb.frameContext;
         if (!frameContext.isStub) {
+            HotSpotForeignCallsProvider foreignCalls = providers.getForeignCalls();
             try (ScratchRegister sc = masm.getScratchRegister()) {
                 Register scratch = sc.getRegister();
-                HotSpotForeignCallsProvider foreignCalls = providers.getForeignCalls();
                 crb.recordMark(config.MARKID_EXCEPTION_HANDLER_ENTRY);
                 ForeignCallLinkage linkage = foreignCalls.lookupForeignCall(EXCEPTION_HANDLER);
                 Register helper = AArch64Call.isNearCall(linkage) ? null : scratch;
                 AArch64Call.directCall(crb, masm, linkage, helper, null);
-
-                crb.recordMark(config.MARKID_DEOPT_HANDLER_ENTRY);
-                linkage = foreignCalls.lookupForeignCall(DEOPTIMIZATION_HANDLER);
-                helper = AArch64Call.isNearCall(linkage) ? null : scratch;
-                AArch64Call.directCall(crb, masm, linkage, helper, null);
             }
+            crb.recordMark(config.MARKID_DEOPT_HANDLER_ENTRY);
+            ForeignCallLinkage linkage = foreignCalls.lookupForeignCall(DEOPTIMIZATION_HANDLER);
+            masm.adr(lr, 0); // Warning: the argument is an offset from the instruction!
+            AArch64Call.directJmp(crb, masm, linkage);
         } else {
             // No need to emit the stubs for entries back into the method since
             // it has no calls that can cause such "return" entries

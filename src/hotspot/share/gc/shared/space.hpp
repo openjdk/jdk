@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_VM_GC_SHARED_SPACE_HPP
 
 #include "gc/shared/blockOffsetTable.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
@@ -145,6 +145,9 @@ class Space: public CHeapObj<mtGC> {
   bool is_in(const void* p) const {
     return used_region().contains(p);
   }
+  bool is_in(oop obj) const {
+    return is_in((void*)obj);
+  }
 
   // Returns true iff the given reserved memory of the space contains the
   // given address.
@@ -181,7 +184,7 @@ class Space: public CHeapObj<mtGC> {
   // depending on the type of space in which the closure will
   // operate. ResourceArea allocated.
   virtual DirtyCardToOopClosure* new_dcto_cl(ExtendedOopClosure* cl,
-                                             CardTableModRefBS::PrecisionStyle precision,
+                                             CardTable::PrecisionStyle precision,
                                              HeapWord* boundary,
                                              bool parallel);
 
@@ -253,7 +256,7 @@ class DirtyCardToOopClosure: public MemRegionClosureRO {
 protected:
   ExtendedOopClosure* _cl;
   Space* _sp;
-  CardTableModRefBS::PrecisionStyle _precision;
+  CardTable::PrecisionStyle _precision;
   HeapWord* _boundary;          // If non-NULL, process only non-NULL oops
                                 // pointing below boundary.
   HeapWord* _min_done;          // ObjHeadPreciseArray precision requires
@@ -282,7 +285,7 @@ protected:
 
 public:
   DirtyCardToOopClosure(Space* sp, ExtendedOopClosure* cl,
-                        CardTableModRefBS::PrecisionStyle precision,
+                        CardTable::PrecisionStyle precision,
                         HeapWord* boundary) :
     _sp(sp), _cl(cl), _precision(precision), _boundary(boundary),
     _min_done(NULL) {
@@ -619,7 +622,7 @@ class ContiguousSpace: public CompactibleSpace {
 
   // Override.
   DirtyCardToOopClosure* new_dcto_cl(ExtendedOopClosure* cl,
-                                     CardTableModRefBS::PrecisionStyle precision,
+                                     CardTable::PrecisionStyle precision,
                                      HeapWord* boundary,
                                      bool parallel);
 
@@ -694,7 +697,7 @@ protected:
 
 public:
   FilteringDCTOC(Space* sp, ExtendedOopClosure* cl,
-                  CardTableModRefBS::PrecisionStyle precision,
+                  CardTable::PrecisionStyle precision,
                   HeapWord* boundary) :
     DirtyCardToOopClosure(sp, cl, precision, boundary) {}
 };
@@ -723,7 +726,7 @@ protected:
 
 public:
   ContiguousSpaceDCTOC(ContiguousSpace* sp, ExtendedOopClosure* cl,
-                       CardTableModRefBS::PrecisionStyle precision,
+                       CardTable::PrecisionStyle precision,
                        HeapWord* boundary) :
     FilteringDCTOC(sp, cl, precision, boundary)
   {}

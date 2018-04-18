@@ -26,6 +26,7 @@
 LIB_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)
 CONF_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_conf/$(MODULE)
 LEGAL_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_legal/$(MODULE)
+COMMON_LEGAL_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_legal/common
 
 ################################################################################
 #
@@ -39,18 +40,10 @@ ifneq ($(wildcard $(INCLUDE_SOURCE_DIR)/*), )
   $(eval $(call SetupCopyFiles, COPY_EXPORTED_INCLUDE, \
       SRC := $(INCLUDE_SOURCE_DIR), \
       DEST := $(INCLUDE_TARGET_DIR), \
-      FILES := $(shell $(FIND) $(INCLUDE_SOURCE_DIR) -type f), \
+      FILES := $(filter %.h, $(call CacheFind, $(INCLUDE_SOURCE_DIR))), \
   ))
 
   TARGETS += $(COPY_EXPORTED_INCLUDE)
-endif
-
-# For historical reasons, the OS include directories have odd names.
-INCLUDE_TARGET_OS_SUBDIR := $(OPENJDK_TARGET_OS)
-ifeq ($(OPENJDK_TARGET_OS), windows)
-  INCLUDE_TARGET_OS_SUBDIR := win32
-else ifeq ($(OPENJDK_TARGET_OS), macosx)
-  INCLUDE_TARGET_OS_SUBDIR := darwin
 endif
 
 # Use the most specific of OS and OS_TYPE.
@@ -62,9 +55,30 @@ endif
 ifneq ($(wildcard $(INCLUDE_SOURCE_OS_DIR)/*), )
   $(eval $(call SetupCopyFiles, COPY_EXPORTED_INCLUDE_OS, \
       SRC := $(INCLUDE_SOURCE_OS_DIR), \
-      DEST := $(INCLUDE_TARGET_DIR)/$(INCLUDE_TARGET_OS_SUBDIR), \
-      FILES := $(shell $(FIND) $(INCLUDE_SOURCE_OS_DIR) -type f), \
+      DEST := $(INCLUDE_TARGET_DIR)/$(OPENJDK_TARGET_OS_INCLUDE_SUBDIR), \
+      FILES := $(filter %.h, $(call CacheFind, $(INCLUDE_SOURCE_OS_DIR))), \
   ))
 
   TARGETS += $(COPY_EXPORTED_INCLUDE_OS)
 endif
+
+################################################################################
+# Setup make rules for copying legal files. This is only needed if the files
+# need to be filtered due to optional components being enabled/disabled.
+# Otherwise CreateJmods.gmk will find the legal files in the original src dirs.
+#
+# Parameter 1 is the name of the rule.
+#
+# Remaining parameters are named arguments. These include:
+#   EXCLUDES : List of filenames to exclude from copy
+SetupCopyLegalFiles = $(NamedParamsMacroTemplate)
+define SetupCopyLegalFilesBody
+  $$(foreach f, $$(filter-out $$(addprefix %/, $$($1_EXCLUDES)), \
+      $$(wildcard $$(addsuffix /*, $$(call FindModuleLegalSrcDirs, $$(MODULE))))), \
+    $$(eval $$(call SetupCopyFiles, $1_$$(notdir $$f), \
+        DEST := $$(LEGAL_DST_DIR), \
+        FILES := $$f, \
+    )) \
+    $$(eval $1 += $$($1_$$(notdir $$f))) \
+  )
+endef

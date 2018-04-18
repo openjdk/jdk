@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "logging/log.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.inline.hpp"
 #include "services/attachListener.hpp"
 #include "services/dtraceAttacher.hpp"
@@ -185,6 +186,10 @@ class ArgumentIterator : public StackObj {
   }
   char* next() {
     if (*_pos == '\0') {
+      // advance the iterator if possible (null arguments)
+      if (_pos < _end) {
+        _pos += 1;
+      }
       return NULL;
     }
     char* res = _pos;
@@ -643,10 +648,10 @@ bool AttachListener::is_init_trigger() {
   if (init_at_startup() || is_initialized()) {
     return false;               // initialized at startup or already initialized
   }
-  char fn[PATH_MAX+1];
-  sprintf(fn, ".attach_pid%d", os::current_process_id());
+  char fn[PATH_MAX + 1];
   int ret;
   struct stat64 st;
+  sprintf(fn, ".attach_pid%d", os::current_process_id());
   RESTARTABLE(::stat64(fn, &st), ret);
   if (ret == -1) {
     log_trace(attach)("Failed to find attach file: %s, trying alternate", fn);
@@ -662,7 +667,10 @@ bool AttachListener::is_init_trigger() {
     // a bogus user creates the file
     if (st.st_uid == geteuid()) {
       init();
+      log_trace(attach)("Attach triggered by %s", fn);
       return true;
+    } else {
+      log_debug(attach)("File %s has wrong user id %d (vs %d). Attach is not triggered", fn, st.st_uid, geteuid());
     }
   }
   return false;

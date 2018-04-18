@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,12 @@
  *   <li><a href="https://docs.oracle.com/javase/tutorial/sound/">
  *   The Java Sound Tutorial</a>
  * </ul>
+ * Please note: In the {@code javax.sound.sampled.spi} APIs, a {@code null}
+ * reference parameter to methods is incorrect unless explicitly documented on
+ * the method as having a meaningful interpretation. Usage to the contrary is
+ * incorrect coding and may result in a run time exception either immediately or
+ * at some later time. {@code NullPointerException} is an example of typical and
+ * acceptable run time exception for such cases.
  *
  * @since 1.3
  */

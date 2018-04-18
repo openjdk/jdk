@@ -28,6 +28,7 @@ import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Platform;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
+import jdk.test.lib.cds.CDSTestUtils.Result;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import java.io.File;
@@ -191,6 +192,13 @@ public class TestCommon extends CDSTestUtils {
         return runWithArchive(opts);
     }
 
+    // This is the new API for running a Java process with CDS enabled.
+    // See comments in the CDSTestUtils.Result class for how to use this method.
+    public static Result run(String... suffix) throws Exception {
+        AppCDSOptions opts = (new AppCDSOptions());
+        opts.addSuffix(suffix);
+        return new Result(opts, runWithArchive(opts));
+    }
 
     public static OutputAnalyzer exec(String appJar, String... suffix) throws Exception {
         AppCDSOptions opts = (new AppCDSOptions()).setAppJar(appJar);
@@ -198,6 +206,12 @@ public class TestCommon extends CDSTestUtils {
         return runWithArchive(opts);
     }
 
+    public static Result runWithModules(String prefix[], String upgrademodulepath, String modulepath,
+                                            String mid, String... testClassArgs) throws Exception {
+        AppCDSOptions opts = makeModuleOptions(prefix, upgrademodulepath, modulepath,
+                                               mid, testClassArgs);
+        return new Result(opts, runWithArchive(opts));
+    }
 
     public static OutputAnalyzer execAuto(String... suffix) throws Exception {
         AppCDSOptions opts = (new AppCDSOptions());
@@ -211,10 +225,9 @@ public class TestCommon extends CDSTestUtils {
         return runWithArchive(opts);
     }
 
-    public static OutputAnalyzer execModule(String prefix[], String upgrademodulepath, String modulepath,
-                                            String mid, String... testClassArgs)
-        throws Exception {
 
+    private static AppCDSOptions makeModuleOptions(String prefix[], String upgrademodulepath, String modulepath,
+                                            String mid, String testClassArgs[]) {
         AppCDSOptions opts = (new AppCDSOptions());
 
         opts.addPrefix(prefix);
@@ -225,7 +238,14 @@ public class TestCommon extends CDSTestUtils {
                            "-p", modulepath, "-m", mid);
         }
         opts.addSuffix(testClassArgs);
+        return opts;
+    }
 
+    public static OutputAnalyzer execModule(String prefix[], String upgrademodulepath, String modulepath,
+                                            String mid, String... testClassArgs)
+        throws Exception {
+        AppCDSOptions opts = makeModuleOptions(prefix, upgrademodulepath, modulepath,
+                                               mid, testClassArgs);
         return runWithArchive(opts);
     }
 

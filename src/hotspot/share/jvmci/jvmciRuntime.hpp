@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,10 +73,7 @@ class JVMCIRuntime: public AllStatic {
   /**
    * Gets the singleton HotSpotJVMCIRuntime instance, initializing it if necessary
    */
-  static Handle get_HotSpotJVMCIRuntime(TRAPS) {
-    initialize_JVMCI(CHECK_(Handle()));
-    return Handle(THREAD, JNIHandles::resolve_non_null(_HotSpotJVMCIRuntime_instance));
-  }
+  static Handle get_HotSpotJVMCIRuntime(TRAPS);
 
   static jobject get_HotSpotJVMCIRuntime_jobject(TRAPS) {
     initialize_JVMCI(CHECK_NULL);
@@ -154,7 +151,6 @@ class JVMCIRuntime: public AllStatic {
   static void write_barrier_pre(JavaThread* thread, oopDesc* obj);
   static void write_barrier_post(JavaThread* thread, void* card);
   static jboolean validate_object(JavaThread* thread, oopDesc* parent, oopDesc* child);
-  static void new_store_pre_barrier(JavaThread* thread);
 
   // used to throw exceptions from compiled JVMCI code
   static void throw_and_post_jvmti_exception(JavaThread* thread, const char* exception, const char* message);

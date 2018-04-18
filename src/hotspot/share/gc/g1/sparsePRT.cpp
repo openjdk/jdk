@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 #include "gc/g1/heapRegionBounds.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/sparsePRT.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -41,7 +41,7 @@ void SparsePRTEntry::init(RegionIdx_t region_ind) {
   // Check that the card array element type can represent all cards in the region.
   // Choose a large SparsePRTEntry::card_elem_t (e.g. CardIdx_t) if required.
   assert(((size_t)1 << (sizeof(SparsePRTEntry::card_elem_t) * BitsPerByte)) *
-         G1SATBCardTableModRefBS::card_size >= HeapRegionBounds::max_size(), "precondition");
+         G1CardTable::card_size >= HeapRegionBounds::max_size(), "precondition");
   assert(G1RSetSparseRegionEntries > 0, "precondition");
   _region_ind = region_ind;
   _next_index = RSHashTable::NullEntry;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,10 +61,10 @@ void CollectedHeap::post_allocation_setup_no_klass_install(Klass* klass,
 
   assert(obj != NULL, "NULL object pointer");
   if (UseBiasedLocking && (klass != NULL)) {
-    obj->set_mark(klass->prototype_header());
+    obj->set_mark_raw(klass->prototype_header());
   } else {
     // May be bootstrapping
-    obj->set_mark(markOopDesc::prototype());
+    obj->set_mark_raw(markOopDesc::prototype());
   }
 }
 
@@ -298,40 +298,5 @@ inline HeapWord* CollectedHeap::align_allocation_or_fail(HeapWord* addr,
     return NULL;
   }
 }
-
-#ifndef PRODUCT
-
-inline bool
-CollectedHeap::promotion_should_fail(volatile size_t* count) {
-  // Access to count is not atomic; the value does not have to be exact.
-  if (PromotionFailureALot) {
-    const size_t gc_num = total_collections();
-    const size_t elapsed_gcs = gc_num - _promotion_failure_alot_gc_number;
-    if (elapsed_gcs >= PromotionFailureALotInterval) {
-      // Test for unsigned arithmetic wrap-around.
-      if (++*count >= PromotionFailureALotCount) {
-        *count = 0;
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-inline bool CollectedHeap::promotion_should_fail() {
-  return promotion_should_fail(&_promotion_failure_alot_count);
-}
-
-inline void CollectedHeap::reset_promotion_should_fail(volatile size_t* count) {
-  if (PromotionFailureALot) {
-    _promotion_failure_alot_gc_number = total_collections();
-    *count = 0;
-  }
-}
-
-inline void CollectedHeap::reset_promotion_should_fail() {
-  reset_promotion_should_fail(&_promotion_failure_alot_count);
-}
-#endif  // #ifndef PRODUCT
 
 #endif // SHARE_VM_GC_SHARED_COLLECTEDHEAP_INLINE_HPP

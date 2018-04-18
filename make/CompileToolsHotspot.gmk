@@ -48,6 +48,7 @@ ifeq ($(INCLUDE_GRAAL), true)
       SETUP := GENERATE_OLDBYTECODE, \
       SRC := \
           $(SRC_DIR)/org.graalvm.word/src \
+          $(SRC_DIR)/org.graalvm.collections/src \
           $(SRC_DIR)/org.graalvm.compiler.core/src \
           $(SRC_DIR)/org.graalvm.compiler.core.common/src \
           $(SRC_DIR)/org.graalvm.compiler.core.match.processor/src \
@@ -101,6 +102,7 @@ ifeq ($(INCLUDE_GRAAL), true)
   $(eval $(call SetupJavaCompilation, BUILD_VM_COMPILER_OPTIONS_PROCESSOR, \
       SETUP := GENERATE_OLDBYTECODE, \
       SRC := \
+          $(SRC_DIR)/org.graalvm.collections/src \
           $(SRC_DIR)/org.graalvm.compiler.options/src \
           $(SRC_DIR)/org.graalvm.compiler.options.processor/src \
           $(SRC_DIR)/org.graalvm.util/src \
@@ -117,6 +119,8 @@ ifeq ($(INCLUDE_GRAAL), true)
       SETUP := GENERATE_OLDBYTECODE, \
       SRC := \
           $(SRC_DIR)/org.graalvm.word/src \
+          $(SRC_DIR)/org.graalvm.collections/src \
+          $(SRC_DIR)/org.graalvm.compiler.bytecode/src \
           $(SRC_DIR)/org.graalvm.compiler.replacements.verifier/src \
           $(SRC_DIR)/org.graalvm.compiler.api.replacements/src \
           $(SRC_DIR)/org.graalvm.compiler.code/src \

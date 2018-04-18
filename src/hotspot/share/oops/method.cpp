@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,13 @@
 #include "code/codeCache.hpp"
 #include "code/debugInfoRec.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
-#include "gc/shared/gcLocker.hpp"
 #include "gc/shared/generation.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodeTracer.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -42,7 +42,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constMethod.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -57,6 +57,7 @@
 #include "runtime/init.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/relocator.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "utilities/align.hpp"
@@ -446,7 +447,7 @@ MethodCounters* Method::build_method_counters(Method* m, TRAPS) {
 
 bool Method::init_method_counters(MethodCounters* counters) {
   // Try to install a pointer to MethodCounters, return true on success.
-  return Atomic::cmpxchg(counters, &_method_counters, (MethodCounters*)NULL) == NULL;
+  return Atomic::replace_if_null(counters, &_method_counters);
 }
 
 void Method::cleanup_inline_caches() {
@@ -2180,7 +2181,7 @@ bool Method::is_valid_method() const {
   } else if ((intptr_t(this) & (wordSize-1)) != 0) {
     // Quick sanity check on pointer.
     return false;
-  } else if (MetaspaceShared::is_in_shared_space(this)) {
+  } else if (is_shared()) {
     return MetaspaceShared::is_valid_shared_method(this);
   } else if (Metaspace::contains_non_shared(this)) {
     return has_method_vptr((const void*)this);
@@ -2190,8 +2191,8 @@ bool Method::is_valid_method() const {
 }
 
 #ifndef PRODUCT
-void Method::print_jmethod_ids(ClassLoaderData* loader_data, outputStream* out) {
-  out->print_cr("jni_method_id count = %d", loader_data->jmethod_ids()->count_methods());
+void Method::print_jmethod_ids(const ClassLoaderData* loader_data, outputStream* out) {
+  out->print(" jni_method_id count = %d", loader_data->jmethod_ids()->count_methods());
 }
 #endif // PRODUCT
 
@@ -2371,9 +2372,9 @@ void Method::log_touched(TRAPS) {
     ptr = ptr->_next;
   }
   TouchedMethodRecord* nptr = NEW_C_HEAP_OBJ(TouchedMethodRecord, mtTracing);
-  my_class->set_permanent();  // prevent reclaimed by GC
-  my_name->set_permanent();
-  my_sig->set_permanent();
+  my_class->increment_refcount();
+  my_name->increment_refcount();
+  my_sig->increment_refcount();
   nptr->_class_name         = my_class;
   nptr->_method_name        = my_name;
   nptr->_method_signature   = my_sig;

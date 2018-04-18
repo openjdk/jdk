@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,8 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
@@ -68,6 +69,8 @@ public class TreeWriter extends AbstractTreeWriter {
      */
     private final boolean classesOnly;
 
+    private final Navigation navBar;
+
     /**
      * Constructor to construct TreeWriter object.
      *
@@ -79,6 +82,7 @@ public class TreeWriter extends AbstractTreeWriter {
         super(configuration, filename, classtree);
         packages = configuration.packages;
         classesOnly = packages.isEmpty();
+        this.navBar = new Navigation(null, configuration, fixedNavDiv, PageMode.TREE, path);
     }
 
     /**
@@ -127,7 +131,8 @@ public class TreeWriter extends AbstractTreeWriter {
         } else {
             htmlTree = body;
         }
-        addNavLinks(false, htmlTree);
+        navBar.setUserFooter(getUserHeaderFooter(false));
+        htmlTree.addContent(navBar.getContent(false));
         addBottom(htmlTree);
         if (configuration.allowTag(HtmlTag.FOOTER)) {
             body.addContent(htmlTree);
@@ -162,7 +167,7 @@ public class TreeWriter extends AbstractTreeWriter {
                     continue;
                 }
                 DocPath link = pathString(pkg, DocPaths.PACKAGE_TREE);
-                Content li = HtmlTree.LI(Links.createLink(link,
+                Content li = HtmlTree.LI(links.createLink(link,
                         new StringContent(utils.getPackageName(pkg))));
                 if (i < packages.size() - 1) {
                     li.addContent(", ");
@@ -186,7 +191,8 @@ public class TreeWriter extends AbstractTreeWriter {
                 ? HtmlTree.HEADER()
                 : bodyTree;
         addTop(htmlTree);
-        addNavLinks(true, htmlTree);
+        navBar.setUserHeader(getUserHeaderFooter(true));
+        htmlTree.addContent(navBar.getContent(true));
         if (configuration.allowTag(HtmlTag.HEADER)) {
             bodyTree.addContent(htmlTree);
         }

@@ -42,7 +42,7 @@ public interface ClassConstants
     public static final int JVM_CONSTANT_NameAndType        = 12;
     public static final int JVM_CONSTANT_MethodHandle       = 15;
     public static final int JVM_CONSTANT_MethodType         = 16;
-    //     static final int JVM_CONSTANT_(unused)           = 17;
+    public static final int JVM_CONSTANT_Dynamic            = 17;
     public static final int JVM_CONSTANT_InvokeDynamic      = 18;
 
     // JVM_CONSTANT_MethodHandle subtypes

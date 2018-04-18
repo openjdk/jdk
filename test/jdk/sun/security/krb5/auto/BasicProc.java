@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,13 @@
 
 /*
  * @test
- * @bug 8009977 8186884
+ * @bug 8009977 8186884 8194486
  * @summary A test to launch multiple Java processes using either Java GSS
  *          or native GSS
- * @library ../../../../java/security/testlibrary/
+ * @library ../../../../java/security/testlibrary/ /test/lib
  * @compile -XDignore.symbol.file BasicProc.java
- * @run main/othervm BasicProc launcher
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts BasicProc launcher
  */
 
 import java.nio.file.Files;
@@ -39,6 +40,7 @@ import java.util.PropertyPermission;
 import java.util.Random;
 import java.util.Set;
 
+import jdk.test.lib.Platform;
 import org.ietf.jgss.Oid;
 import sun.security.krb5.Config;
 
@@ -238,10 +240,12 @@ public class BasicProc {
             pc.perm(new PropertyPermission("user.name", "read"));
         } else {
             Files.copy(Paths.get("base.ccache"), Paths.get(label + ".ccache"));
-            Files.setPosixFilePermissions(Paths.get(label + ".ccache"),
-                    Set.of(PosixFilePermission.OWNER_READ,
-                            PosixFilePermission.OWNER_WRITE));
-            pc.env("KRB5CCNAME", label + ".ccache");
+            if (!Platform.isWindows()) {
+                Files.setPosixFilePermissions(Paths.get(label + ".ccache"),
+                        Set.of(PosixFilePermission.OWNER_READ,
+                                PosixFilePermission.OWNER_WRITE));
+            }
+            pc.env("KRB5CCNAME", "FILE:" + label + ".ccache");
             // Do not try system ktab if ccache fails
             pc.env("KRB5_KTNAME", "none");
         }
@@ -304,11 +308,12 @@ public class BasicProc {
      */
     private static Proc proc(String lib) throws Exception {
         Proc p = Proc.create("BasicProc")
+                .inheritProp("jdk.net.hosts.file")
                 .prop("java.security.manager", "")
                 .perm(new javax.security.auth.AuthPermission("doAs"));
         if (lib != null) {
             p.env("KRB5_CONFIG", CONF)
-                    .env("KRB5_TRACE", "/dev/stderr")
+                    .env("KRB5_TRACE", Platform.isWindows() ? "CON" : "/dev/stderr")
                     .prop("sun.security.jgss.native", "true")
                     .prop("sun.security.jgss.lib", lib)
                     .prop("javax.security.auth.useSubjectCredsOnly", "false")

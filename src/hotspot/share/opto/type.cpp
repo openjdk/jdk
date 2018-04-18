@@ -28,7 +28,6 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "compiler/compileLog.hpp"
-#include "gc/shared/gcLocker.hpp"
 #include "libadt/dict.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"

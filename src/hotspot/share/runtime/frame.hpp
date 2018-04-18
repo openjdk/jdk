@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ class vframeArray;
 // so that one physical frame can correspond to multiple source level
 // frames because of inlining.
 
-class frame VALUE_OBJ_CLASS_SPEC {
+class frame {
  private:
   // Instance variables:
   intptr_t* _sp; // stack pointer (from Thread::last_Java_sp)
@@ -269,7 +269,6 @@ class frame VALUE_OBJ_CLASS_SPEC {
   // expression stack (may go up or down, direction == 1 or -1)
  public:
   intptr_t* interpreter_frame_expression_stack() const;
-  static  jint  interpreter_frame_expression_stack_direction();
 
   // The _at version returns a pointer because the address is used for GC.
   intptr_t* interpreter_frame_expression_stack_at(jint offset) const;
@@ -337,33 +336,6 @@ class frame VALUE_OBJ_CLASS_SPEC {
   // tells whether there is another chunk of Delta stack above
   bool entry_frame_is_first() const;
 
-  // Compiled frames:
-
- public:
-  // Given the index of a local, and the number of argument words
-  // in this stack frame, tell which word of the stack frame to find
-  // the local in.  Arguments are stored above the ofp/rpc pair,
-  // while other locals are stored below it.
-  // Since monitors (BasicLock blocks) are also assigned indexes,
-  // but may have different storage requirements, their presence
-  // can also affect the calculation of offsets.
-  static int local_offset_for_compiler(int local_index, int nof_args, int max_nof_locals, int max_nof_monitors);
-
-  // Given the index of a monitor, etc., tell which word of the
-  // stack frame contains the start of the BasicLock block.
-  // Note that the local index by convention is the __higher__
-  // of the two indexes allocated to the block.
-  static int monitor_offset_for_compiler(int local_index, int nof_args, int max_nof_locals, int max_nof_monitors);
-
-  // Tell the smallest value that local_offset_for_compiler will attain.
-  // This is used to help determine how much stack frame to allocate.
-  static int min_local_offset_for_compiler(int nof_args, int max_nof_locals, int max_nof_monitors);
-
-  // Tells if this register must be spilled during a call.
-  // On Intel, all registers are smashed by calls.
-  static bool volatile_across_calls(Register reg);
-
-
   // Safepoints
 
  public:
@@ -416,8 +388,6 @@ class frame VALUE_OBJ_CLASS_SPEC {
   // Usage:
   // assert(frame::verify_return_pc(return_address), "must be a return pc");
 
-  int pd_oop_map_offset_adjustment() const;
-
   NOT_PRODUCT(void pd_ps();)  // platform dependent frame printing
 
 #include CPU_HEADER(frame)
@@ -426,7 +396,7 @@ class frame VALUE_OBJ_CLASS_SPEC {
 
 #ifndef PRODUCT
 // A simple class to describe a location on the stack
-class FrameValue VALUE_OBJ_CLASS_SPEC {
+class FrameValue {
  public:
   intptr_t* location;
   char* description;
@@ -491,7 +461,7 @@ class StackFrameStream : public StackObj {
    StackFrameStream(JavaThread *thread, bool update = true);
 
   // Iteration
-  bool is_done()                  { return (_is_done) ? true : (_is_done = _fr.is_first_frame(), false); }
+  inline bool is_done();
   void next()                     { if (!_is_done) _fr = _fr.sender(&_reg_map); }
 
   // Query

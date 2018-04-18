@@ -34,7 +34,7 @@ private:
   void disable_adaptive_size_policy(const char* collector_name);
   void set_parnew_gc_flags();
 public:
-  virtual void initialize_flags();
+  virtual void initialize();
   virtual size_t conservative_max_heap_alignment();
   virtual CollectedHeap* create_heap();
 };

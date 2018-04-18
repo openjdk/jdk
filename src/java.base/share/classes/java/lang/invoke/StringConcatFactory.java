@@ -373,6 +373,12 @@ public final class StringConcatFactory {
         }
     }
 
+    // StringConcatFactory bootstrap methods are startup sensitive, and may be
+    // special cased in java.lang.invokeBootstrapMethodInvoker to ensure
+    // methods are invoked with exact type information to avoid generating
+    // code for runtime checks. Take care any changes or additions here are
+    // reflected there as appropriate.
+
     /**
      * Facilitates the creation of optimized String concatenation methods, that
      * can be used to efficiently concatenate a known number of arguments of

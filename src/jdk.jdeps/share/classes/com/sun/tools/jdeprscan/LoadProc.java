@@ -50,7 +50,7 @@ import javax.lang.model.util.Elements;
 
 import javax.tools.Diagnostic;
 
-import static javax.lang.model.SourceVersion.RELEASE_10;
+import static javax.lang.model.SourceVersion.RELEASE_11;
 
 /**
  * Annotation processor for the Deprecation Scanner tool.
@@ -58,7 +58,7 @@ import static javax.lang.model.SourceVersion.RELEASE_10;
  *
  */
 @SupportedAnnotationTypes("java.lang.Deprecated")
-@SupportedSourceVersion(RELEASE_10)
+@SupportedSourceVersion(RELEASE_11)
 public class LoadProc extends AbstractProcessor {
     Elements elements;
     Messager messager;

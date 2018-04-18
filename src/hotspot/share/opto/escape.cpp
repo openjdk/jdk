@@ -37,6 +37,9 @@
 #include "opto/phaseX.hpp"
 #include "opto/movenode.hpp"
 #include "opto/rootnode.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc/g1/g1ThreadLocalData.hpp"
+#endif // INCLUDE_ALL_GCS
 
 ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn) :
   _nodes(C->comp_arena(), C->unique(), C->unique(), NULL),
@@ -543,12 +546,10 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
               Node* tls = get_addp_base(adr);
               if (tls->Opcode() == Op_ThreadLocal) {
                 int offs = (int)igvn->find_intptr_t_con(adr->in(AddPNode::Offset), Type::OffsetBot);
-                if (offs == in_bytes(JavaThread::satb_mark_queue_offset() +
-                                     SATBMarkQueue::byte_offset_of_buf())) {
+                if (offs == in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset())) {
                   break; // G1 pre barrier previous oop value store.
                 }
-                if (offs == in_bytes(JavaThread::dirty_card_queue_offset() +
-                                     DirtyCardQueue::byte_offset_of_buf())) {
+                if (offs == in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset())) {
                   break; // G1 post barrier card address store.
                 }
               }
@@ -3226,7 +3227,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
                n->Opcode() == Op_EncodeISOArray) {
       // get the memory projection
       n = n->find_out_with(Op_SCMemProj);
-      assert(n->Opcode() == Op_SCMemProj, "memory projection required");
+      assert(n != NULL && n->Opcode() == Op_SCMemProj, "memory projection required");
     } else {
       assert(n->is_Mem(), "memory node required.");
       Node *addr = n->in(MemNode::Address);
@@ -3250,7 +3251,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       } else if (n->is_LoadStore()) {
         // get the memory projection
         n = n->find_out_with(Op_SCMemProj);
-        assert(n->Opcode() == Op_SCMemProj, "memory projection required");
+        assert(n != NULL && n->Opcode() == Op_SCMemProj, "memory projection required");
       }
     }
     // push user on appropriate worklist

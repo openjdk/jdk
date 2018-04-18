@@ -110,6 +110,8 @@ public class RepaintManager
 
     private Dimension doubleBufferMaxSize;
 
+    private boolean isCustomMaxBufferSizeSet = false;
+
     // Support for both the standard and volatile offscreen buffers exists to
     // provide backwards compatibility for the [rare] programs which may be
     // calling getOffScreenBuffer() and not expecting to get a VolatileImage.
@@ -335,7 +337,13 @@ public class RepaintManager
     }
 
     private void displayChanged() {
-        clearImages();
+        if (isCustomMaxBufferSizeSet) {
+            clearImages();
+        } else {
+            // Reset buffer maximum size to get valid size from updated graphics
+            // environment in getDoubleBufferMaximumSize()
+            setDoubleBufferMaximumSize(null);
+        }
     }
 
     /**
@@ -1156,8 +1164,10 @@ public class RepaintManager
     public void setDoubleBufferMaximumSize(Dimension d) {
         doubleBufferMaxSize = d;
         if (doubleBufferMaxSize == null) {
+            isCustomMaxBufferSizeSet = false;
             clearImages();
         } else {
+            isCustomMaxBufferSizeSet = true;
             clearImages(d.width, d.height);
         }
     }

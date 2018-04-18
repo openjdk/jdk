@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,13 @@
  * @modules java.base/java.lang:open
  * @run testng/othervm -Xint -DtestUnused=true LocalsAndOperands
  * @run testng/othervm -Xcomp LocalsAndOperands
+ */
+
+/*
+ * @test
+ * @bug 8020968 8147039 8156073
+ * @modules java.base/java.lang:open
+ * @requires !vm.graal.enabled
  * @run testng/othervm -Xcomp -XX:-TieredCompilation LocalsAndOperands
  */
 

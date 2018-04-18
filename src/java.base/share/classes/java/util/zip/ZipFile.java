@@ -37,7 +37,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.Files;
-
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -52,18 +51,20 @@ import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.WeakHashMap;
-
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import jdk.internal.misc.JavaLangAccess;
 import jdk.internal.misc.JavaUtilZipFileAccess;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.misc.VM;
 import jdk.internal.perf.PerfCounter;
 import jdk.internal.ref.CleanerFactory;
+import jdk.internal.vm.annotation.Stable;
 
 import static java.util.zip.ZipConstants64.*;
 import static java.util.zip.ZipUtils.*;
@@ -98,14 +99,14 @@ class ZipFile implements ZipConstants, Closeable {
 
     private final String name;     // zip file name
     private volatile boolean closeRequested;
-    private ZipCoder zc;
+    private final @Stable ZipCoder zc;
 
     // The "resource" used by this zip file that needs to be
     // cleaned after use.
     // a) the input streams that need to be closed
     // b) the list of cached Inflater objects
     // c) the "native" source of this zip file.
-    private final CleanableResource res;
+    private final @Stable CleanableResource res;
 
     private static final int STORED = ZipEntry.STORED;
     private static final int DEFLATED = ZipEntry.DEFLATED;
@@ -369,7 +370,7 @@ class ZipFile implements ZipConstants, Closeable {
     public InputStream getInputStream(ZipEntry entry) throws IOException {
         Objects.requireNonNull(entry, "entry");
         int pos = -1;
-        ZipFileInputStream in = null;
+        ZipFileInputStream in;
         Source zsrc = res.zsrc;
         Set<InputStream> istreams = res.istreams;
         synchronized (this) {
@@ -604,9 +605,7 @@ class ZipFile implements ZipConstants, Closeable {
     private String getEntryName(int pos) {
         byte[] cen = res.zsrc.cen;
         int nlen = CENNAM(cen, pos);
-        int clen = CENCOM(cen, pos);
-        int flag = CENFLG(cen, pos);
-        if (!zc.isUTF8() && (flag & EFS) != 0) {
+        if (!zc.isUTF8() && (CENFLG(cen, pos) & EFS) != 0) {
             return zc.toStringUTF8(cen, pos + CENHDR, nlen);
         } else {
             return zc.toString(cen, pos + CENHDR, nlen);
@@ -835,11 +834,10 @@ class ZipFile implements ZipConstants, Closeable {
         static CleanableResource get(ZipFile zf, File file, int mode)
             throws IOException {
             Class<?> clz = zf.getClass();
-            while (clz != ZipFile.class) {
-                try {
-                    clz.getDeclaredMethod("close");
+            while (clz != ZipFile.class && clz != JarFile.class) {
+                if (JLA.getDeclaredPublicMethods(clz, "close").size() != 0) {
                     return new FinalizableResource(zf, file, mode);
-                } catch (NoSuchMethodException nsme) {}
+                }
                 clz = clz.getSuperclass();
             }
             return new CleanableResource(zf, file, mode);
@@ -1102,6 +1100,8 @@ class ZipFile implements ZipConstants, Closeable {
     }
 
     private static boolean isWindows;
+    private static final JavaLangAccess JLA;
+
     static {
         SharedSecrets.setJavaUtilZipFileAccess(
             new JavaUtilZipFileAccess() {
@@ -1134,6 +1134,7 @@ class ZipFile implements ZipConstants, Closeable {
                 }
              }
         );
+        JLA = jdk.internal.misc.SharedSecrets.getJavaLangAccess();
         isWindows = VM.getSavedProperty("os.name").contains("Windows");
     }
 
@@ -1218,7 +1219,7 @@ class ZipFile implements ZipConstants, Closeable {
         static Source get(File file, boolean toDelete) throws IOException {
             Key key = new Key(file,
                               Files.readAttributes(file.toPath(), BasicFileAttributes.class));
-            Source src = null;
+            Source src;
             synchronized (files) {
                 src = files.get(key);
                 if (src != null) {

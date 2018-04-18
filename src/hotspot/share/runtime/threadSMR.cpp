@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,15 @@
 #include "precompiled.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.inline.hpp"
+#include "runtime/vm_operations.hpp"
 #include "services/threadService.hpp"
+#include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/resourceHash.hpp"
+#include "utilities/vmError.hpp"
 
 Monitor*              ThreadsSMRSupport::_delete_lock =
                           new Monitor(Monitor::special, "Thread_SMR_delete_lock",
@@ -539,6 +543,76 @@ ThreadsListSetter::~ThreadsListSetter() {
   }
 }
 
+// Closure to determine if the specified JavaThread is found by
+// threads_do().
+//
+class VerifyHazardPointerThreadClosure : public ThreadClosure {
+ private:
+  bool _found;
+  Thread *_self;
+
+ public:
+  VerifyHazardPointerThreadClosure(Thread *self) : _found(false), _self(self) {}
+
+  bool found() const { return _found; }
+
+  virtual void do_thread(Thread *thread) {
+    if (thread == _self) {
+      _found = true;
+    }
+  }
+};
+
+// Apply the closure to all threads in the system, with a snapshot of
+// all JavaThreads provided by the list parameter.
+void ThreadsSMRSupport::threads_do(ThreadClosure *tc, ThreadsList *list) {
+  list->threads_do(tc);
+  Threads::non_java_threads_do(tc);
+}
+
+// Apply the closure to all threads in the system.
+void ThreadsSMRSupport::threads_do(ThreadClosure *tc) {
+  threads_do(tc, _java_thread_list);
+}
+
+// Verify that the stable hazard pointer used to safely keep threads
+// alive is scanned by threads_do() which is a key piece of honoring
+// the Thread-SMR protocol.
+void ThreadsSMRSupport::verify_hazard_pointer_scanned(Thread *self, ThreadsList *threads) {
+#ifdef ASSERT
+  assert(threads != NULL, "threads must not be NULL");
+
+  // The closure will attempt to verify that the calling thread can
+  // be found by threads_do() on the specified ThreadsList. If it
+  // is successful, then the specified ThreadsList was acquired as
+  // a stable hazard pointer by the calling thread in a way that
+  // honored the Thread-SMR protocol.
+  //
+  // If the calling thread cannot be found by threads_do() and if
+  // it is not the shutdown thread, then the calling thread is not
+  // honoring the Thread-SMR ptotocol. This means that the specified
+  // ThreadsList is not a stable hazard pointer and can be freed
+  // by another thread from the to-be-deleted list at any time.
+  //
+  // Note: The shutdown thread has removed itself from the Threads
+  // list and is safe to have a waiver from this check because
+  // VM_Exit::_shutdown_thread is not set until after the VMThread
+  // has started the final safepoint which holds the Threads_lock
+  // for the remainder of the VM's life.
+  //
+  VerifyHazardPointerThreadClosure cl(self);
+  threads_do(&cl, threads);
+
+  // If the calling thread is not honoring the Thread-SMR protocol,
+  // then we will either crash in threads_do() above because 'threads'
+  // was freed by another thread or we will fail the assert() below.
+  // In either case, we won't get past this point with a badly placed
+  // ThreadsListHandle.
+
+  assert(cl.found() || self == VM_Exit::shutdown_thread(), "Acquired a ThreadsList snapshot from a thread not recognized by the Thread-SMR protocol.");
+#endif
+}
+
 void ThreadsListSetter::set() {
   assert(_target->get_threads_hazard_ptr() == NULL, "hazard ptr should not already be set");
   (void) ThreadsSMRSupport::acquire_stable_list(_target, /* is_ThreadsListSetter */ true);
@@ -612,6 +686,8 @@ ThreadsList *ThreadsSMRSupport::acquire_stable_list_fast_path(Thread *self) {
   // are protected and hence they should not be deleted until everyone
   // agrees it is safe to do so.
 
+  verify_hazard_pointer_scanned(self, threads);
+
   return threads;
 }
 
@@ -647,6 +723,8 @@ ThreadsList *ThreadsSMRSupport::acquire_stable_list_nested_path(Thread *self) {
     }
   }
   log_debug(thread, smr)("tid=" UINTX_FORMAT ": ThreadsSMRSupport::acquire_stable_list: add NestedThreadsList node containing ThreadsList=" INTPTR_FORMAT, os::current_thread_id(), p2i(node->t_list()));
+
+  verify_hazard_pointer_scanned(self, node->t_list());
 
   return node->t_list();
 }
@@ -708,7 +786,7 @@ void ThreadsSMRSupport::free_list(ThreadsList* threads) {
   // Gather a hash table of the current hazard ptrs:
   ThreadScanHashtable *scan_table = new ThreadScanHashtable(hash_table_size);
   ScanHazardPtrGatherThreadsListClosure scan_cl(scan_table);
-  Threads::threads_do(&scan_cl);
+  threads_do(&scan_cl);
 
   // Walk through the linked list of pending freeable ThreadsLists
   // and free the ones that are not referenced from hazard ptrs.
@@ -770,7 +848,7 @@ bool ThreadsSMRSupport::is_a_protected_JavaThread(JavaThread *thread) {
   // hazard ptrs.
   ThreadScanHashtable *scan_table = new ThreadScanHashtable(hash_table_size);
   ScanHazardPtrGatherProtectedThreadsClosure scan_cl(scan_table);
-  Threads::threads_do(&scan_cl);
+  threads_do(&scan_cl);
 
   bool thread_is_protected = false;
   if (scan_table->has_entry((void*)thread)) {
@@ -935,7 +1013,7 @@ void ThreadsSMRSupport::smr_delete(JavaThread *thread) {
         log_debug(thread, smr)("tid=" UINTX_FORMAT ": ThreadsSMRSupport::smr_delete: thread=" INTPTR_FORMAT " is not deleted.", os::current_thread_id(), p2i(thread));
         if (log_is_enabled(Debug, os, thread)) {
           ScanHazardPtrPrintMatchingThreadsClosure scan_cl(thread);
-          Threads::threads_do(&scan_cl);
+          threads_do(&scan_cl);
         }
       }
     } // We have to drop the Threads_lock to wait or delete the thread

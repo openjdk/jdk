@@ -49,7 +49,7 @@ public class IsAnnotationType {
         failures += test(String.class, false);
         failures += test(Enum.class, false);
         failures += test(java.math.RoundingMode.class, false);
-        // Classes in java.lang.annoation
+        // Classes in java.lang.annotation
         failures += test(Annotation.class, false);
         failures += test(Retention.class, true);
         failures += test(RetentionPolicy.class, false);
@@ -57,7 +57,7 @@ public class IsAnnotationType {
         failures += test(AnnotationPoseur.class, false);
 
         if (failures > 0) {
-            throw new RuntimeException("Unexepcted annotation " +
+            throw new RuntimeException("Unexpected annotation " +
                                        "status detected.");
         }
     }

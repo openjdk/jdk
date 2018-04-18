@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,7 @@ import jdk.jshell.ExpressionSnippet;
 import jdk.jshell.ImportSnippet;
 import jdk.jshell.JShell;
 import jdk.jshell.JShell.Subscription;
+import jdk.jshell.JShellException;
 import jdk.jshell.MethodSnippet;
 import jdk.jshell.Snippet;
 import jdk.jshell.Snippet.Kind;
@@ -515,7 +516,7 @@ public class JShellTool implements MessageHandler {
         private final OptionSpecBuilder argV = parser.accepts("v");
         private final OptionSpec<String> argR = parser.accepts("R").withRequiredArg();
         private final OptionSpec<String> argC = parser.accepts("C").withRequiredArg();
-        private final OptionSpecBuilder argHelp = parser.acceptsAll(asList("h", "help"));
+        private final OptionSpecBuilder argHelp = parser.acceptsAll(asList("?", "h", "help"));
         private final OptionSpecBuilder argVersion = parser.accepts("version");
         private final OptionSpecBuilder argFullVersion = parser.accepts("full-version");
         private final OptionSpecBuilder argShowVersion = parser.accepts("show-version");
@@ -1457,6 +1458,7 @@ public class JShellTool implements MessageHandler {
     static final CompletionProvider EMPTY_COMPLETION_PROVIDER = new FixedCompletionProvider();
     private static final CompletionProvider SNIPPET_HISTORY_OPTION_COMPLETION_PROVIDER = new FixedCompletionProvider("-all", "-start ", "-history");
     private static final CompletionProvider SAVE_OPTION_COMPLETION_PROVIDER = new FixedCompletionProvider("-all ", "-start ", "-history ");
+    private static final CompletionProvider HISTORY_OPTION_COMPLETION_PROVIDER = new FixedCompletionProvider("-all");
     private static final CompletionProvider SNIPPET_OPTION_COMPLETION_PROVIDER = new FixedCompletionProvider("-all", "-start " );
     private static final FixedCompletionProvider COMMAND_LINE_LIKE_OPTIONS_COMPLETION_PROVIDER = new FixedCompletionProvider(
             "-class-path ", "-module-path ", "-add-modules ", "-add-exports ");
@@ -1657,6 +1659,11 @@ public class JShellTool implements MessageHandler {
         };
     }
 
+    // /history command completion
+    private static CompletionProvider historyCompletion() {
+        return optionCompletion(HISTORY_OPTION_COMPLETION_PROVIDER);
+    }
+
     // /reload command completion
     private static CompletionProvider reloadCompletion() {
         return optionCompletion(RELOAD_OPTIONS_COMPLETION_PROVIDER);
@@ -1781,8 +1788,8 @@ public class JShellTool implements MessageHandler {
                 this::cmdReload,
                 reloadCompletion()));
         registerCommand(new Command("/history",
-                arg -> cmdHistory(),
-                EMPTY_COMPLETION_PROVIDER));
+                this::cmdHistory,
+                historyCompletion()));
         registerCommand(new Command("/debug",
                 this::cmdDebug,
                 EMPTY_COMPLETION_PROVIDER,
@@ -2423,9 +2430,14 @@ public class JShellTool implements MessageHandler {
         hardrb(key);
     }
 
-    private boolean cmdHistory() {
+    private boolean cmdHistory(String rawArgs) {
+        ArgTokenizer at = new ArgTokenizer("/history", rawArgs.trim());
+        at.allowedOptions("-all");
+        if (!checkOptionsAndRemainingInput(at)) {
+            return false;
+        }
         cmdout.println();
-        for (String s : input.currentSessionHistory()) {
+        for (String s : input.history(!at.hasOption("-all"))) {
             // No number prefix, confusing with snippet ids
             cmdout.printf("%s\n", s);
         }
@@ -2935,7 +2947,7 @@ public class JShellTool implements MessageHandler {
 
     private boolean cmdList(String arg) {
         if (arg.length() >= 2 && "-history".startsWith(arg)) {
-            return cmdHistory();
+            return cmdHistory("");
         }
         Stream<Snippet> stream = argsOptionsToSnippets(state::snippets,
                 this::mainActive, arg, "/list");
@@ -3183,7 +3195,7 @@ public class JShellTool implements MessageHandler {
                 CREATE, TRUNCATE_EXISTING, WRITE)) {
             if (at.hasOption("-history")) {
                 // they want history (commands and snippets), ignore the snippet stream
-                for (String s : input.currentSessionHistory()) {
+                for (String s : input.history(true)) {
                     writer.write(s);
                     writer.write("\n");
                 }
@@ -3346,20 +3358,60 @@ public class JShellTool implements MessageHandler {
     /**
      * Print out a snippet exception.
      *
-     * @param exception the exception to print
+     * @param exception the throwable to print
      * @return true on fatal exception
      */
-    private boolean displayException(Exception exception) {
-        if (exception instanceof EvalException) {
-            printEvalException((EvalException) exception);
-            return true;
-        } else if (exception instanceof UnresolvedReferenceException) {
-            printUnresolvedException((UnresolvedReferenceException) exception);
-            return false;
+    private boolean displayException(Throwable exception) {
+        Throwable rootCause = exception;
+        while (rootCause instanceof EvalException) {
+            rootCause = rootCause.getCause();
+        }
+        if (rootCause != exception && rootCause instanceof UnresolvedReferenceException) {
+            // An unresolved reference caused a chained exception, just show the unresolved
+            return displayException(rootCause, null);
         } else {
+            return displayException(exception, null);
+        }
+    }
+    //where
+    private boolean displayException(Throwable exception, StackTraceElement[] caused) {
+        if (exception instanceof EvalException) {
+            // User exception
+            return displayEvalException((EvalException) exception, caused);
+        } else if (exception instanceof UnresolvedReferenceException) {
+            // Reference to an undefined snippet
+            return displayUnresolvedException((UnresolvedReferenceException) exception);
+        } else {
+            // Should never occur
             error("Unexpected execution exception: %s", exception);
             return true;
         }
+    }
+    //where
+    private boolean displayUnresolvedException(UnresolvedReferenceException ex) {
+        // Display the resolution issue
+        printSnippetStatus(ex.getSnippet(), false);
+        return false;
+    }
+
+    //where
+    private boolean displayEvalException(EvalException ex, StackTraceElement[] caused) {
+        // The message for the user exception is configured based on the
+        // existance of an exception message and if this is a recursive
+        // invocation for a chained exception.
+        String msg = ex.getMessage();
+        String key = "jshell.err.exception" +
+                (caused == null? ".thrown" : ".cause") +
+                (msg == null? "" : ".message");
+        errormsg(key, ex.getExceptionClassName(), msg);
+        // The caused trace is sent to truncate duplicate elements in the cause trace
+        printStackTrace(ex.getStackTrace(), caused);
+        JShellException cause = ex.getCause();
+        if (cause != null) {
+            // Display the cause (recursively)
+            displayException(cause, ex.getStackTrace());
+        }
+        return true;
     }
 
     /**
@@ -3507,9 +3559,19 @@ public class JShellTool implements MessageHandler {
         }
         return false;
     }
-    //where
-    void printStackTrace(StackTraceElement[] stes) {
-        for (StackTraceElement ste : stes) {
+
+    // Print a stack trace, elide frames displayed for the caused exception
+    void printStackTrace(StackTraceElement[] stes, StackTraceElement[] caused) {
+        int overlap = 0;
+        if (caused != null) {
+            int maxOverlap = Math.min(stes.length, caused.length);
+            while (overlap < maxOverlap
+                    && stes[stes.length - (overlap + 1)].equals(caused[caused.length - (overlap + 1)])) {
+                ++overlap;
+            }
+        }
+        for (int i = 0; i < stes.length - overlap; ++i) {
+            StackTraceElement ste = stes[i];
             StringBuilder sb = new StringBuilder();
             String cn = ste.getClassName();
             if (!cn.isEmpty()) {
@@ -3537,19 +3599,9 @@ public class JShellTool implements MessageHandler {
             error("      at %s(%s)", sb, loc);
 
         }
-    }
-    //where
-    void printUnresolvedException(UnresolvedReferenceException ex) {
-        printSnippetStatus(ex.getSnippet(), false);
-    }
-    //where
-    void printEvalException(EvalException ex) {
-        if (ex.getMessage() == null) {
-            error("%s thrown", ex.getExceptionClassName());
-        } else {
-            error("%s thrown: %s", ex.getExceptionClassName(), ex.getMessage());
+        if (overlap != 0) {
+            error("      ...");
         }
-        printStackTrace(ex.getStackTrace());
     }
 
     private FormatAction toAction(Status status, Status previousStatus, boolean isSignatureChange) {
@@ -3862,7 +3914,7 @@ abstract class NonInteractiveIOContext extends IOContext {
     }
 
     @Override
-    public Iterable<String> currentSessionHistory() {
+    public Iterable<String> history(boolean currentSession) {
         return Collections.emptyList();
     }
 

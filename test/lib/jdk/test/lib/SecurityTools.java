@@ -43,8 +43,10 @@ public class SecurityTools {
     private static ProcessBuilder getProcessBuilder(String tool, List<String> args) {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK(tool)
                 .addVMArg("-Duser.language=en")
-                .addVMArg("-Duser.country=US")
-                .addVMArg("-Djava.security.egd=file:/dev/./urandom");
+                .addVMArg("-Duser.country=US");
+        if (!Platform.isWindows()) {
+            launcher.addVMArg("-Djava.security.egd=file:/dev/./urandom");
+        }
         for (String arg : args) {
             if (arg.startsWith("-J")) {
                 launcher.addVMArg(arg.substring(2));

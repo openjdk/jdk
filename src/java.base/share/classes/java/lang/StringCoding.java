@@ -42,7 +42,6 @@ import jdk.internal.HotSpotIntrinsicCandidate;
 import sun.nio.cs.HistoricallyNamedCharset;
 import sun.nio.cs.ArrayDecoder;
 import sun.nio.cs.ArrayEncoder;
-import sun.nio.cs.StandardCharsets;
 
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;

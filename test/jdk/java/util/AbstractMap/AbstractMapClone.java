@@ -30,7 +30,10 @@
  * @author Konstantin Kladko
  */
 
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class AbstractMapClone extends AbstractMap implements Cloneable {
 
@@ -45,10 +48,11 @@ public class AbstractMapClone extends AbstractMap implements Cloneable {
     }
 
     public Object clone() {
-        AbstractMapClone clone = null;
+        final AbstractMapClone clone;
         try {
-        clone = (AbstractMapClone)super.clone();
+            clone = (AbstractMapClone)super.clone();
         } catch (CloneNotSupportedException e) {
+            throw new AssertionError(e);
         }
         clone.map = (Map)((HashMap)map).clone();
         return clone;

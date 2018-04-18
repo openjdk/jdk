@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -774,14 +774,12 @@ newStringUTF8(JNIEnv *env, const char *str)
     return newSizedStringJava(env, str, len);
 }
 
-/* Initialize the fast encoding.  If the "sun.jnu.encoding" property
- * has not yet been set, we leave fastEncoding == NO_ENCODING_YET.
+/* Initialize the fast encoding from the encoding name.
+ * Export InitializeEncoding so that the VM can initialize it if required.
  */
-void
-initializeEncoding(JNIEnv *env)
+JNIEXPORT void
+InitializeEncoding(JNIEnv *env, const char *encname)
 {
-    jstring propname = 0;
-    jstring enc = 0;
     jclass strClazz = NULL;
 
     if ((*env)->EnsureLocalCapacity(env, 3) < 0)
@@ -790,61 +788,49 @@ initializeEncoding(JNIEnv *env)
     strClazz = JNU_ClassString(env);
     CHECK_NULL(strClazz);
 
-    propname = (*env)->NewStringUTF(env, "sun.jnu.encoding");
-    if (propname) {
-        jboolean exc;
-        enc = JNU_CallStaticMethodByName
-                       (env,
-                        &exc,
-                        "java/lang/System",
-                        "getProperty",
-                        "(Ljava/lang/String;)Ljava/lang/String;",
-                        propname).l;
-        if (!exc) {
-            if (enc) {
-                const char* encname = (*env)->GetStringUTFChars(env, enc, 0);
-                if (encname) {
-           /*
-            * On Solaris with nl_langinfo() called in GetJavaProperties():
-            *
-            *   locale undefined -> NULL -> hardcoded default
-            *   "C" locale       -> "" -> hardcoded default     (on 2.6)
-            *   "C" locale       -> "ISO646-US"                 (on Sol 7/8)
-            *   "en_US" locale -> "ISO8859-1"
-            *   "en_GB" locale -> "ISO8859-1"                   (on Sol 7/8)
-            *   "en_UK" locale -> "ISO8859-1"                   (on 2.6)
-            */
-                    if ((strcmp(encname, "8859_1") == 0) ||
-                        (strcmp(encname, "ISO8859-1") == 0) ||
-                        (strcmp(encname, "ISO8859_1") == 0) ||
-                        (strcmp(encname, "ISO-8859-1") == 0)) {
-                        fastEncoding = FAST_8859_1;
-                    } else if (strcmp(encname, "UTF-8") == 0) {
-                        fastEncoding = FAST_UTF_8;
-                        jnuEncoding = (jstring)(*env)->NewGlobalRef(env, enc);
-                    } else if (strcmp(encname, "ISO646-US") == 0) {
-                        fastEncoding = FAST_646_US;
-                    } else if (strcmp(encname, "Cp1252") == 0 ||
-                             /* This is a temporary fix until we move */
-                             /* to wide character versions of all Windows */
-                             /* calls. */
-                             strcmp(encname, "utf-16le") == 0) {
-                        fastEncoding = FAST_CP1252;
-                    } else {
-                        fastEncoding = NO_FAST_ENCODING;
-                        jnuEncoding = (jstring)(*env)->NewGlobalRef(env, enc);
-                    }
-                    (*env)->ReleaseStringUTFChars(env, enc, encname);
-                }
-            }
+    if (encname) {
+        /*
+         * On Solaris with nl_langinfo() called in GetJavaProperties():
+         *
+         *   locale undefined -> NULL -> hardcoded default
+         *   "C" locale       -> "" -> hardcoded default     (on 2.6)
+         *   "C" locale       -> "ISO646-US"                 (on Sol 7/8)
+         *   "en_US" locale -> "ISO8859-1"
+         *   "en_GB" locale -> "ISO8859-1"                   (on Sol 7/8)
+         *   "en_UK" locale -> "ISO8859-1"                   (on 2.6)
+         */
+        if ((strcmp(encname, "8859_1") == 0) ||
+            (strcmp(encname, "ISO8859-1") == 0) ||
+            (strcmp(encname, "ISO8859_1") == 0) ||
+            (strcmp(encname, "ISO-8859-1") == 0)) {
+            fastEncoding = FAST_8859_1;
+        } else if (strcmp(encname, "UTF-8") == 0) {
+            jstring enc = (*env)->NewStringUTF(env, encname);
+            if (enc == NULL)
+                return;
+            fastEncoding = FAST_UTF_8;
+            jnuEncoding = (jstring)(*env)->NewGlobalRef(env, enc);
+            (*env)->DeleteLocalRef(env, enc);
+        } else if (strcmp(encname, "ISO646-US") == 0) {
+            fastEncoding = FAST_646_US;
+        } else if (strcmp(encname, "Cp1252") == 0 ||
+            /* This is a temporary fix until we move */
+            /* to wide character versions of all Windows */
+            /* calls. */
+            strcmp(encname, "utf-16le") == 0) {
+            fastEncoding = FAST_CP1252;
         } else {
-            (*env)->ExceptionClear(env);
+            jstring enc = (*env)->NewStringUTF(env, encname);
+            if (enc == NULL)
+                return;
+            fastEncoding = NO_FAST_ENCODING;
+            jnuEncoding = (jstring)(*env)->NewGlobalRef(env, enc);
+            (*env)->DeleteLocalRef(env, enc);
         }
     } else {
-        (*env)->ExceptionClear(env);
+        JNU_ThrowInternalError(env, "platform encoding undefined");
+        return;
     }
-    (*env)->DeleteLocalRef(env, propname);
-    (*env)->DeleteLocalRef(env, enc);
 
     /* Initialize method-id cache */
     String_getBytes_ID = (*env)->GetMethodID(env, strClazz,
@@ -865,19 +851,18 @@ NewStringPlatform(JNIEnv *env, const char *str)
 JNIEXPORT jstring JNICALL
 JNU_NewStringPlatform(JNIEnv *env, const char *str)
 {
-    if (fastEncoding == NO_ENCODING_YET) {
-        initializeEncoding(env);
-        JNU_CHECK_EXCEPTION_RETURN(env, NULL);
-    }
-
-    if ((fastEncoding == FAST_8859_1) || (fastEncoding == NO_ENCODING_YET))
+    if (fastEncoding == FAST_UTF_8)
+        return newStringUTF8(env, str);
+    if (fastEncoding == FAST_8859_1)
         return newString8859_1(env, str);
     if (fastEncoding == FAST_646_US)
         return newString646_US(env, str);
     if (fastEncoding == FAST_CP1252)
         return newStringCp1252(env, str);
-    if (fastEncoding == FAST_UTF_8)
-        return newStringUTF8(env, str);
+    if (fastEncoding == NO_ENCODING_YET) {
+        JNU_ThrowInternalError(env, "platform encoding not initialized");
+        return NULL;
+    }
     return newStringJava(env, str);
 }
 
@@ -985,20 +970,18 @@ JNU_GetStringPlatformChars(JNIEnv *env, jstring jstr, jboolean *isCopy)
     if (isCopy)
         *isCopy = JNI_TRUE;
 
-    if (fastEncoding == NO_ENCODING_YET) {
-        initializeEncoding(env);
-        JNU_CHECK_EXCEPTION_RETURN(env, 0);
-    }
-
-    if ((fastEncoding == FAST_8859_1) || (fastEncoding == NO_ENCODING_YET))
+    if (fastEncoding == FAST_UTF_8)
+        return getStringUTF8(env, jstr);
+    if (fastEncoding == FAST_8859_1)
         return getString8859_1Chars(env, jstr);
     if (fastEncoding == FAST_646_US)
         return getString646_USChars(env, jstr);
     if (fastEncoding == FAST_CP1252)
         return getStringCp1252Chars(env, jstr);
-    if (fastEncoding == FAST_UTF_8)
-        return getStringUTF8(env, jstr);
-    else
+    if (fastEncoding == NO_ENCODING_YET) {
+        JNU_ThrowInternalError(env, "platform encoding not initialized");
+        return 0;
+    } else
         return getStringBytes(env, jstr);
 }
 

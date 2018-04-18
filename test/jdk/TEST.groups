@@ -28,6 +28,8 @@
 tier1 = \
     :jdk_lang \
     :jdk_util \
+    :jdk_svc_sanity \
+    :build_sanity \
     sun/nio/cs/ISO8859x.java \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
@@ -35,19 +37,30 @@ tier1 = \
     tools/pack200
 
 tier2 = \
-    :jdk_io \
-    :jdk_nio \
-    -sun/nio/cs/ISO8859x.java \
-    -java/nio/Buffer \
-    :jdk_net \
-    :jdk_time \
+    :tier2_part1 \
+    :tier2_part2 \
+    :tier2_part3
+
+# com/sun/crypto/provider/Cipher is in tier1 because of JDK-8132855
+tier2_part1 = \
     :jdk_security \
-    -com/sun/crypto/provider/Cipher \
-    :jdk_text \
+    -com/sun/crypto/provider/Cipher
+
+# sun/nio/cs/ISO8859x.java and java/nio/Buffer are in tier1 because of JDK-8132854
+tier2_part2 = \
     :core_tools \
     -tools/pack200 \
-    :jdk_other
+    :jdk_io \
+    :jdk_nio \
+    -java/nio/Buffer \
+    -sun/nio/cs/ISO8859x.java \
+    :jdk_other \
+    :jdk_text \
+    :jdk_time
 
+tier2_part3 = \
+    :jdk_net
+   
 tier3 = \
     :jdk_rmi \
     :jdk_beans \
@@ -59,6 +72,10 @@ tier3 = \
 #
 # Other test definitions; generally smaller granularity than tiers
 #
+
+# Build source checking
+build_sanity = \
+    sanity/releaseFile
 
 # java.lang package and VM runtime support
 jdk_lang = \
@@ -263,17 +280,15 @@ jdk_tools = \
 jdk_other = \
     java/sql \
     javax/sql \
+    javax/transaction \
     javax/rmi \
     javax/naming \
     javax/script \
     javax/smartcardio \
-    javax/transaction \
     javax/xml \
     -javax/xml/crypto \
     jdk/internal/jline \
     com/sun/jndi \
-    com/sun/corba \
-    org/omg/CORBA \
     lib/testlibrary
 
 #

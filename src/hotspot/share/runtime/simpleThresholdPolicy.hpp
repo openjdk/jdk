@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,13 +82,7 @@ protected:
   template<CompLevel level> static inline bool loop_predicate_helper(int i, int b, double scale, Method* method);
 
   // Get a compilation level for a given method.
-  static CompLevel comp_level(Method* method) {
-    CompiledMethod *nm = method->code();
-    if (nm != NULL && nm->is_in_use()) {
-      return (CompLevel)nm->comp_level();
-    }
-    return CompLevel_none;
-  }
+  static CompLevel comp_level(Method* method);
   virtual void method_invocation_event(const methodHandle& method, const methodHandle& inlinee,
                                        CompLevel level, CompiledMethod* nm, JavaThread* thread);
   virtual void method_back_branch_event(const methodHandle& method, const methodHandle& inlinee,

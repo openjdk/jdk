@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#include "interpreter/bytecode.hpp"
+#include "interpreter/bytecode.inline.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "oops/constantPool.hpp"
+#include "oops/cpCache.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/fieldType.hpp"
 #include "runtime/handles.inline.hpp"
@@ -123,6 +124,11 @@ void Bytecode_invoke::verify() const {
   assert(cpcache() != NULL, "do not call this from verifier or rewriter");
 }
 
+int Bytecode_invoke::size_of_parameters() const {
+  ArgumentSizeComputer asc(signature());
+  return asc.size() + (has_receiver() ? 1 : 0);
+}
+
 
 Symbol* Bytecode_member_ref::klass() const {
   return constants()->klass_ref_at_noresolve(index());
@@ -207,8 +213,7 @@ int Bytecode_loadconstant::pool_index() const {
 
 BasicType Bytecode_loadconstant::result_type() const {
   int index = pool_index();
-  constantTag tag = _method->constants()->tag_at(index);
-  return tag.basic_type();
+  return _method->constants()->basic_type_for_constant_at(index);
 }
 
 oop Bytecode_loadconstant::resolve_constant(TRAPS) const {
@@ -217,6 +222,8 @@ oop Bytecode_loadconstant::resolve_constant(TRAPS) const {
   ConstantPool* constants = _method->constants();
   if (has_cache_index()) {
     return constants->resolve_cached_constant_at(index, THREAD);
+  } else if (_method->constants()->tag_at(index).is_dynamic_constant()) {
+    return constants->resolve_possibly_cached_constant_at(index, THREAD);
   } else {
     return constants->resolve_constant_at(index, THREAD);
   }

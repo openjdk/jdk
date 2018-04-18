@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,10 +188,7 @@ public class MsgAppletViewer extends ListResourceBundle {
             {"appletsecurityexception.checkpackageaccess", "Security Exception: cannot access package: {0}"},
             {"appletsecurityexception.checkpackagedefinition", "Security Exception: cannot define package: {0}"},
             {"appletsecurityexception.cannotsetfactory", "Security Exception: cannot set factory"},
-            {"appletsecurityexception.checkmemberaccess", "Security Exception: check member access"},
             {"appletsecurityexception.checkgetprintjob", "Security Exception: getPrintJob"},
-            {"appletsecurityexception.checksystemclipboardaccess", "Security Exception: getSystemClipboard"},
-            {"appletsecurityexception.checkawteventqueueaccess", "Security Exception: getEventQueue"},
             {"appletsecurityexception.checksecurityaccess", "Security Exception: security operation: {0}"},
             {"appletsecurityexception.getsecuritycontext.unknown", "unknown class loader type. unable to check for getContext"},
             {"appletsecurityexception.checkread.unknown", "unknown class loader type. unable to check for checking read {0}"},

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,11 @@
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classListParser.hpp"
-#include "classfile/classLoader.hpp"
+#include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/klassFactory.hpp"
+#include "classfile/modules.hpp"
 #include "classfile/sharedClassUtil.hpp"
 #include "classfile/sharedPathsMiscInfo.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -41,19 +42,21 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
 #include "services/threadService.hpp"
 #include "utilities/stringUtils.hpp"
 
-jshort ClassLoaderExt::_app_paths_start_index = ClassLoaderExt::max_classpath_index;
+jshort ClassLoaderExt::_app_class_paths_start_index = ClassLoaderExt::max_classpath_index;
+jshort ClassLoaderExt::_app_module_paths_start_index = ClassLoaderExt::max_classpath_index;
 bool ClassLoaderExt::_has_app_classes = false;
 bool ClassLoaderExt::_has_platform_classes = false;
 
 void ClassLoaderExt::setup_app_search_path() {
   assert(DumpSharedSpaces, "this function is only used with -Xshare:dump and -XX:+UseAppCDS");
-  _app_paths_start_index = ClassLoader::num_boot_classpath_entries();
+  _app_class_paths_start_index = ClassLoader::num_boot_classpath_entries();
   char* app_class_path = os::strdup(Arguments::get_appclasspath());
 
   if (strcmp(app_class_path, ".") == 0) {
@@ -66,6 +69,29 @@ void ClassLoaderExt::setup_app_search_path() {
     shared_paths_misc_info()->add_app_classpath(app_class_path);
     ClassLoader::setup_app_search_path(app_class_path);
   }
+}
+
+void ClassLoaderExt::process_module_table(ModuleEntryTable* met, TRAPS) {
+  ResourceMark rm;
+  for (int i = 0; i < met->table_size(); i++) {
+    for (ModuleEntry* m = met->bucket(i); m != NULL;) {
+      char* path = m->location()->as_C_string();
+      if (strncmp(path, "file:", 5) == 0 && ClassLoader::string_ends_with(path, ".jar")) {
+        m->print();
+        path = ClassLoader::skip_uri_protocol(path);
+        ClassLoader::setup_module_search_path(path, THREAD);
+      }
+      m = m->next();
+    }
+  }
+}
+void ClassLoaderExt::setup_module_search_path(TRAPS) {
+  assert(DumpSharedSpaces, "this function is only used with -Xshare:dump and -XX:+UseAppCDS");
+  _app_module_paths_start_index = ClassLoader::num_boot_classpath_entries() +
+                              ClassLoader::num_app_classpath_entries();
+  Handle system_class_loader (THREAD, SystemDictionary::java_system_loader());
+  ModuleEntryTable* met = Modules::get_module_entry_table(system_class_loader);
+  process_module_table(met, THREAD);
 }
 
 char* ClassLoaderExt::read_manifest(ClassPathEntry* entry, jint *manifest_size, bool clean_text, TRAPS) {
@@ -195,29 +221,13 @@ void ClassLoaderExt::setup_search_paths() {
   }
 }
 
-Thread* ClassLoaderExt::Context::_dump_thread = NULL;
-
-bool ClassLoaderExt::check(ClassLoaderExt::Context *context,
-                           const ClassFileStream* stream,
-                           const int classpath_index) {
-  if (stream != NULL) {
-    // Ignore any App classes from signed JAR file during CDS archiving
-    // dumping
-    if (DumpSharedSpaces &&
-        SharedClassUtil::is_classpath_entry_signed(classpath_index) &&
-        classpath_index >= _app_paths_start_index) {
-      tty->print_cr("Preload Warning: Skipping %s from signed JAR",
-                    context->class_name());
-      return false;
-    }
-    if (classpath_index >= _app_paths_start_index) {
-      _has_app_classes = true;
-      _has_platform_classes = true;
-    }
+void ClassLoaderExt::setup_module_paths(TRAPS) {
+  if (UseAppCDS) {
+    ClassLoaderExt::setup_module_search_path(THREAD);
   }
-
-  return true;
 }
+
+Thread* ClassLoaderExt::Context::_dump_thread = NULL;
 
 void ClassLoaderExt::record_result(ClassLoaderExt::Context *context,
                                    Symbol* class_name,

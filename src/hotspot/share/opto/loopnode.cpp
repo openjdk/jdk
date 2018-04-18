@@ -1158,9 +1158,9 @@ Node* CountedLoopNode::match_incr_with_optional_truncation(
   return NULL;
 }
 
-LoopNode* CountedLoopNode::skip_strip_mined(int expect_opaq) {
+LoopNode* CountedLoopNode::skip_strip_mined(int expect_skeleton) {
   if (is_strip_mined()) {
-    verify_strip_mined(expect_opaq);
+    verify_strip_mined(expect_skeleton);
     return in(EntryControl)->as_Loop();
   }
   return this;
@@ -1250,6 +1250,20 @@ SafePointNode* CountedLoopNode::outer_safepoint() const {
     return NULL;
   }
   return l->outer_safepoint();
+}
+
+Node* CountedLoopNode::skip_predicates() {
+  if (is_main_loop()) {
+    Node* ctrl = skip_strip_mined()->in(LoopNode::EntryControl);
+    while (ctrl != NULL && ctrl->is_Proj() && ctrl->in(0)->is_If() &&
+           ctrl->in(0)->as_If()->proj_out(1-ctrl->as_Proj()->_con)->outcnt() == 1 &&
+           ctrl->in(0)->as_If()->proj_out(1-ctrl->as_Proj()->_con)->unique_out()->Opcode() == Op_Halt) {
+      ctrl = ctrl->in(0)->in(0);
+    }
+
+    return ctrl;
+  }
+  return in(LoopNode::EntryControl);
 }
 
 void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
@@ -2347,7 +2361,7 @@ void IdealLoopTree::dump_head( ) const {
     tty->print("  ");
   tty->print("Loop: N%d/N%d ",_head->_idx,_tail->_idx);
   if (_irreducible) tty->print(" IRREDUCIBLE");
-  Node* entry = _head->as_Loop()->skip_strip_mined(-1)->in(LoopNode::EntryControl);
+  Node* entry = _head->is_Loop() ? _head->as_Loop()->skip_strip_mined(-1)->in(LoopNode::EntryControl) : _head->in(LoopNode::EntryControl);
   Node* predicate = PhaseIdealLoop::find_predicate_insertion_point(entry, Deoptimization::Reason_loop_limit_check);
   if (predicate != NULL ) {
     tty->print(" limit_check");
@@ -2398,7 +2412,7 @@ void IdealLoopTree::dump_head( ) const {
   if (Verbose) {
     tty->print(" body={"); _body.dump_simple(); tty->print(" }");
   }
-  if (_head->as_Loop()->is_strip_mined()) {
+  if (_head->is_Loop() && _head->as_Loop()->is_strip_mined()) {
     tty->print(" strip_mined");
   }
   tty->cr();
@@ -3770,7 +3784,8 @@ bool PhaseIdealLoop::is_canonical_loop_entry(CountedLoopNode* cl) {
   if (!cl->is_main_loop() && !cl->is_post_loop()) {
     return false;
   }
-  Node* ctrl = cl->skip_strip_mined()->in(LoopNode::EntryControl);
+  Node* ctrl = cl->skip_predicates();
+
   if (ctrl == NULL || (!ctrl->is_IfTrue() && !ctrl->is_IfFalse())) {
     return false;
   }

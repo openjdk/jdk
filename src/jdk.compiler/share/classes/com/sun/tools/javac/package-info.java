@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 /**
  * This package provides a legacy entry point for the <em>javac</em> tool.
- * See the <a href="{@docRoot}/jdk.compiler-summary.html">{@code jdk.compiler}</a>
+ * See the <a href="{@docRoot}/jdk.compiler/module-summary.html">{@code jdk.compiler}</a>
  * module for details on replacement APIs.
  */
 package com.sun.tools.javac;

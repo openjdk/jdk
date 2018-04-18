@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  *          java.management
  *          jdk.attach/sun.tools.attach
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm/timeout=900 TestOptionsWithRanges
+ * @run main/othervm/timeout=1800 TestOptionsWithRanges
  */
 
 import java.util.ArrayList;
@@ -86,6 +86,11 @@ public class TestOptionsWithRanges {
          * Exclude MallocMaxTestWords as it is expected to exit VM at small values (>=0)
          */
         excludeTestMinRange("MallocMaxTestWords");
+
+        /*
+         * Exclude CMSSamplingGrain as it can cause intermittent failures on Windows
+         */
+        excludeTestRange("CMSSamplingGrain");
 
         /*
          * Exclude below options as their maximum value would consume too much memory

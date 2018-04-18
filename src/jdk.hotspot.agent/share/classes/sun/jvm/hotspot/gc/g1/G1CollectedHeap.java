@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.gc.shared.CollectedHeap;
 import sun.jvm.hotspot.gc.shared.CollectedHeapName;
 import sun.jvm.hotspot.gc.shared.SpaceClosure;
+import sun.jvm.hotspot.gc.shared.PrintRegionClosure;
 import sun.jvm.hotspot.memory.MemRegion;
 import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.runtime.VMObjectFactory;
@@ -40,6 +41,7 @@ import sun.jvm.hotspot.types.AddressField;
 import sun.jvm.hotspot.types.CIntegerField;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
+import sun.jvm.hotspot.tools.HeapSummary;
 
 // Mirror class for G1CollectedHeap.
 
@@ -123,7 +125,7 @@ public class G1CollectedHeap extends CollectedHeap {
     }
 
     public CollectedHeapName kind() {
-        return CollectedHeapName.G1_COLLECTED_HEAP;
+        return CollectedHeapName.G1;
     }
 
     @Override
@@ -133,6 +135,14 @@ public class G1CollectedHeap extends CollectedHeap {
         tty.print("garbage-first heap");
         tty.print(" [" + mr.start() + ", " + mr.end() + "]");
         tty.println(" region size " + (HeapRegion.grainBytes() / 1024) + "K");
+
+        HeapSummary sum = new HeapSummary();
+        sum.printG1HeapSummary(this);
+    }
+
+    public void printRegionDetails(PrintStream tty) {
+        PrintRegionClosure prc = new PrintRegionClosure(tty);
+        heapRegionIterate(prc);
     }
 
     public G1CollectedHeap(Address addr) {

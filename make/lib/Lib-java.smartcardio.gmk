@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,25 +33,16 @@ LIBJ2PCSC_CPPFLAGS := $(addprefix -I,$(LIBJ2PCSC_SRC)) \
     -I$(TOPDIR)/src/java.smartcardio/$(OPENJDK_TARGET_OS_TYPE)/native/libj2pcsc/MUSCLE \
     -I$(SUPPORT_OUTPUTDIR)/headers/java.smartcardio
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBJ2PCSC, \
-    LIBRARY := j2pcsc, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+$(eval $(call SetupJdkLibrary, BUILD_LIBJ2PCSC, \
+    NAME := j2pcsc, \
     SRC := $(LIBJ2PCSC_SRC), \
     CFLAGS_unix := -D__sun_jdk, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBJ2PCSC_CPPFLAGS), \
-    MAPFILE := $(TOPDIR)/make/mapfiles/libj2pcsc/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := $(LIBDL), \
-    LIBS_solaris := -lc, \
     LIBS_windows := winscard.lib, \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=j2pcsc.dll" \
-        -D "JDK_INTERNAL_NAME=j2pcsc" \
-        -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libj2pcsc, \
 ))
 
 TARGETS += $(BUILD_LIBJ2PCSC)

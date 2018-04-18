@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,15 @@
  */
 
 /**
- * @see KeyStoreCompatibilityMode.sh
- */
+ * @test
+ * @bug 6324294 6931562 8180570
+ * @requires os.family == "windows"
+ * @run main KeyStoreCompatibilityMode
+ * @run main/othervm -Dsun.security.mscapi.keyStoreCompatibilityMode=true KeyStoreCompatibilityMode
+ * @run main/othervm -Dsun.security.mscapi.keyStoreCompatibilityMode=false KeyStoreCompatibilityMode -disable
+ * @summary Confirm that a null stream or password is not permitted when
+ *          compatibility mode is enabled (and vice versa).
+*/
 
 import java.io.*;
 import java.security.Provider;

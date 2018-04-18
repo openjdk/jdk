@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/extendedPC.hpp"
 #include "runtime/globals.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -52,13 +52,13 @@
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
+#include "runtime/semaphore.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
-#include "semaphore_bsd.hpp"
 #include "services/attachListener.hpp"
 #include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
@@ -91,7 +91,6 @@
 # include <time.h>
 # include <pwd.h>
 # include <poll.h>
-# include <semaphore.h>
 # include <fcntl.h>
 # include <string.h>
 # include <sys/param.h>
@@ -1829,135 +1828,28 @@ int os::sigexitnum_pd() {
 
 // a counter for each possible signal value
 static volatile jint pending_signals[NSIG+1] = { 0 };
-
-// Bsd(POSIX) specific hand shaking semaphore.
-#ifdef __APPLE__
-typedef semaphore_t os_semaphore_t;
-
-  #define SEM_INIT(sem, value)    semaphore_create(mach_task_self(), &sem, SYNC_POLICY_FIFO, value)
-  #define SEM_WAIT(sem)           semaphore_wait(sem)
-  #define SEM_POST(sem)           semaphore_signal(sem)
-  #define SEM_DESTROY(sem)        semaphore_destroy(mach_task_self(), sem)
-#else
-typedef sem_t os_semaphore_t;
-
-  #define SEM_INIT(sem, value)    sem_init(&sem, 0, value)
-  #define SEM_WAIT(sem)           sem_wait(&sem)
-  #define SEM_POST(sem)           sem_post(&sem)
-  #define SEM_DESTROY(sem)        sem_destroy(&sem)
-#endif
-
-#ifdef __APPLE__
-// OS X doesn't support unamed POSIX semaphores, so the implementation in os_posix.cpp can't be used.
-
-static const char* sem_init_strerror(kern_return_t value) {
-  switch (value) {
-    case KERN_INVALID_ARGUMENT:  return "Invalid argument";
-    case KERN_RESOURCE_SHORTAGE: return "Resource shortage";
-    default:                     return "Unknown";
-  }
-}
-
-OSXSemaphore::OSXSemaphore(uint value) {
-  kern_return_t ret = SEM_INIT(_semaphore, value);
-
-  guarantee(ret == KERN_SUCCESS, "Failed to create semaphore: %s", sem_init_strerror(ret));
-}
-
-OSXSemaphore::~OSXSemaphore() {
-  SEM_DESTROY(_semaphore);
-}
-
-void OSXSemaphore::signal(uint count) {
-  for (uint i = 0; i < count; i++) {
-    kern_return_t ret = SEM_POST(_semaphore);
-
-    assert(ret == KERN_SUCCESS, "Failed to signal semaphore");
-  }
-}
-
-void OSXSemaphore::wait() {
-  kern_return_t ret;
-  while ((ret = SEM_WAIT(_semaphore)) == KERN_ABORTED) {
-    // Semaphore was interrupted. Retry.
-  }
-  assert(ret == KERN_SUCCESS, "Failed to wait on semaphore");
-}
-
-jlong OSXSemaphore::currenttime() {
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  return (tv.tv_sec * NANOSECS_PER_SEC) + (tv.tv_usec * 1000);
-}
-
-bool OSXSemaphore::trywait() {
-  return timedwait(0, 0);
-}
-
-bool OSXSemaphore::timedwait(unsigned int sec, int nsec) {
-  kern_return_t kr = KERN_ABORTED;
-  mach_timespec_t waitspec;
-  waitspec.tv_sec = sec;
-  waitspec.tv_nsec = nsec;
-
-  jlong starttime = currenttime();
-
-  kr = semaphore_timedwait(_semaphore, waitspec);
-  while (kr == KERN_ABORTED) {
-    jlong totalwait = (sec * NANOSECS_PER_SEC) + nsec;
-
-    jlong current = currenttime();
-    jlong passedtime = current - starttime;
-
-    if (passedtime >= totalwait) {
-      waitspec.tv_sec = 0;
-      waitspec.tv_nsec = 0;
-    } else {
-      jlong waittime = totalwait - (current - starttime);
-      waitspec.tv_sec = waittime / NANOSECS_PER_SEC;
-      waitspec.tv_nsec = waittime % NANOSECS_PER_SEC;
-    }
-
-    kr = semaphore_timedwait(_semaphore, waitspec);
-  }
-
-  return kr == KERN_SUCCESS;
-}
-
-#else
-// Use POSIX implementation of semaphores.
-
-struct timespec PosixSemaphore::create_timespec(unsigned int sec, int nsec) {
-  struct timespec ts;
-  unpackTime(&ts, false, (sec * NANOSECS_PER_SEC) + nsec);
-
-  return ts;
-}
-
-#endif // __APPLE__
-
-static os_semaphore_t sig_sem;
-
-#ifdef __APPLE__
-static OSXSemaphore sr_semaphore;
-#else
-static PosixSemaphore sr_semaphore;
-#endif
+static Semaphore* sig_sem = NULL;
 
 void os::signal_init_pd() {
   // Initialize signal structures
   ::memset((void*)pending_signals, 0, sizeof(pending_signals));
 
   // Initialize signal semaphore
-  ::SEM_INIT(sig_sem, 0);
+  sig_sem = new Semaphore();
 }
 
 void os::signal_notify(int sig) {
-  Atomic::inc(&pending_signals[sig]);
-  ::SEM_POST(sig_sem);
+  if (sig_sem != NULL) {
+    Atomic::inc(&pending_signals[sig]);
+    sig_sem->signal();
+  } else {
+    // Signal thread is not created with ReduceSignalUsage and signal_init_pd
+    // initialization isn't called.
+    assert(ReduceSignalUsage, "signal semaphore should be created");
+  }
 }
 
-static int check_pending_signals(bool wait) {
+static int check_pending_signals() {
   Atomic::store(0, &sigint_count);
   for (;;) {
     for (int i = 0; i < NSIG + 1; i++) {
@@ -1966,9 +1858,6 @@ static int check_pending_signals(bool wait) {
         return i;
       }
     }
-    if (!wait) {
-      return -1;
-    }
     JavaThread *thread = JavaThread::current();
     ThreadBlockInVM tbivm(thread);
 
@@ -1976,7 +1865,7 @@ static int check_pending_signals(bool wait) {
     do {
       thread->set_suspend_equivalent();
       // cleared by handle_special_suspend_equivalent_condition() or java_suspend_self()
-      ::SEM_WAIT(sig_sem);
+      sig_sem->wait();
 
       // were we externally suspended while we were waiting?
       threadIsSuspended = thread->handle_special_suspend_equivalent_condition();
@@ -1985,7 +1874,7 @@ static int check_pending_signals(bool wait) {
         // another thread suspended us. We don't want to continue running
         // while suspended because that would surprise the thread that
         // suspended us.
-        ::SEM_POST(sig_sem);
+        sig_sem->signal();
 
         thread->java_suspend_self();
       }
@@ -1993,12 +1882,8 @@ static int check_pending_signals(bool wait) {
   }
 }
 
-int os::signal_lookup() {
-  return check_pending_signals(false);
-}
-
 int os::signal_wait() {
-  return check_pending_signals(true);
+  return check_pending_signals();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2321,7 +2206,7 @@ char* os::reserve_memory_special(size_t bytes, size_t alignment, char* req_addr,
 
 bool os::release_memory_special(char* base, size_t bytes) {
   if (MemTracker::tracking_level() > NMT_minimal) {
-    Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
+    Tracker tkr(Tracker::release);
     // detaching the SHM segment will also delete it, see reserve_memory_special()
     int rslt = shmdt(base);
     if (rslt == 0) {
@@ -2663,6 +2548,12 @@ static void suspend_save_context(OSThread *osthread, siginfo_t* siginfo, ucontex
 //
 // Currently only ever called on the VMThread or JavaThread
 //
+#ifdef __APPLE__
+static OSXSemaphore sr_semaphore;
+#else
+static PosixSemaphore sr_semaphore;
+#endif
+
 static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
   // Save and restore errno to avoid confusing native code with EINTR
   // after sigsuspend.
@@ -4001,59 +3892,6 @@ int os::fork_and_exec(char* cmd) {
       return status;
     }
   }
-}
-
-// is_headless_jre()
-//
-// Test for the existence of xawt/libmawt.so or libawt_xawt.so
-// in order to report if we are running in a headless jre
-//
-// Since JDK8 xawt/libmawt.so was moved into the same directory
-// as libawt.so, and renamed libawt_xawt.so
-//
-bool os::is_headless_jre() {
-#ifdef __APPLE__
-  // We no longer build headless-only on Mac OS X
-  return false;
-#else
-  struct stat statbuf;
-  char buf[MAXPATHLEN];
-  char libmawtpath[MAXPATHLEN];
-  const char *xawtstr  = "/xawt/libmawt" JNI_LIB_SUFFIX;
-  const char *new_xawtstr = "/libawt_xawt" JNI_LIB_SUFFIX;
-  char *p;
-
-  // Get path to libjvm.so
-  os::jvm_path(buf, sizeof(buf));
-
-  // Get rid of libjvm.so
-  p = strrchr(buf, '/');
-  if (p == NULL) {
-    return false;
-  } else {
-    *p = '\0';
-  }
-
-  // Get rid of client or server
-  p = strrchr(buf, '/');
-  if (p == NULL) {
-    return false;
-  } else {
-    *p = '\0';
-  }
-
-  // check xawt/libmawt.so
-  strcpy(libmawtpath, buf);
-  strcat(libmawtpath, xawtstr);
-  if (::stat(libmawtpath, &statbuf) == 0) return false;
-
-  // check libawt_xawt.so
-  strcpy(libmawtpath, buf);
-  strcat(libmawtpath, new_xawtstr);
-  if (::stat(libmawtpath, &statbuf) == 0) return false;
-
-  return true;
-#endif
 }
 
 // Get the default path to the core file

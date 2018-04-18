@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package jdk.javadoc.internal.doclets.toolkit.util;
 
 import javax.lang.model.element.ModuleElement;
+import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.TypeElement;
 
 /**
  * Standard DocPath objects.
@@ -37,6 +39,18 @@ import javax.lang.model.element.ModuleElement;
  *
  */
 public class DocPaths {
+    private final boolean useModuleDirectories;
+    private final String moduleSeparator;
+    private final Utils utils;
+
+    public DocPaths(Utils utils, boolean useModuleDirectories) {
+        this.utils = utils;
+        this.useModuleDirectories = useModuleDirectories;
+        moduleSeparator = useModuleDirectories ? "/module-" : "-";
+    }
+
+    public static final DocPath DOT_DOT = DocPath.create("..");
+
     /** The name of the file for all classes, without using frames, when --no-frames is specified. */
     public static final DocPath ALLCLASSES = DocPath.create("allclasses.html");
 
@@ -80,7 +94,11 @@ public class DocPaths {
     /** The name of the directory for the split index files. */
     public static final DocPath INDEX_FILES = DocPath.create("index-files");
 
-    /** Generate the name of one of the files in the split index. */
+    /**
+     * Generate the name of one of the files in the split index.
+     * @param n the position in the index
+     * @return the path
+     */
     public static DocPath indexN(int n) {
         return DocPath.create("index-" + n + ".html");
     }
@@ -173,29 +191,153 @@ public class DocPaths {
     /** The name of the file for the package usage info. */
     public static final DocPath PACKAGE_USE = DocPath.create("package-use.html");
 
-    /** The name of the output directory for module documentation files. */
-    public static DocPath moduleDocFiles(ModuleElement mdle) {
-        return DocPath.create(mdle.getQualifiedName() + "-doc-files");
+    /**
+     * Returns the path for a type element.
+     * For example, if the type element is {@code java.lang.Object},
+     * the path is {@code java/lang/Object.html}.
+     *
+     * @param typeElement the type element
+     * @return the path
+     */
+    public DocPath forClass(TypeElement typeElement) {
+        return (typeElement == null)
+                ? DocPath.empty
+                : forPackage(utils.containingPackage(typeElement)).resolve(forName(typeElement));
     }
 
-    /** The name of the file for the module frame. */
-    public static DocPath moduleFrame(ModuleElement mdle) {
-        return DocPath.create(mdle.getQualifiedName() + "-frame.html");
+    /**
+     * Returns the path for the simple name of a type element.
+     * For example, if the type element is {@code java.lang.Object},
+     * the path is {@code Object.html}.
+     *
+     * @param typeElement the type element
+     * @return the path
+     */
+    public DocPath forName(TypeElement typeElement) {
+        return (typeElement == null)
+                ? DocPath.empty
+                : new DocPath(utils.getSimpleName(typeElement) + ".html");
     }
 
-    /** The name of the file for the module summary. */
-    public static DocPath moduleSummary(ModuleElement mdle) {
-        return DocPaths.moduleSummary(mdle.getQualifiedName().toString());
+    public static DocPath forModule(ModuleElement mdle) {
+        return mdle == null || mdle.isUnnamed()
+                ? DocPath.empty
+                : DocPath.create(mdle.getQualifiedName().toString());
     }
 
-    /** The name of the file for the module summary. */
-    public static DocPath moduleSummary(String mdleName) {
-        return DocPath.create(mdleName + "-summary.html");
+    /**
+     * Returns the path for the package of a type element.
+     * For example, if the type element is {@code java.lang.Object},
+     * the path is {@code java/lang}.
+     *
+     * @param typeElement the type element
+     * @return the path
+     */
+    public DocPath forPackage(TypeElement typeElement) {
+        return (typeElement == null)
+                ? DocPath.empty
+                : forPackage(utils.containingPackage(typeElement));
     }
 
-    /** The name of the file for the module frame. */
-    public static DocPath moduleTypeFrame(ModuleElement mdle) {
-        return DocPath.create(mdle.getQualifiedName() + "-type-frame.html");
+    /**
+     * Returns the path for a package.
+     * For example, if the package is {@code java.lang},
+     * the path is {@code java/lang}.
+     *
+     * @param pkgElement the package element
+     * @return the path
+     */
+    public DocPath forPackage(PackageElement pkgElement) {
+        if (pkgElement == null || pkgElement.isUnnamed()) {
+            return DocPath.empty;
+        }
+
+        DocPath pkgPath = DocPath.create(pkgElement.getQualifiedName().toString().replace('.', '/'));
+        if (useModuleDirectories) {
+            ModuleElement mdle = (ModuleElement) pkgElement.getEnclosingElement();
+            return forModule(mdle).resolve(pkgPath);
+        } else {
+            return pkgPath;
+        }
+    }
+
+    /**
+     * Returns the inverse path for a package.
+     * For example, if the package is {@code java.lang},
+     * the inverse path is {@code ../..}.
+     *
+     * @param pkgElement the package element
+     * @return the path
+     */
+    public static DocPath forRoot(PackageElement pkgElement) {
+        String name = (pkgElement == null || pkgElement.isUnnamed())
+                ? ""
+                : pkgElement.getQualifiedName().toString();
+        return new DocPath(name.replace('.', '/').replaceAll("[^/]+", ".."));
+    }
+
+    /**
+     * Returns a relative path from one package to another.
+     *
+     * @param from the origin of the relative path
+     * @param to the destination of the relative path
+     * @return the path
+     */
+    public DocPath relativePath(PackageElement from, PackageElement to) {
+        return forRoot(from).resolve(forPackage(to));
+    }
+
+    /**
+     * The path for the output directory for module documentation files.
+     * @param mdle the module
+     * @return the path
+     */
+    public DocPath moduleDocFiles(ModuleElement mdle) {
+        return createModulePath(mdle, "doc-files");
+    }
+
+    /**
+     * The path for the file for a module's frame page.
+     * @param mdle the module
+     * @return the path
+     */
+    public DocPath moduleFrame(ModuleElement mdle) {
+        return createModulePath(mdle, "frame.html");
+    }
+
+    /**
+     * The path for the file for a module's summary page.
+     * @param mdle the module
+     * @return the path
+     */
+    public DocPath moduleSummary(ModuleElement mdle) {
+        return createModulePath(mdle, "summary.html");
+    }
+
+    /**
+     * The path for the file for a module's summary page.
+     * @param mdleName the module
+     * @return the path
+     */
+    public DocPath moduleSummary(String mdleName) {
+        return createModulePath(mdleName, "summary.html");
+    }
+
+    /**
+     * The path for the file for a module's type frame page.
+     * @param mdle the module
+     * @return the path
+     */
+    public DocPath moduleTypeFrame(ModuleElement mdle) {
+        return createModulePath(mdle, "type-frame.html");
+    }
+
+    private DocPath createModulePath(ModuleElement mdle, String path) {
+        return DocPath.create(mdle.getQualifiedName() + moduleSeparator + path);
+    }
+
+    private DocPath createModulePath(String moduleName, String path) {
+        return DocPath.create(moduleName + moduleSeparator + path);
     }
 
     /** The name of the file for the module overview frame. */

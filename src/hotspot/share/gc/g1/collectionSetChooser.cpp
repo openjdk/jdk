@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/collectionSetChooser.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "runtime/atomic.hpp"
 
@@ -83,8 +84,7 @@ CollectionSetChooser::CollectionSetChooser() :
                   100), true /* C_Heap */),
     _front(0), _end(0), _first_par_unreserved_idx(0),
     _region_live_threshold_bytes(0), _remaining_reclaimable_bytes(0) {
-  _region_live_threshold_bytes =
-    HeapRegion::GrainBytes * (size_t) G1MixedGCLiveThresholdPercent / 100;
+  _region_live_threshold_bytes = mixed_gc_live_threshold_bytes();
 }
 
 #ifndef PRODUCT
@@ -138,7 +138,7 @@ void CollectionSetChooser::sort_regions() {
     G1PrintRegionLivenessInfoClosure cl("Post-Sorting");
     for (uint i = 0; i < _end; ++i) {
       HeapRegion* r = regions_at(i);
-      cl.doHeapRegion(r);
+      cl.do_heap_region(r);
     }
   }
   verify();
@@ -148,6 +148,8 @@ void CollectionSetChooser::add_region(HeapRegion* hr) {
   assert(!hr->is_pinned(),
          "Pinned region shouldn't be added to the collection set (index %u)", hr->hrm_index());
   assert(!hr->is_young(), "should not be young!");
+  assert(hr->rem_set()->is_complete(),
+         "Trying to add region %u to the collection set with incomplete remembered set", hr->hrm_index());
   _regions.append(hr);
   _end++;
   _remaining_reclaimable_bytes += hr->reclaimable_bytes();
@@ -203,6 +205,16 @@ void CollectionSetChooser::update_totals(uint region_num,
   }
 }
 
+void CollectionSetChooser::iterate(HeapRegionClosure* cl) {
+  for (uint i = _front; i < _end; i++) {
+    HeapRegion* r = regions_at(i);
+    if (cl->do_heap_region(r)) {
+      cl->set_incomplete();
+      break;
+    }
+  }
+}
+
 void CollectionSetChooser::clear() {
   _regions.clear();
   _front = 0;
@@ -220,7 +232,7 @@ public:
     _g1h(G1CollectedHeap::heap()),
     _cset_updater(hrSorted, true /* parallel */, chunk_size) { }
 
-  bool doHeapRegion(HeapRegion* r) {
+  bool do_heap_region(HeapRegion* r) {
     // Do we have any marking information for this region?
     if (r->is_marked()) {
       // We will skip any region that's currently used as an old GC
@@ -228,6 +240,10 @@ public:
       // before we fill them up).
       if (_cset_updater.should_add(r) && !_g1h->is_old_gc_alloc_region(r)) {
         _cset_updater.add_region(r);
+      } else if (r->is_old()) {
+        // Can clean out the remembered sets of all regions that we did not choose but
+        // we created the remembered set for.
+        r->rem_set()->clear(true);
       }
     }
     return false;
@@ -257,6 +273,18 @@ uint CollectionSetChooser::calculate_parallel_work_chunk_size(uint n_workers, ui
   const uint overpartition_factor = 4;
   const uint min_chunk_size = MAX2(n_regions / n_workers, 1U);
   return MAX2(n_regions / (n_workers * overpartition_factor), min_chunk_size);
+}
+
+bool CollectionSetChooser::region_occupancy_low_enough_for_evac(size_t live_bytes) {
+  return live_bytes < mixed_gc_live_threshold_bytes();
+}
+
+bool CollectionSetChooser::should_add(HeapRegion* hr) const {
+  assert(hr->is_marked(), "pre-condition");
+  assert(!hr->is_young(), "should never consider young regions");
+  return !hr->is_pinned() &&
+          region_occupancy_low_enough_for_evac(hr->live_bytes()) &&
+          hr->rem_set()->is_complete();
 }
 
 void CollectionSetChooser::rebuild(WorkGang* workers, uint n_regions) {

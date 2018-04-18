@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_RUNTIME_JAVAFRAMEANCHOR_HPP
 #define SHARE_VM_RUNTIME_JAVAFRAMEANCHOR_HPP
 
-#include "runtime/orderAccess.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
@@ -33,8 +32,9 @@
 // An object for encapsulating the machine/os dependent part of a JavaThread frame state
 //
 class JavaThread;
+class MacroAssembler;
 
-class JavaFrameAnchor VALUE_OBJ_CLASS_SPEC {
+class JavaFrameAnchor {
 // Too many friends...
 friend class CallNativeDirectNode;
 friend class OptoRuntime;

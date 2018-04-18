@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ AC_DEFUN_ONCE([HELP_SETUP_DEPENDENCY_HELP],
 AC_DEFUN([HELP_MSG_MISSING_DEPENDENCY],
 [
   # Print a helpful message on how to acquire the necessary build dependency.
-  # $1 is the help tag: freetype, cups, alsa etc
+  # $1 is the help tag: cups, alsa etc
   MISSING_DEPENDENCY=$1
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -75,24 +75,6 @@ cygwin_help() {
     make)
       PKGHANDLER_COMMAND="( cd <location of cygwin setup.exe> && cmd /c setup -q -P make )"
       HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
-      ;;
-    freetype)
-      HELP_MSG="
-The freetype library can now be build during the configure process.
-Download the freetype sources and unpack them into an arbitrary directory:
-
-wget http://download.savannah.gnu.org/releases/freetype/freetype-2.5.3.tar.gz
-tar -xzf freetype-2.5.3.tar.gz
-
-Then run configure with '--with-freetype-src=<freetype_src>'. This will
-automatically build the freetype library into '<freetype_src>/lib64' for 64-bit
-builds or into '<freetype_src>/lib32' for 32-bit builds.
-Afterwards you can always use '--with-freetype-include=<freetype_src>/include'
-and '--with-freetype-lib=<freetype_src>/lib[32|64]' for other builds.
-
-Alternatively you can unpack the sources like this to use the default directory:
-
-tar --one-top-level=$HOME/freetype --strip-components=1 -xzf freetype-2.5.3.tar.gz"
       ;;
   esac
 }
@@ -231,8 +213,16 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   printf "Configuration summary:\n"
   printf "* Debug level:    $DEBUG_LEVEL\n"
   printf "* HS debug level: $HOTSPOT_DEBUG_LEVEL\n"
-  printf "* JDK variant:    $JDK_VARIANT\n"
   printf "* JVM variants:   $JVM_VARIANTS\n"
+  printf "* JVM features:   "
+
+  for variant in $JVM_VARIANTS; do
+    features_var_name=JVM_FEATURES_$variant
+    JVM_FEATURES_FOR_VARIANT=${!features_var_name}
+    printf "$variant: \'$JVM_FEATURES_FOR_VARIANT\' "
+  done
+  printf "\n"
+
   printf "* OpenJDK target: OS: $OPENJDK_TARGET_OS, CPU architecture: $OPENJDK_TARGET_CPU_ARCH, address length: $OPENJDK_TARGET_CPU_BITS\n"
   printf "* Version string: $VERSION_STRING ($VERSION_SHORT)\n"
 
@@ -242,10 +232,7 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
     printf "* Environment:    $WINDOWS_ENV_VENDOR version $WINDOWS_ENV_VERSION (root at $WINDOWS_ENV_ROOT_PATH)\n"
   fi
   printf "* Boot JDK:       $BOOT_JDK_VERSION (at $BOOT_JDK)\n"
-  if test "x$TOOLCHAIN_VERSION" != "x"; then
-    print_version=" $TOOLCHAIN_VERSION"
-  fi
-  printf "* Toolchain:      $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTION$print_version)\n"
+  printf "* Toolchain:      $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTION)\n"
   printf "* C Compiler:     Version $CC_VERSION_NUMBER (at $CC)\n"
   printf "* C++ Compiler:   Version $CXX_VERSION_NUMBER (at $CXX)\n"
 
@@ -290,6 +277,12 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   if test "x$IS_RECONFIGURE" != "xyes" && test "x$no_create" = "xyes"; then
     printf "WARNING: The result of this configuration was not saved.\n"
     printf "You should run without '--no-create | -n' to create the configuration.\n"
+    printf "\n"
+  fi
+
+  if test "x$UNSUPPORTED_TOOLCHAIN_VERSION" = "xyes"; then
+    printf "WARNING: The toolchain version used is known to have issues. Please\n"
+    printf "consider using a supported version unless you know what you are doing.\n"
     printf "\n"
   fi
 ])

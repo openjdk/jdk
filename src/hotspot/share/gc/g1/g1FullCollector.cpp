@@ -43,6 +43,7 @@
 #include "gc/shared/weakProcessor.hpp"
 #include "logging/log.hpp"
 #include "runtime/biasedLocking.hpp"
+#include "runtime/handles.inline.hpp"
 #include "utilities/debug.hpp"
 
 static void clear_and_activate_derived_pointers() {
@@ -199,7 +200,8 @@ void G1FullCollector::phase1_mark_live_objects() {
   scope()->tracer()->report_object_count_after_gc(&_is_alive);
 }
 
-void G1FullCollector::prepare_compaction_common() {
+void G1FullCollector::phase2_prepare_compaction() {
+  GCTraceTime(Info, gc, phases) info("Phase 2: Prepare for compaction", scope()->timer());
   G1FullGCPrepareTask task(this);
   run_task(&task);
 
@@ -209,14 +211,9 @@ void G1FullCollector::prepare_compaction_common() {
   }
 }
 
-void G1FullCollector::phase2_prepare_compaction() {
-  GCTraceTime(Info, gc, phases) info("Phase 2: Prepare for compaction", scope()->timer());
-  prepare_compaction_ext(); // Will call prepare_compaction_common() above.
-}
-
 void G1FullCollector::phase3_adjust_pointers() {
   // Adjust the pointers to reflect the new locations
-  GCTraceTime(Info, gc, phases) info("Phase 3: Adjust pointers and remembered sets", scope()->timer());
+  GCTraceTime(Info, gc, phases) info("Phase 3: Adjust pointers", scope()->timer());
 
   G1FullGCAdjustTask task(this);
   run_task(&task);

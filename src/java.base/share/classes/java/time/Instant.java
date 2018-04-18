@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,7 +193,7 @@ import java.util.Objects;
  * {@code ZonedDateTime} and {@code Duration}.
  *
  * <p>
- * This is a <a href="{@docRoot}/java/lang/doc-files/ValueBased.html">value-based</a>
+ * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
  * class; use of identity-sensitive operations (including reference equality
  * ({@code ==}), identity hash code, or synchronization) on instances of
  * {@code Instant} may have unpredictable results and should be avoided.
@@ -610,7 +610,7 @@ public final class Instant
      * <p>
      * The epoch second count is a simple incrementing count of seconds where
      * second 0 is 1970-01-01T00:00:00Z.
-     * The nanosecond part of the day is returned by {@link #getNano}.
+     * The nanosecond part is returned by {@link #getNano}.
      *
      * @return the seconds from the epoch of 1970-01-01T00:00:00Z
      */

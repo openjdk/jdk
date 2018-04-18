@@ -962,24 +962,19 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     /**
      * Fast initialization functions for ScriptFunctions that are strict, to avoid
      * creating setters that probably aren't used. Inject directly into the spill pool
-     * the defaults for "arguments" and "caller"
+     * the defaults for "arguments" and "caller", asserting the property is already
+     * defined in the map.
      *
-     * @param key           property key
-     * @param propertyFlags flags
-     * @param getter        getter for {@link UserAccessorProperty}, null if not present or N/A
-     * @param setter        setter for {@link UserAccessorProperty}, null if not present or N/A
+     * @param key     property key
+     * @param getter  getter for {@link UserAccessorProperty}
+     * @param setter  setter for {@link UserAccessorProperty}
      */
-    protected final void initUserAccessors(final String key, final int propertyFlags, final ScriptFunction getter, final ScriptFunction setter) {
-        final PropertyMap oldMap = getMap();
-        final int slot = oldMap.getFreeSpillSlot();
-        ensureSpillSize(slot);
-        objectSpill[slot] = new UserAccessorProperty.Accessors(getter, setter);
-        Property    newProperty;
-        PropertyMap newMap;
-        do {
-            newProperty = new UserAccessorProperty(key, propertyFlags, slot);
-            newMap = oldMap.addProperty(newProperty);
-        } while (!compareAndSetMap(oldMap, newMap));
+    protected final void initUserAccessors(final String key, final ScriptFunction getter, final ScriptFunction setter) {
+        final PropertyMap map = getMap();
+        final Property property = map.findProperty(key);
+        assert property instanceof UserAccessorProperty;
+        ensureSpillSize(property.getSlot());
+        objectSpill[property.getSlot()] = new UserAccessorProperty.Accessors(getter, setter);
     }
 
     /**
@@ -2051,8 +2046,11 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     // Marks a property as declared and sets its value. Used as slow path for block-scoped LET and CONST
     @SuppressWarnings("unused")
     private void declareAndSet(final String key, final Object value) {
+        declareAndSet(findProperty(key, false), value);
+    }
+
+    private void declareAndSet(final FindProperty find, final Object value) {
         final PropertyMap oldMap = getMap();
-        final FindProperty find = findProperty(key, false);
         assert find != null;
 
         final Property property = find.getProperty();
@@ -2061,7 +2059,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
 
         final PropertyMap newMap = oldMap.replaceProperty(property, property.removeFlags(Property.NEEDS_DECLARATION));
         setMap(newMap);
-        set(key, value, NashornCallSiteDescriptor.CALLSITE_DECLARE);
+        set(property.getKey(), value, NashornCallSiteDescriptor.CALLSITE_DECLARE);
     }
 
     /**
@@ -3091,6 +3089,11 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
                             f.getProperty().isAccessorProperty() ? "property.has.no.setter" : "property.not.writable",
                             key.toString(), ScriptRuntime.safeToString(this));
                 }
+                return;
+            }
+
+            if (NashornCallSiteDescriptor.isDeclaration(callSiteFlags) && f.getProperty().needsDeclaration()) {
+                f.getOwner().declareAndSet(f, value);
                 return;
             }
 

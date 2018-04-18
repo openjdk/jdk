@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,12 @@
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "trace/traceMacros.hpp"
 #include "utilities/macros.hpp"
@@ -60,11 +62,13 @@ bool Klass::is_cloneable() const {
 }
 
 void Klass::set_is_cloneable() {
-  if (name() != vmSymbols::java_lang_invoke_MemberName()) {
-    _access_flags.set_is_cloneable_fast();
-  } else {
+  if (name() == vmSymbols::java_lang_invoke_MemberName()) {
     assert(is_final(), "no subclasses allowed");
     // MemberName cloning should not be intrinsified and always happen in JVM_Clone.
+  } else if (is_instance_klass() && InstanceKlass::cast(this)->reference_type() != REF_NONE) {
+    // Reference cloning should not be intrinsified and always happen in JVM_Clone.
+  } else {
+    _access_flags.set_is_cloneable_fast();
   }
 }
 
@@ -183,7 +187,8 @@ void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word
 Klass::Klass() : _prototype_header(markOopDesc::prototype()),
                  _shared_class_path_index(-1),
                  _java_mirror(NULL) {
-
+  CDS_ONLY(_shared_class_flags = 0;)
+  CDS_JAVA_HEAP_ONLY(_archived_mirror = 0;)
   _primary_supers[0] = this;
   set_super_check_offset(in_bytes(primary_supers_offset()));
 }
@@ -519,28 +524,70 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
     loader_data->add_class(this);
   }
 
-  // Recreate the class mirror.
+  Handle loader(THREAD, loader_data->class_loader());
+  ModuleEntry* module_entry = NULL;
+  Klass* k = this;
+  if (k->is_objArray_klass()) {
+    k = ObjArrayKlass::cast(k)->bottom_klass();
+  }
+  // Obtain klass' module.
+  if (k->is_instance_klass()) {
+    InstanceKlass* ik = (InstanceKlass*) k;
+    module_entry = ik->module();
+  } else {
+    module_entry = ModuleEntryTable::javabase_moduleEntry();
+  }
+  // Obtain java.lang.Module, if available
+  Handle module_handle(THREAD, ((module_entry != NULL) ? module_entry->module() : (oop)NULL));
+
+  if (this->has_raw_archived_mirror()) {
+    log_debug(cds, mirror)("%s has raw archived mirror", external_name());
+    if (MetaspaceShared::open_archive_heap_region_mapped()) {
+      oop m = archived_java_mirror();
+      log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
+      if (m != NULL) {
+        // mirror is archived, restore
+        assert(oopDesc::is_archive_object(m), "must be archived mirror object");
+        Handle m_h(THREAD, m);
+        java_lang_Class::restore_archived_mirror(this, m_h, loader, module_handle, protection_domain, CHECK);
+        return;
+      }
+    }
+
+    // No archived mirror data
+    _java_mirror = NULL;
+    this->clear_has_raw_archived_mirror();
+  }
+
   // Only recreate it if not present.  A previous attempt to restore may have
   // gotten an OOM later but keep the mirror if it was created.
   if (java_mirror() == NULL) {
-    Handle loader(THREAD, loader_data->class_loader());
-    ModuleEntry* module_entry = NULL;
-    Klass* k = this;
-    if (k->is_objArray_klass()) {
-      k = ObjArrayKlass::cast(k)->bottom_klass();
-    }
-    // Obtain klass' module.
-    if (k->is_instance_klass()) {
-      InstanceKlass* ik = (InstanceKlass*) k;
-      module_entry = ik->module();
-    } else {
-      module_entry = ModuleEntryTable::javabase_moduleEntry();
-    }
-    // Obtain java.lang.Module, if available
-    Handle module_handle(THREAD, ((module_entry != NULL) ? module_entry->module() : (oop)NULL));
+    log_trace(cds, mirror)("Recreate mirror for %s", external_name());
     java_lang_Class::create_mirror(this, loader, module_handle, protection_domain, CHECK);
   }
 }
+
+#if INCLUDE_CDS_JAVA_HEAP
+// Used at CDS dump time to access the archived mirror. No GC barrier.
+oop Klass::archived_java_mirror_raw() {
+  assert(DumpSharedSpaces, "called only during runtime");
+  assert(has_raw_archived_mirror(), "must have raw archived mirror");
+  return CompressedOops::decode(_archived_mirror);
+}
+
+// Used at CDS runtime to get the archived mirror from shared class. Uses GC barrier.
+oop Klass::archived_java_mirror() {
+  assert(UseSharedSpaces, "UseSharedSpaces expected.");
+  assert(has_raw_archived_mirror(), "must have raw archived mirror");
+  return RootAccess<IN_ARCHIVE_ROOT>::oop_load(&_archived_mirror);
+}
+
+// No GC barrier
+void Klass::set_archived_java_mirror_raw(oop m) {
+  assert(DumpSharedSpaces, "called only during runtime");
+  _archived_mirror = CompressedOops::encode(m);
+}
+#endif // INCLUDE_CDS_JAVA_HEAP
 
 Klass* Klass::array_klass_or_null(int rank) {
   EXCEPTION_MARK;
@@ -577,21 +624,15 @@ const char* Klass::external_name() const {
   if (is_instance_klass()) {
     const InstanceKlass* ik = static_cast<const InstanceKlass*>(this);
     if (ik->is_anonymous()) {
-      intptr_t hash = 0;
-      if (ik->java_mirror() != NULL) {
-        // java_mirror might not be created yet, return 0 as hash.
-        hash = ik->java_mirror()->identity_hash();
-      }
-      char     hash_buf[40];
-      sprintf(hash_buf, "/" UINTX_FORMAT, (uintx)hash);
-      size_t   hash_len = strlen(hash_buf);
-
-      size_t result_len = name()->utf8_length();
-      char*  result     = NEW_RESOURCE_ARRAY(char, result_len + hash_len + 1);
-      name()->as_klass_external_name(result, (int) result_len + 1);
-      assert(strlen(result) == result_len, "");
-      strcpy(result + result_len, hash_buf);
-      assert(strlen(result) == result_len + hash_len, "");
+      char addr_buf[20];
+      jio_snprintf(addr_buf, 20, "/" INTPTR_FORMAT, p2i(ik));
+      size_t addr_len = strlen(addr_buf);
+      size_t name_len = name()->utf8_length();
+      char*  result   = NEW_RESOURCE_ARRAY(char, name_len + addr_len + 1);
+      name()->as_klass_external_name(result, (int) name_len + 1);
+      assert(strlen(result) == name_len, "");
+      strcpy(result + name_len, addr_buf);
+      assert(strlen(result) == name_len + addr_len, "");
       return result;
     }
   }
@@ -599,10 +640,15 @@ const char* Klass::external_name() const {
   return name()->as_klass_external_name();
 }
 
-
 const char* Klass::signature_name() const {
   if (name() == NULL)  return "<unknown>";
   return name()->as_C_string();
+}
+
+const char* Klass::external_kind() const {
+  if (is_interface()) return "interface";
+  if (is_abstract()) return "abstract class";
+  return "class";
 }
 
 // Unless overridden, modifier_flags is 0.
@@ -737,4 +783,82 @@ bool Klass::verify_itable_index(int i) {
   return true;
 }
 
-#endif
+#endif // PRODUCT
+
+// The caller of class_loader_and_module_name() (or one of its callers)
+// must use a ResourceMark in order to correctly free the result.
+const char* Klass::class_loader_and_module_name() const {
+  const char* delim = "/";
+  size_t delim_len = strlen(delim);
+
+  const char* fqn = external_name();
+  // Length of message to return; always include FQN
+  size_t msglen = strlen(fqn) + 1;
+
+  bool has_cl_name = false;
+  bool has_mod_name = false;
+  bool has_version = false;
+
+  // Use class loader name, if exists and not builtin
+  const char* class_loader_name = "";
+  ClassLoaderData* cld = class_loader_data();
+  assert(cld != NULL, "class_loader_data should not be NULL");
+  if (!cld->is_builtin_class_loader_data()) {
+    // If not builtin, look for name
+    oop loader = class_loader();
+    if (loader != NULL) {
+      oop class_loader_name_oop = java_lang_ClassLoader::name(loader);
+      if (class_loader_name_oop != NULL) {
+        class_loader_name = java_lang_String::as_utf8_string(class_loader_name_oop);
+        if (class_loader_name != NULL && class_loader_name[0] != '\0') {
+          has_cl_name = true;
+          msglen += strlen(class_loader_name) + delim_len;
+        }
+      }
+    }
+  }
+
+  const char* module_name = "";
+  const char* version = "";
+  const Klass* bottom_klass = is_objArray_klass() ?
+    ObjArrayKlass::cast(this)->bottom_klass() : this;
+  if (bottom_klass->is_instance_klass()) {
+    ModuleEntry* module = InstanceKlass::cast(bottom_klass)->module();
+    // Use module name, if exists
+    if (module->is_named()) {
+      has_mod_name = true;
+      module_name = module->name()->as_C_string();
+      msglen += strlen(module_name);
+      // Use version if exists and is not a jdk module
+      if (module->is_non_jdk_module() && module->version() != NULL) {
+        has_version = true;
+        version = module->version()->as_C_string();
+        msglen += strlen("@") + strlen(version);
+      }
+    }
+  } else {
+    // klass is an array of primitives, so its module is java.base
+    module_name = JAVA_BASE_NAME;
+  }
+
+  if (has_cl_name || has_mod_name) {
+    msglen += delim_len;
+  }
+
+  char* message = NEW_RESOURCE_ARRAY_RETURN_NULL(char, msglen);
+
+  // Just return the FQN if error in allocating string
+  if (message == NULL) {
+    return fqn;
+  }
+
+  jio_snprintf(message, msglen, "%s%s%s%s%s%s%s",
+               class_loader_name,
+               (has_cl_name) ? delim : "",
+               (has_mod_name) ? module_name : "",
+               (has_version) ? "@" : "",
+               (has_version) ? version : "",
+               (has_cl_name || has_mod_name) ? delim : "",
+               fqn);
+  return message;
+}

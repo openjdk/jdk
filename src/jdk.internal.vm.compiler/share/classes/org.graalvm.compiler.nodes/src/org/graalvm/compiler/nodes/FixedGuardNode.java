@@ -22,6 +22,7 @@
  */
 package org.graalvm.compiler.nodes;
 
+import org.graalvm.compiler.debug.DebugCloseable;
 import static org.graalvm.compiler.nodeinfo.InputType.Guard;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_2;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
@@ -80,24 +81,19 @@ public final class FixedGuardNode extends AbstractFixedGuardNode implements Lowe
         }
     }
 
+    @SuppressWarnings("try")
     @Override
     public void lower(LoweringTool tool) {
-        if (graph().getGuardsStage().allowsFloatingGuards()) {
-            /*
-             * Don't allow guards with action None and reason RuntimeConstraint to float. In cases
-             * where 2 guards are testing equivalent conditions they might be lowered at the same
-             * location. If the guard with the None action is lowered before the other guard then
-             * the code will be stuck repeatedly deoptimizing without invalidating the code.
-             * Conditional elimination will eliminate the guard if it's truly redundant in this
-             * case.
-             */
-            if (getAction() != DeoptimizationAction.None || getReason() != DeoptimizationReason.RuntimeConstraint) {
-                ValueNode guard = tool.createGuard(this, getCondition(), getReason(), getAction(), getSpeculation(), isNegated()).asNode();
-                this.replaceAtUsages(guard);
-                graph().removeFixed(this);
+        try (DebugCloseable position = this.withNodeSourcePosition()) {
+            if (graph().getGuardsStage().allowsFloatingGuards()) {
+                if (getAction() != DeoptimizationAction.None) {
+                    ValueNode guard = tool.createGuard(this, getCondition(), getReason(), getAction(), getSpeculation(), isNegated()).asNode();
+                    this.replaceAtUsages(guard);
+                    graph().removeFixed(this);
+                }
+            } else {
+                lowerToIf().lower(tool);
             }
-        } else {
-            lowerToIf().lower(tool);
         }
     }
 

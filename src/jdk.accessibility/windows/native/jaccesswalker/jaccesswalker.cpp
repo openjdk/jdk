@@ -527,7 +527,7 @@ void Jaccesswalker::addComponentNodes(long vmID, AccessibleContext context,
         tvi.mask = TVIF_PARAM | TVIF_TEXT;
         tvi.pszText = (char *) s; // Accessible name and role
         tvi.cchTextMax = (int)strlen(s);
-        tvi.lParam = (long) newNode; // Accessibility information
+        tvi.lParam = (LPARAM) newNode; // Accessibility information
 
         TVINSERTSTRUCT tvis;
         tvis.hParent = treeNodeParent;
@@ -544,13 +544,13 @@ void Jaccesswalker::addComponentNodes(long vmID, AccessibleContext context,
         char s[LINE_BUFSIZE];
         sprintf( s,
             "ERROR calling GetAccessibleContextInfo; vmID = %X, context = %p",
-            vmID, context );
+            vmID, (void*)context );
 
         TVITEM tvi;
         tvi.mask = TVIF_PARAM | TVIF_TEXT;  // text and lParam are only valid parts
         tvi.pszText = (char *) s;
         tvi.cchTextMax = (int)strlen(s);
-        tvi.lParam = (long) newNode;
+        tvi.lParam = (LPARAM) newNode;
 
         TVINSERTSTRUCT tvis;
         tvis.hParent = treeNodeParent;

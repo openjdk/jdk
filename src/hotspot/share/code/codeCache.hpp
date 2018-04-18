@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,6 +296,17 @@ class CodeCache : AllStatic {
     CodeHeap* heap = get_code_heap(code_blob_type);
     return (heap != NULL) ? heap->full_count() : 0;
   }
+
+  // CodeHeap State Analytics.
+  // interface methods for CodeHeap printing, called by CompileBroker
+  static void aggregate(outputStream *out, const char* granularity);
+  static void discard(outputStream *out);
+  static void print_usedSpace(outputStream *out);
+  static void print_freeSpace(outputStream *out);
+  static void print_count(outputStream *out);
+  static void print_space(outputStream *out);
+  static void print_age(outputStream *out);
+  static void print_names(outputStream *out);
 };
 
 

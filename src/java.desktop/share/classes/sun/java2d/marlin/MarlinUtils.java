@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,5 +59,23 @@ public final class MarlinUtils {
             System.out.println(msg);
             th.printStackTrace(System.err);
         }
+    }
+
+    // From sun.awt.util.ThreadGroupUtils
+
+    /**
+     * Returns a root thread group.
+     * Should be called with {@link sun.security.util.SecurityConstants#MODIFY_THREADGROUP_PERMISSION}
+     *
+     * @return a root {@code ThreadGroup}
+     */
+    public static ThreadGroup getRootThreadGroup() {
+        ThreadGroup currentTG = Thread.currentThread().getThreadGroup();
+        ThreadGroup parentTG = currentTG.getParent();
+        while (parentTG != null) {
+            currentTG = parentTG;
+            parentTG = currentTG.getParent();
+        }
+        return currentTG;
     }
 }

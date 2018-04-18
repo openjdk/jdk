@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,7 +259,7 @@ public class ModuleDotGraph {
         static final Set<String> JDK_SUBGRAPH = jdk();
 
         private static Set<String> javaSE() {
-            String root = "java.se.ee";
+            String root = "java.se";
             ModuleFinder system = ModuleFinder.ofSystem();
             if (system.find(root).isPresent()) {
                 return Stream.concat(Stream.of(root),

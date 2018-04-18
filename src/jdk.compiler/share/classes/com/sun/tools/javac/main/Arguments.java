@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -536,6 +536,20 @@ public class Arguments {
             }
         }
 
+        if (options.isSet(Option.PREVIEW)) {
+            if (sourceString == null) {
+                //enable-preview must be used with explicit -source or --release
+                error("err.preview.without.source.or.release");
+                return false;
+            } else if (source != Source.DEFAULT) {
+                //enable-preview must be used with latest source version
+                error("err.preview.not.latest",
+                        sourceString,
+                        Source.DEFAULT.name);
+                return false;
+            }
+        }
+
         String profileString = options.get(Option.PROFILE);
         if (profileString != null) {
             Profile profile = Profile.lookup(profileString);
@@ -594,6 +608,10 @@ public class Arguments {
                 Option.ADD_EXPORTS, Option.ADD_OPENS, Option.ADD_READS,
                 Option.LIMIT_MODULES,
                 Option.PATCH_MODULE);
+
+        if (lintOptions && options.isSet(Option.PARAMETERS) && !target.hasMethodParameters()) {
+            log.warning(Warnings.OptionParametersUnsupported(target.name, Target.JDK1_8.name));
+        }
 
         if (fm.hasLocation(StandardLocation.MODULE_SOURCE_PATH)) {
             if (!options.isSet(Option.PROC, "only")
@@ -832,9 +850,7 @@ public class Arguments {
 
         String checkPackages = options.get(Option.XDOCLINT_PACKAGE);
         if (checkPackages != null) {
-            for (String s : checkPackages.split("\\s+")) {
-                doclintOpts.add(DocLint.XCHECK_PACKAGE + s);
-            }
+            doclintOpts.add(DocLint.XCHECK_PACKAGE + checkPackages);
         }
 
         String format = options.get(Option.DOCLINT_FORMAT);

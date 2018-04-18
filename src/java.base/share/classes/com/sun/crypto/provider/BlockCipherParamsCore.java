@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ final class BlockCipherParamsCore {
      * Returns a formatted string describing the parameters.
      */
     public String toString() {
-        String LINE_SEP = System.getProperty("line.separator");
+        String LINE_SEP = System.lineSeparator();
 
         String ivString = LINE_SEP + "    iv:" + LINE_SEP + "[";
         HexDumpEncoder encoder = new HexDumpEncoder();

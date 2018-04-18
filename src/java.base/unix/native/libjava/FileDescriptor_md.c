@@ -64,6 +64,10 @@ Java_java_io_FileDescriptor_sync(JNIEnv *env, jobject this) {
         JNU_ThrowByName(env, "java/io/SyncFailedException", "sync failed");
     }
 }
+JNIEXPORT jlong JNICALL
+Java_java_io_FileDescriptor_getHandle(JNIEnv *env, jclass fdClass, jint fd) {
+    return -1;
+}
 
 JNIEXPORT jboolean JNICALL
 Java_java_io_FileDescriptor_getAppend(JNIEnv *env, jclass fdClass, jint fd) {
@@ -71,17 +75,17 @@ Java_java_io_FileDescriptor_getAppend(JNIEnv *env, jclass fdClass, jint fd) {
     return ((flags & O_APPEND) == 0) ? JNI_FALSE : JNI_TRUE;
 }
 
+// instance method close0 for FileDescriptor
 JNIEXPORT void JNICALL
-Java_java_io_FileDescriptor_cleanupClose0(JNIEnv *env, jclass fdClass, jint fd) {
+Java_java_io_FileDescriptor_close0(JNIEnv *env, jobject this) {
+    fileDescriptorClose(env, this);
+}
+
+JNIEXPORT void JNICALL
+Java_java_io_FileCleanable_cleanupClose0(JNIEnv *env, jclass fdClass, jint fd, jlong unused) {
     if (fd != -1) {
         if (close(fd) == -1) {
             JNU_ThrowIOExceptionWithLastError(env, "close failed");
         }
     }
-}
-
-// instance method close0 for FileDescriptor
-JNIEXPORT void JNICALL
-Java_java_io_FileDescriptor_close0(JNIEnv *env, jobject this) {
-    fileDescriptorClose(env, this);
 }

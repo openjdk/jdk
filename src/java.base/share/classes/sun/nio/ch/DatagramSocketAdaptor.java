@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,23 @@
 
 package sun.nio.ch;
 
-import java.io.*;
-import java.net.*;
-import java.nio.*;
-import java.nio.channels.*;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.DatagramSocketImpl;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.SocketAddress;
+import java.net.SocketException;
+import java.net.SocketOption;
+import java.net.SocketTimeoutException;
+import java.net.StandardSocketOptions;
+import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.DatagramChannel;
+import java.nio.channels.IllegalBlockingModeException;
+import java.util.Objects;
 
 
 // Make a datagram-socket channel look like a datagram socket.
@@ -41,7 +54,6 @@ import java.nio.channels.*;
 public class DatagramSocketAdaptor
     extends DatagramSocket
 {
-
     // The channel being adapted
     private final DatagramChannelImpl dc;
 
@@ -51,7 +63,7 @@ public class DatagramSocketAdaptor
     // ## super will create a useless impl
     private DatagramSocketAdaptor(DatagramChannelImpl dc) throws IOException {
         // Invoke the DatagramSocketAdaptor(SocketAddress) constructor,
-        // passing a dummy DatagramSocketImpl object to aovid any native
+        // passing a dummy DatagramSocketImpl object to avoid any native
         // resource allocation in super class and invoking our bind method
         // before the dc field is initialized.
         super(dummyDatagramSocket);
@@ -75,10 +87,10 @@ public class DatagramSocketAdaptor
             throw new IllegalArgumentException("connect: " + port);
         if (remote == null)
             throw new IllegalArgumentException("connect: null address");
-        if (isClosed())
-            return;
         try {
             dc.connect(remote);
+        } catch (ClosedChannelException e) {
+            // ignore
         } catch (Exception x) {
             Net.translateToSocketException(x);
         }
@@ -103,8 +115,7 @@ public class DatagramSocketAdaptor
     }
 
     public void connect(SocketAddress remote) throws SocketException {
-        if (remote == null)
-            throw new IllegalArgumentException("Address can't be null");
+        Objects.requireNonNull(remote, "Address can't be null");
         connectInternal(remote);
     }
 
@@ -125,15 +136,13 @@ public class DatagramSocketAdaptor
     }
 
     public InetAddress getInetAddress() {
-        return (isConnected()
-                ? Net.asInetSocketAddress(dc.remoteAddress()).getAddress()
-                : null);
+        InetSocketAddress remote = dc.remoteAddress();
+        return (remote != null) ? remote.getAddress() : null;
     }
 
     public int getPort() {
-        return (isConnected()
-                ? Net.asInetSocketAddress(dc.remoteAddress()).getPort()
-                : -1);
+        InetSocketAddress remote = dc.remoteAddress();
+        return (remote != null) ? remote.getPort() : -1;
     }
 
     public void send(DatagramPacket p) throws IOException {
@@ -149,8 +158,7 @@ public class DatagramSocketAdaptor
                         if (p.getAddress() == null) {
                             // Legacy DatagramSocket will send in this case
                             // and set address and port of the packet
-                            InetSocketAddress isa = (InetSocketAddress)
-                                                    dc.remoteAddress();
+                            InetSocketAddress isa = dc.remoteAddress();
                             p.setPort(isa.getPort());
                             p.setAddress(isa.getAddress());
                             dc.write(bb);
@@ -169,38 +177,24 @@ public class DatagramSocketAdaptor
         }
     }
 
-    // Must hold dc.blockingLock()
-    //
     private SocketAddress receive(ByteBuffer bb) throws IOException {
-        if (timeout == 0) {
-            return dc.receive(bb);
-        }
+        assert Thread.holdsLock(dc.blockingLock()) && dc.isBlocking();
 
-        dc.configureBlocking(false);
-        try {
-            int n;
-            SocketAddress sender;
-            if ((sender = dc.receive(bb)) != null)
-                return sender;
-            long to = timeout;
+        long to = this.timeout;
+        if (to == 0) {
+            return dc.receive(bb);
+        } else {
             for (;;) {
                 if (!dc.isOpen())
-                     throw new ClosedChannelException();
+                    throw new ClosedChannelException();
                 long st = System.currentTimeMillis();
-                int result = dc.poll(Net.POLLIN, to);
-                if (result > 0 &&
-                        ((result & Net.POLLIN) != 0)) {
-                    if ((sender = dc.receive(bb)) != null)
-                        return sender;
+                if (dc.pollRead(to)) {
+                    return dc.receive(bb);
                 }
                 to -= System.currentTimeMillis() - st;
                 if (to <= 0)
                     throw new SocketTimeoutException();
-
             }
-        } finally {
-            if (dc.isOpen())
-                dc.configureBlocking(true);
         }
     }
 
@@ -226,10 +220,10 @@ public class DatagramSocketAdaptor
     public InetAddress getLocalAddress() {
         if (isClosed())
             return null;
-        SocketAddress local = dc.localAddress();
+        InetSocketAddress local = dc.localAddress();
         if (local == null)
             local = new InetSocketAddress(0);
-        InetAddress result = ((InetSocketAddress)local).getAddress();
+        InetAddress result = local.getAddress();
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             try {
@@ -245,9 +239,9 @@ public class DatagramSocketAdaptor
         if (isClosed())
             return -1;
         try {
-            SocketAddress local = dc.getLocalAddress();
+            InetSocketAddress local = dc.localAddress();
             if (local != null) {
-                return ((InetSocketAddress)local).getPort();
+                return local.getPort();
             }
         } catch (Exception x) {
         }

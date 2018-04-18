@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class DumpSymbolAndStringTable {
         pb.command(new String[] {JDKToolFinder.getJDKTool("jcmd"), pid, "VM.systemdictionary", "-verbose"});
         output = CDSTestUtils.executeAndLog(pb, "jcmd-systemdictionary");
         try {
-            output.shouldContain("Dictionary for class loader 0x");
+            output.shouldContain("Dictionary for loader data: 0x");
             output.shouldContain("^java.lang.String");
         } catch (RuntimeException e) {
             output.shouldContain("Unknown diagnostic command");

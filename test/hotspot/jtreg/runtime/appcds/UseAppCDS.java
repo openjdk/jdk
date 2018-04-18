@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary Testing use of UseAppCDS flag
- * AppCDS does not support uncompressed oops
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -88,8 +87,11 @@ public class UseAppCDS {
         // Next tests rely on the classlist we just dumped
 
         // Test 3: No AppCDS - "test" classes in classlist ignored when dumping
+        // Although AppCDS isn't used, all classes will be found during dumping
+        // after the fix for JDK-8193434. Classes which are not in the boot
+        // loader dictionary will not be saved into the archive.
         dumpArchive(false, new String[] { BOOTCLASS },
-                    new String[] { TESTNAME});
+                    new String[0]);
 
         // Test 4:    AppCDS - "test" classes in classlist are dumped
         dumpArchive(true, new String[] { BOOTCLASS, TESTNAME },

@@ -897,7 +897,8 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
   // Figure out which of the two tests sets the upper bound and which
   // sets the lower bound if any.
   Node* adjusted_lim = NULL;
-  if (hi_type->_lo > lo_type->_hi && hi_type->_hi == max_jint && lo_type->_lo == min_jint) {
+  if (lo_type != NULL && hi_type != NULL && hi_type->_lo > lo_type->_hi &&
+      hi_type->_hi == max_jint && lo_type->_lo == min_jint) {
     assert((dom_bool->_test.is_less() && !proj->_con) ||
            (dom_bool->_test.is_greater() && proj->_con), "incorrect test");
     // this test was canonicalized
@@ -937,7 +938,8 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
         cond = BoolTest::lt;
       }
     }
-  } else if (lo_type->_lo > hi_type->_hi && lo_type->_hi == max_jint && hi_type->_lo == min_jint) {
+  } else if (lo_type != NULL && hi_type != NULL && lo_type->_lo > hi_type->_hi &&
+             lo_type->_hi == max_jint && hi_type->_lo == min_jint) {
 
     // this_bool = <
     //   dom_bool = < (proj = True) or dom_bool = >= (proj = False)

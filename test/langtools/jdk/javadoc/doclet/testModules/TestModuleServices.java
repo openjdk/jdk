@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8178067 8192007
+ * @bug 8178067 8192007 8182765
  * @summary tests the module's services, such as provides and uses
  * @modules jdk.javadoc/jdk.javadoc.internal.api
  *          jdk.javadoc/jdk.javadoc.internal.tool
@@ -117,38 +117,39 @@ public class TestModuleServices extends JavadocTester {
         mb.write(src);
 
         javadoc("-d", base.resolve("out").toString(),
-                "-quiet", "-noindex",
+                "-quiet",
+                "-noindex",
                 "--module-source-path", src.toString(),
                 "--module", "moduleService,moduleServiceProvider,moduleServiceUser,moduleServiceUserNoDescription",
                 "pkgService", "moduleServiceProvider/pkgServiceProvider", "moduleServiceUser/pkgServiceUser",
                 "moduleServiceUserNoDescription/pkgServiceUserNoDescription");
         checkExit(Exit.OK);
 
-        checkOutput("moduleServiceProvider-summary.html", true,
+        checkOutput("moduleServiceProvider/module-summary.html", true,
                 "<tr class=\"altColor\">\n"
-                + "<th class=\"colFirst\" scope=\"row\"><a href=\"pkgService/Service.html\" "
+                + "<th class=\"colFirst\" scope=\"row\"><a href=\"../moduleService/pkgService/Service.html\" "
                 + "title=\"interface in pkgService\">Service</a></th>\n"
                 + "<td class=\"colLast\">\n"
                 + "<div class=\"block\">Provides a service whose name is ServiceProvider.</div>\n"
                 + "</td>\n"
                 + "</tr>");
-        checkOutput("moduleServiceUser-summary.html", true,
+        checkOutput("moduleServiceUser/module-summary.html", true,
                 "<tr class=\"altColor\">\n"
-                + "<th class=\"colFirst\" scope=\"row\"><a href=\"pkgService/Service.html\" title=\"interface in pkgService\">Service</a></th>\n"
+                + "<th class=\"colFirst\" scope=\"row\"><a href=\"../moduleService/pkgService/Service.html\" title=\"interface in pkgService\">Service</a></th>\n"
                 + "<td class=\"colLast\">\n"
                 + "<div class=\"block\">If no other provider is found, a default internal implementation will be used.</div>\n"
                 + "</td>\n"
                 + "</tr>");
-        checkOutput("moduleServiceUserNoDescription-summary.html", true,
+        checkOutput("moduleServiceUserNoDescription/module-summary.html", true,
                 "<tr class=\"altColor\">\n"
-                + "<th class=\"colFirst\" scope=\"row\"><a href=\"pkgService/Service.html\" title=\"interface in pkgService\">Service</a></th>\n"
+                + "<th class=\"colFirst\" scope=\"row\"><a href=\"../moduleService/pkgService/Service.html\" title=\"interface in pkgService\">Service</a></th>\n"
                 + "<td class=\"colLast\">\n"
                 + "<div class=\"block\">A service Interface for service providers.</div>\n"
                 + "</td>\n"
                 + "</tr>");
-        checkOutput("moduleServiceProvider-summary.html", false,
+        checkOutput("moduleServiceProvider/module-summary.html", false,
                 "A service Interface for service providers.");
-        checkOutput("moduleServiceUser-summary.html", false,
+        checkOutput("moduleServiceUser/module-summary.html", false,
                 "A service Interface for service providers.");
     }
 
@@ -169,7 +170,7 @@ public class TestModuleServices extends JavadocTester {
                 "--module", "m");
         checkExit(Exit.OK);
 
-        checkOutput("m-summary.html", false,
+        checkOutput("m/module-summary.html", false,
                 "<h3>Services</h3>");
     }
 
@@ -190,10 +191,37 @@ public class TestModuleServices extends JavadocTester {
                 "--module", "m");
         checkExit(Exit.OK);
 
-        checkOutput("m-summary.html", true,
+        checkOutput("m/module-summary.html", true,
                 "<h3>Services</h3>");
 
-        checkOutput("m-summary.html", true,
+        checkOutput("m/module-summary.html", true,
+                "<table class=\"usesSummary\">\n" +
+                "<caption><span>Uses</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
+                "<tr>\n" +
+                "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
+                "<th class=\"colLast\" scope=\"col\">Description</th>\n" +
+                "</tr>\n" +
+                "<tbody>\n" +
+                "<tr class=\"altColor\">\n" +
+                "<th class=\"colFirst\" scope=\"row\"><a href=\"p1/A.html\" title=\"class in p1\">A</a></th>\n" +
+                "<td class=\"colLast\">&nbsp;</td>\n" +
+                "</tr>\n" +
+                "<tr class=\"rowColor\">\n" +
+                "<th class=\"colFirst\" scope=\"row\"><a href=\"p1/B.html\" title=\"class in p1\">B</a></th>\n" +
+                "<td class=\"colLast\">&nbsp;</td>\n" +
+                "</tr>\n" +
+                "</tbody>\n" +
+                "</table>\n");
+
+        javadoc("-d", base.toString() + "/out-html4",
+                "-html4",
+                "-quiet",
+                "--show-module-contents", "all",
+                "--module-source-path", base.toString(),
+                "--module", "m");
+        checkExit(Exit.OK);
+
+        checkOutput("m/module-summary.html", true,
                 "<table class=\"usesSummary\" summary=\"Uses table, listing types, and an explanation\">\n" +
                 "<caption><span>Uses</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
                 "<tr>\n" +
@@ -230,10 +258,32 @@ public class TestModuleServices extends JavadocTester {
                 "--module", "m");
         checkExit(Exit.OK);
 
-        checkOutput("m-summary.html", true,
+        checkOutput("m/module-summary.html", true,
                 "<h3>Services</h3>");
 
-        checkOutput("m-summary.html", true,
+        checkOutput("m/module-summary.html", true,
+                "<table class=\"usesSummary\">\n" +
+                "<caption><span>Uses</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
+                "<tr>\n" +
+                "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
+                "<th class=\"colLast\" scope=\"col\">Description</th>\n" +
+                "</tr>\n" +
+                "<tbody>\n" +
+                "<tr class=\"altColor\">\n" +
+                "<th class=\"colFirst\" scope=\"row\"><a href=\"p1/A.html\" title=\"class in p1\">A</a></th>\n" +
+                "<td class=\"colLast\">&nbsp;</td>\n" +
+                "</tr>\n" +
+                "</tbody>\n" +
+                "</table>\n");
+
+        javadoc("-d", base.toString() + "/out-html4",
+                "-html4",
+                "-quiet",
+                "--module-source-path", base.toString(),
+                "--module", "m");
+        checkExit(Exit.OK);
+
+        checkOutput("m/module-summary.html", true,
                 "<table class=\"usesSummary\" summary=\"Uses table, listing types, and an explanation\">\n" +
                 "<caption><span>Uses</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
                 "<tr>\n" +
@@ -270,7 +320,7 @@ public class TestModuleServices extends JavadocTester {
 
         checkExit(Exit.OK);
 
-        checkOutput("m-summary.html", false,
+        checkOutput("m/module-summary.html", false,
                 "<h3>Services</h3>");
     }
 
@@ -296,10 +346,37 @@ public class TestModuleServices extends JavadocTester {
 
         checkExit(Exit.OK);
 
-        checkOutput("m-summary.html", true,
+        checkOutput("m/module-summary.html", true,
                 "<h3>Services</h3>");
 
-        checkOutput("m-summary.html", true,
+        checkOutput("m/module-summary.html", true,
+                "<table class=\"providesSummary\">\n" +
+                "<caption><span>Provides</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
+                "<tr>\n" +
+                "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
+                "<th class=\"colLast\" scope=\"col\">Description</th>\n" +
+                "</tr>\n" +
+                "<tbody>\n" +
+                "<tr class=\"altColor\">\n" +
+                "<th class=\"colFirst\" scope=\"row\"><a href=\"p1/A.html\" title=\"interface in p1\">A</a></th>\n" +
+                "<td class=\"colLast\">&nbsp;<br>(<span class=\"implementationLabel\">Implementation(s):</span>&nbsp;<a href=\"p1/B.html\" title=\"class in p1\">B</a>)</td>\n" +
+                "</tr>\n" +
+                "<tr class=\"rowColor\">\n" +
+                "<th class=\"colFirst\" scope=\"row\"><a href=\"p2/A.html\" title=\"interface in p2\">A</a></th>\n" +
+                "<td class=\"colLast\">&nbsp;<br>(<span class=\"implementationLabel\">Implementation(s):</span>&nbsp;<a href=\"p2/B.html\" title=\"class in p2\">B</a>)</td>\n" +
+                "</tr>\n" +
+                "</tbody>\n");
+
+        javadoc("-d", base.toString() + "/out-html4",
+                "-html4",
+                "-quiet",
+                "--show-module-contents", "all",
+                "--module-source-path", base.toString(),
+                "--module", "m");
+
+        checkExit(Exit.OK);
+
+        checkOutput("m/module-summary.html", true,
                 "<table class=\"providesSummary\" summary=\"Provides table, listing types, and an explanation\">\n" +
                 "<caption><span>Provides</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
                 "<tr>\n" +
@@ -339,10 +416,34 @@ public class TestModuleServices extends JavadocTester {
 
         checkExit(Exit.OK);
 
-        checkOutput("m-summary.html", true,
+        checkOutput("m/module-summary.html", true,
                 "<h3>Services</h3>");
 
-        checkOutput("m-summary.html", true,
+        checkOutput("m/module-summary.html", true,
+                "<table class=\"providesSummary\">\n" +
+                "<caption><span>Provides</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
+                "<tr>\n" +
+                "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
+                "<th class=\"colLast\" scope=\"col\">Description</th>\n" +
+                "</tr>\n" +
+                "<tbody>\n" +
+                "<tr class=\"altColor\">\n" +
+                "<th class=\"colFirst\" scope=\"row\"><a href=\"p1/A.html\" title=\"interface in p1\">A</a></th>\n" +
+                "<td class=\"colLast\">\n" +
+                "<div class=\"block\">abc</div>\n</td>\n" +
+                "</tr>\n" +
+                "</tbody>\n" +
+                "</table>\n");
+
+        javadoc("-d", base.toString() + "/out-html4",
+                "-html4",
+                "-quiet",
+                "--module-source-path", base.toString(),
+                "--module", "m");
+
+        checkExit(Exit.OK);
+
+        checkOutput("m/module-summary.html", true,
                 "<table class=\"providesSummary\" summary=\"Provides table, listing types, and an explanation\">\n" +
                 "<caption><span>Provides</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
                 "<tr>\n" +
@@ -381,10 +482,48 @@ public class TestModuleServices extends JavadocTester {
 
         checkExit(Exit.OK);
 
-        checkOutput("m-summary.html", true,
+        checkOutput("m/module-summary.html", true,
                 "<h3>Services</h3>");
 
-        checkOutput("m-summary.html", true,
+        checkOutput("m/module-summary.html", true,
+                "<table class=\"providesSummary\">\n" +
+                "<caption><span>Provides</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
+                "<tr>\n" +
+                "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
+                "<th class=\"colLast\" scope=\"col\">Description</th>\n" +
+                "</tr>\n" +
+                "<tbody>\n" +
+                "<tr class=\"altColor\">\n" +
+                "<th class=\"colFirst\" scope=\"row\"><a href=\"p1/A.html\" title=\"interface in p1\">A</a></th>\n" +
+                "<td class=\"colLast\">\n" +
+                "<div class=\"block\">abc</div>\n</td>\n" +
+                "</tr>\n" +
+                "</tbody>\n" +
+                "</table>",
+                "<table class=\"usesSummary\">\n" +
+                "<caption><span>Uses</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
+                "<tr>\n" +
+                "<th class=\"colFirst\" scope=\"col\">Type</th>\n" +
+                "<th class=\"colLast\" scope=\"col\">Description</th>\n" +
+                "</tr>\n" +
+                "<tbody>\n" +
+                "<tr class=\"altColor\">\n" +
+                "<th class=\"colFirst\" scope=\"row\"><a href=\"p2/B.html\" title=\"class in p2\">B</a></th>\n" +
+                "<td class=\"colLast\">\n" +
+                "<div class=\"block\">def</div>\n</td>\n" +
+                "</tr>\n" +
+                "</tbody>\n" +
+                "</table>\n");
+
+        javadoc("-d", base.toString() + "/out-html4",
+                "-html4",
+                "-quiet",
+                "--module-source-path", base.toString(),
+                "--module", "m");
+
+        checkExit(Exit.OK);
+
+        checkOutput("m/module-summary.html", true,
                 "<table class=\"providesSummary\" summary=\"Provides table, listing types, and an explanation\">\n" +
                 "<caption><span>Provides</span><span class=\"tabEnd\">&nbsp;</span></caption>\n" +
                 "<tr>\n" +

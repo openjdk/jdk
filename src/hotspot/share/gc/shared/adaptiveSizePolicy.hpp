@@ -37,7 +37,7 @@
 
 // Forward decls
 class elapsedTimer;
-class CollectorPolicy;
+class SoftRefPolicy;
 
 class AdaptiveSizePolicy : public CHeapObj<mtGC> {
  friend class GCAdaptivePolicyCounters;
@@ -486,7 +486,7 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
                                size_t max_eden_size,
                                bool   is_full_gc,
                                GCCause::Cause gc_cause,
-                               CollectorPolicy* collector_policy);
+                               SoftRefPolicy* soft_ref_policy);
 
   static bool should_update_promo_stats(GCCause::Cause cause) {
     return ((GCCause::is_user_requested_gc(cause)  &&

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * @modules java.base
  * @library /test/lib /
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *    sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -XX:+UseG1GC
  *   -Xbootclasspath/a:.
@@ -53,8 +53,7 @@ public class TestConcurrentPhaseControlG1Basics {
         "MARK_FROM_ROOTS",
         "BEFORE_REMARK",
         "REMARK",
-        "CREATE_LIVE_DATA",
-        "COMPLETE_CLEANUP",
+        "REBUILD_REMEMBERED_SETS",
         "CLEANUP_FOR_NEXT_MARK",
     };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,24 +61,33 @@ import jdk.jshell.MemoryFileManager.SourceMemoryJavaFileObject;
 import java.lang.Runtime.Version;
 import java.nio.CharBuffer;
 import java.util.function.BiFunction;
+import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.Tree.Kind;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.tools.javac.api.JavacTaskPool;
 import com.sun.tools.javac.code.ClassFinder;
 import com.sun.tools.javac.code.Kinds;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
+import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symtab;
+import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.comp.Attr;
+import com.sun.tools.javac.comp.AttrContext;
+import com.sun.tools.javac.comp.Enter;
+import com.sun.tools.javac.comp.Env;
+import com.sun.tools.javac.comp.Resolve;
 import com.sun.tools.javac.parser.Parser;
 import com.sun.tools.javac.parser.ParserFactory;
-import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCTypeCast;
+import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.Tag;
+import com.sun.tools.javac.util.Context.Factory;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Log.DiscardDiagnosticHandler;
 import com.sun.tools.javac.util.Names;
@@ -158,7 +167,7 @@ class TaskFactory {
         WrapSourceHandler sh = new WrapSourceHandler();
         List<String> allOptions = new ArrayList<>();
 
-        allOptions.add("--should-stop:at=FLOW");
+        allOptions.add("--should-stop=at=FLOW");
         allOptions.add("-Xlint:unchecked");
         allOptions.add("-proc:none");
         allOptions.addAll(extraArgs);
@@ -197,6 +206,7 @@ class TaskFactory {
                                          compilationUnits, task -> {
                  JavacTaskImpl jti = (JavacTaskImpl) task;
                  Context context = jti.getContext();
+                 DisableAccessibilityResolve.preRegister(context);
                  jti.addTaskListener(new TaskListenerImpl(context, state));
                  try {
                      return worker.withTask(creator.apply(jti, diagnostics));
@@ -301,15 +311,18 @@ class TaskFactory {
             return fm.createSourceFileObject(w, w.classFullName(), w.wrapped());
         }
 
+        /**
+         * Get the source information from the wrap.  If this is external, or
+         * otherwise does not have wrap info, just use source code.
+         * @param d the Diagnostic from the compiler
+         * @return the corresponding Diag
+         */
         @Override
         public Diag diag(Diagnostic<? extends JavaFileObject> d) {
-            SourceMemoryJavaFileObject smjfo = (SourceMemoryJavaFileObject) d.getSource();
-            if (smjfo == null) {
-                // Handle failure that doesn't preserve mapping
-                return new StringSourceHandler().diag(d);
-            }
-            OuterWrap w = (OuterWrap) smjfo.getOrigin();
-            return w.wrapDiag(d);
+            JavaFileObject jfo = d.getSource();
+            return jfo instanceof SourceMemoryJavaFileObject
+                    ? ((OuterWrap) ((SourceMemoryJavaFileObject) jfo).getOrigin()).wrapDiag(d)
+                    : new StringSourceHandler().diag(d);
         }
     }
 
@@ -578,10 +591,25 @@ class TaskFactory {
         }
     }
 
+    /**The variable types inferred for "var"s may be non-denotable.
+     * jshell desugars these variables into fields, and fields must have
+     * a denotable type. So these fields are declared with some simpler denotable
+     * type, and the listener here enhances the types of the fields to be the full
+     * inferred types. This is mainly when the inferred type contains:
+     * -intersection types (e.g. <Z extends Runnable&CharSequence> Z get() {...} var z = get();)
+     * -types that are inaccessible at the given place
+     *
+     * This type enhancement does not need to do anything about anonymous classes, as these
+     * are desugared into member classes.
+     */
     private static final class TaskListenerImpl implements TaskListener {
 
         private final Context context;
         private final JShell state;
+        /* Keep the original (declaration) types of the fields that were enhanced.
+         * The declaration types need to be put back before writing the fields
+         * into classfiles.*/
+        private final Map<VarSymbol, Type> var2OriginalType = new HashMap<>();
 
         public TaskListenerImpl(Context context, JShell state) {
             this.context = context;
@@ -589,43 +617,85 @@ class TaskFactory {
         }
 
         @Override
+        public void started(TaskEvent e) {
+            if (e.getKind() != TaskEvent.Kind.GENERATE)
+                return ;
+            //clear enhanced types in fields we are about to write to the classfiles:
+            for (Tree clazz : e.getCompilationUnit().getTypeDecls()) {
+                ClassTree ct = (ClassTree) clazz;
+
+                for (Tree member : ct.getMembers()) {
+                    if (member.getKind() != Tree.Kind.VARIABLE)
+                        continue;
+                    VarSymbol vsym = ((JCVariableDecl) member).sym;
+                    Type original = var2OriginalType.remove(vsym);
+                    if (original != null) {
+                        vsym.type = original;
+                    }
+                }
+            }
+        }
+
+        private boolean variablesSet = false;
+
+        @Override
         public void finished(TaskEvent e) {
-            if (e.getKind() != TaskEvent.Kind.ENTER)
+            if (e.getKind() != TaskEvent.Kind.ENTER || variablesSet)
                 return ;
             state.maps
                  .snippetList()
                  .stream()
                  .filter(s -> s.status() == Status.VALID)
                  .filter(s -> s.kind() == Snippet.Kind.VAR)
-                 .filter(s -> s.subKind() == Snippet.SubKind.VAR_DECLARATION_WITH_INITIALIZER_SUBKIND)
-                 .forEach(s -> setVariableType((JCCompilationUnit) e.getCompilationUnit(), (VarSnippet) s));
+                 .filter(s -> s.subKind() == Snippet.SubKind.VAR_DECLARATION_WITH_INITIALIZER_SUBKIND ||
+                              s.subKind() == Snippet.SubKind.TEMP_VAR_EXPRESSION_SUBKIND)
+                 .forEach(s -> setVariableType((VarSnippet) s));
+            variablesSet = true;
         }
 
-        private void setVariableType(JCCompilationUnit root, VarSnippet s) {
+        /* If the snippet contain enhanced types, enhance the type of
+         * the variable from snippet s to be the enhanced type.
+         */
+        private void setVariableType(VarSnippet s) {
+            String typeName = s.fullTypeName;
+
+            if (typeName == null)
+                return ;
+
             Symtab syms = Symtab.instance(context);
             Names names = Names.instance(context);
             Log log  = Log.instance(context);
             ParserFactory parserFactory = ParserFactory.instance(context);
             Attr attr = Attr.instance(context);
+            Enter enter = Enter.instance(context);
+            DisableAccessibilityResolve rs = (DisableAccessibilityResolve) Resolve.instance(context);
 
+            //find the variable:
             ClassSymbol clazz = syms.getClass(syms.unnamedModule, names.fromString(s.classFullName()));
             if (clazz == null || !clazz.isCompleted())
                 return;
             VarSymbol field = (VarSymbol) clazz.members().findFirst(names.fromString(s.name()), sym -> sym.kind == Kinds.Kind.VAR);
-            if (field != null) {
+
+            if (field != null && !var2OriginalType.containsKey(field)) {
+                //if it was not enhanced yet:
+                //ignore any errors:
                 JavaFileObject prev = log.useSource(null);
                 DiscardDiagnosticHandler h = new DiscardDiagnosticHandler(log);
                 try {
-                    String typeName = s.typeName();
+                    //parse the type as a cast, i.e. "(<typeName>) x". This is to support
+                    //intersection types:
                     CharBuffer buf = CharBuffer.wrap(("(" + typeName +")x\u0000").toCharArray(), 0, typeName.length() + 3);
                     Parser parser = parserFactory.newParser(buf, false, false, false);
                     JCExpression expr = parser.parseExpression();
                     if (expr.hasTag(Tag.TYPECAST)) {
+                        //if parsed OK, attribute and set the type:
+                        var2OriginalType.put(field, field.type);
+
                         JCTypeCast tree = (JCTypeCast) expr;
-                        if (tree.clazz.hasTag(Tag.TYPEINTERSECTION)) {
+                        rs.runWithoutAccessChecks(() -> {
                             field.type = attr.attribType(tree.clazz,
-                                                         ((JCClassDecl) root.getTypeDecls().head).sym);
-                        }
+                                                         enter.getEnvs().iterator().next().enclClass.sym);
+                        });
                     }
                 } finally {
                     log.popDiagnosticHandler(h);
@@ -633,6 +703,50 @@ class TaskFactory {
                 }
             }
         }
+    }
+
+    private static final class DisableAccessibilityResolve extends Resolve {
+
+        public static void preRegister(Context context) {
+            if (context.get(Marker.class) == null) {
+                context.put(resolveKey, ((Factory<Resolve>) c -> new DisableAccessibilityResolve(c)));
+                context.put(Marker.class, new Marker());
+            }
+        }
+
+        private boolean noAccessChecks;
+
+        public DisableAccessibilityResolve(Context context) {
+            super(context);
+        }
+
+        /**Run the given Runnable with all access checks disabled.
+         *
+         * @param r Runnnable to run
+         */
+        public void runWithoutAccessChecks(Runnable r) {
+            boolean prevNoAccessCheckes = noAccessChecks;
+            try {
+                noAccessChecks = true;
+                r.run();
+            } finally {
+                noAccessChecks = prevNoAccessCheckes;
+            }
+        }
+
+        @Override
+        public boolean isAccessible(Env<AttrContext> env, TypeSymbol c, boolean checkInner) {
+            if (noAccessChecks) return true;
+            return super.isAccessible(env, c, checkInner);
+        }
+
+        @Override
+        public boolean isAccessible(Env<AttrContext> env, Type site, Symbol sym, boolean checkInner) {
+            if (noAccessChecks) return true;
+            return super.isAccessible(env, site, sym, checkInner);
+        }
+
+        private static final class Marker {}
     }
 
 }

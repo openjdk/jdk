@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @key headful
  * @bug 8030050
  * @summary Validate fields on DnD class deserialization
  * @author petr.pchelko@oracle.com

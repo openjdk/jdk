@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2017, SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,14 @@
 #include "asm/codeBuffer.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "opto/compile.hpp"
 #include "opto/intrinsicnode.hpp"
@@ -40,7 +43,7 @@
 #include "registerSaver_s390.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/icache.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
@@ -49,11 +52,6 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
-#include "gc/g1/heapRegion.hpp"
-#endif
 
 #include <ucontext.h>
 
@@ -1284,7 +1282,7 @@ int MacroAssembler::patch_compare_immediate_32(address pos, int64_t np) {
 int MacroAssembler::patch_load_narrow_oop(address pos, oop o) {
   assert(UseCompressedOops, "Can only patch compressed oops");
 
-  narrowOop no = oopDesc::encode_heap_oop(o);
+  narrowOop no = CompressedOops::encode(o);
   return patch_load_const_32to64(pos, no);
 }
 
@@ -1302,7 +1300,7 @@ int MacroAssembler::patch_load_narrow_klass(address pos, Klass* k) {
 int MacroAssembler::patch_compare_immediate_narrow_oop(address pos, oop o) {
   assert(UseCompressedOops, "Can only patch compressed oops");
 
-  narrowOop no = oopDesc::encode_heap_oop(o);
+  narrowOop no = CompressedOops::encode(o);
   return patch_compare_immediate_32(pos, no);
 }
 
@@ -3500,313 +3498,10 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   // flag == NE indicates failure
 }
 
-// Write to card table for modification at store_addr - register is destroyed afterwards.
-void MacroAssembler::card_write_barrier_post(Register store_addr, Register tmp) {
-  CardTableModRefBS* bs = (CardTableModRefBS*) Universe::heap()->barrier_set();
-  assert(bs->kind() == BarrierSet::CardTableForRS ||
-         bs->kind() == BarrierSet::CardTableExtension, "wrong barrier");
-  assert_different_registers(store_addr, tmp);
-  z_srlg(store_addr, store_addr, CardTableModRefBS::card_shift);
-  load_absolute_address(tmp, (address)bs->byte_map_base);
-  z_agr(store_addr, tmp);
-  z_mvi(0, store_addr, 0); // Store byte 0.
-}
-
 void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp2) {
-  NearLabel Ldone;
-  z_ltgr(tmp1, value);
-  z_bre(Ldone);          // Use NULL result as-is.
-
-  z_nill(value, ~JNIHandles::weak_tag_mask);
-  z_lg(value, 0, value); // Resolve (untagged) jobject.
-
-#if INCLUDE_ALL_GCS
-  if (UseG1GC) {
-    NearLabel Lnot_weak;
-    z_tmll(tmp1, JNIHandles::weak_tag_mask); // Test for jweak tag.
-    z_braz(Lnot_weak);
-    verify_oop(value);
-    g1_write_barrier_pre(noreg /* obj */,
-                         noreg /* offset */,
-                         value /* pre_val */,
-                         noreg /* val */,
-                         tmp1  /* tmp1 */,
-                         tmp2  /* tmp2 */,
-                         true  /* pre_val_needed */);
-    bind(Lnot_weak);
-  }
-#endif // INCLUDE_ALL_GCS
-  verify_oop(value);
-  bind(Ldone);
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->resolve_jobject(this, value, tmp1, tmp2);
 }
-
-#if INCLUDE_ALL_GCS
-
-//------------------------------------------------------
-// General G1 pre-barrier generator.
-// Purpose: record the previous value if it is not null.
-// All non-tmps are preserved.
-//------------------------------------------------------
-// Note: Rpre_val needs special attention.
-//   The flag pre_val_needed indicated that the caller of this emitter function
-//   relies on Rpre_val containing the correct value, that is:
-//     either the value it contained on entry to this code segment
-//     or the value that was loaded into the register from (Robj+offset).
-//
-//   Independent from this requirement, the contents of Rpre_val must survive
-//   the push_frame() operation. push_frame() uses Z_R0_scratch by default
-//   to temporarily remember the frame pointer.
-//   If Rpre_val is assigned Z_R0_scratch by the caller, code must be emitted to
-//   save it's value.
-void MacroAssembler::g1_write_barrier_pre(Register           Robj,
-                                          RegisterOrConstant offset,
-                                          Register           Rpre_val,      // Ideally, this is a non-volatile register.
-                                          Register           Rval,          // Will be preserved.
-                                          Register           Rtmp1,         // If Rpre_val is volatile, either Rtmp1
-                                          Register           Rtmp2,         // or Rtmp2 has to be non-volatile..
-                                          bool               pre_val_needed // Save Rpre_val across runtime call, caller uses it.
-                                       ) {
-  Label callRuntime, filtered;
-  const int active_offset = in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active());
-  const int buffer_offset = in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_buf());
-  const int index_offset  = in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_index());
-  assert_different_registers(Rtmp1, Rtmp2, Z_R0_scratch); // None of the Rtmp<i> must be Z_R0!!
-  assert_different_registers(Robj, Z_R0_scratch);         // Used for addressing. Furthermore, push_frame destroys Z_R0!!
-  assert_different_registers(Rval, Z_R0_scratch);         // push_frame destroys Z_R0!!
-
-#ifdef ASSERT
-  // make sure the register is not Z_R0. Used for addressing. Furthermore, would be destroyed by push_frame.
-  if (offset.is_register() && offset.as_register()->encoding() == 0) {
-    tty->print_cr("Roffset(g1_write_barrier_pre)  = %%r%d", offset.as_register()->encoding());
-    assert(false, "bad register for offset");
-  }
-#endif
-
-  BLOCK_COMMENT("g1_write_barrier_pre {");
-
-  // Is marking active?
-  // Note: value is loaded for test purposes only. No further use here.
-  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-    load_and_test_int(Rtmp1, Address(Z_thread, active_offset));
-  } else {
-    guarantee(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-    load_and_test_byte(Rtmp1, Address(Z_thread, active_offset));
-  }
-  z_bre(filtered); // Activity indicator is zero, so there is no marking going on currently.
-
-  assert(Rpre_val != noreg, "must have a real register");
-
-
-  // If an object is given, we need to load the previous value into Rpre_val.
-  if (Robj != noreg) {
-    // Load the previous value...
-    Register ixReg = offset.is_register() ? offset.register_or_noreg() : Z_R0;
-    if (UseCompressedOops) {
-      z_llgf(Rpre_val, offset.constant_or_zero(), ixReg, Robj);
-    } else {
-      z_lg(Rpre_val, offset.constant_or_zero(), ixReg, Robj);
-    }
-  }
-
-  // Is the previous value NULL?
-  // If so, we don't need to record it and we're done.
-  // Note: pre_val is loaded, decompressed and stored (directly or via runtime call).
-  //       Register contents is preserved across runtime call if caller requests to do so.
-  z_ltgr(Rpre_val, Rpre_val);
-  z_bre(filtered); // previous value is NULL, so we don't need to record it.
-
-  // Decode the oop now. We know it's not NULL.
-  if (Robj != noreg && UseCompressedOops) {
-    oop_decoder(Rpre_val, Rpre_val, /*maybeNULL=*/false);
-  }
-
-  // OK, it's not filtered, so we'll need to call enqueue.
-
-  // We can store the original value in the thread's buffer
-  // only if index > 0. Otherwise, we need runtime to handle.
-  // (The index field is typed as size_t.)
-  Register Rbuffer = Rtmp1, Rindex = Rtmp2;
-  assert_different_registers(Rbuffer, Rindex, Rpre_val);
-
-  z_lg(Rbuffer, buffer_offset, Z_thread);
-
-  load_and_test_long(Rindex, Address(Z_thread, index_offset));
-  z_bre(callRuntime); // If index == 0, goto runtime.
-
-  add2reg(Rindex, -wordSize); // Decrement index.
-  z_stg(Rindex, index_offset, Z_thread);
-
-  // Record the previous value.
-  z_stg(Rpre_val, 0, Rbuffer, Rindex);
-  z_bru(filtered);  // We are done.
-
-  Rbuffer = noreg;  // end of life
-  Rindex  = noreg;  // end of life
-
-  bind(callRuntime);
-
-  // Save some registers (inputs and result) over runtime call
-  // by spilling them into the top frame.
-  if (Robj != noreg && Robj->is_volatile()) {
-    z_stg(Robj, Robj->encoding()*BytesPerWord, Z_SP);
-  }
-  if (offset.is_register() && offset.as_register()->is_volatile()) {
-    Register Roff = offset.as_register();
-    z_stg(Roff, Roff->encoding()*BytesPerWord, Z_SP);
-  }
-  if (Rval != noreg && Rval->is_volatile()) {
-    z_stg(Rval, Rval->encoding()*BytesPerWord, Z_SP);
-  }
-
-  // Save Rpre_val (result) over runtime call.
-  Register Rpre_save = Rpre_val;
-  if ((Rpre_val == Z_R0_scratch) || (pre_val_needed && Rpre_val->is_volatile())) {
-    guarantee(!Rtmp1->is_volatile() || !Rtmp2->is_volatile(), "oops!");
-    Rpre_save = !Rtmp1->is_volatile() ? Rtmp1 : Rtmp2;
-  }
-  lgr_if_needed(Rpre_save, Rpre_val);
-
-  // Push frame to protect top frame with return pc and spilled register values.
-  save_return_pc();
-  push_frame_abi160(0); // Will use Z_R0 as tmp.
-
-  // Rpre_val may be destroyed by push_frame().
-  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), Rpre_save, Z_thread);
-
-  pop_frame();
-  restore_return_pc();
-
-  // Restore spilled values.
-  if (Robj != noreg && Robj->is_volatile()) {
-    z_lg(Robj, Robj->encoding()*BytesPerWord, Z_SP);
-  }
-  if (offset.is_register() && offset.as_register()->is_volatile()) {
-    Register Roff = offset.as_register();
-    z_lg(Roff, Roff->encoding()*BytesPerWord, Z_SP);
-  }
-  if (Rval != noreg && Rval->is_volatile()) {
-    z_lg(Rval, Rval->encoding()*BytesPerWord, Z_SP);
-  }
-  if (pre_val_needed && Rpre_val->is_volatile()) {
-    lgr_if_needed(Rpre_val, Rpre_save);
-  }
-
-  bind(filtered);
-  BLOCK_COMMENT("} g1_write_barrier_pre");
-}
-
-// General G1 post-barrier generator.
-// Purpose: Store cross-region card.
-void MacroAssembler::g1_write_barrier_post(Register Rstore_addr,
-                                           Register Rnew_val,
-                                           Register Rtmp1,
-                                           Register Rtmp2,
-                                           Register Rtmp3) {
-  Label callRuntime, filtered;
-
-  assert_different_registers(Rstore_addr, Rnew_val, Rtmp1, Rtmp2); // Most probably, Rnew_val == Rtmp3.
-
-  G1SATBCardTableModRefBS* bs = (G1SATBCardTableModRefBS*) Universe::heap()->barrier_set();
-  assert(bs->kind() == BarrierSet::G1SATBCTLogging, "wrong barrier");
-
-  BLOCK_COMMENT("g1_write_barrier_post {");
-
-  // Does store cross heap regions?
-  // It does if the two addresses specify different grain addresses.
-  if (G1RSBarrierRegionFilter) {
-    if (VM_Version::has_DistinctOpnds()) {
-      z_xgrk(Rtmp1, Rstore_addr, Rnew_val);
-    } else {
-      z_lgr(Rtmp1, Rstore_addr);
-      z_xgr(Rtmp1, Rnew_val);
-    }
-    z_srag(Rtmp1, Rtmp1, HeapRegion::LogOfHRGrainBytes);
-    z_bre(filtered);
-  }
-
-  // Crosses regions, storing NULL?
-#ifdef ASSERT
-  z_ltgr(Rnew_val, Rnew_val);
-  asm_assert_ne("null oop not allowed (G1)", 0x255); // TODO: also on z? Checked by caller on PPC64, so following branch is obsolete:
-  z_bre(filtered);  // Safety net: don't break if we have a NULL oop.
-#endif
-  Rnew_val = noreg; // end of lifetime
-
-  // Storing region crossing non-NULL, is card already dirty?
-  assert(sizeof(*bs->byte_map_base) == sizeof(jbyte), "adjust this code");
-  assert_different_registers(Rtmp1, Rtmp2, Rtmp3);
-  // Make sure not to use Z_R0 for any of these registers.
-  Register Rcard_addr = (Rtmp1 != Z_R0_scratch) ? Rtmp1 : Rtmp3;
-  Register Rbase      = (Rtmp2 != Z_R0_scratch) ? Rtmp2 : Rtmp3;
-
-  // calculate address of card
-  load_const_optimized(Rbase, (address)bs->byte_map_base);        // Card table base.
-  z_srlg(Rcard_addr, Rstore_addr, CardTableModRefBS::card_shift); // Index into card table.
-  z_algr(Rcard_addr, Rbase);                                      // Explicit calculation needed for cli.
-  Rbase = noreg; // end of lifetime
-
-  // Filter young.
-  assert((unsigned int)G1SATBCardTableModRefBS::g1_young_card_val() <= 255, "otherwise check this code");
-  z_cli(0, Rcard_addr, (int)G1SATBCardTableModRefBS::g1_young_card_val());
-  z_bre(filtered);
-
-  // Check the card value. If dirty, we're done.
-  // This also avoids false sharing of the (already dirty) card.
-  z_sync(); // Required to support concurrent cleaning.
-  assert((unsigned int)CardTableModRefBS::dirty_card_val() <= 255, "otherwise check this code");
-  z_cli(0, Rcard_addr, CardTableModRefBS::dirty_card_val()); // Reload after membar.
-  z_bre(filtered);
-
-  // Storing a region crossing, non-NULL oop, card is clean.
-  // Dirty card and log.
-  z_mvi(0, Rcard_addr, CardTableModRefBS::dirty_card_val());
-
-  Register Rcard_addr_x = Rcard_addr;
-  Register Rqueue_index = (Rtmp2 != Z_R0_scratch) ? Rtmp2 : Rtmp1;
-  Register Rqueue_buf   = (Rtmp3 != Z_R0_scratch) ? Rtmp3 : Rtmp1;
-  const int qidx_off    = in_bytes(JavaThread::dirty_card_queue_offset() + SATBMarkQueue::byte_offset_of_index());
-  const int qbuf_off    = in_bytes(JavaThread::dirty_card_queue_offset() + SATBMarkQueue::byte_offset_of_buf());
-  if ((Rcard_addr == Rqueue_buf) || (Rcard_addr == Rqueue_index)) {
-    Rcard_addr_x = Z_R0_scratch;  // Register shortage. We have to use Z_R0.
-  }
-  lgr_if_needed(Rcard_addr_x, Rcard_addr);
-
-  load_and_test_long(Rqueue_index, Address(Z_thread, qidx_off));
-  z_bre(callRuntime); // Index == 0 then jump to runtime.
-
-  z_lg(Rqueue_buf, qbuf_off, Z_thread);
-
-  add2reg(Rqueue_index, -wordSize); // Decrement index.
-  z_stg(Rqueue_index, qidx_off, Z_thread);
-
-  z_stg(Rcard_addr_x, 0, Rqueue_index, Rqueue_buf); // Store card.
-  z_bru(filtered);
-
-  bind(callRuntime);
-
-  // TODO: do we need a frame? Introduced to be on the safe side.
-  bool needs_frame = true;
-  lgr_if_needed(Rcard_addr, Rcard_addr_x); // copy back asap. push_frame will destroy Z_R0_scratch!
-
-  // VM call need frame to access(write) O register.
-  if (needs_frame) {
-    save_return_pc();
-    push_frame_abi160(0); // Will use Z_R0 as tmp on old CPUs.
-  }
-
-  // Save the live input values.
-  call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), Rcard_addr, Z_thread);
-
-  if (needs_frame) {
-    pop_frame();
-    restore_return_pc();
-  }
-
-  bind(filtered);
-
-  BLOCK_COMMENT("} g1_write_barrier_post");
-}
-#endif // INCLUDE_ALL_GCS
 
 // Last_Java_sp must comply to the rules in frame_s390.hpp.
 void MacroAssembler::set_last_Java_frame(Register last_Java_sp, Register last_Java_pc, bool allow_relocation) {

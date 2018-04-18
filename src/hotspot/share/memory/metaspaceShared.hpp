@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
-#include "oops/oop.inline.hpp"
+#include "oops/oop.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/resourceHash.hpp"
@@ -38,7 +38,7 @@
 
 class FileMapInfo;
 
-class MetaspaceSharedStats VALUE_OBJ_CLASS_SPEC {
+class MetaspaceSharedStats {
 public:
   MetaspaceSharedStats() {
     memset(this, 0, sizeof(*this));
@@ -96,12 +96,8 @@ class MetaspaceShared : AllStatic {
   static bool obj_equals(oop const& p1, oop const& p2) {
     return p1 == p2;
   }
-  static unsigned obj_hash(oop const& p) {
-    assert(!p->mark()->has_bias_pattern(),
-           "this object should never have been locked");  // so identity_hash won't safepoin
-    unsigned hash = (unsigned)p->identity_hash();
-    return hash;
-  }
+  static unsigned obj_hash(oop const& p);
+
   typedef ResourceHashtable<oop, oop,
       MetaspaceShared::obj_hash,
       MetaspaceShared::obj_equals,
@@ -113,8 +109,9 @@ class MetaspaceShared : AllStatic {
   static ArchivedObjectCache* archive_object_cache() {
     return _archive_object_cache;
   }
+  static oop find_archived_heap_object(oop obj);
   static oop archive_heap_object(oop obj, Thread* THREAD);
-  static void archive_resolved_constants(Thread* THREAD);
+  static void archive_klass_objects(Thread* THREAD);
 #endif
   static bool is_heap_object_archiving_allowed() {
     CDS_JAVA_HEAP_ONLY(return (UseG1GC && UseCompressedOops && UseCompressedClassPointers);)
@@ -127,6 +124,8 @@ class MetaspaceShared : AllStatic {
     CDS_JAVA_HEAP_ONLY(delete _archive_object_cache; _archive_object_cache = NULL;);
   }
   static void fixup_mapped_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
+
+  static void dump_closed_archive_heap_objects(GrowableArray<MemRegion> * closed_archive) NOT_CDS_JAVA_HEAP_RETURN;
 
   static void dump_open_archive_heap_objects(GrowableArray<MemRegion> * open_archive) NOT_CDS_JAVA_HEAP_RETURN;
   static void set_open_archive_heap_region_mapped() {
@@ -164,8 +163,13 @@ class MetaspaceShared : AllStatic {
   static bool map_shared_spaces(FileMapInfo* mapinfo) NOT_CDS_RETURN_(false);
   static void initialize_shared_spaces() NOT_CDS_RETURN;
 
-  // Return true if given address is in the mapped shared space.
-  static bool is_in_shared_space(const void* p) NOT_CDS_RETURN_(false);
+  // Return true if given address is in the shared metaspace regions (i.e., excluding any
+  // mapped shared heap regions.)
+  static bool is_in_shared_metaspace(const void* p) {
+    // If no shared metaspace regions are mapped, MetaspceObj::_shared_metaspace_{base,top} will
+    // both be NULL and all values of p will be rejected quickly.
+    return (p < MetaspaceObj::_shared_metaspace_top && p >= MetaspaceObj::_shared_metaspace_base);
+  }
 
   // Return true if given address is in the shared region corresponding to the idx
   static bool is_in_shared_region(const void* p, int idx) NOT_CDS_RETURN_(false);
@@ -194,7 +198,8 @@ class MetaspaceShared : AllStatic {
   static void zero_cpp_vtable_clones_for_writing();
   static void patch_cpp_vtable_pointers();
   static bool is_valid_shared_method(const Method* m) NOT_CDS_RETURN_(false);
-  static void serialize(SerializeClosure* sc);
+  static void serialize(SerializeClosure* sc) NOT_CDS_RETURN;
+  static void serialize_well_known_classes(SerializeClosure* soc) NOT_CDS_RETURN;
 
   static MetaspaceSharedStats* stats() {
     return &_stats;
@@ -243,5 +248,7 @@ class MetaspaceShared : AllStatic {
     return _cds_i2i_entry_code_buffers_size;
   }
   static void relocate_klass_ptr(oop o);
+
+  static Klass* get_relocated_klass(Klass *k);
 };
 #endif // SHARE_VM_MEMORY_METASPACESHARED_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,31 +23,15 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/concurrentMarkThread.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/g1/vm_operations_g1.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
-#include "runtime/interfaceSupport.hpp"
-
-VM_G1CollectForAllocation::VM_G1CollectForAllocation(uint gc_count_before,
-                                                     size_t word_size)
-  : VM_G1OperationWithAllocRequest(gc_count_before, word_size,
-                                   GCCause::_allocation_failure) {
-  guarantee(word_size != 0, "An allocation should always be requested with this operation.");
-}
-
-void VM_G1CollectForAllocation::doit() {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  GCCauseSetter x(g1h, _gc_cause);
-
-  _result = g1h->satisfy_failed_allocation(_word_size, allocation_context(), &_pause_succeeded);
-  assert(_result == NULL || _pause_succeeded,
-         "if we get back a result, the pause should have succeeded");
-}
+#include "runtime/interfaceSupport.inline.hpp"
 
 void VM_G1CollectFull::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
@@ -55,12 +39,13 @@ void VM_G1CollectFull::doit() {
   g1h->do_full_collection(false /* clear_all_soft_refs */);
 }
 
-VM_G1IncCollectionPause::VM_G1IncCollectionPause(uint           gc_count_before,
-                                                 size_t         word_size,
-                                                 bool           should_initiate_conc_mark,
-                                                 double         target_pause_time_ms,
-                                                 GCCause::Cause gc_cause)
-  : VM_G1OperationWithAllocRequest(gc_count_before, word_size, gc_cause),
+VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t         word_size,
+                                                     uint           gc_count_before,
+                                                     GCCause::Cause gc_cause,
+                                                     bool           should_initiate_conc_mark,
+                                                     double         target_pause_time_ms)
+  : VM_CollectForAllocation(word_size, gc_count_before, gc_cause),
+    _pause_succeeded(false),
     _should_initiate_conc_mark(should_initiate_conc_mark),
     _target_pause_time_ms(target_pause_time_ms),
     _should_retry_gc(false),
@@ -71,8 +56,8 @@ VM_G1IncCollectionPause::VM_G1IncCollectionPause(uint           gc_count_before,
   _gc_cause = gc_cause;
 }
 
-bool VM_G1IncCollectionPause::doit_prologue() {
-  bool res = VM_G1OperationWithAllocRequest::doit_prologue();
+bool VM_G1CollectForAllocation::doit_prologue() {
+  bool res = VM_CollectForAllocation::doit_prologue();
   if (!res) {
     if (_should_initiate_conc_mark) {
       // The prologue can fail for a couple of reasons. The first is that another GC
@@ -87,7 +72,7 @@ bool VM_G1IncCollectionPause::doit_prologue() {
   return res;
 }
 
-void VM_G1IncCollectionPause::doit() {
+void VM_G1CollectForAllocation::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   assert(!_should_initiate_conc_mark || g1h->should_do_concurrent_full_gc(_gc_cause),
       "only a GC locker, a System.gc(), stats update, whitebox, or a hum allocation induced GC should start a cycle");
@@ -95,7 +80,6 @@ void VM_G1IncCollectionPause::doit() {
   if (_word_size > 0) {
     // An allocation has been requested. So, try to do that first.
     _result = g1h->attempt_allocation_at_safepoint(_word_size,
-                                                   allocation_context(),
                                                    false /* expect_null_cur_alloc_region */);
     if (_result != NULL) {
       // If we can successfully allocate before we actually do the
@@ -144,27 +128,38 @@ void VM_G1IncCollectionPause::doit() {
     }
   }
 
-  _pause_succeeded =
-    g1h->do_collection_pause_at_safepoint(_target_pause_time_ms);
-  if (_pause_succeeded && _word_size > 0) {
-    // An allocation had been requested.
-    _result = g1h->attempt_allocation_at_safepoint(_word_size,
-                                                   allocation_context(),
-                                                   true /* expect_null_cur_alloc_region */);
+  // Try a partial collection of some kind.
+  _pause_succeeded = g1h->do_collection_pause_at_safepoint(_target_pause_time_ms);
+
+  if (_pause_succeeded) {
+    if (_word_size > 0) {
+      // An allocation had been requested. Do it, eventually trying a stronger
+      // kind of GC.
+      _result = g1h->satisfy_failed_allocation(_word_size, &_pause_succeeded);
+    } else {
+      bool should_upgrade_to_full = !g1h->should_do_concurrent_full_gc(_gc_cause) &&
+                                    !g1h->has_regions_left_for_allocation();
+      if (should_upgrade_to_full) {
+        // There has been a request to perform a GC to free some space. We have no
+        // information on how much memory has been asked for. In case there are
+        // absolutely no regions left to allocate into, do a maximally compacting full GC.
+        log_info(gc, ergo)("Attempting maximally compacting collection");
+        _pause_succeeded = g1h->do_full_collection(false, /* explicit gc */
+                                                   true   /* clear_all_soft_refs */);
+      }
+    }
+    guarantee(_pause_succeeded, "Elevated collections during the safepoint must always succeed.");
   } else {
     assert(_result == NULL, "invariant");
-    if (!_pause_succeeded) {
-      // Another possible reason reason for the pause to not be successful
-      // is that, again, the GC locker is active (and has become active
-      // since the prologue was executed). In this case we should retry
-      // the pause after waiting for the GC locker to become inactive.
-      _should_retry_gc = true;
-    }
+    // The only reason for the pause to not be successful is that, the GC locker is
+    // active (or has become active since the prologue was executed). In this case
+    // we should retry the pause after waiting for the GC locker to become inactive.
+    _should_retry_gc = true;
   }
 }
 
-void VM_G1IncCollectionPause::doit_epilogue() {
-  VM_G1OperationWithAllocRequest::doit_epilogue();
+void VM_G1CollectForAllocation::doit_epilogue() {
+  VM_CollectForAllocation::doit_epilogue();
 
   // If the pause was initiated by a System.gc() and
   // +ExplicitGCInvokesConcurrent, we have to wait here for the cycle
@@ -209,6 +204,8 @@ void VM_CGC_Operation::doit() {
   GCTraceCPUTime tcpu;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   GCTraceTime(Info, gc) t(_printGCMessage, g1h->concurrent_mark()->gc_timer_cm(), GCCause::_no_gc, true);
+  TraceCollectorStats tcs(g1h->g1mm()->conc_collection_counters());
+  SvcGCMarker sgcm(SvcGCMarker::CONCURRENT);
   IsGCActiveMark x;
   _cl->do_void();
 }

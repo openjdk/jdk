@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,9 @@
 
 #include "logging/logDecorators.hpp"
 #include "logging/logTagSet.hpp"
-#include "memory/allocation.hpp"
 
 // Temporary object containing the necessary data for a log call's decorations (timestamps, etc).
-class LogDecorations VALUE_OBJ_CLASS_SPEC {
+class LogDecorations {
  public:
   static const int DecorationsBufferSize = 256;
  private:

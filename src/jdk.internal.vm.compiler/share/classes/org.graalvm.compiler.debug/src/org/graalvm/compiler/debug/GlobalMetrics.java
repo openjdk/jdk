@@ -29,10 +29,10 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.MapCursor;
+import org.graalvm.collections.Pair;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.util.EconomicMap;
-import org.graalvm.util.MapCursor;
-import org.graalvm.util.Pair;
 
 /**
  * Metric values that can be {@linkplain #add(DebugContext) updated} by multiple threads.

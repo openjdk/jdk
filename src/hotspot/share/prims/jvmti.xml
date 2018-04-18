@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <?xml-stylesheet type="text/xsl" href="jvmti.xsl"?>
 <!--
- Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -333,6 +333,8 @@
 
    <!ELEMENT p EMPTY>
 
+   <!ELEMENT blockquote ANY>
+
    <!ELEMENT dl  (dt|dd)+>
 
    <!ELEMENT dd  ANY>
@@ -344,10 +346,10 @@
    <!ELEMENT tr  (td|th)*>
 
    <!ELEMENT td  ANY>
-   <!ATTLIST td align (left|right|center) "center">
+   <!ATTLIST td class CDATA #IMPLIED>
 
    <!ELEMENT th  ANY>
-   <!ATTLIST th align (left|right|center) "center">
+   <!ATTLIST th class CDATA #IMPLIED>
 
    <!ELEMENT ul  (li)+>
    <!ATTLIST ul type (disc|circle|square) "disc">
@@ -691,7 +693,7 @@ Agent_OnUnload_L(JavaVM *vm)</example>
     mechanism causes the unload (an unload mechanism is not specified in this document)
     or the library is (in effect) unloaded by the termination of the VM whether through
     normal termination or VM failure, including start-up failure.
-    Uncontrolled shutdown is, of couse, an exception to this rule.
+    Uncontrolled shutdown is, of course, an exception to this rule.
     Note the distinction between this function and the
     <eventlink id="VMDeath">VM Death event</eventlink>: for the VM Death event
     to be sent, the VM must have run at least to the point of initialization and a valid
@@ -3527,15 +3529,15 @@ class C2 extends C1 implements I2 {
             returned in the order: q, r.
             An instance of class <code>C1</code> will have the
             following field indices:
-            <dl><dd><table>
+            <blockquote><table>
               <tr>
-                <td>
+                <td class="centered">
                   a
                 </td>
-                <td>
+                <td class="centered">
                   2
                 </td>
-                <td align="left">
+                <td>
                   The count of the fields in the interfaces
                   implemented by <code>C1</code> is two (<i>n</i>=2):
                   <code>p</code> of <code>I0</code>
@@ -3543,30 +3545,30 @@ class C2 extends C1 implements I2 {
                 </td>
               </tr>
               <tr>
-                <td>
+                <td class="centered">
                   b
                 </td>
-                <td>
+                <td class="centered">
                   3
                 </td>
-                <td align="left">
+                <td>
                   the subsequent index.
                 </td>
               </tr>
-            </table></dd></dl>
+            </table></blockquote>
             The class <code>C1</code> will have the same field indices.
             <p/>
             An instance of class <code>C2</code> will have the
             following field indices:
-            <dl><dd><table>
+            <blockquote><table>
               <tr>
-                <td>
+                <td class="centered">
                   a
                 </td>
-                <td>
+                <td class="centered">
                   3
                 </td>
-                <td align="left">
+                <td>
                   The count of the fields in the interfaces
                   implemented by <code>C2</code> is three (<i>n</i>=3):
                   <code>p</code> of <code>I0</code>,
@@ -3576,39 +3578,39 @@ class C2 extends C1 implements I2 {
                 </td>
               </tr>
               <tr>
-                <td>
+                <td class="centered">
                   b
                 </td>
-                <td>
+                <td class="centered">
                   4
                 </td>
-                <td align="left">
+                <td>
                   the subsequent index to "a".
                 </td>
               </tr>
               <tr>
-                <td>
+                <td class="centered">
                   q
                 </td>
-                <td>
+                <td class="centered">
                   5
                 </td>
-                <td align="left">
+                <td>
                   the subsequent index to "b".
                 </td>
               </tr>
               <tr>
-                <td>
+                <td class="centered">
                   r
                 </td>
-                <td>
+                <td class="centered">
                   6
                 </td>
-                <td align="left">
+                <td>
                   the subsequent index to "q".
                 </td>
               </tr>
-            </table></dd></dl>
+            </table></blockquote>
             The class <code>C2</code> will have the same field indices.
             Note that a field may have a different index depending on the
             object that is viewing it -- for example field "a" above.
@@ -3617,21 +3619,21 @@ class C2 extends C1 implements I2 {
             <p/>
             The interface <code>I1</code> will have the
             following field indices:
-            <dl><dd><table>
+            <blockquote><table>
               <tr>
-                <td>
+                <td class="centered">
                   x
                 </td>
-                <td>
+                <td class="centered">
                   1
                 </td>
-                <td align="left">
+                <td>
                   The count of the fields in the superinterfaces
                   of <code>I1</code> is one (<i>n</i>=1):
                   <code>p</code> of <code>I0</code>.
                 </td>
               </tr>
-            </table></dd></dl>
+            </table></blockquote>
 	  </description>
 	</field>
       </typedef>
@@ -4486,61 +4488,61 @@ class C2 extends C1 implements I2 {
             </th>
           </tr>
           <tr>
-            <th align="left">
+            <th class="leftAligned">
               the
               <datalink id="jvmtiHeapVisitControl">Heap Visit Control Flags</datalink>
               returned by <functionlink id="jvmtiHeapReferenceCallback"/>
             </th>
-            <td>
+            <td class="centered">
               <b>Yes</b>
             </td>
-            <td>
+            <td class="centered">
               <b>Yes</b>, since visits are controlled
             </td>
-            <td>
+            <td class="centered">
               <b>Yes</b>, since visits are controlled
             </td>
           </tr>
           <tr>
-            <th align="left">
+            <th class="leftAligned">
               <fieldlink id="array_primitive_value_callback" struct="jvmtiHeapCallbacks"/>
               in <paramlink id="callbacks"/> set
             </th>
-            <td>
+            <td class="centered">
               No
             </td>
-            <td>
+            <td class="centered">
               <b>Yes</b>
             </td>
-            <td>
+            <td class="centered">
               No
             </td>
           </tr>
           <tr>
-            <th align="left">
+            <th class="leftAligned">
               <paramlink id="heap_filter"/>
             </th>
-            <td>
+            <td class="centered">
               No
             </td>
-            <td>
+            <td class="centered">
               <b>Yes</b>
             </td>
-            <td>
+            <td class="centered">
               <b>Yes</b>
             </td>
           </tr>
           <tr>
-            <th align="left">
+            <th class="leftAligned">
               <paramlink id="klass"/>
             </th>
-            <td>
+            <td class="centered">
               No
             </td>
-            <td>
+            <td class="centered">
               <b>Yes</b>
             </td>
-            <td>
+            <td class="centered">
               <b>Yes</b>
             </td>
           </tr>
@@ -4678,61 +4680,61 @@ class C2 extends C1 implements I2 {
             </th>
           </tr>
           <tr>
-            <th align="left">
+            <th class="leftAligned">
               the
               <datalink id="jvmtiHeapVisitControl">Heap Visit Control Flags</datalink>
               returned by <functionlink id="jvmtiHeapIterationCallback"/>
             </th>
-            <td>
+            <td class="centered">
               No<br/>(unless they abort the iteration)
             </td>
-            <td>
+            <td class="centered">
               No<br/>(unless they abort the iteration)
             </td>
-            <td>
+            <td class="centered">
               No<br/>(unless they abort the iteration)
             </td>
           </tr>
           <tr>
-            <th align="left">
+            <th class="leftAligned">
               <fieldlink id="array_primitive_value_callback" struct="jvmtiHeapCallbacks"/>
               in <paramlink id="callbacks"/> set
             </th>
-            <td>
+            <td class="centered">
               No
             </td>
-            <td>
+            <td class="centered">
               <b>Yes</b>
             </td>
-            <td>
+            <td class="centered">
               No
             </td>
           </tr>
           <tr>
-            <th align="left">
+            <th class="leftAligned">
               <paramlink id="heap_filter"/>
             </th>
-            <td>
+            <td class="centered">
               No
             </td>
-            <td>
+            <td class="centered">
               <b>Yes</b>
             </td>
-            <td>
+            <td class="centered">
               <b>Yes</b>
             </td>
           </tr>
           <tr>
-            <th align="left">
+            <th class="leftAligned">
               <paramlink id="klass"/>
             </th>
-            <td>
+            <td class="centered">
               No
             </td>
-            <td>
+            <td class="centered">
               <b>Yes</b>
             </td>
-            <td>
+            <td class="centered">
               <b>Yes</b>
             </td>
           </tr>
@@ -9403,7 +9405,7 @@ myInit() {
 	    the event <paramlink id="event_type"></paramlink> will be disabled
 	  </constant>
 	</constants>
-	If <code>thread</code> is <code>NULL</code>,
+	If <code>event_thread</code> is <code>NULL</code>,
 	the event is enabled or disabled globally; otherwise, it is
 	enabled or disabled for a particular thread.
 	An event is generated for

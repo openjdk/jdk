@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug      6921664
+ * @key printer
  * @summary  Verifies number of copies and the job name are passed to a
  *           3rd party PrintService.
  * @run      main DummyPrintTest

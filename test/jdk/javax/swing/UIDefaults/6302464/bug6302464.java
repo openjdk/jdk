@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager.LookAndFeelInfo;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.basic.BasicLookAndFeel;
 import static java.awt.RenderingHints.KEY_TEXT_ANTIALIASING;
 import static java.awt.RenderingHints.KEY_TEXT_LCD_CONTRAST;
@@ -178,6 +179,7 @@ public class bug6302464 {
     private static void setLookAndFeel(String lafClass) {
         try {
             UIManager.setLookAndFeel(lafClass);
+        } catch (final UnsupportedLookAndFeelException ignored) {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

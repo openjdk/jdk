@@ -23,6 +23,8 @@
 
 /* @test
    @bug 8072769
+   @key headful
+   @requires (os.family == "windows")
    @summary System tray icon title freezes java
    @author Semyon Sadetsky
    @library ../../../../lib/testlibrary

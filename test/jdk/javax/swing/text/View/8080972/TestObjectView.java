@@ -36,6 +36,7 @@ import javax.swing.text.html.ObjectView;
  * @summary Audit Core Reflection in module java.desktop for places that will
  *          require changes to work with modules
  * @author Alexander Scherbatiy
+ * @run main/othervm TestObjectView
  */
 
 public class TestObjectView {

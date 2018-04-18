@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,10 @@ import javax.swing.SwingUtilities;
 /**
  * @test
  * @key headful
- * @bug 8175301
+ * @bug 8175301 8198613
  * @summary Java GUI hangs on Windows when Display set to 125%
  * @run main/othervm -Dsun.java2d.uiScale=2 ScaledFrameBackgroundTest
  * @run main/othervm -Dsun.java2d.uiScale=2 -Dsun.java2d.d3d=true ScaledFrameBackgroundTest
- * @run main/othervm -Dsun.java2d.uiScale=2 -Dsun.java2d.opengl=true ScaledFrameBackgroundTest
  */
 public class ScaledFrameBackgroundTest {
 

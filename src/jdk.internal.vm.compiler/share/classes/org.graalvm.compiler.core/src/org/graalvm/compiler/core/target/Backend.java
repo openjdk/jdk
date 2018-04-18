@@ -24,6 +24,7 @@ package org.graalvm.compiler.core.target;
 
 import java.util.ArrayList;
 
+import org.graalvm.collections.EconomicSet;
 import org.graalvm.compiler.asm.Assembler;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
@@ -44,7 +45,6 @@ import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
 import org.graalvm.compiler.phases.tiers.TargetProvider;
 import org.graalvm.compiler.phases.util.Providers;
-import org.graalvm.util.EconomicSet;
 
 import jdk.vm.ci.code.BailoutException;
 import jdk.vm.ci.code.CodeCacheProvider;
@@ -178,7 +178,7 @@ public abstract class Backend implements TargetProvider, ValueKindFactory<LIRKin
      * @param method the method compiled to produce {@code compiledCode} or {@code null} if the
      *            input to {@code compResult} was not a {@link ResolvedJavaMethod}
      * @param compilationRequest the compilation request or {@code null}
-     * @param compilationResult the code to be compiled
+     * @param compilationResult the code to be installed
      * @param predefinedInstalledCode a pre-allocated {@link InstalledCode} object to use as a
      *            reference to the installed code. If {@code null}, a new {@link InstalledCode}
      *            object will be created.
@@ -204,28 +204,46 @@ public abstract class Backend implements TargetProvider, ValueKindFactory<LIRKin
         }
         try (DebugContext.Scope s2 = debug.scope("CodeInstall", debugContext);
                         DebugContext.Activation a = debug.activate()) {
-            for (CodeInstallationTask task : tasks) {
-                task.preProcess(compilationResult);
-            }
 
-            CompiledCode compiledCode = createCompiledCode(method, compilationRequest, compilationResult);
-            InstalledCode installedCode = getProviders().getCodeCache().installCode(method, compiledCode, predefinedInstalledCode, speculationLog, isDefault);
-
-            // Run post-code installation tasks.
+            InstalledCode installedCode;
             try {
-                for (CodeInstallationTask task : tasks) {
-                    task.postProcess(installedCode);
-                }
-                for (CodeInstallationTask task : tasks) {
-                    task.releaseInstallation(installedCode);
-                }
+                preCodeInstallationTasks(tasks, compilationResult, predefinedInstalledCode);
+                CompiledCode compiledCode = createCompiledCode(method, compilationRequest, compilationResult);
+                installedCode = getProviders().getCodeCache().installCode(method, compiledCode, predefinedInstalledCode, speculationLog, isDefault);
+                assert predefinedInstalledCode == null || installedCode == predefinedInstalledCode;
             } catch (Throwable t) {
-                installedCode.invalidate();
+                failCodeInstallationTasks(tasks, t);
                 throw t;
             }
+
+            postCodeInstallationTasks(tasks, installedCode);
+
             return installedCode;
         } catch (Throwable e) {
             throw debug.handle(e);
+        }
+    }
+
+    private static void failCodeInstallationTasks(CodeInstallationTask[] tasks, Throwable t) {
+        for (CodeInstallationTask task : tasks) {
+            task.installFailed(t);
+        }
+    }
+
+    private static void preCodeInstallationTasks(CodeInstallationTask[] tasks, CompilationResult compilationResult, InstalledCode predefinedInstalledCode) {
+        for (CodeInstallationTask task : tasks) {
+            task.preProcess(compilationResult, predefinedInstalledCode);
+        }
+    }
+
+    private static void postCodeInstallationTasks(CodeInstallationTask[] tasks, InstalledCode installedCode) {
+        try {
+            for (CodeInstallationTask task : tasks) {
+                task.postProcess(installedCode);
+            }
+        } catch (Throwable t) {
+            installedCode.invalidate();
+            throw t;
         }
     }
 
@@ -288,24 +306,29 @@ public abstract class Backend implements TargetProvider, ValueKindFactory<LIRKin
     public abstract static class CodeInstallationTask {
         /**
          * Task to run before code installation.
+         *
+         * @param compilationResult the code about to be installed
+         * @param predefinedInstalledCode a pre-allocated {@link InstalledCode} object that will be
+         *            used as a reference to the installed code. May be {@code null}.
+         *
          */
-        @SuppressWarnings("unused")
-        public void preProcess(CompilationResult compilationResult) {
+        public void preProcess(CompilationResult compilationResult, InstalledCode predefinedInstalledCode) {
         }
 
         /**
          * Task to run after the code is installed.
+         *
+         * @param installedCode a reference to the installed code
          */
-        @SuppressWarnings("unused")
         public void postProcess(InstalledCode installedCode) {
         }
 
         /**
-         * Task to run after all the post-code installation tasks are complete, used to release the
-         * installed code.
+         * Invoked after {@link #preProcess} when code installation fails.
+         *
+         * @param cause the cause of the installation failure
          */
-        @SuppressWarnings("unused")
-        public void releaseInstallation(InstalledCode installedCode) {
+        public void installFailed(Throwable cause) {
         }
     }
 

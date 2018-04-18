@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.EnumConstantWriter;
@@ -272,38 +272,5 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     protected Content getDeprecatedLink(Element member) {
         String name = utils.getFullyQualifiedName(member) + "." + member.getSimpleName();
         return writer.getDocLink(LinkInfoImpl.Kind.MEMBER, member, name);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected Content getNavSummaryLink(TypeElement typeElement, boolean link) {
-        if (link) {
-            if (typeElement == null) {
-                return Links.createLink(SectionName.ENUM_CONSTANT_SUMMARY,
-                        contents.navEnum);
-            } else {
-                return links.createLink(
-                        SectionName.ENUM_CONSTANTS_INHERITANCE,
-                        configuration.getClassName(typeElement), contents.navEnum);
-            }
-        } else {
-            return contents.navEnum;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void addNavDetailLink(boolean link, Content liNav) {
-        if (link) {
-            liNav.addContent(Links.createLink(
-                    SectionName.ENUM_CONSTANT_DETAIL,
-                    contents.navEnum));
-        } else {
-            liNav.addContent(contents.navEnum);
-        }
     }
 }

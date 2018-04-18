@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,14 @@
 /*
  * @test
  * @key headful
- * @bug 6917744
+ * @bug 6917744 8194767
  * @summary JScrollPane Page Up/Down keys do not handle correctly html tables with different cells contents
  * @author Pavel Porvatov
  * @run main bug6917744
  */
 
 import java.awt.*;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
 import javax.swing.*;
@@ -43,6 +44,23 @@ public class bug6917744 {
     private static JScrollPane scrollPane;
 
     private static Robot robot;
+
+    private static Point p = null;
+
+    static void blockTillDisplayed(JComponent comp) throws Exception {
+        while (p == null) {
+            try {
+                SwingUtilities.invokeAndWait(() -> {
+                    p = comp.getLocationOnScreen();
+                });
+            } catch (IllegalStateException e) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ie) {
+                }
+            }
+        }
+    }
 
     public static void main(String[] args) throws Exception {
 
@@ -58,6 +76,7 @@ public class bug6917744 {
                 try {
                     editorPane.setPage(bug6917744.class.getResource("/test.html"));
                 } catch (IOException e) {
+                    frame.dispose();
                     throw new RuntimeException("HTML resource not found", e);
                 }
 
@@ -69,6 +88,12 @@ public class bug6917744 {
             }
         });
 
+        blockTillDisplayed(editorPane);
+        robot.mouseMove(p.x+50, p.y+50);
+        robot.waitForIdle();
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.waitForIdle();
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
 
         for (int i = 0; i < 50; i++) {
@@ -84,6 +109,7 @@ public class bug6917744 {
                 BoundedRangeModel model = scrollPane.getVerticalScrollBar().getModel();
 
                 if (model.getValue() + model.getExtent() != model.getMaximum()) {
+                    frame.dispose();
                     throw new RuntimeException("Invalid HTML position");
                 }
             }
@@ -104,6 +130,7 @@ public class bug6917744 {
                 BoundedRangeModel model = scrollPane.getVerticalScrollBar().getModel();
 
                 if (model.getValue() != model.getMinimum()) {
+                    frame.dispose();
                     throw new RuntimeException("Invalid HTML position");
                 }
 

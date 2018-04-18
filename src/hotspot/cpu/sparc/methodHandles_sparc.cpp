@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/frame.inline.hpp"
+#include "utilities/preserveException.hpp"
 
 #define __ _masm->
 
@@ -178,13 +180,13 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
 
   // Load the invoker, as MH -> MH.form -> LF.vmentry
   __ verify_oop(recv);
-  __ load_heap_oop(Address(recv,        NONZERO(java_lang_invoke_MethodHandle::form_offset_in_bytes())),   method_temp);
+  __ load_heap_oop(recv, NONZERO(java_lang_invoke_MethodHandle::form_offset_in_bytes()), method_temp, temp2);
   __ verify_oop(method_temp);
-  __ load_heap_oop(Address(method_temp, NONZERO(java_lang_invoke_LambdaForm::vmentry_offset_in_bytes())),  method_temp);
+  __ load_heap_oop(method_temp, NONZERO(java_lang_invoke_LambdaForm::vmentry_offset_in_bytes()), method_temp, temp2);
   __ verify_oop(method_temp);
-  __ load_heap_oop(Address(method_temp, NONZERO(java_lang_invoke_MemberName::method_offset_in_bytes())), method_temp);
+  __ load_heap_oop(method_temp, NONZERO(java_lang_invoke_MemberName::method_offset_in_bytes()), method_temp, temp2);
   __ verify_oop(method_temp);
-  __ ld_ptr(       Address(method_temp, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset_in_bytes())),   method_temp);
+  __ ld_ptr(Address(method_temp, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset_in_bytes())), method_temp);
 
   if (VerifyMethodHandles && !for_compiler_entry) {
     // make sure recv is already on stack
@@ -360,7 +362,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       if (VerifyMethodHandles && iid != vmIntrinsics::_linkToInterface) {
         Label L_ok;
         Register temp2_defc = temp2;
-        __ load_heap_oop(member_clazz, temp2_defc);
+        __ load_heap_oop(member_clazz, temp2_defc, temp3);
         load_klass_from_Class(_masm, temp2_defc, temp3, temp4);
         __ verify_klass_ptr(temp2_defc);
         __ check_klass_subtype(temp1_recv_klass, temp2_defc, temp3, temp4, L_ok);
@@ -387,7 +389,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       if (VerifyMethodHandles) {
         verify_ref_kind(_masm, JVM_REF_invokeSpecial, member_reg, temp2);
       }
-      __ load_heap_oop(member_vmtarget, G5_method);
+      __ load_heap_oop(member_vmtarget, G5_method, temp3);
       __ ld_ptr(vmtarget_method, G5_method);
       break;
 
@@ -395,7 +397,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       if (VerifyMethodHandles) {
         verify_ref_kind(_masm, JVM_REF_invokeStatic, member_reg, temp2);
       }
-      __ load_heap_oop(member_vmtarget, G5_method);
+      __ load_heap_oop(member_vmtarget, G5_method, temp3);
       __ ld_ptr(vmtarget_method, G5_method);
       break;
 
@@ -436,7 +438,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       }
 
       Register temp2_intf = temp2;
-      __ load_heap_oop(member_clazz, temp2_intf);
+      __ load_heap_oop(member_clazz, temp2_intf, temp3);
       load_klass_from_Class(_masm, temp2_intf, temp3, temp4);
       __ verify_klass_ptr(temp2_intf);
 

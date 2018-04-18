@@ -23,12 +23,14 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/cms/cmsCardTable.hpp"
 #include "gc/cms/compactibleFreeListSpace.hpp"
 #include "gc/cms/concurrentMarkSweepGeneration.hpp"
 #include "gc/cms/concurrentMarkSweepThread.hpp"
 #include "gc/cms/cmsHeap.hpp"
 #include "gc/cms/parNewGeneration.hpp"
 #include "gc/cms/vmCMSOperations.hpp"
+#include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genMemoryPools.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/strongRootsScope.hpp"
@@ -64,7 +66,13 @@ public:
 };
 
 CMSHeap::CMSHeap(GenCollectorPolicy *policy) :
-  GenCollectedHeap(policy), _eden_pool(NULL), _survivor_pool(NULL), _old_pool(NULL) {
+    GenCollectedHeap(policy,
+                     Generation::ParNew,
+                     Generation::ConcurrentMarkSweep,
+                     "ParNew::CMS"),
+    _eden_pool(NULL),
+    _survivor_pool(NULL),
+    _old_pool(NULL) {
   _workers = new WorkGang("GC Thread", ParallelGCThreads,
                           /* are_GC_task_threads */true,
                           /* are_ConcurrentGC_threads */false);
@@ -77,12 +85,15 @@ jint CMSHeap::initialize() {
 
   // If we are running CMS, create the collector responsible
   // for collecting the CMS generations.
-  assert(collector_policy()->is_concurrent_mark_sweep_policy(), "must be CMS policy");
   if (!create_cms_collector()) {
     return JNI_ENOMEM;
   }
 
   return JNI_OK;
+}
+
+CardTableRS* CMSHeap::create_rem_set(const MemRegion& reserved_region) {
+  return new CMSCardTable(reserved_region);
 }
 
 void CMSHeap::initialize_serviceability() {
@@ -127,7 +138,7 @@ void CMSHeap::check_gen_kinds() {
 CMSHeap* CMSHeap::heap() {
   CollectedHeap* heap = Universe::heap();
   assert(heap != NULL, "Uninitialized access to CMSHeap::heap()");
-  assert(heap->kind() == CollectedHeap::CMSHeap, "Not a CMSHeap");
+  assert(heap->kind() == CollectedHeap::CMS, "Invalid name");
   return (CMSHeap*) heap;
 }
 
@@ -152,11 +163,10 @@ void CMSHeap::print_on_error(outputStream* st) const {
 bool CMSHeap::create_cms_collector() {
   assert(old_gen()->kind() == Generation::ConcurrentMarkSweep,
          "Unexpected generation kinds");
-  assert(gen_policy()->is_concurrent_mark_sweep_policy(), "Unexpected policy type");
   CMSCollector* collector =
     new CMSCollector((ConcurrentMarkSweepGeneration*) old_gen(),
                      rem_set(),
-                     gen_policy()->as_concurrent_mark_sweep_policy());
+                     (ConcurrentMarkSweepPolicy*) gen_policy());
 
   if (collector == NULL || !collector->completed_initialization()) {
     if (collector) {

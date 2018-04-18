@@ -90,7 +90,7 @@ assertTLSValue( jvmtiEnv *      jvmtienv,
                 jthread         thread,
                 const void *    expected) {
     jvmtiError  error;
-    void *      test = (void *) 0x99999999;
+    void *      test = (void *) 0x99999999ULL;
 
     /* now check if we do a fetch we get what we wrote */
     error = (*jvmtienv)->GetThreadLocalStorage(

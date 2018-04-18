@@ -45,35 +45,35 @@
   static bool register_code_area(char *low, char *high) { return true; }
 
 #ifndef AARCH64
-  static jlong (*atomic_cmpxchg_long_func)(jlong compare_value,
-                                           jlong exchange_value,
-                                           volatile jlong *dest);
+  static int64_t (*atomic_cmpxchg_long_func)(int64_t compare_value,
+                                             int64_t exchange_value,
+                                             volatile int64_t *dest);
 
-  static jlong (*atomic_load_long_func)(const volatile jlong*);
+  static int64_t (*atomic_load_long_func)(const volatile int64_t*);
 
-  static void (*atomic_store_long_func)(jlong, volatile jlong*);
+  static void (*atomic_store_long_func)(int64_t, volatile int64_t*);
 
-  static jint  (*atomic_add_func)(jint add_value, volatile jint *dest);
+  static int32_t  (*atomic_add_func)(int32_t add_value, volatile int32_t *dest);
 
-  static jint  (*atomic_xchg_func)(jint exchange_value, volatile jint *dest);
+  static int32_t  (*atomic_xchg_func)(int32_t exchange_value, volatile int32_t *dest);
 
-  static jint  (*atomic_cmpxchg_func)(jint compare_value,
-                                      jint exchange_value,
-                                      volatile jint *dest);
+  static int32_t  (*atomic_cmpxchg_func)(int32_t compare_value,
+                                         int32_t exchange_value,
+                                         volatile int32_t *dest);
 
-  static jlong atomic_cmpxchg_long_bootstrap(jlong, jlong, volatile jlong*);
+  static int64_t atomic_cmpxchg_long_bootstrap(int64_t, int64_t, volatile int64_t*);
 
-  static jlong atomic_load_long_bootstrap(const volatile jlong*);
+  static int64_t atomic_load_long_bootstrap(const volatile int64_t*);
 
-  static void atomic_store_long_bootstrap(jlong, volatile jlong*);
+  static void atomic_store_long_bootstrap(int64_t, volatile int64_t*);
 
-  static jint  atomic_add_bootstrap(jint add_value, volatile jint *dest);
+  static int32_t  atomic_add_bootstrap(int32_t add_value, volatile int32_t *dest);
 
-  static jint  atomic_xchg_bootstrap(jint exchange_value, volatile jint *dest);
+  static int32_t  atomic_xchg_bootstrap(int32_t exchange_value, volatile int32_t *dest);
 
-  static jint  atomic_cmpxchg_bootstrap(jint compare_value,
-                                        jint exchange_value,
-                                        volatile jint *dest);
+  static int32_t  atomic_cmpxchg_bootstrap(int32_t compare_value,
+                                           int32_t exchange_value,
+                                           volatile int32_t *dest);
 #endif // !AARCH64
 
 #endif // OS_CPU_LINUX_ARM_VM_OS_LINUX_ARM_HPP

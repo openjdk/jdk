@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 // no precompiled headers
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/bytecodeInterpreter.hpp"
 #include "interpreter/bytecodeInterpreter.inline.hpp"
@@ -33,17 +34,21 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/constantPool.inline.hpp"
+#include "oops/cpCache.inline.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/threadCritical.hpp"
@@ -594,10 +599,6 @@ BytecodeInterpreter::run(interpreterState istate) {
     VERIFY_OOP(rcvr);
   }
 #endif
-// #define HACK
-#ifdef HACK
-  bool interesting = false;
-#endif // HACK
 
   /* QQQ this should be a stack method so we don't know actual direction */
   guarantee(istate->msg() == initialize ||
@@ -649,19 +650,6 @@ BytecodeInterpreter::run(interpreterState istate) {
         os::breakpoint();
       }
 
-#ifdef HACK
-      {
-        ResourceMark rm;
-        char *method_name = istate->method()->name_and_sig_as_C_string();
-        if (strstr(method_name, "runThese$TestRunner.run()V") != NULL) {
-          tty->print_cr("entering: depth %d bci: %d",
-                         (istate->_stack_base - istate->_stack),
-                         istate->_bcp - istate->_method->code_base());
-          interesting = true;
-        }
-      }
-#endif // HACK
-
       // Lock method if synchronized.
       if (METHOD->is_synchronized()) {
         // oop rcvr = locals[0].j.r;
@@ -701,7 +689,7 @@ BytecodeInterpreter::run(interpreterState istate) {
             if (hash != markOopDesc::no_hash) {
               header = header->copy_set_hash(hash);
             }
-            if (Atomic::cmpxchg(header, rcvr->mark_addr(), mark) == mark) {
+            if (rcvr->cas_set_mark(header, mark) == mark) {
               if (PrintBiasedLockingStatistics)
                 (*BiasedLocking::revoked_lock_entry_count_addr())++;
             }
@@ -711,7 +699,7 @@ BytecodeInterpreter::run(interpreterState istate) {
             if (hash != markOopDesc::no_hash) {
               new_header = new_header->copy_set_hash(hash);
             }
-            if (Atomic::cmpxchg(new_header, rcvr->mark_addr(), mark) == mark) {
+            if (rcvr->cas_set_mark(new_header, mark) == mark) {
               if (PrintBiasedLockingStatistics) {
                 (* BiasedLocking::rebiased_lock_entry_count_addr())++;
               }
@@ -730,7 +718,7 @@ BytecodeInterpreter::run(interpreterState istate) {
             markOop new_header = (markOop) ((uintptr_t) header | thread_ident);
             // Debugging hint.
             DEBUG_ONLY(mon->lock()->set_displaced_header((markOop) (uintptr_t) 0xdeaddead);)
-            if (Atomic::cmpxchg(new_header, rcvr->mark_addr(), header) == header) {
+            if (rcvr->cas_set_mark(new_header, header) == header) {
               if (PrintBiasedLockingStatistics) {
                 (* BiasedLocking::anonymously_biased_lock_entry_count_addr())++;
               }
@@ -746,7 +734,7 @@ BytecodeInterpreter::run(interpreterState istate) {
           markOop displaced = rcvr->mark()->set_unlocked();
           mon->lock()->set_displaced_header(displaced);
           bool call_vm = UseHeavyMonitors;
-          if (call_vm || Atomic::cmpxchg((markOop)mon, rcvr->mark_addr(), displaced) != displaced) {
+          if (call_vm || rcvr->cas_set_mark((markOop)mon, displaced) != displaced) {
             // Is it simple recursive case?
             if (!call_vm && THREAD->is_lock_owned((address) displaced->clear_lock_bits())) {
               mon->lock()->set_displaced_header(NULL);
@@ -793,18 +781,6 @@ BytecodeInterpreter::run(interpreterState istate) {
         // resume
         os::breakpoint();
       }
-#ifdef HACK
-      {
-        ResourceMark rm;
-        char *method_name = istate->method()->name_and_sig_as_C_string();
-        if (strstr(method_name, "runThese$TestRunner.run()V") != NULL) {
-          tty->print_cr("resume: depth %d bci: %d",
-                         (istate->_stack_base - istate->_stack) ,
-                         istate->_bcp - istate->_method->code_base());
-          interesting = true;
-        }
-      }
-#endif // HACK
       // returned from a java call, continue executing.
       if (THREAD->pop_frame_pending() && !THREAD->pop_frame_in_process()) {
         goto handle_Pop_Frame;
@@ -899,7 +875,7 @@ BytecodeInterpreter::run(interpreterState istate) {
           if (hash != markOopDesc::no_hash) {
             header = header->copy_set_hash(hash);
           }
-          if (Atomic::cmpxchg(header, lockee->mark_addr(), mark) == mark) {
+          if (lockee->cas_set_mark(header, mark) == mark) {
             if (PrintBiasedLockingStatistics) {
               (*BiasedLocking::revoked_lock_entry_count_addr())++;
             }
@@ -910,7 +886,7 @@ BytecodeInterpreter::run(interpreterState istate) {
           if (hash != markOopDesc::no_hash) {
                 new_header = new_header->copy_set_hash(hash);
           }
-          if (Atomic::cmpxchg(new_header, lockee->mark_addr(), mark) == mark) {
+          if (lockee->cas_set_mark(new_header, mark) == mark) {
             if (PrintBiasedLockingStatistics) {
               (* BiasedLocking::rebiased_lock_entry_count_addr())++;
             }
@@ -928,7 +904,7 @@ BytecodeInterpreter::run(interpreterState istate) {
           markOop new_header = (markOop) ((uintptr_t) header | thread_ident);
           // debugging hint
           DEBUG_ONLY(entry->lock()->set_displaced_header((markOop) (uintptr_t) 0xdeaddead);)
-          if (Atomic::cmpxchg(new_header, lockee->mark_addr(), header) == header) {
+          if (lockee->cas_set_mark(new_header, header) == header) {
             if (PrintBiasedLockingStatistics) {
               (* BiasedLocking::anonymously_biased_lock_entry_count_addr())++;
             }
@@ -944,7 +920,7 @@ BytecodeInterpreter::run(interpreterState istate) {
         markOop displaced = lockee->mark()->set_unlocked();
         entry->lock()->set_displaced_header(displaced);
         bool call_vm = UseHeavyMonitors;
-        if (call_vm || Atomic::cmpxchg((markOop)entry, lockee->mark_addr(), displaced) != displaced) {
+        if (call_vm || lockee->cas_set_mark((markOop)entry, displaced) != displaced) {
           // Is it simple recursive case?
           if (!call_vm && THREAD->is_lock_owned((address) displaced->clear_lock_bits())) {
             entry->lock()->set_displaced_header(NULL);
@@ -1840,7 +1816,7 @@ run:
               if (hash != markOopDesc::no_hash) {
                 header = header->copy_set_hash(hash);
               }
-              if (Atomic::cmpxchg(header, lockee->mark_addr(), mark) == mark) {
+              if (lockee->cas_set_mark(header, mark) == mark) {
                 if (PrintBiasedLockingStatistics)
                   (*BiasedLocking::revoked_lock_entry_count_addr())++;
               }
@@ -1851,7 +1827,7 @@ run:
               if (hash != markOopDesc::no_hash) {
                 new_header = new_header->copy_set_hash(hash);
               }
-              if (Atomic::cmpxchg(new_header, lockee->mark_addr(), mark) == mark) {
+              if (lockee->cas_set_mark(new_header, mark) == mark) {
                 if (PrintBiasedLockingStatistics)
                   (* BiasedLocking::rebiased_lock_entry_count_addr())++;
               }
@@ -1871,7 +1847,7 @@ run:
               markOop new_header = (markOop) ((uintptr_t) header | thread_ident);
               // debugging hint
               DEBUG_ONLY(entry->lock()->set_displaced_header((markOop) (uintptr_t) 0xdeaddead);)
-              if (Atomic::cmpxchg(new_header, lockee->mark_addr(), header) == header) {
+              if (lockee->cas_set_mark(new_header, header) == header) {
                 if (PrintBiasedLockingStatistics)
                   (* BiasedLocking::anonymously_biased_lock_entry_count_addr())++;
               }
@@ -1887,7 +1863,7 @@ run:
             markOop displaced = lockee->mark()->set_unlocked();
             entry->lock()->set_displaced_header(displaced);
             bool call_vm = UseHeavyMonitors;
-            if (call_vm || Atomic::cmpxchg((markOop)entry, lockee->mark_addr(), displaced) != displaced) {
+            if (call_vm || lockee->cas_set_mark((markOop)entry, displaced) != displaced) {
               // Is it simple recursive case?
               if (!call_vm && THREAD->is_lock_owned((address) displaced->clear_lock_bits())) {
                 entry->lock()->set_displaced_header(NULL);
@@ -2368,6 +2344,30 @@ run:
             THREAD->set_vm_result(NULL);
             break;
 
+          case JVM_CONSTANT_Dynamic:
+            {
+              oop result = constants->resolved_references()->obj_at(index);
+              if (result == NULL) {
+                CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode), handle_exception);
+                result = THREAD->vm_result();
+              }
+              VERIFY_OOP(result);
+
+              jvalue value;
+              BasicType type = java_lang_boxing_object::get_value(result, &value);
+              switch (type) {
+              case T_FLOAT:   SET_STACK_FLOAT(value.f, 0); break;
+              case T_INT:     SET_STACK_INT(value.i, 0); break;
+              case T_SHORT:   SET_STACK_INT(value.s, 0); break;
+              case T_BYTE:    SET_STACK_INT(value.b, 0); break;
+              case T_CHAR:    SET_STACK_INT(value.c, 0); break;
+              case T_BOOLEAN: SET_STACK_INT(value.z, 0); break;
+              default:  ShouldNotReachHere();
+              }
+
+              break;
+            }
+
           default:  ShouldNotReachHere();
           }
           UPDATE_PC_AND_TOS_AND_CONTINUE(incr, 1);
@@ -2387,6 +2387,27 @@ run:
           case JVM_CONSTANT_Double:
              SET_STACK_DOUBLE(constants->double_at(index), 1);
             break;
+
+          case JVM_CONSTANT_Dynamic:
+            {
+              oop result = constants->resolved_references()->obj_at(index);
+              if (result == NULL) {
+                CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode), handle_exception);
+                result = THREAD->vm_result();
+              }
+              VERIFY_OOP(result);
+
+              jvalue value;
+              BasicType type = java_lang_boxing_object::get_value(result, &value);
+              switch (type) {
+              case T_DOUBLE: SET_STACK_DOUBLE(value.d, 1); break;
+              case T_LONG:   SET_STACK_LONG(value.j, 1); break;
+              default:  ShouldNotReachHere();
+              }
+
+              break;
+            }
+
           default:  ShouldNotReachHere();
           }
           UPDATE_PC_AND_TOS_AND_CONTINUE(3, 2);
@@ -2404,7 +2425,7 @@ run:
           incr = 3;
         }
 
-        // We are resolved if the f1 field contains a non-null object (CallSite, etc.)
+        // We are resolved if the resolved_references array contains a non-null object (CallSite, etc.)
         // This kind of CP cache entry does not need to match the flags byte, because
         // there is a 1-1 relation between bytecode type and CP entry type.
         ConstantPool* constants = METHOD->constants();
@@ -2414,6 +2435,8 @@ run:
                   handle_exception);
           result = THREAD->vm_result();
         }
+        if (oopDesc::equals(result, Universe::the_null_sentinel()))
+          result = NULL;
 
         VERIFY_OOP(result);
         SET_STACK_OBJECT(result, 0);
@@ -2425,7 +2448,7 @@ run:
         u4 index = Bytes::get_native_u4(pc+1);
         ConstantPoolCacheEntry* cache = cp->constant_pool()->invokedynamic_cp_cache_entry_at(index);
 
-        // We are resolved if the resolved_references field contains a non-null object (CallSite, etc.)
+        // We are resolved if the resolved_references array contains a non-null object (CallSite, etc.)
         // This kind of CP cache entry does not need to match the flags byte, because
         // there is a 1-1 relation between bytecode type and CP entry type.
         if (! cache->is_resolved((Bytecodes::Code) opcode)) {
@@ -2570,17 +2593,19 @@ run:
           if (ki->interface_klass() == iclass) break;
         }
         // If the interface isn't found, this class doesn't implement this
-        // interface.  The link resolver checks this but only for the first
+        // interface. The link resolver checks this but only for the first
         // time this interface is called.
         if (i == int2->itable_length()) {
-          VM_JAVA_ERROR(vmSymbols::java_lang_IncompatibleClassChangeError(), "", note_no_trap);
+          CALL_VM(InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose(THREAD, rcvr->klass(), iclass),
+                  handle_exception);
         }
         int mindex = interface_method->itable_index();
 
         itableMethodEntry* im = ki->first_method_entry(rcvr->klass());
         callee = im[mindex].method();
         if (callee == NULL) {
-          VM_JAVA_ERROR(vmSymbols::java_lang_AbstractMethodError(), "", note_no_trap);
+          CALL_VM(InterpreterRuntime::throw_AbstractMethodErrorVerbose(THREAD, rcvr->klass(), interface_method),
+                  handle_exception);
         }
 
         // Profile virtual call.
@@ -2803,7 +2828,7 @@ run:
     HandleMark __hm(THREAD);
 
     THREAD->clear_pending_exception();
-    assert(except_oop(), "No exception to process");
+    assert(except_oop() != NULL, "No exception to process");
     intptr_t continuation_bci;
     // expression stack is emptied
     topOfStack = istate->stack_base() - Interpreter::stackElementWords;

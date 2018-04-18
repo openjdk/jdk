@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -596,6 +596,10 @@ inline bool is_signed_subword_type(BasicType t) {
   return (t == T_BYTE || t == T_SHORT);
 }
 
+inline bool is_reference_type(BasicType t) {
+  return (t == T_OBJECT || t == T_ARRAY);
+}
+
 // Convert a char from a classfile signature to a BasicType
 inline BasicType char2type(char c) {
   switch( c ) {
@@ -935,15 +939,12 @@ class JavaValue;
 class methodHandle;
 class JavaCallArguments;
 
-// Basic support for errors.
-extern void basic_fatal(const char* msg);
-
 //----------------------------------------------------------------------------------------------------
 // Special constants for debugging
 
 const jint     badInt           = -3;                       // generic "bad int" value
-const long     badAddressVal    = -2;                       // generic "bad address" value
-const long     badOopVal        = -1;                       // generic "bad oop" value
+const intptr_t badAddressVal    = -2;                       // generic "bad address" value
+const intptr_t badOopVal        = -1;                       // generic "bad oop" value
 const intptr_t badHeapOopVal    = (intptr_t) CONST64(0x2BAD4B0BBAADBABE); // value used to zap heap after GC
 const int      badStackSegVal   = 0xCA;                     // value used to zap stack segments
 const int      badHandleValue   = 0xBC;                     // value used to zap vm handle area
@@ -1010,12 +1011,6 @@ inline intptr_t bitfield(intptr_t x, int start_bit_no, int field_length) {
 #ifdef min
 #undef min
 #endif
-
-// The following defines serve the purpose of preventing use of accidentally
-// included min max macros from compiling, while continuing to allow innocent
-// min and max identifiers in the code to compile as intended.
-#define max max
-#define min min
 
 // It is necessary to use templates here. Having normal overloaded
 // functions does not work because it is necessary to provide both 32-

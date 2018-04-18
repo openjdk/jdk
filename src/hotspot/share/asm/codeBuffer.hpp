@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ public:
 // This class represents a stream of code and associated relocations.
 // There are a few in each CodeBuffer.
 // They are filled concurrently, and concatenated at the end.
-class CodeSection VALUE_OBJ_CLASS_SPEC {
+class CodeSection {
   friend class CodeBuffer;
  public:
   typedef int csize_t;  // code size type; would be size_t except for history
@@ -246,7 +246,7 @@ class CodeSection VALUE_OBJ_CLASS_SPEC {
 };
 
 class CodeString;
-class CodeStrings VALUE_OBJ_CLASS_SPEC {
+class CodeStrings {
 private:
 #ifndef PRODUCT
   CodeString* _strings;
@@ -380,7 +380,7 @@ class CodeBuffer: public StackObj {
   OopRecorder  _default_oop_recorder;  // override with initialize_oop_recorder
   Arena*       _overflow_arena;
 
-  address      _last_membar;     // used to merge consecutive memory barriers
+  address      _last_insn;      // used to merge consecutive memory barriers, loads or stores.
 
   address      _decode_begin;   // start address for decode
   address      decode_begin();
@@ -395,7 +395,7 @@ class CodeBuffer: public StackObj {
     _decode_begin    = NULL;
     _overflow_arena  = NULL;
     _code_strings    = CodeStrings();
-    _last_membar     = NULL;
+    _last_insn       = NULL;
   }
 
   void initialize(address code_start, csize_t code_size) {
@@ -587,9 +587,9 @@ class CodeBuffer: public StackObj {
   OopRecorder* oop_recorder() const   { return _oop_recorder; }
   CodeStrings& strings()              { return _code_strings; }
 
-  address last_membar() const { return _last_membar; }
-  void set_last_membar(address a) { _last_membar = a; }
-  void clear_last_membar() { set_last_membar(NULL); }
+  address last_insn() const { return _last_insn; }
+  void set_last_insn(address a) { _last_insn = a; }
+  void clear_last_insn() { set_last_insn(NULL); }
 
   void free_strings() {
     if (!_code_strings.is_null()) {

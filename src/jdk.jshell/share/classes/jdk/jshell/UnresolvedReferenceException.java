@@ -45,7 +45,7 @@ public class UnresolvedReferenceException extends JShellException {
     final DeclarationSnippet snippet;
 
     UnresolvedReferenceException(DeclarationSnippet snippet, StackTraceElement[] stackElements) {
-        super("Attempt to use definition snippet with unresolved references");
+        super("Attempt to use definition snippet with unresolved references in " + snippet);
         this.snippet = snippet;
         this.setStackTrace(stackElements);
     }

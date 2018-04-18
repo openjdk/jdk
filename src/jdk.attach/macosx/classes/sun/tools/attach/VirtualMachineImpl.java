@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,9 +45,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     // the latter can be changed by the user.
     // Any changes to this needs to be synchronized with HotSpot.
     private static final String tmpdir;
-
-    // The patch to the socket file created by the target VM
-    String path;
+    String socket_path;
 
     /**
      * Attaches to the target VM
@@ -68,8 +66,9 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         // Find the socket file. If not found then we attempt to start the
         // attach mechanism in the target VM by sending it a QUIT signal.
         // Then we attempt to find the socket file again.
-        path = findSocketFile(pid);
-        if (path == null) {
+        File socket_file = new File(tmpdir, ".java_pid" + pid);
+        socket_path = socket_file.getPath();
+        if (!socket_file.exists()) {
             File f = createAttachFile(pid);
             try {
                 sendQuitTo(pid);
@@ -85,19 +84,19 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                     try {
                         Thread.sleep(delay);
                     } catch (InterruptedException x) { }
-                    path = findSocketFile(pid);
 
                     time_spend += delay;
-                    if (time_spend > timeout/2 && path == null) {
+                    if (time_spend > timeout/2 && !socket_file.exists()) {
                         // Send QUIT again to give target VM the last chance to react
                         sendQuitTo(pid);
                     }
-                } while (time_spend <= timeout && path == null);
-                if (path == null) {
+                } while (time_spend <= timeout && !socket_file.exists());
+                if (!socket_file.exists()) {
                     throw new AttachNotSupportedException(
                         String.format("Unable to open socket file %s: " +
-                          "target process %d doesn't respond within %dms " +
-                          "or HotSpot VM not loaded", f.getPath(), pid, time_spend));
+                                      "target process %d doesn't respond within %dms " +
+                                      "or HotSpot VM not loaded", socket_path,
+                                      pid, time_spend));
                 }
             } finally {
                 f.delete();
@@ -106,14 +105,14 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
         // Check that the file owner/permission to avoid attaching to
         // bogus process
-        checkPermissions(path);
+        checkPermissions(socket_path);
 
         // Check that we can connect to the process
         // - this ensures we throw the permission denied error now rather than
         // later when we attempt to enqueue a command.
         int s = socket();
         try {
-            connect(s, path);
+            connect(s, socket_path);
         } finally {
             close(s);
         }
@@ -124,8 +123,8 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
      */
     public void detach() throws IOException {
         synchronized (this) {
-            if (this.path != null) {
-                this.path = null;
+            if (socket_path != null) {
+                socket_path = null;
             }
         }
     }
@@ -143,12 +142,10 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         assert args.length <= 3;                // includes null
 
         // did we detach?
-        String p;
         synchronized (this) {
-            if (this.path == null) {
+            if (socket_path == null) {
                 throw new IOException("Detached from target VM");
             }
-            p = this.path;
         }
 
         // create UNIX socket
@@ -156,7 +153,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
         // connect to target VM
         try {
-            connect(s, p);
+            connect(s, socket_path);
         } catch (IOException x) {
             close(s);
             throw x;
@@ -264,14 +261,6 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         }
     }
 
-    // Return the socket file for the given process.
-    // Checks temp directory for .java_pid<pid>.
-    private String findSocketFile(int pid) {
-        String fn = ".java_pid" + pid;
-        File f = new File(tmpdir, fn);
-        return f.exists() ? f.getPath() : null;
-    }
-
     /*
      * Write/sends the given to the target VM. String is transmitted in
      * UTF-8 encoding.
@@ -282,7 +271,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             try {
                 b = s.getBytes("UTF-8");
             } catch (java.io.UnsupportedEncodingException x) {
-                throw new InternalError();
+                throw new InternalError(x);
             }
             VirtualMachineImpl.write(fd, b, 0, b.length);
         }
@@ -292,8 +281,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     }
 
     private File createAttachFile(int pid) throws IOException {
-        String fn = ".attach_pid" + pid;
-        File f = new File(tmpdir, fn);
+        File f = new File(tmpdir, ".attach_pid" + pid);
         createAttachFile0(f.getPath());
         return f;
     }

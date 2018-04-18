@@ -25,6 +25,7 @@ package org.graalvm.compiler.nodes.virtual;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_0;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_0;
 
+import org.graalvm.compiler.core.common.spi.ArrayOffsetProvider;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.TypeReference;
 import org.graalvm.compiler.graph.IterableNodeType;
@@ -95,7 +96,7 @@ public abstract class VirtualObjectNode extends ValueNode implements LIRLowerabl
      * @param expectedEntryKind Specifies which type is expected at this offset (Is important when
      *            doing implicit casts, especially on big endian systems.
      */
-    public abstract int entryIndexForOffset(long constantOffset, JavaKind expectedEntryKind);
+    public abstract int entryIndexForOffset(ArrayOffsetProvider arrayOffsetProvider, long constantOffset, JavaKind expectedEntryKind);
 
     /**
      * Returns the {@link JavaKind} of the entry at the given index.

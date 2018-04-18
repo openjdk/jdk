@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,15 +38,18 @@
 #include "logging/logStream.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/thread.hpp"
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
@@ -2010,9 +2013,12 @@ Klass* ClassVerifier::load_class(Symbol* name, TRAPS) {
     name, Handle(THREAD, loader), Handle(THREAD, protection_domain),
     true, THREAD);
 
-  if (log_is_enabled(Debug, class, resolve)) {
-    InstanceKlass* cur_class = InstanceKlass::cast(current_class());
-    Verifier::trace_class_resolution(kls, cur_class);
+  if (kls != NULL) {
+    current_class()->class_loader_data()->record_dependency(kls);
+    if (log_is_enabled(Debug, class, resolve)) {
+      InstanceKlass* cur_class = InstanceKlass::cast(current_class());
+      Verifier::trace_class_resolution(kls, cur_class);
+    }
   }
   return kls;
 }
@@ -2054,19 +2060,21 @@ void ClassVerifier::verify_ldc(
     const constantPoolHandle& cp, u2 bci, TRAPS) {
   verify_cp_index(bci, cp, index, CHECK_VERIFY(this));
   constantTag tag = cp->tag_at(index);
-  unsigned int types;
+  unsigned int types = 0;
   if (opcode == Bytecodes::_ldc || opcode == Bytecodes::_ldc_w) {
     if (!tag.is_unresolved_klass()) {
       types = (1 << JVM_CONSTANT_Integer) | (1 << JVM_CONSTANT_Float)
             | (1 << JVM_CONSTANT_String)  | (1 << JVM_CONSTANT_Class)
-            | (1 << JVM_CONSTANT_MethodHandle) | (1 << JVM_CONSTANT_MethodType);
+            | (1 << JVM_CONSTANT_MethodHandle) | (1 << JVM_CONSTANT_MethodType)
+            | (1 << JVM_CONSTANT_Dynamic);
       // Note:  The class file parser already verified the legality of
       // MethodHandle and MethodType constants.
       verify_cp_type(bci, index, cp, types, CHECK_VERIFY(this));
     }
   } else {
     assert(opcode == Bytecodes::_ldc2_w, "must be ldc2_w");
-    types = (1 << JVM_CONSTANT_Double) | (1 << JVM_CONSTANT_Long);
+    types = (1 << JVM_CONSTANT_Double) | (1 << JVM_CONSTANT_Long)
+          | (1 << JVM_CONSTANT_Dynamic);
     verify_cp_type(bci, index, cp, types, CHECK_VERIFY(this));
   }
   if (tag.is_string() && cp->is_pseudo_string_at(index)) {
@@ -2101,6 +2109,30 @@ void ClassVerifier::verify_ldc(
     current_frame->push_stack(
       VerificationType::reference_type(
         vmSymbols::java_lang_invoke_MethodType()), CHECK_VERIFY(this));
+  } else if (tag.is_dynamic_constant()) {
+    Symbol* constant_type = cp->uncached_signature_ref_at(index);
+    if (!SignatureVerifier::is_valid_type_signature(constant_type)) {
+      class_format_error(
+        "Invalid type for dynamic constant in class %s referenced "
+        "from constant pool index %d", _klass->external_name(), index);
+      return;
+    }
+    assert(sizeof(VerificationType) == sizeof(uintptr_t),
+          "buffer type must match VerificationType size");
+    uintptr_t constant_type_buffer[2];
+    VerificationType* v_constant_type = (VerificationType*)constant_type_buffer;
+    SignatureStream sig_stream(constant_type, false);
+    int n = change_sig_to_verificationType(
+      &sig_stream, v_constant_type, CHECK_VERIFY(this));
+    int opcode_n = (opcode == Bytecodes::_ldc2_w ? 2 : 1);
+    if (n != opcode_n) {
+      // wrong kind of ldc; reverify against updated type mask
+      types &= ~(1 << JVM_CONSTANT_Dynamic);
+      verify_cp_type(bci, index, cp, types, CHECK_VERIFY(this));
+    }
+    for (int i = 0; i < n; i++) {
+      current_frame->push_stack(v_constant_type[i], CHECK_VERIFY(this));
+    }
   } else {
     /* Unreachable? verify_cp_type has already validated the cp type. */
     verify_error(
@@ -2665,7 +2697,7 @@ void ClassVerifier::verify_invoke_instructions(
   // Make sure the constant pool item is the right type
   u2 index = bcs->get_index_u2();
   Bytecodes::Code opcode = bcs->raw_code();
-  unsigned int types;
+  unsigned int types = 0;
   switch (opcode) {
     case Bytecodes::_invokeinterface:
       types = 1 << JVM_CONSTANT_InterfaceMethodref;

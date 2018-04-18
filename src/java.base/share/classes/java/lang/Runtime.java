@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.StringTokenizer;
+
+import jdk.internal.misc.SharedSecrets;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
@@ -77,18 +79,14 @@ public class Runtime {
      * serves as a status code; by convention, a nonzero status code indicates
      * abnormal termination.
      *
-     * <p> The virtual machine's shutdown sequence consists of two phases.  In
-     * the first phase all registered {@link #addShutdownHook shutdown hooks},
-     * if any, are started in some unspecified order and allowed to run
-     * concurrently until they finish.  In the second phase all uninvoked
-     * finalizers are run if {@link #runFinalizersOnExit finalization-on-exit}
-     * has been enabled.  Once this is done the virtual machine {@link #halt halts}.
+     * <p> All registered {@linkplain #addShutdownHook shutdown hooks}, if any,
+     * are started in some unspecified order and allowed to run concurrently
+     * until they finish.  Once this is done the virtual machine
+     * {@linkplain #halt halts}.
      *
-     * <p> If this method is invoked after the virtual machine has begun its
-     * shutdown sequence then if shutdown hooks are being run this method will
-     * block indefinitely.  If shutdown hooks have already been run and on-exit
-     * finalization has been enabled then this method halts the virtual machine
-     * with the given status code if the status is nonzero; otherwise, it
+     * <p> If this method is invoked after all shutdown hooks have already
+     * been run and the status is nonzero then this method halts the
+     * virtual machine with the given status code. Otherwise, this method
      * blocks indefinitely.
      *
      * <p> The {@link System#exit(int) System.exit} method is the
@@ -107,7 +105,6 @@ public class Runtime {
      * @see java.lang.SecurityManager#checkExit(int)
      * @see #addShutdownHook
      * @see #removeShutdownHook
-     * @see #runFinalizersOnExit
      * @see #halt(int)
      */
     public void exit(int status) {
@@ -140,10 +137,9 @@ public class Runtime {
      * thread.  When the virtual machine begins its shutdown sequence it will
      * start all registered shutdown hooks in some unspecified order and let
      * them run concurrently.  When all the hooks have finished it will then
-     * run all uninvoked finalizers if finalization-on-exit has been enabled.
-     * Finally, the virtual machine will halt.  Note that daemon threads will
-     * continue to run during the shutdown sequence, as will non-daemon threads
-     * if shutdown was initiated by invoking the {@link #exit exit} method.
+     * halt. Note that daemon threads will continue to run during the shutdown
+     * sequence, as will non-daemon threads if shutdown was initiated by
+     * invoking the {@link #exit exit} method.
      *
      * <p> Once the shutdown sequence has begun it can be stopped only by
      * invoking the {@link #halt halt} method, which forcibly
@@ -253,10 +249,9 @@ public class Runtime {
      *
      * <p> This method should be used with extreme caution.  Unlike the
      * {@link #exit exit} method, this method does not cause shutdown
-     * hooks to be started and does not run uninvoked finalizers if
-     * finalization-on-exit has been enabled.  If the shutdown sequence has
-     * already been initiated then this method does not wait for any running
-     * shutdown hooks or finalizers to finish their work.
+     * hooks to be started.  If the shutdown sequence has already been
+     * initiated then this method does not wait for any running
+     * shutdown hooks to finish their work.
      *
      * @param  status
      *         Termination status. By convention, a nonzero status code
@@ -280,47 +275,8 @@ public class Runtime {
         if (sm != null) {
             sm.checkExit(status);
         }
+        Shutdown.beforeHalt();
         Shutdown.halt(status);
-    }
-
-    /**
-     * Enable or disable finalization on exit; doing so specifies that the
-     * finalizers of all objects that have finalizers that have not yet been
-     * automatically invoked are to be run before the Java runtime exits.
-     * By default, finalization on exit is disabled.
-     *
-     * <p>If there is a security manager,
-     * its {@code checkExit} method is first called
-     * with 0 as its argument to ensure the exit is allowed.
-     * This could result in a SecurityException.
-     *
-     * @param value true to enable finalization on exit, false to disable
-     * @deprecated  This method is inherently unsafe.  It may result in
-     *      finalizers being called on live objects while other threads are
-     *      concurrently manipulating those objects, resulting in erratic
-     *      behavior or deadlock.
-     *      This method is subject to removal in a future version of Java SE.
-     *
-     * @throws  SecurityException
-     *        if a security manager exists and its {@code checkExit}
-     *        method doesn't allow the exit.
-     *
-     * @see     java.lang.Runtime#exit(int)
-     * @see     java.lang.Runtime#gc()
-     * @see     java.lang.SecurityManager#checkExit(int)
-     * @since   1.1
-     */
-    @Deprecated(since="1.2", forRemoval=true)
-    public static void runFinalizersOnExit(boolean value) {
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            try {
-                security.checkExit(0);
-            } catch (SecurityException e) {
-                throw new SecurityException("runFinalizersOnExit");
-            }
-        }
-        Shutdown.setRunFinalizersOnExit(value);
     }
 
     /**
@@ -702,9 +658,6 @@ public class Runtime {
      */
     public native void gc();
 
-    /* Wormhole for calling java.lang.ref.Finalizer.runFinalization */
-    private static native void runFinalization0();
-
     /**
      * Runs the finalization methods of any objects pending finalization.
      * Calling this method suggests that the Java virtual machine expend
@@ -724,7 +677,7 @@ public class Runtime {
      * @see     java.lang.Object#finalize()
      */
     public void runFinalization() {
-        runFinalization0();
+        SharedSecrets.getJavaLangRefAccess().runFinalization();
     }
 
     /**
@@ -784,14 +737,14 @@ public class Runtime {
      * convenient means of invoking this method.
      *
      * @param      filename   the file to load.
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      *             {@code checkLink} method doesn't allow
      *             loading of the specified dynamic library
-     * @exception  UnsatisfiedLinkError  if either the filename is not an
+     * @throws     UnsatisfiedLinkError  if either the filename is not an
      *             absolute path name, the native library is not statically
      *             linked with the VM, or the library cannot be mapped to
      *             a native library image by the host system.
-     * @exception  NullPointerException if {@code filename} is
+     * @throws     NullPointerException if {@code filename} is
      *             {@code null}
      * @see        java.lang.Runtime#getRuntime()
      * @see        java.lang.SecurityException
@@ -847,14 +800,14 @@ public class Runtime {
      * name, the second and subsequent calls are ignored.
      *
      * @param      libname   the name of the library.
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws     SecurityException  if a security manager exists and its
      *             {@code checkLink} method doesn't allow
      *             loading of the specified dynamic library
-     * @exception  UnsatisfiedLinkError if either the libname argument
+     * @throws     UnsatisfiedLinkError if either the libname argument
      *             contains a file path, the native library is not statically
      *             linked with the VM,  or the library cannot be mapped to a
      *             native library image by the host system.
-     * @exception  NullPointerException if {@code libname} is
+     * @throws     NullPointerException if {@code libname} is
      *             {@code null}
      * @see        java.lang.SecurityException
      * @see        java.lang.SecurityManager#checkLink(java.lang.String)
@@ -1099,16 +1052,23 @@ public class Runtime {
                     m.group(VersionPattern.OPT_GROUP));
 
             // empty '+'
-            if ((m.group(VersionPattern.PLUS_GROUP) != null)
-                    && !build.isPresent()) {
-                if (optional.isPresent()) {
-                    if (pre.isPresent())
-                        throw new IllegalArgumentException("'+' found with"
-                            + " pre-release and optional components:'" + s
-                            + "'");
+            if (!build.isPresent()) {
+                if (m.group(VersionPattern.PLUS_GROUP) != null) {
+                    if (optional.isPresent()) {
+                        if (pre.isPresent())
+                            throw new IllegalArgumentException("'+' found with"
+                                + " pre-release and optional components:'" + s
+                                + "'");
+                    } else {
+                        throw new IllegalArgumentException("'+' found with neither"
+                            + " build or optional components: '" + s + "'");
+                    }
                 } else {
-                    throw new IllegalArgumentException("'+' found with neither"
-                        + " build or optional components: '" + s + "'");
+                    if (optional.isPresent() && !pre.isPresent()) {
+                        throw new IllegalArgumentException("optional component"
+                            + " must be preceeded by a pre-release component"
+                            + " or '+': '" + s + "'");
+                    }
                 }
             }
             return new Version(List.of(version), pre, build, optional);
@@ -1180,7 +1140,7 @@ public class Runtime {
          * number is not the major-release number but the feature-release
          * counter, incremented for every time-based release.  Use the {@link
          * #feature()} method in preference to this method.  For compatibility,
-         * this method returns the value of the <a href="FEATURE">feature</a>
+         * this method returns the value of the <a href="#FEATURE">feature</a>
          * element.
          *
          * @return The value of the feature element
@@ -1198,7 +1158,7 @@ public class Runtime {
          * number is not the minor-release number but the interim-release
          * counter, incremented for every interim release.  Use the {@link
          * #interim()} method in preference to this method.  For compatibility,
-         * this method returns the value of the <a href="INTERIM">interim</a>
+         * this method returns the value of the <a href="#INTERIM">interim</a>
          * element, or zero if it is absent.
          *
          * @return The value of the interim element, or zero
@@ -1216,7 +1176,7 @@ public class Runtime {
          * number is not the security level but the update-release counter,
          * incremented for every update release.  Use the {@link #update()}
          * method in preference to this method.  For compatibility, this method
-         * returns the value of the <a href="UPDATE">update</a> element, or
+         * returns the value of the <a href="#UPDATE">update</a> element, or
          * zero if it is absent.
          *
          * @return  The value of the update element, or zero
@@ -1228,9 +1188,9 @@ public class Runtime {
 
         /**
          * Returns an unmodifiable {@link java.util.List List} of the integers
-         * represented in the <a href="#verNum">version number</a>.  The {@code
-         * List} always contains at least one element corresponding to the <a
-         * href="#feature">feature version number</a>.
+         * represented in the <a href="#verNum">version number</a>.
+         * The {@code List} always contains at least one element corresponding to
+         * the <a href="#FEATURE">feature version number</a>.
          *
          * @return  An unmodifiable list of the integers
          *          represented in the version number

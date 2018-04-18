@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @requires vm.gc.G1
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver TestVerifyGCType
  */
 
@@ -53,7 +53,6 @@ public class TestVerifyGCType {
         testFullAndRemark();
         testConcurrentMark();
         testBadVerificationType();
-        testUnsupportedCollector();
     }
 
     private static void testAllVerificationEnabled() throws Exception {
@@ -127,14 +126,6 @@ public class TestVerifyGCType {
         verifyCollection("Pause Full", true, true, true, output.getStdout());
     }
 
-    private static void testUnsupportedCollector() throws Exception {
-        OutputAnalyzer output;
-        // Test bad gc
-        output = testWithBadGC();
-        output.shouldHaveExitValue(0);
-        output.shouldMatch("VerifyGCType is not supported by this collector.");
-    }
-
     private static OutputAnalyzer testWithVerificationType(String[] types) throws Exception {
         ArrayList<String> basicOpts = new ArrayList<>();
         Collections.addAll(basicOpts, new String[] {
@@ -145,6 +136,8 @@ public class TestVerifyGCType {
                                        "-Xlog:gc,gc+start,gc+verify=info",
                                        "-Xms16m",
                                        "-Xmx16m",
+                                       "-XX:ParallelGCThreads=1",
+                                       "-XX:G1HeapWastePercent=1",
                                        "-XX:+VerifyBeforeGC",
                                        "-XX:+VerifyAfterGC",
                                        "-XX:+VerifyDuringGC"});
@@ -157,17 +150,6 @@ public class TestVerifyGCType {
 
         ProcessBuilder procBuilder =  ProcessTools.createJavaProcessBuilder(basicOpts.toArray(
                                                                             new String[basicOpts.size()]));
-        OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
-        return analyzer;
-    }
-
-    private static OutputAnalyzer testWithBadGC() throws Exception {
-        ProcessBuilder procBuilder =  ProcessTools.createJavaProcessBuilder(new String[] {
-                "-XX:+UseParallelGC",
-                "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:VerifyGCType=full",
-                "-version"});
-
         OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
         return analyzer;
     }

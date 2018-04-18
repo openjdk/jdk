@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,8 @@ class LinuxFileStore
         }
 
         // step 2: find mount point
+        List<UnixMountEntry> procMountsEntries =
+            fs.getMountEntries("/proc/mounts");
         UnixPath parent = path.getParent();
         while (parent != null) {
             UnixFileAttributes attrs = null;
@@ -74,16 +76,23 @@ class LinuxFileStore
             } catch (UnixException x) {
                 x.rethrowAsIOException(parent);
             }
-            if (attrs.dev() != dev())
-                break;
+            if (attrs.dev() != dev()) {
+                // step 3: lookup mounted file systems (use /proc/mounts to
+                // ensure we find the file system even when not in /etc/mtab)
+                byte[] dir = path.asByteArray();
+                for (UnixMountEntry entry : procMountsEntries) {
+                    if (Arrays.equals(dir, entry.dir()))
+                        return entry;
+                }
+            }
             path = parent;
             parent = parent.getParent();
         }
 
-        // step 3: lookup mounted file systems (use /proc/mounts to ensure we
-        // find the file system even when not in /etc/mtab)
+        // step 3: lookup mounted file systems (use /proc/mounts to
+        // ensure we find the file system even when not in /etc/mtab)
         byte[] dir = path.asByteArray();
-        for (UnixMountEntry entry: fs.getMountEntries("/proc/mounts")) {
+        for (UnixMountEntry entry : procMountsEntries) {
             if (Arrays.equals(dir, entry.dir()))
                 return entry;
         }
@@ -131,10 +140,12 @@ class LinuxFileStore
             if ((entry().hasOption("user_xattr")))
                 return true;
 
-            // user_xattr option not present but we special-case ext3/4 as we
-            // know that extended attributes are not enabled by default.
-            if (entry().fstype().equals("ext3") || entry().fstype().equals("ext4"))
-                return false;
+            // for ext3 and ext4 user_xattr option is enabled by default so
+            // check for explicit disabling of this option
+            if (entry().fstype().equals("ext3") ||
+                entry().fstype().equals("ext4")) {
+                return !entry().hasOption("nouser_xattr");
+            }
 
             // not ext3/4 so probe mount point
             if (!xattrChecked) {

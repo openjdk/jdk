@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,10 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
 
     if (flag == mtClass) {
       // report class count
-      out->print_cr("%27s (classes #" SIZE_FORMAT ")", " ", _class_count);
+      out->print_cr("%27s (classes #" SIZE_FORMAT ")",
+        " ", (_instance_class_count + _array_class_count));
+      out->print_cr("%27s (  instance classes #" SIZE_FORMAT ", array classes #" SIZE_FORMAT ")",
+        " ", _instance_class_count, _array_class_count);
     } else if (flag == mtThread) {
       // report thread count
       out->print_cr("%27s (thread #" SIZE_FORMAT ")", " ", _malloc_snapshot->thread_count());
@@ -194,18 +197,18 @@ void MemSummaryReporter::report_metadata(Metaspace::MetadataType type) const {
 
   outputStream* out = output();
   const char* scale = current_scale();
-  size_t committed   = MetaspaceAux::committed_bytes(type);
-  size_t used = MetaspaceAux::used_bytes(type);
-  size_t free = (MetaspaceAux::capacity_bytes(type) - used)
-              + MetaspaceAux::free_chunks_total_bytes(type)
-              + MetaspaceAux::free_bytes(type);
+  size_t committed   = MetaspaceUtils::committed_bytes(type);
+  size_t used = MetaspaceUtils::used_bytes(type);
+  size_t free = (MetaspaceUtils::capacity_bytes(type) - used)
+              + MetaspaceUtils::free_chunks_total_bytes(type)
+              + MetaspaceUtils::free_bytes(type);
 
   assert(committed >= used + free, "Sanity");
   size_t waste = committed - (used + free);
 
   out->print_cr("%27s (  %s)", " ", name);
   out->print("%27s (    ", " ");
-  print_total(MetaspaceAux::reserved_bytes(type), committed);
+  print_total(MetaspaceUtils::reserved_bytes(type), committed);
   out->print_cr(")");
   out->print_cr("%27s (    used=" SIZE_FORMAT "%s)", " ", amount_in_current_scale(used), scale);
   out->print_cr("%27s (    free=" SIZE_FORMAT "%s)", " ", amount_in_current_scale(free), scale);
@@ -288,7 +291,7 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
   outputStream* out = output();
   const char* scale = current_scale();
   const NativeCallStack*  stack = reserved_rgn->call_stack();
-  bool all_committed = reserved_rgn->all_committed();
+  bool all_committed = reserved_rgn->size() == reserved_rgn->committed_size();
   const char* region_type = (all_committed ? "reserved and committed" : "reserved");
   out->print_cr(" ");
   print_virtual_memory_region(region_type, reserved_rgn->base(), reserved_rgn->size());
@@ -300,7 +303,17 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
     stack->print_on(out, 4);
   }
 
-  if (all_committed) return;
+  if (all_committed) {
+    CommittedRegionIterator itr = reserved_rgn->iterate_committed_regions();
+    const CommittedMemoryRegion* committed_rgn = itr.next();
+    if (committed_rgn->size() == reserved_rgn->size() && committed_rgn->call_stack()->equals(*stack)) {
+      // One region spanning the entire reserved region, with the same stack trace.
+      // Don't print this regions because the "reserved and committed" line above
+      // already indicates that the region is comitted.
+      assert(itr.next() == NULL, "Unexpectedly more than one regions");
+      return;
+    }
+  }
 
   CommittedRegionIterator itr = reserved_rgn->iterate_committed_regions();
   const CommittedMemoryRegion* committed_rgn;
@@ -459,6 +472,17 @@ void MemSummaryDiffReporter::diff_summary_of_type(MEMFLAGS flag,
         out->print(" %+d", (int)(_current_baseline.class_count() - _early_baseline.class_count()));
       }
       out->print_cr(")");
+
+      out->print("%27s (  instance classes #" SIZE_FORMAT, " ", _current_baseline.instance_class_count());
+      if (_current_baseline.instance_class_count() != _early_baseline.instance_class_count()) {
+        out->print(" %+d", (int)(_current_baseline.instance_class_count() - _early_baseline.instance_class_count()));
+      }
+      out->print(", array classes #" SIZE_FORMAT, _current_baseline.array_class_count());
+      if (_current_baseline.array_class_count() != _early_baseline.array_class_count()) {
+        out->print(" %+d", (int)(_current_baseline.array_class_count() - _early_baseline.array_class_count()));
+      }
+      out->print_cr(")");
+
     } else if (flag == mtThread) {
       // report thread count
       out->print("%27s (thread #" SIZE_FORMAT "", " ", _current_baseline.thread_count());
@@ -731,4 +755,3 @@ void MemDetailDiffReporter::diff_virtual_memory_site(const NativeCallStack* stac
 
   out->print_cr(")\n");
  }
-

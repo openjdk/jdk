@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  * questions.
  */
 #include <string.h>
+#include "jni.h"
 
 #include "jdwpTransport.h"
 #include "shmemBase.h"
@@ -338,7 +339,7 @@ shmemGetLastError(jdwpTransportEnv* env, char **msgP)
     return JDWPTRANSPORT_ERROR_NONE;
 }
 
-jint JNICALL
+JNIEXPORT jint JNICALL
 jdwpTransport_OnLoad(JavaVM *vm, jdwpTransportCallback* cbTablePtr,
                      jint version, jdwpTransportEnv** result)
 {

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -34,19 +34,30 @@ CLDR_METAINFO_FILE := $(GENSRC_DIR)/sun/util/resources/cldr/provider/CLDRLocaleD
 
 CLDR_BASE_LOCALES := "en-US"
 
+ZONENAME_TEMPLATE := $(TOPDIR)/src/java.base/share/classes/java/time/format/ZoneName.java.template
+TZDATA_DIR := $(TOPDIR)/make/data/tzdata
+
 $(CLDR_BASEMETAINFO_FILE): $(wildcard $(CLDRSRCDIR)/common/dtd/*.dtd) \
     $(wildcard $(CLDRSRCDIR)/common/main/en*.xml) \
     $(wildcard $(CLDRSRCDIR)/common/supplemental/*.xml) \
+    $(ZONENAME_TEMPLATE) \
     $(BUILD_TOOLS_JDK)
 	$(MKDIR) -p $(GENSRC_BASEDIR)
-	$(TOOL_CLDRCONVERTER) -base $(CLDRSRCDIR) -baselocales $(CLDR_BASE_LOCALES) -basemodule -o $(GENSRC_BASEDIR)
+	$(TOOL_CLDRCONVERTER) -base $(CLDRSRCDIR) \
+	    -baselocales $(CLDR_BASE_LOCALES) \
+	    -o $(GENSRC_BASEDIR) \
+	    -basemodule \
+	    -zntempfile $(ZONENAME_TEMPLATE) \
+	    -tzdatadir $(TZDATA_DIR)
 
 $(CLDR_METAINFO_FILE): $(wildcard $(CLDRSRCDIR)/common/dtd/*.dtd) \
     $(wildcard $(CLDRSRCDIR)/common/main/*.xml) \
     $(wildcard $(CLDRSRCDIR)/common/supplemental/*.xml) \
     $(BUILD_TOOLS_JDK)
 	$(MKDIR) -p $(GENSRC_DIR)
-	$(TOOL_CLDRCONVERTER) -base $(CLDRSRCDIR) -baselocales $(CLDR_BASE_LOCALES) -o $(GENSRC_DIR)
+	$(TOOL_CLDRCONVERTER) -base $(CLDRSRCDIR) \
+	    -baselocales $(CLDR_BASE_LOCALES) \
+	    -o $(GENSRC_DIR)
 
 GENSRC_JAVA_BASE += $(CLDR_BASEMETAINFO_FILE)
 GENSRC_JDK_LOCALEDATA += $(CLDR_METAINFO_FILE)

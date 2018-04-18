@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2017, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,9 +33,10 @@
 #include "ci/ciInstance.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/barrierSet.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "nativeInst_ppc.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 
@@ -1858,34 +1859,31 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   if (op->expected_type() == NULL) {
     assert(src->is_nonvolatile() && src_pos->is_nonvolatile() && dst->is_nonvolatile() && dst_pos->is_nonvolatile() &&
            length->is_nonvolatile(), "must preserve");
+    address copyfunc_addr = StubRoutines::generic_arraycopy();
+    assert(copyfunc_addr != NULL, "generic arraycopy stub required");
+
     // 3 parms are int. Convert to long.
     __ mr(R3_ARG1, src);
     __ extsw(R4_ARG2, src_pos);
     __ mr(R5_ARG3, dst);
     __ extsw(R6_ARG4, dst_pos);
     __ extsw(R7_ARG5, length);
-    address copyfunc_addr = StubRoutines::generic_arraycopy();
 
-    if (copyfunc_addr == NULL) { // Use C version if stub was not generated.
-      address entry = CAST_FROM_FN_PTR(address, Runtime1::arraycopy);
-      __ call_c_with_frame_resize(entry, frame_resize);
-    } else {
 #ifndef PRODUCT
-      if (PrintC1Statistics) {
-        address counter = (address)&Runtime1::_generic_arraycopystub_cnt;
-        int simm16_offs = __ load_const_optimized(tmp, counter, tmp2, true);
-        __ lwz(R11_scratch1, simm16_offs, tmp);
-        __ addi(R11_scratch1, R11_scratch1, 1);
-        __ stw(R11_scratch1, simm16_offs, tmp);
-      }
-#endif
-      __ call_c_with_frame_resize(copyfunc_addr, /*stub does not need resized frame*/ 0);
-
-      __ nand(tmp, R3_RET, R3_RET);
-      __ subf(length, tmp, length);
-      __ add(src_pos, tmp, src_pos);
-      __ add(dst_pos, tmp, dst_pos);
+    if (PrintC1Statistics) {
+      address counter = (address)&Runtime1::_generic_arraycopystub_cnt;
+      int simm16_offs = __ load_const_optimized(tmp, counter, tmp2, true);
+      __ lwz(R11_scratch1, simm16_offs, tmp);
+      __ addi(R11_scratch1, R11_scratch1, 1);
+      __ stw(R11_scratch1, simm16_offs, tmp);
     }
+#endif
+    __ call_c_with_frame_resize(copyfunc_addr, /*stub does not need resized frame*/ 0);
+
+    __ nand(tmp, R3_RET, R3_RET);
+    __ subf(length, tmp, length);
+    __ add(src_pos, tmp, src_pos);
+    __ add(dst_pos, tmp, dst_pos);
 
     __ cmpwi(CCR0, R3_RET, 0);
     __ bc_far_optimized(Assembler::bcondCRbiIs1, __ bi0(CCR0, Assembler::less), *stub->entry());
@@ -2746,7 +2744,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ciMethodData* md = method->method_data_or_null();
   assert(md != NULL, "Sanity");
   ciProfileData* data = md->bci_to_data(bci);
-  assert(data->is_CounterData(), "need CounterData for calls");
+  assert(data != NULL && data->is_CounterData(), "need CounterData for calls");
   assert(op->mdo()->is_single_cpu(),  "mdo must be allocated");
   Register mdo = op->mdo()->as_register();
 #ifdef _LP64

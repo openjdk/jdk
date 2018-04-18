@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import sun.awt.AppContext;
 import sun.awt.AWTAutoShutdown;
 import sun.awt.AWTPermissions;
 import sun.awt.AppContext;
+import sun.awt.DisplayChangedListener;
 import sun.awt.LightweightFrame;
 import sun.awt.SunToolkit;
 import sun.awt.util.ThreadGroupUtils;
@@ -802,9 +803,10 @@ public final class WToolkit extends SunToolkit implements Runnable {
     public native int getMaximumCursorColors();
 
     static void paletteChanged() {
-        ((Win32GraphicsEnvironment)GraphicsEnvironment
-        .getLocalGraphicsEnvironment())
-        .paletteChanged();
+        Object lge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        if (lge instanceof DisplayChangedListener) {
+            ((DisplayChangedListener) lge).paletteChanged();
+        }
     }
 
     /*
@@ -816,9 +818,10 @@ public final class WToolkit extends SunToolkit implements Runnable {
         EventQueue.invokeLater(new Runnable() {
             @Override
             public void run() {
-                ((Win32GraphicsEnvironment)GraphicsEnvironment
-                .getLocalGraphicsEnvironment())
-                .displayChanged();
+                Object lge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+                if (lge instanceof DisplayChangedListener) {
+                    ((DisplayChangedListener) lge).displayChanged();
+                }
             }
         });
     }
@@ -1104,6 +1107,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
         }
 
         if ((e instanceof MouseEvent) && comp.isEnabled() &&
+            comp.isFocusable() &&
             (((comp instanceof TextComponent) &&
                     ((TextComponent)comp).isEditable()) ||
                 ((comp instanceof JTextComponent) &&

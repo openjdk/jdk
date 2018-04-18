@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "assembler_arm.inline.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_arm.hpp"
 #include "oops/instanceOop.hpp"
@@ -2853,151 +2855,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-#if INCLUDE_ALL_GCS
-  //
-  //  Generate pre-write barrier for array.
-  //
-  //  Input:
-  //     addr     - register containing starting address
-  //     count    - register containing element count, 32-bit int
-  //     callee_saved_regs -
-  //                the call must preserve this number of registers: R0, R1, ..., R[callee_saved_regs-1]
-  //
-  //  callee_saved_regs must include addr and count
-  //  Blows all volatile registers (R0-R3 on 32-bit ARM, R0-R18 on AArch64, Rtemp, LR) except for callee_saved_regs.
-  void gen_write_ref_array_pre_barrier(Register addr, Register count, int callee_saved_regs) {
-    BarrierSet* bs = Universe::heap()->barrier_set();
-    switch (bs->kind()) {
-    case BarrierSet::G1SATBCTLogging:
-      {
-        assert( addr->encoding() < callee_saved_regs, "addr must be saved");
-        assert(count->encoding() < callee_saved_regs, "count must be saved");
-
-        BLOCK_COMMENT("PreBarrier");
-
-#ifdef AARCH64
-        callee_saved_regs = align_up(callee_saved_regs, 2);
-        for (int i = 0; i < callee_saved_regs; i += 2) {
-          __ raw_push(as_Register(i), as_Register(i+1));
-        }
-#else
-        RegisterSet saved_regs = RegisterSet(R0, as_Register(callee_saved_regs-1));
-        __ push(saved_regs | R9ifScratched);
-#endif // AARCH64
-
-        if (addr != R0) {
-          assert_different_registers(count, R0);
-          __ mov(R0, addr);
-        }
-#ifdef AARCH64
-        __ zero_extend(R1, count, 32); // BarrierSet::static_write_ref_array_pre takes size_t
-#else
-        if (count != R1) {
-          __ mov(R1, count);
-        }
-#endif // AARCH64
-
-        __ call(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre));
-
-#ifdef AARCH64
-        for (int i = callee_saved_regs - 2; i >= 0; i -= 2) {
-          __ raw_pop(as_Register(i), as_Register(i+1));
-        }
-#else
-        __ pop(saved_regs | R9ifScratched);
-#endif // AARCH64
-      }
-    case BarrierSet::CardTableForRS:
-    case BarrierSet::CardTableExtension:
-      break;
-    default:
-      ShouldNotReachHere();
-    }
-  }
-#endif // INCLUDE_ALL_GCS
-
-  //
-  //  Generate post-write barrier for array.
-  //
-  //  Input:
-  //     addr     - register containing starting address (can be scratched)
-  //     count    - register containing element count, 32-bit int (can be scratched)
-  //     tmp      - scratch register
-  //
-  //  Note: LR can be scratched but might be equal to addr, count or tmp
-  //  Blows all volatile registers (R0-R3 on 32-bit ARM, R0-R18 on AArch64, Rtemp, LR).
-  void gen_write_ref_array_post_barrier(Register addr, Register count, Register tmp) {
-    assert_different_registers(addr, count, tmp);
-    BarrierSet* bs = Universe::heap()->barrier_set();
-
-    switch (bs->kind()) {
-    case BarrierSet::G1SATBCTLogging:
-      {
-        BLOCK_COMMENT("G1PostBarrier");
-        if (addr != R0) {
-          assert_different_registers(count, R0);
-          __ mov(R0, addr);
-        }
-#ifdef AARCH64
-        __ zero_extend(R1, count, 32); // BarrierSet::static_write_ref_array_post takes size_t
-#else
-        if (count != R1) {
-          __ mov(R1, count);
-        }
-#if R9_IS_SCRATCHED
-        // Safer to save R9 here since callers may have been written
-        // assuming R9 survives. This is suboptimal but is not in
-        // general worth optimizing for the few platforms where R9
-        // is scratched. Note that the optimization might not be to
-        // difficult for this particular call site.
-        __ push(R9);
-#endif
-#endif // !AARCH64
-        __ call(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post));
-#ifndef AARCH64
-#if R9_IS_SCRATCHED
-        __ pop(R9);
-#endif
-#endif // !AARCH64
-      }
-      break;
-    case BarrierSet::CardTableForRS:
-    case BarrierSet::CardTableExtension:
-      {
-        BLOCK_COMMENT("CardTablePostBarrier");
-        CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(bs);
-        assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
-
-        Label L_cardtable_loop, L_done;
-
-        __ cbz_32(count, L_done); // zero count - nothing to do
-
-        __ add_ptr_scaled_int32(count, addr, count, LogBytesPerHeapOop);
-        __ sub(count, count, BytesPerHeapOop);                            // last addr
-
-        __ logical_shift_right(addr, addr, CardTableModRefBS::card_shift);
-        __ logical_shift_right(count, count, CardTableModRefBS::card_shift);
-        __ sub(count, count, addr); // nb of cards
-
-        // warning: Rthread has not been preserved
-        __ mov_address(tmp, (address) ct->byte_map_base, symbolic_Relocation::card_table_reference);
-        __ add(addr,tmp, addr);
-
-        Register zero = __ zero_register(tmp);
-
-        __ BIND(L_cardtable_loop);
-        __ strb(zero, Address(addr, 1, post_indexed));
-        __ subs(count, count, 1);
-        __ b(L_cardtable_loop, ge);
-        __ BIND(L_done);
-      }
-      break;
-    case BarrierSet::ModRef:
-      break;
-    default:
-      ShouldNotReachHere();
-    }
-  }
 
   // Generates pattern of code to be placed after raw data copying in generate_oop_copy
   // Includes return from arraycopy stub.
@@ -3008,7 +2865,7 @@ class StubGenerator: public StubCodeGenerator {
   //     count:    total number of copied elements, 32-bit int
   //
   // Blows all volatile (R0-R3 on 32-bit ARM, R0-R18 on AArch64, Rtemp, LR) and 'to', 'count', 'tmp' registers.
-  void oop_arraycopy_stub_epilogue_helper(Register to, Register count, Register tmp, bool status, bool forward) {
+  void oop_arraycopy_stub_epilogue_helper(Register to, Register count, Register tmp, bool status, bool forward, DecoratorSet decorators) {
     assert_different_registers(to, count, tmp);
 
     if (forward) {
@@ -3019,7 +2876,8 @@ class StubGenerator: public StubCodeGenerator {
 
     // 'to' is the beginning of the region
 
-    gen_write_ref_array_post_barrier(to, count, tmp);
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->arraycopy_epilogue(_masm, decorators, true, to, count, tmp);
 
     if (status) {
       __ mov(R0, 0); // OK
@@ -3087,9 +2945,16 @@ class StubGenerator: public StubCodeGenerator {
     __ push(LR);
 #endif // AARCH64
 
-#if INCLUDE_ALL_GCS
-    gen_write_ref_array_pre_barrier(to, count, callee_saved_regs);
-#endif // INCLUDE_ALL_GCS
+    DecoratorSet decorators = 0;
+    if (disjoint) {
+      decorators |= ARRAYCOPY_DISJOINT;
+    }
+    if (aligned) {
+      decorators |= ARRAYCOPY_ALIGNED;
+    }
+
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->arraycopy_prologue(_masm, decorators, true, to, count, callee_saved_regs);
 
     // save arguments for barrier generation (after the pre barrier)
     __ mov(saved_count, count);
@@ -3147,12 +3012,12 @@ class StubGenerator: public StubCodeGenerator {
     }
     assert(small_copy_limit >= count_required_to_align + min_copy, "first loop might exhaust count");
 
-    oop_arraycopy_stub_epilogue_helper(to, saved_count, /* tmp */ tmp1, status, forward);
+    oop_arraycopy_stub_epilogue_helper(to, saved_count, /* tmp */ tmp1, status, forward, decorators);
 
     {
       copy_small_array(from, to, count, tmp1, noreg, bytes_per_count, forward, L_small_array);
 
-      oop_arraycopy_stub_epilogue_helper(to, saved_count, /* tmp */ tmp1, status, forward);
+      oop_arraycopy_stub_epilogue_helper(to, saved_count, /* tmp */ tmp1, status, forward, decorators);
     }
 
     if (!to_is_aligned) {
@@ -3166,7 +3031,7 @@ class StubGenerator: public StubCodeGenerator {
       int min_copy_shifted = align_dst_and_generate_shifted_copy_loop(from, to, count, bytes_per_count, forward);
       assert (small_copy_limit >= count_required_to_align + min_copy_shifted, "first loop might exhaust count");
 
-      oop_arraycopy_stub_epilogue_helper(to, saved_count, /* tmp */ tmp1, status, forward);
+      oop_arraycopy_stub_epilogue_helper(to, saved_count, /* tmp */ tmp1, status, forward, decorators);
     }
 
     return start;
@@ -3337,7 +3202,7 @@ class StubGenerator: public StubCodeGenerator {
 
     const int callee_saved_regs = AARCH64_ONLY(5) NOT_AARCH64(4); // LR saved differently
 
-    Label load_element, store_element, do_card_marks, fail;
+    Label load_element, store_element, do_epilogue, fail;
 
     BLOCK_COMMENT("Entry:");
 
@@ -3352,9 +3217,10 @@ class StubGenerator: public StubCodeGenerator {
     pushed+=1;
 #endif // AARCH64
 
-#if INCLUDE_ALL_GCS
-    gen_write_ref_array_pre_barrier(to, count, callee_saved_regs);
-#endif // INCLUDE_ALL_GCS
+    DecoratorSet decorators = ARRAYCOPY_CHECKCAST;
+
+    BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->arraycopy_prologue(_masm, decorators, true, to, count, callee_saved_regs);
 
 #ifndef AARCH64
     const RegisterSet caller_saved_regs = RegisterSet(R4,R6) | RegisterSet(R8,R9) | altFP_7_11;
@@ -3400,7 +3266,7 @@ class StubGenerator: public StubCodeGenerator {
       __ subs_32(count,count,1);
       __ str(R5, Address(to, BytesPerHeapOop, post_indexed));             // store the oop
     }
-    __ b(do_card_marks, eq); // count exhausted
+    __ b(do_epilogue, eq); // count exhausted
 
     // ======== loop entry is here ========
     __ BIND(load_element);
@@ -3422,7 +3288,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // Note: fail marked by the fact that count differs from saved_count
 
-    __ BIND(do_card_marks);
+    __ BIND(do_epilogue);
 
     Register copied = AARCH64_ONLY(R20) NOT_AARCH64(R4); // saved
     Label L_not_copied;
@@ -3432,7 +3298,7 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(to, to, AsmOperand(copied, lsl, LogBytesPerHeapOop)); // initial to value
     __ mov(R12, copied); // count arg scratched by post barrier
 
-    gen_write_ref_array_post_barrier(to, R12, R3);
+    bs->arraycopy_epilogue(_masm, decorators, true, to, R12, R3);
 
     assert_different_registers(R3,R12,LR,copied,saved_count);
     inc_counter_np(SharedRuntime::_checkcast_array_copy_ctr, R3, R12);

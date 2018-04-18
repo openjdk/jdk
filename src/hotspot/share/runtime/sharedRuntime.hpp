@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,6 +211,10 @@ class SharedRuntime: AllStatic {
   static address deoptimize_for_implicit_exception(JavaThread* thread, address pc, CompiledMethod* nm, int deopt_reason);
 #endif
 
+  // Post-slow-path-allocation, pre-initializing-stores step for
+  // implementing e.g. ReduceInitialCardMarks
+  static void on_slowpath_allocation_exit(JavaThread* thread);
+
   static void enable_stack_reserved_zone(JavaThread* thread);
   static frame look_for_reserved_stack_annotated_method(JavaThread* thread, frame fr);
 
@@ -314,7 +318,7 @@ class SharedRuntime: AllStatic {
   // The caller (or one of it's callers) must use a ResourceMark
   // in order to correctly free the result.
   //
-  static char* generate_class_cast_message(Klass* caster_klass, Klass* target_klass);
+  static char* generate_class_cast_message(Klass* caster_klass, Klass* target_klass, Symbol* target_klass_name = NULL);
 
   // Resolves a call site- may patch in the destination of the call into the
   // compiled code.

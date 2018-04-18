@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,11 @@
  * questions.
  */
 
-import java.io.File;
 import jdk.testlibrary.OutputAnalyzer;
-import jdk.testlibrary.ProcessTools;
 import jdk.test.lib.util.JarUtils;
+
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /**
  * @test
@@ -32,107 +33,40 @@ import jdk.test.lib.util.JarUtils;
  * @summary Test for chainNotValidated warning
  * @library /lib/testlibrary /test/lib ../
  * @build jdk.test.lib.util.JarUtils
- * @run main ChainNotValidatedTest
+ * @run main ChainNotValidatedTest ca2yes
+ * @run main ChainNotValidatedTest ca2no
  */
 public class ChainNotValidatedTest extends Test {
 
-    private static final String CHAIN = "chain";
-
-    /**
-     * The test signs and verifies a jar that contains entries
-     * whose cert chain can't be correctly validated (chainNotValidated).
-     * Warning message is expected.
-     */
     public static void main(String[] args) throws Throwable {
         ChainNotValidatedTest test = new ChainNotValidatedTest();
-        test.start();
+        test.start(args[0].equals("ca2yes"));
     }
 
-    private void start() throws Throwable {
+    private void start(boolean ca2yes) throws Throwable {
         // create a jar file that contains one class file
         Utils.createFiles(FIRST_FILE);
         JarUtils.createJar(UNSIGNED_JARFILE, FIRST_FILE);
 
-        // create self-signed certificate whose BasicConstraints extension
-        // is set to false, so the certificate may not be used
-        // as a parent certificate (certpath validation should fail)
-        keytool(
-                "-genkeypair",
-                "-alias", CA_KEY_ALIAS,
-                "-keyalg", KEY_ALG,
-                "-keysize", Integer.toString(KEY_SIZE),
-                "-keystore", KEYSTORE,
-                "-storepass", PASSWORD,
-                "-keypass", PASSWORD,
-                "-dname", "CN=CA",
-                "-ext", "BasicConstraints:critical=ca:false",
-                "-validity", Integer.toString(VALIDITY)).shouldHaveExitValue(0);
+        // We have 2 @run. Need cleanup.
+        Files.deleteIfExists(Paths.get(KEYSTORE));
 
-        // create a certificate that is signed by self-signed certificate
-        // despite of it may not be used as a parent certificate
-        // (certpath validation should fail)
-        keytool(
-                "-genkeypair",
-                "-alias", KEY_ALIAS,
-                "-keyalg", KEY_ALG,
-                "-keysize", Integer.toString(KEY_SIZE),
-                "-keystore", KEYSTORE,
-                "-storepass", PASSWORD,
-                "-keypass", PASSWORD,
-                "-dname", "CN=Test",
-                "-ext", "BasicConstraints:critical=ca:false",
-                "-validity", Integer.toString(VALIDITY)).shouldHaveExitValue(0);
+        // Root CA is not checked at all. If the intermediate CA has
+        // BasicConstraints extension set to true, it will be valid.
+        // Otherwise, chain validation will fail.
+        createAlias(CA_KEY_ALIAS);
+        createAlias(CA2_KEY_ALIAS);
+        issueCert(CA2_KEY_ALIAS,
+                "-ext",
+                "bc=ca:" + ca2yes);
 
-        keytool(
-                "-certreq",
-                "-alias", KEY_ALIAS,
-                "-keystore", KEYSTORE,
-                "-storepass", PASSWORD,
-                "-keypass", PASSWORD,
-                "-file", CERT_REQUEST_FILENAME).shouldHaveExitValue(0);
+        createAlias(KEY_ALIAS);
+        issueCert(KEY_ALIAS, "-alias", CA2_KEY_ALIAS);
 
-        keytool(
-                "-gencert",
-                "-alias", CA_KEY_ALIAS,
-                "-keystore", KEYSTORE,
-                "-storepass", PASSWORD,
-                "-keypass", PASSWORD,
-                "-infile", CERT_REQUEST_FILENAME,
-                "-validity", Integer.toString(VALIDITY),
-                "-outfile", CERT_FILENAME).shouldHaveExitValue(0);
-
-        keytool(
-                "-importcert",
-                "-alias", KEY_ALIAS,
-                "-keystore", KEYSTORE,
-                "-storepass", PASSWORD,
-                "-keypass", PASSWORD,
-                "-file", CERT_FILENAME).shouldHaveExitValue(0);
-
-        ProcessBuilder pb = new ProcessBuilder(KEYTOOL,
-                "-export",
-                "-rfc",
-                "-alias", KEY_ALIAS,
-                "-keystore", KEYSTORE,
-                "-storepass", PASSWORD,
-                "-keypass", PASSWORD);
-        pb.redirectOutput(ProcessBuilder.Redirect.appendTo(new File(CHAIN)));
-        ProcessTools.executeCommand(pb).shouldHaveExitValue(0);
-
-        pb = new ProcessBuilder(KEYTOOL,
-                "-export",
-                "-rfc",
-                "-alias", CA_KEY_ALIAS,
-                "-keystore", KEYSTORE,
-                "-storepass", PASSWORD,
-                "-keypass", PASSWORD);
-        pb.redirectOutput(ProcessBuilder.Redirect.appendTo(new File(CHAIN)));
-        ProcessTools.executeCommand(pb).shouldHaveExitValue(0);
-
-        // remove CA certificate
+        // remove CA2 certificate so it's not trusted
         keytool(
                 "-delete",
-                "-alias", CA_KEY_ALIAS,
+                "-alias", CA2_KEY_ALIAS,
                 "-keystore", KEYSTORE,
                 "-storepass", PASSWORD,
                 "-keypass", PASSWORD).shouldHaveExitValue(0);
@@ -142,12 +76,15 @@ public class ChainNotValidatedTest extends Test {
                 "-keystore", KEYSTORE,
                 "-storepass", PASSWORD,
                 "-keypass", PASSWORD,
-                "-certchain", CHAIN,
                 "-signedjar", SIGNED_JARFILE,
                 UNSIGNED_JARFILE,
                 KEY_ALIAS);
 
-        checkSigning(analyzer, CHAIN_NOT_VALIDATED_SIGNING_WARNING);
+        if (ca2yes) {
+            checkSigning(analyzer, "!" + CHAIN_NOT_VALIDATED_SIGNING_WARNING);
+        } else {
+            checkSigning(analyzer, CHAIN_NOT_VALIDATED_SIGNING_WARNING);
+        }
 
         // verify signed jar
         analyzer = jarsigner(
@@ -156,10 +93,13 @@ public class ChainNotValidatedTest extends Test {
                 "-keystore", KEYSTORE,
                 "-storepass", PASSWORD,
                 "-keypass", PASSWORD,
-                "-certchain", CHAIN,
                 SIGNED_JARFILE);
 
-        checkVerifying(analyzer, 0, CHAIN_NOT_VALIDATED_VERIFYING_WARNING);
+        if (ca2yes) {
+            checkVerifying(analyzer, 0, "!" + CHAIN_NOT_VALIDATED_VERIFYING_WARNING);
+        } else {
+            checkVerifying(analyzer, 0, CHAIN_NOT_VALIDATED_VERIFYING_WARNING);
+        }
 
         // verify signed jar in strict mode
         analyzer = jarsigner(
@@ -169,11 +109,15 @@ public class ChainNotValidatedTest extends Test {
                 "-keystore", KEYSTORE,
                 "-storepass", PASSWORD,
                 "-keypass", PASSWORD,
-                "-certchain", CHAIN,
                 SIGNED_JARFILE);
 
-        checkVerifying(analyzer, CHAIN_NOT_VALIDATED_EXIT_CODE,
-                CHAIN_NOT_VALIDATED_VERIFYING_WARNING);
+        if (ca2yes) {
+            checkVerifying(analyzer, 0,
+                    "!" + CHAIN_NOT_VALIDATED_VERIFYING_WARNING);
+        } else {
+            checkVerifying(analyzer, CHAIN_NOT_VALIDATED_EXIT_CODE,
+                    CHAIN_NOT_VALIDATED_VERIFYING_WARNING);
+        }
 
         System.out.println("Test passed");
     }

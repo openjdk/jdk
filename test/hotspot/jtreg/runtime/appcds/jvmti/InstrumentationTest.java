@@ -27,7 +27,7 @@
  * @summary Exercise the java.lang.instrument.Instrumentation APIs on classes archived
  *          using CDS/AppCDSv1/AppCDSv2.
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds /test/hotspot/jtreg/runtime/appcds/test-classes
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
+ * @requires vm.cds
  * @requires vm.flavor != "minimal"
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar

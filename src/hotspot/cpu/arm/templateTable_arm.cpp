@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,13 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/templateTable.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/cpCache.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
@@ -193,7 +194,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
   assert_different_registers(obj.base(), new_val, tmp1, tmp2, tmp3, noreg);
   switch (barrier) {
 #if INCLUDE_ALL_GCS
-    case BarrierSet::G1SATBCTLogging:
+    case BarrierSet::G1BarrierSet:
       {
         // flatten object address if needed
         assert (obj.mode() == basic_offset, "pre- or post-indexing is not supported here");
@@ -228,8 +229,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
       }
       break;
 #endif // INCLUDE_ALL_GCS
-    case BarrierSet::CardTableForRS:
-    case BarrierSet::CardTableExtension:
+    case BarrierSet::CardTableBarrierSet:
       {
         if (is_null) {
           __ store_heap_oop_null(new_val, obj);
@@ -4335,7 +4335,6 @@ void TemplateTable::_new() {
   Label done;
   Label initialize_header;
   Label initialize_object;  // including clearing the fields
-  Label allocate_shared;
 
   const bool allow_shared_alloc =
     Universe::heap()->supports_inline_contig_alloc();
@@ -4380,13 +4379,19 @@ void TemplateTable::_new() {
   // Klass::_lh_instance_slow_path_bit is really a bit mask, not bit number
   __ tbnz(Rsize, exact_log2(Klass::_lh_instance_slow_path_bit), slow_case);
 
+  // Allocate the instance:
+  //  If TLAB is enabled:
+  //    Try to allocate in the TLAB.
+  //    If fails, go to the slow path.
+  //  Else If inline contiguous allocations are enabled:
+  //    Try to allocate in eden.
+  //    If fails due to heap end, go to slow path.
   //
-  // Allocate the instance
-  // 1) Try to allocate in the TLAB
-  // 2) if fail and the object is large allocate in the shared Eden
-  // 3) if the above fails (or is not applicable), go to a slow case
-  // (creates a new TLAB, etc.)
-
+  //  If TLAB is enabled OR inline contiguous is enabled:
+  //    Initialize the allocation.
+  //    Exit.
+  //
+  //  Go to slow path.
   if (UseTLAB) {
     const Register Rtlab_top = R1_tmp;
     const Register Rtlab_end = R2_tmp;
@@ -4396,7 +4401,7 @@ void TemplateTable::_new() {
     __ ldr(Rtlab_end, Address(Rthread, in_bytes(JavaThread::tlab_end_offset())));
     __ add(Rtlab_top, Robj, Rsize);
     __ cmp(Rtlab_top, Rtlab_end);
-    __ b(allow_shared_alloc ? allocate_shared : slow_case, hi);
+    __ b(slow_case, hi);
     __ str(Rtlab_top, Address(Rthread, JavaThread::tlab_top_offset()));
     if (ZeroTLAB) {
       // the fields have been already cleared
@@ -4405,45 +4410,43 @@ void TemplateTable::_new() {
       // initialize both the header and fields
       __ b(initialize_object);
     }
-  }
+  } else {
+    // Allocation in the shared Eden, if allowed.
+    if (allow_shared_alloc) {
+      const Register Rheap_top_addr = R2_tmp;
+      const Register Rheap_top = R5_tmp;
+      const Register Rheap_end = Rtemp;
+      assert_different_registers(Robj, Rklass, Rsize, Rheap_top_addr, Rheap_top, Rheap_end, LR);
 
-  // Allocation in the shared Eden, if allowed.
-  if (allow_shared_alloc) {
-    __ bind(allocate_shared);
+      // heap_end now (re)loaded in the loop since also used as a scratch register in the CAS
+      __ ldr_literal(Rheap_top_addr, Lheap_top_addr);
 
-    const Register Rheap_top_addr = R2_tmp;
-    const Register Rheap_top = R5_tmp;
-    const Register Rheap_end = Rtemp;
-    assert_different_registers(Robj, Rklass, Rsize, Rheap_top_addr, Rheap_top, Rheap_end, LR);
-
-    // heap_end now (re)loaded in the loop since also used as a scratch register in the CAS
-    __ ldr_literal(Rheap_top_addr, Lheap_top_addr);
-
-    Label retry;
-    __ bind(retry);
+      Label retry;
+      __ bind(retry);
 
 #ifdef AARCH64
-    __ ldxr(Robj, Rheap_top_addr);
+      __ ldxr(Robj, Rheap_top_addr);
 #else
-    __ ldr(Robj, Address(Rheap_top_addr));
+      __ ldr(Robj, Address(Rheap_top_addr));
 #endif // AARCH64
 
-    __ ldr(Rheap_end, Address(Rheap_top_addr, (intptr_t)Universe::heap()->end_addr()-(intptr_t)Universe::heap()->top_addr()));
-    __ add(Rheap_top, Robj, Rsize);
-    __ cmp(Rheap_top, Rheap_end);
-    __ b(slow_case, hi);
+      __ ldr(Rheap_end, Address(Rheap_top_addr, (intptr_t)Universe::heap()->end_addr()-(intptr_t)Universe::heap()->top_addr()));
+      __ add(Rheap_top, Robj, Rsize);
+      __ cmp(Rheap_top, Rheap_end);
+      __ b(slow_case, hi);
 
-    // Update heap top atomically.
-    // If someone beats us on the allocation, try again, otherwise continue.
+      // Update heap top atomically.
+      // If someone beats us on the allocation, try again, otherwise continue.
 #ifdef AARCH64
-    __ stxr(Rtemp2, Rheap_top, Rheap_top_addr);
-    __ cbnz_w(Rtemp2, retry);
+      __ stxr(Rtemp2, Rheap_top, Rheap_top_addr);
+      __ cbnz_w(Rtemp2, retry);
 #else
-    __ atomic_cas_bool(Robj, Rheap_top, Rheap_top_addr, 0, Rheap_end/*scratched*/);
-    __ b(retry, ne);
+      __ atomic_cas_bool(Robj, Rheap_top, Rheap_top_addr, 0, Rheap_end/*scratched*/);
+      __ b(retry, ne);
 #endif // AARCH64
 
-    __ incr_allocated_bytes(Rsize, Rtemp);
+      __ incr_allocated_bytes(Rsize, Rtemp);
+    }
   }
 
   if (UseTLAB || allow_shared_alloc) {

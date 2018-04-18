@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.lang;
 
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.PrimitiveIterator;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -43,9 +44,9 @@ import java.util.stream.StreamSupport;
  *
  * <p> This interface does not refine the general contracts of the {@link
  * java.lang.Object#equals(java.lang.Object) equals} and {@link
- * java.lang.Object#hashCode() hashCode} methods.  The result of comparing two
- * objects that implement {@code CharSequence} is therefore, in general,
- * undefined.  Each object may be implemented by a different class, and there
+ * java.lang.Object#hashCode() hashCode} methods. The result of testing two objects
+ * that implement {@code CharSequence} for equality is therefore, in general, undefined.
+ * Each object may be implemented by a different class, and there
  * is no guarantee that each class will be capable of testing its instances
  * for equality with those of the other.  It is therefore inappropriate to use
  * arbitrary {@code CharSequence} instances as elements in a set or as keys in
@@ -73,7 +74,7 @@ public interface CharSequence {
      * indexing.
      *
      * <p>If the {@code char} value specified by the index is a
-     * <a href="{@docRoot}/java/lang/Character.html#unicode">surrogate</a>, the surrogate
+     * <a href="{@docRoot}/java.base/java/lang/Character.html#unicode">surrogate</a>, the surrogate
      * value is returned.
      *
      * @param   index   the index of the {@code char} value to be returned
@@ -118,7 +119,7 @@ public interface CharSequence {
     /**
      * Returns a stream of {@code int} zero-extending the {@code char} values
      * from this sequence.  Any char which maps to a <a
-     * href="{@docRoot}/java/lang/Character.html#unicode">surrogate code
+     * href="{@docRoot}/java.base/java/lang/Character.html#unicode">surrogate code
      * point</a> is passed through uninterpreted.
      *
      * <p>The stream binds to this sequence when the terminal stream operation
@@ -237,4 +238,54 @@ public interface CharSequence {
                 Spliterator.ORDERED,
                 false);
     }
+
+    /**
+     * Compares two {@code CharSequence} instances lexicographically. Returns a
+     * negative value, zero, or a positive value if the first sequence is lexicographically
+     * less than, equal to, or greater than the second, respectively.
+     *
+     * <p>
+     * The lexicographical ordering of {@code CharSequence} is defined as follows.
+     * Consider a {@code CharSequence} <i>cs</i> of length <i>len</i> to be a
+     * sequence of char values, <i>cs[0]</i> to <i>cs[len-1]</i>. Suppose <i>k</i>
+     * is the lowest index at which the corresponding char values from each sequence
+     * differ. The lexicographic ordering of the sequences is determined by a numeric
+     * comparison of the char values <i>cs1[k]</i> with <i>cs2[k]</i>. If there is
+     * no such index <i>k</i>, the shorter sequence is considered lexicographically
+     * less than the other. If the sequences have the same length, the sequences are
+     * considered lexicographically equal.
+     *
+     *
+     * @param cs1 the first {@code CharSequence}
+     * @param cs2 the second {@code CharSequence}
+     *
+     * @return  the value {@code 0} if the two {@code CharSequence} are equal;
+     *          a negative integer if the first {@code CharSequence}
+     *          is lexicographically less than the second; or a
+     *          positive integer if the first {@code CharSequence} is
+     *          lexicographically greater than the second.
+     *
+     * @since 11
+     */
+    @SuppressWarnings("unchecked")
+    public static int compare(CharSequence cs1, CharSequence cs2) {
+        if (Objects.requireNonNull(cs1) == Objects.requireNonNull(cs2)) {
+            return 0;
+        }
+
+        if (cs1.getClass() == cs2.getClass() && cs1 instanceof Comparable) {
+            return ((Comparable<Object>) cs1).compareTo(cs2);
+        }
+
+        for (int i = 0, len = Math.min(cs1.length(), cs2.length()); i < len; i++) {
+            char a = cs1.charAt(i);
+            char b = cs2.charAt(i);
+            if (a != b) {
+                return a - b;
+            }
+        }
+
+        return cs1.length() - cs2.length();
+    }
+
 }

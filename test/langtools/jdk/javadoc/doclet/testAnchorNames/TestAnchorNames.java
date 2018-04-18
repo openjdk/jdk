@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8025633 8025524 8081854 8187521
+ * @bug 8025633 8025524 8081854 8187521 8182765
  * @summary Test for valid name attribute in HTML anchors.
  * @author Bhavesh Patel
  * @library /tools/lib ../lib
@@ -33,7 +33,6 @@
  */
 
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -54,6 +53,7 @@ public class TestAnchorNames extends JavadocTester {
     @Test
     void testHtml4(Path ignore) {
         javadoc("-d", "out-html4",
+                "-html4",
                 "-sourcepath", testSrc,
                 "-source", "8", //so that '_' can be used as an identifier
                 "-use",
@@ -82,63 +82,63 @@ public class TestAnchorNames extends JavadocTester {
         // Test some fields
         checkOutput("pkg1/RegClass.html", true,
                 "<a name=\"Z:Z_\">",
-                "<a href=\"../pkg1/RegClass.html#Z:Z_\">",
+                "<a href=\"#Z:Z_\">",
                 "<a name=\"Z:Z_:D\">",
-                "<a href=\"../pkg1/RegClass.html#Z:Z_:D\">",
+                "<a href=\"#Z:Z_:D\">",
                 "<a name=\"Z:Z:D_\">",
-                "<a href=\"../pkg1/RegClass.html#Z:Z:D_\">",
+                "<a href=\"#Z:Z:D_\">",
                 "<a name=\"Z:Z:Dfield\">",
-                "<a href=\"../pkg1/RegClass.html#Z:Z:Dfield\">",
+                "<a href=\"#Z:Z:Dfield\">",
                 "<a name=\"fieldInCla:D:D\">",
-                "<a href=\"../pkg1/RegClass.html#fieldInCla:D:D\">",
+                "<a href=\"#fieldInCla:D:D\">",
                 "<a name=\"S_:D:D:D:D:DINT\">",
-                "<a href=\"../pkg1/RegClass.html#S_:D:D:D:D:DINT\">",
+                "<a href=\"#S_:D:D:D:D:DINT\">",
                 "<a name=\"method:D:D\">",
-                "<a href=\"../pkg1/RegClass.html#method:D:D\">");
+                "<a href=\"#method:D:D\">");
 
         checkOutput("pkg1/DeprMemClass.html", true,
                 "<a name=\"Z:Z_field_In_Class\">",
-                "<a href=\"../pkg1/DeprMemClass.html#Z:Z_field_In_Class\">");
+                "<a href=\"#Z:Z_field_In_Class\">");
 
         // Test constructor
         checkOutput("pkg1/RegClass.html", true,
                 "<a name=\"RegClass-java.lang.String-int-\">",
-                "<a href=\"../pkg1/RegClass.html#RegClass-java.lang.String-int-\">");
+                "<a href=\"#RegClass-java.lang.String-int-\">");
 
         // Test some methods
         checkOutput("pkg1/RegClass.html", true,
                 "<a name=\"Z:Z_methodInClass-java.lang.String-\">",
-                "<a href=\"../pkg1/RegClass.html#Z:Z_methodInClass-java.lang.String-\">",
+                "<a href=\"#Z:Z_methodInClass-java.lang.String-\">",
                 "<a name=\"method--\">",
-                "<a href=\"../pkg1/RegClass.html#method--\">",
+                "<a href=\"#method--\">",
                 "<a name=\"foo-java.util.Map-\">",
-                "<a href=\"../pkg1/RegClass.html#foo-java.util.Map-\">",
+                "<a href=\"#foo-java.util.Map-\">",
                 "<a name=\"methodInCla:Ds-java.lang.String:A-\">",
-                "<a href=\"../pkg1/RegClass.html#methodInCla:Ds-java.lang.String:A-\">",
+                "<a href=\"#methodInCla:Ds-java.lang.String:A-\">",
                 "<a name=\"Z:Z_methodInClas:D-java.lang.String-int-\">",
-                "<a href=\"../pkg1/RegClass.html#Z:Z_methodInClas:D-java.lang.String-int-\">",
+                "<a href=\"#Z:Z_methodInClas:D-java.lang.String-int-\">",
                 "<a name=\"methodD-pkg1.RegClass.:DA-\">",
-                "<a href=\"../pkg1/RegClass.html#methodD-pkg1.RegClass.:DA-\">",
+                "<a href=\"#methodD-pkg1.RegClass.:DA-\">",
                 "<a name=\"methodD-pkg1.RegClass.D:A-\">",
-                "<a href=\"../pkg1/RegClass.html#methodD-pkg1.RegClass.D:A-\">");
+                "<a href=\"#methodD-pkg1.RegClass.D:A-\">");
 
         checkOutput("pkg1/DeprMemClass.html", true,
                 "<a name=\"Z:Z:Dmethod_In_Class--\">",
-                "<a href=\"../pkg1/DeprMemClass.html#Z:Z:Dmethod_In_Class--\">");
+                "<a href=\"#Z:Z:Dmethod_In_Class--\">");
 
         // Test enum
         checkOutput("pkg1/RegClass.Te$t_Enum.html", true,
                 "<a name=\"Z:Z:DFLD2\">",
-                "<a href=\"../pkg1/RegClass.Te$t_Enum.html#Z:Z:DFLD2\">");
+                "<a href=\"#Z:Z:DFLD2\">");
 
         // Test nested class
         checkOutput("pkg1/RegClass._NestedClas$.html", true,
                 "<a name=\"Z:Z_NestedClas:D--\">",
-                "<a href=\"../pkg1/RegClass._NestedClas$.html#Z:Z_NestedClas:D--\">");
+                "<a href=\"#Z:Z_NestedClas:D--\">");
 
         // Test class use page
         checkOutput("pkg1/class-use/DeprMemClass.html", true,
-                "<a href=\"../../pkg1/RegClass.html#d____mc\">");
+                "<a href=\"../RegClass.html#d____mc\">");
 
         // Test deprecated list page
         checkOutput("deprecated-list.html", true,
@@ -175,7 +175,6 @@ public class TestAnchorNames extends JavadocTester {
                 "-sourcepath", testSrc,
                 "-source", "8", //so that '_' can be used as an identifier
                 "-use",
-                "-html5",
                 "pkg1");
         checkExit(Exit.OK);
 
@@ -201,63 +200,63 @@ public class TestAnchorNames extends JavadocTester {
         // Test some fields
         checkOutput("pkg1/RegClass.html", true,
                 "<a id=\"_\">",
-                "<a href=\"../pkg1/RegClass.html#_\">",
+                "<a href=\"#_\">",
                 "<a id=\"_$\">",
-                "<a href=\"../pkg1/RegClass.html#_$\">",
+                "<a href=\"#_$\">",
                 "<a id=\"$_\">",
-                "<a href=\"../pkg1/RegClass.html#$_\">",
+                "<a href=\"#$_\">",
                 "<a id=\"$field\">",
-                "<a href=\"../pkg1/RegClass.html#$field\">",
+                "<a href=\"#$field\">",
                 "<a id=\"fieldInCla$$\">",
-                "<a href=\"../pkg1/RegClass.html#fieldInCla$$\">",
+                "<a href=\"#fieldInCla$$\">",
                 "<a id=\"S_$$$$$INT\">",
-                "<a href=\"../pkg1/RegClass.html#S_$$$$$INT\">",
+                "<a href=\"#S_$$$$$INT\">",
                 "<a id=\"method$$\">",
-                "<a href=\"../pkg1/RegClass.html#method$$\">");
+                "<a href=\"#method$$\">");
 
         checkOutput("pkg1/DeprMemClass.html", true,
                 "<a id=\"_field_In_Class\">",
-                "<a href=\"../pkg1/DeprMemClass.html#_field_In_Class\">");
+                "<a href=\"#_field_In_Class\">");
 
         // Test constructor
         checkOutput("pkg1/RegClass.html", true,
                 "<a id=\"&lt;init&gt;(java.lang.String,int)\">",
-                "<a href=\"../pkg1/RegClass.html#%3Cinit%3E(java.lang.String,int)\">");
+                "<a href=\"#%3Cinit%3E(java.lang.String,int)\">");
 
         // Test some methods
         checkOutput("pkg1/RegClass.html", true,
                 "<a id=\"_methodInClass(java.lang.String)\">",
-                "<a href=\"../pkg1/RegClass.html#_methodInClass(java.lang.String)\">",
+                "<a href=\"#_methodInClass(java.lang.String)\">",
                 "<a id=\"method()\">",
-                "<a href=\"../pkg1/RegClass.html#method()\">",
+                "<a href=\"#method()\">",
                 "<a id=\"foo(java.util.Map)\">",
-                "<a href=\"../pkg1/RegClass.html#foo(java.util.Map)\">",
+                "<a href=\"#foo(java.util.Map)\">",
                 "<a id=\"methodInCla$s(java.lang.String[])\">",
-                "<a href=\"../pkg1/RegClass.html#methodInCla$s(java.lang.String%5B%5D)\">",
+                "<a href=\"#methodInCla$s(java.lang.String%5B%5D)\">",
                 "<a id=\"_methodInClas$(java.lang.String,int)\">",
-                "<a href=\"../pkg1/RegClass.html#_methodInClas$(java.lang.String,int)\">",
+                "<a href=\"#_methodInClas$(java.lang.String,int)\">",
                 "<a id=\"methodD(pkg1.RegClass.$A)\">",
-                "<a href=\"../pkg1/RegClass.html#methodD(pkg1.RegClass.$A)\">",
+                "<a href=\"#methodD(pkg1.RegClass.$A)\">",
                 "<a id=\"methodD(pkg1.RegClass.D[])\">",
-                "<a href=\"../pkg1/RegClass.html#methodD(pkg1.RegClass.D%5B%5D)\">");
+                "<a href=\"#methodD(pkg1.RegClass.D%5B%5D)\">");
 
         checkOutput("pkg1/DeprMemClass.html", true,
                 "<a id=\"$method_In_Class()\">",
-                "<a href=\"../pkg1/DeprMemClass.html#$method_In_Class()\">");
+                "<a href=\"#$method_In_Class()\">");
 
         // Test enum
         checkOutput("pkg1/RegClass.Te$t_Enum.html", true,
                 "<a id=\"$FLD2\">",
-                "<a href=\"../pkg1/RegClass.Te$t_Enum.html#$FLD2\">");
+                "<a href=\"#$FLD2\">");
 
         // Test nested class
         checkOutput("pkg1/RegClass._NestedClas$.html", true,
                 "<a id=\"&lt;init&gt;()\">",
-                "<a href=\"../pkg1/RegClass._NestedClas$.html#%3Cinit%3E()\">");
+                "<a href=\"#%3Cinit%3E()\">");
 
         // Test class use page
         checkOutput("pkg1/class-use/DeprMemClass.html", true,
-                "<a href=\"../../pkg1/RegClass.html#d____mc\">");
+                "<a href=\"../RegClass.html#d____mc\">");
 
         // Test deprecated list page
         checkOutput("deprecated-list.html", true,
@@ -320,10 +319,10 @@ public class TestAnchorNames extends JavadocTester {
                 "<a id=\"\u0391\u0392\u0393()\">");
 
         checkOutput("p/Ref.html", true,
-                "<a href=\"../p/Def.html#%C3%A0%C3%A9\"><code>&agrave;&eacute;</code></a>",
-                "<a href=\"../p/Def.html#%C3%80%C3%89()\"><code>&Agrave;&Eacute;</code></a>",
-                "<a href=\"../p/Def.html#%CE%B1%CE%B2%CE%B3\"><code>&alpha;&beta;&gamma;</code></a>",
-                "<a href=\"../p/Def.html#%CE%91%CE%92%CE%93()\"><code>&Alpha;&Beta;&Gamma;</code></a>");
+                "<a href=\"Def.html#%C3%A0%C3%A9\"><code>&agrave;&eacute;</code></a>",
+                "<a href=\"Def.html#%C3%80%C3%89()\"><code>&Agrave;&Eacute;</code></a>",
+                "<a href=\"Def.html#%CE%B1%CE%B2%CE%B3\"><code>&alpha;&beta;&gamma;</code></a>",
+                "<a href=\"Def.html#%CE%91%CE%92%CE%93()\"><code>&Alpha;&Beta;&Gamma;</code></a>");
 
     }
 }

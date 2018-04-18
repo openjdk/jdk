@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@ class G1EvacuationClosures : public G1EvacuationRootClosures {
 public:
   G1EvacuationClosures(G1CollectedHeap* g1h,
                        G1ParScanThreadState* pss,
-                       bool gcs_are_young) :
-      _closures(g1h, pss, gcs_are_young, /* must_claim_cld */ false) {}
+                       bool in_young_gc) :
+      _closures(g1h, pss, in_young_gc, /* must_claim_cld */ false) {}
 
   OopClosure* weak_oops()   { return &_closures._buffered_oops; }
   OopClosure* strong_oops() { return &_closures._buffered_oops; }
@@ -111,19 +111,15 @@ public:
 };
 
 G1EvacuationRootClosures* G1EvacuationRootClosures::create_root_closures(G1ParScanThreadState* pss, G1CollectedHeap* g1h) {
-  G1EvacuationRootClosures* res = create_root_closures_ext(pss, g1h);
-  if (res != NULL) {
-    return res;
-  }
-
-  if (g1h->collector_state()->during_initial_mark_pause()) {
+  G1EvacuationRootClosures* res = NULL;
+  if (g1h->collector_state()->in_initial_mark_gc()) {
     if (ClassUnloadingWithConcurrentMark) {
       res = new G1InitialMarkClosures<G1MarkPromotedFromRoot>(g1h, pss);
     } else {
       res = new G1InitialMarkClosures<G1MarkFromRoot>(g1h, pss);
     }
   } else {
-    res = new G1EvacuationClosures(g1h, pss, g1h->collector_state()->gcs_are_young());
+    res = new G1EvacuationClosures(g1h, pss, g1h->collector_state()->in_young_only_phase());
   }
   return res;
 }

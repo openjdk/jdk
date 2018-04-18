@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,6 +169,7 @@ bool LogFileOutput::parse_options(const char* options, outputStream* errstream) 
 
     char* equals_pos = strchr(pos, '=');
     if (equals_pos == NULL) {
+      errstream->print_cr("Invalid option '%s' for log file output.", pos);
       success = false;
       break;
     }

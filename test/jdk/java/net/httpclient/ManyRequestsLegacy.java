@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @modules jdk.incubator.httpclient
+ * @modules java.net.http
  *          java.logging
  *          jdk.httpserver
  * @library /lib/testlibrary/ /
@@ -48,32 +48,29 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URLConnection;
-import java.security.NoSuchAlgorithmException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
-import jdk.incubator.http.HttpClient;
-import jdk.incubator.http.HttpClient.Version;
-import jdk.incubator.http.HttpHeaders;
-import jdk.incubator.http.HttpRequest;
-import jdk.incubator.http.HttpResponse;
+import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Random;
-import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import jdk.testlibrary.SimpleSSLContext;
-import static jdk.incubator.http.HttpRequest.BodyPublisher.fromByteArray;
-import static jdk.incubator.http.HttpResponse.BodyHandler.asByteArray;
 
 public class ManyRequestsLegacy {
 
@@ -94,7 +91,7 @@ public class ManyRequestsLegacy {
                     return true;
                 }
             });
-        InetSocketAddress addr = new InetSocketAddress(0);
+        InetSocketAddress addr = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         HttpsServer server = HttpsServer.create(addr, 0);
         server.setHttpsConfigurator(new Configurator(ctx));
 
@@ -116,7 +113,7 @@ public class ManyRequestsLegacy {
     static final boolean XFIXED = Boolean.getBoolean("test.XFixed");
 
     static class LegacyHttpClient {
-        static final class LegacyHttpResponse extends HttpResponse<byte[]> {
+        static final class LegacyHttpResponse implements HttpResponse<byte[]> {
             final HttpRequest request;
             final byte[] response;
             final int statusCode;
@@ -139,12 +136,8 @@ public class ManyRequestsLegacy {
             @Override
             public byte[] body() {return response;}
             @Override
-            public SSLParameters sslParameters() {
-                try {
-                    return SSLContext.getDefault().getDefaultSSLParameters();
-                } catch (NoSuchAlgorithmException ex) {
-                    throw new UnsupportedOperationException(ex);
-                }
+            public Optional<SSLSession> sslSession() {
+                return Optional.empty(); // for now
             }
             @Override
             public URI uri() { return request.uri();}
@@ -225,7 +218,7 @@ public class ManyRequestsLegacy {
 
     static void test(HttpsServer server, LegacyHttpClient client) throws Exception {
         int port = server.getAddress().getPort();
-        URI baseURI = new URI("https://127.0.0.1:" + port + "/foo/x");
+        URI baseURI = new URI("https://localhost:" + port + "/foo/x");
         server.createContext("/foo", new TestEchoHandler());
         server.start();
 
@@ -240,7 +233,7 @@ public class ManyRequestsLegacy {
             URI uri = new URI(baseURI.toString() + String.valueOf(i+1));
             HttpRequest r = HttpRequest.newBuilder(uri)
                                        .header("XFixed", "true")
-                                       .POST(fromByteArray(buf))
+                                       .POST(BodyPublishers.ofByteArray(buf))
                                        .build();
             bodies.put(r, buf);
 

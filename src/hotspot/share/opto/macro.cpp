@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
 #include "libadt/vectset.hpp"
 #include "opto/addnode.hpp"
 #include "opto/arraycopynode.hpp"
@@ -46,6 +47,9 @@
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
 #include "runtime/sharedRuntime.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc/g1/g1ThreadLocalData.hpp"
+#endif // INCLUDE_ALL_GCS
 
 
 //
@@ -291,8 +295,7 @@ void PhaseMacroExpand::eliminate_card_mark(Node* p2x) {
               cmpx->is_Cmp() && cmpx->in(2) == intcon(0) &&
               cmpx->in(1)->is_Load()) {
             Node* adr = cmpx->in(1)->as_Load()->in(MemNode::Address);
-            const int marking_offset = in_bytes(JavaThread::satb_mark_queue_offset() +
-                                                SATBMarkQueue::byte_offset_of_active());
+            const int marking_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset());
             if (adr->is_AddP() && adr->in(AddPNode::Base) == top() &&
                 adr->in(AddPNode::Address)->Opcode() == Op_ThreadLocal &&
                 adr->in(AddPNode::Offset) == MakeConX(marking_offset)) {
@@ -2667,8 +2670,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         assert(n->Opcode() == Op_LoopLimit ||
                n->Opcode() == Op_Opaque1   ||
                n->Opcode() == Op_Opaque2   ||
-               n->Opcode() == Op_Opaque3   ||
-               n->Opcode() == Op_Opaque4, "unknown node type in macro list");
+               n->Opcode() == Op_Opaque3, "unknown node type in macro list");
       }
       assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
       progress = progress || success;
@@ -2733,9 +2735,6 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         _igvn.replace_node(n, repl);
         success = true;
 #endif
-      } else if (n->Opcode() == Op_Opaque4) {
-        _igvn.replace_node(n, n->in(2));
-        success = true;
       } else if (n->Opcode() == Op_OuterStripMinedLoop) {
         n->as_OuterStripMinedLoop()->adjust_strip_mined_loop(&_igvn);
         C->remove_macro_node(n);

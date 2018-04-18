@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,14 +88,14 @@
 
 
 // Utility class describing elements in checked exceptions table inlined in Method*.
-class CheckedExceptionElement VALUE_OBJ_CLASS_SPEC {
+class CheckedExceptionElement {
  public:
   u2 class_cp_index;
 };
 
 
 // Utility class describing elements in local variable table inlined in Method*.
-class LocalVariableTableElement VALUE_OBJ_CLASS_SPEC {
+class LocalVariableTableElement {
  public:
   u2 start_bci;
   u2 length;
@@ -106,7 +106,7 @@ class LocalVariableTableElement VALUE_OBJ_CLASS_SPEC {
 };
 
 // Utility class describing elements in exception table
-class ExceptionTableElement VALUE_OBJ_CLASS_SPEC {
+class ExceptionTableElement {
  public:
   u2 start_pc;
   u2 end_pc;
@@ -115,7 +115,7 @@ class ExceptionTableElement VALUE_OBJ_CLASS_SPEC {
 };
 
 // Utility class describing elements in method parameters
-class MethodParametersElement VALUE_OBJ_CLASS_SPEC {
+class MethodParametersElement {
  public:
   u2 name_cp_index;
   u2 flags;

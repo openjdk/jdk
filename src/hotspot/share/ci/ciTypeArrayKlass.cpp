@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
-#include "ci/ciUtilities.hpp"
+#include "ci/ciUtilities.inline.hpp"
 
 // ciTypeArrayKlass
 //

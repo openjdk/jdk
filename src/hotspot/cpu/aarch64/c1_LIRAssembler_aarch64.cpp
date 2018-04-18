@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,10 +34,11 @@
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciInstance.hpp"
 #include "gc/shared/barrierSet.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "nativeInst_aarch64.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "vmreg_aarch64.inline.hpp"
 
@@ -2174,8 +2175,8 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     __ stp(length,  src_pos, Address(sp, 2*BytesPerWord));
     __ str(src,              Address(sp, 4*BytesPerWord));
 
-    address C_entry = CAST_FROM_FN_PTR(address, Runtime1::arraycopy);
     address copyfunc_addr = StubRoutines::generic_arraycopy();
+    assert(copyfunc_addr != NULL, "generic arraycopy stub required");
 
     // The arguments are in java calling convention so we shift them
     // to C convention
@@ -2188,17 +2189,12 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     assert_different_registers(c_rarg3, j_rarg4);
     __ mov(c_rarg3, j_rarg3);
     __ mov(c_rarg4, j_rarg4);
-    if (copyfunc_addr == NULL) { // Use C version if stub was not generated
-      __ mov(rscratch1, RuntimeAddress(C_entry));
-      __ blrt(rscratch1, 5, 0, 1);
-    } else {
 #ifndef PRODUCT
-      if (PrintC1Statistics) {
-        __ incrementw(ExternalAddress((address)&Runtime1::_generic_arraycopystub_cnt));
-      }
-#endif
-      __ far_call(RuntimeAddress(copyfunc_addr));
+    if (PrintC1Statistics) {
+      __ incrementw(ExternalAddress((address)&Runtime1::_generic_arraycopystub_cnt));
     }
+#endif
+    __ far_call(RuntimeAddress(copyfunc_addr));
 
     __ cbz(r0, *stub->continuation());
 
@@ -2208,14 +2204,12 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     __ ldp(length,  src_pos, Address(sp, 2*BytesPerWord));
     __ ldr(src,              Address(sp, 4*BytesPerWord));
 
-    if (copyfunc_addr != NULL) {
-      // r0 is -1^K where K == partial copied count
-      __ eonw(rscratch1, r0, 0);
-      // adjust length down and src/end pos up by partial copied count
-      __ subw(length, length, rscratch1);
-      __ addw(src_pos, src_pos, rscratch1);
-      __ addw(dst_pos, dst_pos, rscratch1);
-    }
+    // r0 is -1^K where K == partial copied count
+    __ eonw(rscratch1, r0, 0);
+    // adjust length down and src/end pos up by partial copied count
+    __ subw(length, length, rscratch1);
+    __ addw(src_pos, src_pos, rscratch1);
+    __ addw(dst_pos, dst_pos, rscratch1);
     __ b(*stub->entry());
 
     __ bind(*stub->continuation());
@@ -2532,7 +2526,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ciMethodData* md = method->method_data_or_null();
   assert(md != NULL, "Sanity");
   ciProfileData* data = md->bci_to_data(bci);
-  assert(data->is_CounterData(), "need CounterData for calls");
+  assert(data != NULL && data->is_CounterData(), "need CounterData for calls");
   assert(op->mdo()->is_single_cpu(),  "mdo must be allocated");
   Register mdo  = op->mdo()->as_register();
   __ mov_metadata(mdo, md->constant_encoding());

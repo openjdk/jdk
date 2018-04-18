@@ -152,16 +152,18 @@ public abstract class CallsBase {
                     calleeVisited = false; // reset state
                 }
                 // compile with requested level if needed
-                if (compileCallee > 0) {
-                    compileMethod(calleeMethod, compileCallee);
+                if (compileCallee > 0 && !compileMethod(calleeMethod, compileCallee)) {
+                    System.out.println("WARNING: Blocking compilation failed for calleeMethod (timeout?). Skipping.");
+                    return;
                 }
                 if (checkCalleeCompilationLevel) {
                     Asserts.assertEQ(expectedCalleeCompilationLevel,
                             wb.getMethodCompilationLevel(calleeMethod),
                             "Unexpected callee compilation level");
                 }
-                if (compileCaller > 0) {
-                    compileMethod(callerMethod, compileCaller);
+                if (compileCaller > 0 && !compileMethod(callerMethod, compileCaller)) {
+                    System.out.println("WARNING: Blocking compilation failed for callerMethod (timeout?). Skipping.");
+                    return;
                 }
                 if (checkCallerCompilationLevel) {
                     Asserts.assertEQ(expectedCallerCompilationLevel,
@@ -185,11 +187,12 @@ public abstract class CallsBase {
      * A method to compile another method, searching it by name in current class
      * @param method a method to compile
      * @param compLevel a compilation level
+     * @return true if method was enqueued for compilation
      */
-    protected final void compileMethod(Method method, int compLevel) {
+    protected final boolean compileMethod(Method method, int compLevel) {
         wb.deoptimizeMethod(method);
         Asserts.assertTrue(wb.isMethodCompilable(method, compLevel));
-        wb.enqueueMethodForCompilation(method, compLevel);
+        return wb.enqueueMethodForCompilation(method, compLevel);
     }
 
     /*

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,9 @@ USE_JTREG_VERSION ?= 4.2
 JTREG_VM_TYPE ?= -agentvm
 USE_JTREG_ASSERT ?= true
 LIMIT_JTREG_VM_MEMORY ?= true
+
+X:=
+SPACE:=$(X) $(X)
 
 .DEFAULT : all
 
@@ -87,6 +90,11 @@ else
   endif
 endif
 
+# convert list of directories to dos paths
+define MixedDirs
+$(foreach i,$1,$(shell $(GETMIXEDPATH) "${i}"))
+endef
+
 ifdef ALT_SLASH_JAVA
   SLASH_JAVA = $(ALT_SLASH_JAVA)
 endif
@@ -122,6 +130,19 @@ ifndef PRODUCT_HOME
          $(ECHO) "$(ABS_PLATFORM_BUILD_ROOT)";  \
        fi)
   PRODUCT_HOME := $(PRODUCT_HOME)
+endif
+
+# On Windows, setup the _NT_SYMBOL_PATH if possible.
+ifeq ($(PLATFORM), windows)
+  ifndef _NT_SYMBOL_PATH
+    ifdef PRODUCT_SYMBOLS_HOME
+      _NT_SYMBOL_PATH := \
+          $(subst $(SPACE),;,$(strip $(call MixedDirs, $(sort $(dir $(wildcard \
+          $(addprefix $(PRODUCT_SYMBOLS_HOME)/bin/, *.pdb */*.pdb)))))))
+      export _NT_SYMBOL_PATH
+    endif
+  endif
+  JTREG_BASIC_OPTIONS += -e:_NT_SYMBOL_PATH='$(_NT_SYMBOL_PATH)'
 endif
 
 # Expect JPRT to set JPRT_PRODUCT_ARGS (e.g. -server etc.)
@@ -171,6 +192,20 @@ ifeq ($(USE_FAILURE_HANDLER), true)
       JTREG_FAILURE_HANDLER_OPTIONS += -J-Djava.library.path="$(FAILURE_HANDLER_DIR_MIXED)"
     endif
   endif
+endif
+
+
+# Optionally create a CDS archive before running tests
+ifeq ($(GENERATE_CDS_ARCHIVE), true)
+  CDS_ARCHIVE_FILE := $(ABS_TEST_OUTPUT_DIR)/cds_archive.jsa
+
+  $(CDS_ARCHIVE_FILE): $(PRODUCT_HOME)
+	$(PRODUCT_HOME)/bin/java -XX:+UnlockDiagnosticVMOptions \
+	    -XX:SharedArchiveFile=$(shell $(GETMIXEDPATH) "$(CDS_ARCHIVE_FILE)") -Xshare:dump
+
+  CDS_VM_ARGS := -XX:+UnlockDiagnosticVMOptions -XX:SharedArchiveFile=$(shell $(GETMIXEDPATH) "$(CDS_ARCHIVE_FILE)")
+  JTREG_TEST_OPTIONS += $(addprefix -vmoption:, $(CDS_VM_ARGS))
+  TEST_PREREQS += $(CDS_ARCHIVE_FILE)
 endif
 
 # Expect JPRT to set JPRT_ARCHIVE_BUNDLE (path to zip bundle for results)
@@ -311,19 +346,15 @@ ifndef JT_HOME
 endif
 
 # Problematic tests to be excluded
-PROBLEM_LISTS=$(call MixedDirs,$(wildcard ProblemList.txt))
+EXTRA_PROBLEM_LISTS :=
+PROBLEM_LISTS := ProblemList.txt $(EXTRA_PROBLEM_LISTS)
 
 # Create exclude list for this platform and arch
 ifdef NO_EXCLUDES
   JTREG_EXCLUSIONS =
 else
-  JTREG_EXCLUSIONS = $(PROBLEM_LISTS:%=-exclude:%)
+  JTREG_EXCLUSIONS = $(addprefix -exclude:, $(wildcard $(PROBLEM_LISTS)))
 endif
-
-# convert list of directories to dos paths
-define MixedDirs
-$(foreach i,$1,$(shell $(GETMIXEDPATH) "${i}"))
-endef
 
 # ------------------------------------------------------------------
 
@@ -332,9 +363,47 @@ ifdef TESTDIRS
   TEST_SELECTION = $(TESTDIRS)
 endif
 
-ifdef CONCURRENCY
-  JTREG_BASIC_OPTIONS += -concurrency:$(CONCURRENCY)
+ifeq ($(UNAME_S), SunOS)
+  NUM_CORES := $(shell LC_MESSAGES=C /usr/sbin/psrinfo -v | grep -c on-line)
 endif
+ifeq ($(UNAME_S), Linux)
+  NUM_CORES := $(shell cat /proc/cpuinfo  | grep -c processor)
+endif
+ifeq ($(UNAME_S), Darwin)
+  NUM_CORES := $(shell /usr/sbin/sysctl -n hw.ncpu)
+endif
+ifeq ($(findstring CYGWIN,$(UNAME_S)), CYGWIN)
+  ifneq ($(NUMBER_OF_PROCESSORS), )
+    NUM_CORES := $(NUMBER_OF_PROCESSORS)
+  else
+    ifneq ($(HOTSPOT_BUILD_JOBS), )
+      NUM_CORES := $(HOTSPOT_BUILD_JOBS)
+    else
+      NUM_CORES := 1 # fallback
+    endif
+  endif
+endif
+
+ifndef CONCURRENCY_FACTOR
+  CONCURRENCY_FACTOR = 1
+endif
+
+# Concurrency based on min(cores / 2, 12) * CONCURRENCY_FACTOR
+CONCURRENCY := $(shell $(AWK) \
+  'BEGIN { \
+    c = $(NUM_CORES) / 2; \
+    if (c > 12) c = 12; \
+    c = c * $(CONCURRENCY_FACTOR); \
+    if (c < 1) c = 1; \
+    printf "%.0f", c; \
+  }')
+JTREG_BASIC_OPTIONS += -concurrency:$(CONCURRENCY)
+
+# Make sure MaxRAMPercentage is low enough to not cause OOM or swapping since
+# we may end up with a lot of JVM's
+MAX_RAM_PERCENTAGE := $(shell expr 25 / $(CONCURRENCY))
+JTREG_BASIC_OPTIONS += -vmoption:-XX:MaxRAMPercentage=$(MAX_RAM_PERCENTAGE)
+
 ifdef EXTRA_JTREG_OPTIONS
   JTREG_BASIC_OPTIONS += $(EXTRA_JTREG_OPTIONS)
 endif
@@ -377,7 +446,7 @@ JTREG_BASIC_OPTIONS += -e:JIB_DATA_DIR
 JTREG_BASIC_OPTIONS += -e:JDK8_HOME=${JT_JAVA}
 # Give aot tests access to Visual Studio installation
 ifneq ($(VS120COMNTOOLS), )
-  JTREG_BASIC_OPTIONS += -e:VS120COMNTOOLS=$(shell $(GETMIXEDPATH) "$(VS120COMNTOOLS)")
+  JTREG_BASIC_OPTIONS += -e:VS120COMNTOOLS="$(shell $(GETMIXEDPATH) "$(patsubst %\,%,$(VS120COMNTOOLS))")"
 endif
 # Set other vm and test options
 JTREG_TEST_OPTIONS += $(JAVA_ARGS:%=-javaoptions:%) $(JAVA_VM_ARGS:%=-vmoption:%)
@@ -406,7 +475,7 @@ endif
 PHONY_LIST += jtreg_exists
 
 # Run jtreg
-jtreg_tests: prep jtreg_exists $(PRODUCT_HOME)
+jtreg_tests: prep jtreg_exists $(PRODUCT_HOME) $(TEST_PREREQS)
 	(                                                                    \
 	  ( JT_HOME=$(shell $(GETMIXEDPATH) "$(JT_HOME)");                   \
 	    export JT_HOME;                                                  \

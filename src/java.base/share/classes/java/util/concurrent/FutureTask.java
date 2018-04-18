@@ -526,7 +526,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
             RUNNER = l.findVarHandle(FutureTask.class, "runner", Thread.class);
             WAITERS = l.findVarHandle(FutureTask.class, "waiters", WaitNode.class);
         } catch (ReflectiveOperationException e) {
-            throw new Error(e);
+            throw new ExceptionInInitializerError(e);
         }
 
         // Reduce the risk of rare disastrous classloading in first call to

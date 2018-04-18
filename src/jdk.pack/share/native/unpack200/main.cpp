@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@
 #define THREAD_SELF ((THRTYPE)pthread_self())
 #endif
 
+#include "jni.h"
 #include "defines.h"
 #include "bytes.h"
 #include "utils.h"
@@ -58,7 +59,8 @@
 #include "unpack.h"
 
 
-int main(int argc, char **argv) {
+JNIEXPORT int JNICALL
+main(int argc, char **argv) {
     return unpacker::run(argc, argv);
 }
 
@@ -153,7 +155,7 @@ static const char* nbasename(const char* progname) {
     "  -q, --quiet                   set verbosity to lowest level\n" \
     "  -l{F}, --log-file={F}         output to the given log file,\n" \
     "                                or '-' for standard output (default)\n" \
-    "  -?, -h, --help                print this message\n" \
+    "  -?, -h, --help                print this help message\n" \
     "  -V, --version                 print program version\n" \
     "\n" \
     "Exit Status:\n" \
@@ -313,7 +315,7 @@ int unpacker::run(int argc, char **argv) {
     case 'h':
     case '?':
       usage(&u, argv[0], true);
-      exit(1);
+      exit(0);
 
     default:
       const char* inenv = isenvarg? " in ${UNPACK200_FLAGS}": "";

@@ -4,7 +4,7 @@
  * @summary Verify that invalid access modifiers on interface members don't cause crash.
  * @author maddox
  *
- * @compile/fail/ref=InterfaceMemberClassModifiers.out --diags:layout=%b:%l:%_%m InterfaceMemberClassModifiers.java
+ * @compile/fail/ref=InterfaceMemberClassModifiers.out --diags=layout=%b:%l:%_%m InterfaceMemberClassModifiers.java
  */
 
 public interface InterfaceMemberClassModifiers {

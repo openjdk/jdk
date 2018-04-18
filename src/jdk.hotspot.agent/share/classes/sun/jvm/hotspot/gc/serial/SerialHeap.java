@@ -35,6 +35,6 @@ public class SerialHeap extends GenCollectedHeap {
   }
 
   public CollectedHeapName kind() {
-    return CollectedHeapName.SERIAL_HEAP;
+    return CollectedHeapName.SERIAL;
   }
 }

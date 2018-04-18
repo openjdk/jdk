@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,9 @@
 #include "ci/ciArray.hpp"
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "ci/ciUtilities.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "vmreg_arm.inline.hpp"
@@ -475,28 +477,27 @@ void LIRGenerator::store_stack_parameter(LIR_Opr item, ByteSize offset_from_sp) 
 }
 
 void LIRGenerator::set_card(LIR_Opr value, LIR_Address* card_addr) {
-  assert(CardTableModRefBS::dirty_card_val() == 0,
+  assert(CardTable::dirty_card_val() == 0,
     "Cannot use ZR register (aarch64) or the register containing the card table base address directly (aarch32) otherwise");
 #ifdef AARCH64
   // AARCH64 has a register that is constant zero. We can use that one to set the
   // value in the card table to dirty.
   __ move(FrameMap::ZR_opr, card_addr);
 #else // AARCH64
-  CardTableModRefBS* ct = (CardTableModRefBS*)_bs;
-  if(((intx)ct->byte_map_base & 0xff) == 0) {
+  if((ci_card_table_address_as<intx>() & 0xff) == 0) {
     // If the card table base address is aligned to 256 bytes, we can use the register
     // that contains the card_table_base_address.
     __ move(value, card_addr);
   } else {
     // Otherwise we need to create a register containing that value.
     LIR_Opr tmp_zero = new_register(T_INT);
-    __ move(LIR_OprFact::intConst(CardTableModRefBS::dirty_card_val()), tmp_zero);
+    __ move(LIR_OprFact::intConst(CardTable::dirty_card_val()), tmp_zero);
     __ move(tmp_zero, card_addr);
   }
 #endif // AARCH64
 }
 
-void LIRGenerator::CardTableModRef_post_barrier_helper(LIR_OprDesc* addr, LIR_Const* card_table_base) {
+void LIRGenerator::CardTableBarrierSet_post_barrier_helper(LIR_OprDesc* addr, LIR_Const* card_table_base) {
   assert(addr->is_register(), "must be a register at this point");
 
   LIR_Opr tmp = FrameMap::LR_ptr_opr;
@@ -510,14 +511,14 @@ void LIRGenerator::CardTableModRef_post_barrier_helper(LIR_OprDesc* addr, LIR_Co
   }
 
 #ifdef AARCH64
-  LIR_Address* shifted_reg_operand = new LIR_Address(tmp, addr, (LIR_Address::Scale) -CardTableModRefBS::card_shift, 0, T_BYTE);
+  LIR_Address* shifted_reg_operand = new LIR_Address(tmp, addr, (LIR_Address::Scale) -CardTable::card_shift, 0, T_BYTE);
   LIR_Opr tmp2 = tmp;
-  __ add(tmp, LIR_OprFact::address(shifted_reg_operand), tmp2); // tmp2 = tmp + (addr >> CardTableModRefBS::card_shift)
+  __ add(tmp, LIR_OprFact::address(shifted_reg_operand), tmp2); // tmp2 = tmp + (addr >> CardTable::card_shift)
   LIR_Address* card_addr = new LIR_Address(tmp2, T_BYTE);
 #else
   // Use unsigned type T_BOOLEAN here rather than (signed) T_BYTE since signed load
   // byte instruction does not support the addressing mode we need.
-  LIR_Address* card_addr = new LIR_Address(tmp, addr, (LIR_Address::Scale) -CardTableModRefBS::card_shift, 0, T_BOOLEAN);
+  LIR_Address* card_addr = new LIR_Address(tmp, addr, (LIR_Address::Scale) -CardTable::card_shift, 0, T_BOOLEAN);
 #endif
   if (UseCondCardMark) {
     if (UseConcMarkSweepGC) {
@@ -527,14 +528,16 @@ void LIRGenerator::CardTableModRef_post_barrier_helper(LIR_OprDesc* addr, LIR_Co
     __ move(card_addr, cur_value);
 
     LabelObj* L_already_dirty = new LabelObj();
-    __ cmp(lir_cond_equal, cur_value, LIR_OprFact::intConst(CardTableModRefBS::dirty_card_val()));
+    __ cmp(lir_cond_equal, cur_value, LIR_OprFact::intConst(CardTable::dirty_card_val()));
     __ branch(lir_cond_equal, T_BYTE, L_already_dirty->label());
     set_card(tmp, card_addr);
     __ branch_destination(L_already_dirty->label());
   } else {
+#if INCLUDE_ALL_GCS
     if (UseConcMarkSweepGC && CMSPrecleaningEnabled) {
       __ membar_storestore();
     }
+#endif
     set_card(tmp, card_addr);
   }
 }

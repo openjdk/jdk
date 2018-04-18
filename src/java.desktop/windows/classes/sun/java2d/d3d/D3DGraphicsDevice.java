@@ -38,7 +38,6 @@ import java.awt.event.WindowListener;
 import java.awt.peer.WindowPeer;
 import java.util.ArrayList;
 
-import jdk.internal.perf.PerfCounter;
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.awt.Win32GraphicsDevice;
@@ -70,9 +69,6 @@ public class D3DGraphicsDevice extends Win32GraphicsDevice {
         if (d3dAvailable) {
             // we don't use pixel formats for the d3d pipeline
             pfDisabled = true;
-            PerfCounter.getD3DAvailable().set(1);
-        } else {
-            PerfCounter.getD3DAvailable().set(0);
         }
     }
 

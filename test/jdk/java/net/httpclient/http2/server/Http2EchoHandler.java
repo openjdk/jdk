@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,30 @@
  */
 
 import java.io.*;
-import jdk.incubator.http.internal.common.HttpHeadersImpl;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import jdk.internal.net.http.common.HttpHeadersImpl;
 
 public class Http2EchoHandler implements Http2Handler {
+    static final Path CWD = Paths.get(".");
+
     public Http2EchoHandler() {}
 
     @Override
     public void handle(Http2TestExchange t)
             throws IOException {
         try {
-            System.err.printf("EchoHandler received request to %s from %s\n", t.getRequestURI(), t.getRemoteAddress());
+            System.err.printf("EchoHandler received request to %s from %s\n",
+                              t.getRequestURI(), t.getRemoteAddress());
             InputStream is = t.getRequestBody();
             HttpHeadersImpl map = t.getRequestHeaders();
             HttpHeadersImpl map1 = t.getResponseHeaders();
             map1.addHeader("X-Hello", "world");
             map1.addHeader("X-Bye", "universe");
             String fixedrequest = map.firstValue("XFixed").orElse(null);
-            File outfile = File.createTempFile("foo", "bar");
+            File outfile = Files.createTempFile(CWD, "foo", "bar").toFile();
             //System.err.println ("QQQ = " + outfile.toString());
             FileOutputStream fos = new FileOutputStream(outfile);
             int count = (int) is.transferTo(fos);

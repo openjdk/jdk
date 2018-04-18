@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,11 @@
 #ifndef SHARE_VM_GC_SHARED_CARDTABLERS_HPP
 #define SHARE_VM_GC_SHARED_CARDTABLERS_HPP
 
-#include "gc/shared/cardTableModRefBSForCTRS.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "memory/memRegion.hpp"
+#include "oops/oop.hpp"
 
+class DirtyCardToOopClosure;
 class Generation;
 class Space;
 class OopsInGenClosure;
@@ -46,44 +48,28 @@ class CLDRemSet {
 // This RemSet uses a card table both as shared data structure
 // for a mod ref barrier set and for the rem set information.
 
-class CardTableRS: public CHeapObj<mtGC> {
+class CardTableRS: public CardTable {
   friend class VMStructs;
   // Below are private classes used in impl.
   friend class VerifyCTSpaceClosure;
   friend class ClearNoncleanCardWrapper;
 
-  static jbyte clean_card_val() {
-    return CardTableModRefBSForCTRS::clean_card;
-  }
-
-  static intptr_t clean_card_row() {
-    return CardTableModRefBSForCTRS::clean_card_row;
-  }
-
-  static bool
-  card_is_dirty_wrt_gen_iter(jbyte cv) {
-    return CardTableModRefBSForCTRS::card_is_dirty_wrt_gen_iter(cv);
-  }
-
   CLDRemSet _cld_rem_set;
-  BarrierSet* _bs;
-
-  CardTableModRefBSForCTRS* _ct_bs;
 
   void verify_space(Space* s, HeapWord* gen_start);
 
   enum ExtendedCardValue {
-    youngergen_card   = CardTableModRefBSForCTRS::CT_MR_BS_last_reserved + 1,
+    youngergen_card   = CT_MR_BS_last_reserved + 1,
     // These are for parallel collection.
     // There are three P (parallel) youngergen card values.  In general, this
     // needs to be more than the number of generations (including the perm
     // gen) that might have younger_refs_do invoked on them separately.  So
     // if we add more gens, we have to add more values.
-    youngergenP1_card  = CardTableModRefBSForCTRS::CT_MR_BS_last_reserved + 2,
-    youngergenP2_card  = CardTableModRefBSForCTRS::CT_MR_BS_last_reserved + 3,
-    youngergenP3_card  = CardTableModRefBSForCTRS::CT_MR_BS_last_reserved + 4,
+    youngergenP1_card  = CT_MR_BS_last_reserved + 2,
+    youngergenP2_card  = CT_MR_BS_last_reserved + 3,
+    youngergenP3_card  = CT_MR_BS_last_reserved + 4,
     cur_youngergen_and_prev_nonclean_card =
-      CardTableModRefBSForCTRS::CT_MR_BS_last_reserved + 5
+      CT_MR_BS_last_reserved + 5
   };
 
   // An array that contains, for each generation, the card table value last
@@ -113,20 +99,14 @@ class CardTableRS: public CHeapObj<mtGC> {
   jbyte find_unused_youngergenP_card_value();
 
 public:
-  CardTableRS(MemRegion whole_heap);
+  CardTableRS(MemRegion whole_heap, bool scanned_concurrently);
   ~CardTableRS();
-
-  // Return the barrier set associated with "this."
-  BarrierSet* bs() { return _bs; }
-
-  // Set the barrier set.
-  void set_bs(BarrierSet* bs) { _bs = bs; }
 
   CLDRemSet* cld_rem_set() { return &_cld_rem_set; }
 
-  CardTableModRefBSForCTRS* ct_bs() { return _ct_bs; }
-
   void younger_refs_in_space_iterate(Space* sp, OopsInGenClosure* cl, uint n_threads);
+
+  virtual void verify_used_region_at_save_marks(Space* sp) const NOT_DEBUG_RETURN;
 
   // Override.
   void prepare_for_younger_refs_iterate(bool parallel);
@@ -137,7 +117,7 @@ public:
   void younger_refs_iterate(Generation* g, OopsInGenClosure* blk, uint n_threads);
 
   void inline_write_ref_field_gc(void* field, oop new_val) {
-    jbyte* byte = _ct_bs->byte_for(field);
+    jbyte* byte = byte_for(field);
     *byte = youngergen_card;
   }
   void write_ref_field_gc_work(void* field, oop new_val) {
@@ -149,29 +129,16 @@ public:
   // a younger card in the current collection.
   virtual void write_ref_field_gc_par(void* field, oop new_val);
 
-  void resize_covered_region(MemRegion new_region);
-
   bool is_aligned(HeapWord* addr) {
-    return _ct_bs->is_card_aligned(addr);
+    return is_card_aligned(addr);
   }
 
   void verify();
+  void initialize();
 
-  void clear(MemRegion mr) { _ct_bs->clear(mr); }
   void clear_into_younger(Generation* old_gen);
 
-  void invalidate(MemRegion mr) {
-    _ct_bs->invalidate(mr);
-  }
   void invalidate_or_clear(Generation* old_gen);
-
-  static uintx ct_max_alignment_constraint() {
-    return CardTableModRefBSForCTRS::ct_max_alignment_constraint();
-  }
-
-  jbyte* byte_for(void* p)     { return _ct_bs->byte_for(p); }
-  jbyte* byte_after(void* p)   { return _ct_bs->byte_after(p); }
-  HeapWord* addr_for(jbyte* p) { return _ct_bs->addr_for(p); }
 
   bool is_prev_nonclean_card_val(jbyte v) {
     return
@@ -184,6 +151,48 @@ public:
     return cv == CardTableRS::cur_youngergen_and_prev_nonclean_card;
   }
 
+  // *** Support for parallel card scanning.
+
+  // dirty and precleaned are equivalent wrt younger_refs_iter.
+  static bool card_is_dirty_wrt_gen_iter(jbyte cv) {
+    return cv == dirty_card || cv == precleaned_card;
+  }
+
+  // Returns "true" iff the value "cv" will cause the card containing it
+  // to be scanned in the current traversal.  May be overridden by
+  // subtypes.
+  bool card_will_be_scanned(jbyte cv);
+
+  // Returns "true" iff the value "cv" may have represented a dirty card at
+  // some point.
+  bool card_may_have_been_dirty(jbyte cv);
+
+  // Iterate over the portion of the card-table which covers the given
+  // region mr in the given space and apply cl to any dirty sub-regions
+  // of mr. Clears the dirty cards as they are processed.
+  void non_clean_card_iterate_possibly_parallel(Space* sp, MemRegion mr,
+                                                OopsInGenClosure* cl, CardTableRS* ct,
+                                                uint n_threads);
+
+  // Work method used to implement non_clean_card_iterate_possibly_parallel()
+  // above in the parallel case.
+  virtual void non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
+                                                    OopsInGenClosure* cl, CardTableRS* ct,
+                                                    uint n_threads);
+
+  // This is an array, one element per covered region of the card table.
+  // Each entry is itself an array, with one element per chunk in the
+  // covered region.  Each entry of these arrays is the lowest non-clean
+  // card of the corresponding chunk containing part of an object from the
+  // previous chunk, or else NULL.
+  typedef jbyte*  CardPtr;
+  typedef CardPtr* CardArr;
+  CardArr* _lowest_non_clean;
+  size_t*  _lowest_non_clean_chunk_size;
+  uintptr_t* _lowest_non_clean_base_chunk_index;
+  volatile int* _last_LNC_resizing_collection;
+
+  virtual bool is_in_young(oop obj) const;
 };
 
 class ClearNoncleanCardWrapper: public MemRegionClosure {

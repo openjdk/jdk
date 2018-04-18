@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,12 @@ import sun.security.krb5.Config;
 
 /*
  * @test
- * @bug 8164656 8181461
- * @run main/othervm KdcPolicy udp
- * @run main/othervm KdcPolicy tcp
+ * @bug 8164656 8181461 8194486
  * @summary krb5.kdc.bad.policy test
+ * @library /test/lib
+ * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts KdcPolicy udp
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts KdcPolicy tcp
  */
 public class KdcPolicy {
 
@@ -98,9 +100,11 @@ public class KdcPolicy {
         System.setProperty("java.security.krb5.conf", "alternative-krb5.conf");
 
         // Check default timeout is 30s. Use real KDC only, otherwise too
-        // slow to wait for timeout.
+        // slow to wait for timeout. Each request (without preauth and with
+        // preauth) might be retried 3 times, and could fail if one fails for
+        // all 3 times.
         writeConf(-1, -1, p3);
-        test("c30000c30000");
+        test("(c30000){2,6}|(c30000){3,6}-");
 
         // 1. Default policy is tryLast
         //Security.setProperty("krb5.kdc.bad.policy", "tryLast");

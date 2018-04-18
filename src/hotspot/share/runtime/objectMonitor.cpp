@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,14 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "services/threadService.hpp"
@@ -102,8 +103,6 @@ int ObjectMonitor::Knob_Verbose     = 0;
 int ObjectMonitor::Knob_VerifyInUse = 0;
 int ObjectMonitor::Knob_VerifyMatch = 0;
 int ObjectMonitor::Knob_SpinLimit   = 5000;    // derived by an external tool -
-static int Knob_LogSpins            = 0;       // enable jvmstat tally for spins
-static int Knob_HandOff             = 0;
 static int Knob_ReportSettings      = 0;
 
 static int Knob_SpinBase            = 0;       // Floor AKA SpinMin
@@ -421,7 +420,7 @@ void ObjectMonitor::enter(TRAPS) {
 int ObjectMonitor::TryLock(Thread * Self) {
   void * own = _owner;
   if (own != NULL) return 0;
-  if (Atomic::cmpxchg(Self, &_owner, (void*)NULL) == NULL) {
+  if (Atomic::replace_if_null(Self, &_owner)) {
     // Either guarantee _recursions == 0 or set _recursions = 0.
     assert(_recursions == 0, "invariant");
     assert(_owner == Self, "invariant");
@@ -529,7 +528,7 @@ void ObjectMonitor::EnterI(TRAPS) {
   if ((SyncFlags & 16) == 0 && nxt == NULL && _EntryList == NULL) {
     // Try to assume the role of responsible thread for the monitor.
     // CONSIDER:  ST vs CAS vs { if (Responsible==null) Responsible=Self }
-    Atomic::cmpxchg(Self, &_Responsible, (Thread*)NULL);
+    Atomic::replace_if_null(Self, &_Responsible);
   }
 
   // The lock might have been released while this thread was occupied queueing
@@ -553,7 +552,7 @@ void ObjectMonitor::EnterI(TRAPS) {
     assert(_owner != Self, "invariant");
 
     if ((SyncFlags & 2) && _Responsible == NULL) {
-      Atomic::cmpxchg(Self, &_Responsible, (Thread*)NULL);
+      Atomic::replace_if_null(Self, &_Responsible);
     }
 
     // park self
@@ -1007,7 +1006,7 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
       // to reacquire the lock the responsibility for ensuring succession
       // falls to the new owner.
       //
-      if (Atomic::cmpxchg(THREAD, &_owner, (void*)NULL) != NULL) {
+      if (!Atomic::replace_if_null(THREAD, &_owner)) {
         return;
       }
       TEVENT(Exit - Reacquired);
@@ -1032,7 +1031,7 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
         // B.  If the elements forming the EntryList|cxq are TSM
         //     we could simply unpark() the lead thread and return
         //     without having set _succ.
-        if (Atomic::cmpxchg(THREAD, &_owner, (void*)NULL) != NULL) {
+        if (!Atomic::replace_if_null(THREAD, &_owner)) {
           TEVENT(Inflated exit - reacquired succeeded);
           return;
         }
@@ -1714,7 +1713,7 @@ void ObjectMonitor::INotify(Thread * Self) {
         ObjectWaiter * tail = _cxq;
         if (tail == NULL) {
           iterator->_next = NULL;
-          if (Atomic::cmpxchg(iterator, &_cxq, (ObjectWaiter*)NULL) == NULL) {
+          if (Atomic::replace_if_null(iterator, &_cxq)) {
             break;
           }
         } else {
@@ -2229,18 +2228,7 @@ inline void ObjectMonitor::DequeueSpecificWaiter(ObjectWaiter* node) {
 PerfCounter * ObjectMonitor::_sync_ContendedLockAttempts       = NULL;
 PerfCounter * ObjectMonitor::_sync_FutileWakeups               = NULL;
 PerfCounter * ObjectMonitor::_sync_Parks                       = NULL;
-PerfCounter * ObjectMonitor::_sync_EmptyNotifications          = NULL;
 PerfCounter * ObjectMonitor::_sync_Notifications               = NULL;
-PerfCounter * ObjectMonitor::_sync_PrivateA                    = NULL;
-PerfCounter * ObjectMonitor::_sync_PrivateB                    = NULL;
-PerfCounter * ObjectMonitor::_sync_SlowExit                    = NULL;
-PerfCounter * ObjectMonitor::_sync_SlowEnter                   = NULL;
-PerfCounter * ObjectMonitor::_sync_SlowNotify                  = NULL;
-PerfCounter * ObjectMonitor::_sync_SlowNotifyAll               = NULL;
-PerfCounter * ObjectMonitor::_sync_FailedSpins                 = NULL;
-PerfCounter * ObjectMonitor::_sync_SuccessfulSpins             = NULL;
-PerfCounter * ObjectMonitor::_sync_MonInCirculation            = NULL;
-PerfCounter * ObjectMonitor::_sync_MonScavenged                = NULL;
 PerfCounter * ObjectMonitor::_sync_Inflations                  = NULL;
 PerfCounter * ObjectMonitor::_sync_Deflations                  = NULL;
 PerfLongVariable * ObjectMonitor::_sync_MonExtant              = NULL;
@@ -2271,18 +2259,7 @@ void ObjectMonitor::Initialize() {
     NEWPERFCOUNTER(_sync_ContendedLockAttempts);
     NEWPERFCOUNTER(_sync_FutileWakeups);
     NEWPERFCOUNTER(_sync_Parks);
-    NEWPERFCOUNTER(_sync_EmptyNotifications);
     NEWPERFCOUNTER(_sync_Notifications);
-    NEWPERFCOUNTER(_sync_SlowEnter);
-    NEWPERFCOUNTER(_sync_SlowExit);
-    NEWPERFCOUNTER(_sync_SlowNotify);
-    NEWPERFCOUNTER(_sync_SlowNotifyAll);
-    NEWPERFCOUNTER(_sync_FailedSpins);
-    NEWPERFCOUNTER(_sync_SuccessfulSpins);
-    NEWPERFCOUNTER(_sync_PrivateA);
-    NEWPERFCOUNTER(_sync_PrivateB);
-    NEWPERFCOUNTER(_sync_MonInCirculation);
-    NEWPERFCOUNTER(_sync_MonScavenged);
     NEWPERFVARIABLE(_sync_MonExtant);
 #undef NEWPERFCOUNTER
 #undef NEWPERFVARIABLE
@@ -2328,7 +2305,7 @@ void ObjectMonitor::DeferredInitialize() {
   if (SyncKnobs == NULL) SyncKnobs = "";
 
   size_t sz = strlen(SyncKnobs);
-  char * knobs = (char *) malloc(sz + 2);
+  char * knobs = (char *) os::malloc(sz + 2, mtInternal);
   if (knobs == NULL) {
     vm_exit_out_of_memory(sz + 2, OOM_MALLOC_ERROR, "Parse SyncKnobs");
     guarantee(0, "invariant");
@@ -2351,7 +2328,6 @@ void ObjectMonitor::DeferredInitialize() {
   SETKNOB(SpinBackOff);
   SETKNOB(CASPenalty);
   SETKNOB(OXPenalty);
-  SETKNOB(LogSpins);
   SETKNOB(SpinSetSucc);
   SETKNOB(SuccEnabled);
   SETKNOB(SuccRestrict);
@@ -2389,11 +2365,7 @@ void ObjectMonitor::DeferredInitialize() {
     Knob_FixedSpin = -1;
   }
 
-  if (Knob_LogSpins == 0) {
-    ObjectMonitor::_sync_FailedSpins = NULL;
-  }
-
-  free(knobs);
+  os::free(knobs);
   OrderAccess::fence();
   InitDone = 1;
 }

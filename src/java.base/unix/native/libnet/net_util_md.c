@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,9 @@ void setDefaultScopeID(JNIEnv *env, struct sockaddr *him)
     }
     int defaultIndex;
     struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)him;
-    if (sin6->sin6_family == AF_INET6 && (sin6->sin6_scope_id == 0)) {
+    if (sin6->sin6_family == AF_INET6 && (sin6->sin6_scope_id == 0) &&
+        (IN6_IS_ADDR_LINKLOCAL(&sin6->sin6_addr) ||
+         IN6_IS_ADDR_MULTICAST(&sin6->sin6_addr))) {
         defaultIndex = (*env)->GetStaticIntField(env, ni_class,
                                                  ni_defaultIndexID);
         sin6->sin6_scope_id = defaultIndex;
@@ -1541,7 +1543,7 @@ NET_Bind(int fd, SOCKETADDRESS *sa, int len)
  * It returns the time left from the timeout (possibly 0), or -1 if it expired.
  */
 
-jint
+JNIEXPORT jint JNICALL
 NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
 {
     jlong prevNanoTime = JVM_NanoTime(env, 0);

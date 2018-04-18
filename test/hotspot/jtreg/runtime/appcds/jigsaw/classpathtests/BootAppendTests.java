@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /**
  * @test
  * @summary AppCDS tests for testing -Xbootclasspath/a
- * @requires ((vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)) & !vm.graal.enabled
+ * @requires vm.cds & !vm.graal.enabled
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -145,29 +145,32 @@ public class BootAppendTests {
     // Test #3: A class in excluded package defined in boot module
     //     - should be loaded from the -Xbootclasspath/a by the boot classloader
     public static void testBootAppendExcludedModuleClassWithoutAppCDS() throws Exception {
-        CDSOptions opts = (new CDSOptions())
-            .addPrefix("-Xbootclasspath/a:" + bootAppendJar, "-cp", appJar,
-                       "--limit-modules", "java.base")
-            .setArchiveName(testArchiveName)
-            .addSuffix(MAIN_CLASS, "Test #3", BOOT_APPEND_MODULE_CLASS, "true", "BOOT");
-
-        CDSTestUtils.runWithArchiveAndCheck(opts);
+        TestCommon.run(
+            "-Xbootclasspath/a:" + bootAppendJar, "-cp", appJar,
+            "-Xlog:class+load=info",
+            "--limit-modules", "java.base",
+            MAIN_CLASS, "Test #3", BOOT_APPEND_MODULE_CLASS, "true", "BOOT")
+            .assertSilentlyDisabledCDS(out -> {
+                out.shouldHaveExitValue(0)
+                   .shouldMatch(".class.load. sun.nio.cs.ext.MyClass source:.*bootAppend.jar");
+            });
     }
 
     // Test #4: A shared class in excluded package that's archived from
     //          -Xbootclasspath/a
-    //     - should be loaded from the archive by the bootstrap classloader
+    //     - should be loaded from the jar since AppCDS will be disabled with
+    //       the --limit-modules option
     public static void testBootAppendExcludedModuleClassWithAppCDS() throws Exception {
-        OutputAnalyzer output = TestCommon.exec(
-            appJar,
-            "-Xbootclasspath/a:" + bootAppendJar,
+        TestCommon.run(
+            "-cp", appJar, "-Xbootclasspath/a:" + bootAppendJar,
+            "-Xlog:class+load=info",
             "--limit-modules", "java.base",
-            "-XX:+TraceClassLoading",
             MAIN_CLASS,
-            "Test #4", BOOT_APPEND_MODULE_CLASS, "true", "BOOT");
-        TestCommon.checkExec(output);
-        if (!TestCommon.isUnableToMap(output))
-            output.shouldContain("[class,load] sun.nio.cs.ext.MyClass source: shared objects file");
+            "Test #4", BOOT_APPEND_MODULE_CLASS, "true", "BOOT")
+            .assertSilentlyDisabledCDS(out -> {
+                out.shouldHaveExitValue(0)
+                   .shouldMatch(".class.load. sun.nio.cs.ext.MyClass source:.*bootAppend.jar");
+            });
     }
 
 
@@ -229,28 +232,28 @@ public class BootAppendTests {
     public static void testBootAppendAppExcludeModuleClassWithoutAppCDS()
         throws Exception {
 
-        CDSOptions opts = (new CDSOptions())
-            .addPrefix("-Xbootclasspath/a:" + bootAppendJar, "-cp", appJar,
-                       "--limit-modules", "java.base")
-            .setArchiveName(testArchiveName)
-            .addSuffix(MAIN_CLASS, "Test #9", APP_MODULE_CLASS, "true", "BOOT");
-
-        CDSTestUtils.runWithArchiveAndCheck(opts);
+        TestCommon.run(
+            "-Xbootclasspath/a:" + bootAppendJar, "-cp", appJar,
+            "-Xlog:class+load=info",
+            "--limit-modules", "java.base",
+            MAIN_CLASS, "Test #9", APP_MODULE_CLASS, "true", "BOOT")
+            .assertSilentlyDisabledCDS(out -> {
+                out.shouldHaveExitValue(0)
+                   .shouldMatch(".class.load. com.sun.tools.javac.Main2 source:.*bootAppend.jar");
+            });
     }
 
     // Test #10: A shared class in excluded package defined in jimage app module
     //    - should be loaded from the -Xbootclasspath/a with AppCDS
     public static void testBootAppendAppExcludeModuleClassAppCDS() throws Exception {
-        OutputAnalyzer output = TestCommon.exec(
-            appJar,
-            "-Xbootclasspath/a:" + bootAppendJar,
-            "-XX:+TraceClassLoading",
+        TestCommon.run(
+            "-cp", appJar, "-Xbootclasspath/a:" + bootAppendJar,
+            "-Xlog:class+load=info",
             "--limit-modules", "java.base",
-            MAIN_CLASS,
-            "Test #10", APP_MODULE_CLASS, "true", "BOOT");
-        TestCommon.checkExec(output);
-
-        if (!TestCommon.isUnableToMap(output))
-            output.shouldContain("[class,load] com.sun.tools.javac.Main2 source: shared objects file");
+            MAIN_CLASS, "Test #10", APP_MODULE_CLASS, "true", "BOOT")
+            .assertSilentlyDisabledCDS(out -> {
+                out.shouldHaveExitValue(0)
+                   .shouldMatch(".class.load. com.sun.tools.javac.Main2 source:.*bootAppend.jar");
+            });
     }
 }

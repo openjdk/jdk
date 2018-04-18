@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
 #include "code/nativeInst.hpp"
 #include "runtime/frame.hpp"
 
+inline bool CompiledMethod::is_deopt_pc(address pc) { return is_deopt_entry(pc) || is_deopt_mh_entry(pc); }
+
 // When using JVMCI the address might be off by the size of a call instruction.
 inline bool CompiledMethod::is_deopt_entry(address pc) {
   return pc == deopt_handler_begin()
@@ -38,6 +40,9 @@ inline bool CompiledMethod::is_deopt_entry(address pc) {
     ;
 }
 
+inline void CompiledMethod::release_set_exception_cache(ExceptionCache *ec) {
+  OrderAccess::release_store(&_exception_cache, ec);
+}
 
 // -----------------------------------------------------------------------------
 // CompiledMethod::get_deopt_original_pc
@@ -55,5 +60,24 @@ inline address CompiledMethod::get_deopt_original_pc(const frame* fr) {
 
   return NULL;
 }
+
+
+// class ExceptionCache methods
+
+inline int ExceptionCache::count() { return OrderAccess::load_acquire(&_count); }
+
+address ExceptionCache::pc_at(int index) {
+  assert(index >= 0 && index < count(),"");
+  return _pc[index];
+}
+
+address ExceptionCache::handler_at(int index) {
+  assert(index >= 0 && index < count(),"");
+  return _handler[index];
+}
+
+// increment_count is only called under lock, but there may be concurrent readers.
+inline void ExceptionCache::increment_count() { OrderAccess::release_store(&_count, _count + 1); }
+
 
 #endif //SHARE_VM_CODE_COMPILEDMETHOD_INLINE_HPP

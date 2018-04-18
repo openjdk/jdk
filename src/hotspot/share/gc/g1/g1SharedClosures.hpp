@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,11 @@ class G1CollectedHeap;
 class G1ParScanThreadState;
 
 // Simple holder object for a complete set of closures used by the G1 evacuation code.
-template <G1Mark Mark, bool use_ext = false>
-class G1SharedClosures VALUE_OBJ_CLASS_SPEC {
+template <G1Mark Mark>
+class G1SharedClosures {
 public:
-  G1ParCopyClosure<G1BarrierNone, Mark, use_ext> _oops;
-  G1ParCopyClosure<G1BarrierCLD,  Mark, use_ext> _oops_in_cld;
+  G1ParCopyClosure<G1BarrierNone, Mark> _oops;
+  G1ParCopyClosure<G1BarrierCLD,  Mark> _oops_in_cld;
 
   G1CLDScanClosure                _clds;
   G1CodeBlobClosure               _codeblobs;

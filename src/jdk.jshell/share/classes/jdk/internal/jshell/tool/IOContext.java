@@ -40,7 +40,7 @@ abstract class IOContext implements AutoCloseable {
 
     public abstract boolean interactiveOutput();
 
-    public abstract Iterable<String> currentSessionHistory();
+    public abstract Iterable<String> history(boolean currentSession);
 
     public abstract  boolean terminalEditorRunning();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,14 @@
 
 /**
  * @test
- * @requires vm.cds
  * @summary Check to make sure that shared strings in the bootstrap CDS archive
  *          are actually shared
- * Feature support: G1GC only, compressed oops/kptrs, 64-bit os, not on windows
- * @requires (sun.arch.data.model != "32") & (os.family != "windows")
- * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
- * @requires vm.gc.G1
+ * @requires vm.cds.archived.java.heap
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build SharedStringsWb sun.hotspot.WhiteBox
- * @run main ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
  * @run main SharedStrings
  */
 
@@ -51,8 +47,6 @@ public class SharedStrings {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=./SharedStrings.jsa",
-            "-XX:+UseG1GC",
-            "-XX:+UseCompressedOops",
             "-Xlog:cds,cds+hashtables",
             // Needed for bootclasspath match, for CDS to work with WhiteBox API
             "-Xbootclasspath/a:" + ClassFileInstaller.getJarPath("whitebox.jar"),
@@ -65,8 +59,6 @@ public class SharedStrings {
         pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:SharedArchiveFile=./SharedStrings.jsa",
-                // these are required modes for shared strings
-                "-XX:+UseCompressedOops", "-XX:+UseG1GC",
                 // needed for access to white box test API
                 "-Xbootclasspath/a:" + ClassFileInstaller.getJarPath("whitebox.jar"),
                 "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",

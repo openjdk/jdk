@@ -26,6 +26,7 @@
 #include "gc/cms/adaptiveFreeList.hpp"
 #include "gc/cms/freeChunk.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "memory/freeList.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/orderAccess.inline.hpp"

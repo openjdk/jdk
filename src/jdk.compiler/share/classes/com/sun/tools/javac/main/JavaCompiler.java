@@ -275,6 +275,10 @@ public class JavaCompiler {
      */
     protected Source source;
 
+    /** The preview language version.
+     */
+    protected Preview preview;
+
     /** The module for code generation.
      */
     protected Gen gen;
@@ -310,6 +314,8 @@ public class JavaCompiler {
     /** The diagnostics factory
      */
     protected JCDiagnostic.Factory diags;
+
+    protected DeferredCompletionFailureHandler dcfh;
 
     /** The type eraser.
      */
@@ -403,6 +409,7 @@ public class JavaCompiler {
             log.error(Errors.CantAccess(ex.sym, ex.getDetailValue()));
         }
         source = Source.instance(context);
+        preview = Preview.instance(context);
         attr = Attr.instance(context);
         analyzer = Analyzer.instance(context);
         chk = Check.instance(context);
@@ -416,6 +423,7 @@ public class JavaCompiler {
         modules = Modules.instance(context);
         moduleFinder = ModuleFinder.instance(context);
         diags = Factory.instance(context);
+        dcfh = DeferredCompletionFailureHandler.instance(context);
 
         finder.sourceCompleter = sourceCompleter;
         modules.findPackageInFile = this::findPackageInFile;
@@ -799,7 +807,7 @@ public class JavaCompiler {
         if (completionFailureName == c.fullname) {
             JCDiagnostic msg =
                     diagFactory.fragment(Fragments.UserSelectedCompletionFailure);
-            throw new CompletionFailure(c, msg);
+            throw new CompletionFailure(c, msg, dcfh);
         }
         JavaFileObject filename = c.classfile;
         JavaFileObject prev = log.useSource(filename);
@@ -827,7 +835,7 @@ public class JavaCompiler {
         // have enough modules available to access java.lang, and
         // so risk getting FatalError("no.java.lang") from MemberEnter.
         if (!modules.enter(List.of(tree), c)) {
-            throw new CompletionFailure(c, diags.fragment(Fragments.CantResolveModules));
+            throw new CompletionFailure(c, diags.fragment(Fragments.CantResolveModules), dcfh);
         }
 
         enter.complete(List.of(tree), c);
@@ -848,18 +856,18 @@ public class JavaCompiler {
                 if (enter.getEnv(tree.modle) == null) {
                     JCDiagnostic diag =
                         diagFactory.fragment(Fragments.FileDoesNotContainModule);
-                    throw new ClassFinder.BadClassFile(c, filename, diag, diagFactory);
+                    throw new ClassFinder.BadClassFile(c, filename, diag, diagFactory, dcfh);
                 }
             } else if (isPkgInfo) {
                 if (enter.getEnv(tree.packge) == null) {
                     JCDiagnostic diag =
                         diagFactory.fragment(Fragments.FileDoesNotContainPackage(c.location()));
-                    throw new ClassFinder.BadClassFile(c, filename, diag, diagFactory);
+                    throw new ClassFinder.BadClassFile(c, filename, diag, diagFactory, dcfh);
                 }
             } else {
                 JCDiagnostic diag =
                         diagFactory.fragment(Fragments.FileDoesntContainClass(c.getQualifiedName()));
-                throw new ClassFinder.BadClassFile(c, filename, diag, diagFactory);
+                throw new ClassFinder.BadClassFile(c, filename, diag, diagFactory, dcfh);
             }
         }
 
@@ -1722,6 +1730,7 @@ public class JavaCompiler {
                 log.warning(Warnings.ProcUseProcOrImplicit);
         }
         chk.reportDeferredDiagnostics();
+        preview.reportDeferredDiagnostics();
         if (log.compressedOutput) {
             log.mandatoryNote(null, Notes.CompressedDiags);
         }

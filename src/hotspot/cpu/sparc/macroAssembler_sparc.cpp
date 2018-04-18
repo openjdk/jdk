@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,17 @@
 #include "jvm.h"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
-#include "gc/shared/cardTableModRefBS.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/biasedLocking.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/safepoint.hpp"
@@ -43,11 +45,6 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
-#include "gc/g1/heapRegion.hpp"
-#endif // INCLUDE_ALL_GCS
 #ifdef COMPILER2
 #include "opto/intrinsicnode.hpp"
 #endif
@@ -169,6 +166,24 @@ int MacroAssembler::branch_destination(int inst, int pos) {
     }
   }
   return r;
+}
+
+void MacroAssembler::resolve_jobject(Register value, Register tmp) {
+  Label done, not_weak;
+  br_null(value, false, Assembler::pn, done); // Use NULL as-is.
+  delayed()->andcc(value, JNIHandles::weak_tag_mask, G0); // Test for jweak
+  brx(Assembler::zero, true, Assembler::pt, not_weak);
+  delayed()->nop();
+  access_load_at(T_OBJECT, IN_ROOT | ON_PHANTOM_OOP_REF,
+                 Address(value, -JNIHandles::weak_tag_value), value, tmp);
+  verify_oop(value);
+  br (Assembler::always, true, Assembler::pt, done);
+  delayed()->nop();
+  bind(not_weak);
+  access_load_at(T_OBJECT, IN_ROOT | IN_CONCURRENT_ROOT,
+                 Address(value, 0), value, tmp);
+  verify_oop(value);
+  bind(done);
 }
 
 void MacroAssembler::null_check(Register reg, int offset) {
@@ -656,14 +671,6 @@ void MacroAssembler::ic_call(address entry, bool emit_delay, jint method_index) 
   }
 }
 
-void MacroAssembler::card_table_write(jbyte* byte_map_base,
-                                      Register tmp, Register obj) {
-  srlx(obj, CardTableModRefBS::card_shift, obj);
-  assert(tmp != obj, "need separate temp reg");
-  set((address) byte_map_base, tmp);
-  stb(G0, tmp, obj);
-}
-
 
 void MacroAssembler::internal_sethi(const AddressLiteral& addrlit, Register d, bool ForceRelocatable) {
   address save_pc;
@@ -995,8 +1002,13 @@ AddressLiteral MacroAssembler::constant_metadata_address(Metadata* obj) {
 
 
 AddressLiteral MacroAssembler::constant_oop_address(jobject obj) {
-  assert(oop_recorder() != NULL, "this assembler needs an OopRecorder");
-  assert(Universe::heap()->is_in_reserved(JNIHandles::resolve(obj)), "not an oop");
+#ifdef ASSERT
+  {
+    ThreadInVMfromUnknown tiv;
+    assert(oop_recorder() != NULL, "this assembler needs an OopRecorder");
+    assert(Universe::heap()->is_in_reserved(JNIHandles::resolve(obj)), "not an oop");
+  }
+#endif
   int oop_index = oop_recorder()->find_index(obj);
   return AddressLiteral(obj, oop_Relocation::spec(oop_index));
 }
@@ -1411,9 +1423,14 @@ void MacroAssembler::untested(const char* what) {
 
 
 void MacroAssembler::unimplemented(const char* what) {
-  char* b = new char[1024];
-  jio_snprintf(b, 1024, "unimplemented: %s", what);
-  stop(b);
+  const char* buf = NULL;
+  {
+    ResourceMark rm;
+    stringStream ss;
+    ss.print("unimplemented: %s", what);
+    buf = code_string(ss.as_string());
+  }
+  stop(buf);
 }
 
 
@@ -3237,127 +3254,6 @@ void MacroAssembler::tlab_allocate(
   verify_tlab();
 }
 
-
-void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case) {
-  Register top = O0;
-  Register t1 = G1;
-  Register t2 = G3;
-  Register t3 = O1;
-  assert_different_registers(top, t1, t2, t3, G4, G5 /* preserve G4 and G5 */);
-  Label do_refill, discard_tlab;
-
-  if (!Universe::heap()->supports_inline_contig_alloc()) {
-    // No allocation in the shared eden.
-    ba(slow_case);
-    delayed()->nop();
-  }
-
-  ld_ptr(G2_thread, in_bytes(JavaThread::tlab_top_offset()), top);
-  ld_ptr(G2_thread, in_bytes(JavaThread::tlab_end_offset()), t1);
-  ld_ptr(G2_thread, in_bytes(JavaThread::tlab_refill_waste_limit_offset()), t2);
-
-  // calculate amount of free space
-  sub(t1, top, t1);
-  srl_ptr(t1, LogHeapWordSize, t1);
-
-  // Retain tlab and allocate object in shared space if
-  // the amount free in the tlab is too large to discard.
-  cmp(t1, t2);
-
-  brx(Assembler::lessEqual, false, Assembler::pt, discard_tlab);
-  // increment waste limit to prevent getting stuck on this slow path
-  if (Assembler::is_simm13(ThreadLocalAllocBuffer::refill_waste_limit_increment())) {
-    delayed()->add(t2, ThreadLocalAllocBuffer::refill_waste_limit_increment(), t2);
-  } else {
-    delayed()->nop();
-    // set64 does not use the temp register if the given constant is 32 bit. So
-    // we can just use any register; using G0 results in ignoring of the upper 32 bit
-    // of that value.
-    set64(ThreadLocalAllocBuffer::refill_waste_limit_increment(), t3, G0);
-    add(t2, t3, t2);
-  }
-
-  st_ptr(t2, G2_thread, in_bytes(JavaThread::tlab_refill_waste_limit_offset()));
-  if (TLABStats) {
-    // increment number of slow_allocations
-    ld(G2_thread, in_bytes(JavaThread::tlab_slow_allocations_offset()), t2);
-    add(t2, 1, t2);
-    stw(t2, G2_thread, in_bytes(JavaThread::tlab_slow_allocations_offset()));
-  }
-  ba(try_eden);
-  delayed()->nop();
-
-  bind(discard_tlab);
-  if (TLABStats) {
-    // increment number of refills
-    ld(G2_thread, in_bytes(JavaThread::tlab_number_of_refills_offset()), t2);
-    add(t2, 1, t2);
-    stw(t2, G2_thread, in_bytes(JavaThread::tlab_number_of_refills_offset()));
-    // accumulate wastage
-    ld(G2_thread, in_bytes(JavaThread::tlab_fast_refill_waste_offset()), t2);
-    add(t2, t1, t2);
-    stw(t2, G2_thread, in_bytes(JavaThread::tlab_fast_refill_waste_offset()));
-  }
-
-  // if tlab is currently allocated (top or end != null) then
-  // fill [top, end + alignment_reserve) with array object
-  br_null_short(top, Assembler::pn, do_refill);
-
-  set((intptr_t)markOopDesc::prototype()->copy_set_hash(0x2), t2);
-  st_ptr(t2, top, oopDesc::mark_offset_in_bytes()); // set up the mark word
-  // set klass to intArrayKlass
-  sub(t1, typeArrayOopDesc::header_size(T_INT), t1);
-  add(t1, ThreadLocalAllocBuffer::alignment_reserve(), t1);
-  sll_ptr(t1, log2_intptr(HeapWordSize/sizeof(jint)), t1);
-  st(t1, top, arrayOopDesc::length_offset_in_bytes());
-  set((intptr_t)Universe::intArrayKlassObj_addr(), t2);
-  ld_ptr(t2, 0, t2);
-  // store klass last.  concurrent gcs assumes klass length is valid if
-  // klass field is not null.
-  store_klass(t2, top);
-  verify_oop(top);
-
-  ld_ptr(G2_thread, in_bytes(JavaThread::tlab_start_offset()), t1);
-  sub(top, t1, t1); // size of tlab's allocated portion
-  incr_allocated_bytes(t1, t2, t3);
-
-  // refill the tlab with an eden allocation
-  bind(do_refill);
-  ld_ptr(G2_thread, in_bytes(JavaThread::tlab_size_offset()), t1);
-  sll_ptr(t1, LogHeapWordSize, t1);
-  // allocate new tlab, address returned in top
-  eden_allocate(top, t1, 0, t2, t3, slow_case);
-
-  st_ptr(top, G2_thread, in_bytes(JavaThread::tlab_start_offset()));
-  st_ptr(top, G2_thread, in_bytes(JavaThread::tlab_top_offset()));
-#ifdef ASSERT
-  // check that tlab_size (t1) is still valid
-  {
-    Label ok;
-    ld_ptr(G2_thread, in_bytes(JavaThread::tlab_size_offset()), t2);
-    sll_ptr(t2, LogHeapWordSize, t2);
-    cmp_and_br_short(t1, t2, Assembler::equal, Assembler::pt, ok);
-    STOP("assert(t1 == tlab_size)");
-    should_not_reach_here();
-
-    bind(ok);
-  }
-#endif // ASSERT
-  add(top, t1, top); // t1 is tlab_size
-  sub(top, ThreadLocalAllocBuffer::alignment_reserve_in_bytes(), top);
-  st_ptr(top, G2_thread, in_bytes(JavaThread::tlab_end_offset()));
-
-  if (ZeroTLAB) {
-    // This is a fast TLAB refill, therefore the GC is not notified of it.
-    // So compiled code must fill the new TLAB with zeroes.
-    ld_ptr(G2_thread, in_bytes(JavaThread::tlab_start_offset()), t2);
-    zero_memory(t2, t1);
-  }
-  verify_tlab();
-  ba(retry);
-  delayed()->nop();
-}
-
 void MacroAssembler::zero_memory(Register base, Register index) {
   assert_different_registers(base, index);
   Label loop;
@@ -3495,358 +3391,6 @@ void MacroAssembler::reserved_stack_check() {
 
   bind(no_reserved_zone_enabling);
 }
-
-///////////////////////////////////////////////////////////////////////////////////
-#if INCLUDE_ALL_GCS
-
-static address satb_log_enqueue_with_frame = NULL;
-static u_char* satb_log_enqueue_with_frame_end = NULL;
-
-static address satb_log_enqueue_frameless = NULL;
-static u_char* satb_log_enqueue_frameless_end = NULL;
-
-static int EnqueueCodeSize = 128 DEBUG_ONLY( + 256); // Instructions?
-
-static void generate_satb_log_enqueue(bool with_frame) {
-  BufferBlob* bb = BufferBlob::create("enqueue_with_frame", EnqueueCodeSize);
-  CodeBuffer buf(bb);
-  MacroAssembler masm(&buf);
-
-#define __ masm.
-
-  address start = __ pc();
-  Register pre_val;
-
-  Label refill, restart;
-  if (with_frame) {
-    __ save_frame(0);
-    pre_val = I0;  // Was O0 before the save.
-  } else {
-    pre_val = O0;
-  }
-
-  int satb_q_index_byte_offset =
-    in_bytes(JavaThread::satb_mark_queue_offset() +
-             SATBMarkQueue::byte_offset_of_index());
-
-  int satb_q_buf_byte_offset =
-    in_bytes(JavaThread::satb_mark_queue_offset() +
-             SATBMarkQueue::byte_offset_of_buf());
-
-  assert(in_bytes(SATBMarkQueue::byte_width_of_index()) == sizeof(intptr_t) &&
-         in_bytes(SATBMarkQueue::byte_width_of_buf()) == sizeof(intptr_t),
-         "check sizes in assembly below");
-
-  __ bind(restart);
-
-  // Load the index into the SATB buffer. SATBMarkQueue::_index is a size_t
-  // so ld_ptr is appropriate.
-  __ ld_ptr(G2_thread, satb_q_index_byte_offset, L0);
-
-  // index == 0?
-  __ cmp_and_brx_short(L0, G0, Assembler::equal, Assembler::pn, refill);
-
-  __ ld_ptr(G2_thread, satb_q_buf_byte_offset, L1);
-  __ sub(L0, oopSize, L0);
-
-  __ st_ptr(pre_val, L1, L0);  // [_buf + index] := I0
-  if (!with_frame) {
-    // Use return-from-leaf
-    __ retl();
-    __ delayed()->st_ptr(L0, G2_thread, satb_q_index_byte_offset);
-  } else {
-    // Not delayed.
-    __ st_ptr(L0, G2_thread, satb_q_index_byte_offset);
-  }
-  if (with_frame) {
-    __ ret();
-    __ delayed()->restore();
-  }
-  __ bind(refill);
-
-  address handle_zero =
-    CAST_FROM_FN_PTR(address,
-                     &SATBMarkQueueSet::handle_zero_index_for_thread);
-  // This should be rare enough that we can afford to save all the
-  // scratch registers that the calling context might be using.
-  __ mov(G1_scratch, L0);
-  __ mov(G3_scratch, L1);
-  __ mov(G4, L2);
-  // We need the value of O0 above (for the write into the buffer), so we
-  // save and restore it.
-  __ mov(O0, L3);
-  // Since the call will overwrite O7, we save and restore that, as well.
-  __ mov(O7, L4);
-  __ call_VM_leaf(L5, handle_zero, G2_thread);
-  __ mov(L0, G1_scratch);
-  __ mov(L1, G3_scratch);
-  __ mov(L2, G4);
-  __ mov(L3, O0);
-  __ br(Assembler::always, /*annul*/false, Assembler::pt, restart);
-  __ delayed()->mov(L4, O7);
-
-  if (with_frame) {
-    satb_log_enqueue_with_frame = start;
-    satb_log_enqueue_with_frame_end = __ pc();
-  } else {
-    satb_log_enqueue_frameless = start;
-    satb_log_enqueue_frameless_end = __ pc();
-  }
-
-#undef __
-}
-
-void MacroAssembler::g1_write_barrier_pre(Register obj,
-                                          Register index,
-                                          int offset,
-                                          Register pre_val,
-                                          Register tmp,
-                                          bool preserve_o_regs) {
-  Label filtered;
-
-  if (obj == noreg) {
-    // We are not loading the previous value so make
-    // sure that we don't trash the value in pre_val
-    // with the code below.
-    assert_different_registers(pre_val, tmp);
-  } else {
-    // We will be loading the previous value
-    // in this code so...
-    assert(offset == 0 || index == noreg, "choose one");
-    assert(pre_val == noreg, "check this code");
-  }
-
-  // Is marking active?
-  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-    ld(G2,
-       in_bytes(JavaThread::satb_mark_queue_offset() +
-                SATBMarkQueue::byte_offset_of_active()),
-       tmp);
-  } else {
-    guarantee(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1,
-              "Assumption");
-    ldsb(G2,
-         in_bytes(JavaThread::satb_mark_queue_offset() +
-                  SATBMarkQueue::byte_offset_of_active()),
-         tmp);
-  }
-
-  // Is marking active?
-  cmp_and_br_short(tmp, G0, Assembler::equal, Assembler::pt, filtered);
-
-  // Do we need to load the previous value?
-  if (obj != noreg) {
-    // Load the previous value...
-    if (index == noreg) {
-      if (Assembler::is_simm13(offset)) {
-        load_heap_oop(obj, offset, tmp);
-      } else {
-        set(offset, tmp);
-        load_heap_oop(obj, tmp, tmp);
-      }
-    } else {
-      load_heap_oop(obj, index, tmp);
-    }
-    // Previous value has been loaded into tmp
-    pre_val = tmp;
-  }
-
-  assert(pre_val != noreg, "must have a real register");
-
-  // Is the previous value null?
-  cmp_and_brx_short(pre_val, G0, Assembler::equal, Assembler::pt, filtered);
-
-  // OK, it's not filtered, so we'll need to call enqueue.  In the normal
-  // case, pre_val will be a scratch G-reg, but there are some cases in
-  // which it's an O-reg.  In the first case, do a normal call.  In the
-  // latter, do a save here and call the frameless version.
-
-  guarantee(pre_val->is_global() || pre_val->is_out(),
-            "Or we need to think harder.");
-
-  if (pre_val->is_global() && !preserve_o_regs) {
-    call(satb_log_enqueue_with_frame);
-    delayed()->mov(pre_val, O0);
-  } else {
-    save_frame(0);
-    call(satb_log_enqueue_frameless);
-    delayed()->mov(pre_val->after_save(), O0);
-    restore();
-  }
-
-  bind(filtered);
-}
-
-static address dirty_card_log_enqueue = 0;
-static u_char* dirty_card_log_enqueue_end = 0;
-
-// This gets to assume that o0 contains the object address.
-static void generate_dirty_card_log_enqueue(jbyte* byte_map_base) {
-  BufferBlob* bb = BufferBlob::create("dirty_card_enqueue", EnqueueCodeSize*2);
-  CodeBuffer buf(bb);
-  MacroAssembler masm(&buf);
-#define __ masm.
-  address start = __ pc();
-
-  Label not_already_dirty, restart, refill, young_card;
-
-  __ srlx(O0, CardTableModRefBS::card_shift, O0);
-  AddressLiteral addrlit(byte_map_base);
-  __ set(addrlit, O1); // O1 := <card table base>
-  __ ldub(O0, O1, O2); // O2 := [O0 + O1]
-
-  __ cmp_and_br_short(O2, G1SATBCardTableModRefBS::g1_young_card_val(), Assembler::equal, Assembler::pt, young_card);
-
-  __ membar(Assembler::Membar_mask_bits(Assembler::StoreLoad));
-  __ ldub(O0, O1, O2); // O2 := [O0 + O1]
-
-  assert(CardTableModRefBS::dirty_card_val() == 0, "otherwise check this code");
-  __ cmp_and_br_short(O2, G0, Assembler::notEqual, Assembler::pt, not_already_dirty);
-
-  __ bind(young_card);
-  // We didn't take the branch, so we're already dirty: return.
-  // Use return-from-leaf
-  __ retl();
-  __ delayed()->nop();
-
-  // Not dirty.
-  __ bind(not_already_dirty);
-
-  // Get O0 + O1 into a reg by itself
-  __ add(O0, O1, O3);
-
-  // First, dirty it.
-  __ stb(G0, O3, G0);  // [cardPtr] := 0  (i.e., dirty).
-
-  int dirty_card_q_index_byte_offset =
-    in_bytes(JavaThread::dirty_card_queue_offset() +
-             DirtyCardQueue::byte_offset_of_index());
-  int dirty_card_q_buf_byte_offset =
-    in_bytes(JavaThread::dirty_card_queue_offset() +
-             DirtyCardQueue::byte_offset_of_buf());
-  __ bind(restart);
-
-  // Load the index into the update buffer. DirtyCardQueue::_index is
-  // a size_t so ld_ptr is appropriate here.
-  __ ld_ptr(G2_thread, dirty_card_q_index_byte_offset, L0);
-
-  // index == 0?
-  __ cmp_and_brx_short(L0, G0, Assembler::equal, Assembler::pn, refill);
-
-  __ ld_ptr(G2_thread, dirty_card_q_buf_byte_offset, L1);
-  __ sub(L0, oopSize, L0);
-
-  __ st_ptr(O3, L1, L0);  // [_buf + index] := I0
-  // Use return-from-leaf
-  __ retl();
-  __ delayed()->st_ptr(L0, G2_thread, dirty_card_q_index_byte_offset);
-
-  __ bind(refill);
-  address handle_zero =
-    CAST_FROM_FN_PTR(address,
-                     &DirtyCardQueueSet::handle_zero_index_for_thread);
-  // This should be rare enough that we can afford to save all the
-  // scratch registers that the calling context might be using.
-  __ mov(G1_scratch, L3);
-  __ mov(G3_scratch, L5);
-  // We need the value of O3 above (for the write into the buffer), so we
-  // save and restore it.
-  __ mov(O3, L6);
-  // Since the call will overwrite O7, we save and restore that, as well.
-  __ mov(O7, L4);
-
-  __ call_VM_leaf(L7_thread_cache, handle_zero, G2_thread);
-  __ mov(L3, G1_scratch);
-  __ mov(L5, G3_scratch);
-  __ mov(L6, O3);
-  __ br(Assembler::always, /*annul*/false, Assembler::pt, restart);
-  __ delayed()->mov(L4, O7);
-
-  dirty_card_log_enqueue = start;
-  dirty_card_log_enqueue_end = __ pc();
-  // XXX Should have a guarantee here about not going off the end!
-  // Does it already do so?  Do an experiment...
-
-#undef __
-
-}
-
-void MacroAssembler::g1_write_barrier_post(Register store_addr, Register new_val, Register tmp) {
-
-  Label filtered;
-  MacroAssembler* post_filter_masm = this;
-
-  if (new_val == G0) return;
-
-  G1SATBCardTableLoggingModRefBS* bs =
-    barrier_set_cast<G1SATBCardTableLoggingModRefBS>(Universe::heap()->barrier_set());
-
-  if (G1RSBarrierRegionFilter) {
-    xor3(store_addr, new_val, tmp);
-    srlx(tmp, HeapRegion::LogOfHRGrainBytes, tmp);
-
-    // XXX Should I predict this taken or not?  Does it matter?
-    cmp_and_brx_short(tmp, G0, Assembler::equal, Assembler::pt, filtered);
-  }
-
-  // If the "store_addr" register is an "in" or "local" register, move it to
-  // a scratch reg so we can pass it as an argument.
-  bool use_scr = !(store_addr->is_global() || store_addr->is_out());
-  // Pick a scratch register different from "tmp".
-  Register scr = (tmp == G1_scratch ? G3_scratch : G1_scratch);
-  // Make sure we use up the delay slot!
-  if (use_scr) {
-    post_filter_masm->mov(store_addr, scr);
-  } else {
-    post_filter_masm->nop();
-  }
-  save_frame(0);
-  call(dirty_card_log_enqueue);
-  if (use_scr) {
-    delayed()->mov(scr, O0);
-  } else {
-    delayed()->mov(store_addr->after_save(), O0);
-  }
-  restore();
-
-  bind(filtered);
-}
-
-// Called from init_globals() after universe_init() and before interpreter_init()
-void g1_barrier_stubs_init() {
-  CollectedHeap* heap = Universe::heap();
-  if (heap->kind() == CollectedHeap::G1CollectedHeap) {
-    // Only needed for G1
-    if (dirty_card_log_enqueue == 0) {
-      G1SATBCardTableLoggingModRefBS* bs =
-        barrier_set_cast<G1SATBCardTableLoggingModRefBS>(heap->barrier_set());
-      generate_dirty_card_log_enqueue(bs->byte_map_base);
-      assert(dirty_card_log_enqueue != 0, "postcondition.");
-    }
-    if (satb_log_enqueue_with_frame == 0) {
-      generate_satb_log_enqueue(true);
-      assert(satb_log_enqueue_with_frame != 0, "postcondition.");
-    }
-    if (satb_log_enqueue_frameless == 0) {
-      generate_satb_log_enqueue(false);
-      assert(satb_log_enqueue_frameless != 0, "postcondition.");
-    }
-  }
-}
-
-#endif // INCLUDE_ALL_GCS
-///////////////////////////////////////////////////////////////////////////////////
-
-void MacroAssembler::card_write_barrier_post(Register store_addr, Register new_val, Register tmp) {
-  // If we're writing constant NULL, we can skip the write barrier.
-  if (new_val == G0) return;
-  CardTableModRefBS* bs =
-    barrier_set_cast<CardTableModRefBS>(Universe::heap()->barrier_set());
-  assert(bs->kind() == BarrierSet::CardTableForRS ||
-         bs->kind() == BarrierSet::CardTableExtension, "wrong barrier");
-  card_table_write(bs->byte_map_base, tmp, store_addr);
-}
-
 // ((OopHandle)result).resolve();
 void MacroAssembler::resolve_oop_handle(Register result) {
   // OopHandle::resolve is an indirection.
@@ -3891,65 +3435,63 @@ void MacroAssembler::store_klass_gap(Register s, Register d) {
   }
 }
 
-void MacroAssembler::load_heap_oop(const Address& s, Register d) {
-  if (UseCompressedOops) {
-    lduw(s, d);
-    decode_heap_oop(d);
+void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
+                                     Register src, Address dst, Register tmp) {
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bool as_raw = (decorators & AS_RAW) != 0;
+  if (as_raw) {
+    bs->BarrierSetAssembler::store_at(this, decorators, type, src, dst, tmp);
   } else {
-    ld_ptr(s, d);
+    bs->store_at(this, decorators, type, src, dst, tmp);
   }
 }
 
-void MacroAssembler::load_heap_oop(Register s1, Register s2, Register d) {
-   if (UseCompressedOops) {
-    lduw(s1, s2, d);
-    decode_heap_oop(d, d);
+void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
+                                    Address src, Register dst, Register tmp) {
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bool as_raw = (decorators & AS_RAW) != 0;
+  if (as_raw) {
+    bs->BarrierSetAssembler::load_at(this, decorators, type, src, dst, tmp);
   } else {
-    ld_ptr(s1, s2, d);
+    bs->load_at(this, decorators, type, src, dst, tmp);
   }
 }
 
-void MacroAssembler::load_heap_oop(Register s1, int simm13a, Register d) {
-   if (UseCompressedOops) {
-    lduw(s1, simm13a, d);
-    decode_heap_oop(d, d);
+void MacroAssembler::load_heap_oop(const Address& s, Register d, Register tmp, DecoratorSet decorators) {
+  access_load_at(T_OBJECT, IN_HEAP | decorators, s, d, tmp);
+}
+
+void MacroAssembler::load_heap_oop(Register s1, Register s2, Register d, Register tmp, DecoratorSet decorators) {
+  access_load_at(T_OBJECT, IN_HEAP | decorators, Address(s1, s2), d, tmp);
+}
+
+void MacroAssembler::load_heap_oop(Register s1, int simm13a, Register d, Register tmp, DecoratorSet decorators) {
+  access_load_at(T_OBJECT, IN_HEAP | decorators, Address(s1, simm13a), d, tmp);
+}
+
+void MacroAssembler::load_heap_oop(Register s1, RegisterOrConstant s2, Register d, Register tmp, DecoratorSet decorators) {
+  if (s2.is_constant()) {
+    access_load_at(T_OBJECT, IN_HEAP | decorators, Address(s1, s2.as_constant()), d, tmp);
   } else {
-    ld_ptr(s1, simm13a, d);
+    access_load_at(T_OBJECT, IN_HEAP | decorators, Address(s1, s2.as_register()), d, tmp);
   }
 }
 
-void MacroAssembler::load_heap_oop(Register s1, RegisterOrConstant s2, Register d) {
-  if (s2.is_constant())  load_heap_oop(s1, s2.as_constant(), d);
-  else                   load_heap_oop(s1, s2.as_register(), d);
+void MacroAssembler::store_heap_oop(Register d, Register s1, Register s2, Register tmp, DecoratorSet decorators) {
+  access_store_at(T_OBJECT, IN_HEAP | decorators, d, Address(s1, s2), tmp);
 }
 
-void MacroAssembler::store_heap_oop(Register d, Register s1, Register s2) {
-  if (UseCompressedOops) {
-    assert(s1 != d && s2 != d, "not enough registers");
-    encode_heap_oop(d);
-    st(d, s1, s2);
-  } else {
-    st_ptr(d, s1, s2);
-  }
+void MacroAssembler::store_heap_oop(Register d, Register s1, int simm13a, Register tmp, DecoratorSet decorators) {
+  access_store_at(T_OBJECT, IN_HEAP | decorators, d, Address(s1, simm13a), tmp);
 }
 
-void MacroAssembler::store_heap_oop(Register d, Register s1, int simm13a) {
-  if (UseCompressedOops) {
-    assert(s1 != d, "not enough registers");
-    encode_heap_oop(d);
-    st(d, s1, simm13a);
+void MacroAssembler::store_heap_oop(Register d, const Address& a, int offset, Register tmp, DecoratorSet decorators) {
+  if (a.has_index()) {
+    assert(!a.has_disp(), "not supported yet");
+    assert(offset == 0, "not supported yet");
+    access_store_at(T_OBJECT, IN_HEAP | decorators, d, Address(a.base(), a.index()), tmp);
   } else {
-    st_ptr(d, s1, simm13a);
-  }
-}
-
-void MacroAssembler::store_heap_oop(Register d, const Address& a, int offset) {
-  if (UseCompressedOops) {
-    assert(a.base() != d, "not enough registers");
-    encode_heap_oop(d);
-    st(d, a, offset);
-  } else {
-    st_ptr(d, a, offset);
+    access_store_at(T_OBJECT, IN_HEAP | decorators, d, Address(a.base(), a.disp() + offset), tmp);
   }
 }
 

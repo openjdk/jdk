@@ -22,12 +22,18 @@
  */
 package org.graalvm.compiler.nodes;
 
+import static org.graalvm.compiler.graph.Graph.SourcePositionTracking.Default;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
+import org.graalvm.collections.EconomicMap;
+import org.graalvm.collections.EconomicSet;
+import org.graalvm.collections.Equivalence;
+import org.graalvm.collections.UnmodifiableEconomicMap;
 import org.graalvm.compiler.core.common.CancellationBailoutException;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.GraalOptions;
@@ -35,9 +41,11 @@ import org.graalvm.compiler.core.common.cfg.BlockMap;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.JavaMethodContext;
+import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeMap;
+import org.graalvm.compiler.graph.NodeSourcePosition;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.cfg.Block;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
@@ -45,10 +53,6 @@ import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.spi.VirtualizableAllocation;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.compiler.options.OptionValues;
-import org.graalvm.util.EconomicMap;
-import org.graalvm.util.EconomicSet;
-import org.graalvm.util.Equivalence;
-import org.graalvm.util.UnmodifiableEconomicMap;
 
 import jdk.vm.ci.meta.Assumptions;
 import jdk.vm.ci.meta.Assumptions.Assumption;
@@ -166,9 +170,11 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
         private CompilationIdentifier compilationId = CompilationIdentifier.INVALID_COMPILATION_ID;
         private int entryBCI = JVMCICompiler.INVOCATION_ENTRY_BCI;
         private boolean useProfilingInfo = true;
+        private SourcePositionTracking trackNodeSourcePosition = Default;
         private final OptionValues options;
         private Cancellable cancellable = null;
         private final DebugContext debug;
+        private NodeSourcePosition callerContext;
 
         /**
          * Creates a builder for a graph.
@@ -177,6 +183,7 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
             this.options = options;
             this.debug = debug;
             this.assumptions = allowAssumptions == AllowAssumptions.YES ? new Assumptions() : null;
+            this.trackNodeSourcePosition = Graph.trackNodeSourcePositionDefault(options, debug);
         }
 
         /**
@@ -185,7 +192,8 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
         public Builder(OptionValues options, DebugContext debug) {
             this.options = options;
             this.debug = debug;
-            assumptions = null;
+            this.assumptions = null;
+            this.trackNodeSourcePosition = Graph.trackNodeSourcePositionDefault(options, debug);
         }
 
         public String getName() {
@@ -255,8 +263,25 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
             return this;
         }
 
+        public Builder trackNodeSourcePosition(SourcePositionTracking tracking) {
+            this.trackNodeSourcePosition = tracking;
+            return this;
+        }
+
+        public Builder trackNodeSourcePosition(boolean flag) {
+            if (flag) {
+                this.trackNodeSourcePosition = SourcePositionTracking.Track;
+            }
+            return this;
+        }
+
+        public Builder callerContext(NodeSourcePosition context) {
+            this.callerContext = context;
+            return this;
+        }
+
         public StructuredGraph build() {
-            return new StructuredGraph(name, rootMethod, entryBCI, assumptions, speculationLog, useProfilingInfo, compilationId, options, debug, cancellable);
+            return new StructuredGraph(name, rootMethod, entryBCI, assumptions, speculationLog, useProfilingInfo, trackNodeSourcePosition, compilationId, options, debug, cancellable, callerContext);
         }
     }
 
@@ -283,6 +308,13 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
     private SpeculationLog speculationLog;
 
     private ScheduleResult lastSchedule;
+
+    private final InliningLog inliningLog;
+
+    /**
+     * Call stack (context) leading to construction of this graph.
+     */
+    private final NodeSourcePosition callerContext;
 
     /**
      * Records the methods that were used while constructing this graph, one entry for each time a
@@ -314,10 +346,12 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
                     Assumptions assumptions,
                     SpeculationLog speculationLog,
                     boolean useProfilingInfo,
+                    SourcePositionTracking trackNodeSourcePosition,
                     CompilationIdentifier compilationId,
                     OptionValues options,
                     DebugContext debug,
-                    Cancellable cancellable) {
+                    Cancellable cancellable,
+                    NodeSourcePosition context) {
         super(name, options, debug);
         this.setStart(add(new StartNode()));
         this.rootMethod = method;
@@ -327,7 +361,11 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
         this.assumptions = assumptions;
         this.speculationLog = speculationLog;
         this.useProfilingInfo = useProfilingInfo;
+        this.trackNodeSourcePosition = trackNodeSourcePosition;
+        assert trackNodeSourcePosition != null;
         this.cancellable = cancellable;
+        this.inliningLog = new InliningLog(rootMethod, options);
+        this.callerContext = context;
     }
 
     public void setLastSchedule(ScheduleResult result) {
@@ -436,6 +474,16 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
         this.start = start;
     }
 
+    public InliningLog getInliningLog() {
+        return inliningLog;
+    }
+
+    public void logInliningTree() {
+        if (GraalOptions.TraceInlining.getValue(getOptions())) {
+            TTY.println(getInliningLog().formatAsTree());
+        }
+    }
+
     /**
      * Creates a copy of this graph.
      *
@@ -450,6 +498,7 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
         return copy(newName, duplicationMapCallback, compilationId, debugForCopy);
     }
 
+    @SuppressWarnings("try")
     private StructuredGraph copy(String newName, Consumer<UnmodifiableEconomicMap<Node, Node>> duplicationMapCallback, CompilationIdentifier newCompilationId, DebugContext debugForCopy) {
         AllowAssumptions allowAssumptions = AllowAssumptions.ifNonNull(assumptions);
         StructuredGraph copy = new StructuredGraph(newName,
@@ -458,8 +507,9 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
                         assumptions == null ? null : new Assumptions(),
                         speculationLog,
                         useProfilingInfo,
+                        trackNodeSourcePosition,
                         newCompilationId,
-                        getOptions(), debugForCopy, null);
+                        getOptions(), debugForCopy, null, callerContext);
         if (allowAssumptions == AllowAssumptions.YES && assumptions != null) {
             copy.assumptions.record(assumptions);
         }
@@ -470,7 +520,13 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
         copy.isAfterExpandLogic = isAfterExpandLogic;
         EconomicMap<Node, Node> replacements = EconomicMap.create(Equivalence.IDENTITY);
         replacements.put(start, copy.start);
-        UnmodifiableEconomicMap<Node, Node> duplicates = copy.addDuplicates(getNodes(), this, this.getNodeCount(), replacements);
+        UnmodifiableEconomicMap<Node, Node> duplicates;
+        try (InliningLog.UpdateScope scope = copy.getInliningLog().openDefaultUpdateScope()) {
+            duplicates = copy.addDuplicates(getNodes(), this, this.getNodeCount(), replacements);
+            if (scope != null) {
+                copy.getInliningLog().replaceLog(duplicates, this.getInliningLog());
+            }
+        }
         if (duplicationMapCallback != null) {
             duplicationMapCallback.accept(duplicates);
         }
@@ -930,5 +986,14 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
     @Override
     protected void afterRegister(Node node) {
         assert hasValueProxies() || !(node instanceof ValueProxyNode);
+        if (GraalOptions.TraceInlining.getValue(getOptions())) {
+            if (node instanceof Invokable) {
+                ((Invokable) node).updateInliningLogAfterRegister(this);
+            }
+        }
+    }
+
+    public NodeSourcePosition getCallerContext() {
+        return callerContext;
     }
 }

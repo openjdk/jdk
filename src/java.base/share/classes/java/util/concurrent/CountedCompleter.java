@@ -775,7 +775,7 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
             PENDING = l.findVarHandle(CountedCompleter.class, "pending", int.class);
 
         } catch (ReflectiveOperationException e) {
-            throw new Error(e);
+            throw new ExceptionInInitializerError(e);
         }
     }
 }

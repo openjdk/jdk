@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 # questions.
 #
 
-##########################################################################################
+################################################################################
 #
 # This Makefile, together with Tools.gmk, can be used to compile a set of
 # gcc based cross compilation, portable, self contained packages, capable
@@ -31,43 +31,42 @@
 #
 # In addition to the makefiles, access to Oracle Linux installation
 # media is required. This has been tested against Oracle Enterprise Linux
-# 5.5. Set variables RPM_DIR_x86_64 and RPM_DIR_i686 respectively to point
-# to directory containing the RPMs.
+# 6.4.
 #
-# By default this Makefile will build crosstools for:
-# * i686-unknown-linux-gnu
-# * x86_64-unknown-linux-gnu
-# The x86_64 version of the compilers will work in multi arch mode and will
-# be able to compile 32bit binaries with the -m32 flag. This makes the
-# explicit cross compiler for i686 somewhat redundant and is a known issue.
+# By default this Makefile will build a native toolchain for the current
+# platform if called with something like this:
 #
-# To build the full set of crosstools, use a command line looking like this:
+# make tars
 #
-# make tars RPM_DIR_x86_64=/tmp/oel64-x86_64/Packages/ RPM_DIR_i686=/tmp/oel64-i686/Packages/
+# To build the full set of crosstools for additional platforms, use a command
+# line looking like this:
 #
-# To create a x86_64 package without the redundant i686 cross compiler, do
-# like this:
+# make cross_compile_target="aarch64-linux-gnu" BASE_OS=Fedora27
 #
-# make tars platforms=x86_64-unknown-linux-gnu RPM_DIR_x86_64=/tmp/oel64-x86_64/Packages/ RPM_DIR_i686=/tmp/oel64-i686/Packages/
-
-#
-# Main makefile which iterates over all host and target platforms.
+# This is the makefile which iterates over all host and target platforms.
 #
 
 os := $(shell uname -o)
-cpu := x86_64
-#$(shell uname -p)
-
-#
-# This wrapper script can handle exactly these platforms
-#
-platforms := $(foreach p,x86_64 i686,$(p)-unknown-linux-gnu)
-#platforms := $(foreach p,x86_64,$(p)-unknown-linux-gnu)
+cpu := $(shell uname -p)
 
 # Figure out what platform this is building on.
 me := $(cpu)-$(if $(findstring Linux,$(os)),unknown-linux-gnu)
 
 $(info Building on platform $(me))
+
+#
+# By default just build for the current platform, which is assumed to be Linux
+#
+ifeq ($(cross_compile_target), )
+  platforms := $(me)
+  host_platforms := $(platforms)
+else
+  platforms := $(cross_compile_target)
+  host_platforms := $(me)
+endif
+target_platforms := $(platforms)
+$(info host_platforms $(host_platforms))
+$(info target_platforms $(target_platforms))
 
 all compile : $(platforms)
 
@@ -75,16 +74,17 @@ ifeq (,$(SKIP_ME))
   $(foreach p,$(filter-out $(me),$(platforms)),$(eval $(p) : $$(me)))
 endif
 
-OUTPUTDIR = $(abspath ../../build/devkit)
-RESULT = $(OUTPUTDIR)/result
+OUTPUT_ROOT = $(abspath ../../build/devkit)
+RESULT = $(OUTPUT_ROOT)/result
 
 submakevars = HOST=$@ BUILD=$(me) \
     RESULT=$(RESULT) PREFIX=$(RESULT)/$@ \
-    OUTPUTDIR=$(OUTPUTDIR)
-$(platforms) :
+    OUTPUT_ROOT=$(OUTPUT_ROOT)
+$(host_platforms) :
 	@echo 'Building compilers for $@'
-	@echo 'Targets: $(platforms)'
-	for p in $@ $(filter-out $@,$(platforms)); do \
+	@echo 'Targets: $(target_platforms)'
+	for p in $(filter $@, $(target_platforms)) $(filter-out $@, $(target_platforms)); do \
+	  $(MAKE) -f Tools.gmk download-rpms $(submakevars) TARGET=$$p && \
 	  $(MAKE) -f Tools.gmk all $(submakevars) \
 	      TARGET=$$p || exit 1 ; \
 	done
@@ -92,11 +92,7 @@ $(platforms) :
 	$(MAKE) -f Tools.gmk ccache $(submakevars) TARGET=$@
 	@echo 'All done"'
 
-$(foreach a,i686 x86_64,$(eval $(a) : $(filter $(a)%,$(platforms))))
-
-ia32 : i686
 today := $(shell date +%Y%m%d)
-
 
 define Mktar
   $(1)_tar = $$(RESULT)/sdk-$(1)-$$(today).tar.gz
@@ -105,7 +101,7 @@ define Mktar
   $$($(1)_tar) : $(1) $$(shell find $$(RESULT)/$(1))
 endef
 
-$(foreach p,$(platforms),$(eval $(call Mktar,$(p))))
+$(foreach p,$(host_platforms),$(eval $(call Mktar,$(p))))
 
 tars : all $(TARFILES)
 onlytars : $(TARFILES)
@@ -115,7 +111,9 @@ onlytars : $(TARFILES)
 	touch $@
 
 clean :
-	rm -rf build result
+	rm -rf $(addprefix ../../build/devkit/, result $(host_platforms))
+dist-clean: clean
+	rm -rf $(addprefix ../../build/devkit/, src download)
 
 FORCE :
-.PHONY : $(configs) $(platforms)
+.PHONY : all compile tars $(configs) $(host_platforms) clean dist-clean

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,20 @@
 /*
  * @test
  * @bug 8153142 8195138
- * @modules jdk.incubator.httpclient
+ * @modules java.net.http
  *          jdk.httpserver
  * @run testng/othervm HeadersTest1
  */
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import jdk.incubator.http.HttpClient;
-import jdk.incubator.http.HttpHeaders;
-import jdk.incubator.http.HttpRequest;
-import jdk.incubator.http.HttpResponse;
+import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +49,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.testng.annotations.Test;
-import static jdk.incubator.http.HttpResponse.BodyHandler.asString;
+import static java.net.http.HttpResponse.BodyHandlers.ofString;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -58,10 +59,12 @@ import static org.testng.Assert.assertTrue;
 public class HeadersTest1 {
 
     private static final String RESPONSE = "Hello world";
+    private static final String QUOTED = "a=\"quote\", b=\"\\\"quote\\\"  \\\"quote\\\"  codec\"";
 
     @Test
     public void test() throws Exception {
-        HttpServer server = HttpServer.create(new InetSocketAddress(0), 10);
+        InetSocketAddress addr = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
+        HttpServer server = HttpServer.create(addr, 10);
         Handler h = new Handler();
         server.createContext("/test", h);
         int port = server.getAddress().getPort();
@@ -75,14 +78,15 @@ public class HeadersTest1 {
                                       .build();
 
         try {
-            URI uri = new URI("http://127.0.0.1:" + Integer.toString(port) + "/test/foo");
+            URI uri = new URI("http://localhost:" + port + "/test/foo");
             HttpRequest req = HttpRequest.newBuilder(uri)
                                          .headers("X-Bar", "foo1")
                                          .headers("X-Bar", "foo2")
+                                         .headers("X-Quote",QUOTED)
                                          .GET()
                                          .build();
 
-            HttpResponse<?> resp = client.send(req, asString());
+            HttpResponse<?> resp = client.send(req, ofString());
             if (resp.statusCode() != 200) {
                 throw new RuntimeException("Expected 200, got: " + resp.statusCode());
             }
@@ -123,6 +127,10 @@ public class HeadersTest1 {
             assertTrue(multiline.get(0).contains(" foo=\"bar\""));
             assertTrue(multiline.get(0).contains(" bar=\"foo\""));
             assertTrue(multiline.get(0).contains(" foobar=\"barfoo\""));
+
+            // quote
+            List<String> quote = hd.allValues("X-Quote-Response");
+            assertEquals(quote, List.of(QUOTED));
         } finally {
             server.stop(0);
             e.shutdownNow();
@@ -143,12 +151,20 @@ public class HeadersTest1 {
                 he.close();
                 return;
             }
+            l = he.getRequestHeaders().get("X-Quote");
+            if (l.isEmpty() || l.size() != 1 || !QUOTED.equals(l.get(0))) {
+                System.out.println("Bad X-Quote: " + l);
+                he.sendResponseHeaders(500, -1);
+                he.close();
+                return;
+            }
             Headers h = he.getResponseHeaders();
             h.add("X-Foo-Response", "resp1");
             h.add("X-Foo-Response", "resp2");
             h.add("X-multi-line-response", "Custom foo=\"bar\","
                     + "\r\n    bar=\"foo\","
                     + "\r\n    foobar=\"barfoo\"");
+            h.add("X-Quote-Response", he.getRequestHeaders().getFirst("X-Quote"));
             he.sendResponseHeaders(200, RESPONSE.length());
             OutputStream os = he.getResponseBody();
             os.write(RESPONSE.getBytes(US_ASCII));

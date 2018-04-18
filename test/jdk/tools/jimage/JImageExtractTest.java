@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,8 +154,10 @@ public class JImageExtractTest extends JImageCliTest {
         Path tmp = Files.createTempDirectory(Paths.get("."), getClass().getName());
         Files.createFile(Paths.get(tmp.toString(), ".not_empty"));
         jimage("extract", "--dir", tmp.toString(), getImagePath())
-                .assertFailure()
-                .assertShowsError();
+                .assertSuccess()
+                .resultChecker(r -> {
+                    assertTrue(r.output.isEmpty(), "Output is not expected");
+                });
     }
 
     public void testExtractToFile() throws IOException {

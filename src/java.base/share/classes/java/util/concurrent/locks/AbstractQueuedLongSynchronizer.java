@@ -320,7 +320,9 @@ public abstract class AbstractQueuedLongSynchronizer
 
         // predNext is the apparent node to unsplice. CASes below will
         // fail if not, in which case, we lost race vs another cancel
-        // or signal, so no further action is necessary.
+        // or signal, so no further action is necessary, although with
+        // a possibility that a cancelled node may transiently remain
+        // reachable.
         Node predNext = pred.next;
 
         // Can use unconditional write instead of CAS here.
@@ -912,13 +914,13 @@ public abstract class AbstractQueuedLongSynchronizer
      * at any time, a {@code true} return does not guarantee that any
      * other thread will ever acquire.
      *
-     * <p>In this implementation, this operation returns in
-     * constant time.
-     *
      * @return {@code true} if there may be other threads waiting to acquire
      */
     public final boolean hasQueuedThreads() {
-        return head != tail;
+        for (Node p = tail, h = head; p != h && p != null; p = p.prev)
+            if (p.waitStatus <= 0)
+                return true;
+        return false;
     }
 
     /**
@@ -1067,16 +1069,20 @@ public abstract class AbstractQueuedLongSynchronizer
      * @since 1.7
      */
     public final boolean hasQueuedPredecessors() {
-        // The correctness of this depends on head being initialized
-        // before tail and on head.next being accurate if the current
-        // thread is first in queue.
-        Node t = tail; // Read fields in reverse initialization order
-        Node h = head;
-        Node s;
-        return h != t &&
-            ((s = h.next) == null || s.thread != Thread.currentThread());
+        Node h, s;
+        if ((h = head) != null) {
+            if ((s = h.next) == null || s.waitStatus > 0) {
+                s = null; // traverse in case of concurrent cancellation
+                for (Node p = tail; p != h && p != null; p = p.prev) {
+                    if (p.waitStatus <= 0)
+                        s = p;
+                }
+            }
+            if (s != null && s.thread != Thread.currentThread())
+                return true;
+        }
+        return false;
     }
-
 
     // Instrumentation and monitoring methods
 
@@ -1824,7 +1830,7 @@ public abstract class AbstractQueuedLongSynchronizer
             HEAD = l.findVarHandle(AbstractQueuedLongSynchronizer.class, "head", Node.class);
             TAIL = l.findVarHandle(AbstractQueuedLongSynchronizer.class, "tail", Node.class);
         } catch (ReflectiveOperationException e) {
-            throw new Error(e);
+            throw new ExceptionInInitializerError(e);
         }
 
         // Reduce the risk of rare disastrous classloading in first call to

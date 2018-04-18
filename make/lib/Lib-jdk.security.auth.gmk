@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,34 +27,14 @@ include LibCommon.gmk
 
 ################################################################################
 
-LIBJAAS_MAPFILE :=
-ifeq ($(OPENJDK_TARGET_OS), solaris)
-  # only on solaris...wonder why
-  LIBJAAS_MAPFILE := $(TOPDIR)/make/mapfiles/libjaas/mapfile-vers
-endif
-
-LIBJAAS_NAME := jaas_unix
-ifeq ($(OPENJDK_TARGET_OS), windows)
-  LIBJAAS_NAME := jaas_nt
-endif
-
-$(eval $(call SetupNativeCompilation,BUILD_LIBJAAS, \
-    LIBRARY := $(LIBJAAS_NAME), \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+$(eval $(call SetupJdkLibrary, BUILD_LIBJAAS, \
+    NAME := jaas, \
     SRC := $(call FindSrcDirsForLib, jdk.security.auth, jaas), \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) -I$(SUPPORT_OUTPUTDIR)/headers/jdk.security.auth, \
-    MAPFILE := $(LIBJAAS_MAPFILE), \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LIBS_solaris := -lc, \
     LIBS_windows := netapi32.lib user32.lib mpr.lib advapi32.lib $(JDKLIB_LIBS), \
-    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=$(LIBJAAS_NAME).dll" \
-        -D "JDK_INTERNAL_NAME=$(LIBJAAS_NAME)" \
-        -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjaas, \
 ))
 
 $(BUILD_LIBJAAS): $(call FindLib, java.base, java)

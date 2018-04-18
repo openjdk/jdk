@@ -24,6 +24,7 @@
 /*
   @test
   @bug 6759726
+  @key headful
   @summary TrayIcon constructor throws NPE instead of documented IAE
   @author Dmitry Cherepanov area=awt.tray
   @run main CtorTest

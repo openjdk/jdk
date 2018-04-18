@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,12 +38,43 @@ size_t G1Arguments::conservative_max_heap_alignment() {
   return HeapRegion::max_region_size();
 }
 
-void G1Arguments::initialize_flags() {
-  GCArguments::initialize_flags();
+void G1Arguments::initialize_verification_types() {
+  if (strlen(VerifyGCType) > 0) {
+    const char delimiter[] = " ,\n";
+    size_t length = strlen(VerifyGCType);
+    char* type_list = NEW_C_HEAP_ARRAY(char, length + 1, mtInternal);
+    strncpy(type_list, VerifyGCType, length + 1);
+    char* token = strtok(type_list, delimiter);
+    while (token != NULL) {
+      parse_verification_type(token);
+      token = strtok(NULL, delimiter);
+    }
+    FREE_C_HEAP_ARRAY(char, type_list);
+  }
+}
+
+void G1Arguments::parse_verification_type(const char* type) {
+  if (strcmp(type, "young-only") == 0) {
+    G1HeapVerifier::enable_verification_type(G1HeapVerifier::G1VerifyYoungOnly);
+  } else if (strcmp(type, "initial-mark") == 0) {
+    G1HeapVerifier::enable_verification_type(G1HeapVerifier::G1VerifyInitialMark);
+  } else if (strcmp(type, "mixed") == 0) {
+    G1HeapVerifier::enable_verification_type(G1HeapVerifier::G1VerifyMixed);
+  } else if (strcmp(type, "remark") == 0) {
+    G1HeapVerifier::enable_verification_type(G1HeapVerifier::G1VerifyRemark);
+  } else if (strcmp(type, "cleanup") == 0) {
+    G1HeapVerifier::enable_verification_type(G1HeapVerifier::G1VerifyCleanup);
+  } else if (strcmp(type, "full") == 0) {
+    G1HeapVerifier::enable_verification_type(G1HeapVerifier::G1VerifyFull);
+  } else {
+    log_warning(gc, verify)("VerifyGCType: '%s' is unknown. Available types are: "
+                            "young-only, initial-mark, mixed, remark, cleanup and full", type);
+  }
+}
+
+void G1Arguments::initialize() {
+  GCArguments::initialize();
   assert(UseG1GC, "Error");
-#if defined(COMPILER1) || INCLUDE_JVMCI
-  FastTLABRefill = false;
-#endif
   FLAG_SET_DEFAULT(ParallelGCThreads, Abstract_VM_Version::parallel_worker_threads());
   if (ParallelGCThreads == 0) {
     assert(!FLAG_IS_DEFAULT(ParallelGCThreads), "The default value for ParallelGCThreads should not be 0.");
@@ -103,12 +135,8 @@ void G1Arguments::initialize_flags() {
     }
   }
 #endif
-}
 
-bool G1Arguments::parse_verification_type(const char* type) {
-  G1CollectedHeap::heap()->verifier()->parse_verification_type(type);
-  // Always return true because we want to parse all values.
-  return true;
+  initialize_verification_types();
 }
 
 CollectedHeap* G1Arguments::create_heap() {

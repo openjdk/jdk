@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,13 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "classfile/classLoader.hpp"
+#include "classfile/classLoader.inline.hpp"
 #include "classfile/compactHashtable.inline.hpp"
 #include "classfile/sharedClassUtil.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/altHashing.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1CollectedHeap.hpp"
-#endif
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "logging/logMessage.hpp"
@@ -42,6 +39,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/objArrayOop.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
@@ -51,6 +49,9 @@
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/defaultStream.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc/g1/g1CollectedHeap.hpp"
+#endif
 
 # include <sys/stat.h>
 # include <errno.h>
@@ -95,7 +96,7 @@ void FileMapInfo::fail_continue(const char *msg, ...) {
   va_list ap;
   va_start(ap, msg);
   MetaspaceShared::set_archive_loading_failed();
-  if (PrintSharedArchiveAndExit && _validating_classpath_entry_table) {
+  if (PrintSharedArchiveAndExit && _validating_shared_path_table) {
     // If we are doing PrintSharedArchiveAndExit and some of the classpath entries
     // do not validate, we can still continue "limping" to validate the remaining
     // entries. No need to quit.
@@ -187,9 +188,9 @@ void FileMapInfo::FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment
   _max_heap_size = MaxHeapSize;
   _narrow_klass_base = Universe::narrow_klass_base();
   _narrow_klass_shift = Universe::narrow_klass_shift();
-  _classpath_entry_table_size = mapinfo->_classpath_entry_table_size;
-  _classpath_entry_table = mapinfo->_classpath_entry_table;
-  _classpath_entry_size = mapinfo->_classpath_entry_size;
+  _shared_path_table_size = mapinfo->_shared_path_table_size;
+  _shared_path_table = mapinfo->_shared_path_table;
+  _shared_path_entry_size = mapinfo->_shared_path_entry_size;
 
   // The following fields are for sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
@@ -230,12 +231,16 @@ void SharedClassPathEntry::init(const char* name, TRAPS) {
   strcpy(_name->data(), name);
 }
 
-bool SharedClassPathEntry::validate() {
+bool SharedClassPathEntry::validate(bool is_class_path) {
   struct stat st;
   const char* name = this->name();
   bool ok = true;
   log_info(class, path)("checking shared classpath entry: %s", name);
-  if (os::stat(name, &st) != 0) {
+  if (os::stat(name, &st) != 0 && is_class_path) {
+    // If the archived module path entry does not exist at runtime, it is not fatal
+    // (no need to invalid the shared archive) because the shared runtime visibility check
+    // filters out any archived module classes that do not have a matching runtime
+    // module path location.
     FileMapInfo::fail_continue("Required classpath entry does not exist: %s", name);
     ok = false;
   } else if (is_dir()) {
@@ -265,7 +270,7 @@ void SharedClassPathEntry::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_manifest);
 }
 
-void FileMapInfo::allocate_classpath_entry_table() {
+void FileMapInfo::allocate_shared_path_table() {
   assert(DumpSharedSpaces, "Sanity");
 
   Thread* THREAD = Thread::current();
@@ -278,12 +283,13 @@ void FileMapInfo::allocate_classpath_entry_table() {
   size_t entry_size = SharedClassUtil::shared_class_path_entry_size(); // assert ( should be 8 byte aligned??)
   int num_boot_classpath_entries = ClassLoader::num_boot_classpath_entries();
   int num_app_classpath_entries = ClassLoader::num_app_classpath_entries();
-  int num_entries = num_boot_classpath_entries + num_app_classpath_entries;
+  int num_module_path_entries = ClassLoader::num_module_path_entries();
+  int num_entries = num_boot_classpath_entries + num_app_classpath_entries + num_module_path_entries;
   size_t bytes = entry_size * num_entries;
 
-  _classpath_entry_table = MetadataFactory::new_array<u8>(loader_data, (int)(bytes + 7 / 8), THREAD);
-  _classpath_entry_table_size = num_entries;
-  _classpath_entry_size = entry_size;
+  _shared_path_table = MetadataFactory::new_array<u8>(loader_data, (int)(bytes + 7 / 8), THREAD);
+  _shared_path_table_size = num_entries;
+  _shared_path_entry_size = entry_size;
 
   // 1. boot class path
   int i = 0;
@@ -291,7 +297,7 @@ void FileMapInfo::allocate_classpath_entry_table() {
   while (cpe != NULL) {
     const char* type = ((cpe == jrt) ? "jrt" : (cpe->is_jar_file() ? "jar" : "dir"));
     log_info(class, path)("add main shared path (%s) %s", type, cpe->name());
-    SharedClassPathEntry* ent = shared_classpath(i);
+    SharedClassPathEntry* ent = shared_path(i);
     ent->init(cpe->name(), THREAD);
     if (cpe != jrt) { // No need to do jimage.
       EXCEPTION_MARK; // The following call should never throw, but would exit VM on error.
@@ -307,40 +313,65 @@ void FileMapInfo::allocate_classpath_entry_table() {
   ClassPathEntry *acpe = ClassLoader::app_classpath_entries();
   while (acpe != NULL) {
     log_info(class, path)("add app shared path %s", acpe->name());
-    SharedClassPathEntry* ent = shared_classpath(i);
+    SharedClassPathEntry* ent = shared_path(i);
     ent->init(acpe->name(), THREAD);
     EXCEPTION_MARK;
     SharedClassUtil::update_shared_classpath(acpe, ent, THREAD);
     acpe = acpe->next();
-    i ++;
+    i++;
   }
-  assert(i == num_entries, "number of app class path entry mismatch");
+
+  // 3. module path
+  ClassPathEntry *mpe = ClassLoader::module_path_entries();
+  while (mpe != NULL) {
+    log_info(class, path)("add module path %s",mpe->name());
+    SharedClassPathEntry* ent = shared_path(i);
+    ent->init(mpe->name(), THREAD);
+    EXCEPTION_MARK;
+    SharedClassUtil::update_shared_classpath(mpe, ent, THREAD);
+    mpe = mpe->next();
+    i++;
+  }
+  assert(i == num_entries, "number of shared path entry mismatch");
 }
 
-bool FileMapInfo::validate_classpath_entry_table() {
-  _validating_classpath_entry_table = true;
+// This function should only be called during run time with UseSharedSpaces enabled.
+bool FileMapInfo::validate_shared_path_table() {
+  _validating_shared_path_table = true;
 
-  int count = _header->_classpath_entry_table_size;
+  _shared_path_table = _header->_shared_path_table;
+  _shared_path_entry_size = _header->_shared_path_entry_size;
+  _shared_path_table_size = _header->_shared_path_table_size;
 
-  _classpath_entry_table = _header->_classpath_entry_table;
-  _classpath_entry_size = _header->_classpath_entry_size;
-  _classpath_entry_table_size = _header->_classpath_entry_table_size;
+  // Note: _app_module_paths_start_index may not have a valid value if the UseAppCDS flag
+  // wasn't enabled during dump time. Therefore, we need to use the smaller of
+  // _shared_path_table_size and _app_module_paths_start_index for the _app_module_paths_start_index.
+  FileMapHeaderExt* header = (FileMapHeaderExt*)FileMapInfo::current_info()->header();
+  int module_paths_start_index = (header->_app_module_paths_start_index >= _shared_path_table_size) ?
+                                  _shared_path_table_size : header->_app_module_paths_start_index;
+
+  int count = _shared_path_table_size;
 
   for (int i=0; i<count; i++) {
-    if (shared_classpath(i)->validate()) {
-      log_info(class, path)("ok");
+    if (i < module_paths_start_index) {
+      if (shared_path(i)->validate()) {
+        log_info(class, path)("ok");
+      }
+    } else if (i >= module_paths_start_index) {
+      if (shared_path(i)->validate(false /* not a class path entry */)) {
+        log_info(class, path)("ok");
+      }
     } else if (!PrintSharedArchiveAndExit) {
-      _validating_classpath_entry_table = false;
-      _classpath_entry_table = NULL;
-      _classpath_entry_table_size = 0;
+      _validating_shared_path_table = false;
+      _shared_path_table = NULL;
+      _shared_path_table_size = 0;
       return false;
     }
   }
 
-  _validating_classpath_entry_table = false;
+  _validating_shared_path_table = false;
   return true;
 }
-
 
 // Read the FileMapInfo information from the file.
 
@@ -410,14 +441,11 @@ bool FileMapInfo::open_for_read() {
 // Write the FileMapInfo information to the file.
 
 void FileMapInfo::open_for_write() {
- _full_path = Arguments::GetSharedArchivePath();
-  if (log_is_enabled(Info, cds)) {
-    ResourceMark rm;
-    LogMessage(cds) msg;
-    stringStream info_stream;
-    info_stream.print_cr("Dumping shared data to file: ");
-    info_stream.print_cr("   %s", _full_path);
-    msg.info("%s", info_stream.as_string());
+  _full_path = Arguments::GetSharedArchivePath();
+  LogMessage(cds) msg;
+  if (msg.is_info()) {
+    msg.info("Dumping shared data to file: ");
+    msg.info("   %s", _full_path);
   }
 
 #ifdef _WINDOWS  // On Windows, need WRITE permission to remove the file.
@@ -471,7 +499,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
   if (MetaspaceShared::is_heap_region(region)) {
     assert((base - (char*)Universe::narrow_oop_base()) % HeapWordSize == 0, "Sanity");
     if (base != NULL) {
-      si->_addr._offset = (intx)oopDesc::encode_heap_oop_not_null((oop)base);
+      si->_addr._offset = (intx)CompressedOops::encode_not_null((oop)base);
     } else {
       si->_addr._offset = 0;
     }
@@ -659,7 +687,7 @@ ReservedSpace FileMapInfo::reserve_shared_memory() {
 static const char* shared_region_name[] = { "MiscData", "ReadWrite", "ReadOnly", "MiscCode", "OptionalData",
                                             "String1", "String2", "OpenArchive1", "OpenArchive2" };
 
-char* FileMapInfo::map_region(int i) {
+char* FileMapInfo::map_region(int i, char** top_ret) {
   assert(!MetaspaceShared::is_heap_region(i), "sanity");
   struct FileMapInfo::FileMapHeader::space_info* si = &_header->_space[i];
   size_t used = si->_used;
@@ -686,6 +714,12 @@ char* FileMapInfo::map_region(int i) {
   MemTracker::record_virtual_memory_type((address)base, mtClassShared);
 #endif
 
+
+  if (!verify_region_checksum(i)) {
+    return NULL;
+  }
+
+  *top_ret = base + size;
   return base;
 }
 
@@ -780,7 +814,7 @@ bool FileMapInfo::map_heap_data(MemRegion **heap_mem, int first,
     size_t used = si->_used;
     if (used > 0) {
       size_t size = used;
-      char* requested_addr = (char*)((void*)oopDesc::decode_heap_oop_not_null(
+      char* requested_addr = (char*)((void*)CompressedOops::decode_not_null(
                                             (narrowOop)si->_addr._offset));
       regions[region_num] = MemRegion((HeapWord*)requested_addr, size / HeapWordSize);
       region_num ++;
@@ -921,18 +955,18 @@ void FileMapInfo::assert_mark(bool check) {
 }
 
 void FileMapInfo::metaspace_pointers_do(MetaspaceClosure* it) {
-  it->push(&_classpath_entry_table);
-  for (int i=0; i<_classpath_entry_table_size; i++) {
-    shared_classpath(i)->metaspace_pointers_do(it);
+  it->push(&_shared_path_table);
+  for (int i=0; i<_shared_path_table_size; i++) {
+    shared_path(i)->metaspace_pointers_do(it);
   }
 }
 
 
 FileMapInfo* FileMapInfo::_current_info = NULL;
-Array<u8>* FileMapInfo::_classpath_entry_table = NULL;
-int FileMapInfo::_classpath_entry_table_size = 0;
-size_t FileMapInfo::_classpath_entry_size = 0x1234baad;
-bool FileMapInfo::_validating_classpath_entry_table = false;
+Array<u8>* FileMapInfo::_shared_path_table = NULL;
+int FileMapInfo::_shared_path_table_size = 0;
+size_t FileMapInfo::_shared_path_entry_size = 0x1234baad;
+bool FileMapInfo::_validating_shared_path_table = false;
 
 // Open the shared archive file, read and validate the header
 // information (version, boot classpath, etc.).  If initialization
@@ -942,7 +976,7 @@ bool FileMapInfo::_validating_classpath_entry_table = false;
 // Validation of the archive is done in two steps:
 //
 // [1] validate_header() - done here. This checks the header, including _paths_misc_info.
-// [2] validate_classpath_entry_table - this is done later, because the table is in the RW
+// [2] validate_shared_path_table - this is done later, because the table is in the RW
 //     region of the archive, which is not mapped yet.
 bool FileMapInfo::initialize() {
   assert(UseSharedSpaces, "UseSharedSpaces expected.");
@@ -961,7 +995,7 @@ bool FileMapInfo::initialize() {
 char* FileMapInfo::FileMapHeader::region_addr(int idx) {
   if (MetaspaceShared::is_heap_region(idx)) {
     return _space[idx]._used > 0 ?
-             (char*)((void*)oopDesc::decode_heap_oop_not_null((narrowOop)_space[idx]._addr._offset)) : NULL;
+             (char*)((void*)CompressedOops::decode_not_null((narrowOop)_space[idx]._addr._offset)) : NULL;
   } else {
     return _space[idx]._addr._base;
   }
@@ -976,6 +1010,7 @@ int FileMapInfo::FileMapHeader::compute_crc() {
   return crc;
 }
 
+// This function should only be called during run time with UseSharedSpaces enabled.
 bool FileMapInfo::FileMapHeader::validate() {
   if (VerifySharedSpaces && compute_crc() != _crc) {
     fail_continue("Header checksum verification failed.");
@@ -1038,27 +1073,6 @@ bool FileMapInfo::validate_header() {
     _paths_misc_info = NULL;
   }
   return status;
-}
-
-// The following method is provided to see whether a given pointer
-// falls in the mapped shared metadata space.
-// Param:
-// p, The given pointer
-// Return:
-// True if the p is within the mapped shared space, otherwise, false.
-bool FileMapInfo::is_in_shared_space(const void* p) {
-  for (int i = 0; i < MetaspaceShared::num_non_heap_spaces; i++) {
-    char *base;
-    if (_header->_space[i]._used == 0) {
-      continue;
-    }
-    base = _header->region_addr(i);
-    if (p >= base && p < base + _header->_space[i]._used) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 // Check if a given address is within one of the shared regions

@@ -50,7 +50,8 @@ import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 
 /**
- * @test @bug 8144718
+ * @test
+ * @bug 8144718
  * @summary Check the Stroker.drawBezApproxForArc() bug (stoke with round
  * joins): if cosext2 > 0.5, it generates curves with NaN coordinates
  * @run main TextClipErrorTest

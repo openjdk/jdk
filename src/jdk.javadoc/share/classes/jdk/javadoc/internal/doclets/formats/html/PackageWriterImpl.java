@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,13 +40,13 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
+import jdk.javadoc.internal.doclets.formats.html.markup.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 
 /**
@@ -66,16 +66,6 @@ public class PackageWriterImpl extends HtmlDocletWriter
     implements PackageSummaryWriter {
 
     /**
-     * The prev package name in the alpha-order list.
-     */
-    protected PackageElement prev;
-
-    /**
-     * The next package name in the alpha-order list.
-     */
-    protected PackageElement next;
-
-    /**
      * The package being documented.
      */
     protected PackageElement packageElement;
@@ -90,6 +80,8 @@ public class PackageWriterImpl extends HtmlDocletWriter
      */
     protected HtmlTree sectionTree = HtmlTree.SECTION();
 
+    private final Navigation navBar;
+
     /**
      * Constructor to construct PackageWriter object and to generate
      * "package-summary.html" file in the respective package directory.
@@ -100,17 +92,13 @@ public class PackageWriterImpl extends HtmlDocletWriter
      *
      * @param configuration the configuration of the doclet.
      * @param packageElement    PackageElement under consideration.
-     * @param prev          Previous package in the sorted array.
-     * @param next            Next package in the sorted array.
      */
-    public PackageWriterImpl(HtmlConfiguration configuration,
-            PackageElement packageElement, PackageElement prev, PackageElement next) {
-        super(configuration, DocPath
-                .forPackage(packageElement)
+    public PackageWriterImpl(HtmlConfiguration configuration, PackageElement packageElement) {
+        super(configuration,
+                configuration.docPaths.forPackage(packageElement)
                 .resolve(DocPaths.PACKAGE_SUMMARY));
-        this.prev = prev;
-        this.next = next;
         this.packageElement = packageElement;
+        this.navBar = new Navigation(packageElement, configuration, fixedNavDiv, PageMode.PACKAGE, path);
     }
 
     /**
@@ -123,7 +111,11 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 ? HtmlTree.HEADER()
                 : bodyTree;
         addTop(htmlTree);
-        addNavLinks(true, htmlTree);
+        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
+                contents.moduleLabel);
+        navBar.setNavLinkModule(linkContent);
+        navBar.setUserHeader(getUserHeaderFooter(true));
+        htmlTree.addContent(navBar.getContent(true));
         if (configuration.allowTag(HtmlTag.HEADER)) {
             bodyTree.addContent(htmlTree);
         }
@@ -362,7 +354,8 @@ public class PackageWriterImpl extends HtmlDocletWriter
         Content htmlTree = (configuration.allowTag(HtmlTag.FOOTER))
                 ? HtmlTree.FOOTER()
                 : contentTree;
-        addNavLinks(false, htmlTree);
+        navBar.setUserFooter(getUserHeaderFooter(false));
+        htmlTree.addContent(navBar.getContent(false));
         addBottom(htmlTree);
         if (configuration.allowTag(HtmlTag.FOOTER)) {
             contentTree.addContent(htmlTree);
@@ -376,92 +369,5 @@ public class PackageWriterImpl extends HtmlDocletWriter
     public void printDocument(Content contentTree) throws DocFileIOException {
         printHtmlDocument(configuration.metakeywords.getMetaKeywords(packageElement),
                 true, contentTree);
-    }
-
-    /**
-     * Get "Use" link for this pacakge in the navigation bar.
-     *
-     * @return a content tree for the class use link
-     */
-    @Override
-    protected Content getNavLinkClassUse() {
-        Content useLink = Links.createLink(DocPaths.PACKAGE_USE,
-                contents.useLabel, "", "");
-        Content li = HtmlTree.LI(useLink);
-        return li;
-    }
-
-    /**
-     * Get "PREV PACKAGE" link in the navigation bar.
-     *
-     * @return a content tree for the previous link
-     */
-    @Override
-    public Content getNavLinkPrevious() {
-        Content li;
-        if (prev == null) {
-            li = HtmlTree.LI(contents.prevPackageLabel);
-        } else {
-            DocPath p = DocPath.relativePath(packageElement, prev);
-            li = HtmlTree.LI(Links.createLink(p.resolve(DocPaths.PACKAGE_SUMMARY),
-                contents.prevPackageLabel, "", ""));
-        }
-        return li;
-    }
-
-    /**
-     * Get "NEXT PACKAGE" link in the navigation bar.
-     *
-     * @return a content tree for the next link
-     */
-    @Override
-    public Content getNavLinkNext() {
-        Content li;
-        if (next == null) {
-            li = HtmlTree.LI(contents.nextPackageLabel);
-        } else {
-            DocPath p = DocPath.relativePath(packageElement, next);
-            li = HtmlTree.LI(Links.createLink(p.resolve(DocPaths.PACKAGE_SUMMARY),
-                contents.nextPackageLabel, "", ""));
-        }
-        return li;
-    }
-
-    /**
-     * Get "Tree" link in the navigation bar. This will be link to the package
-     * tree file.
-     *
-     * @return a content tree for the tree link
-     */
-    @Override
-    protected Content getNavLinkTree() {
-        Content useLink = Links.createLink(DocPaths.PACKAGE_TREE,
-                contents.treeLabel, "", "");
-        Content li = HtmlTree.LI(useLink);
-        return li;
-    }
-
-    /**
-     * Get the module link.
-     *
-     * @return a content tree for the module link
-     */
-    @Override
-    protected Content getNavLinkModule() {
-        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
-                contents.moduleLabel);
-        Content li = HtmlTree.LI(linkContent);
-        return li;
-    }
-
-    /**
-     * Highlight "Package" in the navigation bar, as this is the package page.
-     *
-     * @return a content tree for the package link
-     */
-    @Override
-    protected Content getNavLinkPackage() {
-        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, contents.packageLabel);
-        return li;
     }
 }

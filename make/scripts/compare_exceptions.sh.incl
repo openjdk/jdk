@@ -339,7 +339,7 @@ if [ "$OPENJDK_TARGET_OS" = "solaris" ] && [ "$OPENJDK_TARGET_CPU" = "sparcv9" ]
 
   DIS_DIFF_FILTER="$SED \
       -e 's/^[0-9a-f]\{16\}/<ADDR>:/' \
-      -e 's/^ *[0-9a-f]\{3,8\}:/  <ADDR>:/' \
+      -e 's/^ *[0-9a-f]\{3,12\}:/  <ADDR>:/' \
       -e 's/:	[0-9a-f][0-9a-f]\( [0-9a-f][0-9a-f]\)\{2,10\}/:	<NUMS>/' \
       -e 's/\$[a-zA-Z0-9_\$]\{15\}\./<SYM>./' \
       -e 's/, [0-9a-fx\-]\{1,8\}/, <ADDR>/g' \
@@ -428,8 +428,13 @@ if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
       ./bin/xjc.exe
       "
 
+  SORT_SYMBOLS="
+      ./bin/fontmanager.dll
+      "
+
   ACCEPTED_DIS_DIFF="
       ./bin/jabswitch.exe
+      ./bin/fontmanager.dll
       "
 
   if [ "$OPENJDK_TARGET_CPU" = "x86" ]; then

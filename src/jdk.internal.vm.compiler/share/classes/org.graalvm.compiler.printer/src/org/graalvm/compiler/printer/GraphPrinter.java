@@ -79,7 +79,7 @@ interface GraphPrinter extends Closeable, JavaConstantFormatter {
     /**
      * {@code jdk.vm.ci} module.
      */
-    Object JVMCI_MODULE = JDK9Method.JAVA_SPECIFICATION_VERSION < 9 ? null : JDK9Method.getModule.invoke(Services.class);
+    Object JVMCI_MODULE = JDK9Method.JAVA_SPECIFICATION_VERSION < 9 ? null : JDK9Method.getModule(Services.class);
 
     /**
      * Classes whose {@link #toString()} method does not run any untrusted code.
@@ -111,8 +111,8 @@ interface GraphPrinter extends Closeable, JavaConstantFormatter {
                 return true;
             }
         } else {
-            Object module = JDK9Method.getModule.invoke(c);
-            if (JVMCI_MODULE == module || (Boolean) JDK9Method.isOpenTo.invoke(JVMCI_MODULE, JVMCI_RUNTIME_PACKAGE, module)) {
+            Object module = JDK9Method.getModule(c);
+            if (JVMCI_MODULE == module || JDK9Method.isOpenTo(JVMCI_MODULE, JVMCI_RUNTIME_PACKAGE, module)) {
                 // Can access non-statically-exported package in JVMCI
                 return true;
             }

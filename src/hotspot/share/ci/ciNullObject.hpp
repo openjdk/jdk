@@ -27,7 +27,6 @@
 
 #include "ci/ciClassList.hpp"
 #include "ci/ciObject.hpp"
-#include "ci/ciUtilities.hpp"
 
 // ciNullObject
 //

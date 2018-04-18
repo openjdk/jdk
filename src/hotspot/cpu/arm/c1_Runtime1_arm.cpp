@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,9 @@
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
+#include "ci/ciUtilities.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_arm.hpp"
 #include "oops/compiledICHolder.hpp"
@@ -40,7 +43,9 @@
 #include "utilities/align.hpp"
 #include "vmreg_arm.inline.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc/g1/g1BarrierSet.hpp"
+#include "gc/g1/g1CardTable.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #endif
 
 // Note: Rtemp usage is this file should not impact C2 and should be
@@ -536,6 +541,14 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         __ set_info("g1_pre_barrier_slow_id", dont_gc_arguments);
 
+        BarrierSet* bs = BarrierSet::barrier_set();
+        if (bs->kind() != BarrierSet::G1BarrierSet) {
+          __ mov(R0, (int)id);
+          __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, unimplemented_entry), R0);
+          __ should_not_reach_here();
+          break;
+        }
+
         // save at least the registers that need saving if the runtime is called
 #ifdef AARCH64
         __ raw_push(R0, R1);
@@ -552,12 +565,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         const Register r_index_1    = R1;
         const Register r_buffer_2   = R2;
 
-        Address queue_active(Rthread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                               SATBMarkQueue::byte_offset_of_active()));
-        Address queue_index(Rthread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                              SATBMarkQueue::byte_offset_of_index()));
-        Address buffer(Rthread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                         SATBMarkQueue::byte_offset_of_buf()));
+        Address queue_active(Rthread, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()));
+        Address queue_index(Rthread, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()));
+        Address buffer(Rthread, in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset()));
 
         Label done;
         Label runtime;
@@ -608,19 +618,22 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         __ set_info("g1_post_barrier_slow_id", dont_gc_arguments);
 
-        BarrierSet* bs = Universe::heap()->barrier_set();
-        CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(bs);
+        BarrierSet* bs = BarrierSet::barrier_set();
+        if (bs->kind() != BarrierSet::G1BarrierSet) {
+          __ mov(R0, (int)id);
+          __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, unimplemented_entry), R0);
+          __ should_not_reach_here();
+          break;
+        }
+
         Label done;
         Label recheck;
         Label runtime;
 
-        Address queue_index(Rthread, in_bytes(JavaThread::dirty_card_queue_offset() +
-                                              DirtyCardQueue::byte_offset_of_index()));
-        Address buffer(Rthread, in_bytes(JavaThread::dirty_card_queue_offset() +
-                                         DirtyCardQueue::byte_offset_of_buf()));
+        Address queue_index(Rthread, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()));
+        Address buffer(Rthread, in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()));
 
-        AddressLiteral cardtable((address)ct->byte_map_base, relocInfo::none);
-        assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
+        AddressLiteral cardtable(ci_card_table_address_as<address>(), relocInfo::none);
 
         // save at least the registers that need saving if the runtime is called
 #ifdef AARCH64
@@ -649,12 +662,12 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         // explicitly specify that 'cardtable' has a relocInfo::none
         // type.
         __ lea(r_card_base_1, cardtable);
-        __ add(r_card_addr_0, r_card_base_1, AsmOperand(r_obj_0, lsr, CardTableModRefBS::card_shift));
+        __ add(r_card_addr_0, r_card_base_1, AsmOperand(r_obj_0, lsr, CardTable::card_shift));
 
         // first quick check without barrier
         __ ldrb(r_tmp2, Address(r_card_addr_0));
 
-        __ cmp(r_tmp2, (int)G1SATBCardTableModRefBS::g1_young_card_val());
+        __ cmp(r_tmp2, (int)G1CardTable::g1_young_card_val());
         __ b(recheck, ne);
 
         __ bind(done);
@@ -675,14 +688,14 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         // reload card state after the barrier that ensures the stored oop was visible
         __ ldrb(r_tmp2, Address(r_card_addr_0));
 
-        assert(CardTableModRefBS::dirty_card_val() == 0, "adjust this code");
+        assert(CardTable::dirty_card_val() == 0, "adjust this code");
         __ cbz(r_tmp2, done);
 
         // storing region crossing non-NULL, card is clean.
         // dirty card and log.
 
-        assert(0 == (int)CardTableModRefBS::dirty_card_val(), "adjust this code");
-        if (((intptr_t)ct->byte_map_base & 0xff) == 0) {
+        assert(0 == (int)CardTable::dirty_card_val(), "adjust this code");
+        if ((ci_card_table_address_as<intptr_t>() & 0xff) == 0) {
           // Card table is aligned so the lowest byte of the table address base is zero.
           __ strb(r_card_base_1, Address(r_card_addr_0));
         } else {
@@ -722,10 +735,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         const Register result = R0;
         const Register klass  = R1;
 
-        if (UseTLAB && FastTLABRefill && id != new_instance_id) {
+        if (UseTLAB && Universe::heap()->supports_inline_contig_alloc() && id != new_instance_id) {
           // We come here when TLAB allocation failed.
-          // In this case we either refill TLAB or allocate directly from eden.
-          Label retry_tlab, try_eden, slow_case, slow_case_no_pop;
+          // In this case we try to allocate directly from eden.
+          Label slow_case, slow_case_no_pop;
 
           // Make sure the class is fully initialized
           if (id == fast_new_instance_init_check_id) {
@@ -742,17 +755,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
           __ raw_push(R4, R5, LR);
 
-          __ tlab_refill(result, obj_size, tmp1, tmp2, obj_end, try_eden, slow_case);
-
-          __ bind(retry_tlab);
-          __ ldr_u32(obj_size, Address(klass, Klass::layout_helper_offset()));
-          __ tlab_allocate(result, obj_end, tmp1, obj_size, slow_case);              // initializes result and obj_end
-          __ initialize_object(result, obj_end, klass, noreg /* len */, tmp1, tmp2,
-                               instanceOopDesc::header_size() * HeapWordSize, -1,
-                               /* is_tlab_allocated */ true);
-          __ raw_pop_and_ret(R4, R5);
-
-          __ bind(try_eden);
           __ ldr_u32(obj_size, Address(klass, Klass::layout_helper_offset()));
           __ eden_allocate(result, obj_end, tmp1, tmp2, obj_size, slow_case);        // initializes result and obj_end
           __ incr_allocated_bytes(obj_size, tmp2);
@@ -803,10 +805,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         const Register klass  = R1;
         const Register length = R2;
 
-        if (UseTLAB && FastTLABRefill) {
+        if (UseTLAB && Universe::heap()->supports_inline_contig_alloc()) {
           // We come here when TLAB allocation failed.
-          // In this case we either refill TLAB or allocate directly from eden.
-          Label retry_tlab, try_eden, slow_case, slow_case_no_pop;
+          // In this case we try to allocate directly from eden.
+          Label slow_case, slow_case_no_pop;
 
 #ifdef AARCH64
           __ mov_slow(Rtemp, C1_MacroAssembler::max_array_allocation_length);
@@ -825,40 +827,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
           __ raw_push(R4, R5, LR);
 
-          __ tlab_refill(result, arr_size, tmp1, tmp2, tmp3, try_eden, slow_case);
-
-          __ bind(retry_tlab);
-          // Get the allocation size: round_up((length << (layout_helper & 0xff)) + header_size)
-          __ ldr_u32(tmp1, Address(klass, Klass::layout_helper_offset()));
-          __ mov(arr_size, MinObjAlignmentInBytesMask);
-          __ and_32(tmp2, tmp1, (unsigned int)(Klass::_lh_header_size_mask << Klass::_lh_header_size_shift));
-
-#ifdef AARCH64
-          __ lslv_w(tmp3, length, tmp1);
-          __ add(arr_size, arr_size, tmp3);
-#else
-          __ add(arr_size, arr_size, AsmOperand(length, lsl, tmp1));
-#endif // AARCH64
-
-          __ add(arr_size, arr_size, AsmOperand(tmp2, lsr, Klass::_lh_header_size_shift));
-          __ align_reg(arr_size, arr_size, MinObjAlignmentInBytes);
-
-          // tlab_allocate initializes result and obj_end, and preserves tmp2 which contains header_size
-          __ tlab_allocate(result, obj_end, tmp1, arr_size, slow_case);
-
-          assert_different_registers(result, obj_end, klass, length, tmp1, tmp2);
-          __ initialize_header(result, klass, length, tmp1);
-
-          __ add(tmp2, result, AsmOperand(tmp2, lsr, Klass::_lh_header_size_shift));
-          if (!ZeroTLAB) {
-            __ initialize_body(tmp2, obj_end, tmp1);
-          }
-
-          __ membar(MacroAssembler::StoreStore, tmp1);
-
-          __ raw_pop_and_ret(R4, R5);
-
-          __ bind(try_eden);
           // Get the allocation size: round_up((length << (layout_helper & 0xff)) + header_size)
           __ ldr_u32(tmp1, Address(klass, Klass::layout_helper_offset()));
           __ mov(arr_size, MinObjAlignmentInBytesMask);

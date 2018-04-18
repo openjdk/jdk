@@ -184,14 +184,4 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
     protected void addPartialInfo(TypeElement typeElement, Content contentTree) {
         addPreQualifiedStrongClassLink(LinkInfoImpl.Kind.TREE, typeElement, contentTree);
     }
-
-    /**
-     * Get the tree label for the navigation bar.
-     *
-     * @return a content tree for the tree label
-     */
-    protected Content getNavLinkTree() {
-        Content li = HtmlTree.LI(HtmlStyle.navBarCell1Rev, contents.treeLabel);
-        return li;
-    }
 }

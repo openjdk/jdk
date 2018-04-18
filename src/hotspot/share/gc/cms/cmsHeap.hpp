@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,13 +51,14 @@ public:
 
   // Returns JNI_OK on success
   virtual jint initialize();
+  virtual CardTableRS* create_rem_set(const MemRegion& reserved_region);
 
   // Convenience function to be used in situations where the heap type can be
   // asserted to be this type.
   static CMSHeap* heap();
 
   virtual Name kind() const {
-    return CollectedHeap::CMSHeap;
+    return CollectedHeap::CMS;
   }
 
   virtual const char* name() const {
@@ -74,10 +75,6 @@ public:
   // "System.gc". This implies as full a collection as the CollectedHeap
   // supports. Caller does not hold the Heap_lock on entry.
   void collect(GCCause::Cause cause);
-
-  bool card_mark_must_follow_store() const {
-    return true;
-  }
 
   void stop();
   void safepoint_synchronize_begin();

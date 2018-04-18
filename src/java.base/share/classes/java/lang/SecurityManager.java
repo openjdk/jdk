@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,19 +234,6 @@ public class SecurityManager {
      * Have we been initialized. Effective against finalizer attacks.
      */
     private boolean initialized = false;
-
-
-    /**
-     * returns true if the current context has been granted AllPermission
-     */
-    private boolean hasAllPermission() {
-        try {
-            checkPermission(SecurityConstants.ALL_PERMISSION);
-            return true;
-        } catch (SecurityException se) {
-            return false;
-        }
-    }
 
     /**
      * Constructs a new <code>SecurityManager</code>.
@@ -1081,28 +1068,6 @@ public class SecurityManager {
     }
 
     /**
-     * Returns {@code true} if the calling thread has {@code AllPermission}.
-     *
-     * @param      window   not used except to check if it is {@code null}.
-     * @return     {@code true} if the calling thread has {@code AllPermission}.
-     * @exception  NullPointerException if the {@code window} argument is
-     *             {@code null}.
-     * @deprecated This method was originally used to check if the calling thread
-     *             was trusted to bring up a top-level window. The method has been
-     *             obsoleted and code should instead use {@link #checkPermission}
-     *             to check {@code AWTPermission("showWindowWithoutWarningBanner")}.
-     *             This method is subject to removal in a future version of Java SE.
-     * @see        #checkPermission(java.security.Permission) checkPermission
-     */
-    @Deprecated(since="1.8", forRemoval=true)
-    public boolean checkTopLevelWindow(Object window) {
-        if (window == null) {
-            throw new NullPointerException("window can't be null");
-        }
-        return hasAllPermission();
-    }
-
-    /**
      * Throws a <code>SecurityException</code> if the
      * calling thread is not allowed to initiate a print job request.
      * <p>
@@ -1122,44 +1087,6 @@ public class SecurityManager {
      */
     public void checkPrintJobAccess() {
         checkPermission(new RuntimePermission("queuePrintJob"));
-    }
-
-    /**
-     * Throws {@code SecurityException} if the calling thread does
-     * not have {@code AllPermission}.
-     *
-     * @since   1.1
-     * @exception  SecurityException  if the calling thread does not have
-     *             {@code AllPermission}
-     * @deprecated This method was originally used to check if the calling
-     *             thread could access the system clipboard. The method has been
-     *             obsoleted and code should instead use {@link #checkPermission}
-     *             to check {@code AWTPermission("accessClipboard")}.
-     *             This method is subject to removal in a future version of Java SE.
-     * @see        #checkPermission(java.security.Permission) checkPermission
-     */
-    @Deprecated(since="1.8", forRemoval=true)
-    public void checkSystemClipboardAccess() {
-        checkPermission(SecurityConstants.ALL_PERMISSION);
-    }
-
-    /**
-     * Throws {@code SecurityException} if the calling thread does
-     * not have {@code AllPermission}.
-     *
-     * @since   1.1
-     * @exception  SecurityException  if the calling thread does not have
-     *             {@code AllPermission}
-     * @deprecated This method was originally used to check if the calling
-     *             thread could access the AWT event queue. The method has been
-     *             obsoleted and code should instead use {@link #checkPermission}
-     *             to check {@code AWTPermission("accessEventQueue")}.
-     *             This method is subject to removal in a future version of Java SE.
-     * @see        #checkPermission(java.security.Permission) checkPermission
-     */
-    @Deprecated(since="1.8", forRemoval=true)
-    public void checkAwtEventQueueAccess() {
-        checkPermission(SecurityConstants.ALL_PERMISSION);
     }
 
     /*
@@ -1472,35 +1399,6 @@ public class SecurityManager {
      */
     public void checkSetFactory() {
         checkPermission(new RuntimePermission("setFactory"));
-    }
-
-    /**
-     * Throws a {@code SecurityException} if the calling thread does
-     * not have {@code AllPermission}.
-     *
-     * @param clazz the class that reflection is to be performed on.
-     * @param which type of access, PUBLIC or DECLARED.
-     * @throws  SecurityException if the caller does not have
-     *          {@code AllPermission}
-     * @throws  NullPointerException if the {@code clazz} argument is
-     *          {@code null}
-     * @deprecated This method was originally used to check if the calling
-     *             thread was allowed to access members. It relied on the
-     *             caller being at a stack depth of 4 which is error-prone and
-     *             cannot be enforced by the runtime. The method has been
-     *             obsoleted and code should instead use
-     *             {@link #checkPermission} to check
-     *             {@code RuntimePermission("accessDeclaredMembers")}. This
-     *             method is subject to removal in a future version of Java SE.
-     * @since 1.1
-     * @see        #checkPermission(java.security.Permission) checkPermission
-     */
-    @Deprecated(since="1.8", forRemoval=true)
-    public void checkMemberAccess(Class<?> clazz, int which) {
-        if (clazz == null) {
-            throw new NullPointerException("class can't be null");
-        }
-        checkPermission(SecurityConstants.ALL_PERMISSION);
     }
 
     /**

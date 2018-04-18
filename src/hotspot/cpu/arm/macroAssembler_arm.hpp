@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ class BiasedLockingCounters;
 
 // Introduced AddressLiteral and its subclasses to ease portability from
 // x86 and avoid relocation issues
-class AddressLiteral VALUE_OBJ_CLASS_SPEC {
+class AddressLiteral {
   RelocationHolder _rspec;
   // Typically we use AddressLiterals we want to use their rval
   // However in some situations we want the lval (effect address) of the item.
@@ -359,8 +359,6 @@ public:
   void tlab_allocate(Register obj, Register obj_end, Register tmp1,
                      RegisterOrConstant size_expression, Label& slow_case);
 
-  void tlab_refill(Register top, Register tmp1, Register tmp2, Register tmp3, Register tmp4,
-                   Label& try_eden, Label& slow_case);
   void zero_memory(Register start, Register end, Register tmp);
 
   void incr_allocated_bytes(RegisterOrConstant size_in_bytes, Register tmp);
@@ -1396,7 +1394,7 @@ public:
 // The purpose of this class is to build several code fragments of the same size
 // in order to allow fast table branch.
 
-class FixedSizeCodeBlock VALUE_OBJ_CLASS_SPEC {
+class FixedSizeCodeBlock {
 public:
   FixedSizeCodeBlock(MacroAssembler* masm, int size_in_instrs, bool enabled);
   ~FixedSizeCodeBlock();

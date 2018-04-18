@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -34,34 +34,11 @@ grant {
 
 
     // permissions specific to this test
-    permission java.net.URLPermission "http://127.0.0.1:*/files/foo.txt", "GET:*";
+    permission java.net.URLPermission "http://localhost:*/files/foo.txt", "GET:*";
 };
 
 // For proxy only. Not being tested
 grant codebase "file:${test.classes}/proxydir/-" {
     permission java.net.SocketPermission "localhost:1024-", "accept,listen,connect";
-    permission java.net.SocketPermission "127.0.0.1:1024-", "connect,resolve";
+    permission java.net.SocketPermission "localhost:1024-", "connect,resolve";
 };
-
-grant codeBase "jrt:/jdk.incubator.httpclient" {
-    permission java.lang.RuntimePermission "accessClassInPackage.sun.net";
-    permission java.lang.RuntimePermission "accessClassInPackage.sun.net.util";
-    permission java.lang.RuntimePermission "accessClassInPackage.sun.net.www";
-    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.misc";
-
-    // ## why is SP not good enough. Check API @throws signatures and impl
-    permission java.net.SocketPermission "*","connect,resolve";
-    permission java.net.URLPermission "http:*","*:*";
-    permission java.net.URLPermission "https:*","*:*";
-    permission java.net.URLPermission "ws:*","*:*";
-    permission java.net.URLPermission "wss:*","*:*";
-    permission java.net.URLPermission "socket:*","CONNECT";  // proxy
-
-    // For request/response body processors, fromFile, asFile
-    permission java.io.FilePermission "<<ALL FILES>>","read,write";  // delete???
-
-    permission java.util.PropertyPermission "jdk.httpclient.*","read";
-
-    permission java.net.NetPermission "getProxySelector";
-};
-

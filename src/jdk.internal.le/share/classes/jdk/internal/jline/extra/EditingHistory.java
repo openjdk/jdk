@@ -367,11 +367,11 @@ public abstract class EditingHistory implements History {
         return count;
     }
 
-    public List<String> currentSessionEntries() {
+    public List<String> entries(boolean currentSession) {
         List<String> result = new ArrayList<>();
 
         for (Entry e : fullHistory) {
-            if (!(e.value() instanceof PersistentEntryMarker)) {
+            if (!currentSession || !(e.value() instanceof PersistentEntryMarker)) {
                 result.add(e.value().toString());
             }
         }

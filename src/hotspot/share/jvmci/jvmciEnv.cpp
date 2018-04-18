@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/scopeDesc.hpp"
-#include "runtime/sweeper.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "compiler/compilerOracle.hpp"
@@ -37,14 +36,19 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/universe.inline.hpp"
+#include "memory/universe.hpp"
+#include "oops/constantPool.inline.hpp"
+#include "oops/cpCache.inline.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/sweeper.hpp"
 #include "utilities/dtrace.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
@@ -365,12 +369,6 @@ methodHandle JVMCIEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
   if (holder_is_accessible) { // Our declared holder is loaded.
     constantTag tag = cpool->tag_ref_at(index);
     methodHandle m = lookup_method(accessor, holder, name_sym, sig_sym, bc, tag);
-    if (!m.is_null() &&
-        (bc == Bytecodes::_invokestatic
-         ?  InstanceKlass::cast(m->method_holder())->is_not_initialized()
-         : !InstanceKlass::cast(m->method_holder())->is_loaded())) {
-      m = NULL;
-    }
     if (!m.is_null()) {
       // We found the method.
       return m;

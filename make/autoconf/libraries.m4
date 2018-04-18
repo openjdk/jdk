@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,57 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   LIB_SETUP_BUNDLED_LIBS
   LIB_SETUP_MISC_LIBS
   LIB_SETUP_SOLARIS_STLPORT
+
+  if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+    GLOBAL_LIBS="-lc"
+  else
+    GLOBAL_LIBS=""
+  fi
+
+  BASIC_JDKLIB_LIBS=""
+  if test "x$TOOLCHAIN_TYPE" != xmicrosoft; then
+    BASIC_JDKLIB_LIBS="-ljava -ljvm"
+  fi
+
+  # Math library
+  BASIC_JVM_LIBS="$LIBM"
+
+  # Dynamic loading library
+  if test "x$OPENJDK_TARGET_OS" = xlinux || test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xaix; then
+    BASIC_JVM_LIBS="$BASIC_JVM_LIBS $LIBDL"
+  fi
+
+  # Threading library
+  if test "x$OPENJDK_TARGET_OS" = xlinux || test "x$OPENJDK_TARGET_OS" = xaix; then
+    BASIC_JVM_LIBS="$BASIC_JVM_LIBS -lpthread"
+  elif test "x$OPENJDK_TARGET_OS" = xsolaris; then
+    BASIC_JVM_LIBS="$BASIC_JVM_LIBS -lthread"
+  fi
+
+  if test "x$OPENJDK_TARGET_OS" = xsolaris; then
+    BASIC_JVM_LIBS="$BASIC_JVM_LIBS -lsocket -lsched -ldoor -ldemangle -lnsl \
+        -lrt"
+    BASIC_JVM_LIBS="$BASIC_JVM_LIBS $LIBCXX_JVM"
+  fi
+
+  if test "x$OPENJDK_TARGET_OS" = xwindows; then
+    BASIC_JVM_LIBS="$BASIC_JVM_LIBS kernel32.lib user32.lib gdi32.lib winspool.lib \
+        comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib \
+        wsock32.lib winmm.lib version.lib psapi.lib"
+  fi
+
+  JDKLIB_LIBS="$BASIC_JDKLIB_LIBS"
+  JDKEXE_LIBS=""
+  JVM_LIBS="$BASIC_JVM_LIBS"
+  OPENJDK_BUILD_JDKLIB_LIBS="$BASIC_JDKLIB_LIBS"
+  OPENJDK_BUILD_JVM_LIBS="$BASIC_JVM_LIBS"
+
+  AC_SUBST(JDKLIB_LIBS)
+  AC_SUBST(JDKEXE_LIBS)
+  AC_SUBST(JVM_LIBS)
+  AC_SUBST(OPENJDK_BUILD_JDKLIB_LIBS)
+  AC_SUBST(OPENJDK_BUILD_JVM_LIBS)
+  AC_SUBST(GLOBAL_LIBS)
 ])
 
 ################################################################################

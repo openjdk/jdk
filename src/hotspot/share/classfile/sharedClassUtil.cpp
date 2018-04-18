@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@
 #include "oops/instanceKlass.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/java.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 
 class ManifestStream: public ResourceObj {
   private:
@@ -92,6 +92,9 @@ void SharedPathsMiscInfoExt::print_path(outputStream* out, int type, const char*
   switch(type) {
   case APP:
     ClassLoader::trace_class_path("Expecting -Djava.class.path=", path);
+    break;
+  case MODULE:
+    ClassLoader::trace_class_path("Checking module path: ", path);
     break;
   default:
     SharedPathsMiscInfo::print_path(out, type, path);
@@ -167,12 +170,13 @@ void SharedClassUtil::update_shared_classpath(ClassPathEntry *cpe, SharedClassPa
 
 void SharedClassUtil::initialize(TRAPS) {
   if (UseSharedSpaces) {
-    int size = FileMapInfo::get_number_of_share_classpaths();
+    int size = FileMapInfo::get_number_of_shared_paths();
     if (size > 0) {
       SystemDictionaryShared::allocate_shared_data_arrays(size, THREAD);
       if (!DumpSharedSpaces) {
         FileMapHeaderExt* header = (FileMapHeaderExt*)FileMapInfo::current_info()->header();
-        ClassLoaderExt::init_paths_start_index(header->_app_paths_start_index);
+        ClassLoaderExt::init_paths_start_index(header->_app_class_paths_start_index);
+        ClassLoaderExt::init_app_module_paths_start_index(header->_app_module_paths_start_index);
       }
     }
   }
@@ -208,7 +212,7 @@ void SharedClassUtil::read_extra_data(const char* filename, TRAPS) {
 bool SharedClassUtil::is_classpath_entry_signed(int classpath_index) {
   assert(classpath_index >= 0, "Sanity");
   SharedClassPathEntryExt* ent = (SharedClassPathEntryExt*)
-    FileMapInfo::shared_classpath(classpath_index);
+    FileMapInfo::shared_path(classpath_index);
   return ent->_is_signed;
 }
 
@@ -216,7 +220,8 @@ void FileMapHeaderExt::populate(FileMapInfo* mapinfo, size_t alignment) {
   FileMapInfo::FileMapHeader::populate(mapinfo, alignment);
 
   ClassLoaderExt::finalize_shared_paths_misc_info();
-  _app_paths_start_index = ClassLoaderExt::app_paths_start_index();
+  _app_class_paths_start_index = ClassLoaderExt::app_class_paths_start_index();
+  _app_module_paths_start_index = ClassLoaderExt::app_module_paths_start_index();
 
   _verify_local = BytecodeVerificationLocal;
   _verify_remote = BytecodeVerificationRemote;

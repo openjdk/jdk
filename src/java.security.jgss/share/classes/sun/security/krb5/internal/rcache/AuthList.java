@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,9 @@ public class AuthList {
     private final LinkedList<AuthTimeWithHash> entries;
     private final int lifespan;
 
+    // entries.getLast().ctime, updated after each cleanup.
+    private volatile int oldestTime = Integer.MIN_VALUE;
+
     /**
      * Constructs a AuthList.
      */
@@ -67,11 +70,13 @@ public class AuthList {
      * Puts the authenticator timestamp into the cache in descending order,
      * and throw an exception if it's already there.
      */
-    public void put(AuthTimeWithHash t, KerberosTime currentTime)
+    public synchronized void put(AuthTimeWithHash t, KerberosTime currentTime)
             throws KrbApErrException {
 
         if (entries.isEmpty()) {
             entries.addFirst(t);
+            oldestTime = t.ctime;
+            return;
         } else {
             AuthTimeWithHash temp = entries.getFirst();
             int cmp = temp.compareTo(t);
@@ -106,24 +111,26 @@ public class AuthList {
 
         // let us cleanup while we are here
         long timeLimit = currentTime.getSeconds() - lifespan;
-        ListIterator<AuthTimeWithHash> it = entries.listIterator(0);
-        AuthTimeWithHash temp = null;
-        int index = -1;
-        while (it.hasNext()) {
-            // search expired timestamps.
-            temp = it.next();
-            if (temp.ctime < timeLimit) {
-                index = entries.indexOf(temp);
-                break;
+
+        // Only trigger a cleanup when the earliest entry is
+        // lifespan + 5 sec ago. This ensures a cleanup is done
+        // at most every 5 seconds so that we don't always
+        // addLast(removeLast).
+        if (oldestTime > timeLimit - 5) {
+            return;
+        }
+
+        // and we remove the *enough* old ones (1 lifetime ago)
+        while (!entries.isEmpty()) {
+            AuthTimeWithHash removed = entries.removeLast();
+            if (removed.ctime >= timeLimit) {
+                entries.addLast(removed);
+                oldestTime = removed.ctime;
+                return;
             }
         }
-        // It would be nice if LinkedList has a method called truncate(index).
-        if (index > -1) {
-            do {
-                // remove expired timestamps from the list.
-                entries.removeLast();
-            } while(entries.size() > index);
-        }
+
+        oldestTime = Integer.MIN_VALUE;
     }
 
     public boolean isEmpty() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,19 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.SubmissionPublisher;
-import java.util.function.IntSupplier;
 import java.util.stream.IntStream;
-import jdk.incubator.http.HttpResponse.BodySubscriber;
+import java.net.http.HttpResponse.BodySubscriber;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.lang.Long.MAX_VALUE;
 import static java.lang.Long.MIN_VALUE;
-import static java.lang.System.out;
 import static java.nio.ByteBuffer.wrap;
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static jdk.incubator.http.HttpResponse.BodySubscriber.buffering;
+import static java.net.http.HttpResponse.BodySubscribers.buffering;
 import static org.testng.Assert.*;
 
 /*

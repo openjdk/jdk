@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,4 +127,30 @@ class StringCharBuffer                                  // package-private
         return ByteOrder.nativeOrder();
     }
 
+    ByteOrder charRegionOrder() {
+        return null;
+    }
+
+    public boolean equals(Object ob) {
+        if (this == ob)
+            return true;
+        if (!(ob instanceof CharBuffer))
+            return false;
+        CharBuffer that = (CharBuffer)ob;
+        if (this.remaining() != that.remaining())
+            return false;
+        return BufferMismatch.mismatch(this, this.position(),
+                                       that, that.position(),
+                                       this.remaining()) < 0;
+    }
+
+    public int compareTo(CharBuffer that) {
+        int i = BufferMismatch.mismatch(this, this.position(),
+                                        that, that.position(),
+                                        Math.min(this.remaining(), that.remaining()));
+        if (i >= 0) {
+            return Character.compare(this.get(this.position() + i), that.get(that.position() + i));
+        }
+        return this.remaining() - that.remaining();
+    }
 }

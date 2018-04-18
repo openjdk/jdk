@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,28 +49,29 @@ public class SplitPackage {
     private static final String TEST_SRC = System.getProperty("test.src");
 
     private static final Path CLASSES_DIR = Paths.get("classes");
+    private static final Path PATCHES_DIR = Paths.get(TEST_SRC, "patches");
 
-    private static final String SPLIT_PKG_NAME = "javax.annotation";
-    private static final String JAVA_XML_WS_ANNOTATION = "java.xml.ws.annotation";
+    private static final String SPLIT_PKG_NAME = "java.sql";
+    private static final String MODULE_NAME  = "java.sql";
     /**
      * Compiles classes used by the test
      */
     @BeforeTest
     public void compileAll() throws Exception {
         CompilerUtils.cleanDir(CLASSES_DIR);
-        assertTrue(CompilerUtils.compile(Paths.get(TEST_SRC, "patches"), CLASSES_DIR));
+        assertTrue(CompilerUtils.compile(PATCHES_DIR, CLASSES_DIR, "--patch-module", "java.sql=" + PATCHES_DIR));
     }
 
     @Test
     public void runTest() throws Exception {
-        // split package detected if java.annotation.common is in the root set
-        runTest(JAVA_XML_WS_ANNOTATION, SPLIT_PKG_NAME);
+        // split package detected because of java.sql is in the root set
+        runTest(MODULE_NAME, SPLIT_PKG_NAME);
         runTest("ALL-SYSTEM", SPLIT_PKG_NAME);
         // default
         runTest(null, SPLIT_PKG_NAME);
 
         // Test jdeps classes
-        runTest("ALL-DEFAULT");
+        runTest("ALL-DEFAULT", SPLIT_PKG_NAME);
 
     }
 
@@ -98,7 +99,6 @@ public class SplitPackage {
                 throw new RuntimeException(splitPackages.toString());
             }
 
-            // java.xml.ws.annotation is not observable
             DepsAnalyzer analyzer = jdeps.getDepsAnalyzer();
 
             assertTrue(analyzer.run());

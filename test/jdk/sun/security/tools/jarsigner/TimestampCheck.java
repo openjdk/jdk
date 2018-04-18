@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,7 @@ import sun.security.x509.X500Name;
  *        jdk.test.lib.JDKToolLauncher
  *        jdk.test.lib.Platform
  *        jdk.test.lib.process.*
+ * @compile -XDignore.symbol.file TimestampCheck.java
  * @run main/timeout=600 TimestampCheck
  */
 public class TimestampCheck {
@@ -126,12 +127,12 @@ public class TimestampCheck {
         byte[] sign(byte[] input, String path) throws Exception {
 
             DerValue value = new DerValue(input);
-            System.out.println("\nIncoming Request\n===================");
-            System.out.println("Version: " + value.data.getInteger());
+            System.out.println("#\n# Incoming Request\n===================");
+            System.out.println("# Version: " + value.data.getInteger());
             DerValue messageImprint = value.data.getDerValue();
             AlgorithmId aid = AlgorithmId.parse(
                     messageImprint.data.getDerValue());
-            System.out.println("AlgorithmId: " + aid);
+            System.out.println("# AlgorithmId: " + aid);
 
             ObjectIdentifier policyId = new ObjectIdentifier(defaultPolicyId);
             BigInteger nonce = null;
@@ -139,16 +140,16 @@ public class TimestampCheck {
                 DerValue v = value.data.getDerValue();
                 if (v.tag == DerValue.tag_Integer) {
                     nonce = v.getBigInteger();
-                    System.out.println("nonce: " + nonce);
+                    System.out.println("# nonce: " + nonce);
                 } else if (v.tag == DerValue.tag_Boolean) {
-                    System.out.println("certReq: " + v.getBoolean());
+                    System.out.println("# certReq: " + v.getBoolean());
                 } else if (v.tag == DerValue.tag_ObjectId) {
                     policyId = v.getOID();
-                    System.out.println("PolicyID: " + policyId);
+                    System.out.println("# PolicyID: " + policyId);
                 }
             }
 
-            System.out.println("\nResponse\n===================");
+            System.out.println("#\n# Response\n===================");
             KeyStore ks = KeyStore.getInstance(
                     new File(keystore), "changeit".toCharArray());
 
@@ -232,10 +233,10 @@ public class TimestampCheck {
                     "1.2.840.113549.1.9.16.1.4"),
                     new DerValue(tstInfo2.toByteArray()));
 
-            System.out.println("Signing...");
-            System.out.println(new X500Name(signer
+            System.out.println("# Signing...");
+            System.out.println("# " + new X500Name(signer
                     .getIssuerX500Principal().getName()));
-            System.out.println(signer.getSerialNumber());
+            System.out.println("# " + signer.getSerialNumber());
 
             SignerInfo signerInfo = new SignerInfo(
                     new X500Name(signer.getIssuerX500Principal().getName()),
@@ -306,8 +307,6 @@ public class TimestampCheck {
 
     public static void main(String[] args) throws Throwable {
 
-        prepare();
-
         try (Handler tsa = Handler.init(0, "ks");) {
             tsa.start();
             int port = tsa.getPort();
@@ -315,62 +314,99 @@ public class TimestampCheck {
 
             if (args.length == 0) {         // Run this test
 
+                prepare();
+
                 sign("normal")
                         .shouldNotContain("Warning")
+                        .shouldContain("The signer certificate will expire on")
+                        .shouldContain("The timestamp will expire on")
                         .shouldHaveExitValue(0);
 
                 verify("normal.jar")
                         .shouldNotContain("Warning")
                         .shouldHaveExitValue(0);
 
+                verify("normal.jar", "-verbose")
+                        .shouldNotContain("Warning")
+                        .shouldContain("The signer certificate will expire on")
+                        .shouldContain("The timestamp will expire on")
+                        .shouldHaveExitValue(0);
+
                 // Simulate signing at a previous date:
                 // 1. tsold will create a timestamp of 20 days ago.
                 // 2. oldsigner expired 10 days ago.
-                // jarsigner will show a warning at signing.
                 signVerbose("tsold", "unsigned.jar", "tsold.jar", "oldsigner")
-                        .shouldHaveExitValue(4);
+                        .shouldNotContain("Warning")
+                        .shouldMatch("signer certificate expired on .*. "
+                                + "However, the JAR will be valid")
+                        .shouldHaveExitValue(0);
 
                 // It verifies perfectly.
                 verify("tsold.jar", "-verbose", "-certs")
                         .shouldNotContain("Warning")
+                        .shouldMatch("signer certificate expired on .*. "
+                                + "However, the JAR will be valid")
                         .shouldHaveExitValue(0);
 
+                // No timestamp
                 signVerbose(null, "unsigned.jar", "none.jar", "signer")
                         .shouldContain("is not timestamped")
+                        .shouldContain("The signer certificate will expire on")
                         .shouldHaveExitValue(0);
 
+                verify("none.jar", "-verbose")
+                        .shouldContain("do not include a timestamp")
+                        .shouldContain("The signer certificate will expire on")
+                        .shouldHaveExitValue(0);
+
+                // Error cases
+
                 signVerbose(null, "unsigned.jar", "badku.jar", "badku")
+                        .shouldContain("KeyUsage extension doesn't allow code signing")
                         .shouldHaveExitValue(8);
                 checkBadKU("badku.jar");
 
                 // 8180289: unvalidated TSA cert chain
                 sign("tsnoca")
-                        .shouldContain("TSA certificate chain is invalid")
+                        .shouldContain("The TSA certificate chain is invalid. "
+                                + "Reason: Path does not chain with any of the trust anchors")
                         .shouldHaveExitValue(64);
 
                 verify("tsnoca.jar", "-verbose", "-certs")
                         .shouldHaveExitValue(64)
                         .shouldContain("jar verified")
-                        .shouldContain("Invalid TSA certificate chain")
-                        .shouldContain("TSA certificate chain is invalid");
+                        .shouldContain("Invalid TSA certificate chain: "
+                                + "Path does not chain with any of the trust anchors")
+                        .shouldContain("TSA certificate chain is invalid."
+                                + " Reason: Path does not chain with any of the trust anchors");
 
                 sign("nononce")
+                        .shouldContain("Nonce missing in timestamp token")
                         .shouldHaveExitValue(1);
                 sign("diffnonce")
+                        .shouldContain("Nonce changed in timestamp token")
                         .shouldHaveExitValue(1);
                 sign("baddigest")
+                        .shouldContain("Digest octets changed in timestamp token")
                         .shouldHaveExitValue(1);
                 sign("diffalg")
+                        .shouldContain("Digest algorithm not")
                         .shouldHaveExitValue(1);
+
                 sign("fullchain")
                         .shouldHaveExitValue(0);   // Success, 6543440 solved.
+
                 sign("tsbad1")
+                        .shouldContain("Certificate is not valid for timestamping")
                         .shouldHaveExitValue(1);
                 sign("tsbad2")
+                        .shouldContain("Certificate is not valid for timestamping")
                         .shouldHaveExitValue(1);
                 sign("tsbad3")
+                        .shouldContain("Certificate is not valid for timestamping")
                         .shouldHaveExitValue(1);
                 sign("nocert")
+                        .shouldContain("Certificate not included in timestamp token")
                         .shouldHaveExitValue(1);
 
                 sign("policy", "-tsapolicyid",  "1.2.3")
@@ -378,6 +414,7 @@ public class TimestampCheck {
                 checkTimestamp("policy.jar", "1.2.3", "SHA-256");
 
                 sign("diffpolicy", "-tsapolicyid", "1.2.3")
+                        .shouldContain("TSAPolicyID changed in timestamp token")
                         .shouldHaveExitValue(1);
 
                 sign("sha1alg", "-tsadigestalg", "SHA")
@@ -387,6 +424,7 @@ public class TimestampCheck {
                 sign("tsweak", "-digestalg", "MD5",
                                 "-sigalg", "MD5withRSA", "-tsadigestalg", "MD5")
                         .shouldHaveExitValue(68)
+                        .shouldContain("The timestamp is invalid. Without a valid timestamp")
                         .shouldMatch("MD5.*-digestalg.*risk")
                         .shouldMatch("MD5.*-tsadigestalg.*risk")
                         .shouldMatch("MD5withRSA.*-sigalg.*risk");
@@ -394,6 +432,7 @@ public class TimestampCheck {
 
                 signVerbose("tsweak", "unsigned.jar", "tsweak2.jar", "signer")
                         .shouldHaveExitValue(64)
+                        .shouldContain("The timestamp is invalid. Without a valid timestamp")
                         .shouldContain("TSA certificate chain is invalid");
 
                 // Weak timestamp is an error and jar treated unsigned
@@ -402,18 +441,25 @@ public class TimestampCheck {
                         .shouldContain("treated as unsigned")
                         .shouldMatch("Timestamp.*512.*weak");
 
+                // Algorithm used in signing is weak
                 signVerbose("normal", "unsigned.jar", "halfWeak.jar", "signer",
                         "-digestalg", "MD5")
+                        .shouldContain("-digestalg option is considered a security risk")
                         .shouldHaveExitValue(4);
                 checkHalfWeak("halfWeak.jar");
 
                 // sign with DSA key
                 signVerbose("normal", "unsigned.jar", "sign1.jar", "dsakey")
                         .shouldHaveExitValue(0);
+
                 // sign with RSAkeysize < 1024
                 signVerbose("normal", "sign1.jar", "sign2.jar", "weakkeysize")
+                        .shouldContain("Algorithm constraints check failed on keysize")
                         .shouldHaveExitValue(4);
                 checkMultiple("sign2.jar");
+
+                // 8191438: jarsigner should print when a timestamp will expire
+                checkExpiration();
 
                 // When .SF or .RSA is missing or invalid
                 checkMissingOrInvalidFiles("normal.jar");
@@ -422,10 +468,116 @@ public class TimestampCheck {
                     checkInvalidTsaCertKeyUsage();
                 }
             } else {                        // Run as a standalone server
-                System.out.println("Press Enter to quit server");
+                System.out.println("TSA started at " + host
+                        + ". Press Enter to quit server");
                 System.in.read();
             }
         }
+    }
+
+    private static void checkExpiration() throws Exception {
+
+        // Warning when expired or expiring
+        signVerbose(null, "unsigned.jar", "expired.jar", "expired")
+                .shouldContain("signer certificate has expired")
+                .shouldHaveExitValue(4);
+        verify("expired.jar")
+                .shouldContain("signer certificate has expired")
+                .shouldHaveExitValue(4);
+        signVerbose(null, "unsigned.jar", "expiring.jar", "expiring")
+                .shouldContain("signer certificate will expire within")
+                .shouldHaveExitValue(0);
+        verify("expiring.jar")
+                .shouldContain("signer certificate will expire within")
+                .shouldHaveExitValue(0);
+        // Info for long
+        signVerbose(null, "unsigned.jar", "long.jar", "long")
+                .shouldNotContain("signer certificate has expired")
+                .shouldNotContain("signer certificate will expire within")
+                .shouldContain("signer certificate will expire on")
+                .shouldHaveExitValue(0);
+        verify("long.jar")
+                .shouldNotContain("signer certificate has expired")
+                .shouldNotContain("signer certificate will expire within")
+                .shouldNotContain("The signer certificate will expire")
+                .shouldHaveExitValue(0);
+        verify("long.jar", "-verbose")
+                .shouldContain("The signer certificate will expire")
+                .shouldHaveExitValue(0);
+
+        // Both expired
+        signVerbose("tsexpired", "unsigned.jar",
+                "tsexpired-expired.jar", "expired")
+                .shouldContain("The signer certificate has expired.")
+                .shouldContain("The timestamp has expired.")
+                .shouldHaveExitValue(4);
+        verify("tsexpired-expired.jar")
+                .shouldContain("signer certificate has expired")
+                .shouldContain("timestamp has expired.")
+                .shouldHaveExitValue(4);
+
+        // TS expired but signer still good
+        signVerbose("tsexpired", "unsigned.jar",
+                "tsexpired-long.jar", "long")
+                .shouldContain("The timestamp expired on")
+                .shouldHaveExitValue(0);
+        verify("tsexpired-long.jar")
+                .shouldMatch("timestamp expired on.*However, the JAR will be valid")
+                .shouldNotContain("Error")
+                .shouldHaveExitValue(0);
+
+        signVerbose("tsexpired", "unsigned.jar",
+                "tsexpired-ca.jar", "ca")
+                .shouldContain("The timestamp has expired.")
+                .shouldHaveExitValue(4);
+        verify("tsexpired-ca.jar")
+                .shouldNotContain("timestamp has expired")
+                .shouldNotContain("Error")
+                .shouldHaveExitValue(0);
+
+        // Warning when expiring
+        sign("tsexpiring")
+                .shouldContain("timestamp will expire within")
+                .shouldHaveExitValue(0);
+        verify("tsexpiring.jar")
+                .shouldContain("timestamp will expire within")
+                .shouldNotContain("still valid")
+                .shouldHaveExitValue(0);
+
+        signVerbose("tsexpiring", "unsigned.jar",
+                "tsexpiring-ca.jar", "ca")
+                .shouldContain("self-signed")
+                .stderrShouldNotMatch("The.*expir")
+                .shouldHaveExitValue(4); // self-signed
+        verify("tsexpiring-ca.jar")
+                .stderrShouldNotMatch("The.*expir")
+                .shouldHaveExitValue(0);
+
+        signVerbose("tsexpiringsoon", "unsigned.jar",
+                "tsexpiringsoon-long.jar", "long")
+                .shouldContain("The timestamp will expire")
+                .shouldHaveExitValue(0);
+        verify("tsexpiringsoon-long.jar")
+                .shouldMatch("timestamp will expire.*However, the JAR will be valid until")
+                .shouldHaveExitValue(0);
+
+        // Info for long
+        sign("tslong")
+                .shouldNotContain("timestamp has expired")
+                .shouldNotContain("timestamp will expire within")
+                .shouldContain("timestamp will expire on")
+                .shouldContain("signer certificate will expire on")
+                .shouldHaveExitValue(0);
+        verify("tslong.jar")
+                .shouldNotContain("timestamp has expired")
+                .shouldNotContain("timestamp will expire within")
+                .shouldNotContain("timestamp will expire on")
+                .shouldNotContain("signer certificate will expire on")
+                .shouldHaveExitValue(0);
+        verify("tslong.jar", "-verbose")
+                .shouldContain("timestamp will expire on")
+                .shouldContain("signer certificate will expire on")
+                .shouldHaveExitValue(0);
     }
 
     private static void checkInvalidTsaCertKeyUsage() throws Exception {
@@ -680,6 +832,14 @@ public class TimestampCheck {
         keytool("-alias tsbad3 -genkeypair -dname CN=tsbad3");
         keytool("-alias tsnoca -genkeypair -dname CN=tsnoca");
 
+        keytool("-alias expired -genkeypair -dname CN=expired");
+        keytool("-alias expiring -genkeypair -dname CN=expiring");
+        keytool("-alias long -genkeypair -dname CN=long");
+        keytool("-alias tsexpired -genkeypair -dname CN=tsexpired");
+        keytool("-alias tsexpiring -genkeypair -dname CN=tsexpiring");
+        keytool("-alias tsexpiringsoon -genkeypair -dname CN=tsexpiringsoon");
+        keytool("-alias tslong -genkeypair -dname CN=tslong");
+
         // tsnoca's issuer will be removed from keystore later
         keytool("-alias ca -genkeypair -ext bc -dname CN=CA");
         gencert("tsnoca", "-ext eku:critical=ts");
@@ -691,7 +851,15 @@ public class TimestampCheck {
         gencert("dsakey");
         gencert("weakkeysize");
         gencert("badku", "-ext ku:critical=keyAgreement");
-        gencert("ts", "-ext eku:critical=ts");
+        gencert("ts", "-ext eku:critical=ts -validity 500");
+
+        gencert("expired", "-validity 10 -startdate -12d");
+        gencert("expiring", "-validity 178");
+        gencert("long", "-validity 182");
+        gencert("tsexpired", "-ext eku:critical=ts -validity 10 -startdate -12d");
+        gencert("tsexpiring", "-ext eku:critical=ts -validity 364");
+        gencert("tsexpiringsoon", "-ext eku:critical=ts -validity 170"); // earlier than expiring
+        gencert("tslong", "-ext eku:critical=ts -validity 367");
 
 
         for (int i = 0; i < 5; i++) {
@@ -711,7 +879,7 @@ public class TimestampCheck {
             }
         }
 
-        gencert("tsold", "-ext eku:critical=ts -startdate -40d -validity 45");
+        gencert("tsold", "-ext eku:critical=ts -startdate -40d -validity 500");
 
         gencert("tsweak", "-ext eku:critical=ts");
         gencert("tsbad1");

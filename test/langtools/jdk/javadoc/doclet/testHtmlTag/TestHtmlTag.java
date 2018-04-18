@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6786682 4649116
+ * @bug 6786682 4649116 8182765
  * @summary This test verifies the use of lang attribute by <HTML>.
  * @author Bhavesh Patel
  * @library ../lib
@@ -106,11 +106,12 @@ public class TestHtmlTag extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg3/package-summary.html", true,
-                "<div class=\"contentContainer\"><a name=\"package.description\">\n"
+                "<div class=\"contentContainer\">\n"
+                + "<section role=\"region\"><a id=\"package.description\">\n"
                 + "<!--   -->\n"
                 + "</a>\n"
-                + "<div class=\"block\"><p>This is the first line."
-                + " Note the newlines before the &lt;p&gt; is relevant.</div>");
+                + "<div class=\"block\"><p>This is the first line. Note the newlines before the &lt;p&gt; is relevant.</div>\n"
+                + "</section>");
 
         checkOutput("pkg3/A.DatatypeFactory.html", true,
                 "<div class=\"block\"><p>\n"
@@ -119,11 +120,11 @@ public class TestHtmlTag extends JavadocTester {
                 + "\n"
                 + " <p>\n"
                 + " A new instance of the <code>DatatypeFactory</code> is created through the\n"
-                + " <a href=\"../pkg3/A.DatatypeFactory.html#newInstance--\"><code>newInstance()</code></a> method that uses the following implementation\n"
+                + " <a href=\"#newInstance()\"><code>newInstance()</code></a> method that uses the following implementation\n"
                 + " resolution mechanisms to determine an implementation:</p>\n"
                 + " <ol>\n"
                 + " <li>\n"
-                + " If the system property specified by <a href=\"../pkg3/A.DatatypeFactory.html#DATATYPEFACTORY_PROPERTY\"><code>DATATYPEFACTORY_PROPERTY</code></a>,\n"
+                + " If the system property specified by <a href=\"#DATATYPEFACTORY_PROPERTY\"><code>DATATYPEFACTORY_PROPERTY</code></a>,\n"
                 + " \"<code>javax.xml.datatype.DatatypeFactory</code>\", exists, a class with\n"
                 + " the name of the property value is instantiated. Any Exception thrown\n"
                 + " during the instantiation process is wrapped as a\n"
@@ -148,8 +149,7 @@ public class TestHtmlTag extends JavadocTester {
                 + " </li>\n"
                 + " <li>\n"
                 + " The final mechanism is to attempt to instantiate the <code>Class</code>\n"
-                + " specified by <a href=\"../pkg3/A.DatatypeFactory.html#DATATYPEFACTORY_IMPLEMENTATION_CLASS\">"
-                + "<code>DATATYPEFACTORY_IMPLEMENTATION_CLASS</code></a>. Any Exception\n"
+                + " specified by <a href=\"#DATATYPEFACTORY_IMPLEMENTATION_CLASS\"><code>DATATYPEFACTORY_IMPLEMENTATION_CLASS</code></a>. Any Exception\n"
                 + " thrown during the instantiation process is wrapped as a\n"
                 + " <code>IllegalStateException</code>.\n"
                 + " </li>\n"
@@ -176,21 +176,81 @@ public class TestHtmlTag extends JavadocTester {
                 + " second argument to the remote object's constructor for object to use\n"
                 + " during reinitialization/activation.</div>");
 
-         checkOutput("pkg3/A.ActivationGroupID.html", true,
-                 "<pre>public class <span class=\"typeNameLabel\">A.ActivationGroupID</span>\n"
-                 + "extends java.lang.Object\n"
-                 + "implements java.io.Serializable</pre>\n"
-                 + "<div class=\"block\">The identifier for a registered activation group serves several purposes:\n"
-                 + " <ul>\n"
-                 + " <li>identifies the group uniquely within the activation system, and\n"
-                 + " <li>contains a reference to the group's activation system so that the\n"
-                 + " group can contact its activation system when necessary.</ul><p>\n"
-                 + "\n"
-                 + " The <code>ActivationGroupID</code> is returned from the call to\n"
-                 + " <code>ActivationSystem.registerGroup</code> and is used to identify the\n"
-                 + " group within the activation system. This group id is passed as one of the\n"
-                 + " arguments to the activation group's special constructor when an\n"
-                 + " activation group is created/recreated.</div>\n"
-                 + "<dl>");
+        checkOutput("pkg3/A.ActivationGroupID.html", true,
+                "<pre>public class <span class=\"typeNameLabel\">A.ActivationGroupID</span>\n"
+                + "extends java.lang.Object\n"
+                + "implements java.io.Serializable</pre>\n"
+                + "<div class=\"block\">The identifier for a registered activation group serves several purposes:\n"
+                + " <ul>\n"
+                + " <li>identifies the group uniquely within the activation system, and\n"
+                + " <li>contains a reference to the group's activation system so that the\n"
+                + " group can contact its activation system when necessary.</ul><p>\n"
+                + "\n"
+                + " The <code>ActivationGroupID</code> is returned from the call to\n"
+                + " <code>ActivationSystem.registerGroup</code> and is used to identify the\n"
+                + " group within the activation system. This group id is passed as one of the\n"
+                + " arguments to the activation group's special constructor when an\n"
+                + " activation group is created/recreated.</div>\n"
+                + "<dl>");
+    }
+
+    @Test
+    void test_other_html4() {
+        javadoc("-locale", "en_US",
+                "-d", "out-other-html4",
+                "-html4",
+                "-sourcepath", testSrc,
+                "pkg3");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg3/package-summary.html", true,
+                "<div class=\"contentContainer\"><a name=\"package.description\">\n"
+                + "<!--   -->\n"
+                + "</a>\n"
+                + "<div class=\"block\"><p>This is the first line."
+                + " Note the newlines before the &lt;p&gt; is relevant.</div>");
+
+        checkOutput("pkg3/A.DatatypeFactory.html", true,
+                "<div class=\"block\"><p>\n"
+                + " Factory that creates new <code>javax.xml.datatype</code>\n"
+                + " <code>Object</code>s that map XML to/from Java <code>Object</code>s.</p>\n"
+                + "\n"
+                + " <p>\n"
+                + " A new instance of the <code>DatatypeFactory</code> is created through the\n"
+                + " <a href=\"#newInstance--\"><code>newInstance()</code></a> method that uses the following implementation\n"
+                + " resolution mechanisms to determine an implementation:</p>\n"
+                + " <ol>\n"
+                + " <li>\n"
+                + " If the system property specified by <a href=\"#DATATYPEFACTORY_PROPERTY\"><code>DATATYPEFACTORY_PROPERTY</code></a>,\n"
+                + " \"<code>javax.xml.datatype.DatatypeFactory</code>\", exists, a class with\n"
+                + " the name of the property value is instantiated. Any Exception thrown\n"
+                + " during the instantiation process is wrapped as a\n"
+                + " <code>IllegalStateException</code>.\n"
+                + " </li>\n"
+                + " <li>\n"
+                + " If the file ${JAVA_HOME}/lib/jaxp.properties exists, it is loaded in a\n"
+                + " <code>Properties</code> <code>Object</code>. The\n"
+                + " <code>Properties</code> <code>Object </code> is then queried for the\n"
+                + " property as documented in the prior step and processed as documented in\n"
+                + " the prior step.\n"
+                + " </li>\n"
+                + " <li>\n"
+                + " Uses the service-provider loading facilities, defined by the\n"
+                + " <code>ServiceLoader</code> class, to attempt to locate and load an\n"
+                + " implementation of the service using the default loading mechanism:\n"
+                + " the service-provider loading facility will use the current thread's context class loader\n"
+                + " to attempt to load the service. If the context class loader is null, the system class loader will be used.\n"
+                + " <br>\n"
+                + " In case of <code>service configuration error</code> a\n"
+                + " <code>DatatypeConfigurationException</code> will be thrown.\n"
+                + " </li>\n"
+                + " <li>\n"
+                + " The final mechanism is to attempt to instantiate the <code>Class</code>\n"
+                + " specified by <a href=\"#DATATYPEFACTORY_IMPLEMENTATION_CLASS\">"
+                + "<code>DATATYPEFACTORY_IMPLEMENTATION_CLASS</code></a>. Any Exception\n"
+                + " thrown during the instantiation process is wrapped as a\n"
+                + " <code>IllegalStateException</code>.\n"
+                + " </li>\n"
+                + " </ol></div>");
     }
 }

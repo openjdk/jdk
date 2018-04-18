@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import sun.net.ResourceManager;
  * @author Chris Hegarty
  */
 
-class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
+final class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
 {
     /* Used for IPv6 on Windows only */
     private FileDescriptor fd1;
@@ -86,6 +86,7 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
         fd1 = new FileDescriptor();
         try {
             super.create();
+            SocketCleanable.register(fd1);
         } catch (SocketException e) {
             fd1 = null;
             throw e;
@@ -104,8 +105,16 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
     protected synchronized void bind0(int lport, InetAddress laddr)
         throws SocketException
     {
+        // The native bind0 may close one or both of the underlying file
+        // descriptors, and even create new sockets, so the safest course of
+        // action is to unregister the socket cleaners, and register afterwards.
+        SocketCleanable.unregister(fd);
+        SocketCleanable.unregister(fd1);
+
         bind0(lport, laddr, exclusiveBind);
 
+        SocketCleanable.register(fd);
+        SocketCleanable.register(fd1);
     }
 
     protected synchronized void receive(DatagramPacket p)
@@ -160,6 +169,8 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
 
     protected void close() {
         if (fd != null || fd1 != null) {
+            SocketCleanable.unregister(fd);
+            SocketCleanable.unregister(fd1);
             datagramSocketClose();
             ResourceManager.afterUdpClose();
             fd = null;

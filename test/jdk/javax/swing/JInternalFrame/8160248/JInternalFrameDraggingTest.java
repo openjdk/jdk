@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import javax.swing.SwingUtilities;
 /**
  * @test
  * @key headful
- * @bug 8160248 8160332
+ * @bug 8160248 8160332 8186513
  * @summary Dragged internal frame leaves artifacts for floating point ui scale
  * @run main/othervm -Dsun.java2d.uiScale=1.2 JInternalFrameDraggingTest
  * @run main/othervm -Dsun.java2d.uiScale=1.5 JInternalFrameDraggingTest
@@ -69,10 +69,14 @@ public class JInternalFrameDraggingTest {
         BufferedImage img = robot.createScreenCapture(rect);
 
         int testRGB = BACKGROUND_COLOR.getRGB();
-        for (int i = 0; i < size; i++) {
+        for (int i = 1; i < size; i++) {
             int rgbCW = img.getRGB(i, size / 2);
             int rgbCH = img.getRGB(size / 2, i);
             if (rgbCW != testRGB || rgbCH != testRGB) {
+                System.out.println("i " + i + " rgbCW " +
+                                   Integer.toHexString(rgbCW) +
+                                   " testRGB " + Integer.toHexString(testRGB) +
+                                   " rgbCH " + Integer.toHexString(rgbCH));
                 throw new RuntimeException("Background color is wrong!");
             }
         }
@@ -81,6 +85,7 @@ public class JInternalFrameDraggingTest {
     private static void createAndShowGUI() {
 
         frame = new JFrame();
+        frame.setUndecorated(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout());
 

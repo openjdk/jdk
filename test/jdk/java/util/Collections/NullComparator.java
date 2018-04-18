@@ -27,7 +27,10 @@
  * @summary A null Comparator is now specified to indicate natural ordering.
  */
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class NullComparator {
     public static void main(String[] args) throws Exception {

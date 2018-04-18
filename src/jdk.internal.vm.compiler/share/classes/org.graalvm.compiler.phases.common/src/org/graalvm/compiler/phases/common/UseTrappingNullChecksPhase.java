@@ -50,6 +50,9 @@ import org.graalvm.compiler.nodes.extended.NullCheckNode;
 import org.graalvm.compiler.nodes.memory.FixedAccessNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionKey;
+import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.phases.BasePhase;
 import org.graalvm.compiler.phases.tiers.LowTierContext;
 
@@ -64,16 +67,24 @@ public class UseTrappingNullChecksPhase extends BasePhase<LowTierContext> {
     private static final CounterKey counterTrappingNullCheckUnreached = DebugContext.counter("TrappingNullCheckUnreached");
     private static final CounterKey counterTrappingNullCheckDynamicDeoptimize = DebugContext.counter("TrappingNullCheckDynamicDeoptimize");
 
+    public static class Options {
+
+        // @formatter:off
+        @Option(help = "Use traps for null checks instead of explicit null-checks", type = OptionType.Expert)
+        public static final OptionKey<Boolean> UseTrappingNullChecks = new OptionKey<>(true);
+        // @formatter:on
+    }
+
     @Override
     protected void run(StructuredGraph graph, LowTierContext context) {
-        if (context.getTarget().implicitNullCheckLimit <= 0) {
+        if (!Options.UseTrappingNullChecks.getValue(graph.getOptions()) || context.getTarget().implicitNullCheckLimit <= 0) {
             return;
         }
         assert graph.getGuardsStage().areFrameStatesAtDeopts();
 
         long implicitNullCheckLimit = context.getTarget().implicitNullCheckLimit;
         for (DeoptimizeNode deopt : graph.getNodes(DeoptimizeNode.TYPE)) {
-            tryUseTrappingNullCheck(deopt, deopt.predecessor(), deopt.reason(), deopt.getSpeculation(), implicitNullCheckLimit);
+            tryUseTrappingNullCheck(deopt, deopt.predecessor(), deopt.getReason(), deopt.getSpeculation(), implicitNullCheckLimit);
         }
         for (DynamicDeoptimizeNode deopt : graph.getNodes(DynamicDeoptimizeNode.TYPE)) {
             tryUseTrappingNullCheck(context.getMetaAccess(), deopt, implicitNullCheckLimit);

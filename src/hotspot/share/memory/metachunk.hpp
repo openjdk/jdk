@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 #ifndef SHARE_VM_MEMORY_METACHUNK_HPP
 #define SHARE_VM_MEMORY_METACHUNK_HPP
 
-#include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -33,7 +32,7 @@ class VirtualSpaceNode;
 // Super class of Metablock and Metachunk to allow them to
 // be put on the FreeList and in the BinaryTreeDictionary.
 template <class T>
-class Metabase VALUE_OBJ_CLASS_SPEC {
+class Metabase {
   size_t _word_size;
   T*     _next;
   T*     _prev;
@@ -94,15 +93,83 @@ class Metabase VALUE_OBJ_CLASS_SPEC {
 //            |              |             |         |
 //            +--------------+ <- bottom --+       --+
 
+// ChunkIndex defines the type of chunk.
+// Chunk types differ by size: specialized < small < medium, chunks
+// larger than medium are humongous chunks of varying size.
+enum ChunkIndex {
+  ZeroIndex = 0,
+  SpecializedIndex = ZeroIndex,
+  SmallIndex = SpecializedIndex + 1,
+  MediumIndex = SmallIndex + 1,
+  HumongousIndex = MediumIndex + 1,
+  NumberOfFreeLists = 3,
+  NumberOfInUseLists = 4
+};
+
+// Utility functions.
+size_t get_size_for_nonhumongous_chunktype(ChunkIndex chunk_type, bool is_class);
+ChunkIndex get_chunk_type_by_size(size_t size, bool is_class);
+
+// Returns a descriptive name for a chunk type.
+const char* chunk_size_name(ChunkIndex index);
+
+// Verify chunk type.
+inline bool is_valid_chunktype(ChunkIndex index) {
+  return index == SpecializedIndex || index == SmallIndex ||
+         index == MediumIndex || index == HumongousIndex;
+}
+
+inline bool is_valid_nonhumongous_chunktype(ChunkIndex index) {
+  return is_valid_chunktype(index) && index != HumongousIndex;
+}
+
+enum ChunkOrigin {
+  // Chunk normally born (via take_from_committed)
+  origin_normal = 1,
+  // Chunk was born as padding chunk
+  origin_pad = 2,
+  // Chunk was born as leftover chunk in VirtualSpaceNode::retire
+  origin_leftover = 3,
+  // Chunk was born as result of a merge of smaller chunks
+  origin_merge = 4,
+  // Chunk was born as result of a split of a larger chunk
+  origin_split = 5,
+
+  origin_minimum = origin_normal,
+  origin_maximum = origin_split,
+  origins_count = origin_maximum + 1
+};
+
+inline bool is_valid_chunkorigin(ChunkOrigin origin) {
+  return origin == origin_normal ||
+    origin == origin_pad ||
+    origin == origin_leftover ||
+    origin == origin_merge ||
+    origin == origin_split;
+}
+
 class Metachunk : public Metabase<Metachunk> {
   friend class MetachunkTest;
   // The VirtualSpaceNode containing this chunk.
-  VirtualSpaceNode* _container;
+  VirtualSpaceNode* const _container;
 
   // Current allocation top.
   MetaWord* _top;
 
+  // A 32bit sentinel for debugging purposes.
+  enum { CHUNK_SENTINEL = 0x4d4554EF,  // "MET"
+         CHUNK_SENTINEL_INVALID = 0xFEEEEEEF
+  };
+
+  uint32_t _sentinel;
+
+  const ChunkIndex _chunk_type;
+  const bool _is_class;
+  // Whether the chunk is free (in freelist) or in use by some class loader.
   bool _is_tagged_free;
+
+  ChunkOrigin _origin;
+  int _use_count;
 
   MetaWord* initial_top() const { return (MetaWord*)this + overhead(); }
   MetaWord* top() const         { return _top; }
@@ -120,7 +187,7 @@ class Metachunk : public Metabase<Metachunk> {
   // Size of the Metachunk header, including alignment.
   static size_t overhead();
 
-  Metachunk(size_t word_size , VirtualSpaceNode* container);
+  Metachunk(ChunkIndex chunktype, bool is_class, size_t word_size, VirtualSpaceNode* container);
 
   MetaWord* allocate(size_t word_size);
 
@@ -143,12 +210,23 @@ class Metachunk : public Metabase<Metachunk> {
 
   bool contains(const void* ptr) { return bottom() <= ptr && ptr < _top; }
 
-#ifndef PRODUCT
-  void mangle(juint word_value);
-#endif
-
   void print_on(outputStream* st) const;
-  void verify();
+
+  bool is_valid_sentinel() const        { return _sentinel == CHUNK_SENTINEL; }
+  void remove_sentinel()                { _sentinel = CHUNK_SENTINEL_INVALID; }
+
+  int get_use_count() const             { return _use_count; }
+  void inc_use_count()                  { _use_count ++; }
+
+  ChunkOrigin get_origin() const        { return _origin; }
+  void set_origin(ChunkOrigin orig)     { _origin = orig; }
+
+  ChunkIndex get_chunk_type() const     { return _chunk_type; }
+  bool is_class() const                 { return _is_class; }
+
+  DEBUG_ONLY(void mangle(juint word_value);)
+  DEBUG_ONLY(void verify();)
+
 };
 
 // Metablock is the unit of allocation from a Chunk.

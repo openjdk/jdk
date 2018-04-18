@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,20 @@
  */
 
 #include "jvm.h"
+#include "logging/log.hpp"
+#include "memory/allocation.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "runtime/frame.inline.hpp"
-#include "runtime/interfaceSupport.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.hpp"
+#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 
-#ifndef __APPLE__
-// POSIX unamed semaphores are not supported on OS X.
-#include "semaphore_posix.hpp"
-#endif
-
 #include <dlfcn.h>
 #include <pthread.h>
-#include <semaphore.h>
 #include <signal.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
@@ -337,8 +335,15 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
   return aligned_base;
 }
 
-int os::log_vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
-    return vsnprintf(buf, len, fmt, args);
+int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
+  // All supported POSIX platforms provide C99 semantics.
+  int result = ::vsnprintf(buf, len, fmt, args);
+  // If an encoding error occurred (result < 0) then it's not clear
+  // whether the buffer is NUL terminated, so ensure it is.
+  if ((result < 0) && (len > 0)) {
+    buf[len - 1] = '\0';
+  }
+  return result;
 }
 
 int os::get_fileno(FILE* fp) {
@@ -1498,67 +1503,6 @@ void os::ThreadCrashProtection::check_crash_protection(int sig,
     }
   }
 }
-
-// POSIX unamed semaphores are not supported on OS X.
-#ifndef __APPLE__
-
-PosixSemaphore::PosixSemaphore(uint value) {
-  int ret = sem_init(&_semaphore, 0, value);
-
-  guarantee_with_errno(ret == 0, "Failed to initialize semaphore");
-}
-
-PosixSemaphore::~PosixSemaphore() {
-  sem_destroy(&_semaphore);
-}
-
-void PosixSemaphore::signal(uint count) {
-  for (uint i = 0; i < count; i++) {
-    int ret = sem_post(&_semaphore);
-
-    assert_with_errno(ret == 0, "sem_post failed");
-  }
-}
-
-void PosixSemaphore::wait() {
-  int ret;
-
-  do {
-    ret = sem_wait(&_semaphore);
-  } while (ret != 0 && errno == EINTR);
-
-  assert_with_errno(ret == 0, "sem_wait failed");
-}
-
-bool PosixSemaphore::trywait() {
-  int ret;
-
-  do {
-    ret = sem_trywait(&_semaphore);
-  } while (ret != 0 && errno == EINTR);
-
-  assert_with_errno(ret == 0 || errno == EAGAIN, "trywait failed");
-
-  return ret == 0;
-}
-
-bool PosixSemaphore::timedwait(struct timespec ts) {
-  while (true) {
-    int result = sem_timedwait(&_semaphore, &ts);
-    if (result == 0) {
-      return true;
-    } else if (errno == EINTR) {
-      continue;
-    } else if (errno == ETIMEDOUT) {
-      return false;
-    } else {
-      assert_with_errno(false, "timedwait failed");
-      return false;
-    }
-  }
-}
-
-#endif // __APPLE__
 
 
 // Shared pthread_mutex/cond based PlatformEvent implementation.
