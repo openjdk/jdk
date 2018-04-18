@@ -1008,79 +1008,114 @@ void G1ConcurrentMark::verify_during_pause(G1HeapVerifier::G1VerifyType type, Ve
   verifier->check_bitmaps(caller);
 }
 
-class G1UpdateRemSetTrackingBeforeRebuild : public HeapRegionClosure {
+class G1UpdateRemSetTrackingBeforeRebuildTask : public AbstractGangTask {
   G1CollectedHeap* _g1h;
   G1ConcurrentMark* _cm;
+  HeapRegionClaimer _hrclaimer;
+  uint volatile _total_selected_for_rebuild;
 
   G1PrintRegionLivenessInfoClosure _cl;
 
-  uint _num_regions_selected_for_rebuild;  // The number of regions actually selected for rebuild.
+  class G1UpdateRemSetTrackingBeforeRebuild : public HeapRegionClosure {
+    G1CollectedHeap* _g1h;
+    G1ConcurrentMark* _cm;
 
-  void update_remset_before_rebuild(HeapRegion * hr) {
-    G1RemSetTrackingPolicy* tracking_policy = _g1h->g1_policy()->remset_tracker();
+    G1PrintRegionLivenessInfoClosure* _cl;
 
-    size_t live_bytes = _cm->liveness(hr->hrm_index()) * HeapWordSize;
-    bool selected_for_rebuild = tracking_policy->update_before_rebuild(hr, live_bytes);
-    if (selected_for_rebuild) {
-      _num_regions_selected_for_rebuild++;
-    }
-    _cm->update_top_at_rebuild_start(hr);
-  }
+    uint _num_regions_selected_for_rebuild;  // The number of regions actually selected for rebuild.
 
-  void distribute_marked_bytes(HeapRegion* hr, size_t marked_words) {
-    uint const region_idx = hr->hrm_index();
-    uint num_regions_in_humongous = (uint)G1CollectedHeap::humongous_obj_size_in_regions(marked_words);
+    void update_remset_before_rebuild(HeapRegion * hr) {
+      G1RemSetTrackingPolicy* tracking_policy = _g1h->g1_policy()->remset_tracker();
 
-    for (uint i = region_idx; i < (region_idx + num_regions_in_humongous); i++) {
-      HeapRegion* const r = _g1h->region_at(i);
-      size_t const words_to_add = MIN2(HeapRegion::GrainWords, marked_words);
-      assert(words_to_add > 0, "Out of space to distribute before end of humongous object in region %u (starts %u)", i, region_idx);
-
-      log_trace(gc, marking)("Adding " SIZE_FORMAT " words to humongous region %u (%s)",
-                             words_to_add, i, r->get_type_str());
-      r->add_to_marked_bytes(words_to_add * HeapWordSize);
-      marked_words -= words_to_add;
-    }
-    assert(marked_words == 0,
-           SIZE_FORMAT " words left after distributing space across %u regions",
-           marked_words, num_regions_in_humongous);
-  }
-
-  void update_marked_bytes(HeapRegion* hr) {
-    uint const region_idx = hr->hrm_index();
-    size_t marked_words = _cm->liveness(region_idx);
-    // The marking attributes the object's size completely to the humongous starts
-    // region. We need to distribute this value across the entire set of regions a
-    // humongous object spans.
-    if (hr->is_humongous()) {
-      assert(hr->is_starts_humongous() || marked_words == 0,
-             "Should not have marked words " SIZE_FORMAT " in non-starts humongous region %u (%s)",
-             marked_words, region_idx, hr->get_type_str());
-
-      if (marked_words > 0) {
-        distribute_marked_bytes(hr, marked_words);
+      size_t const live_bytes = _cm->liveness(hr->hrm_index()) * HeapWordSize;
+      bool selected_for_rebuild = tracking_policy->update_before_rebuild(hr, live_bytes);
+      if (selected_for_rebuild) {
+        _num_regions_selected_for_rebuild++;
       }
-    } else {
-      log_trace(gc, marking)("Adding " SIZE_FORMAT " words to region %u (%s)", marked_words, region_idx, hr->get_type_str());
-      hr->add_to_marked_bytes(marked_words * HeapWordSize);
+      _cm->update_top_at_rebuild_start(hr);
     }
-  }
+
+    // Distribute the given words across the humongous object starting with hr and
+    // note end of marking.
+    void distribute_marked_bytes(HeapRegion* hr, size_t marked_words) {
+      uint const region_idx = hr->hrm_index();
+      size_t const obj_size_in_words = (size_t)oop(hr->bottom())->size();
+      uint const num_regions_in_humongous = (uint)G1CollectedHeap::humongous_obj_size_in_regions(obj_size_in_words);
+
+      // "Distributing" zero words means that we only note end of marking for these
+      // regions.
+      assert(marked_words == 0 || obj_size_in_words == marked_words,
+             "Marked words should either be 0 or the same as humongous object (" SIZE_FORMAT ") but is " SIZE_FORMAT,
+             obj_size_in_words, marked_words);
+
+      for (uint i = region_idx; i < (region_idx + num_regions_in_humongous); i++) {
+        HeapRegion* const r = _g1h->region_at(i);
+        size_t const words_to_add = MIN2(HeapRegion::GrainWords, marked_words);
+
+        log_trace(gc, marking)("Adding " SIZE_FORMAT " words to humongous region %u (%s)",
+                               words_to_add, i, r->get_type_str());
+        add_marked_bytes_and_note_end(r, words_to_add * HeapWordSize);
+        marked_words -= words_to_add;
+      }
+      assert(marked_words == 0,
+             SIZE_FORMAT " words left after distributing space across %u regions",
+             marked_words, num_regions_in_humongous);
+    }
+
+    void update_marked_bytes(HeapRegion* hr) {
+      uint const region_idx = hr->hrm_index();
+      size_t const marked_words = _cm->liveness(region_idx);
+      // The marking attributes the object's size completely to the humongous starts
+      // region. We need to distribute this value across the entire set of regions a
+      // humongous object spans.
+      if (hr->is_humongous()) {
+        assert(hr->is_starts_humongous() || marked_words == 0,
+               "Should not have marked words " SIZE_FORMAT " in non-starts humongous region %u (%s)",
+               marked_words, region_idx, hr->get_type_str());
+        if (hr->is_starts_humongous()) {
+          distribute_marked_bytes(hr, marked_words);
+        }
+      } else {
+        log_trace(gc, marking)("Adding " SIZE_FORMAT " words to region %u (%s)", marked_words, region_idx, hr->get_type_str());
+        add_marked_bytes_and_note_end(hr, marked_words * HeapWordSize);
+      }
+    }
+
+    void add_marked_bytes_and_note_end(HeapRegion* hr, size_t marked_bytes) {
+      hr->add_to_marked_bytes(marked_bytes);
+      _cl->do_heap_region(hr);
+      hr->note_end_of_marking();
+    }
+
+  public:
+    G1UpdateRemSetTrackingBeforeRebuild(G1CollectedHeap* g1h, G1ConcurrentMark* cm, G1PrintRegionLivenessInfoClosure* cl) :
+      _g1h(g1h), _cm(cm), _num_regions_selected_for_rebuild(0), _cl(cl) { }
+
+    virtual bool do_heap_region(HeapRegion* r) {
+      update_remset_before_rebuild(r);
+      update_marked_bytes(r);
+
+      return false;
+    }
+
+    uint num_selected_for_rebuild() const { return _num_regions_selected_for_rebuild; }
+  };
 
 public:
-  G1UpdateRemSetTrackingBeforeRebuild(G1CollectedHeap* g1h, G1ConcurrentMark* cm) :
-    _g1h(g1h), _cm(cm), _cl("Post-Marking"), _num_regions_selected_for_rebuild(0) { }
+  G1UpdateRemSetTrackingBeforeRebuildTask(G1CollectedHeap* g1h, G1ConcurrentMark* cm, uint num_workers) :
+    AbstractGangTask("G1 Update RemSet Tracking Before Rebuild"),
+    _g1h(g1h), _cm(cm), _hrclaimer(num_workers), _total_selected_for_rebuild(0), _cl("Post-Marking") { }
 
-  virtual bool do_heap_region(HeapRegion* r) {
-    update_remset_before_rebuild(r);
-    update_marked_bytes(r);
-    if (log_is_enabled(Trace, gc, liveness)) {
-      _cl.do_heap_region(r);
-    }
-    r->note_end_of_marking();
-    return false;
+  virtual void work(uint worker_id) {
+    G1UpdateRemSetTrackingBeforeRebuild update_cl(_g1h, _cm, &_cl);
+    _g1h->heap_region_par_iterate_from_worker_offset(&update_cl, &_hrclaimer, worker_id);
+    Atomic::add(update_cl.num_selected_for_rebuild(), &_total_selected_for_rebuild);
   }
 
-  uint num_selected_for_rebuild() const { return _num_regions_selected_for_rebuild; }
+  uint total_selected_for_rebuild() const { return _total_selected_for_rebuild; }
+
+  // Number of regions for which roughly one thread should be spawned for this work.
+  static const uint RegionsPerThread = 384;
 };
 
 class G1UpdateRemSetTrackingAfterRebuild : public HeapRegionClosure {
@@ -1137,10 +1172,17 @@ void G1ConcurrentMark::remark() {
     swap_mark_bitmaps();
     {
       GCTraceTime(Debug, gc, phases) debug("Update Remembered Set Tracking Before Rebuild", _gc_timer_cm);
-      G1UpdateRemSetTrackingBeforeRebuild cl(_g1h, this);
-      _g1h->heap_region_iterate(&cl);
+
+      uint const workers_by_capacity = (_g1h->num_regions() + G1UpdateRemSetTrackingBeforeRebuildTask::RegionsPerThread - 1) /
+                                       G1UpdateRemSetTrackingBeforeRebuildTask::RegionsPerThread;
+      uint const num_workers = MIN2(_g1h->workers()->active_workers(), workers_by_capacity);
+
+      G1UpdateRemSetTrackingBeforeRebuildTask cl(_g1h, this, num_workers);
+      log_debug(gc,ergo)("Running %s using %u workers for %u regions in heap", cl.name(), num_workers, _g1h->num_regions());
+      _g1h->workers()->run_task(&cl, num_workers);
+
       log_debug(gc, remset, tracking)("Remembered Set Tracking update regions total %u, selected %u",
-                                      _g1h->num_regions(), cl.num_selected_for_rebuild());
+                                      _g1h->num_regions(), cl.total_selected_for_rebuild());
     }
     {
       GCTraceTime(Debug, gc, phases) debug("Reclaim Empty Regions", _gc_timer_cm);
@@ -2926,6 +2968,10 @@ G1PrintRegionLivenessInfoClosure::G1PrintRegionLivenessInfoClosure(const char* p
   _total_prev_live_bytes(0), _total_next_live_bytes(0),
   _total_remset_bytes(0), _total_strong_code_roots_bytes(0)
 {
+  if (!log_is_enabled(Trace, gc, liveness)) {
+    return;
+  }
+
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   MemRegion g1_reserved = g1h->g1_reserved();
   double now = os::elapsedTime();
@@ -2967,6 +3013,10 @@ G1PrintRegionLivenessInfoClosure::G1PrintRegionLivenessInfoClosure(const char* p
 }
 
 bool G1PrintRegionLivenessInfoClosure::do_heap_region(HeapRegion* r) {
+  if (!log_is_enabled(Trace, gc, liveness)) {
+    return false;
+  }
+
   const char* type       = r->get_type_str();
   HeapWord* bottom       = r->bottom();
   HeapWord* end          = r->end();
@@ -3005,6 +3055,10 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(HeapRegion* r) {
 }
 
 G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
+  if (!log_is_enabled(Trace, gc, liveness)) {
+    return;
+  }
+
   // add static memory usages to remembered set sizes
   _total_remset_bytes += HeapRegionRemSet::fl_mem_size() + HeapRegionRemSet::static_mem_size();
   // Print the footer of the output.

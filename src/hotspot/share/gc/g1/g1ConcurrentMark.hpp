@@ -464,7 +464,7 @@ public:
   void add_to_liveness(uint worker_id, oop const obj, size_t size);
   // Liveness of the given region as determined by concurrent marking, i.e. the amount of
   // live words between bottom and nTAMS.
-  size_t liveness(uint region)  { return _region_mark_stats[region]._live_words; }
+  size_t liveness(uint region) const { return _region_mark_stats[region]._live_words; }
 
   // Sets the internal top_at_region_start for the given region to current top of the region.
   inline void update_top_at_rebuild_start(HeapRegion* r);
@@ -840,7 +840,6 @@ public:
 // information. It's currently used at the end of marking and also
 // after we sort the old regions at the end of the cleanup operation.
 class G1PrintRegionLivenessInfoClosure : public HeapRegionClosure {
-private:
   // Accumulators for these values.
   size_t _total_used_bytes;
   size_t _total_capacity_bytes;
