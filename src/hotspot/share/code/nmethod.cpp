@@ -1365,7 +1365,7 @@ void nmethod::flush_dependencies(BoolObjectClosure* is_alive) {
         }
         // During GC the is_alive closure is non-NULL, and is used to
         // determine liveness of dependees that need to be updated.
-        if (is_alive == NULL || klass->is_loader_alive(is_alive)) {
+        if (is_alive == NULL || klass->is_loader_alive()) {
           // The GC defers deletion of this entry, since there might be multiple threads
           // iterating over the _dependencies graph. Other call paths are single-threaded
           // and may delete it immediately.

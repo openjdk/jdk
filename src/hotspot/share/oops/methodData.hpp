@@ -254,7 +254,7 @@ public:
   ProfileData* data_in();
 
   // GC support
-  void clean_weak_klass_links(BoolObjectClosure* cl);
+  void clean_weak_klass_links(bool always_clean);
 
   // Redefinition support
   void clean_weak_method_links();
@@ -505,7 +505,7 @@ public:
   virtual void post_initialize(BytecodeStream* stream, MethodData* mdo) {}
 
   // GC support
-  virtual void clean_weak_klass_links(BoolObjectClosure* is_alive_closure) {}
+  virtual void clean_weak_klass_links(bool always_clean) {}
 
   // Redefinition support
   virtual void clean_weak_method_links() {}
@@ -820,9 +820,6 @@ public:
 
   static void print_klass(outputStream* st, intptr_t k);
 
-  // GC support
-  static bool is_loader_alive(BoolObjectClosure* is_alive_cl, intptr_t p);
-
 protected:
   // ProfileData object these entries are part of
   ProfileData* _pd;
@@ -930,7 +927,7 @@ public:
   }
 
   // GC support
-  void clean_weak_klass_links(BoolObjectClosure* is_alive_closure);
+  void clean_weak_klass_links(bool always_clean);
 
   void print_data_on(outputStream* st) const;
 };
@@ -973,7 +970,7 @@ public:
   }
 
   // GC support
-  void clean_weak_klass_links(BoolObjectClosure* is_alive_closure);
+  void clean_weak_klass_links(bool always_clean);
 
   void print_data_on(outputStream* st) const;
 };
@@ -1157,12 +1154,12 @@ public:
   }
 
   // GC support
-  virtual void clean_weak_klass_links(BoolObjectClosure* is_alive_closure) {
+  virtual void clean_weak_klass_links(bool always_clean) {
     if (has_arguments()) {
-      _args.clean_weak_klass_links(is_alive_closure);
+      _args.clean_weak_klass_links(always_clean);
     }
     if (has_return()) {
-      _ret.clean_weak_klass_links(is_alive_closure);
+      _ret.clean_weak_klass_links(always_clean);
     }
   }
 
@@ -1303,7 +1300,7 @@ public:
   }
 
   // GC support
-  virtual void clean_weak_klass_links(BoolObjectClosure* is_alive_closure);
+  virtual void clean_weak_klass_links(bool always_clean);
 
 #ifdef CC_INTERP
   static int receiver_type_data_size_in_bytes() {
@@ -1433,7 +1430,7 @@ public:
   }
 
   // GC support
-  virtual void clean_weak_klass_links(BoolObjectClosure* is_alive_closure);
+  virtual void clean_weak_klass_links(bool always_clean);
 
   // Redefinition support
   virtual void clean_weak_method_links();
@@ -1562,13 +1559,13 @@ public:
   }
 
   // GC support
-  virtual void clean_weak_klass_links(BoolObjectClosure* is_alive_closure) {
-    ReceiverTypeData::clean_weak_klass_links(is_alive_closure);
+  virtual void clean_weak_klass_links(bool always_clean) {
+    ReceiverTypeData::clean_weak_klass_links(always_clean);
     if (has_arguments()) {
-      _args.clean_weak_klass_links(is_alive_closure);
+      _args.clean_weak_klass_links(always_clean);
     }
     if (has_return()) {
-      _ret.clean_weak_klass_links(is_alive_closure);
+      _ret.clean_weak_klass_links(always_clean);
     }
   }
 
@@ -2021,8 +2018,8 @@ public:
     _parameters.set_type(i, TypeEntries::with_status((intptr_t)k, current));
   }
 
-  virtual void clean_weak_klass_links(BoolObjectClosure* is_alive_closure) {
-    _parameters.clean_weak_klass_links(is_alive_closure);
+  virtual void clean_weak_klass_links(bool always_clean) {
+    _parameters.clean_weak_klass_links(always_clean);
   }
 
   virtual void print_data_on(outputStream* st, const char* extra = NULL) const;
@@ -2610,7 +2607,7 @@ public:
   static bool profile_parameters();
   static bool profile_return_jsr292_only();
 
-  void clean_method_data(BoolObjectClosure* is_alive);
+  void clean_method_data(bool always_clean);
   void clean_weak_method_links();
   DEBUG_ONLY(void verify_clean_weak_method_links();)
   Mutex* extra_data_lock() { return &_extra_data_lock; }

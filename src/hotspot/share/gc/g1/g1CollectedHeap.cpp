@@ -3457,13 +3457,11 @@ private:
 Monitor* G1CodeCacheUnloadingTask::_lock = new Monitor(Mutex::leaf, "Code Cache Unload lock", false, Monitor::_safepoint_check_never);
 
 class G1KlassCleaningTask : public StackObj {
-  BoolObjectClosure*                      _is_alive;
   volatile int                            _clean_klass_tree_claimed;
   ClassLoaderDataGraphKlassIteratorAtomic _klass_iterator;
 
  public:
-  G1KlassCleaningTask(BoolObjectClosure* is_alive) :
-      _is_alive(is_alive),
+  G1KlassCleaningTask() :
       _clean_klass_tree_claimed(0),
       _klass_iterator() {
   }
@@ -3490,7 +3488,7 @@ class G1KlassCleaningTask : public StackObj {
 public:
 
   void clean_klass(InstanceKlass* ik) {
-    ik->clean_weak_instanceklass_links(_is_alive);
+    ik->clean_weak_instanceklass_links();
   }
 
   void work() {
@@ -3498,7 +3496,7 @@ public:
 
     // One worker will clean the subklass/sibling klass tree.
     if (claim_clean_klass_tree_task()) {
-      Klass::clean_subklass_tree(_is_alive);
+      Klass::clean_subklass_tree();
     }
 
     // All workers will help cleaning the classes,
@@ -3545,7 +3543,7 @@ public:
       AbstractGangTask("Parallel Cleaning"),
       _string_symbol_task(is_alive, true, true, G1StringDedup::is_enabled()),
       _code_cache_task(num_workers, is_alive, unloading_occurred),
-      _klass_cleaning_task(is_alive),
+      _klass_cleaning_task(),
       _resolved_method_cleaning_task() {
   }
 
