@@ -41,11 +41,11 @@ class ReferenceProcessor;
 
 class G1ScanClosureBase : public ExtendedOopClosure {
 protected:
-  G1CollectedHeap* _g1;
+  G1CollectedHeap* _g1h;
   G1ParScanThreadState* _par_scan_state;
   HeapRegion* _from;
 
-  G1ScanClosureBase(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state);
+  G1ScanClosureBase(G1CollectedHeap* g1h, G1ParScanThreadState* par_scan_state);
   ~G1ScanClosureBase() { }
 
   template <class T>
@@ -77,9 +77,9 @@ public:
 // Used during the Scan RS phase to scan cards from the remembered set during garbage collection.
 class G1ScanObjsDuringScanRSClosure : public G1ScanClosureBase {
 public:
-  G1ScanObjsDuringScanRSClosure(G1CollectedHeap* g1,
+  G1ScanObjsDuringScanRSClosure(G1CollectedHeap* g1h,
                                 G1ParScanThreadState* par_scan_state):
-    G1ScanClosureBase(g1, par_scan_state) { }
+    G1ScanClosureBase(g1h, par_scan_state) { }
 
   template <class T> void do_oop_nv(T* p);
   virtual void do_oop(oop* p)          { do_oop_nv(p); }
@@ -89,8 +89,8 @@ public:
 // This closure is applied to the fields of the objects that have just been copied during evacuation.
 class G1ScanEvacuatedObjClosure : public G1ScanClosureBase {
 public:
-  G1ScanEvacuatedObjClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
-    G1ScanClosureBase(g1, par_scan_state) { }
+  G1ScanEvacuatedObjClosure(G1CollectedHeap* g1h, G1ParScanThreadState* par_scan_state) :
+    G1ScanClosureBase(g1h, par_scan_state) { }
 
   template <class T> void do_oop_nv(T* p);
   virtual void do_oop(oop* p)          { do_oop_nv(p); }
@@ -104,7 +104,7 @@ public:
 // Add back base class for metadata
 class G1ParCopyHelper : public OopClosure {
 protected:
-  G1CollectedHeap* _g1;
+  G1CollectedHeap* _g1h;
   G1ParScanThreadState* _par_scan_state;
   uint _worker_id;              // Cache value from par_scan_state.
   ClassLoaderData* _scanned_cld;
@@ -120,7 +120,7 @@ protected:
   // GC. It is MT-safe.
   inline void mark_forwarded_object(oop from_obj, oop to_obj);
 
-  G1ParCopyHelper(G1CollectedHeap* g1,  G1ParScanThreadState* par_scan_state);
+  G1ParCopyHelper(G1CollectedHeap* g1h,  G1ParScanThreadState* par_scan_state);
   ~G1ParCopyHelper() { }
 
  public:
@@ -142,8 +142,8 @@ enum G1Mark {
 template <G1Barrier barrier, G1Mark do_mark_object>
 class G1ParCopyClosure : public G1ParCopyHelper {
 public:
-  G1ParCopyClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
-      G1ParCopyHelper(g1, par_scan_state) { }
+  G1ParCopyClosure(G1CollectedHeap* g1h, G1ParScanThreadState* par_scan_state) :
+      G1ParCopyHelper(g1h, par_scan_state) { }
 
   template <class T> void do_oop_work(T* p);
   virtual void do_oop(oop* p)       { do_oop_work(p); }
@@ -188,12 +188,12 @@ public:
 };
 
 class G1ConcurrentRefineOopClosure: public ExtendedOopClosure {
-  G1CollectedHeap* _g1;
+  G1CollectedHeap* _g1h;
   uint _worker_i;
 
 public:
   G1ConcurrentRefineOopClosure(G1CollectedHeap* g1h, uint worker_i) :
-    _g1(g1h),
+    _g1h(g1h),
     _worker_i(worker_i) {
   }
 
@@ -206,10 +206,10 @@ public:
 };
 
 class G1RebuildRemSetClosure : public ExtendedOopClosure {
-  G1CollectedHeap* _g1;
+  G1CollectedHeap* _g1h;
   uint _worker_id;
 public:
-  G1RebuildRemSetClosure(G1CollectedHeap* g1, uint worker_id) : _g1(g1), _worker_id(worker_id) {
+  G1RebuildRemSetClosure(G1CollectedHeap* g1h, uint worker_id) : _g1h(g1h), _worker_id(worker_id) {
   }
 
   template <class T> void do_oop_nv(T* p);

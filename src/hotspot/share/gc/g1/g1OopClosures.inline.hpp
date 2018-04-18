@@ -63,7 +63,7 @@ inline void G1ScanClosureBase::prefetch_and_push(T* p, const oop obj) {
 template <class T>
 inline void G1ScanClosureBase::handle_non_cset_obj_common(InCSetState const state, T* p, oop const obj) {
   if (state.is_humongous()) {
-    _g1->set_humongous_is_live(obj);
+    _g1h->set_humongous_is_live(obj);
   }
 }
 
@@ -75,7 +75,7 @@ inline void G1ScanEvacuatedObjClosure::do_oop_nv(T* p) {
     return;
   }
   oop obj = CompressedOops::decode_not_null(heap_oop);
-  const InCSetState state = _g1->in_cset_state(obj);
+  const InCSetState state = _g1h->in_cset_state(obj);
   if (state.is_in_cset()) {
     prefetch_and_push(p, obj);
   } else {
@@ -105,19 +105,19 @@ inline void G1RootRegionScanClosure::do_oop_nv(T* p) {
 template <class T>
 inline static void check_obj_during_refinement(T* p, oop const obj) {
 #ifdef ASSERT
-  G1CollectedHeap* g1 = G1CollectedHeap::heap();
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
   // can't do because of races
   // assert(oopDesc::is_oop_or_null(obj), "expected an oop");
   assert(check_obj_alignment(obj), "not oop aligned");
-  assert(g1->is_in_reserved(obj), "must be in heap");
+  assert(g1h->is_in_reserved(obj), "must be in heap");
 
-  HeapRegion* from = g1->heap_region_containing(p);
+  HeapRegion* from = g1h->heap_region_containing(p);
 
   assert(from != NULL, "from region must be non-NULL");
   assert(from->is_in_reserved(p) ||
          (from->is_humongous() &&
-          g1->heap_region_containing(p)->is_humongous() &&
-          from->humongous_start_region() == g1->heap_region_containing(p)->humongous_start_region()),
+          g1h->heap_region_containing(p)->is_humongous() &&
+          from->humongous_start_region() == g1h->heap_region_containing(p)->humongous_start_region()),
          "p " PTR_FORMAT " is not in the same region %u or part of the correct humongous object starting at region %u.",
          p2i(p), from->hrm_index(), from->humongous_start_region()->hrm_index());
 #endif // ASSERT
@@ -144,7 +144,7 @@ inline void G1ConcurrentRefineOopClosure::do_oop_nv(T* p) {
     return;
   }
 
-  HeapRegionRemSet* to_rem_set = _g1->heap_region_containing(obj)->rem_set();
+  HeapRegionRemSet* to_rem_set = _g1h->heap_region_containing(obj)->rem_set();
 
   assert(to_rem_set != NULL, "Need per-region 'into' remsets.");
   if (to_rem_set->is_tracked()) {
@@ -162,14 +162,14 @@ inline void G1ScanObjsDuringUpdateRSClosure::do_oop_nv(T* p) {
 
   check_obj_during_refinement(p, obj);
 
-  assert(!_g1->is_in_cset((HeapWord*)p), "Oop originates from " PTR_FORMAT " (region: %u) which is in the collection set.", p2i(p), _g1->addr_to_region((HeapWord*)p));
-  const InCSetState state = _g1->in_cset_state(obj);
+  assert(!_g1h->is_in_cset((HeapWord*)p), "Oop originates from " PTR_FORMAT " (region: %u) which is in the collection set.", p2i(p), _g1h->addr_to_region((HeapWord*)p));
+  const InCSetState state = _g1h->in_cset_state(obj);
   if (state.is_in_cset()) {
     // Since the source is always from outside the collection set, here we implicitly know
     // that this is a cross-region reference too.
     prefetch_and_push(p, obj);
   } else {
-    HeapRegion* to = _g1->heap_region_containing(obj);
+    HeapRegion* to = _g1h->heap_region_containing(obj);
     if (_from == to) {
       return;
     }
@@ -186,7 +186,7 @@ inline void G1ScanObjsDuringScanRSClosure::do_oop_nv(T* p) {
   }
   oop obj = CompressedOops::decode_not_null(heap_oop);
 
-  const InCSetState state = _g1->in_cset_state(obj);
+  const InCSetState state = _g1h->in_cset_state(obj);
   if (state.is_in_cset()) {
     prefetch_and_push(p, obj);
   } else {
@@ -198,13 +198,13 @@ inline void G1ScanObjsDuringScanRSClosure::do_oop_nv(T* p) {
 }
 
 void G1ParCopyHelper::do_cld_barrier(oop new_obj) {
-  if (_g1->heap_region_containing(new_obj)->is_young()) {
+  if (_g1h->heap_region_containing(new_obj)->is_young()) {
     _scanned_cld->record_modified_oops();
   }
 }
 
 void G1ParCopyHelper::mark_object(oop obj) {
-  assert(!_g1->heap_region_containing(obj)->in_collection_set(), "should not mark objects in the CSet");
+  assert(!_g1h->heap_region_containing(obj)->in_collection_set(), "should not mark objects in the CSet");
 
   // We know that the object is not moving so it's safe to read its size.
   _cm->mark_in_next_bitmap(_worker_id, obj);
@@ -215,8 +215,8 @@ void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
   assert(from_obj->forwardee() == to_obj, "to obj should be the forwardee");
   assert(from_obj != to_obj, "should not be self-forwarded");
 
-  assert(_g1->heap_region_containing(from_obj)->in_collection_set(), "from obj should be in the CSet");
-  assert(!_g1->heap_region_containing(to_obj)->in_collection_set(), "should not mark objects in the CSet");
+  assert(_g1h->heap_region_containing(from_obj)->in_collection_set(), "from obj should be in the CSet");
+  assert(!_g1h->heap_region_containing(to_obj)->in_collection_set(), "should not mark objects in the CSet");
 
   // The object might be in the process of being copied by another
   // worker so we cannot trust that its to-space image is
@@ -238,7 +238,7 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
 
   assert(_worker_id == _par_scan_state->worker_id(), "sanity");
 
-  const InCSetState state = _g1->in_cset_state(obj);
+  const InCSetState state = _g1h->in_cset_state(obj);
   if (state.is_in_cset()) {
     oop forwardee;
     markOop m = obj->mark_raw();
@@ -260,7 +260,7 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
     }
   } else {
     if (state.is_humongous()) {
-      _g1->set_humongous_is_live(obj);
+      _g1h->set_humongous_is_live(obj);
     }
 
     // The object is not in collection set. If we're a root scanning
@@ -281,7 +281,7 @@ template <class T> void G1RebuildRemSetClosure::do_oop_nv(T* p) {
     return;
   }
 
-  HeapRegion* to = _g1->heap_region_containing(obj);
+  HeapRegion* to = _g1h->heap_region_containing(obj);
   HeapRegionRemSet* rem_set = to->rem_set();
   rem_set->add_reference(p, _worker_id);
 }
