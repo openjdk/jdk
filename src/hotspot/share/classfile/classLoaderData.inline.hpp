@@ -28,6 +28,18 @@
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.inline.hpp"
+#include "oops/weakHandle.inline.hpp"
+
+inline oop ClassLoaderData::class_loader() const {
+  assert(!_unloading, "This oop is not available to unloading class loader data");
+  assert(_holder.is_null() || _holder.peek() != NULL , "This class loader data holder must be alive");
+  return _class_loader.resolve();
+}
+
+inline bool ClassLoaderData::is_boot_class_loader_data() const {
+    return class_loader() == NULL;
+  }
 
 inline ClassLoaderData* ClassLoaderData::class_loader_data_or_null(oop loader) {
   if (loader == NULL) {

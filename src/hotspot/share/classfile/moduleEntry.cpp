@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jni.h"
-#include "classfile/classLoaderData.hpp"
+#include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "logging/log.hpp"
