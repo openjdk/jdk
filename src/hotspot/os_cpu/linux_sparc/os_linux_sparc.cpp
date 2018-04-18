@@ -374,7 +374,7 @@ inline static bool checkOverflow(sigcontext* uc,
 }
 
 inline static bool checkPollingPage(address pc, address fault, address* stub) {
-  if (fault == os::get_polling_page()) {
+  if (os::is_poll_address(fault)) {
     *stub = SharedRuntime::get_poll_stub(pc);
     return true;
   }
