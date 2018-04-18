@@ -3510,11 +3510,10 @@ public:
 };
 
 class G1ResolvedMethodCleaningTask : public StackObj {
-  BoolObjectClosure* _is_alive;
   volatile int       _resolved_method_task_claimed;
 public:
-  G1ResolvedMethodCleaningTask(BoolObjectClosure* is_alive) :
-      _is_alive(is_alive), _resolved_method_task_claimed(0) {}
+  G1ResolvedMethodCleaningTask() :
+      _resolved_method_task_claimed(0) {}
 
   bool claim_resolved_method_task() {
     if (_resolved_method_task_claimed) {
@@ -3526,7 +3525,7 @@ public:
   // These aren't big, one thread can do it all.
   void work() {
     if (claim_resolved_method_task()) {
-      ResolvedMethodTable::unlink(_is_alive);
+      ResolvedMethodTable::unlink();
     }
   }
 };
@@ -3547,7 +3546,7 @@ public:
       _string_symbol_task(is_alive, true, true, G1StringDedup::is_enabled()),
       _code_cache_task(num_workers, is_alive, unloading_occurred),
       _klass_cleaning_task(is_alive),
-      _resolved_method_cleaning_task(is_alive) {
+      _resolved_method_cleaning_task() {
   }
 
   // The parallel work done by all worker threads.

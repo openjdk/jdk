@@ -30,6 +30,7 @@
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/weakHandle.inline.hpp"
 #include "utilities/hashtable.inline.hpp"
 
 unsigned int ProtectionDomainCacheTable::compute_hash(Handle protection_domain) {
@@ -42,40 +43,30 @@ int ProtectionDomainCacheTable::index_for(Handle protection_domain) {
 }
 
 ProtectionDomainCacheTable::ProtectionDomainCacheTable(int table_size)
-  : Hashtable<oop, mtClass>(table_size, sizeof(ProtectionDomainCacheEntry))
+  : Hashtable<ClassLoaderWeakHandle, mtClass>(table_size, sizeof(ProtectionDomainCacheEntry))
 {
 }
 
-void ProtectionDomainCacheTable::unlink(BoolObjectClosure* is_alive) {
+void ProtectionDomainCacheTable::unlink() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be");
   for (int i = 0; i < table_size(); ++i) {
     ProtectionDomainCacheEntry** p = bucket_addr(i);
     ProtectionDomainCacheEntry* entry = bucket(i);
     while (entry != NULL) {
-      if (is_alive->do_object_b(entry->object_no_keepalive())) {
+      oop pd = entry->object_no_keepalive();
+      if (pd != NULL) {
         p = entry->next_addr();
       } else {
         LogTarget(Debug, protectiondomain) lt;
         if (lt.is_enabled()) {
           LogStream ls(lt);
-          ls.print("protection domain unlinked: ");
-          entry->object_no_keepalive()->print_value_on(&ls);
-          ls.cr();
+          ls.print_cr("protection domain unlinked at %d", i);
         }
+        entry->literal().release();
         *p = entry->next();
         free_entry(entry);
       }
       entry = *p;
-    }
-  }
-}
-
-void ProtectionDomainCacheTable::oops_do(OopClosure* f) {
-  for (int index = 0; index < table_size(); index++) {
-    for (ProtectionDomainCacheEntry* probe = bucket(index);
-                                     probe != NULL;
-                                     probe = probe->next()) {
-      probe->oops_do(f);
     }
   }
 }
@@ -97,7 +88,7 @@ void ProtectionDomainCacheTable::verify() {
 }
 
 oop ProtectionDomainCacheEntry::object() {
-  return RootAccess<ON_PHANTOM_OOP_REF>::oop_load(literal_addr());
+  return literal().resolve();
 }
 
 oop ProtectionDomainEntry::object() {
@@ -108,7 +99,7 @@ oop ProtectionDomainEntry::object() {
 // keeping it alive. This is okay to do in the VM thread state if it is not
 // leaked out to become strongly reachable.
 oop ProtectionDomainCacheEntry::object_no_keepalive() {
-  return RootAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(literal_addr());
+  return literal().peek();
 }
 
 oop ProtectionDomainEntry::object_no_keepalive() {
@@ -116,7 +107,7 @@ oop ProtectionDomainEntry::object_no_keepalive() {
 }
 
 void ProtectionDomainCacheEntry::verify() {
-  guarantee(oopDesc::is_oop(object_no_keepalive()), "must be an oop");
+  guarantee(object_no_keepalive() == NULL || oopDesc::is_oop(object_no_keepalive()), "must be an oop");
 }
 
 ProtectionDomainCacheEntry* ProtectionDomainCacheTable::get(Handle protection_domain) {
@@ -127,6 +118,8 @@ ProtectionDomainCacheEntry* ProtectionDomainCacheTable::get(Handle protection_do
   if (entry == NULL) {
     entry = add_entry(index, hash, protection_domain);
   }
+  // keep entry alive
+  (void)entry->object();
   return entry;
 }
 
@@ -145,7 +138,8 @@ ProtectionDomainCacheEntry* ProtectionDomainCacheTable::add_entry(int index, uns
   assert(index == index_for(protection_domain), "incorrect index?");
   assert(find_entry(index, protection_domain) == NULL, "no double entry");
 
-  ProtectionDomainCacheEntry* p = new_entry(hash, protection_domain);
-  Hashtable<oop, mtClass>::add_entry(index, p);
+  ClassLoaderWeakHandle w = ClassLoaderWeakHandle::create(protection_domain);
+  ProtectionDomainCacheEntry* p = new_entry(hash, w);
+  Hashtable<ClassLoaderWeakHandle, mtClass>::add_entry(index, p);
   return p;
 }

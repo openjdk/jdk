@@ -214,13 +214,13 @@ void DictionaryEntry::add_protection_domain(Dictionary* dict, Handle protection_
 
 // During class loading we may have cached a protection domain that has
 // since been unreferenced, so this entry should be cleared.
-void Dictionary::clean_cached_protection_domains(BoolObjectClosure* is_alive, DictionaryEntry* probe) {
+void Dictionary::clean_cached_protection_domains(DictionaryEntry* probe) {
   assert_locked_or_safepoint(SystemDictionary_lock);
 
   ProtectionDomainEntry* current = probe->pd_set();
   ProtectionDomainEntry* prev = NULL;
   while (current != NULL) {
-    if (!is_alive->do_object_b(current->object_no_keepalive())) {
+    if (current->object_no_keepalive() == NULL) {
       LogTarget(Debug, protectiondomain) lt;
       if (lt.is_enabled()) {
         ResourceMark rm;
@@ -228,7 +228,6 @@ void Dictionary::clean_cached_protection_domains(BoolObjectClosure* is_alive, Di
         LogStream ls(lt);
         ls.print_cr("PD in set is not alive:");
         ls.print("class loader: "); loader_data()->class_loader()->print_value_on(&ls);
-        ls.print(" protection domain: "); current->object_no_keepalive()->print_value_on(&ls);
         ls.print(" loading: "); probe->instance_klass()->print_value_on(&ls);
         ls.cr();
       }
@@ -249,7 +248,7 @@ void Dictionary::clean_cached_protection_domains(BoolObjectClosure* is_alive, Di
 }
 
 
-void Dictionary::do_unloading(BoolObjectClosure* is_alive) {
+void Dictionary::do_unloading() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
 
   // The NULL class loader doesn't initiate loading classes from other class loaders
@@ -276,7 +275,7 @@ void Dictionary::do_unloading(BoolObjectClosure* is_alive) {
         continue;
       }
       // Clean pd_set
-      clean_cached_protection_domains(is_alive, probe);
+      clean_cached_protection_domains(probe);
       p = probe->next_addr();
     }
   }

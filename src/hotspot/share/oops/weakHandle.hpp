@@ -63,4 +63,6 @@ class WeakHandle {
   void print_on(outputStream* st) const;
 };
 
+typedef WeakHandle<vm_class_loader_data> ClassLoaderWeakHandle;
+
 #endif // SHARE_VM_OOPS_WEAKHANDLE_HPP
