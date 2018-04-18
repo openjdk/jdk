@@ -1486,6 +1486,20 @@ public:
           range(0, max_jint)                                                \
           constraint(CICompilerCountConstraintFunc, AfterErgo)              \
                                                                             \
+  product(bool, UseDynamicNumberOfCompilerThreads, true,                    \
+          "Dynamically choose the number of parallel compiler threads")     \
+                                                                            \
+  diagnostic(bool, ReduceNumberOfCompilerThreads, true,                     \
+             "Reduce the number of parallel compiler threads when they "    \
+             "are not used")                                                \
+                                                                            \
+  diagnostic(bool, TraceCompilerThreads, false,                             \
+             "Trace creation and removal of compiler threads")              \
+                                                                            \
+  develop(bool, InjectCompilerCreationFailure, false,                       \
+          "Inject thread creation failures for "                            \
+          "UseDynamicNumberOfCompilerThreads")                              \
+                                                                            \
   product(intx, CompilationPolicyChoice, 0,                                 \
           "which compilation policy (0-3)")                                 \
           range(0, 3)                                                       \

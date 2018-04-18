@@ -82,7 +82,9 @@ public class WBStackSize {
     }
 
     public static void main(String[] args) {
-        long configStackSize = wb.getIntxVMFlag("ThreadStackSize") * K;
+        boolean isCompilerThread = Thread.currentThread().getName().indexOf(" CompilerThread") > 0;
+        long configStackSize = isCompilerThread ? wb.getIntxVMFlag("CompilerThreadStackSize") * K
+                                                : wb.getIntxVMFlag("ThreadStackSize") * K;
         System.out.println("ThreadStackSize VM option: " + configStackSize);
 
         long stackProtectionSize = wb.getIntxVMFlag("StackShadowPages") * wb.getVMPageSize();

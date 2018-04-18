@@ -2029,12 +2029,14 @@ class CompilerThread : public JavaThread {
   BufferBlob*           _buffer_blob;
 
   AbstractCompiler*     _compiler;
+  TimeStamp             _idle_time;
 
  public:
 
   static CompilerThread* current();
 
   CompilerThread(CompileQueue* queue, CompilerCounters* counters);
+  ~CompilerThread();
 
   bool is_Compiler_thread() const                { return true; }
 
@@ -2062,6 +2064,11 @@ class CompilerThread : public JavaThread {
     // Set once, for good.
     assert(_log == NULL, "set only once");
     _log = log;
+  }
+
+  void start_idle_timer()                        { _idle_time.update(); }
+  jlong idle_time_millis() {
+    return TimeHelper::counter_to_millis(_idle_time.ticks_since_update());
   }
 
 #ifndef PRODUCT

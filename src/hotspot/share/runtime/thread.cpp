@@ -3359,6 +3359,11 @@ CompilerThread::CompilerThread(CompileQueue* queue,
 #endif
 }
 
+CompilerThread::~CompilerThread() {
+  // Delete objects which were allocated on heap.
+  delete _counters;
+}
+
 bool CompilerThread::can_call_java() const {
   return _compiler != NULL && _compiler->is_jvmci();
 }
