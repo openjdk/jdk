@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1StringDedup.hpp"
+#include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/referenceProcessor.hpp"
@@ -72,10 +73,40 @@ ReferenceProcessor* G1FullCollector::reference_processor() {
   return _heap->ref_processor_stw();
 }
 
+uint G1FullCollector::calc_active_workers() {
+  G1CollectedHeap* heap = G1CollectedHeap::heap();
+  uint max_worker_count = heap->workers()->total_workers();
+  // Only calculate number of workers if UseDynamicNumberOfGCThreads
+  // is enabled, otherwise use max.
+  if (!UseDynamicNumberOfGCThreads) {
+    return max_worker_count;
+  }
+
+  // Consider G1HeapWastePercent to decide max number of workers. Each worker
+  // will in average cause half a region waste.
+  uint max_wasted_regions_allowed = ((heap->num_regions() * G1HeapWastePercent) / 100);
+  uint waste_worker_count = MAX2((max_wasted_regions_allowed * 2) , 1u);
+  uint heap_waste_worker_limit = MIN2(waste_worker_count, max_worker_count);
+
+  // Also consider HeapSizePerGCThread by calling AdaptiveSizePolicy to calculate
+  // the number of workers.
+  uint current_active_workers = heap->workers()->active_workers();
+  uint adaptive_worker_limit = AdaptiveSizePolicy::calc_active_workers(max_worker_count, current_active_workers, 0);
+
+  // Update active workers to the lower of the limits.
+  uint worker_count = MIN2(heap_waste_worker_limit, adaptive_worker_limit);
+  log_debug(gc, task)("Requesting %u active workers for full compaction (waste limited workers: %u, adaptive workers: %u)",
+                      worker_count, heap_waste_worker_limit, adaptive_worker_limit);
+  worker_count = heap->workers()->update_active_workers(worker_count);
+  log_info(gc, task)("Using %u workers of %u for full compaction", worker_count, max_worker_count);
+
+  return worker_count;
+}
+
 G1FullCollector::G1FullCollector(G1CollectedHeap* heap, GCMemoryManager* memory_manager, bool explicit_gc, bool clear_soft_refs) :
     _heap(heap),
     _scope(memory_manager, explicit_gc, clear_soft_refs),
-    _num_workers(heap->workers()->active_workers()),
+    _num_workers(calc_active_workers()),
     _oop_queue_set(_num_workers),
     _array_queue_set(_num_workers),
     _preserved_marks_set(true),
