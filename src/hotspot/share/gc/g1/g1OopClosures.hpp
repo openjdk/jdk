@@ -96,8 +96,8 @@ public:
   virtual void do_oop(oop* p)          { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p)    { do_oop_nv(p); }
 
-  void set_ref_processor(ReferenceProcessor* rp) {
-    set_ref_processor_internal(rp);
+  void set_ref_discoverer(ReferenceDiscoverer* rd) {
+    set_ref_discoverer_internal(rd);
   }
 };
 
