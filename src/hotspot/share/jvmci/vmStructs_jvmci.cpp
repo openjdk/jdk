@@ -625,6 +625,8 @@
   declare_function(JVMCIRuntime::exception_handler_for_pc) \
   declare_function(JVMCIRuntime::monitorenter) \
   declare_function(JVMCIRuntime::monitorexit) \
+  declare_function(JVMCIRuntime::object_notify) \
+  declare_function(JVMCIRuntime::object_notifyAll) \
   declare_function(JVMCIRuntime::throw_and_post_jvmti_exception) \
   declare_function(JVMCIRuntime::throw_klass_external_name_exception) \
   declare_function(JVMCIRuntime::throw_class_cast_exception) \
