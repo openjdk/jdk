@@ -931,7 +931,7 @@ void CodeCacheDCmd::execute(DCmdSource source, TRAPS) {
 //---<  BEGIN  >--- CodeHeap State Analytics.
 CodeHeapAnalyticsDCmd::CodeHeapAnalyticsDCmd(outputStream* output, bool heap) :
                                              DCmdWithParser(output, heap),
-  _function("function", "Function to be performed (aggregate, UsedSpace, FreeSpace, MethodCount, MethodSpace, MethodAge, discard", "STRING", false, "all"),
+  _function("function", "Function to be performed (aggregate, UsedSpace, FreeSpace, MethodCount, MethodSpace, MethodAge, MethodNames, discard", "STRING", false, "all"),
   _granularity("granularity", "Detail level - smaller value -> more detail", "STRING", false, "4096") {
   _dcmdparser.add_dcmd_argument(&_function);
   _dcmdparser.add_dcmd_argument(&_granularity);
