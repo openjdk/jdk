@@ -25,20 +25,13 @@
 package java.net;
 
 import java.io.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import sun.security.action.GetPropertyAction;
 
 /*
  * This class PlainSocketImpl simply delegates to the appropriate real
  * SocketImpl. We do this because PlainSocketImpl is already extended
  * by SocksSocketImpl.
  * <p>
- * There are two possibilities for the real SocketImpl,
- * TwoStacksPlainSocketImpl or DualStackPlainSocketImpl. We use
- * DualStackPlainSocketImpl on systems that have a dual stack
- * TCP implementation. Otherwise we create an instance of
- * TwoStacksPlainSocketImpl and delegate to it.
+ * There is one possibility for the real SocketImpl: DualStackPlainSocketImpl.
  *
  * @author Chris Hegarty
  */
@@ -46,44 +39,18 @@ import sun.security.action.GetPropertyAction;
 class PlainSocketImpl extends AbstractPlainSocketImpl {
     private AbstractPlainSocketImpl impl;
 
-    /* java.net.preferIPv4Stack */
-    private static final boolean preferIPv4Stack;
-
-    /* True if exclusive binding is on for Windows */
-    private static final boolean exclusiveBind;
-
-    static {
-        preferIPv4Stack = Boolean.parseBoolean(
-        AccessController.doPrivileged(
-                new GetPropertyAction("java.net.preferIPv4Stack")));
-
-        String exclBindProp = AccessController.doPrivileged(
-                new GetPropertyAction("sun.net.useExclusiveBind", ""));
-        exclusiveBind = (exclBindProp.isEmpty())
-                ? true
-                : Boolean.parseBoolean(exclBindProp);
-    }
-
     /**
      * Constructs an empty instance.
      */
     PlainSocketImpl() {
-        if (!preferIPv4Stack) {
-            impl = new DualStackPlainSocketImpl(exclusiveBind);
-        } else {
-            impl = new TwoStacksPlainSocketImpl(exclusiveBind);
-        }
+        impl = new DualStackPlainSocketImpl();
     }
 
     /**
      * Constructs an instance with the given file descriptor.
      */
     PlainSocketImpl(FileDescriptor fd) {
-        if (!preferIPv4Stack) {
-            impl = new DualStackPlainSocketImpl(fd, exclusiveBind);
-        } else {
-            impl = new TwoStacksPlainSocketImpl(fd, exclusiveBind);
-        }
+        impl = new DualStackPlainSocketImpl(fd);
     }
 
     // Override methods in SocketImpl that access impl's fields.
@@ -148,18 +115,10 @@ class PlainSocketImpl extends AbstractPlainSocketImpl {
     }
 
     public void setOption(int opt, Object val) throws SocketException {
-        if (opt == SocketOptions.SO_REUSEPORT) {
-            // SO_REUSEPORT is not supported on Windows.
-            throw new UnsupportedOperationException("unsupported option");
-        }
         impl.setOption(opt, val);
     }
 
     public Object getOption(int opt) throws SocketException {
-        if (opt == SocketOptions.SO_REUSEPORT) {
-            // SO_REUSEPORT is not supported on Windows.
-            throw new UnsupportedOperationException("unsupported option");
-        }
         return impl.getOption(opt);
     }
 
@@ -271,8 +230,8 @@ class PlainSocketImpl extends AbstractPlainSocketImpl {
 
     // Override methods in AbstractPlainSocketImpl that need to be implemented.
 
-    void socketCreate(boolean isServer) throws IOException {
-        impl.socketCreate(isServer);
+    void socketCreate(boolean stream) throws IOException {
+        impl.socketCreate(stream);
     }
 
     void socketConnect(InetAddress address, int port, int timeout)
@@ -307,18 +266,10 @@ class PlainSocketImpl extends AbstractPlainSocketImpl {
 
     void socketSetOption(int cmd, boolean on, Object value)
         throws SocketException {
-        if (cmd == SocketOptions.SO_REUSEPORT) {
-            // SO_REUSEPORT is not supported on Windows.
-            throw new UnsupportedOperationException("unsupported option");
-        }
         impl.socketSetOption(cmd, on, value);
     }
 
     int socketGetOption(int opt, Object iaContainerObj) throws SocketException {
-        if (opt == SocketOptions.SO_REUSEPORT) {
-            // SO_REUSEPORT is not supported on Windows.
-            throw new UnsupportedOperationException("unsupported option");
-        }
         return impl.socketGetOption(opt, iaContainerObj);
     }
 
