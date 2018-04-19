@@ -40,7 +40,7 @@ protected:
                                                 Register start, Register end, Register tmp, RegSet saved_regs) {}
 
   virtual void oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                            Address dst, Register val, Register tmp1, Register tmp2);
+                            Address dst, Register val, Register tmp1, Register tmp2) = 0;
 
 public:
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,

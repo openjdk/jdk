@@ -39,7 +39,7 @@ protected:
   virtual void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators, Register addr, Register count,
                                                 bool do_return);
   virtual void oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                            const Address& dst, Register val, Register tmp1, Register tmp2, Register tmp3);
+                            const Address& dst, Register val, Register tmp1, Register tmp2, Register tmp3) = 0;
 public:
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                   Register src, Register dst, Register count);
