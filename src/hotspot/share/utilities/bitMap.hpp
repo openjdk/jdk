@@ -123,11 +123,11 @@ class BitMap {
 
   // Allocates and clears the bitmap memory.
   template <class Allocator>
-  static bm_word_t* allocate(const Allocator&, idx_t size_in_bits);
+  static bm_word_t* allocate(const Allocator&, idx_t size_in_bits, bool clear = true);
 
   // Reallocates and clears the new bitmap memory.
   template <class Allocator>
-  static bm_word_t* reallocate(const Allocator&, bm_word_t* map, idx_t old_size_in_bits, idx_t new_size_in_bits);
+  static bm_word_t* reallocate(const Allocator&, bm_word_t* map, idx_t old_size_in_bits, idx_t new_size_in_bits, bool clear = true);
 
   // Free the bitmap memory.
   template <class Allocator>
@@ -359,7 +359,7 @@ class CHeapBitMap : public BitMap {
  public:
   CHeapBitMap(MEMFLAGS flags = mtInternal) : BitMap(NULL, 0), _flags(flags) {}
   // Clears the bitmap memory.
-  CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags = mtInternal);
+  CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags = mtInternal, bool clear = true);
   ~CHeapBitMap();
 
   // Resize the backing bitmap memory.
