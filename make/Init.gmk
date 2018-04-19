@@ -310,9 +310,13 @@ else # HAS_SPEC=true
           ifneq ($(PARALLEL_TARGETS), )
 	    $(call StartGlobalTimer)
 	    $(call PrepareSmartJavac)
+            # JOBS will only be empty for a bootcycle-images recursive call
+            # or if specified via a make argument directly. In those cases
+            # treat it as NOT using jobs at all.
 	    ( cd $(TOPDIR) && \
 	        $(NICE) $(MAKE) $(MAKE_ARGS) $(OUTPUT_SYNC_FLAG) \
-	            -j $(JOBS) -f make/Main.gmk $(USER_MAKE_VARS) \
+                    $(if $(JOBS), -j $(JOBS)) \
+	            -f make/Main.gmk $(USER_MAKE_VARS) \
 	            $(PARALLEL_TARGETS) $(COMPARE_BUILD_MAKE) $(BUILD_LOG_PIPE) || \
 	        ( exitcode=$$? && \
 	        $(PRINTF) "\nERROR: Build failed for $(TARGET_DESCRIPTION) (exit code $$exitcode) \n" \
