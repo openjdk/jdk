@@ -5825,7 +5825,7 @@ MarkRefsIntoClosure::MarkRefsIntoClosure(
     _span(span),
     _bitMap(bitMap)
 {
-  assert(ref_processor() == NULL, "deliberately left NULL");
+  assert(ref_discoverer() == NULL, "deliberately left NULL");
   assert(_bitMap->covers(_span), "_bitMap/_span mismatch");
 }
 
@@ -5847,7 +5847,7 @@ ParMarkRefsIntoClosure::ParMarkRefsIntoClosure(
     _span(span),
     _bitMap(bitMap)
 {
-  assert(ref_processor() == NULL, "deliberately left NULL");
+  assert(ref_discoverer() == NULL, "deliberately left NULL");
   assert(_bitMap->covers(_span), "_bitMap/_span mismatch");
 }
 
@@ -5871,7 +5871,7 @@ MarkRefsIntoVerifyClosure::MarkRefsIntoVerifyClosure(
     _verification_bm(verification_bm),
     _cms_bm(cms_bm)
 {
-  assert(ref_processor() == NULL, "deliberately left NULL");
+  assert(ref_discoverer() == NULL, "deliberately left NULL");
   assert(_verification_bm->covers(_span), "_verification_bm/_span mismatch");
 }
 
@@ -5900,7 +5900,7 @@ void MarkRefsIntoVerifyClosure::do_oop(narrowOop* p) { MarkRefsIntoVerifyClosure
 //////////////////////////////////////////////////
 
 MarkRefsIntoAndScanClosure::MarkRefsIntoAndScanClosure(MemRegion span,
-                                                       ReferenceProcessor* rp,
+                                                       ReferenceDiscoverer* rd,
                                                        CMSBitMap* bit_map,
                                                        CMSBitMap* mod_union_table,
                                                        CMSMarkStack*  mark_stack,
@@ -5911,15 +5911,15 @@ MarkRefsIntoAndScanClosure::MarkRefsIntoAndScanClosure(MemRegion span,
   _span(span),
   _bit_map(bit_map),
   _mark_stack(mark_stack),
-  _pushAndMarkClosure(collector, span, rp, bit_map, mod_union_table,
+  _pushAndMarkClosure(collector, span, rd, bit_map, mod_union_table,
                       mark_stack, concurrent_precleaning),
   _yield(should_yield),
   _concurrent_precleaning(concurrent_precleaning),
   _freelistLock(NULL)
 {
   // FIXME: Should initialize in base class constructor.
-  assert(rp != NULL, "ref_processor shouldn't be NULL");
-  set_ref_processor_internal(rp);
+  assert(rd != NULL, "ref_discoverer shouldn't be NULL");
+  set_ref_discoverer_internal(rd);
 }
 
 // This closure is used to mark refs into the CMS generation at the
@@ -6004,18 +6004,18 @@ void MarkRefsIntoAndScanClosure::do_yield_work() {
 //                                MarkRefsIntoAndScanClosure
 ///////////////////////////////////////////////////////////
 ParMarkRefsIntoAndScanClosure::ParMarkRefsIntoAndScanClosure(
-  CMSCollector* collector, MemRegion span, ReferenceProcessor* rp,
+  CMSCollector* collector, MemRegion span, ReferenceDiscoverer* rd,
   CMSBitMap* bit_map, OopTaskQueue* work_queue):
   _span(span),
   _bit_map(bit_map),
   _work_queue(work_queue),
   _low_water_mark(MIN2((work_queue->max_elems()/4),
                        ((uint)CMSWorkQueueDrainThreshold * ParallelGCThreads))),
-  _parPushAndMarkClosure(collector, span, rp, bit_map, work_queue)
+  _parPushAndMarkClosure(collector, span, rd, bit_map, work_queue)
 {
   // FIXME: Should initialize in base class constructor.
-  assert(rp != NULL, "ref_processor shouldn't be NULL");
-  set_ref_processor_internal(rp);
+  assert(rd != NULL, "ref_discoverer shouldn't be NULL");
+  set_ref_discoverer_internal(rd);
 }
 
 // This closure is used to mark refs into the CMS generation at the
@@ -6842,12 +6842,12 @@ void ParPushOrMarkClosure::do_oop(narrowOop* p) { ParPushOrMarkClosure::do_oop_w
 
 PushAndMarkClosure::PushAndMarkClosure(CMSCollector* collector,
                                        MemRegion span,
-                                       ReferenceProcessor* rp,
+                                       ReferenceDiscoverer* rd,
                                        CMSBitMap* bit_map,
                                        CMSBitMap* mod_union_table,
                                        CMSMarkStack*  mark_stack,
                                        bool           concurrent_precleaning):
-  MetadataAwareOopClosure(rp),
+  MetadataAwareOopClosure(rd),
   _collector(collector),
   _span(span),
   _bit_map(bit_map),
@@ -6855,7 +6855,7 @@ PushAndMarkClosure::PushAndMarkClosure(CMSCollector* collector,
   _mark_stack(mark_stack),
   _concurrent_precleaning(concurrent_precleaning)
 {
-  assert(ref_processor() != NULL, "ref_processor shouldn't be NULL");
+  assert(ref_discoverer() != NULL, "ref_discoverer shouldn't be NULL");
 }
 
 // Grey object rescan during pre-cleaning and second checkpoint phases --
@@ -6916,16 +6916,16 @@ void PushAndMarkClosure::do_oop(oop obj) {
 
 ParPushAndMarkClosure::ParPushAndMarkClosure(CMSCollector* collector,
                                              MemRegion span,
-                                             ReferenceProcessor* rp,
+                                             ReferenceDiscoverer* rd,
                                              CMSBitMap* bit_map,
                                              OopTaskQueue* work_queue):
-  MetadataAwareOopClosure(rp),
+  MetadataAwareOopClosure(rd),
   _collector(collector),
   _span(span),
   _bit_map(bit_map),
   _work_queue(work_queue)
 {
-  assert(ref_processor() != NULL, "ref_processor shouldn't be NULL");
+  assert(ref_discoverer() != NULL, "ref_discoverer shouldn't be NULL");
 }
 
 void PushAndMarkClosure::do_oop(oop* p)       { PushAndMarkClosure::do_oop_work(p); }
