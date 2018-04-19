@@ -70,7 +70,13 @@ tier1_compiler = \
 
 hotspot_not_fast_compiler = \
   :hotspot_compiler \
-  -:tier1_compiler
+  -:tier1_compiler \
+  -:hotspot_slow_compiler
+
+hotspot_slow_compiler = \
+  compiler/codegen/aes \
+  compiler/codecache/stress \
+  compiler/gcbarriers/PreserveFPRegistersTest.java
 
 tier1_compiler_1 = \
   compiler/arraycopy/ \
@@ -102,9 +108,7 @@ tier1_compiler_2 = \
   compiler/integerArithmetic/ \
   compiler/interpreter/ \
   compiler/jvmci/ \
-  -compiler/codegen/aes \
-  -compiler/codecache/stress \
-  -compiler/gcbarriers/PreserveFPRegistersTest.java
+  -:hotspot_slow_compiler
 
 tier1_compiler_3 = \
   compiler/intrinsics/ \
@@ -133,11 +137,20 @@ tier1_compiler_not_xcomp = \
 
 ctw_1 = \
   applications/ctw/modules/ \
-  -:ctw_2
+  -:ctw_2 \
+  -:ctw_3
 
 ctw_2 = \
   applications/ctw/modules/java_base.java \
   applications/ctw/modules/java_desktop.java
+
+ctw_3 = \
+  applications/ctw/modules/javafx_graphics.java \
+  applications/ctw/modules/java_xml.java \
+  applications/ctw/modules/jdk_compiler.java \
+  applications/ctw/modules/jdk_internal_vm_compiler.java \
+  applications/ctw/modules/jdk_localedata.java \
+  applications/ctw/modules/jdk_scripting_nashorn.java \
 
 tier1_gc = \
   :tier1_gc_1 \
