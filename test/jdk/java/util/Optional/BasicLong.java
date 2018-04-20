@@ -51,6 +51,7 @@ public class BasicLong {
         assertFalse(empty.equals("unexpected"));
 
         assertFalse(empty.isPresent());
+        assertTrue(empty.isEmpty());
         assertEquals(empty.hashCode(), 0);
         assertEquals(empty.orElse(UNEXPECTED), UNEXPECTED);
         assertEquals(empty.orElseGet(() -> UNEXPECTED), UNEXPECTED);
@@ -86,6 +87,7 @@ public class BasicLong {
         assertFalse(opt.equals("unexpected"));
 
         assertTrue(opt.isPresent());
+        assertFalse(opt.isEmpty());
         assertEquals(opt.hashCode(), Long.hashCode(expected));
         assertEquals(opt.orElse(UNEXPECTED), expected);
         assertEquals(opt.orElseGet(() -> UNEXPECTED), expected);

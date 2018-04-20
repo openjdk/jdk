@@ -28,7 +28,6 @@
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/metaspace.hpp"
-#include "memory/metaspaceCounters.hpp"
 #include "oops/oopHandle.hpp"
 #include "oops/weakHandle.hpp"
 #include "runtime/mutex.hpp"
@@ -84,6 +83,7 @@ class ClassLoaderDataGraph : public AllStatic {
   static volatile size_t  _num_instance_classes;
   static volatile size_t  _num_array_classes;
 
+  static ClassLoaderData* add_to_graph(Handle class_loader, bool anonymous);
   static ClassLoaderData* add(Handle class_loader, bool anonymous);
   static void post_class_unload_events();
  public:
@@ -114,7 +114,7 @@ class ClassLoaderDataGraph : public AllStatic {
   static void packages_unloading_do(void f(PackageEntry*));
   static void loaded_classes_do(KlassClosure* klass_closure);
   static void classes_unloading_do(void f(Klass* const));
-  static bool do_unloading(BoolObjectClosure* is_alive_closure, bool clean_previous_versions);
+  static bool do_unloading(bool clean_previous_versions);
 
   // dictionary do
   // Iterate over all klasses in dictionary, but
@@ -221,7 +221,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   static ClassLoaderData * _the_null_class_loader_data;
 
   WeakHandle<vm_class_loader_data> _holder; // The oop that determines lifetime of this class loader
-  oop _class_loader;          // The instance of java/lang/ClassLoader associated with
+  OopHandle _class_loader;    // The instance of java/lang/ClassLoader associated with
                               // this ClassLoaderData
 
   ClassLoaderMetaspace * volatile _metaspace;  // Meta-space where meta-data defined by the
@@ -234,7 +234,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   bool _modified_oops;             // Card Table Equivalent (YC/CMS support)
   bool _accumulated_modified_oops; // Mod Union Equivalent (CMS support)
 
-  s2 _keep_alive;          // if this CLD is kept alive without a keep_alive_object().
+  s2 _keep_alive;          // if this CLD is kept alive.
                            // Used for anonymous classes and the boot class
                            // loader. _keep_alive does not need to be volatile or
                            // atomic since there is one unique CLD per anonymous class.
@@ -265,6 +265,9 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // Support for walking class loader data objects
   ClassLoaderData* _next; /// Next loader_datas created
 
+  // JFR support
+  Klass*  _class_loader_klass;
+  Symbol* _class_loader_name;
   TRACE_DEFINE_TRACE_ID_FIELD;
 
   void set_next(ClassLoaderData* next) { _next = next; }
@@ -305,6 +308,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   MetaWord* allocate(size_t size);
 
   Dictionary* create_dictionary();
+
+  void initialize_name_and_klass(Handle class_loader);
  public:
   // GC interface.
   void clear_claimed() { _claimed = 0; }
@@ -340,9 +345,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   // Returns true if this class loader data is for the boot class loader.
   // (Note that the class loader data may be anonymous.)
-  bool is_boot_class_loader_data() const {
-    return class_loader() == NULL;
-  }
+  inline bool is_boot_class_loader_data() const;
 
   bool is_builtin_class_loader_data() const;
   bool is_permanent_class_loader_data() const;
@@ -351,10 +354,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // method will allocate a Metaspace if needed.
   ClassLoaderMetaspace* metaspace_non_null();
 
-  oop class_loader() const { return _class_loader; }
-
-  // The object the GC is using to keep this ClassLoaderData alive.
-  oop keep_alive_object() const;
+  inline oop class_loader() const;
 
   // Returns true if this class loader data is for a loader going away.
   bool is_unloading() const     {
@@ -363,7 +363,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   }
 
   // Used to refcount an anonymous class's CLD in order to
-  // indicate their aliveness without a keep_alive_object().
+  // indicate their aliveness.
   void inc_keep_alive();
   void dec_keep_alive();
 
@@ -407,6 +407,9 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   static ClassLoaderData* class_loader_data_or_null(oop loader);
   static ClassLoaderData* anonymous_class_loader_data(Handle loader);
 
+
+  Klass* class_loader_klass() const { return _class_loader_klass; }
+  Symbol* class_loader_name() const { return _class_loader_name; }
   TRACE_DEFINE_TRACE_ID_METHODS;
 };
 

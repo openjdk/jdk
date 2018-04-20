@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,6 +174,16 @@ public class JavacTask extends AbstractTask<JavacTask> {
      */
     public JavacTask options(String... options) {
         this.options = Arrays.asList(options);
+        return this;
+    }
+
+    /**
+     * Sets the options.
+     * @param spaceSeparatedOption the space separated options
+     * @return this task object
+     */
+    public JavacTask spaceSeparatedOptions(String spaceSeparatedOption) {
+        this.options = Arrays.asList(spaceSeparatedOption.split("\\s+"));
         return this;
     }
 

@@ -933,8 +933,6 @@ WB_ENTRY(jint, WB_MatchesMethod(JNIEnv* env, jobject o, jobject method, jstring 
   return result;
 WB_END
 
-static AlwaysFalseClosure always_false;
-
 WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION(env);
@@ -951,7 +949,7 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
       mdo->set_arg_modified(i, 0);
     }
     MutexLockerEx mu(mdo->extra_data_lock());
-    mdo->clean_method_data(&always_false);
+    mdo->clean_method_data(/*always_clean*/true);
   }
 
   mh->clear_not_c1_compilable();

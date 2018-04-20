@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,22 +26,23 @@
 #define SHARE_VM_PRIMS_RESOLVEDMETHOD_HPP
 
 #include "oops/symbol.hpp"
+#include "oops/weakHandle.hpp"
 #include "utilities/hashtable.hpp"
 
 // Hashtable to record Method* used in ResolvedMethods, via. ResolvedMethod oops.
 // This is needed for redefinition to replace Method* with redefined versions.
 
-// Entry in a ResolvedMethodTable, mapping a single oop of java_lang_invoke_ResolvedMethodName which
-// holds JVM Method* in vmtarget.
+// Entry in a ResolvedMethodTable, mapping a ClassLoaderWeakHandle for a single oop of
+// java_lang_invoke_ResolvedMethodName which holds JVM Method* in vmtarget.
 
-class ResolvedMethodEntry : public HashtableEntry<oop, mtClass> {
+class ResolvedMethodEntry : public HashtableEntry<ClassLoaderWeakHandle, mtClass> {
  public:
   ResolvedMethodEntry* next() const {
-    return (ResolvedMethodEntry*)HashtableEntry<oop, mtClass>::next();
+    return (ResolvedMethodEntry*)HashtableEntry<ClassLoaderWeakHandle, mtClass>::next();
   }
 
   ResolvedMethodEntry** next_addr() {
-    return (ResolvedMethodEntry**)HashtableEntry<oop, mtClass>::next_addr();
+    return (ResolvedMethodEntry**)HashtableEntry<ClassLoaderWeakHandle, mtClass>::next_addr();
   }
 
   oop object();
@@ -50,7 +51,7 @@ class ResolvedMethodEntry : public HashtableEntry<oop, mtClass> {
   void print_on(outputStream* st) const;
 };
 
-class ResolvedMethodTable : public Hashtable<oop, mtClass> {
+class ResolvedMethodTable : public Hashtable<ClassLoaderWeakHandle, mtClass> {
   enum Constants {
     _table_size  = 1007
   };
@@ -61,11 +62,11 @@ class ResolvedMethodTable : public Hashtable<oop, mtClass> {
   static ResolvedMethodTable* _the_table;
 private:
   ResolvedMethodEntry* bucket(int i) {
-    return (ResolvedMethodEntry*) Hashtable<oop, mtClass>::bucket(i);
+    return (ResolvedMethodEntry*) Hashtable<ClassLoaderWeakHandle, mtClass>::bucket(i);
   }
 
   ResolvedMethodEntry** bucket_addr(int i) {
-    return (ResolvedMethodEntry**) Hashtable<oop, mtClass>::bucket_addr(i);
+    return (ResolvedMethodEntry**) Hashtable<ClassLoaderWeakHandle, mtClass>::bucket_addr(i);
   }
 
   unsigned int compute_hash(Method* method);
@@ -75,7 +76,7 @@ private:
   oop lookup(Method* method);
 
   // must be done under ResolvedMethodTable_lock
-  oop basic_add(Method* method, oop rmethod_name);
+  oop basic_add(Method* method, Handle rmethod_name);
 
 public:
   ResolvedMethodTable();
@@ -95,8 +96,7 @@ public:
 #endif // INCLUDE_JVMTI
 
   // Cleanup cleared entries
-  static void unlink(BoolObjectClosure* is_alive);
-  static void oops_do(OopClosure* f);
+  static void unlink();
 
 #ifndef PRODUCT
   void print();

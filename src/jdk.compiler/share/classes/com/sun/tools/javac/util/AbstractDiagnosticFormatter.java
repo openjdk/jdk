@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,13 @@ import com.sun.tools.javac.api.DiagnosticFormatter.PositionKind;
 import com.sun.tools.javac.api.Formattable;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Printer;
+import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.CapturedType;
 import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.jvm.Profile;
+import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.Pretty;
@@ -210,6 +212,12 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
         }
         else if (arg instanceof Formattable) {
             return ((Formattable)arg).toString(l, messages);
+        }
+        else if (arg instanceof Target) {
+            return ((Target)arg).name;
+        }
+        else if (arg instanceof Source) {
+            return ((Source)arg).name;
         }
         else {
             return String.valueOf(arg);

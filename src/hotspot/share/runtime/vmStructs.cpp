@@ -543,7 +543,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   /*******************/                                                                                                              \
   /* ClassLoaderData */                                                                                                              \
   /*******************/                                                                                                              \
-  nonstatic_field(ClassLoaderData,             _class_loader,                                 oop)                                   \
+  nonstatic_field(ClassLoaderData,             _class_loader,                                 OopHandle)                             \
   nonstatic_field(ClassLoaderData,             _next,                                         ClassLoaderData*)                      \
   volatile_nonstatic_field(ClassLoaderData,    _klasses,                                      Klass*)                                \
   nonstatic_field(ClassLoaderData,             _is_anonymous,                                 bool)                                  \

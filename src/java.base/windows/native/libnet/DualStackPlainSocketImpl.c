@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
 #include "java_net_DualStackPlainSocketImpl.h"
 #include "java_net_SocketOptions.h"
 
-#define SET_BLOCKING 0
-#define SET_NONBLOCKING 1
+#define SET_BLOCKING     0
+#define SET_NONBLOCKING  1
 
 static jclass isa_class;        /* java.net.InetSocketAddress */
 static jmethodID isa_ctorID;    /* InetSocketAddress(InetAddress, int) */
@@ -60,21 +60,27 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_initIDs
  * Signature: (ZZ)I
  */
 JNIEXPORT jint JNICALL Java_java_net_DualStackPlainSocketImpl_socket0
-  (JNIEnv *env, jclass clazz, jboolean stream, jboolean v6Only /*unused*/) {
+  (JNIEnv *env, jclass clazz, jboolean stream) {
     int fd, rv, opt=0;
+    int type = (stream ? SOCK_STREAM : SOCK_DGRAM);
+    int domain = ipv6_available() ? AF_INET6 : AF_INET;
 
-    fd = NET_Socket(AF_INET6, (stream ? SOCK_STREAM : SOCK_DGRAM), 0);
+    fd = NET_Socket(domain, type, 0);
+
     if (fd == INVALID_SOCKET) {
         NET_ThrowNew(env, WSAGetLastError(), "create");
         return -1;
     }
 
-    rv = setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (char *) &opt, sizeof(opt));
-    if (rv == SOCKET_ERROR) {
-        NET_ThrowNew(env, WSAGetLastError(), "create");
+    if (domain == AF_INET6) {
+        rv = setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (char *) &opt,
+                        sizeof(opt));
+        if (rv == SOCKET_ERROR) {
+            NET_ThrowNew(env, WSAGetLastError(), "create");
+            closesocket(fd);
+            return -1;
+        }
     }
-
-    SetHandleInformation((HANDLE)(UINT_PTR)fd, HANDLE_FLAG_INHERIT, FALSE);
 
     return fd;
 }
@@ -90,10 +96,11 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_bind0
 {
     SOCKETADDRESS sa;
     int rv, sa_len = 0;
+    jboolean v4MappedAddress = ipv6_available() ? JNI_TRUE : JNI_FALSE;
 
     if (NET_InetAddressToSockaddr(env, iaObj, port, &sa,
-                                  &sa_len, JNI_TRUE) != 0) {
-      return;
+                                  &sa_len, v4MappedAddress) != 0) {
+        return;
     }
 
     rv = NET_WinBind(fd, &sa, sa_len, exclBind);
@@ -111,10 +118,11 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainSocketImpl_connect0
   (JNIEnv *env, jclass clazz, jint fd, jobject iaObj, jint port) {
     SOCKETADDRESS sa;
     int rv, sa_len = 0;
+    jboolean v4MappedAddress = ipv6_available() ? JNI_TRUE : JNI_FALSE;
 
     if (NET_InetAddressToSockaddr(env, iaObj, port, &sa,
-                                  &sa_len, JNI_TRUE) != 0) {
-      return -1;
+                                  &sa_len, v4MappedAddress) != 0) {
+        return -1;
     }
 
     rv = connect(fd, &sa.sa, sa_len);
@@ -124,7 +132,8 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainSocketImpl_connect0
             return java_net_DualStackPlainSocketImpl_WOULDBLOCK;
         } else if (err == WSAEADDRNOTAVAIL) {
             JNU_ThrowByName(env, JNU_JAVANETPKG "ConnectException",
-                "connect: Address is invalid on local machine, or port is not valid on remote machine");
+                "connect: Address is invalid on local machine,"
+                " or port is not valid on remote machine");
         } else {
             NET_ThrowNew(env, err, "connect");
         }
@@ -200,6 +209,10 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_waitForConnect
     if (rv == 0) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                         "Unable to establish connection");
+    } else if (!ipv6_available() && rv == WSAEADDRNOTAVAIL) {
+        JNU_ThrowByName(env, JNU_JAVANETPKG "ConnectException",
+                        "connect: Address is invalid on local machine,"
+                        " or port is not valid on remote machine");
     } else {
         NET_ThrowNew(env, rv, "connect");
     }
@@ -284,13 +297,7 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainSocketImpl_accept0
     newfd = accept(fd, &sa.sa, &len);
 
     if (newfd == INVALID_SOCKET) {
-        if (WSAGetLastError() == -2) {
-            JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException",
-                            "operation interrupted");
-        } else {
-            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
-                            "socket closed");
-        }
+        NET_ThrowNew(env, WSAGetLastError(), "accept failed");
         return -1;
     }
 
@@ -298,6 +305,10 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainSocketImpl_accept0
 
     ia = NET_SockaddrToInetAddress(env, &sa, &port);
     isa = (*env)->NewObject(env, isa_class, isa_ctorID, ia, port);
+    if (isa == NULL) {
+        closesocket(newfd);
+        return -1;
+    }
     (*env)->SetObjectArrayElement(env, isaa, 0, isa);
 
     return newfd;
@@ -402,6 +413,51 @@ Java_java_net_DualStackPlainSocketImpl_setIntOption
 
 /*
  * Class:     java_net_DualStackPlainSocketImpl
+ * Method:    setSoTimeout0
+ * Signature: (II)V
+ */
+JNIEXPORT void JNICALL
+Java_java_net_DualStackPlainSocketImpl_setSoTimeout0
+  (JNIEnv *env, jclass clazz, jint fd, jint timeout)
+{
+    /*
+     * SO_TIMEOUT is the socket option used to specify the timeout
+     * for ServerSocket.accept and Socket.getInputStream().read.
+     * It does not typically map to a native level socket option.
+     * For Windows we special-case this and use the SOL_SOCKET/SO_RCVTIMEO
+     * socket option to specify a receive timeout on the socket. This
+     * receive timeout is applicable to Socket only and the socket
+     * option should not be set on ServerSocket.
+     */
+
+    /*
+     * SO_RCVTIMEO is only supported on Microsoft's implementation
+     * of Windows Sockets so if WSAENOPROTOOPT returned then
+     * reset flag and timeout will be implemented using
+     * select() -- see SocketInputStream.socketRead.
+     */
+    if (isRcvTimeoutSupported) {
+        /*
+         * Disable SO_RCVTIMEO if timeout is <= 5 second.
+         */
+        if (timeout <= 5000) {
+            timeout = 0;
+        }
+
+        if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
+            sizeof(timeout)) < 0) {
+            int err = WSAGetLastError();
+            if (err == WSAENOPROTOOPT) {
+                isRcvTimeoutSupported = JNI_FALSE;
+            } else {
+                NET_ThrowNew(env, err, "setsockopt SO_RCVTIMEO");
+            }
+        }
+    }
+}
+
+/*
+ * Class:     java_net_DualStackPlainSocketImpl
  * Method:    getIntOption
  * Signature: (II)I
  */
@@ -466,7 +522,7 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_configureBlocking
     int result;
 
     if (blocking == JNI_TRUE) {
-        arg = SET_BLOCKING;    // 0
+        arg = SET_BLOCKING;      // 0
     } else {
         arg = SET_NONBLOCKING;   // 1
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,7 @@ public class SPI {
                      } else if (line.indexOf("_INCLUDE_ALIASES_MAP_") != -1) {
                          Hasher.genClass(out, aliasKeys, aliasValues,
                                          null, "Aliases", "String",
-                                         11, 3, true, false, false);
+                                         12, 3, true, false, false);
                      } else if (line.indexOf("_INCLUDE_CLASSES_MAP_") != -1) {
                          Hasher.genClass(out, clzKeys, clzValues,
                                          null, "Classes", "String",

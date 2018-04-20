@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -326,6 +326,8 @@ charset windows-1252 MS1252
     ascii   true
     alias   cp1252			# JDK historical
     alias   cp5348			# Euro IBM CCSID
+    alias   ibm-1252
+    alias   ibm1252
 
 charset windows-1253 MS1253
     package sun.nio.cs
@@ -933,11 +935,16 @@ charset x-IBM942 IBM942          # IBM & PC/MSDOS encodings
 
 charset x-IBM942C IBM942C
     package sun.nio.cs.ext
-    type    source
+    type    template
     alias   cp942C               # JDK historical
     alias   ibm942C
     alias   ibm-942C
     alias   942C
+    alias   cp932
+    alias   ibm932
+    alias   ibm-932
+    alias   932
+    alias   x-ibm932
 
 charset x-IBM943 IBM943
     package sun.nio.cs.ext
@@ -952,7 +959,7 @@ charset x-IBM943 IBM943
 
 charset x-IBM943C IBM943C
     package sun.nio.cs.ext
-    type    source
+    type    template
     alias   cp943C               # JDK historical
     alias   ibm943C
     alias   ibm-943C
@@ -1519,6 +1526,9 @@ charset x-IBM1383 IBM1383
     alias   ibm1383
     alias   ibm-1383
     alias   1383
+    alias   ibmeuccn
+    alias   ibm-euccn
+    alias   cpeuccn
 
 charset x-IBM970 IBM970
     package sun.nio.cs.ext

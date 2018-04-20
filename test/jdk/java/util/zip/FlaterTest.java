@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,12 @@
 
 /**
  * @test
- * @bug 6348045
+ * @bug 6348045 6341887
  * @summary GZipOutputStream/InputStream goes critical(calls JNI_Get*Critical)
  * and causes slowness.  This test uses Deflater and Inflater directly.
  * @key randomness
  */
 
-import java.io.*;
 import java.nio.*;
 import java.util.*;
 import java.util.zip.*;
@@ -41,35 +40,37 @@ import java.util.zip.*;
  */
 public class FlaterTest extends Thread {
     private static final int DATA_LEN = 1024 * 128;
-    private static byte[] data;
+
+    private static ByteBuffer dataDirect;
+    private static ByteBuffer dataHeap;
 
     // If true, print extra info.
     private static final boolean debug = false;
 
     // Set of Flater threads running.
-    private static Set flaters =
-        Collections.synchronizedSet(new HashSet());
+    private static Set<Flater> flaters =
+        Collections.synchronizedSet(new HashSet<>());
 
     /** Fill in {@code data} with random values. */
     static void createData() {
-        ByteBuffer bb = ByteBuffer.allocate(8);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        for (int i = 0; i < DATA_LEN; i++) {
-            bb.putDouble(0, Math.random());
-            baos.write(bb.array(), 0, 8);
+        ByteBuffer bb = ByteBuffer.allocateDirect(DATA_LEN * 8);
+        for (int i = 0; i < DATA_LEN * 8; i += 8) {
+            bb.putDouble(i, Math.random());
         }
-        data = baos.toByteArray();
-        if (debug) System.out.println("data length is " + data.length);
+        dataDirect = bb;
+        final ByteBuffer hb = ByteBuffer.allocate(bb.capacity());
+        hb.duplicate().put(bb.duplicate());
+        dataHeap = hb;
+        if (debug) System.out.println("data length is " + bb.capacity());
     }
 
     /** @return the length of the deflated {@code data}. */
-    private static int getDeflatedLength() throws Throwable {
-        int rc = 0;
+    private static int getDeflatedLength() {
         Deflater deflater = new Deflater();
-        deflater.setInput(data);
+        deflater.setInput(dataDirect.duplicate());
         deflater.finish();
-        byte[] out = new byte[data.length];
-        rc = deflater.deflate(out);
+        byte[] out = new byte[dataDirect.capacity()];
+        int rc = deflater.deflate(out);
         deflater.end();
         if (debug) System.out.println("deflatedLength is " + rc);
         return rc;
@@ -78,70 +79,98 @@ public class FlaterTest extends Thread {
     /** Compares given bytes with those in {@code data}.
      * @throws Exception if given bytes don't match {@code data}.
      */
-    private static void validate(byte[] buf, int offset, int len) throws Exception {
+    private static void validate(ByteBuffer buf, int offset, int len) throws Exception {
         for (int i = 0; i < len; i++ ) {
-            if (buf[i] != data[offset+i]) {
+            if (buf.get(i) != dataDirect.get(offset+i)) {
                 throw new Exception("mismatch at " + (offset + i));
             }
         }
     }
 
-    public static void realMain(String[] args) throws Throwable {
-        createData();
+    public static void realMain(String[] args) {
         int numThreads = args.length > 0 ? Integer.parseInt(args[0]) : 5;
-        new FlaterTest().go(numThreads);
+        createData();
+        for (int srcMode = 0; srcMode <= 2; srcMode ++) {
+            for (int dstMode = 0; dstMode <= 2; dstMode ++) {
+                new FlaterTest().go(numThreads, srcMode, dstMode);
+            }
+        }
     }
 
-    private synchronized void go(int numThreads) throws Throwable {
+    private synchronized void go(int numThreads, int srcMode, int dstMode) {
         int deflatedLength = getDeflatedLength();
 
         long time = System.currentTimeMillis();
         for (int i = 0; i < numThreads; i++) {
-            Flater f = new Flater(deflatedLength);
+            Flater f = new Flater(deflatedLength, srcMode, dstMode);
             flaters.add(f);
             f.start();
         }
-        while (flaters.size() != 0) {
-            try {
-                Thread.currentThread().sleep(10);
-            } catch (InterruptedException ex) {
-                unexpected(ex);
+        synchronized (flaters) {
+            while (flaters.size() != 0) {
+                try {
+                    flaters.wait();
+                } catch (InterruptedException ex) {
+                    unexpected(ex);
+                }
             }
         }
         time = System.currentTimeMillis() - time;
         System.out.println("Time needed for " + numThreads
-                           + " threads to deflate/inflate: " + time + " ms.");
+                           + " threads to deflate/inflate: " + time + " ms (srcMode="+srcMode+",dstMode="+dstMode+")");
     }
 
     /** Deflates and inflates data. */
     static class Flater extends Thread {
         private final int deflatedLength;
+        private final int srcMode, dstMode;
 
-        private Flater(int length) {
+        private Flater(int length, int srcMode, int dstMode) {
             this.deflatedLength = length;
+            this.srcMode = srcMode;
+            this.dstMode = dstMode;
         }
 
         /** Deflates and inflates {@code data}. */
         public void run() {
             if (debug) System.out.println(getName() + " starting run()");
             try {
-                byte[] deflated = DeflateData(deflatedLength);
+                ByteBuffer deflated = DeflateData(deflatedLength);
                 InflateData(deflated);
             } catch (Throwable t) {
                 t.printStackTrace();
                 fail(getName() + " failed");
             } finally {
-                flaters.remove(this);
+                synchronized (flaters) {
+                    flaters.remove(this);
+                    if (flaters.isEmpty()) {
+                        flaters.notifyAll();
+                    }
+                }
             }
         }
 
         /** Returns a copy of {@code data} in deflated form. */
-        private byte[] DeflateData(int length) throws Throwable {
+        private ByteBuffer DeflateData(int length) {
             Deflater deflater = new Deflater();
-            deflater.setInput(data);
+            if (srcMode == 0) {
+                deflater.setInput(dataHeap.array());
+            } else if (srcMode == 1) {
+                deflater.setInput(dataHeap.duplicate());
+            } else {
+                assert srcMode == 2;
+                deflater.setInput(dataDirect.duplicate());
+            }
             deflater.finish();
-            byte[] out = new byte[length];
-            deflater.deflate(out);
+            ByteBuffer out = dstMode == 2 ? ByteBuffer.allocateDirect(length) : ByteBuffer.allocate(length);
+            int deflated;
+            if (dstMode == 0) {
+                deflated = deflater.deflate(out.array(), 0, length);
+                out.position(deflated);
+            } else {
+                deflater.deflate(out);
+            }
+            out.flip();
             return out;
         }
 
@@ -149,14 +178,30 @@ public class FlaterTest extends Thread {
          * inflation.
          * @throws Exception if inflated bytes don't match {@code data}.
          */
-        private void InflateData(byte[] bytes) throws Throwable {
+        private void InflateData(ByteBuffer bytes) throws Throwable {
             Inflater inflater = new Inflater();
-            inflater.setInput(bytes, 0, bytes.length);
+            if (dstMode == 0) {
+                inflater.setInput(bytes.array(), 0, bytes.remaining());
+            } else {
+                inflater.setInput(bytes);
+            }
+            if (inflater.getRemaining() == 0) {
+                throw new Exception("Nothing to inflate (bytes=" + bytes + ")");
+            }
             int len = 1024 * 8;
             int offset = 0;
+            ByteBuffer buf = srcMode == 2 ? ByteBuffer.allocateDirect(len) : ByteBuffer.allocate(len);
             while (inflater.getRemaining() > 0) {
-                byte[] buf = new byte[len];
-                int inflated = inflater.inflate(buf, 0, len);
+                buf.clear();
+                int inflated;
+                if (srcMode == 0) {
+                    inflated = inflater.inflate(buf.array(), 0, buf.remaining());
+                } else {
+                    inflated = inflater.inflate(buf);
+                }
+                if (inflated == 0) {
+                    throw new Exception("Nothing inflated (dst=" + buf + ",offset=" + offset + ",rem=" + inflater.getRemaining() + ",srcMode="+srcMode+",dstMode="+dstMode+")");
+                }
                 validate(buf, offset, inflated);
                 offset += inflated;
             }

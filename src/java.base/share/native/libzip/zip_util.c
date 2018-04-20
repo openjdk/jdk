@@ -881,7 +881,7 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
  * set to the error message text if msg != 0. Otherwise, *msg will be
  * set to NULL. Caller doesn't need to free the error message.
  */
-JNIEXPORT jzfile * JNICALL
+JNIEXPORT jzfile *
 ZIP_Open(const char *name, char **pmsg)
 {
     jzfile *file = ZIP_Open_Generic(name, pmsg, O_RDONLY, 0);
@@ -895,7 +895,7 @@ ZIP_Open(const char *name, char **pmsg)
 /*
  * Closes the specified zip file object.
  */
-JNIEXPORT void JNICALL
+JNIEXPORT void
 ZIP_Close(jzfile *zip)
 {
     MLOCK(zfiles_lock);
@@ -1115,7 +1115,7 @@ ZIP_FreeEntry(jzfile *jz, jzentry *ze)
  * Returns the zip entry corresponding to the specified name, or
  * NULL if not found.
  */
-JNIEXPORT jzentry * JNICALL
+JNIEXPORT jzentry *
 ZIP_GetEntry(jzfile *zip, char *name, jint ulen)
 {
     if (ulen == 0) {
@@ -1238,7 +1238,7 @@ Finally:
  * Returns the n'th (starting at zero) zip file entry, or NULL if the
  * specified index was out of range.
  */
-JNIEXPORT jzentry * JNICALL
+JNIEXPORT jzentry *
 ZIP_GetNextEntry(jzfile *zip, jint n)
 {
     jzentry *result;
@@ -1439,7 +1439,7 @@ InflateFully(jzfile *zip, jzentry *entry, void *buf, char **msg)
  * The current implementation does not support reading an entry that
  * has the size bigger than 2**32 bytes in ONE invocation.
  */
-JNIEXPORT jzentry * JNICALL
+JNIEXPORT jzentry *
 ZIP_FindEntry(jzfile *zip, char *name, jint *sizeP, jint *nameLenP)
 {
     jzentry *entry = ZIP_GetEntry(zip, name, 0);
@@ -1456,7 +1456,7 @@ ZIP_FindEntry(jzfile *zip, char *name, jint *sizeP, jint *nameLenP)
  * Note: this is called from the separately delivered VM (hotspot/classic)
  * so we have to be careful to maintain the expected behaviour.
  */
-JNIEXPORT jboolean JNICALL
+JNIEXPORT jboolean
 ZIP_ReadEntry(jzfile *zip, jzentry *entry, unsigned char *buf, char *entryname)
 {
     char *msg;
@@ -1515,7 +1515,7 @@ ZIP_ReadEntry(jzfile *zip, jzentry *entry, unsigned char *buf, char *entryname)
     return JNI_TRUE;
 }
 
-JNIEXPORT jboolean JNICALL
+JNIEXPORT jboolean
 ZIP_InflateFully(void *inBuf, jlong inLen, void *outBuf, jlong outLen, char **pmsg)
 {
     z_stream strm;

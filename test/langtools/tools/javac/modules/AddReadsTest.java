@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -352,7 +352,7 @@ public class AddReadsTest extends ModuleTestBase {
                 .getOutput(Task.OutputKind.DIRECT);
 
         checkOutputContains(log,
-            "javac: no value for --add-reads option");
+            "error: no value for --add-reads option");
     }
 
     @Test
@@ -421,7 +421,7 @@ public class AddReadsTest extends ModuleTestBase {
                 .getOutput(Task.OutputKind.DIRECT);
 
         checkOutputContains(log,
-            "javac: bad value for --add-reads option: '" + option + "'");
+            "error: bad value for --add-reads option: '" + option + "'");
     }
 
     @Test
@@ -572,7 +572,7 @@ public class AddReadsTest extends ModuleTestBase {
                 .getOutput(Task.OutputKind.DIRECT);
 
         checkOutputContains(log,
-            "javac: bad value for --add-reads option: 'm1x:m2x'");
+            "error: bad value for --add-reads option: 'm1x:m2x'");
     }
 
     @Test

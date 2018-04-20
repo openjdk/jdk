@@ -295,7 +295,7 @@ public:
   void release_set_exception_cache(ExceptionCache *ec);
   address handler_for_exception_and_pc(Handle exception, address pc);
   void add_handler_for_exception_and_pc(Handle exception, address pc, address handler);
-  void clean_exception_cache(BoolObjectClosure* is_alive);
+  void clean_exception_cache();
 
   void add_exception_cache_entry(ExceptionCache* new_entry);
   ExceptionCache* exception_cache_entry_for_exception(Handle exception);
@@ -364,10 +364,10 @@ public:
   void set_unloading_next(CompiledMethod* next) { _unloading_next = next; }
   CompiledMethod* unloading_next()              { return _unloading_next; }
 
-  void static clean_ic_if_metadata_is_dead(CompiledIC *ic, BoolObjectClosure *is_alive);
+  void static clean_ic_if_metadata_is_dead(CompiledIC *ic);
 
   // Check that all metadata is still alive
-  void verify_metadata_loaders(address low_boundary, BoolObjectClosure* is_alive);
+  void verify_metadata_loaders(address low_boundary);
 
   virtual void do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred);
   //  The parallel versions are used by G1.

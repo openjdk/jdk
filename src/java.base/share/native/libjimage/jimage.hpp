@@ -72,7 +72,7 @@ typedef jlong JImageLocationRef;
  *   ...
  */
 
-extern "C" JNIEXPORT JImageFile* JNICALL
+extern "C" JNIEXPORT JImageFile*
 JIMAGE_Open(const char *name, jint* error);
 
 typedef JImageFile* (*JImageOpen_t)(const char *name, jint* error);
@@ -87,7 +87,7 @@ typedef JImageFile* (*JImageOpen_t)(const char *name, jint* error);
  *  (*JImageClose)(image);
  */
 
-extern "C" JNIEXPORT void JNICALL
+extern "C" JNIEXPORT void
 JIMAGE_Close(JImageFile* jimage);
 
 typedef void (*JImageClose_t)(JImageFile* jimage);
@@ -106,7 +106,7 @@ typedef void (*JImageClose_t)(JImageFile* jimage);
  *  -> java.base
  */
 
-extern "C" JNIEXPORT const char * JNICALL
+extern "C" JNIEXPORT const char *
 JIMAGE_PackageToModule(JImageFile* jimage, const char* package_name);
 
 typedef const char* (*JImagePackageToModule_t)(JImageFile* jimage, const char* package_name);
@@ -150,7 +150,7 @@ typedef JImageLocationRef(*JImageFindResource_t)(JImageFile* jimage,
  *  char* buffer = new char[size];
  *  (*JImageGetResource)(image, location, buffer, size);
  */
-extern "C" JNIEXPORT jlong JNICALL
+extern "C" JNIEXPORT jlong
 JIMAGE_GetResource(JImageFile* jimage, JImageLocationRef location,
         char* buffer, jlong size);
 
@@ -185,7 +185,7 @@ typedef bool (*JImageResourceVisitor_t)(JImageFile* jimage,
         const char* module_name, const char* version, const char* package,
         const char* name, const char* extension, void* arg);
 
-extern "C" JNIEXPORT void JNICALL
+extern "C" JNIEXPORT void
 JIMAGE_ResourceIterator(JImageFile* jimage,
         JImageResourceVisitor_t visitor, void *arg);
 
@@ -202,7 +202,7 @@ typedef void (*JImageResourceIterator_t)(JImageFile* jimage,
  *   char path[JIMAGE_MAX_PATH];
  *    (*JImageResourcePath)(image, location, path, JIMAGE_MAX_PATH);
  */
-extern "C" JNIEXPORT bool JNICALL
+extern "C" JNIEXPORT bool
 JIMAGE_ResourcePath(JImageFile* image, JImageLocationRef locationRef,
                                     char* path, size_t max);
 

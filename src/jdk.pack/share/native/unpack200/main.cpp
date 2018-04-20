@@ -59,7 +59,7 @@
 #include "unpack.h"
 
 
-JNIEXPORT int JNICALL
+JNIEXPORT int
 main(int argc, char **argv) {
     return unpacker::run(argc, argv);
 }

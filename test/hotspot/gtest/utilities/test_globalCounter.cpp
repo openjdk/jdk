@@ -29,8 +29,8 @@
 #include "utilities/globalCounter.inline.hpp"
 #include "utilitiesHelper.inline.hpp"
 
-#define GOOD 1337
-#define BAD  4711
+#define GOOD_VALUE 1337
+#define BAD_VALUE  4711
 
 struct TestData {
   long test_value;
@@ -50,13 +50,13 @@ public:
       GlobalCounter::critical_section_begin(this);
       volatile TestData* test = OrderAccess::load_acquire(_test);
       long value = OrderAccess::load_acquire(&test->test_value);
-      ASSERT_EQ(value, GOOD);
+      ASSERT_EQ(value, GOOD_VALUE);
       GlobalCounter::critical_section_end(this);
       {
         GlobalCounter::CriticalSection cs(this);
         volatile TestData* test = OrderAccess::load_acquire(_test);
         long value = OrderAccess::load_acquire(&test->test_value);
-        ASSERT_EQ(value, GOOD);
+        ASSERT_EQ(value, GOOD_VALUE);
       }
     }
   }
@@ -81,7 +81,7 @@ public:
     RCUReaderThread* reader4 = new RCUReaderThread(&post, &test, &wrt_start);
 
     TestData* tmp = new TestData();
-    tmp->test_value = GOOD;
+    tmp->test_value = GOOD_VALUE;
     OrderAccess::release_store_fence(&test, tmp);
 
     reader1->doit();
@@ -98,10 +98,10 @@ public:
     for (int i = 0; i < 100000 && stop_ms > os::javaTimeMillis(); i++) {
       volatile TestData* free_tmp = test;
       tmp = new TestData();
-      tmp->test_value = GOOD;
+      tmp->test_value = GOOD_VALUE;
       OrderAccess::release_store(&test, tmp);
       GlobalCounter::write_synchronize();
-      free_tmp->test_value = BAD;
+      free_tmp->test_value = BAD_VALUE;
       delete free_tmp;
     }
     RCUReaderThread::_exit = true;

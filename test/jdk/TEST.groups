@@ -1,4 +1,4 @@
-#  Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 #  This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,14 @@ tier1 = \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
     :jdk_math \
-    tools/pack200
+    tools/pack200 \
+    -java/util/Arrays/TimSortStackSize2.java
 
 tier2 = \
     :tier2_part1 \
     :tier2_part2 \
-    :tier2_part3
+    :tier2_part3 \
+    java/util/Arrays/TimSortStackSize2.java
 
 # com/sun/crypto/provider/Cipher is in tier1 because of JDK-8132855
 tier2_part1 = \

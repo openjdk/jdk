@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,22 @@
 
 /**
  * @test
- * @bug 7110149 8184306
+ * @bug 7110149 8184306 6341887
  * @summary Test basic deflater & inflater functionality
  * @key randomness
  */
 
 import java.io.*;
+import java.nio.*;
 import java.util.*;
 import java.util.zip.*;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class DeInflate {
+
+    private static Random rnd = new Random();
+
 
     static void checkStream(Deflater def, byte[] in, int len,
                             byte[] out1, byte[] out2, boolean nowrap)
@@ -61,6 +67,57 @@ public class DeInflate {
         }
     }
 
+    static void checkByteBuffer(Deflater def, Inflater inf,
+                                ByteBuffer in, ByteBuffer out1, ByteBuffer out2,
+                                byte[] expected, int len, byte[] result,
+                                boolean out1ReadOnlyWhenInflate)
+            throws Throwable {
+        def.reset();
+        inf.reset();
+
+        def.setInput(in);
+        def.finish();
+        int m = def.deflate(out1);
+
+        out1.flip();
+        if (out1ReadOnlyWhenInflate)
+            out1 = out1.asReadOnlyBuffer();
+        inf.setInput(out1);
+        int n = inf.inflate(out2);
+
+        out2.flip();
+        out2.get(result, 0, n);
+
+        if (n != len || out2.position() != len ||
+            !Arrays.equals(Arrays.copyOf(expected, len), Arrays.copyOf(result, len)) ||
+            inf.inflate(result) != 0) {
+            throw new RuntimeException("De/inflater(buffer) failed:" + def);
+        }
+    }
+
+    static void checkByteBufferReadonly(Deflater def, Inflater inf,
+                                        ByteBuffer in, ByteBuffer out1, ByteBuffer out2)
+            throws Throwable {
+        def.reset();
+        inf.reset();
+        def.setInput(in);
+        def.finish();
+        int m = -1;
+        if (!out2.isReadOnly())
+            out2 = out2.asReadOnlyBuffer();
+        try {
+            m = def.deflate(out2);
+            throw new RuntimeException("deflater: ReadOnlyBufferException: failed");
+        } catch (ReadOnlyBufferException robe) {}
+        m = def.deflate(out1);
+        out1.flip();
+        inf.setInput(out1);
+        try {
+            inf.inflate(out2);
+            throw new RuntimeException("inflater: ReadOnlyBufferException: failed");
+        } catch (ReadOnlyBufferException robe) {}
+    }
+
     static void check(Deflater def, byte[] in, int len,
                       byte[] out1, byte[] out2, boolean nowrap)
         throws Throwable
@@ -83,6 +140,107 @@ public class DeInflate {
                               m, n, len, Arrays.equals(in, out2));
             throw new RuntimeException("De/inflater failed:" + def);
         }
+
+        // readable
+        Arrays.fill(out1, (byte)0);
+        Arrays.fill(out2, (byte)0);
+        ByteBuffer bbIn = ByteBuffer.wrap(in, 0, len);
+        ByteBuffer bbOut1 = ByteBuffer.wrap(out1);
+        ByteBuffer bbOut2 = ByteBuffer.wrap(out2);
+        checkByteBuffer(def, inf, bbIn, bbOut1, bbOut2, in, len, out2, false);
+        checkByteBufferReadonly(def, inf, bbIn, bbOut1, bbOut2);
+
+        // readonly in
+        Arrays.fill(out1, (byte)0);
+        Arrays.fill(out2, (byte)0);
+        bbIn = ByteBuffer.wrap(in, 0, len).asReadOnlyBuffer();
+        bbOut1 = ByteBuffer.wrap(out1);
+        bbOut2 = ByteBuffer.wrap(out2);
+        checkByteBuffer(def, inf, bbIn, bbOut1, bbOut2, in, len, out2, false);
+        checkByteBufferReadonly(def, inf, bbIn, bbOut1, bbOut2);
+
+        // readonly out1 when inflate
+        Arrays.fill(out1, (byte)0);
+        Arrays.fill(out2, (byte)0);
+        bbIn = ByteBuffer.wrap(in, 0, len);
+        bbOut1 = ByteBuffer.wrap(out1);
+        bbOut2 = ByteBuffer.wrap(out2);
+        checkByteBuffer(def, inf, bbIn, bbOut1, bbOut2, in, len, out2, true);
+        checkByteBufferReadonly(def, inf, bbIn, bbOut1, bbOut2);
+
+        // direct
+        bbIn = ByteBuffer.allocateDirect(in.length);
+        bbIn.put(in, 0, n).flip();
+        bbOut1 = ByteBuffer.allocateDirect(out1.length);
+        bbOut2 = ByteBuffer.allocateDirect(out2.length);
+        checkByteBuffer(def, inf, bbIn, bbOut1, bbOut2, in, len, out2, false);
+        checkByteBufferReadonly(def, inf, bbIn, bbOut1, bbOut2);
+    }
+
+    static void checkDict(Deflater def, Inflater inf, byte[] src,
+                          byte[] dstDef, byte[] dstInf,
+                          ByteBuffer dictDef,  ByteBuffer dictInf) throws Throwable {
+        def.reset();
+        inf.reset();
+
+        def.setDictionary(dictDef);
+        def.setInput(src);
+        def.finish();
+        int n = def.deflate(dstDef);
+
+        inf.setInput(dstDef, 0, n);
+        n = inf.inflate(dstInf);
+        if (n != 0 || !inf.needsDictionary()) {
+            throw new RuntimeException("checkDict failed: need dict to continue");
+        }
+        inf.setDictionary(dictInf);
+        n = inf.inflate(dstInf);
+        // System.out.println("result: " + new String(dstInf, 0, n));
+        if (n != src.length || !Arrays.equals(Arrays.copyOf(dstInf, n), src)) {
+            throw new RuntimeException("checkDict failed: inflate result");
+        }
+    }
+
+    static void checkDict(int level, int strategy) throws Throwable {
+
+        Deflater def = newDeflater(level, strategy, false, new byte[0]);
+        Inflater inf = new Inflater();
+
+        byte[] src = "hello world, hello world, hello sherman".getBytes();
+        byte[] dict = "hello".getBytes();
+
+        byte[] dstDef = new byte[1024];
+        byte[] dstInf = new byte[1024];
+
+        def.setDictionary(dict);
+        def.setInput(src);
+        def.finish();
+        int n = def.deflate(dstDef);
+
+        inf.setInput(dstDef, 0, n);
+        n = inf.inflate(dstInf);
+        if (n != 0 || !inf.needsDictionary()) {
+            throw new RuntimeException("checkDict failed: need dict to continue");
+        }
+        inf.setDictionary(dict);
+        n = inf.inflate(dstInf);
+        //System.out.println("result: " + new String(dstInf, 0, n));
+        if (n != src.length || !Arrays.equals(Arrays.copyOf(dstInf, n), src)) {
+            throw new RuntimeException("checkDict failed: inflate result");
+        }
+
+        ByteBuffer dictDef = ByteBuffer.wrap(dict);
+        ByteBuffer dictInf = ByteBuffer.wrap(dict);
+        checkDict(def, inf, src, dstDef, dstInf, dictDef, dictInf);
+
+        dictDef = ByteBuffer.allocateDirect(dict.length);
+        dictInf = ByteBuffer.allocateDirect(dict.length);
+        dictDef.put(dict).flip();
+        dictInf.put(dict).flip();
+        checkDict(def, inf, src, dstDef, dstInf, dictDef, dictInf);
+
+        def.end();
+        inf.end();
     }
 
     private static Deflater newDeflater(int level, int strategy, boolean dowrap, byte[] tmp) {
@@ -109,7 +267,7 @@ public class DeInflate {
     public static void main(String[] args) throws Throwable {
 
         byte[] dataIn = new byte[1024 * 512];
-        new Random().nextBytes(dataIn);
+        rnd.nextBytes(dataIn);
         byte[] dataOut1 = new byte[dataIn.length + 1024];
         byte[] dataOut2 = new byte[dataIn.length];
 
@@ -130,6 +288,7 @@ public class DeInflate {
                         // use a new deflater
                         Deflater def = newDeflater(level, strategy, dowrap, dataOut2);
                         check(def, dataIn, len, dataOut1, dataOut2, dowrap);
+                        def.end();
 
                         // reuse the deflater (with reset) and test on stream, which
                         // uses a "smaller" buffer (smaller than the overall data)
@@ -137,6 +296,8 @@ public class DeInflate {
                         checkStream(def, dataIn, len, dataOut1, dataOut2, dowrap);
                     }
                 }
+                // test setDictionary()
+                checkDict(level, strategy);
             }
         }
     }

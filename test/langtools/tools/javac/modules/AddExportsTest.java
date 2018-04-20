@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public class AddExportsTest extends ModuleTestBase {
                 .getOutput(Task.OutputKind.DIRECT);
 
         checkOutputContains(log,
-            "javac: no value for --add-exports option");
+            "error: no value for --add-exports option");
     }
 
     @Test
@@ -123,7 +123,7 @@ public class AddExportsTest extends ModuleTestBase {
                 .getOutput(Task.OutputKind.DIRECT);
 
         checkOutputContains(log,
-            "javac: bad value for --add-exports option: '" + option + "'");
+            "error: bad value for --add-exports option: '" + option + "'");
     }
 
     @Test
@@ -158,7 +158,7 @@ public class AddExportsTest extends ModuleTestBase {
                 .getOutput(Task.OutputKind.DIRECT);
 
         checkOutputContains(log,
-            "javac: bad value for --add-exports option: '" + option + "'");
+            "error: bad value for --add-exports option: '" + option + "'");
     }
 
     @Test

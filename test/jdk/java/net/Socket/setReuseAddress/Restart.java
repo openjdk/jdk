@@ -28,8 +28,12 @@
  *          after a crash.
  * @run main Restart
  * @run main/othervm -Dsun.net.useExclusiveBind Restart
+ * @run main/othervm -Dsun.net.useExclusiveBind=true Restart
  * @run main/othervm -Djava.net.preferIPv4Stack=true Restart
- * @run main/othervm -Dsun.net.useExclusiveBind -Djava.net.preferIPv4Stack=true Restart
+ * @run main/othervm -Dsun.net.useExclusiveBind
+ *                   -Djava.net.preferIPv4Stack=true Restart
+ * @run main/othervm -Dsun.net.useExclusiveBind=true
+ *                   -Djava.net.preferIPv4Stack=true Restart
  */
 import java.net.*;
 

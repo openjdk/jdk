@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public class BadOptionsTest extends TestRunner {
                 .run(Task.Expect.FAIL)
                 .writeAll();
         checkFound(result.getOutput(Task.OutputKind.DIRECT),
-                "javadoc: error - no value for --add-modules option");
+                "javadoc: error - error: no value for --add-modules option");
         checkNotFound(result, "Exception", "at jdk.javadoc/");
     }
 
@@ -104,7 +104,7 @@ public class BadOptionsTest extends TestRunner {
                 .run(Task.Expect.FAIL)
                 .writeAll();
         checkFound(result.getOutput(Task.OutputKind.DIRECT),
-                "javadoc: error - no value for --add-exports option");
+                "javadoc: error - error: no value for --add-exports option");
         checkNotFound(result, "Exception", "at jdk.javadoc/");
     }
 
@@ -116,7 +116,7 @@ public class BadOptionsTest extends TestRunner {
                 .run(Task.Expect.FAIL)
                 .writeAll();
         checkFound(result.getOutput(Task.OutputKind.DIRECT),
-                "javadoc: error - bad value for --add-exports option");
+                "javadoc: error - error: bad value for --add-exports option: 'm/p'");
         checkNotFound(result, "Exception", "at jdk.javadoc/");
     }
 
@@ -146,7 +146,7 @@ public class BadOptionsTest extends TestRunner {
                 .run(Task.Expect.FAIL)
                 .writeAll();
         checkFound(result.getOutput(Task.OutputKind.DIRECT),
-                "javadoc: cannot specify both --source-path and --module-source-path");
+                "error: cannot specify both --source-path and --module-source-path");
         checkFound(result.getOutput(Task.OutputKind.DIRECT),
                 "1 error");
     }

@@ -574,7 +574,7 @@ SplashReconfigure(Splash * splash)
     PostMessage(splash->hWnd, WM_SPLASHRECONFIGURE, 0, 0);
 }
 
-jboolean
+JNIEXPORT jboolean JNICALL
 SplashGetScaledImageName(const char* jarName, const char* fileName,
                            float *scaleFactor, char *scaleImageName,
                            const size_t scaledImageLength)

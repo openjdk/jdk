@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ void LoaderConstraintTable::purge_loader_constraints() {
       InstanceKlass* klass = probe->klass();
       // Remove klass that is no longer alive
       if (klass != NULL &&
-          klass->class_loader_data()->is_unloading()) {
+          !klass->is_loader_alive()) {
         probe->set_klass(NULL);
         if (lt.is_enabled()) {
           ResourceMark rm;
@@ -116,31 +116,31 @@ void LoaderConstraintTable::purge_loader_constraints() {
       int n = 0;
       while (n < probe->num_loaders()) {
         if (probe->loader_data(n)->is_unloading()) {
-            if (lt.is_enabled()) {
-              ResourceMark rm;
-              lt.print("purging loader %s from constraint for name %s",
-                            probe->loader_data(n)->loader_name(),
-                            probe->name()->as_C_string()
-                            );
-            }
+          if (lt.is_enabled()) {
+            ResourceMark rm;
+            lt.print("purging loader %s from constraint for name %s",
+                     probe->loader_data(n)->loader_name(),
+                     probe->name()->as_C_string()
+                     );
+          }
 
-            // Compact array
-            int num = probe->num_loaders() - 1;
-            probe->set_num_loaders(num);
+          // Compact array
+          int num = probe->num_loaders() - 1;
+          probe->set_num_loaders(num);
           probe->set_loader_data(n, probe->loader_data(num));
           probe->set_loader_data(num, NULL);
 
-            if (lt.is_enabled()) {
-              ResourceMark rm;
-              lt.print("new loader list:");
-              for (int i = 0; i < probe->num_loaders(); i++) {
-                lt.print("    [%d]: %s", i,
-                              probe->loader_data(i)->loader_name());
-              }
+          if (lt.is_enabled()) {
+            ResourceMark rm;
+            lt.print("new loader list:");
+            for (int i = 0; i < probe->num_loaders(); i++) {
+              lt.print("    [%d]: %s", i,
+                            probe->loader_data(i)->loader_name());
             }
+          }
 
-            continue;  // current element replaced, so restart without
-                       // incrementing n
+          continue;  // current element replaced, so restart without
+                     // incrementing n
           }
         n++;
       }
@@ -159,9 +159,7 @@ void LoaderConstraintTable::purge_loader_constraints() {
       } else {
 #ifdef ASSERT
         if (probe->klass() != NULL) {
-          ClassLoaderData* loader_data =
-            probe->klass()->class_loader_data();
-          assert(!loader_data->is_unloading(), "klass should be live");
+          assert(probe->klass()->is_loader_alive(), "klass should be live");
         }
 #endif
         // Go to next entry

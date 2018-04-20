@@ -59,6 +59,7 @@ import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.platform.PlatformProvider;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Log.PrefixKind;
@@ -197,7 +198,7 @@ public enum Option {
         @Override
         public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
             if (arg.isEmpty()) {
-                throw helper.newInvalidValueException("err.no.value.for.option", option);
+                throw helper.newInvalidValueException(Errors.NoValueForOption(option));
             } else if (getPattern().matcher(arg).matches()) {
                 String prev = helper.get(PATCH_MODULE);
                 if (prev == null) {
@@ -209,13 +210,13 @@ public enum Option {
                             .collect(Collectors.toSet())
                             .contains(argModulePackage);
                     if (isRepeated) {
-                        throw helper.newInvalidValueException("err.repeated.value.for.patch.module", argModulePackage);
+                        throw helper.newInvalidValueException(Errors.RepeatedValueForPatchModule(argModulePackage));
                     } else {
                         super.process(helper, option, prev + '\0' + arg);
                     }
                 }
             } else {
-                throw helper.newInvalidValueException("err.bad.value.for.option", option, arg);
+                throw helper.newInvalidValueException(Errors.BadValueForOption(option, arg));
             }
         }
 
@@ -290,7 +291,7 @@ public enum Option {
         public void process(OptionHelper helper, String option, String operand) throws InvalidValueException {
             Source source = Source.lookup(operand);
             if (source == null) {
-                throw helper.newInvalidValueException("err.invalid.source", operand);
+                throw helper.newInvalidValueException(Errors.InvalidSource(operand));
             }
             super.process(helper, option, operand);
         }
@@ -301,7 +302,7 @@ public enum Option {
         public void process(OptionHelper helper, String option, String operand) throws InvalidValueException {
             Target target = Target.lookup(operand);
             if (target == null) {
-                throw helper.newInvalidValueException("err.invalid.target", operand);
+                throw helper.newInvalidValueException(Errors.InvalidTarget(operand));
             }
             super.process(helper, option, operand);
         }
@@ -337,7 +338,7 @@ public enum Option {
         public void process(OptionHelper helper, String option, String operand) throws InvalidValueException {
             Profile profile = Profile.lookup(operand);
             if (profile == null) {
-                throw helper.newInvalidValueException("err.invalid.profile", operand);
+                throw helper.newInvalidValueException(Errors.InvalidProfile(operand));
             }
             super.process(helper, option, operand);
         }
@@ -392,12 +393,12 @@ public enum Option {
         public void process(OptionHelper helper, String option) throws InvalidValueException {
             int argLength = option.length();
             if (argLength == 2) {
-                throw helper.newInvalidValueException("err.empty.A.argument");
+                throw helper.newInvalidValueException(Errors.EmptyAArgument);
             }
             int sepIndex = option.indexOf('=');
             String key = option.substring(2, (sepIndex != -1 ? sepIndex : argLength) );
             if (!JavacProcessingEnvironment.isValidOptionName(key)) {
-                throw helper.newInvalidValueException("err.invalid.A.key", option);
+                throw helper.newInvalidValueException(Errors.InvalidAKey(option));
             }
             helper.put(option, option);
         }
@@ -410,14 +411,13 @@ public enum Option {
         public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
             String prev = helper.get(DEFAULT_MODULE_FOR_CREATED_FILES);
             if (prev != null) {
-                throw helper.newInvalidValueException("err.option.too.many",
-                                                      DEFAULT_MODULE_FOR_CREATED_FILES.primaryName);
+                throw helper.newInvalidValueException(Errors.OptionTooMany(DEFAULT_MODULE_FOR_CREATED_FILES.primaryName));
             } else if (arg.isEmpty()) {
-                throw helper.newInvalidValueException("err.no.value.for.option", option);
+                throw helper.newInvalidValueException(Errors.NoValueForOption(option));
             } else if (getPattern().matcher(arg).matches()) {
                 helper.put(DEFAULT_MODULE_FOR_CREATED_FILES.primaryName, arg);
             } else {
-                throw helper.newInvalidValueException("err.bad.value.for.option", option, arg);
+                throw helper.newInvalidValueException(Errors.BadValueForOption(option, arg));
             }
         }
 
@@ -487,7 +487,7 @@ public enum Option {
                 Log log = helper.getLog();
                 log.setWriters(new PrintWriter(new FileWriter(arg), true));
             } catch (java.io.IOException e) {
-                throw helper.newInvalidValueException("err.error.writing.file", arg, e);
+                throw helper.newInvalidValueException(Errors.ErrorWritingFile(arg, e.getMessage()));
             }
             super.process(helper, option, arg);
         }
@@ -570,12 +570,12 @@ public enum Option {
         @Override
         public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
             if (arg.isEmpty()) {
-                throw helper.newInvalidValueException("err.no.value.for.option", option);
+                throw helper.newInvalidValueException(Errors.NoValueForOption(option));
             } else if (getPattern().matcher(arg).matches()) {
                 String prev = helper.get(ADD_EXPORTS);
                 helper.put(ADD_EXPORTS.primaryName, (prev == null) ? arg : prev + '\0' + arg);
             } else {
-                throw helper.newInvalidValueException("err.bad.value.for.option", option, arg);
+                throw helper.newInvalidValueException(Errors.BadValueForOption(option, arg));
             }
         }
 
@@ -591,12 +591,12 @@ public enum Option {
         @Override
         public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
             if (arg.isEmpty()) {
-                throw helper.newInvalidValueException("err.no.value.for.option", option);
+                throw helper.newInvalidValueException(Errors.NoValueForOption(option));
             } else if (getPattern().matcher(arg).matches()) {
                 String prev = helper.get(ADD_READS);
                 helper.put(ADD_READS.primaryName, (prev == null) ? arg : prev + '\0' + arg);
             } else {
-                throw helper.newInvalidValueException("err.bad.value.for.option", option, arg);
+                throw helper.newInvalidValueException(Errors.BadValueForOption(option, arg));
             }
         }
 
@@ -612,14 +612,14 @@ public enum Option {
         @Override
         public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
             if (arg.isEmpty()) {
-                throw helper.newInvalidValueException("err.no.value.for.option", option);
+                throw helper.newInvalidValueException(Errors.NoValueForOption(option));
             } else if (getPattern().matcher(arg).matches()) {
                 String prev = helper.get(ADD_MODULES);
                 // since the individual values are simple names, we can simply join the
                 // values of multiple --add-modules options with ','
                 helper.put(ADD_MODULES.primaryName, (prev == null) ? arg : prev + ',' + arg);
             } else {
-                throw helper.newInvalidValueException("err.bad.value.for.option", option, arg);
+                throw helper.newInvalidValueException(Errors.BadValueForOption(option, arg));
             }
         }
 
@@ -633,11 +633,11 @@ public enum Option {
         @Override
         public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
             if (arg.isEmpty()) {
-                throw helper.newInvalidValueException("err.no.value.for.option", option);
+                throw helper.newInvalidValueException(Errors.NoValueForOption(option));
             } else if (getPattern().matcher(arg).matches()) {
                 helper.put(LIMIT_MODULES.primaryName, arg); // last one wins
             } else {
-                throw helper.newInvalidValueException("err.bad.value.for.option", option, arg);
+                throw helper.newInvalidValueException(Errors.BadValueForOption(option, arg));
             }
         }
 
@@ -651,13 +651,13 @@ public enum Option {
         @Override
         public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
             if (arg.isEmpty()) {
-                throw helper.newInvalidValueException("err.no.value.for.option", option);
+                throw helper.newInvalidValueException(Errors.NoValueForOption(option));
             } else {
                 // use official parser if available
                 try {
                     ModuleDescriptor.Version.parse(arg);
                 } catch (IllegalArgumentException e) {
-                    throw helper.newInvalidValueException("err.bad.value.for.option", option, arg);
+                    throw helper.newInvalidValueException(Errors.BadValueForOption(option, arg));
                 }
             }
             super.process(helper, option, arg);
@@ -692,10 +692,10 @@ public enum Option {
             if (option.endsWith(".java") ) {
                 Path p = Paths.get(option);
                 if (!Files.exists(p)) {
-                    throw helper.newInvalidValueException("err.file.not.found", p);
+                    throw helper.newInvalidValueException(Errors.FileNotFound(p.toString()));
                 }
                 if (!Files.isRegularFile(p)) {
-                    throw helper.newInvalidValueException("err.file.not.file", p);
+                    throw helper.newInvalidValueException(Errors.FileNotFile(p));
                 }
                 helper.addFile(p);
             } else {
@@ -1078,7 +1078,7 @@ public enum Option {
                 operand = arg.substring(sep + 1);
             } else {
                 if (!rest.hasNext()) {
-                    throw helper.newInvalidValueException("err.req.arg", arg);
+                    throw helper.newInvalidValueException(Errors.ReqArg(this.primaryName));
                 }
                 option = arg;
                 operand = rest.next();

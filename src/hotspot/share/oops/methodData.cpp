@@ -71,9 +71,9 @@ void DataLayout::initialize(u1 tag, u2 bci, int cell_count) {
   }
 }
 
-void DataLayout::clean_weak_klass_links(BoolObjectClosure* cl) {
+void DataLayout::clean_weak_klass_links(bool always_clean) {
   ResourceMark m;
-  data_in()->clean_weak_klass_links(cl);
+  data_in()->clean_weak_klass_links(always_clean);
 }
 
 
@@ -315,23 +315,20 @@ void VirtualCallTypeData::post_initialize(BytecodeStream* stream, MethodData* md
   }
 }
 
-bool TypeEntries::is_loader_alive(BoolObjectClosure* is_alive_cl, intptr_t p) {
-  Klass* k = (Klass*)klass_part(p);
-  return k != NULL && k->is_loader_alive(is_alive_cl);
-}
-
-void TypeStackSlotEntries::clean_weak_klass_links(BoolObjectClosure* is_alive_cl) {
+void TypeStackSlotEntries::clean_weak_klass_links(bool always_clean) {
   for (int i = 0; i < _number_of_entries; i++) {
     intptr_t p = type(i);
-    if (!is_loader_alive(is_alive_cl, p)) {
+    Klass* k = (Klass*)klass_part(p);
+    if (k != NULL && (always_clean || !k->is_loader_alive())) {
       set_type(i, with_status((Klass*)NULL, p));
     }
   }
 }
 
-void ReturnTypeEntry::clean_weak_klass_links(BoolObjectClosure* is_alive_cl) {
+void ReturnTypeEntry::clean_weak_klass_links(bool always_clean) {
   intptr_t p = type();
-  if (!is_loader_alive(is_alive_cl, p)) {
+  Klass* k = (Klass*)klass_part(p);
+  if (k != NULL && (always_clean || !k->is_loader_alive())) {
     set_type(with_status((Klass*)NULL, p));
   }
 }
@@ -408,21 +405,21 @@ void VirtualCallTypeData::print_data_on(outputStream* st, const char* extra) con
 // that the check is reached, and a series of (Klass*, count) pairs
 // which are used to store a type profile for the receiver of the check.
 
-void ReceiverTypeData::clean_weak_klass_links(BoolObjectClosure* is_alive_cl) {
+void ReceiverTypeData::clean_weak_klass_links(bool always_clean) {
     for (uint row = 0; row < row_limit(); row++) {
     Klass* p = receiver(row);
-    if (p != NULL && !p->is_loader_alive(is_alive_cl)) {
+    if (p != NULL && (always_clean || !p->is_loader_alive())) {
       clear_row(row);
     }
   }
 }
 
 #if INCLUDE_JVMCI
-void VirtualCallData::clean_weak_klass_links(BoolObjectClosure* is_alive_cl) {
-  ReceiverTypeData::clean_weak_klass_links(is_alive_cl);
+void VirtualCallData::clean_weak_klass_links(bool always_clean) {
+  ReceiverTypeData::clean_weak_klass_links(always_clean);
   for (uint row = 0; row < method_row_limit(); row++) {
     Method* p = method(row);
-    if (p != NULL && !p->method_holder()->is_loader_alive(is_alive_cl)) {
+    if (p != NULL && (always_clean || !p->method_holder()->is_loader_alive())) {
       clear_method_row(row);
     }
   }
@@ -1669,12 +1666,11 @@ public:
 
 // Check for entries that reference an unloaded method
 class CleanExtraDataKlassClosure : public CleanExtraDataClosure {
-private:
-  BoolObjectClosure* _is_alive;
+  bool _always_clean;
 public:
-  CleanExtraDataKlassClosure(BoolObjectClosure* is_alive) : _is_alive(is_alive) {}
+  CleanExtraDataKlassClosure(bool always_clean) : _always_clean(always_clean) {}
   bool is_live(Method* m) {
-    return m->method_holder()->is_loader_alive(_is_alive);
+    return !(_always_clean) && m->method_holder()->is_loader_alive();
   }
 };
 
@@ -1757,19 +1753,19 @@ void MethodData::verify_extra_data_clean(CleanExtraDataClosure* cl) {
 #endif
 }
 
-void MethodData::clean_method_data(BoolObjectClosure* is_alive) {
+void MethodData::clean_method_data(bool always_clean) {
   ResourceMark rm;
   for (ProfileData* data = first_data();
        is_valid(data);
        data = next_data(data)) {
-    data->clean_weak_klass_links(is_alive);
+    data->clean_weak_klass_links(always_clean);
   }
   ParametersTypeData* parameters = parameters_type_data();
   if (parameters != NULL) {
-    parameters->clean_weak_klass_links(is_alive);
+    parameters->clean_weak_klass_links(always_clean);
   }
 
-  CleanExtraDataKlassClosure cl(is_alive);
+  CleanExtraDataKlassClosure cl(always_clean);
   clean_extra_data(&cl);
   verify_extra_data_clean(&cl);
 }
