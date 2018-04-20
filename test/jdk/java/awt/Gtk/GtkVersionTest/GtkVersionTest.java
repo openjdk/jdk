@@ -23,7 +23,7 @@
 
 /* @test
  * @key headful
- * @bug 8156121
+ * @bug 8156121 8200313
  * @summary "Fail forward" fails for GTK3 if no GTK2 available
  * @modules java.desktop/sun.awt
  * @requires (os.family == "linux")
@@ -32,8 +32,9 @@
 
 import sun.awt.UNIXToolkit;
 
-import java.awt.*;
-import java.io.*;
+import java.awt.Toolkit;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 
 public class GtkVersionTest {
     public static class LoadGtk {
@@ -43,7 +44,7 @@ public class GtkVersionTest {
     }
 
     public static void main(String[] args) throws Exception {
-        test(null, "2");
+        test(null, "3");
         test("2", "2");
         test("2.2", "2");
         test("3", "3");
