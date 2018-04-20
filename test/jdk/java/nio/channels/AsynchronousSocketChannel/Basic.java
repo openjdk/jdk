@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
  * @bug 4607272 6842687 6878369 6944810 7023403
  * @summary Unit test for AsynchronousSocketChannel(use -Dseed=X to set PRNG seed)
  * @library /test/lib
- * @build jdk.test.lib.RandomFactory
- * @run main Basic -skipSlowConnectTest
+ * @build jdk.test.lib.RandomFactory jdk.test.lib.Utils
+ * @run main/othervm/timeout=600 Basic -skipSlowConnectTest
  * @key randomness intermittent
  */
 
@@ -79,11 +79,16 @@ public class Basic {
         private final InetSocketAddress address;
 
         Server() throws IOException {
-            ssc = ServerSocketChannel.open().bind(new InetSocketAddress(0));
+            this(0);
+        }
 
-            InetAddress lh = InetAddress.getLocalHost();
-            int port = ((InetSocketAddress)(ssc.getLocalAddress())).getPort();
-            address = new InetSocketAddress(lh, port);
+        Server(int recvBufSize) throws IOException {
+            ssc = ServerSocketChannel.open();
+            if (recvBufSize > 0) {
+                ssc.setOption(SO_RCVBUF, recvBufSize);
+            }
+            ssc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+            address = (InetSocketAddress)ssc.getLocalAddress();
         }
 
         InetSocketAddress address() {
@@ -293,7 +298,7 @@ public class Basic {
 
         System.out.println("-- asynchronous close when reading --");
 
-        try (Server server = new Server()) {
+        try (Server server = new Server(1)) {
             ch = AsynchronousSocketChannel.open();
             ch.connect(server.address()).get();
 
@@ -325,6 +330,8 @@ public class Basic {
 
             ch = AsynchronousSocketChannel.open();
             ch.connect(server.address()).get();
+            SocketChannel peer = server.accept();
+            peer.setOption(SO_RCVBUF, 1);
 
             final AtomicReference<Throwable> writeException =
                 new AtomicReference<Throwable>();
@@ -333,10 +340,13 @@ public class Basic {
             final AtomicInteger numCompleted = new AtomicInteger();
             ch.write(genBuffer(), ch, new CompletionHandler<Integer,AsynchronousSocketChannel>() {
                 public void completed(Integer result, AsynchronousSocketChannel ch) {
+                    System.out.println("completed write to async channel: " + result);
                     numCompleted.incrementAndGet();
                     ch.write(genBuffer(), ch, this);
+                    System.out.println("started another write to async channel: " + result);
                 }
                 public void failed(Throwable x, AsynchronousSocketChannel ch) {
+                    System.out.println("failed write to async channel");
                     writeException.set(x);
                 }
             });
@@ -347,7 +357,8 @@ public class Basic {
             // the internal channel state indicates it is writing
             int prevNumCompleted = numCompleted.get();
             do {
-                Thread.sleep(1000);
+                Thread.sleep((long)(1000 * jdk.test.lib.Utils.TIMEOUT_FACTOR));
+                System.out.println("check if buffer is filled up");
                 if (numCompleted.get() == prevNumCompleted) {
                     break;
                 }
@@ -357,14 +368,19 @@ public class Basic {
             // attempt a concurrent write -
             // should fail with WritePendingException
             try {
+                System.out.println("concurrent write to async channel");
                 ch.write(genBuffer());
+                System.out.format("prevNumCompleted: %d, numCompleted: %d%n",
+                                  prevNumCompleted, numCompleted.get());
                 throw new RuntimeException("WritePendingException expected");
             } catch (WritePendingException x) {
             }
 
             // close channel - should cause initial write to complete
+            System.out.println("closing async channel...");
             ch.close();
-            server.accept().close();
+            System.out.println("closed async channel");
+            peer.close();
 
             // wait for exception
             while (writeException.get() == null) {
