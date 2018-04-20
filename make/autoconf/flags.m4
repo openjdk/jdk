@@ -233,15 +233,17 @@ AC_DEFUN_ONCE([FLAGS_PRE_TOOLCHAIN],
   # The sysroot flags are needed for configure to be able to run the compilers
   FLAGS_SETUP_SYSROOT_FLAGS
 
+  # For solstudio and xlc, the word size flag is required for correct behavior.
+  # For clang/gcc, the flag is only strictly required for reduced builds, but
+  # set it always where possible (x86, sparc and ppc).
   if test "x$TOOLCHAIN_TYPE" = xxlc; then
     MACHINE_FLAG="-q${OPENJDK_TARGET_CPU_BITS}"
-  elif test "x$TOOLCHAIN_TYPE" != xmicrosoft; then
-    if test "x$OPENJDK_TARGET_CPU" != xaarch64 &&
-       test "x$OPENJDK_TARGET_CPU" != xarm &&
-       test "x$OPENJDK_TARGET_CPU" != xmips &&
-       test "x$OPENJDK_TARGET_CPU" != xmipsel &&
-       test "x$OPENJDK_TARGET_CPU" != xmips64 &&
-       test "x$OPENJDK_TARGET_CPU" != xmips64el; then
+  elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+    MACHINE_FLAG="-m${OPENJDK_TARGET_CPU_BITS}"
+  elif test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+    if test "x$OPENJDK_TARGET_CPU_ARCH" = xx86 ||
+        test "x$OPENJDK_TARGET_CPU_ARCH" = xsparc ||
+        test "x$OPENJDK_TARGET_CPU_ARCH" = xppc; then
       MACHINE_FLAG="-m${OPENJDK_TARGET_CPU_BITS}"
     fi
   fi
