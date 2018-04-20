@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,7 +172,7 @@ public class JavacTaskImpl extends BasicJavacTask {
             if (compiler == null || compiler.errorCount() == 0
                     || Options.instance(context).isSet("dev")) {
                 Log log = Log.instance(context);
-                log.printLines(PrefixKind.JAVAC, "msg.bug", JavaCompiler.version());
+                log.printLines("msg.bug", JavaCompiler.version());
                 ex.printStackTrace(log.getWriter(WriterKind.NOTICE));
             }
             return abnormalErrorResult;

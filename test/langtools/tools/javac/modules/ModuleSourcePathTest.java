@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!log.contains("cannot specify both --source-path and --module-source-path"))
+        if (!log.contains("compiler.err.sourcepath.modulesourcepath.conflict"))
             throw new Exception("expected diagnostic not found");
     }
 

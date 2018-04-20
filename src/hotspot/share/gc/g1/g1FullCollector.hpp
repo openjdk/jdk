@@ -56,6 +56,8 @@ class G1FullCollector : StackObj {
   G1IsAliveClosure          _is_alive;
   ReferenceProcessorIsAliveMutator _is_alive_mutator;
 
+  static uint calc_active_workers();
+
 public:
   G1FullCollector(G1CollectedHeap* heap, GCMemoryManager* memory_manager, bool explicit_gc, bool clear_soft_refs);
   ~G1FullCollector();

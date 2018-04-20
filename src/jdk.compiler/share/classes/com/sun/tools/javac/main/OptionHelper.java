@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,9 @@ package com.sun.tools.javac.main;
 
 import java.nio.file.Path;
 
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.util.JCDiagnostic;
+import com.sun.tools.javac.util.JCDiagnostic.Error;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Log.PrefixKind;
 
@@ -89,8 +91,8 @@ public abstract class OptionHelper {
      * @param args the arguments, if any, for the resource string
      * @return the InvalidValueException
      */
-    Option.InvalidValueException newInvalidValueException(String key, Object... args) {
-        return new Option.InvalidValueException(getLog().localize(PrefixKind.JAVAC, key, args));
+    Option.InvalidValueException newInvalidValueException(Error error) {
+        return new Option.InvalidValueException(getLog().localize(error));
     }
 
     /** Record a file to be compiled. */

@@ -30,6 +30,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/method.hpp"
 #include "oops/symbol.hpp"
+#include "oops/weakHandle.inline.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -39,7 +40,7 @@
 
 
 oop ResolvedMethodEntry::object() {
-  return RootAccess<ON_PHANTOM_OOP_REF>::oop_load(literal_addr());
+  return literal().resolve();
 }
 
 oop ResolvedMethodEntry::object_no_keepalive() {
@@ -48,11 +49,11 @@ oop ResolvedMethodEntry::object_no_keepalive() {
   // not leak out past a thread transition where a safepoint can happen.
   // A subsequent oop_load without AS_NO_KEEPALIVE (the object() accessor)
   // keeps the oop alive before doing so.
-  return RootAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(literal_addr());
+  return literal().peek();
 }
 
 ResolvedMethodTable::ResolvedMethodTable()
-  : Hashtable<oop, mtClass>(_table_size, sizeof(ResolvedMethodEntry)) { }
+  : Hashtable<ClassLoaderWeakHandle, mtClass>(_table_size, sizeof(ResolvedMethodEntry)) { }
 
 oop ResolvedMethodTable::lookup(int index, unsigned int hash, Method* method) {
   for (ResolvedMethodEntry* p = bucket(index); p != NULL; p = p->next()) {
@@ -62,7 +63,7 @@ oop ResolvedMethodTable::lookup(int index, unsigned int hash, Method* method) {
       oop target = p->object_no_keepalive();
 
       // The method is in the table as a target already
-      if (java_lang_invoke_ResolvedMethodName::vmtarget(target) == method) {
+      if (target != NULL && java_lang_invoke_ResolvedMethodName::vmtarget(target) == method) {
         ResourceMark rm;
         log_debug(membername, table) ("ResolvedMethod entry found for %s index %d",
                                        method->name_and_sig_as_C_string(), index);
@@ -88,7 +89,7 @@ oop ResolvedMethodTable::lookup(Method* method) {
   return lookup(index, hash, method);
 }
 
-oop ResolvedMethodTable::basic_add(Method* method, oop rmethod_name) {
+oop ResolvedMethodTable::basic_add(Method* method, Handle rmethod_name) {
   assert_locked_or_safepoint(ResolvedMethodTable_lock);
 
   unsigned int hash = compute_hash(method);
@@ -100,12 +101,13 @@ oop ResolvedMethodTable::basic_add(Method* method, oop rmethod_name) {
     return entry;
   }
 
-  ResolvedMethodEntry* p = (ResolvedMethodEntry*) Hashtable<oop, mtClass>::new_entry(hash, rmethod_name);
-  Hashtable<oop, mtClass>::add_entry(index, p);
+  ClassLoaderWeakHandle w = ClassLoaderWeakHandle::create(rmethod_name);
+  ResolvedMethodEntry* p = (ResolvedMethodEntry*) Hashtable<ClassLoaderWeakHandle, mtClass>::new_entry(hash, w);
+  Hashtable<ClassLoaderWeakHandle, mtClass>::add_entry(index, p);
   ResourceMark rm;
   log_debug(membername, table) ("ResolvedMethod entry added for %s index %d",
                                  method->name_and_sig_as_C_string(), index);
-  return rmethod_name;
+  return rmethod_name();
 }
 
 ResolvedMethodTable* ResolvedMethodTable::_the_table = NULL;
@@ -134,7 +136,7 @@ oop ResolvedMethodTable::add_method(Handle resolved_method_name) {
   // have any membernames in the table.
   method->method_holder()->set_has_resolved_methods();
 
-  return _the_table->basic_add(method, resolved_method_name());
+  return _the_table->basic_add(method, resolved_method_name);
 }
 
 // Removing entries
@@ -143,7 +145,7 @@ int ResolvedMethodTable::_oops_counted = 0;
 
 // Serially invoke removed unused oops from the table.
 // This is done late during GC.
-void ResolvedMethodTable::unlink(BoolObjectClosure* is_alive) {
+void ResolvedMethodTable::unlink() {
   _oops_removed = 0;
   _oops_counted = 0;
   for (int i = 0; i < _the_table->table_size(); ++i) {
@@ -151,36 +153,25 @@ void ResolvedMethodTable::unlink(BoolObjectClosure* is_alive) {
     ResolvedMethodEntry* entry = _the_table->bucket(i);
     while (entry != NULL) {
       _oops_counted++;
-      if (is_alive->do_object_b(entry->object_no_keepalive())) {
+      oop l = entry->object_no_keepalive();
+      if (l != NULL) {
         p = entry->next_addr();
       } else {
+        // Entry has been removed.
         _oops_removed++;
         if (log_is_enabled(Debug, membername, table)) {
-          Method* m = (Method*)java_lang_invoke_ResolvedMethodName::vmtarget(entry->object_no_keepalive());
-          ResourceMark rm;
-          log_debug(membername, table) ("ResolvedMethod entry removed for %s index %d",
-                                           m->name_and_sig_as_C_string(), i);
+          log_debug(membername, table) ("ResolvedMethod entry removed for index %d", i);
         }
+        entry->literal().release();
         *p = entry->next();
         _the_table->free_entry(entry);
       }
       // get next entry
-      entry = (ResolvedMethodEntry*)HashtableEntry<oop, mtClass>::make_ptr(*p);
+      entry = (ResolvedMethodEntry*)HashtableEntry<ClassLoaderWeakHandle, mtClass>::make_ptr(*p);
     }
   }
   log_debug(membername, table) ("ResolvedMethod entries counted %d removed %d",
                                 _oops_counted, _oops_removed);
-}
-
-// Serially invoke "f->do_oop" on the locations of all oops in the table.
-void ResolvedMethodTable::oops_do(OopClosure* f) {
-  for (int i = 0; i < _the_table->table_size(); ++i) {
-    ResolvedMethodEntry* entry = _the_table->bucket(i);
-    while (entry != NULL) {
-      f->do_oop(entry->literal_addr());
-      entry = entry->next();
-    }
-  }
 }
 
 #ifndef PRODUCT
@@ -190,9 +181,11 @@ void ResolvedMethodTable::print() {
     while (entry != NULL) {
       tty->print("%d : ", i);
       oop rmethod_name = entry->object_no_keepalive();
-      rmethod_name->print();
-      Method* m = (Method*)java_lang_invoke_ResolvedMethodName::vmtarget(rmethod_name);
-      m->print();
+      if (rmethod_name != NULL) {
+        rmethod_name->print();
+        Method* m = (Method*)java_lang_invoke_ResolvedMethodName::vmtarget(rmethod_name);
+        m->print();
+      }
       entry = entry->next();
     }
   }
@@ -205,9 +198,15 @@ void ResolvedMethodTable::adjust_method_entries(bool * trace_name_printed) {
   assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
   // For each entry in RMT, change to new method
   for (int i = 0; i < _the_table->table_size(); ++i) {
-    ResolvedMethodEntry* entry = _the_table->bucket(i);
-    while (entry != NULL) {
+    for (ResolvedMethodEntry* entry = _the_table->bucket(i);
+         entry != NULL;
+         entry = entry->next()) {
+
       oop mem_name = entry->object_no_keepalive();
+      // except ones removed
+      if (mem_name == NULL) {
+        continue;
+      }
       Method* old_method = (Method*)java_lang_invoke_ResolvedMethodName::vmtarget(mem_name);
 
       if (old_method->is_old()) {
@@ -235,7 +234,6 @@ void ResolvedMethodTable::adjust_method_entries(bool * trace_name_printed) {
           ("ResolvedMethod method update: %s(%s)",
            new_method->name()->as_C_string(), new_method->signature()->as_C_string());
       }
-      entry = entry->next();
     }
   }
 }

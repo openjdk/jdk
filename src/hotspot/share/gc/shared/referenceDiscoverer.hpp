@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +22,16 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_OOPHANDLE_HPP
-#define SHARE_VM_OOPS_OOPHANDLE_HPP
+#ifndef SHARE_GC_SHARED_REFERENCEDISCOVERER_HPP
+#define SHARE_GC_SHARED_REFERENCEDISCOVERER_HPP
 
-#include "oops/oop.hpp"
+#include "memory/allocation.hpp"
+#include "memory/referenceType.hpp"
+#include "oops/oopsHierarchy.hpp"
 
-// Simple class for encapsulating oop pointers stored in metadata.
-// These are different from Handle.  The Handle class stores pointers
-// to oops on the stack, and manages the allocation from a thread local
-// area in the constructor.
-// This assumes that the caller will allocate the handle in the appropriate
-// area.  The reason for the encapsulation is to help with naming and to allow
-// future uses for read barriers.
-
-class OopHandle {
-private:
-  oop* _obj;
-
+class ReferenceDiscoverer : public CHeapObj<mtGC> {
 public:
-  OopHandle() : _obj(NULL) {}
-  OopHandle(oop* w) : _obj(w) {}
-
-  inline oop resolve() const;
-
-  // Used only for removing handle.
-  oop* ptr_raw() const { return _obj; }
+  virtual bool discover_reference(oop obj, ReferenceType type) = 0;
 };
 
-#endif // SHARE_VM_OOPS_OOPHANDLE_HPP
+#endif // SHARE_GC_SHARED_REFERENCEDISCOVERER_HPP

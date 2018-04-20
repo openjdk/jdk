@@ -132,9 +132,6 @@ void SplashDonePlatform(Splash * splash);
 
 unsigned SplashTime();
 char* SplashConvertStringAlloc(const char* in, int *size);
-jboolean SplashGetScaledImageName(const char* jarName,
-                 const char* fileName, float *scaleFactor,
-                 char *scaleImageName, const size_t scaledImageNameLength);
 void SplashLock(Splash * splash);
 void SplashUnlock(Splash * splash);
 
@@ -157,8 +154,7 @@ void SplashDone(Splash * splash);
 void SplashUpdateScreenData(Splash * splash);
 
 void SplashCleanup(Splash * splash);
-void SplashSetScaleFactor(float scaleFactor);
-int  SplashGetScaledImgNameMaxPstfixLen(const char *fileName);
+
 void cleanUp(char *fName, char *xName, char *pctName, float *scaleFactor);
 jboolean GetScaledImageName(const char *fileName, char *scaledImgName,
                   float *scaleFactor, const size_t scaledImageLength);

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "trace/traceStream.hpp"
 #if INCLUDE_TRACE
-#include "classfile/classLoaderData.hpp"
+#include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.hpp"

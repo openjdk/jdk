@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class LimitModulesTest extends ModuleTestBase {
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!log.contains("javac: no value for --limit-modules option"))
+        if (!log.contains("error: no value for --limit-modules option"))
             throw new Exception("expected output not found");
 
         log = new JavacTask(tb, Task.Mode.CMDLINE)
@@ -70,7 +70,7 @@ public class LimitModulesTest extends ModuleTestBase {
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!log.contains("javac: no value for --limit-modules option"))
+        if (!log.contains("error: no value for --limit-modules option"))
             throw new Exception("expected output not found");
     }
 
@@ -127,7 +127,7 @@ public class LimitModulesTest extends ModuleTestBase {
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!log.contains("javac: bad value for --limit-modules option"))
+        if (!log.contains("error: bad value for --limit-modules option"))
             throw new Exception("expected output not found");
     }
 

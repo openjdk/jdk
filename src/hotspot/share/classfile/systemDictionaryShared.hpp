@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -300,13 +300,7 @@ public:
   }
 
   // Check if sharing is supported for the class loader.
-  static bool is_sharing_possible(ClassLoaderData* loader_data) {
-    oop class_loader = loader_data->class_loader();
-    return (class_loader == NULL ||
-            (UseAppCDS && (SystemDictionary::is_system_class_loader(class_loader) ||
-                           SystemDictionary::is_platform_class_loader(class_loader)))
-            );
-  }
+  static bool is_sharing_possible(ClassLoaderData* loader_data);
   static bool is_shared_class_visible_for_classloader(InstanceKlass* ik,
                                                       Handle class_loader,
                                                       const char* pkg_string,

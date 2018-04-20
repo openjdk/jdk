@@ -41,7 +41,7 @@ protected:
 
   virtual void oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                             Register base, RegisterOrConstant ind_or_offs, Register val,
-                            Register tmp1, Register tmp2, Register tmp3, bool needs_frame);
+                            Register tmp1, Register tmp2, Register tmp3, bool needs_frame) = 0;
 public:
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                   Register src, Register dst, Register count, Register preserve1, Register preserve2);

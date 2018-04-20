@@ -25,11 +25,15 @@
  * @test
  * @bug 4476378
  * @summary Check the specific behaviour of the setReuseAddress(boolean)
- * method.
+ *          method.
  * @run main Basic
  * @run main/othervm -Dsun.net.useExclusiveBind Basic
+ * @run main/othervm -Dsun.net.useExclusiveBind=true Basic
  * @run main/othervm -Djava.net.preferIPv4Stack=true Basic
- * @run main/othervm -Dsun.net.useExclusiveBind -Djava.net.preferIPv4Stack=true Basic
+ * @run main/othervm -Dsun.net.useExclusiveBind
+ *                   -Djava.net.preferIPv4Stack=true Basic
+ * @run main/othervm -Dsun.net.useExclusiveBind=true
+ *                   -Djava.net.preferIPv4Stack=true Basic
  */
 import java.net.*;
 

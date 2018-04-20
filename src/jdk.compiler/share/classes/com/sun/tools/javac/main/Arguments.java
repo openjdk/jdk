@@ -54,7 +54,6 @@ import javax.tools.StandardLocation;
 import com.sun.tools.doclint.DocLint;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Source;
-import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.Profile;
@@ -66,6 +65,7 @@ import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticInfo;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
@@ -295,7 +295,7 @@ public class Arguments {
         String platformString = options.get(Option.RELEASE);
 
         checkOptionAllowed(platformString == null,
-                option -> error("err.release.bootclasspath.conflict", option.getPrimaryName()),
+                option -> reportDiag(Errors.ReleaseBootclasspathConflict(option)),
                 Option.BOOT_CLASS_PATH, Option.XBOOTCLASSPATH, Option.XBOOTCLASSPATH_APPEND,
                 Option.XBOOTCLASSPATH_PREPEND,
                 Option.ENDORSEDDIRS, Option.DJAVA_ENDORSED_DIRS,
@@ -308,7 +308,7 @@ public class Arguments {
                     PlatformUtils.lookupPlatformDescription(platformString);
 
             if (platformDescription == null) {
-                error("err.unsupported.release.version", platformString);
+                reportDiag(Errors.UnsupportedReleaseVersion(platformString));
                 return false;
             }
 
@@ -363,7 +363,7 @@ public class Arguments {
         while (argIter.hasNext()) {
             String arg = argIter.next();
             if (arg.isEmpty()) {
-                error("err.invalid.flag", arg);
+                reportDiag(Errors.InvalidFlag(arg));
                 return false;
             }
 
@@ -392,7 +392,7 @@ public class Arguments {
             }
 
             // none of the above
-            error("err.invalid.flag", arg);
+            reportDiag(Errors.InvalidFlag(arg));
             return false;
         }
 
@@ -457,9 +457,9 @@ public class Arguments {
             if (!emptyAllowed) {
                 if (!errors) {
                     if (JavaCompiler.explicitAnnotationProcessingRequested(options)) {
-                        error("err.no.source.files.classes");
+                        reportDiag(Errors.NoSourceFilesClasses);
                     } else {
-                        error("err.no.source.files");
+                        reportDiag(Errors.NoSourceFiles);
                     }
                 }
                 return false;
@@ -520,13 +520,9 @@ public class Arguments {
             if (target.compareTo(source.requiredTarget()) < 0) {
                 if (targetString != null) {
                     if (sourceString == null) {
-                        error("warn.target.default.source.conflict",
-                                targetString,
-                                source.requiredTarget().name);
+                        reportDiag(Warnings.TargetDefaultSourceConflict(targetString, source.requiredTarget()));
                     } else {
-                        error("warn.source.target.conflict",
-                                sourceString,
-                                source.requiredTarget().name);
+                        reportDiag(Warnings.SourceTargetConflict(sourceString, source.requiredTarget()));
                     }
                     return false;
                 } else {
@@ -539,13 +535,11 @@ public class Arguments {
         if (options.isSet(Option.PREVIEW)) {
             if (sourceString == null) {
                 //enable-preview must be used with explicit -source or --release
-                error("err.preview.without.source.or.release");
+                report(Errors.PreviewWithoutSourceOrRelease);
                 return false;
             } else if (source != Source.DEFAULT) {
                 //enable-preview must be used with latest source version
-                error("err.preview.not.latest",
-                        sourceString,
-                        Source.DEFAULT.name);
+                report(Errors.PreviewNotLatest(sourceString, Source.DEFAULT));
                 return false;
             }
         }
@@ -554,18 +548,18 @@ public class Arguments {
         if (profileString != null) {
             Profile profile = Profile.lookup(profileString);
             if (!profile.isValid(target)) {
-                error("warn.profile.target.conflict", profileString, target.name);
+                reportDiag(Warnings.ProfileTargetConflict(profile, target));
             }
 
             // This check is only effective in command line mode,
             // where the file manager options are added to options
             if (options.get(Option.BOOT_CLASS_PATH) != null) {
-                error("err.profile.bootclasspath.conflict");
+                reportDiag(Errors.ProfileBootclasspathConflict);
             }
         }
 
         if (options.isSet(Option.SOURCE_PATH) && options.isSet(Option.MODULE_SOURCE_PATH)) {
-            error("err.sourcepath.modulesourcepath.conflict");
+            reportDiag(Errors.SourcepathModulesourcepathConflict);
         }
 
         boolean lintOptions = options.isUnset(Option.XLINT_CUSTOM, "-" + LintCategory.OPTIONS.option);
@@ -586,15 +580,15 @@ public class Arguments {
         }
 
         if (target.compareTo(Target.MIN) < 0) {
-            log.error(Errors.OptionRemovedTarget(target.name, Target.MIN.name));
+            log.error(Errors.OptionRemovedTarget(target, Target.MIN));
         } else if (target == Target.MIN && lintOptions) {
-            log.warning(LintCategory.OPTIONS, Warnings.OptionObsoleteTarget(target.name));
+            log.warning(LintCategory.OPTIONS, Warnings.OptionObsoleteTarget(target));
             obsoleteOptionFound = true;
         }
 
         final Target t = target;
         checkOptionAllowed(t.compareTo(Target.JDK1_8) <= 0,
-                option -> error("err.option.not.allowed.with.target", option.getPrimaryName(), t.name),
+                option -> reportDiag(Errors.OptionNotAllowedWithTarget(option, t)),
                 Option.BOOT_CLASS_PATH,
                 Option.XBOOTCLASSPATH_PREPEND, Option.XBOOTCLASSPATH, Option.XBOOTCLASSPATH_APPEND,
                 Option.ENDORSEDDIRS, Option.DJAVA_ENDORSED_DIRS,
@@ -602,7 +596,7 @@ public class Arguments {
                 Option.PROFILE);
 
         checkOptionAllowed(t.compareTo(Target.JDK1_9) >= 0,
-                option -> error("err.option.not.allowed.with.target", option.getPrimaryName(), t.name),
+                option -> reportDiag(Errors.OptionNotAllowedWithTarget(option, t)),
                 Option.MODULE_SOURCE_PATH, Option.UPGRADE_MODULE_PATH,
                 Option.SYSTEM, Option.MODULE_PATH, Option.ADD_MODULES,
                 Option.ADD_EXPORTS, Option.ADD_OPENS, Option.ADD_READS,
@@ -610,7 +604,7 @@ public class Arguments {
                 Option.PATCH_MODULE);
 
         if (lintOptions && options.isSet(Option.PARAMETERS) && !target.hasMethodParameters()) {
-            log.warning(Warnings.OptionParametersUnsupported(target.name, Target.JDK1_8.name));
+            log.warning(Warnings.OptionParametersUnsupported(target, Target.JDK1_8));
         }
 
         if (fm.hasLocation(StandardLocation.MODULE_SOURCE_PATH)) {
@@ -871,7 +865,7 @@ public class Arguments {
         }
         Path file = Paths.get(value);
         if (Files.exists(file) && !Files.isDirectory(file)) {
-            error("err.file.not.directory", value);
+            reportDiag(Errors.FileNotDirectory(value));
             return false;
         }
         return true;
@@ -889,35 +883,19 @@ public class Arguments {
         }
     }
 
-    void error(JCDiagnostic.Error error) {
+    void reportDiag(DiagnosticInfo diag) {
         errors = true;
         switch (errorMode) {
             case ILLEGAL_ARGUMENT: {
-                String msg = log.localize(error);
+                String msg = log.localize(diag);
                 throw new PropagatedException(new IllegalArgumentException(msg));
             }
             case ILLEGAL_STATE: {
-                String msg = log.localize(error);
+                String msg = log.localize(diag);
                 throw new PropagatedException(new IllegalStateException(msg));
             }
             case LOG:
-                report(error);
-        }
-    }
-
-    void error(String key, Object... args) {
-        errors = true;
-        switch (errorMode) {
-            case ILLEGAL_ARGUMENT: {
-                String msg = log.localize(PrefixKind.JAVAC, key, args);
-                throw new PropagatedException(new IllegalArgumentException(msg));
-            }
-            case ILLEGAL_STATE: {
-                String msg = log.localize(PrefixKind.JAVAC, key, args);
-                throw new PropagatedException(new IllegalStateException(msg));
-            }
-            case LOG:
-                report(key, args);
+                report(diag);
         }
     }
 
@@ -932,22 +910,17 @@ public class Arguments {
                 throw new PropagatedException(new IllegalStateException(msg, f.getCause()));
             }
             case LOG:
-                log.printRawLines(ownName + ": " + msg);
+                log.printRawLines(msg);
         }
     }
 
-    void warning(String key, Object... args) {
-        report(key, args);
-    }
-
-    private void report(String key, Object... args) {
+    private void report(DiagnosticInfo diag) {
         // Would be good to have support for -XDrawDiagnostics here
-        log.printRawLines(ownName + ": " + log.localize(PrefixKind.JAVAC, key, args));
-    }
-
-    private void report(JCDiagnostic.Error error) {
-        // Would be good to have support for -XDrawDiagnostics here
-        log.printRawLines(ownName + ": " + log.localize(error));
+        if (diag instanceof JCDiagnostic.Error) {
+            log.error((JCDiagnostic.Error)diag);
+        } else if (diag instanceof JCDiagnostic.Warning){
+            log.warning((JCDiagnostic.Warning)diag);
+        }
     }
 
     private JavaFileManager getFileManager() {

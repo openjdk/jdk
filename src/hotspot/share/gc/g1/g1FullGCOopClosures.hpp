@@ -60,7 +60,7 @@ class G1MarkAndPushClosure : public ExtendedOopClosure {
   uint _worker_id;
 
 public:
-  G1MarkAndPushClosure(uint worker, G1FullGCMarker* marker, ReferenceProcessor* ref) :
+  G1MarkAndPushClosure(uint worker, G1FullGCMarker* marker, ReferenceDiscoverer* ref) :
     _marker(marker),
     _worker_id(worker),
     ExtendedOopClosure(ref) { }

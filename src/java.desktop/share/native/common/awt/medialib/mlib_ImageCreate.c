@@ -227,7 +227,7 @@ mlib_image* mlib_ImageSet(mlib_image *image,
 }
 
 /***************************************************************/
-mlib_image *mlib_ImageCreateStruct(mlib_type  type,
+JNIEXPORT mlib_image* JNICALL mlib_ImageCreateStruct(mlib_type  type,
                                    mlib_s32   channels,
                                    mlib_s32   width,
                                    mlib_s32   height,
@@ -253,7 +253,7 @@ mlib_image *mlib_ImageCreateStruct(mlib_type  type,
 }
 
 /***************************************************************/
-mlib_image *mlib_ImageCreate(mlib_type type,
+JNIEXPORT mlib_image* JNICALL mlib_ImageCreate(mlib_type type,
                              mlib_s32  channels,
                              mlib_s32  width,
                              mlib_s32  height)
@@ -352,7 +352,7 @@ mlib_image *mlib_ImageCreate(mlib_type type,
 }
 
 /***************************************************************/
-void mlib_ImageDelete(mlib_image *img)
+JNIEXPORT void JNICALL mlib_ImageDelete(mlib_image *img)
 {
   if (img == NULL) return;
   if ((img -> flags & MLIB_IMAGE_USERALLOCATED) == 0) {

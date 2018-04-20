@@ -1831,24 +1831,6 @@ void SystemDictionary::always_strong_oops_do(OopClosure* blk) {
 }
 
 
-#ifdef ASSERT
-class VerifySDReachableAndLiveClosure : public OopClosure {
-private:
-  BoolObjectClosure* _is_alive;
-
-  template <class T> void do_oop_work(T* p) {
-    oop obj = RawAccess<>::oop_load(p);
-    guarantee(_is_alive->do_object_b(obj), "Oop in protection domain cache table must be live");
-  }
-
-public:
-  VerifySDReachableAndLiveClosure(BoolObjectClosure* is_alive) : OopClosure(), _is_alive(is_alive) { }
-
-  virtual void do_oop(oop* p)       { do_oop_work(p); }
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-};
-#endif
-
 // Assumes classes in the SystemDictionary are only unloaded at a safepoint
 // Note: anonymous classes are not in the SD.
 bool SystemDictionary::do_unloading(BoolObjectClosure* is_alive,
@@ -1865,8 +1847,7 @@ bool SystemDictionary::do_unloading(BoolObjectClosure* is_alive,
     GCTraceTime(Debug, gc, phases) t("ClassLoaderData", gc_timer);
 
     // First, mark for unload all ClassLoaderData referencing a dead class loader.
-    unloading_occurred = ClassLoaderDataGraph::do_unloading(is_alive,
-                                                            do_cleaning);
+    unloading_occurred = ClassLoaderDataGraph::do_unloading(do_cleaning);
   }
 
   if (unloading_occurred) {
@@ -1880,17 +1861,12 @@ bool SystemDictionary::do_unloading(BoolObjectClosure* is_alive,
     // Oops referenced by the protection domain cache table may get unreachable independently
     // of the class loader (eg. cached protection domain oops). So we need to
     // explicitly unlink them here.
-    _pd_cache_table->unlink(is_alive);
-
-#ifdef ASSERT
-    VerifySDReachableAndLiveClosure cl(is_alive);
-    _pd_cache_table->oops_do(&cl);
-#endif
+    _pd_cache_table->unlink();
   }
 
   if (do_cleaning) {
     GCTraceTime(Debug, gc, phases) t("ResolvedMethodTable", gc_timer);
-    ResolvedMethodTable::unlink(is_alive);
+    ResolvedMethodTable::unlink();
   }
 
   return unloading_occurred;
@@ -1906,21 +1882,15 @@ void SystemDictionary::roots_oops_do(OopClosure* strong, OopClosure* weak) {
   if (strong == weak || !ClassUnloading) {
     // Only the protection domain oops contain references into the heap. Iterate
     // over all of them.
-    _pd_cache_table->oops_do(strong);
     vm_weak_oop_storage()->oops_do(strong);
   } else {
    if (weak != NULL) {
-     _pd_cache_table->oops_do(weak);
      vm_weak_oop_storage()->oops_do(weak);
    }
   }
 
   // Visit extra methods
   invoke_method_table()->oops_do(strong);
-
-  if (weak != NULL) {
-    ResolvedMethodTable::oops_do(weak);
-  }
 }
 
 void SystemDictionary::oops_do(OopClosure* f) {
@@ -1929,14 +1899,8 @@ void SystemDictionary::oops_do(OopClosure* f) {
   f->do_oop(&_system_loader_lock_obj);
   CDS_ONLY(SystemDictionaryShared::oops_do(f);)
 
-  // Only the protection domain oops contain references into the heap. Iterate
-  // over all of them.
-  _pd_cache_table->oops_do(f);
-
   // Visit extra methods
   invoke_method_table()->oops_do(f);
-
-  ResolvedMethodTable::oops_do(f);
 
   vm_weak_oop_storage()->oops_do(f);
 }

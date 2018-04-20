@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,8 @@ class Monitor : public CHeapObj<mtInternal> {
        access         = event          +   1,
        special        = access         +   2,
        suspend_resume = special        +   1,
-       leaf           = suspend_resume +   2,
+       vmweak         = suspend_resume +   2,
+       leaf           = vmweak         +   2,
        safepoint      = leaf           +  10,
        barrier        = safepoint      +   1,
        nonleaf        = barrier        +   1,

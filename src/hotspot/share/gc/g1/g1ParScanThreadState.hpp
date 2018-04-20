@@ -87,7 +87,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   G1ParScanThreadState(G1CollectedHeap* g1h, uint worker_id, size_t young_cset_length);
   virtual ~G1ParScanThreadState();
 
-  void set_ref_processor(ReferenceProcessor* rp) { _scanner.set_ref_processor(rp); }
+  void set_ref_discoverer(ReferenceDiscoverer* rd) { _scanner.set_ref_discoverer(rd); }
 
 #ifdef ASSERT
   bool queue_is_empty() const { return _refs->is_empty(); }

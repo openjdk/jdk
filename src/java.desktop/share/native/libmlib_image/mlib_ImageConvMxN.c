@@ -90,7 +90,7 @@
 #include "mlib_ImageConvEdge.h"
 
 /***************************************************************/
-mlib_status mlib_ImageConvMxN(mlib_image       *dst,
+JNIEXPORT mlib_status JNICALL mlib_ImageConvMxN(mlib_image       *dst,
                               const mlib_image *src,
                               const mlib_s32   *kernel,
                               mlib_s32         m,

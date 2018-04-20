@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,7 @@ class FilteringClosure: public ExtendedOopClosure {
   template <class T> inline void do_oop_work(T* p);
  public:
   FilteringClosure(HeapWord* boundary, ExtendedOopClosure* cl) :
-    ExtendedOopClosure(cl->ref_processor()), _boundary(boundary),
+    ExtendedOopClosure(cl->ref_discoverer()), _boundary(boundary),
     _cl(cl) {}
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);

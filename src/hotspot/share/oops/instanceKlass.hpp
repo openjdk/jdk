@@ -1148,9 +1148,9 @@ public:
   void adjust_default_methods(InstanceKlass* holder, bool* trace_name_printed);
 #endif // INCLUDE_JVMTI
 
-  void clean_weak_instanceklass_links(BoolObjectClosure* is_alive);
-  void clean_implementors_list(BoolObjectClosure* is_alive);
-  void clean_method_data(BoolObjectClosure* is_alive);
+  void clean_weak_instanceklass_links();
+  void clean_implementors_list();
+  void clean_method_data();
 
   // Explicit metaspace deallocation of fields
   // For RedefineClasses and class file parsing errors, we need to deallocate

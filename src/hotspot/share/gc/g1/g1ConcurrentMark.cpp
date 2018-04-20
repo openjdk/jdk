@@ -1413,14 +1413,13 @@ bool G1CMIsAliveClosure::do_object_b(oop obj) {
 class G1CMKeepAliveAndDrainClosure : public OopClosure {
   G1ConcurrentMark* _cm;
   G1CMTask*         _task;
-  int               _ref_counter_limit;
-  int               _ref_counter;
+  uint              _ref_counter_limit;
+  uint              _ref_counter;
   bool              _is_serial;
 public:
   G1CMKeepAliveAndDrainClosure(G1ConcurrentMark* cm, G1CMTask* task, bool is_serial) :
     _cm(cm), _task(task), _is_serial(is_serial),
     _ref_counter_limit(G1RefProcDrainInterval) {
-    assert(_ref_counter_limit > 0, "sanity");
     assert(!_is_serial || _task->worker_id() == 0, "only task 0 for serial code");
     _ref_counter = _ref_counter_limit;
   }

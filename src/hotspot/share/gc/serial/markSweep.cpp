@@ -211,7 +211,7 @@ void MarkSweep::preserve_mark(oop obj, markOop mark) {
 
 void MarkSweep::set_ref_processor(ReferenceProcessor* rp) {
   _ref_processor = rp;
-  mark_and_push_closure.set_ref_processor(_ref_processor);
+  mark_and_push_closure.set_ref_discoverer(_ref_processor);
 }
 
 AdjustPointerClosure MarkSweep::adjust_pointer_closure;

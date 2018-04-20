@@ -78,7 +78,7 @@
 #endif /* __sparc */
 
 /***************************************************************/
-mlib_status mlib_ImageConvKernelConvert(mlib_s32       *ikernel,
+JNIEXPORT mlib_status JNICALL mlib_ImageConvKernelConvert(mlib_s32       *ikernel,
                                         mlib_s32       *iscale,
                                         const mlib_d64 *fkernel,
                                         mlib_s32       m,

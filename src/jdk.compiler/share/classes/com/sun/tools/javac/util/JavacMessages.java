@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.tools.javac.util;
 
 import com.sun.tools.javac.api.Messages;
+
 import java.lang.ref.SoftReference;
 import java.util.ResourceBundle;
 import java.util.MissingResourceException;
@@ -33,6 +34,10 @@ import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+
+import com.sun.tools.javac.api.DiagnosticFormatter;
+import com.sun.tools.javac.util.JCDiagnostic.Factory;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 
 /**
  *  Support for formatted localized messages.
@@ -61,6 +66,9 @@ public class JavacMessages implements Messages {
     private Locale currentLocale;
     private List<ResourceBundle> currentBundles;
 
+    private DiagnosticFormatter<JCDiagnostic> diagFormatter;
+    private JCDiagnostic.Factory diagFactory;
+
     public Locale getCurrentLocale() {
         return currentLocale;
     }
@@ -73,11 +81,18 @@ public class JavacMessages implements Messages {
         this.currentLocale = locale;
     }
 
+    Context context;
+
     /** Creates a JavacMessages object.
      */
     public JavacMessages(Context context) {
         this(defaultBundleName, context.get(Locale.class));
+        this.context = context;
         context.put(messagesKey, this);
+        Options options = Options.instance(context);
+        boolean rawDiagnostics = options.isSet("rawDiagnostics");
+        this.diagFormatter = rawDiagnostics ? new RawDiagnosticFormatter(options) :
+                                                  new BasicDiagnosticFormatter(options, this);
     }
 
     /** Creates a JavacMessages object.
@@ -140,11 +155,21 @@ public class JavacMessages implements Messages {
         return getLocalizedString(currentLocale, key, args);
     }
 
+    public String getLocalizedString(JCDiagnostic.DiagnosticInfo diagInfo) {
+        return getLocalizedString(currentLocale, diagInfo);
+    }
+
     @Override
     public String getLocalizedString(Locale l, String key, Object... args) {
         if (l == null)
             l = getCurrentLocale();
         return getLocalizedString(getBundles(l), key, args);
+    }
+
+    public String getLocalizedString(Locale l, JCDiagnostic.DiagnosticInfo diagInfo) {
+        if (l == null)
+            l = getCurrentLocale();
+        return getLocalizedString(getBundles(l), diagInfo);
     }
 
     /* Static access:
@@ -185,7 +210,7 @@ public class JavacMessages implements Messages {
         }
     }
 
-    private static String getLocalizedString(List<ResourceBundle> bundles,
+    static private String getLocalizedString(List<ResourceBundle> bundles,
                                              String key,
                                              Object... args) {
        String msg = null;
@@ -203,6 +228,36 @@ public class JavacMessages implements Messages {
                " arguments={0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}";
        }
        return MessageFormat.format(msg, args);
+    }
+
+    private String getLocalizedString(List<ResourceBundle> bundles, JCDiagnostic.DiagnosticInfo diagInfo) {
+        String msg = null;
+        for (List<ResourceBundle> l = bundles; l.nonEmpty() && msg == null; l = l.tail) {
+            ResourceBundle rb = l.head;
+            try {
+                msg = rb.getString(diagInfo.key());
+            }
+            catch (MissingResourceException e) {
+                // ignore, try other bundles in list
+            }
+        }
+        if (msg == null) {
+            msg = "compiler message file broken: key=" + diagInfo.key() +
+                " arguments={0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}";
+        }
+        if (diagInfo == Errors.Error) {
+            return MessageFormat.format(msg, new Object[0]);
+        } else {
+            return diagFormatter.format(getDiagFactory().create(DiagnosticSource.NO_SOURCE, null, diagInfo),
+                    getCurrentLocale());
+        }
+    }
+
+    JCDiagnostic.Factory getDiagFactory() {
+        if (diagFactory == null) {
+            this.diagFactory = JCDiagnostic.Factory.instance(context);
+        }
+        return diagFactory;
     }
 
     /**

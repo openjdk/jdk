@@ -78,7 +78,7 @@
 #include "mlib_c_ImageLookUp.h"
 
 /***************************************************************/
-mlib_status mlib_ImageLookUp(mlib_image       *dst,
+JNIEXPORT mlib_status JNICALL mlib_ImageLookUp(mlib_image       *dst,
                              const mlib_image *src,
                              const void       **table)
 {

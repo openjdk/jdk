@@ -28,6 +28,7 @@
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
+#include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -1891,22 +1892,22 @@ bool InstanceKlass::is_dependent_nmethod(nmethod* nm) {
 }
 #endif //PRODUCT
 
-void InstanceKlass::clean_weak_instanceklass_links(BoolObjectClosure* is_alive) {
-  clean_implementors_list(is_alive);
-  clean_method_data(is_alive);
+void InstanceKlass::clean_weak_instanceklass_links() {
+  clean_implementors_list();
+  clean_method_data();
 
   // Since GC iterates InstanceKlasses sequentially, it is safe to remove stale entries here.
   DependencyContext dep_context(&_dep_context);
   dep_context.expunge_stale_entries();
 }
 
-void InstanceKlass::clean_implementors_list(BoolObjectClosure* is_alive) {
-  assert(class_loader_data()->is_alive(), "this klass should be live");
+void InstanceKlass::clean_implementors_list() {
+  assert(is_loader_alive(), "this klass should be live");
   if (is_interface()) {
     if (ClassUnloading) {
       Klass* impl = implementor();
       if (impl != NULL) {
-        if (!impl->is_loader_alive(is_alive)) {
+        if (!impl->is_loader_alive()) {
           // remove this guy
           Klass** klass = adr_implementor();
           assert(klass != NULL, "null klass");
@@ -1919,11 +1920,11 @@ void InstanceKlass::clean_implementors_list(BoolObjectClosure* is_alive) {
   }
 }
 
-void InstanceKlass::clean_method_data(BoolObjectClosure* is_alive) {
+void InstanceKlass::clean_method_data() {
   for (int m = 0; m < methods()->length(); m++) {
     MethodData* mdo = methods()->at(m)->method_data();
     if (mdo != NULL) {
-      mdo->clean_method_data(is_alive);
+      mdo->clean_method_data(/*always_clean*/false);
     }
   }
 }

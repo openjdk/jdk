@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package java.util.zip;
 
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
 import java.nio.file.attribute.FileTime;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -37,6 +39,9 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.zip.ZipConstants.ENDHDR;
 
+import jdk.internal.misc.Unsafe;
+import sun.nio.ch.DirectBuffer;
+
 class ZipUtils {
 
     // used to adjust values between Windows and java epoch
@@ -44,6 +49,9 @@ class ZipUtils {
 
     // used to indicate the corresponding windows time is not available
     public static final long WINDOWS_TIME_NOT_AVAILABLE = Long.MIN_VALUE;
+
+    // static final ByteBuffer defaultBuf = ByteBuffer.allocateDirect(0);
+    static final ByteBuffer defaultBuf = ByteBuffer.allocate(0);
 
     /**
      * Converts Windows time (in microseconds, UTC/GMT) time to FileTime.
@@ -280,5 +288,18 @@ class ZipUtils {
             PrivilegedAction<Void> pa = () -> { System.loadLibrary("zip"); return null; };
             AccessController.doPrivileged(pa);
         }
+    }
+
+    private static final Unsafe unsafe = Unsafe.getUnsafe();
+
+    private static final long byteBufferArrayOffset = unsafe.objectFieldOffset(ByteBuffer.class, "hb");
+    private static final long byteBufferOffsetOffset = unsafe.objectFieldOffset(ByteBuffer.class, "offset");
+
+    static byte[] getBufferArray(ByteBuffer byteBuffer) {
+        return (byte[]) unsafe.getObject(byteBuffer, byteBufferArrayOffset);
+    }
+
+    static int getBufferOffset(ByteBuffer byteBuffer) {
+        return unsafe.getInt(byteBuffer, byteBufferOffsetOffset);
     }
 }

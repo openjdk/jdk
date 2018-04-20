@@ -74,7 +74,7 @@
           "in milliseconds.")                                               \
           range(1.0, DBL_MAX)                                               \
                                                                             \
-  product(int, G1RefProcDrainInterval, 10,                                  \
+  product(uint, G1RefProcDrainInterval, 1000,                               \
           "The number of discovered reference objects to process before "   \
           "draining concurrent marking work queues.")                       \
           range(1, INT_MAX)                                                 \

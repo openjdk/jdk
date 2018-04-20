@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ public class IncludePackagesTest {
         p1sp1sp2T(ERROR, "p1sp1sp2T.java:2:12: compiler.err.proc.messager: malformed HTML"),
         p2T(ERROR, "p2T.java:2:12: compiler.err.proc.messager: malformed HTML"),
         Default(ERROR, "Default.java:1:12: compiler.err.proc.messager: malformed HTML"),
-        INVALID_PACKAGE_ERROR(ERROR, "invalid flag: -Xdoclint/package:wrong+package");
+        INVALID_PACKAGE_ERROR(ERROR, "error: invalid flag: -Xdoclint/package:wrong+package");
 
         final Diagnostic.Kind kind;
         final String text;

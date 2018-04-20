@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,6 +163,13 @@ public:
   void initialize();
 
   static size_t refill_waste_limit_increment()   { return TLABWasteIncrement; }
+
+  template <typename T> void addresses_do(T f) {
+    f(&_start);
+    f(&_top);
+    f(&_pf_top);
+    f(&_end);
+  }
 
   // Code generation support
   static ByteSize start_offset()                 { return byte_offset_of(ThreadLocalAllocBuffer, _start); }

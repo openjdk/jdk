@@ -31,7 +31,7 @@
 
 class CodeBlob;
 class nmethod;
-class ReferenceProcessor;
+class ReferenceDiscoverer;
 class DataLayout;
 class KlassClosure;
 class ClassLoaderData;
@@ -60,17 +60,17 @@ extern DoNothingClosure do_nothing_cl;
 // pollute the OopClosure interface.
 class ExtendedOopClosure : public OopClosure {
  private:
-  ReferenceProcessor* _ref_processor;
+  ReferenceDiscoverer* _ref_discoverer;
 
  protected:
-  ExtendedOopClosure(ReferenceProcessor* rp) : _ref_processor(rp) { }
-  ExtendedOopClosure() : _ref_processor(NULL) { }
+  ExtendedOopClosure(ReferenceDiscoverer* rd) : _ref_discoverer(rd) { }
+  ExtendedOopClosure() : _ref_discoverer(NULL) { }
   ~ExtendedOopClosure() { }
 
-  void set_ref_processor_internal(ReferenceProcessor* rp) { _ref_processor = rp; }
+  void set_ref_discoverer_internal(ReferenceDiscoverer* rd) { _ref_discoverer = rd; }
 
  public:
-  ReferenceProcessor* ref_processor() const { return _ref_processor; }
+  ReferenceDiscoverer* ref_discoverer() const { return _ref_discoverer; }
 
   // Iteration of InstanceRefKlasses differ depending on the closure,
   // the below enum describes the different alternatives.
@@ -165,7 +165,7 @@ class MetadataAwareOopClosure: public ExtendedOopClosure {
 
  public:
   MetadataAwareOopClosure() : ExtendedOopClosure() { }
-  MetadataAwareOopClosure(ReferenceProcessor* rp) : ExtendedOopClosure(rp) { }
+  MetadataAwareOopClosure(ReferenceDiscoverer* rd) : ExtendedOopClosure(rd) { }
 
   bool do_metadata_nv()      { return true; }
   virtual bool do_metadata() { return do_metadata_nv(); }
