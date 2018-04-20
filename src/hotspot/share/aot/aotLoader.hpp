@@ -57,6 +57,7 @@ public:
   static void initialize() NOT_AOT({ FLAG_SET_ERGO(bool, UseAOT, false); });
 
   static void universe_init() NOT_AOT_RETURN;
+  static void set_narrow_oop_shift() NOT_AOT_RETURN;
   static void set_narrow_klass_shift() NOT_AOT_RETURN;
   static bool contains(address p) NOT_AOT({ return false; });
   static void load_for_klass(InstanceKlass* ik, Thread* thread) NOT_AOT_RETURN;
