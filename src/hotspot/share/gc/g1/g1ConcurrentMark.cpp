@@ -1695,20 +1695,17 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
     assert(!rp->discovery_enabled(), "Post condition");
   }
 
-  assert(has_overflown() || _global_mark_stack.is_empty(),
-         "Mark stack should be empty (unless it has overflown)");
-
-  {
-    GCTraceTime(Debug, gc, phases) debug("Weak Processing", _gc_timer_cm);
-    WeakProcessor::weak_oops_do(&g1_is_alive, &do_nothing_cl);
-  }
-
   if (has_overflown()) {
     // We can not trust g1_is_alive if the marking stack overflowed
     return;
   }
 
   assert(_global_mark_stack.is_empty(), "Marking should have completed");
+
+  {
+    GCTraceTime(Debug, gc, phases) debug("Weak Processing", _gc_timer_cm);
+    WeakProcessor::weak_oops_do(&g1_is_alive, &do_nothing_cl);
+  }
 
   // Unload Klasses, String, Symbols, Code Cache, etc.
   if (ClassUnloadingWithConcurrentMark) {
