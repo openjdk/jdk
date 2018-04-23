@@ -368,7 +368,7 @@ void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
   CodeBuffer cb(code_pos, instruction_size);
   MacroAssembler a(&cb);
 
-  a.mov(rscratch1, entry);
+  a.movptr(rscratch1, (uintptr_t)entry);
   a.br(rscratch1);
 
   ICache::invalidate_range(code_pos, instruction_size);
