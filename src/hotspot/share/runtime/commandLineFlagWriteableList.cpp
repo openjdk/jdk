@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/plab.hpp"
-#include "runtime/flags/jvmFlagWriteableList.hpp"
+#include "runtime/commandLineFlagWriteableList.hpp"
 #include "runtime/os.hpp"
 #ifdef COMPILER1
 #include "c1/c1_globals.hpp"
@@ -36,18 +36,18 @@
 #include "jvmci/jvmci_globals.hpp"
 #endif
 
-bool JVMFlagWriteable::is_writeable(void) {
+bool CommandLineFlagWriteable::is_writeable(void) {
   return _writeable;
 }
 
-void JVMFlagWriteable::mark_once(void) {
+void CommandLineFlagWriteable::mark_once(void) {
   if (_type == Once) {
     _writeable = false;
   }
 }
 
-void JVMFlagWriteable::mark_startup(void) {
-  if (_type == JVMFlagWriteable::CommandLineOnly) {
+void CommandLineFlagWriteable::mark_startup(void) {
+  if (_type == CommandLineFlagWriteable::CommandLineOnly) {
     _writeable = false;
   }
 }
@@ -67,30 +67,30 @@ void emit_writeable_uint64_t(const char* /*name*/)  { /* NOP */ }
 void emit_writeable_size_t(const char* /*name*/)    { /* NOP */ }
 void emit_writeable_double(const char* /*name*/)    { /* NOP */ }
 
-// JVMFlagWriteable emitting code functions if range arguments are provided
-void emit_writeable_bool(const char* name, JVMFlagWriteable::WriteableType type) {
-  JVMFlagWriteableList::add(new JVMFlagWriteable(name, type));
+// CommandLineFlagWriteable emitting code functions if range arguments are provided
+void emit_writeable_bool(const char* name, CommandLineFlagWriteable::WriteableType type) {
+  CommandLineFlagWriteableList::add(new CommandLineFlagWriteable(name, type));
 }
-void emit_writeable_int(const char* name, JVMFlagWriteable::WriteableType type) {
-  JVMFlagWriteableList::add(new JVMFlagWriteable(name, type));
+void emit_writeable_int(const char* name, CommandLineFlagWriteable::WriteableType type) {
+  CommandLineFlagWriteableList::add(new CommandLineFlagWriteable(name, type));
 }
-void emit_writeable_intx(const char* name, JVMFlagWriteable::WriteableType type) {
-  JVMFlagWriteableList::add(new JVMFlagWriteable(name, type));
+void emit_writeable_intx(const char* name, CommandLineFlagWriteable::WriteableType type) {
+  CommandLineFlagWriteableList::add(new CommandLineFlagWriteable(name, type));
 }
-void emit_writeable_uint(const char* name, JVMFlagWriteable::WriteableType type) {
-  JVMFlagWriteableList::add(new JVMFlagWriteable(name, type));
+void emit_writeable_uint(const char* name, CommandLineFlagWriteable::WriteableType type) {
+  CommandLineFlagWriteableList::add(new CommandLineFlagWriteable(name, type));
 }
-void emit_writeable_uintx(const char* name, JVMFlagWriteable::WriteableType type) {
-  JVMFlagWriteableList::add(new JVMFlagWriteable(name, type));
+void emit_writeable_uintx(const char* name, CommandLineFlagWriteable::WriteableType type) {
+  CommandLineFlagWriteableList::add(new CommandLineFlagWriteable(name, type));
 }
-void emit_writeable_uint64_t(const char* name, JVMFlagWriteable::WriteableType type) {
-  JVMFlagWriteableList::add(new JVMFlagWriteable(name, type));
+void emit_writeable_uint64_t(const char* name, CommandLineFlagWriteable::WriteableType type) {
+  CommandLineFlagWriteableList::add(new CommandLineFlagWriteable(name, type));
 }
-void emit_writeable_size_t(const char* name, JVMFlagWriteable::WriteableType type) {
-  JVMFlagWriteableList::add(new JVMFlagWriteable(name, type));
+void emit_writeable_size_t(const char* name, CommandLineFlagWriteable::WriteableType type) {
+  CommandLineFlagWriteableList::add(new CommandLineFlagWriteable(name, type));
 }
-void emit_writeable_double(const char* name, JVMFlagWriteable::WriteableType type) {
-  JVMFlagWriteableList::add(new JVMFlagWriteable(name, type));
+void emit_writeable_double(const char* name, CommandLineFlagWriteable::WriteableType type) {
+  CommandLineFlagWriteableList::add(new CommandLineFlagWriteable(name, type));
 }
 
 // Generate code to call emit_writeable_xxx function
@@ -108,14 +108,14 @@ void emit_writeable_double(const char* name, JVMFlagWriteable::WriteableType typ
 #define EMIT_WRITEABLE_LP64_PRODUCT_FLAG(type, name, value, doc) ); emit_writeable_##type(#name
 
 // Generate type argument to pass into emit_writeable_xxx functions
-#define EMIT_WRITEABLE(a)                                      , JVMFlagWriteable::a
+#define EMIT_WRITEABLE(a)                                      , CommandLineFlagWriteable::a
 
 #define INITIAL_WRITEABLES_SIZE 2
-GrowableArray<JVMFlagWriteable*>* JVMFlagWriteableList::_controls = NULL;
+GrowableArray<CommandLineFlagWriteable*>* CommandLineFlagWriteableList::_controls = NULL;
 
-void JVMFlagWriteableList::init(void) {
+void CommandLineFlagWriteableList::init(void) {
 
-  _controls = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<JVMFlagWriteable*>(INITIAL_WRITEABLES_SIZE, true);
+  _controls = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<CommandLineFlagWriteable*>(INITIAL_WRITEABLES_SIZE, true);
 
   emit_writeable_no(NULL VM_FLAGS(EMIT_WRITEABLE_DEVELOPER_FLAG,
                                   EMIT_WRITEABLE_PD_DEVELOPER_FLAG,
@@ -185,10 +185,10 @@ void JVMFlagWriteableList::init(void) {
 #endif // COMPILER2
 }
 
-JVMFlagWriteable* JVMFlagWriteableList::find(const char* name) {
-  JVMFlagWriteable* found = NULL;
+CommandLineFlagWriteable* CommandLineFlagWriteableList::find(const char* name) {
+  CommandLineFlagWriteable* found = NULL;
   for (int i=0; i<length(); i++) {
-    JVMFlagWriteable* writeable = at(i);
+    CommandLineFlagWriteable* writeable = at(i);
     if (strcmp(writeable->name(), name) == 0) {
       found = writeable;
       break;
@@ -197,9 +197,9 @@ JVMFlagWriteable* JVMFlagWriteableList::find(const char* name) {
   return found;
 }
 
-void JVMFlagWriteableList::mark_startup(void) {
+void CommandLineFlagWriteableList::mark_startup(void) {
   for (int i=0; i<length(); i++) {
-    JVMFlagWriteable* writeable = at(i);
+    CommandLineFlagWriteable* writeable = at(i);
     writeable->mark_startup();
   }
 }

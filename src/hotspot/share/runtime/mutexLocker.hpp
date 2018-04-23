@@ -26,7 +26,6 @@
 #define SHARE_VM_RUNTIME_MUTEXLOCKER_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/flags/flagSetting.hpp"
 #include "runtime/mutex.hpp"
 
 // Mutexes used in the VM.
