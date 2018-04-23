@@ -35,6 +35,7 @@
 #include "memory/resourceArea.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
+#include "utilities/preserveException.hpp"
 
 #define __ _masm->
 
