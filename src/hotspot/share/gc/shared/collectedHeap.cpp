@@ -172,6 +172,22 @@ bool CollectedHeap::request_concurrent_phase(const char* phase) {
   return false;
 }
 
+bool CollectedHeap::is_oop(oop object) const {
+  if (!check_obj_alignment(object)) {
+    return false;
+  }
+
+  if (!is_in_reserved(object)) {
+    return false;
+  }
+
+  if (is_in_reserved(object->klass_or_null())) {
+    return false;
+  }
+
+  return true;
+}
+
 // Memory state functions.
 
 
