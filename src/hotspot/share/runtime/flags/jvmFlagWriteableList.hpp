@@ -22,13 +22,12 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_COMMANDLINEFLAGWRITEABLE_HPP
-#define SHARE_VM_RUNTIME_COMMANDLINEFLAGWRITEABLE_HPP
+#ifndef SHARE_VM_RUNTIME_JVMFLAGWRITEABLE_HPP
+#define SHARE_VM_RUNTIME_JVMFLAGWRITEABLE_HPP
 
-#include "runtime/globals.hpp"
 #include "utilities/growableArray.hpp"
 
-class CommandLineFlagWriteable : public CHeapObj<mtArguments> {
+class JVMFlagWriteable : public CHeapObj<mtArguments> {
 public:
   enum WriteableType {
     // can be set without any limits
@@ -45,8 +44,8 @@ private:
   bool _startup_done;
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagWriteable(const char* name, WriteableType type) { _name=name; _type=type; _writeable=true; _startup_done=false; }
-  ~CommandLineFlagWriteable() {}
+  JVMFlagWriteable(const char* name, WriteableType type) { _name=name; _type=type; _writeable=true; _startup_done=false; }
+  ~JVMFlagWriteable() {}
   const char* name() { return _name; }
   const WriteableType type() { return _type; }
   bool is_writeable(void);
@@ -54,15 +53,15 @@ public:
   void mark_startup(void);
 };
 
-class CommandLineFlagWriteableList : public AllStatic {
-  static GrowableArray<CommandLineFlagWriteable*>* _controls;
+class JVMFlagWriteableList : public AllStatic {
+  static GrowableArray<JVMFlagWriteable*>* _controls;
 public:
   static void init();
   static int length() { return (_controls != NULL) ? _controls->length() : 0; }
-  static CommandLineFlagWriteable* at(int i) { return (_controls != NULL) ? _controls->at(i) : NULL; }
-  static CommandLineFlagWriteable* find(const char* name);
-  static void add(CommandLineFlagWriteable* range) { _controls->append(range); }
+  static JVMFlagWriteable* at(int i) { return (_controls != NULL) ? _controls->at(i) : NULL; }
+  static JVMFlagWriteable* find(const char* name);
+  static void add(JVMFlagWriteable* range) { _controls->append(range); }
   static void mark_startup(void);
 };
 
-#endif // SHARE_VM_RUNTIME_COMMANDLINEFLAGWRITEABLE_HPP
+#endif // SHARE_VM_RUNTIME_JVMFLAGWRITEABLE_HPP
