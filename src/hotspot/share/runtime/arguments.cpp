@@ -1820,18 +1820,6 @@ jint Arguments::set_ergonomics_flags() {
 
   GCConfig::initialize();
 
-#if COMPILER2_OR_JVMCI
-  // Shared spaces work fine with other GCs but causes bytecode rewriting
-  // to be disabled, which hurts interpreter performance and decreases
-  // server performance.  When -server is specified, keep the default off
-  // unless it is asked for.  Future work: either add bytecode rewriting
-  // at link time, or rewrite bytecodes in non-shared methods.
-  if (is_server_compilation_mode_vm() && !DumpSharedSpaces && !RequireSharedSpaces &&
-      (FLAG_IS_DEFAULT(UseSharedSpaces) || !UseSharedSpaces)) {
-    no_shared_spaces("COMPILER2 default: -Xshare:auto | off, have to manually setup to on.");
-  }
-#endif
-
 #if defined(IA32)
   // Only server compiler can optimize safepoints well enough.
   if (!is_server_compilation_mode_vm()) {
