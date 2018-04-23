@@ -29,8 +29,8 @@
 #include "utilities/globalDefinitions.hpp"
 
 // Parallel Subconstraints
-JVMFlag::Error ParallelGCThreadsConstraintFuncParallel(uint value, bool verbose);
-JVMFlag::Error InitialTenuringThresholdConstraintFuncParallel(uintx value, bool verbose);
-JVMFlag::Error MaxTenuringThresholdConstraintFuncParallel(uintx value, bool verbose);
+Flag::Error ParallelGCThreadsConstraintFuncParallel(uint value, bool verbose);
+Flag::Error InitialTenuringThresholdConstraintFuncParallel(uintx value, bool verbose);
+Flag::Error MaxTenuringThresholdConstraintFuncParallel(uintx value, bool verbose);
 
 #endif // SHARE_GC_PARALLEL_COMMANDLINEFLAGCONSTRAINTSPARALLEL_HPP

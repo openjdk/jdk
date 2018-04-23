@@ -38,7 +38,6 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/flags/flagSetting.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/copy.hpp"

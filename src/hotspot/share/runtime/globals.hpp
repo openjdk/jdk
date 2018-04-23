@@ -108,6 +108,349 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
 
 #endif // no compilers
 
+// string type aliases used only in this file
+typedef const char* ccstr;
+typedef const char* ccstrlist;   // represents string arguments which accumulate
+
+// function type that will construct default range string
+typedef const char* (*RangeStrFunc)(void);
+
+struct Flag {
+  enum Flags {
+    // latest value origin
+    DEFAULT          = 0,
+    COMMAND_LINE     = 1,
+    ENVIRON_VAR      = 2,
+    CONFIG_FILE      = 3,
+    MANAGEMENT       = 4,
+    ERGONOMIC        = 5,
+    ATTACH_ON_DEMAND = 6,
+    INTERNAL         = 7,
+
+    LAST_VALUE_ORIGIN = INTERNAL,
+    VALUE_ORIGIN_BITS = 4,
+    VALUE_ORIGIN_MASK = right_n_bits(VALUE_ORIGIN_BITS),
+
+    // flag kind
+    KIND_PRODUCT            = 1 << 4,
+    KIND_MANAGEABLE         = 1 << 5,
+    KIND_DIAGNOSTIC         = 1 << 6,
+    KIND_EXPERIMENTAL       = 1 << 7,
+    KIND_NOT_PRODUCT        = 1 << 8,
+    KIND_DEVELOP            = 1 << 9,
+    KIND_PLATFORM_DEPENDENT = 1 << 10,
+    KIND_READ_WRITE         = 1 << 11,
+    KIND_C1                 = 1 << 12,
+    KIND_C2                 = 1 << 13,
+    KIND_ARCH               = 1 << 14,
+    KIND_LP64_PRODUCT       = 1 << 15,
+    KIND_COMMERCIAL         = 1 << 16,
+    KIND_JVMCI              = 1 << 17,
+
+    // set this bit if the flag was set on the command line
+    ORIG_COMMAND_LINE       = 1 << 18,
+
+    KIND_MASK = ~(VALUE_ORIGIN_MASK | ORIG_COMMAND_LINE)
+  };
+
+  enum Error {
+    // no error
+    SUCCESS = 0,
+    // flag name is missing
+    MISSING_NAME,
+    // flag value is missing
+    MISSING_VALUE,
+    // error parsing the textual form of the value
+    WRONG_FORMAT,
+    // flag is not writable
+    NON_WRITABLE,
+    // flag value is outside of its bounds
+    OUT_OF_BOUNDS,
+    // flag value violates its constraint
+    VIOLATES_CONSTRAINT,
+    // there is no flag with the given name
+    INVALID_FLAG,
+    // the flag can only be set only on command line during invocation of the VM
+    COMMAND_LINE_ONLY,
+    // the flag may only be set once
+    SET_ONLY_ONCE,
+    // the flag is not writable in this combination of product/debug build
+    CONSTANT,
+    // other, unspecified error related to setting the flag
+    ERR_OTHER
+  };
+
+  enum MsgType {
+    NONE = 0,
+    DIAGNOSTIC_FLAG_BUT_LOCKED,
+    EXPERIMENTAL_FLAG_BUT_LOCKED,
+    DEVELOPER_FLAG_BUT_PRODUCT_BUILD,
+    NOTPRODUCT_FLAG_BUT_PRODUCT_BUILD,
+    COMMERCIAL_FLAG_BUT_DISABLED,
+    COMMERCIAL_FLAG_BUT_LOCKED
+  };
+
+  const char* _type;
+  const char* _name;
+  void* _addr;
+  NOT_PRODUCT(const char* _doc;)
+  Flags _flags;
+  size_t _name_len;
+
+  // points to all Flags static array
+  static Flag* flags;
+
+  // number of flags
+  static size_t numFlags;
+
+  static Flag* find_flag(const char* name) { return find_flag(name, strlen(name), true, true); };
+  static Flag* find_flag(const char* name, size_t length, bool allow_locked = false, bool return_flag = false);
+  static Flag* fuzzy_match(const char* name, size_t length, bool allow_locked = false);
+
+  static const char* get_int_default_range_str();
+  static const char* get_uint_default_range_str();
+  static const char* get_intx_default_range_str();
+  static const char* get_uintx_default_range_str();
+  static const char* get_uint64_t_default_range_str();
+  static const char* get_size_t_default_range_str();
+  static const char* get_double_default_range_str();
+
+  Flag::Error check_writable(bool changed);
+
+  bool is_bool() const;
+  bool get_bool() const;
+  Flag::Error set_bool(bool value);
+
+  bool is_int() const;
+  int get_int() const;
+  Flag::Error set_int(int value);
+
+  bool is_uint() const;
+  uint get_uint() const;
+  Flag::Error set_uint(uint value);
+
+  bool is_intx() const;
+  intx get_intx() const;
+  Flag::Error set_intx(intx value);
+
+  bool is_uintx() const;
+  uintx get_uintx() const;
+  Flag::Error set_uintx(uintx value);
+
+  bool is_uint64_t() const;
+  uint64_t get_uint64_t() const;
+  Flag::Error set_uint64_t(uint64_t value);
+
+  bool is_size_t() const;
+  size_t get_size_t() const;
+  Flag::Error set_size_t(size_t value);
+
+  bool is_double() const;
+  double get_double() const;
+  Flag::Error set_double(double value);
+
+  bool is_ccstr() const;
+  bool ccstr_accumulates() const;
+  ccstr get_ccstr() const;
+  Flag::Error set_ccstr(ccstr value);
+
+  Flags get_origin();
+  void set_origin(Flags origin);
+
+  size_t get_name_length();
+
+  bool is_default();
+  bool is_ergonomic();
+  bool is_command_line();
+  void set_command_line();
+
+  bool is_product() const;
+  bool is_manageable() const;
+  bool is_diagnostic() const;
+  bool is_experimental() const;
+  bool is_notproduct() const;
+  bool is_develop() const;
+  bool is_read_write() const;
+  bool is_commercial() const;
+
+  bool is_constant_in_binary() const;
+
+  bool is_unlocker() const;
+  bool is_unlocked() const;
+  bool is_writeable() const;
+  bool is_external() const;
+
+  bool is_unlocker_ext() const;
+  bool is_unlocked_ext() const;
+  bool is_writeable_ext() const;
+  bool is_external_ext() const;
+
+  void clear_diagnostic();
+
+  Flag::MsgType get_locked_message(char*, int) const;
+  Flag::MsgType get_locked_message_ext(char*, int) const;
+
+  // printRanges will print out flags type, name and range values as expected by -XX:+PrintFlagsRanges
+  void print_on(outputStream* st, bool withComments = false, bool printRanges = false);
+  void print_kind(outputStream* st, unsigned int width);
+  void print_origin(outputStream* st, unsigned int width);
+  void print_as_flag(outputStream* st);
+
+  static const char* flag_error_str(Flag::Error error);
+};
+
+// debug flags control various aspects of the VM and are global accessible
+
+// use FlagSetting to temporarily change some debug flag
+// e.g. FlagSetting fs(DebugThisAndThat, true);
+// restored to previous value upon leaving scope
+class FlagSetting {
+  bool val;
+  bool* flag;
+ public:
+  FlagSetting(bool& fl, bool newValue) { flag = &fl; val = fl; fl = newValue; }
+  ~FlagSetting()                       { *flag = val; }
+};
+
+
+class CounterSetting {
+  intx* counter;
+ public:
+  CounterSetting(intx* cnt) { counter = cnt; (*counter)++; }
+  ~CounterSetting()         { (*counter)--; }
+};
+
+class IntFlagSetting {
+  int val;
+  int* flag;
+ public:
+  IntFlagSetting(int& fl, int newValue) { flag = &fl; val = fl; fl = newValue; }
+  ~IntFlagSetting()                     { *flag = val; }
+};
+
+class UIntFlagSetting {
+  uint val;
+  uint* flag;
+ public:
+  UIntFlagSetting(uint& fl, uint newValue) { flag = &fl; val = fl; fl = newValue; }
+  ~UIntFlagSetting()                       { *flag = val; }
+};
+
+class UIntXFlagSetting {
+  uintx val;
+  uintx* flag;
+ public:
+  UIntXFlagSetting(uintx& fl, uintx newValue) { flag = &fl; val = fl; fl = newValue; }
+  ~UIntXFlagSetting()                         { *flag = val; }
+};
+
+class DoubleFlagSetting {
+  double val;
+  double* flag;
+ public:
+  DoubleFlagSetting(double& fl, double newValue) { flag = &fl; val = fl; fl = newValue; }
+  ~DoubleFlagSetting()                           { *flag = val; }
+};
+
+class SizeTFlagSetting {
+  size_t val;
+  size_t* flag;
+ public:
+  SizeTFlagSetting(size_t& fl, size_t newValue) { flag = &fl; val = fl; fl = newValue; }
+  ~SizeTFlagSetting()                           { *flag = val; }
+};
+
+// Helper class for temporarily saving the value of a flag during a scope.
+template <size_t SIZE>
+class FlagGuard {
+  unsigned char _value[SIZE];
+  void* const _addr;
+
+  // Hide operator new, this class should only be allocated on the stack.
+  // NOTE: Cannot include memory/allocation.hpp here due to circular
+  //       dependencies.
+  void* operator new(size_t size) throw();
+  void* operator new [](size_t size) throw();
+
+ public:
+  FlagGuard(void* flag_addr) : _addr(flag_addr) {
+    memcpy(_value, _addr, SIZE);
+  }
+
+  ~FlagGuard() {
+    memcpy(_addr, _value, SIZE);
+  }
+};
+
+#define FLAG_GUARD(f) FlagGuard<sizeof(f)> f ## _guard(&f)
+
+class CommandLineFlags {
+public:
+  static Flag::Error boolAt(const char* name, size_t len, bool* value, bool allow_locked = false, bool return_flag = false);
+  static Flag::Error boolAt(const char* name, bool* value, bool allow_locked = false, bool return_flag = false)      { return boolAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error boolAtPut(Flag* flag, bool* value, Flag::Flags origin);
+  static Flag::Error boolAtPut(const char* name, size_t len, bool* value, Flag::Flags origin);
+  static Flag::Error boolAtPut(const char* name, bool* value, Flag::Flags origin)   { return boolAtPut(name, strlen(name), value, origin); }
+
+  static Flag::Error intAt(const char* name, size_t len, int* value, bool allow_locked = false, bool return_flag = false);
+  static Flag::Error intAt(const char* name, int* value, bool allow_locked = false, bool return_flag = false)      { return intAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error intAtPut(Flag* flag, int* value, Flag::Flags origin);
+  static Flag::Error intAtPut(const char* name, size_t len, int* value, Flag::Flags origin);
+  static Flag::Error intAtPut(const char* name, int* value, Flag::Flags origin)   { return intAtPut(name, strlen(name), value, origin); }
+
+  static Flag::Error uintAt(const char* name, size_t len, uint* value, bool allow_locked = false, bool return_flag = false);
+  static Flag::Error uintAt(const char* name, uint* value, bool allow_locked = false, bool return_flag = false)      { return uintAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error uintAtPut(Flag* flag, uint* value, Flag::Flags origin);
+  static Flag::Error uintAtPut(const char* name, size_t len, uint* value, Flag::Flags origin);
+  static Flag::Error uintAtPut(const char* name, uint* value, Flag::Flags origin)   { return uintAtPut(name, strlen(name), value, origin); }
+
+  static Flag::Error intxAt(const char* name, size_t len, intx* value, bool allow_locked = false, bool return_flag = false);
+  static Flag::Error intxAt(const char* name, intx* value, bool allow_locked = false, bool return_flag = false)      { return intxAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error intxAtPut(Flag* flag, intx* value, Flag::Flags origin);
+  static Flag::Error intxAtPut(const char* name, size_t len, intx* value, Flag::Flags origin);
+  static Flag::Error intxAtPut(const char* name, intx* value, Flag::Flags origin)   { return intxAtPut(name, strlen(name), value, origin); }
+
+  static Flag::Error uintxAt(const char* name, size_t len, uintx* value, bool allow_locked = false, bool return_flag = false);
+  static Flag::Error uintxAt(const char* name, uintx* value, bool allow_locked = false, bool return_flag = false)    { return uintxAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error uintxAtPut(Flag* flag, uintx* value, Flag::Flags origin);
+  static Flag::Error uintxAtPut(const char* name, size_t len, uintx* value, Flag::Flags origin);
+  static Flag::Error uintxAtPut(const char* name, uintx* value, Flag::Flags origin) { return uintxAtPut(name, strlen(name), value, origin); }
+
+  static Flag::Error size_tAt(const char* name, size_t len, size_t* value, bool allow_locked = false, bool return_flag = false);
+  static Flag::Error size_tAt(const char* name, size_t* value, bool allow_locked = false, bool return_flag = false)    { return size_tAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error size_tAtPut(Flag* flag, size_t* value, Flag::Flags origin);
+  static Flag::Error size_tAtPut(const char* name, size_t len, size_t* value, Flag::Flags origin);
+  static Flag::Error size_tAtPut(const char* name, size_t* value, Flag::Flags origin) { return size_tAtPut(name, strlen(name), value, origin); }
+
+  static Flag::Error uint64_tAt(const char* name, size_t len, uint64_t* value, bool allow_locked = false, bool return_flag = false);
+  static Flag::Error uint64_tAt(const char* name, uint64_t* value, bool allow_locked = false, bool return_flag = false) { return uint64_tAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error uint64_tAtPut(Flag* flag, uint64_t* value, Flag::Flags origin);
+  static Flag::Error uint64_tAtPut(const char* name, size_t len, uint64_t* value, Flag::Flags origin);
+  static Flag::Error uint64_tAtPut(const char* name, uint64_t* value, Flag::Flags origin) { return uint64_tAtPut(name, strlen(name), value, origin); }
+
+  static Flag::Error doubleAt(const char* name, size_t len, double* value, bool allow_locked = false, bool return_flag = false);
+  static Flag::Error doubleAt(const char* name, double* value, bool allow_locked = false, bool return_flag = false)    { return doubleAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error doubleAtPut(Flag* flag, double* value, Flag::Flags origin);
+  static Flag::Error doubleAtPut(const char* name, size_t len, double* value, Flag::Flags origin);
+  static Flag::Error doubleAtPut(const char* name, double* value, Flag::Flags origin) { return doubleAtPut(name, strlen(name), value, origin); }
+
+  static Flag::Error ccstrAt(const char* name, size_t len, ccstr* value, bool allow_locked = false, bool return_flag = false);
+  static Flag::Error ccstrAt(const char* name, ccstr* value, bool allow_locked = false, bool return_flag = false)    { return ccstrAt(name, strlen(name), value, allow_locked, return_flag); }
+  // Contract:  Flag will make private copy of the incoming value.
+  // Outgoing value is always malloc-ed, and caller MUST call free.
+  static Flag::Error ccstrAtPut(const char* name, size_t len, ccstr* value, Flag::Flags origin);
+  static Flag::Error ccstrAtPut(const char* name, ccstr* value, Flag::Flags origin) { return ccstrAtPut(name, strlen(name), value, origin); }
+
+  // Returns false if name is not a command line flag.
+  static bool wasSetOnCmdline(const char* name, bool* value);
+  static void printSetFlags(outputStream* out);
+
+  // printRanges will print out flags type, name and range values as expected by -XX:+PrintFlagsRanges
+  static void printFlags(outputStream* out, bool withComments, bool printRanges = false);
+
+  static void verify() PRODUCT_RETURN;
+};
+
 // use this for flags that are true by default in the debug version but
 // false in the optimized version, and vice versa
 #ifdef ASSERT
@@ -193,10 +536,10 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
 // it can be done in the same way as product_rw.
 //
 // range is a macro that will expand to min and max arguments for range
-//    checking code if provided - see jvmFlagRangeList.hpp
+//    checking code if provided - see commandLineFlagRangeList.hpp
 //
 // constraint is a macro that will expand to custom function call
-//    for constraint checking if provided - see jvmFlagConstraintList.hpp
+//    for constraint checking if provided - see commandLineFlagConstraintList.hpp
 //
 // writeable is a macro that controls if and how the value can change during the runtime
 //

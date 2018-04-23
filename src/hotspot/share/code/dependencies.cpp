@@ -35,7 +35,6 @@
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/objArrayKlass.hpp"
-#include "runtime/flags/flagSetting.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"

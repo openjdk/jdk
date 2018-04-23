@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,17 @@
 
 #include "precompiled.hpp"
 #include "runtime/globals.hpp"
-#include "runtime/flags/flagSetting.hpp"
 #include "unittest.hpp"
 
-#define TEST_FLAG(f, type, value)                                \
-  do {                                                           \
-    ASSERT_TRUE(JVMFlag::find_flag(#f)->is_ ## type());          \
-    type original_value = f;                                     \
-    {                                                            \
-      FLAG_GUARD(f);                                             \
-      f = value;                                                 \
-    }                                                            \
-    ASSERT_EQ(original_value, f);                                \
+#define TEST_FLAG(f, type, value)                     \
+  do {                                                \
+    ASSERT_TRUE(Flag::find_flag(#f)->is_ ## type());  \
+    type original_value = f;                          \
+    {                                                 \
+      FLAG_GUARD(f);                                  \
+      f = value;                                      \
+    }                                                 \
+    ASSERT_EQ(original_value, f);                     \
   } while (0)
 
 TEST_VM(FlagGuard, bool_flag) {

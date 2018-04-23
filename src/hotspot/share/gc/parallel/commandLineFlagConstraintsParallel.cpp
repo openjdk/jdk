@@ -23,11 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/flags/jvmFlagRangeList.hpp"
+#include "runtime/commandLineFlagRangeList.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-JVMFlag::Error ParallelGCThreadsConstraintFuncParallel(uint value, bool verbose) {
+Flag::Error ParallelGCThreadsConstraintFuncParallel(uint value, bool verbose) {
   // Parallel GC passes ParallelGCThreads when creating GrowableArray as 'int' type parameter.
   // So can't exceed with "max_jint"
 
@@ -36,24 +36,24 @@ JVMFlag::Error ParallelGCThreadsConstraintFuncParallel(uint value, bool verbose)
                             "ParallelGCThreads (" UINT32_FORMAT ") must be "
                             "less than or equal to " UINT32_FORMAT " for Parallel GC\n",
                             value, max_jint);
-    return JVMFlag::VIOLATES_CONSTRAINT;
+    return Flag::VIOLATES_CONSTRAINT;
   }
-  return JVMFlag::SUCCESS;
+  return Flag::SUCCESS;
 }
 
-JVMFlag::Error InitialTenuringThresholdConstraintFuncParallel(uintx value, bool verbose) {
+Flag::Error InitialTenuringThresholdConstraintFuncParallel(uintx value, bool verbose) {
   // InitialTenuringThreshold is only used for ParallelGC.
   if (UseParallelGC && (value > MaxTenuringThreshold)) {
       CommandLineError::print(verbose,
                               "InitialTenuringThreshold (" UINTX_FORMAT ") must be "
                               "less than or equal to MaxTenuringThreshold (" UINTX_FORMAT ")\n",
                               value, MaxTenuringThreshold);
-      return JVMFlag::VIOLATES_CONSTRAINT;
+      return Flag::VIOLATES_CONSTRAINT;
   }
-  return JVMFlag::SUCCESS;
+  return Flag::SUCCESS;
 }
 
-JVMFlag::Error MaxTenuringThresholdConstraintFuncParallel(uintx value, bool verbose) {
+Flag::Error MaxTenuringThresholdConstraintFuncParallel(uintx value, bool verbose) {
   // As only ParallelGC uses InitialTenuringThreshold,
   // we don't need to compare InitialTenuringThreshold with MaxTenuringThreshold.
   if (UseParallelGC && (value < InitialTenuringThreshold)) {
@@ -61,8 +61,8 @@ JVMFlag::Error MaxTenuringThresholdConstraintFuncParallel(uintx value, bool verb
                             "MaxTenuringThreshold (" UINTX_FORMAT ") must be "
                             "greater than or equal to InitialTenuringThreshold (" UINTX_FORMAT ")\n",
                             value, InitialTenuringThreshold);
-    return JVMFlag::VIOLATES_CONSTRAINT;
+    return Flag::VIOLATES_CONSTRAINT;
   }
 
-  return JVMFlag::SUCCESS;
+  return Flag::SUCCESS;
 }

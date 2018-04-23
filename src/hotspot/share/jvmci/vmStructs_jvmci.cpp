@@ -35,7 +35,6 @@
 #include "oops/oop.hpp"
 #include "oops/oopHandle.hpp"
 #include "oops/objArrayKlass.hpp"
-#include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.hpp"
@@ -147,16 +146,16 @@
   nonstatic_field(Deoptimization::UnrollBlock, _initial_info,                          intptr_t)                                     \
   nonstatic_field(Deoptimization::UnrollBlock, _unpack_kind,                           int)                                          \
                                                                                                                                      \
-  nonstatic_field(ExceptionTableElement,       start_pc,                                      u2)                                    \
-  nonstatic_field(ExceptionTableElement,       end_pc,                                        u2)                                    \
-  nonstatic_field(ExceptionTableElement,       handler_pc,                                    u2)                                    \
-  nonstatic_field(ExceptionTableElement,       catch_type_index,                              u2)                                    \
+  nonstatic_field(ExceptionTableElement,       start_pc,                                       u2)                                   \
+  nonstatic_field(ExceptionTableElement,       end_pc,                                         u2)                                   \
+  nonstatic_field(ExceptionTableElement,       handler_pc,                                     u2)                                   \
+  nonstatic_field(ExceptionTableElement,       catch_type_index,                               u2)                                   \
                                                                                                                                      \
-  nonstatic_field(JVMFlag,                     _type,                                         const char*)                           \
-  nonstatic_field(JVMFlag,                     _name,                                         const char*)                           \
-  unchecked_nonstatic_field(JVMFlag,           _addr,                                         sizeof(void*))                         \
-  nonstatic_field(JVMFlag,                     _flags,                                        JVMFlag::Flags)                        \
-  static_field(JVMFlag,                        flags,                                         JVMFlag*)                              \
+  nonstatic_field(Flag,                        _type,                                          const char*)                          \
+  nonstatic_field(Flag,                        _name,                                          const char*)                          \
+  unchecked_nonstatic_field(Flag,              _addr,                                          sizeof(void*))                        \
+  nonstatic_field(Flag,                        _flags,                                         Flag::Flags)                          \
+  static_field(Flag,                           flags,                                          Flag*)                                \
                                                                                                                                      \
   nonstatic_field(InstanceKlass,               _fields,                                       Array<u2>*)                            \
   nonstatic_field(InstanceKlass,               _constants,                                    ConstantPool*)                         \
@@ -346,8 +345,8 @@
   declare_toplevel_type(BasicLock)                                        \
   declare_toplevel_type(CompilerToVM)                                     \
   declare_toplevel_type(ExceptionTableElement)                            \
-  declare_toplevel_type(JVMFlag)                                          \
-  declare_toplevel_type(JVMFlag*)                                         \
+  declare_toplevel_type(Flag)                                             \
+  declare_toplevel_type(Flag*)                                            \
   declare_toplevel_type(InvocationCounter)                                \
   declare_toplevel_type(JVMCIEnv)                                         \
   declare_toplevel_type(LocalVariableTableElement)                        \
