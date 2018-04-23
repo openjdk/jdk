@@ -82,7 +82,6 @@ import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.comp.Resolve;
 import com.sun.tools.javac.parser.Parser;
 import com.sun.tools.javac.parser.ParserFactory;
-import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCTypeCast;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
@@ -91,6 +90,7 @@ import com.sun.tools.javac.util.Context.Factory;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Log.DiscardDiagnosticHandler;
 import com.sun.tools.javac.util.Names;
+import static jdk.internal.jshell.debug.InternalDebugControl.DBG_FMGR;
 import jdk.jshell.Snippet.Status;
 
 /**
@@ -202,6 +202,7 @@ class TaskFactory {
                             .map(in -> sh.sourceToFileObject(fileManager, in))
                             .collect(Collectors.toList());
             DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+            state.debug(DBG_FMGR, "Task (%s %s) Options: %s\n", this, compilationUnits, allOptions);
             return javacTaskPool.getTask(null, fileManager, diagnostics, allOptions, null,
                                          compilationUnits, task -> {
                  JavacTaskImpl jti = (JavacTaskImpl) task;
