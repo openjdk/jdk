@@ -86,11 +86,25 @@ public class SimpleScriptContext  implements ScriptContext {
      * Create a {@code SimpleScriptContext}.
      */
     public SimpleScriptContext() {
+        this(new InputStreamReader(System.in),
+             new PrintWriter(System.out , true),
+             new PrintWriter(System.err, true));
         engineScope = new SimpleBindings();
         globalScope = null;
-        reader = new InputStreamReader(System.in);
-        writer = new PrintWriter(System.out , true);
-        errorWriter = new PrintWriter(System.err, true);
+    }
+
+    /**
+     * Package-private constructor to avoid needless creation of reader and writers.
+     * It is the caller's responsability to initialize the engine scope.
+     *
+     * @param reader the reader
+     * @param writer the writer
+     * @param errorWriter the error writer
+     */
+    SimpleScriptContext(Reader reader, Writer writer, Writer errorWriter) {
+        this.reader = reader;
+        this.writer = writer;
+        this.errorWriter = errorWriter;
     }
 
     /**

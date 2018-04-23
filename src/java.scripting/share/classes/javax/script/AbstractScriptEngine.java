@@ -287,7 +287,7 @@ public abstract class AbstractScriptEngine  implements ScriptEngine {
      */
     protected ScriptContext getScriptContext(Bindings nn) {
 
-        SimpleScriptContext ctxt = new SimpleScriptContext();
+        SimpleScriptContext ctxt = new SimpleScriptContext(context.getReader(), context.getWriter(), context.getErrorWriter());
         Bindings gs = getBindings(ScriptContext.GLOBAL_SCOPE);
 
         if (gs != null) {
@@ -300,10 +300,6 @@ public abstract class AbstractScriptEngine  implements ScriptEngine {
         } else {
             throw new NullPointerException("Engine scope Bindings may not be null.");
         }
-
-        ctxt.setReader(context.getReader());
-        ctxt.setWriter(context.getWriter());
-        ctxt.setErrorWriter(context.getErrorWriter());
 
         return ctxt;
 
