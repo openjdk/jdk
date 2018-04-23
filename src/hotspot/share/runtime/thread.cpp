@@ -63,11 +63,12 @@
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/biasedLocking.hpp"
-#include "runtime/flags/jvmFlagConstraintList.hpp"
-#include "runtime/flags/jvmFlagRangeList.hpp"
-#include "runtime/flags/jvmFlagWriteableList.hpp"
+#include "runtime/commandLineFlagConstraintList.hpp"
+#include "runtime/commandLineFlagWriteableList.hpp"
+#include "runtime/commandLineFlagRangeList.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -3662,17 +3663,17 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (ergo_result != JNI_OK) return ergo_result;
 
   // Final check of all ranges after ergonomics which may change values.
-  if (!JVMFlagRangeList::check_ranges()) {
+  if (!CommandLineFlagRangeList::check_ranges()) {
     return JNI_EINVAL;
   }
 
   // Final check of all 'AfterErgo' constraints after ergonomics which may change values.
-  bool constraint_result = JVMFlagConstraintList::check_constraints(JVMFlagConstraint::AfterErgo);
+  bool constraint_result = CommandLineFlagConstraintList::check_constraints(CommandLineFlagConstraint::AfterErgo);
   if (!constraint_result) {
     return JNI_EINVAL;
   }
 
-  JVMFlagWriteableList::mark_startup();
+  CommandLineFlagWriteableList::mark_startup();
 
   if (PauseAtStartup) {
     os::pause();

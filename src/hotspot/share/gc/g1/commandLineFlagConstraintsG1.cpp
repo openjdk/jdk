@@ -24,12 +24,12 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/heapRegionBounds.inline.hpp"
-#include "runtime/flags/jvmFlagRangeList.hpp"
+#include "runtime/commandLineFlagRangeList.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-JVMFlag::Error G1RSetRegionEntriesConstraintFunc(intx value, bool verbose) {
-  if (!UseG1GC) return JVMFlag::SUCCESS;
+Flag::Error G1RSetRegionEntriesConstraintFunc(intx value, bool verbose) {
+  if (!UseG1GC) return Flag::SUCCESS;
 
   // Default value of G1RSetRegionEntries=0 means will be set ergonomically.
   // Minimum value is 1.
@@ -38,14 +38,14 @@ JVMFlag::Error G1RSetRegionEntriesConstraintFunc(intx value, bool verbose) {
                             "G1RSetRegionEntries (" INTX_FORMAT ") must be "
                             "greater than or equal to 1\n",
                             value);
-    return JVMFlag::VIOLATES_CONSTRAINT;
+    return Flag::VIOLATES_CONSTRAINT;
   } else {
-    return JVMFlag::SUCCESS;
+    return Flag::SUCCESS;
   }
 }
 
-JVMFlag::Error G1RSetSparseRegionEntriesConstraintFunc(intx value, bool verbose) {
-  if (!UseG1GC) return JVMFlag::SUCCESS;
+Flag::Error G1RSetSparseRegionEntriesConstraintFunc(intx value, bool verbose) {
+  if (!UseG1GC) return Flag::SUCCESS;
 
   // Default value of G1RSetSparseRegionEntries=0 means will be set ergonomically.
   // Minimum value is 1.
@@ -54,14 +54,14 @@ JVMFlag::Error G1RSetSparseRegionEntriesConstraintFunc(intx value, bool verbose)
                             "G1RSetSparseRegionEntries (" INTX_FORMAT ") must be "
                             "greater than or equal to 1\n",
                             value);
-    return JVMFlag::VIOLATES_CONSTRAINT;
+    return Flag::VIOLATES_CONSTRAINT;
   } else {
-    return JVMFlag::SUCCESS;
+    return Flag::SUCCESS;
   }
 }
 
-JVMFlag::Error G1HeapRegionSizeConstraintFunc(size_t value, bool verbose) {
-  if (!UseG1GC) return JVMFlag::SUCCESS;
+Flag::Error G1HeapRegionSizeConstraintFunc(size_t value, bool verbose) {
+  if (!UseG1GC) return Flag::SUCCESS;
 
   // Default value of G1HeapRegionSize=0 means will be set ergonomically.
   if (FLAG_IS_CMDLINE(G1HeapRegionSize) && (value < HeapRegionBounds::min_size())) {
@@ -69,53 +69,53 @@ JVMFlag::Error G1HeapRegionSizeConstraintFunc(size_t value, bool verbose) {
                             "G1HeapRegionSize (" SIZE_FORMAT ") must be "
                             "greater than or equal to ergonomic heap region minimum size\n",
                             value);
-    return JVMFlag::VIOLATES_CONSTRAINT;
+    return Flag::VIOLATES_CONSTRAINT;
   } else {
-    return JVMFlag::SUCCESS;
+    return Flag::SUCCESS;
   }
 }
 
-JVMFlag::Error G1NewSizePercentConstraintFunc(uintx value, bool verbose) {
-  if (!UseG1GC) return JVMFlag::SUCCESS;
+Flag::Error G1NewSizePercentConstraintFunc(uintx value, bool verbose) {
+  if (!UseG1GC) return Flag::SUCCESS;
 
   if (value > G1MaxNewSizePercent) {
     CommandLineError::print(verbose,
                             "G1NewSizePercent (" UINTX_FORMAT ") must be "
                             "less than or equal to G1MaxNewSizePercent (" UINTX_FORMAT ")\n",
                             value, G1MaxNewSizePercent);
-    return JVMFlag::VIOLATES_CONSTRAINT;
+    return Flag::VIOLATES_CONSTRAINT;
   } else {
-    return JVMFlag::SUCCESS;
+    return Flag::SUCCESS;
   }
 }
 
-JVMFlag::Error G1MaxNewSizePercentConstraintFunc(uintx value, bool verbose) {
-  if (!UseG1GC) return JVMFlag::SUCCESS;
+Flag::Error G1MaxNewSizePercentConstraintFunc(uintx value, bool verbose) {
+  if (!UseG1GC) return Flag::SUCCESS;
 
   if (value < G1NewSizePercent) {
     CommandLineError::print(verbose,
                             "G1MaxNewSizePercent (" UINTX_FORMAT ") must be "
                             "greater than or equal to G1NewSizePercent (" UINTX_FORMAT ")\n",
                             value, G1NewSizePercent);
-    return JVMFlag::VIOLATES_CONSTRAINT;
+    return Flag::VIOLATES_CONSTRAINT;
   } else {
-    return JVMFlag::SUCCESS;
+    return Flag::SUCCESS;
   }
 }
 
-JVMFlag::Error MaxGCPauseMillisConstraintFuncG1(uintx value, bool verbose) {
+Flag::Error MaxGCPauseMillisConstraintFuncG1(uintx value, bool verbose) {
   if (UseG1GC && FLAG_IS_CMDLINE(MaxGCPauseMillis) && (value >= GCPauseIntervalMillis)) {
     CommandLineError::print(verbose,
                             "MaxGCPauseMillis (" UINTX_FORMAT ") must be "
                             "less than GCPauseIntervalMillis (" UINTX_FORMAT ")\n",
                             value, GCPauseIntervalMillis);
-    return JVMFlag::VIOLATES_CONSTRAINT;
+    return Flag::VIOLATES_CONSTRAINT;
   }
 
-  return JVMFlag::SUCCESS;
+  return Flag::SUCCESS;
 }
 
-JVMFlag::Error GCPauseIntervalMillisConstraintFuncG1(uintx value, bool verbose) {
+Flag::Error GCPauseIntervalMillisConstraintFuncG1(uintx value, bool verbose) {
   if (UseG1GC) {
     if (FLAG_IS_CMDLINE(GCPauseIntervalMillis)) {
       if (value < 1) {
@@ -123,14 +123,14 @@ JVMFlag::Error GCPauseIntervalMillisConstraintFuncG1(uintx value, bool verbose) 
                                 "GCPauseIntervalMillis (" UINTX_FORMAT ") must be "
                                 "greater than or equal to 1\n",
                                 value);
-        return JVMFlag::VIOLATES_CONSTRAINT;
+        return Flag::VIOLATES_CONSTRAINT;
       }
 
       if (FLAG_IS_DEFAULT(MaxGCPauseMillis)) {
         CommandLineError::print(verbose,
                                 "GCPauseIntervalMillis cannot be set "
                                 "without setting MaxGCPauseMillis\n");
-        return JVMFlag::VIOLATES_CONSTRAINT;
+        return Flag::VIOLATES_CONSTRAINT;
       }
 
       if (value <= MaxGCPauseMillis) {
@@ -138,15 +138,15 @@ JVMFlag::Error GCPauseIntervalMillisConstraintFuncG1(uintx value, bool verbose) 
                                 "GCPauseIntervalMillis (" UINTX_FORMAT ") must be "
                                 "greater than MaxGCPauseMillis (" UINTX_FORMAT ")\n",
                                 value, MaxGCPauseMillis);
-        return JVMFlag::VIOLATES_CONSTRAINT;
+        return Flag::VIOLATES_CONSTRAINT;
       }
     }
   }
 
-  return JVMFlag::SUCCESS;
+  return Flag::SUCCESS;
 }
 
-JVMFlag::Error NewSizeConstraintFuncG1(size_t value, bool verbose) {
+Flag::Error NewSizeConstraintFuncG1(size_t value, bool verbose) {
 #ifdef _LP64
   // Overflow would happen for uint type variable of YoungGenSizer::_min_desired_young_length
   // when the value to be assigned exceeds uint range.
@@ -156,10 +156,10 @@ JVMFlag::Error NewSizeConstraintFuncG1(size_t value, bool verbose) {
     CommandLineError::print(verbose,
                             "NewSize (" SIZE_FORMAT ") must be less than ergonomic maximum value\n",
                             value);
-    return JVMFlag::VIOLATES_CONSTRAINT;
+    return Flag::VIOLATES_CONSTRAINT;
   }
 #endif // _LP64
-  return JVMFlag::SUCCESS;
+  return Flag::SUCCESS;
 }
 
 size_t MaxSizeForHeapAlignmentG1() {

@@ -27,11 +27,11 @@
 
 // globals_extension.hpp extension
 
-// Additional JVMFlags enum values
-#define JVMFLAGS_EXT
+// Additional CommandLineFlags enum values
+#define COMMANDLINEFLAG_EXT
 
-// Additional JVMFlagsWithType enum values
-#define JVMFLAGSWITHTYPE_EXT
+// Additional CommandLineFlagsWithType enum values
+#define COMMANDLINEFLAGWITHTYPE_EXT
 
 
 // globals.cpp extension
@@ -45,26 +45,26 @@
 
 // Default method implementations
 
-inline bool JVMFlag::is_unlocker_ext() const {
+inline bool Flag::is_unlocker_ext() const {
   return false;
 }
 
-inline bool JVMFlag::is_unlocked_ext() const {
+inline bool Flag::is_unlocked_ext() const {
   return true;
 }
 
-inline bool JVMFlag::is_writeable_ext() const {
+inline bool Flag::is_writeable_ext() const {
   return false;
 }
 
-inline bool JVMFlag::is_external_ext() const {
+inline bool Flag::is_external_ext() const {
   return false;
 }
 
-inline JVMFlag::MsgType JVMFlag::get_locked_message_ext(char* buf, int buflen) const {
+inline Flag::MsgType Flag::get_locked_message_ext(char* buf, int buflen) const {
   assert(buf != NULL, "Buffer cannot be NULL");
   buf[0] = '\0';
-  return JVMFlag::NONE;
+  return Flag::NONE;
 }
 
 #endif // SHARE_VM_RUNTIME_GLOBALS_EXT_HPP

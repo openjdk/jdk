@@ -29,20 +29,20 @@
 #include "utilities/globalDefinitions.hpp"
 
 // CMS Flag Constraints
-JVMFlag::Error ParGCStridesPerThreadConstraintFunc(uintx value, bool verbose);
-JVMFlag::Error ParGCCardsPerStrideChunkConstraintFunc(intx value, bool verbose);
-JVMFlag::Error CMSOldPLABMinConstraintFunc(size_t value, bool verbose);
-JVMFlag::Error CMSOldPLABMaxConstraintFunc(size_t value, bool verbose);
-JVMFlag::Error CMSRescanMultipleConstraintFunc(size_t value, bool verbose);
-JVMFlag::Error CMSConcMarkMultipleConstraintFunc(size_t value, bool verbose);
-JVMFlag::Error CMSPrecleanDenominatorConstraintFunc(uintx value, bool verbose);
-JVMFlag::Error CMSPrecleanNumeratorConstraintFunc(uintx value, bool verbose);
-JVMFlag::Error CMSSamplingGrainConstraintFunc(uintx value, bool verbose);
-JVMFlag::Error CMSWorkQueueDrainThresholdConstraintFunc(uintx value, bool verbose);
-JVMFlag::Error CMSBitMapYieldQuantumConstraintFunc(size_t value, bool verbose);
+Flag::Error ParGCStridesPerThreadConstraintFunc(uintx value, bool verbose);
+Flag::Error ParGCCardsPerStrideChunkConstraintFunc(intx value, bool verbose);
+Flag::Error CMSOldPLABMinConstraintFunc(size_t value, bool verbose);
+Flag::Error CMSOldPLABMaxConstraintFunc(size_t value, bool verbose);
+Flag::Error CMSRescanMultipleConstraintFunc(size_t value, bool verbose);
+Flag::Error CMSConcMarkMultipleConstraintFunc(size_t value, bool verbose);
+Flag::Error CMSPrecleanDenominatorConstraintFunc(uintx value, bool verbose);
+Flag::Error CMSPrecleanNumeratorConstraintFunc(uintx value, bool verbose);
+Flag::Error CMSSamplingGrainConstraintFunc(uintx value, bool verbose);
+Flag::Error CMSWorkQueueDrainThresholdConstraintFunc(uintx value, bool verbose);
+Flag::Error CMSBitMapYieldQuantumConstraintFunc(size_t value, bool verbose);
 
 // CMS Subconstraints
-JVMFlag::Error ParallelGCThreadsConstraintFuncCMS(uint value, bool verbose);
-JVMFlag::Error OldPLABSizeConstraintFuncCMS(size_t value, bool verbose);
+Flag::Error ParallelGCThreadsConstraintFuncCMS(uint value, bool verbose);
+Flag::Error OldPLABSizeConstraintFuncCMS(size_t value, bool verbose);
 
 #endif // SHARE_GC_CMS_COMMANDLINEFLAGCONSTRAINTSCMS_HPP

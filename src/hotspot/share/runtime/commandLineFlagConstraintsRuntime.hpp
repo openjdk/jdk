@@ -22,10 +22,11 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_JVMFLAGCONSTRAINTSRUNTIME_HPP
-#define SHARE_VM_RUNTIME_JVMFLAGCONSTRAINTSRUNTIME_HPP
+#ifndef SHARE_VM_RUNTIME_COMMANDLINEFLAGCONSTRAINTSRUNTIME_HPP
+#define SHARE_VM_RUNTIME_COMMANDLINEFLAGCONSTRAINTSRUNTIME_HPP
 
-#include "runtime/flags/jvmFlag.hpp"
+#include "runtime/globals.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 /*
  * Here we have runtime arguments constraints functions, which are called automatically
@@ -33,18 +34,18 @@
  * an appropriate error value.
  */
 
-JVMFlag::Error ObjectAlignmentInBytesConstraintFunc(intx value, bool verbose);
+Flag::Error ObjectAlignmentInBytesConstraintFunc(intx value, bool verbose);
 
-JVMFlag::Error ContendedPaddingWidthConstraintFunc(intx value, bool verbose);
+Flag::Error ContendedPaddingWidthConstraintFunc(intx value, bool verbose);
 
-JVMFlag::Error BiasedLockingBulkRebiasThresholdFunc(intx value, bool verbose);
-JVMFlag::Error BiasedLockingStartupDelayFunc(intx value, bool verbose);
-JVMFlag::Error BiasedLockingBulkRevokeThresholdFunc(intx value, bool verbose);
-JVMFlag::Error BiasedLockingDecayTimeFunc(intx value, bool verbose);
+Flag::Error BiasedLockingBulkRebiasThresholdFunc(intx value, bool verbose);
+Flag::Error BiasedLockingStartupDelayFunc(intx value, bool verbose);
+Flag::Error BiasedLockingBulkRevokeThresholdFunc(intx value, bool verbose);
+Flag::Error BiasedLockingDecayTimeFunc(intx value, bool verbose);
 
-JVMFlag::Error PerfDataSamplingIntervalFunc(intx value, bool verbose);
+Flag::Error PerfDataSamplingIntervalFunc(intx value, bool verbose);
 
-JVMFlag::Error ThreadLocalHandshakesConstraintFunc(bool value, bool verbose);
+Flag::Error ThreadLocalHandshakesConstraintFunc(bool value, bool verbose);
 
 
-#endif /* SHARE_VM_RUNTIME_JVMFLAGCONSTRAINTSRUNTIME_HPP */
+#endif /* SHARE_VM_RUNTIME_COMMANDLINEFLAGCONSTRAINTSRUNTIME_HPP */
