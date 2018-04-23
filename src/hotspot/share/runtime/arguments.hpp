@@ -28,6 +28,7 @@
 #include "logging/logLevel.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/flags/jvmFlag.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfData.hpp"
@@ -413,8 +414,8 @@ class Arguments : AllStatic {
 
   // Argument parsing
   static void do_pd_flag_adjustments();
-  static bool parse_argument(const char* arg, Flag::Flags origin);
-  static bool process_argument(const char* arg, jboolean ignore_unrecognized, Flag::Flags origin);
+  static bool parse_argument(const char* arg, JVMFlag::Flags origin);
+  static bool process_argument(const char* arg, jboolean ignore_unrecognized, JVMFlag::Flags origin);
   static void process_java_launcher_argument(const char*, void*);
   static void process_java_compiler_argument(const char* arg);
   static jint parse_options_environment_variable(const char* name, ScopedVMInitArgs* vm_args);
@@ -442,7 +443,7 @@ class Arguments : AllStatic {
   static jint parse_vm_init_args(const JavaVMInitArgs *java_tool_options_args,
                                  const JavaVMInitArgs *java_options_args,
                                  const JavaVMInitArgs *cmd_line_args);
-  static jint parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_mod_javabase, Flag::Flags origin);
+  static jint parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_mod_javabase, JVMFlag::Flags origin);
   static jint finalize_vm_init_args(bool patch_mod_javabase);
   static bool is_bad_option(const JavaVMOption* option, jboolean ignore, const char* option_type);
 

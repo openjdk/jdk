@@ -33,7 +33,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
-#include "runtime/globals.hpp"
+#include "runtime/flags/jvmFlag.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
@@ -231,9 +231,9 @@ PrintVMFlagsDCmd::PrintVMFlagsDCmd(outputStream* output, bool heap) :
 
 void PrintVMFlagsDCmd::execute(DCmdSource source, TRAPS) {
   if (_all.value()) {
-    CommandLineFlags::printFlags(output(), true);
+    JVMFlag::printFlags(output(), true);
   } else {
-    CommandLineFlags::printSetFlags(output());
+    JVMFlag::printSetFlags(output());
   }
 }
 
@@ -264,9 +264,9 @@ void SetVMFlagDCmd::execute(DCmdSource source, TRAPS) {
   }
 
   FormatBuffer<80> err_msg("%s", "");
-  int ret = WriteableFlags::set_flag(_flag.value(), val, Flag::MANAGEMENT, err_msg);
+  int ret = WriteableFlags::set_flag(_flag.value(), val, JVMFlag::MANAGEMENT, err_msg);
 
-  if (ret != Flag::SUCCESS) {
+  if (ret != JVMFlag::SUCCESS) {
     output()->print_cr("%s", err_msg.buffer());
   }
 }
