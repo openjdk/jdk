@@ -29,9 +29,8 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "oops/markOop.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/flags/jvmFlag.hpp"
-#include "runtime/flags/jvmFlagConstraintList.hpp"
-#include "runtime/flags/jvmFlagRangeList.hpp"
+#include "runtime/commandLineFlagConstraintList.hpp"
+#include "runtime/commandLineFlagRangeList.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
@@ -47,29 +46,29 @@ void CommandLineError::print(bool verbose, const char* msg, ...) {
   }
 }
 
-class JVMFlagRange_int : public JVMFlagRange {
+class CommandLineFlagRange_int : public CommandLineFlagRange {
   int _min;
   int _max;
   const int* _ptr;
 
 public:
   // the "name" argument must be a string literal
-  JVMFlagRange_int(const char* name, const int* ptr, int min, int max)
-    : JVMFlagRange(name), _min(min), _max(max), _ptr(ptr) {}
+  CommandLineFlagRange_int(const char* name, const int* ptr, int min, int max)
+    : CommandLineFlagRange(name), _min(min), _max(max), _ptr(ptr) {}
 
-  JVMFlag::Error check(bool verbose = true) {
+  Flag::Error check(bool verbose = true) {
     return check_int(*_ptr, verbose);
   }
 
-  JVMFlag::Error check_int(int value, bool verbose = true) {
+  Flag::Error check_int(int value, bool verbose = true) {
     if ((value < _min) || (value > _max)) {
       CommandLineError::print(verbose,
                               "int %s=%d is outside the allowed range "
                               "[ %d ... %d ]\n",
                               name(), value, _min, _max);
-      return JVMFlag::OUT_OF_BOUNDS;
+      return Flag::OUT_OF_BOUNDS;
     } else {
-      return JVMFlag::SUCCESS;
+      return Flag::SUCCESS;
     }
   }
 
@@ -78,28 +77,28 @@ public:
   }
 };
 
-class JVMFlagRange_intx : public JVMFlagRange {
+class CommandLineFlagRange_intx : public CommandLineFlagRange {
   intx _min;
   intx _max;
   const intx* _ptr;
 public:
   // the "name" argument must be a string literal
-  JVMFlagRange_intx(const char* name, const intx* ptr, intx min, intx max)
-    : JVMFlagRange(name), _min(min), _max(max), _ptr(ptr) {}
+  CommandLineFlagRange_intx(const char* name, const intx* ptr, intx min, intx max)
+    : CommandLineFlagRange(name), _min(min), _max(max), _ptr(ptr) {}
 
-  JVMFlag::Error check(bool verbose = true) {
+  Flag::Error check(bool verbose = true) {
     return check_intx(*_ptr, verbose);
   }
 
-  JVMFlag::Error check_intx(intx value, bool verbose = true) {
+  Flag::Error check_intx(intx value, bool verbose = true) {
     if ((value < _min) || (value > _max)) {
       CommandLineError::print(verbose,
                               "intx %s=" INTX_FORMAT " is outside the allowed range "
                               "[ " INTX_FORMAT " ... " INTX_FORMAT " ]\n",
                               name(), value, _min, _max);
-      return JVMFlag::OUT_OF_BOUNDS;
+      return Flag::OUT_OF_BOUNDS;
     } else {
-      return JVMFlag::SUCCESS;
+      return Flag::SUCCESS;
     }
   }
 
@@ -108,29 +107,29 @@ public:
   }
 };
 
-class JVMFlagRange_uint : public JVMFlagRange {
+class CommandLineFlagRange_uint : public CommandLineFlagRange {
   uint _min;
   uint _max;
   const uint* _ptr;
 
 public:
   // the "name" argument must be a string literal
-  JVMFlagRange_uint(const char* name, const uint* ptr, uint min, uint max)
-    : JVMFlagRange(name), _min(min), _max(max), _ptr(ptr) {}
+  CommandLineFlagRange_uint(const char* name, const uint* ptr, uint min, uint max)
+    : CommandLineFlagRange(name), _min(min), _max(max), _ptr(ptr) {}
 
-  JVMFlag::Error check(bool verbose = true) {
+  Flag::Error check(bool verbose = true) {
     return check_uint(*_ptr, verbose);
   }
 
-  JVMFlag::Error check_uint(uint value, bool verbose = true) {
+  Flag::Error check_uint(uint value, bool verbose = true) {
     if ((value < _min) || (value > _max)) {
       CommandLineError::print(verbose,
                               "uint %s=%u is outside the allowed range "
                               "[ %u ... %u ]\n",
                               name(), value, _min, _max);
-      return JVMFlag::OUT_OF_BOUNDS;
+      return Flag::OUT_OF_BOUNDS;
     } else {
-      return JVMFlag::SUCCESS;
+      return Flag::SUCCESS;
     }
   }
 
@@ -139,29 +138,29 @@ public:
   }
 };
 
-class JVMFlagRange_uintx : public JVMFlagRange {
+class CommandLineFlagRange_uintx : public CommandLineFlagRange {
   uintx _min;
   uintx _max;
   const uintx* _ptr;
 
 public:
   // the "name" argument must be a string literal
-  JVMFlagRange_uintx(const char* name, const uintx* ptr, uintx min, uintx max)
-    : JVMFlagRange(name), _min(min), _max(max), _ptr(ptr) {}
+  CommandLineFlagRange_uintx(const char* name, const uintx* ptr, uintx min, uintx max)
+    : CommandLineFlagRange(name), _min(min), _max(max), _ptr(ptr) {}
 
-  JVMFlag::Error check(bool verbose = true) {
+  Flag::Error check(bool verbose = true) {
     return check_uintx(*_ptr, verbose);
   }
 
-  JVMFlag::Error check_uintx(uintx value, bool verbose = true) {
+  Flag::Error check_uintx(uintx value, bool verbose = true) {
     if ((value < _min) || (value > _max)) {
       CommandLineError::print(verbose,
                               "uintx %s=" UINTX_FORMAT " is outside the allowed range "
                               "[ " UINTX_FORMAT " ... " UINTX_FORMAT " ]\n",
                               name(), value, _min, _max);
-      return JVMFlag::OUT_OF_BOUNDS;
+      return Flag::OUT_OF_BOUNDS;
     } else {
-      return JVMFlag::SUCCESS;
+      return Flag::SUCCESS;
     }
   }
 
@@ -170,29 +169,29 @@ public:
   }
 };
 
-class JVMFlagRange_uint64_t : public JVMFlagRange {
+class CommandLineFlagRange_uint64_t : public CommandLineFlagRange {
   uint64_t _min;
   uint64_t _max;
   const uint64_t* _ptr;
 
 public:
   // the "name" argument must be a string literal
-  JVMFlagRange_uint64_t(const char* name, const uint64_t* ptr, uint64_t min, uint64_t max)
-    : JVMFlagRange(name), _min(min), _max(max), _ptr(ptr) {}
+  CommandLineFlagRange_uint64_t(const char* name, const uint64_t* ptr, uint64_t min, uint64_t max)
+    : CommandLineFlagRange(name), _min(min), _max(max), _ptr(ptr) {}
 
-  JVMFlag::Error check(bool verbose = true) {
+  Flag::Error check(bool verbose = true) {
     return check_uint64_t(*_ptr, verbose);
   }
 
-  JVMFlag::Error check_uint64_t(uint64_t value, bool verbose = true) {
+  Flag::Error check_uint64_t(uint64_t value, bool verbose = true) {
     if ((value < _min) || (value > _max)) {
       CommandLineError::print(verbose,
                               "uint64_t %s=" UINT64_FORMAT " is outside the allowed range "
                               "[ " UINT64_FORMAT " ... " UINT64_FORMAT " ]\n",
                               name(), value, _min, _max);
-      return JVMFlag::OUT_OF_BOUNDS;
+      return Flag::OUT_OF_BOUNDS;
     } else {
-      return JVMFlag::SUCCESS;
+      return Flag::SUCCESS;
     }
   }
 
@@ -201,29 +200,29 @@ public:
   }
 };
 
-class JVMFlagRange_size_t : public JVMFlagRange {
+class CommandLineFlagRange_size_t : public CommandLineFlagRange {
   size_t _min;
   size_t _max;
   const size_t* _ptr;
 
 public:
   // the "name" argument must be a string literal
-  JVMFlagRange_size_t(const char* name, const size_t* ptr, size_t min, size_t max)
-    : JVMFlagRange(name), _min(min), _max(max), _ptr(ptr) {}
+  CommandLineFlagRange_size_t(const char* name, const size_t* ptr, size_t min, size_t max)
+    : CommandLineFlagRange(name), _min(min), _max(max), _ptr(ptr) {}
 
-  JVMFlag::Error check(bool verbose = true) {
+  Flag::Error check(bool verbose = true) {
     return check_size_t(*_ptr, verbose);
   }
 
-  JVMFlag::Error check_size_t(size_t value, bool verbose = true) {
+  Flag::Error check_size_t(size_t value, bool verbose = true) {
     if ((value < _min) || (value > _max)) {
       CommandLineError::print(verbose,
                               "size_t %s=" SIZE_FORMAT " is outside the allowed range "
                               "[ " SIZE_FORMAT " ... " SIZE_FORMAT " ]\n",
                               name(), value, _min, _max);
-      return JVMFlag::OUT_OF_BOUNDS;
+      return Flag::OUT_OF_BOUNDS;
     } else {
-      return JVMFlag::SUCCESS;
+      return Flag::SUCCESS;
     }
   }
 
@@ -232,29 +231,29 @@ public:
   }
 };
 
-class JVMFlagRange_double : public JVMFlagRange {
+class CommandLineFlagRange_double : public CommandLineFlagRange {
   double _min;
   double _max;
   const double* _ptr;
 
 public:
   // the "name" argument must be a string literal
-  JVMFlagRange_double(const char* name, const double* ptr, double min, double max)
-    : JVMFlagRange(name), _min(min), _max(max), _ptr(ptr) {}
+  CommandLineFlagRange_double(const char* name, const double* ptr, double min, double max)
+    : CommandLineFlagRange(name), _min(min), _max(max), _ptr(ptr) {}
 
-  JVMFlag::Error check(bool verbose = true) {
+  Flag::Error check(bool verbose = true) {
     return check_double(*_ptr, verbose);
   }
 
-  JVMFlag::Error check_double(double value, bool verbose = true) {
+  Flag::Error check_double(double value, bool verbose = true) {
     if ((value < _min) || (value > _max)) {
       CommandLineError::print(verbose,
                               "double %s=%f is outside the allowed range "
                               "[ %f ... %f ]\n",
                               name(), value, _min, _max);
-      return JVMFlag::OUT_OF_BOUNDS;
+      return Flag::OUT_OF_BOUNDS;
     } else {
-      return JVMFlag::SUCCESS;
+      return Flag::SUCCESS;
     }
   }
 
@@ -278,27 +277,27 @@ void emit_range_uint64_t(const char* /*name*/, const uint64_t* /*value*/)    { /
 void emit_range_size_t(const char* /*name*/, const size_t* /*value*/)        { /* NOP */ }
 void emit_range_double(const char* /*name*/, const double* /*value*/)        { /* NOP */ }
 
-// JVMFlagRange emitting code functions if range arguments are provided
+// CommandLineFlagRange emitting code functions if range arguments are provided
 void emit_range_int(const char* name, const int* ptr, int min, int max)       {
-  JVMFlagRangeList::add(new JVMFlagRange_int(name, ptr, min, max));
+  CommandLineFlagRangeList::add(new CommandLineFlagRange_int(name, ptr, min, max));
 }
 void emit_range_intx(const char* name, const intx* ptr, intx min, intx max) {
-  JVMFlagRangeList::add(new JVMFlagRange_intx(name, ptr, min, max));
+  CommandLineFlagRangeList::add(new CommandLineFlagRange_intx(name, ptr, min, max));
 }
 void emit_range_uint(const char* name, const uint* ptr, uint min, uint max) {
-  JVMFlagRangeList::add(new JVMFlagRange_uint(name, ptr, min, max));
+  CommandLineFlagRangeList::add(new CommandLineFlagRange_uint(name, ptr, min, max));
 }
 void emit_range_uintx(const char* name, const uintx* ptr, uintx min, uintx max) {
-  JVMFlagRangeList::add(new JVMFlagRange_uintx(name, ptr, min, max));
+  CommandLineFlagRangeList::add(new CommandLineFlagRange_uintx(name, ptr, min, max));
 }
 void emit_range_uint64_t(const char* name, const uint64_t* ptr, uint64_t min, uint64_t max) {
-  JVMFlagRangeList::add(new JVMFlagRange_uint64_t(name, ptr, min, max));
+  CommandLineFlagRangeList::add(new CommandLineFlagRange_uint64_t(name, ptr, min, max));
 }
 void emit_range_size_t(const char* name, const size_t* ptr, size_t min, size_t max) {
-  JVMFlagRangeList::add(new JVMFlagRange_size_t(name, ptr, min, max));
+  CommandLineFlagRangeList::add(new CommandLineFlagRange_size_t(name, ptr, min, max));
 }
 void emit_range_double(const char* name, const double* ptr, double min, double max) {
-  JVMFlagRangeList::add(new JVMFlagRange_double(name, ptr, min, max));
+  CommandLineFlagRangeList::add(new CommandLineFlagRange_double(name, ptr, min, max));
 }
 
 // Generate code to call emit_range_xxx function
@@ -329,12 +328,12 @@ void emit_range_double(const char* name, const double* ptr, double min, double m
 #define EMIT_RANGE_CHECK(a, b)                               , a, b
 
 #define INITIAL_RANGES_SIZE 379
-GrowableArray<JVMFlagRange*>* JVMFlagRangeList::_ranges = NULL;
+GrowableArray<CommandLineFlagRange*>* CommandLineFlagRangeList::_ranges = NULL;
 
 // Check the ranges of all flags that have them
-void JVMFlagRangeList::init(void) {
+void CommandLineFlagRangeList::init(void) {
 
-  _ranges = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<JVMFlagRange*>(INITIAL_RANGES_SIZE, true);
+  _ranges = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<CommandLineFlagRange*>(INITIAL_RANGES_SIZE, true);
 
   emit_range_no(NULL VM_FLAGS(EMIT_RANGE_DEVELOPER_FLAG,
                               EMIT_RANGE_PD_DEVELOPER_FLAG,
@@ -404,10 +403,10 @@ void JVMFlagRangeList::init(void) {
 #endif // COMPILER2
 }
 
-JVMFlagRange* JVMFlagRangeList::find(const char* name) {
-  JVMFlagRange* found = NULL;
+CommandLineFlagRange* CommandLineFlagRangeList::find(const char* name) {
+  CommandLineFlagRange* found = NULL;
   for (int i=0; i<length(); i++) {
-    JVMFlagRange* range = at(i);
+    CommandLineFlagRange* range = at(i);
     if (strcmp(range->name(), name) == 0) {
       found = range;
       break;
@@ -416,12 +415,12 @@ JVMFlagRange* JVMFlagRangeList::find(const char* name) {
   return found;
 }
 
-void JVMFlagRangeList::print(outputStream* st, const char* name, RangeStrFunc default_range_str_func) {
-  JVMFlagRange* range = JVMFlagRangeList::find(name);
+void CommandLineFlagRangeList::print(outputStream* st, const char* name, RangeStrFunc default_range_str_func) {
+  CommandLineFlagRange* range = CommandLineFlagRangeList::find(name);
   if (range != NULL) {
     range->print(st);
   } else {
-    JVMFlagConstraint* constraint = JVMFlagConstraintList::find(name);
+    CommandLineFlagConstraint* constraint = CommandLineFlagConstraintList::find(name);
     if (constraint != NULL) {
       assert(default_range_str_func!=NULL, "default_range_str_func must be provided");
       st->print("%s", default_range_str_func());
@@ -431,12 +430,12 @@ void JVMFlagRangeList::print(outputStream* st, const char* name, RangeStrFunc de
   }
 }
 
-bool JVMFlagRangeList::check_ranges() {
+bool CommandLineFlagRangeList::check_ranges() {
   // Check ranges.
   bool status = true;
   for (int i=0; i<length(); i++) {
-    JVMFlagRange* range = at(i);
-    if (range->check(true) != JVMFlag::SUCCESS) status = false;
+    CommandLineFlagRange* range = at(i);
+    if (range->check(true) != Flag::SUCCESS) status = false;
   }
   return status;
 }

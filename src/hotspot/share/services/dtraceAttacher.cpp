@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #include "code/codeCache.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/deoptimization.hpp"
-#include "runtime/flags/jvmFlag.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
 #include "services/dtraceAttacher.hpp"
@@ -51,8 +50,8 @@ class VM_DeoptimizeTheWorld : public VM_Operation {
 };
 
 static void set_bool_flag(const char* flag, bool value) {
-  JVMFlag::boolAtPut((char*)flag, strlen(flag), &value,
-                              JVMFlag::ATTACH_ON_DEMAND);
+  CommandLineFlags::boolAtPut((char*)flag, strlen(flag), &value,
+                              Flag::ATTACH_ON_DEMAND);
 }
 
 // Enable only the "fine grained" flags. Do *not* touch

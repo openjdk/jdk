@@ -27,6 +27,7 @@
 
 #include "runtime/globals.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/macros.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci_globals.hpp"
 #endif
@@ -163,9 +164,9 @@ typedef enum {
             IGNORE_RANGE, \
             IGNORE_CONSTRAINT, \
             IGNORE_WRITEABLE)
- JVMFLAGS_EXT
- NUM_JVMFlags
-} JVMFlags;
+ COMMANDLINEFLAG_EXT
+ NUM_CommandLineFlag
+} CommandLineFlag;
 
 // Construct enum of Flag_<cmdline-arg>_<type> constants.
 
@@ -292,19 +293,19 @@ typedef enum {
           IGNORE_RANGE,
           IGNORE_CONSTRAINT,
           IGNORE_WRITEABLE)
-  JVMFLAGSWITHTYPE_EXT
-  NUM_JVMFlagsWithType
-} JVMFlagsWithType;
+ COMMANDLINEFLAGWITHTYPE_EXT
+ NUM_CommandLineFlagWithType
+} CommandLineFlagWithType;
 
-#define FLAG_IS_DEFAULT(name)         (JVMFlagEx::is_default(FLAG_MEMBER(name)))
-#define FLAG_IS_ERGO(name)            (JVMFlagEx::is_ergo(FLAG_MEMBER(name)))
-#define FLAG_IS_CMDLINE(name)         (JVMFlagEx::is_cmdline(FLAG_MEMBER(name)))
+#define FLAG_IS_DEFAULT(name)         (CommandLineFlagsEx::is_default(FLAG_MEMBER(name)))
+#define FLAG_IS_ERGO(name)            (CommandLineFlagsEx::is_ergo(FLAG_MEMBER(name)))
+#define FLAG_IS_CMDLINE(name)         (CommandLineFlagsEx::is_cmdline(FLAG_MEMBER(name)))
 
 #define FLAG_SET_DEFAULT(name, value) ((name) = (value))
 
-#define FLAG_SET_CMDLINE(type, name, value) (JVMFlagEx::setOnCmdLine(FLAG_MEMBER_WITH_TYPE(name, type)), \
-                                             JVMFlagEx::type##AtPut(FLAG_MEMBER_WITH_TYPE(name, type), (type)(value), JVMFlag::COMMAND_LINE))
-#define FLAG_SET_ERGO(type, name, value)    (JVMFlagEx::type##AtPut(FLAG_MEMBER_WITH_TYPE(name, type), (type)(value), JVMFlag::ERGONOMIC))
+#define FLAG_SET_CMDLINE(type, name, value) (CommandLineFlagsEx::setOnCmdLine(FLAG_MEMBER_WITH_TYPE(name, type)), \
+                                             CommandLineFlagsEx::type##AtPut(FLAG_MEMBER_WITH_TYPE(name, type), (type)(value), Flag::COMMAND_LINE))
+#define FLAG_SET_ERGO(type, name, value)    (CommandLineFlagsEx::type##AtPut(FLAG_MEMBER_WITH_TYPE(name, type), (type)(value), Flag::ERGONOMIC))
 #define FLAG_SET_ERGO_IF_DEFAULT(type, name, value) \
   do {                                              \
     if (FLAG_IS_DEFAULT(name)) {                    \
@@ -312,26 +313,26 @@ typedef enum {
     }                                               \
   } while (0)
 
-// Can't put the following in JVMFlags because
+// Can't put the following in CommandLineFlags because
 // of a circular dependency on the enum definition.
-class JVMFlagEx : JVMFlag {
+class CommandLineFlagsEx : CommandLineFlags {
  public:
-  static JVMFlag::Error boolAtPut(JVMFlagsWithType flag, bool value, JVMFlag::Flags origin);
-  static JVMFlag::Error intAtPut(JVMFlagsWithType flag, int value, JVMFlag::Flags origin);
-  static JVMFlag::Error uintAtPut(JVMFlagsWithType flag, uint value, JVMFlag::Flags origin);
-  static JVMFlag::Error intxAtPut(JVMFlagsWithType flag, intx value, JVMFlag::Flags origin);
-  static JVMFlag::Error uintxAtPut(JVMFlagsWithType flag, uintx value, JVMFlag::Flags origin);
-  static JVMFlag::Error uint64_tAtPut(JVMFlagsWithType flag, uint64_t value, JVMFlag::Flags origin);
-  static JVMFlag::Error size_tAtPut(JVMFlagsWithType flag, size_t value, JVMFlag::Flags origin);
-  static JVMFlag::Error doubleAtPut(JVMFlagsWithType flag, double value, JVMFlag::Flags origin);
+  static Flag::Error boolAtPut(CommandLineFlagWithType flag, bool value, Flag::Flags origin);
+  static Flag::Error intAtPut(CommandLineFlagWithType flag, int value, Flag::Flags origin);
+  static Flag::Error uintAtPut(CommandLineFlagWithType flag, uint value, Flag::Flags origin);
+  static Flag::Error intxAtPut(CommandLineFlagWithType flag, intx value, Flag::Flags origin);
+  static Flag::Error uintxAtPut(CommandLineFlagWithType flag, uintx value, Flag::Flags origin);
+  static Flag::Error uint64_tAtPut(CommandLineFlagWithType flag, uint64_t value, Flag::Flags origin);
+  static Flag::Error size_tAtPut(CommandLineFlagWithType flag, size_t value, Flag::Flags origin);
+  static Flag::Error doubleAtPut(CommandLineFlagWithType flag, double value, Flag::Flags origin);
   // Contract:  Flag will make private copy of the incoming value
-  static JVMFlag::Error ccstrAtPut(JVMFlagsWithType flag, ccstr value, JVMFlag::Flags origin);
+  static Flag::Error ccstrAtPut(CommandLineFlagWithType flag, ccstr value, Flag::Flags origin);
 
-  static bool is_default(JVMFlags flag);
-  static bool is_ergo(JVMFlags flag);
-  static bool is_cmdline(JVMFlags flag);
+  static bool is_default(CommandLineFlag flag);
+  static bool is_ergo(CommandLineFlag flag);
+  static bool is_cmdline(CommandLineFlag flag);
 
-  static void setOnCmdLine(JVMFlagsWithType flag);
+  static void setOnCmdLine(CommandLineFlagWithType flag);
 };
 
 #endif // SHARE_VM_RUNTIME_GLOBALS_EXTENSION_HPP
