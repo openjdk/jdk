@@ -2969,7 +2969,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     }
 
     private boolean doesNotHaveCheckArrayKeys(final long longIndex, final int value, final int callSiteFlags) {
-        if (getMap().containsArrayKeys()) {
+        if (hasDefinedArrayProperties()) {
             final String       key  = JSType.toString(longIndex);
             final FindProperty find = findProperty(key, true);
             if (find != null) {
@@ -2981,7 +2981,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     }
 
     private boolean doesNotHaveCheckArrayKeys(final long longIndex, final double value, final int callSiteFlags) {
-         if (getMap().containsArrayKeys()) {
+         if (hasDefinedArrayProperties()) {
             final String       key  = JSType.toString(longIndex);
             final FindProperty find = findProperty(key, true);
             if (find != null) {
@@ -2993,11 +2993,20 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     }
 
     private boolean doesNotHaveCheckArrayKeys(final long longIndex, final Object value, final int callSiteFlags) {
-        if (getMap().containsArrayKeys()) {
+        if (hasDefinedArrayProperties()) {
             final String       key  = JSType.toString(longIndex);
             final FindProperty find = findProperty(key, true);
             if (find != null) {
                 setObject(find, callSiteFlags, key, value);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasDefinedArrayProperties() {
+        for (ScriptObject obj = this; obj != null; obj = obj.getProto()) {
+            if (obj.getMap().containsArrayKeys()) {
                 return true;
             }
         }
