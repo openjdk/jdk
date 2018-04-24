@@ -46,6 +46,10 @@ public class PrintNMTStatistics {
     OutputAnalyzer output_detail = new OutputAnalyzer(pb.start());
     output_detail.shouldContain("Virtual memory map:");
     output_detail.shouldContain("Details:");
+
+    // PrintNMTStatistics also prints out metaspace statistics as a convenience.
+    output_detail.shouldContain("Metaspace:");
+
     output_detail.shouldHaveExitValue(0);
 
     // Make sure memory reserved for Module processing is recorded.

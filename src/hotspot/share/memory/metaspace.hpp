@@ -68,6 +68,11 @@ class SpaceManager;
 class VirtualSpaceList;
 class CollectedHeap;
 
+namespace metaspace {
+namespace internals {
+  class ClassLoaderMetaspaceStatistics;
+}}
+
 // Metaspaces each have a  SpaceManager and allocations
 // are done by the SpaceManager.  Allocations are done
 // out of the current Metachunk.  When the current Metachunk
@@ -94,10 +99,12 @@ class Metaspace : public AllStatic {
     MetadataTypeCount
   };
   enum MetaspaceType {
-    StandardMetaspaceType,
-    BootMetaspaceType,
-    AnonymousMetaspaceType,
-    ReflectionMetaspaceType
+    ZeroMetaspaceType = 0,
+    StandardMetaspaceType = ZeroMetaspaceType,
+    BootMetaspaceType = StandardMetaspaceType + 1,
+    AnonymousMetaspaceType = BootMetaspaceType + 1,
+    ReflectionMetaspaceType = AnonymousMetaspaceType + 1,
+    MetaspaceTypeCount
   };
 
  private:
@@ -193,7 +200,6 @@ class Metaspace : public AllStatic {
 
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
                             MetaspaceObj::Type type, TRAPS);
-  void deallocate(MetaWord* ptr, size_t byte_size, bool is_class);
 
   static bool contains(const void* ptr);
   static bool contains_non_shared(const void* ptr);
@@ -238,96 +244,97 @@ class ClassLoaderMetaspace : public CHeapObj<mtClass> {
   void initialize_first_chunk(Metaspace::MetaspaceType type, Metaspace::MetadataType mdtype);
   Metachunk* get_initialization_chunk(Metaspace::MetaspaceType type, Metaspace::MetadataType mdtype);
 
+  const Metaspace::MetaspaceType _space_type;
+  Mutex* const  _lock;
   SpaceManager* _vsm;
-  SpaceManager* vsm() const { return _vsm; }
-
   SpaceManager* _class_vsm;
+
+  SpaceManager* vsm() const { return _vsm; }
   SpaceManager* class_vsm() const { return _class_vsm; }
   SpaceManager* get_space_manager(Metaspace::MetadataType mdtype) {
     assert(mdtype != Metaspace::MetadataTypeCount, "MetadaTypeCount can't be used as mdtype");
     return mdtype == Metaspace::ClassType ? class_vsm() : vsm();
   }
 
+  Mutex* lock() const { return _lock; }
+
   MetaWord* expand_and_allocate(size_t size, Metaspace::MetadataType mdtype);
 
   size_t class_chunk_size(size_t word_size);
+
+  // Adds to the given statistic object. Must be locked with CLD metaspace lock.
+  void add_to_statistics_locked(metaspace::internals::ClassLoaderMetaspaceStatistics* out) const;
 
  public:
 
   ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType type);
   ~ClassLoaderMetaspace();
 
+  Metaspace::MetaspaceType space_type() const { return _space_type; }
+
   // Allocate space for metadata of type mdtype. This is space
   // within a Metachunk and is used by
   //   allocate(ClassLoaderData*, size_t, bool, MetadataType, TRAPS)
   MetaWord* allocate(size_t word_size, Metaspace::MetadataType mdtype);
-
-  size_t used_words_slow(Metaspace::MetadataType mdtype) const;
-  size_t free_words_slow(Metaspace::MetadataType mdtype) const;
-  size_t capacity_words_slow(Metaspace::MetadataType mdtype) const;
-
-  size_t used_bytes_slow(Metaspace::MetadataType mdtype) const;
-  size_t capacity_bytes_slow(Metaspace::MetadataType mdtype) const;
 
   size_t allocated_blocks_bytes() const;
   size_t allocated_chunks_bytes() const;
 
   void deallocate(MetaWord* ptr, size_t byte_size, bool is_class);
 
-  void dump(outputStream* const out) const;
-
   void print_on(outputStream* st) const;
   // Debugging support
   void verify();
 
+  // Adds to the given statistic object. Will lock with CLD metaspace lock.
+  void add_to_statistics(metaspace::internals::ClassLoaderMetaspaceStatistics* out) const;
+
 }; // ClassLoaderMetaspace
 
-
 class MetaspaceUtils : AllStatic {
+
+  // Spacemanager updates running counters.
+  friend class SpaceManager;
+
+  // Running counters for statistics concerning in-use chunks.
+  // Note: capacity = used + free + waste + overhead. Note that we do not
+  // count free and waste. Their sum can be deduces from the three other values.
+  // For more details, one should call print_report() from within a safe point.
+  static size_t _capacity_words [Metaspace:: MetadataTypeCount];
+  static size_t _overhead_words [Metaspace:: MetadataTypeCount];
+  static volatile size_t _used_words [Metaspace:: MetadataTypeCount];
+
+  // Atomically decrement or increment in-use statistic counters
+  static void dec_capacity(Metaspace::MetadataType mdtype, size_t words);
+  static void inc_capacity(Metaspace::MetadataType mdtype, size_t words);
+  static void dec_used(Metaspace::MetadataType mdtype, size_t words);
+  static void inc_used(Metaspace::MetadataType mdtype, size_t words);
+  static void dec_overhead(Metaspace::MetadataType mdtype, size_t words);
+  static void inc_overhead(Metaspace::MetadataType mdtype, size_t words);
+
+
+  // Getters for the in-use counters.
+  static size_t capacity_words(Metaspace::MetadataType mdtype)        { return _capacity_words[mdtype]; }
+  static size_t used_words(Metaspace::MetadataType mdtype)            { return _used_words[mdtype]; }
+  static size_t overhead_words(Metaspace::MetadataType mdtype)        { return _overhead_words[mdtype]; }
+
   static size_t free_chunks_total_words(Metaspace::MetadataType mdtype);
 
-  // These methods iterate over the classloader data graph
-  // for the given Metaspace type.  These are slow.
-  static size_t used_bytes_slow(Metaspace::MetadataType mdtype);
-  static size_t free_bytes_slow(Metaspace::MetadataType mdtype);
-  static size_t capacity_bytes_slow(Metaspace::MetadataType mdtype);
-  static size_t capacity_bytes_slow();
+  // Helper for print_xx_report.
+  static void print_vs(outputStream* out, size_t scale);
 
-  // Running sum of space in all Metachunks that has been
-  // allocated to a Metaspace.  This is used instead of
-  // iterating over all the classloaders. One for each
-  // type of Metadata
-  static size_t _capacity_words[Metaspace:: MetadataTypeCount];
-  // Running sum of space in all Metachunks that
-  // are being used for metadata. One for each
-  // type of Metadata.
-  static volatile size_t _used_words[Metaspace:: MetadataTypeCount];
+public:
 
- public:
-  // Decrement and increment _allocated_capacity_words
-  static void dec_capacity(Metaspace::MetadataType type, size_t words);
-  static void inc_capacity(Metaspace::MetadataType type, size_t words);
-
-  // Decrement and increment _allocated_used_words
-  static void dec_used(Metaspace::MetadataType type, size_t words);
-  static void inc_used(Metaspace::MetadataType type, size_t words);
-
-  // Total of space allocated to metadata in all Metaspaces.
-  // This sums the space used in each Metachunk by
-  // iterating over the classloader data graph
-  static size_t used_bytes_slow() {
-    return used_bytes_slow(Metaspace::ClassType) +
-           used_bytes_slow(Metaspace::NonClassType);
-  }
+  // Collect used metaspace statistics. This involves walking the CLDG. The resulting
+  // output will be the accumulated values for all live metaspaces.
+  // Note: method does not do any locking.
+  static void collect_statistics(metaspace::internals::ClassLoaderMetaspaceStatistics* out);
 
   // Used by MetaspaceCounters
   static size_t free_chunks_total_words();
   static size_t free_chunks_total_bytes();
   static size_t free_chunks_total_bytes(Metaspace::MetadataType mdtype);
 
-  static size_t capacity_words(Metaspace::MetadataType mdtype) {
-    return _capacity_words[mdtype];
-  }
   static size_t capacity_words() {
     return capacity_words(Metaspace::NonClassType) +
            capacity_words(Metaspace::ClassType);
@@ -339,9 +346,6 @@ class MetaspaceUtils : AllStatic {
     return capacity_words() * BytesPerWord;
   }
 
-  static size_t used_words(Metaspace::MetadataType mdtype) {
-    return _used_words[mdtype];
-  }
   static size_t used_words() {
     return used_words(Metaspace::NonClassType) +
            used_words(Metaspace::ClassType);
@@ -353,8 +357,9 @@ class MetaspaceUtils : AllStatic {
     return used_words() * BytesPerWord;
   }
 
-  static size_t free_bytes();
-  static size_t free_bytes(Metaspace::MetadataType mdtype);
+  // Space committed but yet unclaimed by any class loader.
+  static size_t free_in_vs_bytes();
+  static size_t free_in_vs_bytes(Metaspace::MetadataType mdtype);
 
   static size_t reserved_bytes(Metaspace::MetadataType mdtype);
   static size_t reserved_bytes() {
@@ -373,7 +378,29 @@ class MetaspaceUtils : AllStatic {
     return min_chunk_size_words() * BytesPerWord;
   }
 
-  static void print_metadata_for_nmt(outputStream* out, size_t scale = K);
+  // Flags for print_report().
+  enum ReportFlag {
+    // Show usage by class loader.
+    rf_show_loaders                 = (1 << 0),
+    // Breaks report down by chunk type (small, medium, ...).
+    rf_break_down_by_chunktype      = (1 << 1),
+    // Breaks report down by space type (anonymous, reflection, ...).
+    rf_break_down_by_spacetype      = (1 << 2),
+    // Print details about the underlying virtual spaces.
+    rf_show_vslist                  = (1 << 3),
+    // Print metaspace map.
+    rf_show_vsmap                   = (1 << 4)
+  };
+
+  // This will print out a basic metaspace usage report but
+  // unlike print_report() is guaranteed not to lock or to walk the CLDG.
+  static void print_basic_report(outputStream* st, size_t scale);
+
+  // Prints a report about the current metaspace state.
+  // Optional parts can be enabled via flags.
+  // Function will walk the CLDG and will lock the expand lock; if that is not
+  // convenient, use print_basic_report() instead.
+  static void print_report(outputStream* out, size_t scale = 0, int flags = 0);
 
   static bool has_chunk_free_list(Metaspace::MetadataType mdtype);
   static MetaspaceChunkFreeListSummary chunk_free_list_summary(Metaspace::MetadataType mdtype);
@@ -381,20 +408,13 @@ class MetaspaceUtils : AllStatic {
   // Print change in used metadata.
   static void print_metaspace_change(size_t prev_metadata_used);
   static void print_on(outputStream * out);
-  static void print_on(outputStream * out, Metaspace::MetadataType mdtype);
-
-  static void print_class_waste(outputStream* out);
-  static void print_waste(outputStream* out);
 
   // Prints an ASCII representation of the given space.
   static void print_metaspace_map(outputStream* out, Metaspace::MetadataType mdtype);
 
   static void dump(outputStream* out);
   static void verify_free_chunks();
-  // Checks that the values returned by allocated_capacity_bytes() and
-  // capacity_bytes_slow() are the same.
-  static void verify_capacity();
-  static void verify_used();
+  // Check internal counters (capacity, used).
   static void verify_metrics();
 };
 

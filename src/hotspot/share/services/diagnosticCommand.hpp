@@ -866,25 +866,4 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-class MetaspaceDCmd : public DCmd {
-public:
-  MetaspaceDCmd(outputStream* output, bool heap);
-  static const char* name() {
-    return "VM.metaspace";
-  }
-  static const char* description() {
-    return "Prints the statistics for the metaspace";
-  }
-  static const char* impact() {
-      return "Medium: Depends on number of classes loaded.";
-  }
-  static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
-    return p;
-  }
-  static int num_arguments() { return 0; }
-  virtual void execute(DCmdSource source, TRAPS);
-};
-
 #endif // SHARE_VM_SERVICES_DIAGNOSTICCOMMAND_HPP

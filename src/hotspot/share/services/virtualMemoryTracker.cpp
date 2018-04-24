@@ -617,7 +617,7 @@ void MetaspaceSnapshot::snapshot(Metaspace::MetadataType type, MetaspaceSnapshot
 
   size_t free_in_bytes = (MetaspaceUtils::capacity_bytes(type) - MetaspaceUtils::used_bytes(type))
                        + MetaspaceUtils::free_chunks_total_bytes(type)
-                       + MetaspaceUtils::free_bytes(type);
+                       + MetaspaceUtils::free_in_vs_bytes(type);
   mss._free_in_bytes[type] = free_in_bytes;
 }
 
