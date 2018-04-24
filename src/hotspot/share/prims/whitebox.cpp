@@ -1359,7 +1359,9 @@ CodeBlob* WhiteBox::allocate_code_blob(int size, int blob_type) {
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = (BufferBlob*) CodeCache::allocate(full_size, blob_type);
-    ::new (blob) BufferBlob("WB::DummyBlob", full_size);
+    if (blob != NULL) {
+      ::new (blob) BufferBlob("WB::DummyBlob", full_size);
+    }
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
