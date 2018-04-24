@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.GraphUtils.DottableNode;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Type.*;
@@ -115,7 +116,6 @@ public class Infer {
         types = Types.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         log = Log.instance(context);
-        inferenceException = new InferenceException(diags);
         Options options = Options.instance(context);
         Source source = Source.instance(context);
         allowGraphInference = Feature.GRAPH_INFERENCE.allowedInSource(source)
@@ -144,27 +144,32 @@ public class Infer {
 
         @Override
         InapplicableMethodException setMessage() {
-            //no message to set
-            return this;
+            throw new AssertionError("InferenceException is immutable");
         }
 
         @Override
         InapplicableMethodException setMessage(JCDiagnostic diag) {
-            messages = messages.append(diag);
-            return this;
+            throw new AssertionError("InferenceException is immutable");
+        }
+
+        @Override
+        InapplicableMethodException setMessage(String key, Object... args) {
+            throw new AssertionError("InferenceException is immutable");
         }
 
         @Override
         public JCDiagnostic getDiagnostic() {
             return messages.head;
         }
-
-        void clear() {
-            messages = List.nil();
-        }
     }
 
-    protected final InferenceException inferenceException;
+    InferenceException error(JCDiagnostic diag) {
+        InferenceException result = new InferenceException(diags);
+        if (diag != null) {
+            result.messages = result.messages.append(diag);
+        }
+        return result;
+    }
 
     // <editor-fold defaultstate="collapsed" desc="Inference routines">
     /**
@@ -183,7 +188,6 @@ public class Infer {
                             Warner warn) throws InferenceException {
         //-System.err.println("instantiateMethod(" + tvars + ", " + mt + ", " + argtypes + ")"); //DEBUG
         final InferenceContext inferenceContext = new InferenceContext(this, tvars);  //B0
-        inferenceException.clear();
         try {
             DeferredAttr.DeferredAttrContext deferredAttrContext =
                         resolveContext.deferredAttrContext(msym, inferenceContext, resultInfo, warn);
@@ -315,7 +319,6 @@ public class Infer {
          */
         Type check(Attr.ResultInfo resultInfo) {
             Warner noWarnings = new Warner(null);
-            inferenceException.clear();
             List<Type> saved_undet = null;
             try {
                 /** we need to save the inference context before generating target type constraints.
@@ -430,9 +433,7 @@ public class Infer {
         if (!resultInfo.checkContext.compatible(qtype, rsInfoInfContext.asUndetVar(to), retWarn) ||
                 //unchecked conversion is not allowed in source 7 mode
                 (!allowGraphInference && retWarn.hasLint(Lint.LintCategory.UNCHECKED))) {
-            throw inferenceException
-                    .setMessage("infer.no.conforming.instance.exists",
-                    inferenceContext.restvars(), mt.getReturnType(), to);
+            throw error(diags.fragment(Fragments.InferNoConformingInstanceExists(inferenceContext.restvars(), mt.getReturnType(), to)));
         }
         return from;
     }
@@ -1269,41 +1270,49 @@ public class Infer {
      * Incorporation error: mismatch between inferred type and given bound.
      */
     void reportInstError(UndetVar uv, InferenceBound ib) {
-        reportInferenceError(
-                String.format("inferred.do.not.conform.to.%s.bounds", StringUtils.toLowerCase(ib.name())),
-                uv.getInst(),
-                uv.getBounds(ib));
+        switch (ib) {
+            case EQ:
+                throw error(diags.fragment(Fragments.InferredDoNotConformToEqBounds(uv.getInst(), uv.getBounds(ib))));
+            case LOWER:
+                throw error(diags.fragment(Fragments.InferredDoNotConformToLowerBounds(uv.getInst(), uv.getBounds(ib))));
+            case UPPER:
+                throw error(diags.fragment(Fragments.InferredDoNotConformToUpperBounds(uv.getInst(), uv.getBounds(ib))));
+        }
     }
 
     /**
      * Incorporation error: mismatch between two (or more) bounds of same kind.
      */
     void reportBoundError(UndetVar uv, InferenceBound ib) {
-        reportInferenceError(
-                String.format("incompatible.%s.bounds", StringUtils.toLowerCase(ib.name())),
-                uv.qtype,
-                uv.getBounds(ib));
+        switch (ib) {
+            case EQ:
+                throw error(diags.fragment(Fragments.IncompatibleEqBounds(uv.qtype, uv.getBounds(ib))));
+            case UPPER:
+                throw error(diags.fragment(Fragments.IncompatibleUpperBounds(uv.qtype, uv.getBounds(ib))));
+            case LOWER:
+                throw new AssertionError("this case shouldn't happen");
+        }
     }
 
     /**
      * Incorporation error: mismatch between two (or more) bounds of different kinds.
      */
     void reportBoundError(UndetVar uv, InferenceBound ib1, InferenceBound ib2) {
-        reportInferenceError(
-                String.format("incompatible.%s.%s.bounds",
-                        StringUtils.toLowerCase(ib1.name()),
-                        StringUtils.toLowerCase(ib2.name())),
+        throw error(diags.fragment(Fragments.IncompatibleBounds(
                 uv.qtype,
-                uv.getBounds(ib1),
-                uv.getBounds(ib2));
+                getBoundFragment(ib1, uv.getBounds(ib1)),
+                getBoundFragment(ib2, uv.getBounds(ib2)))));
     }
 
-    /**
-     * Helper method: reports an inference error.
-     */
-    void reportInferenceError(String key, Object... args) {
-        throw inferenceException.setMessage(key, args);
+    Fragment getBoundFragment(InferenceBound ib, List<Type> types) {
+        switch (ib) {
+            case EQ: return Fragments.EqBounds(types);
+            case LOWER: return Fragments.LowerBounds(types);
+            case UPPER: return Fragments.UpperBounds(types);
+        }
+        throw new AssertionError("can't get to this place");
     }
+
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="Inference engine">
@@ -1456,9 +1465,7 @@ public class Infer {
                 //note: lobounds should have at least one element
                 Type owntype = lobounds.tail.tail == null  ? lobounds.head : infer.types.lub(lobounds);
                 if (owntype.isPrimitive() || owntype.hasTag(ERROR)) {
-                    throw infer.inferenceException
-                        .setMessage("no.unique.minimal.instance.exists",
-                                    uv.qtype, lobounds);
+                    throw infer.error(infer.diags.fragment(Fragments.NoUniqueMinimalInstanceExists(uv.qtype, lobounds)));
                 } else {
                     return owntype;
                 }
@@ -1499,9 +1506,7 @@ public class Infer {
                 //note: hibounds should have at least one element
                 Type owntype = hibounds.tail.tail == null  ? hibounds.head : infer.types.glb(hibounds);
                 if (owntype.isPrimitive() || owntype.hasTag(ERROR)) {
-                    throw infer.inferenceException
-                        .setMessage("no.unique.maximal.instance.exists",
-                                    uv.qtype, hibounds);
+                    throw infer.error(infer.diags.fragment(Fragments.NoUniqueMaximalInstanceExists(uv.qtype, hibounds)));
                 } else {
                     return owntype;
                 }
@@ -1677,7 +1682,7 @@ public class Infer {
                             }
                         }
                         //no progress
-                        throw inferenceException.setMessage();
+                        throw error(null);
                     }
                 }
                 catch (InferenceException ex) {

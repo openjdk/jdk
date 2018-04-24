@@ -73,7 +73,6 @@ compiler.misc.kindname.static
 compiler.misc.kindname.type.variable
 compiler.misc.kindname.type.variable.bound
 compiler.misc.kindname.value
-compiler.misc.incompatible.eq.lower.bounds              # cannot happen?
 compiler.misc.module.name.mismatch
 compiler.misc.module.non.zero.opens                     # bad class file
 compiler.misc.no.unique.minimal.instance.exists
@@ -151,6 +150,7 @@ compiler.misc.locn.module_path                                # fragment uninter
 compiler.misc.locn.module_source_path                         # fragment uninteresting in and of itself
 compiler.misc.locn.system_modules                             # fragment uninteresting in and of itself
 compiler.misc.locn.upgrade_module_path                        # fragment uninteresting in and of itself
+compiler.misc.inferred.do.not.conform.to.eq.bounds            # hard to generate, could probably be removed
 
 # The following are new module-related messages, that need new  examples to be created
 compiler.err.duplicate.module.on.path
