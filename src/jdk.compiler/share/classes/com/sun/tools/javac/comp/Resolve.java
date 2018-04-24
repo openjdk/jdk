@@ -143,9 +143,6 @@ public class Resolve {
         checkVarargsAccessAfterResolution =
                 Feature.POST_APPLICABILITY_VARARGS_ACCESS_CHECK.allowedInSource(source);
         polymorphicSignatureScope = WriteableScope.create(syms.noSymbol);
-
-        inapplicableMethodException = new InapplicableMethodException(diags);
-
         allowModules = Feature.MODULES.allowedInSource(source);
     }
 
@@ -575,7 +572,7 @@ public class Resolve {
             ForAll pmt = (ForAll) mt;
             if (typeargtypes.length() != pmt.tvars.length())
                  // not enough args
-                throw inapplicableMethodException.setMessage("wrong.number.type.args", Integer.toString(pmt.tvars.length()));
+                throw new InapplicableMethodException(diags.fragment(Fragments.WrongNumberTypeArgs(Integer.toString(pmt.tvars.length()))));
             // Check type arguments are within bounds
             List<Type> formals = pmt.tvars;
             List<Type> actuals = typeargtypes;
@@ -583,8 +580,9 @@ public class Resolve {
                 List<Type> bounds = types.subst(types.getBounds((TypeVar)formals.head),
                                                 pmt.tvars, typeargtypes);
                 for (; bounds.nonEmpty(); bounds = bounds.tail) {
-                    if (!types.isSubtypeUnchecked(actuals.head, bounds.head, warn))
-                        throw inapplicableMethodException.setMessage("explicit.param.do.not.conform.to.bounds",actuals.head, bounds);
+                    if (!types.isSubtypeUnchecked(actuals.head, bounds.head, warn)) {
+                        throw new InapplicableMethodException(diags.fragment(Fragments.ExplicitParamDoNotConformToBounds(actuals.head, bounds)));
+                    }
                 }
                 formals = formals.tail;
                 actuals = actuals.tail;
@@ -820,8 +818,7 @@ public class Resolve {
             String key = inferDiag ? diag.inferKey : diag.basicKey;
             throw inferDiag ?
                 infer.error(diags.create(DiagnosticType.FRAGMENT, log.currentSource(), pos, key, args)) :
-                inapplicableMethodException
-                        .setMessage(diags.create(DiagnosticType.FRAGMENT, log.currentSource(), pos, key, args));
+                new InapplicableMethodException(diags.create(DiagnosticType.FRAGMENT, log.currentSource(), pos, key, args));
         }
 
         public MethodCheck mostSpecificCheck(List<Type> actuals) {
@@ -1007,7 +1004,7 @@ public class Resolve {
         }
 
         public void report(DiagnosticPosition pos, JCDiagnostic details) {
-            throw inapplicableMethodException.setMessage(details);
+            throw new InapplicableMethodException(details);
         }
 
         public Warner checkWarner(DiagnosticPosition pos, Type found, Type req) {
@@ -1368,31 +1365,15 @@ public class Resolve {
         private static final long serialVersionUID = 0;
 
         JCDiagnostic diagnostic;
-        JCDiagnostic.Factory diags;
 
-        InapplicableMethodException(JCDiagnostic.Factory diags) {
-            this.diagnostic = null;
-            this.diags = diags;
-        }
-        InapplicableMethodException setMessage() {
-            return setMessage((JCDiagnostic)null);
-        }
-        InapplicableMethodException setMessage(String key) {
-            return setMessage(key != null ? diags.fragment(key) : null);
-        }
-        InapplicableMethodException setMessage(String key, Object... args) {
-            return setMessage(key != null ? diags.fragment(key, args) : null);
-        }
-        InapplicableMethodException setMessage(JCDiagnostic diag) {
+        InapplicableMethodException(JCDiagnostic diag) {
             this.diagnostic = diag;
-            return this;
         }
 
         public JCDiagnostic getDiagnostic() {
             return diagnostic;
         }
     }
-    private final InapplicableMethodException inapplicableMethodException;
 
 /* ***************************************************************************
  *  Symbol lookup

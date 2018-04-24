@@ -138,23 +138,8 @@ public class Infer {
 
         List<JCDiagnostic> messages = List.nil();
 
-        InferenceException(JCDiagnostic.Factory diags) {
-            super(diags);
-        }
-
-        @Override
-        InapplicableMethodException setMessage() {
-            throw new AssertionError("InferenceException is immutable");
-        }
-
-        @Override
-        InapplicableMethodException setMessage(JCDiagnostic diag) {
-            throw new AssertionError("InferenceException is immutable");
-        }
-
-        @Override
-        InapplicableMethodException setMessage(String key, Object... args) {
-            throw new AssertionError("InferenceException is immutable");
+        InferenceException() {
+            super(null);
         }
 
         @Override
@@ -164,7 +149,7 @@ public class Infer {
     }
 
     InferenceException error(JCDiagnostic diag) {
-        InferenceException result = new InferenceException(diags);
+        InferenceException result = new InferenceException();
         if (diag != null) {
             result.messages = result.messages.append(diag);
         }
