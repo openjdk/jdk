@@ -2997,6 +2997,8 @@ public:
   diagnostic(bool, ShowRegistersOnAssert, false,                            \
           "On internal errors, include registers in error report.")         \
                                                                             \
+  experimental(bool, UseSwitchProfiling, true,                              \
+          "leverage profiling for table/lookup switch")                     \
 
 #define VM_FLAGS(develop,                                                   \
                  develop_pd,                                                \

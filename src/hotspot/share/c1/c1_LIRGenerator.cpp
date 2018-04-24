@@ -2552,6 +2552,36 @@ void LIRGenerator::do_TableSwitch(TableSwitch* x) {
   int hi_key = x->hi_key();
   int len = x->length();
   LIR_Opr value = tag.result();
+
+  if (compilation()->env()->comp_level() == CompLevel_full_profile && UseSwitchProfiling) {
+    ciMethod* method = x->state()->scope()->method();
+    ciMethodData* md = method->method_data_or_null();
+    ciProfileData* data = md->bci_to_data(x->state()->bci());
+    assert(data->is_MultiBranchData(), "bad profile data?");
+    int default_count_offset = md->byte_offset_of_slot(data, MultiBranchData::default_count_offset());
+    LIR_Opr md_reg = new_register(T_METADATA);
+    __ metadata2reg(md->constant_encoding(), md_reg);
+    LIR_Opr data_offset_reg = new_pointer_register();
+    LIR_Opr tmp_reg = new_pointer_register();
+
+    __ move(LIR_OprFact::intptrConst(default_count_offset), data_offset_reg);
+    for (int i = 0; i < len; i++) {
+      int count_offset = md->byte_offset_of_slot(data, MultiBranchData::case_count_offset(i));
+      __ cmp(lir_cond_equal, value, i + lo_key);
+      __ move(data_offset_reg, tmp_reg);
+      __ cmove(lir_cond_equal,
+               LIR_OprFact::intptrConst(count_offset),
+               tmp_reg,
+               data_offset_reg, T_INT);
+    }
+
+    LIR_Opr data_reg = new_pointer_register();
+    LIR_Address* data_addr = new LIR_Address(md_reg, data_offset_reg, data_reg->type());
+    __ move(data_addr, data_reg);
+    __ add(data_reg, LIR_OprFact::intptrConst(1), data_reg);
+    __ move(data_reg, data_addr);
+  }
+
   if (UseTableRanges) {
     do_SwitchRanges(create_lookup_ranges(x), value, x->default_sux());
   } else {
@@ -2577,6 +2607,37 @@ void LIRGenerator::do_LookupSwitch(LookupSwitch* x) {
   move_to_phi(x->state());
 
   LIR_Opr value = tag.result();
+  int len = x->length();
+
+  if (compilation()->env()->comp_level() == CompLevel_full_profile && UseSwitchProfiling) {
+    ciMethod* method = x->state()->scope()->method();
+    ciMethodData* md = method->method_data_or_null();
+    ciProfileData* data = md->bci_to_data(x->state()->bci());
+    assert(data->is_MultiBranchData(), "bad profile data?");
+    int default_count_offset = md->byte_offset_of_slot(data, MultiBranchData::default_count_offset());
+    LIR_Opr md_reg = new_register(T_METADATA);
+    __ metadata2reg(md->constant_encoding(), md_reg);
+    LIR_Opr data_offset_reg = new_pointer_register();
+    LIR_Opr tmp_reg = new_pointer_register();
+
+    __ move(LIR_OprFact::intptrConst(default_count_offset), data_offset_reg);
+    for (int i = 0; i < len; i++) {
+      int count_offset = md->byte_offset_of_slot(data, MultiBranchData::case_count_offset(i));
+      __ cmp(lir_cond_equal, value, x->key_at(i));
+      __ move(data_offset_reg, tmp_reg);
+      __ cmove(lir_cond_equal,
+               LIR_OprFact::intptrConst(count_offset),
+               tmp_reg,
+               data_offset_reg, T_INT);
+    }
+
+    LIR_Opr data_reg = new_pointer_register();
+    LIR_Address* data_addr = new LIR_Address(md_reg, data_offset_reg, data_reg->type());
+    __ move(data_addr, data_reg);
+    __ add(data_reg, LIR_OprFact::intptrConst(1), data_reg);
+    __ move(data_reg, data_addr);
+  }
+
   if (UseTableRanges) {
     do_SwitchRanges(create_lookup_ranges(x), value, x->default_sux());
   } else {
