@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import java.util.List;
 
 import java.lang.reflect.UndeclaredThrowableException;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -160,6 +161,16 @@ public class ManagementFactoryHelper {
 
     public static boolean isPlatformLoggingMXBeanAvailable() {
         return LoggingMXBeanAccess.isAvailable();
+    }
+
+    /**
+     * Returns an array of the name of all memory pools.  The order of the memory pools is
+     * significant and maintained in the VM.
+     */
+    public static String[] getAllMemoryPoolNames() {
+        return Arrays.stream(MemoryImpl.getMemoryPools())
+                .map(MemoryPoolMXBean::getName)
+                .toArray(String[]::new);
     }
 
     // The LoggingMXBeanAccess class uses reflection to determine

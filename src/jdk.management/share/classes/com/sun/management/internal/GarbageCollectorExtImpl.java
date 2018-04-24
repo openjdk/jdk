@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package com.sun.management.internal;
 import com.sun.management.GarbageCollectionNotificationInfo;
 import com.sun.management.GarbageCollectorMXBean;
 import com.sun.management.GcInfo;
-import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryPoolMXBean;
 import java.util.List;
 import javax.management.ListenerNotFoundException;
@@ -38,6 +37,7 @@ import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
 import javax.management.openmbean.CompositeData;
 import sun.management.GarbageCollectorImpl;
+import sun.management.ManagementFactoryHelper;
 
 /**
  * Implementation class for the garbage collector.
@@ -59,12 +59,8 @@ public class GarbageCollectorExtImpl extends GarbageCollectorImpl
     private String[] poolNames = null;
     private synchronized String[] getAllPoolNames() {
         if (poolNames == null) {
-            List<MemoryPoolMXBean> pools = ManagementFactory.getMemoryPoolMXBeans();
-            poolNames = new String[pools.size()];
-            int i = 0;
-            for (MemoryPoolMXBean m : pools) {
-                poolNames[i++] = m.getName();
-            }
+            // The order of all memory pool names is important as GcInfo is also created with same order.
+            poolNames = ManagementFactoryHelper.getAllMemoryPoolNames();
         }
         return poolNames;
     }
