@@ -1943,9 +1943,14 @@ bool SuperWord::profitable(Node_List* p) {
         for (uint k = 0; k < use->req(); k++) {
           Node* n = use->in(k);
           if (def == n) {
-            // reductions can be loop carried dependences
-            if (def->is_reduction() && use->is_Phi())
+            // reductions should only have a Phi use at the the loop
+            // head and out of loop uses
+            if (def->is_reduction() &&
+                ((use->is_Phi() && use->in(0) == _lpt->_head) ||
+                 !_lpt->is_member(_phase->get_loop(_phase->ctrl_or_self(use))))) {
+              assert(i == p->size()-1, "must be last element of the pack");
               continue;
+            }
             if (!is_vector_use(use, k)) {
               return false;
             }
