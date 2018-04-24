@@ -29,7 +29,7 @@ import static org.graalvm.compiler.lir.sparc.SPARCDelayedControlTransfer.DUMMY;
 
 import java.util.Arrays;
 
-import org.graalvm.collections.EconomicSet;
+import jdk.internal.vm.compiler.collections.EconomicSet;
 import org.graalvm.compiler.asm.sparc.SPARCAddress;
 import org.graalvm.compiler.asm.sparc.SPARCMacroAssembler;
 import org.graalvm.compiler.lir.LIRInstructionClass;

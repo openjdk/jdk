@@ -27,6 +27,7 @@ import static org.graalvm.compiler.core.common.GraalOptions.LimitInlinedInvokes;
 import static org.graalvm.compiler.core.common.GraalOptions.MaximumDesiredSize;
 import static org.graalvm.compiler.core.common.GraalOptions.MaximumInliningSize;
 import static org.graalvm.compiler.core.common.GraalOptions.SmallCompiledLowLevelGraphSize;
+import static org.graalvm.compiler.core.common.GraalOptions.TraceInlining;
 import static org.graalvm.compiler.core.common.GraalOptions.TrivialInliningSize;
 
 import java.util.Map;
@@ -61,8 +62,8 @@ public class GreedyInliningPolicy extends AbstractInliningPolicy {
     }
 
     @Override
-    public boolean isWorthInlining(Replacements replacements, MethodInvocation invocation, int inliningDepth, boolean fullyProcessed) {
-
+    public Decision isWorthInlining(Replacements replacements, MethodInvocation invocation, int inliningDepth, boolean fullyProcessed) {
+        final boolean isTracing = TraceInlining.getValue(replacements.getOptions());
         final InlineInfo info = invocation.callee();
         OptionValues options = info.graph().getOptions();
         final double probability = invocation.probability();
@@ -70,17 +71,17 @@ public class GreedyInliningPolicy extends AbstractInliningPolicy {
 
         if (InlineEverything.getValue(options)) {
             InliningUtil.traceInlinedMethod(info, inliningDepth, fullyProcessed, "inline everything");
-            return true;
+            return InliningPolicy.Decision.YES.withReason(isTracing, "inline everything");
         }
 
         if (isIntrinsic(replacements, info)) {
             InliningUtil.traceInlinedMethod(info, inliningDepth, fullyProcessed, "intrinsic");
-            return true;
+            return InliningPolicy.Decision.YES.withReason(isTracing, "intrinsic");
         }
 
         if (info.shouldInline()) {
             InliningUtil.traceInlinedMethod(info, inliningDepth, fullyProcessed, "forced inlining");
-            return true;
+            return InliningPolicy.Decision.YES.withReason(isTracing, "forced inlining");
         }
 
         double inliningBonus = getInliningBonus(info);
@@ -90,12 +91,13 @@ public class GreedyInliningPolicy extends AbstractInliningPolicy {
         if (SmallCompiledLowLevelGraphSize.getValue(options) > 0 && lowLevelGraphSize > SmallCompiledLowLevelGraphSize.getValue(options) * inliningBonus) {
             InliningUtil.traceNotInlinedMethod(info, inliningDepth, "too large previous low-level graph (low-level-nodes: %d, relevance=%f, probability=%f, bonus=%f, nodes=%d)", lowLevelGraphSize,
                             relevance, probability, inliningBonus, nodes);
-            return false;
+            return InliningPolicy.Decision.NO.withReason(isTracing, "too large previous low-level graph (low-level-nodes: %d, relevance=%f, probability=%f, bonus=%f, nodes=%d)", lowLevelGraphSize,
+                            relevance, probability, inliningBonus, nodes);
         }
 
         if (nodes < TrivialInliningSize.getValue(options) * inliningBonus) {
             InliningUtil.traceInlinedMethod(info, inliningDepth, fullyProcessed, "trivial (relevance=%f, probability=%f, bonus=%f, nodes=%d)", relevance, probability, inliningBonus, nodes);
-            return true;
+            return InliningPolicy.Decision.YES.withReason(isTracing, "trivial (relevance=%f, probability=%f, bonus=%f, nodes=%d)", relevance, probability, inliningBonus, nodes);
         }
 
         /*
@@ -108,17 +110,19 @@ public class GreedyInliningPolicy extends AbstractInliningPolicy {
         if (LimitInlinedInvokes.getValue(options) > 0 && fullyProcessed && invokes > LimitInlinedInvokes.getValue(options) * inliningBonus) {
             InliningUtil.traceNotInlinedMethod(info, inliningDepth, "callee invoke probability is too high (invokeP=%f, relevance=%f, probability=%f, bonus=%f, nodes=%d)", invokes, relevance,
                             probability, inliningBonus, nodes);
-            return false;
+            return InliningPolicy.Decision.NO.withReason(isTracing, "callee invoke probability is too high (invokeP=%f, relevance=%f, probability=%f, bonus=%f, nodes=%d)", invokes, relevance,
+                            probability, inliningBonus, nodes);
         }
 
         double maximumNodes = computeMaximumSize(relevance, (int) (MaximumInliningSize.getValue(options) * inliningBonus));
         if (nodes <= maximumNodes) {
             InliningUtil.traceInlinedMethod(info, inliningDepth, fullyProcessed, "relevance-based (relevance=%f, probability=%f, bonus=%f, nodes=%d <= %f)", relevance, probability, inliningBonus,
                             nodes, maximumNodes);
-            return true;
+            return InliningPolicy.Decision.YES.withReason(isTracing, "relevance-based (relevance=%f, probability=%f, bonus=%f, nodes=%d <= %f)", relevance, probability, inliningBonus,
+                            nodes, maximumNodes);
         }
 
         InliningUtil.traceNotInlinedMethod(info, inliningDepth, "relevance-based (relevance=%f, probability=%f, bonus=%f, nodes=%d > %f)", relevance, probability, inliningBonus, nodes, maximumNodes);
-        return false;
+        return InliningPolicy.Decision.NO.withReason(isTracing, "relevance-based (relevance=%f, probability=%f, bonus=%f, nodes=%d > %f)", relevance, probability, inliningBonus, nodes, maximumNodes);
     }
 }

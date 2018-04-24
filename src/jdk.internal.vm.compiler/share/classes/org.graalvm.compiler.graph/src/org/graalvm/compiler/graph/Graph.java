@@ -22,6 +22,7 @@
  */
 package org.graalvm.compiler.graph;
 
+import static org.graalvm.compiler.core.common.GraalOptions.TrackNodeInsertion;
 import static org.graalvm.compiler.graph.Graph.SourcePositionTracking.Default;
 import static org.graalvm.compiler.graph.Graph.SourcePositionTracking.Track;
 import static org.graalvm.compiler.graph.Graph.SourcePositionTracking.UpdateOnly;
@@ -33,21 +34,24 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.function.Consumer;
 
-import org.graalvm.collections.EconomicMap;
-import org.graalvm.collections.Equivalence;
-import org.graalvm.collections.UnmodifiableEconomicMap;
+import jdk.internal.vm.compiler.collections.EconomicMap;
+import jdk.internal.vm.compiler.collections.Equivalence;
+import jdk.internal.vm.compiler.collections.UnmodifiableEconomicMap;
 import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.debug.CounterKey;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.TimerKey;
+import org.graalvm.compiler.graph.Node.NodeInsertionStackTrace;
 import org.graalvm.compiler.graph.Node.ValueNumberable;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionValues;
+
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /**
  * This class is a graph container, it contains the set of nodes that belong to this graph.
@@ -195,7 +199,7 @@ public class Graph {
      *         was opened
      */
     public DebugCloseable withNodeSourcePosition(Node node) {
-        return withNodeSourcePosition(node.sourcePosition);
+        return withNodeSourcePosition(node.getNodeSourcePosition());
     }
 
     /**
@@ -719,6 +723,9 @@ public class Graph {
         assert node.getNodeClass().valueNumberable();
         T other = this.findDuplicate(node);
         if (other != null) {
+            if (other.getNodeSourcePosition() == null) {
+                other.setNodeSourcePosition(node.getNodeSourcePosition());
+            }
             return other;
         } else {
             T result = addHelper(node);
@@ -1097,6 +1104,9 @@ public class Graph {
         if (currentNodeSourcePosition != null && trackNodeSourcePosition()) {
             node.setNodeSourcePosition(currentNodeSourcePosition);
         }
+        if (TrackNodeInsertion.getValue(getOptions())) {
+            node.setInsertionPosition(new NodeInsertionStackTrace());
+        }
 
         updateNodeCaches(node);
 
@@ -1183,6 +1193,23 @@ public class Graph {
                     }
                 } catch (GraalError e) {
                     throw GraalGraphError.transformAndAddContext(e, node).addContext(this);
+                }
+            }
+        }
+        return true;
+    }
+
+    public boolean verifySourcePositions() {
+        if (trackNodeSourcePosition()) {
+            ResolvedJavaMethod root = null;
+            for (Node node : getNodes()) {
+                NodeSourcePosition pos = node.getNodeSourcePosition();
+                if (pos != null) {
+                    if (root == null) {
+                        root = pos.getRootMethod();
+                    } else {
+                        assert pos.verifyRootMethod(root) : node;
+                    }
                 }
             }
         }

@@ -29,7 +29,7 @@ import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationFailureA
 import static org.graalvm.compiler.core.test.ReflectionOptionDescriptors.extractEntries;
 import static org.graalvm.compiler.debug.MemUseTrackerKey.getCurrentThreadAllocatedBytes;
 import static org.graalvm.compiler.hotspot.test.CompileTheWorld.Options.DESCRIPTORS;
-import static org.graalvm.compiler.serviceprovider.JDK9Method.Java8OrEarlier;
+import static org.graalvm.compiler.serviceprovider.GraalServices.Java8OrEarlier;
 
 import java.io.Closeable;
 import java.io.File;
@@ -66,10 +66,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.graalvm.collections.EconomicMap;
-import org.graalvm.collections.UnmodifiableEconomicMap;
+import jdk.internal.vm.compiler.collections.EconomicMap;
+import jdk.internal.vm.compiler.collections.UnmodifiableEconomicMap;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.bytecode.Bytecodes;
 import org.graalvm.compiler.core.CompilerThreadFactory;
@@ -86,7 +88,7 @@ import org.graalvm.compiler.options.OptionDescriptors;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.options.OptionsParser;
-import org.graalvm.compiler.serviceprovider.JDK9Method;
+import org.graalvm.compiler.serviceprovider.GraalServices;
 
 import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
 import jdk.vm.ci.hotspot.HotSpotCompilationRequest;
@@ -107,8 +109,8 @@ public final class CompileTheWorld {
 
     /**
      * Magic token to denote that JDK classes are to be compiled. If
-     * {@link JDK9Method#Java8OrEarlier}, then the classes in {@code rt.jar} are compiled. Otherwise
-     * the classes in the Java runtime image are compiled.
+     * {@link GraalServices#Java8OrEarlier}, then the classes in {@code rt.jar} are compiled.
+     * Otherwise the classes in the Java runtime image are compiled.
      */
     public static final String SUN_BOOT_CLASS_PATH = "sun.boot.class.path";
 
@@ -379,6 +381,11 @@ public final class CompileTheWorld {
             return new URLClassLoader(new URL[]{url});
         }
 
+        /**
+         * @see "https://docs.oracle.com/javase/9/docs/specs/jar/jar.html#Multi-release"
+         */
+        static Pattern MultiReleaseJarVersionedClassRE = Pattern.compile("META-INF/versions/[1-9][0-9]*/(.+)");
+
         @Override
         public List<String> getClassNames() throws IOException {
             Enumeration<JarEntry> e = jarFile.entries();
@@ -389,6 +396,17 @@ public final class CompileTheWorld {
                     continue;
                 }
                 String className = je.getName().substring(0, je.getName().length() - ".class".length());
+                if (className.equals("module-info")) {
+                    continue;
+                }
+                if (className.startsWith("META-INF/versions/")) {
+                    Matcher m = MultiReleaseJarVersionedClassRE.matcher(className);
+                    if (m.matches()) {
+                        className = m.group(1);
+                    } else {
+                        continue;
+                    }
+                }
                 classNames.add(className.replace('/', '.'));
             }
             return classNames;
@@ -562,6 +580,10 @@ public final class CompileTheWorld {
                         continue;
                     }
 
+                    if (!isClassIncluded(className)) {
+                        continue;
+                    }
+
                     try {
                         // Load and initialize class
                         Class<?> javaClass = Class.forName(className, true, loader);
@@ -578,14 +600,6 @@ public final class CompileTheWorld {
                             if (isClassIncluded(className)) {
                                 println("Preloading failed for (%d) %s: %s", classFileCounter, className, t);
                             }
-                            continue;
-                        }
-
-                        /*
-                         * Only check filters after class loading and resolution to mitigate impact
-                         * on reproducibility.
-                         */
-                        if (!isClassIncluded(className)) {
                             continue;
                         }
 

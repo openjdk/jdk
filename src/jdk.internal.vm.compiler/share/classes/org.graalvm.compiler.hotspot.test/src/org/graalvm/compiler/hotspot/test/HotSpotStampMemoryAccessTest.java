@@ -28,7 +28,6 @@ import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.hotspot.nodes.type.HotSpotNarrowOopStamp;
 import org.junit.Assume;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import jdk.vm.ci.meta.JavaConstant;
@@ -37,7 +36,6 @@ import jdk.vm.ci.meta.MemoryAccessProvider;
 
 public class HotSpotStampMemoryAccessTest extends HotSpotGraalCompilerTest {
 
-    @Ignore("not all versions are safe yet")
     @Test
     public void testReadNarrowObject() {
         CompressEncoding oopEncoding = runtime().getVMConfig().getOopEncoding();

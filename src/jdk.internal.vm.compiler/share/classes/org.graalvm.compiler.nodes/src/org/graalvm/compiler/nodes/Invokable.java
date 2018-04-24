@@ -35,6 +35,10 @@ public interface Invokable {
 
     int bci();
 
+    default boolean isAlive() {
+        return asFixedNode().isAlive();
+    }
+
     FixedNode asFixedNode();
 
     /**

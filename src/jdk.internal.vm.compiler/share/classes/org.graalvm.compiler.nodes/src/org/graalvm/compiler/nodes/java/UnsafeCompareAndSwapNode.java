@@ -36,7 +36,7 @@ import org.graalvm.compiler.nodes.memory.AbstractMemoryCheckpoint;
 import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
-import org.graalvm.word.LocationIdentity;
+import jdk.internal.vm.compiler.word.LocationIdentity;
 
 import jdk.vm.ci.meta.JavaKind;
 
@@ -53,8 +53,8 @@ public final class UnsafeCompareAndSwapNode extends AbstractMemoryCheckpoint imp
     @Input ValueNode expected;
     @Input ValueNode newValue;
 
-    protected final JavaKind valueKind;
-    protected final LocationIdentity locationIdentity;
+    private final JavaKind valueKind;
+    private final LocationIdentity locationIdentity;
 
     public UnsafeCompareAndSwapNode(ValueNode object, ValueNode offset, ValueNode expected, ValueNode newValue, JavaKind valueKind, LocationIdentity locationIdentity) {
         super(TYPE, StampFactory.forKind(JavaKind.Boolean.getStackKind()));

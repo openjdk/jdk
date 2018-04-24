@@ -27,7 +27,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.HashSet;
 
-import org.graalvm.collections.Pair;
+import jdk.internal.vm.compiler.collections.Pair;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.lir.alloc.trace.ShadowedRegisterValue;
 import org.graalvm.compiler.lir.alloc.trace.TraceGlobalMoveResolutionPhase;

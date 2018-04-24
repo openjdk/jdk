@@ -439,7 +439,7 @@ jdk.internal.vm.compiler_ADD_JAVAC_FLAGS += -parameters -XDstringConcat=inline \
     #
 
 jdk.internal.vm.compiler_EXCLUDES += \
-    org.graalvm.collections.test \
+    jdk.internal.vm.compiler.collections.test \
     org.graalvm.compiler.core.match.processor \
     org.graalvm.compiler.nodeinfo.processor \
     org.graalvm.compiler.options.processor \

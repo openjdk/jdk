@@ -31,7 +31,7 @@ import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.STACK;
 import java.util.ArrayList;
 import java.util.EnumSet;
 
-import org.graalvm.collections.EconomicSet;
+import jdk.internal.vm.compiler.collections.EconomicSet;
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
 import org.graalvm.compiler.debug.GraalError;

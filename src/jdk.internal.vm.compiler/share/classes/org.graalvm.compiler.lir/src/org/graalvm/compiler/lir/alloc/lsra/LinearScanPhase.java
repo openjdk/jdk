@@ -23,26 +23,20 @@
 package org.graalvm.compiler.lir.alloc.lsra;
 
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
+import org.graalvm.compiler.lir.alloc.RegisterAllocationPhase;
 import org.graalvm.compiler.lir.alloc.lsra.ssa.SSALinearScan;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool.MoveFactory;
-import org.graalvm.compiler.lir.phases.AllocationPhase;
 
 import jdk.vm.ci.code.TargetDescription;
 
-public final class LinearScanPhase extends AllocationPhase {
-
-    private boolean neverSpillConstants;
-
-    public void setNeverSpillConstants(boolean neverSpillConstants) {
-        this.neverSpillConstants = neverSpillConstants;
-    }
+public final class LinearScanPhase extends RegisterAllocationPhase {
 
     @Override
     protected void run(TargetDescription target, LIRGenerationResult lirGenRes, AllocationContext context) {
         MoveFactory spillMoveFactory = context.spillMoveFactory;
         RegisterAllocationConfig registerAllocationConfig = context.registerAllocationConfig;
-        final LinearScan allocator = new SSALinearScan(target, lirGenRes, spillMoveFactory, registerAllocationConfig, lirGenRes.getLIR().linearScanOrder(), neverSpillConstants);
+        final LinearScan allocator = new SSALinearScan(target, lirGenRes, spillMoveFactory, registerAllocationConfig, lirGenRes.getLIR().linearScanOrder(), getNeverSpillConstants());
         allocator.allocate(target, lirGenRes, context);
     }
 }

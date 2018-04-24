@@ -28,7 +28,7 @@ import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.osThreadInterruptedOffset;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.osThreadOffset;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.threadObjectOffset;
-import static org.graalvm.word.LocationIdentity.any;
+import static jdk.internal.vm.compiler.word.LocationIdentity.any;
 
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;

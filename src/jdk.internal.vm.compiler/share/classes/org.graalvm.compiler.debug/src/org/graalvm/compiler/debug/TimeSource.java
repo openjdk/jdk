@@ -22,21 +22,13 @@
  */
 package org.graalvm.compiler.debug;
 
+import org.graalvm.compiler.serviceprovider.GraalServices;
+
 /**
  * A consistent source of timing data that should be used by all facilities in the debug package.
  */
 public class TimeSource {
-    private static final boolean USING_BEAN;
-    private static final java.lang.management.ThreadMXBean threadMXBean;
-
-    static {
-        threadMXBean = Management.getThreadMXBean();
-        if (threadMXBean.isThreadCpuTimeSupported()) {
-            USING_BEAN = true;
-        } else {
-            USING_BEAN = false;
-        }
-    }
+    private static final boolean USING_THREAD_CPU_TIME = GraalServices.isCurrentThreadCpuTimeSupported();
 
     /**
      * Gets the current time of this thread in nanoseconds from the most accurate timer available on
@@ -50,7 +42,7 @@ public class TimeSource {
      * @return the current thread's time in nanoseconds
      */
     public static long getTimeNS() {
-        return USING_BEAN ? threadMXBean.getCurrentThreadCpuTime() : System.nanoTime();
+        return USING_THREAD_CPU_TIME ? GraalServices.getCurrentThreadCpuTime() : System.nanoTime();
     }
 
 }

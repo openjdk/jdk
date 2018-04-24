@@ -51,7 +51,7 @@ import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.nodes.StubForeignCallNode;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.word.Word;
-import org.graalvm.word.WordFactory;
+import jdk.internal.vm.compiler.word.WordFactory;
 
 import jdk.vm.ci.code.Register;
 

@@ -50,8 +50,8 @@ import org.graalvm.compiler.nodes.SnippetAnchorNode;
 import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.replacements.Log;
 import org.graalvm.compiler.word.Word;
-import org.graalvm.word.Pointer;
-import org.graalvm.word.WordFactory;
+import jdk.internal.vm.compiler.word.Pointer;
+import jdk.internal.vm.compiler.word.WordFactory;
 
 import jdk.vm.ci.meta.DeoptimizationAction;
 

@@ -29,7 +29,6 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
@@ -38,19 +37,6 @@ import org.graalvm.compiler.options.OptionValues;
  * Miscellaneous methods for modifying and generating file system paths.
  */
 public class PathUtilities {
-
-    private static final AtomicLong globalTimeStamp = new AtomicLong();
-
-    /**
-     * Gets a time stamp for the current process. This method will always return the same value for
-     * the current VM execution.
-     */
-    public static long getGlobalTimeStamp() {
-        if (globalTimeStamp.get() == 0) {
-            globalTimeStamp.compareAndSet(0, System.currentTimeMillis());
-        }
-        return globalTimeStamp.get();
-    }
 
     /**
      * Gets a value based on {@code name} that can be passed to {@link Paths#get(String, String...)}

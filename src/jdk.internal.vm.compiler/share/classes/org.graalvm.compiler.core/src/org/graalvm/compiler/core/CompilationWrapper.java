@@ -122,8 +122,10 @@ public abstract class CompilationWrapper<T> {
      *
      * Subclasses can override this to choose a different action based on factors such as whether
      * {@code actionKey} has been explicitly set in {@code options} for example.
+     *
+     * @param cause the cause of the bailout or failure
      */
-    protected ExceptionAction lookupAction(OptionValues options, EnumOptionKey<ExceptionAction> actionKey) {
+    protected ExceptionAction lookupAction(OptionValues options, EnumOptionKey<ExceptionAction> actionKey, Throwable cause) {
         if (actionKey == CompilationFailureAction) {
             if (ExitVMOnException.getValue(options)) {
                 assert CompilationFailureAction.getDefaultValue() != ExceptionAction.ExitVM;
@@ -175,7 +177,7 @@ public abstract class CompilationWrapper<T> {
                 actionKey = CompilationFailureAction;
                 causeType = "failure";
             }
-            ExceptionAction action = lookupAction(initialOptions, actionKey);
+            ExceptionAction action = lookupAction(initialOptions, actionKey, cause);
 
             action = adjustAction(initialOptions, actionKey, action);
 
@@ -262,18 +264,30 @@ public abstract class CompilationWrapper<T> {
                                 DumpPath, dumpPath.getPath());
 
                 try (DebugContext retryDebug = createRetryDebugContext(retryOptions)) {
-                    return performCompilation(retryDebug);
+                    T res = performCompilation(retryDebug);
+                    maybeExitVM(action);
+                    return res;
                 } catch (Throwable ignore) {
                     // Failures during retry are silent
-                    return handleException(cause);
-                } finally {
-                    if (action == ExitVM) {
-                        synchronized (ExceptionAction.class) {
-                            TTY.println("Exiting VM after retry compilation of " + this);
-                            System.exit(-1);
-                        }
-                    }
+                    T res = handleException(cause);
+                    maybeExitVM(action);
+                    return res;
                 }
+            }
+        }
+    }
+
+    private void maybeExitVM(ExceptionAction action) {
+        if (action == ExitVM) {
+            synchronized (ExceptionAction.class) {
+                try {
+                    // Give other compiler threads a chance to flush
+                    // error handling output.
+                    ExceptionAction.class.wait(2000);
+                } catch (InterruptedException e) {
+                }
+                TTY.println("Exiting VM after retry compilation of " + this);
+                System.exit(-1);
             }
         }
     }

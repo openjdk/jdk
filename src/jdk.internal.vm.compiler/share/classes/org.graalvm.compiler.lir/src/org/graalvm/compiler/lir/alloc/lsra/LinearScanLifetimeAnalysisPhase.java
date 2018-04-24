@@ -35,8 +35,8 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.EnumSet;
 
-import org.graalvm.collections.EconomicSet;
-import org.graalvm.collections.Equivalence;
+import jdk.internal.vm.compiler.collections.EconomicSet;
+import jdk.internal.vm.compiler.collections.Equivalence;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.core.common.alloc.ComputeBlockOrder;
@@ -160,12 +160,14 @@ public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
         intervalInLoop = new BitMap2D(allocator.operandSize(), allocator.numLoops());
 
         try {
+            final BitSet liveGenScratch = new BitSet(liveSize);
+            final BitSet liveKillScratch = new BitSet(liveSize);
             // iterate all blocks
             for (final AbstractBlockBase<?> block : allocator.sortedBlocks()) {
                 try (Indent indent = debug.logAndIndent("compute local live sets for block %s", block)) {
 
-                    final BitSet liveGen = new BitSet(liveSize);
-                    final BitSet liveKill = new BitSet(liveSize);
+                    liveGenScratch.clear();
+                    liveKillScratch.clear();
 
                     ArrayList<LIRInstruction> instructions = allocator.getLIR().getLIRforBlock(block);
                     int numInst = instructions.size();
@@ -173,8 +175,8 @@ public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
                     ValueConsumer useConsumer = (operand, mode, flags) -> {
                         if (isVariable(operand)) {
                             int operandNum = allocator.operandNumber(operand);
-                            if (!liveKill.get(operandNum)) {
-                                liveGen.set(operandNum);
+                            if (!liveKillScratch.get(operandNum)) {
+                                liveGenScratch.set(operandNum);
                                 if (debug.isLogEnabled()) {
                                     debug.log("liveGen for operand %d(%s)", operandNum, operand);
                                 }
@@ -185,14 +187,14 @@ public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
                         }
 
                         if (allocator.detailedAsserts) {
-                            verifyInput(block, liveKill, operand);
+                            verifyInput(block, liveKillScratch, operand);
                         }
                     };
                     ValueConsumer stateConsumer = (operand, mode, flags) -> {
                         if (LinearScan.isVariableOrRegister(operand)) {
                             int operandNum = allocator.operandNumber(operand);
-                            if (!liveKill.get(operandNum)) {
-                                liveGen.set(operandNum);
+                            if (!liveKillScratch.get(operandNum)) {
+                                liveGenScratch.set(operandNum);
                                 if (debug.isLogEnabled()) {
                                     debug.log("liveGen in state for operand %d(%s)", operandNum, operand);
                                 }
@@ -202,7 +204,7 @@ public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
                     ValueConsumer defConsumer = (operand, mode, flags) -> {
                         if (isVariable(operand)) {
                             int varNum = allocator.operandNumber(operand);
-                            liveKill.set(varNum);
+                            liveKillScratch.set(varNum);
                             if (debug.isLogEnabled()) {
                                 debug.log("liveKill for operand %d(%s)", varNum, operand);
                             }
@@ -217,7 +219,7 @@ public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
                              * be processed in live sets. Process them only in debug mode so that
                              * this can be checked
                              */
-                            verifyTemp(liveKill, operand);
+                            verifyTemp(liveKillScratch, operand);
                         }
                     };
 
@@ -239,10 +241,11 @@ public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
                     } // end of instruction iteration
 
                     BlockData blockSets = allocator.getBlockData(block);
-                    blockSets.liveGen = liveGen;
-                    blockSets.liveKill = liveKill;
-                    blockSets.liveIn = new BitSet(liveSize);
-                    blockSets.liveOut = new BitSet(liveSize);
+                    blockSets.liveGen = trimClone(liveGenScratch);
+                    blockSets.liveKill = trimClone(liveKillScratch);
+                    // sticky size, will get non-sticky in computeGlobalLiveSets
+                    blockSets.liveIn = new BitSet(0);
+                    blockSets.liveOut = new BitSet(0);
 
                     if (debug.isLogEnabled()) {
                         debug.log("liveGen  B%d %s", block.getId(), blockSets.liveGen);
@@ -292,7 +295,7 @@ public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
             boolean changeOccurred;
             boolean changeOccurredInBlock;
             int iterationCount = 0;
-            BitSet liveOut = new BitSet(allocator.liveSetSize()); // scratch set for calculations
+            BitSet scratch = new BitSet(allocator.liveSetSize()); // scratch set for calculations
 
             /*
              * Perform a backward dataflow analysis to compute liveOut and liveIn for each block.
@@ -315,22 +318,16 @@ public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
                          */
                         int n = block.getSuccessorCount();
                         if (n > 0) {
-                            liveOut.clear();
+                            scratch.clear();
                             // block has successors
                             if (n > 0) {
                                 for (AbstractBlockBase<?> successor : block.getSuccessors()) {
-                                    liveOut.or(allocator.getBlockData(successor).liveIn);
+                                    scratch.or(allocator.getBlockData(successor).liveIn);
                                 }
                             }
 
-                            if (!blockSets.liveOut.equals(liveOut)) {
-                                /*
-                                 * A change occurred. Swap the old and new live out sets to avoid
-                                 * copying.
-                                 */
-                                BitSet temp = blockSets.liveOut;
-                                blockSets.liveOut = liveOut;
-                                liveOut = temp;
+                            if (!blockSets.liveOut.equals(scratch)) {
+                                blockSets.liveOut = trimClone(scratch);
 
                                 changeOccurred = true;
                                 changeOccurredInBlock = true;
@@ -344,12 +341,19 @@ public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
                              *
                              * Note: liveIn has to be computed only in first iteration or if liveOut
                              * has changed!
+                             *
+                             * Note: liveIn set can only grow, never shrink. No need to clear it.
                              */
                             BitSet liveIn = blockSets.liveIn;
-                            liveIn.clear();
+                            /*
+                             * BitSet#or will call BitSet#ensureSize (since the bit set is of length
+                             * 0 initially) and set sticky to false
+                             */
                             liveIn.or(blockSets.liveOut);
                             liveIn.andNot(blockSets.liveKill);
                             liveIn.or(blockSets.liveGen);
+
+                            liveIn.clone(); // trimToSize()
 
                             if (debug.isLogEnabled()) {
                                 debug.log("block %d: livein = %s,  liveout = %s", block.getId(), liveIn, blockSets.liveOut);
@@ -382,6 +386,20 @@ public class LinearScanLifetimeAnalysisPhase extends LinearScanAllocationPhase {
                 throw new GraalError("liveIn set of first block must be empty: " + allocator.getBlockData(startBlock).liveIn);
             }
         }
+    }
+
+    /**
+     * Creates a trimmed copy a bit set.
+     *
+     * {@link BitSet#clone()} cannot be used since it will not {@linkplain BitSet#trimToSize trim}
+     * the array if the bit set is {@linkplain BitSet#sizeIsSticky sticky}.
+     */
+    @SuppressWarnings("javadoc")
+    private static BitSet trimClone(BitSet set) {
+        BitSet trimmedSet = new BitSet(0); // zero-length words array, sticky
+        trimmedSet.or(set); // words size ensured to be words-in-use of set,
+                            // also makes it non-sticky
+        return trimmedSet;
     }
 
     @SuppressWarnings("try")

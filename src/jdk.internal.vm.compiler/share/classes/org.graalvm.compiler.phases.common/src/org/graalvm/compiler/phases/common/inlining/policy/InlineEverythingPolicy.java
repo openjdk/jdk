@@ -24,6 +24,7 @@ package org.graalvm.compiler.phases.common.inlining.policy;
 
 import static org.graalvm.compiler.core.common.GraalOptions.MaximumDesiredSize;
 
+import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.core.common.PermanentBailoutException;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.spi.Replacements;
@@ -41,7 +42,7 @@ public class InlineEverythingPolicy implements InliningPolicy {
     }
 
     @Override
-    public boolean isWorthInlining(Replacements replacements, MethodInvocation invocation, int inliningDepth, boolean fullyProcessed) {
-        return true;
+    public Decision isWorthInlining(Replacements replacements, MethodInvocation invocation, int inliningDepth, boolean fullyProcessed) {
+        return Decision.YES.withReason(GraalOptions.TraceInlining.getValue(replacements.getOptions()), "inline everything");
     }
 }

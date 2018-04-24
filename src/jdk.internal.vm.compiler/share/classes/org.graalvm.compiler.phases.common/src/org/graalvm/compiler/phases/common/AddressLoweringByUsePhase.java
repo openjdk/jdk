@@ -93,7 +93,7 @@ public class AddressLoweringByUsePhase extends Phase {
             } else {
                 continue;
             }
-            // the lowered address amy already be a replacement
+            // the lowered address may already be a replacement
             // in which case we want to use it not delete it!
             if (lowered != address) {
                 // replace original with lowered at this usage only

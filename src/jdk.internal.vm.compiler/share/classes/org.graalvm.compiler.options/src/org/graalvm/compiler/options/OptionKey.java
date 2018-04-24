@@ -24,7 +24,7 @@ package org.graalvm.compiler.options;
 
 import java.util.Formatter;
 
-import org.graalvm.collections.EconomicMap;
+import jdk.internal.vm.compiler.collections.EconomicMap;
 
 /**
  * A key for an option. The value for an option is obtained from an {@link OptionValues} object.

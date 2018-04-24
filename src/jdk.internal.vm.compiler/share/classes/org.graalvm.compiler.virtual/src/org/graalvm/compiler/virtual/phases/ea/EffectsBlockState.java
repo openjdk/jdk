@@ -25,8 +25,8 @@ package org.graalvm.compiler.virtual.phases.ea;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.graalvm.collections.EconomicMap;
-import org.graalvm.collections.UnmodifiableMapCursor;
+import jdk.internal.vm.compiler.collections.EconomicMap;
+import jdk.internal.vm.compiler.collections.UnmodifiableMapCursor;
 
 public abstract class EffectsBlockState<T extends EffectsBlockState<T>> {
 

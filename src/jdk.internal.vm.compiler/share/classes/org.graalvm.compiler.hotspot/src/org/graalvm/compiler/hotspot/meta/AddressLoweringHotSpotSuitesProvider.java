@@ -29,7 +29,7 @@ import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.BasePhase;
-import org.graalvm.compiler.phases.common.AddressLoweringPhase;
+import org.graalvm.compiler.phases.Phase;
 import org.graalvm.compiler.phases.common.ExpandLogicPhase;
 import org.graalvm.compiler.phases.common.FixReadsPhase;
 import org.graalvm.compiler.phases.tiers.LowTierContext;
@@ -41,10 +41,10 @@ import org.graalvm.compiler.phases.tiers.SuitesCreator;
  */
 public class AddressLoweringHotSpotSuitesProvider extends HotSpotSuitesProvider {
 
-    private final AddressLoweringPhase.AddressLowering addressLowering;
+    private final Phase addressLowering;
 
     public AddressLoweringHotSpotSuitesProvider(SuitesCreator defaultSuitesCreator, GraalHotSpotVMConfig config, HotSpotGraalRuntimeProvider runtime,
-                    AddressLoweringPhase.AddressLowering addressLowering) {
+                    Phase addressLowering) {
         super(defaultSuitesCreator, config, runtime);
         this.addressLowering = addressLowering;
     }
@@ -57,7 +57,7 @@ public class AddressLoweringHotSpotSuitesProvider extends HotSpotSuitesProvider 
         if (findPhase == null) {
             findPhase = suites.getLowTier().findPhase(ExpandLogicPhase.class);
         }
-        findPhase.add(new AddressLoweringPhase(addressLowering));
+        findPhase.add(addressLowering);
 
         return suites;
     }

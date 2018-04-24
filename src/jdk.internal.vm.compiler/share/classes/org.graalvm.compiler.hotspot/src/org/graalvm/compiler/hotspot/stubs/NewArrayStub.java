@@ -59,7 +59,7 @@ import org.graalvm.compiler.hotspot.word.KlassPointer;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.word.Word;
-import org.graalvm.word.WordFactory;
+import jdk.internal.vm.compiler.word.WordFactory;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;

@@ -35,6 +35,7 @@ import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.BICS
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.BLR;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.BR;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.BRK;
+import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.CAS;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.CLREX;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.CLS;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.CLZ;
@@ -118,6 +119,9 @@ import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.asm.aarch64.AArch64Address.AddressingMode;
 import org.graalvm.compiler.debug.GraalError;
 
+import jdk.vm.ci.aarch64.AArch64;
+import jdk.vm.ci.aarch64.AArch64.CPUFeature;
+import jdk.vm.ci.aarch64.AArch64.Flag;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.TargetDescription;
 
@@ -471,6 +475,9 @@ public abstract class AArch64Assembler extends Assembler {
     private static final int BarrierOp = 0xD503301F;
     private static final int BarrierKindOffset = 8;
 
+    private static final int CASAcquireOffset = 22;
+    private static final int CASReleaseOffset = 15;
+
     /**
      * Encoding for all instructions.
      */
@@ -500,6 +507,8 @@ public abstract class AArch64Assembler extends Assembler {
 
         LDP(0b1 << 22),
         STP(0b0 << 22),
+
+        CAS(0x08A07C00),
 
         ADR(0x00000000),
         ADRP(0x80000000),
@@ -738,6 +747,14 @@ public abstract class AArch64Assembler extends Assembler {
 
     public AArch64Assembler(TargetDescription target) {
         super(target);
+    }
+
+    public boolean supports(CPUFeature feature) {
+        return ((AArch64) target.arch).getFeatures().contains(feature);
+    }
+
+    public boolean isFlagSet(Flag flag) {
+        return ((AArch64) target.arch).getFlags().contains(flag);
     }
 
     /* Conditional Branch (5.2.1) */
@@ -1311,6 +1328,20 @@ public abstract class AArch64Assembler extends Assembler {
         emitInt(transferSizeEncoding | instr.encoding | rs2(rs) | rn(rn) | rt(rt));
     }
 
+    /* Compare And Swap */
+    public void cas(int size, Register rs, Register rt, Register rn, boolean acquire, boolean release) {
+        assert size == 32 || size == 64;
+        int transferSize = NumUtil.log2Ceil(size / 8);
+        compareAndSwapInstruction(CAS, rs, rt, rn, transferSize, acquire, release);
+    }
+
+    private void compareAndSwapInstruction(Instruction instr, Register rs, Register rt, Register rn, int log2TransferSize, boolean acquire, boolean release) {
+        assert log2TransferSize >= 0 && log2TransferSize < 4;
+        assert rt.getRegisterCategory().equals(CPU) && rs.getRegisterCategory().equals(CPU) && !rs.equals(rt);
+        int transferSizeEncoding = log2TransferSize << LoadStoreTransferSizeOffset;
+        emitInt(transferSizeEncoding | instr.encoding | rs2(rs) | rn(rn) | rt(rt) | (acquire ? 1 : 0) << CASAcquireOffset | (release ? 1 : 0) << CASReleaseOffset);
+    }
+
     /* PC-relative Address Calculation (5.4.4) */
 
     /**
@@ -1576,7 +1607,7 @@ public abstract class AArch64Assembler extends Assembler {
      * @param r must be in the range 0 to size - 1
      * @param s must be in the range 0 to size - 1
      */
-    protected void bfm(int size, Register dst, Register src, int r, int s) {
+    public void bfm(int size, Register dst, Register src, int r, int s) {
         bitfieldInstruction(BFM, dst, src, r, s, generalFromSize(size));
     }
 
@@ -1589,7 +1620,7 @@ public abstract class AArch64Assembler extends Assembler {
      * @param r must be in the range 0 to size - 1
      * @param s must be in the range 0 to size - 1
      */
-    protected void ubfm(int size, Register dst, Register src, int r, int s) {
+    public void ubfm(int size, Register dst, Register src, int r, int s) {
         bitfieldInstruction(UBFM, dst, src, r, s, generalFromSize(size));
     }
 

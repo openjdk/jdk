@@ -39,6 +39,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.serviceprovider.GraalServices;
 
 /**
  * Manages a directory into which diagnostics such crash reports and dumps should be written. The
@@ -67,26 +68,6 @@ public class DiagnosticsOutputDirectory {
      */
     public String getPath() {
         return getPath(true);
-    }
-
-    /**
-     * Gets a unique identifier for this execution such as a process ID.
-     */
-    protected String getExecutionID() {
-        try {
-            String runtimeName = java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
-            try {
-                int index = runtimeName.indexOf('@');
-                if (index != -1) {
-                    long pid = Long.parseLong(runtimeName.substring(0, index));
-                    return Long.toString(pid);
-                }
-            } catch (NumberFormatException e) {
-            }
-            return runtimeName;
-        } catch (LinkageError err) {
-            return String.valueOf(org.graalvm.compiler.debug.PathUtilities.getGlobalTimeStamp());
-        }
     }
 
     private synchronized String getPath(boolean createIfNull) {
@@ -120,7 +101,7 @@ public class DiagnosticsOutputDirectory {
             // directory specified by the DumpPath option.
             baseDir = Paths.get(".");
         }
-        return baseDir.resolve("graal_diagnostics_" + getExecutionID()).toAbsolutePath().toString();
+        return baseDir.resolve("graal_diagnostics_" + GraalServices.getExecutionID()).toAbsolutePath().toString();
     }
 
     /**

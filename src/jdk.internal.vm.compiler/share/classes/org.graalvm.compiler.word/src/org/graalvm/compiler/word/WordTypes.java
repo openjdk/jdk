@@ -27,8 +27,8 @@ import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.type.StampTool;
 import org.graalvm.compiler.word.Word.Operation;
-import org.graalvm.word.WordBase;
-import org.graalvm.word.WordFactory;
+import jdk.internal.vm.compiler.word.WordBase;
+import jdk.internal.vm.compiler.word.WordFactory;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
