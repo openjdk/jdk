@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@
  * @requires vm.opt.ExplicitGCInvokesConcurrent == null | vm.opt.ExplicitGCInvokesConcurrent == false
  * @modules java.management/sun.management
  *          jdk.management
- * @run     main/othervm GarbageCollectionNotificationContentTest
- */
+ * @run     main/othervm -Xms64m -Xmx64m GarbageCollectionNotificationContentTest
+  */
 
 import java.util.*;
 import java.lang.management.*;
@@ -97,7 +97,7 @@ public class GarbageCollectionNotificationContentTest {
         System.gc();
         // Allocation of many short living and small objects to trigger minor GC
         Object data[] = new Object[32];
-        for(int i = 0; i<100000000; i++) {
+        for(int i = 0; i<10000000; i++) {
             data[i%32] = new int[8];
         }
         int wakeup = 0;
@@ -139,6 +139,8 @@ public class GarbageCollectionNotificationContentTest {
             System.out.println("Usage for pool " + poolname);
             System.out.println("   Before GC: " + busage);
             System.out.println("   After GC: " + ausage);
+
+            checkMemoryUsage(poolname, busage, ausage);
         }
 
         // check if memory usage for all memory pools are returned
@@ -147,6 +149,15 @@ public class GarbageCollectionNotificationContentTest {
             if (!pnames.contains(p.getName())) {
                 throw new RuntimeException("GcInfo does not contain " +
                     "memory usage for pool " + p.getName());
+            }
+        }
+    }
+
+    private static void checkMemoryUsage(String poolname, MemoryUsage busage, MemoryUsage ausage) throws Exception {
+        if (poolname.contains("Eden Space") && busage.getUsed() > 0) {
+            // Used size at Eden Space should be decreased or
+            if (busage.getUsed() <= ausage.getUsed()) {
+                throw new RuntimeException("Used size at Eden Space should be decreased.");
             }
         }
     }
