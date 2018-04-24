@@ -1867,8 +1867,7 @@ float Block::succ_prob(uint i) {
   }
 
   case Op_Jump:
-    // Divide the frequency between all successors evenly
-    return 1.0f/_num_succs;
+    return n->as_MachJump()->_probs[get_node(i + eidx + 1)->as_JumpProj()->_con];
 
   case Op_Catch: {
     const CatchProjNode *ci = get_node(i + eidx + 1)->as_CatchProj();
