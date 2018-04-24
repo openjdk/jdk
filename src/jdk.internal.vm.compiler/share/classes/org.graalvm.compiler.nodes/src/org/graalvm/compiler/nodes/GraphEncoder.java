@@ -27,8 +27,8 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.Objects;
 
-import org.graalvm.collections.Pair;
-import org.graalvm.collections.UnmodifiableMapCursor;
+import jdk.internal.vm.compiler.collections.Pair;
+import jdk.internal.vm.compiler.collections.UnmodifiableMapCursor;
 import org.graalvm.compiler.core.common.Fields;
 import org.graalvm.compiler.core.common.util.FrequencyEncoder;
 import org.graalvm.compiler.core.common.util.TypeConversion;

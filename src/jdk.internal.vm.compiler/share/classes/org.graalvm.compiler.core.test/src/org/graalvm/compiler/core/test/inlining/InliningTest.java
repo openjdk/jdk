@@ -22,9 +22,11 @@
  */
 package org.graalvm.compiler.core.test.inlining;
 
+import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugDumpScope;
+import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.FullInfopointNode;
 import org.graalvm.compiler.nodes.Invoke;
@@ -32,17 +34,21 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.nodes.StructuredGraph.Builder;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
 import org.graalvm.compiler.phases.common.DeadCodeEliminationPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import jdk.vm.ci.code.site.InfopointReason;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+
+import java.util.regex.Pattern;
 
 public class InliningTest extends GraalCompilerTest {
 
@@ -198,6 +204,40 @@ public class InliningTest extends GraalCompilerTest {
         assertFewMethodInfopoints(assertNotInlined(getGraph("invokeOverriddenInterfaceMethodSnippet", true)));
     }
 
+    public static void traceInliningTest() {
+        callTrivial();
+    }
+
+    private static void callTrivial() {
+        callNonTrivial();
+    }
+
+    private static double callNonTrivial() {
+        double x = 0.0;
+        for (int i = 0; i < 10; i++) {
+            x += i * 1.21;
+        }
+        return x;
+    }
+
+    @Test
+    @SuppressWarnings("try")
+    public void testTracing() {
+        OptionValues options = new OptionValues(getInitialOptions(), GraalOptions.TraceInlining, true);
+        StructuredGraph graph;
+        try (TTY.Filter f = new TTY.Filter()) {
+            graph = getGraph("traceInliningTest", options, false);
+        }
+        String inliningTree = graph.getInliningLog().formatAsTree(false);
+        String expectedRegex = "compilation of org.graalvm.compiler.core.test.inlining.InliningTest.traceInliningTest.*: \\R" +
+                        "  at .*org.graalvm.compiler.core.test.inlining.InliningTest.traceInliningTest.*: <GraphBuilderPhase> org.graalvm.compiler.core.test.inlining.InliningTest.callTrivial.*: yes, inline method\\R" +
+                        "    at .*org.graalvm.compiler.core.test.inlining.InliningTest.callTrivial.*: .*\\R" +
+                        "       .*<GraphBuilderPhase> org.graalvm.compiler.core.test.inlining.InliningTest.callNonTrivial.*: .*(.*\\R)*" +
+                        "       .*<InliningPhase> org.graalvm.compiler.core.test.inlining.InliningTest.callNonTrivial.*: .*(.*\\R)*";
+        Pattern expectedPattern = Pattern.compile(expectedRegex, Pattern.MULTILINE);
+        Assert.assertTrue("Got: " + inliningTree, expectedPattern.matcher(inliningTree).matches());
+    }
+
     @SuppressWarnings("all")
     public static int invokeLeafClassMethodSnippet(SubClassA subClassA) {
         return subClassA.publicFinalMethod() + subClassA.publicNotOverriddenMethod() + subClassA.publicOverriddenMethod();
@@ -233,9 +273,13 @@ public class InliningTest extends GraalCompilerTest {
         return superClass.protectedOverriddenMethod();
     }
 
-    @SuppressWarnings("try")
     private StructuredGraph getGraph(final String snippet, final boolean eagerInfopointMode) {
-        DebugContext debug = getDebugContext();
+        return getGraph(snippet, null, eagerInfopointMode);
+    }
+
+    @SuppressWarnings("try")
+    private StructuredGraph getGraph(final String snippet, OptionValues options, final boolean eagerInfopointMode) {
+        DebugContext debug = options == null ? getDebugContext() : getDebugContext(options, null, null);
         try (DebugContext.Scope s = debug.scope("InliningTest", new DebugDumpScope(snippet, true))) {
             ResolvedJavaMethod method = getResolvedJavaMethod(snippet);
             Builder builder = builder(method, AllowAssumptions.YES, debug);

@@ -22,6 +22,10 @@
  */
 package org.graalvm.compiler.phases.tiers;
 
+import org.graalvm.compiler.lir.alloc.RegisterAllocationPhase;
+import org.graalvm.compiler.lir.phases.AllocationPhase.AllocationContext;
+import org.graalvm.compiler.lir.phases.LIRPhase;
+import org.graalvm.compiler.lir.phases.LIRPhaseSuite;
 import org.graalvm.compiler.lir.phases.LIRSuites;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.PhaseSuite;
@@ -56,7 +60,25 @@ public final class Suites {
     }
 
     public static LIRSuites createLIRSuites(CompilerConfiguration config, OptionValues options) {
-        return new LIRSuites(config.createPreAllocationOptimizationStage(options), config.createAllocationStage(options), config.createPostAllocationOptimizationStage(options));
+        LIRPhaseSuite<AllocationContext> allocationStage = config.createAllocationStage(options);
+        assert verifyAllocationStage(allocationStage);
+        return new LIRSuites(config.createPreAllocationOptimizationStage(options), allocationStage, config.createPostAllocationOptimizationStage(options));
+    }
+
+    private static boolean verifyAllocationStage(LIRPhaseSuite<AllocationContext> allocationStage) {
+        boolean allocationPhase = false;
+        for (LIRPhase<?> phase : allocationStage.getPhases()) {
+            if (phase instanceof RegisterAllocationPhase) {
+                if (allocationPhase) {
+                    assert false : "More than one register allocation phase";
+                    return false;
+                }
+                allocationPhase = true;
+            }
+
+        }
+        assert allocationPhase : "No register allocation phase";
+        return allocationPhase;
     }
 
     public boolean isImmutable() {

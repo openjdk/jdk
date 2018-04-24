@@ -28,6 +28,7 @@ import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.Una
 import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOperation.LOG10;
 import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOperation.SIN;
 import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOperation.TAN;
+import static org.graalvm.compiler.serviceprovider.GraalServices.JAVA_SPECIFICATION_VERSION;
 
 import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.nodes.ValueNode;
@@ -53,6 +54,9 @@ public class AArch64GraphBuilderPlugins {
                 registerIntegerLongPlugins(invocationPlugins, AArch64IntegerSubstitutions.class, JavaKind.Int, bytecodeProvider);
                 registerIntegerLongPlugins(invocationPlugins, AArch64LongSubstitutions.class, JavaKind.Long, bytecodeProvider);
                 registerMathPlugins(invocationPlugins);
+                registerStringLatin1Plugins(invocationPlugins, bytecodeProvider);
+                registerStringUTF16Plugins(invocationPlugins, bytecodeProvider);
+
             }
         });
     }
@@ -114,4 +118,23 @@ public class AArch64GraphBuilderPlugins {
             }
         });
     }
+
+    private static void registerStringLatin1Plugins(InvocationPlugins plugins, BytecodeProvider replacementsBytecodeProvider) {
+        if (JAVA_SPECIFICATION_VERSION >= 9) {
+            Registration r = new Registration(plugins, "java.lang.StringLatin1", replacementsBytecodeProvider);
+            r.setAllowOverwrite(true);
+            r.registerMethodSubstitution(AArch64StringLatin1Substitutions.class, "compareTo", byte[].class, byte[].class);
+            r.registerMethodSubstitution(AArch64StringLatin1Substitutions.class, "compareToUTF16", byte[].class, byte[].class);
+        }
+    }
+
+    private static void registerStringUTF16Plugins(InvocationPlugins plugins, BytecodeProvider replacementsBytecodeProvider) {
+        if (JAVA_SPECIFICATION_VERSION >= 9) {
+            Registration r = new Registration(plugins, "java.lang.StringUTF16", replacementsBytecodeProvider);
+            r.setAllowOverwrite(true);
+            r.registerMethodSubstitution(AArch64StringUTF16Substitutions.class, "compareTo", byte[].class, byte[].class);
+            r.registerMethodSubstitution(AArch64StringUTF16Substitutions.class, "compareToLatin1", byte[].class, byte[].class);
+        }
+    }
+
 }

@@ -25,7 +25,7 @@ package org.graalvm.compiler.hotspot.amd64;
 
 import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 
-import org.graalvm.collections.EconomicMap;
+import jdk.internal.vm.compiler.collections.EconomicMap;
 import org.graalvm.compiler.asm.amd64.AMD64Address.Scale;
 import org.graalvm.compiler.core.amd64.AMD64AddressNode;
 import org.graalvm.compiler.core.amd64.AMD64CompressAddressLowering;

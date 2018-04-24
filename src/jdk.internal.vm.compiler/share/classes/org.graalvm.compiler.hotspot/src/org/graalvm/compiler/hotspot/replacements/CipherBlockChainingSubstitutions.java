@@ -40,9 +40,9 @@ import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.nodes.extended.RawLoadNode;
 import org.graalvm.compiler.word.Word;
-import org.graalvm.word.LocationIdentity;
-import org.graalvm.word.Pointer;
-import org.graalvm.word.WordFactory;
+import jdk.internal.vm.compiler.word.LocationIdentity;
+import jdk.internal.vm.compiler.word.Pointer;
+import jdk.internal.vm.compiler.word.WordFactory;
 
 import jdk.vm.ci.meta.JavaKind;
 

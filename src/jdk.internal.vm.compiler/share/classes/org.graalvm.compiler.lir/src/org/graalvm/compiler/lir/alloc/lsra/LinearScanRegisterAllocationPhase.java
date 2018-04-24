@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.lir.alloc.lsra;
 
-import org.graalvm.collections.Pair;
+import jdk.internal.vm.compiler.collections.Pair;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.phases.AllocationPhase.AllocationContext;

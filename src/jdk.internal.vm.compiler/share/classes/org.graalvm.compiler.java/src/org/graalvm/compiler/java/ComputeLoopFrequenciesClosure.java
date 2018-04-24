@@ -26,7 +26,7 @@ import static org.graalvm.compiler.nodes.cfg.ControlFlowGraph.multiplyProbabilit
 
 import java.util.List;
 
-import org.graalvm.collections.EconomicMap;
+import jdk.internal.vm.compiler.collections.EconomicMap;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.ControlSplitNode;

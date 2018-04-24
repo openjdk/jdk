@@ -52,6 +52,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plu
 import org.graalvm.compiler.nodes.spi.LoweringProvider;
 import org.graalvm.compiler.nodes.spi.Replacements;
 import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.phases.common.AddressLoweringPhase;
 import org.graalvm.compiler.phases.tiers.CompilerConfiguration;
 import org.graalvm.compiler.phases.util.Providers;
 import org.graalvm.compiler.replacements.amd64.AMD64GraphBuilderPlugins;
@@ -77,7 +78,7 @@ public class AMD64HotSpotBackendFactory implements HotSpotBackendFactory {
 
     @Override
     public String getName() {
-        return "core";
+        return "community";
     }
 
     @Override
@@ -186,7 +187,7 @@ public class AMD64HotSpotBackendFactory implements HotSpotBackendFactory {
     protected HotSpotSuitesProvider createSuites(GraalHotSpotVMConfig config, HotSpotGraalRuntimeProvider runtime, CompilerConfiguration compilerConfiguration, Plugins plugins,
                     HotSpotRegistersProvider registers, Replacements replacements, OptionValues options) {
         return new AddressLoweringHotSpotSuitesProvider(new AMD64HotSpotSuitesCreator(compilerConfiguration, plugins), config, runtime,
-                        new AMD64HotSpotAddressLowering(config, registers.getHeapBaseRegister(), options));
+                        new AddressLoweringPhase(new AMD64HotSpotAddressLowering(config, registers.getHeapBaseRegister(), options)));
     }
 
     protected HotSpotSnippetReflectionProvider createSnippetReflection(HotSpotGraalRuntimeProvider runtime, HotSpotConstantReflectionProvider constantReflection, WordTypes wordTypes) {

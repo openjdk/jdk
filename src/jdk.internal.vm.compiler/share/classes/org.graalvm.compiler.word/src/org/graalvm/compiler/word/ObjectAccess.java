@@ -24,11 +24,11 @@ package org.graalvm.compiler.word;
 
 import org.graalvm.compiler.word.Word.Opcode;
 import org.graalvm.compiler.word.Word.Operation;
-import org.graalvm.word.LocationIdentity;
-import org.graalvm.word.Pointer;
-import org.graalvm.word.SignedWord;
-import org.graalvm.word.UnsignedWord;
-import org.graalvm.word.WordBase;
+import jdk.internal.vm.compiler.word.LocationIdentity;
+import jdk.internal.vm.compiler.word.Pointer;
+import jdk.internal.vm.compiler.word.SignedWord;
+import jdk.internal.vm.compiler.word.UnsignedWord;
+import jdk.internal.vm.compiler.word.WordBase;
 
 /**
  * Low-level memory access for Objects. Similarly to the readXxx and writeXxx methods defined for

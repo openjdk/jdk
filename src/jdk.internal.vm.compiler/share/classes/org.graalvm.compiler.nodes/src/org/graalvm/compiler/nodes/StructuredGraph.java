@@ -30,10 +30,10 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
-import org.graalvm.collections.EconomicMap;
-import org.graalvm.collections.EconomicSet;
-import org.graalvm.collections.Equivalence;
-import org.graalvm.collections.UnmodifiableEconomicMap;
+import jdk.internal.vm.compiler.collections.EconomicMap;
+import jdk.internal.vm.compiler.collections.EconomicSet;
+import jdk.internal.vm.compiler.collections.Equivalence;
+import jdk.internal.vm.compiler.collections.UnmodifiableEconomicMap;
 import org.graalvm.compiler.core.common.CancellationBailoutException;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.GraalOptions;
@@ -359,12 +359,16 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
         this.compilationId = compilationId;
         this.entryBCI = entryBCI;
         this.assumptions = assumptions;
-        this.speculationLog = speculationLog;
+        if (speculationLog != null && !(speculationLog instanceof GraphSpeculationLog)) {
+            this.speculationLog = new GraphSpeculationLog(speculationLog);
+        } else {
+            this.speculationLog = speculationLog;
+        }
         this.useProfilingInfo = useProfilingInfo;
         this.trackNodeSourcePosition = trackNodeSourcePosition;
         assert trackNodeSourcePosition != null;
         this.cancellable = cancellable;
-        this.inliningLog = new InliningLog(rootMethod, options);
+        this.inliningLog = new InliningLog(rootMethod, GraalOptions.TraceInlining.getValue(options));
         this.callerContext = context;
     }
 
@@ -480,7 +484,10 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
 
     public void logInliningTree() {
         if (GraalOptions.TraceInlining.getValue(getOptions())) {
-            TTY.println(getInliningLog().formatAsTree());
+            String formattedTree = getInliningLog().formatAsTree(true);
+            if (formattedTree != null) {
+                TTY.println(formattedTree);
+            }
         }
     }
 
@@ -518,6 +525,7 @@ public final class StructuredGraph extends Graph implements JavaMethodContext {
         copy.isAfterFloatingReadPhase = isAfterFloatingReadPhase;
         copy.hasValueProxies = hasValueProxies;
         copy.isAfterExpandLogic = isAfterExpandLogic;
+        copy.trackNodeSourcePosition = trackNodeSourcePosition;
         EconomicMap<Node, Node> replacements = EconomicMap.create(Equivalence.IDENTITY);
         replacements.put(start, copy.start);
         UnmodifiableEconomicMap<Node, Node> duplicates;

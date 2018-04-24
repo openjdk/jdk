@@ -37,9 +37,7 @@ import static jdk.vm.ci.code.ValueUtil.asStackSlot;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static jdk.vm.ci.code.ValueUtil.isStackSlot;
 
-import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.asm.aarch64.AArch64Address;
-import org.graalvm.compiler.asm.aarch64.AArch64Assembler;
 import org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler;
 import org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler.ScratchRegister;
 import org.graalvm.compiler.core.common.LIRKind;
@@ -336,60 +334,6 @@ public class AArch64Move {
         @Override
         public LIRFrameState getState() {
             return state;
-        }
-    }
-
-    /**
-     * Compare and swap instruction. Does the following atomically: <code>
-     *  CAS(newVal, expected, address):
-     *    oldVal = *address
-     *    if oldVal == expected:
-     *        *address = newVal
-     *    return oldVal
-     * </code>
-     */
-    @Opcode("CAS")
-    public static class CompareAndSwapOp extends AArch64LIRInstruction {
-        public static final LIRInstructionClass<CompareAndSwapOp> TYPE = LIRInstructionClass.create(CompareAndSwapOp.class);
-
-        @Def protected AllocatableValue resultValue;
-        @Alive protected Value expectedValue;
-        @Alive protected AllocatableValue newValue;
-        @Alive protected AllocatableValue addressValue;
-        @Temp protected AllocatableValue scratchValue;
-
-        public CompareAndSwapOp(AllocatableValue result, Value expectedValue, AllocatableValue newValue, AllocatableValue addressValue, AllocatableValue scratch) {
-            super(TYPE);
-            this.resultValue = result;
-            this.expectedValue = expectedValue;
-            this.newValue = newValue;
-            this.addressValue = addressValue;
-            this.scratchValue = scratch;
-        }
-
-        @Override
-        public void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
-            AArch64Kind kind = (AArch64Kind) expectedValue.getPlatformKind();
-            assert kind.isInteger();
-            final int size = kind.getSizeInBytes() * Byte.SIZE;
-
-            Register address = asRegister(addressValue);
-            Register result = asRegister(resultValue);
-            Register newVal = asRegister(newValue);
-            Register scratch = asRegister(scratchValue);
-            // We could avoid using a scratch register here, by reusing resultValue for the stlxr
-            // success flag and issue a mov resultValue, expectedValue in case of success before
-            // returning.
-            Label retry = new Label();
-            Label fail = new Label();
-            masm.bind(retry);
-            masm.ldaxr(size, result, address);
-            AArch64Compare.gpCompare(masm, resultValue, expectedValue);
-            masm.branchConditionally(AArch64Assembler.ConditionFlag.NE, fail);
-            masm.stlxr(size, scratch, newVal, address);
-            // if scratch == 0 then write successful, else retry.
-            masm.cbnz(32, scratch, retry);
-            masm.bind(fail);
         }
     }
 

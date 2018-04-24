@@ -28,7 +28,7 @@ import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Transition.
 import static org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProviderImpl.REEXECUTABLE;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.clearPendingException;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.registerAsWord;
-import static org.graalvm.word.LocationIdentity.any;
+import static jdk.internal.vm.compiler.word.LocationIdentity.any;
 
 import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;

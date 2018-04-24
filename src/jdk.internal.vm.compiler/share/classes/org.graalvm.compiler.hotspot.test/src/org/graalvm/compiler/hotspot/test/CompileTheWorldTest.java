@@ -25,7 +25,7 @@ package org.graalvm.compiler.hotspot.test;
 import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationBailoutAction;
 import static org.graalvm.compiler.core.GraalCompilerOptions.CompilationFailureAction;
 
-import org.graalvm.collections.EconomicMap;
+import jdk.internal.vm.compiler.collections.EconomicMap;
 import org.graalvm.compiler.core.CompilationWrapper.ExceptionAction;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.hotspot.HotSpotGraalCompiler;

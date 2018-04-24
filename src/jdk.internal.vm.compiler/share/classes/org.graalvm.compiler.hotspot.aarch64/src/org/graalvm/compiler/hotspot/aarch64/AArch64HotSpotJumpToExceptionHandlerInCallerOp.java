@@ -35,6 +35,7 @@ import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
+import org.graalvm.compiler.serviceprovider.GraalServices;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.AllocatableValue;
@@ -68,11 +69,12 @@ public class AArch64HotSpotJumpToExceptionHandlerInCallerOp extends AArch64HotSp
     public void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
         leaveFrame(crb, masm, /* emitSafepoint */false);
 
-        if (System.getProperty("java.specification.version").compareTo("1.8") < 0) {
+        if (GraalServices.JAVA_SPECIFICATION_VERSION < 8) {
             // Restore sp from fp if the exception PC is a method handle call site.
             try (ScratchRegister sc = masm.getScratchRegister()) {
                 Register scratch = sc.getRegister();
-                AArch64Address address = masm.makeAddress(thread, isMethodHandleReturnOffset, scratch, 4, /* allowOverwrite */false);
+                final boolean allowOverwrite = false;
+                AArch64Address address = masm.makeAddress(thread, isMethodHandleReturnOffset, scratch, 4, allowOverwrite);
                 masm.ldr(32, scratch, address);
                 Label noRestore = new Label();
                 masm.cbz(32, scratch, noRestore);

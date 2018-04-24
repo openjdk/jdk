@@ -36,9 +36,10 @@ module jdk.internal.vm.compiler {
     uses org.graalvm.compiler.hotspot.CompilerConfigurationFactory;
     uses org.graalvm.compiler.hotspot.HotSpotBackendFactory;
     uses org.graalvm.compiler.hotspot.HotSpotCodeCacheListener;
-    uses org.graalvm.compiler.options.OptionValuesAccess;
+    uses org.graalvm.compiler.hotspot.HotSpotGraalManagementRegistration;
     uses org.graalvm.compiler.nodes.graphbuilderconf.NodeIntrinsicPluginFactory;
 
+    exports jdk.internal.vm.compiler.collections        to jdk.internal.vm.compiler.management;
     exports org.graalvm.compiler.api.directives         to jdk.aot;
     exports org.graalvm.compiler.api.runtime            to jdk.aot;
     exports org.graalvm.compiler.api.replacements       to jdk.aot;
@@ -46,9 +47,13 @@ module jdk.internal.vm.compiler {
     exports org.graalvm.compiler.bytecode               to jdk.aot;
     exports org.graalvm.compiler.code                   to jdk.aot;
     exports org.graalvm.compiler.core                   to jdk.aot;
-    exports org.graalvm.compiler.core.common            to jdk.aot;
+    exports org.graalvm.compiler.core.common            to
+        jdk.aot,
+        jdk.internal.vm.compiler.management;
     exports org.graalvm.compiler.core.target            to jdk.aot;
-    exports org.graalvm.compiler.debug                  to jdk.aot;
+    exports org.graalvm.compiler.debug                  to
+        jdk.aot,
+        jdk.internal.vm.compiler.management;
     exports org.graalvm.compiler.graph                  to jdk.aot;
     exports org.graalvm.compiler.hotspot                to
         jdk.aot,
@@ -62,12 +67,17 @@ module jdk.internal.vm.compiler {
     exports org.graalvm.compiler.lir.phases             to jdk.aot;
     exports org.graalvm.compiler.nodes                  to jdk.aot;
     exports org.graalvm.compiler.nodes.graphbuilderconf to jdk.aot;
-    exports org.graalvm.compiler.options                to jdk.aot;
+    exports org.graalvm.compiler.options                to
+        jdk.aot,
+        jdk.internal.vm.compiler.management;
     exports org.graalvm.compiler.phases                 to jdk.aot;
     exports org.graalvm.compiler.phases.tiers           to jdk.aot;
     exports org.graalvm.compiler.printer                to jdk.aot;
     exports org.graalvm.compiler.runtime                to jdk.aot;
     exports org.graalvm.compiler.replacements           to jdk.aot;
+    exports org.graalvm.compiler.serviceprovider        to
+        jdk.aot,
+        jdk.internal.vm.compiler.management;
     exports org.graalvm.compiler.word                   to jdk.aot;
-    exports org.graalvm.word                            to jdk.aot;
+    exports jdk.internal.vm.compiler.word               to jdk.aot;
 }

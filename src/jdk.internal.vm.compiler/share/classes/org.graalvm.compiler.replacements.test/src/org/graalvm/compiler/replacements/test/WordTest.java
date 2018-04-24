@@ -29,10 +29,10 @@ import org.graalvm.compiler.nodes.StructuredGraph.Builder;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.word.Word;
-import org.graalvm.word.Pointer;
-import org.graalvm.word.UnsignedWord;
-import org.graalvm.word.WordBase;
-import org.graalvm.word.WordFactory;
+import jdk.internal.vm.compiler.word.Pointer;
+import jdk.internal.vm.compiler.word.UnsignedWord;
+import jdk.internal.vm.compiler.word.WordBase;
+import jdk.internal.vm.compiler.word.WordFactory;
 import org.junit.Test;
 
 /**

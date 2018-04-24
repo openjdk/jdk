@@ -32,7 +32,7 @@ import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.replacements.StringSubstitutions;
 import org.graalvm.compiler.replacements.nodes.ArrayCompareToNode;
 import org.graalvm.compiler.word.Word;
-import org.graalvm.word.Pointer;
+import jdk.internal.vm.compiler.word.Pointer;
 
 import jdk.vm.ci.meta.JavaKind;
 

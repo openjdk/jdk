@@ -24,7 +24,7 @@ package org.graalvm.compiler.options;
 
 import java.util.EnumSet;
 
-import org.graalvm.collections.EconomicMap;
+import jdk.internal.vm.compiler.collections.EconomicMap;
 
 public class EnumOptionKey<T extends Enum<T>> extends OptionKey<T> {
     final Class<T> enumClass;
@@ -45,11 +45,11 @@ public class EnumOptionKey<T extends Enum<T>> extends OptionKey<T> {
         return EnumSet.allOf(enumClass);
     }
 
-    Object valueOf(String name) {
+    public Object valueOf(String name) {
         try {
             return Enum.valueOf(enumClass, name);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("\"" + name + "\" is not a valid option for " + getName() + ". Valid values are " + EnumSet.allOf(enumClass));
+            throw new IllegalArgumentException("\"" + name + "\" is not a valid option for " + getName() + ". Valid values are " + getAllValues());
         }
     }
 

@@ -23,10 +23,11 @@
 package org.graalvm.compiler.core;
 
 import static org.graalvm.compiler.core.GraalCompilerOptions.PrintCompilation;
+import static org.graalvm.compiler.serviceprovider.GraalServices.getCurrentThreadAllocatedBytes;
+import static org.graalvm.compiler.serviceprovider.GraalServices.isThreadAllocatedMemorySupported;
 
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
-import org.graalvm.compiler.debug.Management;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.options.OptionValues;
 
@@ -58,11 +59,6 @@ public final class CompilationPrinter {
      */
     public static CompilationPrinter begin(OptionValues options, CompilationIdentifier id, JavaMethod method, int entryBCI) {
         if (PrintCompilation.getValue(options) && !TTY.isSuppressed()) {
-            try {
-                Class.forName("java.lang.management.ManagementFactory");
-            } catch (ClassNotFoundException ex) {
-                throw new IllegalArgumentException("PrintCompilation option requires java.management module");
-            }
             return new CompilationPrinter(id, method, entryBCI);
         }
         return DISABLED;
@@ -83,9 +79,8 @@ public final class CompilationPrinter {
         this.id = id;
         this.entryBCI = entryBCI;
 
-        final long threadId = Thread.currentThread().getId();
         start = System.nanoTime();
-        allocatedBytesBefore = getAllocatedBytes(threadId);
+        allocatedBytesBefore = isThreadAllocatedMemorySupported() ? getCurrentThreadAllocatedBytes() : -1;
     }
 
     private String getMethodDescription() {
@@ -101,24 +96,17 @@ public final class CompilationPrinter {
      */
     public void finish(CompilationResult result) {
         if (id != null) {
-            final long threadId = Thread.currentThread().getId();
             final long stop = System.nanoTime();
             final long duration = (stop - start) / 1000000;
             final int targetCodeSize = result != null ? result.getTargetCodeSize() : -1;
             final int bytecodeSize = result != null ? result.getBytecodeSize() : 0;
-            final long allocatedBytesAfter = getAllocatedBytes(threadId);
-            final long allocatedKBytes = (allocatedBytesAfter - allocatedBytesBefore) / 1024;
-
-            TTY.println(getMethodDescription() + String.format(" | %4dms %5dB %5dB %5dkB", duration, bytecodeSize, targetCodeSize, allocatedKBytes));
+            if (allocatedBytesBefore == -1) {
+                TTY.println(getMethodDescription() + String.format(" | %4dms %5dB %5dB", duration, bytecodeSize, targetCodeSize));
+            } else {
+                final long allocatedBytesAfter = getCurrentThreadAllocatedBytes();
+                final long allocatedKBytes = (allocatedBytesAfter - allocatedBytesBefore) / 1024;
+                TTY.println(getMethodDescription() + String.format(" | %4dms %5dB %5dB %5dkB", duration, bytecodeSize, targetCodeSize, allocatedKBytes));
+            }
         }
-    }
-
-    static com.sun.management.ThreadMXBean threadMXBean;
-
-    static long getAllocatedBytes(long threadId) {
-        if (threadMXBean == null) {
-            threadMXBean = (com.sun.management.ThreadMXBean) Management.getThreadMXBean();
-        }
-        return threadMXBean.getThreadAllocatedBytes(threadId);
     }
 }

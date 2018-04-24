@@ -24,7 +24,7 @@ package org.graalvm.compiler.replacements;
 
 import static org.graalvm.compiler.nodes.graphbuilderconf.IntrinsicContext.CompilationContext.INLINE_AFTER_PARSING;
 
-import org.graalvm.collections.EconomicMap;
+import jdk.internal.vm.compiler.collections.EconomicMap;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.SourceLanguagePositionProvider;

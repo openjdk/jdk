@@ -42,10 +42,10 @@ import java.util.Locale;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 import org.graalvm.compiler.debug.CSVUtil;
-import org.graalvm.compiler.debug.Management;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.serviceprovider.GraalServices;
 
 import jdk.vm.ci.hotspot.HotSpotInstalledCode;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
@@ -87,8 +87,7 @@ public final class CompilationStatistics {
     private static long zeroTime = System.nanoTime();
 
     private static long getThreadAllocatedBytes() {
-        com.sun.management.ThreadMXBean thread = (com.sun.management.ThreadMXBean) Management.getThreadMXBean();
-        return thread.getThreadAllocatedBytes(currentThread().getId());
+        return GraalServices.getCurrentThreadAllocatedBytes();
     }
 
     @NotReported private final long startTime;

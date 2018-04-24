@@ -36,6 +36,10 @@ import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.tiers.LowTierContext;
 import org.graalvm.compiler.phases.tiers.MidTierContext;
 
+/**
+ * A compiler configuration that performs fewer Graal IR optimizations while using the same backend
+ * as the {@link CommunityCompilerConfiguration}.
+ */
 public class EconomyCompilerConfiguration implements CompilerConfiguration {
 
     @Override

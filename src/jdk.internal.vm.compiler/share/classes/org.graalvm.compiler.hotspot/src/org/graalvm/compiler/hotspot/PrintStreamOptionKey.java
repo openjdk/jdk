@@ -27,15 +27,19 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.List;
 
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.serviceprovider.GraalServices;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider;
 
 /**
- * An option that encapsulates and configures a print stream.
+ * An option for a configurable file name that can also open a {@link PrintStream} on the file. If
+ * no value is given for the option, the stream will output to HotSpot's
+ * {@link HotSpotJVMCIRuntimeProvider#getLogStream() log} stream
  */
 public class PrintStreamOptionKey extends OptionKey<String> {
 
@@ -44,27 +48,13 @@ public class PrintStreamOptionKey extends OptionKey<String> {
     }
 
     /**
-     * Replace any instance of %p with an identifying name. Try to get it from the RuntimeMXBean
-     * name.
-     *
-     * @return the name of the file to log to
+     * @return {@code nameTemplate} with all instances of %p replaced by
+     *         {@link GraalServices#getExecutionID()} and %t by {@link System#currentTimeMillis()}
      */
-    private String getFilename(OptionValues options) {
-        String name = getValue(options);
+    private static String makeFilename(String nameTemplate) {
+        String name = nameTemplate;
         if (name.contains("%p")) {
-            try {
-                String runtimeName = java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
-                int index = runtimeName.indexOf('@');
-                if (index != -1) {
-                    long pid = Long.parseLong(runtimeName.substring(0, index));
-                    runtimeName = Long.toString(pid);
-                }
-                name = name.replaceAll("%p", runtimeName);
-            } catch (NumberFormatException e) {
-
-            } catch (LinkageError err) {
-                name = String.valueOf(org.graalvm.compiler.debug.PathUtilities.getGlobalTimeStamp());
-            }
+            name = name.replaceAll("%p", GraalServices.getExecutionID());
         }
         if (name.contains("%t")) {
             name = name.replaceAll("%t", String.valueOf(System.currentTimeMillis()));
@@ -118,22 +108,26 @@ public class PrintStreamOptionKey extends OptionKey<String> {
      * will output to HotSpot's {@link HotSpotJVMCIRuntimeProvider#getLogStream() log} stream.
      */
     public PrintStream getStream(OptionValues options) {
-        if (getValue(options) != null) {
+        String nameTemplate = getValue(options);
+        if (nameTemplate != null) {
+            String name = makeFilename(nameTemplate);
             try {
                 final boolean enableAutoflush = true;
-                PrintStream ps = new PrintStream(new FileOutputStream(getFilename(options)), enableAutoflush);
+                PrintStream ps = new PrintStream(new FileOutputStream(name), enableAutoflush);
                 /*
                  * Add the JVM and Java arguments to the log file to help identity it.
                  */
-                String inputArguments = String.join(" ", java.lang.management.ManagementFactory.getRuntimeMXBean().getInputArguments());
-                ps.println("VM Arguments: " + inputArguments);
+                List<String> inputArguments = GraalServices.getInputArguments();
+                if (inputArguments != null) {
+                    ps.println("VM Arguments: " + String.join(" ", inputArguments));
+                }
                 String cmd = System.getProperty("sun.java.command");
                 if (cmd != null) {
                     ps.println("sun.java.command=" + cmd);
                 }
                 return ps;
             } catch (FileNotFoundException e) {
-                throw new RuntimeException("couldn't open file: " + getValue(options), e);
+                throw new RuntimeException("couldn't open file: " + name, e);
             }
         } else {
             return new PrintStream(new DelayedOutputStream());

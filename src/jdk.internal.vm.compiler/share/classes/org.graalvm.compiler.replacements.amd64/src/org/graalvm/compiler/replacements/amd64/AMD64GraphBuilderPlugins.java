@@ -29,8 +29,8 @@ import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.Una
 import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOperation.LOG10;
 import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOperation.SIN;
 import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOperation.TAN;
-import static org.graalvm.compiler.serviceprovider.JDK9Method.JAVA_SPECIFICATION_VERSION;
-import static org.graalvm.compiler.serviceprovider.JDK9Method.Java8OrEarlier;
+import static org.graalvm.compiler.serviceprovider.GraalServices.JAVA_SPECIFICATION_VERSION;
+import static org.graalvm.compiler.serviceprovider.GraalServices.Java8OrEarlier;
 
 import java.util.Arrays;
 
@@ -57,7 +57,7 @@ import org.graalvm.compiler.replacements.nodes.BinaryMathIntrinsicNode.BinaryOpe
 import org.graalvm.compiler.replacements.nodes.BitCountNode;
 import org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode;
 import org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOperation;
-import org.graalvm.word.LocationIdentity;
+import jdk.internal.vm.compiler.word.LocationIdentity;
 
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.amd64.AMD64.CPUFeature;
@@ -194,8 +194,7 @@ public class AMD64GraphBuilderPlugins {
                 r.registerMethodSubstitution(AMD64StringSubstitutions.class, "indexOf", char[].class, int.class,
                                 int.class, char[].class, int.class, int.class, int.class);
             }
-            // r.registerMethodSubstitution(AMD64StringSubstitutions.class, "compareTo",
-            // Receiver.class, String.class);
+            r.registerMethodSubstitution(AMD64StringSubstitutions.class, "compareTo", Receiver.class, String.class);
         }
     }
 
