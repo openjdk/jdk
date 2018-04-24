@@ -278,13 +278,6 @@ inline void MacroAssembler::call( Label& L, relocInfo::relocType rt ) {
 inline void MacroAssembler::callr( Register s1, Register s2 ) { jmpl( s1, s2, O7 ); }
 inline void MacroAssembler::callr( Register s1, int simm13a, RelocationHolder const& rspec ) { jmpl( s1, simm13a, O7, rspec); }
 
-// prefetch instruction
-inline void MacroAssembler::iprefetch( address d, relocInfo::relocType rt ) {
-  Assembler::bp( never, true, xcc, pt, d, rt );
-    Assembler::bp( never, true, xcc, pt, d, rt );
-}
-inline void MacroAssembler::iprefetch( Label& L) { iprefetch( target(L) ); }
-
 inline void MacroAssembler::tst( Register s ) { orcc( G0, s, G0 ); }
 
 inline void MacroAssembler::ret( bool trace ) {
