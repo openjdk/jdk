@@ -69,13 +69,11 @@ import com.sun.source.util.SimpleDocTreeVisitor;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.DocType;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
@@ -94,9 +92,8 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
-import jdk.javadoc.internal.doclets.toolkit.util.ImplementedMethods;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
-import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 import static com.sun.source.doctree.DocTree.Kind.*;
 import static jdk.javadoc.internal.doclets.toolkit.util.CommentHelper.SPACER;
@@ -302,11 +299,12 @@ public class HtmlDocletWriter {
         TypeElement enclosing = utils.getEnclosingTypeElement(method);
         List<? extends TypeMirror> intfacs = enclosing.getInterfaces();
         ExecutableElement overriddenMethod = utils.overriddenMethod(method);
+        VisibleMemberTable vmt = configuration.getVisibleMemberTable(enclosing);
         // Check whether there is any implementation or overridden info to be
         // printed. If no overridden or implementation info needs to be
         // printed, do not print this section.
         if ((!intfacs.isEmpty()
-                && new ImplementedMethods(method, this.configuration).build().isEmpty() == false)
+                && vmt.getImplementedMethods(method).isEmpty() == false)
                 || overriddenMethod != null) {
             MethodWriterImpl.addImplementsInfo(this, method, dl);
             if (overriddenMethod != null) {
@@ -1078,10 +1076,11 @@ public class HtmlDocletWriter {
 
             // Find the enclosing type where the method is actually visible
             // in the inheritance hierarchy.
+            ExecutableElement overriddenMethod = null;
             if (refMem.getKind() == ElementKind.METHOD) {
-                VisibleMemberMap vmm = configuration.getVisibleMemberMap(containing,
-                        VisibleMemberMap.Kind.METHODS);
-                ExecutableElement overriddenMethod = vmm.getVisibleMethod((ExecutableElement)refMem);
+                VisibleMemberTable vmt = configuration.getVisibleMemberTable(containing);
+                overriddenMethod = vmt.getOverriddenMethod((ExecutableElement)refMem);
+
                 if (overriddenMethod != null)
                     containing = utils.getEnclosingTypeElement(overriddenMethod);
             }
@@ -1111,6 +1110,10 @@ public class HtmlDocletWriter {
             if (utils.isExecutableElement(refMem)) {
                 if (refMemName.indexOf('(') < 0) {
                     refMemName += utils.makeSignature((ExecutableElement)refMem, true);
+                }
+                if (overriddenMethod != null) {
+                    // The method to actually link.
+                    refMem = overriddenMethod;
                 }
             }
 
@@ -1596,7 +1599,7 @@ public class HtmlDocletWriter {
      * {@literal <a href="./com/sun/javadoc/package-summary.html">The package Page</a>}
      *
      * @param element the Element object whose documentation is being written.
-     * @param text the text being written.
+     * @param tt the text being written.
      *
      * @return the text, with all the relative links redirected to work.
      */
@@ -1671,7 +1674,7 @@ public class HtmlDocletWriter {
      * Add the annotation types of the executable receiver.
      *
      * @param method the executable to write the receiver annotations for.
-     * @param descList list of annotation description.
+     * @param descList a list of annotation mirrors.
      * @param htmltree the documentation tree to which the annotation info will be
      *        added
      */
@@ -1718,7 +1721,7 @@ public class HtmlDocletWriter {
      * Adds the annotatation types for the given Element.
      *
      * @param element the element to write annotations for.
-     * @param descList the array of {@link AnnotationDesc}.
+     * @param descList a list of annotation mirrors.
      * @param htmltree the documentation tree to which the annotation info will be
      *        added
      */
@@ -1732,7 +1735,7 @@ public class HtmlDocletWriter {
      *
      * @param indent the number of extra spaces to indent the annotations.
      * @param element the element to write annotations for.
-     * @param descList the array of {@link AnnotationDesc}.
+     * @param descList a list of annotation mirrors.
      * @param htmltree the documentation tree to which the annotation info will be
      *        added
      */
@@ -1758,9 +1761,9 @@ public class HtmlDocletWriter {
      * the given doc.
      *
      * @param indent the number of extra spaces to indent the annotations.
-     * @param descList the array of {@link AnnotationDesc}.
+     * @param descList a list of annotation mirrors.
      * @param linkBreak if true, add new line between each member value.
-     * @return an array of strings representing the annotations being
+     * @return a list of strings representing the annotations being
      *         documented.
      */
     private List<Content> getAnnotations(int indent, List<? extends AnnotationMirror> descList, boolean linkBreak) {
@@ -1781,10 +1784,10 @@ public class HtmlDocletWriter {
      * annotations should be returned without any filtering.
      *
      * @param indent the number of extra spaces to indent the annotations.
-     * @param descList the array of {@link AnnotationDesc}.
+     * @param descList a list of annotation mirrors.
      * @param linkBreak if true, add new line between each member value.
      * @param isJava5DeclarationLocation
-     * @return an array of strings representing the annotations being
+     * @return a list of strings representing the annotations being
      *         documented.
      */
     public List<Content> getAnnotations(int indent, List<? extends AnnotationMirror> descList,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,9 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
-import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 /**
  * The interface for a factory creates writers.
@@ -180,30 +179,30 @@ public interface WriterFactory {
      * Return the specified member summary writer for a given class.
      *
      * @param classWriter the writer for the class being documented.
-     * @param memberType  the {@link VisibleMemberMap} member type indicating
+     * @param memberType  the {@link VisibleMemberTable} member type indicating
      *                    the type of member summary that should be returned.
      * @return the summary writer for the give class.  Return null if this
      * writer is not supported by the doclet.
      *
-     * @see VisibleMemberMap
+     * @see VisibleMemberTable
      */
     public abstract MemberSummaryWriter getMemberSummaryWriter(
-        ClassWriter classWriter, VisibleMemberMap.Kind memberType);
+        ClassWriter classWriter, VisibleMemberTable.Kind memberType);
 
     /**
      * Return the specified member summary writer for a given annotation type.
      *
      * @param annotationTypeWriter the writer for the annotation type being
      *                             documented.
-     * @param memberType  the {@link VisibleMemberMap} member type indicating
+     * @param memberType  the {@link VisibleMemberTable} member type indicating
      *                    the type of member summary that should be returned.
      * @return the summary writer for the give class.  Return null if this
      * writer is not supported by the doclet.
      *
-     * @see VisibleMemberMap
+     * @see VisibleMemberTable
      */
     public abstract MemberSummaryWriter getMemberSummaryWriter(
-        AnnotationTypeWriter annotationTypeWriter, VisibleMemberMap.Kind memberType);
+        AnnotationTypeWriter annotationTypeWriter, VisibleMemberTable.Kind memberType);
 
     /**
      * Return the writer for the serialized form.

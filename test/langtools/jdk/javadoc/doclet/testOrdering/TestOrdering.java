@@ -578,6 +578,7 @@ public class TestOrdering extends JavadocTester {
         void run() {
             tester.javadoc("-d", "out-5",
                     "-javafx",
+                    "--disable-javafx-strict-checks",
                     "-sourcepath", tester.testSrc(new File(".").getPath()),
                     "pkg5"
             );

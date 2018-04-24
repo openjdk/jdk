@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.EnumMap;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,6 +38,8 @@ import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+
 
 /**
  * Constants and factory methods for common fragments of content
@@ -165,6 +169,8 @@ public class Contents {
     public final Content useLabel;
     public final Content valueLabel;
 
+    private final EnumMap<VisibleMemberTable.Kind, Content> navLinkLabels;
+
     private final Resources resources;
 
     /**
@@ -289,6 +295,13 @@ public class Contents {
         typeLabel = getContent("doclet.Type");
         useLabel = getContent("doclet.navClassUse");
         valueLabel = getContent("doclet.Value");
+
+        navLinkLabels = new EnumMap<>(VisibleMemberTable.Kind.class);
+        navLinkLabels.put(VisibleMemberTable.Kind.INNER_CLASSES, getContent("doclet.navNested"));
+        navLinkLabels.put(VisibleMemberTable.Kind.ENUM_CONSTANTS, getContent("doclet.navEnum"));
+        navLinkLabels.put(VisibleMemberTable.Kind.FIELDS, getContent("doclet.navField"));
+        navLinkLabels.put(VisibleMemberTable.Kind.CONSTRUCTORS, getContent("doclet.navConstructor"));
+        navLinkLabels.put(VisibleMemberTable.Kind.METHODS, getContent("doclet.navMethod"));
     }
 
     /**
@@ -392,5 +405,14 @@ public class Contents {
         }
         c.addContent(text.substring(start));
         return c; // TODO: should be made immutable
+    }
+
+    /**
+     * Returns a content for a visible member kind.
+     * @param kind the visible member table kind.
+     * @return the string content
+     */
+    public Content getNavLinkLabelContent(VisibleMemberTable.Kind kind) {
+        return Objects.requireNonNull(navLinkLabels.get(kind));
     }
 }

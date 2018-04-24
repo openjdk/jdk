@@ -74,12 +74,10 @@ import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTree.Kind;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.SerialFieldTree;
-import com.sun.source.doctree.StartElementTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.LineMap;
 import com.sun.source.util.DocSourcePositions;
 import com.sun.source.util.DocTrees;
-import com.sun.source.util.SimpleDocTreeVisitor;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.model.JavacTypes;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
@@ -94,7 +92,6 @@ import static javax.lang.model.type.TypeKind.*;
 
 import static com.sun.source.doctree.DocTree.Kind.*;
 import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuilder.MAX_CONSTANT_VALUE_INDEX_LENGTH;
-
 
 /**
  * Utilities Class for Doclets.
@@ -806,9 +803,8 @@ public class Utils {
             if (te == null) {
                 return null;
             }
-            VisibleMemberMap vmm = configuration.getVisibleMemberMap(te,
-                    VisibleMemberMap.Kind.METHODS);
-            for (Element e : vmm.getMembers(te)) {
+            VisibleMemberTable vmt = configuration.getVisibleMemberTable(te);
+            for (Element e : vmt.getMembers(VisibleMemberTable.Kind.METHODS)) {
                 ExecutableElement ee = (ExecutableElement)e;
                 if (configuration.workArounds.overrides(method, ee, origin) &&
                         !isSimpleOverride(ee)) {
@@ -1167,7 +1163,7 @@ public class Utils {
         }
         TypeElement superClass = asTypeElement(superType);
         // skip "hidden" classes
-        while ((superClass != null && isHidden(superClass))
+        while ((superClass != null && hasHiddenTag(superClass))
                 || (superClass != null &&  !isPublic(superClass) && !isLinkable(superClass))) {
             TypeMirror supersuperType = superClass.getSuperclass();
             TypeElement supersuperClass = asTypeElement(supersuperType);
@@ -1416,7 +1412,7 @@ public class Utils {
      * @param e the queried element
      * @return true if it exists, false otherwise
      */
-    public boolean isHidden(Element e) {
+    public boolean hasHiddenTag(Element e) {
         // prevent needless tests on elements which are not included
         if (!isIncluded(e)) {
             return false;
@@ -1462,14 +1458,14 @@ public class Utils {
                 new TreeSet<>(makeGeneralPurposeComparator());
         if (!javafx) {
             for (Element te : classlist) {
-                if (!isHidden(te)) {
+                if (!hasHiddenTag(te)) {
                     filteredOutClasses.add((TypeElement)te);
                 }
             }
             return filteredOutClasses;
         }
         for (Element e : classlist) {
-            if (isPrivate(e) || isPackagePrivate(e) || isHidden(e)) {
+            if (isPrivate(e) || isPackagePrivate(e) || hasHiddenTag(e)) {
                 continue;
             }
             filteredOutClasses.add((TypeElement)e);
@@ -2246,18 +2242,6 @@ public class Utils {
         return convertToTypeElement(getItems(e, false, INTERFACE));
     }
 
-    List<Element> getNestedClasses(TypeElement e) {
-        List<Element> result = new ArrayList<>();
-        recursiveGetItems(result, e, true, CLASS);
-        return result;
-    }
-
-    List<Element> getNestedClassesUnfiltered(TypeElement e) {
-        List<Element> result = new ArrayList<>();
-        recursiveGetItems(result, e, false, CLASS);
-        return result;
-    }
-
     public List<Element> getEnumConstants(Element e) {
         return getItems(e, true, ENUM_CONSTANT);
     }
@@ -2381,7 +2365,6 @@ public class Utils {
     }
 
     EnumSet<ElementKind> nestedKinds = EnumSet.of(ANNOTATION_TYPE, CLASS, ENUM, INTERFACE);
-
     void recursiveGetItems(Collection<Element> list, Element e, boolean filter, ElementKind... select) {
         list.addAll(getItems0(e, filter, select));
         List<Element> classes = getItems0(e, filter, nestedKinds);
@@ -2411,7 +2394,8 @@ public class Utils {
     }
 
     private SimpleElementVisitor9<Boolean, Void> shouldDocumentVisitor = null;
-    private boolean shouldDocument(Element e) {
+
+    protected boolean shouldDocument(Element e) {
         if (shouldDocumentVisitor == null) {
             shouldDocumentVisitor = new SimpleElementVisitor9<Boolean, Void>() {
                 private boolean hasSource(TypeElement e) {
@@ -2422,6 +2406,10 @@ public class Utils {
                 // handle types
                 @Override
                 public Boolean visitType(TypeElement e, Void p) {
+                    // treat inner classes etc as members
+                    if (e.getNestingKind().isNested()) {
+                        return defaultAction(e, p);
+                    }
                     return configuration.docEnv.isSelected(e) && hasSource(e);
                 }
 
@@ -3272,6 +3260,12 @@ public class Utils {
         public Pair(K first, L second) {
             this.first = first;
             this.second = second;
+        }
+
+        public String toString() {
+            StringBuffer out = new StringBuffer();
+            out.append(first + ":" + second);
+            return out.toString();
         }
     }
 }

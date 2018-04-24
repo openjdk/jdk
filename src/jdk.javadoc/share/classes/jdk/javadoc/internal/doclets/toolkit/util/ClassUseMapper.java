@@ -47,7 +47,8 @@ import javax.lang.model.util.Types;
 
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
-import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap.Kind;
+
+import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.*;
 
 /**
  * Map all class uses for a given class.
@@ -243,8 +244,9 @@ public class ClassUseMapper {
                 mapExecutable(ctor);
             }
 
-            VisibleMemberMap vmm = configuration.getVisibleMemberMap(aClass, Kind.METHODS);
-            List<ExecutableElement> methods = ElementFilter.methodsIn(vmm.getMembers(aClass));
+            VisibleMemberTable vmt = configuration.getVisibleMemberTable(aClass);
+            List<ExecutableElement> methods = ElementFilter.methodsIn(vmt.getMembers(METHODS));
+
             for (ExecutableElement method : methods) {
                 mapExecutable(method);
                 mapTypeParameters(classToMethodTypeParam, method, method);
@@ -554,8 +556,8 @@ public class ClassUseMapper {
      * Map the AnnotationType to the members that use them as type parameters.
      *
      * @param map the map the insert the information into.
-     * @param element whose type parameters are being checked.
-     * @param holder the holder that owns the type parameters.
+     * @param e whose type parameters are being checked.
+     * @param holder owning the type parameters.
      */
     private <T extends Element> void mapAnnotations(final Map<TypeElement, List<T>> map,
             Element e, final T holder) {

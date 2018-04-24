@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 import javax.lang.model.element.Element;
@@ -180,8 +179,7 @@ public class TagletManager {
     private final boolean showauthor;
 
     /**
-     * True if we want to use JavaFX-related tags (@propertyGetter,
-     * @propertySetter, @propertyDescription, @defaultValue, @treatAsPrivate).
+     * True if we want to use JavaFX-related tags (@defaultValue, @treatAsPrivate).
      */
     private final boolean javafx;
 
