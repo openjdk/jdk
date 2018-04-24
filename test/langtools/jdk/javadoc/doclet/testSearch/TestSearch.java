@@ -285,6 +285,7 @@ public class TestSearch extends JavadocTester {
         javadoc("-d", "out-9",
                 "-sourcepath", testSrc,
                 "-javafx",
+                "--disable-javafx-strict-checks",
                 "-package",
                 "-use",
                 "pkgfx", "pkg3");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,7 +161,6 @@ public class ClassTree {
      * have their own sub-class lists.
      *
      * @param classes all the classes in this run.
-     * @param configuration the current configuration of the doclet.
      */
     private void buildTree(Iterable<TypeElement> classes) {
         for (TypeElement aClass : classes) {
@@ -174,7 +173,7 @@ public class ClassTree {
                 continue;
             }
 
-            if (utils.isHidden(aClass)) {
+            if (utils.hasHiddenTag(aClass)) {
                 continue;
             }
 

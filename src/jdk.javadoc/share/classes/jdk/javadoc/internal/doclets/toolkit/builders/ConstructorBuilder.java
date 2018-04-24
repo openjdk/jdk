@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@ import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.ConstructorWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
-import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
 
+import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.*;
 
 /**
  * Builds documentation for a constructor.
@@ -57,16 +57,6 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
     private ExecutableElement currentConstructor;
 
     /**
-     * The class whose constructors are being documented.
-     */
-    private final TypeElement typeElement;
-
-    /**
-     * The visible constructors for the given class.
-     */
-    private final VisibleMemberMap visibleMemberMap;
-
-    /**
      * The writer to output the constructor documentation.
      */
     private final ConstructorWriter writer;
@@ -74,7 +64,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
     /**
      * The constructors being documented.
      */
-    private final List<Element> constructors;
+    private final List<? extends Element> constructors;
 
     /**
      * Construct a new ConstructorBuilder.
@@ -86,12 +76,9 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
     private ConstructorBuilder(Context context,
             TypeElement typeElement,
             ConstructorWriter writer) {
-        super(context);
-        this.typeElement = typeElement;
+        super(context, typeElement);
         this.writer = writer;
-        visibleMemberMap = configuration.getVisibleMemberMap(typeElement,
-                VisibleMemberMap.Kind.CONSTRUCTORS);
-        constructors = visibleMemberMap.getMembers(typeElement);
+        constructors = getVisibleMembers(CONSTRUCTORS);
         for (Element ctor : constructors) {
             if (utils.isProtected(ctor) || utils.isPrivate(ctor)) {
                 writer.setFoundNonPubConstructor(true);

@@ -42,6 +42,7 @@ public class TestProperty extends JavadocTester {
     void testArrays() {
         javadoc("-d", "out",
                 "-javafx",
+                "--disable-javafx-strict-checks",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
@@ -113,6 +114,7 @@ public class TestProperty extends JavadocTester {
         javadoc("-d", "out-html4",
                 "-html4",
                 "-javafx",
+                "--disable-javafx-strict-checks",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);

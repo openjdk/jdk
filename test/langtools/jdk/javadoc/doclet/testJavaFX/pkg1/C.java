@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,27 +60,28 @@ public class C {
 
     public final void setRate(double value) {}
 
-    public final double getRate() {}
+    public final double getRate() { return 1.0d; }
 
-    public final DoubleProperty rateProperty() {}
+    public final DoubleProperty rateProperty() { return null; }
 
     private BooleanProperty paused;
 
     public final void setPaused(boolean value) {}
 
-    public final double isPaused() {}
+    public final double isPaused() { return 3.14d; }
 
     /**
      * Defines if paused. The second line.
      * @defaultValue false
+     * @return foo
      */
-    public final BooleanProperty pausedProperty() {}
+    public final BooleanProperty pausedProperty() { return null; }
 
     class DoubleProperty {}
 
     class BooleanProperty {}
 
-    public final BooleanProperty setTestMethodProperty() {}
+    public final BooleanProperty setTestMethodProperty() { return null; }
 
     private class Inner {
         private BooleanProperty testMethodProperty() {}
@@ -94,8 +95,8 @@ public class C {
 
         public final void setRate(double value) {}
 
-        public final double getRate() {}
+        public final double getRate() { return 3.14d; }
 
-        public final DoubleProperty rateProperty() {}
+        public final DoubleProperty rateProperty() { return null; }
     }
 }
