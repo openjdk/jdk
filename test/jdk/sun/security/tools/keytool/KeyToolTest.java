@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,7 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.security.cert.X509Certificate;
+import jdk.test.lib.util.FileUtils;
 import sun.security.util.ObjectIdentifier;
 
 public class KeyToolTest {
@@ -118,9 +119,10 @@ public class KeyToolTest {
         if (debug) {
             System.err.println("Removing " + filename);
         }
-        new File(filename).delete();
-        if (new File(filename).exists()) {
-            throw new RuntimeException("Error deleting " + filename);
+        try{
+            FileUtils.deleteFileIfExistsWithRetry(Paths.get(filename));
+        }catch(IOException e) {
+            throw new RuntimeException("Error deleting " + filename, e);
         }
     }
 
