@@ -142,7 +142,9 @@ ctw_1 = \
 
 ctw_2 = \
   applications/ctw/modules/java_base.java \
-  applications/ctw/modules/java_desktop.java
+  applications/ctw/modules/java_base_2.java \
+  applications/ctw/modules/java_desktop.java \
+  applications/ctw/modules/java_desktop_2.java
 
 ctw_3 = \
   applications/ctw/modules/javafx_graphics.java \
