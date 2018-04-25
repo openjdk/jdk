@@ -372,7 +372,7 @@ public:
   virtual void do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred);
   //  The parallel versions are used by G1.
   virtual bool do_unloading_parallel(BoolObjectClosure* is_alive, bool unloading_occurred);
-  virtual void do_unloading_parallel_postponed(BoolObjectClosure* is_alive, bool unloading_occurred);
+  virtual void do_unloading_parallel_postponed();
 
   static unsigned char global_unloading_clock()   { return _global_unloading_clock; }
   static void increase_unloading_clock();
@@ -383,7 +383,7 @@ public:
 protected:
   virtual bool do_unloading_oops(address low_boundary, BoolObjectClosure* is_alive, bool unloading_occurred) = 0;
 #if INCLUDE_JVMCI
-  virtual bool do_unloading_jvmci(BoolObjectClosure* is_alive, bool unloading_occurred) = 0;
+  virtual bool do_unloading_jvmci(bool unloading_occurred) = 0;
 #endif
 
 private:
