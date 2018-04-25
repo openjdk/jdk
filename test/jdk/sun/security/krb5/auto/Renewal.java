@@ -161,8 +161,10 @@ public class Renewal {
             return;
         }
         long change = (t.getTime() - System.currentTimeMillis()) / 1000;
-        if (change > duration + 20 || change < duration - 20) {
-            throw new Exception(t + " is not " + duration);
+        //accounting the delay factor in processing the instructions on host mc
+        if (change > duration + 40 || change < duration - 40) {
+            throw new Exception("Timestamp is " + t + ", actual difference "
+                    + change + " is not " + duration);
         }
     }
 }
