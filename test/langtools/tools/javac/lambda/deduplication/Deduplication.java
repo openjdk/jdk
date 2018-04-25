@@ -38,6 +38,31 @@ public class Deduplication {
                 (Runnable) () -> { ( (Runnable) () -> {} ).run(); }
         );
 
+        group(
+                (Runnable) () -> { Deduplication.class.toString(); },
+                (Runnable) () -> { Deduplication.class.toString(); }
+        );
+
+        group(
+                (Runnable) () -> { Integer[].class.toString(); },
+                (Runnable) () -> { Integer[].class.toString(); }
+        );
+
+        group(
+                (Runnable) () -> { char.class.toString(); },
+                (Runnable) () -> { char.class.toString(); }
+        );
+
+        group(
+                (Runnable) () -> { Void.class.toString(); },
+                (Runnable) () -> { Void.class.toString(); }
+        );
+
+        group(
+                (Runnable) () -> { void.class.toString(); },
+                (Runnable) () -> { void.class.toString(); }
+        );
+
         group((Function<String, Integer>) x -> x.hashCode());
         group((Function<Object, Integer>) x -> x.hashCode());
 
