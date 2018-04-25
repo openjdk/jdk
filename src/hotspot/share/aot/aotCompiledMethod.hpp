@@ -285,7 +285,7 @@ private:
 
 protected:
   virtual bool do_unloading_oops(address low_boundary, BoolObjectClosure* is_alive, bool unloading_occurred);
-  virtual bool do_unloading_jvmci(BoolObjectClosure* is_alive, bool unloading_occurred) { return false; }
+  virtual bool do_unloading_jvmci(bool unloading_occurred) { return false; }
 
 };
 

@@ -3353,7 +3353,7 @@ private:
   }
 
   void clean_nmethod_postponed(CompiledMethod* nm) {
-    nm->do_unloading_parallel_postponed(_is_alive, _unloading_occurred);
+    nm->do_unloading_parallel_postponed();
   }
 
   static const int MaxClaimNmethods = 16;
