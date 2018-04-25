@@ -32,7 +32,7 @@
  *          jdk.jartool/sun.tools.jar
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @compile src/jdk/test/Main.java
- * @compile src/com/sun/tools/javac/Main2.jasm
+ * @compile src/com/sun/tools/javac/MyMain.jasm
  * @compile src/sun/nio/cs/ext/MyClass.java
  * @compile src/sun/nio/cs/ext1/MyClass.java
  * @run main BootAppendTests
@@ -52,7 +52,7 @@ public class BootAppendTests {
     private static final Path CLASSES_DIR = Paths.get("classes");
 
     private static final String MAIN_CLASS = "jdk.test.Main";
-    private static final String APP_MODULE_CLASS = "com/sun/tools/javac/Main2";
+    private static final String APP_MODULE_CLASS = "com/sun/tools/javac/MyMain";
     private static final String BOOT_APPEND_MODULE_CLASS = "sun/nio/cs/ext/MyClass";
     private static final String BOOT_APPEND_CLASS = "sun/nio/cs/ext1/MyClass";
     private static final String[] ARCHIVE_CLASSES =
@@ -239,7 +239,7 @@ public class BootAppendTests {
             MAIN_CLASS, "Test #9", APP_MODULE_CLASS, "true", "BOOT")
             .assertSilentlyDisabledCDS(out -> {
                 out.shouldHaveExitValue(0)
-                   .shouldMatch(".class.load. com.sun.tools.javac.Main2 source:.*bootAppend.jar");
+                   .shouldMatch(".class.load. com.sun.tools.javac.MyMain source:.*bootAppend.jar");
             });
     }
 
@@ -253,7 +253,7 @@ public class BootAppendTests {
             MAIN_CLASS, "Test #10", APP_MODULE_CLASS, "true", "BOOT")
             .assertSilentlyDisabledCDS(out -> {
                 out.shouldHaveExitValue(0)
-                   .shouldMatch(".class.load. com.sun.tools.javac.Main2 source:.*bootAppend.jar");
+                   .shouldMatch(".class.load. com.sun.tools.javac.MyMain source:.*bootAppend.jar");
             });
     }
 }

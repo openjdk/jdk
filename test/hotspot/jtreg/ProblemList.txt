@@ -92,12 +92,6 @@ serviceability/sa/sadebugd/SADebugDTest.java         8163805 generic-all
 # Java EE Module Removal
 #
 
-runtime/appcds/jigsaw/classpathtests/ClassPathTests.java                       8194310    generic-all  Java EE Module Removal
-runtime/appcds/jigsaw/overridetests/OverrideTests.java                         8194310    generic-all  Java EE Module Removal
-runtime/SharedArchiveFile/BootAppendTests.java                                 8194310    generic-all  Java EE Module Removal
 runtime/modules/PatchModule/PatchModuleClassList.java                          8194310    generic-all  Java EE Module Removal
 compiler/c2/Test8007294.java                                                   8194310    generic-all  Java EE Module Removal
 compiler/c2/Test6852078.java                                                   8194310    generic-all  Java EE Module Removal
-runtime/AppCDS/HelloExtTest.java                                               8194310    generic-all  Java EE Module Removal
-runtime/AppCDS/javaldr/CheckAnonymousClass.java                                8194310    generic-all  Java EE Module Removal
-runtime/appcds/jigsaw/classpathtests/DummyClassesInBootClassPath.java          8194310    generic-all  Java EE Module Removal

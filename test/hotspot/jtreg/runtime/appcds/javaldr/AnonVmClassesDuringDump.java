@@ -61,8 +61,22 @@ public class AnonVmClassesDuringDump {
                             // Set the following property to see logs for dynamically generated classes
                             // in STDOUT
                             "-Djava.lang.invoke.MethodHandle.DUMP_CLASS_FILES=true");
+
+        String prefix = ".class.load. ";
+        // class name pattern like the following:
+        // jdk.internal.loader.BuiltinClassLoader$$Lambda$1/1816757085
+        // java.lang.invoke.LambdaForm$MH/1585787493
+        String class_pattern = ".*Lambda([a-z0-9$]+)/([0-9]+).*";
+        String suffix = ".*source: shared objects file.*";
+        String pattern = prefix + class_pattern + suffix;
+        // during run time, anonymous classes shouldn't be loaded from the archive
         TestCommon.run("-cp", appJar, "Hello")
-            .assertNormalExit();
+            .assertNormalExit(output -> output.shouldNotMatch(pattern));
+
+        // inspect the archive and make sure no anonymous class is in there
+        TestCommon.run("-cp", appJar,
+            "-XX:+PrintSharedArchiveAndExit", "-XX:+PrintSharedDictionary", "Hello")
+            .assertNormalExit(output -> output.shouldNotMatch(class_pattern));
     }
 }
 

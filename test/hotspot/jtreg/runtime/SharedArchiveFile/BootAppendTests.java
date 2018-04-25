@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,12 @@
  * @summary Testing -Xbootclasspath/a support for CDS
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
+ * @modules java.compiler
+ *          java.base/jdk.internal.misc
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @compile javax/sound/sampled/MyClass.jasm
- * @compile org/omg/CORBA/Context.jasm
+ * @compile javax/annotation/processing/FilerException.jasm
  * @compile nonjdk/myPackage/MyClass.java
  * @build LoadClass
  * @run main/othervm BootAppendTests
@@ -53,7 +54,8 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class BootAppendTests {
     private static final String APP_CLASS = "LoadClass";
     private static final String BOOT_APPEND_MODULE_CLASS = "javax/sound/sampled/MyClass";
-    private static final String BOOT_APPEND_DUPLICATE_MODULE_CLASS = "org/omg/CORBA/Context";
+    private static final String BOOT_APPEND_DUPLICATE_MODULE_CLASS =
+        "javax/annotation/processing/FilerException";
     private static final String BOOT_APPEND_CLASS = "nonjdk/myPackage/MyClass";
     private static final String BOOT_APPEND_MODULE_CLASS_NAME =
         BOOT_APPEND_MODULE_CLASS.replace('/', '.');
@@ -141,21 +143,21 @@ public class BootAppendTests {
     //          from -Xbootclasspath/a. Verify the behavior is the same at runtime
     //          when CDS is enabled.
     //
-    //          The org.omg.CORBA.Context is a boot module class. The class on
-    //          the -Xbootclasspath/a path that has the same fully-qualified name
-    //          should not be loaded at runtime when CDS is enabled.
-    //          The one from the boot modules should be loaded instead.
+    //          The javax/annotation/processing/FilerException is a platform module
+    //          class. The class on the -Xbootclasspath/a path that has the same
+    //          fully-qualified name should not be loaded at runtime when CDS is enabled.
+    //          The one from the platform modules should be loaded instead.
     public static void testBootAppendDuplicateModuleClass() throws Exception {
         for (String mode : modes) {
             CDSOptions opts = (new CDSOptions())
                 .setXShareMode(mode).setUseVersion(false)
-                .addPrefix("--add-modules", "java.corba", "-showversion",
+                .addPrefix("-showversion",
                            "-Xbootclasspath/a:" + bootAppendJar, "-cp", appJar)
                 .addSuffix("-Xlog:class+load=info",
                            APP_CLASS, BOOT_APPEND_DUPLICATE_MODULE_CLASS_NAME);
 
             OutputAnalyzer out = CDSTestUtils.runWithArchive(opts);
-            CDSTestUtils.checkExec(out, opts, "[class,load] org.omg.CORBA.Context source: jrt:/java.corba");
+            CDSTestUtils.checkExec(out, opts, "[class,load] javax.annotation.processing.FilerException source: jrt:/java.compiler");
         }
     }
 
@@ -164,9 +166,9 @@ public class BootAppendTests {
     //          using --limit-modules. Verify the behavior is the same at runtime when CDS
     //          is enabled.
     //
-    //          The java.desktop module is excluded using --limit-modules at runtime,
-    //          javax.sound.sampled.MyClass is archived from -Xbootclasspath/a. It can be
-    //          loaded from the archive at runtime.
+    //          The java.desktop module is excluded using --limit-modules at runtime
+    //          CDS will be disabled with the --limit-modules option during runtime.
+    //          javax.sound.sampled.MyClass will be loaded from the jar at runtime.
     public static void testBootAppendExcludedModuleClass() throws Exception {
         for (String mode : modes) {
             CDSOptions opts = (new CDSOptions())
@@ -175,13 +177,18 @@ public class BootAppendTests {
                            "--limit-modules=java.base", "-cp", appJar)
                 .addSuffix("-Xlog:class+load=info",
                            APP_CLASS, BOOT_APPEND_MODULE_CLASS_NAME);
-
-            OutputAnalyzer out = CDSTestUtils.runWithArchive(opts);
-            CDSTestUtils.checkExec(out, opts, "[class,load] javax.sound.sampled.MyClass");
-
-            // When CDS is enabled, the shared class should be loaded from the archive.
+            CDSTestUtils.Result res = CDSTestUtils.run(opts);
+            String MATCH_PATTERN =
+                ".class.load. javax.sound.sampled.MyClass source:.*bootAppend.jar*";
             if (mode.equals("on")) {
-                CDSTestUtils.checkExec(out, opts, "[class,load] javax.sound.sampled.MyClass source: shared objects file");
+                res.assertSilentlyDisabledCDS(out -> {
+                    out.shouldHaveExitValue(0)
+                       .shouldMatch(MATCH_PATTERN);
+                    });
+            } else {
+                res.assertNormalExit(out -> {
+                    out.shouldMatch(MATCH_PATTERN);
+                    });
             }
         }
     }
@@ -192,10 +199,12 @@ public class BootAppendTests {
     //          --limit-modules. Verify the behavior is the same at runtime
     //          when CDS is enabled.
     //
-    //          The org.omg.CORBA.Context is a boot module class. The class
-    //          on -Xbootclasspath/a that has the same fully-qualified name
-    //          as org.omg.CORBA.Context can be loaded at runtime when
-    //          java.corba is excluded.
+    //          The javax.annotation.processing.FilerException is a platform module class.
+    //          The class on -Xbootclasspath/a that has the same fully-qualified name
+    //          as javax.annotation.processing.FilerException can be loaded at runtime when
+    //          java.compiler is excluded.
+    //          CDS is disabled during runtime if the --limit-modules option is
+    //          specified.
     public static void testBootAppendDuplicateExcludedModuleClass() throws Exception {
         for (String mode : modes) {
             CDSOptions opts = (new CDSOptions())
@@ -205,14 +214,18 @@ public class BootAppendTests {
                 .addSuffix("-Xlog:class+load=info",
                            APP_CLASS, BOOT_APPEND_DUPLICATE_MODULE_CLASS_NAME);
 
-            OutputAnalyzer out = CDSTestUtils.runWithArchive(opts);
-            CDSTestUtils.checkExec(out, opts, "[class,load] org.omg.CORBA.Context");
-            if (!CDSTestUtils.isUnableToMap(out)) {
-                if (mode.equals("off")) {
-                    out.shouldMatch(".*\\[class,load\\] org.omg.CORBA.Context source:.*bootAppend.jar");
-                } else {
-                    CDSTestUtils.checkExec(out, opts, "[class,load] org.omg.CORBA.Context source: shared objects file");
-                }
+            CDSTestUtils.Result res = CDSTestUtils.run(opts);
+            String MATCH_PATTERN =
+                ".class.load. javax.annotation.processing.FilerException source:.*bootAppend.jar*";
+            if (mode.equals("on")) {
+                res.assertSilentlyDisabledCDS(out -> {
+                    out.shouldHaveExitValue(0)
+                       .shouldMatch(MATCH_PATTERN);
+                    });
+            } else {
+                res.assertNormalExit(out -> {
+                    out.shouldMatch(MATCH_PATTERN);
+                    });
             }
         }
     }
@@ -222,8 +235,9 @@ public class BootAppendTests {
     //          the same at runtime when CDS is enabled.
     //
     //          The nonjdk.myPackage is not defined in named modules. The
-    //          archived nonjdk.myPackage.MyClass from -Xbootclasspath/a
-    //          can be loaded at runtime when CDS is enabled.
+    //          nonjdk.myPackage.MyClass will be loaded from the jar in
+    //          -Xbootclasspath/a since CDS will be disabled with the
+    //          --limit-modules option.
     public static void testBootAppendClass() throws Exception {
         for (String mode : modes) {
             CDSOptions opts = (new CDSOptions())
@@ -233,21 +247,26 @@ public class BootAppendTests {
                 .addSuffix("-Xlog:class+load=info",
                            APP_CLASS, BOOT_APPEND_CLASS_NAME);
 
-            OutputAnalyzer out = CDSTestUtils.runWithArchive(opts);
-            CDSTestUtils.checkExec(out, opts, "[class,load] nonjdk.myPackage.MyClass");
-
-            // If CDS is enabled, the nonjdk.myPackage.MyClass should be loaded
-            // from the shared archive.
+            CDSTestUtils.Result res = CDSTestUtils.run(opts);
+            String MATCH_PATTERN =
+                ".class.load. nonjdk.myPackage.MyClass source:.*bootAppend.jar*";
             if (mode.equals("on")) {
-                CDSTestUtils.checkExec(out, opts,
-                    "[class,load] nonjdk.myPackage.MyClass source: shared objects file");
+                res.assertSilentlyDisabledCDS(out -> {
+                    out.shouldHaveExitValue(0)
+                       .shouldMatch(MATCH_PATTERN);
+                    });
+            } else {
+                res.assertNormalExit(out -> {
+                    out.shouldMatch(MATCH_PATTERN);
+                    });
             }
         }
     }
 
     // Test #6: This is similar to Test #5. During runtime, an extra dir
     //          is appended to the bootclasspath. It should not invalidate
-    //          the shared archive.
+    //          the shared archive. However, CDS will be disabled with the
+    //          --limit-modules in the command line.
     public static void testBootAppendExtraDir() throws Exception {
         for (String mode : modes) {
             CDSOptions opts = (new CDSOptions())
@@ -257,14 +276,18 @@ public class BootAppendTests {
                 .addSuffix("-Xlog:class+load=info",
                            APP_CLASS, BOOT_APPEND_CLASS_NAME);
 
-            OutputAnalyzer out = CDSTestUtils.runWithArchive(opts);
-            CDSTestUtils.checkExec(out, opts, "[class,load] nonjdk.myPackage.MyClass");
-
-            // If CDS is enabled, the nonjdk.myPackage.MyClass should be loaded
-            // from the shared archive.
+            CDSTestUtils.Result res = CDSTestUtils.run(opts);
+            String MATCH_PATTERN =
+                ".class.load. nonjdk.myPackage.MyClass source:.*bootAppend.jar*";
             if (mode.equals("on")) {
-                CDSTestUtils.checkExec(out, opts,
-                    "[class,load] nonjdk.myPackage.MyClass source: shared objects file");
+                res.assertSilentlyDisabledCDS(out -> {
+                    out.shouldHaveExitValue(0)
+                       .shouldMatch(MATCH_PATTERN);
+                    });
+            } else {
+                res.assertNormalExit(out -> {
+                    out.shouldMatch(MATCH_PATTERN);
+                    });
             }
         }
     }
