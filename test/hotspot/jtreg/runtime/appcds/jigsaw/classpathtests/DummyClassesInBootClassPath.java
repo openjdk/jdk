@@ -27,11 +27,11 @@
  * @summary Ensure that classes found in jimage takes precedence over classes found in -Xbootclasspath/a.
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
- * @modules java.activation
+ * @modules java.compiler
  *          jdk.jartool/sun.tools.jar
  * @compile ../../test-classes/DummyClassHelper.java
  * @compile ../../test-classes/java/net/HttpCookie.jasm
- * @compile ../../test-classes/javax/activation/MimeType.jasm
+ * @compile ../../../SharedArchiveFile/javax/annotation/processing/FilerException.jasm
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main DummyClassesInBootClassPath
@@ -57,21 +57,20 @@ public class DummyClassesInBootClassPath {
 
     public static void main(String[] args) throws Exception {
         String classNames[] = { "java/net/HttpCookie",
-                                "javax/activation/MimeType"};
+                                "javax/annotation/processing/FilerException"};
         JarBuilder.build("dummyClasses", classNames[0], classNames[1]);
 
         String appJar = TestCommon.getTestJar("dummyClasses.jar");
         OutputAnalyzer dumpOutput = TestCommon.dump(
-            appJar, classNames, "-Xbootclasspath/a:" + appJar,
-            "--add-modules", "java.activation");
+            appJar, classNames, "-Xbootclasspath/a:" + appJar);
         List<String> argsList = new ArrayList<String>();
         for (int i = 0; i < classNames.length; i++) {
             argsList.add(classNames[i].replace('/', '.'));
         }
         String[] arguments = new String[argsList.size()];
         arguments = argsList.toArray(arguments);
-        Testcommon.run(
-            "--add-modules", "java.activation", "-Xbootclasspath/a:" + appJar,
+        TestCommon.run(
+            "-Xbootclasspath/a:" + appJar,
             "DummyClassHelper", arguments[0], arguments[1])
           .assertNormalExit(output -> checkOutput(output, classNames));
 
@@ -80,14 +79,14 @@ public class DummyClassesInBootClassPath {
         String bootClassPath = "-Xbootclasspath/a:" + appJar +
             File.pathSeparator + whiteBoxJar;
         dumpOutput = TestCommon.dump(
-            appJar, classNames, bootClassPath, "--add-modules", "java.activation");
+            appJar, classNames, bootClassPath);
         argsList.add("testWithWhiteBox");
         arguments = new String[argsList.size()];
         arguments = argsList.toArray(arguments);
         String[] opts = {"-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
-            "--add-modules", "java.activation", bootClassPath, "-Xlog:class+path=trace",
+            bootClassPath, "-Xlog:class+path=trace",
             "DummyClassHelper", arguments[0], arguments[1], arguments[2]};
-        Testcommon.run(opts)
+        TestCommon.run(opts)
           .assertNormalExit(output -> checkOutput(output, classNames));
     }
 }

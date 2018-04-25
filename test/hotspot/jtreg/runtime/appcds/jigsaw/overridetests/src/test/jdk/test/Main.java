@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,11 +73,15 @@ public class Main {
         Class<?> clazz = Class.forName(className, true, loader);
         // Make sure we got the expected defining ClassLoader
         testLoader(clazz, loader);
-        // Create an instance and see what toString() returns
-        String s = clazz.newInstance().toString();
+
+        String s = null;
+        if (shouldOverride) {
+          // Create an instance and see what toString() returns
+          clazz.newInstance().toString();
+        }
         // The overridden version of the class should return "hi". Make sure
         // it does only if we are expecting to have loaded the overridden version.
-        assertTrue(s.equals("hi") == shouldOverride);
+        assertTrue("hi".equals(s) == shouldOverride);
     }
 
     /**

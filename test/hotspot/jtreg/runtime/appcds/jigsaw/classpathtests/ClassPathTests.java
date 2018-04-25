@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,13 @@
  * @requires vm.cds & !vm.graal.enabled
  * @library ../..
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- * @modules jdk.jartool/sun.tools.jar
+ * @modules java.compiler
+ *          java.base/jdk.internal.misc
+ *          jdk.jartool/sun.tools.jar
  * @compile src/jdk/test/Main.java
  * @compile src/com/sun/tools/javac/Main.jasm
- * @compile src/com/sun/tools/javac/Main2.jasm
- * @compile src/javax/activation/UnsupportedDataTypeException2.jasm
+ * @compile src/com/sun/tools/javac/MyMain.jasm
+ * @compile ../../../SharedArchiveFile/javax/annotation/processing/FilerException.jasm
  * @run main ClassPathTests
  * @summary AppCDS tests for testing classpath/package conflicts
  */
@@ -73,8 +74,8 @@ public class ClassPathTests {
 
     // test classes to archive. These are both in UPGRADED_MODULES
     private static final String JIMAGE_CLASS      = "com/sun/tools/javac/Main";
-    private static final String APP_ARCHIVE_CLASS = "com/sun/tools/javac/Main2";
-    private static final String PLATFORM_ARCHIVE_CLASS = "javax/activation/UnsupportedDataTypeException2";
+    private static final String APP_ARCHIVE_CLASS = "com/sun/tools/javac/MyMain";
+    private static final String PLATFORM_ARCHIVE_CLASS = "javax/annotation/processing/FilerException";
     private static final String[] ARCHIVE_CLASSES = {APP_ARCHIVE_CLASS, PLATFORM_ARCHIVE_CLASS, JIMAGE_CLASS};
     private static final int NUMBER_OF_TEST_CASES = 10;
 
@@ -111,15 +112,17 @@ public class ClassPathTests {
         // dump the archive with altnernate jdk.comiler and jdk.activation classes in the class list
         OutputAnalyzer output1  = TestCommon.dump(appJar, TestCommon.list(ARCHIVE_CLASSES));
         TestCommon.checkDump(output1);
-        // Only a class that belongs to a module which is not defined by default
-        // can be found. In this case the PLATFORM_ARCHIVE_CLASS belongs
-        // to the java.activation which is not defined by default; it is the only
-        // class can be found during dumping.
+        // The PLATFORM_ARCHIVE_CLASS belongs to the java.compiler
+        // module will be found from the module during dumping.
+        // The JIMAGE_CLASS will be found from the jdk.compiler module during
+        // dumping.
+        // The APP_ARCHIVE_CLASS, which belongs to a package within the
+        // jdk.compiler module, will not be found during dump time.
         for (String archiveClass : ARCHIVE_CLASSES) {
-            if (archiveClass.equals(PLATFORM_ARCHIVE_CLASS)) {
-                output1.shouldNotContain("Preload Warning: Cannot find " + archiveClass);
-            } else {
+            if (archiveClass.equals(APP_ARCHIVE_CLASS)) {
                 output1.shouldContain("Preload Warning: Cannot find " + archiveClass);
+            } else {
+                output1.shouldNotContain("Preload Warning: Cannot find " + archiveClass);
             }
         }
 
@@ -146,82 +149,86 @@ public class ClassPathTests {
         CDSTestUtils.runWithArchiveAndCheck(opts);
     }
 
-    // For tests #3 and #4, we need to "--add-modules java.activation" since the
-    // java.activation module won't be defined by default.
-
     // #3: Archived classpath class in same package as jimage ext class. With AppCDS.
-    // Should fail to load.
+    // The class should be loaded from the module.
     public void testExtClassWithAppCDS() throws Exception {
         OutputAnalyzer output = TestCommon.exec(
-            appJar, "--add-modules", "java.activation", MAIN_CLASS,
-            "Test #3", PLATFORM_ARCHIVE_CLASS, "false"); // last 3 args passed to test
+            appJar, MAIN_CLASS,
+            "Test #3", PLATFORM_ARCHIVE_CLASS, "true", "EXT"); // last 4 args passed to test
         TestCommon.checkExec(output);
     }
 
     // #4: Archived classpath class in same package as jimage ext class. Without AppCDS.
-    // Should fail to load.
+    // The class should be loaded from the module.
     public void testExtClassWithoutAppCDS() throws Exception {
         CDSOptions opts = (new CDSOptions())
-            .addPrefix("-cp", appJar, "--add-modules", "java.activation")
+            .addPrefix("-cp", appJar)
             .setArchiveName(testArchiveName)
-            .addSuffix(MAIN_CLASS, "Test #4", PLATFORM_ARCHIVE_CLASS, "false");
+            .addSuffix(MAIN_CLASS, "Test #4", PLATFORM_ARCHIVE_CLASS, "true", "EXT");
 
         CDSTestUtils.runWithArchiveAndCheck(opts);
     }
 
     // #5: Archived classpath class in same package as jimage app class. With AppCDS.
-    // Should load because --limit-modules is used.
+    // Should load with CDS disabled because --limit-modules is used.
     public void testAppClassWithLimitModsWithAppCDS() throws Exception {
-        OutputAnalyzer output = TestCommon.exec(
-            appJar,
-            "--limit-modules", "java.base",
-            MAIN_CLASS,
-            "Test #5", APP_ARCHIVE_CLASS, "true"); // last 3 args passed to test
-        TestCommon.checkExec(output);
+        TestCommon.run("-cp", appJar,
+                       "--limit-modules", "java.base",
+                       MAIN_CLASS,
+                       "Test #5", APP_ARCHIVE_CLASS, "true") // last 3 args passed to test
+            .assertSilentlyDisabledCDS(out -> {
+                out.shouldHaveExitValue(0);
+            });
     }
 
     // #6: Archived classpath class in same package as jimage app class. Without AppCDS.
-    // Should load because --limit-modules is used.
+    // Should load with CDS disabled because --limit-modules is used.
     public void testAppClassWithLimitModsWithoutAppCDS() throws Exception {
         CDSOptions opts = (new CDSOptions())
             .addPrefix("-cp", appJar, "--limit-modules", "java.base")
             .setArchiveName(testArchiveName)
             .addSuffix(MAIN_CLASS, "Test #6", APP_ARCHIVE_CLASS, "true");
-
-        CDSTestUtils.runWithArchiveAndCheck(opts);
+        CDSTestUtils.run(opts)
+            .assertSilentlyDisabledCDS(out -> {
+                out.shouldHaveExitValue(0);
+            });
     }
 
     // #7: Archived classpath class in same package as jimage ext class. With AppCDS.
-    // Should load because --limit-modules is used.
+    // Should load with CDS disabled because --limit-modules is used.
     public void testExtClassWithLimitModsWithAppCDS() throws Exception {
-        OutputAnalyzer output = TestCommon.exec(
-            appJar,
-            "--limit-modules", "java.base",
-            MAIN_CLASS,
-            "Test #7", PLATFORM_ARCHIVE_CLASS, "true"); // last 3 args passed to test
-        TestCommon.checkExec(output);
+        TestCommon.run("-cp", appJar,
+                       "--limit-modules", "java.base",
+                       MAIN_CLASS,
+                       "Test #7", PLATFORM_ARCHIVE_CLASS, "true") // last 3 args passed to test
+            .assertSilentlyDisabledCDS(out -> {
+                out.shouldHaveExitValue(0);
+            });
     }
 
     // #8: Archived classpath class in same package as jimage ext class. Without AppCDS.
-    // Should load because --limit-modules is used.
+    // Should load with CDS disabled because --limit-modules is used.
     public void testExtClassWithLimitModsWithoutAppCDS() throws Exception {
         CDSOptions opts = (new CDSOptions())
             .addPrefix("-cp", appJar, "--limit-modules", "java.base")
             .setArchiveName(testArchiveName)
             .addSuffix(MAIN_CLASS, "Test #8", PLATFORM_ARCHIVE_CLASS, "true");
-
-        CDSTestUtils.runWithArchiveAndCheck(opts);
+        CDSTestUtils.run(opts)
+            .assertSilentlyDisabledCDS(out -> {
+                out.shouldHaveExitValue(0);
+            });
     }
 
     // #9: Archived classpath class with same name as jimage app class. With AppCDS.
-    // Should load because --limit-modules is used.
+    // Should load with CDS disabled because --limit-modules is used.
     public void testReplacingJImageClassWithAppCDS() throws Exception {
-        OutputAnalyzer output = TestCommon.exec(
-            appJar,
-            "--limit-modules", "java.base", "-XX:+TraceClassLoading",
-            MAIN_CLASS,
-            "Test #9", JIMAGE_CLASS, "true"); // last 3 args passed to test
-        TestCommon.checkExec(output);
+        TestCommon.run("-cp", appJar,
+                       "--limit-modules", "java.base",
+                       MAIN_CLASS,
+                       "Test #9", JIMAGE_CLASS, "true") // last 3 args passed to test
+            .assertSilentlyDisabledCDS(out -> {
+                out.shouldHaveExitValue(0);
+            });
     }
 
     // #10: Archived classpath class with same name as jimage app class. Without AppCDS.
@@ -233,8 +240,9 @@ public class ClassPathTests {
             .addPrefix("-cp", appJar, "--limit-modules", "java.base")
             .setArchiveName(testArchiveName)
             .addSuffix(MAIN_CLASS, "Test #10", JIMAGE_CLASS, "true");
-
-        CDSTestUtils.runWithArchiveAndCheck(opts);
+        CDSTestUtils.run(opts)
+            .assertSilentlyDisabledCDS(out -> {
+                out.shouldHaveExitValue(0);
+            });
     }
-
 }

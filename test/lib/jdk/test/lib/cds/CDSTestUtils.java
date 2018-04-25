@@ -366,6 +366,10 @@ public class CDSTestUtils {
         return new Result(opts, runWithArchive(opts));
     }
 
+    public static Result run(CDSOptions opts) throws Exception {
+        return new Result(opts, runWithArchive(opts));
+    }
+
     // Execute JVM with CDS archive, specify command line args suffix
     public static OutputAnalyzer runWithArchive(String... cliPrefix)
         throws Exception {
