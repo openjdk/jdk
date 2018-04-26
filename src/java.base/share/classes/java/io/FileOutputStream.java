@@ -95,7 +95,7 @@ class FileOutputStream extends OutputStream
 
     private volatile boolean closed;
 
-    private final AltFinalizer altFinalizer;
+    private final Object altFinalizer;
 
     /**
      * Creates a file output stream to write to the file with the
@@ -235,7 +235,7 @@ class FileOutputStream extends OutputStream
         this.path = name;
 
         open(name, append);
-        altFinalizer = AltFinalizer.get(this);
+        altFinalizer = getFinalizer(this);
         if (altFinalizer == null) {
             FileCleanable.register(fd);   // open sets the fd, register the cleanup
         }
@@ -496,6 +496,24 @@ class FileOutputStream extends OutputStream
         initIDs();
     }
 
+    /*
+     * Returns a finalizer object if the FOS needs a finalizer; otherwise null.
+     * If the FOS has a close method; it needs an AltFinalizer.
+     */
+    private static Object getFinalizer(FileOutputStream fos) {
+        Class<?> clazz = fos.getClass();
+        while (clazz != FileOutputStream.class) {
+            try {
+                clazz.getDeclaredMethod("close");
+                return new AltFinalizer(fos);
+            } catch (NoSuchMethodException nsme) {
+                // ignore
+            }
+            clazz = clazz.getSuperclass();
+        }
+        return null;
+    }
+
     /**
      * Class to call {@code FileOutputStream.close} when finalized.
      * If finalization of the stream is needed, an instance is created
@@ -506,25 +524,7 @@ class FileOutputStream extends OutputStream
     static class AltFinalizer {
         private final FileOutputStream fos;
 
-        /*
-         * Returns a finalizer object if the FOS needs a finalizer; otherwise null.
-         * If the FOS has a close method; it needs an AltFinalizer.
-         */
-        static AltFinalizer get(FileOutputStream fos) {
-            Class<?> clazz = fos.getClass();
-            while (clazz != FileOutputStream.class) {
-                try {
-                    clazz.getDeclaredMethod("close");
-                    return new AltFinalizer(fos);
-                } catch (NoSuchMethodException nsme) {
-                    // ignore
-                }
-                clazz = clazz.getSuperclass();
-            }
-            return null;
-        }
-
-        private AltFinalizer(FileOutputStream fos) {
+        AltFinalizer(FileOutputStream fos) {
             this.fos = fos;
         }
 
