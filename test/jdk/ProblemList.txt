@@ -235,6 +235,8 @@ java/awt/print/Headless/HeadlessPrinterJob.java 8196088 windows-all
 java/awt/print/PrinterJob/TestPgfmtSetMPA.java 8198343 generic-all
 sun/awt/datatransfer/SuplementaryCharactersTransferTest.java 8011371 generic-all
 sun/awt/shell/ShellFolderMemoryLeak.java 8197794 windows-all
+sun/java2d/cmm/ColorConvertOp/ColConvCCMTest.java 8196572 generic-all
+sun/java2d/cmm/ColorConvertOp/MTColConvTest.java 8196572 generic-all
 sun/java2d/DirectX/OnScreenRenderingResizeTest/OnScreenRenderingResizeTest.java 8022403 generic-all
 sun/java2d/DirectX/OverriddenInsetsTest/OverriddenInsetsTest.java 8196102 generic-all
 sun/java2d/DirectX/RenderingToCachedGraphicsTest/RenderingToCachedGraphicsTest.java 8196180 windows-all
