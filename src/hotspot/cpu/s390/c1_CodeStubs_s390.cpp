@@ -34,9 +34,6 @@
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 #include "vmreg_s390.inline.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1BarrierSet.hpp"
-#endif // INCLUDE_ALL_GCS
 
 #define __ ce->masm()->
 #undef  CHECK_BAILOUT
@@ -452,47 +449,5 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
 
   __ branch_optimized(Assembler::bcondAlways, _continuation);
 }
-
-
-///////////////////////////////////////////////////////////////////////////////////
-#if INCLUDE_ALL_GCS
-
-void G1PreBarrierStub::emit_code(LIR_Assembler* ce) {
-  // At this point we know that marking is in progress.
-  // If do_load() is true then we have to emit the
-  // load of the previous value; otherwise it has already
-  // been loaded into _pre_val.
-  __ bind(_entry);
-  ce->check_reserved_argument_area(16); // RT stub needs 2 spill slots.
-  assert(pre_val()->is_register(), "Precondition.");
-
-  Register pre_val_reg = pre_val()->as_register();
-
-  if (do_load()) {
-    ce->mem2reg(addr(), pre_val(), T_OBJECT, patch_code(), info(), false /*wide*/, false /*unaligned*/);
-  }
-
-  __ z_ltgr(Z_R1_scratch, pre_val_reg); // Pass oop in Z_R1_scratch to Runtime1::g1_pre_barrier_slow_id.
-  __ branch_optimized(Assembler::bcondZero, _continuation);
-  ce->emit_call_c(Runtime1::entry_for (Runtime1::g1_pre_barrier_slow_id));
-  CHECK_BAILOUT();
-  __ branch_optimized(Assembler::bcondAlways, _continuation);
-}
-
-void G1PostBarrierStub::emit_code(LIR_Assembler* ce) {
-  __ bind(_entry);
-  ce->check_reserved_argument_area(16); // RT stub needs 2 spill slots.
-  assert(addr()->is_register(), "Precondition.");
-  assert(new_val()->is_register(), "Precondition.");
-  Register new_val_reg = new_val()->as_register();
-  __ z_ltgr(new_val_reg, new_val_reg);
-  __ branch_optimized(Assembler::bcondZero, _continuation);
-  __ z_lgr(Z_R1_scratch, addr()->as_pointer_register());
-  ce->emit_call_c(Runtime1::entry_for (Runtime1::g1_post_barrier_slow_id));
-  CHECK_BAILOUT();
-  __ branch_optimized(Assembler::bcondAlways, _continuation);
-}
-
-#endif // INCLUDE_ALL_GCS
 
 #undef __

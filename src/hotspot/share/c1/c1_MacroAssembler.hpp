@@ -74,6 +74,9 @@ class StubAssembler: public C1_MacroAssembler {
   void set_frame_size(int size);
   void set_num_rt_args(int args);
 
+  void save_live_registers();
+  void restore_live_registers_without_return();
+
   // accessors
   const char* name() const                       { return _name; }
   bool  must_gc_arguments() const                { return _must_gc_arguments; }
@@ -86,6 +89,9 @@ class StubAssembler: public C1_MacroAssembler {
   int call_RT(Register oop_result1, Register metadata_result, address entry, Register arg1);
   int call_RT(Register oop_result1, Register metadata_result, address entry, Register arg1, Register arg2);
   int call_RT(Register oop_result1, Register metadata_result, address entry, Register arg1, Register arg2, Register arg3);
+
+  void prologue(const char* name, bool must_gc_arguments);
+  void epilogue();
 };
 
 #endif // SHARE_VM_C1_C1_MACROASSEMBLER_HPP

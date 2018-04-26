@@ -25,13 +25,18 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
+#ifdef COMPILER1
+#include "c1/c1_LIRAssembler.hpp"
+#include "c1/c1_MacroAssembler.hpp"
+#include "gc/g1/c1/g1BarrierSetC1.hpp"
+#endif
 
 #define __ masm->
 
@@ -476,8 +481,6 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
   }
 }
 
-#undef __
-
 void G1BarrierSetAssembler::barrier_stubs_init() {
   if (dirty_card_log_enqueue == 0) {
     G1BarrierSet* bs = barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
@@ -494,3 +497,211 @@ void G1BarrierSetAssembler::barrier_stubs_init() {
     assert(satb_log_enqueue_frameless != 0, "postcondition.");
   }
 }
+
+#ifdef COMPILER1
+
+#undef __
+#define __ ce->masm()->
+
+void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStub* stub) {
+  G1BarrierSetC1* bs = (G1BarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
+  // At this point we know that marking is in progress.
+  // If do_load() is true then we have to emit the
+  // load of the previous value; otherwise it has already
+  // been loaded into _pre_val.
+
+  __ bind(*stub->entry());
+
+  assert(stub->pre_val()->is_register(), "Precondition.");
+  Register pre_val_reg = stub->pre_val()->as_register();
+
+  if (stub->do_load()) {
+    ce->mem2reg(stub->addr(), stub->pre_val(), T_OBJECT, stub->patch_code(), stub->info(), false /*wide*/, false /*unaligned*/);
+  }
+
+  if (__ is_in_wdisp16_range(*stub->continuation())) {
+    __ br_null(pre_val_reg, /*annul*/false, Assembler::pt, *stub->continuation());
+  } else {
+    __ cmp(pre_val_reg, G0);
+    __ brx(Assembler::equal, false, Assembler::pn, *stub->continuation());
+  }
+  __ delayed()->nop();
+
+  __ call(bs->pre_barrier_c1_runtime_code_blob()->code_begin());
+  __ delayed()->mov(pre_val_reg, G4);
+  __ br(Assembler::always, false, Assembler::pt, *stub->continuation());
+  __ delayed()->nop();
+}
+
+void G1BarrierSetAssembler::gen_post_barrier_stub(LIR_Assembler* ce, G1PostBarrierStub* stub) {
+  G1BarrierSetC1* bs = (G1BarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
+  __ bind(*stub->entry());
+
+  assert(stub->addr()->is_register(), "Precondition.");
+  assert(stub->new_val()->is_register(), "Precondition.");
+  Register addr_reg = stub->addr()->as_pointer_register();
+  Register new_val_reg = stub->new_val()->as_register();
+
+  if (__ is_in_wdisp16_range(*stub->continuation())) {
+    __ br_null(new_val_reg, /*annul*/false, Assembler::pt, *stub->continuation());
+  } else {
+    __ cmp(new_val_reg, G0);
+    __ brx(Assembler::equal, false, Assembler::pn, *stub->continuation());
+  }
+  __ delayed()->nop();
+
+  __ call(bs->post_barrier_c1_runtime_code_blob()->code_begin());
+  __ delayed()->mov(addr_reg, G4);
+  __ br(Assembler::always, false, Assembler::pt, *stub->continuation());
+  __ delayed()->nop();
+}
+
+#undef __
+#define __ sasm->
+
+void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm) {
+  __ prologue("g1_pre_barrier", false);
+
+  // G4: previous value of memory
+
+  Register pre_val = G4;
+  Register tmp  = G1_scratch;
+  Register tmp2 = G3_scratch;
+
+  Label refill, restart;
+  int satb_q_active_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset());
+  int satb_q_index_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset());
+  int satb_q_buf_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset());
+
+  // Is marking still active?
+  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
+    __ ld(G2_thread, satb_q_active_byte_offset, tmp);
+  } else {
+    assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+    __ ldsb(G2_thread, satb_q_active_byte_offset, tmp);
+  }
+  __ cmp_and_br_short(tmp, G0, Assembler::notEqual, Assembler::pt, restart);
+  __ retl();
+  __ delayed()->nop();
+
+  __ bind(restart);
+  // Load the index into the SATB buffer. SATBMarkQueue::_index is a
+  // size_t so ld_ptr is appropriate
+  __ ld_ptr(G2_thread, satb_q_index_byte_offset, tmp);
+
+  // index == 0?
+  __ cmp_and_brx_short(tmp, G0, Assembler::equal, Assembler::pn, refill);
+
+  __ ld_ptr(G2_thread, satb_q_buf_byte_offset, tmp2);
+  __ sub(tmp, oopSize, tmp);
+
+  __ st_ptr(pre_val, tmp2, tmp);  // [_buf + index] := <address_of_card>
+  // Use return-from-leaf
+  __ retl();
+  __ delayed()->st_ptr(tmp, G2_thread, satb_q_index_byte_offset);
+
+  __ bind(refill);
+
+  __ save_live_registers_no_oop_map(true);
+
+  __ call_VM_leaf(L7_thread_cache,
+                  CAST_FROM_FN_PTR(address,
+                                   SATBMarkQueueSet::handle_zero_index_for_thread),
+                                   G2_thread);
+
+  __ restore_live_registers(true);
+
+  __ br(Assembler::always, /*annul*/false, Assembler::pt, restart);
+  __ epilogue();
+}
+
+void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler* sasm) {
+  __ prologue("g1_post_barrier", false);
+
+  G1BarrierSet* bs = barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
+
+  Register addr = G4;
+  Register cardtable = G5;
+  Register tmp  = G1_scratch;
+  Register tmp2 = G3_scratch;
+  jbyte* byte_map_base = bs->card_table()->byte_map_base();
+
+  Label not_already_dirty, restart, refill, young_card;
+
+#ifdef _LP64
+  __ srlx(addr, CardTable::card_shift, addr);
+#else
+  __ srl(addr, CardTable::card_shift, addr);
+#endif
+
+  AddressLiteral rs((address)byte_map_base);
+  __ set(rs, cardtable);         // cardtable := <card table base>
+  __ ldub(addr, cardtable, tmp); // tmp := [addr + cardtable]
+
+  __ cmp_and_br_short(tmp, G1CardTable::g1_young_card_val(), Assembler::equal, Assembler::pt, young_card);
+
+  __ membar(Assembler::Membar_mask_bits(Assembler::StoreLoad));
+  __ ldub(addr, cardtable, tmp); // tmp := [addr + cardtable]
+
+  assert(G1CardTable::dirty_card_val() == 0, "otherwise check this code");
+  __ cmp_and_br_short(tmp, G0, Assembler::notEqual, Assembler::pt, not_already_dirty);
+
+  __ bind(young_card);
+  // We didn't take the branch, so we're already dirty: return.
+  // Use return-from-leaf
+  __ retl();
+  __ delayed()->nop();
+
+  // Not dirty.
+  __ bind(not_already_dirty);
+
+  // Get cardtable + tmp into a reg by itself
+  __ add(addr, cardtable, tmp2);
+
+  // First, dirty it.
+  __ stb(G0, tmp2, 0);  // [cardPtr] := 0  (i.e., dirty).
+
+  Register tmp3 = cardtable;
+  Register tmp4 = tmp;
+
+  // these registers are now dead
+  addr = cardtable = tmp = noreg;
+
+  int dirty_card_q_index_byte_offset = in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset());
+  int dirty_card_q_buf_byte_offset = in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset());
+
+  __ bind(restart);
+
+  // Get the index into the update buffer. DirtyCardQueue::_index is
+  // a size_t so ld_ptr is appropriate here.
+  __ ld_ptr(G2_thread, dirty_card_q_index_byte_offset, tmp3);
+
+  // index == 0?
+  __ cmp_and_brx_short(tmp3, G0, Assembler::equal,  Assembler::pn, refill);
+
+  __ ld_ptr(G2_thread, dirty_card_q_buf_byte_offset, tmp4);
+  __ sub(tmp3, oopSize, tmp3);
+
+  __ st_ptr(tmp2, tmp4, tmp3);  // [_buf + index] := <address_of_card>
+  // Use return-from-leaf
+  __ retl();
+  __ delayed()->st_ptr(tmp3, G2_thread, dirty_card_q_index_byte_offset);
+
+  __ bind(refill);
+
+  __ save_live_registers_no_oop_map(true);
+
+  __ call_VM_leaf(L7_thread_cache,
+                  CAST_FROM_FN_PTR(address,
+                                   DirtyCardQueueSet::handle_zero_index_for_thread),
+                                   G2_thread);
+
+  __ restore_live_registers(true);
+
+  __ br(Assembler::always, /*annul*/false, Assembler::pt, restart);
+  __ epilogue();
+}
+
+#undef __
+
+#endif // COMPILER1

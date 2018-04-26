@@ -32,9 +32,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
 #include "vmreg_sparc.inline.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1BarrierSet.hpp"
-#endif // INCLUDE_ALL_GCS
 
 #define __ ce->masm()->
 
@@ -453,64 +450,5 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   __ br(Assembler::always, false, Assembler::pt, _continuation);
   __ delayed()->nop();
 }
-
-
-///////////////////////////////////////////////////////////////////////////////////
-#if INCLUDE_ALL_GCS
-
-void G1PreBarrierStub::emit_code(LIR_Assembler* ce) {
-  // At this point we know that marking is in progress.
-  // If do_load() is true then we have to emit the
-  // load of the previous value; otherwise it has already
-  // been loaded into _pre_val.
-
-  __ bind(_entry);
-
-  assert(pre_val()->is_register(), "Precondition.");
-  Register pre_val_reg = pre_val()->as_register();
-
-  if (do_load()) {
-    ce->mem2reg(addr(), pre_val(), T_OBJECT, patch_code(), info(), false /*wide*/, false /*unaligned*/);
-  }
-
-  if (__ is_in_wdisp16_range(_continuation)) {
-    __ br_null(pre_val_reg, /*annul*/false, Assembler::pt, _continuation);
-  } else {
-    __ cmp(pre_val_reg, G0);
-    __ brx(Assembler::equal, false, Assembler::pn, _continuation);
-  }
-  __ delayed()->nop();
-
-  __ call(Runtime1::entry_for(Runtime1::Runtime1::g1_pre_barrier_slow_id));
-  __ delayed()->mov(pre_val_reg, G4);
-  __ br(Assembler::always, false, Assembler::pt, _continuation);
-  __ delayed()->nop();
-
-}
-
-void G1PostBarrierStub::emit_code(LIR_Assembler* ce) {
-  __ bind(_entry);
-
-  assert(addr()->is_register(), "Precondition.");
-  assert(new_val()->is_register(), "Precondition.");
-  Register addr_reg = addr()->as_pointer_register();
-  Register new_val_reg = new_val()->as_register();
-
-  if (__ is_in_wdisp16_range(_continuation)) {
-    __ br_null(new_val_reg, /*annul*/false, Assembler::pt, _continuation);
-  } else {
-    __ cmp(new_val_reg, G0);
-    __ brx(Assembler::equal, false, Assembler::pn, _continuation);
-  }
-  __ delayed()->nop();
-
-  __ call(Runtime1::entry_for(Runtime1::Runtime1::g1_post_barrier_slow_id));
-  __ delayed()->mov(addr_reg, G4);
-  __ br(Assembler::always, false, Assembler::pt, _continuation);
-  __ delayed()->nop();
-}
-
-#endif // INCLUDE_ALL_GCS
-///////////////////////////////////////////////////////////////////////////////////
 
 #undef __

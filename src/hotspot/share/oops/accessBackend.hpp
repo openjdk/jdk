@@ -980,31 +980,6 @@ namespace AccessInternal {
     }
   };
 
-  // This class adds implied decorators that follow according to decorator rules.
-  // For example adding default reference strength and default memory ordering
-  // semantics.
-  template <DecoratorSet input_decorators>
-  struct DecoratorFixup: AllStatic {
-    // If no reference strength has been picked, then strong will be picked
-    static const DecoratorSet ref_strength_default = input_decorators |
-      (((ON_DECORATOR_MASK & input_decorators) == 0 && (INTERNAL_VALUE_IS_OOP & input_decorators) != 0) ?
-       ON_STRONG_OOP_REF : INTERNAL_EMPTY);
-    // If no memory ordering has been picked, unordered will be picked
-    static const DecoratorSet memory_ordering_default = ref_strength_default |
-      ((MO_DECORATOR_MASK & ref_strength_default) == 0 ? MO_UNORDERED : INTERNAL_EMPTY);
-    // If no barrier strength has been picked, normal will be used
-    static const DecoratorSet barrier_strength_default = memory_ordering_default |
-      ((AS_DECORATOR_MASK & memory_ordering_default) == 0 ? AS_NORMAL : INTERNAL_EMPTY);
-    // Heap array accesses imply it is a heap access
-    static const DecoratorSet heap_array_is_in_heap = barrier_strength_default |
-      ((IN_HEAP_ARRAY & barrier_strength_default) != 0 ? IN_HEAP : INTERNAL_EMPTY);
-    static const DecoratorSet conc_root_is_root = heap_array_is_in_heap |
-      ((IN_CONCURRENT_ROOT & heap_array_is_in_heap) != 0 ? IN_ROOT : INTERNAL_EMPTY);
-    static const DecoratorSet archive_root_is_root = conc_root_is_root |
-      ((IN_ARCHIVE_ROOT & conc_root_is_root) != 0 ? IN_ROOT : INTERNAL_EMPTY);
-    static const DecoratorSet value = archive_root_is_root | BT_BUILDTIME_DECORATORS;
-  };
-
   // Step 2: Reduce types.
   // Enforce that for non-oop types, T and P have to be strictly the same.
   // P is the type of the address and T is the type of the values.

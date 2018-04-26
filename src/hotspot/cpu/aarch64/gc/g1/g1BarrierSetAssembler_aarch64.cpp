@@ -24,6 +24,9 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "c1/c1_LIRAssembler.hpp"
+#include "c1/c1_MacroAssembler.hpp"
+#include "gc/g1/c1/g1BarrierSetC1.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1CardTable.hpp"
@@ -307,4 +310,167 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
 
 }
 
+#ifdef COMPILER1
+
 #undef __
+#define __ ce->masm()->
+
+void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStub* stub) {
+  G1BarrierSetC1* bs = (G1BarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
+  // At this point we know that marking is in progress.
+  // If do_load() is true then we have to emit the
+  // load of the previous value; otherwise it has already
+  // been loaded into _pre_val.
+
+  __ bind(*stub->entry());
+
+  assert(stub->pre_val()->is_register(), "Precondition.");
+
+  Register pre_val_reg = stub->pre_val()->as_register();
+
+  if (stub->do_load()) {
+    ce->mem2reg(stub->addr(), stub->pre_val(), T_OBJECT, stub->patch_code(), stub->info(), false /*wide*/, false /*unaligned*/);
+  }
+  __ cbz(pre_val_reg, *stub->continuation());
+  ce->store_parameter(stub->pre_val()->as_register(), 0);
+  __ far_call(RuntimeAddress(bs->pre_barrier_c1_runtime_code_blob()->code_begin()));
+  __ b(*stub->continuation());
+}
+
+void G1BarrierSetAssembler::gen_post_barrier_stub(LIR_Assembler* ce, G1PostBarrierStub* stub) {
+  G1BarrierSetC1* bs = (G1BarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
+  __ bind(*stub->entry());
+  assert(stub->addr()->is_register(), "Precondition.");
+  assert(stub->new_val()->is_register(), "Precondition.");
+  Register new_val_reg = stub->new_val()->as_register();
+  __ cbz(new_val_reg, *stub->continuation());
+  ce->store_parameter(stub->addr()->as_pointer_register(), 0);
+  __ far_call(RuntimeAddress(bs->post_barrier_c1_runtime_code_blob()->code_begin()));
+  __ b(*stub->continuation());
+}
+
+#undef __
+
+#define __ sasm->
+
+void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm) {
+  __ prologue("g1_pre_barrier", false);
+
+  // arg0 : previous value of memory
+
+  BarrierSet* bs = BarrierSet::barrier_set();
+
+  const Register pre_val = r0;
+  const Register thread = rthread;
+  const Register tmp = rscratch1;
+
+  Address in_progress(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()));
+  Address queue_index(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()));
+  Address buffer(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset()));
+
+  Label done;
+  Label runtime;
+
+  // Is marking still active?
+  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
+    __ ldrw(tmp, in_progress);
+  } else {
+    assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+    __ ldrb(tmp, in_progress);
+  }
+  __ cbzw(tmp, done);
+
+  // Can we store original value in the thread's buffer?
+  __ ldr(tmp, queue_index);
+  __ cbz(tmp, runtime);
+
+  __ sub(tmp, tmp, wordSize);
+  __ str(tmp, queue_index);
+  __ ldr(rscratch2, buffer);
+  __ add(tmp, tmp, rscratch2);
+  __ load_parameter(0, rscratch2);
+  __ str(rscratch2, Address(tmp, 0));
+  __ b(done);
+
+  __ bind(runtime);
+  __ push_call_clobbered_registers();
+  __ load_parameter(0, pre_val);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), pre_val, thread);
+  __ pop_call_clobbered_registers();
+  __ bind(done);
+
+  __ epilogue();
+}
+
+void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler* sasm) {
+  __ prologue("g1_post_barrier", false);
+
+  // arg0: store_address
+  Address store_addr(rfp, 2*BytesPerWord);
+
+  BarrierSet* bs = BarrierSet::barrier_set();
+  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
+  CardTable* ct = ctbs->card_table();
+  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
+
+  Label done;
+  Label runtime;
+
+  // At this point we know new_value is non-NULL and the new_value crosses regions.
+  // Must check to see if card is already dirty
+
+  const Register thread = rthread;
+
+  Address queue_index(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()));
+  Address buffer(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()));
+
+  const Register card_offset = rscratch2;
+  // LR is free here, so we can use it to hold the byte_map_base.
+  const Register byte_map_base = lr;
+
+  assert_different_registers(card_offset, byte_map_base, rscratch1);
+
+  __ load_parameter(0, card_offset);
+  __ lsr(card_offset, card_offset, CardTable::card_shift);
+  __ load_byte_map_base(byte_map_base);
+  __ ldrb(rscratch1, Address(byte_map_base, card_offset));
+  __ cmpw(rscratch1, (int)G1CardTable::g1_young_card_val());
+  __ br(Assembler::EQ, done);
+
+  assert((int)CardTable::dirty_card_val() == 0, "must be 0");
+
+  __ membar(Assembler::StoreLoad);
+  __ ldrb(rscratch1, Address(byte_map_base, card_offset));
+  __ cbzw(rscratch1, done);
+
+  // storing region crossing non-NULL, card is clean.
+  // dirty card and log.
+  __ strb(zr, Address(byte_map_base, card_offset));
+
+  // Convert card offset into an address in card_addr
+  Register card_addr = card_offset;
+  __ add(card_addr, byte_map_base, card_addr);
+
+  __ ldr(rscratch1, queue_index);
+  __ cbz(rscratch1, runtime);
+  __ sub(rscratch1, rscratch1, wordSize);
+  __ str(rscratch1, queue_index);
+
+  // Reuse LR to hold buffer_addr
+  const Register buffer_addr = lr;
+
+  __ ldr(buffer_addr, buffer);
+  __ str(card_addr, Address(buffer_addr, rscratch1));
+  __ b(done);
+
+  __ bind(runtime);
+  __ push_call_clobbered_registers();
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), card_addr, thread);
+  __ pop_call_clobbered_registers();
+  __ bind(done);
+  __ epilogue();
+}
+
+#undef __
+
+#endif // COMPILER1

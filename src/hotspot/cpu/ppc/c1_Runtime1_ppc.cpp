@@ -42,11 +42,6 @@
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 #include "vmreg_ppc.inline.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/g1ThreadLocalData.hpp"
-#endif
 
 // Implementation of StubAssembler
 
@@ -708,164 +703,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-#if INCLUDE_ALL_GCS
-    case g1_pre_barrier_slow_id:
-      {
-        BarrierSet* bs = BarrierSet::barrier_set();
-        if (bs->kind() != BarrierSet::G1BarrierSet) {
-          goto unimplemented_entry;
-        }
-
-        __ set_info("g1_pre_barrier_slow_id", dont_gc_arguments);
-
-        // Using stack slots: pre_val (pre-pushed), spill tmp, spill tmp2.
-        const int stack_slots = 3;
-        Register pre_val = R0; // previous value of memory
-        Register tmp  = R14;
-        Register tmp2 = R15;
-
-        Label refill, restart, marking_not_active;
-        int satb_q_active_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset());
-        int satb_q_index_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset());
-        int satb_q_buf_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset());
-
-        // Spill
-        __ std(tmp, -16, R1_SP);
-        __ std(tmp2, -24, R1_SP);
-
-        // Is marking still active?
-        if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-          __ lwz(tmp, satb_q_active_byte_offset, R16_thread);
-        } else {
-          assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-          __ lbz(tmp, satb_q_active_byte_offset, R16_thread);
-        }
-        __ cmpdi(CCR0, tmp, 0);
-        __ beq(CCR0, marking_not_active);
-
-        __ bind(restart);
-        // Load the index into the SATB buffer. SATBMarkQueue::_index is a
-        // size_t so ld_ptr is appropriate.
-        __ ld(tmp, satb_q_index_byte_offset, R16_thread);
-
-        // index == 0?
-        __ cmpdi(CCR0, tmp, 0);
-        __ beq(CCR0, refill);
-
-        __ ld(tmp2, satb_q_buf_byte_offset, R16_thread);
-        __ ld(pre_val, -8, R1_SP); // Load from stack.
-        __ addi(tmp, tmp, -oopSize);
-
-        __ std(tmp, satb_q_index_byte_offset, R16_thread);
-        __ stdx(pre_val, tmp2, tmp); // [_buf + index] := <address_of_card>
-
-        __ bind(marking_not_active);
-        // Restore temp registers and return-from-leaf.
-        __ ld(tmp2, -24, R1_SP);
-        __ ld(tmp, -16, R1_SP);
-        __ blr();
-
-        __ bind(refill);
-        const int nbytes_save = (MacroAssembler::num_volatile_regs + stack_slots) * BytesPerWord;
-        __ save_volatile_gprs(R1_SP, -nbytes_save); // except R0
-        __ mflr(R0);
-        __ std(R0, _abi(lr), R1_SP);
-        __ push_frame_reg_args(nbytes_save, R0); // dummy frame for C call
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, SATBMarkQueueSet::handle_zero_index_for_thread), R16_thread);
-        __ pop_frame();
-        __ ld(R0, _abi(lr), R1_SP);
-        __ mtlr(R0);
-        __ restore_volatile_gprs(R1_SP, -nbytes_save); // except R0
-        __ b(restart);
-      }
-      break;
-
-  case g1_post_barrier_slow_id:
-    {
-        BarrierSet* bs = BarrierSet::barrier_set();
-        if (bs->kind() != BarrierSet::G1BarrierSet) {
-          goto unimplemented_entry;
-        }
-
-        __ set_info("g1_post_barrier_slow_id", dont_gc_arguments);
-
-        // Using stack slots: spill addr, spill tmp2
-        const int stack_slots = 2;
-        Register tmp = R0;
-        Register addr = R14;
-        Register tmp2 = R15;
-        jbyte* byte_map_base = ci_card_table_address();
-
-        Label restart, refill, ret;
-
-        // Spill
-        __ std(addr, -8, R1_SP);
-        __ std(tmp2, -16, R1_SP);
-
-        __ srdi(addr, R0, CardTable::card_shift); // Addr is passed in R0.
-        __ load_const_optimized(/*cardtable*/ tmp2, byte_map_base, tmp);
-        __ add(addr, tmp2, addr);
-        __ lbz(tmp, 0, addr); // tmp := [addr + cardtable]
-
-        // Return if young card.
-        __ cmpwi(CCR0, tmp, G1CardTable::g1_young_card_val());
-        __ beq(CCR0, ret);
-
-        // Return if sequential consistent value is already dirty.
-        __ membar(Assembler::StoreLoad);
-        __ lbz(tmp, 0, addr); // tmp := [addr + cardtable]
-
-        __ cmpwi(CCR0, tmp, G1CardTable::dirty_card_val());
-        __ beq(CCR0, ret);
-
-        // Not dirty.
-
-        // First, dirty it.
-        __ li(tmp, G1CardTable::dirty_card_val());
-        __ stb(tmp, 0, addr);
-
-        int dirty_card_q_index_byte_offset = in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset());
-        int dirty_card_q_buf_byte_offset = in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset());
-
-        __ bind(restart);
-
-        // Get the index into the update buffer. DirtyCardQueue::_index is
-        // a size_t so ld_ptr is appropriate here.
-        __ ld(tmp2, dirty_card_q_index_byte_offset, R16_thread);
-
-        // index == 0?
-        __ cmpdi(CCR0, tmp2, 0);
-        __ beq(CCR0, refill);
-
-        __ ld(tmp, dirty_card_q_buf_byte_offset, R16_thread);
-        __ addi(tmp2, tmp2, -oopSize);
-
-        __ std(tmp2, dirty_card_q_index_byte_offset, R16_thread);
-        __ add(tmp2, tmp, tmp2);
-        __ std(addr, 0, tmp2); // [_buf + index] := <address_of_card>
-
-        // Restore temp registers and return-from-leaf.
-        __ bind(ret);
-        __ ld(tmp2, -16, R1_SP);
-        __ ld(addr, -8, R1_SP);
-        __ blr();
-
-        __ bind(refill);
-        const int nbytes_save = (MacroAssembler::num_volatile_regs + stack_slots) * BytesPerWord;
-        __ save_volatile_gprs(R1_SP, -nbytes_save); // except R0
-        __ mflr(R0);
-        __ std(R0, _abi(lr), R1_SP);
-        __ push_frame_reg_args(nbytes_save, R0); // dummy frame for C call
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, DirtyCardQueueSet::handle_zero_index_for_thread), R16_thread);
-        __ pop_frame();
-        __ ld(R0, _abi(lr), R1_SP);
-        __ mtlr(R0);
-        __ restore_volatile_gprs(R1_SP, -nbytes_save); // except R0
-        __ b(restart);
-      }
-      break;
-#endif // INCLUDE_ALL_GCS
-
     case predicate_failed_trap_id:
       {
         __ set_info("predicate_failed_trap", dont_gc_arguments);
@@ -889,7 +726,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       break;
 
   default:
-  unimplemented_entry:
       {
         __ set_info("unimplemented entry", dont_gc_arguments);
         __ mflr(R0);

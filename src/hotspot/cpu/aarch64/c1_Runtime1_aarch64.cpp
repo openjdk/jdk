@@ -43,11 +43,6 @@
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
 #include "vmreg_aarch64.inline.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/g1ThreadLocalData.hpp"
-#endif
 
 
 // Implementation of StubAssembler
@@ -173,31 +168,32 @@ class StubFrame: public StackObj {
   ~StubFrame();
 };;
 
+void StubAssembler::prologue(const char* name, bool must_gc_arguments) {
+  set_info(name, must_gc_arguments);
+  enter();
+}
+
+void StubAssembler::epilogue() {
+  leave();
+  ret(lr);
+}
 
 #define __ _sasm->
 
 StubFrame::StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments) {
   _sasm = sasm;
-  __ set_info(name, must_gc_arguments);
-  __ enter();
+  __ prologue(name, must_gc_arguments);
 }
 
 // load parameters that were stored with LIR_Assembler::store_parameter
 // Note: offsets for store_parameter and load_argument must match
 void StubFrame::load_argument(int offset_in_words, Register reg) {
-  // rbp, + 0: link
-  //     + 1: return address
-  //     + 2: argument with offset 0
-  //     + 3: argument with offset 1
-  //     + 4: ...
-
-  __ ldr(reg, Address(rfp, (offset_in_words + 2) * BytesPerWord));
+  __ load_parameter(offset_in_words, reg);
 }
 
 
 StubFrame::~StubFrame() {
-  __ leave();
-  __ ret(lr);
+  __ epilogue();
 }
 
 #undef __
@@ -1099,136 +1095,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_array_store_exception), true);
       }
       break;
-
-#if INCLUDE_ALL_GCS
-
-    case g1_pre_barrier_slow_id:
-      {
-        StubFrame f(sasm, "g1_pre_barrier", dont_gc_arguments);
-        // arg0 : previous value of memory
-
-        BarrierSet* bs = BarrierSet::barrier_set();
-        if (bs->kind() != BarrierSet::G1BarrierSet) {
-          __ mov(r0, (int)id);
-          __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, unimplemented_entry), r0);
-          __ should_not_reach_here();
-          break;
-        }
-
-        const Register pre_val = r0;
-        const Register thread = rthread;
-        const Register tmp = rscratch1;
-
-        Address in_progress(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()));
-        Address queue_index(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()));
-        Address buffer(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset()));
-
-        Label done;
-        Label runtime;
-
-        // Is marking still active?
-        if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-          __ ldrw(tmp, in_progress);
-        } else {
-          assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-          __ ldrb(tmp, in_progress);
-        }
-        __ cbzw(tmp, done);
-
-        // Can we store original value in the thread's buffer?
-        __ ldr(tmp, queue_index);
-        __ cbz(tmp, runtime);
-
-        __ sub(tmp, tmp, wordSize);
-        __ str(tmp, queue_index);
-        __ ldr(rscratch2, buffer);
-        __ add(tmp, tmp, rscratch2);
-        f.load_argument(0, rscratch2);
-        __ str(rscratch2, Address(tmp, 0));
-        __ b(done);
-
-        __ bind(runtime);
-        __ push_call_clobbered_registers();
-        f.load_argument(0, pre_val);
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), pre_val, thread);
-        __ pop_call_clobbered_registers();
-        __ bind(done);
-      }
-      break;
-    case g1_post_barrier_slow_id:
-      {
-        StubFrame f(sasm, "g1_post_barrier", dont_gc_arguments);
-
-        BarrierSet* bs = BarrierSet::barrier_set();
-        if (bs->kind() != BarrierSet::G1BarrierSet) {
-          __ mov(r0, (int)id);
-          __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, unimplemented_entry), r0);
-          __ should_not_reach_here();
-          break;
-        }
-
-        // arg0: store_address
-        Address store_addr(rfp, 2*BytesPerWord);
-
-        Label done;
-        Label runtime;
-
-        // At this point we know new_value is non-NULL and the new_value crosses regions.
-        // Must check to see if card is already dirty
-
-        const Register thread = rthread;
-
-        Address queue_index(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()));
-        Address buffer(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()));
-
-        const Register card_offset = rscratch2;
-        // LR is free here, so we can use it to hold the byte_map_base.
-        const Register byte_map_base = lr;
-
-        assert_different_registers(card_offset, byte_map_base, rscratch1);
-
-        f.load_argument(0, card_offset);
-        __ lsr(card_offset, card_offset, CardTable::card_shift);
-        __ load_byte_map_base(byte_map_base);
-        __ ldrb(rscratch1, Address(byte_map_base, card_offset));
-        __ cmpw(rscratch1, (int)G1CardTable::g1_young_card_val());
-        __ br(Assembler::EQ, done);
-
-        assert((int)CardTable::dirty_card_val() == 0, "must be 0");
-
-        __ membar(Assembler::StoreLoad);
-        __ ldrb(rscratch1, Address(byte_map_base, card_offset));
-        __ cbzw(rscratch1, done);
-
-        // storing region crossing non-NULL, card is clean.
-        // dirty card and log.
-        __ strb(zr, Address(byte_map_base, card_offset));
-
-        // Convert card offset into an address in card_addr
-        Register card_addr = card_offset;
-        __ add(card_addr, byte_map_base, card_addr);
-
-        __ ldr(rscratch1, queue_index);
-        __ cbz(rscratch1, runtime);
-        __ sub(rscratch1, rscratch1, wordSize);
-        __ str(rscratch1, queue_index);
-
-        // Reuse LR to hold buffer_addr
-        const Register buffer_addr = lr;
-
-        __ ldr(buffer_addr, buffer);
-        __ str(card_addr, Address(buffer_addr, rscratch1));
-        __ b(done);
-
-        __ bind(runtime);
-        __ push_call_clobbered_registers();
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), card_addr, thread);
-        __ pop_call_clobbered_registers();
-        __ bind(done);
-
-      }
-      break;
-#endif
 
     case predicate_failed_trap_id:
       {

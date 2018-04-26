@@ -1558,7 +1558,16 @@ void LIR_Assembler::casl(Register addr, Register newval, Register cmpval) {
 
 void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
   assert(VM_Version::supports_cx8(), "wrong machine");
-  Register addr = as_reg(op->addr());
+  Register addr;
+  if (op->addr()->is_register()) {
+    addr = as_reg(op->addr());
+  } else {
+    assert(op->addr()->is_address(), "what else?");
+    LIR_Address* addr_ptr = op->addr()->as_address_ptr();
+    assert(addr_ptr->disp() == 0, "need 0 disp");
+    assert(addr_ptr->index() == LIR_OprDesc::illegalOpr(), "need 0 index");
+    addr = as_reg(addr_ptr->base());
+  }
   Register newval = as_reg(op->new_value());
   Register cmpval = as_reg(op->cmp_value());
   Label succeed, fail, around;

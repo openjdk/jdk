@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -356,6 +356,16 @@ void C1_MacroAssembler::remove_frame(int framesize) {
 
 
 void C1_MacroAssembler::verified_entry() {
+}
+
+void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {
+  // rbp, + 0: link
+  //     + 1: return address
+  //     + 2: argument with offset 0
+  //     + 3: argument with offset 1
+  //     + 4: ...
+
+  ldr(reg, Address(rfp, (offset_in_words + 2) * BytesPerWord));
 }
 
 #ifndef PRODUCT

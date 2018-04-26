@@ -34,15 +34,22 @@
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
+#ifdef COMPILER1
+#include "gc/shared/c1/cardTableBarrierSetC1.hpp"
+#endif
+
+class CardTableBarrierSetC1;
 
 // This kind of "BarrierSet" allows a "CollectedHeap" to detect and
 // enumerate ref fields that have been modified (since the last
 // enumeration.)
 
 CardTableBarrierSet::CardTableBarrierSet(BarrierSetAssembler* barrier_set_assembler,
+                                         BarrierSetC1* barrier_set_c1,
                                          CardTable* card_table,
                                          const BarrierSet::FakeRtti& fake_rtti) :
   ModRefBarrierSet(barrier_set_assembler,
+                   barrier_set_c1,
                    fake_rtti.add_tag(BarrierSet::CardTableBarrierSet)),
   _defer_initial_card_mark(false),
   _card_table(card_table)
@@ -50,6 +57,7 @@ CardTableBarrierSet::CardTableBarrierSet(BarrierSetAssembler* barrier_set_assemb
 
 CardTableBarrierSet::CardTableBarrierSet(CardTable* card_table) :
   ModRefBarrierSet(make_barrier_set_assembler<CardTableBarrierSetAssembler>(),
+                   make_barrier_set_c1<CardTableBarrierSetC1>(),
                    BarrierSet::FakeRtti(BarrierSet::CardTableBarrierSet)),
   _defer_initial_card_mark(false),
   _card_table(card_table)
