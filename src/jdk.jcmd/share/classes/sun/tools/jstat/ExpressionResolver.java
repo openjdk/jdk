@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class ExpressionResolver implements ExpressionEvaluator {
                     System.err.println("Warning: Unresolved Symbol: "
                                        + id.getName() + " substituted NaN");
                 }
-                return new Literal(Double.valueOf(Double.NaN));
+                return new Literal(e.isRequired() ? 0.0d : Double.NaN);
             }
             if (m.getVariability() == Variability.CONSTANT) {
                 if (debug) {
@@ -131,7 +131,9 @@ public class ExpressionResolver implements ExpressionEvaluator {
                                        + " (right = " + rn.doubleValue() + ")"
                                        + " to literal value " + result);
                 }
-                return new Literal(Double.valueOf(result));
+                var literal = new Literal(result);
+                literal.setRequired(e.isRequired());
+                return literal;
             }
         }
 

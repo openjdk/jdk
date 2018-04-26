@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,13 +60,15 @@ public class Parser {
     private static final String FORMAT = "format";
     private static final String ALIGN = "align";
     private static final String SCALE = "scale";
+    private static final String REQUIRED = "required";
 
     private static final String START = OPTION;
 
     private static final Set<String> scaleKeyWords = Scale.keySet();
     private static final Set<String> alignKeyWords = Alignment.keySet();
+    private static final Set<String> boolKeyWords = Set.of("true", "false");
     private static String[] otherKeyWords = {
-        OPTION, COLUMN, DATA, HEADER, WIDTH, FORMAT, ALIGN, SCALE
+        OPTION, COLUMN, DATA, HEADER, WIDTH, FORMAT, ALIGN, SCALE, REQUIRED
     };
 
     private static char[] infixOps = {
@@ -445,6 +447,16 @@ public class Parser {
     }
 
     /**
+     * requiredstmt -> 'required' expression
+     */
+    private void requiredStmt(ColumnFormat cf) throws ParserException, IOException {
+        match(REQUIRED);
+        Token t = matchOne(boolKeyWords);
+        cf.setRequired(Boolean.parseBoolean(t.sval));
+        log(pdebug, "Parsed: required -> " + cf.isRequired());
+    }
+
+    /**
      * statementlist -> optionalstmt statementlist
      * optionalstmt -> 'data' expression
      *                 'header' quotedstring
@@ -452,6 +464,7 @@ public class Parser {
      *                 'format' formatstring
      *                 'align' alignspec
      *                 'scale' scalespec
+     *                 'required' boolean
      */
     private void statementList(ColumnFormat cf)
                  throws ParserException, IOException {
@@ -472,6 +485,8 @@ public class Parser {
                 alignStmt(cf);
             } else if (lookahead.sval.compareTo(SCALE) == 0) {
                 scaleStmt(cf);
+            } else if (lookahead.sval.compareTo(REQUIRED) == 0) {
+                requiredStmt(cf);
             } else {
                 return;
             }
