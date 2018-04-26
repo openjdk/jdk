@@ -2189,9 +2189,9 @@ public final class Locale implements Cloneable, Serializable {
                 }
                 break;
             case "tz":
-                displayType = TimeZoneNameUtility.retrieveGenericDisplayName(
-                    TimeZoneNameUtility.convertLDMLShortID(type).orElse(type),
-                    TimeZone.LONG, inLocale);
+                displayType = TimeZoneNameUtility.convertLDMLShortID(type)
+                    .map(id -> TimeZoneNameUtility.retrieveGenericDisplayName(id, TimeZone.LONG, inLocale))
+                    .orElse(type);
                 break;
             }
             ret = MessageFormat.format(lr.getLocaleName("ListKeyTypePattern"),

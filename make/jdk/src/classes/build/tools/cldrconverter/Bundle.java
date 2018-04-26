@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -318,16 +318,17 @@ class Bundle {
         }
         for (Iterator<String> it = myMap.keySet().iterator(); it.hasNext();) {
             String key = it.next();
-            if (key.startsWith(CLDRConverter.TIMEZONE_ID_PREFIX)
+                if (key.startsWith(CLDRConverter.TIMEZONE_ID_PREFIX)
                     || key.startsWith(CLDRConverter.METAZONE_ID_PREFIX)) {
                 @SuppressWarnings("unchecked")
                 Map<String, String> nameMap = (Map<String, String>) myMap.get(key);
+
                 // Convert key/value pairs to an array.
                 String[] names = new String[ZONE_NAME_KEYS.length];
                 int ix = 0;
                 for (String nameKey : ZONE_NAME_KEYS) {
                     String name = nameMap.get(nameKey);
-                    if (name == null) {
+                    if (name == null && parentsMap != null) {
                         @SuppressWarnings("unchecked")
                         Map<String, String> parentNames = (Map<String, String>) parentsMap.get(key);
                         if (parentNames != null) {
@@ -355,29 +356,6 @@ class Bundle {
                                     names[i] = m.get(ZONE_NAME_KEYS[i]);
                                 }
                             }
-                        }
-                    }
-                    // If there are still any nulls, try filling in them from en data.
-                    if (hasNulls(names) && !id.equals("en")) {
-                        @SuppressWarnings("unchecked")
-                        String[] enNames = (String[]) Bundle.getBundle("en").getTargetMap().get(key);
-                        if (enNames == null) {
-                            if (metaKey != null) {
-                                @SuppressWarnings("unchecked")
-                                String[] metaNames = (String[]) Bundle.getBundle("en").getTargetMap().get(metaKey);
-                                enNames = metaNames;
-                            }
-                        }
-                        if (enNames != null) {
-                            for (int i = 0; i < names.length; i++) {
-                                if (names[i] == null) {
-                                    names[i] = enNames[i];
-                                }
-                            }
-                        }
-                        // If there are still nulls, give up names.
-                        if (hasNulls(names)) {
-                            names = null;
                         }
                     }
                 }
@@ -662,12 +640,12 @@ class Bundle {
                     if (CLDRConverter.handlerMetaZones.get(tz).equals(meta)) {
                         tzid = tz;
                         break;
-                        }
                     }
                 }
+            }
         } else {
             tzid = key.substring(CLDRConverter.TIMEZONE_ID_PREFIX.length());
-    }
+        }
 
         if (tzid != null) {
             for (Object[] jreZone : jreTimeZoneNames) {
@@ -676,13 +654,13 @@ class Bundle {
                         if (map.get(ZONE_NAME_KEYS[i]) == null) {
                             String[] jreNames = (String[])jreZone[1];
                             map.put(ZONE_NAME_KEYS[i], jreNames[i]);
+                        }
+                    }
+                    break;
                 }
             }
-                    break;
         }
     }
-            }
-        }
 
     private void convert(CalendarType calendarType, char cldrLetter, int count, StringBuilder sb) {
         switch (cldrLetter) {

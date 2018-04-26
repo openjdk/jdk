@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.CalendarDataProvider;
+import java.util.spi.TimeZoneNameProvider;
 import sun.util.locale.provider.JRELocaleProviderAdapter;
 import sun.util.locale.provider.LocaleDataMetaInfo;
 import sun.util.locale.provider.LocaleProviderAdapter;
@@ -128,6 +129,24 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     @Override
     public CollatorProvider getCollatorProvider() {
         return null;
+    }
+
+    @Override
+    public TimeZoneNameProvider getTimeZoneNameProvider() {
+        if (timeZoneNameProvider == null) {
+            TimeZoneNameProvider provider = AccessController.doPrivileged(
+                (PrivilegedAction<TimeZoneNameProvider>) () ->
+                    new CLDRTimeZoneNameProviderImpl(
+                        getAdapterType(),
+                        getLanguageTagSet("TimeZoneNames")));
+
+            synchronized (this) {
+                if (timeZoneNameProvider == null) {
+                    timeZoneNameProvider = provider;
+                }
+            }
+        }
+        return timeZoneNameProvider;
     }
 
     @Override
@@ -246,9 +265,9 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     }
 
     /**
-     * Returns the time zone ID from an LDML's short ID
+     * Returns the canonical ID for the given ID
      */
-    public Optional<String> getTimeZoneID(String shortID) {
-        return Optional.ofNullable(baseMetaInfo.tzShortIDs().get(shortID));
+    public Optional<String> canonicalTZID(String id) {
+        return Optional.ofNullable(baseMetaInfo.tzCanonicalIDs().get(id));
     }
 }

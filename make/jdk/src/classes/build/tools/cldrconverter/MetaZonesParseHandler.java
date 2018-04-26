@@ -35,6 +35,8 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 class MetaZonesParseHandler extends AbstractLDMLHandler<String> {
+    final static String NO_METAZONE_KEY = "no.metazone.defined";
+
     private String tzid, metazone;
 
     // for java.time.format.ZoneNames.java
@@ -101,10 +103,17 @@ class MetaZonesParseHandler extends AbstractLDMLHandler<String> {
         assert qName.equals(currentContainer.getqName()) : "current=" + currentContainer.getqName() + ", param=" + qName;
         switch (qName) {
         case "timezone":
-            if (tzid == null || metazone == null) {
+            if (tzid == null) {
                 throw new InternalError();
+            } else if (metazone == null) {
+                String no_meta = get(NO_METAZONE_KEY);
+                put(NO_METAZONE_KEY, no_meta == null ? tzid : no_meta + " " + tzid);
+                CLDRConverter.info("No metazone defined for %s%n", tzid);
+            } else {
+                put(tzid, metazone);
             }
-            put(tzid, metazone);
+            tzid = null;
+            metazone = null;
             break;
         }
         currentContainer = currentContainer.getParent();

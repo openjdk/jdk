@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,11 +274,6 @@ public class LocaleData {
                             itr.remove();
                         }
                     }
-                }
-                // Force fallback to Locale.ENGLISH for CLDR time zone names support
-                if (locale.getLanguage() != "en"
-                        && type == CLDR && category.equals("TimeZoneNames")) {
-                    candidates.add(candidates.size() - 1, Locale.ENGLISH);
                 }
                 CANDIDATES_MAP.putIfAbsent(key, candidates);
             }

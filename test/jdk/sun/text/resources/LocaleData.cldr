@@ -5563,7 +5563,7 @@ FormatData/fi/AmPmMarkers/1=ip.
 
 # bug 6507067
 TimeZoneNames/zh_TW/Asia\/Taipei/1=\u53f0\u5317\u6a19\u6e96\u6642\u9593
-TimeZoneNames/zh_TW/Asia\/Taipei/2=CST
+TimeZoneNames/zh_TW/Asia\/Taipei/2=
 
 # bug 6645271
 FormatData/hr_HR/DatePatterns/2=d. MMM y.

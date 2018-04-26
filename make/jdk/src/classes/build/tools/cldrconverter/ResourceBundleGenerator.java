@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,11 +211,13 @@ class ResourceBundleGenerator implements BundleGenerator {
                     if (value == null) {
                         CLDRConverter.warning("null value for " + key);
                     } else if (value instanceof String) {
-                        if (type == BundleType.TIMEZONE ||
-                            ((String)value).startsWith(META_VALUE_PREFIX)) {
-                            out.printf("            { \"%s\", %s },\n", key, CLDRConverter.saveConvert((String) value, useJava));
+                        String valStr = (String)value;
+                        if (type == BundleType.TIMEZONE &&
+                            !key.startsWith(CLDRConverter.EXEMPLAR_CITY_PREFIX) ||
+                            valStr.startsWith(META_VALUE_PREFIX)) {
+                            out.printf("            { \"%s\", %s },\n", key, CLDRConverter.saveConvert(valStr, useJava));
                         } else {
-                            out.printf("            { \"%s\", \"%s\" },\n", key, CLDRConverter.saveConvert((String) value, useJava));
+                            out.printf("            { \"%s\", \"%s\" },\n", key, CLDRConverter.saveConvert(valStr, useJava));
                         }
                     } else if (value instanceof String[]) {
                         String[] values = (String[]) value;
@@ -308,15 +310,20 @@ class ResourceBundleGenerator implements BundleGenerator {
 
             // end of static initializer block.
 
-            // Short TZ names for delayed initialization
+            // Canonical TZ names for delayed initialization
             if (CLDRConverter.isBaseModule) {
-                out.printf("    private static class TZShortIDMapHolder {\n");
-                out.printf("        static final Map<String, String> tzShortIDMap = new HashMap<>();\n");
+                out.printf("    private static class TZCanonicalIDMapHolder {\n");
+                out.printf("        static final Map<String, String> tzCanonicalIDMap = new HashMap<>(600);\n");
                 out.printf("        static {\n");
                 CLDRConverter.handlerTimeZone.getData().entrySet().stream()
                     .forEach(e -> {
-                        out.printf("            tzShortIDMap.put(\"%s\", \"%s\");\n", e.getKey(),
-                                ((String)e.getValue()));
+                        String[] ids = ((String)e.getValue()).split("\\s");
+                        out.printf("            tzCanonicalIDMap.put(\"%s\", \"%s\");\n", e.getKey(),
+                                ids[0]);
+                        for (int i = 1; i < ids.length; i++) {
+                            out.printf("            tzCanonicalIDMap.put(\"%s\", \"%s\");\n", ids[i],
+                                ids[0]);
+                        }
                     });
                 out.printf("        }\n    }\n\n");
             }
@@ -333,8 +340,8 @@ class ResourceBundleGenerator implements BundleGenerator {
 
             if (CLDRConverter.isBaseModule) {
                 out.printf("    @Override\n" +
-                           "    public Map<String, String> tzShortIDs() {\n" +
-                           "        return TZShortIDMapHolder.tzShortIDMap;\n" +
+                           "    public Map<String, String> tzCanonicalIDs() {\n" +
+                           "        return TZCanonicalIDMapHolder.tzCanonicalIDMap;\n" +
                            "    }\n\n");
                 out.printf("    public Map<Locale, String[]> parentLocales() {\n" +
                            "        return parentLocalesMap;\n" +
