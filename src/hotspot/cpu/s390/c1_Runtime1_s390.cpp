@@ -42,11 +42,6 @@
 #include "utilities/macros.hpp"
 #include "vmreg_s390.inline.hpp"
 #include "registerSaver_s390.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/g1ThreadLocalData.hpp"
-#endif
 
 // Implementation of StubAssembler
 
@@ -190,15 +185,6 @@ static OopMap* save_live_registers_except_r2(StubAssembler* sasm, bool save_fpu_
   return RegisterSaver::save_live_registers(sasm, reg_set);
 }
 
-static OopMap* save_volatile_registers(StubAssembler* sasm, Register return_pc = Z_R14) {
-  __ block_comment("save_volatile_registers");
-  RegisterSaver::RegisterSet reg_set = RegisterSaver::all_volatile_registers;
-  int frame_size_in_slots =
-    RegisterSaver::live_reg_frame_size(reg_set) / VMRegImpl::stack_slot_size;
-  sasm->set_frame_size(frame_size_in_slots / VMRegImpl::slots_per_word);
-  return RegisterSaver::save_live_registers(sasm, reg_set, return_pc);
-}
-
 static void restore_live_registers(StubAssembler* sasm, bool restore_fpu_registers = true) {
   __ block_comment("restore_live_registers");
   RegisterSaver::RegisterSet reg_set =
@@ -212,12 +198,6 @@ static void restore_live_registers_except_r2(StubAssembler* sasm, bool restore_f
   }
   __ block_comment("restore_live_registers_except_r2");
   RegisterSaver::restore_live_registers(sasm, RegisterSaver::all_registers_except_r2);
-}
-
-static void restore_volatile_registers(StubAssembler* sasm) {
-  __ block_comment("restore_volatile_registers");
-  RegisterSaver::RegisterSet reg_set = RegisterSaver::all_volatile_registers;
-  RegisterSaver::restore_live_registers(sasm, reg_set);
 }
 
 void Runtime1::initialize_pd() {
@@ -764,160 +744,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       break;
 #endif // TODO
 
-#if INCLUDE_ALL_GCS
-    case g1_pre_barrier_slow_id:
-      { // Z_R1_scratch: previous value of memory
-
-        BarrierSet* bs = BarrierSet::barrier_set();
-        if (bs->kind() != BarrierSet::G1BarrierSet) {
-          __ should_not_reach_here(FILE_AND_LINE);
-          break;
-        }
-
-        __ set_info("g1_pre_barrier_slow_id", dont_gc_arguments);
-
-        Register pre_val = Z_R1_scratch;
-        Register tmp  = Z_R6; // Must be non-volatile because it is used to save pre_val.
-        Register tmp2 = Z_R7;
-
-        Label refill, restart, marking_not_active;
-        int satb_q_active_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset());
-        int satb_q_index_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset());
-        int satb_q_buf_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset());
-
-        // Save tmp registers (see assertion in G1PreBarrierStub::emit_code()).
-        __ z_stg(tmp,  0*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
-        __ z_stg(tmp2, 1*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
-
-        // Is marking still active?
-        if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-          __ load_and_test_int(tmp, Address(Z_thread, satb_q_active_byte_offset));
-        } else {
-          assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-          __ load_and_test_byte(tmp, Address(Z_thread, satb_q_active_byte_offset));
-        }
-        __ z_bre(marking_not_active); // Activity indicator is zero, so there is no marking going on currently.
-
-        __ bind(restart);
-        // Load the index into the SATB buffer. SATBMarkQueue::_index is a
-        // size_t so ld_ptr is appropriate.
-        __ z_ltg(tmp, satb_q_index_byte_offset, Z_R0, Z_thread);
-
-        // index == 0?
-        __ z_brz(refill);
-
-        __ z_lg(tmp2, satb_q_buf_byte_offset, Z_thread);
-        __ add2reg(tmp, -oopSize);
-
-        __ z_stg(pre_val, 0, tmp, tmp2); // [_buf + index] := <address_of_card>
-        __ z_stg(tmp, satb_q_index_byte_offset, Z_thread);
-
-        __ bind(marking_not_active);
-        // Restore tmp registers (see assertion in G1PreBarrierStub::emit_code()).
-        __ z_lg(tmp,  0*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
-        __ z_lg(tmp2, 1*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
-        __ z_br(Z_R14);
-
-        __ bind(refill);
-        save_volatile_registers(sasm);
-        __ z_lgr(tmp, pre_val); // save pre_val
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, SATBMarkQueueSet::handle_zero_index_for_thread),
-                        Z_thread);
-        __ z_lgr(pre_val, tmp); // restore pre_val
-        restore_volatile_registers(sasm);
-        __ z_bru(restart);
-      }
-      break;
-
-    case g1_post_barrier_slow_id:
-      { // Z_R1_scratch: oop address, address of updated memory slot
-        BarrierSet* bs = BarrierSet::barrier_set();
-        if (bs->kind() != BarrierSet::G1BarrierSet) {
-          __ should_not_reach_here(FILE_AND_LINE);
-          break;
-        }
-
-        __ set_info("g1_post_barrier_slow_id", dont_gc_arguments);
-
-        Register addr_oop  = Z_R1_scratch;
-        Register addr_card = Z_R1_scratch;
-        Register r1        = Z_R6; // Must be saved/restored.
-        Register r2        = Z_R7; // Must be saved/restored.
-        Register cardtable = r1;   // Must be non-volatile, because it is used to save addr_card.
-        jbyte* byte_map_base = ci_card_table_address();
-
-        // Save registers used below (see assertion in G1PreBarrierStub::emit_code()).
-        __ z_stg(r1, 0*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
-
-        Label not_already_dirty, restart, refill, young_card;
-
-        // Calculate address of card corresponding to the updated oop slot.
-        AddressLiteral rs(byte_map_base);
-        __ z_srlg(addr_card, addr_oop, CardTable::card_shift);
-        addr_oop = noreg; // dead now
-        __ load_const_optimized(cardtable, rs); // cardtable := <card table base>
-        __ z_agr(addr_card, cardtable); // addr_card := addr_oop>>card_shift + cardtable
-
-        __ z_cli(0, addr_card, (int)G1CardTable::g1_young_card_val());
-        __ z_bre(young_card);
-
-        __ z_sync(); // Required to support concurrent cleaning.
-
-        __ z_cli(0, addr_card, (int)CardTable::dirty_card_val());
-        __ z_brne(not_already_dirty);
-
-        __ bind(young_card);
-        // We didn't take the branch, so we're already dirty: restore
-        // used registers and return.
-        __ z_lg(r1, 0*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
-        __ z_br(Z_R14);
-
-        // Not dirty.
-        __ bind(not_already_dirty);
-
-        // First, dirty it: [addr_card] := 0
-        __ z_mvi(0, addr_card, CardTable::dirty_card_val());
-
-        Register idx = cardtable; // Must be non-volatile, because it is used to save addr_card.
-        Register buf = r2;
-        cardtable = noreg; // now dead
-
-        // Save registers used below (see assertion in G1PreBarrierStub::emit_code()).
-        __ z_stg(r2, 1*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
-
-        ByteSize dirty_card_q_index_byte_offset = G1ThreadLocalData::dirty_card_queue_index_offset();
-        ByteSize dirty_card_q_buf_byte_offset = G1ThreadLocalData::dirty_card_queue_buffer_offset();
-
-        __ bind(restart);
-
-        // Get the index into the update buffer. DirtyCardQueue::_index is
-        // a size_t so z_ltg is appropriate here.
-        __ z_ltg(idx, Address(Z_thread, dirty_card_q_index_byte_offset));
-
-        // index == 0?
-        __ z_brz(refill);
-
-        __ z_lg(buf, Address(Z_thread, dirty_card_q_buf_byte_offset));
-        __ add2reg(idx, -oopSize);
-
-        __ z_stg(addr_card, 0, idx, buf); // [_buf + index] := <address_of_card>
-        __ z_stg(idx, Address(Z_thread, dirty_card_q_index_byte_offset));
-        // Restore killed registers and return.
-        __ z_lg(r1, 0*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
-        __ z_lg(r2, 1*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
-        __ z_br(Z_R14);
-
-        __ bind(refill);
-        save_volatile_registers(sasm);
-        __ z_lgr(idx, addr_card); // Save addr_card, tmp3 must be non-volatile.
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, DirtyCardQueueSet::handle_zero_index_for_thread),
-                                         Z_thread);
-        __ z_lgr(addr_card, idx);
-        restore_volatile_registers(sasm); // Restore addr_card.
-        __ z_bru(restart);
-      }
-      break;
-#endif // INCLUDE_ALL_GCS
     case predicate_failed_trap_id:
       {
         __ set_info("predicate_failed_trap", dont_gc_arguments);

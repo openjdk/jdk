@@ -41,12 +41,6 @@
 #include "runtime/vframeArray.hpp"
 #include "utilities/macros.hpp"
 #include "vmreg_x86.inline.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/g1ThreadLocalData.hpp"
-#endif
-
 
 // Implementation of StubAssembler
 
@@ -212,39 +206,38 @@ class StubFrame: public StackObj {
   ~StubFrame();
 };
 
+void StubAssembler::prologue(const char* name, bool must_gc_arguments) {
+  set_info(name, must_gc_arguments);
+  enter();
+}
+
+void StubAssembler::epilogue() {
+  leave();
+  ret(0);
+}
 
 #define __ _sasm->
 
 StubFrame::StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments) {
   _sasm = sasm;
-  __ set_info(name, must_gc_arguments);
-  __ enter();
+  __ prologue(name, must_gc_arguments);
 }
 
 // load parameters that were stored with LIR_Assembler::store_parameter
 // Note: offsets for store_parameter and load_argument must match
 void StubFrame::load_argument(int offset_in_words, Register reg) {
-  // rbp, + 0: link
-  //     + 1: return address
-  //     + 2: argument with offset 0
-  //     + 3: argument with offset 1
-  //     + 4: ...
-
-  __ movptr(reg, Address(rbp, (offset_in_words + 2) * BytesPerWord));
+  __ load_parameter(offset_in_words, reg);
 }
 
 
 StubFrame::~StubFrame() {
-  __ leave();
-  __ ret(0);
+  __ epilogue();
 }
 
 #undef __
 
 
 // Implementation of Runtime1
-
-#define __ sasm->
 
 const int float_regs_as_doubles_size_in_slots = pd_nof_fpu_regs_frame_map * 2;
 const int xmm_regs_as_doubles_size_in_slots = FrameMap::nof_xmm_regs * 2;
@@ -309,8 +302,6 @@ enum reg_save_layout {
   return_off, SLOT2(returnH_off)                                                            // 496, 500
   reg_save_frame_size   // As noted: neglects any parameters to runtime                     // 504
 };
-
-
 
 // Save off registers which might be killed by calls into the runtime.
 // Tries to smart of about FP registers.  In particular we separate
@@ -418,8 +409,9 @@ static OopMap* generate_oop_map(StubAssembler* sasm, int num_rt_args,
   return map;
 }
 
-static OopMap* save_live_registers(StubAssembler* sasm, int num_rt_args,
-                                   bool save_fpu_registers = true) {
+#define __ this->
+
+void C1_MacroAssembler::save_live_registers_no_oop_map(int num_rt_args, bool save_fpu_registers) {
   __ block_comment("save_live_registers");
 
   __ pusha();         // integer registers
@@ -493,12 +485,12 @@ static OopMap* save_live_registers(StubAssembler* sasm, int num_rt_args,
 
   // FPU stack must be empty now
   __ verify_FPU(0, "save_live_registers");
-
-  return generate_oop_map(sasm, num_rt_args, save_fpu_registers);
 }
 
+#undef __
+#define __ sasm->
 
-static void restore_fpu(StubAssembler* sasm, bool restore_fpu_registers = true) {
+static void restore_fpu(C1_MacroAssembler* sasm, bool restore_fpu_registers) {
   if (restore_fpu_registers) {
     if (UseSSE >= 2) {
       // restore XMM registers
@@ -549,14 +541,28 @@ static void restore_fpu(StubAssembler* sasm, bool restore_fpu_registers = true) 
   __ addptr(rsp, extra_space_offset * VMRegImpl::stack_slot_size);
 }
 
+#undef __
+#define __ this->
 
-static void restore_live_registers(StubAssembler* sasm, bool restore_fpu_registers = true) {
+void C1_MacroAssembler::restore_live_registers(bool restore_fpu_registers) {
   __ block_comment("restore_live_registers");
 
-  restore_fpu(sasm, restore_fpu_registers);
+  restore_fpu(this, restore_fpu_registers);
   __ popa();
 }
 
+#undef __
+#define __ sasm->
+
+static OopMap* save_live_registers(StubAssembler* sasm, int num_rt_args,
+                                   bool save_fpu_registers = true) {
+  sasm->save_live_registers_no_oop_map(num_rt_args, save_fpu_registers);
+  return generate_oop_map(sasm, num_rt_args, save_fpu_registers);
+}
+
+static void restore_live_registers(StubAssembler* sasm, bool restore_fpu_registers = true) {
+  sasm->restore_live_registers(restore_fpu_registers);
+}
 
 static void restore_live_registers_except_rax(StubAssembler* sasm, bool restore_fpu_registers = true) {
   __ block_comment("restore_live_registers_except_rax");
@@ -1556,159 +1562,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ ret(0);
       }
       break;
-
-#if INCLUDE_ALL_GCS
-    case g1_pre_barrier_slow_id:
-      {
-        StubFrame f(sasm, "g1_pre_barrier", dont_gc_arguments);
-        // arg0 : previous value of memory
-
-        BarrierSet* bs = BarrierSet::barrier_set();
-        if (bs->kind() != BarrierSet::G1BarrierSet) {
-          __ movptr(rax, (int)id);
-          __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, unimplemented_entry), rax);
-          __ should_not_reach_here();
-          break;
-        }
-        __ push(rax);
-        __ push(rdx);
-
-        const Register pre_val = rax;
-        const Register thread = NOT_LP64(rax) LP64_ONLY(r15_thread);
-        const Register tmp = rdx;
-
-        NOT_LP64(__ get_thread(thread);)
-
-        Address queue_active(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()));
-        Address queue_index(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()));
-        Address buffer(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset()));
-
-        Label done;
-        Label runtime;
-
-        // Is marking still active?
-        if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-          __ cmpl(queue_active, 0);
-        } else {
-          assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-          __ cmpb(queue_active, 0);
-        }
-        __ jcc(Assembler::equal, done);
-
-        // Can we store original value in the thread's buffer?
-
-        __ movptr(tmp, queue_index);
-        __ testptr(tmp, tmp);
-        __ jcc(Assembler::zero, runtime);
-        __ subptr(tmp, wordSize);
-        __ movptr(queue_index, tmp);
-        __ addptr(tmp, buffer);
-
-        // prev_val (rax)
-        f.load_argument(0, pre_val);
-        __ movptr(Address(tmp, 0), pre_val);
-        __ jmp(done);
-
-        __ bind(runtime);
-
-        save_live_registers(sasm, 3);
-
-        // load the pre-value
-        f.load_argument(0, rcx);
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), rcx, thread);
-
-        restore_live_registers(sasm);
-
-        __ bind(done);
-
-        __ pop(rdx);
-        __ pop(rax);
-      }
-      break;
-
-    case g1_post_barrier_slow_id:
-      {
-        StubFrame f(sasm, "g1_post_barrier", dont_gc_arguments);
-
-        BarrierSet* bs = BarrierSet::barrier_set();
-        if (bs->kind() != BarrierSet::G1BarrierSet) {
-          __ movptr(rax, (int)id);
-          __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, unimplemented_entry), rax);
-          __ should_not_reach_here();
-          break;
-        }
-
-        // arg0: store_address
-        Address store_addr(rbp, 2*BytesPerWord);
-
-        Label done;
-        Label enqueued;
-        Label runtime;
-
-        // At this point we know new_value is non-NULL and the new_value crosses regions.
-        // Must check to see if card is already dirty
-
-        const Register thread = NOT_LP64(rax) LP64_ONLY(r15_thread);
-
-        Address queue_index(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()));
-        Address buffer(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()));
-
-        __ push(rax);
-        __ push(rcx);
-
-        const Register cardtable = rax;
-        const Register card_addr = rcx;
-
-        f.load_argument(0, card_addr);
-        __ shrptr(card_addr, CardTable::card_shift);
-        // Do not use ExternalAddress to load 'byte_map_base', since 'byte_map_base' is NOT
-        // a valid address and therefore is not properly handled by the relocation code.
-        __ movptr(cardtable, ci_card_table_address_as<intptr_t>());
-        __ addptr(card_addr, cardtable);
-
-        NOT_LP64(__ get_thread(thread);)
-
-        __ cmpb(Address(card_addr, 0), (int)G1CardTable::g1_young_card_val());
-        __ jcc(Assembler::equal, done);
-
-        __ membar(Assembler::Membar_mask_bits(Assembler::StoreLoad));
-        __ cmpb(Address(card_addr, 0), (int)CardTable::dirty_card_val());
-        __ jcc(Assembler::equal, done);
-
-        // storing region crossing non-NULL, card is clean.
-        // dirty card and log.
-
-        __ movb(Address(card_addr, 0), (int)CardTable::dirty_card_val());
-
-        const Register tmp = rdx;
-        __ push(rdx);
-
-        __ movptr(tmp, queue_index);
-        __ testptr(tmp, tmp);
-        __ jcc(Assembler::zero, runtime);
-        __ subptr(tmp, wordSize);
-        __ movptr(queue_index, tmp);
-        __ addptr(tmp, buffer);
-        __ movptr(Address(tmp, 0), card_addr);
-        __ jmp(enqueued);
-
-        __ bind(runtime);
-
-        save_live_registers(sasm, 3);
-
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), card_addr, thread);
-
-        restore_live_registers(sasm);
-
-        __ bind(enqueued);
-        __ pop(rdx);
-
-        __ bind(done);
-        __ pop(rcx);
-        __ pop(rax);
-      }
-      break;
-#endif // INCLUDE_ALL_GCS
 
     case predicate_failed_trap_id:
       {

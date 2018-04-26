@@ -42,11 +42,6 @@
 #include "runtime/vframeArray.hpp"
 #include "utilities/align.hpp"
 #include "vmreg_arm.inline.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/g1ThreadLocalData.hpp"
-#endif
 
 // Note: Rtemp usage is this file should not impact C2 and should be
 // correct as long as it is not implicitly used in lower layers (the
@@ -356,6 +351,13 @@ static void restore_live_registers_without_return(StubAssembler* sasm, bool rest
   restore_live_registers(sasm, true, true, false, restore_fpu_registers);
 }
 
+void StubAssembler::save_live_registers() {
+  save_live_registers(this);
+}
+
+void StubAssembler::restore_live_registers_without_return() {
+  restore_live_registers_without_return(this);
+}
 
 void Runtime1::initialize_pd() {
 }
@@ -533,201 +535,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-#if INCLUDE_ALL_GCS
-    case g1_pre_barrier_slow_id:
-      {
-        // Input:
-        // - pre_val pushed on the stack
-
-        __ set_info("g1_pre_barrier_slow_id", dont_gc_arguments);
-
-        BarrierSet* bs = BarrierSet::barrier_set();
-        if (bs->kind() != BarrierSet::G1BarrierSet) {
-          __ mov(R0, (int)id);
-          __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, unimplemented_entry), R0);
-          __ should_not_reach_here();
-          break;
-        }
-
-        // save at least the registers that need saving if the runtime is called
-#ifdef AARCH64
-        __ raw_push(R0, R1);
-        __ raw_push(R2, R3);
-        const int nb_saved_regs = 4;
-#else // AARCH64
-        const RegisterSet saved_regs = RegisterSet(R0,R3) | RegisterSet(R12) | RegisterSet(LR);
-        const int nb_saved_regs = 6;
-        assert(nb_saved_regs == saved_regs.size(), "fix nb_saved_regs");
-        __ push(saved_regs);
-#endif // AARCH64
-
-        const Register r_pre_val_0  = R0; // must be R0, to be ready for the runtime call
-        const Register r_index_1    = R1;
-        const Register r_buffer_2   = R2;
-
-        Address queue_active(Rthread, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()));
-        Address queue_index(Rthread, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()));
-        Address buffer(Rthread, in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset()));
-
-        Label done;
-        Label runtime;
-
-        // Is marking still active?
-        assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-        __ ldrb(R1, queue_active);
-        __ cbz(R1, done);
-
-        __ ldr(r_index_1, queue_index);
-        __ ldr(r_pre_val_0, Address(SP, nb_saved_regs*wordSize));
-        __ ldr(r_buffer_2, buffer);
-
-        __ subs(r_index_1, r_index_1, wordSize);
-        __ b(runtime, lt);
-
-        __ str(r_index_1, queue_index);
-        __ str(r_pre_val_0, Address(r_buffer_2, r_index_1));
-
-        __ bind(done);
-
-#ifdef AARCH64
-        __ raw_pop(R2, R3);
-        __ raw_pop(R0, R1);
-#else // AARCH64
-        __ pop(saved_regs);
-#endif // AARCH64
-
-        __ ret();
-
-        __ bind(runtime);
-
-        save_live_registers(sasm);
-
-        assert(r_pre_val_0 == c_rarg0, "pre_val should be in R0");
-        __ mov(c_rarg1, Rthread);
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), c_rarg0, c_rarg1);
-
-        restore_live_registers_without_return(sasm);
-
-        __ b(done);
-      }
-      break;
-    case g1_post_barrier_slow_id:
-      {
-        // Input:
-        // - store_addr, pushed on the stack
-
-        __ set_info("g1_post_barrier_slow_id", dont_gc_arguments);
-
-        BarrierSet* bs = BarrierSet::barrier_set();
-        if (bs->kind() != BarrierSet::G1BarrierSet) {
-          __ mov(R0, (int)id);
-          __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, unimplemented_entry), R0);
-          __ should_not_reach_here();
-          break;
-        }
-
-        Label done;
-        Label recheck;
-        Label runtime;
-
-        Address queue_index(Rthread, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()));
-        Address buffer(Rthread, in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()));
-
-        AddressLiteral cardtable(ci_card_table_address_as<address>(), relocInfo::none);
-
-        // save at least the registers that need saving if the runtime is called
-#ifdef AARCH64
-        __ raw_push(R0, R1);
-        __ raw_push(R2, R3);
-        const int nb_saved_regs = 4;
-#else // AARCH64
-        const RegisterSet saved_regs = RegisterSet(R0,R3) | RegisterSet(R12) | RegisterSet(LR);
-        const int nb_saved_regs = 6;
-        assert(nb_saved_regs == saved_regs.size(), "fix nb_saved_regs");
-        __ push(saved_regs);
-#endif // AARCH64
-
-        const Register r_card_addr_0 = R0; // must be R0 for the slow case
-        const Register r_obj_0 = R0;
-        const Register r_card_base_1 = R1;
-        const Register r_tmp2 = R2;
-        const Register r_index_2 = R2;
-        const Register r_buffer_3 = R3;
-        const Register tmp1 = Rtemp;
-
-        __ ldr(r_obj_0, Address(SP, nb_saved_regs*wordSize));
-        // Note: there is a comment in x86 code about not using
-        // ExternalAddress / lea, due to relocation not working
-        // properly for that address. Should be OK for arm, where we
-        // explicitly specify that 'cardtable' has a relocInfo::none
-        // type.
-        __ lea(r_card_base_1, cardtable);
-        __ add(r_card_addr_0, r_card_base_1, AsmOperand(r_obj_0, lsr, CardTable::card_shift));
-
-        // first quick check without barrier
-        __ ldrb(r_tmp2, Address(r_card_addr_0));
-
-        __ cmp(r_tmp2, (int)G1CardTable::g1_young_card_val());
-        __ b(recheck, ne);
-
-        __ bind(done);
-
-#ifdef AARCH64
-        __ raw_pop(R2, R3);
-        __ raw_pop(R0, R1);
-#else // AARCH64
-        __ pop(saved_regs);
-#endif // AARCH64
-
-        __ ret();
-
-        __ bind(recheck);
-
-        __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreLoad), tmp1);
-
-        // reload card state after the barrier that ensures the stored oop was visible
-        __ ldrb(r_tmp2, Address(r_card_addr_0));
-
-        assert(CardTable::dirty_card_val() == 0, "adjust this code");
-        __ cbz(r_tmp2, done);
-
-        // storing region crossing non-NULL, card is clean.
-        // dirty card and log.
-
-        assert(0 == (int)CardTable::dirty_card_val(), "adjust this code");
-        if ((ci_card_table_address_as<intptr_t>() & 0xff) == 0) {
-          // Card table is aligned so the lowest byte of the table address base is zero.
-          __ strb(r_card_base_1, Address(r_card_addr_0));
-        } else {
-          __ strb(__ zero_register(r_tmp2), Address(r_card_addr_0));
-        }
-
-        __ ldr(r_index_2, queue_index);
-        __ ldr(r_buffer_3, buffer);
-
-        __ subs(r_index_2, r_index_2, wordSize);
-        __ b(runtime, lt); // go to runtime if now negative
-
-        __ str(r_index_2, queue_index);
-
-        __ str(r_card_addr_0, Address(r_buffer_3, r_index_2));
-
-        __ b(done);
-
-        __ bind(runtime);
-
-        save_live_registers(sasm);
-
-        assert(r_card_addr_0 == c_rarg0, "card_addr should be in R0");
-        __ mov(c_rarg1, Rthread);
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), c_rarg0, c_rarg1);
-
-        restore_live_registers_without_return(sasm);
-
-        __ b(done);
-      }
-      break;
-#endif // INCLUDE_ALL_GCS
     case new_instance_id:
     case fast_new_instance_id:
     case fast_new_instance_init_check_id:

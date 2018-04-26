@@ -2978,7 +2978,9 @@ void LIR_Assembler::peephole(LIR_List* lir) {
 
 
 void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr dest, LIR_Opr tmp) {
-  const Register Rptr = src->as_pointer_register(),
+  const LIR_Address *addr = src->as_address_ptr();
+  assert(addr->disp() == 0 && addr->index()->is_illegal(), "use leal!");
+  const Register Rptr = addr->base()->as_pointer_register(),
                  Rtmp = tmp->as_register();
   Register Rco = noreg;
   if (UseCompressedOops && data->is_oop()) {
