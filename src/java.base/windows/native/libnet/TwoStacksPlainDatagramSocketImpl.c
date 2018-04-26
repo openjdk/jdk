@@ -63,13 +63,6 @@ jfieldID pdsi_connected;
 static jclass ia4_clazz;
 static jmethodID ia4_ctor;
 
-static CRITICAL_SECTION sizeCheckLock;
-
-/* Windows OS version is XP or better */
-static int xp_or_later = 0;
-/* Windows OS version is Windows 2000 or better */
-static int w2k_or_later = 0;
-
 /*
  * Notes about UDP/IPV6 on Windows (XP and 2003 server):
  *
@@ -137,182 +130,6 @@ static int getFD1(JNIEnv *env, jobject this) {
 }
 
 /*
- * This function returns JNI_TRUE if the datagram size exceeds the underlying
- * provider's ability to send to the target address. The following OS
- * oddities have been observed :-
- *
- * 1. On Windows 95/98 if we try to send a datagram > 12k to an application
- *    on the same machine then the send will fail silently.
- *
- * 2. On Windows ME if we try to send a datagram > supported by underlying
- *    provider then send will not return an error.
- *
- * 3. On Windows NT/2000 if we exceeds the maximum size then send will fail
- *    with WSAEADDRNOTAVAIL.
- *
- * 4. On Windows 95/98 if we exceed the maximum size when sending to
- *    another machine then WSAEINVAL is returned.
- *
- */
-jboolean exceedSizeLimit(JNIEnv *env, jint fd, jint addr, jint size)
-{
-#define DEFAULT_MSG_SIZE        65527
-    static jboolean initDone;
-    static jboolean is95or98;
-    static int maxmsg;
-
-    typedef struct _netaddr  {          /* Windows 95/98 only */
-        unsigned long addr;
-        struct _netaddr *next;
-    } netaddr;
-    static netaddr *addrList;
-    netaddr *curr;
-
-    /*
-     * First time we are called we must determine which OS this is and also
-     * get the maximum size supported by the underlying provider.
-     *
-     * In addition on 95/98 we must enumerate our IP addresses.
-     */
-    if (!initDone) {
-        EnterCriticalSection(&sizeCheckLock);
-
-        if (initDone) {
-            /* another thread got there first */
-            LeaveCriticalSection(&sizeCheckLock);
-
-        } else {
-            OSVERSIONINFO ver;
-            int len;
-
-            /*
-             * Step 1: Determine which OS this is.
-             */
-            ver.dwOSVersionInfoSize = sizeof(ver);
-            GetVersionEx(&ver);
-
-            is95or98 = JNI_FALSE;
-            if (ver.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS &&
-                ver.dwMajorVersion == 4 &&
-                (ver.dwMinorVersion == 0 || ver.dwMinorVersion == 10)) {
-
-                is95or98 = JNI_TRUE;
-            }
-
-            /*
-             * Step 2: Determine the maximum datagram supported by the
-             * underlying provider. On Windows 95 if winsock hasn't been
-             * upgraded (ie: unsupported configuration) then we assume
-             * the default 64k limit.
-             */
-            len = sizeof(maxmsg);
-            if (NET_GetSockOpt(fd, SOL_SOCKET, SO_MAX_MSG_SIZE, (char *)&maxmsg, &len) < 0) {
-                maxmsg = DEFAULT_MSG_SIZE;
-            }
-
-            /*
-             * Step 3: On Windows 95/98 then enumerate the IP addresses on
-             * this machine. This is neccesary because we need to check if the
-             * datagram is being sent to an application on the same machine.
-             */
-            if (is95or98) {
-                char hostname[255];
-                struct hostent *hp;
-
-                if (gethostname(hostname, sizeof(hostname)) == -1) {
-                    LeaveCriticalSection(&sizeCheckLock);
-                    JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Unable to obtain hostname");
-                    return JNI_TRUE;
-                }
-                hp = (struct hostent *)gethostbyname(hostname);
-                if (hp != NULL) {
-                    struct in_addr **addrp = (struct in_addr **) hp->h_addr_list;
-
-                    while (*addrp != (struct in_addr *) 0) {
-                        curr = (netaddr *)malloc(sizeof(netaddr));
-                        if (curr == NULL) {
-                            while (addrList != NULL) {
-                                curr = addrList->next;
-                                free(addrList);
-                                addrList = curr;
-                            }
-                            LeaveCriticalSection(&sizeCheckLock);
-                            JNU_ThrowOutOfMemoryError(env, "Native heap allocation failed");
-                            return JNI_TRUE;
-                        }
-                        curr->addr = htonl((*addrp)->S_un.S_addr);
-                        curr->next = addrList;
-                        addrList = curr;
-                        addrp++;
-                    }
-                }
-            }
-
-            /*
-             * Step 4: initialization is done so set flag and unlock cs
-             */
-            initDone = JNI_TRUE;
-            LeaveCriticalSection(&sizeCheckLock);
-        }
-    }
-
-    /*
-     * Now examine the size of the datagram :-
-     *
-     * (a) If exceeds size of service provider return 'false' to indicate that
-     *     we exceed the limit.
-     * (b) If not 95/98 then return 'true' to indicate that the size is okay.
-     * (c) On 95/98 if the size is <12k we are okay.
-     * (d) On 95/98 if size > 12k then check if the destination is the current
-     *     machine.
-     */
-    if (size > maxmsg) {        /* step (a) */
-        return JNI_TRUE;
-    }
-    if (!is95or98) {            /* step (b) */
-        return JNI_FALSE;
-    }
-    if (size <= 12280) {        /* step (c) */
-        return JNI_FALSE;
-    }
-
-    /* step (d) */
-
-    if ((addr & 0x7f000000) == 0x7f000000) {
-        return JNI_TRUE;
-    }
-    curr = addrList;
-    while (curr != NULL) {
-        if (curr->addr == addr) {
-            return JNI_TRUE;
-        }
-        curr = curr->next;
-    }
-    return JNI_FALSE;
-}
-
-/*
- * Return JNI_TRUE if this Windows edition supports ICMP Port Unreachable
- */
-__inline static jboolean supportPortUnreachable() {
-    static jboolean initDone;
-    static jboolean portUnreachableSupported;
-
-    if (!initDone) {
-        OSVERSIONINFO ver;
-        ver.dwOSVersionInfoSize = sizeof(ver);
-        GetVersionEx(&ver);
-        if (ver.dwPlatformId == VER_PLATFORM_WIN32_NT && ver.dwMajorVersion >= 5) {
-            portUnreachableSupported = JNI_TRUE;
-        } else {
-            portUnreachableSupported = JNI_FALSE;
-        }
-        initDone = JNI_TRUE;
-    }
-    return portUnreachableSupported;
-}
-
-/*
  * This function "purges" all outstanding ICMP port unreachable packets
  * outstanding on a socket and returns JNI_TRUE if any ICMP messages
  * have been purged. The rational for purging is to emulate normal BSD
@@ -329,13 +146,6 @@ static jboolean purgeOutstandingICMP(JNIEnv *env, jobject this, jint fd)
     int addrlen = sizeof(SOCKETADDRESS);
 
     memset((char *)&rmtaddr, 0, sizeof(rmtaddr));
-
-    /*
-     * A no-op if this OS doesn't support it.
-     */
-    if (!supportPortUnreachable()) {
-        return JNI_FALSE;
-    }
 
     /*
      * Peek at the queue to see if there is an ICMP port unreachable. If there
@@ -370,16 +180,6 @@ static jboolean purgeOutstandingICMP(JNIEnv *env, jobject this, jint fd)
  */
 JNIEXPORT void JNICALL
 Java_java_net_TwoStacksPlainDatagramSocketImpl_init(JNIEnv *env, jclass cls) {
-
-    OSVERSIONINFO ver;
-    int version;
-    ver.dwOSVersionInfoSize = sizeof(ver);
-    GetVersionEx(&ver);
-
-    version = ver.dwMajorVersion * 10 + ver.dwMinorVersion;
-    xp_or_later = (ver.dwPlatformId == VER_PLATFORM_WIN32_NT) && (version >= 51);
-    w2k_or_later = (ver.dwPlatformId == VER_PLATFORM_WIN32_NT) && (version >= 50);
-
     /* get fieldIDs */
     pdsi_fdID = (*env)->GetFieldID(env, cls, "fd", "Ljava/io/FileDescriptor;");
     CHECK_NULL(pdsi_fdID);
@@ -409,9 +209,6 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_init(JNIEnv *env, jclass cls) {
     CHECK_NULL(ia4_clazz);
     ia4_ctor = (*env)->GetMethodID(env, ia4_clazz, "<init>", "()V");
     CHECK_NULL(ia4_ctor);
-
-
-    InitializeCriticalSection(&sizeCheckLock);
 }
 
 JNIEXPORT void JNICALL
@@ -524,6 +321,8 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_connect0
     jint fd = -1, fd1 = -1, fdc, family;
     SOCKETADDRESS rmtaddr;
     int rmtaddrlen = 0;
+    DWORD x1, x2; /* ignored result codes */
+    int res, t;
 
     if (IS_NULL(fdObj) && IS_NULL(fd1Obj)) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
@@ -553,16 +352,13 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_connect0
 
     fdc = family == java_net_InetAddress_IPv4 ? fd : fd1;
 
-    if (xp_or_later) {
-        /* SIO_UDP_CONNRESET fixes a bug introduced in Windows 2000, which
-         * returns connection reset errors on connected UDP sockets (as well
-         * as connected sockets). The solution is to only enable this feature
-         * when the socket is connected
-         */
-        DWORD x1, x2; /* ignored result codes */
-        int res, t = TRUE;
-        res = WSAIoctl(fdc,SIO_UDP_CONNRESET,&t,sizeof(t),&x1,sizeof(x1),&x2,0,0);
-    }
+    /* SIO_UDP_CONNRESET fixes a bug introduced in Windows 2000, which
+     * returns connection reset errors on connected UDP sockets (as well
+     * as connected sockets). The solution is to only enable this feature
+     * when the socket is connected
+     */
+    t = TRUE;
+    res = WSAIoctl(fdc, SIO_UDP_CONNRESET, &t, sizeof(t), &x1, sizeof(x1), &x2, 0, 0);
 
     if (NET_InetAddressToSockaddr(env, address, port, &rmtaddr,
                                   &rmtaddrlen, JNI_FALSE) != 0) {
@@ -588,6 +384,8 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_disconnect0(JNIEnv *env, jobject 
     /* The fdObj'fd */
     jint fd, len;
     SOCKETADDRESS addr;
+    DWORD x1 = 0, x2 = 0; /* ignored result codes */
+    int t;
 
     if (family == java_net_InetAddress_IPv4) {
         fdObj = (*env)->GetObjectField(env, this, pdsi_fdID);
@@ -610,11 +408,8 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_disconnect0(JNIEnv *env, jobject 
      * use SIO_UDP_CONNRESET
      * to disable ICMP port unreachable handling here.
      */
-    if (xp_or_later) {
-        DWORD x1 = 0, x2 = 0; /* ignored result codes */
-        int t = FALSE;
-        WSAIoctl(fd,SIO_UDP_CONNRESET,&t,sizeof(t),&x1,sizeof(x1),&x2,0,0);
-    }
+    t = FALSE;
+    WSAIoctl(fd, SIO_UDP_CONNRESET, &t, sizeof(t), &x1, sizeof(x1), &x2, 0, 0);
 }
 
 /*
@@ -632,7 +427,6 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_send
     jint fd;
 
     jobject iaObj;
-    jint address;
     jint family;
 
     jint packetBufferOffset, packetBufferLen, packetPort;
@@ -697,32 +491,6 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_send
     }
 
     if (packetBufferLen > MAX_BUFFER_LEN) {
-
-        /*
-         * On 95/98 if we try to send a datagram >12k to an application
-         * on the same machine then this will fail silently. Thus we
-         * catch this situation here so that we can throw an exception
-         * when this arises.
-         * On ME if we try to send a datagram with a size greater than
-         * that supported by the service provider then no error is
-         * returned.
-         */
-        if (!w2k_or_later) { /* avoid this check on Win 2K or better. Does not work with IPv6.
-                      * Check is not necessary on these OSes */
-            if (connected) {
-                address = getInetAddress_addr(env, iaObj);
-            } else {
-                address = ntohl(rmtaddr.sa4.sin_addr.s_addr);
-            }
-
-            if (exceedSizeLimit(env, fd, address, packetBufferLen)) {
-                if (!((*env)->ExceptionOccurred(env))) {
-                    NET_ThrowNew(env, WSAEMSGSIZE, "Datagram send failed");
-                }
-                return;
-            }
-        }
-
         /* When JNI-ifying the JDK's IO routines, we turned
          * reads and writes of byte arrays of size greater
          * than 2048 bytes into several operations of size 2048.
@@ -1282,16 +1050,15 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_receive0(JNIEnv *env, jobject thi
 
 
     /*
-     * If this Windows edition supports ICMP port unreachable and if we
-     * are not connected then we need to know if a timeout has been specified
-     * and if so we need to pick up the current time. These are required in
-     * order to implement the semantics of timeout, viz :-
+     * If we are not connected then we need to know if a timeout has been
+     * specified and if so we need to pick up the current time. These are
+     * required in order to implement the semantics of timeout, viz :-
      * timeout set to t1 but ICMP port unreachable arrives in t2 where
      * t2 < t1. In this case we must discard the ICMP packets and then
      * wait for the next packet up to a maximum of t1 minus t2.
      */
     connected = (*env)->GetBooleanField(env, this, pdsi_connected);
-    if (supportPortUnreachable() && !connected && timeout &&!ipv6_supported) {
+    if (!connected && timeout && !ipv6_supported) {
         prevTime = JVM_CurrentTimeMillis(env, 0);
     }
 
