@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
 
@@ -59,12 +60,31 @@ public class GTestWrapper {
         if (!path.toFile().exists()) {
             throw new Error("TESTBUG: the library has not been found in " + nativePath);
         }
-        path = path.resolve("gtestLauncher" + (Platform.isWindows() ? ".exe" : ""));
-        ProcessTools.executeCommand(new String[] {
-                path.toString(),
-                "-jdk",
-                System.getProperty("test.jdk")
-        }).shouldHaveExitValue(0);
+
+        Path execPath = path.resolve("gtestLauncher" + (Platform.isWindows() ? ".exe" : ""));
+        ProcessBuilder pb = new ProcessBuilder();
+        Map<String, String> env = pb.environment();
+
+        // The GTestWrapper was started using the normal java launcher, which
+        // may have set LD_LIBRARY_PATH or LIBPATH to point to the jdk libjvm. In
+        // that case, prepend the path with the location of the gtest library."
+
+        String ldLibraryPath = System.getenv("LD_LIBRARY_PATH");
+        if (ldLibraryPath != null) {
+            env.put("LD_LIBRARY_PATH", path + ":" + ldLibraryPath);
+        }
+
+        String libPath = System.getenv("LIBPATH");
+        if (libPath != null) {
+            env.put("LIBPATH", path + ":" + libPath);
+        }
+
+        pb.command(new String[] {
+            execPath.toString(),
+            "-jdk",
+            System.getProperty("test.jdk")
+        });
+        ProcessTools.executeCommand(pb).shouldHaveExitValue(0);
     }
 
     private static String getJVMVariantSubDir() {
