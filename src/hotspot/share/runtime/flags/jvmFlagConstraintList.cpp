@@ -25,11 +25,12 @@
 #include "precompiled.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
-#include "gc/shared/commandLineFlagConstraintsGC.hpp"
+#include "gc/shared/jvmFlagConstraintsGC.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/commandLineFlagConstraintList.hpp"
-#include "runtime/commandLineFlagConstraintsCompiler.hpp"
-#include "runtime/commandLineFlagConstraintsRuntime.hpp"
+#include "runtime/flags/jvmFlag.hpp"
+#include "runtime/flags/jvmFlagConstraintList.hpp"
+#include "runtime/flags/jvmFlagConstraintsCompiler.hpp"
+#include "runtime/flags/jvmFlagConstraintsRuntime.hpp"
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1
@@ -39,162 +40,161 @@
 #include "opto/c2_globals.hpp"
 #endif
 
-
-class CommandLineFlagConstraint_bool : public CommandLineFlagConstraint {
-  CommandLineFlagConstraintFunc_bool _constraint;
+class JVMFlagConstraint_bool : public JVMFlagConstraint {
+  JVMFlagConstraintFunc_bool _constraint;
   const bool* _ptr;
 
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagConstraint_bool(const char* name, const bool* ptr,
-                                 CommandLineFlagConstraintFunc_bool func,
-                                 ConstraintType type) : CommandLineFlagConstraint(name, type), _constraint(func), _ptr(ptr) {}
+  JVMFlagConstraint_bool(const char* name, const bool* ptr,
+                                 JVMFlagConstraintFunc_bool func,
+                                 ConstraintType type) : JVMFlagConstraint(name, type), _constraint(func), _ptr(ptr) {}
 
-  Flag::Error apply(bool verbose) {
+  JVMFlag::Error apply(bool verbose) {
     bool value = *_ptr;
     return _constraint(value, verbose);
   }
 
-  Flag::Error apply_bool(bool value, bool verbose) {
+  JVMFlag::Error apply_bool(bool value, bool verbose) {
     return _constraint(value, verbose);
   }
 };
 
-class CommandLineFlagConstraint_int : public CommandLineFlagConstraint {
-  CommandLineFlagConstraintFunc_int _constraint;
+class JVMFlagConstraint_int : public JVMFlagConstraint {
+  JVMFlagConstraintFunc_int _constraint;
   const int* _ptr;
 
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagConstraint_int(const char* name, const int* ptr,
-                                CommandLineFlagConstraintFunc_int func,
-                                ConstraintType type) : CommandLineFlagConstraint(name, type), _constraint(func), _ptr(ptr) {}
+  JVMFlagConstraint_int(const char* name, const int* ptr,
+                                JVMFlagConstraintFunc_int func,
+                                ConstraintType type) : JVMFlagConstraint(name, type), _constraint(func), _ptr(ptr) {}
 
-  Flag::Error apply(bool verbose) {
+  JVMFlag::Error apply(bool verbose) {
     int value = *_ptr;
     return _constraint(value, verbose);
   }
 
-  Flag::Error apply_int(int value, bool verbose) {
+  JVMFlag::Error apply_int(int value, bool verbose) {
     return _constraint(value, verbose);
   }
 };
 
-class CommandLineFlagConstraint_intx : public CommandLineFlagConstraint {
-  CommandLineFlagConstraintFunc_intx _constraint;
+class JVMFlagConstraint_intx : public JVMFlagConstraint {
+  JVMFlagConstraintFunc_intx _constraint;
   const intx* _ptr;
 
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagConstraint_intx(const char* name, const intx* ptr,
-                                 CommandLineFlagConstraintFunc_intx func,
-                                 ConstraintType type) : CommandLineFlagConstraint(name, type), _constraint(func), _ptr(ptr) {}
+  JVMFlagConstraint_intx(const char* name, const intx* ptr,
+                                 JVMFlagConstraintFunc_intx func,
+                                 ConstraintType type) : JVMFlagConstraint(name, type), _constraint(func), _ptr(ptr) {}
 
-  Flag::Error apply(bool verbose) {
+  JVMFlag::Error apply(bool verbose) {
     intx value = *_ptr;
     return _constraint(value, verbose);
   }
 
-  Flag::Error apply_intx(intx value, bool verbose) {
+  JVMFlag::Error apply_intx(intx value, bool verbose) {
     return _constraint(value, verbose);
   }
 };
 
-class CommandLineFlagConstraint_uint : public CommandLineFlagConstraint {
-  CommandLineFlagConstraintFunc_uint _constraint;
+class JVMFlagConstraint_uint : public JVMFlagConstraint {
+  JVMFlagConstraintFunc_uint _constraint;
   const uint* _ptr;
 
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagConstraint_uint(const char* name, const uint* ptr,
-                                 CommandLineFlagConstraintFunc_uint func,
-                                 ConstraintType type) : CommandLineFlagConstraint(name, type), _constraint(func), _ptr(ptr) {}
+  JVMFlagConstraint_uint(const char* name, const uint* ptr,
+                                 JVMFlagConstraintFunc_uint func,
+                                 ConstraintType type) : JVMFlagConstraint(name, type), _constraint(func), _ptr(ptr) {}
 
-  Flag::Error apply(bool verbose) {
+  JVMFlag::Error apply(bool verbose) {
     uint value = *_ptr;
     return _constraint(value, verbose);
   }
 
-  Flag::Error apply_uint(uint value, bool verbose) {
+  JVMFlag::Error apply_uint(uint value, bool verbose) {
     return _constraint(value, verbose);
   }
 };
 
-class CommandLineFlagConstraint_uintx : public CommandLineFlagConstraint {
-  CommandLineFlagConstraintFunc_uintx _constraint;
+class JVMFlagConstraint_uintx : public JVMFlagConstraint {
+  JVMFlagConstraintFunc_uintx _constraint;
   const uintx* _ptr;
 
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagConstraint_uintx(const char* name, const uintx* ptr,
-                                  CommandLineFlagConstraintFunc_uintx func,
-                                 ConstraintType type) : CommandLineFlagConstraint(name, type), _constraint(func), _ptr(ptr) {}
+  JVMFlagConstraint_uintx(const char* name, const uintx* ptr,
+                                  JVMFlagConstraintFunc_uintx func,
+                                 ConstraintType type) : JVMFlagConstraint(name, type), _constraint(func), _ptr(ptr) {}
 
-  Flag::Error apply(bool verbose) {
+  JVMFlag::Error apply(bool verbose) {
     uintx value = *_ptr;
     return _constraint(value, verbose);
   }
 
-  Flag::Error apply_uintx(uintx value, bool verbose) {
+  JVMFlag::Error apply_uintx(uintx value, bool verbose) {
     return _constraint(value, verbose);
   }
 };
 
-class CommandLineFlagConstraint_uint64_t : public CommandLineFlagConstraint {
-  CommandLineFlagConstraintFunc_uint64_t _constraint;
+class JVMFlagConstraint_uint64_t : public JVMFlagConstraint {
+  JVMFlagConstraintFunc_uint64_t _constraint;
   const uint64_t* _ptr;
 
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagConstraint_uint64_t(const char* name, const uint64_t* ptr,
-                                     CommandLineFlagConstraintFunc_uint64_t func,
-                                 ConstraintType type) : CommandLineFlagConstraint(name, type), _constraint(func), _ptr(ptr) {}
+  JVMFlagConstraint_uint64_t(const char* name, const uint64_t* ptr,
+                                     JVMFlagConstraintFunc_uint64_t func,
+                                 ConstraintType type) : JVMFlagConstraint(name, type), _constraint(func), _ptr(ptr) {}
 
-  Flag::Error apply(bool verbose) {
+  JVMFlag::Error apply(bool verbose) {
     uint64_t value = *_ptr;
     return _constraint(value, verbose);
   }
 
-  Flag::Error apply_uint64_t(uint64_t value, bool verbose) {
+  JVMFlag::Error apply_uint64_t(uint64_t value, bool verbose) {
     return _constraint(value, verbose);
   }
 };
 
-class CommandLineFlagConstraint_size_t : public CommandLineFlagConstraint {
-  CommandLineFlagConstraintFunc_size_t _constraint;
+class JVMFlagConstraint_size_t : public JVMFlagConstraint {
+  JVMFlagConstraintFunc_size_t _constraint;
   const size_t* _ptr;
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagConstraint_size_t(const char* name, const size_t* ptr,
-                                   CommandLineFlagConstraintFunc_size_t func,
-                                 ConstraintType type) : CommandLineFlagConstraint(name, type), _constraint(func), _ptr(ptr) {}
+  JVMFlagConstraint_size_t(const char* name, const size_t* ptr,
+                                   JVMFlagConstraintFunc_size_t func,
+                                 ConstraintType type) : JVMFlagConstraint(name, type), _constraint(func), _ptr(ptr) {}
 
-  Flag::Error apply(bool verbose) {
+  JVMFlag::Error apply(bool verbose) {
     size_t value = *_ptr;
     return _constraint(value, verbose);
   }
 
-  Flag::Error apply_size_t(size_t value, bool verbose) {
+  JVMFlag::Error apply_size_t(size_t value, bool verbose) {
     return _constraint(value, verbose);
   }
 };
 
-class CommandLineFlagConstraint_double : public CommandLineFlagConstraint {
-  CommandLineFlagConstraintFunc_double _constraint;
+class JVMFlagConstraint_double : public JVMFlagConstraint {
+  JVMFlagConstraintFunc_double _constraint;
   const double* _ptr;
 
 public:
   // the "name" argument must be a string literal
-  CommandLineFlagConstraint_double(const char* name, const double* ptr,
-                                   CommandLineFlagConstraintFunc_double func,
-                                 ConstraintType type) : CommandLineFlagConstraint(name, type), _constraint(func), _ptr(ptr) {}
+  JVMFlagConstraint_double(const char* name, const double* ptr,
+                                   JVMFlagConstraintFunc_double func,
+                                 ConstraintType type) : JVMFlagConstraint(name, type), _constraint(func), _ptr(ptr) {}
 
-  Flag::Error apply(bool verbose) {
+  JVMFlag::Error apply(bool verbose) {
     double value = *_ptr;
     return _constraint(value, verbose);
   }
 
-  Flag::Error apply_double(double value, bool verbose) {
+  JVMFlag::Error apply_double(double value, bool verbose) {
     return _constraint(value, verbose);
   }
 };
@@ -214,30 +214,30 @@ void emit_constraint_uint64_t(const char* /*name*/, const uint64_t* /*value*/)  
 void emit_constraint_size_t(const char* /*name*/, const size_t* /*value*/)        { /* NOP */ }
 void emit_constraint_double(const char* /*name*/, const double* /*value*/)        { /* NOP */ }
 
-// CommandLineFlagConstraint emitting code functions if function argument is provided
-void emit_constraint_bool(const char* name, const bool* ptr, CommandLineFlagConstraintFunc_bool func, CommandLineFlagConstraint::ConstraintType type) {
-  CommandLineFlagConstraintList::add(new CommandLineFlagConstraint_bool(name, ptr, func, type));
+// JVMFlagConstraint emitting code functions if function argument is provided
+void emit_constraint_bool(const char* name, const bool* ptr, JVMFlagConstraintFunc_bool func, JVMFlagConstraint::ConstraintType type) {
+  JVMFlagConstraintList::add(new JVMFlagConstraint_bool(name, ptr, func, type));
 }
-void emit_constraint_int(const char* name, const int* ptr, CommandLineFlagConstraintFunc_int func, CommandLineFlagConstraint::ConstraintType type) {
-  CommandLineFlagConstraintList::add(new CommandLineFlagConstraint_int(name, ptr, func, type));
+void emit_constraint_int(const char* name, const int* ptr, JVMFlagConstraintFunc_int func, JVMFlagConstraint::ConstraintType type) {
+  JVMFlagConstraintList::add(new JVMFlagConstraint_int(name, ptr, func, type));
 }
-void emit_constraint_intx(const char* name, const intx* ptr, CommandLineFlagConstraintFunc_intx func, CommandLineFlagConstraint::ConstraintType type) {
-  CommandLineFlagConstraintList::add(new CommandLineFlagConstraint_intx(name, ptr, func, type));
+void emit_constraint_intx(const char* name, const intx* ptr, JVMFlagConstraintFunc_intx func, JVMFlagConstraint::ConstraintType type) {
+  JVMFlagConstraintList::add(new JVMFlagConstraint_intx(name, ptr, func, type));
 }
-void emit_constraint_uint(const char* name, const uint* ptr, CommandLineFlagConstraintFunc_uint func, CommandLineFlagConstraint::ConstraintType type) {
-  CommandLineFlagConstraintList::add(new CommandLineFlagConstraint_uint(name, ptr, func, type));
+void emit_constraint_uint(const char* name, const uint* ptr, JVMFlagConstraintFunc_uint func, JVMFlagConstraint::ConstraintType type) {
+  JVMFlagConstraintList::add(new JVMFlagConstraint_uint(name, ptr, func, type));
 }
-void emit_constraint_uintx(const char* name, const uintx* ptr, CommandLineFlagConstraintFunc_uintx func, CommandLineFlagConstraint::ConstraintType type) {
-  CommandLineFlagConstraintList::add(new CommandLineFlagConstraint_uintx(name, ptr, func, type));
+void emit_constraint_uintx(const char* name, const uintx* ptr, JVMFlagConstraintFunc_uintx func, JVMFlagConstraint::ConstraintType type) {
+  JVMFlagConstraintList::add(new JVMFlagConstraint_uintx(name, ptr, func, type));
 }
-void emit_constraint_uint64_t(const char* name, const uint64_t* ptr, CommandLineFlagConstraintFunc_uint64_t func, CommandLineFlagConstraint::ConstraintType type) {
-  CommandLineFlagConstraintList::add(new CommandLineFlagConstraint_uint64_t(name, ptr, func, type));
+void emit_constraint_uint64_t(const char* name, const uint64_t* ptr, JVMFlagConstraintFunc_uint64_t func, JVMFlagConstraint::ConstraintType type) {
+  JVMFlagConstraintList::add(new JVMFlagConstraint_uint64_t(name, ptr, func, type));
 }
-void emit_constraint_size_t(const char* name, const size_t* ptr, CommandLineFlagConstraintFunc_size_t func, CommandLineFlagConstraint::ConstraintType type) {
-  CommandLineFlagConstraintList::add(new CommandLineFlagConstraint_size_t(name, ptr, func, type));
+void emit_constraint_size_t(const char* name, const size_t* ptr, JVMFlagConstraintFunc_size_t func, JVMFlagConstraint::ConstraintType type) {
+  JVMFlagConstraintList::add(new JVMFlagConstraint_size_t(name, ptr, func, type));
 }
-void emit_constraint_double(const char* name, const double* ptr, CommandLineFlagConstraintFunc_double func, CommandLineFlagConstraint::ConstraintType type) {
-  CommandLineFlagConstraintList::add(new CommandLineFlagConstraint_double(name, ptr, func, type));
+void emit_constraint_double(const char* name, const double* ptr, JVMFlagConstraintFunc_double func, JVMFlagConstraint::ConstraintType type) {
+  JVMFlagConstraintList::add(new JVMFlagConstraint_double(name, ptr, func, type));
 }
 
 // Generate code to call emit_constraint_xxx function
@@ -265,16 +265,16 @@ void emit_constraint_double(const char* name, const double* ptr, CommandLineFlag
 #endif
 
 // Generate func argument to pass into emit_constraint_xxx functions
-#define EMIT_CONSTRAINT_CHECK(func, type)                         , func, CommandLineFlagConstraint::type
+#define EMIT_CONSTRAINT_CHECK(func, type)                         , func, JVMFlagConstraint::type
 
 // the "name" argument must be a string literal
 #define INITIAL_CONSTRAINTS_SIZE 72
-GrowableArray<CommandLineFlagConstraint*>* CommandLineFlagConstraintList::_constraints = NULL;
-CommandLineFlagConstraint::ConstraintType CommandLineFlagConstraintList::_validating_type = CommandLineFlagConstraint::AtParse;
+GrowableArray<JVMFlagConstraint*>* JVMFlagConstraintList::_constraints = NULL;
+JVMFlagConstraint::ConstraintType JVMFlagConstraintList::_validating_type = JVMFlagConstraint::AtParse;
 
 // Check the ranges of all flags that have them or print them out and exit if requested
-void CommandLineFlagConstraintList::init(void) {
-  _constraints = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<CommandLineFlagConstraint*>(INITIAL_CONSTRAINTS_SIZE, true);
+void JVMFlagConstraintList::init(void) {
+  _constraints = new (ResourceObj::C_HEAP, mtArguments) GrowableArray<JVMFlagConstraint*>(INITIAL_CONSTRAINTS_SIZE, true);
 
   emit_constraint_no(NULL VM_FLAGS(EMIT_CONSTRAINT_DEVELOPER_FLAG,
                                    EMIT_CONSTRAINT_PD_DEVELOPER_FLAG,
@@ -331,10 +331,10 @@ void CommandLineFlagConstraintList::init(void) {
 #endif // COMPILER2
 }
 
-CommandLineFlagConstraint* CommandLineFlagConstraintList::find(const char* name) {
-  CommandLineFlagConstraint* found = NULL;
+JVMFlagConstraint* JVMFlagConstraintList::find(const char* name) {
+  JVMFlagConstraint* found = NULL;
   for (int i=0; i<length(); i++) {
-    CommandLineFlagConstraint* constraint = at(i);
+    JVMFlagConstraint* constraint = at(i);
     if (strcmp(constraint->name(), name) == 0) {
       found = constraint;
       break;
@@ -344,9 +344,9 @@ CommandLineFlagConstraint* CommandLineFlagConstraintList::find(const char* name)
 }
 
 // Find constraints by name and return only if found constraint's type is equal or lower than current validating type.
-CommandLineFlagConstraint* CommandLineFlagConstraintList::find_if_needs_check(const char* name) {
-  CommandLineFlagConstraint* found = NULL;
-  CommandLineFlagConstraint* constraint = find(name);
+JVMFlagConstraint* JVMFlagConstraintList::find_if_needs_check(const char* name) {
+  JVMFlagConstraint* found = NULL;
+  JVMFlagConstraint* constraint = find(name);
   if (constraint && (constraint->type() <= _validating_type)) {
     found = constraint;
   }
@@ -354,15 +354,15 @@ CommandLineFlagConstraint* CommandLineFlagConstraintList::find_if_needs_check(co
 }
 
 // Check constraints for specific constraint type.
-bool CommandLineFlagConstraintList::check_constraints(CommandLineFlagConstraint::ConstraintType type) {
+bool JVMFlagConstraintList::check_constraints(JVMFlagConstraint::ConstraintType type) {
   guarantee(type > _validating_type, "Constraint check is out of order.");
   _validating_type = type;
 
   bool status = true;
   for (int i=0; i<length(); i++) {
-    CommandLineFlagConstraint* constraint = at(i);
+    JVMFlagConstraint* constraint = at(i);
     if (type != constraint->type()) continue;
-    if (constraint->apply(true) != Flag::SUCCESS) status = false;
+    if (constraint->apply(true) != JVMFlag::SUCCESS) status = false;
   }
   return status;
 }

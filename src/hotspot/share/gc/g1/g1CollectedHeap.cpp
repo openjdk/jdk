@@ -84,6 +84,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/flags/flagSetting.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/orderAccess.inline.hpp"

@@ -29,6 +29,7 @@
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/vmStructs_jvmci.hpp"
+#include "runtime/flags/jvmFlag.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/resourceHash.hpp"
@@ -378,9 +379,9 @@ jobjectArray readConfiguration0(JNIEnv *env, TRAPS) {
 #define COUNT_FLAG(ignore) +1
 #ifdef ASSERT
 #define CHECK_FLAG(type, name) { \
-  Flag* flag = Flag::find_flag(#name, strlen(#name), /*allow_locked*/ true, /* return_flag */ true); \
+  JVMFlag* flag = JVMFlag::find_flag(#name, strlen(#name), /*allow_locked*/ true, /* return_flag */ true); \
   assert(flag != NULL, "No such flag named " #name); \
-  assert(flag->is_##type(), "Flag " #name " is not of type " #type); \
+  assert(flag->is_##type(), "JVMFlag " #name " is not of type " #type); \
 }
 #else
 #define CHECK_FLAG(type, name)

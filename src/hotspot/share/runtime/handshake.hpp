@@ -26,6 +26,7 @@
 #define SHARE_VM_RUNTIME_HANDSHAKE_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/flags/flagSetting.hpp"
 #include "runtime/semaphore.hpp"
 
 class ThreadClosure;
