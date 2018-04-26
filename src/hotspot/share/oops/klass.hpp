@@ -168,7 +168,6 @@ private:
   // in the open archive heap region when archiving java object is supported.
   CDS_JAVA_HEAP_ONLY(narrowOop _archived_mirror;)
 
-  friend class SharedClassUtil;
 protected:
 
   // Constructor

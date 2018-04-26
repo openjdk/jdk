@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
-#include "classfile/sharedClassUtil.hpp"
 #include "classfile/dictionary.inline.hpp"
 #include "classfile/protectionDomainCache.hpp"
 #include "classfile/systemDictionary.hpp"
