@@ -72,7 +72,6 @@
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_CDS
-#include "classfile/sharedClassUtil.hpp"
 #include "classfile/sharedPathsMiscInfo.hpp"
 #endif
 
@@ -660,7 +659,7 @@ void* ClassLoader::get_shared_paths_misc_info() {
 }
 
 bool ClassLoader::check_shared_paths_misc_info(void *buf, int size) {
-  SharedPathsMiscInfo* checker = SharedClassUtil::allocate_shared_paths_misc_info((char*)buf, size);
+  SharedPathsMiscInfo* checker = new SharedPathsMiscInfo((char*)buf, size);
   bool result = checker->check();
   delete checker;
   return result;
@@ -1406,8 +1405,6 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
                                                          name->utf8_length());
   assert(file_name != NULL, "invariant");
 
-  ClassLoaderExt::Context context(class_name, file_name, THREAD);
-
   // Lookup stream for parsing .class file
   ClassFileStream* stream = NULL;
   s2 classpath_index = 0;
@@ -1480,7 +1477,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
     return NULL;
   }
 
-  stream->set_verify(context.should_verify(classpath_index));
+  stream->set_verify(ClassLoaderExt::should_verify(classpath_index));
 
   ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
   Handle protection_domain;
@@ -1628,8 +1625,7 @@ void ClassLoader::record_result(InstanceKlass* ik, const ClassFileStream* stream
                                                          ik->name()->utf8_length());
   assert(file_name != NULL, "invariant");
 
-  ClassLoaderExt::Context context(class_name, file_name, CATCH);
-  context.record_result(ik->name(), classpath_index, ik, THREAD);
+  ClassLoaderExt::record_result(classpath_index, ik, THREAD);
 }
 #endif // INCLUDE_CDS
 
@@ -1699,7 +1695,7 @@ void ClassLoader::initialize() {
 #if INCLUDE_CDS
   // initialize search path
   if (DumpSharedSpaces) {
-    _shared_paths_misc_info = SharedClassUtil::allocate_shared_paths_misc_info();
+    _shared_paths_misc_info = new SharedPathsMiscInfo();
   }
 #endif
   setup_bootstrap_search_path();

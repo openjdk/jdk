@@ -84,7 +84,6 @@
 #include "trace/tracing.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_CDS
-#include "classfile/sharedClassUtil.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #endif
 #if INCLUDE_JVMCI

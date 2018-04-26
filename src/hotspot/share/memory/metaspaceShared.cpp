@@ -29,7 +29,6 @@
 #include "classfile/dictionary.hpp"
 #include "classfile/loaderConstraints.hpp"
 #include "classfile/placeholders.hpp"
-#include "classfile/sharedClassUtil.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -321,6 +320,46 @@ void MetaspaceShared::initialize_dumptime_shared_and_meta_spaces() {
   _mc_region.init(&_shared_rs);
   tty->print_cr("Allocated shared space: " SIZE_FORMAT " bytes at " PTR_FORMAT,
                 _shared_rs.size(), p2i(_shared_rs.base()));
+}
+
+// Called by universe_post_init()
+void MetaspaceShared::post_initialize(TRAPS) {
+  if (UseSharedSpaces) {
+    int size = FileMapInfo::get_number_of_shared_paths();
+    if (size > 0) {
+      SystemDictionaryShared::allocate_shared_data_arrays(size, THREAD);
+      FileMapInfo::FileMapHeader* header = FileMapInfo::current_info()->header();
+      ClassLoaderExt::init_paths_start_index(header->_app_class_paths_start_index);
+      ClassLoaderExt::init_app_module_paths_start_index(header->_app_module_paths_start_index);
+    }
+  }
+
+  if (DumpSharedSpaces) {
+    if (SharedArchiveConfigFile) {
+      read_extra_data(SharedArchiveConfigFile, THREAD);
+    }
+  }
+}
+
+void MetaspaceShared::read_extra_data(const char* filename, TRAPS) {
+  HashtableTextDump reader(filename);
+  reader.check_version("VERSION: 1.0");
+
+  while (reader.remain() > 0) {
+    int utf8_length;
+    int prefix_type = reader.scan_prefix(&utf8_length);
+    ResourceMark rm(THREAD);
+    char* utf8_buffer = NEW_RESOURCE_ARRAY(char, utf8_length);
+    reader.get_utf8(utf8_buffer, utf8_length);
+
+    if (prefix_type == HashtableTextDump::SymbolPrefix) {
+      SymbolTable::new_symbol(utf8_buffer, utf8_length, THREAD);
+    } else{
+      assert(prefix_type == HashtableTextDump::StringPrefix, "Sanity");
+      utf8_buffer[utf8_length] = '\0';
+      oop s = StringTable::intern(utf8_buffer, THREAD);
+    }
+  }
 }
 
 void MetaspaceShared::commit_shared_space_to(char* newtop) {

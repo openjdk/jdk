@@ -29,7 +29,7 @@
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/klassFactory.hpp"
-#include "classfile/sharedClassUtil.hpp"
+#include "memory/filemap.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiEnvBase.hpp"
