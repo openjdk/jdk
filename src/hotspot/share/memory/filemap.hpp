@@ -75,6 +75,7 @@ public:
 class FileMapInfo : public CHeapObj<mtInternal> {
 private:
   friend class ManifestStream;
+  friend class VMStructs;
   enum {
     _invalid_version = -1,
     _current_version = 3
