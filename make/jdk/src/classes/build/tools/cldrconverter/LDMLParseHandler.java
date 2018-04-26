@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,19 +103,30 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         case "key":
             // for LocaleNames
             // copy string
-            pushStringEntry(qName, attributes,
-                CLDRConverter.LOCALE_KEY_PREFIX +
-                convertOldKeyName(attributes.getValue("type")));
+            {
+                String key = convertOldKeyName(attributes.getValue("type"));
+                if (key.length() == 2) {
+                    pushStringEntry(qName, attributes,
+                        CLDRConverter.LOCALE_KEY_PREFIX + key);
+                } else {
+                    pushIgnoredContainer(qName);
+                }
+            }
             break;
 
         case "type":
             // for LocaleNames/CalendarNames
             // copy string
-            pushStringEntry(qName, attributes,
-                CLDRConverter.LOCALE_TYPE_PREFIX +
-                convertOldKeyName(attributes.getValue("key")) + "." +
-                attributes.getValue("type"));
-
+            {
+                String key = convertOldKeyName(attributes.getValue("key"));
+                if (key.length() == 2) {
+                    pushStringEntry(qName, attributes,
+                    CLDRConverter.LOCALE_TYPE_PREFIX + key + "." +
+                    attributes.getValue("type"));
+                } else {
+                    pushIgnoredContainer(qName);
+                }
+            }
             break;
 
         //
@@ -445,6 +456,16 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         case "gmtFormat":
             pushStringEntry(qName, attributes, "timezone.gmtFormat");
             break;
+        case "gmtZeroFormat":
+            pushStringEntry(qName, attributes, "timezone.gmtZeroFormat");
+            break;
+        case "regionFormat":
+            {
+                String type = attributes.getValue("type");
+                pushStringEntry(qName, attributes, "timezone.regionFormat" +
+                    (type == null ? "" : "." + type));
+            }
+            break;
         case "zone":
             {
                 String tzid = attributes.getValue("type"); // Olson tz id
@@ -474,8 +495,8 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         case "daylight": // daylight saving (summer) time name
             pushStringEntry(qName, attributes, CLDRConverter.ZONE_NAME_PREFIX + qName + "." + zoneNameStyle);
             break;
-        case "exemplarCity":  // not used in JDK
-            pushIgnoredContainer(qName);
+        case "exemplarCity":
+            pushStringEntry(qName, attributes, CLDRConverter.EXEMPLAR_CITY_PREFIX);
             break;
 
         //
@@ -877,11 +898,16 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
         case "generic":
         case "standard":
         case "daylight":
+        case "exemplarCity":
             if (zonePrefix != null && (currentContainer instanceof Entry)) {
                 @SuppressWarnings("unchecked")
                 Map<String, String> valmap = (Map<String, String>) get(zonePrefix + getContainerKey());
                 Entry<?> entry = (Entry<?>) currentContainer;
-                valmap.put(entry.getKey(), (String) entry.getValue());
+                if (qName.equals("exemplarCity")) {
+                    put(CLDRConverter.EXEMPLAR_CITY_PREFIX + getContainerKey(), (String) entry.getValue());
+                } else {
+                    valmap.put(entry.getKey(), (String) entry.getValue());
+                }
             }
             break;
 

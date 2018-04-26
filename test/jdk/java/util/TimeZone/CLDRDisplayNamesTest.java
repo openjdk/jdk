@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8005471 8008577 8129881 8130845 8136518
+ * @bug 8005471 8008577 8129881 8130845 8136518 8181157
  * @modules jdk.localedata
  * @run main/othervm -Djava.locale.providers=CLDR CLDRDisplayNamesTest
  * @summary Make sure that localized time zone names of CLDR are used
@@ -47,27 +47,27 @@ public class CLDRDisplayNamesTest {
         {
             "ja-JP",
             "\u30a2\u30e1\u30ea\u30ab\u592a\u5e73\u6d0b\u6a19\u6e96\u6642",
-            "PST",
+            "GMT-08:00",
             "\u30a2\u30e1\u30ea\u30ab\u592a\u5e73\u6d0b\u590f\u6642\u9593",
-            "PDT",
+            "GMT-07:00",
             //"\u30a2\u30e1\u30ea\u30ab\u592a\u5e73\u6d0b\u6642\u9593",
             //"PT"
         },
         {
             "zh-CN",
             "\u5317\u7f8e\u592a\u5e73\u6d0b\u6807\u51c6\u65f6\u95f4",
-            "PST",
+            "GMT-08:00",
             "\u5317\u7f8e\u592a\u5e73\u6d0b\u590f\u4ee4\u65f6\u95f4",
-            "PDT",
+            "GMT-07:00",
             //"\u5317\u7f8e\u592a\u5e73\u6d0b\u65f6\u95f4",
             //"PT",
         },
         {
             "de-DE",
             "Nordamerikanische Westk\u00fcsten-Normalzeit",
-            "PST",
+            "GMT-08:00",
             "Nordamerikanische Westk\u00fcsten-Sommerzeit",
-            "PDT",
+            "GMT-07:00",
             //"Nordamerikanische Westk\u00fcstenzeit",
             //"PT",
         },

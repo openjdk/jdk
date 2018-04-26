@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.*;
+import java.text.MessageFormat;
 import java.time.*;
 import java.util.*;
 import java.util.ResourceBundle.Control;
@@ -82,9 +83,11 @@ public class CLDRConverter {
     static final String CALENDAR_FIRSTDAY_PREFIX = "firstDay.";
     static final String CALENDAR_MINDAYS_PREFIX = "minDays.";
     static final String TIMEZONE_ID_PREFIX = "timezone.id.";
+    static final String EXEMPLAR_CITY_PREFIX = "timezone.excity.";
     static final String ZONE_NAME_PREFIX = "timezone.displayname.";
     static final String METAZONE_ID_PREFIX = "metazone.id.";
     static final String PARENT_LOCALE_PREFIX = "parentLocale.";
+    static final String[] EMPTY_ZONE = {"", "", "", "", "", ""};
 
     private static SupplementDataParseHandler handlerSuppl;
     private static SupplementalMetadataParseHandler handlerSupplMeta;
@@ -662,23 +665,18 @@ public class CLDRConverter {
                                 Arrays.deepEquals(data,
                                     (String[])map.get(METAZONE_ID_PREFIX + me.getValue())))
                             .findAny();
-                    if (cldrMeta.isPresent()) {
-                        names.put(tzid, cldrMeta.get().getValue());
-                    } else {
+                    cldrMeta.ifPresentOrElse(meta -> names.put(tzid, meta.getValue()), () -> {
                         // check the JRE meta key, add if there is not.
                         Optional<Map.Entry<String[], String>> jreMeta =
                             jreMetaMap.entrySet().stream()
                                 .filter(jm -> Arrays.deepEquals(data, jm.getKey()))
                                 .findAny();
-                        if (jreMeta.isPresent()) {
-                            names.put(tzid, jreMeta.get().getValue());
-                        } else {
-                            String metaName = "JRE_" + tzid.replaceAll("[/-]", "_");
-                            names.put(METAZONE_ID_PREFIX + metaName, data);
-                            names.put(tzid, metaName);
-                            jreMetaMap.put(data, metaName);
-                        }
-                    }
+                        jreMeta.ifPresentOrElse(meta -> names.put(tzid, meta.getValue()), () -> {
+                                String metaName = "JRE_" + tzid.replaceAll("[/-]", "_");
+                                names.put(METAZONE_ID_PREFIX + metaName, data);
+                                names.put(tzid, metaName);
+                        });
+                    });
                 }
             });
         }
@@ -704,6 +702,26 @@ public class CLDRConverter {
                 }
             }
         });
+
+        // exemplar cities.
+        Map<String, Object> exCities = map.entrySet().stream()
+                .filter(e -> e.getKey().startsWith(CLDRConverter.EXEMPLAR_CITY_PREFIX))
+                .collect(Collectors
+                        .toMap(Map.Entry::getKey, Map.Entry::getValue));
+        names.putAll(exCities);
+
+        if (!id.equals("en") &&
+            !names.isEmpty()) {
+            // CLDR does not have UTC entry, so add it here.
+            names.put("UTC", EMPTY_ZONE);
+
+            // no metazone zones
+            Arrays.asList(handlerMetaZones.get(MetaZonesParseHandler.NO_METAZONE_KEY)
+                .split("\\s")).stream()
+                .forEach(tz -> {
+                    names.put(tz, EMPTY_ZONE);
+                });
+        }
 
         return names;
     }
@@ -769,6 +787,10 @@ public class CLDRConverter {
         "field.hour",
         "timezone.hourFormat",
         "timezone.gmtFormat",
+        "timezone.gmtZeroFormat",
+        "timezone.regionFormat",
+        "timezone.regionFormat.daylight",
+        "timezone.regionFormat.standard",
         "field.minute",
         "field.second",
         "field.zone",

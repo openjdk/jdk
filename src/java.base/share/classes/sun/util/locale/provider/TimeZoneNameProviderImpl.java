@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.spi.TimeZoneNameProvider;
-import sun.util.calendar.ZoneInfoFile;
 
 /**
  * Concrete implementation of the
@@ -43,9 +42,8 @@ import sun.util.calendar.ZoneInfoFile;
 public class TimeZoneNameProviderImpl extends TimeZoneNameProvider {
     private final LocaleProviderAdapter.Type type;
     private final Set<String> langtags;
-    private static final String CLDR_NO_INHERITANCE_MARKER = "\u2205\u2205\u2205";
 
-    TimeZoneNameProviderImpl(LocaleProviderAdapter.Type type, Set<String> langtags) {
+    protected TimeZoneNameProviderImpl(LocaleProviderAdapter.Type type, Set<String> langtags) {
         this.type = type;
         this.langtags = langtags;
     }
@@ -120,41 +118,23 @@ public class TimeZoneNameProviderImpl extends TimeZoneNameProvider {
         return null;
     }
 
-    private String[] getDisplayNameArray(String id, Locale locale) {
+    protected String[] getDisplayNameArray(String id, Locale locale) {
         Objects.requireNonNull(id);
         Objects.requireNonNull(locale);
 
-        String[] ret =
-            LocaleProviderAdapter.forType(type).getLocaleResources(locale).getTimeZoneNames(id);
-
-        if (Objects.nonNull(ret) && type == LocaleProviderAdapter.Type.CLDR) {
-            // check for CLDR's "no inheritance marker"
-            for (int index = 0; index < ret.length; index++) {
-                TimeZone tz = null;
-                if (CLDR_NO_INHERITANCE_MARKER.equals(ret[index])) {
-                    if (Objects.isNull(tz)) {
-                        tz = TimeZone.getTimeZone(id);
-                    }
-                    int offset = tz.getRawOffset();
-                    if (index == 3 || index == 4) { // daylight
-                        offset += tz.getDSTSavings();
-                    }
-                    ret[index] = ZoneInfoFile.toCustomID(offset);
-                }
-            }
-        }
-
-        return ret;
+        return (String []) LocaleProviderAdapter.forType(type)
+            .getLocaleResources(locale)
+            .getTimeZoneNames(id);
     }
 
     /**
      * Returns a String[][] as the DateFormatSymbols.getZoneStrings() value for
-     * the given locale. This method is package private.
+     * the given locale.
      *
      * @param locale a Locale for time zone names
      * @return an array of time zone names arrays
      */
-    String[][] getZoneStrings(Locale locale) {
+    protected String[][] getZoneStrings(Locale locale) {
         return LocaleProviderAdapter.forType(type).getLocaleResources(locale).getZoneStrings();
     }
 }

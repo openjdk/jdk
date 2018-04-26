@@ -50,11 +50,12 @@ public interface LocaleDataMetaInfo {
     public String availableLanguageTags(String category);
 
     /**
-     * Returns a map for short time zone ids in BCP47 Unicode extension and
-     * the long time zone ids.
-     * @return map of short id to long ids, separated by a space.
+     * Returns a map for time zone ids to their canonical ids.
+     * The map key is either an LDML's short id, or a valid
+     * TZDB zone id.
+     * @return map of ids to their canonical ids.
      */
-    default public Map<String, String>  tzShortIDs() {
+    default public Map<String, String>  tzCanonicalIDs() {
         return null;
     }
 }
