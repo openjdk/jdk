@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
@@ -81,11 +83,11 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
                                                 // robj is data dependent on rcounter.
   }
 
-  __ clear_jweak_tag(robj);
-
-  __ movptr(robj, Address(robj, 0));             // *obj
   __ mov   (roffset, c_rarg2);
   __ shrptr(roffset, 2);                         // offset
+
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->try_resolve_jobject_in_native(masm, robj, rscratch1, slow);
 
   assert(count < LIST_CAPACITY, "LIST_CAPACITY too small");
   speculative_load_pclist[count] = __ pc();

@@ -25,6 +25,8 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
@@ -82,11 +84,9 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
                                               // robj ^ rcounter ^ rcounter == robj
                                               // robj is address dependent on rcounter.
 
-  // If mask changes we need to ensure that the inverse is still encodable as an immediate
-  STATIC_ASSERT(JNIHandles::weak_tag_mask == 1);
-  __ andr(robj, robj, ~JNIHandles::weak_tag_mask);
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->try_resolve_jobject_in_native(masm, robj, rscratch1, slow);
 
-  __ ldr(robj, Address(robj, 0));             // *obj
   __ lsr(roffset, c_rarg2, 2);                // offset
 
   assert(count < LIST_CAPACITY, "LIST_CAPACITY too small");
@@ -177,4 +177,3 @@ address JNI_FastGetField::generate_fast_get_float_field() {
 address JNI_FastGetField::generate_fast_get_double_field() {
   return generate_fast_get_int_field0(T_DOUBLE);
 }
-
