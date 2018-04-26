@@ -277,6 +277,7 @@ option gc {
     width 8
     scale sec
     format "0.000"
+    required true
   }
 }
 
@@ -537,6 +538,7 @@ option gccause {
     width 8
     scale sec
     format "0.000"
+    required true
   }
   column {
     header "^LGCC"	/* Last GC Cause */
@@ -835,6 +837,7 @@ option gcold {
     width 8
     scale sec
     format "0.000"
+    required true
   }
 }
 
@@ -917,6 +920,7 @@ option gcoldcapacity {
     width 8
     scale sec
     format "0.000"
+    required true
   }
 }
 
@@ -1015,6 +1019,7 @@ option gcmetacapacity {
     width 8
     scale sec
     format "0.000"
+    required true
   }
 }
 
@@ -1121,6 +1126,7 @@ option gcutil {
     width 8
     scale sec
     format "0.000"
+    required true
   }
 }
 
