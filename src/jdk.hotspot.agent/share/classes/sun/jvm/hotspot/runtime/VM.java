@@ -137,7 +137,7 @@ public class VM {
   private Boolean compressedOopsEnabled;
   private Boolean compressedKlassPointersEnabled;
 
-  // command line flags supplied to VM - see struct Flag in globals.hpp
+  // command line flags supplied to VM - see struct JVMFlag in jvmFlag.hpp
   public static final class Flag {
      private String type;
      private String name;
@@ -916,7 +916,7 @@ public class VM {
   private void readCommandLineFlags() {
     // get command line flags
     TypeDataBase db = getTypeDataBase();
-    Type flagType = db.lookupType("Flag");
+    Type flagType = db.lookupType("JVMFlag");
     int numFlags = (int) flagType.getCIntegerField("numFlags").getValue();
     // NOTE: last flag contains null values.
     commandLineFlags = new Flag[numFlags - 1];

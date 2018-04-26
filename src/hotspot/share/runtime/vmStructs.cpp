@@ -83,6 +83,7 @@
 #include "prims/jvmtiAgentThread.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -718,7 +719,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   nonstatic_field(nmethod,                     _osr_link,                                     nmethod*)                              \
   nonstatic_field(nmethod,                     _scavenge_root_link,                           nmethod*)                              \
   nonstatic_field(nmethod,                     _scavenge_root_state,                          jbyte)                                 \
-  nonstatic_field(nmethod,                     _state,                                        volatile signed char)                         \
+  nonstatic_field(nmethod,                     _state,                                        volatile signed char)                  \
   nonstatic_field(nmethod,                     _exception_offset,                             int)                                   \
   nonstatic_field(nmethod,                     _orig_pc_offset,                               int)                                   \
   nonstatic_field(nmethod,                     _stub_offset,                                  int)                                   \
@@ -1062,12 +1063,12 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   /* -XX flags         */                                                                                                            \
   /*********************/                                                                                                            \
                                                                                                                                      \
-  nonstatic_field(Flag,                        _type,                                         const char*)                           \
-  nonstatic_field(Flag,                        _name,                                         const char*)                           \
-  unchecked_nonstatic_field(Flag,              _addr,                                         sizeof(void*)) /* NOTE: no type */     \
-  nonstatic_field(Flag,                        _flags,                                        Flag::Flags)                           \
-     static_field(Flag,                        flags,                                         Flag*)                                 \
-     static_field(Flag,                        numFlags,                                      size_t)                                \
+  nonstatic_field(JVMFlag,                     _type,                                         const char*)                           \
+  nonstatic_field(JVMFlag,                     _name,                                         const char*)                           \
+  unchecked_nonstatic_field(JVMFlag,           _addr,                                         sizeof(void*)) /* NOTE: no type */     \
+  nonstatic_field(JVMFlag,                     _flags,                                        JVMFlag::Flags)                        \
+     static_field(JVMFlag,                     flags,                                         JVMFlag*)                              \
+     static_field(JVMFlag,                     numFlags,                                      size_t)                                \
                                                                                                                                      \
   /*************************/                                                                                                        \
   /* JDK / VM version info */                                                                                                        \
@@ -1444,14 +1445,14 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_toplevel_type(SharedRuntime)                                    \
                                                                           \
   declare_toplevel_type(CodeBlob)                                         \
-  declare_type(RuntimeBlob,             CodeBlob)                        \
-  declare_type(BufferBlob,               RuntimeBlob)                    \
+  declare_type(RuntimeBlob,              CodeBlob)                        \
+  declare_type(BufferBlob,               RuntimeBlob)                     \
   declare_type(AdapterBlob,              BufferBlob)                      \
   declare_type(MethodHandlesAdapterBlob, BufferBlob)                      \
   declare_type(CompiledMethod,           CodeBlob)                        \
   declare_type(nmethod,                  CompiledMethod)                  \
-  declare_type(RuntimeStub,              RuntimeBlob)                    \
-  declare_type(SingletonBlob,            RuntimeBlob)                    \
+  declare_type(RuntimeStub,              RuntimeBlob)                     \
+  declare_type(SingletonBlob,            RuntimeBlob)                     \
   declare_type(SafepointBlob,            SingletonBlob)                   \
   declare_type(DeoptimizationBlob,       SingletonBlob)                   \
   declare_c2_type(ExceptionBlob,         SingletonBlob)                   \
@@ -1910,8 +1911,8 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   /* -XX flags        */                                                  \
   /********************/                                                  \
                                                                           \
-  declare_toplevel_type(Flag)                                             \
-  declare_toplevel_type(Flag*)                                            \
+  declare_toplevel_type(JVMFlag)                                          \
+  declare_toplevel_type(JVMFlag*)                                         \
                                                                           \
   /********************/                                                  \
   /* JVMTI            */                                                  \
@@ -1951,7 +1952,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
    declare_integer_type(ThreadState)                                      \
    declare_integer_type(Location::Type)                                   \
    declare_integer_type(Location::Where)                                  \
-   declare_integer_type(Flag::Flags)                                      \
+   declare_integer_type(JVMFlag::Flags)                                   \
    COMPILER2_PRESENT(declare_integer_type(OptoReg::Name))                 \
                                                                           \
    declare_toplevel_type(CHeapObj<mtInternal>)                            \

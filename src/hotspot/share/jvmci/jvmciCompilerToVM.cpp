@@ -37,6 +37,7 @@
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciCodeInstaller.hpp"
 #include "jvmci/jvmciRuntime.hpp"
+#include "runtime/flags/jvmFlag.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -125,7 +126,7 @@ C2V_VMENTRY(jobject, getFlagValue, (JNIEnv *, jobject c2vm, jobject name_handle)
   }
   ResourceMark rm;
   const char* cstring = java_lang_String::as_utf8_string(name());
-  Flag* flag = Flag::find_flag(cstring, strlen(cstring), /* allow_locked */ true, /* return_flag */ true);
+  JVMFlag* flag = JVMFlag::find_flag(cstring, strlen(cstring), /* allow_locked */ true, /* return_flag */ true);
   if (flag == NULL) {
     return c2vm;
   }
