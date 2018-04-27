@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package jdk.javadoc.internal.doclets.toolkit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -200,10 +199,15 @@ public class WorkArounds {
 
     // TODO: needs to ported to jx.l.m.
     public TypeElement searchClass(TypeElement klass, String className) {
-        // search by qualified name first
-        TypeElement te = configuration.docEnv.getElementUtils().getTypeElement(className);
-        if (te != null) {
-            return te;
+        TypeElement te;
+
+        // search by qualified name in current module first
+        ModuleElement me = utils.containingModule(klass);
+        if (me != null) {
+            te = configuration.docEnv.getElementUtils().getTypeElement(me, className);
+            if (te != null) {
+                return te;
+            }
         }
 
         // search inner classes
@@ -249,6 +253,12 @@ public class WorkArounds {
                     return (TypeElement)sym;
                 }
             }
+        }
+
+        // finally, search by qualified name in all modules
+        te = configuration.docEnv.getElementUtils().getTypeElement(className);
+        if (te != null) {
+            return te;
         }
 
         return null; // not found
