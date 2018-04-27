@@ -700,7 +700,7 @@ bool Node::is_dead() const {
 //------------------------------is_unreachable---------------------------------
 bool Node::is_unreachable(PhaseIterGVN &igvn) const {
   assert(!is_Mach(), "doesn't work with MachNodes");
-  return outcnt() == 0 || igvn.type(this) == Type::TOP || in(0)->is_top();
+  return outcnt() == 0 || igvn.type(this) == Type::TOP || (in(0) != NULL && in(0)->is_top());
 }
 
 //------------------------------add_req----------------------------------------
