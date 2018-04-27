@@ -90,8 +90,9 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
   // register obj is destroyed afterwards.
   BarrierSet* bs = BarrierSet::barrier_set();
 
-  CardTableBarrierSet* ct = barrier_set_cast<CardTableBarrierSet>(bs);
-  assert(sizeof(*ct->card_table()->byte_map_base()) == sizeof(jbyte), "adjust this code");
+  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
+  CardTable* ct = ctbs->card_table();
+  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
   __ shrptr(obj, CardTable::card_shift);
 
@@ -102,15 +103,15 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
   // So this essentially converts an address to a displacement and it will
   // never need to be relocated. On 64bit however the value may be too
   // large for a 32bit displacement.
-  intptr_t disp = (intptr_t) ct->card_table()->byte_map_base();
-  if (__ is_simm32(disp)) {
-    card_addr = Address(noreg, obj, Address::times_1, disp);
+  intptr_t byte_map_base = (intptr_t)ct->byte_map_base();
+  if (__ is_simm32(byte_map_base)) {
+    card_addr = Address(noreg, obj, Address::times_1, byte_map_base);
   } else {
-    // By doing it as an ExternalAddress 'disp' could be converted to a rip-relative
+    // By doing it as an ExternalAddress 'byte_map_base' could be converted to a rip-relative
     // displacement and done in a single instruction given favorable mapping and a
     // smarter version of as_Address. However, 'ExternalAddress' generates a relocation
     // entry and that entry is not properly handled by the relocation code.
-    AddressLiteral cardtable((address)ct->card_table()->byte_map_base(), relocInfo::none);
+    AddressLiteral cardtable((address)byte_map_base, relocInfo::none);
     Address index(noreg, obj, Address::times_1);
     card_addr = __ as_Address(ArrayAddress(cardtable, index));
   }
@@ -118,7 +119,7 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
   int dirty = CardTable::dirty_card_val();
   if (UseCondCardMark) {
     Label L_already_dirty;
-    if (UseConcMarkSweepGC) {
+    if (ct->scanned_concurrently()) {
       __ membar(Assembler::StoreLoad);
     }
     __ cmpb(card_addr, dirty);
