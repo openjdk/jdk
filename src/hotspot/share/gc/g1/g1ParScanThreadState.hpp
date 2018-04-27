@@ -35,6 +35,7 @@
 #include "gc/shared/ageTable.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
+#include "utilities/ticks.hpp"
 
 class G1PLABAllocator;
 class G1EvacuationRootClosures;
@@ -42,7 +43,6 @@ class HeapRegion;
 class outputStream;
 
 class G1ParScanThreadState : public CHeapObj<mtGC> {
- private:
   G1CollectedHeap* _g1h;
   RefToScanQueue*  _refs;
   DirtyCardQueue   _dcq;
@@ -60,6 +60,11 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   int  _hash_seed;
   uint _worker_id;
 
+  // Upper and lower threshold to start and end work queue draining.
+  uint const _stack_trim_upper_threshold;
+  uint const _stack_trim_lower_threshold;
+
+  Tickspan _trim_ticks;
   // Map from young-age-index (0 == not young, 1 is youngest) to
   // surviving words. base is what we get back from the malloc call
   size_t* _surviving_young_words_base;
@@ -83,7 +88,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
     return _dest[original.value()];
   }
 
- public:
+public:
   G1ParScanThreadState(G1CollectedHeap* g1h, uint worker_id, size_t young_cset_length);
   virtual ~G1ParScanThreadState();
 
@@ -129,7 +134,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 
   void flush(size_t* surviving_young_words);
 
- private:
+private:
   #define G1_PARTIAL_ARRAY_MASK 0x2
 
   inline bool has_partial_array_mask(oop* ref) const {
@@ -185,11 +190,19 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   void report_promotion_event(InCSetState const dest_state,
                               oop const old, size_t word_sz, uint age,
                               HeapWord * const obj_ptr) const;
- public:
 
+  inline bool needs_partial_trimming() const;
+  inline bool is_partially_trimmed() const;
+
+  inline void trim_queue_to_threshold(uint threshold);
+public:
   oop copy_to_survivor_space(InCSetState const state, oop const obj, markOop const old_mark);
 
   void trim_queue();
+  void trim_queue_partially();
+
+  Tickspan trim_ticks() const;
+  void reset_trim_ticks();
 
   inline void steal_and_trim_queue(RefToScanQueueSet *task_queues);
 

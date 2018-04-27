@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,8 @@ void G1CLDScanClosure::do_cld(ClassLoaderData* cld) {
     cld->oops_do(_closure, _must_claim, /*clear_modified_oops*/true);
 
     _closure->set_scanned_cld(NULL);
+
+    _closure->trim_queue_partially();
   }
   _count++;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -285,9 +285,10 @@ public:
   inline bool push(E t);
 
   // Attempts to claim a task from the "local" end of the queue (the most
-  // recently pushed).  If successful, returns true and sets t to the task;
-  // otherwise, returns false (the queue is empty).
-  inline bool pop_local(volatile E& t);
+  // recently pushed) as long as the number of entries exceeds the threshold.
+  // If successful, returns true and sets t to the task; otherwise, returns false
+  // (the queue is empty or the number of elements below the threshold).
+  inline bool pop_local(volatile E& t, uint threshold = 0);
 
   // Like pop_local(), but uses the "global" end of the queue (the least
   // recently pushed).

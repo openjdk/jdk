@@ -628,7 +628,7 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t cards_sc
   if (update_stats) {
     double cost_per_card_ms = 0.0;
     if (_pending_cards > 0) {
-      cost_per_card_ms = (average_time_ms(G1GCPhaseTimes::UpdateRS) - scan_hcc_time_ms) / (double) _pending_cards;
+      cost_per_card_ms = (average_time_ms(G1GCPhaseTimes::UpdateRS)) / (double) _pending_cards;
       _analytics->report_cost_per_card_ms(cost_per_card_ms);
     }
     _analytics->report_cost_scan_hcc(scan_hcc_time_ms);
@@ -730,9 +730,9 @@ void G1Policy::record_collection_pause_end(double pause_time_ms, size_t cards_sc
   } else {
     update_rs_time_goal_ms -= scan_hcc_time_ms;
   }
-  _g1h->concurrent_refine()->adjust(average_time_ms(G1GCPhaseTimes::UpdateRS) - scan_hcc_time_ms,
-                                   phase_times()->sum_thread_work_items(G1GCPhaseTimes::UpdateRS),
-                                   update_rs_time_goal_ms);
+  _g1h->concurrent_refine()->adjust(average_time_ms(G1GCPhaseTimes::UpdateRS),
+                                    phase_times()->sum_thread_work_items(G1GCPhaseTimes::UpdateRS),
+                                    update_rs_time_goal_ms);
 
   cset_chooser()->verify();
 }

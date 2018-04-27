@@ -43,11 +43,15 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint worker_id,
     _dcq(&g1h->dirty_card_queue_set()),
     _ct(g1h->card_table()),
     _closures(NULL),
+    _plab_allocator(NULL),
+    _age_table(false),
+    _tenuring_threshold(g1h->g1_policy()->tenuring_threshold()),
+    _scanner(g1h, this),
     _hash_seed(17),
     _worker_id(worker_id),
-    _tenuring_threshold(g1h->g1_policy()->tenuring_threshold()),
-    _age_table(false),
-    _scanner(g1h, this),
+    _stack_trim_upper_threshold(GCDrainStackTargetSize * 2 + 1),
+    _stack_trim_lower_threshold(GCDrainStackTargetSize),
+    _trim_ticks(),
     _old_gen_is_full(false)
 {
   // we allocate G1YoungSurvRateNumRegions plus one entries, since
@@ -138,16 +142,8 @@ bool G1ParScanThreadState::verify_task(StarTask ref) const {
 void G1ParScanThreadState::trim_queue() {
   StarTask ref;
   do {
-    // Drain the overflow stack first, so other threads can steal.
-    while (_refs->pop_overflow(ref)) {
-      if (!_refs->try_push_to_taskqueue(ref)) {
-        dispatch_reference(ref);
-      }
-    }
-
-    while (_refs->pop_local(ref)) {
-      dispatch_reference(ref);
-    }
+    // Fully drain the queue.
+    trim_queue_to_threshold(0);
   } while (!_refs->is_empty());
 }
 
@@ -314,7 +310,7 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
       // length field of the from-space object.
       arrayOop(obj)->set_length(0);
       oop* old_p = set_partial_array_mask(old);
-      push_on_queue(old_p);
+      do_oop_partial_array(old_p);
     } else {
       HeapRegion* const to_region = _g1h->heap_region_containing(obj_ptr);
       _scanner.set_region(to_region);

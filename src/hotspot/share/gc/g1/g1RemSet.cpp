@@ -33,6 +33,7 @@
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
+#include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
@@ -306,32 +307,21 @@ void G1RemSet::initialize(size_t capacity, uint max_regions) {
 
 G1ScanRSForRegionClosure::G1ScanRSForRegionClosure(G1RemSetScanState* scan_state,
                                                    G1ScanObjsDuringScanRSClosure* scan_obj_on_card,
-                                                   CodeBlobClosure* code_root_cl,
+                                                   G1ParScanThreadState* pss,
                                                    uint worker_i) :
-  _scan_state(scan_state),
+  _g1h(G1CollectedHeap::heap()),
+  _ct(_g1h->card_table()),
+  _pss(pss),
   _scan_objs_on_card_cl(scan_obj_on_card),
-  _code_root_cl(code_root_cl),
-  _strong_code_root_scan_time_sec(0.0),
+  _scan_state(scan_state),
+  _worker_i(worker_i),
   _cards_claimed(0),
   _cards_scanned(0),
   _cards_skipped(0),
-  _worker_i(worker_i) {
-  _g1h = G1CollectedHeap::heap();
-  _bot = _g1h->bot();
-  _ct = _g1h->card_table();
-}
-
-void G1ScanRSForRegionClosure::scan_card(MemRegion mr, uint region_idx_for_card) {
-  HeapRegion* const card_region = _g1h->region_at(region_idx_for_card);
-  _scan_objs_on_card_cl->set_region(card_region);
-  card_region->oops_on_card_seq_iterate_careful<true>(mr, _scan_objs_on_card_cl);
-  _cards_scanned++;
-}
-
-void G1ScanRSForRegionClosure::scan_strong_code_roots(HeapRegion* r) {
-  double scan_start = os::elapsedTime();
-  r->strong_code_roots_do(_code_root_cl);
-  _strong_code_root_scan_time_sec += (os::elapsedTime() - scan_start);
+  _rem_set_root_scan_time(),
+  _rem_set_trim_partially_time(),
+  _strong_code_root_scan_time(),
+  _strong_code_trim_partially_time() {
 }
 
 void G1ScanRSForRegionClosure::claim_card(size_t card_index, const uint region_idx_for_card){
@@ -339,13 +329,17 @@ void G1ScanRSForRegionClosure::claim_card(size_t card_index, const uint region_i
   _scan_state->add_dirty_region(region_idx_for_card);
 }
 
-bool G1ScanRSForRegionClosure::do_heap_region(HeapRegion* r) {
-  assert(r->in_collection_set(), "should only be called on elements of CS.");
-  uint region_idx = r->hrm_index();
+void G1ScanRSForRegionClosure::scan_card(MemRegion mr, uint region_idx_for_card) {
+  HeapRegion* const card_region = _g1h->region_at(region_idx_for_card);
+  _scan_objs_on_card_cl->set_region(card_region);
+  card_region->oops_on_card_seq_iterate_careful<true>(mr, _scan_objs_on_card_cl);
+  _scan_objs_on_card_cl->trim_queue_partially();
+  _cards_scanned++;
+}
 
-  if (_scan_state->iter_is_complete(region_idx)) {
-    return false;
-  }
+void G1ScanRSForRegionClosure::scan_rem_set_roots(HeapRegion* r) {
+  uint const region_idx = r->hrm_index();
+
   if (_scan_state->claim_iter(region_idx)) {
     // If we ever free the collection set concurrently, we should also
     // clear the card table concurrently therefore we won't need to
@@ -397,33 +391,52 @@ bool G1ScanRSForRegionClosure::do_heap_region(HeapRegion* r) {
 
     scan_card(mr, region_idx_for_card);
   }
+}
+
+void G1ScanRSForRegionClosure::scan_strong_code_roots(HeapRegion* r) {
+  r->strong_code_roots_do(_pss->closures()->weak_codeblobs());
+}
+
+bool G1ScanRSForRegionClosure::do_heap_region(HeapRegion* r) {
+  assert(r->in_collection_set(),
+         "Should only be called on elements of the collection set but region %u is not.",
+         r->hrm_index());
+  uint const region_idx = r->hrm_index();
+
+  // Do an early out if we know we are complete.
+  if (_scan_state->iter_is_complete(region_idx)) {
+    return false;
+  }
+
+  {
+    G1EvacPhaseWithTrimTimeTracker timer(_pss, _rem_set_root_scan_time, _rem_set_trim_partially_time);
+    scan_rem_set_roots(r);
+  }
+
   if (_scan_state->set_iter_complete(region_idx)) {
+    G1EvacPhaseWithTrimTimeTracker timer(_pss, _strong_code_root_scan_time, _strong_code_trim_partially_time);
     // Scan the strong code root list attached to the current region
     scan_strong_code_roots(r);
   }
   return false;
 }
 
-void G1RemSet::scan_rem_set(G1ParScanThreadState* pss,
-                            CodeBlobClosure* heap_region_codeblobs,
-                            uint worker_i) {
-  double rs_time_start = os::elapsedTime();
-
+void G1RemSet::scan_rem_set(G1ParScanThreadState* pss, uint worker_i) {
   G1ScanObjsDuringScanRSClosure scan_cl(_g1h, pss);
-  G1ScanRSForRegionClosure cl(_scan_state, &scan_cl, heap_region_codeblobs, worker_i);
+  G1ScanRSForRegionClosure cl(_scan_state, &scan_cl, pss, worker_i);
   _g1h->collection_set_iterate_from(&cl, worker_i);
-
-  double scan_rs_time_sec = (os::elapsedTime() - rs_time_start) -
-                             cl.strong_code_root_scan_time_sec();
 
   G1GCPhaseTimes* p = _g1p->phase_times();
 
-  p->record_time_secs(G1GCPhaseTimes::ScanRS, worker_i, scan_rs_time_sec);
+  p->record_time_secs(G1GCPhaseTimes::ScanRS, worker_i, TicksToTimeHelper::seconds(cl.rem_set_root_scan_time()));
+  p->add_time_secs(G1GCPhaseTimes::ObjCopy, worker_i, TicksToTimeHelper::seconds(cl.rem_set_trim_partially_time()));
+
   p->record_thread_work_item(G1GCPhaseTimes::ScanRS, worker_i, cl.cards_scanned(), G1GCPhaseTimes::ScanRSScannedCards);
   p->record_thread_work_item(G1GCPhaseTimes::ScanRS, worker_i, cl.cards_claimed(), G1GCPhaseTimes::ScanRSClaimedCards);
   p->record_thread_work_item(G1GCPhaseTimes::ScanRS, worker_i, cl.cards_skipped(), G1GCPhaseTimes::ScanRSSkippedCards);
 
-  p->record_time_secs(G1GCPhaseTimes::CodeRoots, worker_i, cl.strong_code_root_scan_time_sec());
+  p->record_time_secs(G1GCPhaseTimes::CodeRoots, worker_i, TicksToTimeHelper::seconds(cl.strong_code_root_scan_time()));
+  p->add_time_secs(G1GCPhaseTimes::ObjCopy, worker_i, TicksToTimeHelper::seconds(cl.strong_code_root_trim_partially_time()));
 }
 
 // Closure used for updating rem sets. Only called during an evacuation pause.
@@ -448,6 +461,7 @@ public:
     bool card_scanned = _g1rs->refine_card_during_gc(card_ptr, _update_rs_cl);
 
     if (card_scanned) {
+      _update_rs_cl->trim_queue_partially();
       _cards_scanned++;
     } else {
       _cards_skipped++;
@@ -460,32 +474,37 @@ public:
 };
 
 void G1RemSet::update_rem_set(G1ParScanThreadState* pss, uint worker_i) {
-  G1ScanObjsDuringUpdateRSClosure update_rs_cl(_g1h, pss, worker_i);
-  G1RefineCardClosure refine_card_cl(_g1h, &update_rs_cl);
+  G1GCPhaseTimes* p = _g1p->phase_times();
 
-  G1GCParPhaseTimesTracker x(_g1p->phase_times(), G1GCPhaseTimes::UpdateRS, worker_i);
+  // Apply closure to log entries in the HCC.
   if (G1HotCardCache::default_use_cache()) {
-    // Apply the closure to the entries of the hot card cache.
-    G1GCParPhaseTimesTracker y(_g1p->phase_times(), G1GCPhaseTimes::ScanHCC, worker_i);
+    G1EvacPhaseTimesTracker x(p, pss, G1GCPhaseTimes::ScanHCC, worker_i);
+
+    G1ScanObjsDuringUpdateRSClosure scan_hcc_cl(_g1h, pss, worker_i);
+    G1RefineCardClosure refine_card_cl(_g1h, &scan_hcc_cl);
     _g1h->iterate_hcc_closure(&refine_card_cl, worker_i);
   }
-  // Apply the closure to all remaining log entries.
-  _g1h->iterate_dirty_card_closure(&refine_card_cl, worker_i);
 
-  G1GCPhaseTimes* p = _g1p->phase_times();
-  p->record_thread_work_item(G1GCPhaseTimes::UpdateRS, worker_i, refine_card_cl.cards_scanned(), G1GCPhaseTimes::UpdateRSScannedCards);
-  p->record_thread_work_item(G1GCPhaseTimes::UpdateRS, worker_i, refine_card_cl.cards_skipped(), G1GCPhaseTimes::UpdateRSSkippedCards);
+  // Now apply the closure to all remaining log entries.
+  {
+    G1EvacPhaseTimesTracker x(p, pss, G1GCPhaseTimes::UpdateRS, worker_i);
+
+    G1ScanObjsDuringUpdateRSClosure update_rs_cl(_g1h, pss, worker_i);
+    G1RefineCardClosure refine_card_cl(_g1h, &update_rs_cl);
+    _g1h->iterate_dirty_card_closure(&refine_card_cl, worker_i);
+
+    p->record_thread_work_item(G1GCPhaseTimes::UpdateRS, worker_i, refine_card_cl.cards_scanned(), G1GCPhaseTimes::UpdateRSScannedCards);
+    p->record_thread_work_item(G1GCPhaseTimes::UpdateRS, worker_i, refine_card_cl.cards_skipped(), G1GCPhaseTimes::UpdateRSSkippedCards);
+  }
 }
 
 void G1RemSet::cleanupHRRS() {
   HeapRegionRemSet::cleanup();
 }
 
-void G1RemSet::oops_into_collection_set_do(G1ParScanThreadState* pss,
-                                           CodeBlobClosure* heap_region_codeblobs,
-                                           uint worker_i) {
+void G1RemSet::oops_into_collection_set_do(G1ParScanThreadState* pss, uint worker_i) {
   update_rem_set(pss, worker_i);
-  scan_rem_set(pss, heap_region_codeblobs, worker_i);;
+  scan_rem_set(pss, worker_i);;
 }
 
 void G1RemSet::prepare_for_oops_into_collection_set_do() {
