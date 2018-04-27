@@ -247,14 +247,15 @@ public class JavacElements implements Elements {
             if (sym == null)
                 sym = javaCompiler.resolveIdent(module, nameStr);
 
-            sym.complete();
-
-            return (sym.kind != ERR &&
+            if (clazz.isInstance(sym)) {
+                sym.complete();
+                if (sym.kind != ERR &&
                     sym.exists() &&
-                    clazz.isInstance(sym) &&
-                    name.equals(sym.getQualifiedName()))
-                ? clazz.cast(sym)
-                : null;
+                    name.equals(sym.getQualifiedName())) {
+                    return clazz.cast(sym);
+                }
+            }
+            return null;
         } catch (CompletionFailure cf) {
             cf.dcfh.handleAPICompletionFailure(cf);
             return null;
