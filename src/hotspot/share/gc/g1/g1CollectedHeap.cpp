@@ -28,7 +28,6 @@
 #include "classfile/symbolTable.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
-#include "gc/g1/bufferingOopClosure.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -1841,7 +1840,7 @@ void G1CollectedHeap::iterate_dirty_card_closure(CardTableEntryClosure* cl, uint
   while (dcqs.apply_closure_during_gc(cl, worker_i)) {
     n_completed_buffers++;
   }
-  g1_policy()->phase_times()->record_thread_work_item(G1GCPhaseTimes::UpdateRS, worker_i, n_completed_buffers);
+  g1_policy()->phase_times()->record_thread_work_item(G1GCPhaseTimes::UpdateRS, worker_i, n_completed_buffers, G1GCPhaseTimes::UpdateRSProcessedBuffers);
   dcqs.clear_n_completed_buffers();
   assert(!dcqs.completed_buffers_exist_dirty(), "Completed buffers exist!");
 }
@@ -3130,15 +3129,13 @@ public:
 
       double start_strong_roots_sec = os::elapsedTime();
 
-      _root_processor->evacuate_roots(pss->closures(), worker_id);
+      _root_processor->evacuate_roots(pss, worker_id);
 
       // We pass a weak code blobs closure to the remembered set scanning because we want to avoid
       // treating the nmethods visited to act as roots for concurrent marking.
       // We only want to make sure that the oops in the nmethods are adjusted with regard to the
       // objects copied by the current evacuation.
-      _g1h->g1_rem_set()->oops_into_collection_set_do(pss,
-                                                      pss->closures()->weak_codeblobs(),
-                                                      worker_id);
+      _g1h->g1_rem_set()->oops_into_collection_set_do(pss, worker_id);
 
       double strong_roots_sec = os::elapsedTime() - start_strong_roots_sec;
 
@@ -3152,9 +3149,11 @@ public:
         evac_term_attempts = evac.term_attempts();
         term_sec = evac.term_time();
         double elapsed_sec = os::elapsedTime() - start;
-        _g1h->g1_policy()->phase_times()->add_time_secs(G1GCPhaseTimes::ObjCopy, worker_id, elapsed_sec - term_sec);
-        _g1h->g1_policy()->phase_times()->record_time_secs(G1GCPhaseTimes::Termination, worker_id, term_sec);
-        _g1h->g1_policy()->phase_times()->record_thread_work_item(G1GCPhaseTimes::Termination, worker_id, evac_term_attempts);
+
+        G1GCPhaseTimes* p = _g1h->g1_policy()->phase_times();
+        p->add_time_secs(G1GCPhaseTimes::ObjCopy, worker_id, elapsed_sec - term_sec);
+        p->record_time_secs(G1GCPhaseTimes::Termination, worker_id, term_sec);
+        p->record_thread_work_item(G1GCPhaseTimes::Termination, worker_id, evac_term_attempts);
       }
 
       assert(pss->queue_is_empty(), "should be empty");
