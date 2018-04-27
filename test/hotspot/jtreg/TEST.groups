@@ -35,6 +35,10 @@ hotspot_compiler_xcomp = \
   :hotspot_compiler \
   -:tier1_compiler_not_xcomp
 
+hotspot_compiler_all_gcs = \
+  :hotspot_compiler \
+  -:tier1_compiler_not_cms
+
 hotspot_gc = \
   gc
 
@@ -134,6 +138,10 @@ tier1_compiler_3 = \
 
 tier1_compiler_not_xcomp = \
   compiler/aot
+
+tier1_compiler_not_cms = \
+  compiler/aot \
+  compiler/jvmci
 
 ctw_1 = \
   applications/ctw/modules/ \
