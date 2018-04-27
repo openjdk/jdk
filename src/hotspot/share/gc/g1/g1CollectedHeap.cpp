@@ -3529,6 +3529,7 @@ public:
 // To minimize the remark pause times, the tasks below are done in parallel.
 class G1ParallelCleaningTask : public AbstractGangTask {
 private:
+  bool                          _unloading_occurred;
   G1StringAndSymbolCleaningTask _string_symbol_task;
   G1CodeCacheUnloadingTask      _code_cache_task;
   G1KlassCleaningTask           _klass_cleaning_task;
@@ -3541,6 +3542,7 @@ public:
       _string_symbol_task(is_alive, true, true, G1StringDedup::is_enabled()),
       _code_cache_task(num_workers, is_alive, unloading_occurred),
       _klass_cleaning_task(),
+      _unloading_occurred(unloading_occurred),
       _resolved_method_cleaning_task() {
   }
 
@@ -3566,7 +3568,11 @@ public:
     _code_cache_task.work_second_pass(worker_id);
 
     // Clean all klasses that were not unloaded.
-    _klass_cleaning_task.work();
+    // The weak metadata in klass doesn't need to be
+    // processed if there was no unloading.
+    if (_unloading_occurred) {
+      _klass_cleaning_task.work();
+    }
   }
 };
 

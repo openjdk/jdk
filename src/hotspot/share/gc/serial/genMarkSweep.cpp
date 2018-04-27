@@ -234,7 +234,7 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     CodeCache::do_unloading(&is_alive, purged_class);
 
     // Prune dead klasses from subklass/sibling/implementor lists.
-    Klass::clean_weak_klass_links();
+    Klass::clean_weak_klass_links(purged_class);
   }
 
   {

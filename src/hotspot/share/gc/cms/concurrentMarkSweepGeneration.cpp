@@ -5245,7 +5245,7 @@ void CMSCollector::refProcessingWork() {
       CodeCache::do_unloading(&_is_alive_closure, purged_class);
 
       // Prune dead klasses from subklass/sibling/implementor lists.
-      Klass::clean_weak_klass_links();
+      Klass::clean_weak_klass_links(purged_class);
     }
 
     {

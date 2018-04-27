@@ -384,8 +384,8 @@ void Klass::append_to_sibling_list() {
   debug_only(verify();)
 }
 
-void Klass::clean_weak_klass_links(bool clean_alive_klasses) {
-  if (!ClassUnloading) {
+void Klass::clean_weak_klass_links(bool unloading_occurred, bool clean_alive_klasses) {
+  if (!ClassUnloading || !unloading_occurred) {
     return;
   }
 
