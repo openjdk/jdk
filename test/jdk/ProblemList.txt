@@ -672,7 +672,6 @@ javax/swing/JComboBox/8182031/ComboPopupTest.java 8196465 linux-all,macosx-all
 javax/swing/JFileChooser/6738668/bug6738668.java 8194946 generic-all
 javax/swing/JFileChooser/8021253/bug8021253.java 8169954 windows-all,linux-all,macosx-all
 javax/swing/JFileChooser/8062561/bug8062561.java 8196466 linux-all,macosx-all
-javax/swing/JFileChooser/FileSystemView/FileSystemViewListenerLeak.java 8198342 generic-all
 javax/swing/JInternalFrame/Test6325652.java 8196467 linux-all,macosx-all
 javax/swing/JInternalFrame/8145896/TestJInternalFrameMaximize.java 8194944 macosx-all
 javax/swing/JLabel/6596966/bug6596966.java 8040914 macosx-all
