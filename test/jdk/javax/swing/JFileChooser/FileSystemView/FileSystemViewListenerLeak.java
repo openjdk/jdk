@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,14 @@
 
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileSystemView;
 
 /**
  * @test
- * @bug 8175968
+ * @bug 8175968 8198342
+ * @summary FileSystemView should clean listeners in UIManager before removal
  * @library /javax/swing/regtesthelpers
  * @build Util
  * @run main/othervm -Xmx8m -Djava.awt.headless=true FileSystemViewListenerLeak
@@ -39,17 +39,9 @@ public final class FileSystemViewListenerLeak {
 
     public static void main(final String[] args) {
         checkListenersCount();
-        test();
+        new CustomFileSystemView();
         Util.generateOOME();
         checkListenersCount();
-    }
-
-    private static void test() {
-        // Will run the test no more than 30 seconds
-        long endtime = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
-        while (!(endtime - System.nanoTime() < 0)) {
-            new CustomFileSystemView();
-        }
     }
 
     private static void checkListenersCount() {
