@@ -638,9 +638,9 @@ protected:
   // Klass is considered alive.  Has already been marked as unloading.
   bool is_loader_alive() const { return !class_loader_data()->is_unloading(); }
 
-  static void clean_weak_klass_links(bool clean_alive_klasses = true);
+  static void clean_weak_klass_links(bool unloading_occurred, bool clean_alive_klasses = true);
   static void clean_subklass_tree() {
-    clean_weak_klass_links(false /* clean_alive_klasses */);
+    clean_weak_klass_links(/*unloading_occurred*/ true , /* clean_alive_klasses */ false);
   }
 
   // GC specific object visitors

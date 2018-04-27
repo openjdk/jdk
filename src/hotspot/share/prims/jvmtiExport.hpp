@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,19 +170,6 @@ class JvmtiExport : public AllStatic {
   static void post_dynamic_code_generated(JvmtiEnv* env, const char *name, const void *code_begin,
                                           const void *code_end) NOT_JVMTI_RETURN;
 
-  // The RedefineClasses() API breaks some invariants in the "regular"
-  // system. For example, there are sanity checks when GC'ing nmethods
-  // that require the containing class to be unloading. However, when a
-  // method is redefined, the old method and nmethod can become GC'able
-  // without the containing class unloading. The state of becoming
-  // GC'able can be asynchronous to the RedefineClasses() call since
-  // the old method may still be running and cannot be GC'ed until
-  // after all old invocations have finished. Additionally, a method
-  // that has not been redefined may have an nmethod that depends on
-  // the redefined method. The dependent nmethod will get deopted in
-  // this case and may also be GC'able without the containing class
-  // being unloaded.
-  //
   // This flag indicates whether RedefineClasses() has ever redefined
   // one or more classes during the lifetime of the VM. The flag should
   // only be set by the friend class and can be queried by other sub

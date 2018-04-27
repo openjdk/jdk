@@ -1150,9 +1150,11 @@ public:
 #endif // INCLUDE_JVMTI
 
   void clean_weak_instanceklass_links();
+ private:
   void clean_implementors_list();
   void clean_method_data();
 
+ public:
   // Explicit metaspace deallocation of fields
   // For RedefineClasses and class file parsing errors, we need to deallocate
   // instanceKlasses and the metadata they point to.
