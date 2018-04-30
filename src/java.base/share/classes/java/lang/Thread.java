@@ -425,7 +425,8 @@ class Thread implements Runnable {
          */
         if (security != null) {
             if (isCCLOverridden(getClass())) {
-                security.checkPermission(SUBCLASS_IMPLEMENTATION_PERMISSION);
+                security.checkPermission(
+                        SecurityConstants.SUBCLASS_IMPLEMENTATION_PERMISSION);
             }
         }
 
@@ -1702,10 +1703,6 @@ class Thread implements Runnable {
         }
         return m;
     }
-
-
-    private static final RuntimePermission SUBCLASS_IMPLEMENTATION_PERMISSION =
-                    new RuntimePermission("enableContextClassLoaderOverride");
 
     /** cache of subclass security audit results */
     /* Replace with ConcurrentReferenceHashMap when/if it appears in a future
