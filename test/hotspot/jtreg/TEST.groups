@@ -235,7 +235,6 @@ tier1_runtime = \
  -runtime/SelectionResolution/InvokeVirtualICCE.java \
  -runtime/SelectionResolution/InvokeVirtualSuccessTest.java \
  -runtime/SharedArchiveFile/CdsSameObjectAlignment.java \
- -runtime/SharedArchiveFile/DefaultUseWithClient.java \
  -runtime/SharedArchiveFile/SharedBaseAddress.java \
  -runtime/Thread/CancellableThreadTest.java \
  -runtime/Thread/TestThreadDumpMonitorContention.java \
