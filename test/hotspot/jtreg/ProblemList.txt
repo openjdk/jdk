@@ -72,7 +72,6 @@ gc/stress/TestJNIBlockFullGC/TestJNIBlockFullGC.java 8192647 generic-all
 # :hotspot_runtime
 
 runtime/CompressedOops/UseCompressedOops.java 8079353 generic-all
-runtime/SharedArchiveFile/DefaultUseWithClient.java 8154204 generic-all
 
 #############################################################################
 
