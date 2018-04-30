@@ -53,9 +53,6 @@ public class CDSDumper {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             heapsize,
             "-XX:+IgnoreUnrecognizedVMOptions",
-            "-XX:+UnlockCommercialFeatures",
-            "-XX:+UseAppCDS",
-            "-XX:+UnlockDiagnosticVMOptions",
             "-cp", classpath,
             "-XX:ExtraSharedClassListFile=" + classlist,
             "-XX:SharedArchiveFile=" + archive,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @summary If -Djava.system.class.loader=xxx is specified in command-line, disable UseAppCDS
+ * @summary If -Djava.system.class.loader=xxx is specified in command-line, disable archived non-system classes
  * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -46,7 +46,7 @@ public class SpecifySysLoaderProp {
     String jarFileName = "sysloader.jar";
     String appJar = TestCommon.getTestJar(jarFileName);
     TestCommon.testDump(appJar, TestCommon.list("ReportMyLoader"));
-    String warning = "VM warning: UseAppCDS is disabled because the java.system.class.loader property is specified";
+    String warning = "VM warning: Archived non-system classes are disabled because the java.system.class.loader property is specified";
 
 
     // (0) Baseline. Do not specify -Djava.system.class.loader
@@ -70,7 +70,7 @@ public class SpecifySysLoaderProp {
         });
 
     // (2) Try to execute the archive with -Djava.system.class.loader=TestClassLoader,
-    //     it should run, but AppCDS should be disabled
+    //     it should run, but archived non-system classes should be disabled
     TestCommon.run(
         "-verbose:class",
         "-cp", appJar,

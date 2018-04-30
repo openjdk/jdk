@@ -42,14 +42,12 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class SharedArchiveFile {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true,
-                                "-XX:+UnlockDiagnosticVMOptions",
                                 "-XX:SharedArchiveFile=./SharedArchiveFile.jsa",
                                 "-Xshare:dump");
         OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "SharedArchiveFile");
         CDSTestUtils.checkDump(out);
 
         pb = ProcessTools.createJavaProcessBuilder(true,
-                              "-XX:+UnlockDiagnosticVMOptions",
                               "-XX:SharedArchiveFile=./SharedArchiveFile.jsa",
                               "-Xshare:on", "-version");
         out = CDSTestUtils.executeAndLog(pb, "SharedArchiveFile");

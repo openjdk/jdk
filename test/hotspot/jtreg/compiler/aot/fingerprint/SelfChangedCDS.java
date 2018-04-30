@@ -43,9 +43,9 @@
  *      compiler.aot.fingerprint.Blah TEST-UNMODIFIED
  * @run main compiler.aot.fingerprint.CDSRunner -cp SelfChangedCDS.jar
  *      -XX:+UseAOT -XX:+PrintAOT -XX:AOTLibrary=./libSelfChanged.so
- *      -XX:+UnlockDiagnosticVMOptions -XX:SharedArchiveFile=SelfChangedCDS.jsa
+ *      -XX:SharedArchiveFile=SelfChangedCDS.jsa
  *      -XX:+IgnoreUnrecognizedVMOptions
- *      -Xshare:auto -XX:+UnlockCommercialFeatures -XX:+UseAppCDS -showversion
+ *      -Xshare:auto -showversion
  *      -Xlog:cds -Xlog:gc+heap+coops
  *      -Xlog:aot+class+fingerprint=trace -Xlog:aot+class+load=trace
  *      compiler.aot.fingerprint.Blah TEST-UNMODIFIED
@@ -59,9 +59,9 @@
  *      compiler.aot.fingerprint.Blah TEST-MODIFIED
  * @run main compiler.aot.fingerprint.CDSRunner -cp SelfChangedCDS.jar
  *      -XX:+UseAOT -XX:+PrintAOT -XX:AOTLibrary=./libSelfChanged.so
- *      -XX:+UnlockDiagnosticVMOptions -XX:SharedArchiveFile=SelfChangedCDS.jsa
+ *      -XX:SharedArchiveFile=SelfChangedCDS.jsa
  *      -XX:+IgnoreUnrecognizedVMOptions
- *      -Xshare:auto -XX:+UnlockCommercialFeatures -XX:+UseAppCDS -showversion
+ *      -Xshare:auto -showversion
  *      -Xlog:cds -Xlog:gc+heap+coops
  *      -Xlog:aot+class+fingerprint=trace -Xlog:aot+class+load=trace
  *      compiler.aot.fingerprint.Blah TEST-MODIFIED
@@ -78,9 +78,9 @@
  *      compiler.aot.fingerprint.Blah TEST-UNMODIFIED
  * @run main compiler.aot.fingerprint.CDSRunner -Xmx512m -cp SelfChangedCDS.jar
  *      -XX:+UseAOT -XX:+PrintAOT -XX:AOTLibrary=./libSelfChanged.so
- *      -XX:+UnlockDiagnosticVMOptions -XX:SharedArchiveFile=SelfChangedCDS.jsa
+ *      -XX:SharedArchiveFile=SelfChangedCDS.jsa
  *      -XX:+IgnoreUnrecognizedVMOptions
- *      -Xshare:auto -XX:+UnlockCommercialFeatures -XX:+UseAppCDS -showversion
+ *      -Xshare:auto -showversion
  *      -Xlog:cds -Xlog:gc+heap+coops
  *      -Xlog:aot+class+fingerprint=trace -Xlog:aot+class+load=trace
  *      compiler.aot.fingerprint.Blah TEST-UNMODIFIED

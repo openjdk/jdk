@@ -360,9 +360,8 @@ Handle SystemDictionaryShared::init_security_info(Handle class_loader, InstanceK
 bool SystemDictionaryShared::is_sharing_possible(ClassLoaderData* loader_data) {
   oop class_loader = loader_data->class_loader();
   return (class_loader == NULL ||
-          (UseAppCDS && (SystemDictionary::is_system_class_loader(class_loader) ||
-                         SystemDictionary::is_platform_class_loader(class_loader)))
-          );
+          SystemDictionary::is_system_class_loader(class_loader) ||
+          SystemDictionary::is_platform_class_loader(class_loader));
 }
 
 // Currently AppCDS only archives classes from the run-time image, the
@@ -508,57 +507,59 @@ bool SystemDictionaryShared::is_shared_class_visible_for_classloader(
 //
 InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
                  Symbol* name, Handle class_loader, TRAPS) {
-  if (DumpSharedSpaces) {
-    return NULL;
-  }
-
   InstanceKlass* k = NULL;
-  if (shared_dictionary() != NULL &&
-      UseAppCDS && (SystemDictionary::is_system_class_loader(class_loader()) ||
-                    SystemDictionary::is_platform_class_loader(class_loader()))) {
-
-    // Fix for 4474172; see evaluation for more details
-    class_loader = Handle(
-      THREAD, java_lang_ClassLoader::non_reflection_class_loader(class_loader()));
-    ClassLoaderData *loader_data = register_loader(class_loader);
-    Dictionary* dictionary = loader_data->dictionary();
-
-    unsigned int d_hash = dictionary->compute_hash(name);
-
-    bool DoObjectLock = true;
-    if (is_parallelCapable(class_loader)) {
-      DoObjectLock = false;
+  if (UseSharedSpaces) {
+    FileMapHeaderExt* header = (FileMapHeaderExt*)FileMapInfo::current_info()->header();
+    if (!header->has_platform_or_app_classes()) {
+      return NULL;
     }
 
-    // Make sure we are synchronized on the class loader before we proceed
-    //
-    // Note: currently, find_or_load_shared_class is called only from
-    // JVM_FindLoadedClass and used for PlatformClassLoader and AppClassLoader,
-    // which are parallel-capable loaders, so this lock is NOT taken.
-    Handle lockObject = compute_loader_lock_object(class_loader, THREAD);
-    check_loader_lock_contention(lockObject, THREAD);
-    ObjectLocker ol(lockObject, THREAD, DoObjectLock);
+    if (shared_dictionary() != NULL &&
+        (SystemDictionary::is_system_class_loader(class_loader()) ||
+         SystemDictionary::is_platform_class_loader(class_loader()))) {
+      // Fix for 4474172; see evaluation for more details
+      class_loader = Handle(
+        THREAD, java_lang_ClassLoader::non_reflection_class_loader(class_loader()));
+      ClassLoaderData *loader_data = register_loader(class_loader);
+      Dictionary* dictionary = loader_data->dictionary();
 
-    {
-      MutexLocker mu(SystemDictionary_lock, THREAD);
-      Klass* check = find_class(d_hash, name, dictionary);
-      if (check != NULL) {
-        return InstanceKlass::cast(check);
+      unsigned int d_hash = dictionary->compute_hash(name);
+
+      bool DoObjectLock = true;
+      if (is_parallelCapable(class_loader)) {
+        DoObjectLock = false;
+      }
+
+      // Make sure we are synchronized on the class loader before we proceed
+      //
+      // Note: currently, find_or_load_shared_class is called only from
+      // JVM_FindLoadedClass and used for PlatformClassLoader and AppClassLoader,
+      // which are parallel-capable loaders, so this lock is NOT taken.
+      Handle lockObject = compute_loader_lock_object(class_loader, THREAD);
+      check_loader_lock_contention(lockObject, THREAD);
+      ObjectLocker ol(lockObject, THREAD, DoObjectLock);
+
+      {
+        MutexLocker mu(SystemDictionary_lock, THREAD);
+        Klass* check = find_class(d_hash, name, dictionary);
+        if (check != NULL) {
+          return InstanceKlass::cast(check);
+        }
+      }
+
+      k = load_shared_class_for_builtin_loader(name, class_loader, THREAD);
+      if (k != NULL) {
+        define_instance_class(k, CHECK_NULL);
       }
     }
-
-    k = load_shared_class_for_builtin_loader(name, class_loader, THREAD);
-    if (k != NULL) {
-      define_instance_class(k, CHECK_NULL);
-    }
   }
-
   return k;
 }
 
 InstanceKlass* SystemDictionaryShared::load_shared_class_for_builtin_loader(
                  Symbol* class_name, Handle class_loader, TRAPS) {
-  assert(UseAppCDS && shared_dictionary() != NULL, "already checked");
+  assert(UseSharedSpaces, "must be");
+  assert(shared_dictionary() != NULL, "already checked");
   Klass* k = shared_dictionary()->find_class_for_builtin_loader(class_name);
 
   if (k != NULL) {
@@ -609,13 +610,13 @@ void SystemDictionaryShared::allocate_shared_data_arrays(int size, TRAPS) {
   allocate_shared_jar_manifest_array(size, CHECK);
 }
 
-
+// This function is called for loading only UNREGISTERED classes
 InstanceKlass* SystemDictionaryShared::lookup_from_stream(const Symbol* class_name,
                                                           Handle class_loader,
                                                           Handle protection_domain,
                                                           const ClassFileStream* cfs,
                                                           TRAPS) {
-  if (!UseAppCDS || shared_dictionary() == NULL) {
+  if (shared_dictionary() == NULL) {
     return NULL;
   }
   if (class_name == NULL) {  // don't do this for anonymous classes
@@ -624,7 +625,6 @@ InstanceKlass* SystemDictionaryShared::lookup_from_stream(const Symbol* class_na
   if (class_loader.is_null() ||
       SystemDictionary::is_system_class_loader(class_loader()) ||
       SystemDictionary::is_platform_class_loader(class_loader())) {
-    // This function is called for loading only UNREGISTERED classes.
     // Do nothing for the BUILTIN loaders.
     return NULL;
   }
@@ -686,11 +686,12 @@ InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
   return shared_klass;
 }
 
-bool SystemDictionaryShared::add_non_builtin_klass(Symbol* name, ClassLoaderData* loader_data,
+bool SystemDictionaryShared::add_non_builtin_klass(Symbol* name,
+                                                   ClassLoaderData* loader_data,
                                                    InstanceKlass* k,
                                                    TRAPS) {
   assert(DumpSharedSpaces, "only when dumping");
-  assert(UseAppCDS && boot_loader_dictionary() != NULL, "must be");
+  assert(boot_loader_dictionary() != NULL, "must be");
 
   if (boot_loader_dictionary()->add_non_builtin_klass(name, loader_data, k)) {
     MutexLocker mu_r(Compile_lock, THREAD); // not really necessary, but add_to_hierarchy asserts this.

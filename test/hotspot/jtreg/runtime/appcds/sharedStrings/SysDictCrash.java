@@ -44,7 +44,6 @@ public class SysDictCrash {
         ProcessBuilder dumpPb = ProcessTools.createJavaProcessBuilder(true,
           TestCommon.makeCommandLineForAppCDS(
             "-XX:+UseG1GC", "-XX:MaxRAMPercentage=12.5",
-            "-XX:+UseAppCDS",
             "-cp", ".",
             "-XX:SharedBaseAddress=0", "-XX:SharedArchiveFile=./SysDictCrash.jsa",
             "-Xshare:dump",
@@ -55,7 +54,6 @@ public class SysDictCrash {
         ProcessBuilder runPb = ProcessTools.createJavaProcessBuilder(true,
           TestCommon.makeCommandLineForAppCDS(
             "-XX:+UseG1GC", "-XX:MaxRAMPercentage=12.5",
-            "-XX:+UseAppCDS",
             "-XX:SharedArchiveFile=./SysDictCrash.jsa",
             "-Xshare:on",
             "-version"));

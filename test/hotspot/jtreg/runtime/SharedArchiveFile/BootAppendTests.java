@@ -111,6 +111,7 @@ public class BootAppendTests {
 
         OutputAnalyzer out = CDSTestUtils.createArchiveAndCheck(
                                  "-Xbootclasspath/a:" + bootAppendJar,
+                                 "-cp", appJar,
                                  "-XX:SharedClassListFile=" + classlist.getPath());
         // Make sure all the classes were successfully archived.
         for (String archiveClass : ARCHIVE_CLASSES) {
@@ -156,8 +157,10 @@ public class BootAppendTests {
                 .addSuffix("-Xlog:class+load=info",
                            APP_CLASS, BOOT_APPEND_DUPLICATE_MODULE_CLASS_NAME);
 
+            String MATCH_PATTERN = ".class.load. javax.annotation.processing.FilerException source:.*bootAppend.jar*";
             OutputAnalyzer out = CDSTestUtils.runWithArchive(opts);
-            CDSTestUtils.checkExec(out, opts, "[class,load] javax.annotation.processing.FilerException source: jrt:/java.compiler");
+            out.shouldHaveExitValue(0)
+                       .shouldNotMatch(MATCH_PATTERN);
         }
     }
 

@@ -247,7 +247,6 @@ public class CDSTestUtils {
 
         cmd.add("-Xshare:dump");
         cmd.add("-Xlog:cds,cds+hashtables");
-        cmd.add("-XX:+UnlockDiagnosticVMOptions");
         if (opts.archiveName == null)
             opts.archiveName = getDefaultArchiveName();
         cmd.add("-XX:SharedArchiveFile=./" + opts.archiveName);
@@ -389,7 +388,6 @@ public class CDSTestUtils {
         for (String p : opts.prefix) cmd.add(p);
 
         cmd.add("-Xshare:" + opts.xShareMode);
-        cmd.add("-XX:+UnlockDiagnosticVMOptions");
         cmd.add("-Dtest.timeout.factor=" + TestTimeoutFactor);
 
         if (opts.archiveName == null)

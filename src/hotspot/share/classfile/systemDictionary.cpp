@@ -3059,13 +3059,9 @@ class CombineDictionariesClosure : public CLDClosure {
 // During run time, we only have one shared dictionary.
 void SystemDictionary::combine_shared_dictionaries() {
   assert(DumpSharedSpaces, "dump time only");
-  // If AppCDS isn't enabled, we only dump the classes in the boot loader dictionary
-  // into the shared archive.
-  if (UseAppCDS) {
-    Dictionary* master_dictionary = ClassLoaderData::the_null_class_loader_data()->dictionary();
-    CombineDictionariesClosure cdc(master_dictionary);
-    ClassLoaderDataGraph::cld_do(&cdc);
-  }
+  Dictionary* master_dictionary = ClassLoaderData::the_null_class_loader_data()->dictionary();
+  CombineDictionariesClosure cdc(master_dictionary);
+  ClassLoaderDataGraph::cld_do(&cdc);
 
   // These tables are no longer valid or necessary. Keeping them around will
   // cause SystemDictionary::verify() to fail. Let's empty them.
