@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,17 @@ package jdk.test.lib;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class Platform {
     public  static final String vmName      = System.getProperty("java.vm.name");
     public  static final String vmInfo      = System.getProperty("java.vm.info");
     private static final String osVersion   = System.getProperty("os.version");
+    private static       String[] osVersionTokens;
     private static       int osVersionMajor = -1;
     private static       int osVersionMinor = -1;
     private static final String osName      = System.getProperty("os.name");
@@ -124,17 +129,21 @@ public class Platform {
 
     // Os version support.
     private static void init_version() {
+        osVersionTokens = osVersion.split("\\.");
         try {
-            final String[] tokens = osVersion.split("\\.");
-            if (tokens.length > 0) {
-                osVersionMajor = Integer.parseInt(tokens[0]);
-                if (tokens.length > 1) {
-                    osVersionMinor = Integer.parseInt(tokens[1]);
+            if (osVersionTokens.length > 0) {
+                osVersionMajor = Integer.parseInt(osVersionTokens[0]);
+                if (osVersionTokens.length > 1) {
+                    osVersionMinor = Integer.parseInt(osVersionTokens[1]);
                 }
             }
         } catch (NumberFormatException e) {
             osVersionMajor = osVersionMinor = 0;
         }
+    }
+
+    public static String getOsVersion() {
+        return osVersion;
     }
 
     // Returns major version number from os.version system property.
@@ -149,6 +158,45 @@ public class Platform {
     public static int getOsVersionMinor() {
         if (osVersionMinor == -1) init_version();
         return osVersionMinor;
+    }
+
+    /**
+     * Compares the platform version with the supplied version. The
+     * version must be of the form a[.b[.c[.d...]]] where a, b, c, d, ...
+     * are decimal integers.
+     *
+     * @throws NullPointerException if the parameter is null
+     * @throws NumberFormatException if there is an error parsing either
+     *         version as split into component strings
+     * @return -1, 0, or 1 according to whether the platform version is
+     *         less than, equal to, or greater than the supplied version
+     */
+    public static int compareOsVersion(String version) {
+        if (osVersionTokens == null) init_version();
+
+        Objects.requireNonNull(version);
+
+        List<Integer> s1 = Arrays
+            .stream(osVersionTokens)
+            .map(Integer::valueOf)
+            .collect(Collectors.toList());
+        List<Integer> s2 = Arrays
+            .stream(version.split("\\."))
+            .map(Integer::valueOf)
+            .collect(Collectors.toList());
+
+        int count = Math.max(s1.size(), s2.size());
+        for (int i = 0; i < count; i++) {
+            int i1 = i < s1.size() ? s1.get(i) : 0;
+            int i2 = i < s2.size() ? s2.get(i) : 0;
+            if (i1 > i2) {
+                return 1;
+            } else if (i2 > i1) {
+                return -1;
+            }
+        }
+
+        return 0;
     }
 
     public static boolean isDebugBuild() {
