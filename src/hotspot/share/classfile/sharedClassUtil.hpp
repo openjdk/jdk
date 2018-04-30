@@ -43,6 +43,10 @@ public:
   FileMapHeaderExt() {
     _has_platform_or_app_classes = true;
   }
+  void set_has_platform_or_app_classes(bool v) {
+    _has_platform_or_app_classes = v;
+  }
+  bool has_platform_or_app_classes() { return _has_platform_or_app_classes; }
   virtual void populate(FileMapInfo* mapinfo, size_t alignment);
   virtual bool validate();
 };

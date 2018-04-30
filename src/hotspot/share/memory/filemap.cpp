@@ -207,10 +207,6 @@ void SharedClassPathEntry::init(const char* name, TRAPS) {
   struct stat st;
   if (os::stat(name, &st) == 0) {
     if ((st.st_mode & S_IFMT) == S_IFDIR) {
-      if (!os::dir_is_empty(name)) {
-        ClassLoader::exit_with_path_failure(
-                  "Cannot have non-empty directory in archived classpaths", name);
-      }
       _is_dir = true;
     } else {
       _is_dir = false;
@@ -232,6 +228,8 @@ void SharedClassPathEntry::init(const char* name, TRAPS) {
 }
 
 bool SharedClassPathEntry::validate(bool is_class_path) {
+  assert(UseSharedSpaces, "runtime only");
+
   struct stat st;
   const char* name = this->name();
   bool ok = true;
@@ -335,22 +333,49 @@ void FileMapInfo::allocate_shared_path_table() {
   assert(i == num_entries, "number of shared path entry mismatch");
 }
 
-// This function should only be called during run time with UseSharedSpaces enabled.
-bool FileMapInfo::validate_shared_path_table() {
-  _validating_shared_path_table = true;
+void FileMapInfo::check_nonempty_dir_in_shared_path_table() {
+  assert(DumpSharedSpaces, "dump time only");
 
+  bool has_nonempty_dir = false;
+
+  int end = _shared_path_table_size;
+  if (!ClassLoaderExt::has_platform_or_app_classes()) {
+    // only check the boot path if no app class is loaded
+    end = ClassLoaderExt::app_class_paths_start_index();
+  }
+
+  for (int i = 0; i < end; i++) {
+    SharedClassPathEntry *e = shared_path(i);
+    if (e->is_dir()) {
+      const char* path = e->name();
+      if (!os::dir_is_empty(path)) {
+        tty->print_cr("Error: non-empty directory '%s'", path);
+        has_nonempty_dir = true;
+      }
+    }
+  }
+
+  if (has_nonempty_dir) {
+    ClassLoader::exit_with_path_failure("Cannot have non-empty directory in paths", NULL);
+  }
+}
+
+bool FileMapInfo::validate_shared_path_table() {
+  assert(UseSharedSpaces, "runtime only");
+
+  _validating_shared_path_table = true;
   _shared_path_table = _header->_shared_path_table;
   _shared_path_entry_size = _header->_shared_path_entry_size;
   _shared_path_table_size = _header->_shared_path_table_size;
 
-  // Note: _app_module_paths_start_index may not have a valid value if the UseAppCDS flag
-  // wasn't enabled during dump time. Therefore, we need to use the smaller of
-  // _shared_path_table_size and _app_module_paths_start_index for the _app_module_paths_start_index.
   FileMapHeaderExt* header = (FileMapHeaderExt*)FileMapInfo::current_info()->header();
-  int module_paths_start_index = (header->_app_module_paths_start_index >= _shared_path_table_size) ?
-                                  _shared_path_table_size : header->_app_module_paths_start_index;
+  int module_paths_start_index = header->_app_module_paths_start_index;
 
-  int count = _shared_path_table_size;
+  // If the shared archive contain app or platform classes, validate all entries
+  // in the shared path table. Otherwise, only validate the boot path entries (with
+  // entry index < _app_class_paths_start_index).
+  int count = header->has_platform_or_app_classes() ?
+              _shared_path_table_size : header->_app_class_paths_start_index;
 
   for (int i=0; i<count; i++) {
     if (i < module_paths_start_index) {

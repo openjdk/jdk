@@ -2480,10 +2480,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "Address to allocate shared memory region for class data")        \
           range(0, SIZE_MAX)                                                \
                                                                             \
-  product(bool, UseAppCDS, false,                                           \
-          "Enable Application Class Data Sharing when using shared spaces") \
-          writeable(CommandLineOnly)                                        \
-                                                                            \
   product(ccstr, SharedArchiveConfigFile, NULL,                             \
           "Data to add to the CDS archive file")                            \
                                                                             \
@@ -2589,7 +2585,7 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   product(ccstr, SharedClassListFile, NULL,                                 \
           "Override the default CDS class list")                            \
                                                                             \
-  diagnostic(ccstr, SharedArchiveFile, NULL,                                \
+  product(ccstr, SharedArchiveFile, NULL,                                   \
           "Override the default location of the CDS archive file")          \
                                                                             \
   product(ccstr, ExtraSharedClassListFile, NULL,                            \

@@ -94,7 +94,6 @@ public class GraalWithLimitedMetaspace {
             "-XX:+EagerJVMCI",
             "-cp",
             TESTJAR,
-            "-XX:+UseAppCDS",
             TESTNAME,
             TEST_OUT));
 
@@ -117,7 +116,6 @@ public class GraalWithLimitedMetaspace {
           TestCommon.makeCommandLineForAppCDS(
             "-cp",
             TESTJAR,
-            "-XX:+UseAppCDS",
             "-XX:SharedClassListFile=" + CLASSLIST_FILE,
             "-XX:SharedArchiveFile=" + ARCHIVE_FILE,
             "-Xlog:cds",

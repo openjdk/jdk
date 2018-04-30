@@ -422,7 +422,6 @@ class ClassLoader: AllStatic {
     }
     return num_entries;
   }
-  static void  check_shared_classpath(const char *path);
   static void  finalize_shared_paths_misc_info();
   static int   get_shared_paths_misc_info_size();
   static void* get_shared_paths_misc_info();

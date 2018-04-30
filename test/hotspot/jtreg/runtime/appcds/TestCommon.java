@@ -109,18 +109,8 @@ public class TestCommon extends CDSTestUtils {
         return createArchive(opts);
     }
 
-    // If you use -XX:+UseAppCDS or -XX:-UseAppCDS in your JVM command-line, call this method
-    // to wrap the arguments. On commercial builds, -XX:+UnlockCommercialFeatures will be
-    // prepended to the command-line. See JDK-8193664.
     public static String[] makeCommandLineForAppCDS(String... args) throws Exception {
-        if (BuildHelper.isCommercialBuild()) {
-            String[] newArgs = new String[args.length + 1];
-            newArgs[0] = "-XX:+UnlockCommercialFeatures";
-            System.arraycopy(args, 0, newArgs, 1, args.length);
-            return newArgs;
-        } else {
-            return args;
-        }
+        return args;
     }
 
     // Create AppCDS archive using appcds options
@@ -143,7 +133,6 @@ public class TestCommon extends CDSTestUtils {
 
         cmd.add("-Xshare:dump");
         cmd.add("-Xlog:cds,cds+hashtables");
-        cmd.add("-XX:+UseAppCDS");
         cmd.add("-XX:ExtraSharedClassListFile=" + classList.getPath());
 
         if (opts.archiveName == null)
@@ -168,7 +157,6 @@ public class TestCommon extends CDSTestUtils {
         for (String p : opts.prefix) cmd.add(p);
 
         cmd.add("-Xshare:" + opts.xShareMode);
-        cmd.add("-XX:+UseAppCDS");
         cmd.add("-showversion");
         cmd.add("-XX:SharedArchiveFile=" + getCurrentArchiveName());
         cmd.add("-Dtest.timeout.factor=" + timeoutFactor);

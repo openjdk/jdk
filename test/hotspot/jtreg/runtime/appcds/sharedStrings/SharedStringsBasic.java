@@ -48,7 +48,6 @@ public class SharedStringsBasic {
 
         ProcessBuilder dumpPb = ProcessTools.createJavaProcessBuilder(true,
           TestCommon.makeCommandLineForAppCDS(
-            "-XX:+UseAppCDS",
             "-cp", appJar,
             "-XX:SharedArchiveConfigFile=" + sharedArchiveConfigFile,
             "-XX:SharedArchiveFile=./SharedStringsBasic.jsa",
@@ -61,7 +60,6 @@ public class SharedStringsBasic {
 
         ProcessBuilder runPb = ProcessTools.createJavaProcessBuilder(true,
           TestCommon.makeCommandLineForAppCDS(
-            "-XX:+UseAppCDS",
             "-cp", appJar,
             "-XX:SharedArchiveFile=./SharedStringsBasic.jsa",
             "-Xshare:auto",
