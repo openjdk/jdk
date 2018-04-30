@@ -48,6 +48,8 @@ public:
   static bool is_gc_selected(CollectedHeap::Name name);
   static bool is_gc_selected_ergonomically();
 
+  static const char* hs_err_name();
+
   static GCArguments* arguments();
 };
 
