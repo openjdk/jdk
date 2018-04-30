@@ -561,7 +561,7 @@ $(eval $(call SetupCopyFiles, COPY_JDWP_PROTOCOL, \
 JDK_SPECS_TARGETS += $(COPY_JDWP_PROTOCOL)
 
 # Get jvmti.html from the main jvm variant (all variants' jvmti.html are identical).
-JVMTI_HTML := $(HOTSPOT_OUTPUTDIR)/variant-$(JVM_VARIANT_MAIN)/gensrc/jvmtifiles/jvmti.html
+JVMTI_HTML ?= $(HOTSPOT_OUTPUTDIR)/variant-$(JVM_VARIANT_MAIN)/gensrc/jvmtifiles/jvmti.html
 $(eval $(call SetupCopyFiles, COPY_JVMTI_HTML, \
     FILES := $(JVMTI_HTML), \
     DEST := $(DOCS_OUTPUTDIR)/specs, \
