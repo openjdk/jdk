@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
  * @test
  * @bug 6631352
  * @summary Check that appends are atomic
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
+ * @run main AtomicAppend
  */
 
 import java.io.File;
@@ -32,6 +35,8 @@ import java.io.FileOutputStream;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import jdk.test.lib.Platform;
 
 public class AtomicAppend {
     // Before the fix for
@@ -73,7 +78,17 @@ public class AtomicAppend {
         if (x == null ? y == null : x.equals(y)) pass();
         else fail(x + " not equal to " + y);}
     public static void main(String[] args) throws Throwable {
-        new AtomicAppend().instanceMain(args);}
+        if (Platform.isOSX()) {
+            final String version = "10.13";
+            int ineq = Platform.compareOsVersion(version);
+            if (ineq >= 0) {
+                System.out.format("Skipping test for macOS version %s >= %s%n",
+                    Platform.getOsVersion(), version);
+                return;
+            }
+        }
+        new AtomicAppend().instanceMain(args);
+    }
     void instanceMain(String[] args) throws Throwable {
         try {test(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
