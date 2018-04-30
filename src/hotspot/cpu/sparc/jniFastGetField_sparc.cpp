@@ -70,18 +70,20 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   __ andcc (G4, 1, G0);
   __ br (Assembler::notZero, false, Assembler::pn, label1);
   __ delayed()->srl (O2, 2, O4);
+  __ mov(O1, O5);
 
+  // Both O5 and G3 are clobbered by try_resolve_jobject_in_native.
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->try_resolve_jobject_in_native(masm, O1, G3_scratch, label1);
+  bs->try_resolve_jobject_in_native(masm, /* jni_env */ O0, /* obj */ O5, /* tmp */ G3, label1);
 
   assert(count < LIST_CAPACITY, "LIST_CAPACITY too small");
   speculative_load_pclist[count] = __ pc();
   switch (type) {
-    case T_BOOLEAN: __ ldub (O1, O4, G3);  break;
-    case T_BYTE:    __ ldsb (O1, O4, G3);  break;
-    case T_CHAR:    __ lduh (O1, O4, G3);  break;
-    case T_SHORT:   __ ldsh (O1, O4, G3);  break;
-    case T_INT:     __ ld (O1, O4, G3);    break;
+    case T_BOOLEAN: __ ldub (O5, O4, G3);  break;
+    case T_BYTE:    __ ldsb (O5, O4, G3);  break;
+    case T_CHAR:    __ lduh (O5, O4, G3);  break;
+    case T_SHORT:   __ ldsh (O5, O4, G3);  break;
+    case T_INT:     __ ld (O5, O4, G3);    break;
     default:        ShouldNotReachHere();
   }
 
