@@ -62,8 +62,7 @@ public class ClhsdbJhisto {
                     "java.nio.HeapByteBuffer",
                     "java.net.URI",
                     "LingeredAppWithInterface",
-                    "ParselTongue",
-                    "ImmutableCollections$SetN$1"));
+                    "ParselTongue"));
 
             test.run(theApp.getPid(), cmds, expStrMap, null);
         } catch (Exception ex) {
