@@ -27,6 +27,8 @@ package build.tools.cldrconverter;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
@@ -38,6 +40,12 @@ import org.xml.sax.SAXException;
  */
 
 class SupplementalMetadataParseHandler extends AbstractLDMLHandler<Object> {
+    private final Map<String, String> languageAliasMap;
+
+    SupplementalMetadataParseHandler() {
+        languageAliasMap = new HashMap<>();
+    }
+
     @Override
     public InputSource resolveEntity(String publicID, String systemID) throws IOException, SAXException {
         // avoid HTTP traffic to unicode.org
@@ -57,6 +65,17 @@ class SupplementalMetadataParseHandler extends AbstractLDMLHandler<Object> {
             }
             pushIgnoredContainer(qName);
             break;
+        case "languageAlias":
+            String aliasReason = attributes.getValue("reason");
+            if ("deprecated".equals(aliasReason) || "legacy".equals(aliasReason)) {
+                String tag = attributes.getValue("type");
+                if (!checkLegacyLocales(tag)) {
+                   languageAliasMap.put(tag.replaceAll("_", "-"),
+                   attributes.getValue("replacement").replaceAll("_", "-"));
+                }
+            }
+            pushIgnoredContainer(qName);
+            break;
         default:
             // treat anything else as a container
             pushContainer(qName, attributes);
@@ -68,5 +87,14 @@ class SupplementalMetadataParseHandler extends AbstractLDMLHandler<Object> {
         return keySet().stream()
                 .map(k -> String.format("        \"%s\", \"%s\",", k, get(k)))
                 .sorted();
+    }
+    Map<String, String> getLanguageAliasData() {
+        return languageAliasMap;
+    }
+
+    // skip language aliases for JDK legacy locales for ISO compatibility
+    private boolean checkLegacyLocales(String tag) {
+        return (tag.startsWith("no") || tag.startsWith("in")
+                || tag.startsWith("iw") || tag.startsWith("ji"));
     }
 }

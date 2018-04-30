@@ -64,8 +64,14 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
 
     // parent locales map
     private static volatile Map<Locale, Locale> parentLocalesMap;
+    // language aliases map
+    private static volatile Map<String,String> langAliasesMap;
+    // cache to hold  locale to locale mapping for language aliases.
+    private static final Map<Locale, Locale> langAliasesCache;
     static {
         parentLocalesMap = new ConcurrentHashMap<>();
+        langAliasesMap = new ConcurrentHashMap<>();
+        langAliasesCache = new ConcurrentHashMap<>();
         // Assuming these locales do NOT have irregular parent locales.
         parentLocalesMap.put(Locale.ROOT, Locale.ROOT);
         parentLocalesMap.put(Locale.ENGLISH, Locale.ENGLISH);
@@ -160,6 +166,22 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
         return locs;
     }
 
+    private Locale applyAliases(Locale loc) {
+        if (langAliasesMap.isEmpty()) {
+            langAliasesMap = baseMetaInfo.getLanguageAliasMap();
+        }
+        Locale locale = langAliasesCache.get(loc);
+        if (locale == null) {
+            String locTag = loc.toLanguageTag();
+            Locale aliasLocale = langAliasesMap.containsKey(locTag)
+                    ? Locale.forLanguageTag(langAliasesMap.get(locTag)) : loc;
+            langAliasesCache.putIfAbsent(loc, aliasLocale);
+            return aliasLocale;
+        } else {
+            return locale;
+        }
+    }
+
     @Override
     protected Set<String> createLanguageTagSet(String category) {
         // Assume all categories support the same set as AvailableLocales
@@ -194,7 +216,7 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     // Implementation of ResourceBundleBasedAdapter
     @Override
     public List<Locale> getCandidateLocales(String baseName, Locale locale) {
-        List<Locale> candidates = super.getCandidateLocales(baseName, locale);
+        List<Locale> candidates = super.getCandidateLocales(baseName, applyAliases(locale));
         return applyParentLocales(baseName, candidates);
     }
 
