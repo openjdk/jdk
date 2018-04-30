@@ -45,7 +45,8 @@ public:
                        Address src, Register dst, Register tmp);
 
   // Support for jniFastGetField to try resolving a jobject/jweak in native
-  virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register robj, Register tmp, Label& slowpath);
+  virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
+                                             Register obj, Register tmp, Label& slowpath);
 
   virtual void barrier_stubs_init() {}
 };

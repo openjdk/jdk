@@ -100,7 +100,8 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
   }
 }
 
-void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register robj, Register tmp, Label& slowpath) {
-  __ andn (robj, JNIHandles::weak_tag_mask, robj);
-  __ ld_ptr(robj, 0, robj);
+void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
+                                                        Register obj, Register tmp, Label& slowpath) {
+  __ andn(obj, JNIHandles::weak_tag_mask, obj);
+  __ ld_ptr(obj, 0, obj);
 }
