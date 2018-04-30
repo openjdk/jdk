@@ -270,7 +270,8 @@ class ResourceBundleGenerator implements BundleGenerator {
             out.printf("public class %s implements LocaleDataMetaInfo {\n", className);
             out.printf("    private static final Map<String, String> resourceNameToLocales = new HashMap<>();\n" +
                        (CLDRConverter.isBaseModule ?
-                       "    private static final Map<Locale, String[]> parentLocalesMap = new HashMap<>();\n\n" :
+                       "    private static final Map<Locale, String[]> parentLocalesMap = new HashMap<>();\n" +
+                       "    private static final Map<String, String> languageAliasMap = new HashMap<>();\n\n" :
                        "\n") +
                        "    static {\n");
 
@@ -301,9 +302,15 @@ class ResourceBundleGenerator implements BundleGenerator {
                 } else {
                     if ("AvailableLocales".equals(key)) {
                         out.printf("        resourceNameToLocales.put(\"%s\",\n", key);
-                        out.printf("              \"%s\");\n", toLocaleList(metaInfo.get(key), false));
+                        out.printf("              \"%s\");\n", toLocaleList(applyLanguageAliases(metaInfo.get(key)), false));
                     }
                 }
+            }
+            // for languageAliasMap
+            if (CLDRConverter.isBaseModule) {
+                CLDRConverter.handlerSupplMeta.getLanguageAliasData().forEach((key, value) -> {
+                    out.printf("                languageAliasMap.put(\"%s\", \"%s\");\n", key, value);
+                });
             }
 
             out.printf("    }\n\n");
@@ -339,6 +346,10 @@ class ResourceBundleGenerator implements BundleGenerator {
                         "    }\n\n");
 
             if (CLDRConverter.isBaseModule) {
+                out.printf("    @Override\n" +
+                           "    public Map<String, String> getLanguageAliasMap() {\n" +
+                           "        return languageAliasMap;\n" +
+                           "    }\n\n");
                 out.printf("    @Override\n" +
                            "    public Map<String, String> tzCanonicalIDs() {\n" +
                            "        return TZCanonicalIDMapHolder.tzCanonicalIDMap;\n" +
@@ -376,5 +387,14 @@ class ResourceBundleGenerator implements BundleGenerator {
             }
         }
         return sb.toString();
+    }
+
+    private static SortedSet<String> applyLanguageAliases(SortedSet<String> tags) {
+        CLDRConverter.handlerSupplMeta.getLanguageAliasData().forEach((key, value) -> {
+            if (tags.remove(key)) {
+                tags.add(value);
+            }
+        });
+        return tags;
     }
 }

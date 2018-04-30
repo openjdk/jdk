@@ -90,8 +90,8 @@ public class CLDRConverter {
     static final String[] EMPTY_ZONE = {"", "", "", "", "", ""};
 
     private static SupplementDataParseHandler handlerSuppl;
-    private static SupplementalMetadataParseHandler handlerSupplMeta;
     private static LikelySubtagsParseHandler handlerLikelySubtags;
+    static SupplementalMetadataParseHandler handlerSupplMeta;
     static NumberingSystemsParseHandler handlerNumbering;
     static MetaZonesParseHandler handlerMetaZones;
     static TimeZoneParseHandler handlerTimeZone;
@@ -428,7 +428,7 @@ public class CLDRConverter {
         parseLDMLFile(new File(LIKELYSUBTAGS_SOURCE_FILE), handlerLikelySubtags);
 
         // Parse supplementalMetadata
-        // Currently only interested in deprecated time zone ids.
+        // Currently interested in deprecated time zone ids and language aliases.
         handlerSupplMeta = new SupplementalMetadataParseHandler();
         parseLDMLFile(new File(SPPL_META_SOURCE_FILE), handlerSupplMeta);
     }
