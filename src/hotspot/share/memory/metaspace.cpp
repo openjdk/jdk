@@ -365,6 +365,7 @@ class ChunkManager : public CHeapObj<mtInternal> {
 
 class SmallBlocks : public CHeapObj<mtClass> {
   const static uint _small_block_max_size = sizeof(TreeChunk<Metablock,  FreeList<Metablock> >)/HeapWordSize;
+  // Note: this corresponds to the imposed miminum allocation size, see SpaceManager::get_allocation_word_size()
   const static uint _small_block_min_size = sizeof(Metablock)/HeapWordSize;
 
  private:
@@ -3601,7 +3602,7 @@ void SpaceManager::add_chunk(Metachunk* new_chunk, bool make_current) {
 void SpaceManager::retire_current_chunk() {
   if (current_chunk() != NULL) {
     size_t remaining_words = current_chunk()->free_word_size();
-    if (remaining_words >= BlockFreelist::min_dictionary_size()) {
+    if (remaining_words >= SmallBlocks::small_block_min_size()) {
       MetaWord* ptr = current_chunk()->allocate(remaining_words);
       deallocate(ptr, remaining_words);
       inc_used_metrics(remaining_words);
