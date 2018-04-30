@@ -82,14 +82,3 @@ Java_java_io_Console_echo(JNIEnv *env, jclass cls, jboolean on)
     }
     return old;
 }
-
-JNIEXPORT jboolean JNICALL
-Java_java_io_Console_echo0(JNIEnv *env, jclass cls)
-{
-    DWORD fdwMode;
-    if (! GetConsoleMode(hStdIn, &fdwMode)) {
-        JNU_ThrowIOExceptionWithLastError(env, "GetConsoleMode failed");
-        return JNI_TRUE;
-    }
-    return (fdwMode & ENABLE_ECHO_INPUT) != 0;
-}
