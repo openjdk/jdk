@@ -42,6 +42,7 @@ protected:
                                         Register addr, Register count, Register tmp);
 
 #ifdef COMPILER1
+public:
   void gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStub* stub);
   void gen_post_barrier_stub(LIR_Assembler* ce, G1PostBarrierStub* stub);
 
