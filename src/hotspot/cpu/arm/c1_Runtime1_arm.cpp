@@ -352,11 +352,11 @@ static void restore_live_registers_without_return(StubAssembler* sasm, bool rest
 }
 
 void StubAssembler::save_live_registers() {
-  save_live_registers(this);
+  ::save_live_registers(this);
 }
 
 void StubAssembler::restore_live_registers_without_return() {
-  restore_live_registers_without_return(this);
+  ::restore_live_registers_without_return(this);
 }
 
 void Runtime1::initialize_pd() {

@@ -26,6 +26,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "interpreter/interp_masm.hpp"
@@ -175,15 +176,7 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   // Input:
   // - pre_val pushed on the stack
 
-  __ set_info("g1_pre_barrier_slow_id", dont_gc_arguments);
-
-  BarrierSet* bs = BarrierSet::barrier_set();
-  if (bs->kind() != BarrierSet::G1BarrierSet) {
-    __ mov(R0, (int)id);
-    __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, unimplemented_entry), R0);
-    __ should_not_reach_here();
-    break;
-  }
+  __ set_info("g1_pre_barrier_slow_id", false);
 
   // save at least the registers that need saving if the runtime is called
 #ifdef AARCH64
@@ -251,15 +244,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
   // Input:
   // - store_addr, pushed on the stack
 
-  __ set_info("g1_post_barrier_slow_id", dont_gc_arguments);
-
-  BarrierSet* bs = BarrierSet::barrier_set();
-  if (bs->kind() != BarrierSet::G1BarrierSet) {
-    __ mov(R0, (int)id);
-    __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, unimplemented_entry), R0);
-    __ should_not_reach_here();
-    break;
-  }
+  __ set_info("g1_post_barrier_slow_id", false);
 
   Label done;
   Label recheck;
