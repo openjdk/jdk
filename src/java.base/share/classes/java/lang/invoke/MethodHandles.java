@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2267,27 +2267,27 @@ return mh1;
         }
 
         /** Check access and get the requested method. */
-        private MethodHandle getDirectMethod(byte refKind, Class<?> refc, MemberName method, Class<?> callerClass) throws IllegalAccessException {
+        private MethodHandle getDirectMethod(byte refKind, Class<?> refc, MemberName method, Class<?> boundCallerClass) throws IllegalAccessException {
             final boolean doRestrict    = true;
             final boolean checkSecurity = true;
-            return getDirectMethodCommon(refKind, refc, method, checkSecurity, doRestrict, callerClass);
+            return getDirectMethodCommon(refKind, refc, method, checkSecurity, doRestrict, boundCallerClass);
         }
         /** Check access and get the requested method, for invokespecial with no restriction on the application of narrowing rules. */
-        private MethodHandle getDirectMethodNoRestrictInvokeSpecial(Class<?> refc, MemberName method, Class<?> callerClass) throws IllegalAccessException {
+        private MethodHandle getDirectMethodNoRestrictInvokeSpecial(Class<?> refc, MemberName method, Class<?> boundCallerClass) throws IllegalAccessException {
             final boolean doRestrict    = false;
             final boolean checkSecurity = true;
-            return getDirectMethodCommon(REF_invokeSpecial, refc, method, checkSecurity, doRestrict, callerClass);
+            return getDirectMethodCommon(REF_invokeSpecial, refc, method, checkSecurity, doRestrict, boundCallerClass);
         }
         /** Check access and get the requested method, eliding security manager checks. */
-        private MethodHandle getDirectMethodNoSecurityManager(byte refKind, Class<?> refc, MemberName method, Class<?> callerClass) throws IllegalAccessException {
+        private MethodHandle getDirectMethodNoSecurityManager(byte refKind, Class<?> refc, MemberName method, Class<?> boundCallerClass) throws IllegalAccessException {
             final boolean doRestrict    = true;
             final boolean checkSecurity = false;  // not needed for reflection or for linking CONSTANT_MH constants
-            return getDirectMethodCommon(refKind, refc, method, checkSecurity, doRestrict, callerClass);
+            return getDirectMethodCommon(refKind, refc, method, checkSecurity, doRestrict, boundCallerClass);
         }
         /** Common code for all methods; do not call directly except from immediately above. */
         private MethodHandle getDirectMethodCommon(byte refKind, Class<?> refc, MemberName method,
                                                    boolean checkSecurity,
-                                                   boolean doRestrict, Class<?> callerClass) throws IllegalAccessException {
+                                                   boolean doRestrict, Class<?> boundCallerClass) throws IllegalAccessException {
             checkMethod(refKind, refc, method);
             // Optionally check with the security manager; this isn't needed for unreflect* calls.
             if (checkSecurity)
@@ -2325,25 +2325,25 @@ return mh1;
                 checkMethod(refKind, refc, method);
             }
 
-            DirectMethodHandle dmh = DirectMethodHandle.make(refKind, refc, method);
+            DirectMethodHandle dmh = DirectMethodHandle.make(refKind, refc, method, lookupClass());
             MethodHandle mh = dmh;
-            // Optionally narrow the receiver argument to refc using restrictReceiver.
+            // Optionally narrow the receiver argument to lookupClass using restrictReceiver.
             if ((doRestrict && refKind == REF_invokeSpecial) ||
                     (MethodHandleNatives.refKindHasReceiver(refKind) && restrictProtectedReceiver(method))) {
                 mh = restrictReceiver(method, dmh, lookupClass());
             }
-            mh = maybeBindCaller(method, mh, callerClass);
+            mh = maybeBindCaller(method, mh, boundCallerClass);
             mh = mh.setVarargs(method);
             return mh;
         }
         private MethodHandle maybeBindCaller(MemberName method, MethodHandle mh,
-                                             Class<?> callerClass)
+                                             Class<?> boundCallerClass)
                                              throws IllegalAccessException {
             if (allowedModes == TRUSTED || !MethodHandleNatives.isCallerSensitive(method))
                 return mh;
             Class<?> hostClass = lookupClass;
             if (!hasPrivateAccess())  // caller must have private access
-                hostClass = callerClass;  // callerClass came from a security manager style stack walk
+                hostClass = boundCallerClass;  // boundCallerClass came from a security manager style stack walk
             MethodHandle cbmh = MethodHandleImpl.bindCaller(mh, hostClass);
             // Note: caller will apply varargs after this step happens.
             return cbmh;

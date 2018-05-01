@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,8 @@ final class MethodTypeForm {
             LF_GWT                     = 17,  // guardWithTest
             LF_TF                      = 18,  // tryFinally
             LF_LOOP                    = 19,  // loop
-            LF_LIMIT                   = 20;
+            LF_INVSPECIAL_IFC          = 20,  // DMH invokeSpecial of (private) interface method
+            LF_LIMIT                   = 21;
 
     /** Return the type corresponding uniquely (1-1) to this MT-form.
      *  It might have any primitive returns or arguments, but will have no references except Object.
