@@ -1335,7 +1335,7 @@ void LIRGenerator::do_BlockBegin(BlockBegin* x) {
 void LIRGenerator::do_CheckCast(CheckCast* x) {
   LIRItem obj(x->obj(), this);
   CodeEmitInfo* patching_info = NULL;
-  if (!x->klass()->is_loaded() || (PatchALot && !x->is_incompatible_class_change_check())) {
+  if (!x->klass()->is_loaded() || (PatchALot && !x->is_incompatible_class_change_check() && !x->is_invokespecial_receiver_check())) {
     patching_info = state_for(x, x->state_before());
   }
 
