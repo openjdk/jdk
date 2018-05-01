@@ -510,7 +510,6 @@ java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8081652 generic-
 
 # jdk_io
 
-java/io/FileOutputStream/AtomicAppend.java                      8202062 macosx-all
 java/io/pathNames/GeneralWin32.java                             8180264 windows-all
 
 java/io/FileInputStream/UnreferencedFISClosesFd.java            8202292 linux-all
@@ -551,8 +550,6 @@ java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-a
 java/nio/Buffer/EqualsCompareTest.java                          8193917 solaris-all
 
 java/nio/channels/DatagramChannel/ChangingAddress.java          7141822 macosx-all
-
-java/nio/channels/FileChannel/AtomicAppend.java                 8202062 macosx-all
 
 java/nio/channels/Selector/Wakeup.java                          6963118 windows-all
 
