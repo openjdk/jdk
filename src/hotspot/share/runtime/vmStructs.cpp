@@ -56,6 +56,7 @@
 #include "memory/referenceType.hpp"
 #include "memory/universe.hpp"
 #include "memory/virtualspace.hpp"
+#include "memory/filemap.hpp"
 #include "oops/array.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
@@ -82,6 +83,7 @@
 #include "prims/jvmtiAgentThread.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -717,7 +719,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   nonstatic_field(nmethod,                     _osr_link,                                     nmethod*)                              \
   nonstatic_field(nmethod,                     _scavenge_root_link,                           nmethod*)                              \
   nonstatic_field(nmethod,                     _scavenge_root_state,                          jbyte)                                 \
-  nonstatic_field(nmethod,                     _state,                                        volatile signed char)                         \
+  nonstatic_field(nmethod,                     _state,                                        volatile signed char)                  \
   nonstatic_field(nmethod,                     _exception_offset,                             int)                                   \
   nonstatic_field(nmethod,                     _orig_pc_offset,                               int)                                   \
   nonstatic_field(nmethod,                     _stub_offset,                                  int)                                   \
@@ -1000,6 +1002,8 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   c2_nonstatic_field(MachIfNode,               _prob,                                         jfloat)                                \
   c2_nonstatic_field(MachIfNode,               _fcnt,                                         jfloat)                                \
                                                                                                                                      \
+  c2_nonstatic_field(MachJumpNode,             _probs,                                        jfloat*)                               \
+                                                                                                                                     \
   c2_nonstatic_field(CallNode,                 _entry_point,                                  address)                               \
                                                                                                                                      \
   c2_nonstatic_field(CallJavaNode,             _method,                                       ciMethod*)                             \
@@ -1059,12 +1063,12 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   /* -XX flags         */                                                                                                            \
   /*********************/                                                                                                            \
                                                                                                                                      \
-  nonstatic_field(Flag,                        _type,                                         const char*)                           \
-  nonstatic_field(Flag,                        _name,                                         const char*)                           \
-  unchecked_nonstatic_field(Flag,              _addr,                                         sizeof(void*)) /* NOTE: no type */     \
-  nonstatic_field(Flag,                        _flags,                                        Flag::Flags)                           \
-     static_field(Flag,                        flags,                                         Flag*)                                 \
-     static_field(Flag,                        numFlags,                                      size_t)                                \
+  nonstatic_field(JVMFlag,                     _type,                                         const char*)                           \
+  nonstatic_field(JVMFlag,                     _name,                                         const char*)                           \
+  unchecked_nonstatic_field(JVMFlag,           _addr,                                         sizeof(void*)) /* NOTE: no type */     \
+  nonstatic_field(JVMFlag,                     _flags,                                        JVMFlag::Flags)                        \
+     static_field(JVMFlag,                     flags,                                         JVMFlag*)                              \
+     static_field(JVMFlag,                     numFlags,                                      size_t)                                \
                                                                                                                                      \
   /*************************/                                                                                                        \
   /* JDK / VM version info */                                                                                                        \
@@ -1117,6 +1121,16 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
      static_field(java_lang_Class,             _array_klass_offset,                           int)                                   \
      static_field(java_lang_Class,             _oop_size_offset,                              int)                                   \
      static_field(java_lang_Class,             _static_oop_field_count_offset,                int)                                   \
+                                                                                                                                     \
+  /********************************************/                                                                                     \
+  /* FileMapInfo fields (CDS archive related) */                                                                                     \
+  /********************************************/                                                                                     \
+                                                                                                                                     \
+  nonstatic_field(FileMapInfo,                 _header,                                       FileMapInfo::FileMapHeader*)           \
+     static_field(FileMapInfo,                 _current_info,                                 FileMapInfo*)                          \
+  nonstatic_field(FileMapInfo::FileMapHeader,  _space[0],                                     FileMapInfo::FileMapHeader::space_info)\
+  nonstatic_field(FileMapInfo::FileMapHeader::space_info, _addr._base,                        char*)                                 \
+  nonstatic_field(FileMapInfo::FileMapHeader::space_info, _used,                              size_t)                                \
                                                                                                                                      \
   /******************/                                                                                                               \
   /* VMError fields */                                                                                                               \
@@ -1431,18 +1445,18 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_toplevel_type(SharedRuntime)                                    \
                                                                           \
   declare_toplevel_type(CodeBlob)                                         \
-  declare_type(RuntimeBlob,             CodeBlob)                        \
-  declare_type(BufferBlob,               RuntimeBlob)                    \
+  declare_type(RuntimeBlob,              CodeBlob)                        \
+  declare_type(BufferBlob,               RuntimeBlob)                     \
   declare_type(AdapterBlob,              BufferBlob)                      \
   declare_type(MethodHandlesAdapterBlob, BufferBlob)                      \
   declare_type(CompiledMethod,           CodeBlob)                        \
   declare_type(nmethod,                  CompiledMethod)                  \
-  declare_type(RuntimeStub,              RuntimeBlob)                    \
-  declare_type(SingletonBlob,            RuntimeBlob)                    \
+  declare_type(RuntimeStub,              RuntimeBlob)                     \
+  declare_type(SingletonBlob,            RuntimeBlob)                     \
   declare_type(SafepointBlob,            SingletonBlob)                   \
   declare_type(DeoptimizationBlob,       SingletonBlob)                   \
   declare_c2_type(ExceptionBlob,         SingletonBlob)                   \
-  declare_c2_type(UncommonTrapBlob,      RuntimeBlob)                        \
+  declare_c2_type(UncommonTrapBlob,      RuntimeBlob)                     \
                                                                           \
   /***************************************/                               \
   /* PcDesc and other compiled code info */                               \
@@ -1663,6 +1677,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_c2_type(MachNullCheckNode, MachIdealNode)                       \
   declare_c2_type(MachProjNode, ProjNode)                                 \
   declare_c2_type(MachIfNode, MachNode)                                   \
+  declare_c2_type(MachJumpNode, MachNode)                                 \
   declare_c2_type(MachFastLockNode, MachNode)                             \
   declare_c2_type(MachReturnNode, MachNode)                               \
   declare_c2_type(MachSafePointNode, MachReturnNode)                      \
@@ -1896,8 +1911,8 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   /* -XX flags        */                                                  \
   /********************/                                                  \
                                                                           \
-  declare_toplevel_type(Flag)                                             \
-  declare_toplevel_type(Flag*)                                            \
+  declare_toplevel_type(JVMFlag)                                          \
+  declare_toplevel_type(JVMFlag*)                                         \
                                                                           \
   /********************/                                                  \
   /* JVMTI            */                                                  \
@@ -1937,7 +1952,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
    declare_integer_type(ThreadState)                                      \
    declare_integer_type(Location::Type)                                   \
    declare_integer_type(Location::Where)                                  \
-   declare_integer_type(Flag::Flags)                                      \
+   declare_integer_type(JVMFlag::Flags)                                   \
    COMPILER2_PRESENT(declare_integer_type(OptoReg::Name))                 \
                                                                           \
    declare_toplevel_type(CHeapObj<mtInternal>)                            \
@@ -1997,6 +2012,10 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_toplevel_type(vframeArrayElement)                               \
   declare_toplevel_type(Annotations*)                                     \
   declare_type(OopMapValue, StackObj)                                     \
+  declare_type(FileMapInfo, CHeapObj<mtInternal>)                         \
+  declare_type(FileMapInfo::FileMapHeaderBase, CHeapObj<mtClass>)         \
+  declare_type(FileMapInfo::FileMapHeader, FileMapInfo::FileMapHeaderBase)\
+  declare_toplevel_type(FileMapInfo::FileMapHeader::space_info)           \
                                                                           \
   /************/                                                          \
   /* GC types */                                                          \

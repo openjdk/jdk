@@ -46,8 +46,8 @@ import static java.lang.System.err;
 
 /*
  * @test
- * @summary An example on how to read a response body with InputStream...
- * @run main/othervm -Dtest.debug=true HttpInputStreamTest
+ * @summary An example on how to read a response body with InputStream.
+ * @run main/manual -Dtest.debug=true HttpInputStreamTest
  * @author daniel fuchs
  */
 public class HttpInputStreamTest {

@@ -51,8 +51,8 @@ public class HelloExtTest {
     String bootClassPath = "-Xbootclasspath/a:" + whiteBoxJar;
 
     TestCommon.dump(appJar,
-        TestCommon.list("org/omg/CORBA/ORB", "[Ljava/lang/Comparable;"),
-        bootClassPath, "-verbose:class", "--add-modules", "java.corba");
+        TestCommon.list("javax/annotation/processing/FilerException", "[Ljava/lang/Comparable;"),
+        bootClassPath, "-verbose:class");
 
     String prefix = ".class.load. ";
     String class_pattern = ".*LambdaForm[$]MH[/][0123456789].*";
@@ -60,14 +60,14 @@ public class HelloExtTest {
     String pattern = prefix + class_pattern + suffix;
 
     TestCommon.run("-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
-            "-cp", appJar, bootClassPath, "-verbose:class", "--add-modules", "java.corba", "HelloExt")
+            "-cp", appJar, bootClassPath, "-verbose:class", "HelloExt")
         .assertNormalExit(output -> output.shouldNotMatch(pattern));
 
 
     TestCommon.run("-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
             "-cp", appJar, bootClassPath, "-verbose:class",
             "-XX:+PrintSharedArchiveAndExit", "-XX:+PrintSharedDictionary",
-            "--add-modules", "java.corba", "HelloExt")
+            "HelloExt")
         .assertNormalExit(output ->  output.shouldNotMatch(class_pattern));
   }
 }

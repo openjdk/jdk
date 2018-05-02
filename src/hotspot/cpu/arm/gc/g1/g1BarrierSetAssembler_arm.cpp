@@ -26,12 +26,18 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/macros.hpp"
+#ifdef COMPILER1
+#include "c1/c1_LIRAssembler.hpp"
+#include "c1/c1_MacroAssembler.hpp"
+#include "gc/g1/c1/g1BarrierSetC1.hpp"
+#endif
 
 #define __ masm->
 
@@ -120,3 +126,227 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
 #endif // !R9_IS_SCRATCHED
 #endif // !AARCH64
 }
+
+#ifdef COMPILER1
+
+#undef __
+#define __ ce->masm()->
+
+void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStub* stub) {
+  G1BarrierSetC1* bs = (G1BarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
+  // At this point we know that marking is in progress.
+  // If do_load() is true then we have to emit the
+  // load of the previous value; otherwise it has already
+  // been loaded into _pre_val.
+
+  __ bind(*stub->entry());
+  assert(stub->pre_val()->is_register(), "Precondition.");
+
+  Register pre_val_reg = stub->pre_val()->as_register();
+
+  if (stub->do_load()) {
+    ce->mem2reg(stub->addr(), stub->pre_val(), T_OBJECT, stub->patch_code(), stub->info(), false /*wide*/, false /*unaligned*/);
+  }
+
+  __ cbz(pre_val_reg, *stub->continuation());
+  ce->verify_reserved_argument_area_size(1);
+  __ str(pre_val_reg, Address(SP));
+  __ call(bs->pre_barrier_c1_runtime_code_blob()->code_begin(), relocInfo::runtime_call_type);
+
+  __ b(*stub->continuation());
+}
+
+void G1BarrierSetAssembler::gen_post_barrier_stub(LIR_Assembler* ce, G1PostBarrierStub* stub) {
+  G1BarrierSetC1* bs = (G1BarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
+  __ bind(*stub->entry());
+  assert(stub->addr()->is_register(), "Precondition.");
+  assert(stub->new_val()->is_register(), "Precondition.");
+  Register new_val_reg = stub->new_val()->as_register();
+  __ cbz(new_val_reg, *stub->continuation());
+  ce->verify_reserved_argument_area_size(1);
+  __ str(stub->addr()->as_pointer_register(), Address(SP));
+  __ call(bs->post_barrier_c1_runtime_code_blob()->code_begin(), relocInfo::runtime_call_type);
+  __ b(*stub->continuation());
+}
+
+#undef __
+#define __ sasm->
+
+void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm) {
+  // Input:
+  // - pre_val pushed on the stack
+
+  __ set_info("g1_pre_barrier_slow_id", false);
+
+  // save at least the registers that need saving if the runtime is called
+#ifdef AARCH64
+  __ raw_push(R0, R1);
+  __ raw_push(R2, R3);
+  const int nb_saved_regs = 4;
+#else // AARCH64
+  const RegisterSet saved_regs = RegisterSet(R0,R3) | RegisterSet(R12) | RegisterSet(LR);
+  const int nb_saved_regs = 6;
+  assert(nb_saved_regs == saved_regs.size(), "fix nb_saved_regs");
+  __ push(saved_regs);
+#endif // AARCH64
+
+  const Register r_pre_val_0  = R0; // must be R0, to be ready for the runtime call
+  const Register r_index_1    = R1;
+  const Register r_buffer_2   = R2;
+
+  Address queue_active(Rthread, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()));
+  Address queue_index(Rthread, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()));
+  Address buffer(Rthread, in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset()));
+
+  Label done;
+  Label runtime;
+
+  // Is marking still active?
+  assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+  __ ldrb(R1, queue_active);
+  __ cbz(R1, done);
+
+  __ ldr(r_index_1, queue_index);
+  __ ldr(r_pre_val_0, Address(SP, nb_saved_regs*wordSize));
+  __ ldr(r_buffer_2, buffer);
+
+  __ subs(r_index_1, r_index_1, wordSize);
+  __ b(runtime, lt);
+
+  __ str(r_index_1, queue_index);
+  __ str(r_pre_val_0, Address(r_buffer_2, r_index_1));
+
+  __ bind(done);
+
+#ifdef AARCH64
+  __ raw_pop(R2, R3);
+  __ raw_pop(R0, R1);
+#else // AARCH64
+  __ pop(saved_regs);
+#endif // AARCH64
+
+  __ ret();
+
+  __ bind(runtime);
+
+  __ save_live_registers();
+
+  assert(r_pre_val_0 == c_rarg0, "pre_val should be in R0");
+  __ mov(c_rarg1, Rthread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), c_rarg0, c_rarg1);
+
+  __ restore_live_registers_without_return();
+
+  __ b(done);
+}
+
+void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler* sasm) {
+  // Input:
+  // - store_addr, pushed on the stack
+
+  __ set_info("g1_post_barrier_slow_id", false);
+
+  Label done;
+  Label recheck;
+  Label runtime;
+
+  Address queue_index(Rthread, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()));
+  Address buffer(Rthread, in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()));
+
+  AddressLiteral cardtable(ci_card_table_address_as<address>(), relocInfo::none);
+
+  // save at least the registers that need saving if the runtime is called
+#ifdef AARCH64
+  __ raw_push(R0, R1);
+  __ raw_push(R2, R3);
+  const int nb_saved_regs = 4;
+#else // AARCH64
+  const RegisterSet saved_regs = RegisterSet(R0,R3) | RegisterSet(R12) | RegisterSet(LR);
+  const int nb_saved_regs = 6;
+  assert(nb_saved_regs == saved_regs.size(), "fix nb_saved_regs");
+  __ push(saved_regs);
+#endif // AARCH64
+
+  const Register r_card_addr_0 = R0; // must be R0 for the slow case
+  const Register r_obj_0 = R0;
+  const Register r_card_base_1 = R1;
+  const Register r_tmp2 = R2;
+  const Register r_index_2 = R2;
+  const Register r_buffer_3 = R3;
+  const Register tmp1 = Rtemp;
+
+  __ ldr(r_obj_0, Address(SP, nb_saved_regs*wordSize));
+  // Note: there is a comment in x86 code about not using
+  // ExternalAddress / lea, due to relocation not working
+  // properly for that address. Should be OK for arm, where we
+  // explicitly specify that 'cardtable' has a relocInfo::none
+  // type.
+  __ lea(r_card_base_1, cardtable);
+  __ add(r_card_addr_0, r_card_base_1, AsmOperand(r_obj_0, lsr, CardTable::card_shift));
+
+  // first quick check without barrier
+  __ ldrb(r_tmp2, Address(r_card_addr_0));
+
+  __ cmp(r_tmp2, (int)G1CardTable::g1_young_card_val());
+  __ b(recheck, ne);
+
+  __ bind(done);
+
+#ifdef AARCH64
+  __ raw_pop(R2, R3);
+  __ raw_pop(R0, R1);
+#else // AARCH64
+  __ pop(saved_regs);
+#endif // AARCH64
+
+  __ ret();
+
+  __ bind(recheck);
+
+  __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreLoad), tmp1);
+
+  // reload card state after the barrier that ensures the stored oop was visible
+  __ ldrb(r_tmp2, Address(r_card_addr_0));
+
+  assert(CardTable::dirty_card_val() == 0, "adjust this code");
+  __ cbz(r_tmp2, done);
+
+  // storing region crossing non-NULL, card is clean.
+  // dirty card and log.
+
+  assert(0 == (int)CardTable::dirty_card_val(), "adjust this code");
+  if ((ci_card_table_address_as<intptr_t>() & 0xff) == 0) {
+    // Card table is aligned so the lowest byte of the table address base is zero.
+    __ strb(r_card_base_1, Address(r_card_addr_0));
+  } else {
+    __ strb(__ zero_register(r_tmp2), Address(r_card_addr_0));
+  }
+
+  __ ldr(r_index_2, queue_index);
+  __ ldr(r_buffer_3, buffer);
+
+  __ subs(r_index_2, r_index_2, wordSize);
+  __ b(runtime, lt); // go to runtime if now negative
+
+  __ str(r_index_2, queue_index);
+
+  __ str(r_card_addr_0, Address(r_buffer_3, r_index_2));
+
+  __ b(done);
+
+  __ bind(runtime);
+
+  __ save_live_registers();
+
+  assert(r_card_addr_0 == c_rarg0, "card_addr should be in R0");
+  __ mov(c_rarg1, Rthread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), c_rarg0, c_rarg1);
+
+  __ restore_live_registers_without_return();
+
+  __ b(done);
+}
+
+#undef __
+
+#endif // COMPILER1

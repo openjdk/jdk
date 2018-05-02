@@ -33,8 +33,9 @@
 #include "utilities/fakeRttiSupport.hpp"
 #include "utilities/macros.hpp"
 
-class JavaThread;
 class BarrierSetAssembler;
+class BarrierSetC1;
+class JavaThread;
 
 // This class provides the interface between a barrier implementation and
 // the rest of the system.
@@ -68,6 +69,7 @@ protected:
 private:
   FakeRtti _fake_rtti;
   BarrierSetAssembler* _barrier_set_assembler;
+  BarrierSetC1* _barrier_set_c1;
 
 public:
   // Metafunction mapping a class derived from BarrierSet to the
@@ -88,14 +90,22 @@ public:
   // End of fake RTTI support.
 
 protected:
-  BarrierSet(BarrierSetAssembler* barrier_set_assembler, const FakeRtti& fake_rtti) :
+  BarrierSet(BarrierSetAssembler* barrier_set_assembler,
+             BarrierSetC1* barrier_set_c1,
+             const FakeRtti& fake_rtti) :
     _fake_rtti(fake_rtti),
-    _barrier_set_assembler(barrier_set_assembler) { }
+    _barrier_set_assembler(barrier_set_assembler),
+    _barrier_set_c1(barrier_set_c1) {}
   ~BarrierSet() { }
 
   template <class BarrierSetAssemblerT>
   BarrierSetAssembler* make_barrier_set_assembler() {
     return NOT_ZERO(new BarrierSetAssemblerT()) ZERO_ONLY(NULL);
+  }
+
+  template <class BarrierSetC1T>
+  BarrierSetC1* make_barrier_set_c1() {
+    return COMPILER1_PRESENT(new BarrierSetC1T()) NOT_COMPILER1(NULL);
   }
 
 public:
@@ -121,6 +131,11 @@ public:
   BarrierSetAssembler* barrier_set_assembler() {
     assert(_barrier_set_assembler != NULL, "should be set");
     return _barrier_set_assembler;
+  }
+
+  BarrierSetC1* barrier_set_c1() {
+    assert(_barrier_set_c1 != NULL, "should be set");
+    return _barrier_set_c1;
   }
 
   // The AccessBarrier of a BarrierSet subclass is called by the Access API

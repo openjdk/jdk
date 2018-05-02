@@ -161,6 +161,15 @@ class CompileBroker: AllStatic {
   // The installed compiler(s)
   static AbstractCompiler* _compilers[2];
 
+  // The maximum numbers of compiler threads to be determined during startup.
+  static int _c1_count, _c2_count;
+
+  // An array of compiler thread Java objects
+  static jobject *_compiler1_objects, *_compiler2_objects;
+
+  // An array of compiler logs
+  static CompileLog **_compiler1_logs, **_compiler2_logs;
+
   // These counters are used for assigning id's to each compilation
   static volatile jint _compilation_id;
   static volatile jint _osr_compilation_id;
@@ -219,8 +228,11 @@ class CompileBroker: AllStatic {
 
   static volatile int _print_compilation_warning;
 
-  static JavaThread* make_thread(const char* name, CompileQueue* queue, CompilerCounters* counters, AbstractCompiler* comp, bool compiler_thread, TRAPS);
-  static void init_compiler_sweeper_threads(int c1_compiler_count, int c2_compiler_count);
+  static Handle create_thread_oop(const char* name, TRAPS);
+  static JavaThread* make_thread(jobject thread_oop, CompileQueue* queue,
+                                 AbstractCompiler* comp, bool compiler_thread, TRAPS);
+  static void init_compiler_sweeper_threads();
+  static void possibly_add_compiler_threads();
   static bool compilation_is_complete  (const methodHandle& method, int osr_bci, int comp_level);
   static bool compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level, bool excluded);
   static void preload_classes          (const methodHandle& method, TRAPS);
@@ -366,6 +378,21 @@ public:
 
   // compiler name for debugging
   static const char* compiler_name(int comp_level);
+
+  // Provide access to compiler thread Java objects
+  static jobject compiler1_object(int idx) {
+    assert(_compiler1_objects != NULL, "must be initialized");
+    assert(idx < _c1_count, "oob");
+    return _compiler1_objects[idx];
+  }
+
+  static jobject compiler2_object(int idx) {
+    assert(_compiler2_objects != NULL, "must be initialized");
+    assert(idx < _c2_count, "oob");
+    return _compiler2_objects[idx];
+  }
+
+  static CompileLog* get_log(CompilerThread* ct);
 
   static int get_total_compile_count() {          return _total_compile_count; }
   static int get_total_bailout_count() {          return _total_bailout_count; }

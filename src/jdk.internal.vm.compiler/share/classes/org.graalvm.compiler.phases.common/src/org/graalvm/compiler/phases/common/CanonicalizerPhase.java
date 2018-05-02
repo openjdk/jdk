@@ -314,7 +314,7 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
 
         @SuppressWarnings("try")
         public boolean tryCanonicalize(final Node node, NodeClass<?> nodeClass) {
-            try (DebugCloseable position = node.withNodeSourcePosition()) {
+            try (DebugCloseable position = node.withNodeSourcePosition(); DebugContext.Scope scope = debug.scope("tryCanonicalize", node)) {
                 if (customCanonicalizer != null) {
                     Node canonical = customCanonicalizer.canonicalize(node);
                     if (performReplacement(node, canonical)) {
@@ -349,6 +349,8 @@ public class CanonicalizerPhase extends BasePhase<PhaseContext> {
                     return node.isDeleted();
                 }
                 return false;
+            } catch (Throwable throwable) {
+                throw debug.handle(throwable);
             }
         }
 

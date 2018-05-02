@@ -73,3 +73,14 @@ serviceability/jvmti/GetModulesInfo/JvmtiGetAllModulesTest.java 8195156   generi
 compiler/compilercontrol/directives/LogTest.java                8181753   generic-all
 
 gc/g1/ihop/TestIHOPStatic.java                                  8199486   generic-all
+
+compiler/jvmci/compilerToVM/ReprofileTest.java                  8201333   generic-all
+
+compiler/tiered/TieredLevelsTest.java                           8202124   generic-all
+compiler/tiered/NonTieredLevelsTest.java                        8202124   generic-all
+compiler/intrinsics/mathexact/sanity/SubtractExactLongTest.java 8202124   generic-all
+
+compiler/jvmci/meta/StableFieldTest.java                        CODETOOLS-7902162   generic-all
+compiler/jvmci/jdk.vm.ci.hotspot.test/src/jdk/vm/ci/hotspot/test/HotSpotConstantReflectionProviderTest.java   CODETOOLS-7902162   generic-all
+compiler/jvmci/jdk.vm.ci.hotspot.test/src/jdk/vm/ci/hotspot/test/MemoryAccessProviderTest.java                CODETOOLS-7902162   generic-all
+compiler/jvmci/events/JvmciShutdownEventTest.java               CODETOOLS-7902162   generic-all

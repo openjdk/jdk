@@ -270,14 +270,6 @@ ClassFileStream* ClassPathDirEntry::open_stream(const char* name, TRAPS) {
   // check if file exists
   struct stat st;
   if (os::stat(path, &st) == 0) {
-#if INCLUDE_CDS
-    if (DumpSharedSpaces) {
-      // We have already check in ClassLoader::check_shared_classpath() that the directory is empty, so
-      // we should never find a file underneath it -- unless user has added a new file while we are running
-      // the dump, in which case let's quit!
-      ShouldNotReachHere();
-    }
-#endif
     // found file, open it
     int file_handle = os::open(path, 0, 0);
     if (file_handle != -1) {
@@ -644,24 +636,6 @@ void ClassLoader::trace_class_path(const char* msg, const char* name) {
   }
 }
 
-#if INCLUDE_CDS
-void ClassLoader::check_shared_classpath(const char *path) {
-  if (strcmp(path, "") == 0) {
-    exit_with_path_failure("Cannot have empty path in archived classpaths", NULL);
-  }
-
-  struct stat st;
-  if (os::stat(path, &st) == 0) {
-    if ((st.st_mode & S_IFMT) != S_IFREG) { // is not a regular file
-      if (!os::dir_is_empty(path)) {
-        tty->print_cr("Error: non-empty directory '%s'", path);
-        exit_with_path_failure("CDS allows only empty directories in archived classpaths", NULL);
-      }
-    }
-  }
-}
-#endif
-
 void ClassLoader::setup_bootstrap_search_path() {
   const char* sys_class_path = Arguments::get_sysclasspath();
   if (PrintSharedArchiveAndExit) {
@@ -713,8 +687,6 @@ void ClassLoader::setup_app_search_path(const char *class_path) {
     strncpy(path, &class_path[start], end - start);
     path[end - start] = '\0';
 
-    check_shared_classpath(path);
-
     update_class_path_entry_list(path, false, false);
 
     while (class_path[end] == os::path_separator()[0]) {
@@ -757,7 +729,6 @@ void ClassLoader::update_module_path_entry_list(const char *path, TRAPS) {
 }
 
 void ClassLoader::setup_module_search_path(const char* path, TRAPS) {
-  check_shared_classpath(path);
   update_module_path_entry_list(path, THREAD);
 }
 #endif // INCLUDE_CDS
@@ -886,11 +857,6 @@ void ClassLoader::setup_boot_search_path(const char *class_path) {
       update_class_path_entry_list(path, false, true);
     }
 
-#if INCLUDE_CDS
-    if (DumpSharedSpaces) {
-      check_shared_classpath(path);
-    }
-#endif
     while (class_path[end] == os::path_separator()[0]) {
       end++;
     }
@@ -1082,11 +1048,6 @@ void ClassLoader::add_to_app_classpath_entries(const char* path,
 
   if (entry->is_jar_file()) {
     ClassLoaderExt::process_jar_manifest(entry, check_for_duplicates);
-  } else {
-    if (!os::dir_is_empty(path)) {
-      tty->print_cr("Error: non-empty directory '%s'", path);
-      exit_with_path_failure("Cannot have non-empty directory in app classpaths", NULL);
-    }
   }
 #endif
 }

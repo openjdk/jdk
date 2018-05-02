@@ -39,6 +39,7 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSet.hpp"
+#include "gc/shared/c1/barrierSetC1.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"
@@ -178,9 +179,17 @@ static void deopt_caller() {
   }
 }
 
+class StubIDStubAssemblerCodeGenClosure: public StubAssemblerCodeGenClosure {
+ private:
+  Runtime1::StubID _id;
+ public:
+  StubIDStubAssemblerCodeGenClosure(Runtime1::StubID id) : _id(id) {}
+  virtual OopMapSet* generate_code(StubAssembler* sasm) {
+    return Runtime1::generate_code_for(_id, sasm);
+  }
+};
 
-void Runtime1::generate_blob_for(BufferBlob* buffer_blob, StubID id) {
-  assert(0 <= id && id < number_of_ids, "illegal stub id");
+CodeBlob* Runtime1::generate_blob(BufferBlob* buffer_blob, int stub_id, const char* name, bool expect_oop_map, StubAssemblerCodeGenClosure* cl) {
   ResourceMark rm;
   // create code buffer for code storage
   CodeBuffer code(buffer_blob);
@@ -192,33 +201,12 @@ void Runtime1::generate_blob_for(BufferBlob* buffer_blob, StubID id) {
   Compilation::setup_code_buffer(&code, 0);
 
   // create assembler for code generation
-  StubAssembler* sasm = new StubAssembler(&code, name_for(id), id);
+  StubAssembler* sasm = new StubAssembler(&code, name, stub_id);
   // generate code for runtime stub
-  oop_maps = generate_code_for(id, sasm);
+  oop_maps = cl->generate_code(sasm);
   assert(oop_maps == NULL || sasm->frame_size() != no_frame_size,
          "if stub has an oop map it must have a valid frame size");
-
-#ifdef ASSERT
-  // Make sure that stubs that need oopmaps have them
-  switch (id) {
-    // These stubs don't need to have an oopmap
-  case dtrace_object_alloc_id:
-  case g1_pre_barrier_slow_id:
-  case g1_post_barrier_slow_id:
-  case slow_subtype_check_id:
-  case fpu2long_stub_id:
-  case unwind_exception_id:
-  case counter_overflow_id:
-#if defined(SPARC) || defined(PPC32)
-  case handle_exception_nofpu_id:  // Unused on sparc
-#endif
-    break;
-
-    // All other stubs should have oopmaps
-  default:
-    assert(oop_maps != NULL, "must have an oopmap");
-  }
-#endif
+  assert(!expect_oop_map || oop_maps != NULL, "must have an oopmap");
 
   // align so printing shows nop's instead of random code at the end (SimpleStubs are aligned)
   sasm->align(BytesPerWord);
@@ -228,17 +216,42 @@ void Runtime1::generate_blob_for(BufferBlob* buffer_blob, StubID id) {
   frame_size = sasm->frame_size();
   must_gc_arguments = sasm->must_gc_arguments();
   // create blob - distinguish a few special cases
-  CodeBlob* blob = RuntimeStub::new_runtime_stub(name_for(id),
+  CodeBlob* blob = RuntimeStub::new_runtime_stub(name,
                                                  &code,
                                                  CodeOffsets::frame_never_safe,
                                                  frame_size,
                                                  oop_maps,
                                                  must_gc_arguments);
-  // install blob
   assert(blob != NULL, "blob must exist");
-  _blobs[id] = blob;
+  return blob;
 }
 
+void Runtime1::generate_blob_for(BufferBlob* buffer_blob, StubID id) {
+  assert(0 <= id && id < number_of_ids, "illegal stub id");
+  bool expect_oop_map = true;
+#ifdef ASSERT
+  // Make sure that stubs that need oopmaps have them
+  switch (id) {
+    // These stubs don't need to have an oopmap
+  case dtrace_object_alloc_id:
+  case slow_subtype_check_id:
+  case fpu2long_stub_id:
+  case unwind_exception_id:
+  case counter_overflow_id:
+#if defined(SPARC) || defined(PPC32)
+  case handle_exception_nofpu_id:  // Unused on sparc
+#endif
+    expect_oop_map = false;
+    break;
+  default:
+    break;
+  }
+#endif
+  StubIDStubAssemblerCodeGenClosure cl(id);
+  CodeBlob* blob = generate_blob(buffer_blob, id, name_for(id), expect_oop_map, &cl);
+  // install blob
+  _blobs[id] = blob;
+}
 
 void Runtime1::initialize(BufferBlob* blob) {
   // platform-dependent initialization
@@ -257,8 +270,9 @@ void Runtime1::initialize(BufferBlob* blob) {
     }
   }
 #endif
+  BarrierSetC1* bs = BarrierSet::barrier_set()->barrier_set_c1();
+  bs->generate_c1_runtime_stubs(blob);
 }
-
 
 CodeBlob* Runtime1::blob_for(StubID id) {
   assert(0 <= id && id < number_of_ids, "illegal stub id");

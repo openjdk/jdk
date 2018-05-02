@@ -173,11 +173,9 @@ void SharedClassUtil::initialize(TRAPS) {
     int size = FileMapInfo::get_number_of_shared_paths();
     if (size > 0) {
       SystemDictionaryShared::allocate_shared_data_arrays(size, THREAD);
-      if (!DumpSharedSpaces) {
-        FileMapHeaderExt* header = (FileMapHeaderExt*)FileMapInfo::current_info()->header();
-        ClassLoaderExt::init_paths_start_index(header->_app_class_paths_start_index);
-        ClassLoaderExt::init_app_module_paths_start_index(header->_app_module_paths_start_index);
-      }
+      FileMapHeaderExt* header = (FileMapHeaderExt*)FileMapInfo::current_info()->header();
+      ClassLoaderExt::init_paths_start_index(header->_app_class_paths_start_index);
+      ClassLoaderExt::init_app_module_paths_start_index(header->_app_module_paths_start_index);
     }
   }
 
@@ -229,17 +227,18 @@ void FileMapHeaderExt::populate(FileMapInfo* mapinfo, size_t alignment) {
 }
 
 bool FileMapHeaderExt::validate() {
-  if (UseAppCDS) {
-    const char* prop = Arguments::get_property("java.system.class.loader");
-    if (prop != NULL) {
-      warning("UseAppCDS is disabled because the java.system.class.loader property is specified (value = \"%s\"). "
-              "To enable UseAppCDS, this property must be not be set", prop);
-      UseAppCDS = false;
-    }
-  }
-
   if (!FileMapInfo::FileMapHeader::validate()) {
     return false;
+  }
+
+  // This must be done after header validation because it might change the
+  // header data
+  const char* prop = Arguments::get_property("java.system.class.loader");
+  if (prop != NULL) {
+    warning("Archived non-system classes are disabled because the "
+            "java.system.class.loader property is specified (value = \"%s\"). "
+            "To use archived non-system classes, this property must be not be set", prop);
+    _has_platform_or_app_classes = false;
   }
 
   // For backwards compatibility, we don't check the verification setting

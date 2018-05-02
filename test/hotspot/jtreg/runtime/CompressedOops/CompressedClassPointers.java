@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ public class CompressedClassPointers {
             "-XX:SharedBaseAddress=8g",
             "-Xmx128m",
             "-Xlog:gc+metaspace=trace",
+            "-Xshare:off",
+            "-Xlog:cds=trace",
             "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Narrow klass base: 0x0000000000000000");
@@ -54,6 +56,8 @@ public class CompressedClassPointers {
             "-XX:CompressedClassSpaceSize=3g",
             "-Xmx128m",
             "-Xlog:gc+metaspace=trace",
+            "-Xshare:off",
+            "-Xlog:cds=trace",
             "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Narrow klass base: 0x0000000000000000, Narrow klass shift: 3");
@@ -66,6 +70,8 @@ public class CompressedClassPointers {
             "-Xmx30g",
             "-XX:-UseAOT", // AOT explicitly set klass shift to 3.
             "-Xlog:gc+metaspace=trace",
+            "-Xshare:off",
+            "-Xlog:cds=trace",
             "-XX:+VerifyBeforeGC", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("Narrow klass base: 0x0000000000000000");

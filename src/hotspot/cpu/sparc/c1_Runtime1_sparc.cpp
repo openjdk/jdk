@@ -40,11 +40,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/align.hpp"
 #include "vmreg_sparc.inline.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/g1ThreadLocalData.hpp"
-#endif
 
 // Implementation of StubAssembler
 
@@ -145,10 +140,16 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
   return call_RT(oop_result1, metadata_result, entry, 3);
 }
 
+void StubAssembler::prologue(const char* name, bool must_gc_arguments) {
+  set_info(name, must_gc_arguments);
+}
+
+void StubAssembler::epilogue() {
+  delayed()->restore();
+}
 
 // Implementation of Runtime1
 
-#define __ sasm->
 
 static int cpu_reg_save_offsets[FrameMap::nof_cpu_regs];
 static int fpu_reg_save_offsets[FrameMap::nof_fpu_regs];
@@ -156,7 +157,7 @@ static int reg_save_size_in_words;
 static int frame_size_in_bytes = -1;
 
 static OopMap* generate_oop_map(StubAssembler* sasm, bool save_fpu_registers) {
-  assert(frame_size_in_bytes == __ total_frame_size_in_bytes(reg_save_size_in_words),
+  assert(frame_size_in_bytes == sasm->total_frame_size_in_bytes(reg_save_size_in_words),
          "mismatch in calculation");
   sasm->set_frame_size(frame_size_in_bytes / BytesPerWord);
   int frame_size_in_slots = frame_size_in_bytes / sizeof(jint);
@@ -183,7 +184,9 @@ static OopMap* generate_oop_map(StubAssembler* sasm, bool save_fpu_registers) {
   return oop_map;
 }
 
-static OopMap* save_live_registers(StubAssembler* sasm, bool save_fpu_registers = true) {
+#define __ this->
+
+void C1_MacroAssembler::save_live_registers_no_oop_map(bool save_fpu_registers) {
   assert(frame_size_in_bytes == __ total_frame_size_in_bytes(reg_save_size_in_words),
          "mismatch in calculation");
   __ save_frame_c1(frame_size_in_bytes);
@@ -211,11 +214,9 @@ static OopMap* save_live_registers(StubAssembler* sasm, bool save_fpu_registers 
       __ stf(FloatRegisterImpl::S, r, SP, (sp_offset * BytesPerWord) + STACK_BIAS);
     }
   }
-
-  return generate_oop_map(sasm, save_fpu_registers);
 }
 
-static void restore_live_registers(StubAssembler* sasm, bool restore_fpu_registers = true) {
+void C1_MacroAssembler::restore_live_registers(bool restore_fpu_registers) {
   for (int i = 0; i < FrameMap::nof_cpu_regs; i++) {
     Register r = as_Register(i);
     if (r == G1 || r == G3 || r == G4 || r == G5) {
@@ -229,6 +230,18 @@ static void restore_live_registers(StubAssembler* sasm, bool restore_fpu_registe
       __ ldf(FloatRegisterImpl::S, SP, (fpu_reg_save_offsets[i] * BytesPerWord) + STACK_BIAS, r);
     }
   }
+}
+
+#undef __
+#define __ sasm->
+
+static OopMap* save_live_registers(StubAssembler* sasm, bool save_fpu_registers = true) {
+  sasm->save_live_registers_no_oop_map(save_fpu_registers);
+  return generate_oop_map(sasm, save_fpu_registers);
+}
+
+static void restore_live_registers(StubAssembler* sasm, bool restore_fpu_registers = true) {
+  sasm->restore_live_registers(restore_fpu_registers);
 }
 
 
@@ -758,165 +771,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ delayed()->restore();
       }
       break;
-
-#if INCLUDE_ALL_GCS
-    case g1_pre_barrier_slow_id:
-      { // G4: previous value of memory
-        BarrierSet* bs = BarrierSet::barrier_set();
-        if (bs->kind() != BarrierSet::G1BarrierSet) {
-          __ save_frame(0);
-          __ set((int)id, O1);
-          __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, unimplemented_entry), I0);
-          __ should_not_reach_here();
-          break;
-        }
-
-        __ set_info("g1_pre_barrier_slow_id", dont_gc_arguments);
-
-        Register pre_val = G4;
-        Register tmp  = G1_scratch;
-        Register tmp2 = G3_scratch;
-
-        Label refill, restart;
-        int satb_q_active_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset());
-        int satb_q_index_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset());
-        int satb_q_buf_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset());
-
-        // Is marking still active?
-        if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-          __ ld(G2_thread, satb_q_active_byte_offset, tmp);
-        } else {
-          assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-          __ ldsb(G2_thread, satb_q_active_byte_offset, tmp);
-        }
-        __ cmp_and_br_short(tmp, G0, Assembler::notEqual, Assembler::pt, restart);
-        __ retl();
-        __ delayed()->nop();
-
-        __ bind(restart);
-        // Load the index into the SATB buffer. SATBMarkQueue::_index is a
-        // size_t so ld_ptr is appropriate
-        __ ld_ptr(G2_thread, satb_q_index_byte_offset, tmp);
-
-        // index == 0?
-        __ cmp_and_brx_short(tmp, G0, Assembler::equal, Assembler::pn, refill);
-
-        __ ld_ptr(G2_thread, satb_q_buf_byte_offset, tmp2);
-        __ sub(tmp, oopSize, tmp);
-
-        __ st_ptr(pre_val, tmp2, tmp);  // [_buf + index] := <address_of_card>
-        // Use return-from-leaf
-        __ retl();
-        __ delayed()->st_ptr(tmp, G2_thread, satb_q_index_byte_offset);
-
-        __ bind(refill);
-
-        save_live_registers(sasm);
-
-        __ call_VM_leaf(L7_thread_cache,
-                        CAST_FROM_FN_PTR(address,
-                                         SATBMarkQueueSet::handle_zero_index_for_thread),
-                                         G2_thread);
-
-        restore_live_registers(sasm);
-
-        __ br(Assembler::always, /*annul*/false, Assembler::pt, restart);
-        __ delayed()->restore();
-      }
-      break;
-
-    case g1_post_barrier_slow_id:
-      {
-        BarrierSet* bs = BarrierSet::barrier_set();
-        if (bs->kind() != BarrierSet::G1BarrierSet) {
-          __ save_frame(0);
-          __ set((int)id, O1);
-          __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, unimplemented_entry), I0);
-          __ should_not_reach_here();
-          break;
-        }
-
-        __ set_info("g1_post_barrier_slow_id", dont_gc_arguments);
-
-        Register addr = G4;
-        Register cardtable = G5;
-        Register tmp  = G1_scratch;
-        Register tmp2 = G3_scratch;
-        jbyte* byte_map_base = ci_card_table_address();
-
-        Label not_already_dirty, restart, refill, young_card;
-
-        __ srlx(addr, CardTable::card_shift, addr);
-
-        AddressLiteral rs(byte_map_base);
-        __ set(rs, cardtable);         // cardtable := <card table base>
-        __ ldub(addr, cardtable, tmp); // tmp := [addr + cardtable]
-
-        __ cmp_and_br_short(tmp, G1CardTable::g1_young_card_val(), Assembler::equal, Assembler::pt, young_card);
-
-        __ membar(Assembler::Membar_mask_bits(Assembler::StoreLoad));
-        __ ldub(addr, cardtable, tmp); // tmp := [addr + cardtable]
-
-        assert(CardTable::dirty_card_val() == 0, "otherwise check this code");
-        __ cmp_and_br_short(tmp, G0, Assembler::notEqual, Assembler::pt, not_already_dirty);
-
-        __ bind(young_card);
-        // We didn't take the branch, so we're already dirty: return.
-        // Use return-from-leaf
-        __ retl();
-        __ delayed()->nop();
-
-        // Not dirty.
-        __ bind(not_already_dirty);
-
-        // Get cardtable + tmp into a reg by itself
-        __ add(addr, cardtable, tmp2);
-
-        // First, dirty it.
-        __ stb(G0, tmp2, 0);  // [cardPtr] := 0  (i.e., dirty).
-
-        Register tmp3 = cardtable;
-        Register tmp4 = tmp;
-
-        // these registers are now dead
-        addr = cardtable = tmp = noreg;
-
-        int dirty_card_q_index_byte_offset = in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset());
-        int dirty_card_q_buf_byte_offset = in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset());
-
-        __ bind(restart);
-
-        // Get the index into the update buffer. DirtyCardQueue::_index is
-        // a size_t so ld_ptr is appropriate here.
-        __ ld_ptr(G2_thread, dirty_card_q_index_byte_offset, tmp3);
-
-        // index == 0?
-        __ cmp_and_brx_short(tmp3, G0, Assembler::equal,  Assembler::pn, refill);
-
-        __ ld_ptr(G2_thread, dirty_card_q_buf_byte_offset, tmp4);
-        __ sub(tmp3, oopSize, tmp3);
-
-        __ st_ptr(tmp2, tmp4, tmp3);  // [_buf + index] := <address_of_card>
-        // Use return-from-leaf
-        __ retl();
-        __ delayed()->st_ptr(tmp3, G2_thread, dirty_card_q_index_byte_offset);
-
-        __ bind(refill);
-
-        save_live_registers(sasm);
-
-        __ call_VM_leaf(L7_thread_cache,
-                        CAST_FROM_FN_PTR(address,
-                                         DirtyCardQueueSet::handle_zero_index_for_thread),
-                                         G2_thread);
-
-        restore_live_registers(sasm);
-
-        __ br(Assembler::always, /*annul*/false, Assembler::pt, restart);
-        __ delayed()->restore();
-      }
-      break;
-#endif // INCLUDE_ALL_GCS
 
     case predicate_failed_trap_id:
       {

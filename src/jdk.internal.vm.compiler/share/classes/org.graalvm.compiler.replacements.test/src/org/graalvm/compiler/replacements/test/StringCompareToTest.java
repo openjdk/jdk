@@ -26,10 +26,10 @@ import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.replacements.nodes.ArrayCompareToNode;
 import org.junit.Assert;
 import org.junit.Assume;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import jdk.vm.ci.amd64.AMD64;
+import jdk.vm.ci.aarch64.AArch64;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
@@ -49,6 +49,7 @@ public class StringCompareToTest extends MethodSubstitutionTest {
                     "\uFF21\uFF21",
                     "\u043c\u0430\u043c\u0430\u0020\u043c\u044b\u043b\u0430\u0020\u0440\u0430\u043c\u0443\u002c\u0020\u0440\u0430\u043c\u0430\u0020\u0441\u044a\u0435\u043b\u0430\u0020\u043c\u0430\u043c\u0443",
                     "crazy dog jumps over laszy fox",
+                    "some-string\0xff",
                     "XMM-XMM-YMM-YMM-ZMM-ZMM-ZMM-ZMM-",
                     "XMM-XMM+YMM-YMM-ZMM-ZMM-ZMM-ZMM-",
                     "XMM-XMM-YMM-YMM+ZMM-ZMM-ZMM-ZMM-",
@@ -61,7 +62,7 @@ public class StringCompareToTest extends MethodSubstitutionTest {
     };
 
     public StringCompareToTest() {
-        Assume.assumeTrue(getTarget().arch instanceof AMD64);
+        Assume.assumeTrue((getTarget().arch instanceof AMD64) || (getTarget().arch instanceof AArch64));
 
         realMethod = getResolvedJavaMethod(String.class, "compareTo", String.class);
         testMethod = getResolvedJavaMethod("stringCompareTo");
@@ -91,24 +92,35 @@ public class StringCompareToTest extends MethodSubstitutionTest {
     }
 
     @Test
-    @Ignore("GR-8748")
     public void testEqualString() {
         String s = "equal-string";
         executeStringCompareTo(s, new String(s.toCharArray()));
     }
 
     @Test
-    @Ignore("GR-8748")
     public void testDifferentString() {
-        executeStringCompareTo("some-string", "different-string");
+        // Smoke test for primary cases
+        executeStringCompareTo("AAAAAAAA", "");
+        // LL
+        executeStringCompareTo("some-stringA", "some-string\0xff");
+        // UU
+        executeStringCompareTo("\u2241AAAAAAAB", "\u2241\u0041\u0041\u0041\u0041\u0041\u0041\u0041\uFF41");
+        // LU
+        executeStringCompareTo("AAAAAAAAB", "\u0041\u0041\u0041\u0041\u0041\u0041\u0041\u0041\uFF41");
     }
 
     @Test
-    @Ignore("GR-8748")
     public void testAllStrings() {
         for (String s0 : testData) {
             for (String s1 : testData) {
-                executeStringCompareTo(s0, s1);
+                try {
+                    executeStringCompareTo(s0, s1);
+                } catch (AssertionError ex) {
+                    System.out.println("FAIL: '" + ex + "'");
+                    System.out.println(" ***: s0 '" + s0 + "'");
+                    System.out.println(" ***: s1 '" + s1 + "'");
+                    throw ex;
+                }
             }
         }
     }

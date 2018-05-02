@@ -77,7 +77,6 @@ public class SASymbolTableTest {
             // (1) Launch the attachee process
             System.out.println("Starting LingeredApp");
             List<String> vmOpts = Arrays.asList(
-                    "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:SharedArchiveFile=" + jsaName,
                     "-Xshare:" + flag,
                     "-showversion");                // so we can see "sharing" in the output

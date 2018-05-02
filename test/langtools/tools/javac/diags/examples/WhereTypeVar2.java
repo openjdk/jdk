@@ -21,10 +21,12 @@
  * questions.
  */
 
-// key: compiler.misc.incompatible.upper.lower.bounds
+// key: compiler.misc.incompatible.bounds
 // key: compiler.misc.where.description.typevar
 // key: compiler.misc.where.typevar
 // key: compiler.err.prob.found.req
+// key: compiler.misc.lower.bounds
+// key: compiler.misc.upper.bounds
 // options: --diags=formatterOptions=where
 // run: simple
 

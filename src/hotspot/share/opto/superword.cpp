@@ -1943,9 +1943,14 @@ bool SuperWord::profitable(Node_List* p) {
         for (uint k = 0; k < use->req(); k++) {
           Node* n = use->in(k);
           if (def == n) {
-            // reductions can be loop carried dependences
-            if (def->is_reduction() && use->is_Phi())
+            // reductions should only have a Phi use at the the loop
+            // head and out of loop uses
+            if (def->is_reduction() &&
+                ((use->is_Phi() && use->in(0) == _lpt->_head) ||
+                 !_lpt->is_member(_phase->get_loop(_phase->ctrl_or_self(use))))) {
+              assert(i == p->size()-1, "must be last element of the pack");
               continue;
+            }
             if (!is_vector_use(use, k)) {
               return false;
             }
@@ -2139,8 +2144,21 @@ void SuperWord::co_locate_pack(Node_List* pk) {
     // we use the memory state of the last load. However, if any load could
     // not be moved down due to the dependence constraint, we use the memory
     // state of the first load.
-    Node* last_mem  = executed_last(pk)->in(MemNode::Memory);
-    Node* first_mem = executed_first(pk)->in(MemNode::Memory);
+    Node* first_mem = pk->at(0)->in(MemNode::Memory);
+    Node* last_mem = first_mem;
+    for (uint i = 1; i < pk->size(); i++) {
+      Node* ld = pk->at(i);
+      Node* mem = ld->in(MemNode::Memory);
+      assert(in_bb(first_mem) || in_bb(mem) || mem == first_mem, "2 different memory state from outside the loop?");
+      if (in_bb(mem)) {
+        if (in_bb(first_mem) && bb_idx(mem) < bb_idx(first_mem)) {
+          first_mem = mem;
+        }
+        if (!in_bb(last_mem) || bb_idx(mem) > bb_idx(last_mem)) {
+          last_mem = mem;
+        }
+      }
+    }
     bool schedule_last = true;
     for (uint i = 0; i < pk->size(); i++) {
       Node* ld = pk->at(i);

@@ -61,6 +61,7 @@ import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionDescriptor;
 import org.graalvm.compiler.options.OptionDescriptors;
 import org.graalvm.compiler.options.OptionKey;
+import org.graalvm.compiler.options.OptionType;
 
 /**
  * Processes static fields annotated with {@link Option}. An {@link OptionDescriptors}
@@ -218,7 +219,7 @@ public class OptionProcessor extends AbstractProcessor {
             }
         }
 
-        info.options.add(new OptionInfo(optionName, help, extraHelp, optionType, declaringClass, field));
+        info.options.add(new OptionInfo(optionName, annotation.type(), help, extraHelp, optionType, declaringClass, field));
     }
 
     private void createFiles(OptionsInfo info) {
@@ -243,6 +244,7 @@ public class OptionProcessor extends AbstractProcessor {
             out.println("");
             out.println("import java.util.*;");
             out.println("import " + OptionDescriptors.class.getPackage().getName() + ".*;");
+            out.println("import " + OptionType.class.getName() + ";");
             out.println("");
             out.println("public class " + optionsClassName + " implements " + OptionDescriptors.class.getSimpleName() + " {");
 
@@ -263,6 +265,7 @@ public class OptionProcessor extends AbstractProcessor {
                     optionField = option.declaringClass + "." + option.field.getSimpleName();
                 }
                 out.println("        case \"" + name + "\": {");
+                OptionType optionType = option.optionType;
                 String type = option.type;
                 String help = option.help;
                 String[] extraHelp = option.extraHelp;
@@ -270,7 +273,8 @@ public class OptionProcessor extends AbstractProcessor {
                 Name fieldName = option.field.getSimpleName();
                 out.printf("            return " + desc + ".create(\n");
                 out.printf("                /*name*/ \"%s\",\n", name);
-                out.printf("                /*type*/ %s.class,\n", type);
+                out.printf("                /*optionType*/ %s.%s,\n", optionType.getDeclaringClass().getSimpleName(), optionType.name());
+                out.printf("                /*optionValueType*/ %s.class,\n", type);
                 out.printf("                /*help*/ \"%s\",\n", help);
                 if (extraHelp.length != 0) {
                     out.printf("                /*extraHelp*/ new String[] {\n");
@@ -332,14 +336,16 @@ public class OptionProcessor extends AbstractProcessor {
     static class OptionInfo implements Comparable<OptionInfo> {
 
         final String name;
+        final OptionType optionType;
         final String help;
         final String[] extraHelp;
         final String type;
         final String declaringClass;
         final VariableElement field;
 
-        OptionInfo(String name, String help, String[] extraHelp, String type, String declaringClass, VariableElement field) {
+        OptionInfo(String name, OptionType optionType, String help, String[] extraHelp, String type, String declaringClass, VariableElement field) {
             this.name = name;
+            this.optionType = optionType;
             this.help = help;
             this.extraHelp = extraHelp;
             this.type = type;

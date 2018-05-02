@@ -43,6 +43,7 @@ public class TestOverrideMethods  extends JavadocTester {
         javadoc("-d", "out-bad-option",
                 "-sourcepath", testSrc,
                 "-javafx",
+                "--disable-javafx-strict-checks",
                 "--override-methods=nonsense",
                 "pkg5");
 
@@ -55,6 +56,7 @@ public class TestOverrideMethods  extends JavadocTester {
         javadoc("-d", "out-detail",
                 "-sourcepath", testSrc,
                 "-javafx",
+                "--disable-javafx-strict-checks",
                 "--override-methods=detail",
                 "pkg5");
 
@@ -66,6 +68,7 @@ public class TestOverrideMethods  extends JavadocTester {
         javadoc("-d", "out-summary",
                 "-sourcepath", testSrc,
                 "-javafx",
+                "--disable-javafx-strict-checks",
                 "--override-methods=summary",
                 "pkg5");
 

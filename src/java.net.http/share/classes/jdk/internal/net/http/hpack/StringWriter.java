@@ -52,7 +52,7 @@ final class StringWriter {
     private static final int DONE           = 4;
 
     private final IntegerWriter intWriter = new IntegerWriter();
-    private final Huffman.Writer huffmanWriter = new Huffman.Writer();
+    private final Huffman.Writer huffmanWriter = new QuickHuffman.Writer();
     private final ISO_8859_1.Writer plainWriter = new ISO_8859_1.Writer();
 
     private int state = NEW;
@@ -76,7 +76,7 @@ final class StringWriter {
             intWriter.configure(end - start, 7, 0b0000_0000);
         } else {
             huffmanWriter.from(input, start, end);
-            intWriter.configure(Huffman.INSTANCE.lengthOf(input, start, end),
+            intWriter.configure(huffmanWriter.lengthOf(input, start, end),
                     7, 0b1000_0000);
         }
 

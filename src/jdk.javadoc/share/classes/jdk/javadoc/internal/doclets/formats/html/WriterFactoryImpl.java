@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeFieldWriter;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeOptionalMemberWriter;
@@ -45,7 +44,7 @@ import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.SerializedFormWriter;
 import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
-import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 /**
  * The factory that returns HTML writers.
@@ -184,7 +183,7 @@ public class WriterFactoryImpl implements WriterFactory {
      */
     @Override
     public MemberSummaryWriter getMemberSummaryWriter(ClassWriter classWriter,
-            VisibleMemberMap.Kind memberType) {
+            VisibleMemberTable.Kind memberType) {
         switch (memberType) {
             case CONSTRUCTORS:
                 return getConstructorWriter(classWriter);
@@ -209,7 +208,7 @@ public class WriterFactoryImpl implements WriterFactory {
      */
     @Override
     public MemberSummaryWriter getMemberSummaryWriter(AnnotationTypeWriter annotationTypeWriter,
-            VisibleMemberMap.Kind memberType) {
+            VisibleMemberTable.Kind memberType) {
         switch (memberType) {
             case ANNOTATION_TYPE_FIELDS:
                 return (AnnotationTypeFieldWriterImpl)

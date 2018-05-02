@@ -283,7 +283,6 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
   error("AppCDS custom class loaders not supported on this platform");
 #endif
 
-  assert(UseAppCDS, "must be");
   if (!is_super_specified()) {
     error("If source location is specified, super class must be also specified");
   }
@@ -383,9 +382,7 @@ Klass* ClassListParser::load_current_class(TRAPS) {
   } else {
     // If "source:" tag is specified, all super class and super interfaces must be specified in the
     // class list file.
-    if (UseAppCDS) {
-      klass = load_class_from_source(class_name_symbol, CHECK_NULL);
-    }
+    klass = load_class_from_source(class_name_symbol, CHECK_NULL);
   }
 
   if (klass != NULL && klass->is_instance_klass() && is_id_specified()) {

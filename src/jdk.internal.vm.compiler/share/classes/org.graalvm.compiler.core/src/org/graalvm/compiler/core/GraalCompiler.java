@@ -25,10 +25,12 @@ package org.graalvm.compiler.core;
 import java.util.Collection;
 import java.util.List;
 
-import org.graalvm.collections.EconomicSet;
+import jdk.internal.vm.compiler.collections.EconomicSet;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.LIRGenerationPhase.LIRGenerationContext;
 import org.graalvm.compiler.core.common.GraalOptions;
+import org.graalvm.compiler.core.common.PermanentBailoutException;
+import org.graalvm.compiler.core.common.RetryableBailoutException;
 import org.graalvm.compiler.core.common.alloc.ComputeBlockOrder;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
@@ -188,8 +190,18 @@ public class GraalCompiler {
      *             {@code graph.method()} or {@code graph.name}
      */
     private static void checkForRequestedCrash(StructuredGraph graph) {
-        String methodPattern = GraalCompilerOptions.CrashAt.getValue(graph.getOptions());
-        if (methodPattern != null) {
+        String value = GraalCompilerOptions.CrashAt.getValue(graph.getOptions());
+        if (value != null) {
+            boolean bailout = false;
+            boolean permanentBailout = false;
+            String methodPattern = value;
+            if (value.endsWith(":Bailout")) {
+                methodPattern = value.substring(0, value.length() - ":Bailout".length());
+                bailout = true;
+            } else if (value.endsWith(":PermanentBailout")) {
+                methodPattern = value.substring(0, value.length() - ":PermanentBailout".length());
+                permanentBailout = true;
+            }
             String crashLabel = null;
             if (graph.name != null && graph.name.contains(methodPattern)) {
                 crashLabel = graph.name;
@@ -204,6 +216,12 @@ public class GraalCompiler {
                 }
             }
             if (crashLabel != null) {
+                if (permanentBailout) {
+                    throw new PermanentBailoutException("Forced crash after compiling " + crashLabel);
+                }
+                if (bailout) {
+                    throw new RetryableBailoutException("Forced crash after compiling " + crashLabel);
+                }
                 throw new RuntimeException("Forced crash after compiling " + crashLabel);
             }
         }

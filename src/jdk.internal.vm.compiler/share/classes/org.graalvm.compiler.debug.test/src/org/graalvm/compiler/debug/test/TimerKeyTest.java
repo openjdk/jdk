@@ -28,16 +28,14 @@ import static org.graalvm.compiler.debug.DebugContext.NO_DESCRIPTION;
 import static org.graalvm.compiler.debug.DebugContext.NO_GLOBAL_METRIC_VALUES;
 import static org.junit.Assert.assertEquals;
 
-import java.lang.management.ThreadMXBean;
-
-import org.graalvm.collections.EconomicMap;
+import jdk.internal.vm.compiler.collections.EconomicMap;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugOptions;
-import org.graalvm.compiler.debug.Management;
 import org.graalvm.compiler.debug.TimerKey;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.serviceprovider.GraalServices;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,12 +45,7 @@ public class TimerKeyTest {
 
     @Before
     public void checkCapabilities() {
-        try {
-            ThreadMXBean threadMXBean = Management.getThreadMXBean();
-            Assume.assumeTrue("skipping management interface test", threadMXBean.isCurrentThreadCpuTimeSupported());
-        } catch (LinkageError err) {
-            Assume.assumeNoException("Cannot run without java.management JDK9 module", err);
-        }
+        Assume.assumeTrue("skipping management interface test", GraalServices.isCurrentThreadCpuTimeSupported());
     }
 
     /**
@@ -63,10 +56,9 @@ public class TimerKeyTest {
      *         {@code ms}
      */
     private static long spin(long ms) {
-        ThreadMXBean threadMXBean = Management.getThreadMXBean();
-        long start = threadMXBean.getCurrentThreadCpuTime();
+        long start = GraalServices.getCurrentThreadCpuTime();
         do {
-            long durationMS = (threadMXBean.getCurrentThreadCpuTime() - start) / 1000;
+            long durationMS = (GraalServices.getCurrentThreadCpuTime() - start) / 1000;
             if (durationMS >= ms) {
                 return durationMS;
             }

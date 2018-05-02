@@ -46,6 +46,17 @@ public class HotSpotMethodSubstitutionTest extends MethodSubstitutionTest {
 
         test("getClass0", "a string");
         test("objectHashCode", obj);
+
+        testGraph("objectNotify", "Object.notify");
+        testGraph("objectNotifyAll", "Object.notifyAll");
+
+        synchronized (obj) {
+            test("objectNotify", obj);
+            test("objectNotifyAll", obj);
+        }
+        // Test with IllegalMonitorStateException (no synchronized block)
+        test("objectNotify", obj);
+        test("objectNotifyAll", obj);
     }
 
     @SuppressWarnings("all")
@@ -56,6 +67,16 @@ public class HotSpotMethodSubstitutionTest extends MethodSubstitutionTest {
     @SuppressWarnings("all")
     public static int objectHashCode(TestClassA obj) {
         return obj.hashCode();
+    }
+
+    @SuppressWarnings("all")
+    public static void objectNotify(Object obj) {
+        obj.notify();
+    }
+
+    @SuppressWarnings("all")
+    public static void objectNotifyAll(Object obj) {
+        obj.notifyAll();
     }
 
     @Test

@@ -116,6 +116,8 @@ public class EscapedOctetsInURI {
 
     @Test(dataProvider = "variants")
     void test(String uriString, boolean sameClient) throws Exception {
+        System.out.println("\n--- Starting ");
+
         // The single-argument factory requires any illegal characters in its
         // argument to be quoted and preserves any escaped octets and other
         // characters that are present.
@@ -146,6 +148,7 @@ public class EscapedOctetsInURI {
 
     @Test(dataProvider = "variants")
     void testAsync(String uriString, boolean sameClient) {
+        System.out.println("\n--- Starting ");
         URI uri = URI.create(uriString);
 
         HttpClient client = null;

@@ -33,6 +33,7 @@ import org.graalvm.compiler.asm.amd64.AMD64MacroAssembler;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
+import org.graalvm.compiler.serviceprovider.GraalServices;
 
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.AllocatableValue;
@@ -68,7 +69,7 @@ final class AMD64HotSpotJumpToExceptionHandlerInCallerOp extends AMD64HotSpotEpi
         // Discard the return address, thus completing restoration of caller frame
         masm.incrementq(rsp, 8);
 
-        if (System.getProperty("java.specification.version").compareTo("1.8") < 0) {
+        if (GraalServices.JAVA_SPECIFICATION_VERSION < 8) {
             // Restore rsp from rbp if the exception PC is a method handle call site.
             AMD64Address dst = new AMD64Address(thread, isMethodHandleReturnOffset);
             masm.cmpl(dst, 0);

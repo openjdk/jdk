@@ -149,7 +149,12 @@ LIR_Address* LIRGenerator::generate_address(LIR_Opr base, LIR_Opr index,
 
   // Accumulate fixed displacements.
   if (index->is_constant()) {
-    large_disp += (intx)(index->as_constant_ptr()->as_jint()) << shift;
+    LIR_Const *constant = index->as_constant_ptr();
+    if (constant->type() == T_LONG) {
+      large_disp += constant->as_jlong() << shift;
+    } else {
+      large_disp += (intx)(constant->as_jint()) << shift;
+    }
     index = LIR_OprFact::illegalOpr;
   }
 
@@ -190,7 +195,7 @@ LIR_Address* LIRGenerator::generate_address(LIR_Opr base, LIR_Opr index,
 
 
 LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_opr,
-                                              BasicType type, bool needs_card_mark) {
+                                              BasicType type) {
   int elem_size = type2aelembytes(type);
   int shift = exact_log2(elem_size);
 
@@ -230,13 +235,7 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
       __ add(index_opr, array_opr, base_opr);
     }
   }
-  if (needs_card_mark) {
-    LIR_Opr ptr = new_pointer_register();
-    __ add(base_opr, LIR_OprFact::intptrConst(offset), ptr);
-    return new LIR_Address(ptr, type);
-  } else {
-    return new LIR_Address(base_opr, offset, type);
-  }
+  return new LIR_Address(base_opr, offset, type);
 }
 
 
@@ -320,80 +319,12 @@ void LIRGenerator::store_stack_parameter(LIR_Opr item, ByteSize offset_from_sp) 
 //             visitor functions
 //----------------------------------------------------------------------
 
-void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
-  assert(x->is_pinned(),"");
-  bool needs_range_check = x->compute_needs_range_check();
-  bool use_length = x->length() != NULL;
-  bool obj_store = x->elt_type() == T_ARRAY || x->elt_type() == T_OBJECT;
-  bool needs_store_check = obj_store && (x->value()->as_Constant() == NULL ||
-                                         !get_jobject_constant(x->value())->is_null_object() ||
-                                         x->should_profile());
-
-  LIRItem array(x->array(), this);
-  LIRItem index(x->index(), this);
-  LIRItem value(x->value(), this);
-  LIRItem length(this);
-
-  array.load_item();
-  index.load_nonconstant();
-
-  if (use_length && needs_range_check) {
-    length.set_instruction(x->length());
-    length.load_item();
-  }
-  if (needs_store_check || x->check_boolean()) {
-    value.load_item();
-  } else {
-    value.load_for_store(x->elt_type());
-  }
-
-  set_no_result(x);
-
-  // The CodeEmitInfo must be duplicated for each different
-  // LIR-instruction because spilling can occur anywhere between two
-  // instructions and so the debug information must be different.
-  CodeEmitInfo* range_check_info = state_for(x);
-  CodeEmitInfo* null_check_info = NULL;
-  if (x->needs_null_check()) {
-    null_check_info = new CodeEmitInfo(range_check_info);
-  }
-
-  // Emit array address setup early so it schedules better.
-  LIR_Address* array_addr = emit_array_address(array.result(), index.result(), x->elt_type(), obj_store);
-
-  if (GenerateRangeChecks && needs_range_check) {
-    if (use_length) {
-      __ cmp(lir_cond_belowEqual, length.result(), index.result());
-      __ branch(lir_cond_belowEqual, T_INT, new RangeCheckStub(range_check_info, index.result()));
-    } else {
-      array_range_check(array.result(), index.result(), null_check_info, range_check_info);
-      // Range_check also does the null check.
-      null_check_info = NULL;
-    }
-  }
-
-  if (GenerateArrayStoreCheck && needs_store_check) {
-    // Following registers are used by slow_subtype_check:
-    LIR_Opr tmp1 = FrameMap::R4_opr; // super_klass
-    LIR_Opr tmp2 = FrameMap::R5_opr; // sub_klass
-    LIR_Opr tmp3 = FrameMap::R6_opr; // temp
-
-    CodeEmitInfo* store_check_info = new CodeEmitInfo(range_check_info);
-    __ store_check(value.result(), array.result(), tmp1, tmp2, tmp3,
-                   store_check_info, x->profiled_method(), x->profiled_bci());
-  }
-
-  if (obj_store) {
-    // Needs GC write barriers.
-    pre_barrier(LIR_OprFact::address(array_addr), LIR_OprFact::illegalOpr /* pre_val */,
-                true /* do_load */, false /* patch */, NULL);
-  }
-  LIR_Opr result = maybe_mask_boolean(x, array.result(), value.result(), null_check_info);
-  __ move(result, array_addr, null_check_info);
-  if (obj_store) {
-    // Precise card mark.
-    post_barrier(LIR_OprFact::address(array_addr), value.result());
-  }
+void LIRGenerator::array_store_check(LIR_Opr value, LIR_Opr array, CodeEmitInfo* store_check_info, ciMethod* profiled_method, int profiled_bci) {
+  // Following registers are used by slow_subtype_check:
+  LIR_Opr tmp1 = FrameMap::R4_opr; // super_klass
+  LIR_Opr tmp2 = FrameMap::R5_opr; // sub_klass
+  LIR_Opr tmp3 = FrameMap::R6_opr; // temp
+  __ store_check(value, array, tmp1, tmp2, tmp3, store_check_info, profiled_method, profiled_bci);
 }
 
 
@@ -702,24 +633,68 @@ void LIRGenerator::do_CompareOp(CompareOp* x) {
 }
 
 
-void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
-  assert(x->number_of_arguments() == 4, "wrong type");
-  LIRItem obj   (x->argument_at(0), this);  // object
-  LIRItem offset(x->argument_at(1), this);  // offset of field
-  LIRItem cmp   (x->argument_at(2), this);  // Value to compare with field.
-  LIRItem val   (x->argument_at(3), this);  // Replace field with val if matches cmp.
-
+LIR_Opr LIRGenerator::atomic_cmpxchg(BasicType type, LIR_Opr addr, LIRItem& cmp_value, LIRItem& new_value) {
+  LIR_Opr result = new_register(T_INT);
   LIR_Opr t1 = LIR_OprFact::illegalOpr;
   LIR_Opr t2 = LIR_OprFact::illegalOpr;
-  LIR_Opr addr = new_pointer_register();
+  cmp_value.load_item();
+  new_value.load_item();
 
-  // Get address of field.
-  obj.load_item();
-  offset.load_item();
-  cmp.load_item();
-  val.load_item();
+  // Volatile load may be followed by Unsafe CAS.
+  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+    __ membar();
+  } else {
+    __ membar_release();
+  }
 
-  __ add(obj.result(), offset.result(), addr);
+  if (type == T_OBJECT || type == T_ARRAY) {
+    if (UseCompressedOops) {
+      t1 = new_register(T_OBJECT);
+      t2 = new_register(T_OBJECT);
+    }
+    __ cas_obj(addr->as_address_ptr()->base(), cmp_value.result(), new_value.result(), t1, t2);
+  } else if (type == T_INT) {
+    __ cas_int(addr->as_address_ptr()->base(), cmp_value.result(), new_value.result(), t1, t2);
+  } else if (type == T_LONG) {
+    __ cas_long(addr->as_address_ptr()->base(), cmp_value.result(), new_value.result(), t1, t2);
+  } else {
+    Unimplemented();
+  }
+  __ cmove(lir_cond_equal, LIR_OprFact::intConst(1), LIR_OprFact::intConst(0),
+           result, type);
+  return result;
+}
+
+
+LIR_Opr LIRGenerator::atomic_xchg(BasicType type, LIR_Opr addr, LIRItem& value) {
+  LIR_Opr result = new_register(type);
+  LIR_Opr tmp = FrameMap::R0_opr;
+
+  value.load_item();
+
+  // Volatile load may be followed by Unsafe CAS.
+  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+    __ membar();
+  } else {
+    __ membar_release();
+  }
+
+  __ xchg(addr, value.result(), result, tmp);
+
+  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+    __ membar_acquire();
+  } else {
+    __ membar();
+  }
+  return result;
+}
+
+
+LIR_Opr LIRGenerator::atomic_add(BasicType type, LIR_Opr addr, LIRItem& value) {
+  LIR_Opr result = new_register(type);
+  LIR_Opr tmp = FrameMap::R0_opr;
+
+  value.load_item();
 
   // Volatile load may be followed by Unsafe CAS.
   if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -728,33 +703,14 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
     __ membar_release();
   }
 
-  if (type == objectType) {  // Write-barrier needed for Object fields.
-    // Only cmp value can get overwritten, no do_load required.
-    pre_barrier(LIR_OprFact::illegalOpr /* addr */, cmp.result() /* pre_val */,
-                false /* do_load */, false /* patch */, NULL);
-  }
+  __ xadd(addr, value.result(), result, tmp);
 
-  if (type == objectType) {
-    if (UseCompressedOops) {
-      t1 = new_register(T_OBJECT);
-      t2 = new_register(T_OBJECT);
-    }
-    __ cas_obj(addr, cmp.result(), val.result(), t1, t2);
-  } else if (type == intType) {
-    __ cas_int(addr, cmp.result(), val.result(), t1, t2);
-  } else if (type == longType) {
-    __ cas_long(addr, cmp.result(), val.result(), t1, t2);
+  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
+    __ membar_acquire();
   } else {
-    ShouldNotReachHere();
+    __ membar();
   }
-  // Benerate conditional move of boolean result.
-  LIR_Opr result = rlock_result(x);
-  __ cmove(lir_cond_equal, LIR_OprFact::intConst(1), LIR_OprFact::intConst(0),
-           result, as_BasicType(type));
-  if (type == objectType) {  // Write-barrier needed for Object fields.
-    // Precise card mark since could either be object or array.
-    post_barrier(addr, val.result());
-  }
+  return result;
 }
 
 
@@ -1112,7 +1068,7 @@ void LIRGenerator::do_BlockBegin(BlockBegin* x) {
 void LIRGenerator::do_CheckCast(CheckCast* x) {
   LIRItem obj(x->obj(), this);
   CodeEmitInfo* patching_info = NULL;
-  if (!x->klass()->is_loaded() || (PatchALot && !x->is_incompatible_class_change_check())) {
+  if (!x->klass()->is_loaded() || (PatchALot && !x->is_incompatible_class_change_check() && !x->is_invokespecial_receiver_check())) {
     // Must do this before locking the destination register as
     // an oop register, and before the obj is loaded (so x->obj()->item()
     // is valid for creating a debug info location).
@@ -1252,110 +1208,6 @@ void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
   Unimplemented();
 //  __ volatile_load_mem_reg(address, result, info);
 #endif
-}
-
-
-void LIRGenerator::put_Object_unsafe(LIR_Opr src, LIR_Opr offset, LIR_Opr data,
-                                     BasicType type, bool is_volatile) {
-  LIR_Opr base_op = src;
-  LIR_Opr index_op = offset;
-
-  bool is_obj = (type == T_ARRAY || type == T_OBJECT);
-#ifndef _LP64
-  if (is_volatile && type == T_LONG) {
-    __ volatile_store_unsafe_reg(data, src, offset, type, NULL, lir_patch_none);
-  } else
-#endif
-  {
-    if (type == T_BOOLEAN) {
-      type = T_BYTE;
-    }
-    LIR_Address* addr;
-    if (type == T_ARRAY || type == T_OBJECT) {
-      LIR_Opr tmp = new_pointer_register();
-      __ add(base_op, index_op, tmp);
-      addr = new LIR_Address(tmp, type);
-    } else {
-      addr = new LIR_Address(base_op, index_op, type);
-    }
-
-    if (is_obj) {
-      pre_barrier(LIR_OprFact::address(addr), LIR_OprFact::illegalOpr /* pre_val */,
-          true /* do_load */, false /* patch */, NULL);
-      // _bs->c1_write_barrier_pre(this, LIR_OprFact::address(addr));
-    }
-    __ move(data, addr);
-    if (is_obj) {
-      // This address is precise.
-      post_barrier(LIR_OprFact::address(addr), data);
-    }
-  }
-}
-
-
-void LIRGenerator::get_Object_unsafe(LIR_Opr dst, LIR_Opr src, LIR_Opr offset,
-                                     BasicType type, bool is_volatile) {
-#ifndef _LP64
-  if (is_volatile && type == T_LONG) {
-    __ volatile_load_unsafe_reg(src, offset, dst, type, NULL, lir_patch_none);
-  } else
-#endif
-    {
-    LIR_Address* addr = new LIR_Address(src, offset, type);
-    __ load(addr, dst);
-  }
-}
-
-
-void LIRGenerator::do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) {
-  BasicType type = x->basic_type();
-  LIRItem src(x->object(), this);
-  LIRItem off(x->offset(), this);
-  LIRItem value(x->value(), this);
-
-  src.load_item();
-  value.load_item();
-  off.load_nonconstant();
-
-  LIR_Opr dst = rlock_result(x, type);
-  LIR_Opr data = value.result();
-  bool is_obj = (type == T_ARRAY || type == T_OBJECT);
-
-  LIR_Opr tmp = FrameMap::R0_opr;
-  LIR_Opr ptr = new_pointer_register();
-  __ add(src.result(), off.result(), ptr);
-
-  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-    __ membar();
-  } else {
-    __ membar_release();
-  }
-
-  if (x->is_add()) {
-    __ xadd(ptr, data, dst, tmp);
-  } else {
-    const bool can_move_barrier = true; // TODO: port GraphKit::can_move_pre_barrier() from C2
-    if (!can_move_barrier && is_obj) {
-      // Do the pre-write barrier, if any.
-      pre_barrier(ptr, LIR_OprFact::illegalOpr /* pre_val */,
-                  true /* do_load */, false /* patch */, NULL);
-    }
-    __ xchg(ptr, data, dst, tmp);
-    if (is_obj) {
-      // Seems to be a precise address.
-      post_barrier(ptr, data);
-      if (can_move_barrier) {
-        pre_barrier(LIR_OprFact::illegalOpr, dst /* pre_val */,
-                    false /* do_load */, false /* patch */, NULL);
-      }
-    }
-  }
-
-  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-    __ membar_acquire();
-  } else {
-    __ membar();
-  }
 }
 
 

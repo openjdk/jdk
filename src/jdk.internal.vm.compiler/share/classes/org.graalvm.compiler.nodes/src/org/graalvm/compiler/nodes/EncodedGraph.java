@@ -24,7 +24,7 @@ package org.graalvm.compiler.nodes;
 
 import java.util.List;
 
-import org.graalvm.collections.EconomicSet;
+import jdk.internal.vm.compiler.collections.EconomicSet;
 import org.graalvm.compiler.graph.NodeClass;
 
 import jdk.vm.ci.meta.Assumptions;

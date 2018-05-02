@@ -27,16 +27,15 @@ import java.util.Map;
 import org.graalvm.compiler.api.runtime.GraalRuntime;
 import org.graalvm.compiler.core.CompilationWrapper.ExceptionAction;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
+import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.DiagnosticsOutputDirectory;
-import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.replacements.SnippetCounter.Group;
 import org.graalvm.compiler.runtime.RuntimeProvider;
 
 import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 //JaCoCo Exclude
 
@@ -75,14 +74,6 @@ public interface HotSpotGraalRuntimeProvider extends GraalRuntime, RuntimeProvid
      * Gets the option values associated with this runtime.
      */
     OptionValues getOptions();
-
-    /**
-     * Gets the option values associated with this runtime that are applicable for a given method.
-     *
-     * @param forMethod the method we are seeking for options for
-     * @return the options applicable for compiling {@code method}
-     */
-    OptionValues getOptions(ResolvedJavaMethod forMethod);
 
     /**
      * Determines if the VM is currently bootstrapping the JVMCI compiler.

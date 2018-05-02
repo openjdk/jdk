@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,10 +92,10 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_initIDs
 /*
  * Class:     java_net_DualStackPlainDatagramSocketImpl
  * Method:    socketCreate
- * Signature: (Z)I
+ * Signature: ()I
  */
 JNIEXPORT jint JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketCreate
-  (JNIEnv *env, jclass clazz, jboolean v6Only /*unused*/) {
+  (JNIEnv *env, jclass clazz) {
     int fd, rv, opt=0, t=TRUE;
     DWORD x1, x2; /* ignored result codes */
 
@@ -121,7 +121,7 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketCrea
      * when the socket is connected.
      */
     t = FALSE;
-    WSAIoctl(fd ,SIO_UDP_CONNRESET ,&t ,sizeof(t) ,&x1 ,sizeof(x1) ,&x2 ,0 ,0);
+    WSAIoctl(fd, SIO_UDP_CONNRESET, &t, sizeof(t), &x1, sizeof(x1), &x2, 0, 0);
 
     return fd;
 }
@@ -158,7 +158,7 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketBind
 JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketConnect
   (JNIEnv *env, jclass clazz, jint fd, jobject iaObj, jint port) {
     SOCKETADDRESS sa;
-    int rv, sa_len = 0, t = TRUE;
+    int rv, sa_len = 0, t;
     DWORD x1, x2; /* ignored result codes */
 
     if (NET_InetAddressToSockaddr(env, iaObj, port, &sa,
@@ -173,6 +173,7 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketConn
     }
 
     /* see comment in socketCreate */
+    t = TRUE;
     WSAIoctl(fd, SIO_UDP_CONNRESET, &t, sizeof(t), &x1, sizeof(x1), &x2, 0, 0);
 }
 

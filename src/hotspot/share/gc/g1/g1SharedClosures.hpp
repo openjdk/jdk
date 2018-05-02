@@ -22,7 +22,6 @@
  *
  */
 
-#include "gc/g1/bufferingOopClosure.hpp"
 #include "gc/g1/g1CodeBlobClosure.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "memory/iterator.hpp"
@@ -39,12 +38,10 @@ public:
 
   G1CLDScanClosure                _clds;
   G1CodeBlobClosure               _codeblobs;
-  BufferingOopClosure             _buffered_oops;
 
   G1SharedClosures(G1CollectedHeap* g1h, G1ParScanThreadState* pss, bool process_only_dirty, bool must_claim_cld) :
     _oops(g1h, pss),
     _oops_in_cld(g1h, pss),
     _clds(&_oops_in_cld, process_only_dirty, must_claim_cld),
-    _codeblobs(&_oops),
-    _buffered_oops(&_oops) {}
+    _codeblobs(&_oops) {}
 };

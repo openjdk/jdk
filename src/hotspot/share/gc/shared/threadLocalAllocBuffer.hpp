@@ -58,6 +58,7 @@ private:
   unsigned  _slow_refill_waste;
   unsigned  _gc_waste;
   unsigned  _slow_allocations;
+  size_t    _allocated_size;
 
   AdaptiveWeightedAverage _allocation_fraction;  // fraction of eden allocated in tlabs
 
@@ -140,6 +141,9 @@ public:
   // space is large enough to hold obj_size and necessary fill space.
   // Otherwise return 0;
   inline size_t compute_size(size_t obj_size);
+
+  // Compute the minimal needed tlab size for the given object size.
+  static inline size_t compute_min_size(size_t obj_size);
 
   // Record slow allocation
   inline void record_slow_allocation(size_t obj_size);

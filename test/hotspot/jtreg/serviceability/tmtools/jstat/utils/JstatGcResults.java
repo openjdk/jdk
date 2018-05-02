@@ -103,10 +103,18 @@ public class JstatGcResults extends JstatResults {
         assertThat(GCT >= 0, "Incorrect time value for GCT");
         assertThat(GCT >= YGCT, "GCT < YGCT (total garbage collection time < young generation garbage collection time)");
 
-        int CGC = getIntValue("CGC");
-        float CGCT = getFloatValue("CGCT");
-        assertThat(CGCT >= 0, "Incorrect time value for CGCT");
+        int CGC = 0;
+        float CGCT = 0.0f;
+        try {
+            CGC = getIntValue("CGC");
+        } catch (NumberFormatException e) {
+            if (!e.getMessage().equals("Unparseable number: \"-\"")) {
+                throw e;
+            }
+        }
         if (CGC > 0) {
+            CGCT = getFloatValue("CGCT");
+            assertThat(CGCT >= 0, "Incorrect time value for CGCT");
             assertThat(CGCT > 0, "Number of concurrent GC events is " + CGC + ", but CGCT is 0");
         }
 

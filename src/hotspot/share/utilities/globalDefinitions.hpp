@@ -1259,4 +1259,11 @@ static inline void* dereference_vptr(const void* addr) {
   return *(void**)addr;
 }
 
+//----------------------------------------------------------------------------------------------------
+// String type aliases used by command line flag declarations and
+// processing utilities.
+
+typedef const char* ccstr;
+typedef const char* ccstrlist;   // represents string arguments which accumulate
+
 #endif // SHARE_VM_UTILITIES_GLOBALDEFINITIONS_HPP

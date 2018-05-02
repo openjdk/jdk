@@ -47,6 +47,11 @@ class Tickspan {
     return *this;
   }
 
+  Tickspan& operator-=(const Tickspan& rhs) {
+    _span_ticks -= rhs._span_ticks;
+    return *this;
+  }
+
   jlong value() const {
     return _span_ticks;
   }

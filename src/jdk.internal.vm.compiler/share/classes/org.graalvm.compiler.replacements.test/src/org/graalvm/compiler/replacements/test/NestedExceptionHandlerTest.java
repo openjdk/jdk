@@ -22,11 +22,19 @@
  */
 package org.graalvm.compiler.replacements.test;
 
+import static org.graalvm.compiler.core.common.GraalOptions.RemoveNeverExecutedCode;
+import static org.graalvm.compiler.core.common.GraalOptions.UseExceptionProbability;
+import static org.graalvm.compiler.core.common.GraalOptions.UseTypeCheckHints;
+
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.core.phases.HighTier;
 import org.graalvm.compiler.core.test.GraalCompilerTest;
+import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
 import org.graalvm.compiler.options.OptionValues;
+import org.junit.Ignore;
 import org.junit.Test;
+
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 public class NestedExceptionHandlerTest extends GraalCompilerTest {
 
@@ -63,4 +71,67 @@ public class NestedExceptionHandlerTest extends GraalCompilerTest {
         test(new OptionValues(getInitialOptions(), HighTier.Options.Inline, false), "nestedExceptionHandler");
     }
 
+    @SuppressWarnings("try")
+    public static String snippet1() {
+        try {
+            synchronized (String.class) {
+                try (AutoCloseable scope = null) {
+                    return "RETURN";
+                } catch (Throwable t) {
+                    return t.toString();
+                }
+            }
+        } finally {
+            raise();
+        }
+    }
+
+    public static void raise() {
+        throw new RuntimeException();
+    }
+
+    @SuppressWarnings("try")
+    public static String snippet2() {
+        try {
+            synchronized (String.class) {
+                try (AutoCloseable scope = null) {
+                    return performCompilation();
+                } catch (Throwable t) {
+                    return t.toString();
+                }
+            }
+        } finally {
+            synchronized (String.class) {
+                String.class.toString();
+            }
+        }
+    }
+
+    private static String performCompilation() {
+        return "passed";
+    }
+
+    @Ignore("https://bugs.eclipse.org/bugs/show_bug.cgi?id=533187")
+    @Test
+    public void testSnippet1() {
+        OptionValues options = parseAllCodeWithoutInlining();
+        ResolvedJavaMethod method = getResolvedJavaMethod("snippet1");
+        parseEager(method, AllowAssumptions.YES, options);
+    }
+
+    @Ignore("https://bugs.eclipse.org/bugs/show_bug.cgi?id=533187")
+    @Test
+    public void testSnippet2() {
+        OptionValues options = parseAllCodeWithoutInlining();
+        ResolvedJavaMethod method = getResolvedJavaMethod("snippet2");
+        parseEager(method, AllowAssumptions.YES, options);
+    }
+
+    private static OptionValues parseAllCodeWithoutInlining() {
+        OptionValues options = new OptionValues(getInitialOptions(),
+                        UseTypeCheckHints, false,
+                        UseExceptionProbability, false,
+                        RemoveNeverExecutedCode, false);
+        return options;
+    }
 }

@@ -172,6 +172,22 @@ bool CollectedHeap::request_concurrent_phase(const char* phase) {
   return false;
 }
 
+bool CollectedHeap::is_oop(oop object) const {
+  if (!check_obj_alignment(object)) {
+    return false;
+  }
+
+  if (!is_in_reserved(object)) {
+    return false;
+  }
+
+  if (is_in_reserved(object->klass_or_null())) {
+    return false;
+  }
+
+  return true;
+}
+
 // Memory state functions.
 
 
@@ -368,17 +384,24 @@ HeapWord* CollectedHeap::allocate_from_tlab_slow(Klass* klass, Thread* thread, s
     return NULL;
   }
 
-  // Allocate a new TLAB...
-  HeapWord* obj = Universe::heap()->allocate_new_tlab(new_tlab_size);
+  // Allocate a new TLAB requesting new_tlab_size. Any size
+  // between minimal and new_tlab_size is accepted.
+  size_t actual_tlab_size = 0;
+  size_t min_tlab_size = ThreadLocalAllocBuffer::compute_min_size(size);
+  HeapWord* obj = Universe::heap()->allocate_new_tlab(min_tlab_size, new_tlab_size, &actual_tlab_size);
   if (obj == NULL) {
+    assert(actual_tlab_size == 0, "Allocation failed, but actual size was updated. min: " SIZE_FORMAT ", desired: " SIZE_FORMAT ", actual: " SIZE_FORMAT,
+           min_tlab_size, new_tlab_size, actual_tlab_size);
     return NULL;
   }
+  assert(actual_tlab_size != 0, "Allocation succeeded but actual size not updated. obj at: " PTR_FORMAT " min: " SIZE_FORMAT ", desired: " SIZE_FORMAT,
+         p2i(obj), min_tlab_size, new_tlab_size);
 
-  AllocTracer::send_allocation_in_new_tlab(klass, obj, new_tlab_size * HeapWordSize, size * HeapWordSize, thread);
+  AllocTracer::send_allocation_in_new_tlab(klass, obj, actual_tlab_size * HeapWordSize, size * HeapWordSize, thread);
 
   if (ZeroTLAB) {
     // ..and clear it.
-    Copy::zero_to_words(obj, new_tlab_size);
+    Copy::zero_to_words(obj, actual_tlab_size);
   } else {
     // ...and zap just allocated object.
 #ifdef ASSERT
@@ -386,10 +409,10 @@ HeapWord* CollectedHeap::allocate_from_tlab_slow(Klass* klass, Thread* thread, s
     // ensure that the returned space is not considered parsable by
     // any concurrent GC thread.
     size_t hdr_size = oopDesc::header_size();
-    Copy::fill_to_words(obj + hdr_size, new_tlab_size - hdr_size, badHeapWordVal);
+    Copy::fill_to_words(obj + hdr_size, actual_tlab_size - hdr_size, badHeapWordVal);
 #endif // ASSERT
   }
-  thread->tlab().fill(obj, obj + size, new_tlab_size);
+  thread->tlab().fill(obj, obj + size, actual_tlab_size);
   return obj;
 }
 
@@ -490,7 +513,9 @@ void CollectedHeap::fill_with_objects(HeapWord* start, size_t words, bool zap)
   fill_with_object_impl(start, words, zap);
 }
 
-HeapWord* CollectedHeap::allocate_new_tlab(size_t size) {
+HeapWord* CollectedHeap::allocate_new_tlab(size_t min_size,
+                                           size_t requested_size,
+                                           size_t* actual_size) {
   guarantee(false, "thread-local allocation buffers not supported");
   return NULL;
 }

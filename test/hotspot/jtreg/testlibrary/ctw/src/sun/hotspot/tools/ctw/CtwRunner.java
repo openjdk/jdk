@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,11 +52,17 @@ public class CtwRunner {
     private static final Predicate<String> IS_CLASS_LINE = Pattern.compile(
             "^\\[\\d+\\]\\s*\\S+\\s*$").asPredicate();
 
+    private static final String USAGE = "Usage: CtwRunner <artifact to compile> [start[%] stop[%]]";
+
     public static void main(String[] args) throws Exception {
-        if (args.length != 1) {
-            throw new Error("Usage: <artifact to compile>");
+        CtwRunner runner;
+        switch (args.length) {
+            case 1: runner = new CtwRunner(args[0]); break;
+            case 3: runner = new CtwRunner(args[0], args[1], args[2]); break;
+            default: throw new Error(USAGE);
         }
-        new CtwRunner(args[0]).run();
+
+        runner.run();
     }
 
     private final List<Throwable> errors;
@@ -64,7 +70,10 @@ public class CtwRunner {
     private final Path targetPath;
     private final String targetName;
 
-    private CtwRunner(String target) {
+    private final int start, stop;
+    private final boolean isStartStopPercentage;
+
+    private CtwRunner(String target, String start, String stop) {
         if (target.startsWith("modules")) {
             targetPath = Paths
                     .get(Utils.TEST_JDK)
@@ -82,8 +91,29 @@ public class CtwRunner {
         }
         this.target = target;
         errors = new ArrayList<>();
+
+        if (start.endsWith("%") && stop.endsWith("%")) {
+            int startPercentage = Integer.parseInt(start.substring(0, start.length() - 1));;
+            int stopPercentage = Integer.parseInt(stop.substring(0, stop.length() - 1));
+            if (startPercentage < 0 || startPercentage > 100 ||
+                stopPercentage < 0 || stopPercentage > 100) {
+                throw new Error(USAGE);
+            }
+            this.start = startPercentage;
+            this.stop = stopPercentage;
+            this.isStartStopPercentage = true;
+        } else if (!start.endsWith("%") && !stop.endsWith("%")) {
+            this.start = Integer.parseInt(start);
+            this.stop = Integer.parseInt(stop);
+            this.isStartStopPercentage = false;
+        } else {
+            throw new Error(USAGE);
+        }
     }
 
+    private CtwRunner(String target) {
+        this(target, "0%", "100%");
+    }
 
     private void run() {
         startCtwforAllClasses();
@@ -105,15 +135,44 @@ public class CtwRunner {
         }
     }
 
+    private long start(long totalClassCount) {
+        if (isStartStopPercentage) {
+            return totalClassCount * start / 100;
+        } else if (start > totalClassCount) {
+            System.err.println("WARNING: start [" + start + "] > totalClassCount [" + totalClassCount + "]");
+            return totalClassCount;
+        } else {
+            return start;
+        }
+    }
+
+    private long stop(long totalClassCount) {
+        if (isStartStopPercentage) {
+            return totalClassCount * stop / 100;
+        } else if (stop > totalClassCount) {
+            System.err.println("WARNING: stop [" + start + "] > totalClassCount [" + totalClassCount + "]");
+            return totalClassCount;
+        } else {
+            return stop;
+        }
+    }
 
     private void startCtwforAllClasses() {
-        long classStart = 0L;
-        long classCount = classCount();
+        long totalClassCount = classCount();
+
+        long classStart = start(totalClassCount);
+        long classStop = stop(totalClassCount);
+
+        long classCount = classStop - classStart;
         Asserts.assertGreaterThan(classCount, 0L,
                 target + "(at " + targetPath + ") does not have any classes");
+
+        System.out.printf("Compiling %d classes (of %d total classes) starting at %d and ending at %d\n",
+                          classCount, totalClassCount, classStart, classStop);
+
         boolean done = false;
         while (!done) {
-            String[] cmd = cmd(classStart);
+            String[] cmd = cmd(classStart, classStop);
             try {
                 ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                         /* addTestVmAndJavaOptions = */ true,
@@ -138,11 +197,11 @@ public class CtwRunner {
                 Pair<String, Long> lastClass = getLastClass(out);
                 if (exitCode == 0) {
                     long lastIndex = lastClass == null ? -1 : lastClass.second;
-                    if (lastIndex != classCount) {
+                    if (lastIndex != classStop) {
                         errors.add(new Error(phase + ": Unexpected zero exit code"
                                 + "before finishing all compilations."
                                 + " lastClass[" + lastIndex
-                                + "] != classCount[" + classCount + "]"));
+                                + "] != classStop[" + classStop + "]"));
                     } else {
                         System.out.println("Executed CTW for all " + classCount
                                 + " classes in " + target + "(at " + targetPath + ")");
@@ -197,7 +256,7 @@ public class CtwRunner {
         return null;
     }
 
-    private String[] cmd(long classStart) {
+    private String[] cmd(long classStart, long classStop) {
         String phase = phaseName(classStart);
         return new String[] {
                 "-Xbatch",
@@ -206,6 +265,7 @@ public class CtwRunner {
                 "-XX:+UnlockDiagnosticVMOptions",
                 // define phase start
                 "-DCompileTheWorldStartAt=" + classStart,
+                "-DCompileTheWorldStopAt=" + classStop,
                 // CTW library uses WhiteBox API
                 "-XX:+WhiteBoxAPI", "-Xbootclasspath/a:.",
                 // export jdk.internal packages used by CTW library

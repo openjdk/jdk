@@ -183,28 +183,21 @@ void AOTLoader::universe_init() {
     // Shifts are static values which initialized by 0 until java heap initialization.
     // AOT libs are loaded before heap initialized so shift values are not set.
     // It is okay since ObjectAlignmentInBytes flag which defines shifts value is set before AOT libs are loaded.
-    // Set shifts value based on first AOT library config.
+    // AOT sets shift values during heap and metaspace initialization.
+    // Check shifts value to make sure thay did not change.
     if (UseCompressedOops && AOTLib::narrow_oop_shift_initialized()) {
       int oop_shift = Universe::narrow_oop_shift();
-      if (oop_shift == 0) {
-        Universe::set_narrow_oop_shift(AOTLib::narrow_oop_shift());
-      } else {
-        FOR_ALL_AOT_LIBRARIES(lib) {
-          (*lib)->verify_flag(AOTLib::narrow_oop_shift(), oop_shift, "Universe::narrow_oop_shift");
-        }
+      FOR_ALL_AOT_LIBRARIES(lib) {
+        (*lib)->verify_flag((*lib)->config()->_narrowOopShift, oop_shift, "Universe::narrow_oop_shift");
       }
       if (UseCompressedClassPointers) { // It is set only if UseCompressedOops is set
         int klass_shift = Universe::narrow_klass_shift();
-        if (klass_shift == 0) {
-          Universe::set_narrow_klass_shift(AOTLib::narrow_klass_shift());
-        } else {
-          FOR_ALL_AOT_LIBRARIES(lib) {
-            (*lib)->verify_flag(AOTLib::narrow_klass_shift(), klass_shift, "Universe::narrow_klass_shift");
-          }
+        FOR_ALL_AOT_LIBRARIES(lib) {
+          (*lib)->verify_flag((*lib)->config()->_narrowKlassShift, klass_shift, "Universe::narrow_klass_shift");
         }
       }
     }
-    // Create heaps for all the libraries
+    // Create heaps for all valid libraries
     FOR_ALL_AOT_LIBRARIES(lib) {
       if ((*lib)->is_valid()) {
         AOTCodeHeap* heap = new AOTCodeHeap(*lib);
@@ -213,6 +206,9 @@ void AOTLoader::universe_init() {
           add_heap(heap);
           CodeCache::add_heap(heap);
         }
+      } else {
+        // Unload invalid libraries
+        os::dll_unload((*lib)->dl_handle());
       }
     }
   }
@@ -223,20 +219,29 @@ void AOTLoader::universe_init() {
   }
 }
 
+// Set shift value for compressed oops and classes based on first AOT library config.
+// AOTLoader::universe_init(), which is called later, will check the shift value again to make sure nobody change it.
+// This code is not executed during CDS dump because it runs in Interpreter mode and AOT is disabled in this mode.
+
+void AOTLoader::set_narrow_oop_shift() {
+  // This method is called from Universe::initialize_heap().
+  if (UseAOT && libraries_count() > 0 &&
+      UseCompressedOops && AOTLib::narrow_oop_shift_initialized()) {
+    if (Universe::narrow_oop_shift() == 0) {
+      // 0 is valid shift value for small heap but we can safely increase it
+      // at this point when nobody used it yet.
+      Universe::set_narrow_oop_shift(AOTLib::narrow_oop_shift());
+    }
+  }
+}
+
 void AOTLoader::set_narrow_klass_shift() {
-  // This method could be called from Metaspace::set_narrow_klass_base_and_shift().
-  // In case it is not called (during dump CDS, for example) the corresponding code in
-  // AOTLoader::universe_init(), which is called later, will set the shift value.
+  // This method is called from Metaspace::set_narrow_klass_base_and_shift().
   if (UseAOT && libraries_count() > 0 &&
       UseCompressedOops && AOTLib::narrow_oop_shift_initialized() &&
       UseCompressedClassPointers) {
-    int klass_shift = Universe::narrow_klass_shift();
-    if (klass_shift == 0) {
+    if (Universe::narrow_klass_shift() == 0) {
       Universe::set_narrow_klass_shift(AOTLib::narrow_klass_shift());
-    } else {
-      FOR_ALL_AOT_LIBRARIES(lib) {
-        (*lib)->verify_flag(AOTLib::narrow_klass_shift(), klass_shift, "Universe::narrow_klass_shift");
-      }
     }
   }
 }

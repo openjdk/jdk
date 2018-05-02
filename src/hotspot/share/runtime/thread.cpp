@@ -63,12 +63,11 @@
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/biasedLocking.hpp"
-#include "runtime/commandLineFlagConstraintList.hpp"
-#include "runtime/commandLineFlagWriteableList.hpp"
-#include "runtime/commandLineFlagRangeList.hpp"
+#include "runtime/flags/jvmFlagConstraintList.hpp"
+#include "runtime/flags/jvmFlagRangeList.hpp"
+#include "runtime/flags/jvmFlagWriteableList.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
-#include "runtime/globals.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -3359,6 +3358,11 @@ CompilerThread::CompilerThread(CompileQueue* queue,
 #endif
 }
 
+CompilerThread::~CompilerThread() {
+  // Delete objects which were allocated on heap.
+  delete _counters;
+}
+
 bool CompilerThread::can_call_java() const {
   return _compiler != NULL && _compiler->is_jvmci();
 }
@@ -3658,17 +3662,17 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (ergo_result != JNI_OK) return ergo_result;
 
   // Final check of all ranges after ergonomics which may change values.
-  if (!CommandLineFlagRangeList::check_ranges()) {
+  if (!JVMFlagRangeList::check_ranges()) {
     return JNI_EINVAL;
   }
 
   // Final check of all 'AfterErgo' constraints after ergonomics which may change values.
-  bool constraint_result = CommandLineFlagConstraintList::check_constraints(CommandLineFlagConstraint::AfterErgo);
+  bool constraint_result = JVMFlagConstraintList::check_constraints(JVMFlagConstraint::AfterErgo);
   if (!constraint_result) {
     return JNI_EINVAL;
   }
 
-  CommandLineFlagWriteableList::mark_startup();
+  JVMFlagWriteableList::mark_startup();
 
   if (PauseAtStartup) {
     os::pause();

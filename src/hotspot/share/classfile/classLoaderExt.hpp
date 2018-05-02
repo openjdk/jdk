@@ -95,7 +95,6 @@ private:
   static char* get_class_path_attr(const char* jar_path, char* manifest, jint manifest_size);
   static void setup_app_search_path(); // Only when -Xshare:dump
   static void process_module_table(ModuleEntryTable* met, TRAPS);
-  static void setup_module_search_path(TRAPS);
   static SharedPathsMiscInfoExt* shared_paths_misc_info() {
     return (SharedPathsMiscInfoExt*)_shared_paths_misc_info;
   }
@@ -112,15 +111,7 @@ public:
   CDS_ONLY(static void process_jar_manifest(ClassPathEntry* entry, bool check_for_duplicates);)
 
   // Called by JVMTI code to add boot classpath
-  static void append_boot_classpath(ClassPathEntry* new_entry) {
-#if INCLUDE_CDS
-    if (UseAppCDS) {
-      warning("UseAppCDS is disabled because bootstrap classpath has been appended");
-      UseAppCDS = false;
-    }
-#endif
-    ClassLoader::add_to_boot_append_entries(new_entry);
-  }
+  static void append_boot_classpath(ClassPathEntry* new_entry);
 
   static void setup_search_paths() NOT_CDS_RETURN;
   static void setup_module_paths(TRAPS) NOT_CDS_RETURN;

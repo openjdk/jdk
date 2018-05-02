@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -648,7 +648,7 @@ void Canonicalizer::do_NewTypeArray   (NewTypeArray*    x) {}
 void Canonicalizer::do_NewObjectArray (NewObjectArray*  x) {}
 void Canonicalizer::do_NewMultiArray  (NewMultiArray*   x) {}
 void Canonicalizer::do_CheckCast      (CheckCast*       x) {
-  if (x->klass()->is_loaded()) {
+  if (x->klass()->is_loaded() && !x->is_invokespecial_receiver_check()) {
     Value obj = x->obj();
     ciType* klass = obj->exact_type();
     if (klass == NULL) klass = obj->declared_type();

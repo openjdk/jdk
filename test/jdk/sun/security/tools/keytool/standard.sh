@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 # @test
 # @summary (almost) all keytool behaviors
 # @author Weijun Wang
+# @library /test/lib
+# @build jdk.test.lib.util.FileUtils
 # @run shell/timeout=600 standard.sh
 # @key intermittent
 
@@ -57,14 +59,22 @@ case "$OS" in
     exit 1;
     ;;
 esac
+case "$OS" in
+  Windows_* | CYGWIN* )
+    PS=";"
+    ;;
+  * )
+    PS=":"
+    ;;
+esac
 
 EXTRAOPTS="--add-exports java.base/sun.security.tools.keytool=ALL-UNNAMED \
  --add-exports java.base/sun.security.util=ALL-UNNAMED \
  --add-exports java.base/sun.security.x509=ALL-UNNAMED"
 
-${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} ${EXTRAOPTS} -d . -XDignore.symbol.file ${TESTSRC}${FS}KeyToolTest.java || exit 10
+${COMPILEJAVA}${FS}bin${FS}javac -classpath ${TESTCLASSPATH} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} ${EXTRAOPTS} -d . -XDignore.symbol.file ${TESTSRC}${FS}KeyToolTest.java || exit 10
 
-echo | ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} ${EXTRAOPTS} -Dfile KeyToolTest
+echo | ${TESTJAVA}${FS}bin${FS}java -classpath .${PS}${TESTCLASSPATH} ${TESTVMOPTS} ${EXTRAOPTS} -Dfile KeyToolTest
 status=$?
 
 exit $status

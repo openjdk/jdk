@@ -32,7 +32,7 @@ import jdk.vm.ci.hotspot.HotSpotMetaspaceConstant;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
-import org.graalvm.collections.EconomicSet;
+import jdk.internal.vm.compiler.collections.EconomicSet;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.hotspot.nodes.aot.InitializeKlassNode;
 import org.graalvm.compiler.hotspot.nodes.aot.ResolveConstantNode;

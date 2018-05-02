@@ -67,6 +67,10 @@ inline void G1ScanClosureBase::handle_non_cset_obj_common(InCSetState const stat
   }
 }
 
+inline void G1ScanClosureBase::trim_queue_partially() {
+  _par_scan_state->trim_queue_partially();
+}
+
 template <class T>
 inline void G1ScanEvacuatedObjClosure::do_oop_nv(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
@@ -225,6 +229,10 @@ void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
   _cm->mark_in_next_bitmap(_worker_id, to_obj, from_obj->size());
 }
 
+void G1ParCopyHelper::trim_queue_partially() {
+  _par_scan_state->trim_queue_partially();
+}
+
 template <G1Barrier barrier, G1Mark do_mark_object>
 template <class T>
 void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
@@ -269,6 +277,7 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
       mark_object(obj);
     }
   }
+  trim_queue_partially();
 }
 
 template <class T> void G1RebuildRemSetClosure::do_oop_nv(T* p) {

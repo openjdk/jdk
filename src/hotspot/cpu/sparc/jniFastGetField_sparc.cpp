@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
@@ -68,8 +70,11 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   __ andcc (G4, 1, G0);
   __ br (Assembler::notZero, false, Assembler::pn, label1);
   __ delayed()->srl (O2, 2, O4);
-  __ andn (O1, JNIHandles::weak_tag_mask, O1);
-  __ ld_ptr (O1, 0, O5);
+  __ mov(O1, O5);
+
+  // Both O5 and G3 are clobbered by try_resolve_jobject_in_native.
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->try_resolve_jobject_in_native(masm, /* jni_env */ O0, /* obj */ O5, /* tmp */ G3, label1);
 
   assert(count < LIST_CAPACITY, "LIST_CAPACITY too small");
   speculative_load_pclist[count] = __ pc();

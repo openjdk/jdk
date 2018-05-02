@@ -24,10 +24,10 @@ package org.graalvm.compiler.virtual.phases.ea;
 
 import java.util.Iterator;
 
-import org.graalvm.collections.EconomicMap;
-import org.graalvm.collections.Equivalence;
+import jdk.internal.vm.compiler.collections.EconomicMap;
+import jdk.internal.vm.compiler.collections.Equivalence;
 import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.word.LocationIdentity;
+import jdk.internal.vm.compiler.word.LocationIdentity;
 
 /**
  * This class maintains a set of known values, identified by base object, locations and offset.

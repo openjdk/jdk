@@ -3378,6 +3378,7 @@ void SpaceManager::track_metaspace_memory_usage() {
 }
 
 MetaWord* SpaceManager::grow_and_allocate(size_t word_size) {
+  assert_lock_strong(_lock);
   assert(vs_list()->current_virtual_space() != NULL,
          "Should have been set");
   assert(current_chunk() == NULL ||
@@ -3406,7 +3407,16 @@ MetaWord* SpaceManager::grow_and_allocate(size_t word_size) {
   // and do an allocation from it.
   if (next != NULL) {
     // Add to this manager's list of chunks in use.
-    add_chunk(next, false);
+    // If the new chunk is humongous, it was created to serve a single large allocation. In that
+    // case it usually makes no sense to make it the current chunk, since the next allocation would
+    // need to allocate a new chunk anyway, while we would now prematurely retire a perfectly
+    // good chunk which could be used for more normal allocations.
+    bool make_current = true;
+    if (next->get_chunk_type() == HumongousIndex &&
+        current_chunk() != NULL) {
+      make_current = false;
+    }
+    add_chunk(next, make_current);
     mem = next->allocate(word_size);
   }
 
@@ -3553,6 +3563,7 @@ void SpaceManager::deallocate(MetaWord* p, size_t word_size) {
 // Adds a chunk to the list of chunks in use.
 void SpaceManager::add_chunk(Metachunk* new_chunk, bool make_current) {
 
+  assert_lock_strong(_lock);
   assert(new_chunk != NULL, "Should not be NULL");
   assert(new_chunk->next() == NULL, "Should not be on a list");
 
@@ -3562,28 +3573,16 @@ void SpaceManager::add_chunk(Metachunk* new_chunk, bool make_current) {
   // chunk for that list.
   ChunkIndex index = chunk_manager()->list_index(new_chunk->word_size());
 
-  if (index != HumongousIndex) {
+  if (make_current) {
+    // If we are to make the chunk current, retire the old current chunk and replace
+    // it with the new chunk.
     retire_current_chunk();
     set_current_chunk(new_chunk);
-    new_chunk->set_next(chunks_in_use(index));
-    set_chunks_in_use(index, new_chunk);
-  } else {
-    // For null class loader data and DumpSharedSpaces, the first chunk isn't
-    // small, so small will be null.  Link this first chunk as the current
-    // chunk.
-    if (make_current) {
-      // Set as the current chunk but otherwise treat as a humongous chunk.
-      set_current_chunk(new_chunk);
-    }
-    // Link at head.  The _current_chunk only points to a humongous chunk for
-    // the null class loader metaspace (class and data virtual space managers)
-    // any humongous chunks so will not point to the tail
-    // of the humongous chunks list.
-    new_chunk->set_next(chunks_in_use(HumongousIndex));
-    set_chunks_in_use(HumongousIndex, new_chunk);
-
-    assert(new_chunk->word_size() > medium_chunk_size(), "List inconsistency");
   }
+
+  // Add the new chunk at the head of its respective chunk list.
+  new_chunk->set_next(chunks_in_use(index));
+  set_chunks_in_use(index, new_chunk);
 
   // Add to the running sum of capacity
   inc_size_metrics(new_chunk->word_size());
@@ -4800,7 +4799,7 @@ ClassLoaderMetaspace::~ClassLoaderMetaspace() {
 void ClassLoaderMetaspace::initialize_first_chunk(Metaspace::MetaspaceType type, Metaspace::MetadataType mdtype) {
   Metachunk* chunk = get_initialization_chunk(type, mdtype);
   if (chunk != NULL) {
-    // Add to this manager's list of chunks in use and current_chunk().
+    // Add to this manager's list of chunks in use and make it the current_chunk().
     get_space_manager(mdtype)->add_chunk(chunk, true);
   }
 }

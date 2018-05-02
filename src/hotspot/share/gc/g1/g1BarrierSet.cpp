@@ -37,12 +37,18 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/macros.hpp"
+#ifdef COMPILER1
+#include "gc/g1/c1/g1BarrierSetC1.hpp"
+#endif
+
+class G1BarrierSetC1;
 
 SATBMarkQueueSet G1BarrierSet::_satb_mark_queue_set;
 DirtyCardQueueSet G1BarrierSet::_dirty_card_queue_set;
 
 G1BarrierSet::G1BarrierSet(G1CardTable* card_table) :
   CardTableBarrierSet(make_barrier_set_assembler<G1BarrierSetAssembler>(),
+                      make_barrier_set_c1<G1BarrierSetC1>(),
                       card_table,
                       BarrierSet::FakeRtti(BarrierSet::G1BarrierSet)) {}
 

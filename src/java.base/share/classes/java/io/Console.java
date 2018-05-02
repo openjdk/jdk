@@ -311,9 +311,9 @@ public final class Console implements Flushable
         char[] passwd = null;
         synchronized (writeLock) {
             synchronized(readLock) {
-                boolean echoWasOn;
+                installShutdownHook();
                 try {
-                    echoWasOn = echo(false);
+                    restoreEcho = echo(false);
                 } catch (IOException x) {
                     throw new IOError(x);
                 }
@@ -326,7 +326,8 @@ public final class Console implements Flushable
                     ioe = new IOError(x);
                 } finally {
                     try {
-                        echo(echoWasOn);
+                        if (restoreEcho)
+                            restoreEcho = echo(true);
                     } catch (IOException x) {
                         if (ioe == null)
                             ioe = new IOError(x);
@@ -340,6 +341,31 @@ public final class Console implements Flushable
             }
         }
         return passwd;
+    }
+
+    private void installShutdownHook() {
+        if (shutdownHookInstalled)
+            return;
+        try {
+            // Add a shutdown hook to restore console's echo state should
+            // it be necessary.
+            SharedSecrets.getJavaLangAccess()
+                .registerShutdownHook(0 /* shutdown hook invocation order */,
+                    false /* only register if shutdown is not in progress */,
+                    new Runnable() {
+                        public void run() {
+                            try {
+                                if (restoreEcho) {
+                                    echo(true);
+                                }
+                            } catch (IOException x) { }
+                        }
+                    });
+        } catch (IllegalStateException e) {
+            // shutdown is already in progress and readPassword is first used
+            // by a shutdown hook
+        }
+        shutdownHookInstalled = true;
     }
 
    /**
@@ -372,6 +398,8 @@ public final class Console implements Flushable
     private Formatter formatter;
     private Charset cs;
     private char[] rcb;
+    private boolean restoreEcho;
+    private boolean shutdownHookInstalled;
     private static native String encoding();
     /*
      * Sets the console echo status to {@code on} and returns the previous
@@ -381,12 +409,6 @@ public final class Console implements Flushable
      * @return true if the previous console echo status is on
      */
     private static native boolean echo(boolean on) throws IOException;
-    /*
-     * Returns the current console echo on/off status.
-     * @return true if the cosole echo is on
-     */
-    private static native boolean echo0() throws IOException;
-    private static boolean echoOn;
 
     private char[] readline(boolean zeroOut) throws IOException {
         int len = reader.read(rcb, 0, rcb.length);
@@ -531,25 +553,6 @@ public final class Console implements Flushable
 
     // Set up JavaIOAccess in SharedSecrets
     static {
-        try {
-            // Add a shutdown hook to restore console's echo state should
-            // it be necessary.
-            SharedSecrets.getJavaLangAccess()
-                .registerShutdownHook(0 /* shutdown hook invocation order */,
-                    false /* only register if shutdown is not in progress */,
-                    new Runnable() {
-                        public void run() {
-                            try {
-                                if (cons != null)
-                                    echo(echoOn);
-                            } catch (IOException x) { }
-                        }
-                    });
-        } catch (IllegalStateException e) {
-            // shutdown is already in progress and console is first used
-            // by a shutdown hook
-        }
-
         SharedSecrets.setJavaIOAccess(new JavaIOAccess() {
             public Console console() {
                 if (istty()) {
@@ -591,10 +594,5 @@ public final class Console implements Flushable
                      readLock,
                      cs));
         rcb = new char[1024];
-        try {
-            echoOn = echo0();
-        } catch (IOException x) {
-            echoOn = true;
-        }
     }
 }

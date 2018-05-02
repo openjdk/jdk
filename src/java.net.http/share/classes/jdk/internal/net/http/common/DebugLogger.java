@@ -52,6 +52,12 @@ final class DebugLogger implements Logger {
     final static System.Logger HTTP = System.getLogger(HTTP_NAME);
     final static System.Logger WS = System.getLogger(WS_NAME);
     final static System.Logger HPACK = System.getLogger(HPACK_NAME);
+    private static final DebugLogger NO_HTTP_LOGGER =
+            new DebugLogger(HTTP, "HTTP"::toString, Level.OFF, Level.OFF);
+    private static final DebugLogger NO_WS_LOGGER =
+            new DebugLogger(HTTP, "WS"::toString, Level.OFF, Level.OFF);
+    private static final DebugLogger NO_HPACK_LOGGER =
+            new DebugLogger(HTTP, "HPACK"::toString, Level.OFF, Level.OFF);
     final static long START_NANOS = System.nanoTime();
 
     private final Supplier<String> dbgTag;
@@ -112,16 +118,21 @@ final class DebugLogger implements Logger {
     }
 
     private boolean isEnabled(Level level) {
-        if (level == Level.OFF) return false;
-        int severity = level.getSeverity();
-        return severity >= errLevel.getSeverity()
-                || severity >= outLevel.getSeverity()
-                || logger.isLoggable(level);
+        return levelEnabledFor(level, outLevel, errLevel, logger);
     }
 
     @Override
     public final boolean on() {
         return debugOn;
+    }
+
+    static boolean levelEnabledFor(Level level, Level outLevel, Level errLevel,
+                                   System.Logger logger) {
+        if (level == Level.OFF) return false;
+        int severity = level.getSeverity();
+        return severity >= errLevel.getSeverity()
+                || severity >= outLevel.getSeverity()
+                || logger.isLoggable(level);
     }
 
     @Override
@@ -251,18 +262,33 @@ final class DebugLogger implements Logger {
     public static DebugLogger createHttpLogger(Supplier<String> dbgTag,
                                                Level outLevel,
                                                Level errLevel) {
-        return new DebugLogger(HTTP, dbgTag, outLevel, errLevel);
+        if (levelEnabledFor(Level.DEBUG, outLevel, errLevel, HTTP)) {
+            return new DebugLogger(HTTP, dbgTag, outLevel, errLevel);
+        } else {
+            // return a shared instance if debug logging is not enabled.
+            return NO_HTTP_LOGGER;
+        }
     }
 
     public static DebugLogger createWebSocketLogger(Supplier<String> dbgTag,
                                                     Level outLevel,
                                                     Level errLevel) {
-        return new DebugLogger(WS, dbgTag, outLevel, errLevel);
+        if (levelEnabledFor(Level.DEBUG, outLevel, errLevel, WS)) {
+            return new DebugLogger(WS, dbgTag, outLevel, errLevel);
+        } else {
+            // return a shared instance if logging is not enabled.
+            return NO_WS_LOGGER;
+        }
     }
 
     public static DebugLogger createHpackLogger(Supplier<String> dbgTag,
                                                 Level outLevel,
                                                 Level errLevel) {
-        return new DebugLogger(HPACK, dbgTag, outLevel, errLevel);
+        if (levelEnabledFor(Level.DEBUG, outLevel, errLevel, HPACK)) {
+            return new DebugLogger(HPACK, dbgTag, outLevel, errLevel);
+        } else {
+            // return a shared instance if logging is not enabled.
+            return NO_HPACK_LOGGER;
+        }
     }
 }

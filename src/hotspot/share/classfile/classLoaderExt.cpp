@@ -54,8 +54,17 @@ jshort ClassLoaderExt::_app_module_paths_start_index = ClassLoaderExt::max_class
 bool ClassLoaderExt::_has_app_classes = false;
 bool ClassLoaderExt::_has_platform_classes = false;
 
+void ClassLoaderExt::append_boot_classpath(ClassPathEntry* new_entry) {
+#if INCLUDE_CDS
+  warning("Sharing is only supported for boot loader classes because bootstrap classpath has been appended");
+  FileMapHeaderExt* header = (FileMapHeaderExt*)FileMapInfo::current_info()->header();
+  header->set_has_platform_or_app_classes(false);
+#endif
+  ClassLoader::add_to_boot_append_entries(new_entry);
+}
+
 void ClassLoaderExt::setup_app_search_path() {
-  assert(DumpSharedSpaces, "this function is only used with -Xshare:dump and -XX:+UseAppCDS");
+  assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
   _app_class_paths_start_index = ClassLoader::num_boot_classpath_entries();
   char* app_class_path = os::strdup(Arguments::get_appclasspath());
 
@@ -85,8 +94,8 @@ void ClassLoaderExt::process_module_table(ModuleEntryTable* met, TRAPS) {
     }
   }
 }
-void ClassLoaderExt::setup_module_search_path(TRAPS) {
-  assert(DumpSharedSpaces, "this function is only used with -Xshare:dump and -XX:+UseAppCDS");
+void ClassLoaderExt::setup_module_paths(TRAPS) {
+  assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
   _app_module_paths_start_index = ClassLoader::num_boot_classpath_entries() +
                               ClassLoader::num_app_classpath_entries();
   Handle system_class_loader (THREAD, SystemDictionary::java_system_loader());
@@ -215,16 +224,8 @@ void ClassLoaderExt::process_jar_manifest(ClassPathEntry* entry,
 }
 
 void ClassLoaderExt::setup_search_paths() {
-  if (UseAppCDS) {
-    shared_paths_misc_info()->record_app_offset();
-    ClassLoaderExt::setup_app_search_path();
-  }
-}
-
-void ClassLoaderExt::setup_module_paths(TRAPS) {
-  if (UseAppCDS) {
-    ClassLoaderExt::setup_module_search_path(THREAD);
-  }
+  shared_paths_misc_info()->record_app_offset();
+  ClassLoaderExt::setup_app_search_path();
 }
 
 Thread* ClassLoaderExt::Context::_dump_thread = NULL;
@@ -251,10 +252,8 @@ void ClassLoaderExt::record_result(ClassLoaderExt::Context *context,
 }
 
 void ClassLoaderExt::finalize_shared_paths_misc_info() {
-  if (UseAppCDS) {
-    if (!_has_app_classes) {
-      shared_paths_misc_info()->pop_app();
-    }
+  if (!_has_app_classes) {
+    shared_paths_misc_info()->pop_app();
   }
 }
 
@@ -264,7 +263,7 @@ void ClassLoaderExt::finalize_shared_paths_misc_info() {
 InstanceKlass* ClassLoaderExt::load_class(Symbol* name, const char* path, TRAPS) {
 
   assert(name != NULL, "invariant");
-  assert(DumpSharedSpaces && UseAppCDS, "this function is only used with -Xshare:dump and -XX:+UseAppCDS");
+  assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
   ResourceMark rm(THREAD);
   const char* class_name = name->as_C_string();
 
@@ -322,7 +321,7 @@ static GrowableArray<CachedClassPathEntry>* cached_path_entries = NULL;
 
 ClassPathEntry* ClassLoaderExt::find_classpath_entry_from_cache(const char* path, TRAPS) {
   // This is called from dump time so it's single threaded and there's no need for a lock.
-  assert(DumpSharedSpaces && UseAppCDS, "this function is only used with -Xshare:dump and -XX:+UseAppCDS");
+  assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
   if (cached_path_entries == NULL) {
     cached_path_entries = new (ResourceObj::C_HEAP, mtClass) GrowableArray<CachedClassPathEntry>(20, /*c heap*/ true);
   }

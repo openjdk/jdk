@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.CalendarDataProvider;
+import java.util.spi.TimeZoneNameProvider;
 import sun.util.locale.provider.JRELocaleProviderAdapter;
 import sun.util.locale.provider.LocaleDataMetaInfo;
 import sun.util.locale.provider.LocaleProviderAdapter;
@@ -63,8 +64,14 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
 
     // parent locales map
     private static volatile Map<Locale, Locale> parentLocalesMap;
+    // language aliases map
+    private static volatile Map<String,String> langAliasesMap;
+    // cache to hold  locale to locale mapping for language aliases.
+    private static final Map<Locale, Locale> langAliasesCache;
     static {
         parentLocalesMap = new ConcurrentHashMap<>();
+        langAliasesMap = new ConcurrentHashMap<>();
+        langAliasesCache = new ConcurrentHashMap<>();
         // Assuming these locales do NOT have irregular parent locales.
         parentLocalesMap.put(Locale.ROOT, Locale.ROOT);
         parentLocalesMap.put(Locale.ENGLISH, Locale.ENGLISH);
@@ -131,6 +138,24 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     }
 
     @Override
+    public TimeZoneNameProvider getTimeZoneNameProvider() {
+        if (timeZoneNameProvider == null) {
+            TimeZoneNameProvider provider = AccessController.doPrivileged(
+                (PrivilegedAction<TimeZoneNameProvider>) () ->
+                    new CLDRTimeZoneNameProviderImpl(
+                        getAdapterType(),
+                        getLanguageTagSet("TimeZoneNames")));
+
+            synchronized (this) {
+                if (timeZoneNameProvider == null) {
+                    timeZoneNameProvider = provider;
+                }
+            }
+        }
+        return timeZoneNameProvider;
+    }
+
+    @Override
     public Locale[] getAvailableLocales() {
         Set<String> all = createLanguageTagSet("AvailableLocales");
         Locale[] locs = new Locale[all.size()];
@@ -139,6 +164,22 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
             locs[index++] = Locale.forLanguageTag(tag);
         }
         return locs;
+    }
+
+    private Locale applyAliases(Locale loc) {
+        if (langAliasesMap.isEmpty()) {
+            langAliasesMap = baseMetaInfo.getLanguageAliasMap();
+        }
+        Locale locale = langAliasesCache.get(loc);
+        if (locale == null) {
+            String locTag = loc.toLanguageTag();
+            Locale aliasLocale = langAliasesMap.containsKey(locTag)
+                    ? Locale.forLanguageTag(langAliasesMap.get(locTag)) : loc;
+            langAliasesCache.putIfAbsent(loc, aliasLocale);
+            return aliasLocale;
+        } else {
+            return locale;
+        }
     }
 
     @Override
@@ -175,7 +216,7 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     // Implementation of ResourceBundleBasedAdapter
     @Override
     public List<Locale> getCandidateLocales(String baseName, Locale locale) {
-        List<Locale> candidates = super.getCandidateLocales(baseName, locale);
+        List<Locale> candidates = super.getCandidateLocales(baseName, applyAliases(locale));
         return applyParentLocales(baseName, candidates);
     }
 
@@ -246,9 +287,9 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     }
 
     /**
-     * Returns the time zone ID from an LDML's short ID
+     * Returns the canonical ID for the given ID
      */
-    public Optional<String> getTimeZoneID(String shortID) {
-        return Optional.ofNullable(baseMetaInfo.tzShortIDs().get(shortID));
+    public Optional<String> canonicalTZID(String id) {
+        return Optional.ofNullable(baseMetaInfo.tzCanonicalIDs().get(id));
     }
 }

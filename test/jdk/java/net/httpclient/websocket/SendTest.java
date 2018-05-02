@@ -35,7 +35,8 @@ import org.testng.annotations.Test;
 import java.io.IOException;
 import java.net.http.WebSocket;
 
-import static java.net.http.HttpClient.newHttpClient;
+import static java.net.http.HttpClient.Builder.NO_PROXY;
+import static java.net.http.HttpClient.newBuilder;
 import static java.net.http.WebSocket.NORMAL_CLOSURE;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertThrows;
@@ -58,7 +59,7 @@ public class SendTest {
     public void sendMethodsThrowNPE() throws IOException {
         server = new DummyWebSocketServer();
         server.open();
-        webSocket = newHttpClient().newWebSocketBuilder()
+        webSocket = newBuilder().proxy(NO_PROXY).build().newWebSocketBuilder()
                 .buildAsync(server.getURI(), new WebSocket.Listener() { })
                 .join();
 
@@ -89,7 +90,7 @@ public class SendTest {
     public void sendCloseCompleted() throws IOException {
         server = new DummyWebSocketServer();
         server.open();
-        webSocket = newHttpClient().newWebSocketBuilder()
+        webSocket = newBuilder().proxy(NO_PROXY).build().newWebSocketBuilder()
                 .buildAsync(server.getURI(), new WebSocket.Listener() { })
                 .join();
         webSocket.sendClose(NORMAL_CLOSURE, "").join();

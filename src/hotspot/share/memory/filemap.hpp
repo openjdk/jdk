@@ -75,6 +75,7 @@ public:
 class FileMapInfo : public CHeapObj<mtInternal> {
 private:
   friend class ManifestStream;
+  friend class VMStructs;
   enum {
     _invalid_version = -1,
     _current_version = 3
@@ -114,7 +115,7 @@ public:
     int    _obj_alignment;            // value of ObjectAlignmentInBytes
     address _narrow_oop_base;         // compressed oop encoding base
     int    _narrow_oop_shift;         // compressed oop encoding shift
-    bool   _compact_strings;          // value of CompactStrings
+    bool    _compact_strings;         // value of CompactStrings
     uintx  _max_heap_size;            // java max heap size during dumping
     Universe::NARROW_OOP_MODE _narrow_oop_mode; // compressed oop encoding mode
     int     _narrow_klass_shift;      // save narrow klass base and shift
@@ -271,6 +272,7 @@ public:
   static void stop_sharing_and_unmap(const char* msg);
 
   static void allocate_shared_path_table();
+  static void check_nonempty_dir_in_shared_path_table();
   bool validate_shared_path_table();
 
   static SharedClassPathEntry* shared_path(int index) {

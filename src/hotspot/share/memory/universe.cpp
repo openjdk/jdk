@@ -63,7 +63,8 @@
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/commandLineFlagConstraintList.hpp"
+#include "runtime/flags/flagSetting.hpp"
+#include "runtime/flags/jvmFlagConstraintList.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -701,7 +702,7 @@ jint universe_init() {
   AOTLoader::universe_init();
 
   // Checks 'AfterMemoryInit' constraints.
-  if (!CommandLineFlagConstraintList::check_constraints(CommandLineFlagConstraint::AfterMemoryInit)) {
+  if (!JVMFlagConstraintList::check_constraints(JVMFlagConstraint::AfterMemoryInit)) {
     return JNI_EINVAL;
   }
 
@@ -786,6 +787,7 @@ jint Universe::initialize_heap() {
       // Did reserve heap below 32Gb. Can use base == 0;
       Universe::set_narrow_oop_base(0);
     }
+    AOTLoader::set_narrow_oop_shift();
 
     Universe::set_narrow_ptrs_base(Universe::narrow_oop_base());
 

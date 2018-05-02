@@ -26,6 +26,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/metaspace.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
@@ -104,7 +105,12 @@ protected:
     // Let every ~10th space be an anonymous one to test different allocation patterns.
     const Metaspace::MetaspaceType msType = (os::random() % 100 < 10) ?
       Metaspace::AnonymousMetaspaceType : Metaspace::StandardMetaspaceType;
-    _spaces[i].space = new ClassLoaderMetaspace(_spaces[i].lock, msType);
+    {
+      // Pull lock during space creation, since this is what happens in the VM too
+      // (see ClassLoaderData::metaspace_non_null(), which we mimick here).
+      MutexLockerEx ml(_spaces[i].lock,  Mutex::_no_safepoint_check_flag);
+      _spaces[i].space = new ClassLoaderMetaspace(_spaces[i].lock, msType);
+    }
     _spaces[i].allocated = 0;
     ASSERT_TRUE(_spaces[i].space != NULL);
   }
@@ -171,6 +177,7 @@ protected:
             } else {
               size = os::random() % 64;
             }
+            // Note: In contrast to space creation, no need to lock here. ClassLoaderMetaspace::allocate() will lock itself.
             MetaWord* const p = _spaces[index].space->allocate(size, mdType);
             if (p == NULL) {
               // We very probably did hit the metaspace "until-gc" limit.
@@ -196,6 +203,7 @@ protected:
           force_switch = true;
         } else {
           assert(_spaces[index].space != NULL && _spaces[index].allocated > 0, "Sanity");
+          // Note: do not lock here. In the "wild" (the VM), we do not so either (see ~ClassLoaderData()).
           delete _spaces[index].space;
           _spaces[index].space = NULL;
           _spaces[index].allocated = 0;

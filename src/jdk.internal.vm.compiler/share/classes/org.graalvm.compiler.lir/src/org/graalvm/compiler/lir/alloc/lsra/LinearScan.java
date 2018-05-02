@@ -35,7 +35,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.EnumSet;
 
-import org.graalvm.collections.Pair;
+import jdk.internal.vm.compiler.collections.Pair;
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;

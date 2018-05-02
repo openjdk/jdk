@@ -40,8 +40,8 @@ import static java.lang.System.err;
 /*
  * @test
  * @bug 8187503
- * @summary An example on how to read a response body with InputStream...
- * @run main/othervm -Dtest.debug=true BodyProcessorInputStreamTest
+ * @summary An example on how to read a response body with InputStream.
+ * @run main/manual -Dtest.debug=true BodyProcessorInputStreamTest
  * @author daniel fuchs
  */
 public class BodyProcessorInputStreamTest {

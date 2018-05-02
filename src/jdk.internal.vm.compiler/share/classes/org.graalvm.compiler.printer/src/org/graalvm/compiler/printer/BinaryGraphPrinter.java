@@ -26,6 +26,9 @@ import static org.graalvm.compiler.graph.Edges.Type.Inputs;
 import static org.graalvm.compiler.graph.Edges.Type.Successors;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -72,17 +75,26 @@ import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Signature;
+import org.graalvm.graphio.GraphLocations;
 
 public class BinaryGraphPrinter implements
                 GraphStructure<BinaryGraphPrinter.GraphInfo, Node, NodeClass<?>, Edges>,
                 GraphBlocks<BinaryGraphPrinter.GraphInfo, Block, Node>,
                 GraphElements<ResolvedJavaMethod, ResolvedJavaField, Signature, NodeSourcePosition>,
+                GraphLocations<ResolvedJavaMethod, NodeSourcePosition, SourceLanguagePosition>,
                 GraphTypes, GraphPrinter {
     private final SnippetReflectionProvider snippetReflection;
     private final GraphOutput<BinaryGraphPrinter.GraphInfo, ResolvedJavaMethod> output;
 
     public BinaryGraphPrinter(DebugContext ctx, SnippetReflectionProvider snippetReflection) throws IOException {
-        this.output = ctx.buildOutput(GraphOutput.newBuilder(this).protocolVersion(5, 0).blocks(this).elements(this).types(this));
+        // @formatter:off
+        this.output = ctx.buildOutput(GraphOutput.newBuilder(this).
+                        protocolVersion(6, 0).
+                        blocks(this).
+                        elementsAndLocations(this, this).
+                        types(this)
+        );
+        // @formatter:on
         this.snippetReflection = snippetReflection;
     }
 
@@ -265,17 +277,6 @@ public class BinaryGraphPrinter implements
                 updateStringPropertiesForConstant((Map) props, cn);
             }
             props.put("category", "floating");
-        }
-        if (node.getNodeSourcePosition() != null) {
-            NodeSourcePosition pos = node.getNodeSourcePosition();
-            while (pos != null) {
-                SourceLanguagePosition cur = pos.getSourceLanauage();
-                if (cur != null) {
-                    cur.addSourceInformation(props);
-                    break;
-                }
-                pos = pos.getCaller();
-            }
         }
         if (getSnippetReflectionProvider() != null) {
             for (Map.Entry<String, Object> prop : props.entrySet()) {
@@ -500,6 +501,85 @@ public class BinaryGraphPrinter implements
     @Override
     public StackTraceElement methodStackTraceElement(ResolvedJavaMethod method, int bci, NodeSourcePosition pos) {
         return method.asStackTraceElement(bci);
+    }
+
+    @Override
+    public Iterable<SourceLanguagePosition> methodLocation(ResolvedJavaMethod method, int bci, NodeSourcePosition pos) {
+        StackTraceElement e = methodStackTraceElement(method, bci, pos);
+        class JavaSourcePosition implements SourceLanguagePosition {
+
+            @Override
+            public String toShortString() {
+                return e.toString();
+            }
+
+            @Override
+            public int getOffsetEnd() {
+                return -1;
+            }
+
+            @Override
+            public int getOffsetStart() {
+                return -1;
+            }
+
+            @Override
+            public int getLineNumber() {
+                return e.getLineNumber();
+            }
+
+            @Override
+            public URI getURI() {
+                String path = e.getFileName();
+                try {
+                    return path == null ? null : new URI(null, null, path, null);
+                } catch (URISyntaxException ex) {
+                    throw new IllegalArgumentException(ex);
+                }
+            }
+
+            @Override
+            public String getLanguage() {
+                return "Java";
+            }
+        }
+
+        List<SourceLanguagePosition> arr = new ArrayList<>();
+        arr.add(new JavaSourcePosition());
+        NodeSourcePosition at = pos;
+        while (at != null) {
+            SourceLanguagePosition cur = at.getSourceLanguage();
+            if (cur != null) {
+                arr.add(cur);
+            }
+            at = at.getCaller();
+        }
+        return arr;
+    }
+
+    @Override
+    public String locationLanguage(SourceLanguagePosition location) {
+        return location.getLanguage();
+    }
+
+    @Override
+    public URI locationURI(SourceLanguagePosition location) {
+        return location.getURI();
+    }
+
+    @Override
+    public int locationLineNumber(SourceLanguagePosition location) {
+        return location.getLineNumber();
+    }
+
+    @Override
+    public int locationOffsetStart(SourceLanguagePosition location) {
+        return location.getOffsetStart();
+    }
+
+    @Override
+    public int locationOffsetEnd(SourceLanguagePosition location) {
+        return location.getOffsetEnd();
     }
 
     static final class GraphInfo {

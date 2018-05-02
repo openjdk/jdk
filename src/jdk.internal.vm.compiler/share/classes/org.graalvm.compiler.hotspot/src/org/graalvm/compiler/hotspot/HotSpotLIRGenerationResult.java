@@ -22,8 +22,8 @@
  */
 package org.graalvm.compiler.hotspot;
 
-import org.graalvm.collections.EconomicMap;
-import org.graalvm.collections.Equivalence;
+import jdk.internal.vm.compiler.collections.EconomicMap;
+import jdk.internal.vm.compiler.collections.Equivalence;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.hotspot.stubs.Stub;
 import org.graalvm.compiler.lir.LIR;

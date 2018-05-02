@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ public class ColumnFormat extends OptionFormat {
     private String format;
     private String header;
     private Expression expression;
+    private boolean required = false;
     private Object previousValue;
 
     public ColumnFormat(int number) {
@@ -71,6 +72,9 @@ public class ColumnFormat extends OptionFormat {
             // the raw data.
             format="0";
         }
+
+        // Adjust required flag
+        expression.setRequired(required);
     }
 
     public void setWidth(int width) {
@@ -121,6 +125,14 @@ public class ColumnFormat extends OptionFormat {
         this.expression = e;
     }
 
+    public void setRequired(boolean r) {
+        this.required = r;
+    }
+
+    public boolean isRequired() {
+        return this.required;
+    }
+
     public void setPreviousValue(Object o) {
         this.previousValue = o;
     }
@@ -141,7 +153,8 @@ public class ColumnFormat extends OptionFormat {
         System.out.println(indent + indentAmount + "name=" + name
                 + ";data=" + expression.toString() + ";header=" + header
                 + ";format=" + format + ";width=" + width
-                + ";scale=" + scale.toString() + ";align=" + align.toString());
+                + ";scale=" + scale.toString() + ";align=" + align.toString()
+                + ";required=" + required);
 
         for (Iterator<OptionFormat> i = children.iterator();  i.hasNext(); /* empty */) {
             OptionFormat of = i.next();

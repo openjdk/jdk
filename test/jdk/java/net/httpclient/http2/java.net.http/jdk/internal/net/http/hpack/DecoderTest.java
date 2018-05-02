@@ -623,8 +623,10 @@ public final class DecoderTest {
         testAllSplits(() -> new Decoder(256), hexdump, expectedHeaderTable, expectedHeaderList);
     }
 
-    private static void testAllSplits(Supplier<Decoder> supplier, String hexdump,
-                                      String expectedHeaderTable, String expectedHeaderList) {
+    private static void testAllSplits(Supplier<Decoder> supplier,
+                                      String hexdump,
+                                      String expectedHeaderTable,
+                                      String expectedHeaderList) {
         ByteBuffer source = SpecHelper.toBytes(hexdump);
 
         BuffersTestingKit.forEachSplit(source, iterable -> {
@@ -648,6 +650,46 @@ public final class DecoderTest {
                     throw new UncheckedIOException(e);
                 }
             } while (i.hasNext());
+            assertEquals(d.getTable().getStateString(), expectedHeaderTable);
+            assertEquals(actual.stream().collect(Collectors.joining("\n")), expectedHeaderList);
+        });
+
+        // Now introduce last ByteBuffer which is empty and EOF (mimics idiom
+        // I've found in HttpClient code)
+        BuffersTestingKit.forEachSplit(source, iterable -> {
+            List<String> actual = new LinkedList<>();
+            Iterator<? extends ByteBuffer> i = iterable.iterator();
+            if (!i.hasNext()) {
+                return;
+            }
+            Decoder d = supplier.get();
+            do {
+                ByteBuffer n = i.next();
+                try {
+                    d.decode(n, false, (name, value) -> {
+                        if (value == null) {
+                            actual.add(name.toString());
+                        } else {
+                            actual.add(name + ": " + value);
+                        }
+                    });
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            } while (i.hasNext());
+
+            try {
+                d.decode(ByteBuffer.allocate(0), false, (name, value) -> {
+                    if (value == null) {
+                        actual.add(name.toString());
+                    } else {
+                        actual.add(name + ": " + value);
+                    }
+                });
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+
             assertEquals(d.getTable().getStateString(), expectedHeaderTable);
             assertEquals(actual.stream().collect(Collectors.joining("\n")), expectedHeaderList);
         });

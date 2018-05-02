@@ -212,29 +212,51 @@ static map_info* core_lookup(struct ps_prochandle *ph, uintptr_t addr) {
 // mapped.  This structure gets written to a file.  It is not a class,
 // so that the compilers don't add any compiler-private data to it.
 
-#define NUM_SHARED_MAPS 4
+#define NUM_SHARED_MAPS 9
 
 // Refer to FileMapInfo::_current_version in filemap.hpp
-#define CURRENT_ARCHIVE_VERSION 1
+#define CURRENT_ARCHIVE_VERSION 3
+
+typedef unsigned char* address;
+typedef uintptr_t      uintx;
+typedef intptr_t       intx;
 
 struct FileMapHeader {
-  int   _magic;              // identify file type.
-  int   _version;            // (from enum, above.)
-  size_t _alignment;         // how shared archive should be aligned
+  int     _magic;                   // identify file type.
+  int     _crc;                     // header crc checksum.
+  int     _version;                 // (from enum, above.)
+  size_t  _alignment;               // how shared archive should be aligned
+  int     _obj_alignment;           // value of ObjectAlignmentInBytes
+  address _narrow_oop_base;         // compressed oop encoding base
+  int     _narrow_oop_shift;        // compressed oop encoding shift
+  bool    _compact_strings;         // value of CompactStrings
+  uintx   _max_heap_size;           // java max heap size during dumping
+  int     _narrow_oop_mode;         // compressed oop encoding mode
+  int     _narrow_klass_shift;      // save narrow klass base and shift
+  address _narrow_klass_base;
+  char*   _misc_data_patching_start;
+  char*   _read_only_tables_start;
+  address _cds_i2i_entry_code_buffers;
+  size_t  _cds_i2i_entry_code_buffers_size;
+  size_t  _core_spaces_size;        // number of bytes allocated by the core spaces
+                                    // (mc, md, ro, rw and od).
+
 
   struct space_info {
-    int    _file_offset;     // sizeof(this) rounded to vm page size
-    char*  _base;            // copy-on-write base address
-    size_t _capacity;        // for validity checking
-    size_t _used;            // for setting space top on read
-
+    int     _crc;          // crc checksum of the current space
+    size_t  _file_offset;  // sizeof(this) rounded to vm page size
+    union {
+      char*  _base;        // copy-on-write base address
+      intx   _offset;      // offset from the compressed oop encoding base, only used
+                           // by archive heap space
+    } _addr;
+    size_t _used;          // for setting space top on read
     // 4991491 NOTICE These are C++ bool's in filemap.hpp and must match up with
     // the C type matching the C++ bool type on any given platform.
     // We assume the corresponding C type is char but licensees
     // may need to adjust the type of these fields.
-    char   _read_only;       // read only space?
-    char   _allow_exec;      // executable code in space?
-
+    char   _read_only;     // read only space?
+    char   _allow_exec;    // executable code in space?
   } _space[NUM_SHARED_MAPS];
 
   // Ignore the rest of the FileMapHeader. We don't need those fields here.
@@ -381,7 +403,7 @@ static bool init_classsharing_workaround(struct ps_prochandle* ph) {
       // add read-only maps from classes.jsa to the list of maps
       for (m = 0; m < NUM_SHARED_MAPS; m++) {
         if (header._space[m]._read_only) {
-          base = (uintptr_t) header._space[m]._base;
+          base = (uintptr_t) header._space[m]._addr._base;
           // no need to worry about the fractional pages at-the-end.
           // possible fractional pages are handled by core_read_data.
           add_class_share_map_info(ph, (off_t) header._space[m]._file_offset,

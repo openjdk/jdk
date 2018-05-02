@@ -47,6 +47,7 @@ import java.util.Properties;
 import jdk.internal.misc.VM;
 import sun.reflect.misc.ReflectUtil;
 import sun.security.action.GetPropertyAction;
+import sun.security.util.SecurityConstants;
 
 /** <P> The master factory for all reflective objects, both those in
     java.lang.reflect (Fields, Methods, Constructors) as well as their
@@ -63,8 +64,6 @@ import sun.security.action.GetPropertyAction;
 public class ReflectionFactory {
 
     private static boolean initted = false;
-    private static final Permission reflectionFactoryAccessPerm
-        = new RuntimePermission("reflectionFactoryAccess");
     private static final ReflectionFactory soleInstance = new ReflectionFactory();
     // Provides access to package-private mechanisms in java.lang.reflect
     private static volatile LangReflectAccess langReflectAccess;
@@ -129,8 +128,8 @@ public class ReflectionFactory {
     public static ReflectionFactory getReflectionFactory() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            // TO DO: security.checkReflectionFactoryAccess();
-            security.checkPermission(reflectionFactoryAccessPerm);
+            security.checkPermission(
+                SecurityConstants.REFLECTION_FACTORY_ACCESS_PERMISSION);
         }
         return soleInstance;
     }

@@ -35,7 +35,7 @@ import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEff
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Transition.LEAF_NOFP;
 import static org.graalvm.compiler.hotspot.replacements.CRC32Substitutions.UPDATE_BYTES_CRC32;
 import static org.graalvm.compiler.hotspot.replacements.CRC32CSubstitutions.UPDATE_BYTES_CRC32C;
-import static org.graalvm.word.LocationIdentity.any;
+import static jdk.internal.vm.compiler.word.LocationIdentity.any;
 
 import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;

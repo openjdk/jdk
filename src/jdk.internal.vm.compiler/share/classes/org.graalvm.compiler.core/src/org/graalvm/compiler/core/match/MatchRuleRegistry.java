@@ -27,9 +27,9 @@ import static org.graalvm.compiler.debug.DebugOptions.LogVerbose;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.graalvm.collections.EconomicMap;
-import org.graalvm.collections.Equivalence;
-import org.graalvm.collections.MapCursor;
+import jdk.internal.vm.compiler.collections.EconomicMap;
+import jdk.internal.vm.compiler.collections.Equivalence;
+import jdk.internal.vm.compiler.collections.MapCursor;
 import org.graalvm.compiler.core.gen.NodeMatchRules;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;

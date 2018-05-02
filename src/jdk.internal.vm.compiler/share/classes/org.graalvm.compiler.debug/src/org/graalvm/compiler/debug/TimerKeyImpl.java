@@ -26,7 +26,7 @@ import static org.graalvm.compiler.debug.DebugCloseable.VOID_CLOSEABLE;
 
 import java.util.concurrent.TimeUnit;
 
-import org.graalvm.collections.Pair;
+import jdk.internal.vm.compiler.collections.Pair;
 
 final class TimerKeyImpl extends AccumulatedKey implements TimerKey {
     static class FlatTimer extends AbstractKey implements TimerKey {

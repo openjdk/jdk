@@ -45,7 +45,7 @@ import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.hotspot.replacements.HotSpotClassSubstitutions;
 import org.graalvm.compiler.hotspot.word.MetaspacePointer;
 import org.graalvm.compiler.replacements.Snippets;
-import org.graalvm.word.WordBase;
+import jdk.internal.vm.compiler.word.WordBase;
 
 final class GraalFilters {
     private List<ResolvedJavaType> specialClasses;

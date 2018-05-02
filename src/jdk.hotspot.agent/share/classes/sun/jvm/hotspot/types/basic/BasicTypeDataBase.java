@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import sun.jvm.hotspot.debugger.MachineDescription;
 import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
+import sun.jvm.hotspot.memory.FileMapInfo;
 
 /** <P> This is a basic implementation of the TypeDataBase interface.
     It allows an external type database builder to add types to be
@@ -294,6 +295,15 @@ public class BasicTypeDataBase implements TypeDataBase {
     // the locations searched.
 
     Address loc1 = addr.getAddressAt(0);
+
+    if (VM.getVM().isSharingEnabled()) {
+      // Check if the value falls in the _md_region
+      FileMapInfo cdsFileMapInfo = VM.getVM().getFileMapInfo();
+      if (cdsFileMapInfo.inCopiedVtableSpace(loc1)) {
+         return cdsFileMapInfo.getTypeForVptrAddress(loc1);
+      }
+    }
+
     Address loc2 = null;
     Address loc3 = null;
     long offset2 = baseType.getSize();

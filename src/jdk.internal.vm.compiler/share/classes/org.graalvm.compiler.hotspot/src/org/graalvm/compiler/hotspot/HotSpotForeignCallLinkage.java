@@ -27,7 +27,7 @@ import jdk.vm.ci.meta.InvokeTarget;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.core.target.Backend;
 import org.graalvm.compiler.hotspot.stubs.Stub;
-import org.graalvm.word.LocationIdentity;
+import jdk.internal.vm.compiler.word.LocationIdentity;
 
 /**
  * The details required to link a HotSpot runtime or stub call.

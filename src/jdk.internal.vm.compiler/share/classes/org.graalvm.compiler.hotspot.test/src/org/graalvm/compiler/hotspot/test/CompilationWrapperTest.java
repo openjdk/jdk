@@ -105,7 +105,6 @@ public class CompilationWrapperTest extends GraalCompilerTest {
     public void testVMCompilation3() throws IOException, InterruptedException {
         final int maxProblems = 4;
         Probe[] probes = {
-                        new Probe("To capture more information for diagnosing or reporting a compilation", maxProblems),
                         new Probe("Retrying compilation of", maxProblems) {
                             @Override
                             String test() {
@@ -131,6 +130,7 @@ public class CompilationWrapperTest extends GraalCompilerTest {
         testHelper(Collections.emptyList(),
                         Arrays.asList(
                                         "-Dgraal.CompilationFailureAction=ExitVM",
+                                        "-Dgraal.TrufflePerformanceWarningsAreFatal=true",
                                         "-Dgraal.CrashAt=root test1"),
                         "org.graalvm.compiler.truffle.test.SLTruffleGraalTestSuite", "test");
     }
@@ -148,6 +148,22 @@ public class CompilationWrapperTest extends GraalCompilerTest {
                                         "-Dgraal.CompilationFailureAction=Silent",
                                         "-Dgraal.TruffleCompilationExceptionsAreFatal=true",
                                         "-Dgraal.CrashAt=root test1"),
+                        "org.graalvm.compiler.truffle.test.SLTruffleGraalTestSuite", "test");
+    }
+
+    /**
+     * Tests that TrufflePerformanceWarningsAreFatal generates diagnostic output.
+     */
+    @Test
+    public void testTruffleCompilation3() throws IOException, InterruptedException {
+        Probe[] probes = {
+                        new Probe("Exiting VM due to TrufflePerformanceWarningsAreFatal=true", 1),
+        };
+        testHelper(Arrays.asList(probes),
+                        Arrays.asList(
+                                        "-Dgraal.CompilationFailureAction=Silent",
+                                        "-Dgraal.TrufflePerformanceWarningsAreFatal=true",
+                                        "-Dgraal.CrashAt=root test1:PermanentBailout"),
                         "org.graalvm.compiler.truffle.test.SLTruffleGraalTestSuite", "test");
     }
 
@@ -225,7 +241,7 @@ public class CompilationWrapperTest extends GraalCompilerTest {
                     Assert.fail(String.format("Expected at least one .bgv file in %s: %s%n%s", diagnosticOutputZip, entries, proc));
                 }
                 if (cfg == 0) {
-                    Assert.fail(String.format("Expected at least one .cfg file in %s: %s", diagnosticOutputZip, entries));
+                    Assert.fail(String.format("Expected at least one .cfg file in %s: %s%n%s", diagnosticOutputZip, entries, proc));
                 }
             } finally {
                 zip.delete();

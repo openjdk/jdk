@@ -38,12 +38,13 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.ConstructorWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
-import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+
+import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.*;
 
 
 /**
@@ -72,10 +73,9 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     public ConstructorWriterImpl(SubWriterHolderWriter writer, TypeElement typeElement) {
         super(writer, typeElement);
 
-        VisibleMemberMap visibleMemberMap = configuration.getVisibleMemberMap(
-                typeElement,
-                VisibleMemberMap.Kind.CONSTRUCTORS);
-        List<Element> constructors = visibleMemberMap.getMembers(typeElement);
+        VisibleMemberTable vmt = configuration.getVisibleMemberTable(typeElement);
+        List<? extends Element> constructors = vmt.getVisibleMembers(CONSTRUCTORS);
+
         for (Element constructor : constructors) {
             if (utils.isProtected(constructor) || utils.isPrivate(constructor)) {
                 setFoundNonPubConstructor(true);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ public class Expression {
     private Expression right;
     private Operator operator;
     private int ordinal = nextOrdinal++;
+    private boolean required = false;
 
     Expression() {
         if (debug) {
@@ -52,6 +53,7 @@ public class Expression {
             System.out.println("Setting left on " + ordinal + " to " + left);
         }
         this.left = left;
+        this.left.setRequired(required);
     }
 
     Expression getLeft() {
@@ -63,6 +65,7 @@ public class Expression {
             System.out.println("Setting right on " + ordinal + " to " + right);
         }
         this.right = right;
+        this.right.setRequired(required);
     }
 
     Expression getRight() {
@@ -78,6 +81,20 @@ public class Expression {
 
     Operator getOperator() {
         return operator;
+    }
+
+    void setRequired(boolean r) {
+        this.required = r;
+        if (left != null) {
+            left.setRequired(required);
+        }
+        if (right != null) {
+            right.setRequired(required);
+        }
+    }
+
+    boolean isRequired() {
+        return required;
     }
 
     public String toString() {

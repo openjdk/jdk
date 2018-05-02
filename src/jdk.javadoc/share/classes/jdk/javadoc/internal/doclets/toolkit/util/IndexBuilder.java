@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,8 @@ import javax.lang.model.element.TypeElement;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
-import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap.Kind;
+
+import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.*;
 
 /**
  * Build the mapping of each Unicode character with it's member lists
@@ -165,8 +166,8 @@ public class IndexBuilder {
     protected void putMembersInIndexMap(TypeElement te) {
         adjustIndexMap(utils.getAnnotationFields(te));
         adjustIndexMap(utils.getFields(te));
-        VisibleMemberMap vmm = configuration.getVisibleMemberMap(te, Kind.METHODS);
-        adjustIndexMap(vmm.getMembers(te));
+        VisibleMemberTable vmt = configuration.getVisibleMemberTable(te);
+        adjustIndexMap(vmt.getMembers(METHODS));
         adjustIndexMap(utils.getConstructors(te));
         adjustIndexMap(utils.getEnumConstants(te));
     }
@@ -216,7 +217,7 @@ public class IndexBuilder {
      * Should this element be added to the index map?
      */
     protected boolean shouldAddToIndexMap(Element element) {
-        if (utils.isHidden(element)) {
+        if (utils.hasHiddenTag(element)) {
             return false;
         }
 

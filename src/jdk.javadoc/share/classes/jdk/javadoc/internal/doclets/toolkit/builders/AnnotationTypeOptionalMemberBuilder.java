@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@ import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeOptionalMemberWriter;
 import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeRequiredMemberWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
-import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
 
+import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.*;
 
 /**
  * Builds documentation for optional annotation type members.
@@ -57,8 +57,7 @@ public class AnnotationTypeOptionalMemberBuilder extends AnnotationTypeRequiredM
     private AnnotationTypeOptionalMemberBuilder(Context context,
             TypeElement typeElement,
             AnnotationTypeOptionalMemberWriter writer) {
-        super(context, typeElement, writer,
-                VisibleMemberMap.Kind.ANNOTATION_TYPE_MEMBER_OPTIONAL);
+        super(context, typeElement, writer, ANNOTATION_TYPE_MEMBER_OPTIONAL);
     }
 
 

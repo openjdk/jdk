@@ -26,8 +26,6 @@ import static org.graalvm.compiler.core.GraalCompiler.compileGraph;
 import static org.graalvm.compiler.core.common.GraalOptions.OptAssumptions;
 import static org.junit.Assert.assertNotNull;
 
-import org.junit.Test;
-
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilderFactory;
 import org.graalvm.compiler.nodes.FullInfopointNode;
@@ -37,6 +35,7 @@ import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration;
 import org.graalvm.compiler.phases.OptimisticOptimizations;
 import org.graalvm.compiler.phases.PhaseSuite;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
+import org.junit.Test;
 
 import jdk.vm.ci.code.site.Call;
 import jdk.vm.ci.code.site.Infopoint;
@@ -49,6 +48,11 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 public class InfopointReasonTest extends GraalCompilerTest {
 
     public static final String[] STRINGS = new String[]{"world", "everyone", "you"};
+
+    public InfopointReasonTest() {
+        // Call testMethod to ensure all method references are resolved.
+        testMethod();
+    }
 
     public String testMethod() {
         StringBuilder sb = new StringBuilder("Hello ");

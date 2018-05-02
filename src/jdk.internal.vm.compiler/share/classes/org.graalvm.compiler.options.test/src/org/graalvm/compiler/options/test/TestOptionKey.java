@@ -36,6 +36,7 @@ import static org.junit.Assert.assertEquals;
 import org.graalvm.compiler.options.ModifiableOptionValues;
 import org.graalvm.compiler.options.OptionDescriptor;
 import org.graalvm.compiler.options.OptionKey;
+import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionValues;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -51,7 +52,7 @@ public class TestOptionKey {
 
     @Test
     public void toStringTest() {
-        OptionDescriptor.create("MyOption", String.class, "", Options.class, "MyOption", MyOption);
+        OptionDescriptor.create("MyOption", OptionType.Debug, String.class, "", Options.class, "MyOption", MyOption);
         assertEquals("MyOption", MyOption.toString());
     }
 

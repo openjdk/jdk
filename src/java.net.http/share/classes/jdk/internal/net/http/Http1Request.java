@@ -200,9 +200,9 @@ class Http1Request {
             query = "";
         }
         if (query.equals("")) {
-            return path;
+            return Utils.encode(path);
         } else {
-            return path + "?" + query;
+            return Utils.encode(path + "?" + query);
         }
     }
 

@@ -37,7 +37,7 @@ import org.graalvm.compiler.nodes.memory.MemoryAccess;
 import org.graalvm.compiler.nodes.memory.MemoryNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
-import org.graalvm.word.LocationIdentity;
+import jdk.internal.vm.compiler.word.LocationIdentity;
 
 @NodeInfo(cycles = CYCLES_IGNORED, size = SIZE_IGNORED)
 public class SnippetLowerableMemoryNode extends FixedWithNextNode implements Lowerable, MemoryAccess {

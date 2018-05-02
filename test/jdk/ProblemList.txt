@@ -514,6 +514,10 @@ java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8081652 generic-
 
 java/io/pathNames/GeneralWin32.java                             8180264 windows-all
 
+java/io/FileInputStream/UnreferencedFISClosesFd.java            8202292 linux-all
+java/io/FileOutputStream/UnreferencedFOSClosesFd.java           8202292 linux-all
+java/io/RandomAccessFile/UnreferencedRAFClosesFd.java           8202292 linux-all
+
 ############################################################################
 
 # jdk_management
@@ -547,9 +551,9 @@ java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-a
 
 java/nio/Buffer/EqualsCompareTest.java                          8193917 solaris-all
 
-java/nio/channels/Selector/Wakeup.java                          6963118 windows-all
-
 java/nio/channels/DatagramChannel/ChangingAddress.java          7141822 macosx-all
+
+java/nio/channels/Selector/Wakeup.java                          6963118 windows-all
 
 java/nio/file/WatchService/Basic.java                           7158947 solaris-all Solaris 11
 java/nio/file/WatchService/MayFlies.java                        7158947 solaris-all Solaris 11
@@ -588,6 +592,7 @@ sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-
 
 javax/net/ssl/DTLS/PacketLossRetransmission.java                8169086 macosx-x64
 javax/net/ssl/DTLS/RespondToRetransmit.java                     8169086 macosx-x64
+javax/net/ssl/DTLS/CipherSuite.java                             8202059 macosx-x64
 
 sun/security/krb5/auto/UnboundSSL.java                          8180265 windows-all
 sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all
@@ -740,6 +745,8 @@ tools/jimage/JImageListTest.java                                8198405 windows-
 # jdk_jdi
 
 com/sun/jdi/RedefineImplementor.sh                              8004127 generic-all
+
+com/sun/jdi/JdbExprTest.sh                                      8185803 generic-all
 
 com/sun/jdi/JdbMethodExitTest.sh                                8171483 generic-all
 

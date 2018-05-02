@@ -29,6 +29,7 @@ import java.util.Map;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.Platform;
 import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.OutputAnalyzer;
 
 /**
@@ -59,6 +60,27 @@ public class ClhsdbLauncher {
             launcher.addToolArg("--pid=" + Long.toString(lingeredAppPid));
             System.out.println("Starting clhsdb against " + lingeredAppPid);
         }
+
+        ProcessBuilder processBuilder = new ProcessBuilder(launcher.getCommand());
+        processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+
+        toolProcess = processBuilder.start();
+    }
+
+    /**
+     *
+     * Launches 'jhsdb clhsdb' and loads a core file.
+     * @param coreFileName - Name of the corefile to be loaded.
+     */
+    private void loadCore(String coreFileName)
+        throws IOException {
+
+        JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jhsdb");
+        launcher.addToolArg("clhsdb");
+        launcher.addToolArg("--core=" + coreFileName);
+        launcher.addToolArg("--exe=" + JDKToolFinder.getTestJDKTool("java"));
+        System.out.println("Starting clhsdb against corefile " + coreFileName +
+                           " and exe " + JDKToolFinder.getTestJDKTool("java"));
 
         ProcessBuilder processBuilder = new ProcessBuilder(launcher.getCommand());
         processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
@@ -157,6 +179,34 @@ public class ClhsdbLauncher {
         }
 
         attach(lingeredAppPid);
+        return runCmd(commands, expectedStrMap, unExpectedStrMap);
+    }
+
+    /**
+     *
+     * Launches 'jhsdb clhsdb', loads a core file, executes the commands,
+     * checks for expected and unexpected strings.
+     * @param coreFileName - Name of the core file to be debugged.
+     * @param commands  - clhsdb commands to execute.
+     * @param expectedStrMap - Map of expected strings per command which need to
+     *                         be checked in the output of the command.
+     * @param unExpectedStrMap - Map of unexpected strings per command which should
+     *                           not be present in the output of the command.
+     * @return Output of the commands as a String.
+     */
+    public String runOnCore(String coreFileName,
+                            List<String> commands,
+                            Map<String, List<String>> expectedStrMap,
+                            Map<String, List<String>> unExpectedStrMap)
+        throws IOException, InterruptedException {
+
+        if (!Platform.shouldSAAttach()) {
+            // Silently skip the test if we don't have enough permissions to attach
+            System.out.println("SA attach not expected to work - test skipped.");
+            return null;
+        }
+
+        loadCore(coreFileName);
         return runCmd(commands, expectedStrMap, unExpectedStrMap);
     }
 }

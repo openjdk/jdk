@@ -56,11 +56,12 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import org.graalvm.collections.EconomicMap;
-import org.graalvm.collections.EconomicSet;
-import org.graalvm.collections.Pair;
+import jdk.internal.vm.compiler.collections.EconomicMap;
+import jdk.internal.vm.compiler.collections.EconomicSet;
+import jdk.internal.vm.compiler.collections.Pair;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.serviceprovider.GraalServices;
 import org.graalvm.graphio.GraphOutput;
 
 import jdk.vm.ci.meta.JavaMethod;
@@ -236,14 +237,15 @@ public final class DebugContext implements AutoCloseable {
             this.unscopedTimers = parseUnscopedMetricSpec(Timers.getValue(options), "".equals(timeValue), true);
             this.unscopedMemUseTrackers = parseUnscopedMetricSpec(MemUseTrackers.getValue(options), "".equals(trackMemUseValue), true);
 
-            if (unscopedTimers != null ||
-                            unscopedMemUseTrackers != null ||
-                            timeValue != null ||
-                            trackMemUseValue != null) {
-                try {
-                    Class.forName("java.lang.management.ManagementFactory");
-                } catch (ClassNotFoundException ex) {
-                    throw new IllegalArgumentException("Time, Timers, MemUseTrackers and TrackMemUse options require java.management module");
+            if (unscopedTimers != null || timeValue != null) {
+                if (!GraalServices.isCurrentThreadCpuTimeSupported()) {
+                    throw new IllegalArgumentException("Time and Timers options require VM support for querying CPU time");
+                }
+            }
+
+            if (unscopedMemUseTrackers != null || trackMemUseValue != null) {
+                if (!GraalServices.isThreadAllocatedMemorySupported()) {
+                    throw new IllegalArgumentException("MemUseTrackers and TrackMemUse options require VM support for querying thread allocated memory");
                 }
             }
 

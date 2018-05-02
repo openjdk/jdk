@@ -28,10 +28,10 @@ package java.util.jar;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import sun.util.logging.PlatformLogger;
@@ -116,7 +116,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
      * @throws IllegalArgumentException if the attribute name is invalid
      */
     public String getValue(String name) {
-        return (String)get(new Attributes.Name(name));
+        return (String)get(Name.of(name));
     }
 
     /**
@@ -168,7 +168,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
      * @exception IllegalArgumentException if the attribute name is invalid
      */
     public String putValue(String name, String value) {
-        return (String)put(new Name(name), value);
+        return (String)put(Name.of(name), value);
     }
 
     /**
@@ -371,7 +371,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
      */
     @SuppressWarnings("deprecation")
     void read(Manifest.FastInputStream is, byte[] lbuf) throws IOException {
-        String name = null, value = null;
+        String name = null, value;
         byte[] lastline = null;
 
         int len;
@@ -447,8 +447,21 @@ public class Attributes implements Map<Object,Object>, Cloneable {
      * for more information about valid attribute names and values.
      */
     public static class Name {
-        private String name;
-        private int hashCode = -1;
+        private final String name;
+        private final int hashCode;
+
+        /**
+         * Avoid allocation for common Names
+         */
+        private static final Map<String, Name> KNOWN_NAMES;
+
+        static final Name of(String name) {
+            Name n = KNOWN_NAMES.get(name);
+            if (n != null) {
+                return n;
+            }
+            return new Name(name);
+        }
 
         /**
          * Constructs a new attribute name using the given string name.
@@ -459,38 +472,33 @@ public class Attributes implements Map<Object,Object>, Cloneable {
          * @exception NullPointerException if the attribute name was null
          */
         public Name(String name) {
-            if (name == null) {
-                throw new NullPointerException("name");
-            }
-            if (!isValid(name)) {
-                throw new IllegalArgumentException(name);
-            }
+            this.hashCode = hash(name);
             this.name = name.intern();
         }
 
-        private static boolean isValid(String name) {
+        // Checks the string is valid
+        private final int hash(String name) {
+            Objects.requireNonNull(name, "name");
             int len = name.length();
             if (len > 70 || len == 0) {
-                return false;
+                throw new IllegalArgumentException(name);
             }
+            // Calculate hash code case insensitively
+            int h = 0;
             for (int i = 0; i < len; i++) {
-                if (!isValid(name.charAt(i))) {
-                    return false;
+                char c = name.charAt(i);
+                if (c >= 'a' && c <= 'z') {
+                    // hashcode must be identical for upper and lower case
+                    h = h * 31 + (c - 0x20);
+                } else if ((c >= 'A' && c <= 'Z' ||
+                        c >= '0' && c <= '9' ||
+                        c == '_' || c == '-')) {
+                    h = h * 31 + c;
+                } else {
+                    throw new IllegalArgumentException(name);
                 }
             }
-            return true;
-        }
-
-        private static boolean isValid(char c) {
-            return isAlpha(c) || isDigit(c) || c == '_' || c == '-';
-        }
-
-        private static boolean isAlpha(char c) {
-            return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-        }
-
-        private static boolean isDigit(char c) {
-            return c >= '0' && c <= '9';
+            return h;
         }
 
         /**
@@ -500,9 +508,12 @@ public class Attributes implements Map<Object,Object>, Cloneable {
          *         specified attribute object
          */
         public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
             if (o instanceof Name) {
-                Comparator<String> c = String.CASE_INSENSITIVE_ORDER;
-                return c.compare(name, ((Name)o).name) == 0;
+                Name other = (Name)o;
+                return other.name.equalsIgnoreCase(name);
             } else {
                 return false;
             }
@@ -512,9 +523,6 @@ public class Attributes implements Map<Object,Object>, Cloneable {
          * Computes the hash value for this attribute name.
          */
         public int hashCode() {
-            if (hashCode == -1) {
-                hashCode = name.toLowerCase(Locale.ROOT).hashCode();
-            }
             return hashCode;
         }
 
@@ -573,7 +581,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
          */
         public static final Name SEALED = new Name("Sealed");
 
-       /**
+        /**
          * {@code Name} object for {@code Extension-List} manifest attribute
          * used for the extension mechanism that is no longer supported.
          */
@@ -620,7 +628,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
         @Deprecated
         public static final Name IMPLEMENTATION_VENDOR_ID = new Name("Implementation-Vendor-Id");
 
-       /**
+        /**
          * {@code Name} object for {@code Implementation-URL}
          * manifest attribute.
          *
@@ -654,5 +662,55 @@ public class Attributes implements Map<Object,Object>, Cloneable {
          * @since   9
          */
         public static final Name MULTI_RELEASE = new Name("Multi-Release");
+
+        private static void addName(Map<String, Name> names, Name name) {
+            names.put(name.name, name);
+        }
+
+        static {
+            var names = new HashMap<String, Name>(64);
+            addName(names, MANIFEST_VERSION);
+            addName(names, SIGNATURE_VERSION);
+            addName(names, CONTENT_TYPE);
+            addName(names, CLASS_PATH);
+            addName(names, MAIN_CLASS);
+            addName(names, SEALED);
+            addName(names, EXTENSION_LIST);
+            addName(names, EXTENSION_NAME);
+            addName(names, IMPLEMENTATION_TITLE);
+            addName(names, IMPLEMENTATION_VERSION);
+            addName(names, IMPLEMENTATION_VENDOR);
+            addName(names, SPECIFICATION_TITLE);
+            addName(names, SPECIFICATION_VERSION);
+            addName(names, SPECIFICATION_VENDOR);
+            addName(names, MULTI_RELEASE);
+
+            // Common attributes used in MANIFEST.MF et.al; adding these has a
+            // small footprint cost, but is likely to be quickly paid for by
+            // reducing allocation when reading and parsing typical manifests
+            addName(names, new Name("Add-Exports"));
+            addName(names, new Name("Add-Opens"));
+            addName(names, new Name("Ant-Version"));
+            addName(names, new Name("Archiver-Version"));
+            addName(names, new Name("Build-Jdk"));
+            addName(names, new Name("Built-By"));
+            addName(names, new Name("Bnd-LastModified"));
+            addName(names, new Name("Bundle-Description"));
+            addName(names, new Name("Bundle-DocURL"));
+            addName(names, new Name("Bundle-License"));
+            addName(names, new Name("Bundle-ManifestVersion"));
+            addName(names, new Name("Bundle-Name"));
+            addName(names, new Name("Bundle-Vendor"));
+            addName(names, new Name("Bundle-Version"));
+            addName(names, new Name("Bundle-SymbolicName"));
+            addName(names, new Name("Created-By"));
+            addName(names, new Name("Export-Package"));
+            addName(names, new Name("Import-Package"));
+            addName(names, new Name("Name"));
+            addName(names, new Name("SHA1-Digest"));
+            addName(names, new Name("X-Compile-Source-JDK"));
+            addName(names, new Name("X-Compile-Target-JDK"));
+            KNOWN_NAMES = names;
+        }
     }
 }

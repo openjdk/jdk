@@ -181,6 +181,7 @@ public class TestOptions extends JavadocTester {
         javadoc("-d", "out-9",
                 "-linksource",
                 "-javafx",
+                "--disable-javafx-strict-checks",
                 "-sourcepath", testSrc,
                 "-package",
                 "linksource");
@@ -254,6 +255,7 @@ public class TestOptions extends JavadocTester {
                 "-html4",
                 "-linksource",
                 "-javafx",
+                "--disable-javafx-strict-checks",
                 "-sourcepath", testSrc,
                 "-package",
                 "linksource");

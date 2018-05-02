@@ -75,9 +75,6 @@ combination of ptrace and /proc calls.
 #include <asm/ptrace.h>
 #define user_regs_struct  pt_regs
 #endif
-#if defined(s390x)
-#include <asm/ptrace.h>
-#endif
 
 // This C bool type must be int for compatibility with Linux calls and
 // it would be a mistake to equivalence it to C++ bool on many platforms
