@@ -306,14 +306,16 @@ public abstract class SubscriberWrapper
                                downstreamSubscription);
             }
 
+            boolean datasent = false;
             while (!outputQ.isEmpty() && downstreamSubscription.tryDecrement()) {
                 List<ByteBuffer> b = outputQ.poll();
                 if (debug.on())
                     debug.log("DownstreamPusher: Pushing %d bytes downstream",
                               Utils.remaining(b));
                 downstreamSubscriber.onNext(b);
+                datasent = true;
             }
-            upstreamWindowUpdate();
+            if (datasent) upstreamWindowUpdate();
             checkCompletion();
         }
     }

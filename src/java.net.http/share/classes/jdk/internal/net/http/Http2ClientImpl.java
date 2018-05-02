@@ -95,10 +95,10 @@ class Http2ClientImpl {
         synchronized (this) {
             Http2Connection connection = connections.get(key);
             if (connection != null) {
-                if (connection.closed) {
+                if (connection.closed || !connection.reserveStream(true)) {
                     if (debug.on())
-                        debug.log("removing found closed connection: %s", connection);
-                    connections.remove(key);
+                        debug.log("removing found closed or closing connection: %s", connection);
+                    deleteConnection(connection);
                 } else {
                     // fast path if connection already exists
                     if (debug.on())
@@ -138,9 +138,9 @@ class Http2ClientImpl {
      */
     boolean offerConnection(Http2Connection c) {
         if (debug.on()) debug.log("offering to the connection pool: %s", c);
-        if (c.closed) {
+        if (c.closed || c.finalStream()) {
             if (debug.on())
-                debug.log("skipping offered closed connection: %s", c);
+                debug.log("skipping offered closed or closing connection: %s", c);
             return false;
         }
 
@@ -148,7 +148,7 @@ class Http2ClientImpl {
         synchronized(this) {
             Http2Connection c1 = connections.putIfAbsent(key, c);
             if (c1 != null) {
-                c.setSingleStream(true);
+                c.setFinalStream();
                 if (debug.on())
                     debug.log("existing entry in connection pool for %s", key);
                 return false;
@@ -163,9 +163,12 @@ class Http2ClientImpl {
         if (debug.on())
             debug.log("removing from the connection pool: %s", c);
         synchronized (this) {
-            connections.remove(c.key());
-            if (debug.on())
-                debug.log("removed from the connection pool: %s", c);
+            Http2Connection c1 = connections.get(c.key());
+            if (c1 != null && c1.equals(c)) {
+                connections.remove(c.key());
+                if (debug.on())
+                    debug.log("removed from the connection pool: %s", c);
+            }
         }
     }
 

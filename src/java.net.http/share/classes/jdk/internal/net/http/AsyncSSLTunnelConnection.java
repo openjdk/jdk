@@ -65,6 +65,7 @@ class AsyncSSLTunnelConnection extends AbstractAsyncSSLConnection {
                     // create the SSLTube wrapping the SocketTube, with the given engine
                     flow = new SSLTube(engine,
                                        client().theExecutor(),
+                                       client().getSSLBufferSupplier()::recycle,
                                        plainConnection.getConnectionFlow());
                     return null;} );
     }

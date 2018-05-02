@@ -356,6 +356,7 @@ class Http1AsyncReceiver {
                 // be left over in the stream.
                 try {
                     setRetryOnError(false);
+                    pending.close(null);
                     onReadError(new IOException("subscription cancelled"));
                     unsubscribe(pending);
                 } finally {

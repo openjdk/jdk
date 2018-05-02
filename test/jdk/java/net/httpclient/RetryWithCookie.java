@@ -69,6 +69,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.System.out;
+import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -106,6 +107,7 @@ public class RetryWithCookie implements HttpServerAdapters {
         out.printf("%n---- starting (%s) ----%n", uriString);
         CookieManager cookieManager = new CookieManager();
         HttpClient client = HttpClient.newBuilder()
+                .proxy(NO_PROXY)
                 .followRedirects(Redirect.ALWAYS)
                 .cookieHandler(cookieManager)
                 .sslContext(sslContext)

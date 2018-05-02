@@ -177,6 +177,8 @@ public class DependentPromiseActionsTest implements HttpServerAdapters {
         };
     }
 
+    enum SubscriberType {EAGER, LAZZY}
+
     static final class SemaphoreStallerSupplier
             implements Supplier<SemaphoreStaller> {
         @Override
@@ -291,7 +293,8 @@ public class DependentPromiseActionsTest implements HttpServerAdapters {
         String test = format("testAsStringAsync(%s, %b, %s)",
                 uri, sameClient, stallers);
         testDependent(test, uri, sameClient, BodyHandlers::ofString,
-                this::finish, this::extractString, stallers);
+                this::finish, this::extractString, stallers,
+                SubscriberType.EAGER);
     }
 
     @Test(dataProvider = "variants")
@@ -303,7 +306,8 @@ public class DependentPromiseActionsTest implements HttpServerAdapters {
         String test = format("testAsLinesAsync(%s, %b, %s)",
                 uri, sameClient, stallers);
         testDependent(test, uri, sameClient, BodyHandlers::ofLines,
-                this::finish, this::extractStream, stallers);
+                this::finish, this::extractStream, stallers,
+                SubscriberType.LAZZY);
     }
 
     @Test(dataProvider = "variants")
@@ -315,19 +319,22 @@ public class DependentPromiseActionsTest implements HttpServerAdapters {
         String test = format("testAsInputStreamAsync(%s, %b, %s)",
                 uri, sameClient, stallers);
         testDependent(test, uri, sameClient, BodyHandlers::ofInputStream,
-                this::finish, this::extractInputStream, stallers);
+                this::finish, this::extractInputStream, stallers,
+                SubscriberType.LAZZY);
     }
 
     private <T,U> void testDependent(String name, String uri, boolean sameClient,
                                      Supplier<BodyHandler<T>> handlers,
                                      Finisher finisher,
                                      Extractor<T> extractor,
-                                     Supplier<Staller> stallers)
+                                     Supplier<Staller> stallers,
+                                     SubscriberType subscriberType)
             throws Exception
     {
         out.printf("%n%s%s%n", now(), name);
         try {
-            testDependent(uri, sameClient, handlers, finisher, extractor, stallers);
+            testDependent(uri, sameClient, handlers, finisher,
+                          extractor, stallers, subscriberType);
         } catch (Error | Exception x) {
             FAILURES.putIfAbsent(name, x);
             throw x;
@@ -338,7 +345,8 @@ public class DependentPromiseActionsTest implements HttpServerAdapters {
                                      Supplier<BodyHandler<T>> handlers,
                                      Finisher finisher,
                                      Extractor<T> extractor,
-                                     Supplier<Staller> stallers)
+                                     Supplier<Staller> stallers,
+                                     SubscriberType subscriberType)
             throws Exception
     {
         HttpClient client = null;
@@ -355,7 +363,7 @@ public class DependentPromiseActionsTest implements HttpServerAdapters {
             System.out.println("try stalling in " + where);
             CompletableFuture<HttpResponse<T>> responseCF =
                     client.sendAsync(req, handler, promiseHandler);
-            assert !responseCF.isDone();
+            assert subscriberType == SubscriberType.LAZZY || !responseCF.isDone();
             finisher.finish(where, responseCF, promiseHandler, extractor);
         }
     }

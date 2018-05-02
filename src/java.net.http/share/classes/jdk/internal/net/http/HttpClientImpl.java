@@ -28,12 +28,12 @@ package jdk.internal.net.http;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import java.io.IOException;
-import java.lang.System.Logger.Level;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.net.Authenticator;
 import java.net.CookieHandler;
 import java.net.ProxySelector;
+import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
@@ -47,7 +47,6 @@ import java.security.PrivilegedAction;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -57,6 +56,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -70,6 +70,7 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.PushPromiseHandler;
 import java.net.http.WebSocket;
+import jdk.internal.net.http.common.BufferSupplier;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.Pair;
@@ -137,6 +138,13 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     private final Http2ClientImpl client2;
     private final long id;
     private final String dbgTag;
+
+    // The SSL DirectBuffer Supplier provides the ability to recycle
+    // buffers used between the socket reader and the SSLEngine, or
+    // more precisely between the SocketTube publisher and the
+    // SSLFlowDelegate reader.
+    private final SSLDirectBufferSupplier sslBufferSupplier
+            = new SSLDirectBufferSupplier(this);
 
     // This reference is used to keep track of the facade HttpClient
     // that was returned to the application code.
@@ -1160,7 +1168,90 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     // used for the connection window
     int getReceiveBufferSize() {
         return Utils.getIntegerNetProperty(
-                "jdk.httpclient.receiveBufferSize", 2 * 1024 * 1024
+                "jdk.httpclient.receiveBufferSize",
+                0 // only set the size if > 0
         );
     }
+
+    // Optimization for reading SSL encrypted data
+    // --------------------------------------------
+
+    // Returns a BufferSupplier that can be used for reading
+    // encrypted bytes of the channel. These buffers can then
+    // be recycled by the SSLFlowDelegate::Reader after their
+    // content has been copied in the SSLFlowDelegate::Reader
+    // readBuf.
+    // Because allocating, reading, copying, and recycling
+    // all happen in the SelectorManager thread,
+    // then this BufferSupplier can be shared between all
+    // the SSL connections managed by this client.
+    BufferSupplier getSSLBufferSupplier() {
+        return sslBufferSupplier;
+    }
+
+    // An implementation of BufferSupplier that manages a pool of
+    // maximum 3 direct byte buffers (SocketTube.MAX_BUFFERS) that
+    // are used for reading encrypted bytes off the channel before
+    // copying and subsequent unwrapping.
+    private static final class SSLDirectBufferSupplier implements BufferSupplier {
+        private static final int POOL_SIZE = SocketTube.MAX_BUFFERS;
+        private final ByteBuffer[] pool = new ByteBuffer[POOL_SIZE];
+        private final HttpClientImpl client;
+        private final Logger debug;
+        private int tail, count; // no need for volatile: only accessed in SM thread.
+
+        SSLDirectBufferSupplier(HttpClientImpl client) {
+            this.client = Objects.requireNonNull(client);
+            this.debug = client.debug;
+        }
+
+        // Gets a buffer from the pool, or allocates a new one if needed.
+        @Override
+        public ByteBuffer get() {
+            assert client.isSelectorThread();
+            assert tail <= POOL_SIZE : "allocate tail is " + tail;
+            ByteBuffer buf;
+            if (tail == 0) {
+                if (debug.on()) {
+                    // should not appear more than SocketTube.MAX_BUFFERS
+                    debug.log("ByteBuffer.allocateDirect(%d)", Utils.BUFSIZE);
+                }
+                assert count++ < POOL_SIZE : "trying to allocate more than "
+                            + POOL_SIZE + " buffers";
+                buf = ByteBuffer.allocateDirect(Utils.BUFSIZE);
+            } else {
+                assert tail > 0 : "non positive tail value: " + tail;
+                tail--;
+                buf = pool[tail];
+                pool[tail] = null;
+            }
+            assert buf.isDirect();
+            assert buf.position() == 0;
+            assert buf.hasRemaining();
+            assert buf.limit() == Utils.BUFSIZE;
+            assert tail < POOL_SIZE;
+            assert tail >= 0;
+            return buf;
+        }
+
+        // Returns the given buffer to the pool.
+        @Override
+        public void recycle(ByteBuffer buffer) {
+            assert client.isSelectorThread();
+            assert buffer.isDirect();
+            assert !buffer.hasRemaining();
+            assert tail < POOL_SIZE : "recycle tail is " + tail;
+            assert tail >= 0;
+            buffer.position(0);
+            buffer.limit(buffer.capacity());
+            // don't fail if assertions are off. we have asserted above.
+            if (tail < POOL_SIZE) {
+                pool[tail] = buffer;
+                tail++;
+            }
+            assert tail <= POOL_SIZE;
+            assert tail > 0;
+        }
+    }
+
 }
