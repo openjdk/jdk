@@ -44,7 +44,7 @@ public class StandardDoclet implements Doclet {
     private final HtmlDoclet htmlDoclet;
 
     public StandardDoclet() {
-        htmlDoclet = new HtmlDoclet();
+        htmlDoclet = new HtmlDoclet(this);
     }
 
     @Override
