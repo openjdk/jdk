@@ -94,3 +94,19 @@ serviceability/sa/sadebugd/SADebugDTest.java         8163805 generic-all
 
 compiler/c2/Test8007294.java                                                   8194310    generic-all  Java EE Module Removal
 compiler/c2/Test6852078.java                                                   8194310    generic-all  Java EE Module Removal
+
+#############################################################################
+
+# :vmTestbase_*
+
+#############################################################################
+
+vmTestbase/nsk/monitoring/MemoryPoolMBean/isCollectionUsageThresholdExceeded/isexceeded003/TestDescription.java 8153598 generic-all
+vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded001/TestDescription.java 8198668 generic-all
+vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded002/TestDescription.java 8153598 generic-all
+vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded003/TestDescription.java 8198668 generic-all
+vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded004/TestDescription.java 8153598 generic-all
+vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded005/TestDescription.java 8153598 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Deadlock/JavaDeadlock001/TestDescription.java 8060733 generic-all
+
+#############################################################################
