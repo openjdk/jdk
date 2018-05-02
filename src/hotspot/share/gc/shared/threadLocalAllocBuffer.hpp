@@ -58,6 +58,7 @@ private:
   unsigned  _slow_refill_waste;
   unsigned  _gc_waste;
   unsigned  _slow_allocations;
+  size_t    _allocated_size;
 
   AdaptiveWeightedAverage _allocation_fraction;  // fraction of eden allocated in tlabs
 

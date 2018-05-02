@@ -89,7 +89,7 @@ void ThreadLocalAllocBuffer::accumulate_statistics() {
     }
     global_stats()->update_allocating_threads();
     global_stats()->update_number_of_refills(_number_of_refills);
-    global_stats()->update_allocation(_number_of_refills * desired_size());
+    global_stats()->update_allocation(_allocated_size);
     global_stats()->update_gc_waste(_gc_waste);
     global_stats()->update_slow_refill_waste(_slow_refill_waste);
     global_stats()->update_fast_refill_waste(_fast_refill_waste);
@@ -157,17 +157,19 @@ void ThreadLocalAllocBuffer::resize() {
 }
 
 void ThreadLocalAllocBuffer::initialize_statistics() {
-    _number_of_refills = 0;
-    _fast_refill_waste = 0;
-    _slow_refill_waste = 0;
-    _gc_waste          = 0;
-    _slow_allocations  = 0;
+  _number_of_refills = 0;
+  _fast_refill_waste = 0;
+  _slow_refill_waste = 0;
+  _gc_waste          = 0;
+  _slow_allocations  = 0;
+  _allocated_size    = 0;
 }
 
 void ThreadLocalAllocBuffer::fill(HeapWord* start,
                                   HeapWord* top,
                                   size_t    new_size) {
   _number_of_refills++;
+  _allocated_size += new_size;
   print_stats("fill");
   assert(top <= start + new_size - alignment_reserve(), "size too small");
   initialize(start, top, start + new_size - alignment_reserve());
@@ -274,8 +276,7 @@ void ThreadLocalAllocBuffer::print_stats(const char* tag) {
 
   Thread* thrd = myThread();
   size_t waste = _gc_waste + _slow_refill_waste + _fast_refill_waste;
-  size_t alloc = _number_of_refills * _desired_size;
-  double waste_percent = percent_of(waste, alloc);
+  double waste_percent = percent_of(waste, _allocated_size);
   size_t tlab_used  = Universe::heap()->tlab_used(thrd);
   log.trace("TLAB: %s thread: " INTPTR_FORMAT " [id: %2d]"
             " desired_size: " SIZE_FORMAT "KB"
