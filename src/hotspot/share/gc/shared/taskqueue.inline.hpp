@@ -152,7 +152,7 @@ bool GenericTaskQueue<E, F, N>::pop_local_slow(uint localBot, Age oldAge) {
 }
 
 template<class E, MEMFLAGS F, unsigned int N> inline bool
-GenericTaskQueue<E, F, N>::pop_local(volatile E& t) {
+GenericTaskQueue<E, F, N>::pop_local(volatile E& t, uint threshold) {
   uint localBot = _bottom;
   // This value cannot be N-1.  That can only occur as a result of
   // the assignment to bottom in this method.  If it does, this method
@@ -160,7 +160,7 @@ GenericTaskQueue<E, F, N>::pop_local(volatile E& t) {
   // since this is pop_local.)
   uint dirty_n_elems = dirty_size(localBot, _age.top());
   assert(dirty_n_elems != N - 1, "Shouldn't be possible...");
-  if (dirty_n_elems == 0) return false;
+  if (dirty_n_elems <= threshold) return false;
   localBot = decrement_index(localBot);
   _bottom = localBot;
   // This is necessary to prevent any read below from being reordered

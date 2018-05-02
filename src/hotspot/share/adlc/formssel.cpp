@@ -1171,6 +1171,9 @@ const char *InstructForm::mach_base_class(FormDict &globals)  const {
   else if (is_ideal_nop()) {
     return "MachNopNode";
   }
+  else if (is_ideal_jump()) {
+    return "MachJumpNode";
+  }
   else if (is_mach_constant()) {
     return "MachConstantNode";
   }

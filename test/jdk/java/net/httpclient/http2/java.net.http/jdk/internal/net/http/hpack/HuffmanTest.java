@@ -328,7 +328,7 @@ public final class HuffmanTest {
                     parseInt(hex, 16), parseInt(len));
 
             StringBuilder actual = new StringBuilder();
-            Huffman.Reader t = new Huffman.Reader();
+            NaiveHuffman.Reader t = new NaiveHuffman.Reader();
             t.read(ByteBuffer.wrap(bytes), actual, false, true);
 
             // What has been read MUST represent a single symbol
@@ -338,6 +338,8 @@ public final class HuffmanTest {
             // characters (as some of them might not be visible)
             assertEquals(actual.charAt(0), expected);
             i++;
+
+            // maybe not report EOS but rather throw an expected exception?
         }
         assertEquals(i, 257); // 256 + EOS
     }
@@ -503,12 +505,18 @@ public final class HuffmanTest {
     }
 
     @Test
+    public void read_13() {
+        read("6274 a6b4 0989 4de4 b27f 80",
+             "/https2/fixed?0");
+    }
+
+    @Test
     public void test_trie_has_no_empty_nodes() {
-        Huffman.Node root = Huffman.INSTANCE.getRoot();
-        Stack<Huffman.Node> backlog = new Stack<>();
+        NaiveHuffman.Node root = NaiveHuffman.INSTANCE.getRoot();
+        Stack<NaiveHuffman.Node> backlog = new Stack<>();
         backlog.push(root);
         while (!backlog.isEmpty()) {
-            Huffman.Node n = backlog.pop();
+            NaiveHuffman.Node n = backlog.pop();
             // The only type of nodes we couldn't possibly catch during
             // construction is an empty node: no children and no char
             if (n.left != null) {
@@ -525,11 +533,11 @@ public final class HuffmanTest {
     @Test
     public void test_trie_has_257_nodes() {
         int count = 0;
-        Huffman.Node root = Huffman.INSTANCE.getRoot();
-        Stack<Huffman.Node> backlog = new Stack<>();
+        NaiveHuffman.Node root = NaiveHuffman.INSTANCE.getRoot();
+        Stack<NaiveHuffman.Node> backlog = new Stack<>();
         backlog.push(root);
         while (!backlog.isEmpty()) {
-            Huffman.Node n = backlog.pop();
+            NaiveHuffman.Node n = backlog.pop();
             if (n.left != null) {
                 backlog.push(n.left);
             }
@@ -546,7 +554,7 @@ public final class HuffmanTest {
     @Test
     public void cant_encode_outside_byte() {
         TestHelper.Block<Object> coding =
-                () -> new Huffman.Writer()
+                () -> new NaiveHuffman.Writer()
                         .from(((char) 256) + "", 0, 1)
                         .write(ByteBuffer.allocate(1));
         RuntimeException e =
@@ -558,7 +566,7 @@ public final class HuffmanTest {
         ByteBuffer source = SpecHelper.toBytes(hexdump);
         Appendable actual = new StringBuilder();
         try {
-            new Huffman.Reader().read(source, actual, true);
+            new QuickHuffman.Reader().read(source, actual, true);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -566,9 +574,9 @@ public final class HuffmanTest {
     }
 
     private static void write(String decoded, String hexdump) {
-        int n = Huffman.INSTANCE.lengthOf(decoded);
+        Huffman.Writer writer = new QuickHuffman.Writer();
+        int n = writer.lengthOf(decoded);
         ByteBuffer destination = ByteBuffer.allocate(n); // Extra margin (1) to test having more bytes in the destination than needed is ok
-        Huffman.Writer writer = new Huffman.Writer();
         BuffersTestingKit.forEachSplit(destination, byteBuffers -> {
             writer.from(decoded, 0, decoded.length());
             boolean written = false;

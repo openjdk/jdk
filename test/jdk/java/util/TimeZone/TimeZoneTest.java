@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4028006 4044013 4096694 4107276 4107570 4112869 4130885 7039469 7126465 7158483
- *      8008577 8077685 8098547 8133321 8138716 8148446 8151876 8159684 8166875
+ *      8008577 8077685 8098547 8133321 8138716 8148446 8151876 8159684 8166875 8181157
  * @modules java.base/sun.util.resources
  * @library /java/text/testlib
  * @summary test TimeZone
@@ -364,6 +364,7 @@ public class TimeZoneTest extends IntlTest
         }
         else if (!name.equals("Pacific Standard Time") &&
                  !name.equals("\u592a\u5e73\u6d0b\u6807\u51c6\u65f6\u95f4") &&
+                 !name.equals("\u5317\u7f8e\u592a\u5e73\u6d0b\u6807\u51c6\u65f6\u95f4") &&
                  !name.equals("GMT-08:00") &&
                  !name.equals("GMT-8:00") &&
                  !name.equals("GMT-0800") &&

@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 7112427 8012295 8025633 8026567 8061305 8081854 8150130 8162363
- *      8167967 8172528 8175200 8178830 8182257 8186332 8182765
+ *      8167967 8172528 8175200 8178830 8182257 8186332 8182765 8025091
  * @summary Test of the JavaFX doclet features.
  * @author jvalenta
  * @library ../lib
@@ -45,6 +45,7 @@ public class TestJavaFX extends JavadocTester {
         javadoc("-d", "out1",
                 "-sourcepath", testSrc,
                 "-javafx",
+                "--disable-javafx-strict-checks",
                 "-package",
                 "pkg1");
         checkExit(Exit.OK);
@@ -174,6 +175,7 @@ public class TestJavaFX extends JavadocTester {
                 "-html4",
                 "-sourcepath", testSrc,
                 "-javafx",
+                "--disable-javafx-strict-checks",
                 "-package",
                 "pkg1");
         checkExit(Exit.OK);
@@ -200,6 +202,7 @@ public class TestJavaFX extends JavadocTester {
         javadoc("-d", "out2a",
                 "-sourcepath", testSrc,
                 "-javafx",
+                "--disable-javafx-strict-checks",
                 "-package",
                 "pkg2");
         checkExit(Exit.OK);
@@ -255,6 +258,7 @@ public class TestJavaFX extends JavadocTester {
                 "-html4",
                 "-sourcepath", testSrc,
                 "-javafx",
+                "--disable-javafx-strict-checks",
                 "-package",
                 "pkg2");
         checkExit(Exit.OK);
@@ -390,6 +394,7 @@ public class TestJavaFX extends JavadocTester {
     void test4() {
         javadoc("-d", "out4",
                 "--javafx",
+                "--disable-javafx-strict-checks",
                 "-Xdoclint:none",
                 "-sourcepath", testSrc,
                 "-package",

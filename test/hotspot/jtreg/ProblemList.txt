@@ -72,7 +72,6 @@ gc/stress/TestJNIBlockFullGC/TestJNIBlockFullGC.java 8192647 generic-all
 # :hotspot_runtime
 
 runtime/CompressedOops/UseCompressedOops.java 8079353 generic-all
-runtime/SharedArchiveFile/DefaultUseWithClient.java 8154204 generic-all
 
 #############################################################################
 
@@ -80,11 +79,6 @@ runtime/SharedArchiveFile/DefaultUseWithClient.java 8154204 generic-all
 
 serviceability/sa/TestRevPtrsForInvokeDynamic.java   8191270 generic-all
 serviceability/sa/sadebugd/SADebugDTest.java         8163805 generic-all
-serviceability/tmtools/jstat/GcTest01.java           8199519 generic-all
-serviceability/tmtools/jstat/GcTest02.java           8199519 generic-all
-serviceability/tmtools/jstat/GcCauseTest01.java      8199519 generic-all
-serviceability/tmtools/jstat/GcCauseTest02.java      8199519 generic-all
-serviceability/tmtools/jstat/GcCauseTest03.java      8199519 generic-all
 
 #############################################################################
 
@@ -97,12 +91,5 @@ serviceability/tmtools/jstat/GcCauseTest03.java      8199519 generic-all
 # Java EE Module Removal
 #
 
-runtime/appcds/jigsaw/classpathtests/ClassPathTests.java                       8194310    generic-all  Java EE Module Removal
-runtime/appcds/jigsaw/overridetests/OverrideTests.java                         8194310    generic-all  Java EE Module Removal
-runtime/SharedArchiveFile/BootAppendTests.java                                 8194310    generic-all  Java EE Module Removal
-runtime/modules/PatchModule/PatchModuleClassList.java                          8194310    generic-all  Java EE Module Removal
 compiler/c2/Test8007294.java                                                   8194310    generic-all  Java EE Module Removal
 compiler/c2/Test6852078.java                                                   8194310    generic-all  Java EE Module Removal
-runtime/AppCDS/HelloExtTest.java                                               8194310    generic-all  Java EE Module Removal
-runtime/AppCDS/javaldr/CheckAnonymousClass.java                                8194310    generic-all  Java EE Module Removal
-runtime/appcds/jigsaw/classpathtests/DummyClassesInBootClassPath.java          8194310    generic-all  Java EE Module Removal

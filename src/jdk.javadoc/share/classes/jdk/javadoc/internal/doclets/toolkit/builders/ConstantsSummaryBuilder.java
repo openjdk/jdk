@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,9 @@ import javax.lang.model.element.VariableElement;
 import jdk.javadoc.internal.doclets.toolkit.ConstantsSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
-import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
+import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.*;
 
 /**
  * Builds the Constants Summary Page.
@@ -262,9 +263,8 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      * @return true if the given package has constant fields to document.
      */
     private boolean hasConstantField (TypeElement typeElement) {
-        VisibleMemberMap visibleMemberMapFields = configuration.getVisibleMemberMap(typeElement,
-            VisibleMemberMap.Kind.FIELDS);
-        List<Element> fields = visibleMemberMapFields.getLeafMembers();
+        VisibleMemberTable vmt = configuration.getVisibleMemberTable(typeElement);
+        List<? extends Element> fields = vmt.getVisibleMembers(FIELDS);
         for (Element f : fields) {
             VariableElement field = (VariableElement)f;
             if (field.getConstantValue() != null) {
@@ -279,7 +279,7 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      * Return true if the given package name has been printed.  Also
      * return true if the root of this package has been printed.
      *
-     * @param pkgname the name of the package to check.
+     * @param pkg the name of the package to check.
      */
     private boolean hasPrintedPackageIndex(PackageElement pkg) {
         for (PackageElement printedPkg : printedPackageHeaders) {
@@ -298,16 +298,6 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
     private class ConstantFieldBuilder {
 
         /**
-         * The map used to get the visible variables.
-         */
-        protected VisibleMemberMap visibleMemberMapFields = null;
-
-        /**
-         * The map used to get the visible variables.
-         */
-        protected VisibleMemberMap visibleMemberMapEnumConst = null;
-
-        /**
          * The typeElement that we are examining constants for.
          */
         protected TypeElement typeElement;
@@ -318,10 +308,6 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
          */
         public ConstantFieldBuilder(TypeElement typeElement) {
             this.typeElement = typeElement;
-            visibleMemberMapFields = configuration.getVisibleMemberMap(typeElement,
-                VisibleMemberMap.Kind.FIELDS);
-            visibleMemberMapEnumConst = configuration.getVisibleMemberMap(typeElement,
-                VisibleMemberMap.Kind.ENUM_CONSTANTS);
         }
 
         /**
@@ -342,8 +328,10 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
          * @return the set of visible constant fields for the given type.
          */
         protected SortedSet<VariableElement> members() {
-            List<Element> members = visibleMemberMapFields.getLeafMembers();
-            members.addAll(visibleMemberMapEnumConst.getLeafMembers());
+            VisibleMemberTable vmt = configuration.getVisibleMemberTable(typeElement);
+            List<Element> members = new ArrayList<>();
+            members.addAll(vmt.getVisibleMembers(FIELDS));
+            members.addAll(vmt.getVisibleMembers(ENUM_CONSTANTS));
             SortedSet<VariableElement> includes =
                     new TreeSet<>(utils.makeGeneralPurposeComparator());
             for (Element element : members) {

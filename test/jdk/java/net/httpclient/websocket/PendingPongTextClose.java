@@ -40,6 +40,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static java.net.http.HttpClient.Builder.NO_PROXY;
+import static java.net.http.HttpClient.newBuilder;
 import static java.net.http.HttpClient.newHttpClient;
 
 public class PendingPongTextClose extends PendingOperations {
@@ -53,7 +55,7 @@ public class PendingPongTextClose extends PendingOperations {
         repeatable( () -> {
             server = Support.notReadingServer();
             server.open();
-            webSocket = newHttpClient().newWebSocketBuilder()
+            webSocket = newBuilder().proxy(NO_PROXY).build().newWebSocketBuilder()
                     .buildAsync(server.getURI(), new WebSocket.Listener() { })
                     .join();
             ByteBuffer data = ByteBuffer.allocate(125);

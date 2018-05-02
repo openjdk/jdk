@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,8 @@
  */
 
 // key: compiler.err.cant.apply.symbol
-// key: compiler.misc.inferred.do.not.conform.to.upper.bounds
+// key: compiler.misc.inconvertible.types
+// key: compiler.misc.infer.no.conforming.assignment.exists
 // options: -source 7 -Xlint:-options
 
 import java.util.*;

@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @summary AppCDS handling of directories in -cp
+ * @summary Handling of directories in -cp is based on the classlist
  * @requires vm.cds
  * @library /test/lib
  * @run main DirClasspathTest
@@ -45,10 +45,14 @@ public class DirClasspathTest {
         File emptydir = new File(dir, "emptydir");
         emptydir.mkdir();
 
+        /////////////////////////////////////////////////////////////////
+        // The classlist only contains boot class in following test cases
+        /////////////////////////////////////////////////////////////////
+        String bootClassList[] = {"java/lang/Object"};
+
         // Empty dir in -cp: should be OK
         OutputAnalyzer output;
-        String classList[] = {"java/lang/Object"};
-        output = TestCommon.dump(emptydir.getPath(), classList, "-Xlog:class+path=info");
+        output = TestCommon.dump(emptydir.getPath(), bootClassList, "-Xlog:class+path=info");
         TestCommon.checkDump(output);
 
         // Long path to empty dir in -cp: should be OK
@@ -65,19 +69,32 @@ public class DirClasspathTest {
         longDir.mkdir();
         File subDir = new File(longDir, "subdir");
         subDir.mkdir();
-        output = TestCommon.dump(subDir.getPath(), classList, "-Xlog:class+path=info");
+        output = TestCommon.dump(subDir.getPath(), bootClassList, "-Xlog:class+path=info");
         TestCommon.checkDump(output);
 
-        // Non-empty dir in -cp: should fail
+        // Non-empty dir in -cp: should be OK
         // <dir> is not empty because it has at least one subdirectory, i.e., <emptydir>
-        output = TestCommon.dump(dir.getPath(), classList, "-Xlog:class+path=info");
-        output.shouldNotHaveExitValue(0);
-        output.shouldContain("CDS allows only empty directories in archived classpaths");
+        output = TestCommon.dump(dir.getPath(), bootClassList, "-Xlog:class+path=info");
+        TestCommon.checkDump(output);
 
-        // Long path to non-empty dir in -cp: should fail
+        // Long path to non-empty dir in -cp: should be OK
         // <dir> is not empty because it has at least one subdirectory, i.e., <emptydir>
-        output = TestCommon.dump(longDir.getPath(), classList, "-Xlog:class+path=info");
+        output = TestCommon.dump(longDir.getPath(), bootClassList, "-Xlog:class+path=info");
+        TestCommon.checkDump(output);
+
+        /////////////////////////////////////////////////////////////////
+        // The classlist contains non-boot class in following test cases
+        /////////////////////////////////////////////////////////////////
+        String appClassList[] = {"java/lang/Object", "com/sun/tools/javac/Main"};
+
+        // Non-empty dir in -cp: should report error
+        output = TestCommon.dump(dir.getPath(), appClassList, "-Xlog:class+path=info");
         output.shouldNotHaveExitValue(0);
-        output.shouldContain("CDS allows only empty directories in archived classpaths");
+        output.shouldContain("Cannot have non-empty directory in paths");
+
+        // Long path to non-empty dir in -cp: should report error
+        output = TestCommon.dump(longDir.getPath(), appClassList, "-Xlog:class+path=info");
+        output.shouldNotHaveExitValue(0);
+        output.shouldContain("Cannot have non-empty directory in paths");
     }
 }

@@ -35,6 +35,10 @@ hotspot_compiler_xcomp = \
   :hotspot_compiler \
   -:tier1_compiler_not_xcomp
 
+hotspot_compiler_all_gcs = \
+  :hotspot_compiler \
+  -:tier1_compiler_not_cms
+
 hotspot_gc = \
   gc
 
@@ -135,6 +139,10 @@ tier1_compiler_3 = \
 tier1_compiler_not_xcomp = \
   compiler/aot
 
+tier1_compiler_not_cms = \
+  compiler/aot \
+  compiler/jvmci
+
 ctw_1 = \
   applications/ctw/modules/ \
   -:ctw_2 \
@@ -142,7 +150,9 @@ ctw_1 = \
 
 ctw_2 = \
   applications/ctw/modules/java_base.java \
-  applications/ctw/modules/java_desktop.java
+  applications/ctw/modules/java_base_2.java \
+  applications/ctw/modules/java_desktop.java \
+  applications/ctw/modules/java_desktop_2.java
 
 ctw_3 = \
   applications/ctw/modules/javafx_graphics.java \
@@ -225,7 +235,6 @@ tier1_runtime = \
  -runtime/SelectionResolution/InvokeVirtualICCE.java \
  -runtime/SelectionResolution/InvokeVirtualSuccessTest.java \
  -runtime/SharedArchiveFile/CdsSameObjectAlignment.java \
- -runtime/SharedArchiveFile/DefaultUseWithClient.java \
  -runtime/SharedArchiveFile/SharedBaseAddress.java \
  -runtime/Thread/CancellableThreadTest.java \
  -runtime/Thread/TestThreadDumpMonitorContention.java \

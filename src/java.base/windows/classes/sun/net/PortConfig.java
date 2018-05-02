@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,49 +25,21 @@
 
 package sun.net;
 
-import java.security.AccessController;
-
 /**
  * Determines the ephemeral port range in use on this system.
- * If this cannot be determined, then the default settings
- * of the OS are returned.
+ * On Windows we always use the default range.
  */
 
 public final class PortConfig {
 
-    private static int defaultUpper, defaultLower;
-    private static final int upper, lower;
-
-    static {
-        AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("net");
-                    return null;
-                }
-            });
-
-        int v = getLower0();
-        if (v == -1) {
-            v = defaultLower;
-        }
-        lower = v;
-
-        v = getUpper0();
-        if (v == -1) {
-            v = defaultUpper;
-        }
-        upper = v;
-    }
-
-    static native int getLower0();
-    static native int getUpper0();
+    private static final int defaultLower = 49152;
+    private static final int defaultUpper = 65535;
 
     public static int getLower() {
-        return lower;
+        return defaultLower;
     }
 
     public static int getUpper() {
-        return upper;
+        return defaultUpper;
     }
 }

@@ -56,7 +56,7 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
     __ strb(zr, Address(obj, rscratch1));
     __ bind(L_already_dirty);
   } else {
-    if (UseConcMarkSweepGC && CMSPrecleaningEnabled) {
+    if (ct->scanned_concurrently()) {
       __ membar(Assembler::StoreStore);
     }
     __ strb(zr, Address(obj, rscratch1));
@@ -79,7 +79,7 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   const Register count = end; // 'end' register contains bytes count now
   __ load_byte_map_base(scratch);
   __ add(start, start, scratch);
-  if (UseConcMarkSweepGC) {
+  if (ct->scanned_concurrently()) {
     __ membar(__ StoreStore);
   }
   __ bind(L_loop);

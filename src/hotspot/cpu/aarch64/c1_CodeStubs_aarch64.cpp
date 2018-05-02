@@ -32,9 +32,6 @@
 #include "nativeInst_aarch64.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "vmreg_aarch64.inline.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1BarrierSet.hpp"
-#endif
 
 
 #define __ ce->masm()->
@@ -349,43 +346,5 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
 
   __ b(_continuation);
 }
-
-
-/////////////////////////////////////////////////////////////////////////////
-#if INCLUDE_ALL_GCS
-
-void G1PreBarrierStub::emit_code(LIR_Assembler* ce) {
-  // At this point we know that marking is in progress.
-  // If do_load() is true then we have to emit the
-  // load of the previous value; otherwise it has already
-  // been loaded into _pre_val.
-
-  __ bind(_entry);
-  assert(pre_val()->is_register(), "Precondition.");
-
-  Register pre_val_reg = pre_val()->as_register();
-
-  if (do_load()) {
-    ce->mem2reg(addr(), pre_val(), T_OBJECT, patch_code(), info(), false /*wide*/, false /*unaligned*/);
-  }
-  __ cbz(pre_val_reg, _continuation);
-  ce->store_parameter(pre_val()->as_register(), 0);
-  __ far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::g1_pre_barrier_slow_id)));
-  __ b(_continuation);
-}
-
-void G1PostBarrierStub::emit_code(LIR_Assembler* ce) {
-  __ bind(_entry);
-  assert(addr()->is_register(), "Precondition.");
-  assert(new_val()->is_register(), "Precondition.");
-  Register new_val_reg = new_val()->as_register();
-  __ cbz(new_val_reg, _continuation);
-  ce->store_parameter(addr()->as_pointer_register(), 0);
-  __ far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::g1_post_barrier_slow_id)));
-  __ b(_continuation);
-}
-
-#endif // INCLUDE_ALL_GCS
-/////////////////////////////////////////////////////////////////////////////
 
 #undef __

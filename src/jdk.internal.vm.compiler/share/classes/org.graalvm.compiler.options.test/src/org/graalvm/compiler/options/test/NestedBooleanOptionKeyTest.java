@@ -40,6 +40,7 @@ import static org.junit.Assert.assertTrue;
 import org.graalvm.compiler.options.NestedBooleanOptionKey;
 import org.graalvm.compiler.options.OptionDescriptor;
 import org.graalvm.compiler.options.OptionKey;
+import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionValues;
 import org.junit.Test;
 
@@ -54,12 +55,12 @@ public class NestedBooleanOptionKeyTest {
         public static final OptionKey<Boolean> NestedOption2 = new NestedBooleanOptionKey(Master2, false);
     }
 
-    static final OptionDescriptor master0 = OptionDescriptor.create("Master0", Boolean.class, "", Options.class, "Master0", Master0);
-    static final OptionDescriptor nestedOption0 = OptionDescriptor.create("NestedOption0", Boolean.class, "", Options.class, "NestedOption0", NestedOption0);
-    static final OptionDescriptor master1 = OptionDescriptor.create("Master1", Boolean.class, "", Options.class, "Master1", Master1);
-    static final OptionDescriptor nestedOption1 = OptionDescriptor.create("NestedOption1", Boolean.class, "", Options.class, "NestedOption1", NestedOption1);
-    static final OptionDescriptor master2 = OptionDescriptor.create("Master2", Boolean.class, "", Options.class, "Master2", Master2);
-    static final OptionDescriptor nestedOption2 = OptionDescriptor.create("NestedOption2", Boolean.class, "", Options.class, "NestedOption2", NestedOption2);
+    static final OptionDescriptor master0 = OptionDescriptor.create("Master0", OptionType.Debug, Boolean.class, "", Options.class, "Master0", Master0);
+    static final OptionDescriptor nestedOption0 = OptionDescriptor.create("NestedOption0", OptionType.Debug, Boolean.class, "", Options.class, "NestedOption0", NestedOption0);
+    static final OptionDescriptor master1 = OptionDescriptor.create("Master1", OptionType.Debug, Boolean.class, "", Options.class, "Master1", Master1);
+    static final OptionDescriptor nestedOption1 = OptionDescriptor.create("NestedOption1", OptionType.Debug, Boolean.class, "", Options.class, "NestedOption1", NestedOption1);
+    static final OptionDescriptor master2 = OptionDescriptor.create("Master2", OptionType.Debug, Boolean.class, "", Options.class, "Master2", Master2);
+    static final OptionDescriptor nestedOption2 = OptionDescriptor.create("NestedOption2", OptionType.Debug, Boolean.class, "", Options.class, "NestedOption2", NestedOption2);
 
     @Test
     public void runDefaultTrue() {

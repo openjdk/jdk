@@ -28,6 +28,7 @@ import jdk.internal.net.http.hpack.HPACK.Logger;
 
 import java.util.NoSuchElementException;
 
+import static jdk.internal.net.http.common.Utils.pow2Size;
 import static jdk.internal.net.http.hpack.HPACK.Logger.Level.EXTRA;
 import static jdk.internal.net.http.hpack.HPACK.Logger.Level.NORMAL;
 import static java.lang.String.format;
@@ -306,8 +307,8 @@ class SimpleHeaderTable {
         Object[] elements;
 
         CircularBuffer(int capacity) {
-            this.capacity = capacity;
-            elements = new Object[capacity];
+            this.capacity = pow2Size(capacity);
+            elements = new Object[this.capacity];
         }
 
         void add(E elem) {
@@ -316,7 +317,7 @@ class SimpleHeaderTable {
                         format("No room for '%s': capacity=%s", elem, capacity));
             }
             elements[head] = elem;
-            head = (head + 1) % capacity;
+            head = (head + 1) & (capacity - 1);
             size++;
         }
 
@@ -327,7 +328,7 @@ class SimpleHeaderTable {
             }
             E elem = (E) elements[tail];
             elements[tail] = null;
-            tail = (tail + 1) % capacity;
+            tail = (tail + 1) & (capacity - 1);
             size--;
             return elem;
         }
@@ -339,7 +340,7 @@ class SimpleHeaderTable {
                         format("0 <= index <= capacity: index=%s, capacity=%s",
                                index, capacity));
             }
-            int idx = (tail + (size - index - 1)) % capacity;
+            int idx = (tail + (size - index - 1)) & (capacity - 1);
             return (E) elements[idx];
         }
 
@@ -350,7 +351,8 @@ class SimpleHeaderTable {
                                newCapacity, size));
             }
 
-            Object[] newElements = new Object[newCapacity];
+            int capacity = pow2Size(newCapacity);
+            Object[] newElements = new Object[capacity];
 
             if (tail < head || size == 0) {
                 System.arraycopy(elements, tail, newElements, 0, size);
@@ -362,7 +364,7 @@ class SimpleHeaderTable {
             elements = newElements;
             tail = 0;
             head = size;
-            this.capacity = newCapacity;
+            this.capacity = capacity;
         }
     }
 }

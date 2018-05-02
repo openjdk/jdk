@@ -45,14 +45,12 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
-import jdk.javadoc.internal.doclets.formats.html.markup.Navigation;
 import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.taglets.DeprecatedTaglet;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
-import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
 
 import static javax.lang.model.element.Modifier.*;
 
@@ -134,7 +132,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter {
     /**
      * Create the summary table for this element.
      * The table should be created and initialized if needed, and configured
-     * so that it is ready to add content with {@link Table#addRows(Content[])}
+     * so that it is ready to add content with {@link Table#addRow(Content[])}
      * and similar methods.
      *
      * @return the summary table

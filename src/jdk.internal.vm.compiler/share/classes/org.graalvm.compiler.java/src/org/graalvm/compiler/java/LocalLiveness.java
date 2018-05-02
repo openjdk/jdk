@@ -220,7 +220,7 @@ public abstract class LocalLiveness {
     protected abstract void storeOne(int blockID, int local);
 
     private void computeLocalLiveness(BytecodeStream stream, BciBlock block) {
-        if (block.startBci < 0 || block.endBci < 0) {
+        if (block.isExceptionDispatch()) {
             return;
         }
         int blockID = block.getId();

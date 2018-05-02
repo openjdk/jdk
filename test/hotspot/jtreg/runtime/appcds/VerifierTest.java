@@ -243,7 +243,6 @@ public class VerifierTest implements Opcodes {
             if (!dump_setting.equals(prev_dump_setting)) {
                 OutputAnalyzer dumpOutput = TestCommon.dump(
                                                             jar, appClasses, dump_setting,
-                                                            "-XX:+UnlockDiagnosticVMOptions",
                                                             // FIXME: the following options are for working around a GC
                                                             // issue - assert failure when dumping archive with the -Xverify:all
                                                             "-Xms256m",

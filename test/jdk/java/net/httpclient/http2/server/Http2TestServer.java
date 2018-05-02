@@ -67,11 +67,11 @@ public class Http2TestServer implements AutoCloseable {
     }
 
     public Http2TestServer(String serverName, boolean secure, int port) throws Exception {
-        this(serverName, secure, port, getDefaultExecutor(), null);
+        this(serverName, secure, port, getDefaultExecutor(), 50, null);
     }
 
     public Http2TestServer(boolean secure, int port) throws Exception {
-        this(null, secure, port, getDefaultExecutor(), null);
+        this(null, secure, port, getDefaultExecutor(), 50, null);
     }
 
     public InetSocketAddress getAddress() {
@@ -85,19 +85,29 @@ public class Http2TestServer implements AutoCloseable {
 
     public Http2TestServer(boolean secure,
                            SSLContext context) throws Exception {
-        this(null, secure, 0, null, context);
+        this(null, secure, 0, null, 50, context);
     }
 
     public Http2TestServer(String serverName, boolean secure,
                            SSLContext context) throws Exception {
-        this(serverName, secure, 0, null, context);
+        this(serverName, secure, 0, null, 50, context);
     }
 
     public Http2TestServer(boolean secure,
                            int port,
                            ExecutorService exec,
                            SSLContext context) throws Exception {
-        this(null, secure, port, exec, context);
+        this(null, secure, port, exec, 50, context);
+    }
+
+    public Http2TestServer(String serverName,
+                           boolean secure,
+                           int port,
+                           ExecutorService exec,
+                           SSLContext context)
+        throws Exception
+    {
+        this(serverName, secure, port, exec, 50, context);
     }
 
     /**
@@ -109,20 +119,22 @@ public class Http2TestServer implements AutoCloseable {
      * @param secure https or http
      * @param port listen port
      * @param exec executor service (cached thread pool is used if null)
+     * @param backlog the server socket backlog
      * @param context the SSLContext used when secure is true
      */
     public Http2TestServer(String serverName,
                            boolean secure,
                            int port,
                            ExecutorService exec,
+                           int backlog,
                            SSLContext context)
         throws Exception
     {
         this.serverName = serverName;
         if (secure) {
-            server = initSecure(port);
+            server = initSecure(port, backlog);
         } else {
-            server = initPlaintext(port);
+            server = initPlaintext(port, backlog);
         }
         this.secure = secure;
         this.exec = exec == null ? getDefaultExecutor() : exec;
@@ -171,10 +183,10 @@ public class Http2TestServer implements AutoCloseable {
         return handler;
     }
 
-    final ServerSocket initPlaintext(int port) throws Exception {
+    final ServerSocket initPlaintext(int port, int backlog) throws Exception {
         ServerSocket ss = new ServerSocket();
         ss.setReuseAddress(false);
-        ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+        ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), backlog);
         return ss;
     }
 
@@ -192,7 +204,7 @@ public class Http2TestServer implements AutoCloseable {
     }
 
 
-    final ServerSocket initSecure(int port) throws Exception {
+    final ServerSocket initSecure(int port, int backlog) throws Exception {
         ServerSocketFactory fac;
         if (sslContext != null) {
             fac = sslContext.getServerSocketFactory();
@@ -201,7 +213,7 @@ public class Http2TestServer implements AutoCloseable {
         }
         SSLServerSocket se = (SSLServerSocket) fac.createServerSocket();
         se.setReuseAddress(false);
-        se.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+        se.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), backlog);
         SSLParameters sslp = se.getSSLParameters();
         sslp.setApplicationProtocols(new String[]{"h2"});
         sslp.setEndpointIdentificationAlgorithm("HTTPS");

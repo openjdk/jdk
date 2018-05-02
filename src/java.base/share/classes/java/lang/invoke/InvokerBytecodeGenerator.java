@@ -674,6 +674,7 @@ class InvokerBytecodeGenerator {
             case DIRECT_NEW_INVOKE_SPECIAL: // fall-through
             case DIRECT_INVOKE_INTERFACE:   // fall-through
             case DIRECT_INVOKE_SPECIAL:     // fall-through
+            case DIRECT_INVOKE_SPECIAL_IFC: // fall-through
             case DIRECT_INVOKE_STATIC:      // fall-through
             case DIRECT_INVOKE_STATIC_INIT: // fall-through
             case DIRECT_INVOKE_VIRTUAL:     return resolveFrom(name, invokerType, DirectMethodHandle.Holder.class);

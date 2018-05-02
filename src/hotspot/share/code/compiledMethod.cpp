@@ -525,7 +525,7 @@ void CompiledMethod::do_unloading(BoolObjectClosure* is_alive, bool unloading_oc
   }
 
 #if INCLUDE_JVMCI
-  if (do_unloading_jvmci(is_alive, unloading_occurred)) {
+  if (do_unloading_jvmci(unloading_occurred)) {
     return;
   }
 #endif
@@ -535,7 +535,7 @@ void CompiledMethod::do_unloading(BoolObjectClosure* is_alive, bool unloading_oc
 }
 
 template <class CompiledICorStaticCall>
-static bool clean_if_nmethod_is_unloaded(CompiledICorStaticCall *ic, address addr, BoolObjectClosure *is_alive, CompiledMethod* from) {
+static bool clean_if_nmethod_is_unloaded(CompiledICorStaticCall *ic, address addr, CompiledMethod* from) {
   // Ok, to lookup references to zombies here
   CodeBlob *cb = CodeCache::find_blob_unsafe(addr);
   CompiledMethod* nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
@@ -555,12 +555,12 @@ static bool clean_if_nmethod_is_unloaded(CompiledICorStaticCall *ic, address add
   return false;
 }
 
-static bool clean_if_nmethod_is_unloaded(CompiledIC *ic, BoolObjectClosure *is_alive, CompiledMethod* from) {
-  return clean_if_nmethod_is_unloaded(ic, ic->ic_destination(), is_alive, from);
+static bool clean_if_nmethod_is_unloaded(CompiledIC *ic, CompiledMethod* from) {
+  return clean_if_nmethod_is_unloaded(ic, ic->ic_destination(), from);
 }
 
-static bool clean_if_nmethod_is_unloaded(CompiledStaticCall *csc, BoolObjectClosure *is_alive, CompiledMethod* from) {
-  return clean_if_nmethod_is_unloaded(csc, csc->destination(), is_alive, from);
+static bool clean_if_nmethod_is_unloaded(CompiledStaticCall *csc, CompiledMethod* from) {
+  return clean_if_nmethod_is_unloaded(csc, csc->destination(), from);
 }
 
 bool CompiledMethod::do_unloading_parallel(BoolObjectClosure* is_alive, bool unloading_occurred) {
@@ -608,15 +608,15 @@ bool CompiledMethod::do_unloading_parallel(BoolObjectClosure* is_alive, bool unl
         clean_ic_if_metadata_is_dead(CompiledIC_at(&iter));
       }
 
-      postponed |= clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), is_alive, this);
+      postponed |= clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), this);
       break;
 
     case relocInfo::opt_virtual_call_type:
-      postponed |= clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), is_alive, this);
+      postponed |= clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), this);
       break;
 
     case relocInfo::static_call_type:
-      postponed |= clean_if_nmethod_is_unloaded(compiledStaticCall_at(iter.reloc()), is_alive, this);
+      postponed |= clean_if_nmethod_is_unloaded(compiledStaticCall_at(iter.reloc()), this);
       break;
 
     case relocInfo::oop_type:
@@ -636,7 +636,7 @@ bool CompiledMethod::do_unloading_parallel(BoolObjectClosure* is_alive, bool unl
   }
 
 #if INCLUDE_JVMCI
-  if (do_unloading_jvmci(is_alive, unloading_occurred)) {
+  if (do_unloading_jvmci(unloading_occurred)) {
     return postponed;
   }
 #endif
@@ -647,7 +647,7 @@ bool CompiledMethod::do_unloading_parallel(BoolObjectClosure* is_alive, bool unl
   return postponed;
 }
 
-void CompiledMethod::do_unloading_parallel_postponed(BoolObjectClosure* is_alive, bool unloading_occurred) {
+void CompiledMethod::do_unloading_parallel_postponed() {
   ResourceMark rm;
 
   // Make sure the oop's ready to receive visitors
@@ -671,15 +671,15 @@ void CompiledMethod::do_unloading_parallel_postponed(BoolObjectClosure* is_alive
     switch (iter.type()) {
 
     case relocInfo::virtual_call_type:
-      clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), is_alive, this);
+      clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), this);
       break;
 
     case relocInfo::opt_virtual_call_type:
-      clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), is_alive, this);
+      clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), this);
       break;
 
     case relocInfo::static_call_type:
-      clean_if_nmethod_is_unloaded(compiledStaticCall_at(iter.reloc()), is_alive, this);
+      clean_if_nmethod_is_unloaded(compiledStaticCall_at(iter.reloc()), this);
       break;
 
     default:

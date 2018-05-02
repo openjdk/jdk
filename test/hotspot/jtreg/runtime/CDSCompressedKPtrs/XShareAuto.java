@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @requires vm.cds
  * @bug 8005933
- * @summary Test that -Xshare:auto uses CDS when explicitly specified with -server.
+ * @summary -Xshare:auto is the default when -Xshare is not specified
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -45,34 +45,30 @@ public class XShareAuto {
         output.shouldContain("Loading classes to share");
         output.shouldHaveExitValue(0);
 
-        pb = ProcessTools.createJavaProcessBuilder(
-            "-server", "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=./XShareAuto.jsa", "-version");
-        output = new OutputAnalyzer(pb.start());
-        String outputString = output.getOutput();
-        // We asked for server but it could be aliased to something else
-        if (outputString.contains("Server VM") && !outputString.contains("emulated-client")) {
-            // In server case we don't expect to see sharing flag
-            output.shouldNotContain("sharing");
+
+        // We have 2 test cases:
+        String cases[] = {
+            "-Xshare:auto",    // case [1]: -Xshare:auto is explicitly specified.
+            "-showversion"     // case [2]: -Xshare:auto is not explicitly specified,
+                               //           but VM should still use it by default.
+        };
+
+        for (String x : cases) {
+            pb = ProcessTools.createJavaProcessBuilder(
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:SharedArchiveFile=./XShareAuto.jsa",
+                "-Xlog:cds",
+                x,
+                "-version");
+            output = new OutputAnalyzer(pb.start());
+            String outputString = output.getOutput();
+
+            if (!outputString.contains("Unable to map")) {
+                // sharing may not be enabled if XShareAuto.jsa cannot be mapped due to
+                // ASLR.
+                output.shouldContain("sharing");
+            }
             output.shouldHaveExitValue(0);
         }
-        else {
-            System.out.println("Skipping test - no Server VM available");
-            return;
-        }
-
-        pb = ProcessTools.createJavaProcessBuilder(
-            "-server", "-Xshare:auto", "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=./XShareAuto.jsa", "-Xlog:cds", "-version");
-        output = new OutputAnalyzer(pb.start());
-        try {
-            output.shouldContain("sharing");
-        } catch (RuntimeException e) {
-            // if sharing failed due to ASLR or similar reasons,
-            // check whether sharing was attempted at all (UseSharedSpaces)
-            output.shouldContain("UseSharedSpaces:");
-            output.shouldNotContain("Unable to map %s");
-        }
-        output.shouldHaveExitValue(0);
     }
 }

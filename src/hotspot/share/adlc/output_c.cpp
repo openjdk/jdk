@@ -3936,6 +3936,9 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
     fprintf(fp_cpp, "%s node->_prob = _leaf->as_If()->_prob;\n", indent);
     fprintf(fp_cpp, "%s node->_fcnt = _leaf->as_If()->_fcnt;\n", indent);
   }
+  if (inst->is_ideal_jump()) {
+    fprintf(fp_cpp, "%s node->_probs = _leaf->as_Jump()->_probs;\n", indent);
+  }
   if( inst->is_ideal_fastlock() ) {
     fprintf(fp_cpp, "%s node->_counters = _leaf->as_FastLock()->counters();\n", indent);
     fprintf(fp_cpp, "%s node->_rtm_counters = _leaf->as_FastLock()->rtm_counters();\n", indent);

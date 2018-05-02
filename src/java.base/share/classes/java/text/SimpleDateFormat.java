@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ import java.util.concurrent.ConcurrentMap;
 import sun.util.calendar.CalendarUtils;
 import sun.util.calendar.ZoneInfoFile;
 import sun.util.locale.provider.LocaleProviderAdapter;
+import sun.util.locale.provider.TimeZoneNameUtility;
 
 /**
  * <code>SimpleDateFormat</code> is a concrete class for formatting and
@@ -1691,6 +1692,12 @@ public class SimpleDateFormat extends DateFormat {
             // Checking long and short zones [1 & 2],
             // and long and short daylight [3 & 4].
             String zoneName = zoneNames[i];
+            if (zoneName.isEmpty()) {
+                // fill in by retrieving single name
+                zoneName = TimeZoneNameUtility.retrieveDisplayName(
+                                zoneNames[0], i >= 3, i % 2, locale);
+                zoneNames[i] = zoneName;
+            }
             if (text.regionMatches(true, start,
                                    zoneName, 0, zoneName.length())) {
                 return i;

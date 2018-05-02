@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.phases.common.inlining.info;
 
-import org.graalvm.collections.EconomicSet;
+import jdk.internal.vm.compiler.collections.EconomicSet;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.nodes.Invoke;
 import org.graalvm.compiler.nodes.StructuredGraph;
@@ -75,7 +75,7 @@ public interface InlineInfo {
      *
      * @return a collection of nodes that need to be canonicalized after the inlining
      */
-    EconomicSet<Node> inline(Providers providers);
+    EconomicSet<Node> inline(Providers providers, String reason);
 
     /**
      * Try to make the call static bindable to avoid interface and virtual method calls.

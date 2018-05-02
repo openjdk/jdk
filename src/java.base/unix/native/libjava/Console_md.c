@@ -67,14 +67,3 @@ Java_java_io_Console_echo(JNIEnv *env,
     }
     return old;
 }
-
-JNIEXPORT jboolean JNICALL
-Java_java_io_Console_echo0(JNIEnv *env, jclass cls) {
-    struct termios tio;
-    int tty = fileno(stdin);
-    if (tcgetattr(tty, &tio) == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "tcgetattr failed");
-        return JNI_TRUE;
-    }
-    return (tio.c_lflag & ECHO) != 0;
-}

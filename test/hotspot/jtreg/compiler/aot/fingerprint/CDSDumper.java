@@ -31,18 +31,19 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 // Usage:
-// java CDSDumper <classpath> <classlist> <archive> <class1> <class2> ...
+// java CDSDumper <classpath> <classlist> <archive> <heapsize> <class1> <class2> ...
 public class CDSDumper {
     public static void main(String[] args) throws Exception {
         String classpath = args[0];
         String classlist = args[1];
         String archive = args[2];
+        String heapsize = args[3];
 
         // Prepare the classlist
         FileOutputStream fos = new FileOutputStream(classlist);
         PrintStream ps = new PrintStream(fos);
 
-        for (int i=3; i<args.length; i++) {
+        for (int i=4; i<args.length; i++) {
             ps.println(args[i].replace('.', '/'));
         }
         ps.close();
@@ -50,17 +51,18 @@ public class CDSDumper {
 
         // Dump the archive
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            heapsize,
             "-XX:+IgnoreUnrecognizedVMOptions",
-            "-XX:+UnlockCommercialFeatures",
-            "-XX:+UseAppCDS",
-            "-XX:+UnlockDiagnosticVMOptions",
             "-cp", classpath,
             "-XX:ExtraSharedClassListFile=" + classlist,
             "-XX:SharedArchiveFile=" + archive,
             "-Xshare:dump",
+            "-Xlog:gc+heap+coops",
             "-Xlog:cds");
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        System.out.println("[stdout = " + output.getStdout() + "]");
+        System.out.println("[stderr = " + output.getStderr() + "]");
         output.shouldContain("Loading classes to share");
         output.shouldHaveExitValue(0);
     }

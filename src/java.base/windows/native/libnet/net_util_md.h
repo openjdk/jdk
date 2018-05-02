@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,11 +51,6 @@
 extern jboolean isRcvTimeoutSupported;
 
 void NET_ThrowCurrent(JNIEnv *env, char *msg);
-
-/*
- * Return default Type Of Service
- */
-int NET_GetDefaultTOS(void);
 
 typedef union {
     struct sockaddr     sa;

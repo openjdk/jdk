@@ -259,8 +259,19 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         if (!connection.connected()) {
             if (debug.on()) debug.log("initiating connect async");
             connectCF = connection.connectAsync();
+            Throwable cancelled;
             synchronized (lock) {
-                operations.add(connectCF);
+                if ((cancelled = failed) == null) {
+                    operations.add(connectCF);
+                }
+            }
+            if (cancelled != null) {
+                if (client.isSelectorThread()) {
+                    executor.execute(() ->
+                        connectCF.completeExceptionally(cancelled));
+                } else {
+                    connectCF.completeExceptionally(cancelled);
+                }
             }
         } else {
             connectCF = new MinimalFuture<>();
@@ -403,6 +414,9 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
             if ((error = failed) == null) {
                 failed = error = cause;
             }
+            if (debug.on()) {
+                debug.log(request.uri() + ": " + error);
+            }
             if (requestAction != null && requestAction.finished()
                     && response != null && response.finished()) {
                 return;
@@ -447,7 +461,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
                 exec.execute(() -> {
                     if (cf.completeExceptionally(x)) {
                         if (debug.on())
-                            debug.log("completed cf with %s", (Object) x);
+                            debug.log("%s: completed cf with %s", request.uri(), x);
                     }
                 });
             }

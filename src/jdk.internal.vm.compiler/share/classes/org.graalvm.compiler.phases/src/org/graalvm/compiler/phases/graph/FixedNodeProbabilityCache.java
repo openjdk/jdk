@@ -26,8 +26,8 @@ import static org.graalvm.compiler.nodes.cfg.ControlFlowGraph.multiplyProbabilit
 
 import java.util.function.ToDoubleFunction;
 
-import org.graalvm.collections.EconomicMap;
-import org.graalvm.collections.Equivalence;
+import jdk.internal.vm.compiler.collections.EconomicMap;
+import jdk.internal.vm.compiler.collections.Equivalence;
 import org.graalvm.compiler.debug.CounterKey;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.graph.Node;

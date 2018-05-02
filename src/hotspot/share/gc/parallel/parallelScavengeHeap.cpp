@@ -478,8 +478,13 @@ size_t ParallelScavengeHeap::unsafe_max_tlab_alloc(Thread* thr) const {
   return young_gen()->eden_space()->unsafe_max_tlab_alloc(thr);
 }
 
-HeapWord* ParallelScavengeHeap::allocate_new_tlab(size_t size) {
-  return young_gen()->allocate(size);
+HeapWord* ParallelScavengeHeap::allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) {
+  HeapWord* result = young_gen()->allocate(requested_size);
+  if (result != NULL) {
+    *actual_size = requested_size;
+  }
+
+  return result;
 }
 
 void ParallelScavengeHeap::accumulate_statistics_all_tlabs() {

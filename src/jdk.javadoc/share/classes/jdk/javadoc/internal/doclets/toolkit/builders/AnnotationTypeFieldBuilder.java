@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeFieldWriter;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
-import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 
 /**
@@ -50,16 +50,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
 public class AnnotationTypeFieldBuilder extends AbstractMemberBuilder {
 
     /**
-     * The annotation type whose members are being documented.
-     */
-    protected TypeElement typeElement;
-
-    /**
-     * The visible members for the given class.
-     */
-    protected VisibleMemberMap visibleMemberMap;
-
-    /**
      * The writer to output the member documentation.
      */
     protected AnnotationTypeFieldWriter writer;
@@ -67,7 +57,7 @@ public class AnnotationTypeFieldBuilder extends AbstractMemberBuilder {
     /**
      * The list of members being documented.
      */
-    protected List<Element> members;
+    protected List<? extends Element> members;
 
     /**
      * The index of the current member that is being documented at this point
@@ -86,12 +76,10 @@ public class AnnotationTypeFieldBuilder extends AbstractMemberBuilder {
     protected AnnotationTypeFieldBuilder(Context context,
             TypeElement typeElement,
             AnnotationTypeFieldWriter writer,
-            VisibleMemberMap.Kind memberType) {
-        super(context);
-        this.typeElement = typeElement;
+            VisibleMemberTable.Kind memberType) {
+        super(context, typeElement);
         this.writer = writer;
-        this.visibleMemberMap = configuration.getVisibleMemberMap(typeElement, memberType);
-        this.members = this.visibleMemberMap.getMembers(typeElement);
+        this.members = getVisibleMembers(memberType);
     }
 
 
@@ -107,7 +95,7 @@ public class AnnotationTypeFieldBuilder extends AbstractMemberBuilder {
             Context context, TypeElement typeElement,
             AnnotationTypeFieldWriter writer) {
         return new AnnotationTypeFieldBuilder(context, typeElement,
-                    writer, VisibleMemberMap.Kind.ANNOTATION_TYPE_FIELDS);
+                    writer, VisibleMemberTable.Kind.ANNOTATION_TYPE_FIELDS);
     }
 
     /**

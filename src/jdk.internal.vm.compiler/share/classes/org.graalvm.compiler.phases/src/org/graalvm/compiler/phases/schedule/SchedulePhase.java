@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.phases.schedule;
 
-import static org.graalvm.collections.Equivalence.IDENTITY;
+import static jdk.internal.vm.compiler.collections.Equivalence.IDENTITY;
 import static org.graalvm.compiler.core.common.GraalOptions.GuardPriorities;
 import static org.graalvm.compiler.core.common.GraalOptions.OptScheduleOutOfLoops;
 import static org.graalvm.compiler.core.common.cfg.AbstractControlFlowGraph.strictlyDominates;
@@ -38,7 +38,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Function;
 
-import org.graalvm.collections.EconomicSet;
+import jdk.internal.vm.compiler.collections.EconomicSet;
 import org.graalvm.compiler.core.common.SuppressFBWarnings;
 import org.graalvm.compiler.core.common.cfg.AbstractControlFlowGraph;
 import org.graalvm.compiler.core.common.cfg.BlockMap;
@@ -83,7 +83,7 @@ import org.graalvm.compiler.nodes.memory.MemoryCheckpoint;
 import org.graalvm.compiler.nodes.spi.ValueProxy;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.Phase;
-import org.graalvm.word.LocationIdentity;
+import jdk.internal.vm.compiler.word.LocationIdentity;
 
 public final class SchedulePhase extends Phase {
 

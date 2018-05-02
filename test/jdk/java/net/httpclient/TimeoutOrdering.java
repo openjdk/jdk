@@ -77,21 +77,22 @@ public class TimeoutOrdering {
                                          .build();
 
                 final HttpRequest req = requests[i];
+                final int j = i;
                 CompletableFuture<HttpResponse<Object>> response = client
                     .sendAsync(req, BodyHandlers.replacing(null))
                     .whenComplete((HttpResponse<Object> r, Throwable t) -> {
                         if (r != null) {
-                            out.println("Unexpected response: " + r);
+                            out.println("Unexpected response for r" + j + ": " + r);
                             error = true;
                         }
                         if (t != null) {
                             if (!(t.getCause() instanceof HttpTimeoutException)) {
-                                out.println("Wrong exception type:" + t.toString());
+                                out.println("Wrong exception type for r" + j + ": " + t.toString());
                                 Throwable c = t.getCause() == null ? t : t.getCause();
                                 c.printStackTrace();
                                 error = true;
                             } else {
-                                out.println("Caught expected timeout: " + t.getCause());
+                                out.println("Caught expected timeout for r" + j + ": " + t.getCause());
                             }
                         }
                         queue.add(req);
@@ -117,16 +118,21 @@ public class TimeoutOrdering {
                                          .build();
 
                 final HttpRequest req = requests[i];
+                final int j = i;
                 executor.execute(() -> {
                     try {
-                        client.send(req, BodyHandlers.replacing(null));
+                        HttpResponse<?> r = client.send(req, BodyHandlers.replacing(null));
+                        out.println("Unexpected response for r" + j + ": " + r);
+                        error = true;
                     } catch (HttpTimeoutException e) {
-                        out.println("Caught expected timeout: " + e);
-                        queue.offer(req);
+                        out.println("Caught expected timeout for r" + j +": " + e);
                     } catch (IOException | InterruptedException ee) {
                         Throwable c = ee.getCause() == null ? ee : ee.getCause();
+                        out.println("Wrong exception type for r" + j + ": " + c.toString());
                         c.printStackTrace();
                         error = true;
+                    } finally {
+                        queue.offer(req);
                     }
                 });
             }

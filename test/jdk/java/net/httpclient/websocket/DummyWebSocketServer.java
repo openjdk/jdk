@@ -200,6 +200,7 @@ public class DummyWebSocketServer implements Closeable {
             thread.start();
         } catch (IOException e) {
             close(ssc);
+            throw e;
         }
         err.println("Started at: " + getURI());
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,11 +50,21 @@ public interface LocaleDataMetaInfo {
     public String availableLanguageTags(String category);
 
     /**
-     * Returns a map for short time zone ids in BCP47 Unicode extension and
-     * the long time zone ids.
-     * @return map of short id to long ids, separated by a space.
+     * Returns a map for time zone ids to their canonical ids.
+     * The map key is either an LDML's short id, or a valid
+     * TZDB zone id.
+     * @return map of ids to their canonical ids.
      */
-    default public Map<String, String>  tzShortIDs() {
+    default public Map<String, String>  tzCanonicalIDs() {
         return null;
     }
+
+    /**
+     * Returns a map for  language aliases which specifies mapping from source language
+     * to from which it should be replaced.
+     * @return map of source language to replacement language, separated by a space.
+     */
+   default public Map<String, String> getLanguageAliasMap(){
+       return null;
+   }
 }

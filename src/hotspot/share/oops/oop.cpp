@@ -122,10 +122,9 @@ unsigned int oopDesc::new_hash(juint seed) {
 
 // used only for asserts and guarantees
 bool oopDesc::is_oop(oop obj, bool ignore_mark_word) {
-  if (!check_obj_alignment(obj)) return false;
-  if (!Universe::heap()->is_in_reserved(obj)) return false;
-  // obj is aligned and accessible in heap
-  if (Universe::heap()->is_in_reserved(obj->klass_or_null())) return false;
+  if (!Universe::heap()->is_oop(obj)) {
+    return false;
+  }
 
   // Header verification: the mark is typically non-NULL. If we're
   // at a safepoint, it must not be null.

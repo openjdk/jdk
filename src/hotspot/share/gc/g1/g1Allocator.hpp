@@ -99,7 +99,9 @@ public:
 
   // Allocate blocks of memory during mutator time.
 
-  inline HeapWord* attempt_allocation(size_t word_size);
+  inline HeapWord* attempt_allocation(size_t min_word_size,
+                                      size_t desired_word_size,
+                                      size_t* actual_word_size);
   inline HeapWord* attempt_allocation_locked(size_t word_size);
   inline HeapWord* attempt_allocation_force(size_t word_size);
 

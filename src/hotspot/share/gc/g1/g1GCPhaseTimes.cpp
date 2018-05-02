@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
+#include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/shared/workerDataArray.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -167,9 +168,12 @@ void G1GCPhaseTimes::note_gc_start() {
 }
 
 #define ASSERT_PHASE_UNINITIALIZED(phase) \
-    assert(_gc_par_phases[phase]->get(i) == uninitialized, "Phase " #phase " reported for thread that was not started");
+    assert(_gc_par_phases[phase] == NULL || _gc_par_phases[phase]->get(i) == uninitialized, "Phase " #phase " reported for thread that was not started");
 
 double G1GCPhaseTimes::worker_time(GCParPhases phase, uint worker) {
+  if (_gc_par_phases[phase] == NULL) {
+    return 0.0;
+  }
   double value = _gc_par_phases[phase]->get(worker);
   if (value != WorkerDataArray<double>::uninitialized()) {
     return value;
@@ -189,21 +193,20 @@ void G1GCPhaseTimes::note_gc_end() {
       double total_worker_time = _gc_par_phases[GCWorkerEnd]->get(i) - _gc_par_phases[GCWorkerStart]->get(i);
       record_time_secs(GCWorkerTotal, i , total_worker_time);
 
-      double worker_known_time =
-          worker_time(ExtRootScan, i)
-          + worker_time(SATBFiltering, i)
-          + worker_time(UpdateRS, i)
-          + worker_time(ScanRS, i)
-          + worker_time(CodeRoots, i)
-          + worker_time(ObjCopy, i)
-          + worker_time(Termination, i);
+      double worker_known_time = worker_time(ExtRootScan, i) +
+                                 worker_time(ScanHCC, i) +
+                                 worker_time(UpdateRS, i) +
+                                 worker_time(ScanRS, i) +
+                                 worker_time(CodeRoots, i) +
+                                 worker_time(ObjCopy, i) +
+                                 worker_time(Termination, i);
 
       record_time_secs(Other, i, total_worker_time - worker_known_time);
     } else {
       // Make sure all slots are uninitialized since this thread did not seem to have been started
       ASSERT_PHASE_UNINITIALIZED(GCWorkerEnd);
       ASSERT_PHASE_UNINITIALIZED(ExtRootScan);
-      ASSERT_PHASE_UNINITIALIZED(SATBFiltering);
+      ASSERT_PHASE_UNINITIALIZED(ScanHCC);
       ASSERT_PHASE_UNINITIALIZED(UpdateRS);
       ASSERT_PHASE_UNINITIALIZED(ScanRS);
       ASSERT_PHASE_UNINITIALIZED(CodeRoots);
@@ -223,6 +226,14 @@ void G1GCPhaseTimes::record_time_secs(GCParPhases phase, uint worker_i, double s
 // add a number of seconds to a phase
 void G1GCPhaseTimes::add_time_secs(GCParPhases phase, uint worker_i, double secs) {
   _gc_par_phases[phase]->add(worker_i, secs);
+}
+
+void G1GCPhaseTimes::record_or_add_objcopy_time_secs(uint worker_i, double secs) {
+  if (_gc_par_phases[ObjCopy]->get(worker_i) == _gc_par_phases[ObjCopy]->uninitialized()) {
+    record_time_secs(ObjCopy, worker_i, secs);
+  } else {
+    add_time_secs(ObjCopy, worker_i, secs);
+  }
 }
 
 void G1GCPhaseTimes::record_thread_work_item(GCParPhases phase, uint worker_i, size_t count, uint index) {
@@ -463,16 +474,49 @@ void G1GCPhaseTimes::print() {
   }
 }
 
+G1EvacPhaseWithTrimTimeTracker::G1EvacPhaseWithTrimTimeTracker(G1ParScanThreadState* pss, Tickspan& total_time, Tickspan& trim_time) :
+  _pss(pss),
+  _start(Ticks::now()),
+  _total_time(total_time),
+  _trim_time(trim_time) {
+
+  assert(_pss->trim_ticks().value() == 0, "Possibly remaining trim ticks left over from previous use");
+}
+
+G1EvacPhaseWithTrimTimeTracker::~G1EvacPhaseWithTrimTimeTracker() {
+  _total_time += (Ticks::now() - _start) - _pss->trim_ticks();
+  _trim_time += _pss->trim_ticks();
+  _pss->reset_trim_ticks();
+}
+
 G1GCParPhaseTimesTracker::G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, G1GCPhaseTimes::GCParPhases phase, uint worker_id) :
     _phase_times(phase_times), _phase(phase), _worker_id(worker_id) {
   if (_phase_times != NULL) {
-    _start_time = os::elapsedTime();
+    _start_time = Ticks::now();
   }
 }
 
 G1GCParPhaseTimesTracker::~G1GCParPhaseTimesTracker() {
   if (_phase_times != NULL) {
-    _phase_times->record_time_secs(_phase, _worker_id, os::elapsedTime() - _start_time);
+    _phase_times->record_time_secs(_phase, _worker_id, TicksToTimeHelper::seconds(Ticks::now() - _start_time));
+  }
+}
+
+G1EvacPhaseTimesTracker::G1EvacPhaseTimesTracker(G1GCPhaseTimes* phase_times,
+                                                 G1ParScanThreadState* pss,
+                                                 G1GCPhaseTimes::GCParPhases phase,
+                                                 uint worker_id) :
+  G1GCParPhaseTimesTracker(phase_times, phase, worker_id),
+  _total_time(),
+  _trim_time(),
+  _trim_tracker(pss, _total_time, _trim_time) {
+}
+
+G1EvacPhaseTimesTracker::~G1EvacPhaseTimesTracker() {
+  if (_phase_times != NULL) {
+    // Exclude trim time by increasing the start time.
+    _start_time += _trim_time;
+    _phase_times->record_or_add_objcopy_time_secs(_worker_id, TicksToTimeHelper::seconds(_trim_time));
   }
 }
 

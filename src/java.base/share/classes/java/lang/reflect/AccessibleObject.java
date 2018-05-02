@@ -35,6 +35,7 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.reflect.ReflectionFactory;
 import sun.security.action.GetPropertyAction;
+import sun.security.util.SecurityConstants;
 
 /**
  * The {@code AccessibleObject} class is the base class for {@code Field},
@@ -73,17 +74,14 @@ import sun.security.action.GetPropertyAction;
  */
 public class AccessibleObject implements AnnotatedElement {
 
-    /**
-     * The Permission object that is used to check whether a client
-     * has sufficient privilege to defeat Java language access
-     * control checks.
-     */
-    private static final java.security.Permission ACCESS_PERMISSION =
-        new ReflectPermission("suppressAccessChecks");
-
     static void checkPermission() {
         SecurityManager sm = System.getSecurityManager();
-        if (sm != null) sm.checkPermission(ACCESS_PERMISSION);
+        if (sm != null) {
+            // SecurityConstants.ACCESS_PERMISSION is used to check
+            // whether a client has sufficient privilege to defeat Java
+            // language access control checks.
+            sm.checkPermission(SecurityConstants.ACCESS_PERMISSION);
+        }
     }
 
     /**

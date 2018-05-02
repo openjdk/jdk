@@ -32,6 +32,11 @@ inline Tickspan operator+(Tickspan lhs, const Tickspan& rhs) {
   return lhs;
 }
 
+inline Tickspan operator-(Tickspan lhs, const Tickspan& rhs) {
+  lhs -= rhs;
+  return lhs;
+}
+
 inline bool operator==(const Tickspan& lhs, const Tickspan& rhs) {
   return lhs.value() == rhs.value();
 }

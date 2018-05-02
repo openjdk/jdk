@@ -27,6 +27,12 @@
 
 #include "asm/macroAssembler.hpp"
 #include "gc/shared/modRefBarrierSetAssembler.hpp"
+#include "utilities/macros.hpp"
+
+class LIR_Assembler;
+class StubAssembler;
+class G1PreBarrierStub;
+class G1PostBarrierStub;
 
 class G1BarrierSetAssembler: public ModRefBarrierSetAssembler {
 protected:
@@ -34,6 +40,15 @@ protected:
                                        Register addr, Register count, int callee_saved_regs);
   void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                         Register addr, Register count, Register tmp);
+
+#ifdef COMPILER1
+public:
+  void gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStub* stub);
+  void gen_post_barrier_stub(LIR_Assembler* ce, G1PostBarrierStub* stub);
+
+  void generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm);
+  void generate_c1_post_barrier_runtime_stub(StubAssembler* sasm);
+#endif
 };
 
 #endif // CPU_ARM_GC_G1_G1BARRIERSETASSEMBLER_ARM_HPP

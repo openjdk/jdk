@@ -38,9 +38,10 @@ struct SupportedGC {
   bool&               _flag;
   CollectedHeap::Name _name;
   GCArguments&        _arguments;
+  const char*         _hs_err_name;
 
-  SupportedGC(bool& flag, CollectedHeap::Name name, GCArguments& arguments) :
-      _flag(flag), _name(name), _arguments(arguments) {}
+  SupportedGC(bool& flag, CollectedHeap::Name name, GCArguments& arguments, const char* hs_err_name) :
+      _flag(flag), _name(name), _arguments(arguments), _hs_err_name(hs_err_name) {}
 };
 
 static SerialArguments   serialArguments;
@@ -53,14 +54,17 @@ static G1Arguments       g1Arguments;
 // Table of supported GCs, for translating between command
 // line flag, CollectedHeap::Name and GCArguments instance.
 static const SupportedGC SupportedGCs[] = {
-  SupportedGC(UseSerialGC,        CollectedHeap::Serial,   serialArguments),
+  SupportedGC(UseSerialGC,        CollectedHeap::Serial,   serialArguments,   "serial gc"),
 #if INCLUDE_ALL_GCS
-  SupportedGC(UseParallelGC,      CollectedHeap::Parallel, parallelArguments),
-  SupportedGC(UseParallelOldGC,   CollectedHeap::Parallel, parallelArguments),
-  SupportedGC(UseConcMarkSweepGC, CollectedHeap::CMS,      cmsArguments),
-  SupportedGC(UseG1GC,            CollectedHeap::G1,       g1Arguments),
+  SupportedGC(UseParallelGC,      CollectedHeap::Parallel, parallelArguments, "parallel gc"),
+  SupportedGC(UseParallelOldGC,   CollectedHeap::Parallel, parallelArguments, "parallel gc"),
+  SupportedGC(UseConcMarkSweepGC, CollectedHeap::CMS,      cmsArguments,      "concurrent mark sweep gc"),
+  SupportedGC(UseG1GC,            CollectedHeap::G1,       g1Arguments,       "g1 gc"),
 #endif // INCLUDE_ALL_GCS
 };
+
+#define FOR_EACH_SUPPORTED_GC(var) \
+  for (const SupportedGC* var = &SupportedGCs[0]; var < &SupportedGCs[ARRAY_SIZE(SupportedGCs)]; var++)
 
 GCArguments* GCConfig::_arguments = NULL;
 bool GCConfig::_gc_selected_ergonomically = false;
@@ -82,8 +86,8 @@ void GCConfig::select_gc_ergonomically() {
 }
 
 bool GCConfig::is_no_gc_selected() {
-  for (size_t i = 0; i < ARRAY_SIZE(SupportedGCs); i++) {
-    if (SupportedGCs[i]._flag) {
+  FOR_EACH_SUPPORTED_GC(gc) {
+    if (gc->_flag) {
       return false;
     }
   }
@@ -94,11 +98,11 @@ bool GCConfig::is_no_gc_selected() {
 bool GCConfig::is_exactly_one_gc_selected() {
   CollectedHeap::Name selected = CollectedHeap::None;
 
-  for (size_t i = 0; i < ARRAY_SIZE(SupportedGCs); i++) {
-    if (SupportedGCs[i]._flag) {
-      if (SupportedGCs[i]._name == selected || selected == CollectedHeap::None) {
+  FOR_EACH_SUPPORTED_GC(gc) {
+    if (gc->_flag) {
+      if (gc->_name == selected || selected == CollectedHeap::None) {
         // Selected
-        selected = SupportedGCs[i]._name;
+        selected = gc->_name;
       } else {
         // More than one selected
         return false;
@@ -126,9 +130,9 @@ GCArguments* GCConfig::select_gc() {
 
   if (is_exactly_one_gc_selected()) {
     // Exacly one GC selected
-    for (size_t i = 0; i < ARRAY_SIZE(SupportedGCs); i++) {
-      if (SupportedGCs[i]._flag) {
-        return &SupportedGCs[i]._arguments;
+    FOR_EACH_SUPPORTED_GC(gc) {
+      if (gc->_flag) {
+        return &gc->_arguments;
       }
     }
   }
@@ -145,8 +149,8 @@ void GCConfig::initialize() {
 }
 
 bool GCConfig::is_gc_supported(CollectedHeap::Name name) {
-  for (size_t i = 0; i < ARRAY_SIZE(SupportedGCs); i++) {
-    if (SupportedGCs[i]._name == name) {
+  FOR_EACH_SUPPORTED_GC(gc) {
+    if (gc->_name == name) {
       // Supported
       return true;
     }
@@ -157,8 +161,8 @@ bool GCConfig::is_gc_supported(CollectedHeap::Name name) {
 }
 
 bool GCConfig::is_gc_selected(CollectedHeap::Name name) {
-  for (size_t i = 0; i < ARRAY_SIZE(SupportedGCs); i++) {
-    if (SupportedGCs[i]._name == name && SupportedGCs[i]._flag) {
+  FOR_EACH_SUPPORTED_GC(gc) {
+    if (gc->_name == name && gc->_flag) {
       // Selected
       return true;
     }
@@ -170,6 +174,20 @@ bool GCConfig::is_gc_selected(CollectedHeap::Name name) {
 
 bool GCConfig::is_gc_selected_ergonomically() {
   return _gc_selected_ergonomically;
+}
+
+const char* GCConfig::hs_err_name() {
+  if (is_exactly_one_gc_selected()) {
+    // Exacly one GC selected
+    FOR_EACH_SUPPORTED_GC(gc) {
+      if (gc->_flag) {
+        return gc->_hs_err_name;
+      }
+    }
+  }
+
+  // Zero or more than one GC selected
+  return "unknown gc";
 }
 
 GCArguments* GCConfig::arguments() {

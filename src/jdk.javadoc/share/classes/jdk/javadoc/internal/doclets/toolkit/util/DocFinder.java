@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,9 +276,10 @@ public class DocFinder {
             //NOTE:  When we fix the bug where ClassDoc.interfaceTypes() does
             //       not pass all implemented interfaces, we will use the
             //       appropriate element here.
-            ImplementedMethods implMethods
-                    = new ImplementedMethods((ExecutableElement) input.element, configuration);
-            List<ExecutableElement> implementedMethods = implMethods.build();
+            TypeElement encl = utils.getEnclosingTypeElement(input.element);
+            VisibleMemberTable vmt = configuration.getVisibleMemberTable(encl);
+            List<ExecutableElement> implementedMethods =
+                    vmt.getImplementedMethods((ExecutableElement)input.element);
             for (ExecutableElement implementedMethod : implementedMethods) {
                 inheritedSearchInput.element = implementedMethod;
                 output = search(configuration, inheritedSearchInput);

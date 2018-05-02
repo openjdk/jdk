@@ -34,11 +34,9 @@ import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
-import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.JavaMethodContext;
-import org.graalvm.compiler.graph.NodeSourcePosition;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Transition;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkageImpl;
@@ -57,7 +55,7 @@ import org.graalvm.compiler.replacements.GraphKit;
 import org.graalvm.compiler.replacements.nodes.ReadRegisterNode;
 import org.graalvm.compiler.word.Word;
 import org.graalvm.compiler.word.WordTypes;
-import org.graalvm.word.LocationIdentity;
+import jdk.internal.vm.compiler.word.LocationIdentity;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider;
 import jdk.vm.ci.hotspot.HotSpotSignature;
@@ -232,33 +230,30 @@ public class ForeignCallStub extends Stub {
         WordTypes wordTypes = providers.getWordTypes();
         Class<?>[] args = linkage.getDescriptor().getArgumentTypes();
         boolean isObjectResult = !LIRKind.isValue(linkage.getOutgoingCallingConvention().getReturn());
-        StructuredGraph graph = new StructuredGraph.Builder(options, debug).name(toString()).compilationId(compilationId).build();
-        graph.disableUnsafeAccessTracking();
-        graph.setTrackNodeSourcePosition();
+
         try {
             ResolvedJavaMethod thisMethod = providers.getMetaAccess().lookupJavaMethod(ForeignCallStub.class.getDeclaredMethod("getGraph", DebugContext.class, CompilationIdentifier.class));
-            try (DebugCloseable context = graph.withNodeSourcePosition(NodeSourcePosition.substitution(thisMethod))) {
-                GraphKit kit = new GraphKit(graph, providers, wordTypes, providers.getGraphBuilderPlugins());
-                ParameterNode[] params = createParameters(kit, args);
-                ReadRegisterNode thread = kit.append(new ReadRegisterNode(providers.getRegisters().getThreadRegister(), wordTypes.getWordKind(), true, false));
-                ValueNode result = createTargetCall(kit, params, thread);
-                kit.createInvoke(StubUtil.class, "handlePendingException", thread, ConstantNode.forBoolean(isObjectResult, graph));
-                if (isObjectResult) {
-                    InvokeNode object = kit.createInvoke(HotSpotReplacementsUtil.class, "getAndClearObjectResult", thread);
-                    result = kit.createInvoke(StubUtil.class, "verifyObject", object);
-                }
-                kit.append(new ReturnNode(linkage.getDescriptor().getResultType() == void.class ? null : result));
-                debug.dump(DebugContext.VERBOSE_LEVEL, graph, "Initial stub graph");
-
-                kit.inlineInvokes();
-                new RemoveValueProxyPhase().apply(graph);
-
-                debug.dump(DebugContext.VERBOSE_LEVEL, graph, "Stub graph before compilation");
+            GraphKit kit = new GraphKit(debug, thisMethod, providers, wordTypes, providers.getGraphBuilderPlugins(), compilationId, toString());
+            StructuredGraph graph = kit.getGraph();
+            ParameterNode[] params = createParameters(kit, args);
+            ReadRegisterNode thread = kit.append(new ReadRegisterNode(providers.getRegisters().getThreadRegister(), wordTypes.getWordKind(), true, false));
+            ValueNode result = createTargetCall(kit, params, thread);
+            kit.createInvoke(StubUtil.class, "handlePendingException", thread, ConstantNode.forBoolean(isObjectResult, graph));
+            if (isObjectResult) {
+                InvokeNode object = kit.createInvoke(HotSpotReplacementsUtil.class, "getAndClearObjectResult", thread);
+                result = kit.createInvoke(StubUtil.class, "verifyObject", object);
             }
+            kit.append(new ReturnNode(linkage.getDescriptor().getResultType() == void.class ? null : result));
+            debug.dump(DebugContext.VERBOSE_LEVEL, graph, "Initial stub graph");
+
+            kit.inlineInvokes("Foreign call stub.", "Backend");
+            new RemoveValueProxyPhase().apply(graph);
+
+            debug.dump(DebugContext.VERBOSE_LEVEL, graph, "Stub graph before compilation");
+            return graph;
         } catch (Exception e) {
             throw GraalError.shouldNotReachHere(e);
         }
-        return graph;
     }
 
     private ParameterNode[] createParameters(GraphKit kit, Class<?>[] args) {

@@ -36,6 +36,10 @@
   } while (0)
 
 
+inline void G1AllocRegion::reset_alloc_region() {
+  _alloc_region = _dummy_region;
+}
+
 inline HeapWord* G1AllocRegion::allocate(HeapRegion* alloc_region,
                                          size_t word_size) {
   assert(alloc_region != NULL, "pre-condition");
@@ -123,6 +127,19 @@ inline HeapWord* G1AllocRegion::attempt_allocation_force(size_t word_size) {
     return result;
   }
   trace("alloc forced failed", word_size, word_size);
+  return NULL;
+}
+
+inline HeapWord* MutatorAllocRegion::attempt_retained_allocation(size_t min_word_size,
+                                                                 size_t desired_word_size,
+                                                                 size_t* actual_word_size) {
+  if (_retained_alloc_region != NULL) {
+    HeapWord* result = par_allocate(_retained_alloc_region, min_word_size, desired_word_size, actual_word_size);
+    if (result != NULL) {
+      trace("alloc retained", min_word_size, desired_word_size, *actual_word_size, result);
+      return result;
+    }
+  }
   return NULL;
 }
 

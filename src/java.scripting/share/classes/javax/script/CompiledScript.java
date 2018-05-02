@@ -79,13 +79,10 @@ public abstract class CompiledScript {
         ScriptContext ctxt = getEngine().getContext();
 
         if (bindings != null) {
-            SimpleScriptContext tempctxt = new SimpleScriptContext();
+            SimpleScriptContext tempctxt = new SimpleScriptContext(ctxt.getReader(), ctxt.getWriter(), ctxt.getErrorWriter());
             tempctxt.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
             tempctxt.setBindings(ctxt.getBindings(ScriptContext.GLOBAL_SCOPE),
                     ScriptContext.GLOBAL_SCOPE);
-            tempctxt.setWriter(ctxt.getWriter());
-            tempctxt.setReader(ctxt.getReader());
-            tempctxt.setErrorWriter(ctxt.getErrorWriter());
             ctxt = tempctxt;
         }
 

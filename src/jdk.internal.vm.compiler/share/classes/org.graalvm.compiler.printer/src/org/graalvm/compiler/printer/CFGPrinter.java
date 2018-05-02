@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.graalvm.collections.UnmodifiableMapCursor;
+import jdk.internal.vm.compiler.collections.UnmodifiableMapCursor;
 import org.graalvm.compiler.bytecode.Bytecode;
 import org.graalvm.compiler.bytecode.BytecodeDisassembler;
 import org.graalvm.compiler.core.common.alloc.Trace;
@@ -116,38 +116,38 @@ class CFGPrinter extends CompilationPrinter {
     }
 
     private void printBlock(BciBlockMapping.BciBlock block) {
-        out.print("name \"B").print(block.startBci).println('"');
-        out.print("from_bci ").println(block.startBci);
-        out.print("to_bci ").println(block.endBci);
+        out.print("name \"B").print(block.getStartBci()).println('"');
+        out.print("from_bci ").println(block.getStartBci());
+        out.print("to_bci ").println(block.getEndBci());
 
         out.println("predecessors ");
 
         out.print("successors ");
         for (BciBlockMapping.BciBlock succ : block.getSuccessors()) {
-            if (!succ.isExceptionEntry) {
-                out.print("\"B").print(succ.startBci).print("\" ");
+            if (!succ.isExceptionEntry()) {
+                out.print("\"B").print(succ.getStartBci()).print("\" ");
             }
         }
         out.println();
 
         out.print("xhandlers");
         for (BciBlockMapping.BciBlock succ : block.getSuccessors()) {
-            if (succ.isExceptionEntry) {
-                out.print("\"B").print(succ.startBci).print("\" ");
+            if (succ.isExceptionEntry()) {
+                out.print("\"B").print(succ.getStartBci()).print("\" ");
             }
         }
         out.println();
 
         out.print("flags ");
-        if (block.isExceptionEntry) {
+        if (block.isExceptionEntry()) {
             out.print("\"ex\" ");
         }
-        if (block.isLoopHeader) {
+        if (block.isLoopHeader()) {
             out.print("\"plh\" ");
         }
         out.println();
 
-        out.print("loop_depth ").println(Long.bitCount(block.loops));
+        out.print("loop_depth ").println(Long.bitCount(block.getLoops()));
     }
 
     private NodeMap<Block> latestScheduling;

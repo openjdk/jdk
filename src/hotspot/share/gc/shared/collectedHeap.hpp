@@ -126,7 +126,13 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   CollectedHeap();
 
   // Create a new tlab. All TLAB allocations must go through this.
-  virtual HeapWord* allocate_new_tlab(size_t size);
+  // To allow more flexible TLAB allocations min_size specifies
+  // the minimum size needed, while requested_size is the requested
+  // size based on ergonomics. The actually allocated size will be
+  // returned in actual_size.
+  virtual HeapWord* allocate_new_tlab(size_t min_size,
+                                      size_t requested_size,
+                                      size_t* actual_size);
 
   // Accumulate statistics on all tlabs.
   virtual void accumulate_statistics_all_tlabs();
@@ -590,6 +596,8 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   virtual bool supports_object_pinning() const;
   virtual oop pin_object(JavaThread* thread, oop obj);
   virtual void unpin_object(JavaThread* thread, oop obj);
+
+  virtual bool is_oop(oop object) const;
 
   // Non product verification and debugging.
 #ifndef PRODUCT

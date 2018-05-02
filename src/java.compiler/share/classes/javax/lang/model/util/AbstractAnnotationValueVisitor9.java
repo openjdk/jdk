@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@ import javax.annotation.processing.SupportedSourceVersion;
 
 /**
  * A skeletal visitor for annotation values with default behavior
- * appropriate for the {@link SourceVersion#RELEASE_9 RELEASE_9}
- * and {@link SourceVersion#RELEASE_10 RELEASE_10} source versions.
+ * appropriate for source versions {@link SourceVersion#RELEASE_9
+ * RELEASE_9} through {@link SourceVersion#RELEASE_11 RELEASE_11}.
  *
  * <p> <b>WARNING:</b> The {@code AnnotationValueVisitor} interface
  * implemented by this class may have methods added to it in the
@@ -59,7 +59,7 @@ import javax.annotation.processing.SupportedSourceVersion;
  * @see AbstractAnnotationValueVisitor8
  * @since 9
  */
-@SupportedSourceVersion(RELEASE_10)
+@SupportedSourceVersion(RELEASE_11)
 public abstract class AbstractAnnotationValueVisitor9<R, P> extends AbstractAnnotationValueVisitor8<R, P> {
 
     /**

@@ -37,8 +37,8 @@ public:
                        bool in_young_gc) :
       _closures(g1h, pss, in_young_gc, /* must_claim_cld */ false) {}
 
-  OopClosure* weak_oops()   { return &_closures._buffered_oops; }
-  OopClosure* strong_oops() { return &_closures._buffered_oops; }
+  OopClosure* weak_oops()   { return &_closures._oops; }
+  OopClosure* strong_oops() { return &_closures._oops; }
 
   CLDClosure* weak_clds()             { return &_closures._clds; }
   CLDClosure* strong_clds()           { return &_closures._clds; }
@@ -46,9 +46,6 @@ public:
 
   CodeBlobClosure* strong_codeblobs()      { return &_closures._codeblobs; }
   CodeBlobClosure* weak_codeblobs()        { return &_closures._codeblobs; }
-
-  void flush()                 { _closures._buffered_oops.done(); }
-  double closure_app_seconds() { return _closures._buffered_oops.closure_app_seconds(); }
 
   OopClosure* raw_strong_oops() { return &_closures._oops; }
 
@@ -79,8 +76,8 @@ public:
       _strong(g1h, pss, /* process_only_dirty_klasses */ false, /* must_claim_cld */ true),
       _weak(g1h, pss,   /* process_only_dirty_klasses */ false, /* must_claim_cld */ true) {}
 
-  OopClosure* weak_oops()   { return &_weak._buffered_oops; }
-  OopClosure* strong_oops() { return &_strong._buffered_oops; }
+  OopClosure* weak_oops()   { return &_weak._oops; }
+  OopClosure* strong_oops() { return &_strong._oops; }
 
   // If MarkWeak is G1MarkPromotedFromRoot then the weak CLDs must be processed in a second pass.
   CLDClosure* weak_clds()             { return null_if<G1MarkPromotedFromRoot>(&_weak._clds); }
@@ -92,16 +89,6 @@ public:
 
   CodeBlobClosure* strong_codeblobs()      { return &_strong._codeblobs; }
   CodeBlobClosure* weak_codeblobs()        { return &_weak._codeblobs; }
-
-  void flush() {
-    _strong._buffered_oops.done();
-    _weak._buffered_oops.done();
-  }
-
-  double closure_app_seconds() {
-    return _strong._buffered_oops.closure_app_seconds() +
-           _weak._buffered_oops.closure_app_seconds();
-  }
 
   OopClosure* raw_strong_oops() { return &_strong._oops; }
 

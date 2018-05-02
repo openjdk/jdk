@@ -454,11 +454,6 @@ static void collect_array_classes(Klass* k) {
 
 class CollectClassesClosure : public KlassClosure {
   void do_klass(Klass* k) {
-    if (!UseAppCDS && !k->class_loader_data()->is_the_null_class_loader_data()) {
-      // AppCDS is not enabled. Let's omit non-boot classes.
-      return;
-    }
-
     if (!(k->is_instance_klass() && InstanceKlass::cast(k)->is_in_error_state())) {
       if (k->is_instance_klass() && InstanceKlass::cast(k)->signers() != NULL) {
         // Mark any class with signers and don't add to the _global_klass_objects
@@ -1326,6 +1321,8 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
 
 void VM_PopulateDumpSharedSpace::doit() {
   Thread* THREAD = VMThread::vm_thread();
+
+  FileMapInfo::check_nonempty_dir_in_shared_path_table();
 
   NOT_PRODUCT(SystemDictionary::verify();)
   // The following guarantee is meant to ensure that no loader constraints

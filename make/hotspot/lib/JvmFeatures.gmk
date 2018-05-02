@@ -32,7 +32,7 @@ $(eval $(call IncludeCustomExtension, hotspot/lib/JvmFeatures.gmk))
 ifeq ($(call check-jvm-feature, compiler1), true)
   JVM_CFLAGS_FEATURES += -DCOMPILER1
 else
-  JVM_EXCLUDE_PATTERNS += c1_
+  JVM_EXCLUDE_PATTERNS += c1_ c1/
 endif
 
 ifeq ($(call check-jvm-feature, compiler2), true)

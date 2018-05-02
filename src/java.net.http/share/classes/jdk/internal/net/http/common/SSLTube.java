@@ -77,6 +77,13 @@ public class SSLTube implements FlowTube {
     private volatile boolean finished;
 
     public SSLTube(SSLEngine engine, Executor executor, FlowTube tube) {
+        this(engine, executor, null, tube);
+    }
+
+    public SSLTube(SSLEngine engine,
+                   Executor executor,
+                   Consumer<ByteBuffer> recycler,
+                   FlowTube tube) {
         Objects.requireNonNull(engine);
         Objects.requireNonNull(executor);
         this.tube = Objects.requireNonNull(tube);
@@ -85,15 +92,17 @@ public class SSLTube implements FlowTube {
         this.engine = engine;
         sslDelegate = new SSLTubeFlowDelegate(engine,
                                               executor,
+                                              recycler,
                                               readSubscriber,
                                               tube);
     }
 
     final class SSLTubeFlowDelegate extends SSLFlowDelegate {
         SSLTubeFlowDelegate(SSLEngine engine, Executor executor,
+                            Consumer<ByteBuffer> recycler,
                             SSLSubscriberWrapper readSubscriber,
                             FlowTube tube) {
-            super(engine, executor, readSubscriber, tube);
+            super(engine, executor, recycler, readSubscriber, tube);
         }
         protected SchedulingAction enterReadScheduling() {
             readSubscriber.processPendingSubscriber();

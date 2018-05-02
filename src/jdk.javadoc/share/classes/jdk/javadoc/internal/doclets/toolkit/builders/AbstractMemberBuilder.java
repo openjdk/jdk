@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,14 @@
 
 package jdk.javadoc.internal.doclets.toolkit.builders;
 
+import java.util.List;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
+
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind;
 
 /**
  * The superclass for all member builders.  Member builders are only executed
@@ -42,13 +48,19 @@ import jdk.javadoc.internal.doclets.toolkit.DocletException;
  */
 public abstract class AbstractMemberBuilder extends AbstractBuilder {
 
+    final protected TypeElement typeElement;
+
+    final protected VisibleMemberTable visibleMemberTable;
+
     /**
      * Construct a SubBuilder.
      * @param context a context object, providing information used in this run
      *        of the doclet.
      */
-    public AbstractMemberBuilder(Context context) {
+    public AbstractMemberBuilder(Context context, TypeElement typeElement) {
         super(context);
+        this.typeElement = typeElement;
+        visibleMemberTable = configuration.getVisibleMemberTable(typeElement);
     }
 
     /**
@@ -77,4 +89,14 @@ public abstract class AbstractMemberBuilder extends AbstractBuilder {
      * @return true if this subbuilder has anything to document
      */
     public abstract boolean hasMembersToDocument();
+
+    /**
+     * Returns a list of visible elements of the specified kind in this
+     * type element.
+     * @param kind of members
+     * @return a list of members
+     */
+    protected List<? extends Element> getVisibleMembers(Kind kind) {
+        return visibleMemberTable.getVisibleMembers(kind);
+    }
 }

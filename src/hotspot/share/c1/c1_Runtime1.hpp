@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,8 +68,6 @@ class StubAssembler;
   stub(load_klass_patching)          \
   stub(load_mirror_patching)         \
   stub(load_appendix_patching)       \
-  stub(g1_pre_barrier_slow)          \
-  stub(g1_post_barrier_slow)         \
   stub(fpu2long_stub)                \
   stub(counter_overflow)             \
   stub(predicate_failed_trap)        \
@@ -79,6 +77,11 @@ class StubAssembler;
 #define DECLARE_LAST_STUB_ID(x)  x
 #define STUB_NAME(x)             #x " Runtime1 stub",
 #define LAST_STUB_NAME(x)        #x " Runtime1 stub"
+
+class StubAssemblerCodeGenClosure: public Closure {
+ public:
+  virtual OopMapSet* generate_code(StubAssembler* sasm) = 0;
+};
 
 class Runtime1: public AllStatic {
   friend class VMStructs;
@@ -121,8 +124,11 @@ class Runtime1: public AllStatic {
   static const char* _blob_names[];
 
   // stub generation
+ public:
+  static CodeBlob*  generate_blob(BufferBlob* buffer_blob, int stub_id, const char* name, bool expect_oop_map, StubAssemblerCodeGenClosure *cl);
   static void       generate_blob_for(BufferBlob* blob, StubID id);
   static OopMapSet* generate_code_for(StubID id, StubAssembler* sasm);
+ private:
   static OopMapSet* generate_exception_throw(StubAssembler* sasm, address target, bool has_argument);
   static OopMapSet* generate_handle_exception(StubID id, StubAssembler* sasm);
   static void       generate_unwind_exception(StubAssembler *sasm);

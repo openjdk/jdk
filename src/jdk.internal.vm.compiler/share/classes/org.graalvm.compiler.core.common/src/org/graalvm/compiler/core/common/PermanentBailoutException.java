@@ -33,7 +33,7 @@ public class PermanentBailoutException extends BailoutException {
     }
 
     public PermanentBailoutException(String reason) {
-        super(true, reason);
+        super(true, "%s", reason);
     }
 
     public PermanentBailoutException(Throwable cause, String format, Object... args) {

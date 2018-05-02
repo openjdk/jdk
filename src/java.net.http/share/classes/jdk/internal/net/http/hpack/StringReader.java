@@ -44,7 +44,7 @@ final class StringReader {
     private static final int DONE            = 4;
 
     private final IntegerReader intReader = new IntegerReader();
-    private final Huffman.Reader huffmanReader = new Huffman.Reader();
+    private final Huffman.Reader huffmanReader = new QuickHuffman.Reader();
     private final ISO_8859_1.Reader plainReader = new ISO_8859_1.Reader();
 
     private int state = NEW;

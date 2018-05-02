@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,16 +78,15 @@ class FileDispatcherImpl extends FileDispatcher {
         return writev0(fd, address, len, fdAccess.getAppend(fd));
     }
 
+    long seek(FileDescriptor fd, long offset) throws IOException {
+        return seek0(fd, offset);
+    }
+
     int force(FileDescriptor fd, boolean metaData) throws IOException {
         return force0(fd, metaData);
     }
 
     int truncate(FileDescriptor fd, long size) throws IOException {
-        return truncate0(fd, size);
-    }
-
-    int allocate(FileDescriptor fd, long size) throws IOException {
-        // truncate0() works for extending and truncating file size
         return truncate0(fd, size);
     }
 
@@ -126,8 +125,7 @@ class FileDispatcherImpl extends FileDispatcher {
         return true;
     }
 
-    int setDirectIO(FileDescriptor fd, String path)
-    {
+    int setDirectIO(FileDescriptor fd, String path) {
         int result = -1;
         String filePath = path.substring(0, path.lastIndexOf(File.separator));
         CharBuffer buffer = CharBuffer.allocate(filePath.length());
@@ -177,6 +175,8 @@ class FileDispatcherImpl extends FileDispatcher {
 
     static native long writev0(FileDescriptor fd, long address, int len, boolean append)
         throws IOException;
+
+    static native long seek0(FileDescriptor fd, long offset) throws IOException;
 
     static native int force0(FileDescriptor fd, boolean metaData)
         throws IOException;

@@ -42,7 +42,6 @@ public class DumpSharedDictionary {
         if (args.length == 0) {
             // Start this process
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:SharedArchiveFile=./DumpSharedDictionary.jsa",
                 "-Xshare:dump");
 
@@ -52,7 +51,6 @@ public class DumpSharedDictionary {
             String testjdkPath = System.getProperty("test.jdk");
 
             pb = ProcessTools.createJavaProcessBuilder(
-                    "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:SharedArchiveFile=./DumpSharedDictionary.jsa",
                     "-Dtest.jdk=" + testjdkPath,
                     "-Xshare:on", "DumpSharedDictionary", "test");

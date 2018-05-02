@@ -28,7 +28,6 @@
 #include "classfile/symbolTable.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
-#include "gc/g1/bufferingOopClosure.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -84,6 +83,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/flags/flagSetting.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/orderAccess.inline.hpp"
@@ -384,11 +384,13 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
   return result;
 }
 
-HeapWord* G1CollectedHeap::allocate_new_tlab(size_t word_size) {
+HeapWord* G1CollectedHeap::allocate_new_tlab(size_t min_size,
+                                             size_t requested_size,
+                                             size_t* actual_size) {
   assert_heap_not_locked_and_not_at_safepoint();
-  assert(!is_humongous(word_size), "we do not allow humongous TLABs");
+  assert(!is_humongous(requested_size), "we do not allow humongous TLABs");
 
-  return attempt_allocation(word_size);
+  return attempt_allocation(min_size, requested_size, actual_size);
 }
 
 HeapWord*
@@ -399,7 +401,8 @@ G1CollectedHeap::mem_allocate(size_t word_size,
   if (is_humongous(word_size)) {
     return attempt_allocation_humongous(word_size);
   }
-  return attempt_allocation(word_size);
+  size_t dummy = 0;
+  return attempt_allocation(word_size, word_size, &dummy);
 }
 
 HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
@@ -492,8 +495,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
     // first attempt (without holding the Heap_lock) here and the
     // follow-on attempt will be at the start of the next loop
     // iteration (after taking the Heap_lock).
-
-    result = _allocator->attempt_allocation(word_size);
+    size_t dummy = 0;
+    result = _allocator->attempt_allocation(word_size, word_size, &dummy);
     if (result != NULL) {
       return result;
     }
@@ -722,20 +725,28 @@ void G1CollectedHeap::fill_archive_regions(MemRegion* ranges, size_t count) {
   }
 }
 
-inline HeapWord* G1CollectedHeap::attempt_allocation(size_t word_size) {
+inline HeapWord* G1CollectedHeap::attempt_allocation(size_t min_word_size,
+                                                     size_t desired_word_size,
+                                                     size_t* actual_word_size) {
   assert_heap_not_locked_and_not_at_safepoint();
-  assert(!is_humongous(word_size), "attempt_allocation() should not "
+  assert(!is_humongous(desired_word_size), "attempt_allocation() should not "
          "be called for humongous allocation requests");
 
-  HeapWord* result = _allocator->attempt_allocation(word_size);
+  HeapWord* result = _allocator->attempt_allocation(min_word_size, desired_word_size, actual_word_size);
 
   if (result == NULL) {
-    result = attempt_allocation_slow(word_size);
+    *actual_word_size = desired_word_size;
+    result = attempt_allocation_slow(desired_word_size);
   }
+
   assert_heap_not_locked();
   if (result != NULL) {
-    dirty_young_block(result, word_size);
+    assert(*actual_word_size != 0, "Actual size must have been set here");
+    dirty_young_block(result, *actual_word_size);
+  } else {
+    *actual_word_size = 0;
   }
+
   return result;
 }
 
@@ -1840,7 +1851,7 @@ void G1CollectedHeap::iterate_dirty_card_closure(CardTableEntryClosure* cl, uint
   while (dcqs.apply_closure_during_gc(cl, worker_i)) {
     n_completed_buffers++;
   }
-  g1_policy()->phase_times()->record_thread_work_item(G1GCPhaseTimes::UpdateRS, worker_i, n_completed_buffers);
+  g1_policy()->phase_times()->record_thread_work_item(G1GCPhaseTimes::UpdateRS, worker_i, n_completed_buffers, G1GCPhaseTimes::UpdateRSProcessedBuffers);
   dcqs.clear_n_completed_buffers();
   assert(!dcqs.completed_buffers_exist_dirty(), "Completed buffers exist!");
 }
@@ -3129,15 +3140,13 @@ public:
 
       double start_strong_roots_sec = os::elapsedTime();
 
-      _root_processor->evacuate_roots(pss->closures(), worker_id);
+      _root_processor->evacuate_roots(pss, worker_id);
 
       // We pass a weak code blobs closure to the remembered set scanning because we want to avoid
       // treating the nmethods visited to act as roots for concurrent marking.
       // We only want to make sure that the oops in the nmethods are adjusted with regard to the
       // objects copied by the current evacuation.
-      _g1h->g1_rem_set()->oops_into_collection_set_do(pss,
-                                                      pss->closures()->weak_codeblobs(),
-                                                      worker_id);
+      _g1h->g1_rem_set()->oops_into_collection_set_do(pss, worker_id);
 
       double strong_roots_sec = os::elapsedTime() - start_strong_roots_sec;
 
@@ -3151,9 +3160,11 @@ public:
         evac_term_attempts = evac.term_attempts();
         term_sec = evac.term_time();
         double elapsed_sec = os::elapsedTime() - start;
-        _g1h->g1_policy()->phase_times()->add_time_secs(G1GCPhaseTimes::ObjCopy, worker_id, elapsed_sec - term_sec);
-        _g1h->g1_policy()->phase_times()->record_time_secs(G1GCPhaseTimes::Termination, worker_id, term_sec);
-        _g1h->g1_policy()->phase_times()->record_thread_work_item(G1GCPhaseTimes::Termination, worker_id, evac_term_attempts);
+
+        G1GCPhaseTimes* p = _g1h->g1_policy()->phase_times();
+        p->add_time_secs(G1GCPhaseTimes::ObjCopy, worker_id, elapsed_sec - term_sec);
+        p->record_time_secs(G1GCPhaseTimes::Termination, worker_id, term_sec);
+        p->record_thread_work_item(G1GCPhaseTimes::Termination, worker_id, evac_term_attempts);
       }
 
       assert(pss->queue_is_empty(), "should be empty");
@@ -3353,7 +3364,7 @@ private:
   }
 
   void clean_nmethod_postponed(CompiledMethod* nm) {
-    nm->do_unloading_parallel_postponed(_is_alive, _unloading_occurred);
+    nm->do_unloading_parallel_postponed();
   }
 
   static const int MaxClaimNmethods = 16;

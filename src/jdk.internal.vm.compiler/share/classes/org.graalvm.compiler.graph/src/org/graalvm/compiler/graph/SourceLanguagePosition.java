@@ -22,7 +22,7 @@
  */
 package org.graalvm.compiler.graph;
 
-import java.util.Map;
+import java.net.URI;
 
 /**
  * Provides a path to report information about a high level language source position to the Graph
@@ -31,14 +31,22 @@ import java.util.Map;
 public interface SourceLanguagePosition {
 
     /**
-     * This is called during dumping of Nodes. The implementation should add any properties which
-     * describe this source position. The actual keys and values used are a private contract between
-     * the language implementation and the Graph Visualizer.
-     */
-    void addSourceInformation(Map<String, Object> props);
-
-    /**
      * Produce a compact description of this position suitable for printing.
      */
     String toShortString();
+
+    /** Mimics GraphLocations operation. */
+    int getOffsetEnd();
+
+    /** Mimics GraphLocations operation. */
+    int getOffsetStart();
+
+    /** Mimics GraphLocations operation. */
+    int getLineNumber();
+
+    /** Mimics GraphLocations operation. */
+    URI getURI();
+
+    /** Mimics GraphLocations operation. */
+    String getLanguage();
 }

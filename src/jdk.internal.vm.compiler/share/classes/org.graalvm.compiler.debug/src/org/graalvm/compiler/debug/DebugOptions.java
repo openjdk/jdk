@@ -27,11 +27,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.graalvm.collections.EconomicMap;
+import jdk.internal.vm.compiler.collections.EconomicMap;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionValues;
+import org.graalvm.compiler.serviceprovider.GraalServices;
 
 /**
  * Options that configure a {@link DebugContext} and related functionality.
@@ -133,9 +134,7 @@ public class DebugOptions {
 
     @Option(help = "Host part of the address to which graphs are dumped.", type = OptionType.Debug)
     public static final OptionKey<String> PrintGraphHost = new OptionKey<>("127.0.0.1");
-    @Option(help = "Port part of the address to which graphs are dumped in XML format (ignored if PrintBinaryGraphs=true).", type = OptionType.Debug)
-    public static final OptionKey<Integer> PrintXmlGraphPort = new OptionKey<>(4444);
-    @Option(help = "Port part of the address to which graphs are dumped in binary format (ignored if PrintBinaryGraphs=false).", type = OptionType.Debug)
+    @Option(help = "Port part of the address to which graphs are dumped in binary format.", type = OptionType.Debug)
     public static final OptionKey<Integer> PrintBinaryGraphPort = new OptionKey<>(4445);
     @Option(help = "Schedule graphs as they are dumped.", type = OptionType.Debug)
     public static final OptionKey<Boolean> PrintGraphWithSchedule = new OptionKey<>(false);
@@ -164,23 +163,10 @@ public class DebugOptions {
     @Option(help = "Do not compile anything on bootstrap but just initialize the compiler.", type = OptionType.Debug)
     public static final OptionKey<Boolean> BootstrapInitializeOnly = new OptionKey<>(false);
 
-    // These will be removed at some point
-    @Option(help = "Deprecated - use PrintGraphHost instead.", type = OptionType.Debug)
-    static final OptionKey<String> PrintIdealGraphAddress = new DebugOptions.DeprecatedOptionKey<>(PrintGraphHost);
-    @Option(help = "Deprecated - use PrintGraphWithSchedule instead.", type = OptionType.Debug)
-    static final OptionKey<Boolean> PrintIdealGraphSchedule = new DebugOptions.DeprecatedOptionKey<>(PrintGraphWithSchedule);
-    @Option(help = "Deprecated - use PrintGraph instead.", type = OptionType.Debug)
-    static final OptionKey<Boolean> PrintIdealGraph = new DebugOptions.DeprecatedOptionKey<>(PrintGraph);
-    @Option(help = "Deprecated - use PrintGraphFile instead.", type = OptionType.Debug)
-    static final OptionKey<Boolean> PrintIdealGraphFile = new DebugOptions.DeprecatedOptionKey<>(PrintGraphFile);
-    @Option(help = "Deprecated - use PrintXmlGraphPort instead.", type = OptionType.Debug)
-    static final OptionKey<Integer> PrintIdealGraphPort = new DebugOptions.DeprecatedOptionKey<>(PrintXmlGraphPort);
-    // @formatter:on
-
     /**
      * Gets the directory in which {@link DebugDumpHandler}s can generate output. This will be the
      * directory specified by {@link #DumpPath} if it has been set otherwise it will be derived from
-     * the default value of {@link #DumpPath} and {@link PathUtilities#getGlobalTimeStamp()}.
+     * the default value of {@link #DumpPath} and {@link GraalServices#getGlobalTimeStamp()}.
      *
      * This method will ensure the returned directory exists, printing a message to {@link TTY} if
      * it creates it.
@@ -193,14 +179,16 @@ public class DebugOptions {
         if (DumpPath.hasBeenSet(options)) {
             dumpDir = Paths.get(DumpPath.getValue(options));
         } else {
-            dumpDir = Paths.get(DumpPath.getValue(options), String.valueOf(PathUtilities.getGlobalTimeStamp()));
+            dumpDir = Paths.get(DumpPath.getValue(options), String.valueOf(GraalServices.getGlobalTimeStamp()));
         }
         dumpDir = dumpDir.toAbsolutePath();
         if (!Files.exists(dumpDir)) {
             synchronized (DebugConfigImpl.class) {
                 if (!Files.exists(dumpDir)) {
                     Files.createDirectories(dumpDir);
-                    TTY.println("Dumping debug output in %s", dumpDir.toString());
+                    if (ShowDumpFiles.getValue(options)) {
+                        TTY.println("Dumping debug output in %s", dumpDir.toString());
+                    }
                 }
             }
         }

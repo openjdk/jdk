@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "utilities/macros.hpp"
 
 class LineBuffer;
+class G1ParScanThreadState;
 class STWGCTimer;
 
 template <class T> class WorkerDataArray;
@@ -197,6 +198,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   // add a number of seconds to a phase
   void add_time_secs(GCParPhases phase, uint worker_i, double secs);
+
+  void record_or_add_objcopy_time_secs(uint worker_i, double secs);
 
   void record_thread_work_item(GCParPhases phase, uint worker_i, size_t count, uint index = 0);
 
@@ -369,14 +372,36 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   ReferenceProcessorPhaseTimes* ref_phase_times() { return &_ref_phase_times; }
 };
 
-class G1GCParPhaseTimesTracker : public StackObj {
-  double _start_time;
+class G1EvacPhaseWithTrimTimeTracker : public StackObj {
+  G1ParScanThreadState* _pss;
+  Ticks _start;
+
+  Tickspan& _total_time;
+  Tickspan& _trim_time;
+public:
+  G1EvacPhaseWithTrimTimeTracker(G1ParScanThreadState* pss, Tickspan& total_time, Tickspan& trim_time);
+  ~G1EvacPhaseWithTrimTimeTracker();
+};
+
+class G1GCParPhaseTimesTracker : public CHeapObj<mtGC> {
+protected:
+  Ticks _start_time;
   G1GCPhaseTimes::GCParPhases _phase;
   G1GCPhaseTimes* _phase_times;
   uint _worker_id;
 public:
   G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, G1GCPhaseTimes::GCParPhases phase, uint worker_id);
-  ~G1GCParPhaseTimesTracker();
+  virtual ~G1GCParPhaseTimesTracker();
+};
+
+class G1EvacPhaseTimesTracker : public G1GCParPhaseTimesTracker {
+  Tickspan _total_time;
+  Tickspan _trim_time;
+
+  G1EvacPhaseWithTrimTimeTracker _trim_tracker;
+public:
+  G1EvacPhaseTimesTracker(G1GCPhaseTimes* phase_times, G1ParScanThreadState* pss, G1GCPhaseTimes::GCParPhases phase, uint worker_id);
+  virtual ~G1EvacPhaseTimesTracker();
 };
 
 #endif // SHARE_VM_GC_G1_G1GCPHASETIMES_HPP

@@ -27,7 +27,7 @@
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
-#include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gcConfig.hpp"
 #include "logging/logConfiguration.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/whitebox.hpp"
@@ -304,14 +304,6 @@ static void print_oom_reasons(outputStream* st) {
   st->print_cr("# This output file may be truncated or incomplete.");
 }
 
-static const char* gc_mode() {
-  if (UseG1GC)            return "g1 gc";
-  if (UseParallelGC)      return "parallel gc";
-  if (UseConcMarkSweepGC) return "concurrent mark sweep gc";
-  if (UseSerialGC)        return "serial gc";
-  return "ERROR in GC mode";
-}
-
 static void report_vm_version(outputStream* st, char* buf, int buflen) {
    // VM version
    st->print_cr("#");
@@ -340,7 +332,7 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
                  "", "",
 #endif
                  UseCompressedOops ? ", compressed oops" : "",
-                 gc_mode(),
+                 GCConfig::hs_err_name(),
                  Abstract_VM_Version::vm_platform_string()
                );
 }

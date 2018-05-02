@@ -349,10 +349,10 @@ class nmethod : public CompiledMethod {
     return _state;
   }
 
-  void  make_unloaded(BoolObjectClosure* is_alive, oop cause);
+  void  make_unloaded(oop cause);
 
   bool has_dependencies()                         { return dependencies_size() != 0; }
-  void flush_dependencies(BoolObjectClosure* is_alive);
+  void flush_dependencies(bool delete_immediately);
   bool has_flushed_dependencies()                 { return _has_flushed_dependencies; }
   void set_has_flushed_dependencies()             {
     assert(!has_flushed_dependencies(), "should only happen once");
@@ -488,7 +488,7 @@ public:
 #if INCLUDE_JVMCI
   // See comment for _jvmci_installed_code_triggers_unloading field.
   // Returns whether this nmethod was unloaded.
-  virtual bool do_unloading_jvmci(BoolObjectClosure* is_alive, bool unloading_occurred);
+  virtual bool do_unloading_jvmci(bool unloading_occurred);
 #endif
 
  private:

@@ -24,7 +24,7 @@
  */
 
 /*
- * @test /nodynamioccopyright/
+ * @test /nodynamiccopyright/
  * @bug 8177466
  * @summary Add compiler support for local variable type-inference
  * @compile -source 8 pkg/var.java

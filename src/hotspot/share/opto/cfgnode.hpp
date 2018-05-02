@@ -298,6 +298,7 @@ private:
   void reroute_side_effect_free_unc(ProjNode* proj, ProjNode* dom_proj, PhaseIterGVN* igvn);
   ProjNode* uncommon_trap_proj(CallStaticJavaNode*& call) const;
   bool fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn);
+  static bool is_dominator_unc(CallStaticJavaNode* dom_unc, CallStaticJavaNode* unc);
 
 protected:
   ProjNode* range_check_trap_proj(int& flip, Node*& l, Node*& r);
@@ -484,8 +485,13 @@ public:
 // Indirect branch.  Uses PCTable above to implement a switch statement.
 // It emits as a table load and local branch.
 class JumpNode : public PCTableNode {
+  virtual uint size_of() const { return sizeof(*this); }
 public:
-  JumpNode( Node* control, Node* switch_val, uint size) : PCTableNode(control, switch_val, size) {
+  float* _probs; // probability of each projection
+  float _fcnt;   // total number of times this Jump was executed
+  JumpNode( Node* control, Node* switch_val, uint size, float* probs, float cnt)
+    : PCTableNode(control, switch_val, size),
+      _probs(probs), _fcnt(cnt) {
     init_class_id(Class_Jump);
   }
   virtual int   Opcode() const;

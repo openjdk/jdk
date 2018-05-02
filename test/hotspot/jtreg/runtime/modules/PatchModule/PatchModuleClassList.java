@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import jdk.test.lib.process.ProcessTools;
 
 public class PatchModuleClassList {
     private static final String BOOT_CLASS = "javax/naming/spi/NamingManager";
-    private static final String PLATFORM_CLASS = "javax/transaction/InvalidTransactionException";
+    private static final String PLATFORM_CLASS = "java/sql/ResultSet";
 
     public static void main(String args[]) throws Throwable {
         // Case 1. A class to be loaded by the boot class loader
@@ -68,7 +68,9 @@ public class PatchModuleClassList {
             "-XX:DumpLoadedClassList=" + classList,
             "--patch-module=java.naming=" + moduleJar,
             "PatchModuleMain", BOOT_CLASS.replace('/', '.'));
-        new OutputAnalyzer(pb.start()).shouldHaveExitValue(0);
+        OutputAnalyzer oa = new OutputAnalyzer(pb.start());
+        oa.shouldContain("I pass!");
+        oa.shouldHaveExitValue(0);
 
         // check the generated classlist file
         String content = new String(Files.readAllBytes(Paths.get(classList)));
@@ -78,30 +80,32 @@ public class PatchModuleClassList {
 
         // Case 2. A class to be loaded by the platform class loader
 
-        // Create a class file in the module java.transaction. This class file
-        // will be put in the javatransaction.jar file.
-        source = "package javax.transaction; "                 +
-                 "public class InvalidTransactionException { " +
+        // Create a class file in the module java.sql. This class file
+        // will be put in the javasql.jar file.
+        source = "package java.sql; "                 +
+                 "public class ResultSet { " +
                  "    static { "                               +
-                 "        System.out.println(\"I pass!\"); "   +
+                 "        System.out.println(\"I pass too!\"); "   +
                  "    } "                                      +
                  "}";
 
         ClassFileInstaller.writeClassToDisk(PLATFORM_CLASS,
-             InMemoryJavaCompiler.compile(PLATFORM_CLASS.replace('/', '.'), source, "--patch-module=java.transaction"),
+             InMemoryJavaCompiler.compile(PLATFORM_CLASS.replace('/', '.'), source, "--patch-module=java.sql"),
              System.getProperty("test.classes"));
 
-        // Build the jar file that will be used for the module "java.transaction".
-        BasicJarBuilder.build("javatransaction", PLATFORM_CLASS);
-        moduleJar = BasicJarBuilder.getTestJar("javatransaction.jar");
+        // Build the jar file that will be used for the module "java.sql".
+        BasicJarBuilder.build("javasql", PLATFORM_CLASS);
+        moduleJar = BasicJarBuilder.getTestJar("javasql.jar");
 
-        classList = "javatransaction.list";
+        classList = "javasql.list";
         pb = ProcessTools.createJavaProcessBuilder(
             true,
             "-XX:DumpLoadedClassList=" + classList,
-            "--patch-module=java.naming=" + moduleJar,
+            "--patch-module=java.sql=" + moduleJar,
             "PatchModuleMain", PLATFORM_CLASS.replace('/', '.'));
-        new OutputAnalyzer(pb.start()).shouldHaveExitValue(0);
+        OutputAnalyzer oa2 = new OutputAnalyzer(pb.start());
+        oa2.shouldContain("I pass too!");
+        oa2.shouldHaveExitValue(0);
 
         // check the generated classlist file
         content = new String(Files.readAllBytes(Paths.get(classList)));

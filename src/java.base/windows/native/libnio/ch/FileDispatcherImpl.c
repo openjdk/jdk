@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,6 +296,31 @@ Java_sun_nio_ch_FileDispatcherImpl_pwrite0(JNIEnv *env, jclass clazz, jobject fd
     }
 
     return convertReturnVal(env, (jint)written, JNI_FALSE);
+}
+
+JNIEXPORT jlong JNICALL
+Java_sun_nio_ch_FileDispatcherImpl_seek0(JNIEnv *env, jclass clazz,
+                                         jobject fdo, jlong offset)
+{
+    BOOL result = 0;
+    HANDLE h = (HANDLE)(handleval(env, fdo));
+    LARGE_INTEGER where;
+    DWORD whence;
+
+    if (offset < 0) {
+        where.QuadPart = 0;
+        whence = FILE_CURRENT;
+    } else {
+        where.QuadPart = offset;
+        whence = FILE_BEGIN;
+    }
+
+    result = SetFilePointerEx(h, where, &where, whence);
+    if (result == 0) {
+        JNU_ThrowIOExceptionWithLastError(env, "SetFilePointerEx failed");
+        return IOS_THROWN;
+    }
+    return (jlong)where.QuadPart;
 }
 
 JNIEXPORT jint JNICALL

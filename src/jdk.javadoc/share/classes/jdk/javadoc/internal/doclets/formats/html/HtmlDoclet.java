@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,6 @@ public class HtmlDoclet extends AbstractDoclet {
      * For new format.
      *
      * @throws DocletException if there is a problem while writing the other files
-     * @see jdk.doclet.DocletEnvironment
      */
     @Override // defined by AbstractDoclet
     protected void generateOtherFiles(DocletEnvironment docEnv, ClassTree classtree)
@@ -242,7 +241,7 @@ public class HtmlDoclet extends AbstractDoclet {
         List<TypeElement> list = new ArrayList<>(arr);
         ListIterator<TypeElement> iterator = list.listIterator();
         for (TypeElement klass : list) {
-            if (utils.isHidden(klass) ||
+            if (utils.hasHiddenTag(klass) ||
                     !(configuration.isGeneratedDoc(klass) && utils.isIncluded(klass))) {
                 continue;
             }

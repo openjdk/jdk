@@ -572,80 +572,143 @@ void LIR_Assembler::const2stack(LIR_Opr src, LIR_Opr dest) {
 void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmitInfo* info, bool wide) {
   assert(src->is_constant(), "should not call otherwise");
   assert(dest->is_address(), "should not call otherwise");
-  // See special case in LIRGenerator::do_StoreIndexed.
-  // T_BYTE: Special case for card mark store.
-  assert(type == T_BYTE || !dest->as_address_ptr()->index()->is_valid(), "not supported");
+
   LIR_Const* c = src->as_constant_ptr();
   Address addr = as_Address(dest->as_address_ptr());
 
   int store_offset = -1;
-  unsigned int lmem = 0;
-  unsigned int lcon = 0;
-  int64_t cbits = 0;
-  switch (type) {
-    case T_INT:    // fall through
-    case T_FLOAT:
-      lmem = 4; lcon = 4; cbits = c->as_jint_bits();
-      break;
 
-    case T_ADDRESS:
-      lmem = 8; lcon = 4; cbits = c->as_jint_bits();
-      break;
-
-    case T_OBJECT:  // fall through
-    case T_ARRAY:
-      if (c->as_jobject() == NULL) {
-        if (UseCompressedOops && !wide) {
-          store_offset = __ store_const(addr, (int32_t)NULL_WORD, 4, 4);
+  if (dest->as_address_ptr()->index()->is_valid()) {
+    switch (type) {
+      case T_INT:    // fall through
+      case T_FLOAT:
+        __ load_const_optimized(Z_R0_scratch, c->as_jint_bits());
+        store_offset = __ offset();
+        if (Immediate::is_uimm12(addr.disp())) {
+          __ z_st(Z_R0_scratch, addr);
         } else {
-          store_offset = __ store_const(addr, (int64_t)NULL_WORD, 8, 8);
+          __ z_sty(Z_R0_scratch, addr);
         }
-      } else {
-        jobject2reg(c->as_jobject(), Z_R1_scratch);
-        if (UseCompressedOops && !wide) {
-          __ encode_heap_oop(Z_R1_scratch);
-          store_offset = __ reg2mem_opt(Z_R1_scratch, addr, false);
+        break;
+
+      case T_ADDRESS:
+        __ load_const_optimized(Z_R1_scratch, c->as_jint_bits());
+        store_offset = __ reg2mem_opt(Z_R1_scratch, addr, true);
+        break;
+
+      case T_OBJECT:  // fall through
+      case T_ARRAY:
+        if (c->as_jobject() == NULL) {
+          if (UseCompressedOops && !wide) {
+            __ clear_reg(Z_R1_scratch, false);
+            store_offset = __ reg2mem_opt(Z_R1_scratch, addr, false);
+          } else {
+            __ clear_reg(Z_R1_scratch, true);
+            store_offset = __ reg2mem_opt(Z_R1_scratch, addr, true);
+          }
         } else {
-          store_offset = __ reg2mem_opt(Z_R1_scratch, addr, true);
+          jobject2reg(c->as_jobject(), Z_R1_scratch);
+          if (UseCompressedOops && !wide) {
+            __ encode_heap_oop(Z_R1_scratch);
+            store_offset = __ reg2mem_opt(Z_R1_scratch, addr, false);
+          } else {
+            store_offset = __ reg2mem_opt(Z_R1_scratch, addr, true);
+          }
         }
-      }
-      assert(store_offset >= 0, "check");
-      break;
+        assert(store_offset >= 0, "check");
+        break;
 
-    case T_LONG:    // fall through
-    case T_DOUBLE:
-      lmem = 8; lcon = 8; cbits = (int64_t)(c->as_jlong_bits());
-      break;
+      case T_LONG:    // fall through
+      case T_DOUBLE:
+        __ load_const_optimized(Z_R1_scratch, (int64_t)(c->as_jlong_bits()));
+        store_offset = __ reg2mem_opt(Z_R1_scratch, addr, true);
+        break;
 
-    case T_BOOLEAN: // fall through
-    case T_BYTE:
-      lmem = 1; lcon = 1; cbits = (int8_t)(c->as_jint());
-      break;
+      case T_BOOLEAN: // fall through
+      case T_BYTE:
+        __ load_const_optimized(Z_R0_scratch, (int8_t)(c->as_jint()));
+        store_offset = __ offset();
+        if (Immediate::is_uimm12(addr.disp())) {
+          __ z_stc(Z_R0_scratch, addr);
+        } else {
+          __ z_stcy(Z_R0_scratch, addr);
+        }
+        break;
 
-    case T_CHAR:    // fall through
-    case T_SHORT:
-      lmem = 2; lcon = 2; cbits = (int16_t)(c->as_jint());
-      break;
+      case T_CHAR:    // fall through
+      case T_SHORT:
+        __ load_const_optimized(Z_R0_scratch, (int16_t)(c->as_jint()));
+        store_offset = __ offset();
+        if (Immediate::is_uimm12(addr.disp())) {
+          __ z_sth(Z_R0_scratch, addr);
+        } else {
+          __ z_sthy(Z_R0_scratch, addr);
+        }
+        break;
 
-    default:
-      ShouldNotReachHere();
-  };
-
-  // Index register is normally not supported, but for
-  // LIRGenerator::CardTableBarrierSet_post_barrier we make an exception.
-  if (type == T_BYTE && dest->as_address_ptr()->index()->is_valid()) {
-    __ load_const_optimized(Z_R0_scratch, (int8_t)(c->as_jint()));
-    store_offset = __ offset();
-    if (Immediate::is_uimm12(addr.disp())) {
-      __ z_stc(Z_R0_scratch, addr);
-    } else {
-      __ z_stcy(Z_R0_scratch, addr);
+      default:
+        ShouldNotReachHere();
     }
-  }
 
-  if (store_offset == -1) {
-    store_offset = __ store_const(addr, cbits, lmem, lcon);
-    assert(store_offset >= 0, "check");
+  } else { // no index
+
+    unsigned int lmem = 0;
+    unsigned int lcon = 0;
+    int64_t cbits = 0;
+
+    switch (type) {
+      case T_INT:    // fall through
+      case T_FLOAT:
+        lmem = 4; lcon = 4; cbits = c->as_jint_bits();
+        break;
+
+      case T_ADDRESS:
+        lmem = 8; lcon = 4; cbits = c->as_jint_bits();
+        break;
+
+      case T_OBJECT:  // fall through
+      case T_ARRAY:
+        if (c->as_jobject() == NULL) {
+          if (UseCompressedOops && !wide) {
+            store_offset = __ store_const(addr, (int32_t)NULL_WORD, 4, 4);
+          } else {
+            store_offset = __ store_const(addr, (int64_t)NULL_WORD, 8, 8);
+          }
+        } else {
+          jobject2reg(c->as_jobject(), Z_R1_scratch);
+          if (UseCompressedOops && !wide) {
+            __ encode_heap_oop(Z_R1_scratch);
+            store_offset = __ reg2mem_opt(Z_R1_scratch, addr, false);
+          } else {
+            store_offset = __ reg2mem_opt(Z_R1_scratch, addr, true);
+          }
+        }
+        assert(store_offset >= 0, "check");
+        break;
+
+      case T_LONG:    // fall through
+      case T_DOUBLE:
+        lmem = 8; lcon = 8; cbits = (int64_t)(c->as_jlong_bits());
+        break;
+
+      case T_BOOLEAN: // fall through
+      case T_BYTE:
+        lmem = 1; lcon = 1; cbits = (int8_t)(c->as_jint());
+        break;
+
+      case T_CHAR:    // fall through
+      case T_SHORT:
+        lmem = 2; lcon = 2; cbits = (int16_t)(c->as_jint());
+        break;
+
+      default:
+        ShouldNotReachHere();
+    }
+
+    if (store_offset == -1) {
+      store_offset = __ store_const(addr, cbits, lmem, lcon);
+      assert(store_offset >= 0, "check");
+    }
   }
 
   if (info != NULL) {

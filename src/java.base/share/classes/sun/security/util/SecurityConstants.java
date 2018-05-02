@@ -25,12 +25,10 @@
 
 package sun.security.util;
 
+import java.lang.reflect.ReflectPermission;
 import java.net.SocketPermission;
 import java.net.NetPermission;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.Permission;
-import java.security.BasicPermission;
 import java.security.SecurityPermission;
 import java.security.AllPermission;
 import sun.security.action.GetPropertyAction;
@@ -131,6 +129,10 @@ public final class SecurityConstants {
     public static final RuntimePermission GET_STACK_TRACE_PERMISSION =
        new RuntimePermission("getStackTrace");
 
+    // java.lang.Thread
+    public static final RuntimePermission SUBCLASS_IMPLEMENTATION_PERMISSION =
+        new RuntimePermission("enableContextClassLoaderOverride");
+
     // java.security.AccessControlContext
     public static final SecurityPermission CREATE_ACC_PERMISSION =
        new SecurityPermission("createAccessControlContext");
@@ -149,4 +151,13 @@ public final class SecurityConstants {
 
     public static final String PROVIDER_VER =
         GetPropertyAction.privilegedGetProperty("java.specification.version");
+
+    // java.lang.reflect.AccessibleObject
+    public static final ReflectPermission ACCESS_PERMISSION =
+        new ReflectPermission("suppressAccessChecks");
+
+    // sun.reflect.ReflectionFactory
+    public static final RuntimePermission REFLECTION_FACTORY_ACCESS_PERMISSION =
+        new RuntimePermission("reflectionFactoryAccess");
+
 }

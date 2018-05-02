@@ -40,7 +40,7 @@ import tests.Result;
 
 /*
  * @test
- * @bug 8152143 8152704 8155649 8165804 8185841 8176841 8190918
+ * @bug 8152143 8152704 8155649 8165804 8185841 8176841 8190918 8179071
  * @summary IncludeLocalesPlugin tests
  * @author Naoto Sato
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
@@ -256,7 +256,7 @@ public class IncludeLocalesPluginTest {
                 "(root)", "as_IN", "as", "bn_IN", "bn", "bo_IN", "bo", "brx_IN", "brx",
                 "en", "en_001", "en_IN", "en_US", "en_US_POSIX", "gu_IN", "gu", "hi_IN",
                 "hi", "kn_IN", "kn", "kok_IN", "kok", "ks_IN", "ks", "ml_IN", "ml",
-                "mr_IN", "mr", "ne_IN", "ne", "or_IN", "or", "pa_IN", "pa", "pa_IN_#Guru",
+                "mr_IN", "mr", "ne_IN", "ne", "or_IN", "or", "pa", "pa_IN_#Guru",
                 "pa__#Guru", "ta_IN", "ta", "te_IN", "te", "ur_IN", "ur"),
             "",
         },

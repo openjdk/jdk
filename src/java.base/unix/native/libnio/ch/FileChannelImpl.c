@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,32 +23,30 @@
  * questions.
  */
 
-#include "jni.h"
-#include "jni_util.h"
-#include "jvm.h"
-#include "jvm_md.h"
-#include "jlong.h"
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include "sun_nio_ch_FileChannelImpl.h"
-#include "java_lang_Integer.h"
-#include "nio.h"
-#include "nio_util.h"
-#include <dlfcn.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #if defined(__linux__) || defined(__solaris__)
 #include <sys/sendfile.h>
 #elif defined(_AIX)
 #include <sys/socket.h>
 #elif defined(_ALLBSD_SOURCE)
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
-
 #define lseek64 lseek
 #define mmap64 mmap
 #endif
+
+#include "jni.h"
+#include "jni_util.h"
+#include "jlong.h"
+#include "nio.h"
+#include "nio_util.h"
+#include "sun_nio_ch_FileChannelImpl.h"
+#include "java_lang_Integer.h"
 
 static jfieldID chan_fd;        /* jobject 'fd' in sun.nio.ch.FileChannelImpl */
 
@@ -122,23 +120,6 @@ Java_sun_nio_ch_FileChannelImpl_unmap0(JNIEnv *env, jobject this,
                   munmap(a, (size_t)len),
                   "Unmap failed");
 }
-
-
-JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileChannelImpl_position0(JNIEnv *env, jobject this,
-                                          jobject fdo, jlong offset)
-{
-    jint fd = fdval(env, fdo);
-    jlong result = 0;
-
-    if (offset < 0) {
-        result = lseek64(fd, 0, SEEK_CUR);
-    } else {
-        result = lseek64(fd, offset, SEEK_SET);
-    }
-    return handle(env, result, "Position failed");
-}
-
 
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,

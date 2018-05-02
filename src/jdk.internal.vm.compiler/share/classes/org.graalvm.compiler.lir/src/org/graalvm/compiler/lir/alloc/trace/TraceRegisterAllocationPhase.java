@@ -30,10 +30,10 @@ import org.graalvm.compiler.debug.CounterKey;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.Indent;
 import org.graalvm.compiler.lir.LIR;
+import org.graalvm.compiler.lir.alloc.RegisterAllocationPhase;
 import org.graalvm.compiler.lir.alloc.trace.TraceAllocationPhase.TraceAllocationContext;
 import org.graalvm.compiler.lir.gen.LIRGenerationResult;
 import org.graalvm.compiler.lir.gen.LIRGeneratorTool.MoveFactory;
-import org.graalvm.compiler.lir.phases.AllocationPhase;
 import org.graalvm.compiler.lir.ssa.SSAUtil;
 import org.graalvm.compiler.options.Option;
 import org.graalvm.compiler.options.OptionKey;
@@ -47,7 +47,7 @@ import jdk.vm.ci.meta.AllocatableValue;
  * <a href="http://dx.doi.org/10.1145/2972206.2972211">"Trace-based Register Allocation in a JIT
  * Compiler"</a> by Josef Eisl et al.
  */
-public final class TraceRegisterAllocationPhase extends AllocationPhase {
+public final class TraceRegisterAllocationPhase extends RegisterAllocationPhase {
 
     public static class Options {
         // @formatter:off
@@ -67,9 +67,20 @@ public final class TraceRegisterAllocationPhase extends AllocationPhase {
     public static final CounterKey globalStackSlots = DebugContext.counter("TraceRA[GlobalStackSlots]");
     public static final CounterKey allocatedStackSlots = DebugContext.counter("TraceRA[AllocatedStackSlots]");
 
+    private final TraceBuilderPhase traceBuilder;
+    private final GlobalLivenessAnalysisPhase livenessAnalysis;
+
+    public TraceRegisterAllocationPhase() {
+        this.traceBuilder = new TraceBuilderPhase();
+        this.livenessAnalysis = new GlobalLivenessAnalysisPhase();
+    }
+
     @Override
     @SuppressWarnings("try")
     protected void run(TargetDescription target, LIRGenerationResult lirGenRes, AllocationContext context) {
+        traceBuilder.apply(target, lirGenRes, context);
+        livenessAnalysis.apply(target, lirGenRes, context);
+
         MoveFactory spillMoveFactory = context.spillMoveFactory;
         RegisterAllocationConfig registerAllocationConfig = context.registerAllocationConfig;
         LIR lir = lirGenRes.getLIR();
@@ -80,8 +91,8 @@ public final class TraceRegisterAllocationPhase extends AllocationPhase {
         TraceAllocationContext traceContext = new TraceAllocationContext(spillMoveFactory, registerAllocationConfig, resultTraces, livenessInfo);
         AllocatableValue[] cachedStackSlots = Options.TraceRACacheStackSlots.getValue(lir.getOptions()) ? new AllocatableValue[lir.numVariables()] : null;
 
-        // currently this is not supported
-        boolean neverSpillConstant = false;
+        boolean neverSpillConstant = getNeverSpillConstants();
+        assert !neverSpillConstant : "currently this is not supported";
 
         final TraceRegisterAllocationPolicy plan = DefaultTraceRegisterAllocationPolicy.allocationPolicy(target, lirGenRes, spillMoveFactory, registerAllocationConfig, cachedStackSlots, resultTraces,
                         neverSpillConstant, livenessInfo, lir.getOptions());

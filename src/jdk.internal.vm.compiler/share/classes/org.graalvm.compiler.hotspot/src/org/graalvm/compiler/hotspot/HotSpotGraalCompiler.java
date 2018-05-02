@@ -38,9 +38,9 @@ import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.GraalCompiler;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.util.CompilationAlarm;
-import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DebugContext.Activation;
+import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.DebugOptions;
 import org.graalvm.compiler.hotspot.CompilationCounters.Options;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
@@ -105,17 +105,16 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
 
     @Override
     public CompilationRequestResult compileMethod(CompilationRequest request) {
-        return compileMethod(request, true);
+        return compileMethod(request, true, graalRuntime.getOptions());
     }
 
     @SuppressWarnings("try")
-    CompilationRequestResult compileMethod(CompilationRequest request, boolean installAsDefault) {
+    CompilationRequestResult compileMethod(CompilationRequest request, boolean installAsDefault, OptionValues options) {
         if (graalRuntime.isShutdown()) {
             return HotSpotCompilationRequestResult.failure(String.format("Shutdown entered"), false);
         }
 
         ResolvedJavaMethod method = request.getMethod();
-        OptionValues options = graalRuntime.getOptions(method);
 
         if (graalRuntime.isBootstrapping()) {
             if (DebugOptions.BootstrapInitializeOnly.getValue(options)) {
@@ -280,13 +279,6 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
             return newGbs;
         }
         return suite;
-    }
-
-    public Object mbean() {
-        if (graalRuntime instanceof HotSpotGraalRuntime) {
-            return ((HotSpotGraalRuntime) graalRuntime).getMBean();
-        }
-        return null;
     }
 
     /**

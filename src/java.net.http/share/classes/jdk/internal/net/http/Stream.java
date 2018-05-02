@@ -614,7 +614,7 @@ class Stream<T> extends ExchangeImpl<T> {
         if (query != null) {
             path += "?" + query;
         }
-        hdrs.setHeader(":path", path);
+        hdrs.setHeader(":path", Utils.encode(path));
     }
 
     HttpHeadersImpl getRequestPseudoHeaders() {

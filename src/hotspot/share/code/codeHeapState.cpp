@@ -2050,16 +2050,10 @@ void CodeHeapState::print_age(outputStream* out, CodeHeap* heap) {
 }
 
 
-#define JDK8200450_REMEDY
-#define JDK8200450_TRACE
 void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
   if (!initialization_complete) {
     return;
   }
-#ifdef JDK8200450_TRACE
-  out->print_cr("print_names() entered for heap @ " INTPTR_FORMAT, p2i(heap));
-  out->flush();
-#endif
 
   const char* heapName   = get_heapName(heap);
   get_HeapStatGlobals(out, heapName);
@@ -2105,41 +2099,18 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
     // Only check granule if it contains at least one blob.
     unsigned int nBlobs  = StatArray[ix].t1_count   + StatArray[ix].t2_count + StatArray[ix].tx_count +
                            StatArray[ix].stub_count + StatArray[ix].dead_count;
-#ifdef JDK8200450_REMEDY
-    if (nBlobs > 0 )
-#endif
-    {
+    if (nBlobs > 0 ) {
     for (unsigned int is = 0; is < granule_size; is+=(unsigned int)seg_size) {
       // heap->find_start() is safe. Only working with _segmap. Returns NULL or void*. Returned CodeBlob may be uninitialized.
       CodeBlob* this_blob = (CodeBlob *)(heap->find_start(low_bound+ix*granule_size+is));
-#ifndef JDK8200450_REMEDY
-      bool blob_initialized = (this_blob != NULL)
-#else
-#ifndef JDK8200450_TRACE
       bool blob_initialized = (this_blob != NULL) && (this_blob->header_size() >= 0) && (this_blob->relocation_size() >= 0) &&
                               ((address)this_blob + this_blob->header_size() == (address)(this_blob->relocation_begin())) &&
-                              ((address)this_blob + CodeBlob::align_code_offset(this_blob->header_size() + this_blob->relocation_size()) == (address)(this_blob->content_begin()) &&
-                              is_readable_pointer((address)(this_blob->relocation_begin()) &&
+                              ((address)this_blob + CodeBlob::align_code_offset(this_blob->header_size() + this_blob->relocation_size()) == (address)(this_blob->content_begin())) &&
+                              is_readable_pointer((address)(this_blob->relocation_begin())) &&
                               is_readable_pointer(this_blob->content_begin());
-#else
-      int   hdr_size      = 0;
-      int   reloc_size    = 0;
-      address reloc_begin = NULL;
-      address cntnt_begin = NULL;
-      if (this_blob != NULL) {
-        hdr_size    = this_blob->header_size();
-        reloc_size  = this_blob->relocation_size();
-        reloc_begin = (address)(this_blob->relocation_begin());
-        cntnt_begin = this_blob->content_begin();
-      }
-      bool blob_initialized = (this_blob != NULL) && (hdr_size >= 0) && (reloc_size >= 0) &&
-                              ((address)this_blob + hdr_size == reloc_begin) &&
-                              ((address)this_blob + CodeBlob::align_code_offset(hdr_size + reloc_size) == cntnt_begin) &&
-                              is_readable_pointer(reloc_begin) &&
-                              is_readable_pointer(cntnt_begin);
-#endif
-#endif
-      if (blob_initialized && (this_blob != last_blob)) {
+      // blob could have been flushed, freed, and merged.
+      // this_blob < last_blob is an indicator for that.
+      if (blob_initialized && (this_blob > last_blob)) {
         last_blob          = this_blob;
 
         //---<  get type and name  >---
@@ -2147,15 +2118,13 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
         if (segment_granules) {
           cbType = (blobType)StatArray[ix].type;
         } else {
-          cbType = get_cbType(this_blob);  // Is this here safe?
+          cbType = get_cbType(this_blob);
         }
-        // this_blob->name() could return NULL if no name is given to CTOR. Inlined, maybe invisible on stack
+        // this_blob->name() could return NULL if no name was given to CTOR. Inlined, maybe invisible on stack
         const char* blob_name = this_blob->name();
-#ifdef JDK8200450_REMEDY
-        if (blob_name == NULL) {
+        if ((blob_name == NULL) || !is_readable_pointer(blob_name)) {
           blob_name = "<unavailable>";
         }
-#endif
 
         //---<  print table header for new print range  >---
         if (!name_in_addr_range) {
@@ -2174,24 +2143,16 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
         ast->print("(+" PTR32_FORMAT ")", (unsigned int)((char*)this_blob-low_bound));
         ast->fill_to(33);
 
-#ifdef JDK8200450_TRACE
-        STRINGSTREAM_FLUSH_LOCKED("")   // Remove before push!!!
-#endif
-
         // this_blob->as_nmethod_or_null() is safe. Inlined, maybe invisible on stack.
         nmethod*    nm     = this_blob->as_nmethod_or_null();
         Method*     method = (nm == NULL) ? NULL : nm->method();  // may be uninitialized, i.e. != NULL, but invalid
-#ifdef JDK8200450_REMEDY
-        if ((nm != NULL) && (method != NULL) && is_readable_pointer(method) && is_readable_pointer(method->constants())) {
-#else
-        if ((nm != NULL) && (method != NULL)) {
-#endif
+        if ((nm != NULL) && (method != NULL) && (cbType != nMethod_dead) &&
+            is_readable_pointer(method) && is_readable_pointer(method->constants())) {
           ResourceMark rm;
           //---<  collect all data to locals as quickly as possible  >---
           unsigned int total_size = nm->total_size();
           int          hotness    = nm->hotness_counter();
-          bool         nm_zombie  = nm->is_zombie();
-          bool         get_name   = nm->is_in_use() || nm->is_not_entrant();
+          bool         get_name   = (cbType == nMethod_inuse) || (cbType == nMethod_notused);
           //---<  nMethod size in hex  >---
           ast->print(PTR32_FORMAT, total_size);
           ast->print("(" SIZE_FORMAT_W(4) "K)", total_size/K);
@@ -2205,16 +2166,11 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
           ast->fill_to(62+6);
           ast->print("%s", blobTypeName[cbType]);
           ast->fill_to(82+6);
-          if (nm_zombie) {
+          if (cbType == nMethod_dead) {
             ast->print("%14s", " zombie method");
           }
 
-#ifdef JDK8200450_TRACE
-        STRINGSTREAM_FLUSH_LOCKED("")   // Remove before push!!!
-#endif
-
           if (get_name) {
-#ifdef JDK8200450_REMEDY
             Symbol* methName  = method->name();
             const char*   methNameS = (methName == NULL) ? NULL : methName->as_C_string();
             methNameS = (methNameS == NULL) ? "<method name unavailable>" : methNameS;
@@ -2223,10 +2179,6 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
             methSigS  = (methSigS  == NULL) ? "<method signature unavailable>" : methSigS;
             ast->print("%s", methNameS);
             ast->print("%s", methSigS);
-#else
-            blob_name = method->name_and_sig_as_C_string();
-            ast->print("%s", blob_name);
-#endif
           } else {
             ast->print("%s", blob_name);
           }
@@ -2237,45 +2189,9 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
           ast->print("%s", blob_name);
         }
         STRINGSTREAM_FLUSH_LOCKED("\n")
-#ifdef JDK8200450_TRACE
-        if ((nm != NULL) && (method != NULL) && !(is_readable_pointer(method) && is_readable_pointer(method->constants()))) {
-          ast->print("Potential CodeHeap State Analytics issue found.\n");
-          if (is_readable_pointer(method)) {
-            ast->print("  Issue would have been detected by is_readable_pointer(" INTPTR_FORMAT "(method->constants())) check.\n", p2i(method->constants()));
-          } else {
-            ast->print("  Issue would have been detected by is_readable_pointer(" INTPTR_FORMAT "(method)) check.\n", p2i(method));
-          }
-          STRINGSTREAM_FLUSH_LOCKED("\n")
-        }
-#endif
       } else if (!blob_initialized && (this_blob != last_blob) && (this_blob != NULL)) {
         last_blob          = this_blob;
-#ifdef JDK8200450_TRACE
-        ast->print("Potential CodeHeap State Analytics issue found.\n");
-        if (nBlobs == 0) {
-          ast->print("  Issue would have been detected by (nBlobs > 0) check.\n");
-        } else {
-          if (!((address)this_blob + hdr_size == reloc_begin)) {
-            ast->print("  Issue would have been detected by (this(" INTPTR_FORMAT ") + header(%d) == relocation_begin(" INTPTR_FORMAT ")) check.\n", p2i(this_blob), hdr_size, p2i(reloc_begin));
-          }
-          if (!((address)this_blob + CodeBlob::align_code_offset(hdr_size + reloc_size) == cntnt_begin)) {
-            ast->print("  Issue would have been detected by (this(" INTPTR_FORMAT ") + header(%d) + relocation(%d) == content_begin(" INTPTR_FORMAT ")) check.\n", p2i(this_blob), hdr_size, reloc_size, p2i(cntnt_begin));
-          }
-          if (hdr_size    != this_blob->header_size()) {
-            ast->print("  header_size      meanwhile changed from %d to %d\n", hdr_size, this_blob->header_size());
-          }
-          if (reloc_size  != this_blob->relocation_size()) {
-            ast->print("  relocation_size  meanwhile changed from %d to %d\n", reloc_size, this_blob->relocation_size());
-          }
-          if (reloc_begin != (address)(this_blob->relocation_begin())) {
-            ast->print("  relocation_begin meanwhile changed from " INTPTR_FORMAT " to " INTPTR_FORMAT "\n", p2i(reloc_begin), p2i(this_blob->relocation_begin()));
-          }
-          if (cntnt_begin != this_blob->content_begin()) {
-            ast->print("  relocation_begin meanwhile changed from " INTPTR_FORMAT " to " INTPTR_FORMAT "\n", p2i(cntnt_begin), p2i(this_blob->content_begin()));
-          }
-        }
         STRINGSTREAM_FLUSH_LOCKED("\n")
-#endif
       }
     }
     } // nBlobs > 0
@@ -2430,7 +2346,7 @@ void CodeHeapState::print_line_delim(outputStream* out, bufferedStream* ast, cha
 }
 
 CodeHeapState::blobType CodeHeapState::get_cbType(CodeBlob* cb) {
-  if (cb != NULL ) {
+  if ((cb != NULL) && is_readable_pointer(cb)) {
     if (cb->is_runtime_stub())                return runtimeStub;
     if (cb->is_deoptimization_stub())         return deoptimizationStub;
     if (cb->is_uncommon_trap_stub())          return uncommonTrapStub;
@@ -2440,13 +2356,13 @@ CodeHeapState::blobType CodeHeapState::get_cbType(CodeBlob* cb) {
     if (cb->is_method_handles_adapter_blob()) return mh_adapterBlob;
     if (cb->is_buffer_blob())                 return bufferBlob;
 
-    if (cb->is_nmethod() ) {
-      if (((nmethod*)cb)->is_in_use())        return nMethod_inuse;
-      if (((nmethod*)cb)->is_alive() && !(((nmethod*)cb)->is_not_entrant()))   return nMethod_notused;
-      if (((nmethod*)cb)->is_alive())         return nMethod_alive;
-      if (((nmethod*)cb)->is_unloaded())      return nMethod_unloaded;
-      if (((nmethod*)cb)->is_zombie())        return nMethod_dead;
-      tty->print_cr("unhandled nmethod state");
+    nmethod*  nm = cb->as_nmethod_or_null();
+    if (nm != NULL) { // no is_readable check required, nm = (nmethod*)cb.
+      if (nm->is_zombie())        return nMethod_dead;
+      if (nm->is_unloaded())      return nMethod_unloaded;
+      if (nm->is_alive() && !(nm->is_not_entrant()))   return nMethod_notused;
+      if (nm->is_alive())         return nMethod_alive;
+      if (nm->is_in_use())        return nMethod_inuse;
       return nMethod_dead;
     }
   }

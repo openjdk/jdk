@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,9 @@ import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.PropertyWriter;
-import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
+import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.*;
 
 /**
  * Builds documentation for a property.
@@ -52,16 +53,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberMap;
 public class PropertyBuilder extends AbstractMemberBuilder {
 
     /**
-     * The class whose properties are being documented.
-     */
-    private final TypeElement typeElement;
-
-    /**
-     * The visible properties for the given class.
-     */
-    private final VisibleMemberMap visibleMemberMap;
-
-    /**
      * The writer to output the property documentation.
      */
     private final PropertyWriter writer;
@@ -69,7 +60,7 @@ public class PropertyBuilder extends AbstractMemberBuilder {
     /**
      * The list of properties being documented.
      */
-    private final List<Element> properties;
+    private final List<? extends Element> properties;
 
     /**
      * The index of the current property that is being documented at this point
@@ -87,12 +78,9 @@ public class PropertyBuilder extends AbstractMemberBuilder {
     private PropertyBuilder(Context context,
             TypeElement typeElement,
             PropertyWriter writer) {
-        super(context);
-        this.typeElement = typeElement;
+        super(context, typeElement);
         this.writer = writer;
-        visibleMemberMap = configuration.getVisibleMemberMap(typeElement,
-                VisibleMemberMap.Kind.PROPERTIES);
-        properties = visibleMemberMap.getMembers(typeElement);
+        properties = getVisibleMembers(PROPERTIES);
     }
 
     /**

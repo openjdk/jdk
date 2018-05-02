@@ -80,6 +80,20 @@ private:
   // whether the _alloc_region is NULL or not.
   static HeapRegion* _dummy_region;
 
+  // After a region is allocated by alloc_new_region, this
+  // method is used to set it as the active alloc_region
+  void update_alloc_region(HeapRegion* alloc_region);
+
+  // Allocate a new active region and use it to perform a word_size
+  // allocation. The force parameter will be passed on to
+  // G1CollectedHeap::allocate_new_alloc_region() and tells it to try
+  // to allocate a new region even if the max has been reached.
+  HeapWord* new_alloc_region_and_allocate(size_t word_size, bool force);
+
+protected:
+  // Reset the alloc region to point a the dummy region.
+  void reset_alloc_region();
+
   // Perform a non-MT-safe allocation out of the given region.
   inline HeapWord* allocate(HeapRegion* alloc_region,
                             size_t word_size);
@@ -102,22 +116,13 @@ private:
   // the space.
   size_t fill_up_remaining_space(HeapRegion* alloc_region);
 
-  // After a region is allocated by alloc_new_region, this
-  // method is used to set it as the active alloc_region
-  void update_alloc_region(HeapRegion* alloc_region);
-
-  // Allocate a new active region and use it to perform a word_size
-  // allocation. The force parameter will be passed on to
-  // G1CollectedHeap::allocate_new_alloc_region() and tells it to try
-  // to allocate a new region even if the max has been reached.
-  HeapWord* new_alloc_region_and_allocate(size_t word_size, bool force);
-
-protected:
   // Retire the active allocating region. If fill_up is true then make
   // sure that the region is full before we retire it so that no one
   // else can allocate out of it.
   // Returns the number of bytes that have been filled up during retire.
   virtual size_t retire(bool fill_up);
+
+  size_t retire_internal(HeapRegion* alloc_region, bool fill_up);
 
   // For convenience as subclasses use it.
   static G1CollectedHeap* _g1h;
@@ -177,7 +182,7 @@ public:
   inline HeapWord* attempt_allocation_force(size_t word_size);
 
   // Should be called before we start using this object.
-  void init();
+  virtual void init();
 
   // This can be used to set the active region to a specific
   // region. (Use Example: we try to retain the last old GC alloc
@@ -197,14 +202,49 @@ public:
 };
 
 class MutatorAllocRegion : public G1AllocRegion {
+private:
+  // Keeps track of the total waste generated during the current
+  // mutator phase.
+  size_t _wasted_bytes;
+
+  // Retained allocation region. Used to lower the waste generated
+  // during mutation by having two active regions if the free space
+  // in a region about to be retired still could fit a TLAB.
+  HeapRegion* volatile _retained_alloc_region;
+
+  // Decide if the region should be retained, based on the free size
+  // in it and the free size in the currently retained region, if any.
+  bool should_retain(HeapRegion* region);
 protected:
   virtual HeapRegion* allocate_new_region(size_t word_size, bool force);
   virtual void retire_region(HeapRegion* alloc_region, size_t allocated_bytes);
+  virtual size_t retire(bool fill_up);
 public:
   MutatorAllocRegion()
-    : G1AllocRegion("Mutator Alloc Region", false /* bot_updates */) { }
-};
+    : G1AllocRegion("Mutator Alloc Region", false /* bot_updates */),
+      _wasted_bytes(0),
+      _retained_alloc_region(NULL) { }
 
+  // Returns the combined used memory in the current alloc region and
+  // the retained alloc region.
+  size_t used_in_alloc_regions();
+
+  // Perform an allocation out of the retained allocation region, with the given
+  // minimum and desired size. Returns the actual size allocated (between
+  // minimum and desired size) in actual_word_size if the allocation has been
+  // successful.
+  // Should be called without holding a lock. It will try to allocate lock-free
+  // out of the retained region, or return NULL if it was unable to.
+  inline HeapWord* attempt_retained_allocation(size_t min_word_size,
+                                               size_t desired_word_size,
+                                               size_t* actual_word_size);
+
+  // This specialization of release() makes sure that the retained alloc
+  // region is retired and set to NULL.
+  virtual HeapRegion* release();
+
+  virtual void init();
+};
 // Common base class for allocation regions used during GC.
 class G1GCAllocRegion : public G1AllocRegion {
 protected:

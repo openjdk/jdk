@@ -206,8 +206,10 @@
   #define TIERED
 #endif
 #define COMPILER1_PRESENT(code) code
+#define NOT_COMPILER1(code)
 #else // COMPILER1
 #define COMPILER1_PRESENT(code)
+#define NOT_COMPILER1(code) code
 #endif // COMPILER1
 
 // COMPILER2 variant

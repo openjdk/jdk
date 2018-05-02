@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,11 +211,13 @@ class ResourceBundleGenerator implements BundleGenerator {
                     if (value == null) {
                         CLDRConverter.warning("null value for " + key);
                     } else if (value instanceof String) {
-                        if (type == BundleType.TIMEZONE ||
-                            ((String)value).startsWith(META_VALUE_PREFIX)) {
-                            out.printf("            { \"%s\", %s },\n", key, CLDRConverter.saveConvert((String) value, useJava));
+                        String valStr = (String)value;
+                        if (type == BundleType.TIMEZONE &&
+                            !key.startsWith(CLDRConverter.EXEMPLAR_CITY_PREFIX) ||
+                            valStr.startsWith(META_VALUE_PREFIX)) {
+                            out.printf("            { \"%s\", %s },\n", key, CLDRConverter.saveConvert(valStr, useJava));
                         } else {
-                            out.printf("            { \"%s\", \"%s\" },\n", key, CLDRConverter.saveConvert((String) value, useJava));
+                            out.printf("            { \"%s\", \"%s\" },\n", key, CLDRConverter.saveConvert(valStr, useJava));
                         }
                     } else if (value instanceof String[]) {
                         String[] values = (String[]) value;
@@ -268,7 +270,8 @@ class ResourceBundleGenerator implements BundleGenerator {
             out.printf("public class %s implements LocaleDataMetaInfo {\n", className);
             out.printf("    private static final Map<String, String> resourceNameToLocales = new HashMap<>();\n" +
                        (CLDRConverter.isBaseModule ?
-                       "    private static final Map<Locale, String[]> parentLocalesMap = new HashMap<>();\n\n" :
+                       "    private static final Map<Locale, String[]> parentLocalesMap = new HashMap<>();\n" +
+                       "    private static final Map<String, String> languageAliasMap = new HashMap<>();\n\n" :
                        "\n") +
                        "    static {\n");
 
@@ -299,24 +302,35 @@ class ResourceBundleGenerator implements BundleGenerator {
                 } else {
                     if ("AvailableLocales".equals(key)) {
                         out.printf("        resourceNameToLocales.put(\"%s\",\n", key);
-                        out.printf("              \"%s\");\n", toLocaleList(metaInfo.get(key), false));
+                        out.printf("              \"%s\");\n", toLocaleList(applyLanguageAliases(metaInfo.get(key)), false));
                     }
                 }
+            }
+            // for languageAliasMap
+            if (CLDRConverter.isBaseModule) {
+                CLDRConverter.handlerSupplMeta.getLanguageAliasData().forEach((key, value) -> {
+                    out.printf("                languageAliasMap.put(\"%s\", \"%s\");\n", key, value);
+                });
             }
 
             out.printf("    }\n\n");
 
             // end of static initializer block.
 
-            // Short TZ names for delayed initialization
+            // Canonical TZ names for delayed initialization
             if (CLDRConverter.isBaseModule) {
-                out.printf("    private static class TZShortIDMapHolder {\n");
-                out.printf("        static final Map<String, String> tzShortIDMap = new HashMap<>();\n");
+                out.printf("    private static class TZCanonicalIDMapHolder {\n");
+                out.printf("        static final Map<String, String> tzCanonicalIDMap = new HashMap<>(600);\n");
                 out.printf("        static {\n");
                 CLDRConverter.handlerTimeZone.getData().entrySet().stream()
                     .forEach(e -> {
-                        out.printf("            tzShortIDMap.put(\"%s\", \"%s\");\n", e.getKey(),
-                                ((String)e.getValue()));
+                        String[] ids = ((String)e.getValue()).split("\\s");
+                        out.printf("            tzCanonicalIDMap.put(\"%s\", \"%s\");\n", e.getKey(),
+                                ids[0]);
+                        for (int i = 1; i < ids.length; i++) {
+                            out.printf("            tzCanonicalIDMap.put(\"%s\", \"%s\");\n", ids[i],
+                                ids[0]);
+                        }
                     });
                 out.printf("        }\n    }\n\n");
             }
@@ -333,8 +347,12 @@ class ResourceBundleGenerator implements BundleGenerator {
 
             if (CLDRConverter.isBaseModule) {
                 out.printf("    @Override\n" +
-                           "    public Map<String, String> tzShortIDs() {\n" +
-                           "        return TZShortIDMapHolder.tzShortIDMap;\n" +
+                           "    public Map<String, String> getLanguageAliasMap() {\n" +
+                           "        return languageAliasMap;\n" +
+                           "    }\n\n");
+                out.printf("    @Override\n" +
+                           "    public Map<String, String> tzCanonicalIDs() {\n" +
+                           "        return TZCanonicalIDMapHolder.tzCanonicalIDMap;\n" +
                            "    }\n\n");
                 out.printf("    public Map<Locale, String[]> parentLocales() {\n" +
                            "        return parentLocalesMap;\n" +
@@ -369,5 +387,14 @@ class ResourceBundleGenerator implements BundleGenerator {
             }
         }
         return sb.toString();
+    }
+
+    private static SortedSet<String> applyLanguageAliases(SortedSet<String> tags) {
+        CLDRConverter.handlerSupplMeta.getLanguageAliasData().forEach((key, value) -> {
+            if (tags.remove(key)) {
+                tags.add(value);
+            }
+        });
+        return tags;
     }
 }

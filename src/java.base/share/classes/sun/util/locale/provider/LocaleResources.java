@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import sun.security.action.GetPropertyAction;
 import sun.util.calendar.ZoneInfo;
 import sun.util.resources.LocaleData;
 import sun.util.resources.OpenListResourceBundle;
@@ -86,6 +87,9 @@ public class LocaleResources {
     private static final String CALENDAR_NAMES = "CALN.";
     private static final String NUMBER_PATTERNS_CACHEKEY = "NP";
     private static final String DATE_TIME_PATTERN = "DTP.";
+
+    // TimeZoneNamesBundle exemplar city prefix
+    private static final String TZNB_EXCITY_PREFIX = "timezone.excity.";
 
     // null singleton cache value
     private static final Object NULLOBJECT = new Object();
@@ -254,23 +258,32 @@ public class LocaleResources {
         return (String) localeName;
     }
 
-    String[] getTimeZoneNames(String key) {
-        String[] names = null;
-        String cacheKey = TIME_ZONE_NAMES + '.' + key;
+    public Object getTimeZoneNames(String key) {
+        Object val = null;
+        String cacheKey = TIME_ZONE_NAMES + key;
 
         removeEmptyReferences();
         ResourceReference data = cache.get(cacheKey);
 
-        if (Objects.isNull(data) || Objects.isNull((names = (String[]) data.get()))) {
+        if (Objects.isNull(data) || Objects.isNull(val = data.get())) {
             TimeZoneNamesBundle tznb = localeData.getTimeZoneNames(locale);
             if (tznb.containsKey(key)) {
-                names = tznb.getStringArray(key);
+                if (key.startsWith(TZNB_EXCITY_PREFIX)) {
+                    val = tznb.getString(key);
+                    assert val instanceof String;
+                    trace("tznb: %s key: %s, val: %s\n", tznb, key, val);
+                } else {
+                    String[] names = tznb.getStringArray(key);
+                    trace("tznb: %s key: %s, names: %s, %s, %s, %s, %s, %s, %s\n", tznb, key,
+                        names[0], names[1], names[2], names[3], names[4], names[5], names[6]);
+                    val = names;
+                }
                 cache.put(cacheKey,
-                          new ResourceReference(cacheKey, (Object) names, referenceQueue));
+                          new ResourceReference(cacheKey, val, referenceQueue));
             }
         }
 
-        return names;
+        return val;
     }
 
     @SuppressWarnings("unchecked")
@@ -296,7 +309,9 @@ public class LocaleResources {
         // Use a LinkedHashSet to preseve the order
         Set<String[]> value = new LinkedHashSet<>();
         for (String key : keyset) {
-            value.add(rb.getStringArray(key));
+            if (!key.startsWith(TZNB_EXCITY_PREFIX)) {
+                value.add(rb.getStringArray(key));
+            }
         }
 
         // Add aliases data for CLDR
@@ -512,6 +527,15 @@ public class LocaleResources {
 
         String getCacheKey() {
             return cacheKey;
+        }
+    }
+
+    private static final boolean TRACE_ON = Boolean.valueOf(
+        GetPropertyAction.privilegedGetProperty("locale.resources.debug", "false"));
+
+    public static void trace(String format, Object... params) {
+        if (TRACE_ON) {
+            System.out.format(format, params);
         }
     }
 }

@@ -29,8 +29,8 @@ import static org.graalvm.compiler.hotspot.word.HotSpotOperation.HotspotOpcode.T
 
 import org.graalvm.compiler.word.Word.Opcode;
 import org.graalvm.compiler.word.Word.Operation;
-import org.graalvm.word.LocationIdentity;
-import org.graalvm.word.Pointer;
+import jdk.internal.vm.compiler.word.LocationIdentity;
+import jdk.internal.vm.compiler.word.Pointer;
 
 /**
  * Marker type for a metaspace pointer to a type.

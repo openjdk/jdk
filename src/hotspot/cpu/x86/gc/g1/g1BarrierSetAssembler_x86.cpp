@@ -32,6 +32,11 @@
 #include "interpreter/interp_masm.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
+#ifdef COMPILER1
+#include "c1/c1_LIRAssembler.hpp"
+#include "c1/c1_MacroAssembler.hpp"
+#include "gc/g1/c1/g1BarrierSetC1.hpp"
+#endif
 
 #define __ masm->
 
@@ -399,3 +404,193 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
   }
   NOT_LP64(imasm->restore_bcp());
 }
+
+#ifdef COMPILER1
+
+#undef __
+#define __ ce->masm()->
+
+void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStub* stub) {
+  G1BarrierSetC1* bs = (G1BarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
+  // At this point we know that marking is in progress.
+  // If do_load() is true then we have to emit the
+  // load of the previous value; otherwise it has already
+  // been loaded into _pre_val.
+
+  __ bind(*stub->entry());
+  assert(stub->pre_val()->is_register(), "Precondition.");
+
+  Register pre_val_reg = stub->pre_val()->as_register();
+
+  if (stub->do_load()) {
+    ce->mem2reg(stub->addr(), stub->pre_val(), T_OBJECT, stub->patch_code(), stub->info(), false /*wide*/, false /*unaligned*/);
+  }
+
+  __ cmpptr(pre_val_reg, (int32_t)NULL_WORD);
+  __ jcc(Assembler::equal, *stub->continuation());
+  ce->store_parameter(stub->pre_val()->as_register(), 0);
+  __ call(RuntimeAddress(bs->pre_barrier_c1_runtime_code_blob()->code_begin()));
+  __ jmp(*stub->continuation());
+
+}
+
+void G1BarrierSetAssembler::gen_post_barrier_stub(LIR_Assembler* ce, G1PostBarrierStub* stub) {
+  G1BarrierSetC1* bs = (G1BarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
+  __ bind(*stub->entry());
+  assert(stub->addr()->is_register(), "Precondition.");
+  assert(stub->new_val()->is_register(), "Precondition.");
+  Register new_val_reg = stub->new_val()->as_register();
+  __ cmpptr(new_val_reg, (int32_t) NULL_WORD);
+  __ jcc(Assembler::equal, *stub->continuation());
+  ce->store_parameter(stub->addr()->as_pointer_register(), 0);
+  __ call(RuntimeAddress(bs->post_barrier_c1_runtime_code_blob()->code_begin()));
+  __ jmp(*stub->continuation());
+}
+
+#undef __
+
+#define __ sasm->
+
+void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm) {
+  __ prologue("g1_pre_barrier", false);
+  // arg0 : previous value of memory
+
+  __ push(rax);
+  __ push(rdx);
+
+  const Register pre_val = rax;
+  const Register thread = NOT_LP64(rax) LP64_ONLY(r15_thread);
+  const Register tmp = rdx;
+
+  NOT_LP64(__ get_thread(thread);)
+
+  Address queue_active(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()));
+  Address queue_index(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()));
+  Address buffer(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset()));
+
+  Label done;
+  Label runtime;
+
+  // Is marking still active?
+  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
+    __ cmpl(queue_active, 0);
+  } else {
+    assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+    __ cmpb(queue_active, 0);
+  }
+  __ jcc(Assembler::equal, done);
+
+  // Can we store original value in the thread's buffer?
+
+  __ movptr(tmp, queue_index);
+  __ testptr(tmp, tmp);
+  __ jcc(Assembler::zero, runtime);
+  __ subptr(tmp, wordSize);
+  __ movptr(queue_index, tmp);
+  __ addptr(tmp, buffer);
+
+  // prev_val (rax)
+  __ load_parameter(0, pre_val);
+  __ movptr(Address(tmp, 0), pre_val);
+  __ jmp(done);
+
+  __ bind(runtime);
+
+  __ save_live_registers_no_oop_map(3, true);
+
+  // load the pre-value
+  __ load_parameter(0, rcx);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), rcx, thread);
+
+  __ restore_live_registers(true);
+
+  __ bind(done);
+
+  __ pop(rdx);
+  __ pop(rax);
+
+  __ epilogue();
+}
+
+void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler* sasm) {
+  __ prologue("g1_post_barrier", false);
+
+  // arg0: store_address
+  Address store_addr(rbp, 2*BytesPerWord);
+
+  CardTableBarrierSet* ct =
+    barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
+  assert(sizeof(*ct->card_table()->byte_map_base()) == sizeof(jbyte), "adjust this code");
+
+  Label done;
+  Label enqueued;
+  Label runtime;
+
+  // At this point we know new_value is non-NULL and the new_value crosses regions.
+  // Must check to see if card is already dirty
+
+  const Register thread = NOT_LP64(rax) LP64_ONLY(r15_thread);
+
+  Address queue_index(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()));
+  Address buffer(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()));
+
+  __ push(rax);
+  __ push(rcx);
+
+  const Register cardtable = rax;
+  const Register card_addr = rcx;
+
+  __ load_parameter(0, card_addr);
+  __ shrptr(card_addr, CardTable::card_shift);
+  // Do not use ExternalAddress to load 'byte_map_base', since 'byte_map_base' is NOT
+  // a valid address and therefore is not properly handled by the relocation code.
+  __ movptr(cardtable, (intptr_t)ct->card_table()->byte_map_base());
+  __ addptr(card_addr, cardtable);
+
+  NOT_LP64(__ get_thread(thread);)
+
+  __ cmpb(Address(card_addr, 0), (int)G1CardTable::g1_young_card_val());
+  __ jcc(Assembler::equal, done);
+
+  __ membar(Assembler::Membar_mask_bits(Assembler::StoreLoad));
+  __ cmpb(Address(card_addr, 0), (int)CardTable::dirty_card_val());
+  __ jcc(Assembler::equal, done);
+
+  // storing region crossing non-NULL, card is clean.
+  // dirty card and log.
+
+  __ movb(Address(card_addr, 0), (int)CardTable::dirty_card_val());
+
+  const Register tmp = rdx;
+  __ push(rdx);
+
+  __ movptr(tmp, queue_index);
+  __ testptr(tmp, tmp);
+  __ jcc(Assembler::zero, runtime);
+  __ subptr(tmp, wordSize);
+  __ movptr(queue_index, tmp);
+  __ addptr(tmp, buffer);
+  __ movptr(Address(tmp, 0), card_addr);
+  __ jmp(enqueued);
+
+  __ bind(runtime);
+
+  __ save_live_registers_no_oop_map(3, true);
+
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), card_addr, thread);
+
+  __ restore_live_registers(true);
+
+  __ bind(enqueued);
+  __ pop(rdx);
+
+  __ bind(done);
+  __ pop(rcx);
+  __ pop(rax);
+
+  __ epilogue();
+}
+
+#undef __
+
+#endif // COMPILER1
