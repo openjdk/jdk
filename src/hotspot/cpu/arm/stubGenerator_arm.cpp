@@ -3260,7 +3260,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(OptoLoopAlignment);
     __ BIND(store_element);
     if (UseCompressedOops) {
-      __ store_heap_oop(R5, Address(to, BytesPerHeapOop, post_indexed));  // store the oop, changes flags
+      __ store_heap_oop(Address(to, BytesPerHeapOop, post_indexed), R5);  // store the oop, changes flags
       __ subs_32(count,count,1);
     } else {
       __ subs_32(count,count,1);

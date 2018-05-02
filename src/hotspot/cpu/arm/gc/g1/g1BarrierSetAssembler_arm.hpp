@@ -41,6 +41,27 @@ protected:
   void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                         Register addr, Register count, Register tmp);
 
+  void g1_write_barrier_pre(MacroAssembler* masm,
+                            Register store_addr,
+                            Register new_val,
+                            Register pre_val,
+                            Register tmp1,
+                            Register tmp2);
+
+  void g1_write_barrier_post(MacroAssembler* masm,
+                             Register store_addr,
+                             Register new_val,
+                             Register tmp1,
+                             Register tmp2,
+                             Register tmp3);
+
+  virtual void oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                            Address obj, Register new_val, Register tmp1, Register tmp2, Register tmp3, bool is_null);
+
+public:
+  virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                       Register dst, Address src, Register tmp1, Register tmp2, Register tmp3);
+
 #ifdef COMPILER1
 public:
   void gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStub* stub);
