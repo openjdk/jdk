@@ -484,18 +484,18 @@ public:
 #endif
 
  protected:
-  virtual bool do_unloading_oops(address low_boundary, BoolObjectClosure* is_alive, bool unloading_occurred);
+  virtual bool do_unloading_oops(address low_boundary, BoolObjectClosure* is_alive);
 #if INCLUDE_JVMCI
   // See comment for _jvmci_installed_code_triggers_unloading field.
   // Returns whether this nmethod was unloaded.
-  virtual bool do_unloading_jvmci(bool unloading_occurred);
+  virtual bool do_unloading_jvmci();
 #endif
 
  private:
-  bool do_unloading_scopes(BoolObjectClosure* is_alive, bool unloading_occurred);
+  bool do_unloading_scopes(BoolObjectClosure* is_alive);
   //  Unload a nmethod if the *root object is dead.
-  bool can_unload(BoolObjectClosure* is_alive, oop* root, bool unloading_occurred);
-  bool unload_if_dead_at(RelocIterator *iter_at_oop, BoolObjectClosure* is_alive, bool unloading_occurred);
+  bool can_unload(BoolObjectClosure* is_alive, oop* root);
+  bool unload_if_dead_at(RelocIterator *iter_at_oop, BoolObjectClosure* is_alive);
 
  public:
   void oops_do(OopClosure* f) { oops_do(f, false); }
