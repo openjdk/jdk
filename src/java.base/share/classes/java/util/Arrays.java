@@ -4723,32 +4723,35 @@ public class Arrays {
         int result = 1;
 
         for (Object element : a) {
-            int elementHash = 0;
-            if (element instanceof Object[])
-                elementHash = deepHashCode((Object[]) element);
-            else if (element instanceof byte[])
-                elementHash = hashCode((byte[]) element);
-            else if (element instanceof short[])
-                elementHash = hashCode((short[]) element);
-            else if (element instanceof int[])
-                elementHash = hashCode((int[]) element);
-            else if (element instanceof long[])
-                elementHash = hashCode((long[]) element);
-            else if (element instanceof char[])
-                elementHash = hashCode((char[]) element);
-            else if (element instanceof float[])
-                elementHash = hashCode((float[]) element);
-            else if (element instanceof double[])
-                elementHash = hashCode((double[]) element);
-            else if (element instanceof boolean[])
-                elementHash = hashCode((boolean[]) element);
-            else if (element != null)
+            final int elementHash;
+            final Class<?> cl;
+            if (element == null)
+                elementHash = 0;
+            else if ((cl = element.getClass().getComponentType()) == null)
                 elementHash = element.hashCode();
+            else if (element instanceof Object[])
+                elementHash = deepHashCode((Object[]) element);
+            else
+                elementHash = primitiveArrayHashCode(element, cl);
 
             result = 31 * result + elementHash;
         }
 
         return result;
+    }
+
+    private static int primitiveArrayHashCode(Object a, Class<?> cl) {
+        return
+            (cl == byte.class)    ? hashCode((byte[]) a)    :
+            (cl == int.class)     ? hashCode((int[]) a)     :
+            (cl == long.class)    ? hashCode((long[]) a)    :
+            (cl == char.class)    ? hashCode((char[]) a)    :
+            (cl == short.class)   ? hashCode((short[]) a)   :
+            (cl == boolean.class) ? hashCode((boolean[]) a) :
+            (cl == double.class)  ? hashCode((double[]) a)  :
+            // If new primitive types are ever added, this method must be
+            // expanded or we will fail here with ClassCastException.
+            hashCode((float[]) a);
     }
 
     /**
