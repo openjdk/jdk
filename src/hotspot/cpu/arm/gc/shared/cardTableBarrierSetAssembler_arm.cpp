@@ -127,6 +127,14 @@ void CardTableBarrierSetAssembler::store_check_part1(MacroAssembler* masm, Regis
 void CardTableBarrierSetAssembler::store_check_part2(MacroAssembler* masm, Register obj, Register card_table_base, Register tmp) {
   assert_different_registers(obj, card_table_base, tmp);
 
+  BarrierSet* bs = BarrierSet::barrier_set();
+  assert(bs->kind() == BarrierSet::CardTableBarrierSet,
+         "Wrong barrier set kind");
+
+  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
+  CardTable* ct = ctbs->card_table();
+  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "Adjust store check code");
+
   assert(CardTable::dirty_card_val() == 0, "Dirty card value must be 0 due to optimizations.");
 #ifdef AARCH64
   add(card_table_base, card_table_base, AsmOperand(obj, lsr, CardTable::card_shift));
@@ -136,11 +144,9 @@ void CardTableBarrierSetAssembler::store_check_part2(MacroAssembler* masm, Regis
 #endif
 
   if (UseCondCardMark) {
-#if INCLUDE_ALL_GCS
-    if (UseConcMarkSweepGC) {
+    if (ct->scanned_concurrently()) {
       __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreLoad), noreg);
     }
-#endif
     Label already_dirty;
 
     __ ldrb(tmp, card_table_addr);
@@ -150,11 +156,9 @@ void CardTableBarrierSetAssembler::store_check_part2(MacroAssembler* masm, Regis
     __ bind(already_dirty);
 
   } else {
-#if INCLUDE_ALL_GCS
-    if (UseConcMarkSweepGC && CMSPrecleaningEnabled) {
+    if (ct->scanned_concurrently()) {
       __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreStore), noreg);
     }
-#endif
     set_card(masm, card_table_base, card_table_addr, tmp);
   }
 }
