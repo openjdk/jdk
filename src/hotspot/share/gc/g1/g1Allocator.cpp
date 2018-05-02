@@ -157,14 +157,7 @@ size_t G1Allocator::unsafe_max_tlab_alloc() {
 
 size_t G1Allocator::used_in_alloc_regions() {
   assert(Heap_lock->owner() != NULL, "Should be owned on this thread's behalf.");
-  size_t result = 0;
-
-  // Read only once in case it is set to NULL concurrently
-  HeapRegion* hr = mutator_alloc_region()->get();
-  if (hr != NULL) {
-    result += hr->used();
-  }
-  return result;
+  return mutator_alloc_region()->used_in_alloc_regions();
 }
 
 

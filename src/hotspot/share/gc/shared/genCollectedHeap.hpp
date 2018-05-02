@@ -297,7 +297,9 @@ public:
   virtual size_t tlab_capacity(Thread* thr) const;
   virtual size_t tlab_used(Thread* thr) const;
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;
-  virtual HeapWord* allocate_new_tlab(size_t size);
+  virtual HeapWord* allocate_new_tlab(size_t min_size,
+                                      size_t requested_size,
+                                      size_t* actual_size);
 
   // The "requestor" generation is performing some garbage collection
   // action for which it would be useful to have scratch space.  The

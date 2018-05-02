@@ -95,33 +95,40 @@ size_t G1AllocRegion::fill_up_remaining_space(HeapRegion* alloc_region) {
   return result;
 }
 
+size_t G1AllocRegion::retire_internal(HeapRegion* alloc_region, bool fill_up) {
+  // We never have to check whether the active region is empty or not,
+  // and potentially free it if it is, given that it's guaranteed that
+  // it will never be empty.
+  size_t waste = 0;
+  assert_alloc_region(!alloc_region->is_empty(),
+      "the alloc region should never be empty");
+
+  if (fill_up) {
+    waste = fill_up_remaining_space(alloc_region);
+  }
+
+  assert_alloc_region(alloc_region->used() >= _used_bytes_before, "invariant");
+  size_t allocated_bytes = alloc_region->used() - _used_bytes_before;
+  retire_region(alloc_region, allocated_bytes);
+  _used_bytes_before = 0;
+
+  return waste;
+}
+
 size_t G1AllocRegion::retire(bool fill_up) {
   assert_alloc_region(_alloc_region != NULL, "not initialized properly");
 
-  size_t result = 0;
+  size_t waste = 0;
 
   trace("retiring");
   HeapRegion* alloc_region = _alloc_region;
   if (alloc_region != _dummy_region) {
-    // We never have to check whether the active region is empty or not,
-    // and potentially free it if it is, given that it's guaranteed that
-    // it will never be empty.
-    assert_alloc_region(!alloc_region->is_empty(),
-                           "the alloc region should never be empty");
-
-    if (fill_up) {
-      result = fill_up_remaining_space(alloc_region);
-    }
-
-    assert_alloc_region(alloc_region->used() >= _used_bytes_before, "invariant");
-    size_t allocated_bytes = alloc_region->used() - _used_bytes_before;
-    retire_region(alloc_region, allocated_bytes);
-    _used_bytes_before = 0;
-    _alloc_region = _dummy_region;
+    waste = retire_internal(alloc_region, fill_up);
+    reset_alloc_region();
   }
   trace("retired");
 
-  return result;
+  return waste;
 }
 
 HeapWord* G1AllocRegion::new_alloc_region_and_allocate(size_t word_size,
@@ -245,7 +252,8 @@ void G1AllocRegion::trace(const char* str, size_t min_word_size, size_t desired_
 G1AllocRegion::G1AllocRegion(const char* name,
                              bool bot_updates)
   : _name(name), _bot_updates(bot_updates),
-    _alloc_region(NULL), _count(0), _used_bytes_before(0) { }
+    _alloc_region(NULL), _count(0),
+    _used_bytes_before(0) { }
 
 
 HeapRegion* MutatorAllocRegion::allocate_new_region(size_t word_size,
@@ -256,6 +264,82 @@ HeapRegion* MutatorAllocRegion::allocate_new_region(size_t word_size,
 void MutatorAllocRegion::retire_region(HeapRegion* alloc_region,
                                        size_t allocated_bytes) {
   _g1h->retire_mutator_alloc_region(alloc_region, allocated_bytes);
+}
+
+void MutatorAllocRegion::init() {
+  assert(_retained_alloc_region == NULL, "Pre-condition");
+  G1AllocRegion::init();
+  _wasted_bytes = 0;
+}
+
+bool MutatorAllocRegion::should_retain(HeapRegion* region) {
+  size_t free_bytes = region->free();
+  if (free_bytes < MinTLABSize) {
+    return false;
+  }
+
+  if (_retained_alloc_region != NULL &&
+      free_bytes < _retained_alloc_region->free()) {
+    return false;
+  }
+
+  return true;
+}
+
+size_t MutatorAllocRegion::retire(bool fill_up) {
+  size_t waste = 0;
+  trace("retiring");
+  HeapRegion* current_region = get();
+  if (current_region != NULL) {
+    // Retain the current region if it fits a TLAB and has more
+    // free than the currently retained region.
+    if (should_retain(current_region)) {
+      trace("mutator retained");
+      if (_retained_alloc_region != NULL) {
+        waste = retire_internal(_retained_alloc_region, true);
+      }
+      _retained_alloc_region = current_region;
+    } else {
+      waste = retire_internal(current_region, fill_up);
+    }
+    reset_alloc_region();
+  }
+
+  _wasted_bytes += waste;
+  trace("retired");
+  return waste;
+}
+
+size_t MutatorAllocRegion::used_in_alloc_regions() {
+  size_t used = 0;
+  HeapRegion* hr = get();
+  if (hr != NULL) {
+    used += hr->used();
+  }
+
+  hr = _retained_alloc_region;
+  if (hr != NULL) {
+    used += hr->used();
+  }
+  return used;
+}
+
+HeapRegion* MutatorAllocRegion::release() {
+  HeapRegion* ret = G1AllocRegion::release();
+
+  // The retained alloc region must be retired and this must be
+  // done after the above call to release the mutator alloc region,
+  // since it might update the _retained_alloc_region member.
+  if (_retained_alloc_region != NULL) {
+    _wasted_bytes += retire_internal(_retained_alloc_region, false);
+    _retained_alloc_region = NULL;
+  }
+  log_debug(gc, alloc, region)("Mutator Allocation stats, regions: %u, wasted size: " SIZE_FORMAT "%s (%4.1f%%)",
+                               count(),
+                               byte_size_in_proper_unit(_wasted_bytes),
+                               proper_unit_for_byte_size(_wasted_bytes),
+                               percent_of(_wasted_bytes, count() * HeapRegion::GrainBytes));
+  return ret;
 }
 
 HeapRegion* G1GCAllocRegion::allocate_new_region(size_t word_size,

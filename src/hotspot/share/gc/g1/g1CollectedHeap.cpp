@@ -384,11 +384,13 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
   return result;
 }
 
-HeapWord* G1CollectedHeap::allocate_new_tlab(size_t word_size) {
+HeapWord* G1CollectedHeap::allocate_new_tlab(size_t min_size,
+                                             size_t requested_size,
+                                             size_t* actual_size) {
   assert_heap_not_locked_and_not_at_safepoint();
-  assert(!is_humongous(word_size), "we do not allow humongous TLABs");
+  assert(!is_humongous(requested_size), "we do not allow humongous TLABs");
 
-  return attempt_allocation(word_size);
+  return attempt_allocation(min_size, requested_size, actual_size);
 }
 
 HeapWord*
@@ -399,7 +401,8 @@ G1CollectedHeap::mem_allocate(size_t word_size,
   if (is_humongous(word_size)) {
     return attempt_allocation_humongous(word_size);
   }
-  return attempt_allocation(word_size);
+  size_t dummy = 0;
+  return attempt_allocation(word_size, word_size, &dummy);
 }
 
 HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
@@ -492,8 +495,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
     // first attempt (without holding the Heap_lock) here and the
     // follow-on attempt will be at the start of the next loop
     // iteration (after taking the Heap_lock).
-
-    result = _allocator->attempt_allocation(word_size);
+    size_t dummy = 0;
+    result = _allocator->attempt_allocation(word_size, word_size, &dummy);
     if (result != NULL) {
       return result;
     }
@@ -722,20 +725,28 @@ void G1CollectedHeap::fill_archive_regions(MemRegion* ranges, size_t count) {
   }
 }
 
-inline HeapWord* G1CollectedHeap::attempt_allocation(size_t word_size) {
+inline HeapWord* G1CollectedHeap::attempt_allocation(size_t min_word_size,
+                                                     size_t desired_word_size,
+                                                     size_t* actual_word_size) {
   assert_heap_not_locked_and_not_at_safepoint();
-  assert(!is_humongous(word_size), "attempt_allocation() should not "
+  assert(!is_humongous(desired_word_size), "attempt_allocation() should not "
          "be called for humongous allocation requests");
 
-  HeapWord* result = _allocator->attempt_allocation(word_size);
+  HeapWord* result = _allocator->attempt_allocation(min_word_size, desired_word_size, actual_word_size);
 
   if (result == NULL) {
-    result = attempt_allocation_slow(word_size);
+    *actual_word_size = desired_word_size;
+    result = attempt_allocation_slow(desired_word_size);
   }
+
   assert_heap_not_locked();
   if (result != NULL) {
-    dirty_young_block(result, word_size);
+    assert(*actual_word_size != 0, "Actual size must have been set here");
+    dirty_young_block(result, *actual_word_size);
+  } else {
+    *actual_word_size = 0;
   }
+
   return result;
 }
 

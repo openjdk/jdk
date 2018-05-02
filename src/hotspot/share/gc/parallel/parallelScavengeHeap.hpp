@@ -85,7 +85,7 @@ class ParallelScavengeHeap : public CollectedHeap {
 
  protected:
   static inline size_t total_invocations();
-  HeapWord* allocate_new_tlab(size_t size);
+  HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size);
 
   inline bool should_alloc_in_eden(size_t size) const;
   inline void death_march_check(HeapWord* const result, size_t size);
