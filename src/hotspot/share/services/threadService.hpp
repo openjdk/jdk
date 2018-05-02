@@ -377,7 +377,7 @@ class ThreadDumpResult : public StackObj {
   ThreadSnapshot*      snapshots()                      { return _snapshots; }
   void                 set_t_list()                     { _setter.set(); }
   ThreadsList*         t_list();
-  bool                 t_list_has_been_set()            { return _setter.target_needs_release(); }
+  bool                 t_list_has_been_set()            { return _setter.is_set(); }
   void                 oops_do(OopClosure* f);
   void                 metadata_do(void f(Metadata*));
 };

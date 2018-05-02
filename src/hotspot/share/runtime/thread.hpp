@@ -52,10 +52,10 @@
 # include "stack_zero.hpp"
 #endif
 
+class SafeThreadsListPtr;
 class ThreadSafepointState;
 class ThreadsList;
 class ThreadsSMRSupport;
-class NestedThreadsList;
 
 class JvmtiThreadState;
 class JvmtiGetLoadedClassesClosure;
@@ -135,13 +135,14 @@ class Thread: public ThreadShadow {
   void*       _real_malloc_address;
 
   // JavaThread lifecycle support:
+  friend class SafeThreadsListPtr;  // for _threads_list_ptr, cmpxchg_threads_hazard_ptr(), {dec_,inc_,}nested_threads_hazard_ptr_cnt(), {g,s}et_threads_hazard_ptr(), inc_nested_handle_cnt(), tag_hazard_ptr() access
   friend class ScanHazardPtrGatherProtectedThreadsClosure;  // for cmpxchg_threads_hazard_ptr(), get_threads_hazard_ptr(), is_hazard_ptr_tagged() access
-  friend class ScanHazardPtrGatherThreadsListClosure;  // for get_nested_threads_hazard_ptr(), get_threads_hazard_ptr(), untag_hazard_ptr() access
+  friend class ScanHazardPtrGatherThreadsListClosure;  // for get_threads_hazard_ptr(), untag_hazard_ptr() access
   friend class ScanHazardPtrPrintMatchingThreadsClosure;  // for get_threads_hazard_ptr(), is_hazard_ptr_tagged() access
-  friend class ThreadsListSetter;  // for get_threads_hazard_ptr() access
-  friend class ThreadsSMRSupport;  // for get_threads_hazard_ptr() access
+  friend class ThreadsSMRSupport;  // for _nested_threads_hazard_ptr_cnt, _threads_hazard_ptr, _threads_list_ptr access
 
   ThreadsList* volatile _threads_hazard_ptr;
+  SafeThreadsListPtr*   _threads_list_ptr;
   ThreadsList*          cmpxchg_threads_hazard_ptr(ThreadsList* exchange_value, ThreadsList* compare_value);
   ThreadsList*          get_threads_hazard_ptr();
   void                  set_threads_hazard_ptr(ThreadsList* new_list);
@@ -153,15 +154,6 @@ class Thread: public ThreadShadow {
   }
   static ThreadsList*   untag_hazard_ptr(ThreadsList* list) {
     return (ThreadsList*)(intptr_t(list) & ~intptr_t(1));
-  }
-  NestedThreadsList* _nested_threads_hazard_ptr;
-  NestedThreadsList* get_nested_threads_hazard_ptr() {
-    return _nested_threads_hazard_ptr;
-  }
-  void set_nested_threads_hazard_ptr(NestedThreadsList* value) {
-    assert(Threads_lock->owned_by_self(),
-           "must own Threads_lock for _nested_threads_hazard_ptr to be valid.");
-    _nested_threads_hazard_ptr = value;
   }
   // This field is enabled via -XX:+EnableThreadSMRStatistics:
   uint _nested_threads_hazard_ptr_cnt;
@@ -640,7 +632,6 @@ protected:
 
   // Printing
   virtual void print_on(outputStream* st) const;
-  virtual void print_nested_threads_hazard_ptrs_on(outputStream* st) const;
   void print() const { print_on(tty); }
   virtual void print_on_error(outputStream* st, char* buf, int buflen) const;
   void print_value_on(outputStream* st) const;
