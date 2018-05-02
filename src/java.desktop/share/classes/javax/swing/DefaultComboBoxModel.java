@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
  */
 package javax.swing;
 
-import java.util.*;
-
+import java.util.Collection;
+import java.util.Vector;
 import java.io.Serializable;
 
 /**
@@ -176,5 +176,47 @@ public class DefaultComboBoxModel<E> extends AbstractListModel<E> implements Mut
         } else {
             selectedObject = null;
         }
+    }
+
+    /**
+     * Adds all of the elements present in the collection.
+     *
+     * @param c the collection which contains the elements to add
+     * @throws NullPointerException if {@code c} is null
+     */
+    public void addAll(Collection<? extends E> c) {
+        if (c.isEmpty()) {
+            return;
+        }
+
+        int startIndex = getSize();
+
+        objects.addAll(c);
+        fireIntervalAdded(this, startIndex, getSize() - 1);
+    }
+
+    /**
+     * Adds all of the elements present in the collection, starting
+     * from the specified index.
+     *
+     * @param index index at which to insert the first element from the
+     * specified collection
+     * @param c the collection which contains the elements to add
+     * @throws ArrayIndexOutOfBoundsException if {@code index} does not
+     * fall within the range of number of elements currently held
+     * @throws NullPointerException if {@code c} is null
+     */
+    public void addAll(int index, Collection<? extends E> c) {
+        if (index < 0 || index > getSize()) {
+            throw new ArrayIndexOutOfBoundsException("index out of range: " +
+                                                                       index);
+        }
+
+        if (c.isEmpty()) {
+            return;
+        }
+
+        objects.addAll(index, c);
+        fireIntervalAdded(this, index, index + c.size() - 1);
     }
 }
