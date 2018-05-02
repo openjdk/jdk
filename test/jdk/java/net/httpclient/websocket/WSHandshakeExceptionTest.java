@@ -51,6 +51,8 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.fail;
@@ -79,6 +81,7 @@ public class WSHandshakeExceptionTest {
 
     HttpClient newHttpClient() {
         return HttpClient.newBuilder()
+                         .proxy(NO_PROXY)
                          .executor(executor)
                          .sslContext(sslContext)
                          .build();

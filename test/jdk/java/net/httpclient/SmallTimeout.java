@@ -85,12 +85,14 @@ public class SmallTimeout {
             ss.setReuseAddress(false);
             ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
             int port = ss.getLocalPort();
-            URI uri = new URI("http://localhost:" + port + "/");
+            URI u = new URI("http://localhost:" + port + "/");
 
             HttpRequest[] requests = new HttpRequest[TIMEOUTS.length];
 
             out.println("--- TESTING Async");
             for (int i = 0; i < TIMEOUTS.length; i++) {
+                final int n = i;
+                URI uri = new URI(u.toString() + "/r" + n);
                 requests[i] = HttpRequest.newBuilder(uri)
                                          .timeout(Duration.ofMillis(TIMEOUTS[i]))
                                          .GET()
@@ -102,24 +104,25 @@ public class SmallTimeout {
                     .whenComplete((HttpResponse<Object> r, Throwable t) -> {
                         Throwable cause = null;
                         if (r != null) {
-                            out.println("Unexpected response: " + r);
-                            cause = new RuntimeException("Unexpected response");
+                            out.println("Unexpected response for r" + n + ": " + r);
+                            cause = new RuntimeException("Unexpected response for r" + n);
                             error = true;
                         }
                         if (t != null) {
                             if (!(t.getCause() instanceof HttpTimeoutException)) {
-                                out.println("Wrong exception type:" + t.toString());
+                                out.println("Wrong exception type for r" + n + ":" + t.toString());
                                 Throwable c = t.getCause() == null ? t : t.getCause();
                                 c.printStackTrace();
                                 cause = c;
                                 error = true;
                             } else {
-                                out.println("Caught expected timeout: " + t.getCause());
+                                out.println("Caught expected timeout for r" + n +": " + t.getCause());
                             }
                         }
                         if (t == null && r == null) {
-                            out.println("Both response and throwable are null!");
-                            cause = new RuntimeException("Both response and throwable are null!");
+                            out.println("Both response and throwable are null for r" + n + "!");
+                            cause = new RuntimeException("Both response and throwable are null for r"
+                                    + n + "!");
                             error = true;
                         }
                         queue.add(HttpResult.of(req,cause));
@@ -134,11 +137,14 @@ public class SmallTimeout {
 
             // Repeat blocking in separate threads. Use queue to wait.
             out.println("--- TESTING Sync");
+            System.err.println("================= TESTING Sync =====================");
 
             // For running blocking response tasks
             ExecutorService executor = Executors.newCachedThreadPool();
 
             for (int i = 0; i < TIMEOUTS.length; i++) {
+                final int n = i;
+                URI uri = new URI(u.toString()+"/sync/r" + n);
                 requests[i] = HttpRequest.newBuilder(uri)
                                          .timeout(Duration.ofMillis(TIMEOUTS[i]))
                                          .GET()
@@ -148,11 +154,13 @@ public class SmallTimeout {
                 executor.execute(() -> {
                     Throwable cause = null;
                     try {
-                        client.send(req, BodyHandlers.replacing(null));
+                        HttpResponse<?> r = client.send(req, BodyHandlers.replacing(null));
+                        out.println("Unexpected success for r" + n +": " + r);
                     } catch (HttpTimeoutException e) {
-                        out.println("Caught expected timeout: " + e);
+                        out.println("Caught expected timeout for r" + n +": " + e);
                     } catch (Throwable ee) {
                         Throwable c = ee.getCause() == null ? ee : ee.getCause();
+                        out.println("Unexpected exception for r" + n + ": " + c);
                         c.printStackTrace();
                         cause = c;
                         error = true;

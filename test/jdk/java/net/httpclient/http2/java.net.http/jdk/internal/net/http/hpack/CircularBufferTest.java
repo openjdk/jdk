@@ -25,13 +25,16 @@ package jdk.internal.net.http.hpack;
 import org.testng.annotations.Test;
 import jdk.internal.net.http.hpack.SimpleHeaderTable.CircularBuffer;
 
+import java.util.Arrays;
 import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
 
+import static jdk.internal.net.http.common.Utils.pow2Size;
 import static org.testng.Assert.assertEquals;
 import static jdk.internal.net.http.hpack.TestHelper.assertVoidThrows;
 import static jdk.internal.net.http.hpack.TestHelper.newRandom;
+import static org.testng.Assert.assertTrue;
 
 public final class CircularBufferTest {
 
@@ -80,6 +83,8 @@ public final class CircularBufferTest {
 
     private void resizeOnce(int capacity) {
 
+        capacity = pow2Size(capacity);
+
         int nextNumberToPut = 0;
 
         Queue<Integer> referenceQueue = new ArrayBlockingQueue<>(capacity);
@@ -104,10 +109,14 @@ public final class CircularBufferTest {
         Integer[] expected = referenceQueue.toArray(new Integer[0]);
         buffer.resize(expected.length);
 
-        assertEquals(buffer.elements, expected);
+        boolean equals = Arrays.equals(buffer.elements, 0, buffer.size,
+                                       expected, 0, expected.length);
+        assertTrue(equals);
     }
 
     private void queueOnce(int capacity, int numWraps) {
+
+        capacity = pow2Size(capacity);
 
         Queue<Integer> referenceQueue = new ArrayBlockingQueue<>(capacity);
         CircularBuffer<Integer> buffer = new CircularBuffer<>(capacity);

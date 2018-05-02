@@ -375,12 +375,17 @@ class Http1Response<T> {
                     (t) -> {
                         try {
                             if (t != null) {
-                                subscriber.onError(t);
-                                connection.close();
-                                cf.completeExceptionally(t);
+                                try {
+                                    subscriber.onError(t);
+                                } finally {
+                                    cf.completeExceptionally(t);
+                                }
                             }
                         } finally {
                             bodyReader.onComplete(t);
+                            if (t != null) {
+                                connection.close();
+                            }
                         }
                     }));
                 CompletableFuture<State> bodyReaderCF = bodyReader.completion();

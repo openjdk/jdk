@@ -121,33 +121,66 @@ class Http2Connection  {
             Utils.getHpackLogger(this::dbgString, Utils.DEBUG_HPACK);
     static final ByteBuffer EMPTY_TRIGGER = ByteBuffer.allocate(0);
 
-    private boolean singleStream; // used only for stream 1, then closed
+    static private final int MAX_CLIENT_STREAM_ID = Integer.MAX_VALUE; // 2147483647
+    static private final int MAX_SERVER_STREAM_ID = Integer.MAX_VALUE - 1; // 2147483646
+
+    /**
+     * Flag set when no more streams to be opened on this connection.
+     * Two cases where it is used.
+     *
+     * 1. Two connections to the same server were opened concurrently, in which
+     *    case one of them will be put in the cache, and the second will expire
+     *    when all its opened streams (which usually should be a single client
+     *    stream + possibly some additional push-promise server streams) complete.
+     * 2. A cached connection reaches its maximum number of streams (~ 2^31-1)
+     *    either server / or client allocated, in which case it will be taken
+     *    out of the cache - allowing a new connection to replace it. It will
+     *    expire when all its still open streams (which could be many) eventually
+     *    complete.
+     */
+    private boolean finalStream;
 
     /*
-     *  ByteBuffer pooling strategy for HTTP/2 protocol:
+     * ByteBuffer pooling strategy for HTTP/2 protocol.
      *
      * In general there are 4 points where ByteBuffers are used:
-     *  - incoming/outgoing frames from/to ByteBuffers plus incoming/outgoing encrypted data
-     *    in case of SSL connection.
+     *  - incoming/outgoing frames from/to ByteBuffers plus incoming/outgoing
+     *    encrypted data in case of SSL connection.
      *
      * 1. Outgoing frames encoded to ByteBuffers.
-     *    Outgoing ByteBuffers are created with requited size and frequently small (except DataFrames, etc)
-     *    At this place no pools at all. All outgoing buffers should be collected by GC.
+     *
+     *  Outgoing ByteBuffers are created with required size and frequently
+     *  small (except DataFrames, etc). At this place no pools at all. All
+     *  outgoing buffers should eventually be collected by GC.
      *
      * 2. Incoming ByteBuffers (decoded to frames).
-     *    Here, total elimination of BB pool is not a good idea.
-     *    We don't know how many bytes we will receive through network.
-     * So here we allocate buffer of reasonable size. The following life of the BB:
-     * - If all frames decoded from the BB are other than DataFrame and HeaderFrame (and HeaderFrame subclasses)
-     *     BB is returned to pool,
-     * - If we decoded DataFrame from the BB. In that case DataFrame refers to subbuffer obtained by slice() method.
-     *     Such BB is never returned to pool and will be GCed.
-     * - If we decoded HeadersFrame from the BB. Then header decoding is performed inside processFrame method and
-     *     the buffer could be release to pool.
      *
-     * 3. SLL encrypted buffers. Here another pool was introduced and all net buffers are to/from the pool,
-     *    because of we can't predict size encrypted packets.
+     *  Here, total elimination of BB pool is not a good idea.
+     *  We don't know how many bytes we will receive through network.
      *
+     *  A possible future improvement ( currently not implemented ):
+     *  Allocate buffers of reasonable size. The following life of the BB:
+     *   - If all frames decoded from the BB are other than DataFrame and
+     *     HeaderFrame (and HeaderFrame subclasses) BB is returned to pool,
+     *   - If a DataFrame is decoded from the BB. In that case DataFrame refers
+     *     to sub-buffer obtained by slice(). Such a BB is never returned to the
+     *     pool and will eventually be GC'ed.
+     *   - If a HeadersFrame is decoded from the BB. Then header decoding is
+     *     performed inside processFrame method and the buffer could be release
+     *     back to pool.
+     *
+     * 3. SSL encrypted buffers ( received ).
+     *
+     *  The current implementation recycles encrypted buffers read from the
+     *  channel. The pool of buffers has a maximum size of 3, SocketTube.MAX_BUFFERS,
+     *  direct buffers which are shared by all connections on a given client.
+     *  The pool is used by all SSL connections - whether HTTP/1.1 or HTTP/2,
+     *  but only for SSL encrypted buffers that circulate between the SocketTube
+     *  Publisher and the SSLFlowDelegate Reader. Limiting the pool to this
+     *  particular segment allows the use of direct buffers, thus avoiding any
+     *  additional copy in the NIO socket channel implementation. See
+     *  HttpClientImpl.SSLDirectBufferSupplier, SocketTube.SSLDirectBufferSource,
+     *  and SSLTube.recycler.
      */
 
 
@@ -220,6 +253,12 @@ class Http2Connection  {
     private final Map<Integer,Stream<?>> streams = new ConcurrentHashMap<>();
     private int nextstreamid;
     private int nextPushStream = 2;
+    // actual stream ids are not allocated until the Headers frame is ready
+    // to be sent. The following two fields are updated as soon as a stream
+    // is created and assigned to a connection. They are checked before
+    // assigning a stream to a connection.
+    private int lastReservedClientStreamid = 1;
+    private int lastReservedServerStreamid = 0;
     private final Encoder hpackOut;
     private final Decoder hpackIn;
     final SettingsFrame clientSettings;
@@ -365,6 +404,29 @@ class Http2Connection  {
         return client2.client();
     }
 
+    // call these before assigning a request/stream to a connection
+    // if false returned then a new Http2Connection is required
+    // if true, the the stream may be assigned to this connection
+    synchronized boolean reserveStream(boolean clientInitiated) {
+        if (finalStream) {
+            return false;
+        }
+        if (clientInitiated && (lastReservedClientStreamid + 2) >= MAX_CLIENT_STREAM_ID) {
+            setFinalStream();
+            client2.deleteConnection(this);
+            return false;
+        } else if (!clientInitiated && (lastReservedServerStreamid + 2) >= MAX_SERVER_STREAM_ID) {
+            setFinalStream();
+            client2.deleteConnection(this);
+            return false;
+        }
+        if (clientInitiated)
+            lastReservedClientStreamid+=2;
+        else
+            lastReservedServerStreamid+=2;
+        return true;
+    }
+
     /**
      * Throws an IOException if h2 was not negotiated
      */
@@ -414,12 +476,16 @@ class Http2Connection  {
                 .thenCompose(checkAlpnCF);
     }
 
-    synchronized boolean singleStream() {
-        return singleStream;
+    synchronized boolean finalStream() {
+        return finalStream;
     }
 
-    synchronized void setSingleStream(boolean use) {
-        singleStream = use;
+    /**
+     * Mark this connection so no more streams created on it and it will close when
+     * all are complete.
+     */
+    synchronized void setFinalStream() {
+        finalStream = true;
     }
 
     static String keyFor(HttpConnection connection) {
@@ -693,6 +759,9 @@ class Http2Connection  {
         if (promisedStreamid != nextPushStream) {
             resetStream(promisedStreamid, ResetFrame.PROTOCOL_ERROR);
             return;
+        } else if (!reserveStream(false)) {
+            resetStream(promisedStreamid, ResetFrame.REFUSED_STREAM);
+            return;
         } else {
             nextPushStream += 2;
         }
@@ -752,7 +821,7 @@ class Http2Connection  {
             // corresponding entry in the window controller.
             windowController.removeStream(streamid);
         }
-        if (singleStream() && streams.isEmpty()) {
+        if (finalStream() && streams.isEmpty()) {
             // should be only 1 stream, but there might be more if server push
             close();
         }

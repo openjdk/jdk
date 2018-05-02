@@ -73,12 +73,10 @@ public class ProxyServer extends Thread implements Closeable {
      */
     public void close() throws IOException {
         if (debug) System.out.println("Proxy: closing");
-            done = true;
+        done = true;
         listener.close();
         for (Connection c : connections) {
-            if (c.running()) {
-                c.close();
-            }
+            c.close();
         }
     }
 
@@ -179,7 +177,9 @@ public class ProxyServer extends Thread implements Closeable {
             return out.isAlive() || in.isAlive();
         }
 
-        public void close() throws IOException {
+        private volatile boolean closing;
+        public synchronized void close() throws IOException {
+            closing = true;
             if (debug) System.out.println("Closing connection (proxy)");
             if (serverSocket != null) serverSocket.close();
             if (clientSocket != null) clientSocket.close();
@@ -238,7 +238,13 @@ public class ProxyServer extends Thread implements Closeable {
                 i++;
 
                 commonInit(dest, 80);
-                serverOut.write(buf, i, buf.length-i);
+                OutputStream sout;
+                synchronized (this) {
+                    if (closing) return;
+                    sout = serverOut;
+                }
+                // might fail if we're closing but we don't care.
+                sout.write(buf, i, buf.length-i);
                 proxyCommon();
 
             } catch (URISyntaxException e) {
@@ -246,7 +252,8 @@ public class ProxyServer extends Thread implements Closeable {
             }
         }
 
-        void commonInit(String dest, int defaultPort) throws IOException {
+        synchronized void commonInit(String dest, int defaultPort) throws IOException {
+            if (closing) return;
             int port;
             String[] hostport = dest.split(":");
             if (hostport.length == 1) {
@@ -261,7 +268,8 @@ public class ProxyServer extends Thread implements Closeable {
             serverIn = new BufferedInputStream(serverSocket.getInputStream());
         }
 
-        void proxyCommon() throws IOException {
+        synchronized void proxyCommon() throws IOException {
+            if (closing) return;
             out = new Thread(() -> {
                 try {
                     byte[] bb = new byte[8000];
@@ -269,6 +277,7 @@ public class ProxyServer extends Thread implements Closeable {
                     while ((n = clientIn.read(bb)) != -1) {
                         serverOut.write(bb, 0, n);
                     }
+                    closing = true;
                     serverSocket.close();
                     clientSocket.close();
                 } catch (IOException e) {
@@ -284,6 +293,7 @@ public class ProxyServer extends Thread implements Closeable {
                     while ((n = serverIn.read(bb)) != -1) {
                         clientOut.write(bb, 0, n);
                     }
+                    closing = true;
                     serverSocket.close();
                     clientSocket.close();
                 } catch (IOException e) {
@@ -302,7 +312,9 @@ public class ProxyServer extends Thread implements Closeable {
         }
 
         void doTunnel(String dest) throws IOException {
+            if (closing) return; // no need to go further.
             commonInit(dest, 443);
+            // might fail if we're closing, but we don't care.
             clientOut.write("HTTP/1.1 200 OK\r\n\r\n".getBytes());
             proxyCommon();
         }

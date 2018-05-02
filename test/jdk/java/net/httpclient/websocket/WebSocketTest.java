@@ -42,8 +42,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import static java.net.http.HttpClient.newHttpClient;
+import static java.net.http.HttpClient.Builder.NO_PROXY;
+import static java.net.http.HttpClient.newBuilder;
 import static java.net.http.WebSocket.NORMAL_CLOSURE;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertThrows;
@@ -73,7 +73,7 @@ public class WebSocketTest {
     public void illegalArgument() throws IOException {
         server = new DummyWebSocketServer();
         server.open();
-        webSocket = newHttpClient()
+        webSocket = newBuilder().proxy(NO_PROXY).build()
                 .newWebSocketBuilder()
                 .buildAsync(server.getURI(), new WebSocket.Listener() { })
                 .join();
@@ -137,7 +137,7 @@ public class WebSocketTest {
     public void partialBinaryThenText() throws IOException {
         server = new DummyWebSocketServer();
         server.open();
-        webSocket = newHttpClient().newWebSocketBuilder()
+        webSocket = newBuilder().proxy(NO_PROXY).build().newWebSocketBuilder()
                 .buildAsync(server.getURI(), new WebSocket.Listener() { })
                 .join();
         webSocket.sendBinary(ByteBuffer.allocate(16), false).join();
@@ -152,7 +152,7 @@ public class WebSocketTest {
     public void partialTextThenBinary() throws IOException {
         server = new DummyWebSocketServer();
         server.open();
-        webSocket = newHttpClient().newWebSocketBuilder()
+        webSocket = newBuilder().proxy(NO_PROXY).build().newWebSocketBuilder()
                 .buildAsync(server.getURI(), new WebSocket.Listener() { })
                 .join();
 
@@ -168,7 +168,7 @@ public class WebSocketTest {
     public void sendMethodsThrowIOE1() throws IOException {
         server = new DummyWebSocketServer();
         server.open();
-        webSocket = newHttpClient()
+        webSocket = newBuilder().proxy(NO_PROXY).build()
                 .newWebSocketBuilder()
                 .buildAsync(server.getURI(), new WebSocket.Listener() { })
                 .join();
@@ -221,7 +221,7 @@ public class WebSocketTest {
             }
         };
 
-        webSocket = newHttpClient().newWebSocketBuilder()
+        webSocket = newBuilder().proxy(NO_PROXY).build().newWebSocketBuilder()
                 .buildAsync(server.getURI(), listener)
                 .join();
 
@@ -333,7 +333,7 @@ public class WebSocketTest {
             }
         };
 
-        webSocket = newHttpClient().newWebSocketBuilder()
+        webSocket = newBuilder().proxy(NO_PROXY).build().newWebSocketBuilder()
                 .buildAsync(server.getURI(), listener)
                 .join();
 
@@ -407,7 +407,7 @@ public class WebSocketTest {
             }
         };
 
-        webSocket = newHttpClient().newWebSocketBuilder()
+        webSocket = newBuilder().proxy(NO_PROXY).build().newWebSocketBuilder()
                 .buildAsync(server.getURI(), listener)
                 .join();
 
@@ -500,7 +500,7 @@ public class WebSocketTest {
             }
         };
 
-        webSocket = newHttpClient().newWebSocketBuilder()
+        webSocket = newBuilder().proxy(NO_PROXY).build().newWebSocketBuilder()
                 .buildAsync(server.getURI(), listener)
                 .join();
 

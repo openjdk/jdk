@@ -145,31 +145,39 @@ class PlainHttpConnection extends HttpConnection {
         try {
             this.chan = SocketChannel.open();
             chan.configureBlocking(false);
-            int bufsize = client.getReceiveBufferSize();
-            if (!trySetReceiveBufferSize(bufsize)) {
-                trySetReceiveBufferSize(256*1024);
+            trySetReceiveBufferSize(client.getReceiveBufferSize());
+            if (debug.on()) {
+                int bufsize = getInitialBufferSize();
+                debug.log("Initial receive buffer size is: %d", bufsize);
             }
             chan.setOption(StandardSocketOptions.TCP_NODELAY, true);
-            // wrap the connected channel in a Tube for async reading and writing
+            // wrap the channel in a Tube for async reading and writing
             tube = new SocketTube(client(), chan, Utils::getBuffer);
         } catch (IOException e) {
             throw new InternalError(e);
         }
     }
 
-    private boolean trySetReceiveBufferSize(int bufsize) {
+    private int getInitialBufferSize() {
         try {
-            chan.setOption(StandardSocketOptions.SO_RCVBUF, bufsize);
+            return chan.getOption(StandardSocketOptions.SO_RCVBUF);
+        } catch(IOException x) {
             if (debug.on())
-                debug.log("Receive buffer size is %s",
-                          chan.getOption(StandardSocketOptions.SO_RCVBUF));
-            return true;
+                debug.log("Failed to get initial receive buffer size on %s", chan);
+        }
+        return 0;
+    }
+
+    private void trySetReceiveBufferSize(int bufsize) {
+        try {
+            if (bufsize > 0) {
+                chan.setOption(StandardSocketOptions.SO_RCVBUF, bufsize);
+            }
         } catch(IOException x) {
             if (debug.on())
                 debug.log("Failed to set receive buffer size to %d on %s",
                           bufsize, chan);
         }
-        return false;
     }
 
     @Override

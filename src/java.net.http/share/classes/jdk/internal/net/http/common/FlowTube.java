@@ -63,6 +63,8 @@ public interface FlowTube extends
          */
         default void dropSubscription() { }
 
+        default boolean supportsRecycling() { return false; }
+
     }
 
     /**

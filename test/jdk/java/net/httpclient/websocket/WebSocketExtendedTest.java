@@ -43,8 +43,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-
-import static java.net.http.HttpClient.newHttpClient;
+import static java.net.http.HttpClient.Builder.NO_PROXY;
+import static java.net.http.HttpClient.newBuilder;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
@@ -71,7 +71,7 @@ public class WebSocketExtendedTest {
     public void binary(ByteBuffer expected) throws IOException, InterruptedException {
         try (DummyWebSocketServer server = new DummyWebSocketServer()) {
             server.open();
-            WebSocket ws = newHttpClient()
+            WebSocket ws = newBuilder().proxy(NO_PROXY).build()
                     .newWebSocketBuilder()
                     .buildAsync(server.getURI(), new WebSocket.Listener() { })
                     .join();
@@ -166,7 +166,7 @@ public class WebSocketExtendedTest {
     public void ping(ByteBuffer expected) throws Exception {
         try (DummyWebSocketServer server = new DummyWebSocketServer()) {
             server.open();
-            WebSocket ws = newHttpClient()
+            WebSocket ws = newBuilder().proxy(NO_PROXY).build()
                     .newWebSocketBuilder()
                     .buildAsync(server.getURI(), new WebSocket.Listener() { })
                     .join();
@@ -188,7 +188,7 @@ public class WebSocketExtendedTest {
     public void pong(ByteBuffer expected) throws Exception {
         try (DummyWebSocketServer server = new DummyWebSocketServer()) {
             server.open();
-            WebSocket ws = newHttpClient()
+            WebSocket ws = newBuilder().proxy(NO_PROXY).build()
                     .newWebSocketBuilder()
                     .buildAsync(server.getURI(), new WebSocket.Listener() { })
                     .join();
@@ -210,7 +210,7 @@ public class WebSocketExtendedTest {
     public void close(int statusCode, String reason) throws Exception {
         try (DummyWebSocketServer server = new DummyWebSocketServer()) {
             server.open();
-            WebSocket ws = newHttpClient()
+            WebSocket ws = newBuilder().proxy(NO_PROXY).build()
                     .newWebSocketBuilder()
                     .buildAsync(server.getURI(), new WebSocket.Listener() { })
                     .join();
@@ -233,7 +233,7 @@ public class WebSocketExtendedTest {
     public void text(String expected) throws Exception {
         try (DummyWebSocketServer server = new DummyWebSocketServer()) {
             server.open();
-            WebSocket ws = newHttpClient()
+            WebSocket ws = newBuilder().proxy(NO_PROXY).build()
                     .newWebSocketBuilder()
                     .buildAsync(server.getURI(), new WebSocket.Listener() { })
                     .join();

@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @summary Preserve URI component escaped octets when converting to HTTP headers
- * @bug 8198716
+ * @summary Verify that non-US-ASCII chars are replaced with a sequence of
+ *          escaped octets that represent that char in the UTF-8 character set.
+ * @bug 8201238
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
@@ -34,13 +35,12 @@
  * @library /lib/testlibrary http2/server
  * @build Http2TestServer
  * @build jdk.testlibrary.SimpleSSLContext
+ * @compile -encoding utf-8 NonAsciiCharsInURI.java
  * @run testng/othervm
  *       -Djdk.httpclient.HttpClient.log=reqeusts,headers
- *       EscapedOctetsInURI
+ *       NonAsciiCharsInURI
  */
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
@@ -63,32 +63,33 @@ import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import static java.lang.System.err;
 import static java.lang.System.out;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static org.testng.Assert.assertEquals;
 
-public class EscapedOctetsInURI {
+public class NonAsciiCharsInURI implements HttpServerAdapters {
 
     SSLContext sslContext;
-    HttpServer httpTestServer;         // HTTP/1.1    [ 4 servers ]
-    HttpsServer httpsTestServer;       // HTTPS/1.1
-    Http2TestServer http2TestServer;   // HTTP/2 ( h2c )
-    Http2TestServer https2TestServer;  // HTTP/2 ( h2  )
+    HttpTestServer httpTestServer;         // HTTP/1.1    [ 4 servers ]
+    HttpTestServer httpsTestServer;        // HTTPS/1.1
+    HttpTestServer http2TestServer;        // HTTP/2 ( h2c )
+    HttpTestServer https2TestServer;       // HTTP/2 ( h2  )
     String httpURI;
     String httpsURI;
     String http2URI;
     String https2URI;
 
+    // € = '\u20AC' => 0xE20x820xAC
     static final String[][] pathsAndQueryStrings = new String[][] {
-        // partial-path       URI query
-        {  "/001/noSpace", "?noQuotedOctets" },
-        {  "/002/noSpace", "?name=chegar,address=Dublin%20Ireland", },
-        {  "/003/noSpace", "?target=http%3A%2F%2Fwww.w3.org%2Fns%2Foa%23hasBody" },
-
-        {  "/010/with%20space", "?noQuotedOctets" },
-        {  "/011/with%20space", "?name=chegar,address=Dublin%20Ireland" },
-        {  "/012/with%20space", "?target=http%3A%2F%2Fwww.w3.org%2Fns%2Foa%23hasBody" },
+               // partial-path
+            {  "/001/plain"                                                            },
+            {  "/002/plain?plainQuery"                                                 },
+            {  "/003/withEuroSymbol/€"                                                 },
+            {  "/004/withEuroSymbol/€?euroSymbol=€"                                    },
+            {  "/005/wiki/エリザベス1世_(イングランド女王)"                                },
+            {  "/006/x?url=https://ja.wikipedia.org/wiki/エリザベス1世_(イングランド女王)" },
     };
 
     @DataProvider(name = "variants")
@@ -97,16 +98,16 @@ public class EscapedOctetsInURI {
 
         for (boolean sameClient : new boolean[] { false, true }) {
             Arrays.asList(pathsAndQueryStrings).stream()
-                    .map(e -> new Object[] {httpURI + e[0] + e[1], sameClient})
+                    .map(e -> new Object[] {httpURI + e[0], sameClient})
                     .forEach(list::add);
             Arrays.asList(pathsAndQueryStrings).stream()
-                    .map(e -> new Object[] {httpsURI + e[0] + e[1], sameClient})
+                    .map(e -> new Object[] {httpsURI + e[0], sameClient})
                     .forEach(list::add);
             Arrays.asList(pathsAndQueryStrings).stream()
-                    .map(e -> new Object[] {http2URI + e[0] + e[1], sameClient})
+                    .map(e -> new Object[] {http2URI + e[0], sameClient})
                     .forEach(list::add);
             Arrays.asList(pathsAndQueryStrings).stream()
-                    .map(e -> new Object[] {https2URI + e[0] + e[1], sameClient})
+                    .map(e -> new Object[] {https2URI + e[0], sameClient})
                     .forEach(list::add);
         }
         return list.stream().toArray(Object[][]::new);
@@ -116,8 +117,7 @@ public class EscapedOctetsInURI {
 
     @Test(dataProvider = "variants")
     void test(String uriString, boolean sameClient) throws Exception {
-        System.out.println("\n--- Starting ");
-
+        out.println("\n--- Starting ");
         // The single-argument factory requires any illegal characters in its
         // argument to be quoted and preserves any escaped octets and other
         // characters that are present.
@@ -139,16 +139,22 @@ public class EscapedOctetsInURI {
             assertEquals(resp.statusCode(), 200,
                     "Expected 200, got:" + resp.statusCode());
 
-            // the response body should contain the exact escaped request URI
-            URI retrievedURI = URI.create(resp.body());
-            assertEquals(retrievedURI.getRawPath(),  uri.getRawPath());
-            assertEquals(retrievedURI.getRawQuery(), uri.getRawQuery());
+            // the response body should contain the toASCIIString
+            // representation of the URI
+            String expectedURIString = uri.toASCIIString();
+            if (!expectedURIString.contains(resp.body())) {
+                err.println("Test failed: " + resp);
+                throw new AssertionError(expectedURIString +
+                                         " does not contain '" + resp.body() + "'");
+            } else {
+                out.println("Found expected " + resp.body() + " in " + expectedURIString);
+            }
         }
     }
 
     @Test(dataProvider = "variants")
     void testAsync(String uriString, boolean sameClient) {
-        System.out.println("\n--- Starting ");
+        out.println("\n--- Starting ");
         URI uri = URI.create(uriString);
 
         HttpClient client = null;
@@ -162,21 +168,28 @@ public class EscapedOctetsInURI {
             HttpRequest request = HttpRequest.newBuilder(uri).build();
 
             client.sendAsync(request, BodyHandlers.ofString())
-                  .thenApply(response -> {
-                      out.println("Got response: " + response);
-                      out.println("Got body: " + response.body());
-                      assertEquals(response.statusCode(), 200);
-                      return response.body(); })
-                  .thenApply(body -> URI.create(body))
-                  .thenAccept(retrievedURI -> {
-                      // the body should contain the exact escaped request URI
-                      assertEquals(retrievedURI.getRawPath(), uri.getRawPath());
-                      assertEquals(retrievedURI.getRawQuery(), uri.getRawQuery()); })
-                  .join();
+                    .thenApply(response -> {
+                        out.println("Got response: " + response);
+                        out.println("Got body: " + response.body());
+                        assertEquals(response.statusCode(), 200);
+                        return response.body(); })
+                    .thenAccept(body -> {
+                        // the response body should contain the toASCIIString
+                        // representation of the URI
+                        String expectedURIString = uri.toASCIIString();
+                        if (!expectedURIString.contains(body)) {
+                            err.println("Test failed: " + body);
+                            throw new AssertionError(expectedURIString +
+                                    " does not contain '" + body + "'");
+                        } else {
+                            out.println("Found expected " + body + " in "
+                                        + expectedURIString);
+                        } })
+                    .join();
         }
     }
 
-    static String serverAuthority(HttpServer server) {
+    static String serverAuthority(HttpTestServer server) {
         return InetAddress.getLoopbackAddress().getHostName() + ":"
                 + server.getAddress().getPort();
     }
@@ -187,22 +200,24 @@ public class EscapedOctetsInURI {
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
 
+        HttpTestHandler handler = new HttpUriStringHandler();
         InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        httpTestServer = HttpServer.create(sa, 0);
-        httpTestServer.createContext("/http1", new Http1ASCIIUriStringHandler());
+        httpTestServer = HttpTestServer.of(HttpServer.create(sa, 0));
+        httpTestServer.addHandler(handler, "/http1");
         httpURI = "http://" + serverAuthority(httpTestServer) + "/http1";
 
-        httpsTestServer = HttpsServer.create(sa, 0);
-        httpsTestServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        httpsTestServer.createContext("/https1", new Http1ASCIIUriStringHandler());
+        HttpsServer httpsServer = HttpsServer.create(sa, 0);
+        httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
+        httpsTestServer = HttpTestServer.of(httpsServer);
+        httpsTestServer.addHandler(handler, "/https1");
         httpsURI = "https://" + serverAuthority(httpsTestServer) + "/https1";
 
-        http2TestServer = new Http2TestServer("localhost", false, 0);
-        http2TestServer.addHandler(new HttpASCIIUriStringHandler(), "/http2");
+        http2TestServer = HttpTestServer.of(new Http2TestServer("localhost", false, 0));
+        http2TestServer.addHandler(handler, "/http2");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2";
 
-        https2TestServer = new Http2TestServer("localhost", true, 0);
-        https2TestServer.addHandler(new HttpASCIIUriStringHandler(), "/https2");
+        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, 0));
+        https2TestServer.addHandler(handler, "/https2");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2";
 
         httpTestServer.start();
@@ -213,38 +228,22 @@ public class EscapedOctetsInURI {
 
     @AfterTest
     public void teardown() throws Exception {
-        httpTestServer.stop(0);
-        httpsTestServer.stop(0);
+        httpTestServer.stop();
+        httpsTestServer.stop();
         http2TestServer.stop();
         https2TestServer.stop();
     }
 
-    /** A handler that returns as its body the exact escaped request URI. */
-    static class Http1ASCIIUriStringHandler implements HttpHandler {
+    /** A handler that returns, as its body, the exact received request URI. */
+    static class HttpUriStringHandler implements HttpTestHandler {
         @Override
-        public void handle(HttpExchange t) throws IOException {
-            String asciiUriString = t.getRequestURI().toASCIIString();
-            out.println("Http1ASCIIUriString received, asciiUriString: " + asciiUriString);
+        public void handle(HttpTestExchange t) throws IOException {
+            String uri = t.getRequestURI().toString();
+            out.println("Http1UriStringHandler received, uri: " + uri);
             try (InputStream is = t.getRequestBody();
                  OutputStream os = t.getResponseBody()) {
                 is.readAllBytes();
-                byte[] bytes = asciiUriString.getBytes(US_ASCII);
-                t.sendResponseHeaders(200, bytes.length);
-                os.write(bytes);
-            }
-        }
-    }
-
-    /** A handler that returns as its body the exact escaped request URI. */
-    static class HttpASCIIUriStringHandler implements Http2Handler {
-        @Override
-        public void handle(Http2TestExchange t) throws IOException {
-            String asciiUriString = t.getRequestURI().toASCIIString();
-            out.println("Http2ASCIIUriString received, asciiUriString: " + asciiUriString);
-            try (InputStream is = t.getRequestBody();
-                 OutputStream os = t.getResponseBody()) {
-                is.readAllBytes();
-                byte[] bytes = asciiUriString.getBytes(US_ASCII);
+                byte[] bytes = uri.getBytes(US_ASCII);
                 t.sendResponseHeaders(200, bytes.length);
                 os.write(bytes);
             }
