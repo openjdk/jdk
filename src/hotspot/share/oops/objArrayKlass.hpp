@@ -64,7 +64,8 @@ class ObjArrayKlass : public ArrayKlass {
 
   // Dispatched operation
   bool can_be_primary_super_slow() const;
-  GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots);
+  GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
+                                                  Array<Klass*>* transitive_interfaces);
   bool compute_is_subtype_of(Klass* k);
   DEBUG_ONLY(bool is_objArray_klass_slow()  const  { return true; })
   int oop_size(oop obj) const;

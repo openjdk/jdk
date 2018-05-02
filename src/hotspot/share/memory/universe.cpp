@@ -318,7 +318,7 @@ void initialize_basic_type_klass(Klass* k, TRAPS) {
   } else
 #endif
   {
-    k->initialize_supers(ok, CHECK);
+    k->initialize_supers(ok, NULL, CHECK);
   }
   k->append_to_sibling_list();
 }

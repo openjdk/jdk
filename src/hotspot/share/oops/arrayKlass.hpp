@@ -98,7 +98,8 @@ class ArrayKlass: public Klass {
     return static_cast<const ArrayKlass*>(k);
   }
 
-  GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots);
+  GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
+                                                  Array<Klass*>* transitive_interfaces);
   bool compute_is_subtype_of(Klass* k);
 
   // Sizing
