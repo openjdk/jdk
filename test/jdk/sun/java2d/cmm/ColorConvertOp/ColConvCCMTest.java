@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6476665 7033534 6830714 8052162
+ * @bug 6476665 7033534 6830714 8052162 8196572
  * @summary Verifies color conversion of Component Color Model based images
  * @run main ColConvCCMTest
  */
@@ -59,8 +59,8 @@ public class ColConvCCMTest extends ColConvTest {
         2.5,        // sRGB
         (isOpenProfile() ? 45.0 : 10.1), // LINEAR_RGB
         10.5,       // GRAY
-        (isOpenProfile() ? 207 : 45.5), // PYCC
-        47.5        // CIEXYZ
+        (isOpenProfile() ? 215.0 : 45.5), // PYCC
+        (isOpenProfile() ? 56.0 : 47.5) // CIEXYZ
     };
 
     final static String [] gldImgNames = {
