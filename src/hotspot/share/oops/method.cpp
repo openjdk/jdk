@@ -449,12 +449,6 @@ bool Method::init_method_counters(MethodCounters* counters) {
   return Atomic::replace_if_null(counters, &_method_counters);
 }
 
-void Method::cleanup_inline_caches() {
-  // The current system doesn't use inline caches in the interpreter
-  // => nothing to do (keep this method around for future use)
-}
-
-
 int Method::extra_stack_words() {
   // not an inline function, to avoid a header dependency on Interpreter
   return extra_stack_entries() * Interpreter::stackElementSize;

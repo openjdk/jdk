@@ -75,7 +75,7 @@ address* AOTCompiledMethod::orig_pc_addr(const frame* fr) {
   return (address*) ((address)fr->unextended_sp() + _meta->orig_pc_offset());
 }
 
-bool AOTCompiledMethod::do_unloading_oops(address low_boundary, BoolObjectClosure* is_alive, bool unloading_occurred) {
+bool AOTCompiledMethod::do_unloading_oops(address low_boundary, BoolObjectClosure* is_alive) {
   return false;
 }
 
@@ -245,7 +245,7 @@ bool AOTCompiledMethod::make_entrant() {
 // more conservative than for nmethods.
 void AOTCompiledMethod::flush_evol_dependents_on(InstanceKlass* dependee) {
   if (is_java_method()) {
-    cleanup_inline_caches();
+    clear_inline_caches();
     mark_for_deoptimization();
     make_not_entrant();
   }
