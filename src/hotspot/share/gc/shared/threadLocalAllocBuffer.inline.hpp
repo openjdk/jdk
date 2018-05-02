@@ -54,18 +54,15 @@ inline HeapWord* ThreadLocalAllocBuffer::allocate(size_t size) {
 }
 
 inline size_t ThreadLocalAllocBuffer::compute_size(size_t obj_size) {
-  const size_t aligned_obj_size = align_object_size(obj_size);
-
   // Compute the size for the new TLAB.
   // The "last" tlab may be smaller to reduce fragmentation.
   // unsafe_max_tlab_alloc is just a hint.
   const size_t available_size = Universe::heap()->unsafe_max_tlab_alloc(myThread()) /
                                                   HeapWordSize;
-  size_t new_tlab_size = MIN3(available_size, desired_size() + aligned_obj_size, max_size());
+  size_t new_tlab_size = MIN3(available_size, desired_size() + align_object_size(obj_size), max_size());
 
   // Make sure there's enough room for object and filler int[].
-  const size_t obj_plus_filler_size = aligned_obj_size + alignment_reserve();
-  if (new_tlab_size < obj_plus_filler_size) {
+  if (new_tlab_size < compute_min_size(obj_size)) {
     // If there isn't enough room for the allocation, return failure.
     log_trace(gc, tlab)("ThreadLocalAllocBuffer::compute_size(" SIZE_FORMAT ") returns failure",
                         obj_size);
@@ -76,6 +73,11 @@ inline size_t ThreadLocalAllocBuffer::compute_size(size_t obj_size) {
   return new_tlab_size;
 }
 
+inline size_t ThreadLocalAllocBuffer::compute_min_size(size_t obj_size) {
+  const size_t aligned_obj_size = align_object_size(obj_size);
+  const size_t size_with_reserve = aligned_obj_size + alignment_reserve();
+  return MAX2(size_with_reserve, MinTLABSize);
+}
 
 void ThreadLocalAllocBuffer::record_slow_allocation(size_t obj_size) {
   // Raise size required to bypass TLAB next time. Why? Else there's

@@ -1146,11 +1146,18 @@ size_t GenCollectedHeap::unsafe_max_tlab_alloc(Thread* thr) const {
   return 0;
 }
 
-HeapWord* GenCollectedHeap::allocate_new_tlab(size_t size) {
+HeapWord* GenCollectedHeap::allocate_new_tlab(size_t min_size,
+                                              size_t requested_size,
+                                              size_t* actual_size) {
   bool gc_overhead_limit_was_exceeded;
-  return mem_allocate_work(size /* size */,
-                           true /* is_tlab */,
-                           &gc_overhead_limit_was_exceeded);
+  HeapWord* result = mem_allocate_work(requested_size /* size */,
+                                       true /* is_tlab */,
+                                       &gc_overhead_limit_was_exceeded);
+  if (result != NULL) {
+    *actual_size = requested_size;
+  }
+
+  return result;
 }
 
 // Requires "*prev_ptr" to be non-NULL.  Deletes and a block of minimal size

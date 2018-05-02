@@ -141,6 +141,9 @@ public:
   // Otherwise return 0;
   inline size_t compute_size(size_t obj_size);
 
+  // Compute the minimal needed tlab size for the given object size.
+  static inline size_t compute_min_size(size_t obj_size);
+
   // Record slow allocation
   inline void record_slow_allocation(size_t obj_size);
 
