@@ -441,7 +441,7 @@ public class DeferredAttr extends JCTree.Visitor {
         } else {
             stats.add((JCBlock)that.body);
         }
-        JCBlock lambdaBlock = make.Block(0, stats.toList());
+        JCBlock lambdaBlock = make.at(that.pos).Block(0, stats.toList());
         Env<AttrContext> localEnv = attr.lambdaEnv(that, env);
         try {
             localEnv.info.returnResult = resultInfo;

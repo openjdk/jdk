@@ -24,7 +24,7 @@
  */
 
 /*
- * @test /nodynamioccopyright/
+ * @test /nodynamiccopyright/
  * @bug 8200199
  * @summary javac suggests to use var even when var is used
  * @compile/fail/ref=T8200199.out -Werror -XDfind=local -XDrawDiagnostics T8200199.java

@@ -1,5 +1,5 @@
 /*
- * @test /nodynamioccopyright/
+ * @test /nodynamiccopyright/
  * @bug 8199194
  * @summary smoke test for --enabled-preview classreader support
  * @compile -XDforcePreview --enable-preview -source 11 Bar.java
