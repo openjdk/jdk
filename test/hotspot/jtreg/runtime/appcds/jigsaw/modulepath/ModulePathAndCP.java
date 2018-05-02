@@ -132,7 +132,7 @@ public class ModulePathAndCP {
         String jars = subJar.toString() + System.getProperty("path.separator") +
                       mainJar.toString();
         output = TestCommon.createArchive( jars, appClasses,
-                                           "-Xlog:class+load=trace", "-XX:+PrintSystemDictionaryAtExit",
+                                           "-Xlog:class+load=trace",
                                            "--module-path", moduleDir.toString(),
                                            "-m", MAIN_MODULE);
         TestCommon.checkDump(output);
