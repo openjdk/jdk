@@ -243,7 +243,7 @@ Thread::Thread() {
   // This initial value ==> never claimed.
   _oops_do_parity = 0;
   _threads_hazard_ptr = NULL;
-  _nested_threads_hazard_ptr = NULL;
+  _threads_list_ptr = NULL;
   _nested_threads_hazard_ptr_cnt = 0;
   _rcu_counter = 0;
 
@@ -881,31 +881,9 @@ void Thread::print_on(outputStream* st) const {
     st->print("tid=" INTPTR_FORMAT " ", p2i(this));
     osthread()->print_on(st);
   }
-  if (_threads_hazard_ptr != NULL) {
-    st->print("_threads_hazard_ptr=" INTPTR_FORMAT, p2i(_threads_hazard_ptr));
-  }
-  if (_nested_threads_hazard_ptr != NULL) {
-    print_nested_threads_hazard_ptrs_on(st);
-  }
+  ThreadsSMRSupport::print_info_on(this, st);
   st->print(" ");
   debug_only(if (WizardMode) print_owned_locks_on(st);)
-}
-
-void Thread::print_nested_threads_hazard_ptrs_on(outputStream* st) const {
-  assert(_nested_threads_hazard_ptr != NULL, "must be set to print");
-
-  if (EnableThreadSMRStatistics) {
-    st->print(", _nested_threads_hazard_ptr_cnt=%u", _nested_threads_hazard_ptr_cnt);
-  }
-  st->print(", _nested_threads_hazard_ptrs=");
-  for (NestedThreadsList* node = _nested_threads_hazard_ptr; node != NULL;
-       node = node->next()) {
-    if (node != _nested_threads_hazard_ptr) {
-      // First node does not need a comma-space separator.
-      st->print(", ");
-    }
-    st->print(INTPTR_FORMAT, p2i(node->t_list()));
-  }
 }
 
 // Thread::print_on_error() is called by fatal error handler. Don't use
@@ -930,12 +908,7 @@ void Thread::print_on_error(outputStream* st, char* buf, int buflen) const {
     st->print(" [id=%d]", osthread()->thread_id());
   }
 
-  if (_threads_hazard_ptr != NULL) {
-    st->print(" _threads_hazard_ptr=" INTPTR_FORMAT, p2i(_threads_hazard_ptr));
-  }
-  if (_nested_threads_hazard_ptr != NULL) {
-    print_nested_threads_hazard_ptrs_on(st);
-  }
+  ThreadsSMRSupport::print_info_on(this, st);
 }
 
 void Thread::print_value_on(outputStream* st) const {
@@ -2995,12 +2968,7 @@ void JavaThread::print_on_error(outputStream* st, char *buf, int buflen) const {
             p2i(stack_end()), p2i(stack_base()));
   st->print("]");
 
-  if (_threads_hazard_ptr != NULL) {
-    st->print(" _threads_hazard_ptr=" INTPTR_FORMAT, p2i(_threads_hazard_ptr));
-  }
-  if (_nested_threads_hazard_ptr != NULL) {
-    print_nested_threads_hazard_ptrs_on(st);
-  }
+  ThreadsSMRSupport::print_info_on(this, st);
   return;
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,14 +85,14 @@ public class NestedThreadsListHandleInErrorHandlingTest {
     Pattern [] pattern = new Pattern[] {
         // The "Current thread" line should show a hazard ptr and
         // a nested hazard ptr:
-        Pattern.compile("Current thread .* _threads_hazard_ptr=0x[0-9A-Fa-f][0-9A-Fa-f]*, _nested_threads_hazard_ptr_cnt=1, _nested_threads_hazard_ptrs=0x.*"),
+        Pattern.compile("Current thread .* _threads_hazard_ptr=0x[0-9A-Fa-f][0-9A-Fa-f]*, _nested_threads_hazard_ptr_cnt=1, _nested_threads_hazard_ptr=0x[0-9A-Fa-f][0-9A-Fa-f]*.*"),
         // We should have a section of Threads class SMR info:
         Pattern.compile("Threads class SMR info:"),
         // We should have one nested ThreadsListHandle:
         Pattern.compile(".*, _nested_thread_list_max=1"),
         // The current thread (marked with '=>') in the threads list
-        // should show a hazard ptr:
-        Pattern.compile("=>.* JavaThread \"main\" .*_threads_hazard_ptr=0x[0-9A-Fa-f][0-9A-Fa-f]*, _nested_threads_hazard_ptr_cnt=1, _nested_threads_hazard_ptrs=0x.*"),
+        // should show a hazard ptr and a nested hazard ptr:
+        Pattern.compile("=>.* JavaThread \"main\" .* _threads_hazard_ptr=0x[0-9A-Fa-f][0-9A-Fa-f]*, _nested_threads_hazard_ptr_cnt=1, _nested_threads_hazard_ptr=0x[0-9A-Fa-f][0-9A-Fa-f]*.*"),
     };
     int currentPattern = 0;
 
