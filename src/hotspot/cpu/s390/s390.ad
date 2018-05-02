@@ -8401,16 +8401,6 @@ instruct compU_reg_uimm(flagsReg cr, iRegI op1, uimmI op2) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-instruct compU_reg_imm0(flagsReg cr, iRegI op1, immI_0 zero) %{
-  match(Set cr (CmpU op1 zero));
-  ins_cost(DEFAULT_COST_LOW);
-  size(2);
-  format %{ "LTR     $op1,$op1\t # unsigned" %}
-  opcode(LTR_ZOPC);
-  ins_encode(z_rrform(op1, op1));
-  ins_pipe(pipe_class_dummy);
-%}
-
 instruct compU_reg_mem(flagsReg cr, iRegI op1, memory op2)%{
   match(Set cr (CmpU op1 (LoadI op2)));
   ins_cost(MEMORY_REF_COST);
