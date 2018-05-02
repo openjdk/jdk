@@ -110,7 +110,7 @@ class Random implements java.io.Serializable {
         // Different Sizes and Good Lattice Structure", 1999
         for (;;) {
             long current = seedUniquifier.get();
-            long next = current * 181783497276652981L;
+            long next = current * 1181783497276652981L;
             if (seedUniquifier.compareAndSet(current, next))
                 return next;
         }
