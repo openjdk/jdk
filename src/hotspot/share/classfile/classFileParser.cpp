@@ -3592,8 +3592,13 @@ void ClassFileParser::apply_parsed_class_metadata(
   this_klass->set_methods(_methods);
   this_klass->set_inner_classes(_inner_classes);
   this_klass->set_local_interfaces(_local_interfaces);
-  this_klass->set_transitive_interfaces(_transitive_interfaces);
   this_klass->set_annotations(_combined_annotations);
+  // Delay the setting of _transitive_interfaces until after initialize_supers() in
+  // fill_instance_klass(). It is because the _transitive_interfaces may be shared with
+  // its _super. If an OOM occurs while loading the current klass, its _super field
+  // may not have been set. When GC tries to free the klass, the _transitive_interfaces
+  // may be deallocated mistakenly in InstanceKlass::deallocate_interfaces(). Subsequent
+  // dereferences to the deallocated _transitive_interfaces will result in a crash.
 
   // Clear out these fields so they don't get deallocated by the destructor
   clear_class_metadata();
@@ -5462,7 +5467,6 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   assert(NULL == _methods, "invariant");
   assert(NULL == _inner_classes, "invariant");
   assert(NULL == _local_interfaces, "invariant");
-  assert(NULL == _transitive_interfaces, "invariant");
   assert(NULL == _combined_annotations, "invariant");
 
   if (_has_final_method) {
@@ -5529,7 +5533,9 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   }
 
   // Fill in information needed to compute superclasses.
-  ik->initialize_supers(const_cast<InstanceKlass*>(_super_klass), CHECK);
+  ik->initialize_supers(const_cast<InstanceKlass*>(_super_klass), _transitive_interfaces, CHECK);
+  ik->set_transitive_interfaces(_transitive_interfaces);
+  _transitive_interfaces = NULL;
 
   // Initialize itable offset tables
   klassItable::setup_itable_offset_table(ik);
@@ -5834,7 +5840,6 @@ void ClassFileParser::clear_class_metadata() {
   _methods = NULL;
   _inner_classes = NULL;
   _local_interfaces = NULL;
-  _transitive_interfaces = NULL;
   _combined_annotations = NULL;
   _annotations = _type_annotations = NULL;
   _fields_annotations = _fields_type_annotations = NULL;
@@ -5886,6 +5891,7 @@ ClassFileParser::~ClassFileParser() {
   }
 
   clear_class_metadata();
+  _transitive_interfaces = NULL;
 
   // deallocate the klass if already created.  Don't directly deallocate, but add
   // to the deallocate list so that the klass is removed from the CLD::_klasses list
