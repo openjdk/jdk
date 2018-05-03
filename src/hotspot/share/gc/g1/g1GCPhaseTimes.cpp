@@ -113,8 +113,6 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[YoungFreeCSet] = new WorkerDataArray<double>(max_gc_threads, "Young Free Collection Set (ms):");
   _gc_par_phases[NonYoungFreeCSet] = new WorkerDataArray<double>(max_gc_threads, "Non-Young Free Collection Set (ms):");
 
-  _gc_par_phases[PreserveCMReferents] = new WorkerDataArray<double>(max_gc_threads, "Parallel Preserve CM Refs (ms):");
-
   reset();
 }
 
@@ -398,9 +396,6 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
   info_time("Post Evacuate Collection Set", sum_ms);
 
   debug_time("Code Roots Fixup", _cur_collection_code_root_fixup_time_ms);
-
-  debug_time("Preserve CM Refs", _recorded_preserve_cm_referents_time_ms);
-  trace_phase(_gc_par_phases[PreserveCMReferents]);
 
   debug_time_for_reference("Reference Processing", _cur_ref_proc_time_ms);
   _ref_phase_times.print_all_references(2, false);

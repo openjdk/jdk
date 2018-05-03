@@ -1389,15 +1389,6 @@ void G1ConcurrentMark::cleanup() {
   }
 }
 
-// Supporting Object and Oop closures for reference discovery
-// and processing in during marking
-
-bool G1CMIsAliveClosure::do_object_b(oop obj) {
-  HeapWord* addr = (HeapWord*)obj;
-  return addr != NULL &&
-         (!_g1h->is_in_g1_reserved(addr) || !_g1h->is_obj_ill(obj));
-}
-
 // 'Keep Alive' oop closure used by both serial parallel reference processing.
 // Uses the G1CMTask associated with a worker thread (for serial reference
 // processing the G1CMTask for worker 0 is used) to preserve (mark) and

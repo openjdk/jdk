@@ -109,7 +109,13 @@ class G1CMIsAliveClosure : public BoolObjectClosure {
   G1CollectedHeap* _g1h;
 public:
   G1CMIsAliveClosure(G1CollectedHeap* g1h) : _g1h(g1h) { }
+  bool do_object_b(oop obj);
+};
 
+class G1CMSubjectToDiscoveryClosure : public BoolObjectClosure {
+  G1CollectedHeap* _g1h;
+public:
+  G1CMSubjectToDiscoveryClosure(G1CollectedHeap* g1h) : _g1h(g1h) { }
   bool do_object_b(oop obj);
 };
 

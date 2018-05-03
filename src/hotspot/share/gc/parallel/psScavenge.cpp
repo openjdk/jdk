@@ -58,18 +58,19 @@
 #include "services/memoryService.hpp"
 #include "utilities/stack.inline.hpp"
 
-HeapWord*                  PSScavenge::_to_space_top_before_gc = NULL;
-int                        PSScavenge::_consecutive_skipped_scavenges = 0;
-ReferenceProcessor*        PSScavenge::_ref_processor = NULL;
-PSCardTable*               PSScavenge::_card_table = NULL;
-bool                       PSScavenge::_survivor_overflow = false;
-uint                       PSScavenge::_tenuring_threshold = 0;
-HeapWord*                  PSScavenge::_young_generation_boundary = NULL;
-uintptr_t                  PSScavenge::_young_generation_boundary_compressed = 0;
-elapsedTimer               PSScavenge::_accumulated_time;
-STWGCTimer                 PSScavenge::_gc_timer;
-ParallelScavengeTracer     PSScavenge::_gc_tracer;
-CollectorCounters*         PSScavenge::_counters = NULL;
+HeapWord*                     PSScavenge::_to_space_top_before_gc = NULL;
+int                           PSScavenge::_consecutive_skipped_scavenges = 0;
+SpanSubjectToDiscoveryClosure PSScavenge::_span_based_discoverer;
+ReferenceProcessor*           PSScavenge::_ref_processor = NULL;
+PSCardTable*                  PSScavenge::_card_table = NULL;
+bool                          PSScavenge::_survivor_overflow = false;
+uint                          PSScavenge::_tenuring_threshold = 0;
+HeapWord*                     PSScavenge::_young_generation_boundary = NULL;
+uintptr_t                     PSScavenge::_young_generation_boundary_compressed = 0;
+elapsedTimer                  PSScavenge::_accumulated_time;
+STWGCTimer                    PSScavenge::_gc_timer;
+ParallelScavengeTracer        PSScavenge::_gc_tracer;
+CollectorCounters*            PSScavenge::_counters = NULL;
 
 // Define before use
 class PSIsAliveClosure: public BoolObjectClosure {
@@ -766,10 +767,9 @@ void PSScavenge::initialize() {
   set_young_generation_boundary(young_gen->eden_space()->bottom());
 
   // Initialize ref handling object for scavenging.
-  MemRegion mr = young_gen->reserved();
-
+  _span_based_discoverer.set_span(young_gen->reserved());
   _ref_processor =
-    new ReferenceProcessor(mr,                         // span
+    new ReferenceProcessor(&_span_based_discoverer,
                            ParallelRefProcEnabled && (ParallelGCThreads > 1), // mt processing
                            ParallelGCThreads,          // mt processing degree
                            true,                       // mt discovery

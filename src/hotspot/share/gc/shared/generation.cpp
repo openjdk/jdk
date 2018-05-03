@@ -77,7 +77,8 @@ size_t Generation::max_capacity() const {
 void Generation::ref_processor_init() {
   assert(_ref_processor == NULL, "a reference processor already exists");
   assert(!_reserved.is_empty(), "empty generation?");
-  _ref_processor = new ReferenceProcessor(_reserved);    // a vanilla reference processor
+  _span_based_discoverer.set_span(_reserved);
+  _ref_processor = new ReferenceProcessor(&_span_based_discoverer);    // a vanilla reference processor
   if (_ref_processor == NULL) {
     vm_exit_during_initialization("Could not allocate ReferenceProcessor object");
   }

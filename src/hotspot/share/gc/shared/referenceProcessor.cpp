@@ -92,20 +92,22 @@ void ReferenceProcessor::enable_discovery(bool check_no_refs) {
   _discovering_refs = true;
 }
 
-ReferenceProcessor::ReferenceProcessor(MemRegion span,
+ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discovery,
                                        bool      mt_processing,
                                        uint      mt_processing_degree,
                                        bool      mt_discovery,
                                        uint      mt_discovery_degree,
                                        bool      atomic_discovery,
                                        BoolObjectClosure* is_alive_non_header)  :
+  _is_subject_to_discovery(is_subject_to_discovery),
   _discovering_refs(false),
   _enqueuing_is_done(false),
   _is_alive_non_header(is_alive_non_header),
   _processing_is_mt(mt_processing),
   _next_id(0)
 {
-  _span = span;
+  assert(is_subject_to_discovery != NULL, "must be set");
+
   _discovery_is_atomic = atomic_discovery;
   _discovery_is_mt     = mt_discovery;
   _num_q               = MAX2(1U, mt_processing_degree);
@@ -449,6 +451,19 @@ ReferenceProcessor::process_phase1(DiscoveredList&    refs_list,
                              iter.removed(), iter.processed(), p2i(&refs_list));
 }
 
+void ReferenceProcessor::process_phase2(DiscoveredList&    refs_list,
+                                        BoolObjectClosure* is_alive,
+                                        OopClosure*        keep_alive,
+                                        VoidClosure*       complete_gc) {
+  if (discovery_is_atomic()) {
+    // complete_gc is ignored in this case for this phase
+    pp2_work(refs_list, is_alive, keep_alive);
+  } else {
+    assert(complete_gc != NULL, "Error");
+    pp2_work_concurrent_discovery(refs_list, is_alive,
+                                  keep_alive, complete_gc);
+  }
+}
 // Traverse the list and remove any Refs that are not active, or
 // whose referents are either alive or NULL.
 void
@@ -941,6 +956,10 @@ void ReferenceProcessor::verify_referent(oop obj) {
 }
 #endif
 
+bool ReferenceProcessor::is_subject_to_discovery(oop const obj) const {
+  return _is_subject_to_discovery->do_object_b(obj);
+}
+
 // We mention two of several possible choices here:
 // #0: if the reference object is not in the "originating generation"
 //     (or part of the heap being collected, indicated by our "span"
@@ -978,9 +997,8 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     return false;
   }
 
-  HeapWord* obj_addr = (HeapWord*)obj;
   if (RefDiscoveryPolicy == ReferenceBasedDiscovery &&
-      !_span.contains(obj_addr)) {
+      !is_subject_to_discovery(obj)) {
     // Reference is not in the originating generation;
     // don't treat it specially (i.e. we want to scan it as a normal
     // object with strong references).
@@ -1039,16 +1057,15 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     // Discover if and only if EITHER:
     // .. reference is in our span, OR
     // .. we are an atomic collector and referent is in our span
-    if (_span.contains(obj_addr) ||
+    if (is_subject_to_discovery(obj) ||
         (discovery_is_atomic() &&
-         _span.contains(java_lang_ref_Reference::referent(obj)))) {
-      // should_enqueue = true;
+         is_subject_to_discovery(java_lang_ref_Reference::referent(obj)))) {
     } else {
       return false;
     }
   } else {
     assert(RefDiscoveryPolicy == ReferenceBasedDiscovery &&
-           _span.contains(obj_addr), "code inconsistency");
+           is_subject_to_discovery(obj), "code inconsistency");
   }
 
   // Get the right type of discovered queue head.

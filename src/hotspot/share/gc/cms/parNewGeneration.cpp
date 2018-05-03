@@ -1471,8 +1471,9 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
 void ParNewGeneration::ref_processor_init() {
   if (_ref_processor == NULL) {
     // Allocate and initialize a reference processor
+    _span_based_discoverer.set_span(_reserved);
     _ref_processor =
-      new ReferenceProcessor(_reserved,                  // span
+      new ReferenceProcessor(&_span_based_discoverer,    // span
                              ParallelRefProcEnabled && (ParallelGCThreads > 1), // mt processing
                              ParallelGCThreads,          // mt processing degree
                              refs_discovery_is_mt(),     // mt discovery

@@ -617,7 +617,7 @@ class CMSCollector: public CHeapObj<mtGC> {
 
  protected:
   ConcurrentMarkSweepGeneration* _cmsGen;  // Old gen (CMS)
-  MemRegion                      _span;    // Span covering above two
+  MemRegion                      _span;    // Span covering above
   CardTableRS*                   _ct;      // Card table
 
   // CMS marking support structures
@@ -641,8 +641,9 @@ class CMSCollector: public CHeapObj<mtGC> {
   NOT_PRODUCT(ssize_t _num_par_pushes;)
 
   // ("Weak") Reference processing support.
-  ReferenceProcessor*            _ref_processor;
-  CMSIsAliveClosure              _is_alive_closure;
+  SpanSubjectToDiscoveryClosure _span_based_discoverer;
+  ReferenceProcessor*           _ref_processor;
+  CMSIsAliveClosure             _is_alive_closure;
   // Keep this textually after _markBitMap and _span; c'tor dependency.
 
   ConcurrentMarkSweepThread*     _cmsThread;   // The thread doing the work
@@ -841,6 +842,7 @@ class CMSCollector: public CHeapObj<mtGC> {
                ConcurrentMarkSweepPolicy*     cp);
   ConcurrentMarkSweepThread* cmsThread() { return _cmsThread; }
 
+  MemRegion ref_processor_span() const { return _span_based_discoverer.span(); }
   ReferenceProcessor* ref_processor() { return _ref_processor; }
   void ref_processor_init();
 

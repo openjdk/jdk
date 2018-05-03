@@ -38,6 +38,22 @@
 #include "gc/shared/taskqueue.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 
+inline bool G1CMIsAliveClosure::do_object_b(oop obj) {
+  return !_g1h->is_obj_ill(obj);
+}
+
+inline bool G1CMSubjectToDiscoveryClosure::do_object_b(oop obj) {
+  // Re-check whether the passed object is null. With ReferentBasedDiscovery the
+  // mutator may have changed the referent's value (i.e. cleared it) between the
+  // time the referent was determined to be potentially alive and calling this
+  // method.
+  if (obj == NULL) {
+    return false;
+  }
+  assert(_g1h->is_in_reserved(obj), "Trying to discover obj " PTR_FORMAT " not in heap", p2i(obj));
+  return _g1h->heap_region_containing(obj)->is_old_or_humongous();
+}
+
 inline bool G1ConcurrentMark::mark_in_next_bitmap(uint const worker_id, oop const obj, size_t const obj_size) {
   HeapRegion* const hr = _g1h->heap_region_containing(obj);
   return mark_in_next_bitmap(worker_id, hr, obj, obj_size);

@@ -65,9 +65,11 @@ elapsedTimer        PSMarkSweep::_accumulated_time;
 jlong               PSMarkSweep::_time_of_last_gc   = 0;
 CollectorCounters*  PSMarkSweep::_counters = NULL;
 
+SpanSubjectToDiscoveryClosure PSMarkSweep::_span_based_discoverer;
+
 void PSMarkSweep::initialize() {
-  MemRegion mr = ParallelScavengeHeap::heap()->reserved_region();
-  set_ref_processor(new ReferenceProcessor(mr));     // a vanilla ref proc
+  _span_based_discoverer.set_span(ParallelScavengeHeap::heap()->reserved_region());
+  set_ref_processor(new ReferenceProcessor(&_span_based_discoverer));     // a vanilla ref proc
   _counters = new CollectorCounters("PSMarkSweep", 1);
 }
 

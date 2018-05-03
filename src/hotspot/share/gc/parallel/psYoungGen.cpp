@@ -839,7 +839,7 @@ void PSYoungGen::reset_after_change() {
 void PSYoungGen::reset_survivors_after_shrink() {
   _reserved = MemRegion((HeapWord*)virtual_space()->low_boundary(),
                         (HeapWord*)virtual_space()->high_boundary());
-  PSScavenge::reference_processor()->set_span(_reserved);
+  PSScavenge::set_subject_to_discovery_span(_reserved);
 
   MutableSpace* space_shrinking = NULL;
   if (from_space()->end() > to_space()->end()) {
