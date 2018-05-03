@@ -273,6 +273,10 @@ class os: AllStatic {
   static void map_stack_shadow_pages(address sp);
   static bool stack_shadow_pages_available(Thread *thread, const methodHandle& method, address sp);
 
+  // Find committed memory region within specified range (start, start + size),
+  // return true if found any
+  static bool committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size);
+
   // OS interface to Virtual Memory
 
   // Return the default page size.
