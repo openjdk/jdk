@@ -200,7 +200,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 #if COMPILER2_OR_JVMCI
   // Reallocate the non-escaping objects and restore their fields. Then
   // relock objects if synchronization on them was eliminated.
-#ifndef INCLUDE_JVMCI
+#if !INCLUDE_JVMCI
   if (DoEscapeAnalysis || EliminateNestedLocks) {
     if (EliminateAllocations) {
 #endif // INCLUDE_JVMCI
@@ -248,7 +248,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
         // Restore result.
         deoptee.set_saved_oop_result(&map, return_value());
       }
-#ifndef INCLUDE_JVMCI
+#if !INCLUDE_JVMCI
     }
     if (EliminateLocks) {
 #endif // INCLUDE_JVMCI
@@ -283,7 +283,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 #endif // !PRODUCT
         }
       }
-#ifndef INCLUDE_JVMCI
+#if !INCLUDE_JVMCI
     }
   }
 #endif // INCLUDE_JVMCI
@@ -491,7 +491,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 
   assert(CodeCache::find_blob_unsafe(frame_pcs[0]) != NULL, "bad pc");
 
-#ifdef INCLUDE_JVMCI
+#if INCLUDE_JVMCI
   if (exceptionObject() != NULL) {
     thread->set_exception_oop(exceptionObject());
     exec_mode = Unpack_exception;
