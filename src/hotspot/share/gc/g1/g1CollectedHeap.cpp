@@ -4053,12 +4053,17 @@ void G1CollectedHeap::evacuate_collection_set(G1ParScanThreadStateSet* per_threa
 }
 
 void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
+  // Also cleans the card table from temporary duplicate detection information used
+  // during UpdateRS/ScanRS.
+  g1_rem_set()->cleanup_after_oops_into_collection_set_do();
+
   // Process any discovered reference objects - we have
   // to do this _before_ we retire the GC alloc regions
   // as we may have to copy some 'reachable' referent
   // objects (and their reachable sub-graphs) that were
   // not copied during the pause.
   process_discovered_references(per_thread_states);
+  enqueue_discovered_references(per_thread_states);
 
   G1STWIsAliveClosure is_alive(this);
   G1KeepAliveClosure keep_alive(this);
@@ -4081,8 +4086,6 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
     g1_policy()->phase_times()->record_string_dedup_fixup_time(fixup_time_ms);
   }
 
-  g1_rem_set()->cleanup_after_oops_into_collection_set_do();
-
   if (evacuation_failed()) {
     restore_after_evac_failure();
 
@@ -4093,15 +4096,6 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
   }
 
   _preserved_marks_set.assert_empty();
-
-  // Enqueue any remaining references remaining on the STW
-  // reference processor's discovered lists. We need to do
-  // this after the card table is cleaned (and verified) as
-  // the act of enqueueing entries on to the pending list
-  // will log these updates (and dirty their associated
-  // cards). We need these updates logged to update any
-  // RSets.
-  enqueue_discovered_references(per_thread_states);
 
   _allocator->release_gc_alloc_regions(evacuation_info);
 
