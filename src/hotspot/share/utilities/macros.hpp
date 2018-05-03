@@ -172,12 +172,12 @@
 #define INCLUDE_JVMCI 1
 #endif
 
-#ifdef INCLUDE_AOT
-# if INCLUDE_AOT && !(INCLUDE_JVMCI)
-#   error "Must have JVMCI for AOT"
-# endif
-#else
-# define INCLUDE_AOT 0
+#ifndef INCLUDE_AOT
+#define INCLUDE_AOT 1
+#endif
+
+#if INCLUDE_AOT && !INCLUDE_JVMCI
+#  error "Must have JVMCI for AOT"
 #endif
 
 #if INCLUDE_JVMCI
