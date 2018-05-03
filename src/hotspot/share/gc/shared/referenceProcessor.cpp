@@ -110,21 +110,21 @@ ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discover
 
   _discovery_is_atomic = atomic_discovery;
   _discovery_is_mt     = mt_discovery;
-  _num_q               = MAX2(1U, mt_processing_degree);
-  _max_num_q           = MAX2(_num_q, mt_discovery_degree);
+  _num_queues          = MAX2(1U, mt_processing_degree);
+  _max_num_queues      = MAX2(_num_queues, mt_discovery_degree);
   _discovered_refs     = NEW_C_HEAP_ARRAY(DiscoveredList,
-            _max_num_q * number_of_subclasses_of_ref(), mtGC);
+            _max_num_queues * number_of_subclasses_of_ref(), mtGC);
 
   if (_discovered_refs == NULL) {
     vm_exit_during_initialization("Could not allocated RefProc Array");
   }
   _discoveredSoftRefs    = &_discovered_refs[0];
-  _discoveredWeakRefs    = &_discoveredSoftRefs[_max_num_q];
-  _discoveredFinalRefs   = &_discoveredWeakRefs[_max_num_q];
-  _discoveredPhantomRefs = &_discoveredFinalRefs[_max_num_q];
+  _discoveredWeakRefs    = &_discoveredSoftRefs[_max_num_queues];
+  _discoveredFinalRefs   = &_discoveredWeakRefs[_max_num_queues];
+  _discoveredPhantomRefs = &_discoveredFinalRefs[_max_num_queues];
 
   // Initialize all entries to NULL
-  for (uint i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
+  for (uint i = 0; i < _max_num_queues * number_of_subclasses_of_ref(); i++) {
     _discovered_refs[i].set_head(NULL);
     _discovered_refs[i].set_length(0);
   }
@@ -135,7 +135,7 @@ ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discover
 #ifndef PRODUCT
 void ReferenceProcessor::verify_no_references_recorded() {
   guarantee(!_discovering_refs, "Discovering refs?");
-  for (uint i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
+  for (uint i = 0; i < _max_num_queues * number_of_subclasses_of_ref(); i++) {
     guarantee(_discovered_refs[i].is_empty(),
               "Found non-empty discovered list at %u", i);
   }
@@ -143,7 +143,7 @@ void ReferenceProcessor::verify_no_references_recorded() {
 #endif
 
 void ReferenceProcessor::weak_oops_do(OopClosure* f) {
-  for (uint i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
+  for (uint i = 0; i < _max_num_queues * number_of_subclasses_of_ref(); i++) {
     if (UseCompressedOops) {
       f->do_oop((narrowOop*)_discovered_refs[i].adr_head());
     } else {
@@ -183,7 +183,7 @@ void ReferenceProcessor::update_soft_ref_master_clock() {
 
 size_t ReferenceProcessor::total_count(DiscoveredList lists[]) const {
   size_t total = 0;
-  for (uint i = 0; i < _max_num_q; ++i) {
+  for (uint i = 0; i < _max_num_queues; ++i) {
     total += lists[i].length();
   }
   return total;
@@ -283,21 +283,21 @@ void ReferenceProcessor::enqueue_discovered_reflist(DiscoveredList& refs_list) {
   log_develop_trace(gc, ref)("ReferenceProcessor::enqueue_discovered_reflist list " INTPTR_FORMAT, p2i(&refs_list));
 
   oop obj = NULL;
-  oop next_d = refs_list.head();
+  oop next_discovered = refs_list.head();
   // Walk down the list, self-looping the next field
   // so that the References are not considered active.
-  while (obj != next_d) {
-    obj = next_d;
+  while (obj != next_discovered) {
+    obj = next_discovered;
     assert(obj->is_instance(), "should be an instance object");
     assert(InstanceKlass::cast(obj->klass())->is_reference_instance_klass(), "should be reference object");
-    next_d = java_lang_ref_Reference::discovered(obj);
-    log_develop_trace(gc, ref)("        obj " INTPTR_FORMAT "/next_d " INTPTR_FORMAT, p2i(obj), p2i(next_d));
+    next_discovered = java_lang_ref_Reference::discovered(obj);
+    log_develop_trace(gc, ref)("        obj " INTPTR_FORMAT "/next_discovered " INTPTR_FORMAT, p2i(obj), p2i(next_discovered));
     assert(java_lang_ref_Reference::next(obj) == NULL,
            "Reference not active; should not be discovered");
     // Self-loop next, so as to make Ref not active.
     java_lang_ref_Reference::set_next_raw(obj, obj);
-    if (next_d != obj) {
-      HeapAccess<AS_NO_KEEPALIVE>::oop_store_at(obj, java_lang_ref_Reference::discovered_offset, next_d);
+    if (next_discovered != obj) {
+      HeapAccess<AS_NO_KEEPALIVE>::oop_store_at(obj, java_lang_ref_Reference::discovered_offset, next_discovered);
     } else {
       // This is the last object.
       // Swap refs_list into pending list and set obj's
@@ -321,14 +321,14 @@ public:
   virtual void work(unsigned int work_id) {
     RefProcWorkerTimeTracker tt(ReferenceProcessorPhaseTimes::RefEnqueue, _phase_times, work_id);
 
-    assert(work_id < (unsigned int)_ref_processor.max_num_q(), "Index out-of-bounds");
+    assert(work_id < (unsigned int)_ref_processor.max_num_queues(), "Index out-of-bounds");
     // Simplest first cut: static partitioning.
     int index = work_id;
     // The increment on "index" must correspond to the maximum number of queues
     // (n_queues) with which that ReferenceProcessor was created.  That
     // is because of the "clever" way the discovered references lists were
     // allocated and are indexed into.
-    assert(_n_queues == (int) _ref_processor.max_num_q(), "Different number not expected");
+    assert(_n_queues == (int) _ref_processor.max_num_queues(), "Different number not expected");
     for (int j = 0;
          j < ReferenceProcessor::number_of_subclasses_of_ref();
          j++, index += _n_queues) {
@@ -352,11 +352,11 @@ void ReferenceProcessor::enqueue_discovered_reflists(AbstractRefProcTaskExecutor
 
   if (_processing_is_mt && task_executor != NULL) {
     // Parallel code
-    RefProcEnqueueTask tsk(*this, _discovered_refs, _max_num_q, phase_times);
+    RefProcEnqueueTask tsk(*this, _discovered_refs, _max_num_queues, phase_times);
     task_executor->execute(tsk);
   } else {
     // Serial code: call the parent class's implementation
-    for (uint i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
+    for (uint i = 0; i < _max_num_queues * number_of_subclasses_of_ref(); i++) {
       enqueue_discovered_reflist(_discovered_refs[i]);
       _discovered_refs[i].set_head(NULL);
       _discovered_refs[i].set_length(0);
@@ -365,13 +365,14 @@ void ReferenceProcessor::enqueue_discovered_reflists(AbstractRefProcTaskExecutor
 }
 
 void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
-  _discovered_addr = java_lang_ref_Reference::discovered_addr_raw(_ref);
-  oop discovered = java_lang_ref_Reference::discovered(_ref);
-  assert(_discovered_addr && oopDesc::is_oop_or_null(discovered),
+  _current_discovered_addr = java_lang_ref_Reference::discovered_addr_raw(_current_discovered);
+  oop discovered = java_lang_ref_Reference::discovered(_current_discovered);
+  assert(_current_discovered_addr && oopDesc::is_oop_or_null(discovered),
          "Expected an oop or NULL for discovered field at " PTR_FORMAT, p2i(discovered));
-  _next = discovered;
-  _referent_addr = java_lang_ref_Reference::referent_addr_raw(_ref);
-  _referent = java_lang_ref_Reference::referent(_ref);
+  _next_discovered = discovered;
+
+  _referent_addr = java_lang_ref_Reference::referent_addr_raw(_current_discovered);
+  _referent = java_lang_ref_Reference::referent(_current_discovered);
   assert(Universe::heap()->is_in_reserved_or_null(_referent),
          "Wrong oop found in java.lang.Reference object");
   assert(allow_null_referent ?
@@ -383,23 +384,23 @@ void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
 }
 
 void DiscoveredListIterator::remove() {
-  assert(oopDesc::is_oop(_ref), "Dropping a bad reference");
-  RawAccess<>::oop_store(_discovered_addr, oop(NULL));
+  assert(oopDesc::is_oop(_current_discovered), "Dropping a bad reference");
+  RawAccess<>::oop_store(_current_discovered_addr, oop(NULL));
 
   // First _prev_next ref actually points into DiscoveredList (gross).
   oop new_next;
-  if (_next == _ref) {
+  if (_next_discovered == _current_discovered) {
     // At the end of the list, we should make _prev point to itself.
     // If _ref is the first ref, then _prev_next will be in the DiscoveredList,
     // and _prev will be NULL.
-    new_next = _prev;
+    new_next = _prev_discovered;
   } else {
-    new_next = _next;
+    new_next = _next_discovered;
   }
   // Remove Reference object from discovered list. Note that G1 does not need a
   // pre-barrier here because we know the Reference has already been found/marked,
   // that's how it ended up in the discovered list in the first place.
-  RawAccess<>::oop_store(_prev_next, new_next);
+  RawAccess<>::oop_store(_prev_discovered_addr, new_next);
   NOT_PRODUCT(_removed++);
   _refs_list.dec_length(1);
 }
@@ -539,15 +540,11 @@ ReferenceProcessor::pp2_work_concurrent_discovery(DiscoveredList&    refs_list,
   )
 }
 
-// Traverse the list and process the referents, by either
-// clearing them or keeping them (and their reachable
-// closure) alive.
-void
-ReferenceProcessor::process_phase3(DiscoveredList&    refs_list,
-                                   bool               clear_referent,
-                                   BoolObjectClosure* is_alive,
-                                   OopClosure*        keep_alive,
-                                   VoidClosure*       complete_gc) {
+void ReferenceProcessor::process_phase3(DiscoveredList&    refs_list,
+                                        bool               clear_referent,
+                                        BoolObjectClosure* is_alive,
+                                        OopClosure*        keep_alive,
+                                        VoidClosure*       complete_gc) {
   ResourceMark rm;
   DiscoveredListIterator iter(refs_list, keep_alive, is_alive);
   while (iter.has_next()) {
@@ -583,8 +580,8 @@ ReferenceProcessor::clear_discovered_references(DiscoveredList& refs_list) {
 
 void ReferenceProcessor::abandon_partial_discovery() {
   // loop over the lists
-  for (uint i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
-    if ((i % _max_num_q) == 0) {
+  for (uint i = 0; i < _max_num_queues * number_of_subclasses_of_ref(); i++) {
+    if ((i % _max_num_queues) == 0) {
       log_develop_trace(gc, ref)("Abandoning %s discovered list", list_name(i));
     }
     clear_discovered_references(_discovered_refs[i]);
@@ -692,7 +689,7 @@ void ReferenceProcessor::log_reflist_counts(DiscoveredList ref_lists[], uint act
   }
   log_develop_trace(gc, ref)("%s= " SIZE_FORMAT, st.as_string(), total_refs);
 #ifdef ASSERT
-  for (uint i = active_length; i < _max_num_q; i++) {
+  for (uint i = active_length; i < _max_num_queues; i++) {
     assert(ref_lists[i].length() == 0, SIZE_FORMAT " unexpected References in %u",
            ref_lists[i].length(), i);
   }
@@ -701,7 +698,7 @@ void ReferenceProcessor::log_reflist_counts(DiscoveredList ref_lists[], uint act
 #endif
 
 void ReferenceProcessor::set_active_mt_degree(uint v) {
-  _num_q = v;
+  _num_queues = v;
   _next_id = 0;
 }
 
@@ -715,20 +712,20 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
   size_t total_refs = 0;
   log_develop_trace(gc, ref)("Balance ref_lists ");
 
-  for (uint i = 0; i < _max_num_q; ++i) {
+  for (uint i = 0; i < _max_num_queues; ++i) {
     total_refs += ref_lists[i].length();
   }
-  log_reflist_counts(ref_lists, _max_num_q, total_refs);
-  size_t avg_refs = total_refs / _num_q + 1;
+  log_reflist_counts(ref_lists, _max_num_queues, total_refs);
+  size_t avg_refs = total_refs / _num_queues + 1;
   uint to_idx = 0;
-  for (uint from_idx = 0; from_idx < _max_num_q; from_idx++) {
+  for (uint from_idx = 0; from_idx < _max_num_queues; from_idx++) {
     bool move_all = false;
-    if (from_idx >= _num_q) {
+    if (from_idx >= _num_queues) {
       move_all = ref_lists[from_idx].length() > 0;
     }
     while ((ref_lists[from_idx].length() > avg_refs) ||
            move_all) {
-      assert(to_idx < _num_q, "Sanity Check!");
+      assert(to_idx < _num_queues, "Sanity Check!");
       if (ref_lists[to_idx].length() < avg_refs) {
         // move superfluous refs
         size_t refs_to_move;
@@ -774,16 +771,16 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
           break;
         }
       } else {
-        to_idx = (to_idx + 1) % _num_q;
+        to_idx = (to_idx + 1) % _num_queues;
       }
     }
   }
 #ifdef ASSERT
   size_t balanced_total_refs = 0;
-  for (uint i = 0; i < _num_q; ++i) {
+  for (uint i = 0; i < _num_queues; ++i) {
     balanced_total_refs += ref_lists[i].length();
   }
-  log_reflist_counts(ref_lists, _num_q, balanced_total_refs);
+  log_reflist_counts(ref_lists, _num_queues, balanced_total_refs);
   assert(total_refs == balanced_total_refs, "Balancing was incomplete");
 #endif
 }
@@ -826,7 +823,7 @@ void ReferenceProcessor::process_discovered_reflist(
       RefProcPhase1Task phase1(*this, refs_lists, policy, true /*marks_oops_alive*/, phase_times);
       task_executor->execute(phase1);
     } else {
-      for (uint i = 0; i < _max_num_q; i++) {
+      for (uint i = 0; i < _max_num_queues; i++) {
         process_phase1(refs_lists[i], policy,
                        is_alive, keep_alive, complete_gc);
       }
@@ -845,7 +842,7 @@ void ReferenceProcessor::process_discovered_reflist(
       RefProcPhase2Task phase2(*this, refs_lists, !discovery_is_atomic() /*marks_oops_alive*/, phase_times);
       task_executor->execute(phase2);
     } else {
-      for (uint i = 0; i < _max_num_q; i++) {
+      for (uint i = 0; i < _max_num_queues; i++) {
         process_phase2(refs_lists[i], is_alive, keep_alive, complete_gc);
       }
     }
@@ -860,7 +857,7 @@ void ReferenceProcessor::process_discovered_reflist(
       RefProcPhase3Task phase3(*this, refs_lists, clear_referent, true /*marks_oops_alive*/, phase_times);
       task_executor->execute(phase3);
     } else {
-      for (uint i = 0; i < _max_num_q; i++) {
+      for (uint i = 0; i < _max_num_queues; i++) {
         process_phase3(refs_lists[i], clear_referent,
                        is_alive, keep_alive, complete_gc);
       }
@@ -883,7 +880,7 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
       id = next_id();
     }
   }
-  assert(id < _max_num_q, "Id is out-of-bounds id %u and max id %u)", id, _max_num_q);
+  assert(id < _max_num_queues, "Id is out-of-bounds id %u and max id %u)", id, _max_num_queues);
 
   // Get the discovered queue to which we will add
   DiscoveredList* list = NULL;
@@ -1096,7 +1093,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
 }
 
 bool ReferenceProcessor::has_discovered_references() {
-  for (uint i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
+  for (uint i = 0; i < _max_num_queues * number_of_subclasses_of_ref(); i++) {
     if (!_discovered_refs[i].is_empty()) {
       return true;
     }
@@ -1118,7 +1115,7 @@ void ReferenceProcessor::preclean_discovered_references(
   // Soft references
   {
     GCTraceTime(Debug, gc, ref) tm("Preclean SoftReferences", gc_timer);
-    for (uint i = 0; i < _max_num_q; i++) {
+    for (uint i = 0; i < _max_num_queues; i++) {
       if (yield->should_return()) {
         return;
       }
@@ -1130,7 +1127,7 @@ void ReferenceProcessor::preclean_discovered_references(
   // Weak references
   {
     GCTraceTime(Debug, gc, ref) tm("Preclean WeakReferences", gc_timer);
-    for (uint i = 0; i < _max_num_q; i++) {
+    for (uint i = 0; i < _max_num_queues; i++) {
       if (yield->should_return()) {
         return;
       }
@@ -1142,7 +1139,7 @@ void ReferenceProcessor::preclean_discovered_references(
   // Final references
   {
     GCTraceTime(Debug, gc, ref) tm("Preclean FinalReferences", gc_timer);
-    for (uint i = 0; i < _max_num_q; i++) {
+    for (uint i = 0; i < _max_num_queues; i++) {
       if (yield->should_return()) {
         return;
       }
@@ -1154,7 +1151,7 @@ void ReferenceProcessor::preclean_discovered_references(
   // Phantom references
   {
     GCTraceTime(Debug, gc, ref) tm("Preclean PhantomReferences", gc_timer);
-    for (uint i = 0; i < _max_num_q; i++) {
+    for (uint i = 0; i < _max_num_queues; i++) {
       if (yield->should_return()) {
         return;
       }
@@ -1217,10 +1214,10 @@ ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,
 }
 
 const char* ReferenceProcessor::list_name(uint i) {
-   assert(i <= _max_num_q * number_of_subclasses_of_ref(),
+   assert(i <= _max_num_queues * number_of_subclasses_of_ref(),
           "Out of bounds index");
 
-   int j = i / _max_num_q;
+   int j = i / _max_num_queues;
    switch (j) {
      case 0: return "SoftRef";
      case 1: return "WeakRef";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,9 +51,9 @@ DiscoveredListIterator::DiscoveredListIterator(DiscoveredList&    refs_list,
                                                OopClosure*        keep_alive,
                                                BoolObjectClosure* is_alive):
   _refs_list(refs_list),
-  _prev_next(refs_list.adr_head()),
-  _prev(NULL),
-  _ref(refs_list.head()),
+  _prev_discovered_addr(refs_list.adr_head()),
+  _prev_discovered(NULL),
+  _current_discovered(refs_list.head()),
 #ifdef ASSERT
   _first_seen(refs_list.head()),
 #endif
@@ -61,7 +61,7 @@ DiscoveredListIterator::DiscoveredListIterator(DiscoveredList&    refs_list,
   _processed(0),
   _removed(0),
 #endif
-  _next(NULL),
+  _next_discovered(NULL),
   _keep_alive(keep_alive),
   _is_alive(is_alive) {
 }
