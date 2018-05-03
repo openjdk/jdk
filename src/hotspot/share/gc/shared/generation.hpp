@@ -100,6 +100,7 @@ class Generation: public CHeapObj<mtGC> {
   VirtualSpace _virtual_space;
 
   // ("Weak") Reference processing support
+  SpanSubjectToDiscoveryClosure _span_based_discoverer;
   ReferenceProcessor* _ref_processor;
 
   // Performance Counters

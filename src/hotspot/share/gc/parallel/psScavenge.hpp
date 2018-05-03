@@ -65,14 +65,15 @@ class PSScavenge: AllStatic {
 
  protected:
   // Flags/counters
-  static ReferenceProcessor*  _ref_processor;        // Reference processor for scavenging.
-  static PSIsAliveClosure     _is_alive_closure;     // Closure used for reference processing
-  static PSCardTable*         _card_table;           // We cache the card table for fast access.
-  static bool                 _survivor_overflow;    // Overflow this collection
-  static uint                 _tenuring_threshold;   // tenuring threshold for next scavenge
-  static elapsedTimer         _accumulated_time;     // total time spent on scavenge
-  static STWGCTimer           _gc_timer;             // GC time book keeper
-  static ParallelScavengeTracer _gc_tracer;          // GC tracing
+  static SpanSubjectToDiscoveryClosure _span_based_discoverer;
+  static ReferenceProcessor*           _ref_processor;        // Reference processor for scavenging.
+  static PSIsAliveClosure              _is_alive_closure;     // Closure used for reference processing
+  static PSCardTable*                  _card_table;           // We cache the card table for fast access.
+  static bool                          _survivor_overflow;    // Overflow this collection
+  static uint                          _tenuring_threshold;   // tenuring threshold for next scavenge
+  static elapsedTimer                  _accumulated_time;     // total time spent on scavenge
+  static STWGCTimer                    _gc_timer;             // GC time book keeper
+  static ParallelScavengeTracer        _gc_tracer;          // GC tracing
   // The lowest address possible for the young_gen.
   // This is used to decide if an oop should be scavenged,
   // cards should be marked, etc.
@@ -102,6 +103,9 @@ class PSScavenge: AllStatic {
   // Performance Counters
   static CollectorCounters* counters()           { return _counters; }
 
+  static void set_subject_to_discovery_span(MemRegion mr) {
+    _span_based_discoverer.set_span(mr);
+  }
   // Used by scavenge_contents && psMarkSweep
   static ReferenceProcessor* const reference_processor() {
     assert(_ref_processor != NULL, "Sanity");

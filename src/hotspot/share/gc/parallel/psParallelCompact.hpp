@@ -968,6 +968,7 @@ class PSParallelCompact : AllStatic {
   static SpaceInfo            _space_info[last_space_id];
 
   // Reference processing (used in ...follow_contents)
+  static SpanSubjectToDiscoveryClosure  _span_based_discoverer;
   static ReferenceProcessor*  _ref_processor;
 
   // Values computed at initialization and used by dead_wood_limiter().

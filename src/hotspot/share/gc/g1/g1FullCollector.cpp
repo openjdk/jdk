@@ -112,7 +112,9 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap, GCMemoryManager* memory_
     _preserved_marks_set(true),
     _serial_compaction_point(),
     _is_alive(heap->concurrent_mark()->next_mark_bitmap()),
-    _is_alive_mutator(heap->ref_processor_stw(), &_is_alive) {
+    _is_alive_mutator(heap->ref_processor_stw(), &_is_alive),
+    _always_subject_to_discovery(),
+    _is_subject_mutator(heap->ref_processor_stw(), &_always_subject_to_discovery) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
 
   _preserved_marks_set.init(_num_workers);

@@ -1410,10 +1410,12 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   _g1_policy(new G1Policy(_gc_timer_stw)),
   _collection_set(this, _g1_policy),
   _dirty_card_queue_set(false),
-  _is_alive_closure_cm(this),
-  _is_alive_closure_stw(this),
-  _ref_processor_cm(NULL),
   _ref_processor_stw(NULL),
+  _is_alive_closure_stw(this),
+  _is_subject_to_discovery_stw(this),
+  _ref_processor_cm(NULL),
+  _is_alive_closure_cm(this),
+  _is_subject_to_discovery_cm(this),
   _bot(NULL),
   _hot_card_cache(NULL),
   _g1_rem_set(NULL),
@@ -1786,43 +1788,27 @@ void G1CollectedHeap::ref_processing_init() {
   //     * Discovery is atomic - i.e. not concurrent.
   //     * Reference discovery will not need a barrier.
 
-  MemRegion mr = reserved_region();
-
   bool mt_processing = ParallelRefProcEnabled && (ParallelGCThreads > 1);
 
   // Concurrent Mark ref processor
   _ref_processor_cm =
-    new ReferenceProcessor(mr,    // span
-                           mt_processing,
-                                // mt processing
-                           ParallelGCThreads,
-                                // degree of mt processing
-                           (ParallelGCThreads > 1) || (ConcGCThreads > 1),
-                                // mt discovery
-                           MAX2(ParallelGCThreads, ConcGCThreads),
-                                // degree of mt discovery
-                           false,
-                                // Reference discovery is not atomic
-                           &_is_alive_closure_cm);
-                                // is alive closure
-                                // (for efficiency/performance)
+    new ReferenceProcessor(&_is_subject_to_discovery_cm,
+                           mt_processing,                                  // mt processing
+                           ParallelGCThreads,                              // degree of mt processing
+                           (ParallelGCThreads > 1) || (ConcGCThreads > 1), // mt discovery
+                           MAX2(ParallelGCThreads, ConcGCThreads),         // degree of mt discovery
+                           false,                                          // Reference discovery is not atomic
+                           &_is_alive_closure_cm);                         // is alive closure
 
   // STW ref processor
   _ref_processor_stw =
-    new ReferenceProcessor(mr,    // span
-                           mt_processing,
-                                // mt processing
-                           ParallelGCThreads,
-                                // degree of mt processing
-                           (ParallelGCThreads > 1),
-                                // mt discovery
-                           ParallelGCThreads,
-                                // degree of mt discovery
-                           true,
-                                // Reference discovery is atomic
-                           &_is_alive_closure_stw);
-                                // is alive closure
-                                // (for efficiency/performance)
+    new ReferenceProcessor(&_is_subject_to_discovery_stw,
+                           mt_processing,                        // mt processing
+                           ParallelGCThreads,                    // degree of mt processing
+                           (ParallelGCThreads > 1),              // mt discovery
+                           ParallelGCThreads,                    // degree of mt discovery
+                           true,                                 // Reference discovery is atomic
+                           &_is_alive_closure_stw);              // is alive closure
 }
 
 CollectorPolicy* G1CollectedHeap::collector_policy() const {
@@ -3642,24 +3628,19 @@ void G1CollectedHeap::redirty_logged_cards() {
 
 // Weak Reference Processing support
 
-// An always "is_alive" closure that is used to preserve referents.
-// If the object is non-null then it's alive.  Used in the preservation
-// of referent objects that are pointed to by reference objects
-// discovered by the CM ref processor.
-class G1AlwaysAliveClosure: public BoolObjectClosure {
-public:
-  bool do_object_b(oop p) {
-    if (p != NULL) {
-      return true;
-    }
-    return false;
-  }
-};
-
 bool G1STWIsAliveClosure::do_object_b(oop p) {
   // An object is reachable if it is outside the collection set,
   // or is inside and copied.
   return !_g1h->is_in_cset(p) || p->is_forwarded();
+}
+
+bool G1STWSubjectToDiscoveryClosure::do_object_b(oop obj) {
+  assert(obj != NULL, "must not be NULL");
+  assert(_g1h->is_in_reserved(obj), "Trying to discover obj " PTR_FORMAT " not in heap", p2i(obj));
+  // The areas the CM and STW ref processor manage must be disjoint. The is_in_cset() below
+  // may falsely indicate that this is not the case here: however the collection set only
+  // contains old regions when concurrent mark is not running.
+  return _g1h->is_in_cset(obj) || _g1h->heap_region_containing(obj)->is_survivor();
 }
 
 // Non Copying Keep Alive closure
@@ -3892,126 +3873,6 @@ void G1STWRefProcTaskExecutor::execute(EnqueueTask& enq_task) {
 
 // End of weak reference support closures
 
-// Abstract task used to preserve (i.e. copy) any referent objects
-// that are in the collection set and are pointed to by reference
-// objects discovered by the CM ref processor.
-
-class G1ParPreserveCMReferentsTask: public AbstractGangTask {
-protected:
-  G1CollectedHeap*         _g1h;
-  G1ParScanThreadStateSet* _pss;
-  RefToScanQueueSet*       _queues;
-  ParallelTaskTerminator   _terminator;
-  uint                     _n_workers;
-
-public:
-  G1ParPreserveCMReferentsTask(G1CollectedHeap* g1h, G1ParScanThreadStateSet* per_thread_states, int workers, RefToScanQueueSet *task_queues) :
-    AbstractGangTask("ParPreserveCMReferents"),
-    _g1h(g1h),
-    _pss(per_thread_states),
-    _queues(task_queues),
-    _terminator(workers, _queues),
-    _n_workers(workers)
-  {
-    g1h->ref_processor_cm()->set_active_mt_degree(workers);
-  }
-
-  void work(uint worker_id) {
-    G1GCParPhaseTimesTracker x(_g1h->g1_policy()->phase_times(), G1GCPhaseTimes::PreserveCMReferents, worker_id);
-
-    ResourceMark rm;
-    HandleMark   hm;
-
-    G1ParScanThreadState*          pss = _pss->state_for_worker(worker_id);
-    pss->set_ref_discoverer(NULL);
-    assert(pss->queue_is_empty(), "both queue and overflow should be empty");
-
-    // Is alive closure
-    G1AlwaysAliveClosure always_alive;
-
-    // Copying keep alive closure. Applied to referent objects that need
-    // to be copied.
-    G1CopyingKeepAliveClosure keep_alive(_g1h, pss->closures()->raw_strong_oops(), pss);
-
-    ReferenceProcessor* rp = _g1h->ref_processor_cm();
-
-    uint limit = ReferenceProcessor::number_of_subclasses_of_ref() * rp->max_num_q();
-    uint stride = MIN2(MAX2(_n_workers, 1U), limit);
-
-    // limit is set using max_num_q() - which was set using ParallelGCThreads.
-    // So this must be true - but assert just in case someone decides to
-    // change the worker ids.
-    assert(worker_id < limit, "sanity");
-    assert(!rp->discovery_is_atomic(), "check this code");
-
-    // Select discovered lists [i, i+stride, i+2*stride,...,limit)
-    for (uint idx = worker_id; idx < limit; idx += stride) {
-      DiscoveredList& ref_list = rp->discovered_refs()[idx];
-
-      DiscoveredListIterator iter(ref_list, &keep_alive, &always_alive);
-      while (iter.has_next()) {
-        // Since discovery is not atomic for the CM ref processor, we
-        // can see some null referent objects.
-        iter.load_ptrs(DEBUG_ONLY(true));
-        oop ref = iter.obj();
-
-        // This will filter nulls.
-        if (iter.is_referent_alive()) {
-          iter.make_referent_alive();
-        }
-        iter.move_to_next();
-      }
-    }
-
-    // Drain the queue - which may cause stealing
-    G1ParEvacuateFollowersClosure drain_queue(_g1h, pss, _queues, &_terminator);
-    drain_queue.do_void();
-    // Allocation buffers were retired at the end of G1ParEvacuateFollowersClosure
-    assert(pss->queue_is_empty(), "should be");
-  }
-};
-
-void G1CollectedHeap::preserve_cm_referents(G1ParScanThreadStateSet* per_thread_states) {
-  // Any reference objects, in the collection set, that were 'discovered'
-  // by the CM ref processor should have already been copied (either by
-  // applying the external root copy closure to the discovered lists, or
-  // by following an RSet entry).
-  //
-  // But some of the referents, that are in the collection set, that these
-  // reference objects point to may not have been copied: the STW ref
-  // processor would have seen that the reference object had already
-  // been 'discovered' and would have skipped discovering the reference,
-  // but would not have treated the reference object as a regular oop.
-  // As a result the copy closure would not have been applied to the
-  // referent object.
-  //
-  // We need to explicitly copy these referent objects - the references
-  // will be processed at the end of remarking.
-  //
-  // We also need to do this copying before we process the reference
-  // objects discovered by the STW ref processor in case one of these
-  // referents points to another object which is also referenced by an
-  // object discovered by the STW ref processor.
-  double preserve_cm_referents_time = 0.0;
-
-  // To avoid spawning task when there is no work to do, check that
-  // a concurrent cycle is active and that some references have been
-  // discovered.
-  if (concurrent_mark()->cm_thread()->during_cycle() &&
-      ref_processor_cm()->has_discovered_references()) {
-    double preserve_cm_referents_start = os::elapsedTime();
-    uint no_of_gc_workers = workers()->active_workers();
-    G1ParPreserveCMReferentsTask keep_cm_referents(this,
-                                                   per_thread_states,
-                                                   no_of_gc_workers,
-                                                   _task_queues);
-    workers()->run_task(&keep_cm_referents);
-    preserve_cm_referents_time = os::elapsedTime() - preserve_cm_referents_start;
-  }
-
-  g1_policy()->phase_times()->record_preserve_cm_referents_time_ms(preserve_cm_referents_time * 1000.0);
-}
-
 // Weak Reference processing during an evacuation pause (part 1).
 void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per_thread_states) {
   double ref_proc_start = os::elapsedTime();
@@ -4197,7 +4058,6 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
   // as we may have to copy some 'reachable' referent
   // objects (and their reachable sub-graphs) that were
   // not copied during the pause.
-  preserve_cm_referents(per_thread_states);
   process_discovered_references(per_thread_states);
 
   G1STWIsAliveClosure is_alive(this);
