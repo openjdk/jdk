@@ -1,4 +1,4 @@
-#  Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 #  This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,32 @@ tier1 = \
     lib \
     tools \
     -jdk/jshell/ExternalEditorTest.java \
+    -jdk/jshell/FailOverDirectExecutionControlTest.java \
+    -jdk/jshell/FailOverExecutionControlDyingLaunchTest.java \
+    -jdk/jshell/FailOverExecutionControlHangingListenTest.java \
+    -jdk/jshell/JdiHangingListenExecutionControlTest.java \
+    -jdk/jshell/JdiLaunchingExecutionControlTest.java \
+    -jdk/jshell/JdiListeningExecutionControlTest.java \
+    -jdk/jshell/JdiListeningLocalhostExecutionControlTest.java  \
+    -jdk/jshell/ToolBasicTest.java \
+    -jdk/jshell/ToolLocaleMessageTest.java \
     -jdk/jshell/ToolReloadTest.java \
-    -jdk/jshell/ToolLocaleMessageTest.java
+    -jdk/jshell/UserJdiUserRemoteTest.java
 
 # (Almost) no langtools tests are tier 2.
 tier2 = \
     jdk/jshell/ExternalEditorTest.java \
+    jdk/jshell/FailOverDirectExecutionControlTest.java \
+    jdk/jshell/FailOverExecutionControlDyingLaunchTest.java \
+    jdk/jshell/FailOverExecutionControlHangingListenTest.java \
+    jdk/jshell/JdiHangingListenExecutionControlTest.java \
+    jdk/jshell/JdiLaunchingExecutionControlTest.java \
+    jdk/jshell/JdiListeningExecutionControlTest.java \
+    jdk/jshell/JdiListeningLocalhostExecutionControlTest.java \
+    jdk/jshell/ToolBasicTest.java \
+    jdk/jshell/ToolLocaleMessageTest.java \
     jdk/jshell/ToolReloadTest.java \
-    jdk/jshell/ToolLocaleMessageTest.java
+    jdk/jshell/UserJdiUserRemoteTest.java
 
 # No langtools tests are tier 3 either.
 tier3 = 
