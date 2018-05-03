@@ -23,6 +23,7 @@
  */
 #include "precompiled.hpp"
 
+#include "logging/log.hpp"
 #include "memory/metaspace.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
@@ -36,6 +37,12 @@ void VirtualMemorySummary::initialize() {
   assert(sizeof(_snapshot) >= sizeof(VirtualMemorySnapshot), "Sanity Check");
   // Use placement operator new to initialize static data area.
   ::new ((void*)_snapshot) VirtualMemorySnapshot();
+}
+
+void VirtualMemorySummary::snapshot(VirtualMemorySnapshot* s) {
+  // Snapshot current thread stacks
+  VirtualMemoryTracker::snapshot_thread_stacks();
+  as_snapshot()->copy_to(s);
 }
 
 SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>* VirtualMemoryTracker::_reserved_regions;
@@ -286,6 +293,26 @@ void ReservedMemoryRegion::set_flag(MEMFLAGS f) {
   }
 }
 
+address ReservedMemoryRegion::thread_stack_uncommitted_bottom() const {
+  assert(flag() == mtThreadStack, "Only for thread stack");
+  LinkedListNode<CommittedMemoryRegion>* head = _committed_regions.head();
+  address bottom = base();
+  address top = base() + size();
+  while (head != NULL) {
+    address committed_top = head->data()->base() + head->data()->size();
+    if (committed_top < top) {
+      // committed stack guard pages, skip them
+      bottom = head->data()->base() + head->data()->size();
+      head = head->next();
+    } else {
+      assert(top == committed_top, "Sanity");
+      break;
+    }
+  }
+
+  return bottom;
+}
+
 bool VirtualMemoryTracker::initialize(NMT_TrackingLevel level) {
   if (level >= NMT_summary) {
     VirtualMemorySummary::initialize();
@@ -460,6 +487,80 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
   }
 }
 
+// Iterate the range, find committed region within its bound.
+class RegionIterator : public StackObj {
+private:
+  const address _start;
+  const size_t  _size;
+
+  address _current_start;
+  size_t  _current_size;
+public:
+  RegionIterator(address start, size_t size) :
+    _start(start), _size(size), _current_start(start), _current_size(size) {
+  }
+
+  // return true if committed region is found
+  bool next_committed(address& start, size_t& size);
+private:
+  address end() const { return _start + _size; }
+};
+
+bool RegionIterator::next_committed(address& committed_start, size_t& committed_size) {
+  if (end() <= _current_start) return false;
+
+  const size_t page_sz = os::vm_page_size();
+  assert(_current_start + _current_size == end(), "Must be");
+  if (os::committed_in_range(_current_start, _current_size, committed_start, committed_size)) {
+    assert(committed_start != NULL, "Must be");
+    assert(committed_size > 0 && is_aligned(committed_size, os::vm_page_size()), "Must be");
+
+    size_t remaining_size = (_current_start + _current_size) - (committed_start + committed_size);
+    _current_start = committed_start + committed_size;
+    _current_size = remaining_size;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+// Walk all known thread stacks, snapshot their committed ranges.
+class SnapshotThreadStackWalker : public VirtualMemoryWalker {
+public:
+  SnapshotThreadStackWalker() {}
+
+  bool do_allocation_site(const ReservedMemoryRegion* rgn) {
+    if (rgn->flag() == mtThreadStack) {
+      address stack_bottom = rgn->thread_stack_uncommitted_bottom();
+      address committed_start;
+      size_t  committed_size;
+      size_t stack_size = rgn->base() + rgn->size() - stack_bottom;
+
+      ReservedMemoryRegion* region = const_cast<ReservedMemoryRegion*>(rgn);
+      NativeCallStack ncs; // empty stack
+
+      RegionIterator itr(stack_bottom, stack_size);
+      DEBUG_ONLY(bool found_stack = false;)
+      while (itr.next_committed(committed_start, committed_size)) {
+        assert(committed_start != NULL, "Should not be null");
+        assert(committed_size > 0, "Should not be 0");
+        region->add_committed_region(committed_start, committed_size, ncs);
+        DEBUG_ONLY(found_stack = true;)
+      }
+#ifdef ASSERT
+      if (!found_stack) {
+        log_debug(thread)("Thread exited without proper cleanup, may leak thread object");
+      }
+#endif
+    }
+    return true;
+  }
+};
+
+void VirtualMemoryTracker::snapshot_thread_stacks() {
+  SnapshotThreadStackWalker walker;
+  walk_virtual_memory(&walker);
+}
 
 bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   assert(_reserved_regions != NULL, "Sanity check");
