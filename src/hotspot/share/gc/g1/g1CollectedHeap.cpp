@@ -988,9 +988,9 @@ void G1CollectedHeap::abort_concurrent_cycle() {
 
   // Disable discovery and empty the discovered lists
   // for the CM ref processor.
-  ref_processor_cm()->disable_discovery();
-  ref_processor_cm()->abandon_partial_discovery();
-  ref_processor_cm()->verify_no_references_recorded();
+  _ref_processor_cm->disable_discovery();
+  _ref_processor_cm->abandon_partial_discovery();
+  _ref_processor_cm->verify_no_references_recorded();
 
   // Abandon current iterations of concurrent marking and concurrent
   // refinement, if any are in progress.
@@ -1080,10 +1080,10 @@ void G1CollectedHeap::verify_after_full_collection() {
   // That will be done at the start of the next marking cycle.
   // We also know that the STW processor should no longer
   // discover any new references.
-  assert(!ref_processor_stw()->discovery_enabled(), "Postcondition");
-  assert(!ref_processor_cm()->discovery_enabled(), "Postcondition");
-  ref_processor_stw()->verify_no_references_recorded();
-  ref_processor_cm()->verify_no_references_recorded();
+  assert(!_ref_processor_stw->discovery_enabled(), "Postcondition");
+  assert(!_ref_processor_cm->discovery_enabled(), "Postcondition");
+  _ref_processor_stw->verify_no_references_recorded();
+  _ref_processor_cm->verify_no_references_recorded();
 }
 
 void G1CollectedHeap::print_heap_after_full_collection(G1HeapTransition* heap_transition) {
@@ -2839,14 +2839,14 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       // reference processing currently works in G1.
 
       // Enable discovery in the STW reference processor
-      ref_processor_stw()->enable_discovery();
+      _ref_processor_stw->enable_discovery();
 
       {
         // We want to temporarily turn off discovery by the
         // CM ref processor, if necessary, and turn it back on
         // on again later if we do. Using a scoped
         // NoRefDiscovery object will do this.
-        NoRefDiscovery no_cm_discovery(ref_processor_cm());
+        NoRefDiscovery no_cm_discovery(_ref_processor_cm);
 
         // Forget the current alloc region (we might even choose it to be part
         // of the collection set!).
@@ -2984,8 +2984,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         _verifier->verify_after_gc(verify_type);
         _verifier->check_bitmaps("GC End");
 
-        assert(!ref_processor_stw()->discovery_enabled(), "Postcondition");
-        ref_processor_stw()->verify_no_references_recorded();
+        assert(!_ref_processor_stw->discovery_enabled(), "Postcondition");
+        _ref_processor_stw->verify_no_references_recorded();
 
         // CM reference discovery will be re-enabled if necessary.
       }
