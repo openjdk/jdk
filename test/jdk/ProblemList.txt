@@ -243,7 +243,7 @@ sun/java2d/OpenGL/CopyAreaOOB.java 7001973 windows-all,macosx-all
 sun/java2d/SunGraphics2D/EmptyClipRenderingTest.java 8144029 macosx-all
 sun/java2d/SunGraphics2D/DrawImageBilinear.java 8191506 generic-all
 sun/java2d/SunGraphics2D/PolyVertTest.java 6986565 generic-all
-sun/java2d/SunGraphics2D/SimplePrimQuality.java 7992007 generic-all
+sun/java2d/SunGraphics2D/SimplePrimQuality.java 6992007 generic-all
 sun/java2d/SunGraphics2D/SourceClippingBlitTest/SourceClippingBlitTest.java 8196191 windows-all,macosx-all
 sun/java2d/pipe/InterpolationQualityTest.java 8171303 windows-all,linux-all,macosx-all
 java/awt/FullScreen/DisplayChangeVITest/DisplayChangeVITest.java 8169469 windows-all
