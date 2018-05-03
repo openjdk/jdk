@@ -516,7 +516,7 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
     }
     gen->collect(full, clear_soft_refs, size, is_tlab);
     if (!rp->enqueuing_is_done()) {
-      ReferenceProcessorPhaseTimes pt(NULL, rp->num_q());
+      ReferenceProcessorPhaseTimes pt(NULL, rp->num_queues());
       rp->enqueue_discovered_references(NULL, &pt);
       pt.print_enqueue_phase();
     } else {

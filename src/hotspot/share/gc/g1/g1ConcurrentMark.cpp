@@ -1656,7 +1656,7 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
     // Reference lists are balanced (see balance_all_queues() and balance_queues()).
     rp->set_active_mt_degree(active_workers);
 
-    ReferenceProcessorPhaseTimes pt(_gc_timer_cm, rp->num_q());
+    ReferenceProcessorPhaseTimes pt(_gc_timer_cm, rp->num_queues());
 
     // Process the weak references.
     const ReferenceProcessorStats& stats =
@@ -1675,7 +1675,7 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
     assert(has_overflown() || _global_mark_stack.is_empty(),
            "Mark stack should be empty (unless it has overflown)");
 
-    assert(rp->num_q() == active_workers, "why not");
+    assert(rp->num_queues() == active_workers, "why not");
 
     rp->enqueue_discovered_references(executor, &pt);
 

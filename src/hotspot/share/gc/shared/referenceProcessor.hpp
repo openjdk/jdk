@@ -77,13 +77,15 @@ private:
 class DiscoveredListIterator {
 private:
   DiscoveredList&    _refs_list;
-  HeapWord*          _prev_next;
-  oop                _prev;
-  oop                _ref;
-  HeapWord*          _discovered_addr;
-  oop                _next;
+  HeapWord*          _prev_discovered_addr;
+  oop                _prev_discovered;
+  oop                _current_discovered;
+  HeapWord*          _current_discovered_addr;
+  oop                _next_discovered;
+
   HeapWord*          _referent_addr;
   oop                _referent;
+
   OopClosure*        _keep_alive;
   BoolObjectClosure* _is_alive;
 
@@ -102,10 +104,10 @@ public:
                                 BoolObjectClosure* is_alive);
 
   // End Of List.
-  inline bool has_next() const { return _ref != NULL; }
+  inline bool has_next() const { return _current_discovered != NULL; }
 
   // Get oop to the Reference object.
-  inline oop obj() const { return _ref; }
+  inline oop obj() const { return _current_discovered; }
 
   // Get oop to the referent object.
   inline oop referent() const { return _referent; }
@@ -124,8 +126,8 @@ public:
 
   // Move to the next discovered reference.
   inline void next() {
-    _prev_next = _discovered_addr;
-    _prev = _ref;
+    _prev_discovered_addr = _current_discovered_addr;
+    _prev_discovered = _current_discovered;
     move_to_next();
   }
 
@@ -151,13 +153,13 @@ public:
   )
 
   inline void move_to_next() {
-    if (_ref == _next) {
+    if (_current_discovered == _next_discovered) {
       // End of the list.
-      _ref = NULL;
+      _current_discovered = NULL;
     } else {
-      _ref = _next;
+      _current_discovered = _next_discovered;
     }
-    assert(_ref != _first_seen, "cyclic ref_list found");
+    assert(_current_discovered != _first_seen, "cyclic ref_list found");
     NOT_PRODUCT(_processed++);
   }
 };
@@ -180,7 +182,7 @@ class ReferenceProcessor : public ReferenceDiscoverer {
   bool        _enqueuing_is_done;       // true if all weak references enqueued
   bool        _processing_is_mt;        // true during phases when
                                         // reference processing is MT.
-  uint        _next_id;                 // round-robin mod _num_q counter in
+  uint        _next_id;                 // round-robin mod _num_queues counter in
                                         // support of work distribution
 
   // For collectors that do not keep GC liveness information
@@ -201,9 +203,9 @@ class ReferenceProcessor : public ReferenceDiscoverer {
   // The discovered ref lists themselves
 
   // The active MT'ness degree of the queues below
-  uint             _num_q;
+  uint            _num_queues;
   // The maximum MT'ness degree of the queues below
-  uint             _max_num_q;
+  uint            _max_num_queues;
 
   // Master array of discovered oops
   DiscoveredList* _discovered_refs;
@@ -217,8 +219,8 @@ class ReferenceProcessor : public ReferenceDiscoverer {
  public:
   static int number_of_subclasses_of_ref() { return (REF_PHANTOM - REF_OTHER); }
 
-  uint num_q()                             { return _num_q; }
-  uint max_num_q()                         { return _max_num_q; }
+  uint num_queues() const                  { return _num_queues; }
+  uint max_num_queues() const              { return _max_num_queues; }
   void set_active_mt_degree(uint v);
 
   DiscoveredList* discovered_refs()        { return _discovered_refs; }
@@ -264,7 +266,7 @@ class ReferenceProcessor : public ReferenceDiscoverer {
                 OopClosure*        keep_alive,
                 VoidClosure*       complete_gc);
   // Phase3: process the referents by either clearing them
-  // or keeping them alive (and their closure)
+  // or keeping them alive (and their closure), and enqueuing them.
   void process_phase3(DiscoveredList&    refs_list,
                       bool               clear_referent,
                       BoolObjectClosure* is_alive,
@@ -290,7 +292,7 @@ class ReferenceProcessor : public ReferenceDiscoverer {
                                       GCTimer*           gc_timer);
 
   // Returns the name of the discovered reference list
-  // occupying the i / _num_q slot.
+  // occupying the i / _num_queues slot.
   const char* list_name(uint i);
 
   void enqueue_discovered_reflists(AbstractRefProcTaskExecutor* task_executor,
@@ -305,14 +307,14 @@ class ReferenceProcessor : public ReferenceDiscoverer {
                                    VoidClosure*       complete_gc,
                                    YieldClosure*      yield);
 private:
-  // round-robin mod _num_q (not: _not_ mode _max_num_q)
+  // round-robin mod _num_queues (not: _not_ mod _max_num_queues)
   uint next_id() {
     uint id = _next_id;
     assert(!_discovery_is_mt, "Round robin should only be used in serial discovery");
-    if (++_next_id == _num_q) {
+    if (++_next_id == _num_queues) {
       _next_id = 0;
     }
-    assert(_next_id < _num_q, "_next_id %u _num_q %u _max_num_q %u", _next_id, _num_q, _max_num_q);
+    assert(_next_id < _num_queues, "_next_id %u _num_queues %u _max_num_queues %u", _next_id, _num_queues, _max_num_queues);
     return id;
   }
   DiscoveredList* get_discovered_list(ReferenceType rt);
