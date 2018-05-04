@@ -47,50 +47,8 @@ JRE_MODULES += $(filter $(ALL_MODULES), $(BOOT_MODULES) \
     $(PLATFORM_MODULES) $(JRE_TOOL_MODULES))
 JDK_MODULES += $(ALL_MODULES)
 
-# Modules list for compact builds
-JRE_COMPACT1_MODULES := \
-    java.logging \
-    java.scripting \
-    jdk.localedata \
-    jdk.crypto.cryptoki \
-    jdk.crypto.ec \
-    jdk.unsupported \
-    #
-
-JRE_COMPACT2_MODULES := \
-    $(JRE_COMPACT1_MODULES) \
-    java.rmi \
-    java.sql \
-    java.xml \
-    jdk.xml.dom \
-    jdk.httpserver \
-    #
-
-JRE_COMPACT3_MODULES := \
-    $(JRE_COMPACT2_MODULES) \
-    java.smartcardio \
-    java.compiler \
-    java.instrument \
-    java.management \
-    java.management.rmi \
-    java.naming \
-    java.prefs \
-    java.security.jgss \
-    java.security.sasl \
-    java.sql.rowset \
-    java.xml.crypto \
-    jdk.management \
-    jdk.naming.dns \
-    jdk.naming.rmi \
-    jdk.sctp \
-    jdk.security.auth \
-    #
-
 JRE_MODULES_LIST := $(call CommaList, $(JRE_MODULES))
 JDK_MODULES_LIST := $(call CommaList, $(JDK_MODULES))
-JRE_COMPACT1_MODULES_LIST := $(call CommaList, $(JRE_COMPACT1_MODULES))
-JRE_COMPACT2_MODULES_LIST := $(call CommaList, $(JRE_COMPACT2_MODULES))
-JRE_COMPACT3_MODULES_LIST := $(call CommaList, $(JRE_COMPACT3_MODULES))
 
 ################################################################################
 
@@ -152,45 +110,8 @@ $(JRE_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
 	)
 	$(TOUCH) $@
 
-
-$(JRE_COMPACT1_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
-    $(call DependOnVariable, JRE_COMPACT1_MODULES_LIST) $(BASE_RELEASE_FILE)
-	$(ECHO) Creating jre compact1 jimage
-	$(RM) -r $(JRE_COMPACT1_IMAGE_DIR)
-	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/images/jre_compact1, \
-	    $(JLINK_TOOL) --add-modules $(JRE_COMPACT1_MODULES_LIST) \
-	        $(JLINK_JRE_EXTRA_OPTS) \
-	        --output $(JRE_COMPACT1_IMAGE_DIR) \
-	)
-	$(TOUCH) $@
-
-$(JRE_COMPACT2_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
-    $(call DependOnVariable, JRE_COMPACT2_MODULES_LIST) $(BASE_RELEASE_FILE)
-	$(ECHO) Creating jre compact2 jimage
-	$(RM) -r $(JRE_COMPACT2_IMAGE_DIR)
-	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/images/jre_compact2, \
-	    $(JLINK_TOOL) --add-modules $(JRE_COMPACT2_MODULES_LIST) \
-	        $(JLINK_JRE_EXTRA_OPTS) \
-	        --output $(JRE_COMPACT2_IMAGE_DIR) \
-	)
-	$(TOUCH) $@
-
-$(JRE_COMPACT3_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
-    $(call DependOnVariable, JRE_COMPACT3_MODULES_LIST) $(BASE_RELEASE_FILE)
-	$(ECHO) Creating jre compact3 jimage
-	$(RM) -r $(JRE_COMPACT3_IMAGE_DIR)
-	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/images/jre_compact3, \
-	    $(JLINK_TOOL) --add-modules $(JRE_COMPACT3_MODULES_LIST) \
-	        $(JLINK_JRE_EXTRA_OPTS) \
-	        --output $(JRE_COMPACT3_IMAGE_DIR) \
-	)
-	$(TOUCH) $@
-
 TOOL_JRE_TARGETS := $(JRE_IMAGE_DIR)/$(JIMAGE_TARGET_FILE)
 TOOL_JDK_TARGETS := $(JDK_IMAGE_DIR)/$(JIMAGE_TARGET_FILE)
-TOOL_JRE_COMPACT1_TARGETS := $(JRE_COMPACT1_IMAGE_DIR)/$(JIMAGE_TARGET_FILE)
-TOOL_JRE_COMPACT2_TARGETS := $(JRE_COMPACT2_IMAGE_DIR)/$(JIMAGE_TARGET_FILE)
-TOOL_JRE_COMPACT3_TARGETS := $(JRE_COMPACT3_IMAGE_DIR)/$(JIMAGE_TARGET_FILE)
 
 ################################################################################
 # /man dir
@@ -442,15 +363,4 @@ symbols: $(SYMBOLS_TARGETS)
 
 all: jdk jre symbols
 
-$(JRE_COMPACT1_TARGETS): $(TOOL_JRE_COMPACT1_TARGETS)
-$(JRE_COMPACT2_TARGETS): $(TOOL_JRE_COMPACT2_TARGETS)
-$(JRE_COMPACT3_TARGETS): $(TOOL_JRE_COMPACT3_TARGETS)
-
-profiles: $(TOOL_JRE_COMPACT1_TARGETS) \
-    $(TOOL_JRE_COMPACT2_TARGETS) \
-    $(TOOL_JRE_COMPACT3_TARGETS) \
-    $(JRE_COMPACT1_TARGETS) \
-    $(JRE_COMPACT2_TARGETS) \
-    $(JRE_COMPACT3_TARGETS)
-
-.PHONY: default all jdk jre symbols profiles
+.PHONY: default all jdk jre symbols
